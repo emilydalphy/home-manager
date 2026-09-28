@@ -13,6 +13,10 @@
 //      - Info.plist's WKAppBoundDomains lists the server's host and
 //        "localhost" (without both, the service worker and the offline page
 //        stop working inside the app)
+//      - push notifications are switched on in the Xcode project: the
+//        entitlements file says aps-environment and both build settings
+//        point at it (without it, iOS never hands the app a device token
+//        and no notification can ever arrive)
 //
 // `npm run check` runs only the checks (for CI): it fails instead of
 // writing when www/app-config.js is out of date.
@@ -76,6 +80,20 @@ if (existsSync(plist) && serverUrl) {
     if (!listed.includes(host)) {
       problems.push(`ios/App/App/Info.plist: WKAppBoundDomains should list "${host}".`);
     }
+  }
+}
+
+// 3. Push notifications: the capability, once the Xcode project exists.
+if (existsSync(pbxproj)) {
+  const text = readFileSync(pbxproj, 'utf8');
+  const signed = [...text.matchAll(/CODE_SIGN_ENTITLEMENTS = ([^;]+);/g)].map((m) => m[1].trim());
+  if (signed.length < 2 || signed.some((v) => v !== 'App/App.entitlements')) {
+    problems.push('ios/App/App.xcodeproj: CODE_SIGN_ENTITLEMENTS should be App/App.entitlements for Debug and Release (push notifications need it).');
+  }
+  const entitlements = join(root, 'ios', 'App', 'App', 'App.entitlements');
+  const ent = existsSync(entitlements) ? readFileSync(entitlements, 'utf8') : '';
+  if (!/<key>aps-environment<\/key>\s*<string>(development|production)<\/string>/.test(ent)) {
+    problems.push('ios/App/App/App.entitlements: should set aps-environment (the Push Notifications capability).');
   }
 }
 

@@ -126,6 +126,15 @@ class TestLastWeek:
         assert prefill["intake"] is None                  # nothing for this week yet
         assert set(prefill["last_intake"]) == {"week_start", "day_count", "moods", "cuisines", "weekday_lunches"}
 
+    def test_anything_else_is_said_to_be_this_weeks_and_the_page_starts_it_blank(self):
+        """Emily, 2026-09-28: the note is for this week only and must read
+        that way. The server never sends last week's (above); the page
+        clears the box whenever a new period's prefill lands, and says so."""
+        fetch = _extract("fetchPeriod")
+        assert "$('freeform').value = '';" in fetch
+        q5 = PAGE[PAGE.index('<section id="q5"'):PAGE.index('</section>', PAGE.index('<section id="q5"'))]
+        assert "Just for this week &mdash; it starts blank next time." in q5
+
     def test_plan_this_week_saves_every_answer_in_one_revision(self, signed_in):
         """What samePayload sends: the whole set, as leaving does."""
         mon = _monday(2)
@@ -165,11 +174,11 @@ class TestThePage:
         rows = _var("SAME_ROWS")
         for key, step, label in (("days", 1, "Days"), ("lunches", 3, "Weekday lunches"),
                                  ("packed", 3, "Taking lunch with you"), ("different", 2, "Different days"),
-                                 ("mood", 4, "Mood"), ("freeform", 5, "Anything else")):
+                                 ("mood", 4, "Mood"), ("freeform", 5, "Anything else this week")):
             assert f"key: '{key}'" in rows and f"step: {step}, label: '{label}'" in rows, key
         copy = _var("SAME_COPY")
         for line in ("go: 'Plan this week'", "done: 'Done'", "change: 'Change'", "changed: 'Changed'",
-                     "nothingMarked: 'Nothing marked'", "nothingAdded: 'Nothing added'"):
+                     "nothingMarked: 'Nothing marked'", "nothingAdded: 'Nothing yet \\u2014 starts fresh each week'"):
             assert line in copy, line
 
     def test_replanning_an_answered_week_says_this_week_so_far(self):
@@ -263,7 +272,7 @@ class TestTheRows:
             "packed": "Mon, Tue, Thu",
             "different": "Nothing marked",
             "mood": "Something warm, Protein-heavy",
-            "freeform": "Nothing added",
+            "freeform": "Nothing yet \u2014 starts fresh each week",
         }
 
     @_needs_node
@@ -300,9 +309,9 @@ class TestTheRows:
         baseline; a later one marks only the rows whose words moved."""
         values = [
             {"days": "Mon 28 → Sun 4 · 7 days", "lunches": None, "packed": None,
-             "different": "Nothing marked", "mood": "Comfort food", "freeform": "Nothing added"},
+             "different": "Nothing marked", "mood": "Comfort food", "freeform": "Nothing yet \u2014 starts fresh each week"},
             {"days": "Mon 28 → Sun 4 · 7 days", "lunches": None, "packed": None,
-             "different": "Wednesday: short on time", "mood": "Comfort food", "freeform": "Nothing added"},
+             "different": "Wednesday: short on time", "mood": "Comfort food", "freeform": "Nothing yet \u2014 starts fresh each week"},
         ]
         script = (
             "var els = {}; function $(id) { return els[id] || (els[id] = { innerHTML: '', querySelectorAll: function () { return []; } }); }\n"

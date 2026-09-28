@@ -6,7 +6,7 @@ The iPhone app is a thin shell around the live Pomona website. When someone
 opens it, it loads the same Pomona you use in Safari, straight from Railway.
 So sign-in, the week's plan, the list, chat — all of it is the website,
 unchanged. The app adds what a website can't: an App Store listing, a home
-screen icon, a launch screen, and (later) push notifications.
+screen icon, a launch screen, and push notifications.
 
 Because the app shows the live site, **a change merged to `main` reaches the
 app too, with no new App Store release.** A new release is only needed when
@@ -44,6 +44,15 @@ npm run sync        # checks the settings, copies www/ into the iOS project
 settings and of `www/` is generated, not stored in git.
 
 ## Things worth knowing
+
+- **Push notifications:** the app asks once, after a week is approved (never
+  on first launch), and Preferences has an On/Off row. The server sends
+  through Apple with a key that lives only in Railway: `APNS_KEY_ID`,
+  `APNS_TEAM_ID`, `APNS_KEY_P8` (the .p8 file's text), `APNS_TOPIC`
+  (`com.pomona.app`), and `APNS_SANDBOX=1` only while testing a build run
+  from Xcode. Until those are set, the morning note and the dinner nudge go
+  by text, as before. The Push Notifications capability is in
+  `ios/App/App/App.entitlements`; `npm run sync` checks it's switched on.
 
 - **Changing the address** (a custom domain later): change `server.url` in
   `capacitor.config.json` **and** the first entry under `WKAppBoundDomains`

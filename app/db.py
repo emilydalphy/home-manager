@@ -545,6 +545,12 @@ _MIGRATIONS = [
     # never nudges twice. See digest.py's evening nudge section.
     ("members", "evening_nudge_on", "INTEGER NOT NULL DEFAULT 1"),
     ("members", "evening_nudge_sent_on", "TEXT NOT NULL DEFAULT ''"),
+    # Push notifications on the iPhone app (2026-09-27): this adult's own
+    # switch for them, ON by default — the phone's "Allow notifications" is
+    # the explicit yes; this is the way to say no to Pomona from inside the
+    # app. Nothing is pushed to anyone without a phone in push_devices, so
+    # the default changes nothing for anyone who hasn't allowed it.
+    ("members", "push_on", "INTEGER NOT NULL DEFAULT 1"),
     # When this adult first used Pomona as themselves (UTC, datetime('now')
     # shape) — redeeming an invite link, "Who's this?", or inviting someone.
     # NULL = not yet, which is what puts "Invite Vineeth" in Preferences.
