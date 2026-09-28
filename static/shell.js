@@ -12488,6 +12488,13 @@
     // sentence behind, and reading the whole object made every button on
     // every flag dead until the panel was next rebuilt.
     if (!weekStart || (weekFlagState && weekFlagState.busy)) return;
+    // The toast names the dish (house pattern, pomona-copywriter rule 3:
+    // "<thing> was <verbed>", never a bare "Kept." / "Moved."), so its
+    // dish and day are read off the flag BEFORE the fix runs — dismiss
+    // takes the flag off the stored set, and loadWeekMenu below replaces
+    // weekState.data with a week that no longer carries it.
+    var flagForToast = ((weekState.data && weekState.data.draft_flags) || [])
+      .find(function (f) { return f.entry_id === entryId; });
     weekFlagState = { entryId: entryId, busy: true };
     renderMealsStep(panel);
     try {
@@ -12512,7 +12519,16 @@
       // traded dinners. loadWeekMenu is the one place that keeps the
       // band, the rows and the flags in step.
       await loadWeekMenu(panel);
-      toastSaved(action === 'move' ? 'Moved.' : action === 'keep' ? 'Kept.' : 'Added to your prep.');
+      var toastText = action === 'move' ? 'Moved.'
+        : action === 'keep'
+          ? (flagForToast && flagForToast.dish && flagForToast.date
+              ? flagForToast.dish + ' stays on ' + dayName(flagForToast.date, { weekday: 'long' }) + '.'
+              // The flag was already gone by the time the button was tapped
+              // (a stale screen, see above) — dismiss still ran, but there
+              // is no dish/day left to name, so the plain fallback stands.
+              : 'Kept.')
+          : 'Added to your prep.';
+      toastSaved(toastText);
     } catch (err) {
       console.warn('Draft flag fix failed:', err);
       weekFlagState = { entryId: entryId, message: FLAG_TROUBLE };
