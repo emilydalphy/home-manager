@@ -137,11 +137,19 @@ class TestTheStoredAnswer:
         assert bad.status_code == 400
         assert "dinner before it isn’t planned" in bad.json()["detail"]
 
-    def test_the_prep_day_is_the_nearest_one_on_or_before_the_lunch(self):
+    def test_the_prep_day_is_the_nearest_one_before_the_lunch_never_the_same_day(self):
+        """Emily, 2026-09-28: prep happens after work, so a prep day's food is
+        first eaten the NEXT day. Sun + Tue prep: Mon and Tue are Sunday's,
+        Wed and Thu Tuesday's."""
         assert weekday_lunches.prep_day_for("2026-09-28", ["sunday"]) == ("sunday", 1)        # Mon
         assert weekday_lunches.prep_day_for("2026-10-01", ["sunday"]) == ("sunday", 4)        # Thu
         assert weekday_lunches.prep_day_for("2026-10-01", ["sunday", "wednesday"]) == ("wednesday", 1)
-        assert weekday_lunches.prep_day_for("2026-09-30", ["wednesday"]) == ("wednesday", 0)  # same day
+        # A lone prep day on the lunch's own weekday is LAST week's.
+        assert weekday_lunches.prep_day_for("2026-09-30", ["wednesday"]) == ("wednesday", 7)
+        sun_tue = ["sunday", "tuesday"]
+        week = ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02"]
+        assert [weekday_lunches.prep_date_for(d, sun_tue) for d in week] == \
+            ["2026-09-27", "2026-09-27", "2026-09-29", "2026-09-29", "2026-09-29"]
         assert weekday_lunches.prep_day_for("2026-09-28", []) is None
 
 
@@ -527,9 +535,30 @@ class TestTheScreen:
     @_needs_node
     def test_the_prep_day_rule_is_the_servers(self):
         for lunch, days in (("2026-09-28", ["sunday"]), ("2026-10-01", ["sunday"]),
-                            ("2026-10-01", ["sunday", "wednesday"]), ("2026-09-30", ["wednesday"])):
+                            ("2026-10-01", ["sunday", "wednesday"]), ("2026-09-30", ["wednesday"]),
+                            ("2026-09-29", ["sunday", "tuesday"]), ("2026-09-30", ["sunday", "tuesday"])):
             server = weekday_lunches.prep_day_for(lunch, days)
             assert _node(f"prepDayFor('{lunch}', {json.dumps(days)})") == {"day": server[0], "back": server[1]}
+
+    @_needs_node
+    def test_the_sheet_never_says_a_lunch_is_prepped_the_same_day(self):
+        """CATCH (Emily, 2026-09-28, the lunch rhythm sheet with Sun + Tue
+        prep): main read "TUE Prepped Tuesday" — but prep is done after work,
+        so Tuesday's prep isn't ready for Tuesday's lunch."""
+        lines = [_node(f"lunchLine('{d}', 'prepped', ['sunday', 'tuesday'])") for d in WEEK]
+        assert lines == ["Prepped Sunday", "Prepped Sunday", "Prepped Tuesday", "Prepped Tuesday",
+                         "Prepped Tuesday"]
+
+    @_needs_node
+    def test_a_lone_prep_day_on_the_first_lunch_brings_in_the_evening_before(self):
+        """Only Monday chosen, Monday's lunch prepped: Monday's prep can't feed
+        Monday, so the evening before (Sunday) becomes a prep day too — the
+        same reach rule that brings in Wednesday for a Thursday lunch."""
+        kinds = {d: "prepped" for d in WEEK}
+        assert _node(f"ensurePrepReach(['monday'], {json.dumps(kinds)}, {json.dumps(WEEK)}, 'monday')") == \
+            ["sunday", "monday", "thursday"]  # Friday is four days past Monday: Thursday too
+        assert _node(f"lunchLine('{WEEK[0]}', 'prepped', ['sunday', 'monday'])") == "Prepped Sunday"
+        assert _node(f"lunchLine('{WEEK[1]}', 'prepped', ['sunday', 'monday'])") == "Prepped Monday"
 
     @_needs_node
     def test_the_days_say_what_each_one_gets(self):

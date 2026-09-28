@@ -106,8 +106,14 @@ def is_weekday(iso: str) -> bool:
 def prep_day_for(lunch_date: str, prep_days: list[str]) -> tuple[str, int] | None:
     """
     The prep day a prepped lunch comes from: the most recent of
-    `prep_days` on or before the lunch (the same day counts — a Wednesday
-    prep can be Wednesday's lunch), and how many days back it is (0-6).
+    `prep_days` STRICTLY before the lunch, and how many days back it is
+    (1-7). Food made on a prep day is first eaten the NEXT day, never the
+    same day — prep happens in the evening (Emily, 2026-09-28: "if I'm
+    doing my meal prep after work, it won't be done in time for
+    tuesday"), so a Tuesday prep feeds Wednesday on, and Tuesday's lunch
+    comes from the prep day before it. A lone prep day that is also the
+    lunch's own weekday is last week's (7 back — past the three-day reach,
+    so plan-week's ensurePrepReach brings in the evening before).
     None when there are no prep days. plan-week.html's prepDayFor mirrors
     this exactly; tests/test_weekday_lunches.py pins the two together.
     """
@@ -116,7 +122,7 @@ def prep_day_for(lunch_date: str, prep_days: list[str]) -> tuple[str, int] | Non
     for name in prep_days or []:
         if name not in PREP_WEEKDAYS:
             continue
-        back = (lunch.weekday() - _WEEKDAYS_FROM_MONDAY.index(name)) % 7
+        back = (lunch.weekday() - _WEEKDAYS_FROM_MONDAY.index(name) - 1) % 7 + 1
         if best is None or back < best[1]:
             best = (name, back)
     return best
@@ -811,7 +817,15 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
         # Re-read: the leftovers writes above replaced rows.
         lunches, dinners = _lunch_and_dinner_rows(plan_id)
         chains = _leftovers.plan_leftover_chains(plan_id)
-        for prep_date, members in sorted(batches.items()):
+        for n, (prep_date, members) in enumerate(sorted(batches.items())):
+            if n:
+                # Re-read between batches: an earlier batch's lunches can
+                # fall ON a later batch's prep day (Sun + Tue prep: Tuesday's
+                # lunch reheats Sunday's batch, and Tuesday evening is the
+                # next prep), and a stale row there would make a replaced
+                # entry the next batch's cook.
+                lunches, dinners = _lunch_and_dinner_rows(plan_id)
+                chains = _leftovers.plan_leftover_chains(plan_id)
             members.sort(key=lambda d: d["date"])
             rows_by_date = {
                 d["date"]: [r for r in lunches.get(d["date"], []) if r["slot_state"] == "planned"]

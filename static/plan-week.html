@@ -2734,15 +2734,16 @@
   function prevIso(iso) { return addDaysIso(iso, -1); }
 
   // The prep day a prepped lunch comes from: the most recent chosen prep
-  // day on or before it, and how many days back. The server's
-  // weekday_lunches.prep_day_for, answer for answer.
+  // day strictly BEFORE it (1-7 days back) — prep is done in the evening,
+  // so a Tuesday prep feeds Wednesday on, never Tuesday itself. The
+  // server's weekday_lunches.prep_day_for, answer for answer.
   function prepDayFor(iso, prepDays) {
     var day = new Date(iso + 'T00:00:00').getDay();
     var best = null;
     (prepDays || []).forEach(function (name) {
       var i = PREP_WEEKDAYS.indexOf(name);
       if (i === -1) return;
-      var back = ((day - i) % 7 + 7) % 7;
+      var back = ((day - i - 1) % 7 + 7) % 7 + 1;
       if (!best || back < best.back) best = { day: name, back: back };
     });
     return best;

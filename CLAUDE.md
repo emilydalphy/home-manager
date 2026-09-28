@@ -425,6 +425,24 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
+  Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep
+  after work, it won't be done in time for tuesday." The one rule lives in
+  `weekday_lunches.prep_day_for` (mirrored by plan-week's `prepDayFor`):
+  the most recent prep day STRICTLY before the lunch, 1–7 days back (was
+  0–6, same day counted). Sun + Tue prep → Mon/Tue from Sunday, Wed/Thu
+  from Tuesday. Every other reader (apply_to_plan's batches,
+  `_prep_day_cook`, `prepped_batches`, prep sessions, Cook) reads the
+  `prep_date` this stamps, so preview and draft move together. The 3-day
+  reach (`LUNCH_KEEP_DAYS` / `MAX_LEFTOVER_DAYS`) is unchanged and still
+  means "eaten within 3 days of the prep". Knock-on fix: `apply_to_plan`
+  now re-reads rows between batches, because an earlier batch's lunch can
+  now fall ON a later batch's prep day (Tuesday) and the stale row made a
+  replaced entry the next batch's cook. Edge case: a lone prep day on the
+  first lunch's weekday is last week's (7 back), so `ensurePrepReach`
+  brings in the evening before. Assumes evening prep; no morning/evening
+  question exists.
+
 - **2026-09-27 — CLAUDE.md has a tripwire now, and — because the tripwire
   measurably does NOT catch the incident that asked for it — the arithmetic
   that does. Branch `overnight/claude-md-tripwire`, NOT merged at the time of

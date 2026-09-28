@@ -129,23 +129,32 @@ def test_sundays_prep_is_cooked_on_sunday_and_feeds_monday(two_adults, stub_mode
     lunch = _rows(plan_id, "lunch")
     chains = tools.plan_leftover_chains(plan_id)
 
-    assert lunch[dates[1]]["meal"] == "Japanese curry"
-    assert chains["leftovers"][lunch[dates[1]]["id"]]["source"]["entry_id"] == lunch[dates[0]]["id"]
-    assert lunch[dates[1]]["derived"].get("cook_ahead") is True
-    assert f"{dates[1]}:lunch" in lunch[dates[0]]["derived"]["make_double_for"]
+    # Sunday's prep feeds Monday AND Tuesday (Emily, 2026-09-28: food made
+    # on a prep day is first eaten the NEXT day — Tuesday's evening prep
+    # isn't ready for Tuesday's lunch).
+    for d in dates[1:3]:
+        assert lunch[d]["meal"] == "Japanese curry"
+        assert chains["leftovers"][lunch[d]["id"]]["source"]["entry_id"] == lunch[dates[0]]["id"]
+        assert lunch[d]["derived"].get("cook_ahead") is True
+        assert f"{d}:lunch" in lunch[dates[0]]["derived"]["make_double_for"]
     assert lunch[dates[0]]["derived"]["prep_date"] == dates[0]
-    assert lunch[dates[0]]["reasoning"] == "Cook this Sunday for Monday’s lunch."
-    # Tuesday's prep: cooked Tuesday, Wednesday and Thursday reheat it.
+    assert lunch[dates[0]]["reasoning"] == "Cook this Sunday for Monday and Tuesday’s lunches."
+    # Tuesday's prep: Tuesday's own lunch is Sunday's batch, so Tuesday's
+    # dinner is the cook, and Wednesday and Thursday reheat it.
+    dinner = _rows(plan_id, "dinner")
+    assert dinner[dates[2]]["derived"]["prep_date"] == dates[2]
     for d in dates[3:5]:
-        assert lunch[d]["meal"] == "Chicken salad"
-        assert chains["leftovers"][lunch[d]["id"]]["source"]["entry_id"] == lunch[dates[2]]["id"]
+        assert lunch[d]["meal"] == dinner[dates[2]]["meal"]
+        assert chains["leftovers"][lunch[d]["id"]]["source"]["entry_id"] == dinner[dates[2]]["id"]
 
 
 def test_the_weekend_lunch_on_a_prep_day_is_the_batch_not_an_extra_dish(two_adults, stub_model):
     """CATCH: main counts four lunch dishes against Lunches = 2 — Sunday's
     curry, Monday's pancake, the chicken salad and Friday's beef bowls."""
     plan_id, dates = _emilys_week(stub_model)
-    assert _lunch_dishes(plan_id) == {"japanese curry", "chicken salad"}
+    # Wednesday and Thursday reheat Tuesday's DINNER (the Tuesday prep), so
+    # they are not a lunch dish of their own either.
+    assert _lunch_dishes(plan_id) == {"japanese curry"}
     # Friday is Thursday's dinner, reheated — not a lunch dish, not touched.
     lunch = _rows(plan_id, "lunch")
     dinner = _rows(plan_id, "dinner")
@@ -160,16 +169,14 @@ def test_the_schedule_line_survives_in_data_whatever_the_row_shows(two_adults, s
     plan_id, dates = _emilys_week(stub_model)
     menu = tools.get_week_menu(plan_id)
     sunday = next(d for d in menu["days"] if d["date"] == dates[0])
-    assert sunday["lunch"]["schedule_note"] == "Cook this Sunday for Monday’s lunch."
-    tuesday = next(d for d in menu["days"] if d["date"] == dates[2])
-    assert tuesday["lunch"]["schedule_note"] == "Makes Wednesday and Thursday’s lunches too."
+    assert sunday["lunch"]["schedule_note"] == "Cook this Sunday for Monday and Tuesday’s lunches."
 
 
 def test_the_prep_session_names_only_the_lunches_the_batch_is_for(two_adults, stub_model):
     plan_id, dates = _emilys_week(stub_model)
     batches = {b["prep_date"]: b for b in weekday_lunches.prepped_batches(plan_id)}
-    assert batches[dates[0]]["lunch_dates"] == [dates[1]]
-    assert batches[dates[2]]["lunch_dates"] == dates[2:5]
+    assert batches[dates[0]]["lunch_dates"] == dates[1:3]
+    assert batches[dates[2]]["lunch_dates"] == dates[3:5]
 
 
 def test_a_monday_start_week_with_a_sunday_prep_before_it_is_as_before(two_adults, stub_model):

@@ -218,21 +218,22 @@ class TestTheBatchIsOnItsPrepDay:
 
     def test_a_batch_shows_exactly_once_even_when_its_prep_day_is_its_cook_day(
             self, two_adults, stub_model):
-        """RED ON MAIN, NOT FOR ITS OWN CLAIM — it dies on `session["items"]`
-        with no session at all, and what it is named for is the DUPLICATE: a
-        Wednesday prep day whose own Wednesday lunch is prepped puts the cook
-        and the prep on ONE day, so the batch would be gathered twice, once by
+        """What it is named for is the DUPLICATE: the batch's cook and its
+        prep sit on ONE day, so the batch could be gathered twice, once by
         _prepped_lunch_items and once by _cook_ahead_items, which reads the
-        source's own date. That half is pinned by the mutation that drops
-        prepped_cook_ids (2 red), not by this number."""
+        source's own date. That is pinned by the mutation that drops
+        prepped_cook_ids. Since 2026-09-28 a prep day never feeds its own
+        lunch (food made on a prep day is first eaten the next day), so the
+        shape is a Wednesday prep for Thursday and Friday, cooked on
+        Wednesday's own lunch (_prep_day_cook)."""
         sun = _next_weekday("sunday")
         plan_id, dates = _plan(
-            stub_model, sun, {3: "prepped", 4: "prepped"}, ["wednesday"],
+            stub_model, sun, {4: "prepped", 5: "prepped"}, ["wednesday"],
             lunches=["S0", "S1", "S2", "Chili", "Soup", "S5", "S6"],
         )
         session = _session(plan_id, dates[3])
         assert [i["title"] for i in session["items"]] == ["Chili"], session["items"]
-        assert session["items"][0]["line"] == "For Wednesday and Thursday’s lunches."
+        assert session["items"][0]["line"] == "For Thursday and Friday’s lunches."
 
     def test_the_one_lunch_batch_is_a_session_item_too(self, two_adults, stub_model):
         """RED ON MAIN on the missing session rather than on its own claim.
