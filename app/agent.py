@@ -3298,17 +3298,19 @@ each other on the same test. Across DIFFERENT days, a repeated snack is fine and
 the guideline above) — this rule is only ever about one day's own plate. Anything caught here \
 after the fact gets traded onto another day automatically, which works but is a repair, not a \
 plan.
-- The no-repeat rule against recent_history is about DINNER and LUNCH — not \
-breakfast or snack. recent_history covers {_variety_window}, and a dinner or lunch (or a \
-near-identical variant) that appears there is NOT drafted again unless the household asked for \
-it this week — a favourite named in intake.freeform, "again please", a dish in intake.cuisines' \
-territory they clearly want back. Check recent_history's `slot` field; a household that keeps \
-seeing last week's dinners stops trusting the draft (Emily, 2026-09-20). Breakfast and snack repeating within the \
-current week is normal and expected (see the guideline above), and so is a breakfast/snack \
-idea persisting from a previous week — recent_history's breakfast/snack entries are \
-informational only, not something to avoid repeating — EXCEPT when intake.moods includes \
-"Something new": then breakfast joins the rule, and a breakfast in recent_history is not drafted \
-again unless they asked for it by name. Separately, avoid repeating the same \
+- The no-repeat rule against recent_history is about DINNER, LUNCH and SNACK — not \
+breakfast (except under "Something new", below). recent_history covers {_variety_window}, and a \
+dinner, lunch or snack (or a near-identical variant) that appears there is NOT drafted again \
+unless the household asked for it this week — a favourite named in intake.freeform, "again \
+please", a dish in intake.cuisines' territory they clearly want back. Check recent_history's \
+`slot` field; a household that keeps seeing last week's food stops trusting the draft (Emily, \
+2026-09-20 on dinners; 2026-09-28 on snacks: "It keeps giving me the same snack suggestions as \
+previous weeks"). Breakfast and snack repeating WITHIN the current week is normal and expected \
+(see the guideline above) — that is a different question from repeating ACROSS weeks, which is \
+this rule. Breakfast persisting from a previous week is still normal — recent_history's \
+breakfast entries are informational only, not something to avoid repeating — EXCEPT when \
+intake.moods includes "Something new": then breakfast joins the rule too, and a breakfast in \
+recent_history is not drafted again unless they asked for it by name. Separately, avoid repeating the same \
 main_protein or cuisine too many days in a row for dinner — check recent_history's cuisine/ \
 main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
 meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
@@ -6231,10 +6233,18 @@ def _finish_week_slots(
     # dish this pass puts on the week has been through swap_in_place.
     # pick_gate — the same allergen and taste gate — before it was written.
     # See meal_variety.repick_recent_repeats — it swallows its own failures.
+    #
+    # Snack joins the window ALWAYS, not just under "Something new" (Emily,
+    # 2026-09-28: "It keeps giving me the same snack suggestions as previous
+    # weeks"). Unlike breakfast, a repeated snack was never asked for by the
+    # prompt or the rule's own words — it was simply never checked, the same
+    # gap dinner and lunch had before this pass existed at all. See
+    # meal_variety.no_repeat_slots for what's still deliberately exempt
+    # (breakfast, outside "Something new" — "the rhythm working").
     _meal_variety.repick_recent_repeats(
         plan_id, week_start_date,
         repick_budget or _allergen_gate.CallBudget(),
-        asks=count_asks, slots=_meal_variety.no_repeat_slots(intake),
+        asks=count_asks, slots=_meal_variety.no_repeat_slots(intake) + ("snack",),
     )
 
     # "Four dinners a week" means four dishes, and the model is only ASKED
