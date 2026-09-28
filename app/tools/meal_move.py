@@ -309,8 +309,10 @@ def _after_rows(rows: list[dict], placement: dict[int, str]) -> list[dict]:
     return out
 
 
-def _chain_pairs(rows: list[dict]) -> dict[int, int]:
-    """{reheat id: cook id} for every confirmed chain in these rows."""
+def _chain_pairs(rows: list[dict], frozen_only: bool = False) -> dict[int, int]:
+    """{reheat id: cook id} for every chain in these rows — the fridge
+    leftovers (links_to), or with `frozen_only` the freezer portions
+    (from_freezer), which have an order but no age limit."""
     by_date_slot = {}
     for r in sorted(rows, key=lambda r: r["id"]):
         by_date_slot.setdefault((r["date"], r["slot"]), r)
@@ -321,12 +323,12 @@ def _chain_pairs(rows: list[dict]) -> dict[int, int]:
             continue
         derived = r.get("derived") if "derived" in r else _derived(r)
         links_to = (derived.get("links_to") or "").strip()
-        if links_to:
+        if links_to and not frozen_only and not isinstance(derived.get(_leftovers.FROM_FREEZER_KEY), dict):
             src = _weekly_plan._resolve_leftover_source(links_to, by_date_slot, by_id)
             if src is not None and src["id"] != r["id"]:
                 pairs[r["id"]] = src["id"]
         frozen = derived.get(_leftovers.FROM_FREEZER_KEY)
-        if isinstance(frozen, dict):
+        if frozen_only and isinstance(frozen, dict):
             ref = str(frozen.get("cook") or "")
             if ref.startswith("entry_id:"):
                 try:
@@ -346,6 +348,11 @@ def _structural_refusal(snap: dict, before: list[dict], after: list[dict],
     # food-safety days (only where the move made the gap longer — a chain
     # the week already had is not this move's to judge).
     pairs_before = _chain_pairs([{**r, "derived": _derived(r)} for r in before])
+    for reheat_id, cook_id in _chain_pairs(after, frozen_only=True).items():
+        if reheat_id not in placement and cook_id not in placement:
+            continue
+        if _weekly_plan._eaten_at(by_id_after[cook_id]) >= _weekly_plan._eaten_at(by_id_after[reheat_id]):
+            return f"The {short_name(by_id_after[cook_id]['meal'])} would end up after its frozen portion"
     for reheat_id, cook_id in _chain_pairs(after).items():
         if reheat_id not in placement and cook_id not in placement:
             continue
@@ -364,6 +371,9 @@ def _structural_refusal(snap: dict, before: list[dict], after: list[dict],
         prep_date = str(_derived(by_id_before[i]).get("prep_date") or "")
         if prep_date and d < prep_date:
             return f"It’s prepped on {_weekday(prep_date)}"
+        if prep_date and _leftovers.days_apart(prep_date, d) > _leftovers.MAX_LEFTOVER_DAYS \
+                and _leftovers.days_apart(prep_date, d) > _leftovers.days_apart(prep_date, by_id_before[i]["date"]):
+            return f"It’s prepped on {_weekday(prep_date)} — that’s too many days before"
     # At most two lunches and dinners in a row of the same dish.
     keys_before = _leftovers.run_keys_from_rows(before)
     keys_after = _leftovers.run_keys_from_rows(after)
@@ -619,15 +629,18 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
             return {"status": "refused", "message": "The week just changed — try that again."}
         placement = planned["placement"]
         n = len(placement)
+        cuts = _prep_cuts_that_will_shift(conn, weekly_plan_id, snap, placement)
         done = _weekly_plan._redate_plan_rows(
             conn, weekly_plan_id, snap["rows"], placement,
             token_for=lambda r: {"date": r["date"], "at": at, MOVE_TOKEN_KEY: move_id,
-                                 "to": placement[r["id"]], "n": n, "source": entry_id},
+                                 "to": placement[r["id"]], "n": n, "source": entry_id,
+                                 **({"prep_cuts": cuts[r["id"]]} if cuts.get(r["id"]) else {})},
             move_prep_cuts=True,
         )
         if "refused" in done:
             conn.rollback()
             return {"status": "refused", "message": done["refused"]}
+        _resay_freezer_nights(conn, snap, placement)
         conn.commit()
     except Exception:
         conn.rollback()
@@ -652,6 +665,56 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
     }
 
 
+def _prep_cuts_that_will_shift(conn, weekly_plan_id: int, snap: dict, placement: dict[int, str]) -> dict:
+    """{entry id: {prep task id: its date now}} for the prep cuts this move
+    will carry earlier (weekly_plan._shift_late_prep_cuts: a cut that would
+    fall after its meal) — kept on the Undo token so Undo puts each back on
+    its own day rather than guessing."""
+    from . import prep_sessions as _prep_sessions  # lazy: it imports weekly_plan
+    out: dict[int, dict] = {}
+    for i, new in placement.items():
+        rows = conn.execute(
+            "SELECT id, task_date FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? "
+            "AND task_type = ? AND meal_plan_entry_id = ?",
+            (household_id(), weekly_plan_id, _prep_sessions.PREP_CUT_TASK_TYPE, i),
+        ).fetchall()
+        late = {str(t["id"]): t["task_date"] for t in rows if t["task_date"] and t["task_date"] > new}
+        if late:
+            out[i] = late
+    return out
+
+
+def _resay_freezer_nights(conn, snap: dict, placement: dict[int, str]) -> None:
+    """A night eating a portion frozen on a cook that just moved names that
+    cook's day ("Leftovers from the freezer — Monday’s Chili"); re-say it
+    for the day the cook is on now. Only a name that is still exactly the
+    one Pomona wrote is touched."""
+    by_id = {r["id"]: r for r in snap["rows"]}
+    for r in snap["rows"]:
+        frozen = _derived(r).get(_leftovers.FROM_FREEZER_KEY)
+        if not isinstance(frozen, dict):
+            continue
+        ref = str(frozen.get("cook") or "")
+        if not ref.startswith("entry_id:"):
+            continue
+        try:
+            cook_id = int(ref.split(":", 1)[1])
+        except ValueError:
+            continue
+        cook = by_id.get(cook_id)
+        if cook is None or cook_id not in placement:
+            continue
+        dish = frozen.get("dish") or cook["meal"] or ""
+        old = _leftovers.freezer_night_name(dish, cook["date"])
+        new = _leftovers.freezer_night_name(dish, placement[cook_id])
+        if old != new:
+            conn.execute(
+                "UPDATE meal_plan_entries SET freeform_meal = ? WHERE id = ? AND household_id = ? "
+                "AND freeform_meal = ?",
+                (new, r["id"], household_id(), old),
+            )
+
+
 def _refusal_sentence(snap: dict, entry_id: int, to_date: str, reason: str) -> str:
     """A picker reason as a sentence of its own, for a refusal said in a
     toast: "Friday: Nobody’s home."."""
@@ -674,6 +737,7 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
         placement: dict[int, str] = {}
         expected = None
         source_id = None
+        restore_cuts: dict[str, str] = {}
         for r in snap["rows"]:
             token = _derived(r).get(_weekly_plan.NIGHTS_MOVED_KEY) or {}
             if not isinstance(token, dict) or token.get(MOVE_TOKEN_KEY) != move_id:
@@ -683,6 +747,7 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
             if (r["cooked_status"] or "") == "done":
                 raise ValueError("That meal has been cooked since, so it stays where it is.")
             placement[r["id"]] = token.get("date")
+            restore_cuts.update(token.get("prep_cuts") or {})
             expected = token.get("n")
             source_id = token.get("source")
         if not placement or (expected and expected != len(placement)):
@@ -693,6 +758,13 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
         if "refused" in done:
             conn.rollback()
             return {"status": "refused", "message": done["refused"]}
+        # A prep cut the move carried earlier goes back to the day it was on.
+        for task_id, was in restore_cuts.items():
+            conn.execute(
+                "UPDATE prep_tasks SET task_date = ? WHERE id = ? AND household_id = ?",
+                (was, int(task_id), household_id()),
+            )
+        _resay_freezer_nights(conn, snap, placement)
         conn.commit()
     except Exception:
         conn.rollback()

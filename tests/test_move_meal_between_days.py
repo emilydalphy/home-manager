@@ -375,6 +375,18 @@ def test_a_prep_cut_that_would_fall_after_its_meal_moves_with_it():
     assert row["task_date"] == MON
     assert row["description"] == "Get Lasagna ready for Tuesday"
 
+    # Undo puts the cut back on its own day, not just its sentence.
+    token = _meal(TUE)["derived"]["moved_from"]
+    meal_move.undo_meal_move(plan, token["move"])
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT task_date, description FROM prep_tasks WHERE meal_plan_entry_id = ? AND task_type = 'prep_cut'",
+        (lasagna,),
+    ).fetchone()
+    conn.close()
+    assert row["task_date"] == FRI
+    assert row["description"] == "Get Lasagna ready for Saturday"
+
 
 def test_a_moved_dish_she_asked_for_gets_its_short_on_time_line_on_the_draft():
     """The draft's snag lines are re-said after a move: a dish she asked
@@ -476,3 +488,28 @@ def test_the_swap_sheet_no_longer_carries_the_buried_move_line():
     assert "to another day" not in body and "wk-swap-move" not in body
     assert "function runMoveNight(" not in SHELL_JS and "function swapMoveOptions(" not in SHELL_JS
     assert "/move-options" in SHELL_JS and "/move-meal'" in SHELL_JS and "/move-meal-undo" in SHELL_JS
+
+
+def test_a_freezer_portion_is_not_judged_by_the_fridge_days_and_its_name_follows_the_cook():
+    """Chili Monday with a portion frozen for Friday: the freezer night is
+    ordered after the cook but has no three-day limit; when the chili moves
+    to Tuesday the freezer night says Tuesday."""
+    from app.tools import leftovers
+    for name in ("Turkey Chili", "Sunday Roast", "Black Bean Tacos"):
+        _recipe(name)
+    plan = _plan()
+    chili = tools.plan_meal(MON, "Turkey Chili", slot="dinner", weekly_plan_id=plan)["entry_id"]
+    tools.plan_meal(TUE, "Black Bean Tacos", slot="dinner", weekly_plan_id=plan)
+    frozen = tools.plan_meal(FRI, leftovers.freezer_night_name("Turkey Chili", MON), slot="dinner",
+                             weekly_plan_id=plan,
+                             derived_from={leftovers.FROM_FREEZER_KEY: {"cook": f"entry_id:{chili}",
+                                                                         "dish": "Turkey Chili"}})["entry_id"]
+    roast = tools.plan_meal(SUN, "Sunday Roast", slot="dinner", weekly_plan_id=plan)["entry_id"]
+
+    assert _options(plan, roast)[FRI]["ok"] is True, "a frozen portion keeps; no fridge-days limit"
+    assert _options(plan, roast)[MON]["ok"] is False, "nor can the portion come before its cook"
+    assert _options(plan, chili)[SAT]["ok"] is False, "the cook can't go after its frozen portion"
+
+    meal_move.move_meal(plan, chili, TUE)
+    assert _meal(FRI)["id"] == frozen
+    assert _meal(FRI)["meal"] == leftovers.freezer_night_name("Turkey Chili", TUE)
