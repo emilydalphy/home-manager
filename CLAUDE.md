@@ -425,6 +425,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-28 — The draft's toggle reads Meals | Schedule** (Emily; was
+  "What we're eating | Which days"). One constant, `DRAFT_VIEWS` in
+  `static/shell.js`; the view keys (`menu`/`days`) and older comments that
+  name the old words are unchanged.
+
 - **2026-09-28 — "Anything else" says it is this week's. Branch
   `claude/weekly-reset-anything-else-coqur5`.** Emily: make it obvious the
   note is for this week and starts fresh. It already did — `_last_period_intake`

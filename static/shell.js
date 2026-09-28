@@ -12146,7 +12146,7 @@
   // The toggle's side is remembered for the session only (weekState.
   // draftView, in memory), and a NEW draft opens on What we're eating —
   // weekState.draftViewPlanId is how a new plan id resets it.
-  var DRAFT_VIEWS = { menu: 'What we’re eating', days: 'Which days' };
+  var DRAFT_VIEWS = { menu: 'Meals', days: 'Schedule' };
 
   function draftView(data) {
     var id = data && data.weekly_plan_id;

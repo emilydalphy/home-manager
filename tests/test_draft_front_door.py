@@ -204,8 +204,8 @@ console.log(JSON.stringify({{ extras: extras, tail: weekBandTailHtml(extras), se
     assert out["extras"]["view"] == "menu" and out["extras"]["lead"] == data["draft_opener"]
     tail = out["tail"]
     assert "wk-draft-lead" not in tail, "the opener paragraph is no longer shown"
-    assert re.search(r'class="wk-draft-seg-btn is-on" role="tab" aria-selected="true" data-wk-view="menu">What we’re eating<', tail)
-    assert re.search(r'class="wk-draft-seg-btn" role="tab" aria-selected="false" data-wk-view="days">Which days<', tail)
+    assert re.search(r'class="wk-draft-seg-btn is-on" role="tab" aria-selected="true" data-wk-view="menu">Meals<', tail)
+    assert re.search(r'class="wk-draft-seg-btn" role="tab" aria-selected="false" data-wk-view="days">Schedule<', tail)
     assert tail.count("wk-draft-seg-btn") == 2
     assert out["set"] == "", "an approved week has no toggle and no opener"
 
@@ -365,7 +365,7 @@ def test_a_day_thats_different_carries_a_quiet_mark_on_which_days():
 
 def test_the_words_pass_the_seven_rules():
     """Contractions, the thing not the feature, no dashboard labels."""
-    for literal in ("Here’s your week.", "What we’re eating", "Which days", "Re-plan",
+    for literal in ("Here’s your week.", "Meals", "Schedule", "Re-plan",
                     "Need a hand?", "your turn"):
         assert literal in SHELL_JS, literal
     assert "'a draft, your turn'" not in SHELL_JS, "the chip already says Draft"
