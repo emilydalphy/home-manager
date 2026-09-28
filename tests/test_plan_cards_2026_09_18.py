@@ -101,6 +101,7 @@ def _prelude() -> str:
         + _extract("wkDaysPhrase", SHELL_JS) + "\n"
         + _extract("wkMenuDaysPhrase", SHELL_JS) + "\n"
         + _extract("wkMenuFact", SHELL_JS) + "\n"
+        + _extract("wkLeftoverSourcePhrase", SHELL_JS) + "\n"
         + _extract("wkMenuRowHtml", SHELL_JS) + "\n"
         + _extract("wkMenuHtml", SHELL_JS) + "\n"
         + _extract("wkDayMealCount", SHELL_JS) + "\n"

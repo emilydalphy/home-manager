@@ -13132,7 +13132,27 @@
         dish.days.push({ date: day.date, index: i, key: s.key, entry: entry, past: !!day.isPast });
       });
     });
-    return ['breakfast', 'lunch', 'dinner', 'snack'].map(function (t) { return byType[t]; }).filter(Boolean);
+    var groups = ['breakfast', 'lunch', 'dinner', 'snack'].map(function (t) { return byType[t]; }).filter(Boolean);
+    // A row where EVERY day is a leftover occurrence (leftover_from) is a
+    // pure reheat row, not a dish of its own (Emily, 2026-09-28: "if one
+    // of the meals appears twice under the meals — because it's
+    // leftovers — it should have a little marker... so it's not
+    // confusing why it's there twice"). This is the cross-type case —
+    // a dinner's batch eaten the next day as lunch, so the same dish
+    // reads as a second, unexplained row under a different meal-type
+    // card. A row that MIXES a cook day with a later leftover day of the
+    // SAME slot type (a dinner batch eaten again as dinner) stays exactly
+    // as it was — one merged row, "Mon, Tue" — because that is one
+    // continuous dish, not a confusing duplicate (Emily's 2026-09-26
+    // "Plan rows" design; see tests/test_plan_rows_tweak_it.py).
+    groups.forEach(function (group) {
+      group.dishes.forEach(function (dish) {
+        dish.isLeftover = dish.days.every(function (d) {
+          return !!(d.entry.leftover_from && d.entry.leftover_from.date);
+        });
+      });
+    });
+    return groups;
   }
 
   // "7 mornings" when a dish covers the whole period; a single weekday in
@@ -13170,6 +13190,23 @@
     return first === 'leftovers' || first === 'takeout' ? first : '';
   }
 
+  // "from Thursday's dinner" / "made ahead Sunday's breakfast" — which
+  // cooked night a leftovers row is eating from, said with the meal-type
+  // word (leftover_from.slot, weekly_plan.py) so a lunch row reading a
+  // dinner's batch is as clear as a lunch row reading another lunch's.
+  // Every day on a leftovers row shares one source — it's the same batch,
+  // see wkMenuGroups — so `entry` is whichever day wkMenuRowHtml is
+  // already reading for this row (its own `first`), so the tag and this
+  // phrase can never name two different sources or disagree on
+  // "Leftovers" vs "Made ahead".
+  function wkLeftoverSourcePhrase(entry) {
+    var src = entry && entry.leftover_from;
+    if (!src || !src.date) return '';
+    var verb = src.cook_ahead ? 'made ahead' : 'from';
+    var when = dayName(src.date, { weekday: 'long' });
+    return src.slot ? verb + ' ' + when + '’s ' + slotWord(src.slot) : verb + ' ' + when;
+  }
+
   // The days a menu row names (Emily, 2026-09-26): a dish whose days are
   // all behind us reads "Had Thu, Fri" / "Had Wednesday"; a dish with
   // some behind and some ahead names only the days still ahead.
@@ -13185,11 +13222,25 @@
   // all behind us is greyed (is-past) and says "Had …", with no buttons. Swap and the link act on the
   // dish's first day still ahead — the same swap sheet and the same Meal
   // step Which days uses, told which day through data-wk-day-index.
+  //
+  // A leftovers row (dish.isLeftover, wkMenuGroups) reads differently
+  // (Emily, 2026-09-28): a "Leftovers" tag beside the name — "Made ahead"
+  // for a batch the household chose on purpose, same wording rule as the
+  // Cook tab — its days naming the source ("Fri · from Thursday's
+  // dinner") instead of the usual fact, and no Swap. Swapping belongs to
+  // the cooked dish, not the night that reheats it: this row has no dish
+  // of its own to change, only the source's, and the row's own
+  // whole-dish Swap sheet (data-wk-swap-dish, below) has no way to change
+  // "what it reheats" cleanly. The dish is still reachable — its name
+  // opens the Meal step, whose own Swap (mealDockHtml) already handles a
+  // single reheat night on its own, unaffected by this.
   function wkMenuRowHtml(dish, days) {
     var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
     var entry = first.entry;
     var allPast = dish.days.every(function (d) { return d.past; });
-    var meta = [wkMenuDaysPhrase(dish, days), wkMenuFact(dish)].filter(Boolean).join(' · ');
+    var meta = dish.isLeftover
+      ? [wkMenuDaysPhrase(dish, days), wkLeftoverSourcePhrase(entry)].filter(Boolean).join(' · ')
+      : [wkMenuDaysPhrase(dish, days), wkMenuFact(dish)].filter(Boolean).join(' · ');
     // Several days still ahead: Swap means the dish, on all of them
     // (Emily, 2026-09-22 — it used to change the first day and leave the
     // rest, "two meals instead of 1"). The dates ride along only so the
@@ -13198,7 +13249,7 @@
     var dishAttr = ahead.length > 1
       ? ' data-wk-swap-dish="' + escapeHtml(ahead.map(function (d) { return d.date; }).join(',')) + '"'
       : '';
-    var swap = first.past ? '' : wkMiniHtml('data-wk-swap-sheet="' + first.key + '"' + dishAttr, 'wk-mini-swap', WK_ICONS.swap,
+    var swap = (first.past || dish.isLeftover) ? '' : wkMiniHtml('data-wk-swap-sheet="' + first.key + '"' + dishAttr, 'wk-mini-swap', WK_ICONS.swap,
       'Swap', 'Swap — ' + dish.name);
     // "Tweak" (Emily, 2026-09-25, 1A) changes ONE entry's plate — the
     // part sheets write to one entry_id — so it is offered only where the
@@ -13228,6 +13279,13 @@
           // "From last week" (2026-09-25) — see wkMealRowHtml.
           (dish.days.some(function (d) { return d.entry && d.entry.brought_over; })
             ? '<span class="wk-from-last-line"><span class="wk-from-last">From last week</span></span>'
+            : '') +
+          // "Leftovers" / "Made ahead" (Emily, 2026-09-28) — see
+          // wkMenuGroups and the note above wkMenuRowHtml.
+          (dish.isLeftover
+            ? '<span class="wk-leftover-tag-line"><span class="wk-leftover-tag">' +
+                (entry.leftover_from && entry.leftover_from.cook_ahead ? 'Made ahead' : 'Leftovers') +
+                '</span></span>'
             : '') +
         '</div>' +
       '</div>' +
