@@ -1464,6 +1464,28 @@ CREATE TABLE IF NOT EXISTS morning_text_sends (
 -- check a restart inside the dinner window reads before sending). Both are
 -- added by db._MIGRATIONS, beside members.phone / morning_text_on.
 
+-- Push notifications on the iPhone app (Loop Board "App Store: push
+-- notifications on the iPhone app", 2026-09-27). One row per phone: the
+-- APNs device token, the household and the adult it belongs to, and a
+-- random `device_key` the phone also holds as a cookie, so signing out on
+-- that phone removes exactly its row (the token never goes in a cookie).
+-- A token is one phone, so it is unique across households: the same phone
+-- signed in again (as someone else, or elsewhere) moves the row. The row
+-- goes on sign-out (app/push.py forget_device), on "remove me" (member_id
+-- is NOT NULL, so household_deletion.remove_member deletes it) and with the
+-- household (household_deletion finds every household_id table). The
+-- per-adult switch is members.push_on (db._MIGRATIONS). See app/push.py.
+CREATE TABLE IF NOT EXISTS push_devices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    token TEXT NOT NULL UNIQUE,
+    platform TEXT NOT NULL DEFAULT 'ios',
+    device_key TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_seen_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Real tracked pantry/fridge inventory (Phase 3), distinct from the grocery
 -- list — this is "what we currently have", captured primarily via chat
 -- mention ("picked up a rotisserie chicken", "used the last of the
