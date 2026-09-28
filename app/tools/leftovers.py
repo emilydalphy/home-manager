@@ -597,19 +597,31 @@ def run_keys(weekly_plan_id: int, conn=None) -> dict[tuple[str, str], str]:
     finally:
         if own:
             conn.close()
+    return run_keys_from_rows(rows)
+
+
+def run_keys_from_rows(rows) -> dict[tuple[str, str], str]:
+    """run_keys over rows already in hand — {id, date, slot, slot_state,
+    meal} plus either `derived` (a dict) or `derived_from_json` — so a
+    writer can ask the rule of a week it has only rearranged in memory
+    (meal_move, 2026-09-28). Rows of other slots are ignored."""
     by_date_slot: dict = {}
     by_id: dict = {}
-    for r in rows:
+    for r in sorted(rows, key=lambda r: r["id"]):
+        if r["slot"] not in RUN_SLOTS:
+            continue
         by_date_slot.setdefault((r["date"], r["slot"]), r)
         by_id[r["id"]] = r
     keys: dict[tuple[str, str], str] = {}
     for (d, slot), r in by_date_slot.items():
         if r["slot_state"] != "planned" or not (r["meal"] or "").strip():
             continue
-        try:
-            derived = json.loads(r["derived_from_json"] or "{}") or {}
-        except (TypeError, ValueError):
-            derived = {}
+        derived = r.get("derived") if isinstance(r, dict) else None
+        if derived is None:
+            try:
+                derived = json.loads(r["derived_from_json"] or "{}") or {}
+            except (TypeError, ValueError):
+                derived = {}
         name = frozen_portion_on(derived) or r["meal"]
         links_to = str(derived.get("links_to") or "").strip()
         if links_to:

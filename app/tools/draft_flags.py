@@ -653,3 +653,73 @@ def _theirs(derived: dict) -> bool:
     # quietly moved (or leave one it had quietly kept).
     from . import meal_variety as _meal_variety
     return bool(_meal_variety.theirs(derived))
+
+
+# ---------- after a hand-made move ----------
+
+def refresh(weekly_plan_id: int, moved_ids: list[int] | None = None) -> None:
+    """
+    Re-say the draft's lines for the meals a Move just re-dated
+    (meal_move, Emily 2026-09-28) — the producer's own rules, asked again
+    of the week as it now stands, for those meals only.
+
+    * An over-cap line for a moved meal is re-derived: a dish the household
+      asked for that has just landed on a short-on-time night gets its
+      "Lasagna takes 60 minutes, and Thursday is short on time." with the
+      fixes worked out afresh; one that has moved off a short night loses
+      its line (plan_flags would drop it on the date anyway — this also
+      stops the old line coming back if it moves home again later without
+      being over). Only the moved meals: a line the household already
+      acted on elsewhere ("Prep it Tuesday night" dismisses its flag) is
+      not re-raised by somebody moving a different meal.
+    * A "nothing else fit" line whose run the move broke is taken off.
+
+    A draft's control only: an approved week never shows these.
+    """
+    moved = set(moved_ids or [])
+    try:
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+        conn.close()
+        if row is None or row["status"] == "approved":
+            return
+    except Exception:
+        logger.exception("Reading plan %s before refreshing its flags failed", weekly_plan_id)
+        return
+    stored = _stored(weekly_plan_id)
+    kept = []
+    for flag in stored:
+        if flag.get("kind") == OVER_CAP_REQUEST and flag.get("entry_id") in moved:
+            continue  # re-derived below
+        if flag.get("kind") == RUN_LEFT and not _still_in_a_long_run(weekly_plan_id, flag):
+            continue
+        kept.append(flag)
+    fresh = []
+    if moved:
+        nights = _week_nights(weekly_plan_id, None, None)
+        fresh = [f for f in flags_for_kept_over_cap(nights) if f.get("entry_id") in moved]
+    cleaned = [f for f in (_clean(flag) for flag in kept + fresh) if f]
+    if cleaned == [f for f in (_clean(flag) for flag in stored) if f]:
+        return
+    conn = get_conn()
+    conn.execute(
+        "UPDATE weekly_plans SET draft_flags_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(cleaned) if cleaned else "", weekly_plan_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _still_in_a_long_run(weekly_plan_id: int, flag: dict) -> bool:
+    """Whether a run-left line's meal is still part of a run past the rule."""
+    try:
+        from . import leftovers as _leftovers
+        keys = _leftovers.run_keys(weekly_plan_id)
+        pos = (flag.get("date"), flag.get("slot"))
+        return any(pos in run for run in _leftovers.long_runs(keys))
+    except Exception:
+        logger.exception("Checking a run-left line on plan %s failed", weekly_plan_id)
+        return True

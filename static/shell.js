@@ -12801,6 +12801,10 @@
     titleChev: '<svg class="wk-row-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M9 6l6 6-6 6"/></svg>',
+    // Move: an arrow into a day.
+    move: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
+      'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 12h11M11 8l4 4-4 4M20 5v14"/></svg>',
     // Tweak: two sliders.
     tweak: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" ' +
       'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -13001,7 +13005,10 @@
       var tweak = !opts.done && typeof plateCanChange === 'function' && plateCanChange(day, slot, entry)
         ? wkMiniHtml('data-wk-tweak="' + slot + '"', 'wk-mini-tweak', WK_ICONS.tweak, 'Tweak', 'Tweak — ' + name)
         : '';
-      acts = tick + swap + tweak;
+      var move = typeof wkCanMove === 'function' && wkCanMove(day, slot, entry)
+        ? wkMiniHtml('data-wk-move="' + slot + '"', 'wk-mini-move', WK_ICONS.move, 'Move', 'Move — ' + name)
+        : '';
+      acts = tick + swap + tweak + move;
     } else if (open) {
       acts = wkMiniHtml('data-wk-pick="' + slot + '"', '', '', 'Pick', 'Pick ' + slotWord(slot));
     } else if (!entry && !day.isPast) {
@@ -13269,7 +13276,14 @@
     // menu row has no slot eyebrow of its own, so the pill gets one.
     var changed = typeof wasRecentlyChanged === 'function' &&
       dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
-    var acts = swap + tweak;
+    // Move (Emily, 2026-09-28) on a lunch or dinner that is ONE cook still
+    // ahead — its leftovers nights move with it; a dish cooked on several
+    // days is moved a day at a time from Schedule, like Tweak.
+    var move = cooksAhead.length === 1 && cooksAhead[0] === first && days[first.index] &&
+      typeof wkCanMove === 'function' && wkCanMove(days[first.index], first.key, entry)
+      ? wkMiniHtml('data-wk-move="' + first.key + '"', 'wk-mini-move', WK_ICONS.move, 'Move', 'Move — ' + dish.name)
+      : '';
+    var acts = swap + tweak + move;
     return '<div class="wk-row wk-menu-row has-foot' + (allPast ? ' is-past' : '') + '" data-wk-day-index="' + first.index + '" data-wk-row="' + first.key + '">' +
       '<div class="wk-row-main">' +
         '<div class="wk-row-text">' +
@@ -13668,24 +13682,6 @@
     return 'Instead of ' + st.name + '?';
   }
 
-  // The nights this dinner could trade places with: on this plan, not
-  // gone by, not a night nobody is home, not a dinner already cooked —
-  // the server's own rules for swap_dinner_nights, read off the days the
-  // screen is holding. Dinner only: the app moves dinners between nights
-  // (swap-nights) and has no mover for the other slots.
-  function swapMoveOptions(st) {
-    if (st.slot !== 'dinner') return [];
-    return (weekState.days || []).map(function (d, i) { return { day: d, index: i }; })
-      .filter(function (o) {
-        var d = o.day;
-        if (d.date === st.date || d.isPast || d.before_plan_start || reviewDayIsClosed(d)) return false;
-        var dinner = d.dinner;
-        if (dinner && dinner.state === 'planned_empty') return false;
-        if (dinner && dinner.cooked) return false;
-        return true;
-      });
-  }
-
   // What the wait says (Emily, 2026-09-21, board D5 — she almost clicked
   // away from a bare "Finding three…" line): the typical /swap-options
   // time, in seconds, read by swapWaitLine. Railway's log has the call at
@@ -13792,28 +13788,7 @@
     var daysLine = swapDaysLine(st);
     var eyebrow = daysLine ? '' : '<p class="wk-swap-eyebrow">' +
       escapeHtml(dayName(st.date, { weekday: 'long' }) + ' · ' + slotWord(st.slot)) + '</p>';
-    if (st.view === 'move') {
-      var options = swapMoveOptions(st);
-      return eyebrow +
-        '<h2 class="wk-swap-title" id="wk-swap-title">' + escapeHtml('Move the ' + dishShortName(st.name) + ' to which night?') + '</h2>' +
-        '<p class="wk-swap-sub">The two dinners trade places. Nothing else moves.</p>' +
-        '<div class="wk-swap-picks">' +
-          options.map(function (o) {
-            var dinner = o.day.dinner;
-            var holding = dinner && dinner.state === 'planned' ? mealDisplayName(dinner)
-              : (dinner && dinner.state === 'open' ? 'Your call' : 'Nothing yet');
-            return '<button type="button" class="wk-swap-pick" data-wk-swap-move="' + escapeHtml(o.day.date) + '"' +
-                (st.busy ? ' disabled' : '') + '>' +
-              '<span class="wk-swap-pick-text">' +
-                '<span class="wk-swap-pick-name">' + escapeHtml(dayName(o.day.date, { weekday: 'long' })) + '</span>' +
-                '<span class="wk-swap-pick-why">' + escapeHtml(holding) + '</span>' +
-              '</span>' +
-              '<span class="wk-swap-pick-chev">' + WK_ICONS.chev + '</span>' +
-            '</button>';
-          }).join('') +
-        '</div>' +
-        '<button type="button" class="wk-swap-quiet" id="wk-swap-back">Back to the picks</button>';
-    }
+    if (st.view === 'move') return moveSheetBodyHtml(st);
     var picks;
     if (st.trouble) {
       picks = '<p class="wk-swap-trouble">' + escapeHtml(st.trouble) + '</p>';
@@ -13822,9 +13797,6 @@
     } else {
       picks = '<div class="wk-swap-picks">' + st.options.map(function (o) { return swapPickHtml(o, st); }).join('') + '</div>';
     }
-    // Moving trades ONE night with another, so it isn't offered for a
-    // dish being swapped on several days.
-    var canMove = !daysLine && swapMoveOptions(st).length > 0;
     var wait = st.busy ? ' disabled' : '';
     return eyebrow +
       '<h2 class="wk-swap-title" id="wk-swap-title">' + escapeHtml(swapSheetTitle(st)) + '</h2>' +
@@ -13836,10 +13808,6 @@
       // (st.trouble): there is no "one" to be close.
       (st.trouble ? '' : '<p class="wk-swap-tweak-note">If one’s close but not quite right, you can always tweak it after.</p>') +
       picks +
-      (canMove
-        ? '<button type="button" class="wk-swap-quiet" id="wk-swap-move"' + wait + '>' +
-            escapeHtml('Move the ' + dishShortName(st.name) + ' to another day') + '</button>'
-        : '') +
       '<button type="button" class="wk-swap-else" id="wk-swap-tell"' + wait + '>Ask for something else</button>';
   }
 
@@ -13884,15 +13852,11 @@
         runSwapPick(Number(btn.getAttribute('data-wk-swap-pick')));
       });
     });
-    body.querySelectorAll('[data-wk-swap-move]').forEach(function (btn) {
+    body.querySelectorAll('[data-wk-move-to]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        runMoveNight(btn.getAttribute('data-wk-swap-move'));
+        runMoveMeal(btn.getAttribute('data-wk-move-to'));
       });
     });
-    var move = body.querySelector('#wk-swap-move');
-    if (move) move.addEventListener('click', function () { st.view = 'move'; drawSwapSheet(); });
-    var back = body.querySelector('#wk-swap-back');
-    if (back) back.addEventListener('click', function () { st.view = 'picks'; drawSwapSheet(); });
     var tell = body.querySelector('#wk-swap-tell');
     if (tell) tell.addEventListener('click', function () {
       // Chat ABOUT this meal: the composer is empty and the meal rides
@@ -13978,7 +13942,7 @@
   // the week — ~6.5 s in production, Emily 2026-09-22 "it looked like it
   // froze") the tapped pick shows the spinner and SWAP_WORKING, the rest
   // wait dimmed, nothing else in the sheet can be tapped and the sheet
-  // can't be swiped away (dismissSwapSheet) — runMoveNight's busy state,
+  // can't be swiped away (dismissSwapSheet) — runMoveMeal's busy state,
   // with the pick itself saying what's happening.
   async function runSwapPick(index) {
     var st = swapSheetState;
@@ -14040,72 +14004,173 @@
     }
   }
 
-  // Move a dinner to another night by trading it with what is there —
-  // POST /api/week/{week}/swap-nights, no model call; the rows are
-  // re-dated in place and the grocery list is left alone. Undo is the
-  // same call the other way (swap-nights-undo).
-  async function runMoveNight(otherDate) {
-    var st = swapSheetState;
-    if (!st || st.busy || !otherDate || otherDate === st.date) return;
-    st.busy = true;
-    var panel = st.panel, dateA = st.date, weekStart = st.weekStart;
+  // ---------- MOVE: one meal to another day ----------
+  // Emily, 2026-09-28 (Option A of the "swap meals between days" mockups):
+  // Move on a lunch or dinner opens "Move the stew to which day?" — every
+  // other day with its meal of that kind — and a tap trades the two. A
+  // dinner's leftovers night moves with it, same gap. A day it can't go to
+  // is shown dimmed with the reason, never hidden. The rules are the
+  // server's (tools/meal_move.py, POST /move-options); this only draws
+  // them. It replaced the quiet "Move the X to another day" line at the
+  // foot of the Swap sheet, so there is one way in.
+
+  // Whether a row offers Move: a planned lunch or dinner still ahead, not
+  // cooked, and a cook of its own (a leftovers night moves with the meal
+  // it comes from).
+  var MOVE_SLOTS = { lunch: true, dinner: true };
+
+  function wkCanMove(day, slot, entry) {
+    if (!MOVE_SLOTS[slot] || !day || day.isPast || day.before_plan_start) return false;
+    if (!entry || entry.state !== 'planned' || entry.cooked) return false;
+    if (entry.entry_id === null || entry.entry_id === undefined) return false;
+    if ((entry.leftover_from && entry.leftover_from.date) || entry.source === 'leftovers') return false;
+    return true;
+  }
+
+  function moveDayRowHtml(d, st) {
+    var off = !d.ok;
+    var meal = d.meal + (d.minutes && d.ok ? ' · ' + d.minutes + ' min' : '');
+    var line = off ? d.reason : d.note;
+    return '<button type="button" class="wk-swap-pick wk-move-day' + (off ? ' is-off' : '') + '"' +
+        (off ? ' disabled aria-disabled="true"' : ' data-wk-move-to="' + escapeHtml(d.date) + '"') +
+        (st.busy && !off ? ' disabled' : '') + '>' +
+      '<span class="wk-swap-pick-text">' +
+        '<span class="wk-swap-pick-name">' + escapeHtml(d.weekday) + '</span>' +
+        '<span class="wk-swap-pick-why">' + escapeHtml(meal) + '</span>' +
+        (line ? '<span class="wk-move-line' + (off ? '' : ' is-note') + '">' + escapeHtml(line) + '</span>' : '') +
+      '</span>' +
+      (off ? '' : '<span class="wk-swap-pick-chev">' + WK_ICONS.chev + '</span>') +
+    '</button>';
+  }
+
+  function moveSheetBodyHtml(st) {
+    var eyebrow = '<p class="wk-swap-eyebrow">' +
+      escapeHtml(dayName(st.date, { weekday: 'long' }) + ' · ' + slotWord(st.slot)) + '</p>';
+    var sheet = st.move;
+    var title = (sheet && sheet.title) || ('Move the ' + dishShortName(st.name) + ' to which day?');
+    var body;
+    if (st.trouble) {
+      body = '<p class="wk-swap-trouble">' + escapeHtml(st.trouble) + '</p>';
+    } else if (!sheet) {
+      body = '<div class="wk-swap-wait" role="status"><span class="wk-swap-spinner" aria-hidden="true"></span></div>';
+    } else {
+      body = '<div class="wk-swap-picks">' + sheet.days.map(function (d) { return moveDayRowHtml(d, st); }).join('') + '</div>';
+    }
+    return eyebrow +
+      '<h2 class="wk-swap-title" id="wk-swap-title">' + escapeHtml(title) + '</h2>' +
+      (sheet && sheet.sub && !st.trouble ? '<p class="wk-swap-sub">' + escapeHtml(sheet.sub) + '</p>' : '') +
+      body;
+  }
+
+  async function openMoveSheet(panel, day, slot) {
+    var entry = daySlotEntry(day, slot);
+    var weekStart = weekStartForSwap();
+    if (!wkCanMove(day, slot, entry) || !weekStart) return;
+    buildSwapSheet();
+    closeAskSheet();
+    swapSheetState = {
+      panel: panel, day: day, date: day.date, slot: slot, entry: entry, entryId: entry.entry_id,
+      name: mealDisplayName(entry), weekStart: weekStart, view: 'move', move: null, trouble: '',
+      busy: false, holdHeight: 0, dates: [day.date], pending: null
+    };
+    var thisOpen = swapSheetState;
     drawSwapSheet();
+    openSheet(swapSheetEl, swapScrimEl);
     try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-options', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date_a: dateA, date_b: otherDate })
+        body: JSON.stringify({ entry_id: entry.entry_id })
       });
-      if (!res.ok) throw new Error('move failed (' + res.status + ')');
+      var out = res.ok ? await res.json() : null;
+      if (swapSheetState !== thisOpen) return;
+      if (!out || !out.days) {
+        thisOpen.trouble = swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE;
+      } else {
+        thisOpen.move = out;
+      }
+    } catch (err) {
+      console.warn('Could not fetch the move options:', err);
+      if (swapSheetState !== thisOpen) return;
+      thisOpen.trouble = SWAP_TROUBLE;
+    }
+    drawSwapSheet();
+  }
+
+  // The toast carries the move's own line ("Stew was moved to Thursday,
+  // leftovers to Friday") and, only when a thaw now has to start earlier,
+  // that one fridge move after it — the rare second sentence, held longer
+  // so it can be read (Emily, 2026-09-28, decision 5).
+  var MOVE_TOAST_MS = 6000;
+  var MOVE_THAW_TOAST_MS = 10000;
+
+  async function runMoveMeal(toDate) {
+    var st = swapSheetState;
+    if (!st || st.busy || st.view !== 'move' || !toDate) return;
+    st.busy = true;
+    var panel = st.panel, weekStart = st.weekStart;
+    drawSwapSheet();
+    try {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-meal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: st.entryId, to_date: toDate })
+      });
+      if (!res.ok) {
+        st.busy = false;
+        st.trouble = swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE;
+        drawSwapSheet();
+        return;
+      }
       var out = await res.json();
-      if (out.status !== 'swapped') {
+      if (out.status !== 'moved') {
         st.busy = false;
         st.trouble = out.message || SWAP_TROUBLE;
-        st.view = 'picks';
         drawSwapSheet();
         return;
       }
       closeSwapSheet();
       (out.days || []).forEach(spliceSwappedDay);
       renderMealsStep(panel);
-      // Two nights traded places, so the toast names both of them.
-      toastSaved(wkNightsLine(dateA, otherDate) + ' were swapped',
-        { label: 'Undo', onClick: function () { runMoveNightUndo(panel, weekStart, dateA, otherDate); } }, SWAP_UNDO_MS);
+      var thaw = (out.thaw_notes || []).join(' ');
+      toastSaved(out.said + (thaw ? '. ' + thaw : ''),
+        { label: 'Undo', onClick: function () { runMoveMealUndo(panel, weekStart, out.move_id, out.said); } },
+        thaw ? MOVE_THAW_TOAST_MS : MOVE_TOAST_MS);
       await loadWeekMenu(panel);
       refreshTodayMoves();
     } catch (err) {
-      console.warn('Moving a night failed:', err);
+      console.warn('Moving a meal failed:', err);
       if (swapSheetState === st) {
         st.busy = false;
         st.trouble = SWAP_TROUBLE;
-        st.view = 'picks';
         drawSwapSheet();
       }
     }
   }
 
-  // "Thursday and Friday" — the two nights a move traded, for the toasts
-  // on both sides of it (copy sweep findings 1 and 17).
-  function wkNightsLine(dateA, dateB) {
-    return dayName(dateA, { weekday: 'long' }) + ' and ' + dayName(dateB, { weekday: 'long' });
-  }
-
-  async function runMoveNightUndo(panel, weekStart, dateA, dateB) {
+  async function runMoveMealUndo(panel, weekStart, moveId, said) {
     try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-nights-undo', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-meal-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date_a: dateA, date_b: dateB })
+        body: JSON.stringify({ move_id: moveId })
       });
-      if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      if (!res.ok) {
+        showToast(swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE);
+        return;
+      }
       var out = await res.json();
+      if (out.status !== 'restored') {
+        showToast(out.message || SWAP_TROUBLE);
+        return;
+      }
       (out.days || []).forEach(spliceSwappedDay);
       renderMealsStep(panel);
-      showToast(wkNightsLine(dateA, dateB) + ' are back as they were.');
+      showToast(out.said || 'Back as it was');
       await loadWeekMenu(panel);
       refreshTodayMoves();
     } catch (err) {
-      console.warn('Undoing a night move failed:', err);
+      console.warn('Undoing a meal move failed:', err);
       showToast(SWAP_TROUBLE);
     }
   }
@@ -15608,6 +15673,12 @@
           dish ? { wholeDish: true, dates: dish.split(',') } : null);
       });
     });
+    steps.querySelectorAll('[data-wk-move]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = wkDayForTap(btn);
+        if (day) openMoveSheet(panel, day, btn.getAttribute('data-wk-move'));
+      });
+    });
     steps.querySelectorAll('[data-wk-add-meal]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var day = mealsCurrentDay();
@@ -16476,8 +16547,8 @@
   // ---------- The More sheet ----------
   // (The drag-a-tile night move that used to sit here went with the
   // seven-tile Which days step on 2026-09-18 — Check the week is day
-  // cards now, and a night moves through the Swap sheet's "Move the …
-  // to another day".)
+  // cards now, and a meal moves through its row's own Move button —
+  // openMoveSheet, 2026-09-28.)
   var mealsMoreScrim = document.getElementById('meals-more-scrim');
   var mealsMoreSheet = document.getElementById('meals-more-sheet');
 
