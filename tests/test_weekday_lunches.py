@@ -561,6 +561,21 @@ class TestTheScreen:
         assert _node(f"lunchLine('{WEEK[1]}', 'prepped', ['sunday', 'monday'])") == "Prepped Monday"
 
     @_needs_node
+    def test_a_batch_past_the_reach_of_last_weeks_prep_reads_cooked_that_day(self):
+        """A lone Wednesday prep, Mon–Wed prepped: last week's Wednesday can't
+        feed Monday, so Monday is cooked that day and Tuesday/Wednesday reheat
+        it (weekday_lunches.apply_to_plan's `stale` batch). Thursday and Friday
+        are this Wednesday's."""
+        kinds = {d: "prepped" for d in WEEK}
+        lines = [_node(f"lunchLine('{d}', 'prepped', ['wednesday'], {json.dumps(kinds)})") for d in WEEK]
+        assert lines == ["Cooked that day", "Leftovers from Monday’s lunch", "Leftovers from Monday’s lunch",
+                         "Prepped Wednesday", "Prepped Wednesday"]
+        # A batch whose first lunch IS in reach still freezes the far one.
+        sun_only = {d: "prepped" for d in WEEK}
+        assert _node(f"lunchLine('{WEEK[3]}', 'prepped', ['sunday'], {json.dumps(sun_only)})") == \
+            "Prepped Sunday, from the freezer"
+
+    @_needs_node
     def test_the_days_say_what_each_one_gets(self):
         assert _node(f"lunchLine('{WEEK[0]}', 'prepped', ['sunday'])") == "Prepped Sunday"
         assert _node(f"lunchLine('{WEEK[3]}', 'prepped', ['sunday'])") == "Prepped Sunday, from the freezer"

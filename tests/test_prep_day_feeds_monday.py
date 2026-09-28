@@ -237,3 +237,68 @@ def test_a_prepped_cook_is_never_the_one_a_count_folds_away():
     import inspect
     src = inspect.getsource(meal_variety.enforce_distinct_count)
     assert '.get("prep_date")' in src
+
+
+def test_a_later_prep_day_never_takes_over_an_earlier_batchs_cook(two_adults, stub_model):
+    """CATCH (build review, 2026-09-28): Monday-start week, prep Sun + Mon
+    (what the sheet brings in when only Monday is chosen). Sunday's batch
+    is cooked on Monday's lunch because Sunday is outside the week; Monday's
+    own prep must then be Monday's DINNER, not that same lunch — else
+    Monday's lunch is back on Monday's prep and Sunday's batch vanishes."""
+    mon = _next("monday")
+    dates = _dates(mon, 7)
+    tools.save_week_intake(mon.isoformat(), weekday_lunches={
+        "prep_days": ["sunday", "monday"],
+        "days": [{"date": dates[i], "kind": "prepped"} for i in range(3)],
+    })
+    days = []
+    for i, d in enumerate(dates):
+        days.append(_slot(d, "breakfast", "Oats"))
+        days.append(_slot(d, "lunch", ["Chili", "Soup", "Soup", "D", "E", "F", "G"][i]))
+        days.append(_slot(d, "dinner", f"Dinner {i}"))
+    stub_model(days)
+    plan_id = agent.generate_weekly_plan(mon.isoformat())["weekly_plan_id"]
+    lunch = _rows(plan_id, "lunch")
+    dinner = _rows(plan_id, "dinner")
+    chains = tools.plan_leftover_chains(plan_id)
+    sunday_before = (mon - datetime.timedelta(days=1)).isoformat()
+    assert lunch[dates[0]]["derived"]["prep_date"] == sunday_before
+    assert not lunch[dates[0]]["derived"].get("prep_day_cook")
+    assert dinner[dates[0]]["derived"]["prep_date"] == dates[0]
+    for d in dates[1:3]:
+        assert chains["leftovers"][lunch[d]["id"]]["source"]["entry_id"] == dinner[dates[0]]["id"]
+    batches = {b["prep_date"]: b for b in weekday_lunches.prepped_batches(plan_id)}
+    assert batches[sunday_before]["lunch_dates"] == [dates[0]]
+    assert batches[dates[0]]["lunch_dates"] == dates[1:3]
+
+
+def test_a_lunch_past_the_reach_of_last_weeks_prep_is_cooked_that_day(two_adults, stub_model):
+    """CATCH (build review, 2026-09-28). A lone Wednesday prep day and
+    Monday–Wednesday lunches prepped (the sheet brings in Sunday on its own;
+    this is the household taking Sunday back off). Mon–Wed come from LAST
+    Wednesday's prep, which this plan never made: main stamped Monday's
+    lunch "Cook this Wednesday" and the Cook tab called it prepped a week
+    late. It is cooked on Monday, with no prep stamp, and Tuesday and
+    Wednesday reheat it — the sheet's "Cooked that day" / "Leftovers from
+    Monday’s lunch"."""
+    mon = _next("monday")
+    dates = _dates(mon, 7)
+    tools.save_week_intake(mon.isoformat(), weekday_lunches={
+        "prep_days": ["wednesday"],
+        "days": [{"date": dates[i], "kind": "prepped"} for i in range(3)],
+    })
+    days = []
+    for i, d in enumerate(dates):
+        days.append(_slot(d, "breakfast", "Oats"))
+        days.append(_slot(d, "lunch", ["Chili", "Soup", "Wrap", "D", "E", "F", "G"][i]))
+        days.append(_slot(d, "dinner", f"Dinner {i}"))
+    stub_model(days)
+    plan_id = agent.generate_weekly_plan(mon.isoformat())["weekly_plan_id"]
+    lunch = _rows(plan_id, "lunch")
+    chains = tools.plan_leftover_chains(plan_id)
+    assert lunch[dates[0]]["meal"] == "Chili"
+    assert not lunch[dates[0]]["derived"].get("prep_date")
+    assert lunch[dates[0]]["reasoning"] == "Makes Tuesday and Wednesday’s lunches too."
+    for d in dates[1:3]:
+        assert chains["leftovers"][lunch[d]["id"]]["source"]["entry_id"] == lunch[dates[0]]["id"]
+    assert weekday_lunches.prepped_batches(plan_id) == []

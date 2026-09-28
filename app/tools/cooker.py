@@ -1404,8 +1404,9 @@ def _apply_prepped_lunches(weekly_plan_id: int, meals: list[dict]) -> None:
     still the one row `cooked_status` lives on, and the prep session's own
     item opens exactly this card. What changes is only what the day SAYS.
 
-    Nothing happens for a batch whose prep day IS its cook day (a Wednesday
-    prep for Wednesday's own lunch — the cook really is that day), and
+    Nothing happens for a batch whose prep day IS its cook day and is not
+    a prep-day cook (no longer produced since 2026-09-28: a prep day never
+    feeds its own lunch), and
     nothing at all for a week with no weekday-lunches answer, which has no
     prep_date stamp anywhere on it.
     """

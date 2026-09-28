@@ -358,6 +358,12 @@ def _prep_day_cook(prep_date: str, first_lunch: str, lunches: dict, dinners: dic
             continue
         if row["derived"].get("links_to"):
             continue
+        # Already an earlier batch's cook (Sun + Mon prep on a Monday-start
+        # week: Sunday's batch is cooked on Monday's lunch, and Monday's own
+        # prep is that evening) — taking it over would put Monday's lunch
+        # back on Monday's prep and drop Sunday's batch.
+        if row["derived"].get("prep_date"):
+            continue
         from . import leftovers as _leftovers
         if row["derived"].get(_leftovers.FROM_FREEZER_KEY):
             continue
@@ -854,7 +860,14 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
             # else its dinner — when it is a real cook IS the batch, and
             # every lunch of the batch reheats it. Else, as before, the
             # batch is cooked on its first lunch's entry.
-            prep_cook = _prep_day_cook(prep_date, first["date"], lunches, dinners, chains)
+            # A batch whose FIRST lunch is past the three-day reach of its
+            # prep day is cooked on that lunch instead (below) — the same
+            # rule plan-week's lunchLine reads ("Cooked that day").
+            stale = _leftovers.days_apart(prep_date, first["date"]) > _leftovers.MAX_LEFTOVER_DAYS
+            prep_cook = None if stale else _prep_day_cook(prep_date, first["date"], lunches, dinners, chains)
+            # What the three-day reach counts from: the prep day, unless the
+            # batch turns out to be cooked on its own first lunch (below).
+            fresh_from = prep_date
             if prep_cook is not None:
                 cook_id, cook_date = prep_cook["id"], prep_cook["date"]
                 dish, groups = prep_cook["meal"], _food_groups(prep_cook)
@@ -877,14 +890,21 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                     continue
                 dish, groups = model_cook["meal"], _food_groups(model_cook)
                 cook_date = first["date"]
-                if first["date"] == prep_date:
-                    # The cook IS this day's lunch: the line names only the
-                    # lunches it makes besides itself (integration review,
-                    # 2026-09-27: "Cook this Tuesday for Tuesday, Wednesday
-                    # and Thursday's lunches", read on Tuesday's own lunch).
+                if first["date"] == prep_date or stale:
+                    # Nothing made on that prep day can still feed this
+                    # lunch — it is LAST week's prep (a lone Wednesday prep
+                    # and a Monday lunch: 5 days back), which this plan never
+                    # made. So the batch is simply cooked that day, on its
+                    # first lunch, with no prep stamp: the Cook tab shows an
+                    # ordinary cook with its start-by, never "Prepped
+                    # Wednesday" a week late (build review, 2026-09-28).
+                    # plan-week's lunchLine says "Cooked that day" for it.
+                    # The line names only the lunches it makes besides
+                    # itself (integration review, 2026-09-27).
                     later = [d["date"] for d in members[1:]]
                     note = f"Makes {batch_lunch_phrase(later)} too." if later else ""
-                    cook_derived = dict(cook_derived, prep_note=note)
+                    cook_derived = {"constraint": CONSTRAINT, "prep_note": note}
+                    fresh_from = cook_date
                 if (len(first_rows) == 1 and first_rows[0]["meal"].strip().lower() == dish.strip().lower()
                         and first_rows[0]["id"] not in chains["leftovers"]):
                     cook_id = first_rows[0]["id"]
@@ -918,7 +938,7 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                         d["date"], rows[0]["meal"], "prepped", prep_date,
                         phrase=request_phrase(rows[0]["derived"], intake, rows[0]["meal"])))
                     continue
-                if _leftovers.days_apart(prep_date, d["date"]) > _leftovers.MAX_LEFTOVER_DAYS:
+                if _leftovers.days_apart(fresh_from, d["date"]) > _leftovers.MAX_LEFTOVER_DAYS:
                     # Past three days from the prep day: a portion frozen on
                     # the cook (the fold's freezer night, same row).
                     _weekly_plan._replace_slot_entries(

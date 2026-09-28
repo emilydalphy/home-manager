@@ -440,8 +440,15 @@ why*, not duplicating the diff.
   now fall ON a later batch's prep day (Tuesday) and the stale row made a
   replaced entry the next batch's cook. Edge case: a lone prep day on the
   first lunch's weekday is last week's (7 back), so `ensurePrepReach`
-  brings in the evening before. Assumes evening prep; no morning/evening
-  question exists.
+  brings in the evening before. If the household takes that day back off,
+  a batch whose FIRST lunch is past the 3-day reach of its prep day (last
+  week's prep, never made by this plan) is cooked on that first lunch with
+  NO prep stamp, and the rest of the batch reheats it — `apply_to_plan`'s
+  `stale` batch, read identically by plan-week's `lunchLine` ("Cooked that
+  day" / "Leftovers from Monday’s lunch"). `_prep_day_cook` also skips a
+  row that is already an earlier batch's cook (Sun + Mon prep on a
+  Monday-start week). Assumes evening prep; no morning/evening question
+  exists.
 
 - **2026-09-27 — CLAUDE.md has a tripwire now, and — because the tripwire
   measurably does NOT catch the incident that asked for it — the arithmetic
