@@ -12359,7 +12359,7 @@
       // traded dinners. loadWeekMenu is the one place that keeps the
       // band, the rows and the flags in step.
       await loadWeekMenu(panel);
-      toastSaved(action === 'move' ? 'Moved.' : 'Added to your prep.');
+      toastSaved(action === 'move' ? 'Moved.' : action === 'keep' ? 'Kept.' : 'Added to your prep.');
     } catch (err) {
       console.warn('Draft flag fix failed:', err);
       weekFlagState = { entryId: entryId, message: FLAG_TROUBLE };
