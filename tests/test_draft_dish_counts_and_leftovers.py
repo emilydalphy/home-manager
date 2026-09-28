@@ -330,3 +330,38 @@ def test_wednesdays_cook_feeds_thursday_dinner_and_friday_lunch(emily, picker, m
     assert sorted(wed["derived"]["make_double_for"]) == [f"{dates[3]}:dinner", f"{dates[4]}:lunch"]
     assert chains["leftovers"][dinners[dates[3]]["id"]]["source"]["entry_id"] == wed["id"]
     assert chains["leftovers"][lunches[dates[4]]["id"]]["source"]["entry_id"] == wed["id"]
+
+
+def test_a_rush_night_whose_dish_they_asked_for_elsewhere_keeps_the_count(emily, picker, monkeypatch):
+    """Review, 2026-09-28: when the rush night's dish is also on a night
+    they asked for by name, it can't be re-picked whole — and re-picking
+    Monday alone would be a fourth dinner. Their number wins; Monday stands
+    (plan_quality's cap warning says so)."""
+    mon, dates = emily
+    days = _week(dates, ABCABC, LUNCHES)
+    for d in days:
+        if d["date"] == dates[3] and d["slot"] == "dinner":
+            d["derived_from"] = {"freeform": "creamy chicken stew on Thursday"}
+    _stub(monkeypatch, days)
+    plan_id = agent.generate_weekly_plan(mon, day_count=6)["weekly_plan_id"]
+    assert len(meal_variety.distinct_dishes(plan_id, "dinner")) <= 3
+
+
+def test_a_night_carrying_freezer_portions_is_not_folded_into_an_earlier_cook():
+    """Review, 2026-09-28: a night that cooks extra portions for the freezer
+    stays a cook — a reheat cooks nothing, so the portions would never be made."""
+    tools.add_member("Emily")
+    mon = _monday()
+    dates = tools.period_dates(mon, 7)
+    plan_id = tools.create_weekly_plan(mon)["weekly_plan_id"]
+    tools.plan_meal(meal_date=dates[0], meal="Stew", slot="dinner", weekly_plan_id=plan_id)
+    tue = tools.plan_meal(meal_date=dates[1], meal="Stew", slot="dinner", weekly_plan_id=plan_id,
+                          derived_from={"make_double_for": [f"{dates[3]}:dinner"],
+                                        leftovers.FREEZER_EXTRA_KEY: {"servings": 1, "for": [f"{dates[6]}:dinner"]}})
+    tools.plan_meal(meal_date=dates[2], meal="Tacos", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(meal_date=dates[3], meal="Stew", slot="dinner", weekly_plan_id=plan_id,
+                    derived_from={"links_to": f"entry_id:{tue['entry_id']}"})
+    tools.plan_meal(meal_date=dates[4], meal="Tacos", slot="dinner", weekly_plan_id=plan_id)
+    meal_variety.enforce_distinct_count(plan_id, 2, slot="dinner", fill_up=False)
+    tuesday = _rows(plan_id, "dinner")[dates[1]]
+    assert not tuesday["derived"].get("links_to"), "Tuesday still cooks its freezer portion"

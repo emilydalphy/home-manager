@@ -636,7 +636,11 @@ def _plan_batches(nights: list[dict], kept: list[dict], caps: dict | None, slot:
             continue
 
         if is_kept:
-            absorb = _absorbing_cook(cooks_of(dish), n, ok) if n["source"] and not n["done"] else None
+            # Not a night carrying portions for the freezer: those are
+            # cooked on it, and a reheat cooks nothing (review, 2026-09-28).
+            absorb = (_absorbing_cook(cooks_of(dish), n, ok)
+                      if n["source"] and not n["done"] and not _leftovers.freezer_servings(n["derived"])
+                      else None)
             if absorb is not None:
                 # Cook once, eat it all (Emily, 2026-09-28: "it doesn't do a
                 # great job of using the leftover concept"): a repeat night

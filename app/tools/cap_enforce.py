@@ -455,6 +455,10 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         # week that already has its number — so when it has, the WHOLE dish
         # is re-picked, every night of it at once, and the count stays.
         also = _whole_dish_nights(plan_id, night, memory)
+        if also is None:
+            logger.info("Plan %s: %s %r stays over its cap — re-picking it alone would add a dinner "
+                        "past the household's number", plan_id, night["date"], night["meal"])
+            continue
         if also:
             caps_on = [cap] + [c for c in (_cook_cap(o, intake, memory) for o in also) if c]
             cap = min(caps_on)  # the pick is cooked on each of them
@@ -504,13 +508,14 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
     return done
 
 
-def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None) -> list[dict]:
+def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None) -> list[dict] | None:
     """
     The dish's OTHER meals, when re-picking this night alone would put the
     week over the household's number of different dinners; [] when a
     single-night re-pick is fine (no number set, the week is under it, the
-    dish is on no other meal) or when a whole-dish re-pick can't be made
-    (another night of it is cooked, or theirs — asked for, brought over).
+    dish is on no other meal); None when neither can be made without going
+    over their number (another night of it is cooked, or theirs — asked
+    for, brought over).
     """
     memory = memory or {}
     target = memory.get("dinners_per_week") if memory.get("meal_counts_set") else None
@@ -536,7 +541,10 @@ def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None) -> list[d
     for o in others:
         derived = json.loads(o["derived_from_json"] or "{}") or {}
         if (o["cooked_status"] or "") == "done" or _meal_variety.theirs(derived):
-            return []
+            # The dish can't be re-picked whole, and this night alone would
+            # add a dish over their number: their number wins and the night
+            # stands (plan_quality warns; break_long_runs makes the same call).
+            return None
     return others
 
 
