@@ -1,0 +1,725 @@
+"""
+Move one meal to another day (Emily, 2026-09-28 — Option A of the "swap
+meals between days" mockups, answered in chat that day).
+
+    Tap Move on a meal → "Move the stew to which day?" lists every other
+    day with its meal of that kind → pick a day → the two meals trade
+    places. The toast names what moved, with Undo.
+
+Her decisions, each of which is a rule below:
+
+  1. ONE meal moves, not a whole day.
+  2. Dinners and lunches (MOVABLE_SLOTS) — not breakfasts or snacks.
+  3. A dinner's leftovers night moves WITH it, keeping the same gap: stew
+     Monday + leftovers Tuesday, moved to Thursday, is stew Thursday +
+     leftovers Friday — and Thursday's and Friday's meals come back to
+     Monday and Tuesday. A day where that can't work is shown dimmed with
+     the reason, never hidden (`move_options`).
+  4. A long dish may move onto a short-on-time day; the picker says so
+     ("40 min on a short-on-time day") and nothing else asks.
+  5. Drafts and approved weeks alike. The grocery list stays the same
+     (rows keep their ids, so their grocery links ride along); a thaw that
+     now has to start earlier is said in one line (`thaw_notes`).
+
+THIS IS NOT A SECOND MOVER. The write is weekly_plan._redate_plan_rows, the
+one the nights swap has always used (lifted out of it for this card): rows
+re-dated in place, "date:slot" chain references rewritten, defrost
+reminders moved by the same number of days, the Undo token on each moved
+row. What this module adds is the PLACEMENT — which rows go where when a
+meal travels with its leftovers — and the checks a hand-made move owes the
+week that generation already keeps:
+
+  * nobody-home and left-out days, cooked meals and days already gone
+    never take part;
+  * a leftovers chain never runs backwards (the writer's own check) and
+    never ends up more than MAX_LEFTOVER_DAYS from its cook;
+  * no dish lands on a third lunch-or-dinner in a row
+    (leftovers.MAX_MEALS_IN_A_ROW, Emily's rule);
+  * somebody at the new table who has said no to the dish is a veto, the
+    same one draft_flags.move_target and cap_enforce refuse trades on.
+
+The placement is a permutation, so it works for any chain shape: every
+row of the moving meal shifts by the same number of days; each row it
+lands on goes to the place one of the moving rows left, in eating order.
+For the ordinary case (one cook, one leftovers night, both landing on
+ordinary meals) that is exactly two trades — the mockup's four nights.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import re
+import uuid
+from datetime import date, datetime, timedelta
+
+from ..db import get_conn
+from ._shared import household_id
+from . import leftovers as _leftovers
+from . import weekly_plan as _weekly_plan
+
+logger = logging.getLogger("home_manager")
+
+MOVABLE_SLOTS = ("lunch", "dinner")
+_SLOT_PLURALS = {"lunch": "lunches", "dinner": "dinners"}
+
+_WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+
+def _weekday(d: str) -> str:
+    return _WEEKDAYS[date.fromisoformat(d).weekday()]
+
+
+def _shift(d: str, days: int) -> str:
+    return (date.fromisoformat(d) + timedelta(days=days)).isoformat()
+
+
+def short_name(dish: str | None) -> str:
+    """"stew" for "Creamy Chicken and Vegetable Stew" — the dish's last
+    word, lower-cased, which is how the sheet and the toast name it. The
+    same rule as shell.js dishShortName: a one-word dish, or one whose last
+    word is under four letters, is said in full."""
+    text = (dish or "").strip()
+    words = text.split()
+    if not words:
+        return "meal"
+    if len(words) < 2 or len(words[-1]) < 4:
+        return text
+    return words[-1].lower()
+
+
+def _cap(text: str) -> str:
+    return text[:1].upper() + text[1:]
+
+
+# ---------- the week, read once ----------
+
+def _snapshot(weekly_plan_id: int, conn) -> dict:
+    plan = conn.execute(
+        "SELECT id, week_start_date, content_start_date, day_count, planning_mode, status "
+        "FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    ).fetchone()
+    if plan is None:
+        raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
+    if plan["planning_mode"] == "component_based":
+        raise ValueError("That plan is built from components, not days — there's nothing to move.")
+    start, day_count = _weekly_plan.plan_period(plan)
+    end = _weekly_plan.period_end_date(start, day_count)
+    rows = conn.execute(
+        """
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status,
+               mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal,
+               r.prep_time_minutes, r.cook_time_minutes
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
+        ORDER BY mpe.date ASC, mpe.id ASC
+        """,
+        (weekly_plan_id, household_id()),
+    ).fetchall()
+    rows = [dict(r) for r in rows]
+    chains = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)
+    return {"plan": dict(plan), "start": start, "end": end, "rows": rows, "chains": chains}
+
+
+def _derived(row: dict) -> dict:
+    try:
+        return json.loads(row.get("derived_from_json") or "{}") or {}
+    except (TypeError, ValueError):
+        return {}
+
+
+def _minutes(row: dict) -> int | None:
+    prep, cook = row.get("prep_time_minutes"), row.get("cook_time_minutes")
+    if prep is None and cook is None:
+        return None
+    return ((prep or 0) + (cook or 0)) or None
+
+
+def _is_reheat(row: dict, chains: dict) -> bool:
+    """A night that eats another cook's food — a chain's reheat, a freezer
+    portion, or a "Leftovers …" line the model wrote as a name. It moves
+    only with the meal it comes from."""
+    derived = _derived(row)
+    if row["id"] in chains["leftovers"] or (derived.get("links_to") or "").strip():
+        return True
+    if _leftovers.frozen_portion_on(derived):
+        return True
+    return bool(re.search(r"\bleftovers?\b", row.get("meal") or "", re.IGNORECASE))
+
+
+def _slot_row(snap: dict, d: str, slot: str) -> dict | None:
+    """The row a day holds for this meal — the first by id, the rule every
+    reader of (date, slot) uses."""
+    for r in snap["rows"]:
+        if r["date"] == d and r["slot"] == slot:
+            return r
+    return None
+
+
+def _empty_reason(row: dict, slot: str) -> str:
+    """Why a day's meal can't take part, when nobody's eating it."""
+    derived = _derived(row)
+    constraint = derived.get("constraint")
+    if constraint == "already_past":
+        return "Already gone by"
+    if constraint == _weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT:
+        return f"No {slot} planned"
+    return "Nobody’s home"
+
+
+# ---------- the placement ----------
+
+def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
+    """
+    Where every row goes if this meal moves to `to_date`, or why it can't.
+
+    Pure over `snap` (the week as read once) — no reads, no writes — so the
+    picker can ask it of every day at once and the write can ask it again
+    inside its transaction. `today` is the household's date (ISO).
+
+    Returns {"ok": True, "placement": {entry_id: new_date}, "members",
+    "displaced", "delta"} or {"ok": False, "reason": short sentence}.
+    Raises ValueError for a request no screen should make (a breakfast, a
+    day off the plan, the same day, a meal that isn't on this plan).
+    """
+    rows = snap["rows"]
+    by_id = {r["id"]: r for r in rows}
+    source = by_id.get(entry_id)
+    if source is None:
+        raise ValueError("That meal isn't on this week any more.")
+    slot = source["slot"]
+    if slot not in MOVABLE_SLOTS:
+        raise ValueError("Only lunches and dinners move between days.")
+    try:
+        date.fromisoformat(to_date)
+    except (TypeError, ValueError):
+        raise ValueError("The day must be an ISO date (YYYY-MM-DD).")
+    if not (snap["start"] <= to_date <= snap["end"]):
+        raise ValueError(f"{_weekday(to_date)} ({to_date}) isn't on this plan.")
+    if to_date == source["date"]:
+        raise ValueError("That's the day it's already on.")
+    if source["slot_state"] != "planned" or not (source["meal"] or "").strip():
+        raise ValueError("There's no meal there to move.")
+    chains = snap["chains"]
+    if _is_reheat(source, chains):
+        return {"ok": False, "reason": "Leftovers move with the meal they come from"}
+    if (source["cooked_status"] or "") == "done":
+        return {"ok": False, "reason": "Already cooked"}
+    if source["date"] < today:
+        return {"ok": False, "reason": "Already gone by"}
+
+    delta = (date.fromisoformat(to_date) - date.fromisoformat(source["date"])).days
+    members = [source]
+    for t in (chains["sources"].get(source["id"]) or {}).get("targets") or []:
+        row = by_id.get(t["entry_id"])
+        if row is not None:
+            members.append(row)
+    member_pos = {(m["date"], m["slot"]) for m in members}
+    dish = short_name(source["meal"])
+
+    # The day tapped is one of the dish's own leftovers nights.
+    if (to_date, slot) in member_pos:
+        # Shown dimmed with no line of its own: the row already reads
+        # "Chicken Stew leftovers", which is the reason.
+        return {"ok": False, "reason": ""}
+
+    targets: dict[int, str] = {}
+    for m in members:
+        new = _shift(m["date"], delta)
+        if new > snap["end"]:
+            return {"ok": False, "reason": "Its leftovers would land after this week"}
+        if new < snap["start"]:
+            return {"ok": False, "reason": "Its leftovers would land before this week"}
+        if (m["cooked_status"] or "") == "done":
+            return {"ok": False, "reason": "Its leftovers were already had"}
+        targets[m["id"]] = new
+
+    # The rows the moving meal lands on, and the places it leaves.
+    displaced: list[dict] = []
+    for m in members:
+        pos = (targets[m["id"]], m["slot"])
+        if pos in member_pos:
+            continue
+        there = _slot_row(snap, *pos)
+        # The tapped day speaks for itself; a leftovers night landing on
+        # another day names that day.
+        tapped = pos[0] == to_date
+        wd = _weekday(pos[0])
+        if there is None:
+            return {"ok": False, "reason": f"No {m['slot']} planned" if tapped
+                    else f"Its leftovers would land on {wd}, with no {m['slot']} planned"}
+        if there["slot_state"] == "planned_empty":
+            reason = _empty_reason(there, m["slot"])
+            if tapped:
+                return {"ok": False, "reason": reason}
+            if reason == "Nobody’s home":
+                return {"ok": False, "reason": f"Its leftovers would land on {wd}, and nobody’s home"}
+            return {"ok": False, "reason": f"Its leftovers would land on {wd}, which isn’t planned"}
+        if (there["cooked_status"] or "") == "done":
+            return {"ok": False, "reason": "Already cooked" if tapped else f"{wd}’s {m['slot']} is already cooked"}
+        if pos[0] < today:
+            return {"ok": False, "reason": "Already gone by"}
+        if tapped and there["slot_state"] == "planned" and \
+                _leftovers.dish_identity(there["meal"]) == _leftovers.dish_identity(source["meal"]):
+            return {"ok": False, "reason": "Same dish"}
+        displaced.append(there)
+    target_pos = {(targets[m["id"]], m["slot"]) for m in members}
+    vacated = sorted(
+        [(m["date"], m["slot"]) for m in members if (m["date"], m["slot"]) not in target_pos],
+        key=lambda p: (p[0], _leftovers._SLOT_ORDER.get(p[1], 9)),
+    )
+    displaced.sort(key=lambda r: (r["date"], _leftovers._SLOT_ORDER.get(r["slot"], 9), r["id"]))
+    # Same slot for each pair: a lunch only ever trades with a lunch. The
+    # chain's own rows keep their slots, so the counts per slot agree.
+    placement = dict(targets)
+    for slot_name in {p[1] for p in vacated}:
+        free = [p for p in vacated if p[1] == slot_name]
+        going = [r for r in displaced if r["slot"] == slot_name]
+        if len(free) != len(going):
+            return {"ok": False, "reason": "That would leave a meal with nowhere to go"}
+        for r, p in zip(going, free):
+            placement[r["id"]] = p[0]
+
+    after = _after_rows(rows, placement)
+    said = _structural_refusal(snap, rows, after, placement, source)
+    if said:
+        return {"ok": False, "reason": said}
+    return {"ok": True, "placement": placement, "members": [m["id"] for m in members],
+            "displaced": [r["id"] for r in displaced], "delta": delta}
+
+
+def _after_rows(rows: list[dict], placement: dict[int, str]) -> list[dict]:
+    """The week with the placement applied and every "date:slot" reference
+    rewritten, in memory — what the checks below are asked of."""
+    by_id = {r["id"]: r for r in rows}
+    mapping = {f"{by_id[i]['date']}:{by_id[i]['slot']}": f"{d}:{by_id[i]['slot']}"
+               for i, d in placement.items()}
+    out = []
+    for r in rows:
+        derived = _derived(r)
+        if "links_to" in derived:
+            derived["links_to"] = _weekly_plan._rewrite_chain_ref(derived["links_to"], mapping)
+        fed = derived.get("make_double_for")
+        if fed:
+            fed_list = [fed] if isinstance(fed, str) else list(fed)
+            derived["make_double_for"] = [_weekly_plan._rewrite_chain_ref(t, mapping) for t in fed_list]
+        out.append({**r, "date": placement.get(r["id"], r["date"]), "derived": derived,
+                    "derived_from_json": json.dumps(derived)})
+    return out
+
+
+def _chain_pairs(rows: list[dict]) -> dict[int, int]:
+    """{reheat id: cook id} for every confirmed chain in these rows."""
+    by_date_slot = {}
+    for r in sorted(rows, key=lambda r: r["id"]):
+        by_date_slot.setdefault((r["date"], r["slot"]), r)
+    by_id = {r["id"]: r for r in rows}
+    pairs = {}
+    for r in rows:
+        if r["slot_state"] != "planned":
+            continue
+        derived = r.get("derived") if "derived" in r else _derived(r)
+        links_to = (derived.get("links_to") or "").strip()
+        if links_to:
+            src = _weekly_plan._resolve_leftover_source(links_to, by_date_slot, by_id)
+            if src is not None and src["id"] != r["id"]:
+                pairs[r["id"]] = src["id"]
+        frozen = derived.get(_leftovers.FROM_FREEZER_KEY)
+        if isinstance(frozen, dict):
+            ref = str(frozen.get("cook") or "")
+            if ref.startswith("entry_id:"):
+                try:
+                    cook = int(ref.split(":", 1)[1])
+                except ValueError:
+                    cook = None
+                if cook in by_id and cook != r["id"]:
+                    pairs.setdefault(r["id"], cook)
+    return pairs
+
+
+def _structural_refusal(snap: dict, before: list[dict], after: list[dict],
+                        placement: dict[int, str], source: dict) -> str | None:
+    by_id_after = {r["id"]: r for r in after}
+    by_id_before = {r["id"]: r for r in before}
+    # Leftovers never before their cook; never further from it than the
+    # food-safety days (only where the move made the gap longer — a chain
+    # the week already had is not this move's to judge).
+    pairs_before = _chain_pairs([{**r, "derived": _derived(r)} for r in before])
+    for reheat_id, cook_id in _chain_pairs(after).items():
+        if reheat_id not in placement and cook_id not in placement:
+            continue
+        reheat, cook = by_id_after[reheat_id], by_id_after[cook_id]
+        if _weekly_plan._eaten_at(cook) >= _weekly_plan._eaten_at(reheat):
+            return f"The {short_name(cook['meal'])} would end up after its leftovers"
+        gap = _leftovers.days_apart(cook["date"], reheat["date"])
+        if gap > _leftovers.MAX_LEFTOVER_DAYS:
+            was = None
+            if pairs_before.get(reheat_id) == cook_id:
+                was = _leftovers.days_apart(by_id_before[cook_id]["date"], by_id_before[reheat_id]["date"])
+            if was is None or gap > was:
+                return f"The {short_name(cook['meal'])}’s leftovers would be {gap} days old"
+    # A prepped lunch is cooked on its prep day; it can't be eaten before it.
+    for i, d in placement.items():
+        prep_date = str(_derived(by_id_before[i]).get("prep_date") or "")
+        if prep_date and d < prep_date:
+            return f"It’s prepped on {_weekday(prep_date)}"
+    # At most two lunches and dinners in a row of the same dish.
+    keys_before = _leftovers.run_keys_from_rows(before)
+    keys_after = _leftovers.run_keys_from_rows(after)
+    old_runs = {tuple(run) for run in _leftovers.long_runs(keys_before)}
+    for run in _leftovers.long_runs(keys_after):
+        if tuple(run) in old_runs:
+            continue
+        dish = keys_after.get(run[0]) or ""
+        name = next((r["meal"] for r in after
+                     if (r["date"], r["slot"]) == run[0] and r["slot_state"] == "planned"), dish)
+        if _leftovers.dish_identity(name) != dish:
+            # A reheat row: name the dish, not "Leftovers — Monday's …".
+            name = dish
+        return f"That makes three {short_name(name)} meals in a row"
+    return None
+
+
+# ---------- what the picker shows ----------
+
+def _veto(meal: str | None, d: str, slot: str) -> str | None:
+    """Somebody at that table has said no to the dish — the one-veto rule
+    (cap_enforce.would_offend, asked for the meal's own slot)."""
+    if not (meal or "").strip():
+        return None
+    verdict = _weekly_plan._taste_verdict_for_slot(meal, d, slot)
+    if verdict and verdict.get("verdict") == "avoid":
+        who = ", ".join(verdict.get("vetoed_by") or []) or "Someone"
+        return f"{who} would rather not have the {short_name(meal)}"
+    return None
+
+
+def _caps(snap: dict) -> dict:
+    """{(date, slot): minutes cap or None} for this week's days."""
+    from . import memory as _memory
+    from . import time_caps as _time_caps
+    try:
+        intake = _weekly_plan._week_intake.get_week_intake(snap["plan"]["week_start_date"]) or {}
+    except Exception:
+        intake = {}
+    try:
+        memory = _memory.get_household_memory() or {}
+    except Exception:
+        memory = {}
+    tags = intake.get("night_tags") or {}
+    out = {}
+    d = snap["start"]
+    while d <= snap["end"]:
+        out[(d, "dinner")] = _time_caps.minutes_cap(d, "dinner", tags.get(d) or [], memory)
+        d = _shift(d, 1)
+    return out
+
+
+def _time_note(row: dict, lands_on: str, caps: dict, own: bool) -> str | None:
+    """"40 min on a short-on-time day" — a dish that would land over its
+    new day's cap. Said, never refused (Emily's default, decision 4)."""
+    if row["slot"] != "dinner":
+        return None
+    minutes = _minutes(row)
+    cap = caps.get((lands_on, row["slot"]))
+    if not (minutes and cap and minutes > cap):
+        return None
+    if own:
+        return f"{minutes} min on a short-on-time day"
+    return f"{minutes} min on short-on-time {_weekday(lands_on)}"
+
+
+def _day_meal_label(row: dict | None, snap: dict) -> str:
+    """What a day's meal of this kind is, as the picker row says it."""
+    if row is None:
+        return "Nothing planned"
+    if row["slot_state"] == "planned_empty":
+        return "Not planned"
+    if row["slot_state"] == "open":
+        return "Your call"
+    meal = (row["meal"] or "").strip()
+    src = snap["chains"]["leftovers"].get(row["id"])
+    if src:
+        return f"{src['source']['meal']} leftovers"
+    return meal or "Nothing planned"
+
+
+def move_options(weekly_plan_id: int, entry_id: int) -> dict:
+    """
+    The Move sheet for one meal: every other day of the week, in order,
+    with what it holds now and whether the meal can go there.
+
+    {"entry_id", "slot", "meal", "date", "title", "sub",
+     "days": [{"date", "weekday", "meal", "minutes", "ok", "reason", "note"}]}
+
+    `reason` is why a dimmed day can't take it (shown, never hidden —
+    Emily's decision 3); `note` is the plain short-on-time line on a day
+    that can (decision 4). No model call; one read of the week.
+    """
+    from . import cooker as _cooker
+    today = _cooker.household_today().isoformat()
+    conn = get_conn()
+    try:
+        snap = _snapshot(weekly_plan_id, conn)
+    finally:
+        conn.close()
+    by_id = {r["id"]: r for r in snap["rows"]}
+    source = by_id.get(entry_id)
+    if source is None:
+        raise ValueError("That meal isn't on this week any more.")
+    if source["slot"] not in MOVABLE_SLOTS:
+        raise ValueError("Only lunches and dinners move between days.")
+    caps = _caps(snap)
+    slot = source["slot"]
+    meal = source["meal"] or ""
+    targets = (snap["chains"]["sources"].get(source["id"]) or {}).get("targets") or []
+    days = []
+    d = snap["start"]
+    while d <= snap["end"]:
+        if d != source["date"]:
+            here = _slot_row(snap, d, slot)
+            label = _day_meal_label(here, snap)
+            minutes = _minutes(here) if here and here["slot_state"] == "planned" else None
+            entry = {"date": d, "weekday": _weekday(d), "meal": label, "minutes": minutes,
+                     "ok": False, "reason": "", "note": ""}
+            try:
+                out = plan_move(snap, entry_id, d, today)
+            except ValueError as e:
+                out = {"ok": False, "reason": str(e)}
+            if out["ok"]:
+                by_after = out["placement"]
+                # The veto, asked of every dish landing somewhere new —
+                # reads, so asked here, outside plan_move.
+                vetoed = None
+                for i, new_d in by_after.items():
+                    row = by_id[i]
+                    if row["id"] in out["members"] and row["id"] != source["id"]:
+                        continue  # a reheat of our own dish, judged with it
+                    vetoed = _veto(row["meal"], new_d, row["slot"])
+                    if vetoed:
+                        break
+                if vetoed:
+                    entry["reason"] = vetoed
+                else:
+                    entry["ok"] = True
+                    note = _time_note(source, d, caps, own=True)
+                    if not note and here is not None and here["id"] in by_after:
+                        note = _time_note(here, by_after[here["id"]], caps, own=False)
+                    entry["note"] = note or ""
+            elif here is None or here["slot_state"] == "planned_empty":
+                # The day's own emptiness is the reason: said once, as the
+                # day's line ("Nobody’s home"), not twice.
+                entry["meal"] = out["reason"] or label
+            else:
+                entry["reason"] = out["reason"]
+            days.append(entry)
+        d = _shift(d, 1)
+    dish = short_name(meal)
+    sub = f"The two {_SLOT_PLURALS.get(slot, slot + 's')} trade places."
+    if targets:
+        nights = _leftovers._join_days([_weekday(t["date"]) for t in targets])
+        sub += f" {nights}’s leftovers move with the {dish}." if len(targets) == 1 else \
+            f" The leftovers on {nights} move with the {dish}."
+    return {
+        "entry_id": entry_id, "slot": slot, "meal": meal, "date": source["date"],
+        "title": f"Move the {dish} to which day?",
+        "sub": sub,
+        "days": days,
+    }
+
+
+# ---------- the write ----------
+
+MOVE_TOKEN_KEY = "move"
+
+
+def _thaw_notes(thaw: list[dict], today: str) -> list[str]:
+    """One line per fridge move that now has to happen EARLIER than it
+    did — the only thaw change worth a word (a later one simply shows up
+    on its day). "Move the chicken thighs to the fridge today."."""
+    notes = []
+    for t in thaw:
+        if not t.get("to") or not t.get("from") or t["to"] >= t["from"] or t.get("status") == "done":
+            continue
+        what = (t.get("description") or "").split(" — ")[0].rstrip(".").strip()
+        if not what:
+            continue
+        if t["to"] < today:
+            notes.append(f"{what} now.")
+        elif t["to"] == today:
+            notes.append(f"{what} today.")
+        else:
+            notes.append(f"{what} on {_weekday(t['to'])}.")
+    return notes
+
+
+def _said(snap: dict, placement: dict[int, str], members: list[int], source_id: int) -> str:
+    """"Stew was moved to Thursday, leftovers to Friday" / "Stew was moved
+    to Thursday, tacos to Monday" — the house toast pattern, naming both
+    halves of the trade (the mockup's own line)."""
+    by_id = {r["id"]: r for r in snap["rows"]}
+    src = by_id[source_id]
+    dish = _cap(short_name(src["meal"]))
+    line = f"{dish} was moved to {_weekday(placement[source_id])}"
+    leftovers = [i for i in members if i != source_id]
+    if leftovers:
+        days = _leftovers._join_days([_weekday(placement[i]) for i in leftovers])
+        return f"{line}, leftovers to {days}"
+    other = [i for i in placement if i not in members]
+    if len(other) == 1 and by_id[other[0]]["slot_state"] == "planned":
+        o = by_id[other[0]]
+        if o["id"] in snap["chains"]["leftovers"]:
+            return f"{line}, leftovers to {_weekday(placement[o['id']])}"
+        return f"{line}, {short_name(o['meal'])} to {_weekday(placement[o['id']])}"
+    return line
+
+
+def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
+    """
+    Move one lunch or dinner (and its leftovers) to another day, trading
+    places with what is there.
+
+    Returns {"status": "moved", "said", "moved": [{entry_id, meal, slot,
+    from, to}], "move_id", "thaw_notes", "days", "can_undo"}; or
+    {"status": "refused", "message"} with nothing written. Raises
+    ValueError for a request no screen should make.
+    """
+    from . import cooker as _cooker
+    today = _cooker.household_today().isoformat()
+    # The veto reads attendance and taste on connections of their own, so
+    # it is asked BEFORE the write transaction (the nested-get_conn trap),
+    # of the placement as it stands; the transaction then re-plans and
+    # refuses if the week changed underneath.
+    conn = get_conn()
+    try:
+        snap = _snapshot(weekly_plan_id, conn)
+    finally:
+        conn.close()
+    first = plan_move(snap, entry_id, to_date, today)
+    if not first["ok"]:
+        return {"status": "refused", "message": _refusal_sentence(snap, entry_id, to_date, first["reason"])}
+    by_id = {r["id"]: r for r in snap["rows"]}
+    for i, d in first["placement"].items():
+        if i in first["members"] and i != entry_id:
+            continue
+        vetoed = _veto(by_id[i]["meal"], d, by_id[i]["slot"])
+        if vetoed:
+            return {"status": "refused", "message": f"{vetoed}."}
+
+    move_id = uuid.uuid4().hex[:12]
+    at = datetime.now().isoformat(timespec="seconds")
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        snap = _snapshot(weekly_plan_id, conn)
+        planned = plan_move(snap, entry_id, to_date, today)
+        if not planned["ok"] or planned["placement"] != first["placement"]:
+            conn.rollback()
+            return {"status": "refused", "message": "The week just changed — try that again."}
+        placement = planned["placement"]
+        n = len(placement)
+        done = _weekly_plan._redate_plan_rows(
+            conn, weekly_plan_id, snap["rows"], placement,
+            token_for=lambda r: {"date": r["date"], "at": at, MOVE_TOKEN_KEY: move_id,
+                                 "to": placement[r["id"]], "n": n, "source": entry_id},
+            move_prep_cuts=True,
+        )
+        if "refused" in done:
+            conn.rollback()
+            return {"status": "refused", "message": done["refused"]}
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    by_id = {r["id"]: r for r in snap["rows"]}
+    moved = [{"entry_id": i, "meal": by_id[i]["meal"], "slot": by_id[i]["slot"],
+              "from": by_id[i]["date"], "to": d} for i, d in placement.items()]
+    _after_move(weekly_plan_id, list(placement))
+    dates = sorted({m["from"] for m in moved} | {m["to"] for m in moved})
+    return {
+        "status": "moved",
+        "said": _said(snap, placement, planned["members"], entry_id),
+        "moved": moved,
+        "move_id": move_id,
+        "thaw_notes": _thaw_notes(done["thaw"], today),
+        "prep_tasks_moved": done["prep_moved"],
+        "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
+        "can_undo": True,
+    }
+
+
+def _refusal_sentence(snap: dict, entry_id: int, to_date: str, reason: str) -> str:
+    """A picker reason as a sentence of its own, for a refusal said in a
+    toast: "Friday: Nobody’s home."."""
+    return f"{_weekday(to_date)}: {reason}."
+
+
+def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
+    """
+    Put back every row the move `move_id` re-dated. Only while each of them
+    still carries that move's token and still sits where the move put it —
+    a row moved again since means the Undo would move the wrong thing, so
+    it refuses (ValueError) and changes nothing.
+    """
+    if not move_id:
+        raise ValueError("Nothing to put back.")
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        snap = _snapshot(weekly_plan_id, conn)
+        placement: dict[int, str] = {}
+        expected = None
+        source_id = None
+        for r in snap["rows"]:
+            token = _derived(r).get(_weekly_plan.NIGHTS_MOVED_KEY) or {}
+            if not isinstance(token, dict) or token.get(MOVE_TOKEN_KEY) != move_id:
+                continue
+            if token.get("to") != r["date"]:
+                raise ValueError("That meal has moved again since, so there’s nothing to put back.")
+            if (r["cooked_status"] or "") == "done":
+                raise ValueError("That meal has been cooked since, so it stays where it is.")
+            placement[r["id"]] = token.get("date")
+            expected = token.get("n")
+            source_id = token.get("source")
+        if not placement or (expected and expected != len(placement)):
+            raise ValueError("That move has changed since, so there’s nothing to put back.")
+        done = _weekly_plan._redate_plan_rows(
+            conn, weekly_plan_id, snap["rows"], placement, token_for=None, move_prep_cuts=True,
+        )
+        if "refused" in done:
+            conn.rollback()
+            return {"status": "refused", "message": done["refused"]}
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    _after_move(weekly_plan_id, list(placement))
+    by_id = {r["id"]: r for r in snap["rows"]}
+    dates = sorted(set(placement.values()) | {by_id[i]["date"] for i in placement})
+    src = by_id.get(source_id) if source_id in placement else None
+    said = (f"{_cap(short_name(src['meal']))} was moved back to {_weekday(placement[source_id])}"
+            if src else "Back as it was")
+    return {
+        "status": "restored",
+        "said": said,
+        "moved": [{"entry_id": i, "meal": by_id[i]["meal"], "from": by_id[i]["date"], "to": d}
+                  for i, d in placement.items()],
+        "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
+    }
+
+
+def _after_move(weekly_plan_id: int, moved_ids: list[int]) -> None:
+    """The draft's snag lines, re-said for the week as it now stands — a
+    meal that moved onto a short-on-time night gets its line, one that
+    moved off loses it. Never fails the move: the move is written."""
+    try:
+        from . import draft_flags as _draft_flags
+        _draft_flags.refresh(weekly_plan_id, moved_ids)
+    except Exception:
+        logger.exception("Refreshing the draft's flags after a move failed (plan %s)", weekly_plan_id)

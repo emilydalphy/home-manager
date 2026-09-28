@@ -129,7 +129,8 @@ def _prelude() -> str:
         + _extract("defrostMeaningLines", SHELL_JS) + "\n"
         + _extract("defrostMeaningHtml", SHELL_JS) + "\n"
         + _extract("freezerStepHtml", SHELL_JS) + "\n"
-        + _extract("swapMoveOptions", SHELL_JS) + "\n"
+        + _extract("moveDayRowHtml", SHELL_JS) + "\n"
+        + _extract("moveSheetBodyHtml", SHELL_JS) + "\n"
         + _extract_var("SWAP_WAIT_SECONDS", SHELL_JS) + "\n"
         + _extract_var("SWAP_PLACEHOLDERS", SHELL_JS) + "\n"
         + _extract("swapWaitLine", SHELL_JS) + "\n"
@@ -157,6 +158,7 @@ def _day(date, iso_today=False, past=False, **slots):
 _MON = "2026-09-21"
 _TUE = "2026-09-22"
 _WED = "2026-09-23"
+_THU = "2026-09-24"
 
 
 def _week():
@@ -529,26 +531,50 @@ def test_the_swap_sheet_shows_the_eyebrow_the_title_three_picks_and_the_two_line
     assert html.count('data-wk-swap-pick="') == 3
     assert 'data-wk-swap-pick="0"' in html and 'data-wk-swap-pick="2"' in html, "the pick's own index, what /swap-choose wants back"
     assert "30 min · uses the sausages" in html and "25 min · same tortillas" in html and "15 min · no shopping" in html
-    assert 'id="wk-swap-move">Move the tacos to another day</button>' in html
+    # Move left the Swap sheet on 2026-09-28: it is the row's own button.
+    assert "wk-swap-move" not in html
     assert 'id="wk-swap-tell">Ask for something else</button>' in html
-    assert html.index("wk-swap-picks") < html.index("wk-swap-move") < html.index("wk-swap-tell")
+    assert html.index("wk-swap-picks") < html.index("wk-swap-tell")
 
 
 @_needs_node
-def test_the_move_view_lists_the_other_nights_and_a_breakfast_has_no_move_line():
-    days = _week()
-    st = {"date": _TUE, "slot": "dinner", "name": "Black bean tacos", "view": "move", "busy": False, "trouble": "", "options": []}
-    bf = {"date": _TUE, "slot": "breakfast", "name": "Overnight oats", "view": "picks", "busy": False, "trouble": "", "options": None}
-    html = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
-                f"console.log(JSON.stringify([swapSheetBodyHtml({json.dumps(st)}), swapSheetBodyHtml({json.dumps(bf)})]));")
-    move, breakfast = html
-    assert "Move the tacos to which night?" in move
-    assert f'data-wk-swap-move="{_MON}"' in move and f'data-wk-swap-move="{_WED}"' in move
-    assert f'data-wk-swap-move="{_TUE}"' not in move, "never itself"
-    assert "Lemon chicken &amp; orzo" in move and "Your call" in move
-    assert 'id="wk-swap-back"' in move
-    assert "wk-swap-move" not in breakfast, "only a dinner moves between nights"
-    assert "Finding three you could have — about ten seconds." in breakfast, "the wait line (board D5, 2026-09-21)"
+def test_the_move_view_draws_the_servers_days_dimming_the_ones_that_cannot_take_it():
+    """The Move sheet (Emily, 2026-09-28, Option A): the server's own days
+    (POST /move-options) — a day that can take the meal is a tappable row
+    with its meal and any short-on-time note; one that can't is shown,
+    dimmed and disabled, with its reason."""
+    sheet = {
+        "title": "Move the tacos to which day?",
+        "sub": "The two dinners trade places.",
+        "days": [
+            {"date": _MON, "weekday": "Monday", "meal": "Lemon chicken & orzo", "minutes": 25,
+             "ok": True, "reason": "", "note": ""},
+            {"date": _WED, "weekday": "Wednesday", "meal": "Turkey Chili", "minutes": 40,
+             "ok": True, "reason": "", "note": "40 min on short-on-time Tuesday"},
+            {"date": _THU, "weekday": "Thursday", "meal": "Not planned", "minutes": None,
+             "ok": False, "reason": "Nobody’s home", "note": ""},
+        ],
+    }
+    st = {"date": _TUE, "slot": "dinner", "name": "Black bean tacos", "view": "move", "busy": False,
+          "trouble": "", "move": sheet}
+    loading = dict(st, move=None)
+    html = _run(_prelude() + f"weekState.days = {json.dumps(_week())};\n"
+                f"console.log(JSON.stringify([swapSheetBodyHtml({json.dumps(st)}), swapSheetBodyHtml({json.dumps(loading)})]));")
+    move, wait = html
+    assert '<p class="wk-swap-eyebrow">Tuesday · dinner</p>' in move
+    assert 'id="wk-swap-title">Move the tacos to which day?</h2>' in move
+    assert '<p class="wk-swap-sub">The two dinners trade places.</p>' in move
+    assert f'data-wk-move-to="{_MON}"' in move and f'data-wk-move-to="{_WED}"' in move
+    assert f'data-wk-move-to="{_THU}"' not in move, "a day it can't go to is not tappable"
+    assert "Lemon chicken &amp; orzo · 25 min" in move
+    assert '<span class="wk-move-line is-note">40 min on short-on-time Tuesday</span>' in move
+    thu = move[move.index("Thursday") - 200:]
+    assert 'wk-move-day is-off" disabled aria-disabled="true"' in thu
+    assert '<span class="wk-move-line">Nobody’s home</span>' in thu
+    assert "wk-swap-tell" not in move and "wk-swap-back" not in move
+    # Before the days come back: the title and a spinner, nothing to tap.
+    assert 'id="wk-swap-title">Move the tacos to which day?</h2>' in wait and "wk-swap-spinner" in wait
+    assert "data-wk-move-to" not in wait
 
 
 def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():

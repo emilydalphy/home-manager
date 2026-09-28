@@ -4,10 +4,10 @@ _extract_var, _extract_async) — imported by a dozen renderer tests — and
 the one test left from Plan › Which days as seven tiles (Emily, 2026-09-12).
 
 The tiles themselves went on 2026-09-18: Check the week is a carousel of
-day cards now (tests/test_plan_cards_2026_09_18.py), and a dinner moves to
-another night from the swap sheet's "Move the tacos to another day", still
-through POST /api/week/{week}/swap-nights (tests/test_swap_dinner_nights.py
-covers the write).
+day cards now (tests/test_plan_cards_2026_09_18.py), and a lunch or dinner
+moves to another day from its row's own Move button (2026-09-28,
+tests/test_move_meal_between_days.py) — the same re-dating write
+POST /api/week/{week}/swap-nights uses (tests/test_swap_dinner_nights.py).
 """
 from __future__ import annotations
 

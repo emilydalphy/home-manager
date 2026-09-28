@@ -8019,6 +8019,163 @@ def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str
     return len(tasks)
 
 
+def _redate_plan_rows(
+    conn, weekly_plan_id: int, rows: list, new_date: dict[int, str], *,
+    mapping: dict[str, str] | None = None, token_for=None, extra_check=None,
+    move_prep_cuts: bool = False, dry_run: bool = False,
+) -> dict:
+    """
+    The one re-dating write behind every "this meal is now on another day"
+    door — the nights swap (_apply_dinner_nights_swap) and the Move sheet
+    (meal_move.move_meal, Emily 2026-09-28). Lifted out of the nights swap
+    so a lunch, or a dinner travelling with its leftovers night, is moved by
+    exactly the rules a dinner always was, not a second copy of them.
+
+    `rows` is every day-slot row of the plan (id, date, slot, slot_state,
+    derived_from_json, meal); `new_date` names the rows that move and where
+    to. Everything keyed by entry id rides along; what is keyed by date is
+    moved here: the "date:slot" chain references (by `mapping`, default
+    each moving row's old key to its new one) and the defrost reminders.
+
+    `token_for(row)` is the Undo token written on each moved row as
+    derived_from.moved_from, or None to clear it (an Undo). `extra_check`
+    is asked of the in-memory picture after the chain references are
+    rewritten — `after` rows, each {id, date, slot, slot_state, meal,
+    derived, changed} — and may return a refusal sentence. With
+    `move_prep_cuts`, a prep-cut row that would now fall AFTER its meal
+    moves by the same number of days (the Move sheet; the nights swap
+    leaves prep cuts on the prep day, as it always has).
+
+    Runs on the caller's connection and transaction; neither begins,
+    commits nor closes. Returns {"refused": sentence} with nothing written,
+    or {"prep_moved": n, "thaw": [...], "after": after}. `dry_run` runs
+    every check and writes nothing.
+    """
+    if mapping is None:
+        mapping = {}
+        for r in rows:
+            if r["id"] in new_date:
+                mapping[f"{r['date']}:{r['slot']}"] = f"{new_date[r['id']]}:{r['slot']}"
+    now_date = {r["id"]: r["date"] for r in rows}
+    after: list[dict] = []
+    for r in rows:
+        derived = json.loads(r["derived_from_json"] or "{}")
+        changed = False
+        if "links_to" in derived:
+            new_ref = _rewrite_chain_ref(derived["links_to"], mapping)
+            changed = changed or new_ref != derived["links_to"]
+            derived["links_to"] = new_ref
+        fed = derived.get("make_double_for")
+        if fed:
+            fed_list = [fed] if isinstance(fed, str) else list(fed)
+            new_fed = [_rewrite_chain_ref(t, mapping) for t in fed_list]
+            changed = changed or new_fed != fed_list
+            derived["make_double_for"] = new_fed
+        if r["id"] in new_date:
+            if token_for is None:
+                derived.pop(NIGHTS_MOVED_KEY, None)
+            else:
+                derived[NIGHTS_MOVED_KEY] = token_for(r)
+            changed = True
+        after.append({
+            "id": r["id"], "date": new_date.get(r["id"], r["date"]), "slot": r["slot"],
+            "slot_state": r["slot_state"], "meal": r["meal"], "derived": derived,
+            "changed": changed,
+        })
+    by_date_slot = {(e["date"], e["slot"]): e for e in after}
+    by_id = {e["id"]: e for e in after}
+    for e in after:
+        if e["slot_state"] != "planned":
+            continue
+        links_to = (e["derived"].get("links_to") or "").strip()
+        if not links_to:
+            continue
+        source = _resolve_leftover_source(links_to, by_date_slot, by_id)
+        if source is None or source["id"] == e["id"]:
+            continue
+        if _eaten_at(source) >= _eaten_at(e):
+            # Named by where things ARE, not where the move would have
+            # put them — the household is looking at the week as it
+            # stands, and nothing has moved.
+            dish = source["meal"] or e["meal"] or "That one"
+            return {"refused":
+                    f"{dish} on {_weekday_of(now_date[source['id']])} feeds "
+                    f"{_weekday_of(now_date[e['id']])}’s {e['slot']} — it can’t move past that night."}
+    if extra_check is not None:
+        said = extra_check(after, by_date_slot, by_id)
+        if said:
+            return {"refused": said}
+    if dry_run:
+        return {"prep_moved": 0, "thaw": [], "after": after}
+
+    # ---- write: the rows, then what their dates were holding up ----
+    moving = [r for r in rows if r["id"] in new_date and new_date[r["id"]] != r["date"]]
+    # Two rows can trade the same (date, slot); nothing in the schema
+    # forbids that mid-statement, so a plain UPDATE per row is safe.
+    for r in moving:
+        conn.execute(
+            "UPDATE meal_plan_entries SET date = ? WHERE id = ? AND household_id = ?",
+            (new_date[r["id"]], r["id"], household_id()),
+        )
+    for e in after:
+        if e["changed"]:
+            conn.execute(
+                "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(e["derived"]), e["id"], household_id()),
+            )
+    prep_moved = 0
+    thaw: list[dict] = []
+    for r in moving:
+        before = {
+            t["id"]: t["task_date"] for t in conn.execute(
+                "SELECT id, task_date FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? "
+                "AND task_type = 'defrost' AND meal_plan_entry_id = ?",
+                (household_id(), weekly_plan_id, r["id"]),
+            ).fetchall()
+        }
+        prep_moved += _shift_defrost_tasks(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
+        for t in conn.execute(
+            "SELECT id, task_date, description, status FROM prep_tasks WHERE id IN (%s)"
+            % ",".join("?" * len(before)), tuple(before),
+        ).fetchall() if before else []:
+            thaw.append({"prep_task_id": t["id"], "entry_id": r["id"], "from": before[t["id"]],
+                         "to": t["task_date"], "description": t["description"], "status": t["status"]})
+        if move_prep_cuts:
+            prep_moved += _shift_late_prep_cuts(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
+    return {"prep_moved": prep_moved, "thaw": thaw, "after": after}
+
+
+def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: str, new_date: str) -> int:
+    """
+    A prep-cut row ("Get the lasagna ready for Wednesday") stays on its
+    prep day when its meal moves — a prep day is a rhythm fact — UNLESS the
+    meal now comes before it: prepping Thursday for Tuesday's dinner is
+    nonsense. Those move by the same number of days the meal did. Either
+    way a weekday the sentence names is re-said.
+    """
+    from . import prep_sessions as _prep_sessions  # lazy: it imports this module
+    delta = (date.fromisoformat(new_date) - date.fromisoformat(old_date)).days
+    old_wd, new_wd = _weekday_of(old_date), _weekday_of(new_date)
+    tasks = conn.execute(
+        "SELECT id, task_date, description FROM prep_tasks "
+        "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = ? AND meal_plan_entry_id = ?",
+        (household_id(), weekly_plan_id, _prep_sessions.PREP_CUT_TASK_TYPE, entry_id),
+    ).fetchall()
+    moved = 0
+    for t in tasks:
+        task_date = t["task_date"]
+        if task_date and task_date > new_date:
+            task_date = (date.fromisoformat(task_date) + timedelta(days=delta)).isoformat()
+            moved += 1
+        said = (t["description"] or "").replace(f"for {old_wd}", f"for {new_wd}")
+        if task_date != t["task_date"] or said != t["description"]:
+            conn.execute(
+                "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ?",
+                (task_date, said, t["id"]),
+            )
+    return moved
+
+
 def _apply_dinner_nights_swap(
     weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool, dry_run: bool = False,
     conn=None,
@@ -8112,60 +8269,16 @@ def _apply_dinner_nights_swap(
                 if token.get("date") != other:
                     raise ValueError("Those nights haven’t just been moved, so there’s nothing to put back.")
 
-        # ---- the new picture, in memory first, so a backwards chain is
-        # caught before anything is written ----
         new_date = {r["id"]: (date_b if r["date"] == date_a else date_a) for r in moving}
-        now_date = {r["id"]: r["date"] for r in rows}
         mapping = {f"{date_a}:dinner": f"{date_b}:dinner", f"{date_b}:dinner": f"{date_a}:dinner"}
-        after: list[dict] = []
-        for r in rows:
-            derived = json.loads(r["derived_from_json"] or "{}")
-            changed = False
-            if "links_to" in derived:
-                new_ref = _rewrite_chain_ref(derived["links_to"], mapping)
-                changed = changed or new_ref != derived["links_to"]
-                derived["links_to"] = new_ref
-            fed = derived.get("make_double_for")
-            if fed:
-                fed_list = [fed] if isinstance(fed, str) else list(fed)
-                new_fed = [_rewrite_chain_ref(t, mapping) for t in fed_list]
-                changed = changed or new_fed != fed_list
-                derived["make_double_for"] = new_fed
-            if r["id"] in new_date:
-                if undo:
-                    derived.pop(NIGHTS_MOVED_KEY, None)
-                else:
-                    derived[NIGHTS_MOVED_KEY] = {
-                        "date": r["date"],
-                        "at": datetime.now().isoformat(timespec="seconds"),
-                    }
-                changed = True
-            after.append({
-                "id": r["id"], "date": new_date.get(r["id"], r["date"]), "slot": r["slot"],
-                "slot_state": r["slot_state"], "meal": r["meal"], "derived": derived,
-                "changed": changed,
-            })
-        by_date_slot = {(e["date"], e["slot"]): e for e in after}
-        by_id = {e["id"]: e for e in after}
-        for e in after:
-            if e["slot_state"] != "planned":
-                continue
-            links_to = (e["derived"].get("links_to") or "").strip()
-            if not links_to:
-                continue
-            source = _resolve_leftover_source(links_to, by_date_slot, by_id)
-            if source is None or source["id"] == e["id"]:
-                continue
-            if _eaten_at(source) >= _eaten_at(e):
-                # Named by where things ARE, not where the move would have
-                # put them — the household is looking at the week as it
-                # stands, and nothing has moved.
-                dish = source["meal"] or e["meal"] or "That one"
-                return _nights_swap_refusal(
-                    f"{dish} on {_weekday_of(now_date[source['id']])} feeds "
-                    f"{_weekday_of(now_date[e['id']])}’s {e['slot']} — it can’t move past that night.",
-                    date_a, date_b)
-
+        now_iso = datetime.now().isoformat(timespec="seconds")
+        done = _redate_plan_rows(
+            conn, weekly_plan_id, rows, new_date, mapping=mapping,
+            token_for=None if undo else (lambda r: {"date": r["date"], "at": now_iso}),
+            dry_run=dry_run,
+        )
+        if "refused" in done:
+            return _nights_swap_refusal(done["refused"], date_a, date_b)
         if dry_run:
             # Nothing has been written yet — the rollback only releases the
             # lock this call took, so on a caller's connection it must not
@@ -8173,22 +8286,7 @@ def _apply_dinner_nights_swap(
             if own_conn:
                 conn.rollback()
             return {"status": "ok", "date_a": date_a, "date_b": date_b}
-
-        # ---- write: the rows, then what their dates were holding up ----
-        for r in moving:
-            conn.execute(
-                "UPDATE meal_plan_entries SET date = ? WHERE id = ? AND household_id = ?",
-                (new_date[r["id"]], r["id"], household_id()),
-            )
-        for e in after:
-            if e["changed"]:
-                conn.execute(
-                    "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
-                    (json.dumps(e["derived"]), e["id"], household_id()),
-                )
-        prep_moved = 0
-        for r in moving:
-            prep_moved += _shift_defrost_tasks(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
+        prep_moved = done["prep_moved"]
         if own_conn:
             conn.commit()
     except Exception:

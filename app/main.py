@@ -40,6 +40,7 @@ from .agent import run_agent_turn, trim_conversation, generate_chore_recommendat
 from . import tools
 from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
+from .tools import meal_move as _meal_move
 from .tools import prep_sessions as _prep_sessions
 
 
@@ -3614,6 +3615,66 @@ def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Undoing a night move failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class MoveOptionsRequest(BaseModel):
+    entry_id: int
+
+
+class MoveMealRequest(BaseModel):
+    entry_id: int
+    to_date: str
+
+
+class MoveUndoRequest(BaseModel):
+    move_id: str
+
+
+@app.post("/api/week/{week_start}/move-options")
+def week_move_options(week_start: str, req: MoveOptionsRequest):
+    """
+    The Move sheet for one lunch or dinner (Emily, 2026-09-28): every other
+    day of the week with what it holds, and whether the meal can go there —
+    a day that can't says why (tools/meal_move.py). No model call.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return _meal_move.move_options(plan_id, req.entry_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Reading the move options failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/move-meal")
+def week_move_meal(week_start: str, req: MoveMealRequest):
+    """
+    Move one lunch or dinner (its leftovers with it) to another day, trading
+    places with what is there. A 200 can still say no — `status` 'refused'
+    with the sentence, nothing written. The grocery list is not touched.
+    """
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return _meal_move.move_meal(plan_id, req.entry_id, req.to_date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Moving a meal failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week/{week_start}/move-meal-undo")
+def week_move_meal_undo(week_start: str, req: MoveUndoRequest):
+    """Put back everything the last Move re-dated."""
+    plan_id = _plan_id_for_week(week_start)
+    try:
+        return _meal_move.undo_meal_move(plan_id, req.move_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Undoing a meal move failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 

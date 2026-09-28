@@ -10327,3 +10327,13 @@ body.first-open-active { overflow: hidden; }
    now (there is no more Ask column for it to make way for — see
    "Desktop/tablet shell" earlier in this file), so the dock keeps the same
    right padding it always reserves for the FAB on phone. */
+
+/* Move (Emily, 2026-09-28, Option A): the day picker reuses the Swap
+   sheet's .wk-swap-pick rows. A day the meal can't go to is shown, dimmed,
+   with its reason; a day that can take it may carry one plain note
+   ("40 min on a short-on-time day") in the urgent label colour. */
+.wk-move-day.is-off { opacity: .55; cursor: default; }
+.wk-move-day.is-off:disabled { opacity: .55; }
+@media (hover: hover) { .wk-move-day.is-off:hover { background: var(--surface); } }
+.wk-move-line { font-family: var(--font-body); font-size: 13px; line-height: 1.25; color: var(--ink-secondary); }
+.wk-move-line.is-note { color: var(--urgent-label); font-weight: 600; }
