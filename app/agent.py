@@ -6278,45 +6278,53 @@ def _finish_week_slots(
     # all three counts, so a slot still sitting at the default 7 (she set
     # dinners to 4 and never touched breakfasts) is read as unanswered
     # too — "seven distinct breakfasts" is not a floor anyone chose.
-    for slot, field in _meal_variety.COUNT_FIELDS.items():
-        if slot == "lunch" and lunches_answered:
-            # The week's own answer about its weekday lunches is kept as it
-            # is — folding a "cooked that day" lunch into a reheat would undo
-            # what the household just said — and the rest of the week's
-            # lunches fold to the count around it (Emily, 2026-09-27; see
-            # weekday_lunches.enforce_lunch_count).
-            _weekday_lunches.enforce_lunch_count(
-                plan_id, intake, household_memory.get(field), asks=count_asks, caps=caps,
+    def _hold_counts(first: bool) -> None:
+        # `first` is the count pass proper (it may re-pick UP to the number,
+        # spending model calls); the second run is the guard after every
+        # pass that can add a dish (see "THE COUNT, ONE LAST TIME" below):
+        # fold-only, no model calls, never adds.
+        for slot, field in _meal_variety.COUNT_FIELDS.items():
+            if slot == "lunch" and lunches_answered:
+                # The week's own answer about its weekday lunches is kept as it
+                # is — folding a "cooked that day" lunch into a reheat would undo
+                # what the household just said — and the rest of the week's
+                # lunches fold to the count around it (Emily, 2026-09-27; see
+                # weekday_lunches.enforce_lunch_count).
+                _weekday_lunches.enforce_lunch_count(
+                    plan_id, intake, household_memory.get(field), asks=count_asks, caps=caps,
+                )
+                continue
+            usual = usual_counts.get(field)
+            tools.enforce_distinct_meal_count(
+                plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
+                pinned_ids=() if first else _meal_variety.asked_for_ids(plan_id, slot),
+                fill_up=first and bool(household_memory.get("meal_counts_set")) and usual is not None and int(usual) < 7,
+                usual=usual, day_count=planned_count, caps=caps,
+                refuse=_meal_variety.recent_refusals(intake, week_start_date, plan_id, slot) if first else (),
             )
-            continue
-        usual = usual_counts.get(field)
-        tools.enforce_distinct_meal_count(
-            plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
-            fill_up=bool(household_memory.get("meal_counts_set")) and usual is not None and int(usual) < 7,
-            usual=usual, day_count=planned_count, caps=caps,
-            refuse=_meal_variety.recent_refusals(intake, week_start_date, plan_id, slot),
+            if slot == "dinner" and lunches_answered:
+                # The dinner fold may have taken the cook a "leftovers from
+                # dinner" lunch was eating: point each such lunch at a cook again
+                # (the lunch pass right after this ignores them), or say it
+                # couldn't be. See weekday_lunches.repoint_leftover_lunches.
+                repointed = _weekday_lunches.repoint_leftover_lunches(plan_id, intake)
+                if report is not None:
+                    said = report.setdefault("said_lines", [])
+                    said.extend(line for line in repointed.get("said") or [] if line not in said)
+        if first and (household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set")):
+            # The kept days only: a dropped day's snacks were cleared above
+            # and must not be filled back in.
+            _meal_variety.enforce_snacks_per_day(
+                plan_id, household_memory.get("snacks_per_day"), [d for d in period if d not in skipped_days and d not in snackless_days],
+                budget=count_budget, asks=count_asks,
+            )
+        # "Snacks" under Different dishes a week: the week's snacks fold to that
+        # many dishes, each day keeping its snacks a day (meal_variety.enforce_snack_dishes).
+        _meal_variety.enforce_snack_dishes(
+            plan_id, household_memory.get("snack_dishes_per_week"), [d for d in period if d not in skipped_days and d not in snackless_days],
+            asks=count_asks,
         )
-        if slot == "dinner" and lunches_answered:
-            # The dinner fold may have taken the cook a "leftovers from
-            # dinner" lunch was eating: point each such lunch at a cook again
-            # (the lunch pass right after this ignores them), or say it
-            # couldn't be. See weekday_lunches.repoint_leftover_lunches.
-            repointed = _weekday_lunches.repoint_leftover_lunches(plan_id, intake)
-            if report is not None:
-                report.setdefault("said_lines", []).extend(repointed.get("said") or [])
-    if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
-        # The kept days only: a dropped day's snacks were cleared above
-        # and must not be filled back in.
-        _meal_variety.enforce_snacks_per_day(
-            plan_id, household_memory.get("snacks_per_day"), [d for d in period if d not in skipped_days and d not in snackless_days],
-            budget=count_budget, asks=count_asks,
-        )
-    # "Snacks" under Different dishes a week: the week's snacks fold to that
-    # many dishes, each day keeping its snacks a day (meal_variety.enforce_snack_dishes).
-    _meal_variety.enforce_snack_dishes(
-        plan_id, household_memory.get("snack_dishes_per_week"), [d for d in period if d not in skipped_days and d not in snackless_days],
-        asks=count_asks,
-    )
+    _hold_counts(first=True)
 
     # An ingredient they typed ("I have some corn") is in at least one
     # dish, or one slot is re-picked with it on must_contain, or the
@@ -6441,8 +6449,13 @@ def _finish_week_slots(
     # one of the week's own dinners that fits. Same place and caps as the
     # breakfast/lunch fill, for the same reasons. An allergen question and
     # a nobody-home night are left as they are. See dinner_gaps.
+    count_targets = {
+        slot: household_memory.get(field) for slot, field in _meal_variety.COUNT_FIELDS.items()
+        if household_memory.get("meal_counts_set") and household_memory.get(field)
+    }
     _dinner_gaps.fill_open_dinners(
         plan_id, dates, caps=fill_caps, budget=repick_budget or _allergen_gate.CallBudget(),
+        targets=count_targets,
     )
 
     # No dish on more than two lunches and dinners in a row (Emily's
@@ -6453,11 +6466,31 @@ def _finish_week_slots(
     # plates pass and the quality tripwire (plan_quality._no_long_runs).
     _dinner_gaps.break_long_runs(
         plan_id, caps=fill_caps, budget=repick_budget or _allergen_gate.CallBudget(),
-        targets={
-            slot: household_memory.get(field) for slot, field in _meal_variety.COUNT_FIELDS.items()
-            if household_memory.get("meal_counts_set") and household_memory.get(field)
-        },
+        targets=count_targets,
     )
+
+    # THE COUNT, ONE LAST TIME (Emily, 2026-09-28, the third time: "My
+    # dinner settings is 3 but it gave me 4 meal types … Why does this keep
+    # happening."). The count pass above runs once, and every pass between
+    # it and here may put a NEW dish on a night: cap_enforce re-picks a
+    # rush night, the cuisine and ingredient passes re-pick for a request,
+    # fill_open_dinners picks a fresh dinner for a gap. Each was built to
+    # respect the count, and each regression came from one that didn't —
+    # so the count is made true of the week as it now stands, whatever any
+    # pass above did: the same fold, folding only (no model call, never
+    # adds a dish), with a dish re-picked for a cuisine chip they picked
+    # left standing. Caps are re-read because the passes above moved
+    # chains. BEFORE the plates pass, so sides land on the dishes kept.
+    chains = tools.plan_leftover_chains(plan_id)
+    chained = {
+        (c["date"], c["slot"])
+        for c in list(chains["sources"].values()) + list(chains["leftovers"].values())
+    }
+    caps = {
+        (d, slot): _meal_minutes_cap(d, slot, intake, household_memory, is_leftovers=(d, slot) in chained)
+        for d in period for slot in _meal_variety.COUNT_FIELDS
+    }
+    _hold_counts(first=False)
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a
@@ -6525,7 +6558,8 @@ def _finish_week_slots(
     # be a question Pomona can answer (decision A). An allergen re-pick's
     # own question (allergen_gate.repick_slot, "I couldn't find a dinner
     # without …") keeps its words: dinner_gaps.keeps_its_question.
-    _dinner_gaps.fill_open_dinners(plan_id, dates, caps=fill_caps, budget=repick_budget, reserve=0)
+    _dinner_gaps.fill_open_dinners(plan_id, dates, caps=fill_caps, budget=repick_budget, reserve=0,
+                                   targets=count_targets)
 
     # A week whose lunches are last night's leftovers can end up cooking
     # more dinner dishes than the household's number (one pot can't be every

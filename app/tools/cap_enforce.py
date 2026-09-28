@@ -443,9 +443,21 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         (n for n in rows if n["over"] and n["movable"]),
         key=lambda n: (-(n["minutes"] - n["cap"]), n["date"]),
     )
+    gone: set = set()  # meals already re-picked as part of a whole dish
     for night in targets:
+        if night["id"] in gone:
+            continue
         cap = night["cap"]
         because = _cap_reason(night, cap)
+        # The household's number of different dinners (Emily, 2026-09-28:
+        # "My dinner settings is 3 but it gave me 4 meal types"). A dish on
+        # other nights too, re-picked on this night alone, ADDS a dish to a
+        # week that already has its number — so when it has, the WHOLE dish
+        # is re-picked, every night of it at once, and the count stays.
+        also = _whole_dish_nights(plan_id, night, memory)
+        if also:
+            caps_on = [cap] + [c for c in (_cook_cap(o, intake, memory) for o in also) if c]
+            cap = min(caps_on)  # the pick is cooked on each of them
 
         def _too_long(candidate, cap=cap, night=night):
             minutes = _swap._pick_minutes(candidate)
@@ -467,6 +479,7 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
             derived_key=REPICK_KEY,
             reason_line=REPICK_REASON,
             picker=picker,
+            also=also or None,
         )
         if replaced is None:
             logger.warning(
@@ -481,6 +494,7 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         # is on avoid for its own night regardless, and any other night is
         # covered by _too_long refusing it. Discarding it leaves every test
         # in tests/test_rush_cap_enforced.py green.
+        gone.update(o["id"] for o in also)
         new_name = (replaced.get("meal") or "").strip()
         if new_name:
             week_dishes.add(new_name.lower())
@@ -488,6 +502,52 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         logger.info("Plan %s: %s was %d minutes against a %d-minute cap — %r -> %r",
                     plan_id, night["date"], night["minutes"], cap, night["meal"], new_name)
     return done
+
+
+def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None) -> list[dict]:
+    """
+    The dish's OTHER meals, when re-picking this night alone would put the
+    week over the household's number of different dinners; [] when a
+    single-night re-pick is fine (no number set, the week is under it, the
+    dish is on no other meal) or when a whole-dish re-pick can't be made
+    (another night of it is cooked, or theirs — asked for, brought over).
+    """
+    memory = memory or {}
+    target = memory.get("dinners_per_week") if memory.get("meal_counts_set") else None
+    if not target or len(_meal_variety.distinct_dishes(plan_id, "dinner")) < int(target):
+        return []
+    key = _leftovers.dish_identity(night["meal"])
+    conn = get_conn()
+    rows = conn.execute(
+        """
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, mpe.derived_from_json,
+               COALESCE(r.name, mpe.freeform_meal) AS meal
+        FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
+          AND mpe.slot IN ('lunch', 'dinner') AND mpe.slot_state = 'planned' AND mpe.id != ?
+        ORDER BY mpe.date, mpe.id
+        """,
+        (plan_id, household_id(), night["id"]),
+    ).fetchall()
+    conn.close()
+    others = [dict(r) for r in rows if _leftovers.dish_identity(r["meal"]) == key]
+    if not others:
+        return []
+    for o in others:
+        derived = json.loads(o["derived_from_json"] or "{}") or {}
+        if (o["cooked_status"] or "") == "done" or _meal_variety.theirs(derived):
+            return []
+    return others
+
+
+def _cook_cap(row: dict, intake: dict | None, memory: dict | None) -> int | None:
+    """The cap on a dinner of the dish being re-picked that is COOKED on its
+    night (a reheat has no cap to fit)."""
+    derived = json.loads(row.get("derived_from_json") or "{}") or {}
+    if row["slot"] != "dinner" or derived.get("links_to") or _leftovers.frozen_portion_on(derived):
+        return None
+    tags = ((intake or {}).get("night_tags") or {}).get(row["date"]) or []
+    return _time_caps.minutes_cap(row["date"], "dinner", tags, memory)
 
 
 def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None, *,

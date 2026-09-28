@@ -301,7 +301,7 @@ def _fresh_pick(plan_id: int, entry: dict, cap: int | None, keys: dict, week: se
 
 
 def fill_open_dinners(plan_id: int, dates: list[str], caps: dict | None = None, budget=None,
-                      picker=None, reserve: int | None = None) -> dict:
+                      picker=None, reserve: int | None = None, targets: dict | None = None) -> dict:
     """
     Make "a draft never leaves a dinner open that the household is home
     for" true (Emily's decision A, 2026-09-27). Every dinner in `dates`
@@ -321,7 +321,10 @@ def fill_open_dinners(plan_id: int, dates: list[str], caps: dict | None = None, 
 
     `reserve` calls of `budget` are left untouched for the allergen sweep
     that runs after this (default: the sweep's own two attempts; 0 for the
-    call AFTER the sweep). A planned_empty row is never touched: nobody
+    call AFTER the sweep). `targets` ({slot: different dishes the
+    household set}): when the week already has that many dinners, step 2
+    (a fresh dish) is skipped — it would add one they didn't ask for
+    (Emily, 2026-09-28) — and 3 and 4 answer the gap instead. A planned_empty row is never touched: nobody
     home, a day left out, a meal already past are all answers. Never raises.
     """
     out = {"reheated": [], "repicked": [], "repeated": [], "left": []}
@@ -358,7 +361,9 @@ def fill_open_dinners(plan_id: int, dates: list[str], caps: dict | None = None, 
             week = {r["meal"].strip().lower() for r in rows if r["slot"] == "dinner" and (r["meal"] or "").strip()}
             entry = {"id": ids[0], "date": d, "slot": "dinner", "meal": "", "derived_from_json": "{}"}
             picked = None
-            if len(ids) == 1:
+            target = (targets or {}).get("dinner")
+            full = bool(target) and len(_meal_variety.distinct_dishes(plan_id, "dinner")) >= int(target)
+            if len(ids) == 1 and not full:
                 picked = _fresh_pick(
                     plan_id, entry, cap, keys, week, budget, picker,
                     because="nothing was planned for this dinner yet", derived_key="gap_repick",
@@ -555,8 +560,9 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
             # tripwire says so): Pomona does not add a dish they didn't ask
             # for to keep a rule they didn't state that way.
             target = (targets or {}).get(slot)
-            distinct = {_leftovers.dish_identity(r["meal"]) for r in rows
-                        if r["slot"] == slot and r["slot_state"] == "planned" and (r["meal"] or "").strip()}
+            # Counted the way the count pass counts (meal_variety.distinct_
+            # dishes: a reheat is its dish, a lunch eating a dinner is the dinner).
+            distinct = _meal_variety.distinct_dishes(plan_id, slot)
             if len(ids) == 1 and not (target and len(distinct) >= target):
                 picked = _fresh_pick(
                     plan_id, entry, cap, keys, week, budget, picker,
