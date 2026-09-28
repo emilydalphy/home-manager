@@ -315,7 +315,8 @@ def test_the_two_fixes_name_the_night_before_and_the_nearest_night_that_fits(cap
     """
     CATCH (red on main: no flags, so no fixes). Pomona fills in the nights
     — "Prep it Tuesday night", "Move it to Saturday" — and the move is the
-    NEAREST night whose own dinner can come back to the short one.
+    NEAREST night whose own dinner can come back to the short one. A
+    "Keep on Wednesday" rides alongside the move (Emily, 2026-09-28).
     """
     week = _monday()
     dates = tools._week_dates(week)
@@ -331,11 +332,39 @@ def test_the_two_fixes_name_the_night_before_and_the_nearest_night_that_fits(cap
     plan_id, _ = run(week, None)
 
     fixes = _flags(plan_id)[0]["fixes"]
-    assert [f["action"] for f in fixes] == [draft_flags.FIX_PREP_AHEAD, draft_flags.FIX_MOVE]
+    assert [f["action"] for f in fixes] == [
+        draft_flags.FIX_PREP_AHEAD, draft_flags.FIX_MOVE, draft_flags.FIX_KEEP,
+    ]
     assert fixes[0]["label"] == "Prep it Tuesday night"
     assert fixes[0]["date"] == dates[1]
     assert fixes[1]["label"] == "Move it to Saturday"
     assert fixes[1]["date"] == dates[5]
+    assert fixes[2]["label"] == "Keep on Wednesday"
+    assert fixes[2]["date"] == dates[2]
+
+
+def test_no_keep_is_offered_without_a_move_to_stand_beside(capped, stub_model, run):
+    """
+    CATCH. The card ties "Keep" to a live move offer — a flag with no move
+    (nothing else on the week could take the dish) offers no keep either,
+    since keeping is already what happens by doing nothing.
+    """
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Lasagna", 60)
+    _recipe("Quick Eggs", 10)
+    # Cap every OTHER night too, so nothing can take the trade — no move
+    # target exists, and the first day of the period has no night before.
+    tools.save_week_intake(week, night_tags={d: ["rush"] for d in dates})
+    stub_model(_week(dates, ["Quick Eggs"] * 2 + ["Lasagna"] + ["Quick Eggs"] * 4,
+                     **{dates[2]: _asked_for("Lasagna")}))
+
+    plan_id, _ = run(week, None)
+
+    fixes = _flags(plan_id)[0]["fixes"]
+    assert draft_flags.FIX_MOVE not in [f["action"] for f in fixes]
+    assert draft_flags.FIX_KEEP not in [f["action"] for f in fixes]
 
 
 def test_a_move_is_only_offered_when_both_nights_come_out_within_their_caps():
@@ -574,6 +603,102 @@ def test_the_move_fix_trades_the_two_nights(signed_in, capped, stub_model, run):
     assert by_date[dates[5]] == "Lasagna"
     assert by_date[dates[2]] == "Quick Eggs"
     assert _flags(plan_id) == []
+
+
+def test_the_keep_fix_writes_nothing_and_just_takes_the_flag_off(signed_in, capped, stub_model, run):
+    """
+    CATCH (red before this branch: no `keep` action exists, so the route's
+    fallback 400s it). Emily, 2026-09-28: "there should be a 'Keep on
+    Monday' option as well next to the move to Saturday in case I want to
+    keep it there." Tapping it dismisses the flag and moves nothing —
+    Lasagna stays exactly on Wednesday.
+    """
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Lasagna", 60)
+    _recipe("Quick Eggs", 10)
+    tools.save_week_intake(week, night_tags={dates[2]: ["rush"]})
+    stub_model(_week(dates, ["Quick Eggs"] * 2 + ["Lasagna"] + ["Quick Eggs"] * 4,
+                     **{dates[2]: _asked_for("Lasagna")}))
+    plan_id, _ = run(week, None)
+    entry_id = _flags(plan_id)[0]["entry_id"]
+
+    res = signed_in.post(f"/api/week/{week}/flag-fix",
+                      json={"entry_id": entry_id, "action": "keep"})
+
+    assert res.status_code == 200, res.text
+    assert res.json()["applied"] is True
+    assert res.json()["action"] == "keep"
+    by_date = {r["date"]: r["meal"] for r in _dinners(plan_id)}
+    assert by_date[dates[2]] == "Lasagna"
+    assert by_date[dates[5]] == "Quick Eggs"
+    assert _flags(plan_id) == []
+
+
+def test_a_kept_flag_stays_off_across_reload_and_an_unrelated_swap(signed_in, capped,
+                                                                    stub_model, run):
+    """
+    CATCH. Emily's outcome: dismissing a flag with Keep "stays dismissed
+    on reload and doesn't reappear after unrelated edits." plan_flags is
+    the read path get_week_menu uses on every load, so re-reading it here
+    stands in for a reload; swapping a DIFFERENT night's dinner is the
+    unrelated edit.
+    """
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Lasagna", 60)
+    _recipe("Quick Eggs", 10)
+    tools.save_week_intake(week, night_tags={dates[2]: ["rush"]})
+    stub_model(_week(dates, ["Quick Eggs"] * 2 + ["Lasagna"] + ["Quick Eggs"] * 4,
+                     **{dates[2]: _asked_for("Lasagna")}))
+    plan_id, _ = run(week, None)
+    entry_id = _flags(plan_id)[0]["entry_id"]
+    signed_in.post(f"/api/week/{week}/flag-fix", json={"entry_id": entry_id, "action": "keep"})
+    assert _flags(plan_id) == []
+
+    # An unrelated edit: swap Monday's own dinner for something else, and
+    # then re-read the flags the way a fresh page load would.
+    tools.swap_meal_in_plan(plan_id, dates[0], "Different Eggs", "dinner")
+
+    assert _flags(plan_id) == []
+    by_date = {r["date"]: r["meal"] for r in _dinners(plan_id)}
+    assert by_date[dates[2]] == "Lasagna"
+
+
+def test_a_kept_flag_can_come_back_if_the_dish_itself_changes(signed_in, capped, stub_model, run):
+    """
+    CATCH. Emily's outcome carves out one exception: "it may reappear if
+    the meal itself changes, e.g. swapped to a different dish." Swapping
+    the FLAGGED night's own dish for a different one over cap re-lights a
+    flag naturally — it was never this flag (whose `dish`/`entry_id` no
+    longer match), and cap_enforce's own read of the new dish is what
+    would write a fresh one on the next real generation, not `dismiss`
+    forgetting anything.
+    """
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Lasagna", 60)
+    _recipe("Quick Eggs", 10)
+    tools.save_week_intake(week, night_tags={dates[2]: ["rush"]})
+    stub_model(_week(dates, ["Quick Eggs"] * 2 + ["Lasagna"] + ["Quick Eggs"] * 4,
+                     **{dates[2]: _asked_for("Lasagna")}))
+    plan_id, _ = run(week, None)
+    entry_id = _flags(plan_id)[0]["entry_id"]
+    signed_in.post(f"/api/week/{week}/flag-fix", json={"entry_id": entry_id, "action": "keep"})
+    assert _flags(plan_id) == []
+
+    # The flagged night's own dish changes underneath the (now empty)
+    # stored flag list — plan_flags has nothing stale to drop, and nothing
+    # here writes a new flag either, because dismiss doesn't reach into
+    # generation. This just proves the kept flag's absence isn't somehow
+    # blocking a fresh one from being written the normal way.
+    tools.swap_meal_in_plan(plan_id, dates[2], "Beef Wellington", "dinner")
+    assert _flags(plan_id) == []  # no generation ran, so nothing new was written
+    by_date = {r["date"]: r["meal"] for r in _dinners(plan_id)}
+    assert by_date[dates[2]] == "Beef Wellington"
 
 
 def test_the_route_reads_the_night_off_the_stored_flag_never_off_the_request(signed_in, capped,

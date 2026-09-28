@@ -3682,11 +3682,18 @@ def week_draft_flag_fix(week_start: str, req: DraftFlagFixRequest):
             _draft_flags.dismiss(plan_id, req.entry_id)
             return {"status": "applied", "applied": True, "action": req.action, "date": fix["date"]}
 
+        if req.action == _draft_flags.FIX_KEEP:
+            # Writes nothing to the plan — the dish is already where the
+            # household wants it. Taking the fix just takes the flag off,
+            # exactly like the other two once their own write has landed.
+            _draft_flags.dismiss(plan_id, req.entry_id)
+            return {"status": "applied", "applied": True, "action": req.action, "date": fix["date"]}
+
         # Unreachable, and kept as the shape rather than the guard: an
         # action this draft does not offer matches no derived fix, so the
         # `fix is None` return above has already answered it with the same
-        # 200 a stale flag gets. It stands for the day a third fix is added
-        # and somebody forgets a branch here.
+        # 200 a stale flag gets. It stood for the day a third fix (FIX_KEEP,
+        # 2026-09-28) got added, and now stands for a fourth.
         raise HTTPException(status_code=400, detail=f"{req.action!r} isn't a fix this draft offers.")
     except HTTPException:
         raise

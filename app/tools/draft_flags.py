@@ -101,6 +101,17 @@ RUN_LEFT = "run_left"
 FIX_PREP_AHEAD = "prep_ahead"
 FIX_MOVE = "move"
 
+# Emily, 2026-09-28, reading the Move-only card: "there should be a 'Keep
+# on Monday' option as well next to the move to Saturday in case I want to
+# keep it there." Unlike the other two, this fix WRITES NOTHING to the
+# plan — the dish is already exactly where the flag says it is. It only
+# takes the flag itself off, through the same `dismiss` the other two
+# fixes already call once their own write lands. It is offered wherever a
+# move is (fixes_for), never on its own: keeping is the default state a
+# flag that offers nothing already has, so a "keep" button only earns its
+# place beside a button that would change something.
+FIX_KEEP = "keep"
+
 _WEEKDAY_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
@@ -136,6 +147,17 @@ def prep_fix(prep_date: str) -> dict:
 
 def move_fix(to_date: str) -> dict:
     return {"action": FIX_MOVE, "label": f"Move it to {_weekday(to_date)}", "date": to_date}
+
+
+def keep_fix(here_date: str) -> dict:
+    """
+    "Keep on Monday" — the day the dish is ALREADY on, not the day it
+    could move to. `date` is only carried so the flag-fix route's
+    generic "is this fix still live" check (it requires a truthy
+    `date` on every fix) has something to read; the route does not use
+    it to write anywhere, because keeping writes nothing.
+    """
+    return {"action": FIX_KEEP, "label": f"Keep on {_weekday(here_date)}", "date": here_date}
 
 
 PREP_CUT_TEXT = "Get {dish} ready for {weekday}"
@@ -616,6 +638,11 @@ def fixes_for(night: dict, nights: list[dict]) -> list[dict]:
     move_to = move_target(night, nights, {n["date"]: n.get("cap") for n in nights})
     if move_to:
         fixes.append(move_fix(move_to))
+        # Emily, 2026-09-28: a "Keep on <day it's already on>" beside every
+        # move offer, for a household that would rather absorb the short
+        # night than trade a dinner across the week. Tied to the move
+        # offer rather than offered alone — see FIX_KEEP's own docstring.
+        fixes.append(keep_fix(night["date"]))
     return fixes
 
 
