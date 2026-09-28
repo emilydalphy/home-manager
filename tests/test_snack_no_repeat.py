@@ -159,3 +159,35 @@ def test_snack_is_always_in_the_no_repeat_call_regardless_of_mood(last_week, stu
     plan = agent.generate_weekly_plan(week)
 
     assert "Fig bars" not in _names(plan["weekly_plan_id"], "snack")
+
+
+def test_the_repeat_window_and_the_dish_count_fold_both_hold(last_week, stub_model, picker):
+    """
+    Interplay guard (2026-09-28 staging merge, snacks-vary-week-to-week +
+    draft-dish-counts-and-leftovers): repick_recent_repeats (the no-repeat
+    window, `_finish_week_slots`) runs BEFORE enforce_snack_dishes (the
+    "different dishes a week" fold), and in that order every entry is
+    clear of the last-two-weeks window before the fold ever picks a
+    "kept" dish to fold extras into — so the fold cannot hand a folded
+    day back last week's snack, and the window's fix survives the fold
+    that runs after it.
+
+    This week hands the model four distinct snack dishes across the days,
+    two of them the exact repeat from `last_week` ("Fig bars"), with
+    snack_dishes_per_week set to 2 — fewer than the four distinct dishes
+    the model returns even after the repeat is replaced. Both rules must
+    show in the result: no "Fig bars" anywhere, AND at most 2 distinct
+    snack dishes left standing.
+    """
+    tools.edit_preference("snack_dishes_per_week", 2)
+    week = _monday(0)
+    stub_model(_week(
+        week, FRESH_DINNERS, ["Chickpea salad"] * 7,
+        snacks=["Fig bars", "Trail mix", "Fig bars", "Orange", "Trail mix", "Orange", "Popcorn"],
+    ))
+    plan = agent.generate_weekly_plan(week)
+    plan_id = plan["weekly_plan_id"]
+
+    names = _names(plan_id, "snack")
+    assert "Fig bars" not in names  # the no-repeat window held
+    assert len(set(names)) <= 2  # the dish-count fold held

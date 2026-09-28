@@ -425,6 +425,31 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
+  Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep
+  after work, it won't be done in time for tuesday." The one rule lives in
+  `weekday_lunches.prep_day_for` (mirrored by plan-week's `prepDayFor`):
+  the most recent prep day STRICTLY before the lunch, 1–7 days back (was
+  0–6, same day counted). Sun + Tue prep → Mon/Tue from Sunday, Wed/Thu
+  from Tuesday. Every other reader (apply_to_plan's batches,
+  `_prep_day_cook`, `prepped_batches`, prep sessions, Cook) reads the
+  `prep_date` this stamps, so preview and draft move together. The 3-day
+  reach (`LUNCH_KEEP_DAYS` / `MAX_LEFTOVER_DAYS`) is unchanged and still
+  means "eaten within 3 days of the prep". Knock-on fix: `apply_to_plan`
+  now re-reads rows between batches, because an earlier batch's lunch can
+  now fall ON a later batch's prep day (Tuesday) and the stale row made a
+  replaced entry the next batch's cook. Edge case: a lone prep day on the
+  first lunch's weekday is last week's (7 back), so `ensurePrepReach`
+  brings in the evening before. If the household takes that day back off,
+  a batch whose FIRST lunch is past the 3-day reach of its prep day (last
+  week's prep, never made by this plan) is cooked on that first lunch with
+  NO prep stamp, and the rest of the batch reheats it — `apply_to_plan`'s
+  `stale` batch, read identically by plan-week's `lunchLine` ("Cooked that
+  day" / "Leftovers from Monday’s lunch"). `_prep_day_cook` also skips a
+  row that is already an earlier batch's cook (Sun + Mon prep on a
+  Monday-start week). Assumes evening prep; no morning/evening question
+  exists.
+
 - **2026-09-28 — The draft's toggle reads Meals | Schedule** (Emily; was
   "What we're eating | Which days"). One constant, `DRAFT_VIEWS` in
   `static/shell.js`; the view keys (`menu`/`days`) and older comments that

@@ -2735,15 +2735,16 @@
   function prevIso(iso) { return addDaysIso(iso, -1); }
 
   // The prep day a prepped lunch comes from: the most recent chosen prep
-  // day on or before it, and how many days back. The server's
-  // weekday_lunches.prep_day_for, answer for answer.
+  // day strictly BEFORE it (1-7 days back) — prep is done in the evening,
+  // so a Tuesday prep feeds Wednesday on, never Tuesday itself. The
+  // server's weekday_lunches.prep_day_for, answer for answer.
   function prepDayFor(iso, prepDays) {
     var day = new Date(iso + 'T00:00:00').getDay();
     var best = null;
     (prepDays || []).forEach(function (name) {
       var i = PREP_WEEKDAYS.indexOf(name);
       if (i === -1) return;
-      var back = ((day - i) % 7 + 7) % 7;
+      var back = ((day - i - 1) % 7 + 7) % 7 + 1;
       if (!best || back < best.back) best = { day: name, back: back };
     });
     return best;
@@ -2762,6 +2763,14 @@
   function leftoversOk(iso, periodDates, dinnerOff) {
     var evening = prevIso(iso);
     return periodDates.indexOf(evening) !== -1 && !(dinnerOff && dinnerOff(evening));
+  }
+
+  // The kinds of just these dates (lunch.kinds can hold days no longer in
+  // the period).
+  function lunchKindsIn(dates) {
+    var out = {};
+    dates.forEach(function (d) { out[d] = lunch.kinds[d]; });
+    return out;
   }
 
   function lunchCounts(kinds, dates) {
@@ -2871,11 +2880,29 @@
 
   // "Prepped Sunday" · "Prepped Sunday, from the freezer" · "Leftovers
   // from Tuesday’s dinner" · "Cooked that day".
-  function lunchLine(iso, kind, prepDays) {
+  // `kinds` (date → kind, optional) lets a line see the rest of its batch:
+  // when a batch's FIRST lunch is past the three-day reach of its prep day
+  // (last week's prep — a lone Wednesday prep and a Monday lunch), the
+  // batch is cooked on that lunch, and the rest of it reheats that lunch.
+  // weekday_lunches.apply_to_plan's `stale` batch, line for line.
+  function lunchLine(iso, kind, prepDays, kinds) {
     if (kind === 'leftovers') return 'Leftovers from ' + titleDay(isoWeekday(prevIso(iso))) + '’s dinner';
     if (kind === 'cooked') return 'Cooked that day';
     var found = prepDayFor(iso, prepDays);
     if (!found) return 'Prepped';
+    if (found.back > LUNCH_KEEP_DAYS && kinds) {
+      var prepIso = addDaysIso(iso, -found.back);
+      var batch = Object.keys(kinds).filter(function (d) {
+        if (kinds[d] !== 'prepped') return false;
+        var f = prepDayFor(d, prepDays);
+        return f && addDaysIso(d, -f.back) === prepIso;
+      }).sort();
+      var first = batch[0] || iso;
+      var firstBack = prepDayFor(first, prepDays).back;
+      if (firstBack > LUNCH_KEEP_DAYS) {
+        return first === iso ? 'Cooked that day' : 'Leftovers from ' + titleDay(isoWeekday(first)) + '’s lunch';
+      }
+    }
     return 'Prepped ' + titleDay(found.day) + (found.back > LUNCH_KEEP_DAYS ? ', from the freezer' : '');
   }
 
@@ -3060,7 +3087,7 @@
     paintChipSet($('lunch-days'), function (d) { return answers.packed_lunch_days.indexOf(d) !== -1; });
     $('lunch-week').querySelectorAll('.lunch-day').forEach(function (row) {
       var d = row.dataset.date;
-      row.querySelector('.lunch-day-what').textContent = lunchLine(d, lunch.kinds[d], lunch.prepDays);
+      row.querySelector('.lunch-day-what').textContent = lunchLine(d, lunch.kinds[d], lunch.prepDays, lunchKindsIn(currentLunchDates()));
     });
   }
 
