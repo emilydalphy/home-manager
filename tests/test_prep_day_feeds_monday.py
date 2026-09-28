@@ -302,3 +302,41 @@ def test_a_lunch_past_the_reach_of_last_weeks_prep_is_cooked_that_day(two_adults
     for d in dates[1:3]:
         assert chains["leftovers"][lunch[d]["id"]]["source"]["entry_id"] == lunch[dates[0]]["id"]
     assert weekday_lunches.prepped_batches(plan_id) == []
+
+
+def test_a_later_batchs_prep_day_never_steals_a_cooked_that_day_fallback(two_adults, stub_model):
+    """CATCH (second review, 2026-09-28): the "later prep day never takes
+    an earlier batch's cook" guard only checked derived_from.prep_date,
+    which the cooked-that-day fallback above never sets. Prep Monday +
+    Wednesday: Monday's own true prep day is last Wednesday (5 back,
+    stale), so Monday is cooked fresh with no prep stamp; Wednesday's true
+    prep day is THIS Monday (2 back, in reach). On main a31074d, Wednesday's
+    batch found Monday's fallback cook unguarded, took it over, and
+    overwrote its prep_note/reasoning to talk only about Wednesday — losing
+    the fact it's Monday's own cooked-that-day lunch. Monday must stay a
+    plain cooked-that-day lunch; Wednesday falls back to Monday's dinner."""
+    mon = _next("monday")
+    dates = _dates(mon, 7)
+    tools.save_week_intake(mon.isoformat(), weekday_lunches={
+        "prep_days": ["monday", "wednesday"],
+        "days": [{"date": dates[0], "kind": "prepped"}, {"date": dates[2], "kind": "prepped"}],
+    })
+    days = []
+    for i, d in enumerate(dates):
+        days.append(_slot(d, "breakfast", "Oats"))
+        days.append(_slot(d, "lunch", ["Chili", "Soup", "Wrap", "D", "E", "F", "G"][i]))
+        days.append(_slot(d, "dinner", f"Dinner {i}"))
+    stub_model(days)
+    plan_id = agent.generate_weekly_plan(mon.isoformat())["weekly_plan_id"]
+    lunch = _rows(plan_id, "lunch")
+    dinner = _rows(plan_id, "dinner")
+    chains = tools.plan_leftover_chains(plan_id)
+
+    # Monday: cooked fresh, untouched by Wednesday's batch.
+    assert lunch[dates[0]]["meal"] == "Chili"
+    assert not lunch[dates[0]]["derived"].get("prep_date")
+    assert not lunch[dates[0]]["derived"].get("prep_day_cook")
+    # Wednesday reheats Monday's DINNER instead (the next real, unclaimed
+    # cook on Monday), not Monday's stolen lunch.
+    assert dinner[dates[0]]["derived"]["prep_date"] == dates[0]
+    assert chains["leftovers"][lunch[dates[2]]["id"]]["source"]["entry_id"] == dinner[dates[0]]["id"]

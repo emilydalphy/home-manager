@@ -358,11 +358,18 @@ def _prep_day_cook(prep_date: str, first_lunch: str, lunches: dict, dinners: dic
             continue
         if row["derived"].get("links_to"):
             continue
-        # Already an earlier batch's cook (Sun + Mon prep on a Monday-start
-        # week: Sunday's batch is cooked on Monday's lunch, and Monday's own
-        # prep is that evening) — taking it over would put Monday's lunch
-        # back on Monday's prep and drop Sunday's batch.
-        if row["derived"].get("prep_date"):
+        # Already an earlier batch's cook — either a real prep-day cook
+        # (Sun + Mon prep on a Monday-start week: Sunday's batch is cooked
+        # on Monday's lunch, and Monday's own prep is that evening) or a
+        # "cooked that day" fallback for a batch whose true prep day was
+        # stale/out of plan (Mon + Wed prep where Monday's own prep day —
+        # last Wednesday — is unreachable, so Monday is cooked fresh).
+        # Both write `prep_note` (build review, 2026-09-28: checking only
+        # `prep_date` missed the stale-fallback case, so a later batch
+        # stole Monday's fresh cook and overwrote its note, losing any
+        # mention of who else it already fed). Taking either kind over
+        # would orphan or misdescribe the earlier batch.
+        if row["derived"].get("constraint") == CONSTRAINT and "prep_note" in row["derived"]:
             continue
         from . import leftovers as _leftovers
         if row["derived"].get(_leftovers.FROM_FREEZER_KEY):

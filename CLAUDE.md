@@ -449,6 +449,17 @@ why*, not duplicating the diff.
   row that is already an earlier batch's cook (Sun + Mon prep on a
   Monday-start week). Assumes evening prep; no morning/evening question
   exists.
+  **Second review, same day:** the “already an earlier batch's cook”
+  guard in `_prep_day_cook` only checked `derived_from.prep_date`, which
+  the `stale`/cooked-that-day fallback above never sets — so a later
+  batch could steal an earlier batch's cooked-that-day lunch (Mon + Wed
+  prep: Monday's own true prep day, last Wednesday, is stale, so Monday
+  cooks fresh; Wednesday's true prep day is this Monday, in reach — the
+  guard let Wednesday's batch take over Monday's fresh cook and overwrite
+  its `prep_note`/reasoning to talk only about Wednesday). Fixed to key
+  off `constraint == CONSTRAINT and "prep_note" in derived`, which both
+  cook-writing branches always set. Test:
+  `tests/test_prep_day_feeds_monday.py::test_a_later_batchs_prep_day_never_steals_a_cooked_that_day_fallback`.
 
 - **2026-09-28 — The draft's toggle reads Meals | Schedule** (Emily; was
   "What we're eating | Which days"). One constant, `DRAFT_VIEWS` in
