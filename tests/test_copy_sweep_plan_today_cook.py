@@ -102,11 +102,10 @@ def test_20_the_lunch_step_names_what_was_ticked_and_nothing_else():
 
 
 def test_20_travels_well_still_reaches_the_person_where_it_is_used():
-    """The cut clause is not the only place the fact is said: a planned
-    slot carries what it was asked for, and its Which days row shows it.
-    (The What we're eating row said it too until 2026-09-26, when Emily
-    cut that row to title, days and time.)"""
-    assert "var asked = entry && entry.state === 'planned' && entry.asked;" in SHELL_JS
+    """The cut clause still reaches the model. (The Which days row said
+    "travels well" as its asked fact until 2026-09-27, when Emily cut every
+    reason line from the rows — decision C, "cut it everything".)"""
+    assert "entry.asked" not in SHELL_JS
     assert '"travels well, good cold or reheated"' in _read("app", "agent.py")
 
 

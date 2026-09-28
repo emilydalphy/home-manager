@@ -89,9 +89,10 @@ def test_a_draft_row_has_the_chevron_title_then_the_time_line_with_swap_and_twea
     title = re.search(r'<button type="button" class="wk-row-name dish-link" data-wk-meal="dinner">(.*?)</button>', dinner).group(1)
     assert title.startswith("Lemon chicken &amp; orzo<svg class=\"wk-row-chev\"")
     assert 'stroke="currentColor"' in title and 'stroke-width="2.2"' in title
-    # The line under it: the time and the reason as text — no button, no pop.
+    # The line under it: the time as text — no button, no pop, and no
+    # reason since 2026-09-27 (Emily, decision C: "cut it everything").
     foot = dinner[dinner.index('<div class="wk-row-foot">'):]
-    assert '<span class="wk-row-meta">30 min · Lighter than the chops</span>' in foot
+    assert '<span class="wk-row-meta">30 min</span>' in foot and "chops" not in foot
     assert "data-wk-why" not in html and "wk-why-pop" not in html and "wk-row-why" not in html
     # Swap (same handler as ever) then Tweak, both mini buttons on that line.
     acts = foot[foot.index('<div class="wk-row-acts">'):]

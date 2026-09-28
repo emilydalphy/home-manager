@@ -249,6 +249,77 @@ def test_a_breakfast_or_snack_repeat_is_left_exactly_as_it_is(last_week, stub_mo
     assert picker == []
 
 
+def test_something_new_changes_breakfast_too(last_week, stub_model, picker):
+    """
+    CATCH (Emily, 2026-09-27: she picked "Something new" and last week's
+    breakfast came back). With that mood on, breakfast joins the rule:
+    last week's oats go, every morning together, for ONE picker call —
+    and a Breakfasts = 1 count folds nothing back, because the new dish is
+    still one dish. Snacks are still left alone.
+    """
+    week = _monday(0)
+    tools.set_household_meal_preferences(breakfasts_per_week=1, mark_complete=False)
+    tools.save_week_intake(week, moods=["Something new"])
+    stub_model(_week(week, FRESH_DINNERS, ["Chickpea salad"] * 7))
+    plan = agent.generate_weekly_plan(week)
+    plan_id = plan["weekly_plan_id"]
+
+    breakfasts = set(_names(plan_id, "breakfast"))
+    assert "Overnight oats" not in breakfasts
+    assert breakfasts == {"Moussaka"}
+    assert [c["slot"] for c in picker] == ["breakfast"]
+    assert set(_names(plan_id, "snack")) == {"Apple"}
+
+
+def test_something_new_holds_the_count_pass_to_the_window_too(last_week, stub_model, monkeypatch):
+    """
+    CATCH. Breakfasts = 2 with only one breakfast drafted: the count pass
+    re-picks a morning into a second dish, and the picker offers last
+    week's oats back. With Something new that pick is refused, the same as
+    the no-repeat pass refuses it.
+    """
+    week = _monday(0)
+    tools.set_household_meal_preferences(breakfasts_per_week=2, mark_complete=False)
+    tools.save_week_intake(week, moods=["Something new"])
+    stub_model(_week(week, FRESH_DINNERS, ["Chickpea salad"] * 7))
+    offered = iter(["Shakshuka", "Overnight oats", "Granola", "Congee"])
+    calls = []
+
+    def pick(context):
+        calls.append(context)
+        name = next(offered)
+        return {"meal_name": name, "reason": f"{name} because",
+                "ingredients": [{"item": f"{name} stuff", "qty": "1", "category": "pantry"}],
+                "instructions": [f"Make the {name.lower()}.", "Serve."],
+                "food_groups": ["protein", "vegetable", "carb"],
+                "prep_time_minutes": 5, "cook_time_minutes": 5}
+
+    monkeypatch.setattr(sip, "_pick_replacement", pick)
+    plan = agent.generate_weekly_plan(week)
+
+    breakfasts = set(_names(plan["weekly_plan_id"], "breakfast"))
+    assert "Overnight oats" not in breakfasts
+    assert breakfasts == {"Shakshuka", "Granola"}
+    assert all(c["slot"] == "breakfast" for c in calls)
+
+
+def test_something_new_still_keeps_a_breakfast_they_asked_for_by_name(last_week, stub_model, picker):
+    """GUARD: their words beat the rule for breakfast exactly as for dinner."""
+    week = _monday(0)
+    tools.save_week_intake(week, moods=["Something new"], freeform="overnight oats again please")
+    stub_model(_week(week, FRESH_DINNERS, ["Chickpea salad"] * 7))
+    plan = agent.generate_weekly_plan(week)
+
+    assert set(_names(plan["weekly_plan_id"], "breakfast")) == {"Overnight oats"}
+    assert picker == []
+
+
+def test_no_repeat_slots_reads_the_mood():
+    assert meal_variety.no_repeat_slots(None) == ("dinner", "lunch")
+    assert meal_variety.no_repeat_slots({"moods": ["Comfort food"]}) == ("dinner", "lunch")
+    assert "breakfast" in meal_variety.no_repeat_slots({"moods": ["Something new"]})
+
+
 # ---------- their words beat the rule ----------
 
 def test_a_repeat_the_model_marked_as_theirs_is_kept(last_week, stub_model, picker):

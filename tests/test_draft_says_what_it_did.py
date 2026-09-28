@@ -196,7 +196,12 @@ def test_days_phrase_collapses_runs_and_names_the_whole_week():
 
 def test_the_row_fact_is_read_off_what_the_household_asked_never_the_name():
     fact = draft_opener.asked_fact
-    assert fact({"derived_from": {"inputs": ["cuisines:mexican"], "freeform": "Mexican for lunch"}}) == "Mexican, as asked"
+    # A cuisine is only said when it is one of this week's chips AND the
+    # dish is it (2026-09-27) — see the cuisine-chip tests below.
+    assert fact({"meal": "Tacos", "cuisine": "Mexican",
+                 "derived_from": {"inputs": ["cuisines:mexican"], "freeform": "Mexican for lunch"}},
+                cuisines=["Mexican"]) == "Mexican, as asked"
+    assert fact({"derived_from": {"inputs": ["cuisines:mexican"], "freeform": "Mexican for lunch"}}) == "as asked"
     assert fact({"derived_from": {"constraint": "packed_lunch"}}) == "travels well"
     assert fact({"derived_from": json.dumps({"freeform": "chicken and potatoes for dinner"})}) == "as asked"
     assert fact({"derived_from": {"inputs": ["mood:comfort_food"]}}) is None
@@ -260,13 +265,14 @@ def test_the_draft_says_where_each_typed_request_went_and_every_row_carries_its_
     week = _monday()
     dates = tools._week_dates(week)
     tools.save_week_intake(week, freeform="Mexican for lunch. Chicken and potatoes for dinner.",
-                           night_tags={dates[4]: ["out"]})
+                           night_tags={dates[4]: ["out"]}, cuisines=["Mexican"])
     mexican = ["Chicken al pastor tacos", "Black bean bowls", "Chicken al pastor tacos", "Black bean bowls"]
 
     def lunch(date):
         i = dates.index(date)
         if i < 4:
-            return _slot(date, "lunch", mexican[i], derived_from={"freeform": "Mexican for lunch", "inputs": ["cuisines:mexican"]})
+            return _slot(date, "lunch", mexican[i], cuisine="Mexican",
+                         derived_from={"freeform": "Mexican for lunch", "inputs": ["cuisines:mexican"]})
         return _slot(date, "lunch", "Chickpea salad")
 
     def dinner(date):

@@ -51,6 +51,12 @@ from . import plates as _plates
 
 logger = logging.getLogger("home_manager")
 
+# weekday_lunches.CONSTRAINT, spelled here rather than imported: that module
+# imports this one lazily, and a lunch the household said how to make is
+# never a re-pick's target (integration review, 2026-09-27: the burger
+# landed on a Friday lunch they had said is last night's leftovers).
+_WEEKDAY_LUNCH_CONSTRAINT = "weekday_lunches"
+
 # Which slots a typed ingredient can land in, in the order a slot is tried.
 _REPICK_SLOTS = ("dinner", "lunch")
 
@@ -108,8 +114,8 @@ def _load_entries(plan_id: int) -> list[dict]:
     rows = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, mpe.derived_from_json,
-               COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal,
-               r.dish_note, r.main_protein, r.ingredients_json
+               COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal, mpe.reasoning,
+               r.dish_note, r.main_protein, r.ingredients_json, r.cuisine
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
@@ -161,10 +167,75 @@ def _slot_to_repick(entries: list[dict], chains: dict) -> dict | None:
                     continue
                 if e["id"] in chains["leftovers"] or e["id"] in chains["sources"]:
                     continue
+                if derived.get("constraint") == _WEEKDAY_LUNCH_CONSTRAINT or derived.get("prep_date"):
+                    continue  # a lunch they said how to make
                 if once_only and counts[e["meal"].strip().lower()] != 1:
                     continue
                 return e
+    # A week where every dinner is one end of a chain (integration review,
+    # 2026-09-27: nothing was re-pickable, and the corn never landed): a
+    # chain SOURCE may be re-picked whole — the cook and every meal eating
+    # it take the new dish together, so the chain and its batch stay.
+    for slot in _REPICK_SLOTS:
+        for e in entries:
+            if e["slot"] != slot or e["slot_state"] != "planned" or not e["meal"]:
+                continue
+            nights = _whole_chain(e, entries, chains)
+            if nights is not None:
+                return dict(e, _also=nights)
     return None
+
+
+def _whole_chain(entry: dict, entries: list[dict], chains: dict) -> list[dict] | None:
+    """
+    The meals eating `entry`, when it is a chain SOURCE the ingredient and
+    cuisine re-picks may replace whole (entry + these, one dish), else None.
+
+    Never: a cook already done or theirs (meal_variety.theirs — their own
+    words, a meal brought over, a portion they froze), a prepped-lunch
+    batch's cook (they said how those lunches are made), a cook with
+    portions for the freezer, a dish already re-picked for another request
+    or chip, a source feeding a night they TAGGED Leftovers (the tag is
+    about that pot), or one whose dish is also cooked elsewhere on the week
+    (the distinct count stays as enforced).
+    """
+    from . import weekday_lunches as _weekday_lunches
+
+    source = chains["sources"].get(entry["id"])
+    if not source or (entry.get("cooked_status") or "") == "done":
+        return None
+    if (chains.get("freezer") or {}).get(entry["id"]):
+        return None
+    derived = _parsed(entry)
+    if _meal_variety.theirs(derived) or derived.get("prep_date") or derived.get("prep_day_cook"):
+        return None
+    if derived.get("constraint") == _weekday_lunches.CONSTRAINT:
+        return None
+    if derived.get("must_use_repick") or derived.get("cuisine_repick") or derived.get("must_use"):
+        return None
+    by_id = {e["id"]: e for e in entries}
+    nights = []
+    for t in source["targets"]:
+        row = by_id.get(t["entry_id"])
+        if row is None or (row.get("cooked_status") or "") == "done":
+            return None
+        d = _parsed(row)
+        if "left" in (d.get("tags") or []) or d.get("constraint") == "leftovers_night" or _meal_variety.theirs(d):
+            return None
+        nights.append(row)
+    name = _leftovers.dish_identity(entry["meal"])
+    same = {e["id"] for e in entries
+            if e["slot_state"] == "planned" and _leftovers.dish_identity(e["meal"]) == name}
+    if not same <= {entry["id"]} | {n["id"] for n in nights}:
+        return None
+    return nights
+
+
+def _parsed(entry: dict) -> dict:
+    try:
+        return json.loads(entry.get("derived_from_json") or "{}") or {}
+    except (TypeError, ValueError):
+        return {}
 
 
 def _report_lists(report: dict) -> tuple[list[dict], list[dict]]:
@@ -223,6 +294,7 @@ def use_requested_ingredients(plan_id: int, requests: list[dict], report: dict, 
                         context_extra={"must_contain": [ingredient]},
                         reject_pick=lambda candidate, _i=ingredient: _pick_carries(candidate, _i),
                         derived_extra={"freeform": request["words"], "must_use": [ingredient]},
+                        also=target.get("_also"),
                     )
                 if replaced is None:
                     # Said, never silent: the opener reads this line.
@@ -292,6 +364,632 @@ def plan_must_use(plan_id: int, recipe_id: int) -> list[str]:
         for m in derived.get("must_use") or []:
             if isinstance(m, str) and m and m not in out:
                 out.append(m)
+    return out
+
+
+# ---------- a dish asked for today, tonight or tomorrow ----------
+#
+# Emily, 2026-09-27: "I want to make a Japanese curry heavy on veggies
+# today … and have leftovers for it", typed at 3:53pm on the Sunday the
+# week began. The model put the curry on Sunday lunch — gone by then — and
+# left Sunday dinner open. week_intake.freeform_day_requests pins the
+# sentence to one exact meal (Sunday dinner); place_day_requests puts the
+# dish there, whatever the model did; chain_requested_leftovers makes
+# "and have leftovers" a real chain off that cook. The draft says so in one
+# line only when Pomona had to MOVE the dish (report["moved_requests"],
+# read by draft_opener) — a dish the model already put where it was asked
+# needs no sentence of its own.
+
+# On a meal their words named whose time had already gone by when the
+# week was drafted ("tonight" at 10pm): planned anyway, and the draft says
+# so (draft_flags.flags_for_late_requests).
+LATE_KEY = "asked_late"
+
+# Words a sentence asking for a dish carries that are not the dish.
+_DAY_REQUEST_FILLER = {
+    "want", "make", "making", "cook", "cooking", "like", "love", "have", "use", "used", "stuff", "fridge",
+    "freezer", "heavy", "light", "today", "tonight", "tomorrow", "leftover", "leftovers", "some", "something",
+    "dish", "meal", "please", "also", "need", "suggest", "really", "just", "thing", "things", "lot", "lots",
+}
+
+
+def _request_stems(words: str) -> set[str]:
+    stems = {_plan_quality._stem(w) for w in re.findall(r"[a-z]+", (words or "").lower())
+             if len(w) > 2 and w not in _DAY_REQUEST_FILLER}
+    return {s for s in stems if s not in _DAY_REQUEST_FILLER}
+
+
+def _matches_request(entry: dict, request: dict) -> int:
+    """How strongly a planned entry is the dish this sentence asked for: the
+    model's own citation (derived_from.freeform quoting the sentence), or
+    at least two of the dish's name words in the sentence. 0 when neither."""
+    from . import draft_opener as _draft_opener
+
+    try:
+        derived = json.loads(entry.get("derived_from_json") or "{}") or {}
+    except (TypeError, ValueError):
+        derived = {}
+    shared = len(_plan_quality._name_stems(entry.get("meal")) & _request_stems(request["words"]))
+    span = str(derived.get("freeform") or "").strip()
+    cited = bool(span) and _draft_opener._cited(request["words"], span)
+    if shared >= 2:
+        return shared + (1 if cited else 0)
+    return 1 if cited and shared >= 1 else 0
+
+
+def _when_words(meal_date: str, slot: str) -> str:
+    from datetime import date as _date
+
+    return f"{_date.fromisoformat(meal_date).strftime('%A')} {slot}"
+
+
+def place_day_requests(plan_id: int, requests: list[dict], report: dict | None = None) -> dict:
+    """
+    Put each dish asked for today, tonight or tomorrow on the exact meal
+    week_intake.freeform_day_requests resolved it to. The dish is found on
+    the plan by the model's own citation or its name; when it is on another
+    meal it MOVES — traded with what the target meal held when both are
+    the same kind of meal, otherwise the meal it leaves is cleared for the
+    gap passes to fill. Not found anywhere: nothing is invented here (the
+    model's report says whether the request was met). Runs FIRST in
+    _finish_week_slots, before today's past meals are emptied, so a dish
+    the model put on a meal that is already gone can still be rescued.
+
+    Every move is recorded in `report["moved_requests"]` for the draft's
+    one line. Returns {"placed": [...], "moved": [...], "missing": [...]}.
+    Never raises.
+    """
+    from . import weekly_plan as _weekly_plan
+
+    out = {"placed": [], "moved": [], "missing": []}
+    if not requests:
+        return out
+    try:
+        for request in requests:
+            target = (request["date"], request["slot"])
+            entries = [e for e in _load_entries(plan_id)
+                       if e["slot"] in ("lunch", "dinner", "breakfast") and e["slot_state"] == "planned" and e["meal"]]
+            scored = [(e, _matches_request(e, request)) for e in entries]
+            scored = [(e, s) for e, s in scored if s > 0]
+            if not scored:
+                out["missing"].append(request["words"])
+                continue
+            at_target = [e for e, _s in scored if (e["date"], e["slot"]) == target]
+            if at_target:
+                _cite(at_target[0], request)
+                out["placed"].append({"date": target[0], "slot": target[1], "meal": at_target[0]["meal"]})
+                continue
+            # The strongest match; the earliest of equals.
+            dish, _score = min(scored, key=lambda es: (-es[1], _ord(es[0])))
+            try:
+                dish_derived = json.loads(dish.get("derived_from_json") or "{}") or {}
+            except (TypeError, ValueError):
+                dish_derived = {}
+            dish_derived.pop("links_to", None)
+            dish_derived["freeform"] = str(dish_derived.get("freeform") or "").strip() or request["words"]
+            dish_derived["moved_for"] = {"said": request["said"], "from": f"{dish['date']}:{dish['slot']}"}
+            if request.get("late"):
+                dish_derived[LATE_KEY] = True
+            here = [e for e in _load_entries(plan_id) if (e["date"], e["slot"]) == target]
+            displaced = next((e for e in here if e["slot_state"] == "planned" and e["meal"]), None)
+            groups = _food_groups_of(dish)
+            displaced_groups = _food_groups_of(displaced) if displaced is not None else None
+            _weekly_plan._replace_slot_entries(
+                plan_id, [e["id"] for e in here], target[0], target[1], dish["meal"],
+                food_groups=groups, reasoning=dish.get("reasoning") or "", derived_from=dish_derived,
+            )
+            if displaced is not None and displaced["slot"] == dish["slot"]:
+                try:
+                    back = json.loads(displaced.get("derived_from_json") or "{}") or {}
+                except (TypeError, ValueError):
+                    back = {}
+                back.pop("links_to", None)
+                _weekly_plan._replace_slot_entries(
+                    plan_id, [dish["id"]], dish["date"], dish["slot"], displaced["meal"],
+                    food_groups=displaced_groups, reasoning=displaced.get("reasoning") or "",
+                    derived_from=back,
+                )
+            else:
+                _weekly_plan.clear_plan_slot(plan_id, dish["date"], dish["slot"])
+            line = f"I moved {dish['meal']} to {_when_words(*target)}, as you asked."
+            out["moved"].append({"words": request["words"], "from": f"{dish['date']}:{dish['slot']}",
+                                 "to": f"{target[0]}:{target[1]}", "meal": dish["meal"], "line": line})
+            if report is not None:
+                # A LATE move says both things in the one flag line
+                # (draft_flags.late_text, "I moved X to Sunday dinner, as
+                # you asked — its usual time had already gone by."), so it
+                # is not said again by the opener. Its words still ride
+                # along, with no line, so line one does not repeat them.
+                report.setdefault("moved_requests", []).append(
+                    {"words": request["words"], "line": "" if request.get("late") else line})
+    except Exception:
+        logger.exception("Placing today/tonight/tomorrow requests failed for plan %s; the week stands", plan_id)
+    if out["moved"] or out["missing"]:
+        logger.info("Plan %s day requests: %s", plan_id, out)
+    return out
+
+
+def _ord(entry: dict) -> tuple:
+    return (entry["date"], ("breakfast", "lunch", "dinner").index(entry["slot"]))
+
+
+def _food_groups_of(entry: dict) -> list[str] | None:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT food_groups_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry["id"], household_id()),
+    ).fetchone()
+    conn.close()
+    try:
+        return json.loads((row["food_groups_json"] if row else None) or "[]") or None
+    except (TypeError, ValueError):
+        return None
+
+
+def _cite(entry: dict, request: dict) -> None:
+    """The dish was already where it was asked for: make sure it carries
+    the request's words, so every repair pass treats it as theirs."""
+    try:
+        derived = json.loads(entry.get("derived_from_json") or "{}") or {}
+    except (TypeError, ValueError):
+        derived = {}
+    late = bool(request.get("late")) and not derived.get(LATE_KEY)
+    if str(derived.get("freeform") or "").strip() and not late:
+        return
+    if not str(derived.get("freeform") or "").strip():
+        derived["freeform"] = request["words"]
+    if late:
+        derived[LATE_KEY] = True
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry["id"], household_id()),
+    )
+    conn.commit()
+    conn.close()
+
+
+def requested_leftover_cooks(requests: list[dict]) -> list[tuple[str, str]]:
+    """The (date, slot) of every dish asked to "have leftovers" — the cooks
+    the Leftovers-night pass should reach for first
+    (dinner_gaps.apply_leftovers_nights' `prefer`)."""
+    return [(r["date"], r["slot"]) for r in requests or [] if r.get("leftovers")]
+
+
+def chain_requested_leftovers(plan_id: int, requests: list[dict], intake: dict | None = None) -> dict:
+    """
+    "…and have leftovers for it" becomes a real chain. When the requested
+    cook already feeds another meal (the Leftovers night reached for it, or
+    a weekday lunch the household said is leftovers), there is nothing to
+    do. Otherwise the next day's lunch reheats it — unless the household
+    said that lunch is cooked or prepped, it is theirs, or it would put the
+    dish on a third meal in a row. Nothing found: logged, and the cook
+    stands as a single meal. Never raises.
+    """
+    from . import weekly_plan as _weekly_plan
+    from . import weekday_lunches as _weekday_lunches
+    from datetime import date as _date, timedelta as _td
+
+    out = {"chained": [], "already": [], "left": []}
+    kinds = _weekday_lunches.kinds_by_date(intake)
+    for request in requests or []:
+        if not request.get("leftovers"):
+            continue
+        try:
+            entries = _load_entries(plan_id)
+            cook = next((e for e in entries if (e["date"], e["slot"]) == (request["date"], request["slot"])
+                         and e["slot_state"] == "planned" and e["meal"]), None)
+            if cook is None or cook["slot"] not in ("lunch", "dinner"):
+                out["left"].append(request["words"])
+                continue
+            chains = _leftovers.plan_leftover_chains(plan_id)
+            if cook["id"] in chains["sources"]:
+                out["already"].append(request["words"])
+                continue
+            lunch_date = (_date.fromisoformat(cook["date"]) + _td(days=1)).isoformat()
+            lunch = next((e for e in entries if e["date"] == lunch_date and e["slot"] == "lunch"
+                          and e["slot_state"] == "planned" and e["meal"]), None)
+            keys = _leftovers.run_keys(plan_id)
+            ok = (
+                lunch is not None
+                and kinds.get(lunch_date) not in ("cooked", "prepped")
+                and lunch["id"] not in chains["sources"] and lunch["id"] not in chains["leftovers"]
+                and not _meal_variety.theirs(json.loads(lunch.get("derived_from_json") or "{}") or {})
+                and not _leftovers.too_many_in_a_row(keys, lunch_date, "lunch", cook["meal"])
+            )
+            if not ok:
+                out["left"].append(request["words"])
+                continue
+            _weekly_plan._replace_slot_entries(
+                plan_id, [lunch["id"]], lunch_date, "lunch", cook["meal"],
+                food_groups=_food_groups_of(cook), reasoning="",
+                derived_from={"links_to": f"entry_id:{cook['id']}", "freeform": request["words"],
+                              "replaced": lunch["meal"]},
+            )
+            _meal_variety._write_cook_sides(plan_id, {cook["id"]: [f"{lunch_date}:lunch"]}, [], {"batched": []})
+            out["chained"].append({"cook": f"{cook['date']}:{cook['slot']}", "lunch": lunch_date})
+        except Exception:
+            logger.exception("Chaining requested leftovers failed for plan %s", plan_id)
+    if out["chained"] or out["left"]:
+        logger.info("Plan %s requested leftovers: %s", plan_id, out)
+    return out
+
+
+# ---------- a cuisine chip they picked is on the week ----------
+#
+# Emily, 2026-09-27: she tapped Burgers on the week's cuisine chips, the
+# draft had no burger, and a Greek chicken carried "Burgers, as asked".
+# The chips reach the prompt (intake.cuisines) and nothing checked the
+# answer. This is use_requested_ingredients' shape for a chip: each picked
+# cuisine is matched by at least one lunch or dinner of that cuisine, else
+# ONE fitting slot is re-picked with it on `must_be_cuisine` (the swap
+# picker's gates: allergies, taste, the table that's home, and that slot's
+# own time cap — cap_gate), else the report gets an unmet line the opener
+# says plainly ("No burgers fit this week.").
+
+# Why the slot was re-picked, for the row's derived_from and the picker's
+# `replacing_because`.
+CUISINE_BECAUSE = "you picked {cuisine} this week and nothing on the week was {cuisine}"
+
+
+# Words only: a hyphen splits ("Thai-style" is Thai, "stir-fry" and
+# "stir fry" read alike).
+_CUISINE_WORD_RE = re.compile(r"[a-z][a-z']*")
+
+# Two-word dishes kept as one word after splitting, so a chip for one of
+# their halves doesn't match them ("Fries" is not a stir-fry).
+_CUISINE_COMPOUNDS = {"stir fry": "stirfry"}
+
+
+def _singular(word: str) -> str:
+    """One word's matching form, the same for singular and plural:
+    curries/curry, sandwiches/sandwich, smoothies/smoothie,
+    quiches/quiche, potatoes/potato, burgers/burger. Short words and -ss
+    words are left alone (Swiss, BBQ). For matching only — never shown."""
+    if len(word) > 4 and word.endswith("ies"):
+        word = word[:-3] + "y"
+    elif len(word) > 4 and word.endswith(("ches", "shes", "xes", "zes", "sses", "oes")):
+        word = word[:-2]
+    elif len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+        word = word[:-1]
+    # smoothie and smoothies (-> smoothy) meet; quiche and quiches (-> quich) meet.
+    if len(word) > 4 and word.endswith("ie"):
+        word = word[:-2] + "y"
+    if len(word) > 4 and word.endswith("che"):
+        word = word[:-1]
+    return word
+
+
+def _cuisine_norm(text: str) -> str:
+    said = " ".join(_singular(w) for w in _CUISINE_WORD_RE.findall((text or "").lower()))
+    for pair, joined in _CUISINE_COMPOUNDS.items():
+        said = re.sub(rf"\b{pair}\b", joined, said)
+    return said
+
+
+# A chip that names a family of cuisines (Emily's chips are free text; a
+# household that taps "Asian" means a Thai curry counts). Each chip, as
+# _cuisine_norm reads it, answers to itself and to every name here — the
+# recipe's `cuisine` field or the dish's name. Kept small and plain; a
+# chip not listed answers only to its own words.
+CUISINE_FAMILIES = {
+    "asian": ["thai", "chinese", "japanese", "korean", "vietnamese", "indian", "malaysian",
+              "indonesian", "filipino", "taiwanese", "szechuan", "sichuan", "cantonese", "nepalese",
+              "pakistani", "sri lankan", "singaporean", "burmese"],
+    "mediterranean": ["greek", "italian", "lebanese", "turkish", "spanish", "moroccan", "israeli",
+                      "middle eastern", "provencal", "cypriot", "tunisian"],
+    "middle eastern": ["lebanese", "turkish", "persian", "israeli", "syrian", "iraqi", "palestinian",
+                       "jordanian", "egyptian", "arab"],
+    "tex-mex": ["mexican"],
+    "bbq": ["barbecue", "barbeque", "bbq"],
+    "barbecue": ["bbq", "barbeque", "barbecue"],
+    "latin american": ["mexican", "brazilian", "peruvian", "argentinian", "cuban", "colombian"],
+    "caribbean": ["jamaican", "cuban", "trinidadian", "haitian"],
+    "east asian": ["chinese", "japanese", "korean", "taiwanese"],
+    "south asian": ["indian", "pakistani", "nepalese", "sri lankan", "bangladeshi"],
+    "southeast asian": ["thai", "vietnamese", "malaysian", "indonesian", "filipino", "singaporean"],
+}
+
+
+def _cuisine_names(chip: str) -> list[str]:
+    want = _cuisine_norm(chip)
+    if not want:
+        return []
+    families = {_cuisine_norm(k): v for k, v in CUISINE_FAMILIES.items()}
+    return [want] + [_cuisine_norm(n) for n in families.get(want, [])]
+
+
+def dish_is_cuisine(chip: str, meal: str | None, cuisine: str | None = None) -> bool:
+    """
+    Whether a dish answers a cuisine chip: the recipe's own cuisine field
+    or the dish's name says it, as whole words — "Mexican" for Mexican,
+    "Smash Burgers" for Burgers, "Chicken curry" for Curries (plurals read
+    as one word, -ies and -es included), and a family chip answers to its
+    members (Asian to a Thai dish, Tex-Mex to a Mexican one — CUISINE_
+    FAMILIES). "Fries" is not in "Stir-fry". A chip that says nothing
+    matches nothing.
+    """
+    names = _cuisine_names(chip)
+    if not names:
+        return False
+    for text in (cuisine, meal):
+        said = _cuisine_norm(text or "")
+        if said and any(any(True for _ in _typed(want, said)) for want in names):
+            return True
+    return False
+
+
+def _pick_is_cuisine(candidate: dict, chip: str) -> str | None:
+    return None if dish_is_cuisine(chip, candidate.get("meal_name"), candidate.get("cuisine")) else f"not {chip}"
+
+
+def _cuisine_slot(plan_id: int, entries: list[dict], chains: dict, keep_ids=frozenset()) -> dict | None:
+    """
+    The one slot to re-pick for a chip: a planned dinner (else lunch)
+    nobody asked for (meal_variety.theirs, or `keep_ids` — the only dish
+    answering another picked chip, and a dish their own words name), not
+    cooked, not either end of a leftovers chain, not already re-picked for
+    another chip or a typed ingredient, and — so the distinct-dish count
+    stays as enforced — a dish on that one night when there is one. Within
+    that, the night with the most time (no cap first, then the biggest), so
+    Burgers lands where a burger fits rather than on a 20-minute Tuesday;
+    earliest on a tie.
+    """
+    from . import swap_in_place as _swap
+
+    counts: dict[tuple, int] = {}
+    for e in entries:
+        if e["slot"] in _REPICK_SLOTS and e["slot_state"] == "planned" and e["meal"]:
+            k = (e["slot"], e["meal"].strip().lower())
+            counts[k] = counts.get(k, 0) + 1
+    for once_only in (True, False):
+        for slot in _REPICK_SLOTS:
+            fits = []
+            for e in entries:
+                if e["slot"] != slot or e["slot_state"] != "planned" or not e["meal"]:
+                    continue
+                if e["id"] in keep_ids:
+                    continue
+                if _meal_variety._LEFTOVER_LINE.search(e["freeform_meal"] or ""):
+                    continue
+                try:
+                    derived = json.loads(e["derived_from_json"] or "{}") or {}
+                except (TypeError, ValueError):
+                    derived = {}
+                if _meal_variety.theirs(derived) or (e["cooked_status"] or "") == "done":
+                    continue
+                if derived.get("cuisine_repick") or derived.get("must_use_repick") or derived.get("prep_date"):
+                    continue
+                if derived.get("constraint") == _WEEKDAY_LUNCH_CONSTRAINT:
+                    continue  # a lunch they said how to make
+                if e["id"] in chains["leftovers"] or e["id"] in chains["sources"]:
+                    continue
+                if once_only and counts[(slot, e["meal"].strip().lower())] != 1:
+                    continue
+                fits.append(e)
+            if fits:
+                capped = _swap.day_caps(plan_id, [dict(e, entry_id=e["id"]) for e in fits])
+                best = min(capped, key=lambda pair: (pair[1] is not None, -(pair[1] or 0), pair[0]["date"]))
+                return next(e for e in fits if e["id"] == best[0]["id"])
+    # Every dinner and lunch one end of a chain: a chain SOURCE re-picked
+    # whole, cook and reheats together (see _whole_chain), on the night
+    # with the most time as above.
+    for slot in _REPICK_SLOTS:
+        whole = []
+        for e in entries:
+            if e["slot"] != slot or e["slot_state"] != "planned" or not e["meal"] or e["id"] in keep_ids:
+                continue
+            nights = _whole_chain(e, entries, chains)
+            if nights is not None and not any(n["id"] in keep_ids for n in nights):
+                whole.append(dict(e, _also=nights))
+        if whole:
+            capped = _swap.day_caps(plan_id, [dict(e, entry_id=e["id"]) for e in whole])
+            best = min(capped, key=lambda pair: (pair[1] is not None, -(pair[1] or 0), pair[0]["date"]))
+            return next(e for e in whole if e["id"] == best[0]["id"])
+    return None
+
+
+def _is_cuisine_adjective(chip: str) -> bool:
+    from . import week_intake as _week_intake
+    known = {c.lower() for c in (_week_intake.KNOWN_CUISINES + _week_intake.ONBOARDING_CUISINES)}
+    known |= {k for k in CUISINE_FAMILIES if k not in ("bbq", "barbecue")}
+    return chip.strip().lower() in known
+
+
+# Plural dish words that end in -s without being plural dish nouns in the
+# sense this line wants ("No Swiss dish", "No Hummus dish").
+_NOT_A_PLURAL = {"hummus", "couscous", "asparagus", "swiss", "citrus", "molasses"}
+
+
+def _is_plural_dish_noun(chip: str) -> bool:
+    last = chip.split()[-1].lower() if chip.split() else ""
+    if chip.lower() in _NOT_A_PLURAL or last in _NOT_A_PLURAL or _is_cuisine_adjective(chip):
+        return False
+    return len(last) > 3 and last.endswith("s") and not last.endswith("ss")
+
+
+# First words that are names, and keep their capital mid-sentence:
+# "No Brussels sprouts fit", "No Korean tacos fit" (every known cuisine
+# counts too — _is_cuisine_adjective).
+_PROPER_FIRST_WORDS = {"brussels", "caesar", "buffalo", "philly", "belgian", "swedish", "nashville",
+                       "texas", "cajun", "creole", "sichuan", "szechuan", "hawaiian"}
+
+
+def _sentence_case(chip: str) -> str:
+    """The chip mid-sentence: its own capitals kept, except a first letter
+    that is only there because it starts the chip ("Burgers" -> "burgers",
+    "Brussels sprouts" stays)."""
+    first = chip.split()[0]
+    if first.lower() in _PROPER_FIRST_WORDS or _is_cuisine_adjective(first):
+        return chip
+    return chip[:1].lower() + chip[1:]
+
+
+def cuisine_unmet_phrase(chip: str) -> str:
+    """The chip as one thing in a list ("I couldn't fit the corn or a
+    burger in this week"): a plural dish noun comes back singular with its
+    article ("a burger", "a curry"), anything else as a dish of it ("a
+    Mexican dish", "an Italian dish")."""
+    chip = " ".join((chip or "").split())
+    if not chip:
+        return ""
+    if _is_plural_dish_noun(chip):
+        words = _sentence_case(chip).split()
+        last = words[-1]
+        if last.lower().endswith("ies"):
+            last = last[:-3] + "y"
+        elif last.lower().endswith(("ches", "shes", "xes", "oes")):
+            last = last[:-2]
+        else:
+            last = last[:-1]
+        thing = " ".join(words[:-1] + [last])
+    else:
+        thing = f"{chip} dish"
+    return f"{'an' if thing[:1].lower() in 'aeiou' else 'a'} {thing}"
+
+
+def cuisine_unmet_line(chip: str) -> str:
+    """
+    The opener's one plain line for a chip nothing could answer
+    (draft_opener._line_two). The chip as the household wrote it:
+    "No Mexican dish fit this week.", "No Vegetarian dish…", "No BBQ
+    dish…", "No Mac and cheese dish…". Only a chip that is itself a
+    plural dish noun reads as one, lower-cased: "No burgers fit this
+    week.", "No curries fit this week."
+    """
+    chip = " ".join((chip or "").split())
+    if not chip:
+        return ""
+    if _is_plural_dish_noun(chip):
+        return f"No {_sentence_case(chip)} fit this week."
+    return f"No {chip} dish fit this week."
+
+
+def _drop_unmet_about(unmet: list, chip: str) -> None:
+    """A chip the week now answers: every unmet line that IS about it goes
+    — ours (its `cuisine`) and a model line whose words are the chip itself
+    ({"words": "burger"} for Burgers, plural-insensitive) — so the opener
+    never says "I couldn't fit Burgers" over a burger. A line that merely
+    mentions it ("Turkey burgers on Friday", "Italian sausage on Tuesday")
+    is a different request and stays."""
+    want = _cuisine_norm(chip)
+
+    def about(u) -> bool:
+        if str(u.get("cuisine") or "").lower() == chip.lower():
+            return True
+        said = _cuisine_norm(str(u.get("words") or ""))
+        return bool(want) and said == want
+
+    unmet[:] = [u for u in unmet if not about(u)]
+
+
+def chips_left_unanswered(plan_id: int, cuisines: list[str] | None, report: dict) -> list[str]:
+    """
+    After the passes that can still take a dish away — cap_enforce's
+    re-pick and the allergen sweep — a chip whose only dish went gets its
+    unmet line after all, so the opener never stays quiet about it. No
+    model call: it only reads the plan. Returns the chips it added. Never
+    raises.
+    """
+    added: list[str] = []
+    try:
+        _honoured, unmet = _report_lists(report)
+        said = {str(u.get("cuisine") or "").lower() for u in unmet}
+        planned = [e for e in _load_entries(plan_id) if e["slot"] in _REPICK_SLOTS and e["slot_state"] == "planned"
+                   and e["meal"] and not _meal_variety._LEFTOVER_LINE.search(e["freeform_meal"] or "")]
+        for chip in _unique_chips(cuisines):
+            if chip.lower() in said:
+                continue
+            if not any(dish_is_cuisine(chip, e["meal"], e.get("cuisine")) for e in planned):
+                unmet.append({"words": chip, "reason": "nothing of it fit", "cuisine": chip})
+                added.append(chip)
+        if added:
+            logger.info("Plan %s: %s lost its only dish after the chip pass", plan_id, ", ".join(added))
+    except Exception:
+        logger.exception("Cuisine-chip re-check failed for plan %s", plan_id)
+    return added
+
+
+def _unique_chips(cuisines) -> list[str]:
+    chips: list[str] = []
+    for c in cuisines or []:
+        c = str(c or "").strip()
+        if c and c.lower() not in {x.lower() for x in chips}:
+            chips.append(c)
+    return chips
+
+
+def use_picked_cuisines(plan_id: int, cuisines: list[str] | None, report: dict, budget=None, picker=None,
+                        asks: tuple[str | None, ...] = ()) -> dict:
+    """
+    For every cuisine chip the household picked this week (intake.cuisines),
+    make sure one lunch or dinner is of that cuisine — the model's own dish
+    when one is, else one slot re-picked for it — and when none can be,
+    say so in `report` (an unmet line carrying `cuisine`, for the opener).
+    A re-picked dish carries `cuisines:<chip>` in derived_from.inputs; the
+    row's "…, as asked" fact is still only said once draft_opener.asked_fact
+    has checked the chip is this week's and the dish is that cuisine.
+    Returns {"matched", "repicked", "unmet"} for the log and tests. Never
+    raises.
+    """
+    out = {"matched": [], "repicked": [], "unmet": []}
+    chips = _unique_chips(cuisines)
+    if not chips:
+        return out
+    budget = budget or _allergen_gate.CallBudget()
+    try:
+        _honoured, unmet = _report_lists(report)
+        for chip in chips:
+            entries = _load_entries(plan_id)
+            planned = [e for e in entries if e["slot"] in _REPICK_SLOTS and e["slot_state"] == "planned"
+                       and e["meal"] and not _meal_variety._LEFTOVER_LINE.search(e["freeform_meal"] or "")]
+            if any(dish_is_cuisine(chip, e["meal"], e.get("cuisine")) for e in planned):
+                out["matched"].append(chip)
+                _drop_unmet_about(unmet, chip)
+                continue
+            # Never the only dish another chip has, and never one their
+            # own words name (Emily's chips Mexican + Burgers: the burger
+            # must not take the week's only Mexican dish).
+            keep = set()
+            for other in chips:
+                if other.lower() == chip.lower():
+                    continue
+                answering = [e["id"] for e in planned if dish_is_cuisine(other, e["meal"], e.get("cuisine"))]
+                if len(answering) == 1:
+                    keep.update(answering)
+            keep.update(e["id"] for e in planned if asks and _meal_variety.asked_for_by_name(e["meal"], asks))
+            target = _cuisine_slot(plan_id, entries, _leftovers.plan_leftover_chains(plan_id), keep_ids=keep)
+            replaced = None
+            if target is not None:
+                from . import swap_in_place as _swap
+                slot_entry = {"date": target["date"], "slot": target["slot"], "entry_id": target["id"]}
+
+                def reject_pick(candidate, _chip=chip, _entry=slot_entry):
+                    return _pick_is_cuisine(candidate, _chip) or _swap.cap_gate(plan_id, candidate, [_entry])
+
+                replaced = _meal_variety._repick_entry(
+                    plan_id, target, budget,
+                    avoid=[], because=CUISINE_BECAUSE.format(cuisine=chip),
+                    reject=lambda name: False,
+                    derived_key="cuisine_repick", picker=picker,
+                    context_extra={"must_be_cuisine": chip},
+                    reject_pick=reject_pick,
+                    derived_extra={"inputs": [f"cuisines:{chip}"]},
+                    also=target.get("_also"),
+                )
+            if replaced is None:
+                # Said, never silent: the opener reads this line.
+                unmet[:] = [u for u in unmet if str(u.get("cuisine") or "").lower() != chip.lower()]
+                unmet.append({"words": chip, "reason": "nothing of it fit", "cuisine": chip})
+                out["unmet"].append(chip)
+                logger.info("Plan %s: no lunch or dinner was %s, and no re-pick landed one", plan_id, chip)
+                continue
+            out["repicked"].append(chip)
+            _drop_unmet_about(unmet, chip)
+            logger.info("Plan %s: %s %s re-picked as %r so the %s chip is on the week",
+                        plan_id, target["date"], target["slot"], replaced.get("meal"), chip)
+    except Exception:
+        logger.exception("Cuisine-chip pass failed for plan %s; the week stands as generated", plan_id)
     return out
 
 

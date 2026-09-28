@@ -1082,7 +1082,10 @@ def test_only_the_approve_button_and_start_over_ask_for_a_refill():
     # them back), so submitDefrostAsk re-reads Shop in the background too.
     # Four from 2026-09-22: Undo on a dish swapped on several days of an
     # approved week puts every day's shopping back (runSwapUndo).
-    assert body.count("refreshGrocerySurfaces();") == 4
+    # Five from 2026-09-27: a Change on a part of a dish planned on several
+    # days of an approved week rewrites every day's shopping
+    # (runMealChangePart).
+    assert body.count("refreshGrocerySurfaces();") == 5
     # The chat door never refills.
     assert "refill" not in _strip_comments(_function("refreshStaleTabsFromActions"))
 

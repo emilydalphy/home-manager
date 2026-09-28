@@ -716,7 +716,9 @@ def test_the_other_hand_rolled_pairs_are_NOT_fixed_here():
     # a lone clear, not a pair; its three meals go through
     # slot_needs._settle_slot_empty, the one-transaction pair.
     assert agent_src.count("tools.clear_plan_slot(") == 3
-    assert agent_src.count("_slot_needs._settle_slot_empty(") == 1
+    # Two since 2026-09-27: today's meals already gone by are settled
+    # empty the same way (today_meals, "today means from now").
+    assert agent_src.count("_slot_needs._settle_slot_empty(") == 2
     big_meal_src = inspect.getsource(__import__("app.tools.big_meal", fromlist=["big_meal"]))
     assert big_meal_src.count("clear_plan_slot(") == 5
     assert big_meal_src.count("add_ingredients_to_grocery_list=False") == 3

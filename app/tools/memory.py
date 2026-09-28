@@ -302,6 +302,10 @@ def get_household_memory() -> dict:
         # since both are written by the one snacks answer.
         "snacks_per_day": prefs["snacks_per_day"] if prefs else 2,
         "snacks_per_day_set": bool(prefs["snacks_per_day_set"]) if prefs else False,
+        # How many DIFFERENT snack dishes a week (2026-09-27) — the "Snacks"
+        # stepper under Different dishes a week; the draft folds to it
+        # (meal_variety.enforce_snack_dishes). See schema.sql.
+        "snack_dishes_per_week": prefs["snack_dishes_per_week"] if prefs else 2,
         # Whether the three per-week counts are the household's answers
         # (Emily, 2026-09-21) — what lets generation treat them as targets
         # to reach, not only ceilings. See schema.sql on meal_counts_set.
@@ -487,7 +491,8 @@ def edit_preference(field: str, value) -> dict:
     'repeats_tolerance' (DEPRECATED — str: 'cook_once_eat_twice', 'one_a_week'
     or 'all_different'; superseded by leftovers_stance, see the note below),
     'weeknight_max_minutes' (int — a real cap on Mon-Fri dinners; 0 means no
-    cap), 'table_style' (str), 'complete_plates' (bool — whether the app may
+    cap), 'snack_dishes_per_week' (int, 1-7 — how many DIFFERENT snack dishes
+    a week; snacks_per_day still says how many land on each day), 'table_style' (str), 'complete_plates' (bool — whether the app may
     add a small side to a meal that came out short of a full plate: protein
     + vegetable, plus a carb unless their eating style is low-carb. On by
     default. Set it False when someone says any version of "stop adding
@@ -515,7 +520,7 @@ def edit_preference(field: str, value) -> dict:
         "notes", "cooking_time_preference", "cuisine_preferences", "protein_preferences",
         "dislikes", "novelty_preference", "usual_stores", "eating_style",
         "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week",
-        "snacks_per_day",
+        "snacks_per_day", "snack_dishes_per_week",
         "kitchen_kit", "weeknight_max_minutes", "complete_plates",
         *simple_text_columns,
     }
@@ -546,6 +551,26 @@ def edit_preference(field: str, value) -> dict:
         if not 0 <= per_day <= 6:
             raise ValueError(f"snacks_per_day must be from 0 to 6, not {per_day}.")
         value = per_day
+    # Different snack DISHES a week (2026-09-27): at least one — "none" is
+    # snacks_per_day's 0, not this — and no more than a week of them.
+    if field == "snack_dishes_per_week":
+        try:
+            dishes = int(value)
+        except (TypeError, ValueError):
+            raise ValueError("snack_dishes_per_week must be a whole number from 1 to 7.")
+        if not 1 <= dishes <= 7:
+            raise ValueError(f"snack_dishes_per_week must be from 1 to 7, not {dishes}.")
+        # Never fewer different snacks than land on one day: the draft
+        # can't honour it without a day eating the same snack twice
+        # (meal_variety.enforce_snack_dishes holds it there anyway), and the
+        # screen must not say a number the plan doesn't keep.
+        per_day_now = int(get_household_memory().get("snacks_per_day") or 0)
+        if dishes < per_day_now:
+            raise ValueError(
+                f"snack_dishes_per_week can't be below snacks_per_day ({per_day_now}) — "
+                "a day would eat the same snack twice."
+            )
+        value = dishes
     if field == "weeknight_max_minutes":
         try:
             minutes = int(value)
@@ -587,11 +612,13 @@ def edit_preference(field: str, value) -> dict:
         )
 
     _household._log_preference_event(field, "write")
-    if field in simple_text_columns or field in ("kitchen_kit", "weeknight_max_minutes", "complete_plates"):
+    if field in simple_text_columns or field in ("kitchen_kit", "weeknight_max_minutes", "complete_plates",
+                                                 "snack_dishes_per_week"):
         column = {
             "kitchen_kit": "kitchen_kit_json",
             "weeknight_max_minutes": "weeknight_max_minutes",
             "complete_plates": "complete_plates",
+            "snack_dishes_per_week": "snack_dishes_per_week",
             **simple_text_columns,
         }[field]
         stored = json.dumps(value) if field == "kitchen_kit" else value
@@ -692,11 +719,16 @@ def edit_preference(field: str, value) -> dict:
         # Both numbers move together, exactly as onboarding writes them, so
         # correcting one on What we know can never leave the other saying
         # something the household never said.
-        return _preferences.set_household_meal_preferences(
+        saved = _preferences.set_household_meal_preferences(
             snacks_per_day=int(value),
             snacks_per_week=_preferences.snacks_per_week_from_per_day(int(value)),
             mark_complete=False,
         )
+        # More snacks a day than different snacks: the different-snacks
+        # count comes up with it (2026-09-27) — done inside
+        # set_household_meal_preferences (preferences.
+        # keep_snack_counts_consistent), which every write path goes through.
+        return saved
     return _preferences.set_household_meal_preferences(cooking_time_preference=value, mark_complete=False)
 
 
@@ -802,6 +834,7 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             "updated_at = datetime('now') WHERE household_id = ?",
             (household_id(),),
         )
+        _preferences.keep_snack_counts_consistent(conn, household_id())
     elif field == "snacks_per_day":
         # The same forget, reached from the other name for the same answer.
         conn.execute(
@@ -810,6 +843,7 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             "updated_at = datetime('now') WHERE household_id = ?",
             (household_id(),),
         )
+        _preferences.keep_snack_counts_consistent(conn, household_id())
     else:
         conn.close()
         raise ValueError(f"Unknown preference field '{field}'.")

@@ -175,9 +175,12 @@ class TestThePage:
     def test_replanning_an_answered_week_says_this_week_so_far(self):
         # Emily, 2026-09-25: a week that already has answers (or a plan)
         # shows its own answers, so the title isn't "Same as last week?".
-        show = _extract("showSame")
-        assert "$('same-title').textContent = (data && (data.intake || data.plan_exists))" in show
-        assert "? 'This week so far' : 'Same as last week?';" in show
+        # (2026-09-27: a period that hasn't begun names its dates instead —
+        # tests/test_replan_opens_this_week.py.)
+        assert "$('same-title').textContent = sameTitle(data, weekStart, todayIso());" in _extract("showSame")
+        title = _extract("sameTitle")
+        assert "if (!(data && (data.intake || data.plan_exists))) return 'Same as last week?';" in title
+        assert "return 'This week so far';" in title
 
     def test_rows_are_44px_taps_and_colours_go_through_tokens(self):
         css = PAGE[PAGE.index("/* ---------- Same as last week?"):PAGE.index("/* The typed answer (step 5)")]

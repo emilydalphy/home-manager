@@ -148,6 +148,54 @@ def test_the_week_menu_carries_the_parts_on_a_planned_slot(week):
     assert all(not p["missing"] for p in _dinner(week, DAY1)["plate_parts"])
 
 
+_BOWL_INGREDIENTS = [
+    {"item": "Flank steak", "qty": "3 lbs", "category": "meat/seafood"},
+    {"item": "Gochujang", "qty": "6 tbsp", "category": "pantry"},
+    {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+    {"item": "Fresh ginger", "qty": "3 piece", "category": "produce"},
+    {"item": "Broccoli", "qty": "3 heads", "category": "produce"},
+    {"item": "Carrots", "qty": "3 lbs", "category": "produce"},
+    {"item": "Scallions", "qty": "1 bunch", "category": "produce"},
+]
+
+
+def test_the_veg_is_the_real_vegetable_never_an_aromatic_or_herb():
+    # Emily, 2026-09-27: her gochujang beef bowl's plate read "VEG: Fresh
+    # ginger" — "Ginger isn't a 'veggie' in this case, it should be seen
+    # more as an herb." The old list matched "ginger" whole, not "fresh
+    # ginger"; and the first produce line won even when it was an aromatic.
+    parts = pp.parts_of_plate("dinner", ["protein", "vegetable"], "beef", [], "",
+                              ingredients=[_BOWL_INGREDIENTS[3], _BOWL_INGREDIENTS[2], *_BOWL_INGREDIENTS])
+    assert [p["name"] for p in parts if p["role"] == "vegetable"] == ["Broccoli"]
+    for aromatic in ("Fresh ginger", "Ginger root, grated", "Garlic cloves", "Green onions, sliced",
+                     "Thai basil leaves", "Fresh cilantro", "Red chilies", "Jalapeño pepper",
+                     "Lemongrass stalks", "Lime leaves", "Shallots", "Lemon zest"):
+        assert pp._in_dish_part_name("vegetable", [{"item": aromatic, "qty": "1", "category": "produce"}]) is None, aromatic
+    for veg in ("Broccoli", "Baby spinach", "Green beans", "Red bell pepper", "Kale leaves"):
+        assert pp._in_dish_part_name("vegetable", [{"item": veg, "qty": "1", "category": "produce"}]) == veg
+
+
+def test_the_veg_is_the_one_the_dish_is_named_for_else_the_biggest_buy():
+    two = [{"item": "Snow peas", "qty": "1 cup", "category": "produce"},
+           {"item": "Carrots", "qty": "2 lbs", "category": "produce"}]
+    assert pp._in_dish_part_name("vegetable", two, "Beef and Carrot Stir-Fry") == "Carrots"
+    small_first = [{"item": "Radishes", "qty": "3", "category": "produce"},
+                   {"item": "Broccoli", "qty": "2 heads", "category": "produce"}]
+    assert pp._in_dish_part_name("vegetable", small_first, "Beef Bowls") == "Broccoli"
+
+
+def test_change_tells_the_model_the_real_veg_not_the_ginger(week):
+    tools.add_recipe("Gochujang Beef Bowls", ingredients=_BOWL_INGREDIENTS,
+                     food_groups=["protein", "vegetable"], main_protein="beef",
+                     instructions=["Sear.", "Build."])
+    plan_day = DAYS[3]
+    entry_id = tools.plan_meal(plan_day, "Gochujang Beef Bowls", slot="dinner", weekly_plan_id=week)["entry_id"]
+    assert [p["name"] for p in _dinner(week, plan_day)["plate_parts"] if p["role"] == "vegetable"] == ["Broccoli"]
+    seen = []
+    pp.part_options(week, entry_id, "vegetable", asker=lambda c: seen.append(c) or [])
+    assert seen[0]["current_vegetable"] == "Broccoli"
+
+
 # ---------- the options ----------
 
 def test_options_are_asked_for_this_dish_and_cached_for_the_sitting(week):

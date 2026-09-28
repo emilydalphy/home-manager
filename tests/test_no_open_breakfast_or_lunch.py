@@ -393,12 +393,16 @@ def test_the_pass_never_raises(recipes):
     assert out["filled"] == []
 
 
-def test_dinner_is_not_in_scope(recipes):
+def test_dinner_is_not_this_passes_but_it_is_not_left_open_either(recipes):
     """
-    NAME-ONLY red against main. A dinner genuinely is a decision, and
-    quietly repeating one nobody asked for is the opposite of what the
-    household wants. Rule (a) names only breakfast and lunch.
+    UPDATED 2026-09-27 (Emily's decision A: a draft never leaves an open
+    dinner the household is home for). This pass still names only
+    breakfast and lunch — a dinner is not filled with a bare repeat first —
+    and dinner_gaps.fill_open_dinners, its own pass, plans the dinner:
+    here a reheat of the night before, which costs nothing. Until then
+    this test pinned "a dinner gap is handed back as a question".
     """
+    from app.tools import dinner_gaps
     assert _meal_variety.NEVER_OPEN_SLOTS == ("breakfast", "lunch")
 
     week = _week_start()
@@ -406,9 +410,12 @@ def test_dinner_is_not_in_scope(recipes):
     plan_id = _bare_plan(week, [(days[0], "dinner", "Chili")])
 
     out = _meal_variety.fill_gaps_with_a_repeat(plan_id, days[:2])
-
     assert out["filled"] == []
     assert _at(plan_id, days[1], "dinner") == []
+
+    out = dinner_gaps.fill_open_dinners(plan_id, days[:2])
+    assert out["reheated"] == [{"date": days[1], "from": days[0], "dish": "Chili"}]
+    assert [(r["slot_state"], r["meal"]) for r in _at(plan_id, days[1], "dinner")] == [("planned", "Chili")]
 
 
 # =====================================================================
@@ -543,11 +550,13 @@ def test_the_morning_report_is_never_told_about_an_open_breakfast(recipes, stub_
     assert [m for m in caplog.messages if "open_slot_budget" in m] == []
 
 
-def test_a_missing_dinner_is_still_handed_back_as_a_question(recipes, stub_model):
+def test_a_missing_dinner_is_planned_not_handed_back(recipes, stub_model):
     """
-    GUARD, green on main and here. Dinner is deliberately out of scope.
-    Pinned by the mutation "NEVER_OPEN_SLOTS gains dinner", which reddens
-    this and nothing else.
+    UPDATED 2026-09-27 (Emily's decision A). This used to pin the opposite
+    — "a missing dinner is still handed back as a question" — and is red
+    on main now: there the Thursday is `open` with generation_gap. It is a
+    reheat of Wednesday's dinner, the nearest earlier cook, and asks the
+    model nothing.
     """
     week = _week_start()
     days = tools._week_dates(week)
@@ -556,8 +565,8 @@ def test_a_missing_dinner_is_still_handed_back_as_a_question(recipes, stub_model
     plan = agent.generate_weekly_plan(week)
 
     rows = _at(plan["weekly_plan_id"], days[3], "dinner")
-    assert [r["slot_state"] for r in rows] == ["open"]
-    assert _derived(rows[0])["constraint"] == "generation_gap"
+    assert [(r["slot_state"], r["meal"]) for r in rows] == [("planned", DINNERS[2])]
+    assert _derived(rows[0])["links_to"] and _derived(rows[0]).get("constraint") != "generation_gap"
 
 
 def test_the_21_slot_guarantee_still_holds(recipes, stub_model):
