@@ -425,6 +425,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-28 — "Anything else" says it is this week's. Branch
+  `claude/weekly-reset-anything-else-coqur5`.** Emily: make it obvious the
+  note is for this week and starts fresh. It already did — `_last_period_intake`
+  never returns `freeform` and `fetchPeriod` blanks the box per period
+  (pinned by `test_what_is_about_one_week_does_not_travel` and a new page
+  test) — so this is copy only: the "Same as last week?" row reads
+  "Anything else this week", empty value "Nothing yet — starts fresh each
+  week", and step 5 gains "Just for this week — it starts blank next time."
+  Re-planning the SAME week still shows what was typed for it, on purpose.
+
 - **2026-09-27 — CLAUDE.md has a tripwire now, and — because the tripwire
   measurably does NOT catch the incident that asked for it — the arithmetic
   that does. Branch `overnight/claude-md-tripwire`, NOT merged at the time of
