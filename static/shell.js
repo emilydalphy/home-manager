@@ -1593,6 +1593,159 @@
     });
   }
 
+  // ---------- Notifications on the iPhone app (2026-09-27) ----------
+  // Loop Board "App Store: push notifications on the iPhone app". Only the
+  // iPhone app loads static/push.js (loadPushModule: the Capacitor bridge
+  // says it is native), so none of this does anything in a browser.
+  //
+  // WHEN we ask (the card's "sensible moment"): never on first launch.
+  // The first time a week is approved — that is when there is a morning
+  // note and a dinner nudge worth sending — and, for someone who approved
+  // weeks before installing the app, on the first launch after that is
+  // true (GET /api/push's ask_ready). Once per phone: "Not now" is final
+  // here, and the Preferences row stays the way to turn them on later.
+  var pushState = { settings: null, permission: '' };
+  var PUSH_ASKED_KEY = 'pomona.pushAsked';
+  var pushAskScrim = document.getElementById('push-ask-scrim');
+  var pushAskDialog = document.getElementById('push-ask-dialog');
+
+  function isNativeApp() {
+    try {
+      var cap = window.Capacitor;
+      return !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+    } catch (err) { return false; }
+  }
+
+  function pushModule() {
+    var p = typeof window !== 'undefined' ? window.PomonaPush : null;
+    return p && p.available ? p : null;
+  }
+
+  function loadPushModule() {
+    if (!isNativeApp() || window.PomonaPush || document.getElementById('pomona-push-js')) return;
+    var script = document.createElement('script');
+    script.id = 'pomona-push-js';
+    script.src = '/static/push.js';
+    script.onload = function () { pushAfterLoad(); };
+    document.head.appendChild(script);
+  }
+
+  function pushAsked() {
+    try { return window.localStorage.getItem(PUSH_ASKED_KEY) === '1'; } catch (err) { return false; }
+  }
+
+  function markPushAsked() {
+    try { window.localStorage.setItem(PUSH_ASKED_KEY, '1'); } catch (err) { /* private mode */ }
+  }
+
+  async function loadPushSettings() {
+    var mod = pushModule();
+    if (!mod) return null;
+    try { pushState.settings = await Api.json('/api/push', { quiet: true }); } catch (err) { pushState.settings = null; }
+    try { pushState.permission = await mod.permission(); } catch (err) { /* keep the last answer */ }
+    if (prefsState.open) renderPrefsRows();
+    return pushState.settings;
+  }
+
+  async function pushAfterLoad() {
+    var mod = pushModule();
+    if (!mod) return;
+    try { pushState.permission = await mod.ready; } catch (err) { return; }
+    var settings = await loadPushSettings();
+    if (settings && settings.ask_ready) offerPush();
+  }
+
+  async function offerPush() {
+    var mod = pushModule();
+    if (!mod || !pushAskDialog || pushAsked()) return;
+    var settings = await loadPushSettings();
+    // Nobody picked in a house of several adults: there's no one to save
+    // the phone against yet, so no ask either.
+    if (!settings || !settings.member_id || pushState.permission !== 'prompt') return;
+    markPushAsked();
+    openSheet(pushAskDialog, pushAskScrim);
+    document.getElementById('push-ask-on').focus();
+  }
+
+  function closePushAsk() {
+    closeSheet(pushAskDialog, pushAskScrim);
+  }
+
+  async function turnPushOn() {
+    var mod = pushModule();
+    if (!mod) return;
+    markPushAsked();
+    try {
+      var state = await mod.turnOn();
+      if (state === 'granted') showToast('Notifications were turned on.');
+    } catch (err) {
+      console.warn('Turning notifications on failed:', err);
+      showToast('Notifications didn’t turn on. Try again from Preferences.');
+    }
+    loadPushSettings();
+  }
+
+  if (pushAskScrim && pushAskDialog) {
+    pushAskScrim.addEventListener('click', closePushAsk);
+    document.getElementById('push-ask-later').addEventListener('click', closePushAsk);
+    document.getElementById('push-ask-on').addEventListener('click', function () {
+      closePushAsk();
+      turnPushOn();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !pushAskDialog.hidden) closePushAsk();
+    });
+  }
+
+  // The Preferences row: this adult's own On / Off, in the app only. On
+  // means iOS allows them AND their switch is on. A phone where iOS says no
+  // can't be turned on from here, and the row says where it can.
+  function pushPrefsRowHtml() {
+    if (!pushModule()) return '';
+    var st = pushState.settings;
+    if (!st || !st.member_id) return '';
+    var on = !!st.on && pushState.permission === 'granted';
+    var seg = [{ key: 'on', label: 'On' }, { key: 'off', label: 'Off' }].map(function (o) {
+      var sel = (o.key === 'on') === on;
+      return '<button type="button" class="wk-seg-btn' + (sel ? ' is-on' : '') + '" role="radio" ' +
+        'aria-checked="' + (sel ? 'true' : 'false') + '" data-push="' + o.key + '">' + escapeHtml(o.label) + '</button>';
+    }).join('');
+    return '<div class="prefs-appearance prefs-push">' +
+      '<span class="prefs-row-title" id="prefs-push-title">Notifications</span>' +
+      '<div class="wk-seg" role="radiogroup" aria-labelledby="prefs-push-title">' + seg + '</div>' +
+      (pushState.permission === 'denied'
+        ? '<span class="prefs-row-sub">They’re off in your iPhone’s Settings. Turn them on there for Pomona.</span>'
+        : '') +
+    '</div>';
+  }
+
+  async function setPushFromPrefs(key) {
+    var mod = pushModule();
+    if (!mod) return;
+    try {
+      if (key === 'on') {
+        if (pushState.permission === 'denied') {
+          showToast('Turn notifications on for Pomona in your iPhone’s Settings.');
+        } else if (pushState.permission !== 'granted') {
+          await turnPushOn();
+          return;
+        } else {
+          await mod.setOn(true);
+        }
+      } else {
+        await mod.setOn(false);
+      }
+    } catch (err) {
+      console.warn('Saving the notifications switch failed:', err);
+    }
+    loadPushSettings();
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest && e.target.closest('.prefs-push [data-push]');
+    if (btn) setPushFromPrefs(btn.getAttribute('data-push'));
+  });
+
   // ---------- "Who's approving?" picker ----------
   // Resolves to an adult's name, or null if they backed out. Same
   // scrim/dialog treatment as the reset and ingredients confirms.
@@ -17522,6 +17675,10 @@
       defrostAskState.selected = {};
       await loadWeekMenu(panel);
       if (scrollEl) scrollEl.scrollTop = 0;
+      // The notifications ask's moment (iPhone app only; see offerPush):
+      // a week is settled, so there's a morning note and a dinner nudge to
+      // send. A beat after the All set screen lands, not over the toast.
+      setTimeout(offerPush, 1200);
     } catch (err) {
       console.warn('Week approval failed:', err);
       if (btn) { btn.disabled = false; btn.textContent = restoreLabel; }
@@ -23462,6 +23619,8 @@
         '</span>' +
         ICONS.arrow +
       '</button>' +
+      // Notifications on the iPhone app (2026-09-27) — empty anywhere else.
+      pushPrefsRowHtml() +
       appearanceRowHtml() +
       // Sharing with Claude — the household's answer to the consent screen,
       // and the way to change it (aiConsentPrefsRowHtml).
@@ -23547,6 +23706,7 @@
     loadPrefsCalendar();
     loadPrefsMorningText();
     loadPrefsHeld();
+    loadPushSettings();
     if (prefsState.memory) { renderPrefsRows(); return; }
     try {
       var res = await Api.fetch('/api/memory');
@@ -24566,6 +24726,9 @@
   // active regardless of what registers it going forward — that one gets
   // fixed by the service-worker.js content change itself, which the
   // browser detects and updates to automatically.)
+  // Notifications, in the iPhone app only (see loadPushModule).
+  loadPushModule();
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/static/service-worker.js').then(function (reg) {

@@ -4051,14 +4051,14 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    screen it is asking about stays live. (The `data-motion="dialog"`
    attribute covers the box's own fade and scale, and only that — the note
    beside it in the Motion section is about the ANIMATION, not the box.) */
-#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim {
+#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim, #push-ask-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
   animation: fadeIn .18s ease;
   z-index: 50;
 }
-#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog, #leave-dialog {
+#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog, #leave-dialog, #push-ask-dialog {
   position: fixed;
   z-index: 51;
   left: 50%;
@@ -4080,7 +4080,8 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 #dinner-confirm-scrim[hidden], #dinner-confirm-dialog[hidden],
 #approve-who-scrim[hidden], #approve-who-dialog[hidden],
 #discard-draft-scrim[hidden], #discard-draft-dialog[hidden],
-#leave-scrim[hidden], #leave-dialog[hidden] { display: none; }
+#leave-scrim[hidden], #leave-dialog[hidden],
+#push-ask-scrim[hidden], #push-ask-dialog[hidden] { display: none; }
 .dinner-confirm-meal {
   font-family: var(--font-body);
   font-size: 15px;
@@ -9747,7 +9748,7 @@ span.cook-week-name { cursor: default; }
 }
 #ask-scrim, #week-sheet-scrim, #kit-sheet-scrim, #meals-more-scrim, #cook-more-scrim,
 #gro-scan-scrim, #prefs-scrim, #notif-scrim,
-#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim {
+#reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim, #push-ask-scrim {
   animation: none;
   opacity: 0;
   transition: opacity var(--motion-base) var(--motion-ease);
@@ -9756,7 +9757,7 @@ span.cook-week-name { cursor: default; }
 #meals-more-scrim.is-open, #cook-more-scrim.is-open, #gro-scan-scrim.is-open, #prefs-scrim.is-open,
 #notif-scrim.is-open,
 #reset-scrim.is-open, #dinner-confirm-scrim.is-open, #approve-who-scrim.is-open,
-#discard-draft-scrim.is-open, #leave-scrim.is-open {
+#discard-draft-scrim.is-open, #leave-scrim.is-open, #push-ask-scrim.is-open {
   opacity: 1;
 }
 

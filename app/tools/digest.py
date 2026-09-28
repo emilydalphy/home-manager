@@ -42,9 +42,12 @@ switched it off (``members.evening_nudge_on``). ``build_evening_nudge``
 reads tonight off today_moves exactly as the morning text does;
 ``run_evening_nudges_once`` is the pass the same in-process loop makes;
 ``members.evening_nudge_sent_on`` (the household's local date) is what
-keeps a restart at 18:05 from sending twice. There is no push channel yet:
-``send_evening_nudge`` is the one seam a push sender slots into when the
-PWA / App Store work lands, and until then it is a text.
+keeps a restart at 18:05 from sending twice.
+
+PUSH (2026-09-27): an adult with the iPhone app who allowed notifications
+gets both on the lock screen instead (app/push.py, "push, ahead of text"
+below); text stays the fallback. With the APNS_* variables unset, push is
+off and everything here is text exactly as before.
 """
 from __future__ import annotations
 
@@ -440,7 +443,7 @@ def _digest_lines(now_local: datetime) -> list[str]:
     return lines
 
 
-def build_morning_text(now_local: datetime | None = None) -> str | None:
+def build_morning_text(now_local: datetime | None = None, link: bool = True) -> str | None:
     """
     The text, or None when there is nothing worth a text. `now_local` is
     the household's own clock, naive (today_moves compares naive
@@ -470,7 +473,9 @@ def build_morning_text(now_local: datetime | None = None) -> str | None:
     if not lines:
         return None
 
-    link = _app_link()
+    # `link=False` is the push notification's body (app/push.py): the tap
+    # on the notification is the way in, so the address would be noise.
+    link = _app_link() if link else ""
     budget = MAX_TEXT_CHARS - (len(link) + 1 if link else 0)
     kept: list[str] = []
     length = 0
@@ -547,6 +552,55 @@ def send_digest(channel: str, to: str, body: str) -> dict:
         return {"status": "failed", "detail": f"{type(e).__name__}"[:160]}
 
 
+# ---------- push, ahead of text (2026-09-27) ----------
+#
+# Loop Board "App Store: push notifications on the iPhone app". An adult
+# who has the iPhone app and allowed notifications gets the morning note
+# and the evening nudge on the lock screen instead of by text. Text is the
+# fallback: for everyone else, and for anyone whose push didn't go through
+# (every phone refused, Apple unreachable) — in which case they get the
+# text exactly as before, if they have it on.
+#
+# With push off (APNS_* unset — see app/push.py) `_push_ready` is False for
+# everyone and both passes below do exactly what they did before push
+# existed. Any error reading push state reads as "not ready", never as a
+# failed pass.
+
+# Where a tap on each notification lands (app/push.py ALLOWED_PATHS).
+MORNING_PUSH_PATH = "/"
+EVENING_PUSH_PATH = "/kitchen"
+# How long Apple should keep trying a phone that's off. A morning note is
+# stale by the afternoon; a "start dinner" nudge after the late window is
+# noise.
+MORNING_PUSH_TTL_SECONDS = LATE_WINDOW_HOURS * 3600
+EVENING_PUSH_TTL_SECONDS = 90 * 60
+
+
+def _push_ready(member_id: int) -> bool:
+    try:
+        from .. import push as _push
+
+        return _push.can_push(member_id)
+    except Exception:
+        logger.exception("Push state for member %s could not be read; using text", member_id)
+        return False
+
+
+def _push(member_id: int, body: str, path: str, ttl_seconds: int) -> dict:
+    try:
+        from .. import push as _push_mod
+
+        return _push_mod.send_to_member(member_id, body, path=path, ttl_seconds=ttl_seconds)
+    except Exception as e:
+        logger.exception("Push to member %s raised; falling back to text", member_id)
+        return {"status": "failed", "detail": f"push {type(e).__name__}"[:160]}
+
+
+def _texts_on(r) -> bool:
+    """The morning text's own yes: switched on, with a number."""
+    return bool(r["morning_text_on"]) and bool(r["phone"])
+
+
 # ---------- the daily pass ----------
 
 # A phone number as Twilio writes one (+14165550100), a bare run of ten
@@ -593,7 +647,7 @@ def _run_household(now_utc: datetime, send: Callable[[str, str], dict]) -> list[
 
     waiting = [
         r for r in _adult_rows(conn)
-        if r["morning_text_on"] and r["phone"] and not _already_handled(conn, r["id"], sent_on)
+        if (_texts_on(r) or _push_ready(r["id"])) and not _already_handled(conn, r["id"], sent_on)
     ]
     if not waiting:
         conn.close()
@@ -615,8 +669,21 @@ def _run_household(now_utc: datetime, send: Callable[[str, str], dict]) -> list[
         conn.close()
         return done
 
+    push_body = None
     for r in waiting:
-        result = send(r["phone"], text)
+        result = None
+        if _push_ready(r["id"]):
+            if push_body is None:
+                push_body = build_morning_text(local_now.replace(tzinfo=None), link=False) or text
+            result = _push(r["id"], push_body, MORNING_PUSH_PATH, MORNING_PUSH_TTL_SECONDS)
+            if result.get("status") != "ok" and _texts_on(r):
+                logger.info(
+                    "Morning note for household %s member %s: push %s, texting instead",
+                    household_id(), r["id"], result.get("status"),
+                )
+                result = None
+        if result is None:
+            result = send(r["phone"], text)
         status = result.get("status") or "failed"
         _record(conn, r["id"], sent_on, status, result.get("detail") or "")
         done.append({"member_id": r["id"], "status": status})
@@ -752,7 +819,7 @@ def tonight_for_nudge(now_local: datetime) -> dict:
     return {"dinner": dinner, "first": first, "reason": ""}
 
 
-def build_evening_nudge(now_local: datetime | None = None) -> str | None:
+def build_evening_nudge(now_local: datetime | None = None, link: bool = True) -> str | None:
     """
     The nudge, or None when tonight doesn't want one. One breath:
 
@@ -778,17 +845,19 @@ def build_evening_nudge(now_local: datetime | None = None) -> str | None:
     else:
         minutes = int(dinner.get("duration_min") or 0)
         text = f"Tonight: {dish} — {minutes} min. Tap to start." if minutes else f"Tonight: {dish}. Tap to start."
-    link = _app_link("kitchen")
-    return f"{text} {link}" if link else text
+    # No address in a push notification (link=False): tapping it opens Cook.
+    url = _app_link("kitchen") if link else ""
+    return f"{text} {url}" if url else text
 
 
 def send_evening_nudge(member: dict, text: str) -> dict:
     """
-    THE SEAM. One nudge to one person, however it gets there. Today that
-    is a text to members.phone through the morning text's own channel
-    (send_digest → send_sms); when push exists, this is the one function
-    that learns to prefer it — the loop, the builder and the settings
-    don't change. `member` is {member_id, name, phone}; returns
+    The TEXT seam: one nudge to one person, as a text to members.phone
+    through the morning text's own channel (send_digest → send_sms). Push
+    (2026-09-27) is tried before this, in _run_household_evening, for an
+    adult with the iPhone app who allowed notifications; this function is
+    what everyone else gets, and the fallback when a push doesn't go
+    through. `member` is {member_id, name, phone}; returns
     {status, detail} and never raises (send_digest guarantees that).
     """
     return send_digest("text", member.get("phone") or "", text)
@@ -877,7 +946,8 @@ def _run_household_evening(now_utc: datetime, send: Callable[[dict, str], dict])
 
     waiting = [
         r for r in _adult_rows(conn)
-        if r["morning_text_on"] and r["phone"] and r["evening_nudge_on"] and r["evening_nudge_sent_on"] != sent_on
+        if r["evening_nudge_on"] and r["evening_nudge_sent_on"] != sent_on
+        and (_texts_on(r) or _push_ready(r["id"]))
     ]
     if not waiting:
         conn.close()
@@ -889,8 +959,21 @@ def _run_household_evening(now_utc: datetime, send: Callable[[dict, str], dict])
         return []
 
     done: list[dict] = []
+    push_body = None
     for r in waiting:
-        result = send({"member_id": r["id"], "name": r["name"], "phone": r["phone"]}, text)
+        result = None
+        if _push_ready(r["id"]):
+            if push_body is None:
+                push_body = build_evening_nudge(local_now.replace(tzinfo=None), link=False) or text
+            result = _push(r["id"], push_body, EVENING_PUSH_PATH, EVENING_PUSH_TTL_SECONDS)
+            if result.get("status") != "ok" and _texts_on(r):
+                logger.info(
+                    "Evening nudge for household %s member %s: push %s, texting instead",
+                    household_id(), r["id"], result.get("status"),
+                )
+                result = None
+        if result is None:
+            result = send({"member_id": r["id"], "name": r["name"], "phone": r["phone"]}, text)
         status = result.get("status") or "failed"
         conn.execute(
             "UPDATE members SET evening_nudge_sent_on = ? WHERE id = ? AND household_id = ?",
