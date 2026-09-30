@@ -13756,7 +13756,11 @@
   // 10.5–13 s before the picks-not-recipes change (commit 4838c73, which
   // logs "picks kept and seconds" per call) and a few seconds since; set
   // this to what that line typically reads now, and the sheet follows.
-  var SWAP_WAIT_SECONDS = 10;
+  // Measured 2026-09-30: the picks call takes about 5 s in production
+  // (5.3 s on its trimmed schema at low effort, Railway's log), and when
+  // the sheet's picks were fetched ahead (prefetchSwapPicks) there is no
+  // wait at all — this is the wait of the ones that weren't.
+  var SWAP_WAIT_SECONDS = 5;
 
   // "about ten seconds" — the number in words for the ones a wait can
   // reasonably be, digits past that.
@@ -13938,6 +13942,91 @@
     });
   }
 
+  // Picks fetched ahead (Loop Board "Speed: Swap opens instantly", 2026-09-30).
+  // The server keeps each answer for 30 minutes (swap_options' cache), so the
+  // sheet opens with them ready if one was asked for first. Only on a DRAFT,
+  // and only for a Swap button that has been on screen for a moment — never
+  // every row at once: each is a model call (~300 tokens out at low effort),
+  // so they go one at a time, at most PREFETCH_SWAP_MAX a visit, and a row
+  // once asked for is not asked again this sitting.
+  var PREFETCH_SWAP_MAX = 6;
+  var prefetchSwapState = { asked: {}, count: 0, queue: [], running: false, inflight: {}, observer: null, timers: null };
+
+  function prefetchSwapRun() {
+    var st = prefetchSwapState;
+    if (st.running || !st.queue.length) return;
+    var job = st.queue.shift();
+    st.running = true;
+    var jobKey = job.entryId + (job.wholeDish ? ':dish' : '');
+    var call = Api.fetch('/api/week/' + encodeURIComponent(job.weekStart) + '/swap-options', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(job.wholeDish
+        ? { entry_id: job.entryId, avoid: [], whole_dish: true }
+        : { entry_id: job.entryId, avoid: [] })
+    }).catch(function () { /* the sheet asks again itself */ }).then(function () {
+      st.running = false;
+      delete st.inflight[jobKey];
+      prefetchSwapRun();
+    });
+    st.inflight[jobKey] = call;
+  }
+
+  // The sheet is opening for this slot: a prefetch still waiting its turn is
+  // dropped (the sheet asks for itself), and one already in flight is
+  // awaited, so two calls never race for the same slot's picks.
+  async function prefetchSwapSettle(entryId, wholeDish) {
+    var st = prefetchSwapState;
+    var key = entryId + (wholeDish ? ':dish' : '');
+    st.queue = st.queue.filter(function (j) { return (j.entryId + (j.wholeDish ? ':dish' : '')) !== key; });
+    if (st.inflight[key]) await st.inflight[key];
+  }
+
+  function prefetchSwapQueue(btn) {
+    var st = prefetchSwapState;
+    var weekStart = weekStartForSwap();
+    if (!weekStart || weekPlanState(weekState.data || {}) !== 'draft' || st.count >= PREFETCH_SWAP_MAX) return;
+    var card = btn.closest('[data-wk-card]') || btn.closest('[data-wk-day-index]');
+    var i = card ? Number(card.getAttribute('data-wk-card') || card.getAttribute('data-wk-day-index')) : NaN;
+    var day = weekState.days[i] || mealsCurrentDay();
+    var entry = day && daySlotEntry(day, btn.getAttribute('data-wk-swap-sheet'));
+    if (!entry || entry.state !== 'planned' || entry.entry_id === null || entry.entry_id === undefined) return;
+    var wholeDish = !!btn.getAttribute('data-wk-swap-dish');
+    var key = entry.entry_id + (wholeDish ? ':dish' : '');
+    if (st.asked[key]) return;
+    st.asked[key] = true;
+    st.count += 1;
+    st.queue.push({ weekStart: weekStart, entryId: entry.entry_id, wholeDish: wholeDish });
+    prefetchSwapRun();
+  }
+
+  function prefetchSwapPicks(steps) {
+    var buttons = steps.querySelectorAll('[data-wk-swap-sheet]');
+    if (prefetchSwapState.observer) { prefetchSwapState.observer.disconnect(); prefetchSwapState.observer = null; }
+    if (prefetchSwapState.timers) { prefetchSwapState.timers.forEach(function (t) { clearTimeout(t); }); prefetchSwapState.timers = null; }
+    if (!buttons.length || weekPlanState(weekState.data || {}) !== 'draft') return;
+    if (typeof IntersectionObserver === 'undefined') return;
+    // Re-rendered: the old observer was let go above.
+    var timers = new Map();
+    prefetchSwapState.timers = timers;
+    var io = new IntersectionObserver(function (changes) {
+      changes.forEach(function (c) {
+        if (c.isIntersecting) {
+          // A moment in view, not a scroll past.
+          timers.set(c.target, setTimeout(function () {
+            io.unobserve(c.target);
+            if (document.body.contains(c.target)) prefetchSwapQueue(c.target);
+          }, 800));
+        } else if (timers.has(c.target)) {
+          clearTimeout(timers.get(c.target));
+          timers.delete(c.target);
+        }
+      });
+    });
+    prefetchSwapState.observer = io;
+    buttons.forEach(function (btn) { io.observe(btn); });
+  }
+
   // opts.wholeDish / opts.dates: the Swap on a "What we're eating" row
   // standing for several days (wkMenuRowHtml's data-wk-swap-dish, Emily
   // 2026-09-22). The pick then lands on every one of them — the server
@@ -13961,6 +14050,8 @@
     drawSwapSheet();
     openSheet(swapSheetEl, swapScrimEl);
     swapSheetHold(thisOpen);
+    await prefetchSwapSettle(entry.entry_id, thisOpen.wholeDish);
+    if (swapSheetState !== thisOpen) return;
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-options', {
         method: 'POST',
@@ -14034,7 +14125,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-choose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish })
+        body: JSON.stringify({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish, meal: picked.meal })
       });
       if (res.status === 404) {
         stopWorking();
@@ -15741,6 +15832,7 @@
           dish ? { wholeDish: true, dates: dish.split(',') } : null);
       });
     });
+    prefetchSwapPicks(steps);
     steps.querySelectorAll('[data-wk-move]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var day = wkDayForTap(btn);

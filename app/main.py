@@ -3405,6 +3405,9 @@ class SwapChooseRequest(BaseModel):
     entry_id: int
     option: int
     whole_dish: bool = False
+    # The dish name the sheet showed at `option`; the server refuses the tap
+    # if the picks it holds have changed since.
+    meal: str | None = None
 
 
 @app.post("/api/week/{week_start}/swap-options")
@@ -3439,8 +3442,8 @@ def week_swap_choose(week_start: str, req: SwapChooseRequest):
     plan_id = _plan_id_for_week(week_start)
     try:
         if req.whole_dish:
-            return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True)
-        return tools.choose_swap_option(plan_id, req.entry_id, req.option)
+            return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True, meal=req.meal)
+        return tools.choose_swap_option(plan_id, req.entry_id, req.option, meal=req.meal)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
