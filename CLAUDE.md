@@ -507,6 +507,22 @@ why*, not duplicating the diff.
     `.get`** and a deployment older than this answers without them — a
     morning report that crashes tells Emily less than one that omits a
     line. There is a test driving that case.
+  - **Numbers, read off the runs at `TZ=America/Toronto` with the report
+    vars unset, both measured rather than one derived: 8149 passed, 0
+    failed** on the branch against **8136 passed, 0 failed** on `main`
+    (`7b5f7df`, run in its own checkout) — +13 is this one new test file
+    exactly, and `git diff main -- tests/` adds one file and changes none,
+    so no existing test was deleted or weakened.
+  - **Found and NOT fixed, named so nobody reports it as new.** A probe
+    written while chasing this found that `stop_reason == "tool_use"` with
+    NO `tool_use` block in the content loops silently — rounds climb, no
+    tool name is recorded, output stays small, which is the live data's
+    exact fingerprint. It is NOT what happened here (the column default
+    above is), and it is very likely unreachable in production, because the
+    loop then appends `{"role": "user", "content": []}` and the real API
+    refuses an empty content list. Written down because it is the one other
+    shape that produces this signature, and the next person reading these
+    numbers will wonder.
 
 - **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
   Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep
