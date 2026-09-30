@@ -443,3 +443,54 @@ class TestTheRouteTheCardActuallyPosts:
 
         after = signed_in.get("/api/today/moves").json()
         assert [m["done"] for m in after["moves"] if m["kind"] == "cook"] == [True]
+
+
+class TestTheCardChecksAllergies:
+    """Allergy check on the "needs you" dinner pick: same strict gate as chat."""
+
+    def _peanut_house(self):
+        tools.add_member("Sam")
+        tools.set_member_dietary_restrictions("Sam", ["peanut allergy"])
+
+    def _post(self, client, meal):
+        return client.post(
+            "/api/needs-you/dinner",
+            json={"date": _d(), "meal": meal, "add_ingredients": True},
+        )
+
+    def _written(self):
+        from app.db import get_conn
+        conn = get_conn()
+        n = conn.execute("SELECT COUNT(*) FROM meal_plan_entries").fetchone()[0]
+        conn.close()
+        return n, tools.list_grocery_list()
+
+    def test_a_saved_peanut_dish_is_refused_and_nothing_is_written(self, signed_in):
+        self._peanut_house()
+        tools.add_recipe("Noodle Bowl", ingredients=[{"item": "peanut butter", "qty": "2 tbsp"}],
+                         instructions=["Toss."], prep_time_minutes=5, cook_time_minutes=5)
+        before = self._written()
+        res = self._post(signed_in, "Noodle Bowl")
+        assert res.status_code == 200
+        body = res.json()
+        assert body["status"] == "refused"
+        assert "peanut" in body["message"] and "Sam" in body["message"]
+        # A card has nobody to answer a question: the reason, plainly.
+        assert "?" not in body["message"] and body["message"].endswith("can’t have.")
+        assert self._written() == before
+
+    def test_a_safe_pick_still_works(self, signed_in):
+        self._peanut_house()
+        _a_recipe("Chili")
+        res = self._post(signed_in, "Chili")
+        assert res.status_code == 200
+        assert "status" not in res.json()
+        assert [m["meal"] for m in signed_in.get("/api/cooker-view").json()["meals"]] == ["Chili"]
+
+    def test_a_freeform_name_with_no_saved_list_is_checked_strictly_on_the_name(self, signed_in):
+        self._peanut_house()
+        before = self._written()
+        # "Peanut-Free" on a name alone is no proof: strict, so held.
+        body = self._post(signed_in, "Peanut-Free Satay Noodles").json()
+        assert body["status"] == "refused"
+        assert self._written() == before

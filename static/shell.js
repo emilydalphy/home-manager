@@ -1462,6 +1462,11 @@
       });
       if (!res.ok) throw new Error('dinner resolve failed');
       var data = await res.json();
+      if (data && data.status === 'refused') {
+        // An allergy clash: nothing was planned. Say why, leave the card.
+        showToast(data.message || 'Left as it was.');
+        return;
+      }
       showToast(dinnerPlannedToast(meal, data));
       dismissNeedsYouCard(panel, cardEl, data.items || []);
       // Today's timeline and (if it's today) the Week menu both just
@@ -1495,7 +1500,8 @@
         body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error('open dinner resolve failed');
-      await res.json();
+      var settled = await res.json();
+      if (settled && settled.status === 'refused') { showToast(settled.message || 'Left as it was.'); return; }
       showToast(choice + ' is on the plan.');
       await loadNeedsYou(panel);
       loadTodayMoves(panel);
@@ -12633,6 +12639,10 @@
       });
       if (!res.ok) throw new Error('dinner resolve failed');
       var fillData = await res.json();
+      if (fillData && fillData.status === 'refused') {
+        showToast(fillData.message || 'Left as it was.');
+        return;
+      }
       showToast(dinnerPlannedToast(meal, fillData));
       // Today's needs-you band and its timeline may cover this same date —
       // if Today has already been built this session, refresh it too so
@@ -17341,7 +17351,8 @@
         body: JSON.stringify({ date: date, slot: slot, choice: choice })
       });
       if (!res.ok) throw new Error('slot resolve failed');
-      await res.json();
+      var settled = await res.json();
+      if (settled && settled.status === 'refused') { showToast(settled.message || 'Left as it was.'); return; }
       showToast(dayName(date, { weekday: 'long' }) + '’s settled — thank you.');
       // Settling a slot in an already-approved week writes to the shopping
       // list, so anything showing that list is now stale. Background — an

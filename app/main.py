@@ -4083,6 +4083,8 @@ def resolve_week_slot(week_start: str, req: WeekSlotRequest):
         raise HTTPException(status_code=400, detail=f"slot must be one of {', '.join(tools.WEEK_SLOTS)}.")
     try:
         return tools.resolve_open_slot(plan_id, req.date, req.slot, req.choice)
+    except tools.SlotRefused as e:
+        return _card_refusal(e)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -4755,6 +4757,17 @@ def needs_you():
     return {"items": items}
 
 
+def _card_refusal(e) -> dict:
+    """A SlotRefused as a card's 200 {"status": "refused", "message"}. No chat
+    is there to answer "want me to pick something else?", so the question is
+    dropped and the reason alone is the message."""
+    from app.tools import allergen_gate as _ag
+    msg = str(e)
+    if msg.endswith(_ag.CHAT_ASK):
+        msg = msg[: -len(_ag.CHAT_ASK)] + "."
+    return {"status": "refused", "message": msg}
+
+
 @app.post("/api/needs-you/dinner")
 def resolve_needs_you_dinner(req: ResolveDinnerRequest):
     """
@@ -4769,6 +4782,8 @@ def resolve_needs_you_dinner(req: ResolveDinnerRequest):
         result = tools.resolve_needs_you_dinner(
             req.date, req.meal, add_ingredients_to_grocery_list=req.add_ingredients
         )
+    except tools.SlotRefused as e:
+        return _card_refusal(e)
     except Exception as e:
         logger.exception("Needs-you dinner resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

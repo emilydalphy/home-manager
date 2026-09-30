@@ -666,3 +666,37 @@ def test_the_chat_prompt_states_the_allergens_as_hard_exclusions():
     assert "want me to pick something else?" in folded
     assert "pass override=true only if the person then says in their own words to do it anyway" in folded
     assert "Keep it anyway" not in source
+
+
+def test_chats_component_swap_declines_a_dish_someone_cant_have_before_touching_the_plan(tropical):
+    # The gate is asked before the old item is looked for, so a refusal
+    # (not the "couldn't find" ValueError) proves nothing was removed.
+    with pytest.raises(_wp.SlotRefused) as caught:
+        tools.swap_component_in_plan(tropical, "protein", "Chili", "Tropical Fruit Cup")
+    assert "pineapple" in str(caught.value)
+
+
+def test_settling_an_open_slot_with_a_clashing_choice_is_refused_and_the_slot_stays_open(tropical):
+    _wp.plan_slot_open(tropical, DAYS[5], "snack", "I would rather ask than guess.")
+    with pytest.raises(_wp.SlotRefused) as caught:
+        tools.resolve_open_slot(tropical, DAYS[5], "snack", "Tropical Fruit Cup")
+    assert "pineapple" in str(caught.value)
+    assert _slot(tropical, DAYS[5], "snack")["slot_state"] == "open"
+    # A safe choice still settles it.
+    assert tools.resolve_open_slot(tropical, DAYS[5], "snack", "Chili")["was_open"] is True
+
+
+def test_the_slot_route_answers_a_clash_as_a_plain_refused_card(tropical, signed_in):
+    _wp.plan_slot_open(tropical, DAYS[5], "lunch", "I would rather ask than guess.")
+    res = signed_in.post(f"/api/week/{WEEK_START}/slot", json={
+        "date": DAYS[5], "slot": "lunch", "choice": "Tropical Fruit Cup", "weekly_plan_id": tropical})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["status"] == "refused" and "pineapple" in body["message"] and "?" not in body["message"]
+    assert _slot(tropical, DAYS[5], "lunch")["slot_state"] == "open"
+
+
+def test_an_open_slot_is_never_handed_back_with_a_clashing_option(drafted):
+    out = _wp.plan_slot_open(drafted, DAYS[5], "snack", "I would rather ask than guess.", options=[
+        {"label": "Pineapple chunks", "meta": "0 min"}, {"label": "Toast", "meta": "5 min"}])
+    assert [o["label"] for o in out["options"]] == ["Toast"]

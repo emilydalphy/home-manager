@@ -582,6 +582,13 @@ def plan_slot_open(
     # hold must not reach a write, and a caller that passed its own conn
     # must not have its open transaction spent on one either.
     validate_slot(slot)
+    # An option nobody at the table can have is never offered (strict, on the
+    # label alone): resolve_open_slot would refuse it anyway.
+    from . import allergen_gate as _allergen_gate
+    options = [
+        o for o in (options or [])
+        if not _allergen_gate.hard_clashes(str((o.get("label") if isinstance(o, dict) else o) or ""))
+    ]
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
@@ -1994,6 +2001,11 @@ def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: st
             f"That {slot} is deliberately empty — nothing is planned or bought for it. "
             "Change the night's answer if you're in after all."
         )
+
+    # The same strict allergen check chat and the needs-you card run, asked
+    # before anything is replaced: a refusal leaves the open slot open.
+    from . import allergen_gate as _allergen_gate
+    _allergen_gate.refuse_if_clashing(choice.strip())
 
     was_open = row["slot_state"] == "open"
     # The same one-transaction write a swap uses (_replace_slot_entries):
@@ -5953,6 +5965,12 @@ def resolve_needs_you_dinner(
     just with no plan link, the same shape a one-off chat request already
     gets and the shape unplanned_meals_ahead exists to keep visible.
     """
+    # The same strict allergen check chat's plan_meal_for_chat runs (name +
+    # the saved ingredient list, no draft/label negation). Raises
+    # SlotRefused before anything is written to the plan or the list; the
+    # route answers it as 200 {"status": "refused", "message"}.
+    from . import allergen_gate as _allergen_gate
+    _allergen_gate.refuse_if_clashing(meal)
     weekly_plan_id = get_plan_id_for_date(meal_date)
     result = _meal_plans.plan_meal(
         meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
@@ -8424,7 +8442,12 @@ def swap_component_in_plan(
     out one of the proteins) without touching the rest of the plan — the
     component_based equivalent of swap_meal_in_plan. old_meal must match
     the exact meal name currently in that category/plan.
+
+    The same strict allergen check as swap_meal_in_plan_for_chat, asked
+    BEFORE the old item is taken off: a refusal leaves the plan as it was.
     """
+    from . import allergen_gate as _allergen_gate
+    _allergen_gate.refuse_if_clashing(new_meal)
     conn = get_conn()
     week_start_date = conn.execute(
         "SELECT week_start_date FROM weekly_plans WHERE id = ? AND household_id = ?",

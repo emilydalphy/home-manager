@@ -301,6 +301,11 @@ def _replacing_because(name: str, clashes: list[dict]) -> str:
 # ---------- what a person is told ----------
 
 
+# The chat's way out, tacked on the end of the reason. A card has nobody to
+# answer it, so the needs-you route strips it (main.resolve_needs_you_dinner).
+CHAT_ASK = " — want me to pick something else?"
+
+
 def refusal_sentence(name: str, clashes: list[dict]) -> str:
     """
     "Tropical Fruit Cup has pineapple, which Emily can’t have — want me to
@@ -311,7 +316,7 @@ def refusal_sentence(name: str, clashes: list[dict]) -> str:
     food = _food_word(clashes)
     who = _person(clashes)
     cannot = f"{who} can’t have" if who else "this house can’t have"
-    return f"{name} has {food}, which {cannot} — want me to pick something else?"
+    return f"{name} has {food}, which {cannot}{CHAT_ASK}"
 
 
 def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, override: bool = False) -> None:
