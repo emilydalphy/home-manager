@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 
 from ._shared import household_id
@@ -57,6 +58,16 @@ _OPTIONS_TTL = 30 * 60
 #   "unavailable": bool, "context": the slot JSON the picks were asked
 #   against, kept so the chosen one is written out against the same}
 _OPTIONS_CACHE: dict[tuple[int, int], dict] = {}
+# One ask at a time per slot: a prefetch still in flight when the sheet opens
+# (or a double tap) waits for the first answer and reads it from the cache,
+# so the set the sheet shows is always the set the cache holds.
+_ASK_LOCKS: dict[tuple[int, int], threading.Lock] = {}
+_ASK_LOCKS_GUARD = threading.Lock()
+
+
+def _ask_lock(key: tuple[int, int]) -> threading.Lock:
+    with _ASK_LOCKS_GUARD:
+        return _ASK_LOCKS.setdefault(key, threading.Lock())
 
 # How many main ingredients a pick names. Enough for the allergen gate to
 # see what the dish is made of (the gate matches items, not names), few
@@ -367,6 +378,13 @@ def _swap_options(weekly_plan_id: int, entry: dict, avoid: list[str] | None, ask
                   group: list[dict]) -> dict:
     entry_id = entry["entry_id"]
     key = (household_id(), entry_id)
+    with _ask_lock(key):
+        return _swap_options_locked(weekly_plan_id, entry, avoid, asker, group, key)
+
+
+def _swap_options_locked(weekly_plan_id: int, entry: dict, avoid: list[str] | None, asker,
+                         group: list[dict], key: tuple[int, int]) -> dict:
+    entry_id = entry["entry_id"]
     cached = _OPTIONS_CACHE.get(key)
     # Picks asked for one day are not picks for three, and the other way
     # round: the cache holds for the same set of days only.
@@ -467,7 +485,7 @@ WRITE_OUT_TROUBLE = "I couldn’t write that one up just now — nothing changed
 
 
 def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=None,
-                       whole_dish: bool = False) -> dict:
+                       whole_dish: bool = False, meal: str | None = None) -> dict:
     """
     Put the chosen option on the slot. The pick is the one the sheet was
     shown (from the sitting's cache), re-gated at the moment of writing —
@@ -502,6 +520,11 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     if not 0 <= index < len(cached["options"]):
         raise ValueError("That isn't one of the picks.")
     pick = dict(cached["options"][index])
+    # The sheet says which dish it showed at that index. If the cache now
+    # holds a different set (another device, a prefetch that landed after
+    # the sheet opened), tapping card 0 must not plant a dish nobody saw.
+    if meal is not None and (meal or "").strip().lower() != (pick.get("meal_name") or "").strip().lower():
+        raise ValueError("Those picks aren't on offer any more — tap Swap again.")
     if _weekly_plan.night_has_gone(entry["date"]):
         return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
     group = _swap.batch_days(weekly_plan_id, entry_id) if whole_dish else [entry]

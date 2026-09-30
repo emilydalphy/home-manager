@@ -13950,14 +13950,15 @@
   // so they go one at a time, at most PREFETCH_SWAP_MAX a visit, and a row
   // once asked for is not asked again this sitting.
   var PREFETCH_SWAP_MAX = 6;
-  var prefetchSwapState = { asked: {}, count: 0, queue: [], running: false };
+  var prefetchSwapState = { asked: {}, count: 0, queue: [], running: false, inflight: {}, observer: null, timers: null };
 
   function prefetchSwapRun() {
     var st = prefetchSwapState;
     if (st.running || !st.queue.length) return;
     var job = st.queue.shift();
     st.running = true;
-    Api.fetch('/api/week/' + encodeURIComponent(job.weekStart) + '/swap-options', {
+    var jobKey = job.entryId + (job.wholeDish ? ':dish' : '');
+    var call = Api.fetch('/api/week/' + encodeURIComponent(job.weekStart) + '/swap-options', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(job.wholeDish
@@ -13965,8 +13966,20 @@
         : { entry_id: job.entryId, avoid: [] })
     }).catch(function () { /* the sheet asks again itself */ }).then(function () {
       st.running = false;
+      delete st.inflight[jobKey];
       prefetchSwapRun();
     });
+    st.inflight[jobKey] = call;
+  }
+
+  // The sheet is opening for this slot: a prefetch still waiting its turn is
+  // dropped (the sheet asks for itself), and one already in flight is
+  // awaited, so two calls never race for the same slot's picks.
+  async function prefetchSwapSettle(entryId, wholeDish) {
+    var st = prefetchSwapState;
+    var key = entryId + (wholeDish ? ':dish' : '');
+    st.queue = st.queue.filter(function (j) { return (j.entryId + (j.wholeDish ? ':dish' : '')) !== key; });
+    if (st.inflight[key]) await st.inflight[key];
   }
 
   function prefetchSwapQueue(btn) {
@@ -13989,9 +14002,13 @@
 
   function prefetchSwapPicks(steps) {
     var buttons = steps.querySelectorAll('[data-wk-swap-sheet]');
+    if (prefetchSwapState.observer) { prefetchSwapState.observer.disconnect(); prefetchSwapState.observer = null; }
+    if (prefetchSwapState.timers) { prefetchSwapState.timers.forEach(function (t) { clearTimeout(t); }); prefetchSwapState.timers = null; }
     if (!buttons.length || weekPlanState(weekState.data || {}) !== 'draft') return;
     if (typeof IntersectionObserver === 'undefined') return;
+    // Re-rendered: the old observer was let go above.
     var timers = new Map();
+    prefetchSwapState.timers = timers;
     var io = new IntersectionObserver(function (changes) {
       changes.forEach(function (c) {
         if (c.isIntersecting) {
@@ -14006,6 +14023,7 @@
         }
       });
     });
+    prefetchSwapState.observer = io;
     buttons.forEach(function (btn) { io.observe(btn); });
   }
 
@@ -14032,6 +14050,8 @@
     drawSwapSheet();
     openSheet(swapSheetEl, swapScrimEl);
     swapSheetHold(thisOpen);
+    await prefetchSwapSettle(entry.entry_id, thisOpen.wholeDish);
+    if (swapSheetState !== thisOpen) return;
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-options', {
         method: 'POST',
@@ -14105,7 +14125,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-choose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish })
+        body: JSON.stringify({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish, meal: picked.meal })
       });
       if (res.status === 404) {
         stopWorking();

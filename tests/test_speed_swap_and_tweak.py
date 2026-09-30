@@ -269,3 +269,85 @@ def test_the_model_call_asks_for_the_diff_tool_and_a_smaller_budget(week, monkey
     assert "_diff" not in seen["messages"][0]["content"][1]["text"], "the marker is not told to the model"
     pp._ask_variant({"dish": "d"}, "protein")
     assert seen["tools"] == [pp.VARIANT_TOOL] and seen["max_tokens"] == 2000
+
+
+# ---------- verifier follow-ups (2026-09-30) ----------
+
+def test_two_asks_for_one_slot_share_one_model_call_and_one_set(week):
+    """A prefetch still in flight when the sheet opens: the second ask waits
+    and reads the first's answer, so the set shown is the set cached."""
+    import contextvars
+    import threading
+    import time
+    entry_id = _entry_id(week, DAY1)
+    calls = []
+
+    def slow(ctx):
+        calls.append(1)
+        time.sleep(0.3)
+        return [_option(f"Dish {len(calls)}")]
+
+    results = []
+
+    def run():
+        results.append(tools.swap_options(week, entry_id, asker=slow))
+
+    threads = [threading.Thread(target=contextvars.copy_context().run, args=(run,)) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(calls) == 1
+    assert [o["meal"] for o in results[0]["options"]] == [o["meal"] for o in results[1]["options"]] == ["Dish 1"]
+
+
+def test_choose_refuses_when_the_dish_shown_is_not_the_dish_held(week):
+    entry_id = _entry_id(week, DAY1)
+    tools.swap_options(week, entry_id, asker=lambda ctx: [_option("Lemon chicken traybake")])
+    with pytest.raises(ValueError, match="aren't on offer any more"):
+        sop.choose_swap_option(week, entry_id, 0, writer=_no_writer, meal="Some other dish")
+    assert _recipe_row("Some other dish") is None and _recipe_row("Lemon chicken traybake") is None
+    out = sop.choose_swap_option(week, entry_id, 0, writer=_no_writer, meal="lemon chicken traybake ")
+    assert out["status"] == "swapped" and out["meal"] == "Lemon chicken traybake"
+
+
+def test_the_sheet_sends_the_dish_it_showed_and_waits_for_a_prefetch_in_flight():
+    choose = SHELL_JS.split("'/swap-choose'")[1][:300]
+    assert "meal: picked.meal" in choose
+    opened = SHELL_JS.split("async function openSwapSheet(")[1].split("try {")[0]
+    assert "await prefetchSwapSettle(" in opened
+    settle = SHELL_JS.split("async function prefetchSwapSettle(")[1].split("\n  }\n")[0]
+    assert "st.inflight[key]" in settle and "st.queue.filter" in settle
+    picks = SHELL_JS.split("function prefetchSwapPicks(")[1].split("// opts.wholeDish")[0]
+    assert picks.index("observer.disconnect()") < picks.index("new IntersectionObserver("), "the old observer goes on re-render"
+
+
+def test_a_name_only_diff_is_not_a_change_and_the_whole_recipe_is_asked_for(week):
+    contexts = []
+    full = {"meal_name": "Baked Lemon Herb Salmon", "main_protein": "salmon", "reason": "Salmon instead of cod.",
+            "ingredients": [{"item": "Salmon fillets", "qty": "1 lb", "category": "meat/seafood"}],
+            "instructions": NINE, "food_groups": ["protein"]}
+
+    def asker(ctx):
+        contexts.append(dict(ctx))
+        if ctx.get("_diff"):
+            return {"meal_name": "Baked Lemon Herb Salmon", "main_protein": "salmon", "reason": "Salmon."}
+        return full
+
+    out = pp.change_part(week, _cod_entry(week), "protein", "Salmon", asker=asker)
+    assert out["status"] == "changed"
+    assert len(contexts) == 2 and contexts[0].get("_diff") and "_diff" not in contexts[1]
+    assert "Salmon fillets" in _recipe_row("Baked Lemon Herb Salmon")["ingredients_json"]
+
+
+def test_a_diff_is_one_row_per_item_and_a_removal_cannot_take_a_replaced_row():
+    recipe = {"name": "D", "ingredients": [{"item": "Cod", "qty": "1"}, {"item": "Lemons", "qty": "2"}],
+              "instructions": ["a"]}
+    out = pp.apply_variant_diff(recipe, {
+        "meal_name": "D2", "main_protein": "salmon", "reason": "x",
+        "ingredients_changed": [{"replaces": "Cod", "item": "Salmon", "qty": "1 lb"}],
+        "ingredients_added": [{"item": "salmon", "qty": "2 lb"}, {"item": "Dill", "qty": "1"}],
+        "ingredients_removed": ["Cod", "Salmon"],
+    })
+    assert [r["item"] for r in out["ingredients"]] == ["Salmon", "Lemons", "Dill"]
+    assert out["ingredients"][0]["qty"] == "1 lb"

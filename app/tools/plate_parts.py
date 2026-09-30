@@ -59,6 +59,7 @@ part in between:
 from __future__ import annotations
 
 import json
+import re
 import logging
 import time
 
@@ -753,8 +754,18 @@ def apply_variant_diff(recipe: dict, diff: dict) -> dict:
     that matches no row is added as a new row, so a change is never lost
     for a slightly different spelling."""
     rows = [dict(r) for r in (recipe.get("ingredients") or []) if isinstance(r, dict)]
-    by_name = lambda name: next((i for i, r in enumerate(rows)
-                                 if (r.get("item") or "").strip().lower() == (name or "").strip().lower()), None)
+    norm = lambda name: (name or "").strip().lower()
+    by_name = lambda name: next((i for i, r in enumerate(rows) if norm(r.get("item")) == norm(name)), None)
+    # Which rows the diff replaces — found on the ORIGINAL list, so a removal
+    # can't take out a row that was just replaced (by the new row's name, or
+    # by the old one after the swap-in).
+    replaced_at = {by_name(ch.get("replaces")) for ch in _as_list(diff.get("ingredients_changed"))
+                   if isinstance(ch, dict)} - {None}
+    drop = set()
+    for gone in _as_list(diff.get("ingredients_removed")):
+        at = by_name(gone if isinstance(gone, str) else "")
+        if at is not None and at not in replaced_at:
+            drop.add(at)
     appended = []
     for ch in _as_list(diff.get("ingredients_changed")):
         if not isinstance(ch, dict) or not (ch.get("item") or "").strip():
@@ -765,12 +776,18 @@ def apply_variant_diff(recipe: dict, diff: dict) -> dict:
             appended.append(new)
         else:
             rows[at] = dict(rows[at], **new) if not ch.get("qty") else new
-    for gone in _as_list(diff.get("ingredients_removed")):
-        at = by_name(gone if isinstance(gone, str) else "")
-        if at is not None:
-            rows.pop(at)
+    rows = [r for i, r in enumerate(rows) if i not in drop]
     rows += appended + [r for r in _as_list(diff.get("ingredients_added"))
                         if isinstance(r, dict) and (r.get("item") or "").strip()]
+    # One row per item: a changed row the model also listed as added is one
+    # row, the first (the changed one, in its place).
+    seen, unique = set(), []
+    for r in rows:
+        if norm(r.get("item")) in seen:
+            continue
+        seen.add(norm(r.get("item")))
+        unique.append(r)
+    rows = unique
 
     steps = list(recipe.get("instructions") or [])
     edited = {}
@@ -807,6 +824,20 @@ def _is_diff(answer: dict) -> bool:
     still gets)."""
     return not answer.get("ingredients") and (
         any(k in answer for k in _DIFF_KEYS) or bool(answer.get("meal_name")))
+
+
+def _diff_reflects(diff: dict, choice: str) -> bool:
+    """Whether a diff actually puts the requested part in: a row it changes
+    or adds names the choice (any word of it, singular or plural). A
+    name-only answer changes nothing in the recipe, and is not a change."""
+    words = [w.rstrip("s") for w in re.findall(r"[a-z]+", (choice or "").lower()) if len(w) >= 3]
+    if not words:
+        return True
+    for row in _as_list(diff.get("ingredients_changed")) + _as_list(diff.get("ingredients_added")):
+        item = (row.get("item") or "").lower() if isinstance(row, dict) else ""
+        if any(w in item for w in words):
+            return True
+    return False
 
 
 def _can_diff(recipe: dict | None, serves: int) -> bool:
@@ -981,6 +1012,13 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
         context["_diff"] = True
     ask = asker or (lambda ctx: _ask_variant(ctx, role))
     pick = ask(context) or {}
+    if as_diff and _is_diff(pick) and not _diff_reflects(pick, choice):
+        # A diff that never puts the new part in is no change. Ask once more
+        # for the whole recipe, the way a recipe with nothing to diff is asked.
+        logger.warning("plate_part_change diff did not include %r; asking for the whole recipe", choice)
+        context.pop("_diff", None)
+        as_diff = False
+        pick = ask(context) or {}
     if as_diff and _is_diff(pick):
         # What changed, put on the stored recipe: every step it had, less
         # what the change drops (apply_variant_diff).
