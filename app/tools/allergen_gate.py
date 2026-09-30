@@ -142,25 +142,27 @@ def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[d
     return [h for h in hits if h.get("severity") == "hard"]
 
 
-# The allergen-free labels a dish name must not carry (2026-09-30): every
-# prompt that names a dish says so, and a draft dish that arrives with one
-# anyway is written up at the recipe pass under its plain name — the name
-# is then matched strictly, with the full list, like any other. Narrow on
-# purpose: only the family-negation words come off, never anything else.
-# Gluten-free stays: it describes the pasta or the flour, and
-# coordination's gluten-free segment rule already reads it.
-_FREE_LABEL_RE = re.compile(
-    r"\(?\s*\b(?:(?:dairy|egg|eggs|nut|nuts|tree[\s-]nut|peanut|peanuts|soy|sesame|shellfish|fish|lactose)"
-    r"[\s-]free|non[\s-]dairy|eggless|vegan|plant[\s-]based)\b\s*\)?",
+# The labels a dish name must not carry (2026-09-30): every prompt that
+# names a dish says so. At the recipe pass only "Vegan" / "Plant-Based"
+# come off a draft's name before it is written up and checked: they are
+# not allergen words, so taking them off loses nothing. An allergen-free
+# label — "Dairy-Free", "Egg-Free", "Nut-Free", "Non-Dairy" — STAYS, and
+# the strict check then holds the dish on it and it is re-picked. That is
+# the verifier's round 3: stripping "Dairy-Free" let a list the alias
+# table doesn't fully know ("grana padano", "clotted", "2%") through with
+# nothing left to backstop it. Emily's 2026-09-20 rule: a "-free" label
+# never sneaks an allergen in.
+_PLAIN_LABEL_RE = re.compile(
+    r"\(?\s*\b(?:vegan|plant[\s-]based)\b\s*\)?",
     re.IGNORECASE,
 )
 
 
 def plain_dish_name(name: str) -> str:
-    """ "Dairy-Free Pancakes" -> "Pancakes"; "Greek Yogurt (Dairy-Free)
-    Parfait" -> "Greek Yogurt Parfait". A name that is nothing BUT a label
-    comes back as it was."""
-    plain = _FREE_LABEL_RE.sub(" ", name or "")
+    """ "Vegan Alfredo" -> "Alfredo"; "Panna Cotta (Vegan)" -> "Panna
+    Cotta". Allergen-free labels are left exactly where they are. A name
+    that is nothing BUT a label comes back as it was."""
+    plain = _PLAIN_LABEL_RE.sub(" ", name or "")
     plain = re.sub(r"\s{2,}", " ", plain).strip(" -–—,&")
     plain = re.sub(r"^(?:with|and)\s+", "", plain, flags=re.IGNORECASE).strip()
     return plain or (name or "").strip()

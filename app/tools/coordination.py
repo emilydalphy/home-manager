@@ -120,13 +120,14 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "satay", "groundnut", "nutella", "gianduja", "frangipane", "amaretti",
             "baklava", "nougat", "romesco", "dukkah",
             "muhammara", "amaretto", "pignoli", "kung pao", "korma", "orgeat", "mole",
-            "chestnut"},
+            "chestnut", "filbert", "marcona", "biscotti"},
     "peanut": {"satay", "groundnut"},
     "shellfish": {"shrimp", "prawn", "crab", "lobster", "clam", "mussel",
                   "scallop", "oyster", "squid", "calamari", "crawfish", "crayfish",
                   "langoustine", "langostino", "scampi", "octopus", "cockle", "whelk",
                   "bouillabaisse", "cioppino", "gumbo", "belacan", "xo sauce", "ebi",
-                  "abalone", "conch", "krill", "cuttlefish"},
+                  "abalone", "conch", "krill", "cuttlefish", "crawdad", "mudbug",
+                  "tom yum paste", "bagoong", "kapi", "escargot", "geoduck", "periwinkle"},
     # No "sole", "pike" or "bass": ordinary words ("The Sole Survivor",
     # "Pike Place", "Bass-Boosted") that held dishes with no fish in them.
     # "sea bass" is kept whole. No "caesar" in any family: the dressing's
@@ -136,7 +137,7 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
              "sea bass", "snapper", "pollock", "mahi", "swordfish", "catfish",
              "herring", "flounder", "grouper", "monkfish", "branzino", "carp", "perch",
              "lox", "caviar", "roe", "bonito", "dashi", "worcestershire",
-             "nam pla", "surimi"},
+             "nam pla", "surimi", "caesar dressing", "puttanesca"},
     # "buttermilk" is here rather than left to "butter"/"milk": whole-word
     # matching reaches neither half of it, and it is unambiguously dairy —
     # the opposite call from "peanut butter", which is spelled with a dairy
@@ -152,7 +153,10 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
               "asiago", "fontina", "gorgonzola", "stilton", "cotija", "romano", "chevre",
               "taleggio", "pepper jack", "velveeta", "fromage", "curds", "beurre",
               "half and half", "half-and-half", "ranch", "dulce de leche", "panna cotta",
-              "korma", "lassi", "flan", "creme brulee", "mousse"},
+              "korma", "lassi", "flan", "creme brulee", "mousse",
+              # Round 3. "2%" is folded to "2 percent" (see _fold).
+              "grana", "oaxaca", "evaporated", "clotted", "cool whip", "whipped topping",
+              "lactose", "boursin", "american slices", "2 percent", "1 percent", "skim"},
     "gluten": set(_WHEAT_WORDS),
     "wheat": set(_WHEAT_WORDS),
     # "whites" is matched as written (see _VERBATIM_ALIASES), never as
@@ -161,7 +165,9 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "bearnaise", "carbonara", "frittata", "quiche", "omelet", "omelette", "souffle",
             "eggnog", "pavlova", "tiramisu",
             "yolk", "brioche", "challah", "remoulade", "tartar sauce", "flan",
-            "creme brulee", "mousse", "shakshuka", "lo mein", "ranch", "coleslaw dressing"},
+            "creme brulee", "mousse", "shakshuka", "lo mein", "ranch", "coleslaw dressing",
+            "lemon curd", "zabaglione", "sabayon", "clafoutis", "crepe", "french toast",
+            "dutch baby", "albumen", "tamagoyaki", "yorkshire pudding"},
     "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso", "tamari", "shoyu",
             "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara"},
     "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne"},
@@ -169,7 +175,12 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
 # Aliases matched exactly as written, with no singular/plural twin: an
 # egg-white line says "3 whites", and the singular would reach "white
 # wine" and "white beans".
-_VERBATIM_ALIASES: dict[str, set[str]] = {"egg": {"whites"}, "eggs": {"whites"}}
+# "florentines" (the lace cookie) likewise: chicken or eggs FLORENTINE is
+# spinach, not almonds.
+_VERBATIM_ALIASES: dict[str, set[str]] = {
+    "egg": {"whites"}, "eggs": {"whites"},
+    "nut": {"florentines"}, "nuts": {"florentines"},
+}
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
 _ALLERGEN_ALIASES["peanuts"] = _ALLERGEN_ALIASES["peanut"]
 _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
@@ -232,6 +243,7 @@ _DAIRY_PLANT_WORDS = frozenset({
     "dairy", "dairies", "milk", "milks", "butter", "butters", "cheese", "cheeses",
     "cream", "creams", "yogurt", "yogurts", "yoghurt", "yoghurts",
     "custard", "custards", "alfredo", "alfredos",
+    "mousse", "mousses", "flan", "flans", "panna cotta", "panna cottas",
 })
 _EGG_PLANT_WORDS = frozenset({"egg", "eggs", "mayonnaise", "mayonnaises", "mayo", "mayos", "aioli", "aiolis"})
 # The family's own name inside a qualifier ("DAIRY-free butter"). On an
@@ -242,7 +254,7 @@ _FAMILY_WORDS = frozenset({"dairy", "dairies", "egg", "eggs"})
 _EGG_LABELS = frozenset({"egg", "eggs"})
 _PLANT_MOD = (
     r"(?:greek|greek-style|sour|whipped|heavy|plain|shredded|grated|cream|ice|"
-    r"coconut|oat|soy|soya|almond|cashew|rice)"
+    r"coconut|oat|soy|soya|almond|cashew|rice|chocolate|vanilla)"
 )
 
 _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
@@ -268,6 +280,14 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     # allergen they don't contain.
     (frozenset({"beer", "beers"}), re.compile(r"\b(?:root|ginger)\s+beers?\b")),
     (frozenset({"chestnut", "chestnuts"}), re.compile(r"\bwater\s+chestnuts?\b")),
+    # Round 3: tofu is bean curd, not milk curd; ranch-style beans are a
+    # chili-sauce bean; a vegetable gumbo has no shellfish.
+    (frozenset({"curds", "curd"}), re.compile(r"\b(?:tofu|bean|soy|soya)\s+curds?\b")),
+    (frozenset({"ranch", "ranches"}), re.compile(r"\branch[\s-]style\b")),
+    (frozenset({"gumbo", "gumbos"}), re.compile(
+        r"\b(?:vegan|vegetable|veggie|plant[\s-]based)\s+(?:okra\s+)?gumbos?\b"
+        r"|\bgumbos?\s+vegan$"
+    )),
     (frozenset({"caviar", "caviars"}), re.compile(r"\b(?:eggplant|aubergine)\s+caviars?\b")),
     (frozenset({"dashi", "dashis"}), re.compile(r"\b(?:kombu|vegan|shiitake|mushroom|kelp)\s+dashis?\b")),
     # Olive oil is a cooking fat, not an olive. A household that avoids
@@ -320,18 +340,22 @@ _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
     (_DAIRY_PLANT_WORDS, re.compile(
         r"\b(?:vegan|plant[\s-]based)\s+"
         r"(?:" + _PLANT_MOD + r"\s+)?"
-        r"(?:milk|butter|cheese|cream|yogh?urt|custard|alfredo)s?(?![-a-z0-9])"
+        r"(?:milk|butter|cheese|cream|yogh?urt|custard|alfredo|mousse|flan|panna\s+cotta)s?(?![-a-z0-9])"
     )),
     # "dairy-free custard" still has its eggs: this one says nothing to an
     # egg allergy (the third element: the avoidances it never speaks for).
     (_DAIRY_PLANT_WORDS, re.compile(
         r"\b(?:dairy[\s-]free|non[\s-]dairy)\s+"
         r"(?:" + _PLANT_MOD + r"\s+)?"
-        r"(?:milk|butter|cheese|cream|yogh?urt|custard|alfredo)s?(?![-a-z0-9])"
+        r"(?:milk|butter|cheese|cream|yogh?urt|custard|alfredo|mousse|flan|panna\s+cotta)s?(?![-a-z0-9])"
     ), _EGG_LABELS),
     # Coconut custard is set with starch, not cream — but usually still
     # with egg, so it is dairy's exception only.
     (frozenset({"custard", "custards"}), re.compile(r"\bcoconut\s+custards?\b"), _EGG_LABELS),
+    # A vegan caesar dressing has no anchovy (nor egg or parmesan).
+    (frozenset({"caesar dressing", "caesar dressings"}), re.compile(
+        r"\b(?:vegan|plant[\s-]based)\s+caesar\s+dressings?\b"
+    )),
     # The same for egg: vegan or egg-free mayonnaise is made without it.
     (_EGG_PLANT_WORDS, re.compile(
         r"\b(?:vegan|plant[\s-]based|egg[\s-]free|eggless)\s+(?:mayonnaise|mayo|aioli)s?(?![-a-z0-9])"
@@ -1068,8 +1092,13 @@ def _fold(text: str) -> str:
     and full-width characters folded ("Gruyère", "crème fraîche", "Ｄairy"),
     punctuation to spaces,
     whitespace collapsed — the one shape every segment is matched in."""
-    text = re.sub(r"[\u200b-\u200d\ufeff\u00ad]", "", text or "")
+    # Every invisible format character (Unicode Cf: zero-width space and
+    # joiners, soft hyphen, bidi marks, BOM…) is dropped, so it can't split
+    # a word the matcher is looking for.
+    text = "".join(ch for ch in (text or "") if unicodedata.category(ch) != "Cf")
     text = unicodedata.normalize("NFKD", text)
+    # "2%" is milk on an ingredient line ("2 cups 2%").
+    text = re.sub(r"(\d)\s*%", r"\1 percent", text)
     text = "".join(ch for ch in text if not unicodedata.combining(ch)).lower()
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", text)).strip()
 

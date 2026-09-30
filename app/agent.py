@@ -3290,7 +3290,7 @@ allergen is alarming to read on the week's menu even when the recipe is safe, an
 plan impossible to check at a glance. Never put an allergen-free label in a dish's name either — no "Dairy-Free", "Egg-Free", \
 "Nut-Free", "Non-Dairy" or "Vegan" in front of it. Name the dish by what's in it ("Oat Milk \
 Pancakes", not "Dairy-Free Pancakes"); the household's restrictions are already known, and a \
-labelled name is written up under its plain name.
+dish with an allergen-free label in its name is thrown away and re-chosen.
 - Lean toward liked/favorite recipes from saved_recipes (rating='liked' or high \
 times_cooked), but don't just repeat them. household_memory's novelty_preference sets how \
 much new-recipe exposure to aim for this week: "mostly_favorites" -> still surface at least \
@@ -3844,8 +3844,8 @@ person, as they wrote them. Nothing in this recipe may contain any of it — not
 in a salsa or a sauce or a garnish, not under a "-free" name. The people it names EAT this. \
 Every ingredient list is checked against it after you write it, and a recipe that fails is \
 thrown away and the dish re-chosen. A dish name's "Dairy-Free" / "Vegan"-style label promises \
-nothing: the recipe is saved under the plain name and every ingredient on your list is what \
-gets checked, so write the list the way the household can eat it.
+nothing: every ingredient on your list is what gets checked, so write the list the way the \
+household can eat it.
 - `serves` is this household's own table, and default_servings must be exactly that number: \
 write every ingredient quantity for that many people. This is load-bearing for the shopping \
 list, which buys per portion — a recipe written for 4 in a household of 3 has every quantity \
@@ -4069,11 +4069,11 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     raises, so one bad recipe can't stop the rest of an approval.
     """
     name = recipe["name"]
-    # A draft name with an allergen-free label on it ("Dairy-Free
-    # Pancakes") is written up — and checked, strictly, with the full
-    # list — under its plain name (2026-09-30). If another recipe already
-    # has the plain name the label stays, and the strict check then holds
-    # the dish rather than guess.
+    # A draft name with "Vegan" / "Plant-Based" on it is written up under
+    # its plain name ("Vegan Alfredo" -> "Alfredo"); an allergen-free
+    # label ("Dairy-Free Pancakes") stays, and the strict check below holds
+    # the dish on it so it is re-picked (2026-09-30, verifier round 3).
+    # If another recipe already has the plain name the label stays too.
     plain = _allergen_gate.plain_dish_name(name)
     if plain.lower() != name.lower() and tools.existing_recipe_named(plain):
         plain = name
@@ -4344,7 +4344,7 @@ allergen is alarming to read in the week's pool even when the recipe is safe, an
 plan impossible to check at a glance. Never put an allergen-free label in an item's name either — no "Dairy-Free", "Egg-Free", \
 "Nut-Free", "Non-Dairy" or "Vegan" in front of it. Name the item by what's in it ("Oat Milk \
 Pancakes", not "Dairy-Free Pancakes"); the household's restrictions are already known, and a \
-labelled name is written up under its plain name.
+dish with an allergen-free label in its name is thrown away and re-chosen.
 - Lean toward liked/favorite recipes from saved_recipes, but honor novelty_preference the same \
 way as day-based planning — even "mostly_favorites" should include at least one new item \
 somewhere in the pool.
