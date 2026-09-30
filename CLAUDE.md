@@ -425,6 +425,73 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-30 — The morning report's FOOD section spent five of its six
+  lines saying two things. Branch `overnight/report-food-lines-collapse`,
+  NOT merged at the time of writing. REPORT-ONLY — `git diff main -- app/
+  static/ tests/` is one added test file and nothing else.** Found by
+  reading the live app through the report token, read-only, rather than by
+  reading the code — which is the one thing that channel is for.
+  - **Measured before anything was touched, household 1's six FOOD lines:**
+    one `snack_echoes_a_meal` warning, then `Turkish-Style Lentil Soup:
+    Butter '1 stick' is more than 2 would use` **three times**, then
+    `... Carrots never appear(s) in any step.` **twice** — three pieces of
+    news in six slots. The other 24 findings that week, **nine of them
+    `dinner_repeat_in_history`**, printed nothing at all.
+  - **THE DEDUPE IS NOT BROKEN, and that is the finding rather than a
+    caveat.** `get_recent_plan_quality` keys on `(rule, date, slot,
+    message)` and every row really is a different finding: the three butter
+    rows are 2026-10-03, 09-29 and 09-28. What makes them print identically
+    is that a RECIPE-level rule — `quantities_plausible`,
+    `steps_match_ingredients` — writes a message naming the RECIPE and not
+    the night, and `_print_human` prints the message and the severity and
+    nothing else. Confirmed by dumping the raw rows rather than inferred
+    from the shape of the output.
+  - **COLLAPSING RATHER THAN DATING EACH LINE, and it is the one thing here
+    worth arguing with.** Three nights of one recipe is ONE thing to fix —
+    the recipe — and `(3 nights)` keeps what the dates were there to say.
+    Printing the three dates would have been equally honest and would have
+    gone on spending three of six slots to say it.
+  - **A rule that already names its own night is untouched BY
+    CONSTRUCTION**, not by a carve-out: `snack_echoes_a_meal` and
+    `reasoning_is_specific` embed the date in their sentence, so their
+    messages differ and never collapse. Asserted rather than assumed,
+    because it is the half that would quietly lose information if the key
+    were ever loosened to the rule name.
+  - **`_food_line_text` is its own function and that is not tidiness.**
+    `_print_human` needs a whole report dict to drive (it took five rounds
+    of KeyError to get a minimal one, and it still wanted more), so with the
+    `nights > 1` rule inlined in the print the one rule this change adds
+    would have been the one rule no test could reach. Found by trying to
+    test it, not by design.
+  - **Measured again on the same live data after the change, same six
+    slots:** the snack warning, butter (3 nights), carrots (3 nights), and
+    **three `reasoning_is_specific` warnings that had never printed**.
+    Twice the news in the same space. Exit code still 0 — a dull dinner is
+    not an outage, which `test_food_problems_never_land_under_broken`
+    already pins.
+  - `tests/test_report_food_lines.py` (10). **Red-against-main is not
+    quoted, because it is not a meaningful number here**: the file imports
+    `_food_lines` and `_food_line_text`, neither of which exists on main, so
+    every test is a collection error rather than a behaviour catch. **Five
+    mutations are the evidence and every one bites**: no collapsing at all,
+    i.e. main's behaviour (**3** red), the severity dropped from the key
+    (**1**), the output sorted rather than left in arrival order (**1**),
+    the count printed even for a single night (**1**), and the severity
+    column's padding dropped (**3**).
+  - **ONE OF THOSE MUTATIONS WAS BADLY SCOPED ON THE FIRST RUN and is
+    recorded rather than quietly re-run.** "Drop the severity from the key"
+    was written as `key = ("", ...)`, which also blanks the severity in the
+    RETURN value, so it reddened **3** — two of them exact-tuple tests that
+    have nothing to do with the key. Re-written to collapse on the message
+    while keeping each line's real severity, it reddens exactly **1**, the
+    test named for it. A mutation that overshoots says the mutation was
+    badly chosen, not that the tests are broad.
+  - **FOUND AND NOT FIXED, named so nobody reports it as new:** the six-line
+    cap is still a cap, so a week with more than six distinct findings still
+    prints only six — this makes those six worth reading, it does not make
+    them all. And the same collapsing question exists for the ERROR
+    section's `_print_shape`, which was not looked at.
+
 - **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
   Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep
   after work, it won't be done in time for tuesday." The one rule lives in
