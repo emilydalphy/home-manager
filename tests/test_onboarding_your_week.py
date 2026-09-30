@@ -490,3 +490,18 @@ def test_the_read_back_for_a_quieter_week():
         {"icon": "avoid", "text": "Robin: no peanuts"},
         {"icon": "variety", "text": "Lunches from last night’s dinner · 7 dinners"},
     ]
+
+
+def test_some_of_you_differs_from_everyone_in_lightness_in_dark_mode_only():
+    """Emily, 2026-09-30: in dark mode the celadon tint sat too close to dark
+    spruce, so "some of you" read as a hue of "everyone". Dark only, scoped
+    to the grid: the light --celadon fill with --on-accent-ink, the same as
+    Settings' day row. Light mode and the tokens are untouched."""
+    css = ONBOARDING[ONBOARDING.index("<style>"): ONBOARDING.index("</style>")]
+    rule = "background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink);"
+    media = css[css.index("@media (prefers-color-scheme: dark) {\n    :where(:root:not([data-theme=\"light\"])) .uw-day.is-some"):]
+    assert rule in media[: media.index("}\n  }") + 1]
+    assert ':where(:root[data-theme="dark"]) .uw-day.is-some, :where(:root[data-theme="dark"]) .uw-sw.is-some { ' + rule in css
+    # Light keeps the tint.
+    assert ".uw-day.is-some { background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon); }" in css
+    assert "--celadon:" not in css and "--celadon-tint:" not in css, "no token is redefined here"

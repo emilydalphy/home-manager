@@ -382,6 +382,16 @@
   .uw-day.is-all { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
   .uw-day.is-some { background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon); }
   .uw-day.is-open { outline: 3px solid var(--apricot); outline-offset: 1px; }
+  /* Dark mode only (Emily, 2026-09-30): the celadon tint sits too close to
+     dark spruce in lightness, so "some of you" reads as another hue of
+     "everyone". There it is the light --celadon fill with dark
+     --on-accent-ink (hard rule 1) — the same rule Settings' day row uses.
+     The legend swatch follows it. Scoped to this component; no token
+     changes. */
+  @media (prefers-color-scheme: dark) {
+    :where(:root:not([data-theme="light"])) .uw-day.is-some, :where(:root:not([data-theme="light"])) .uw-sw.is-some { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
+  }
+  :where(:root[data-theme="dark"]) .uw-day.is-some, :where(:root[data-theme="dark"]) .uw-sw.is-some { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
   #prep-day-tiles .uw-day { height: 44px; }
   .uw-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .uw-q { padding: 0 12px; font-size: 13px; }
