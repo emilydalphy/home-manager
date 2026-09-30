@@ -1294,6 +1294,18 @@ def onboarding_answers(req: OnboardingAnswersRequest):
     preference) — those are no longer asked upfront; they accumulate
     through ordinary chat/UI use afterward, per the onboarding redesign PRD.
     """
+    usual = req.usual_week
+    if usual is not None:
+        # Checked BEFORE anything is saved: a bad usual week is a 400 and
+        # the rest of the answers are not half-written. People named in the
+        # grid may be the ones this same request adds.
+        try:
+            tools.validate_usual_week(
+                grid=usual.grid, variety=usual.variety, snacks_per_day=usual.snacks_per_day,
+                prep=usual.prep, pending_names=req.member_names,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
     try:
         memory = tools.save_onboarding_answers(
             member_names=req.member_names,
@@ -1307,18 +1319,21 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             snacks_per_week=req.snacks_per_week,
             snacks_per_day=req.snacks_per_day,
         )
-        if req.usual_week is not None:
-            usual = req.usual_week
+    except Exception as e:
+        logger.exception("Onboarding answers save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    if usual is not None:
+        try:
             saved = tools.save_usual_week(
                 grid=usual.grid, variety=usual.variety, snacks_per_day=usual.snacks_per_day,
                 prep=usual.prep, source="onboarding",
             )
-            memory = dict(tools.get_household_memory(), usual_week=saved)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        logger.exception("Onboarding answers save failed")
-        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.exception("Onboarding usual week save failed")
+            raise HTTPException(status_code=500, detail=f"Server error: {e}")
+        memory = dict(tools.get_household_memory(), usual_week=saved)
     return memory
 
 

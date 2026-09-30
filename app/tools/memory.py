@@ -853,5 +853,11 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         raise ValueError(f"Unknown preference field '{field}'.")
     conn.commit()
     conn.close()
+    if field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week"):
+        # Back to 7: a meal the saved usual week had off all week is back on
+        # (usual_week.meal_counts_changed_elsewhere — the number wins).
+        from . import usual_week as _usual_week
+        _usual_week.meal_counts_changed_elsewhere(
+            {meal: 7 for meal, column in _usual_week.COUNT_COLUMNS.items() if column == field})
     _household._log_preference_event(field, "delete")
     return {"field": field, "item": item, "deleted": True}

@@ -144,6 +144,11 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- set_household_meal_preferences; backfilled for a household whose
     -- stored counts are not all the default 7 (db._backfill_meal_counts_set).
     meal_counts_set INTEGER NOT NULL DEFAULT 0,
+    -- The household's usual week (2026-09-30): the meals x days x who's
+    -- eating grid and the variety choice per meal, as JSON. '' = never
+    -- answered (tools/usual_week.py derives the grid from the counts above
+    -- on every read). Written only by usual_week; also in db._MIGRATIONS.
+    usual_week_json TEXT NOT NULL DEFAULT '',
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     -- design_handoff_plan_the_week. The settings the revisitable setup
     -- screen owns and the two onboarding steps collect. They are separate

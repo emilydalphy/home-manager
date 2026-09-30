@@ -343,6 +343,10 @@ def set_prep_days(days: list | None = None, this_week_only: bool = False, source
     _upsert(conn, "", "", "prep_days", json.dumps(normalized), "", source)
     conn.commit()
     conn.close()
+    if not normalized:
+        # No prep day left for a usual week's "Meal prep ahead" lunch.
+        from . import usual_week as _usual_week
+        _usual_week.prep_days_cleared()
     _household._log_preference_event("rhythm:prep_days", "write")
     return {"prep_days": normalized, "prep_days_summary": prep_days_summary(normalized)}
 
@@ -572,6 +576,9 @@ def save_rhythm_answers(
     # so it stays outside the transaction above rather than complicating it.
     for field in logged:
         _household._log_preference_event(field, "write")
+    if normalized_prep_days == []:
+        from . import usual_week as _usual_week
+        _usual_week.prep_days_cleared()
 
     return get_household_rhythm()
 

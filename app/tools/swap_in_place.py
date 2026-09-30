@@ -390,7 +390,9 @@ Rules, in this order:
 anything served with it. An allergy written as a sentence is still an allergy. If honouring it \
 leaves you no good answer, pick a plainer dish rather than a clever one — never a compromise.
 - Never name a dish after an ingredient it leaves out. No "Nut-Free Noodles". The name says what \
-the dish IS.
+the dish IS. No allergen-free label in the name either ("Dairy-Free", \
+"Egg-Free", "Non-Dairy", "Vegan"): "Oat Milk Pancakes", not "Dairy-Free Pancakes" — a dish with \
+a label in its name is turned down, because the label itself names the allergen.
 - `avoid` is what has already been turned down for this slot, including the dish being replaced. \
 Don't come back with any of them, or with a near-identical variant of one.
 - `must_contain`, when present, is something the household asked to use this week ("I have some \
@@ -709,9 +711,14 @@ def _fillable_slots(weekly_plan_id: int, meal_date: str) -> list[dict]:
     # back) is not blank, and its gaps are the per-slot Pick's job.
     if any(r["slot_state"] in ("planned", "open") for r in rows if r["slot"] in _weekly_plan.WEEK_SLOTS):
         return []
+    # …nor a meal the household's usual week has off that day
+    # (usual_week.off_slots_on) — "Not planned" on a Saturday breakfast is
+    # an answer, left out day or not.
+    from . import usual_week as _usual_week
+    usual_off = {slot for (_d, slot) in _usual_week.off_slots_on([meal_date])}
     out = []
     for slot in _weekly_plan.WEEK_SLOTS:
-        if slot in unwanted:
+        if slot in unwanted or slot in usual_off:
             continue
         mine = [r for r in rows if (r["slot"] or "dinner") == slot]
         skipped = bool(mine) and all(
@@ -782,6 +789,12 @@ def fill_empty_day(weekly_plan_id: int, meal_date: str, picker=None) -> dict:
     slots = _fillable_slots(weekly_plan_id, meal_date)
     if not slots:
         return {"status": "refused", "message": FILL_NOTHING}
+    # The household's usual week (2026-09-30): the day's table is its
+    # usual one — "just Emily" on a Thursday dinner is sized for Emily —
+    # before anything is picked. (_fillable_slots already left out the
+    # meals the usual week has off.)
+    from . import usual_week as _usual_week
+    _usual_week.apply_usual_attendance(_usual_week.generation_plan([meal_date]), [meal_date])
 
     filled = []
     missed = False

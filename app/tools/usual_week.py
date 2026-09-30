@@ -40,6 +40,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import threading
 from datetime import date
 
 from ..db import get_conn
@@ -86,6 +87,10 @@ LEFTOVER_LUNCH_DISHES = 1
 # The lunch choice that needs a prep day to mean anything.
 NEEDS_PREP_DAY = {("lunch", "meal_prep_ahead")}
 
+# What a stored "Meal prep ahead" lunch becomes when the prep days are
+# taken away (there is no session left to prep in).
+PREP_REMOVED_LUNCH_CHOICE = "few_in_rotation"
+
 # The prep answer's two lengths, as minutes on the rhythm fact.
 PREP_LENGTHS = {"hour": 60, "longer": 120}
 SNACKS_PER_DAY_MAX = 3
@@ -98,6 +103,9 @@ OFF_REASON = "Not planned — you don’t plan this meal on this day."
 # people", so a later save can rewrite or remove its own rows and never
 # anybody else's (a trip, the day sheet, the guests chip).
 ATTENDANCE_SOURCE = "usual_week"
+# The week's own attendance rows the grid's subset is applied UNDER (their
+# base was "everyone") — the day sheet, a single toggle, the guests chip.
+WEEK_OWN_SOURCES = ("sheet", "toggle", "guests")
 
 
 # ---------- reading ----------
@@ -188,6 +196,7 @@ def _state(conn) -> dict:
     ids = {m["id"] for m in members}
     counts = _counts(row)
     stored = _stored(row)
+    prep_days = _prep_answer()["days"] if stored else []
     if stored:
         grid = {m: {d: _clean_cell((stored["grid"].get(m) or {}).get(d, EVERYONE), ids) for d in WEEKDAYS}
                 for m in MEALS}
@@ -205,6 +214,8 @@ def _state(conn) -> dict:
         # old Different dishes steppers) wins, and the choice it no longer
         # matches is dropped rather than shown as what they picked.
         if choice is not None and resolve_dishes(m, choice, on) != dishes:
+            choice = None
+        if (m, choice) in NEEDS_PREP_DAY and not prep_days:
             choice = None
         variety[m] = {"choice": choice, "dishes": dishes, "days_on": on}
     return {
@@ -252,12 +263,17 @@ def get_usual_week() -> dict:
 
 # ---------- writing ----------
 
-def _parse_grid(grid, members: list[dict], current: dict) -> dict:
+def _parse_grid(grid, members: list[dict], current: dict, pending_names: list[str] | None = None) -> dict:
+    """The grid being saved, from the stored one and the cells sent.
+    `pending_names` (onboarding's validate-first pass) are people about to
+    be added: a cell naming one is accepted as a subset without an id."""
     from . import attendance as _attendance
 
     if not isinstance(grid, dict):
         raise ValueError("grid must be an object of meal → weekday → who.")
     all_ids = [m["id"] for m in members]
+    pending = {str(n).strip().lower() for n in (pending_names or []) if str(n).strip()}
+    known = {m["name"].strip().lower() for m in members}
     out = {m: dict(current[m]) for m in MEALS}
     for meal, days in grid.items():
         if meal not in MEALS:
@@ -275,9 +291,116 @@ def _parse_grid(grid, members: list[dict], current: dict) -> dict:
                 raise ValueError(
                     f"{meal} on {key} must be \"everyone\", \"off\", or a list of the people eating it."
                 )
+            if pending and any(isinstance(w, str) and w.strip().lower() in pending - known for w in who):
+                # Validation only: someone not added yet. Checked for real
+                # on the save that follows the answers.
+                rest = [w for w in who if not (isinstance(w, str) and w.strip().lower() in pending - known)]
+                if rest:
+                    _attendance.resolve_member_ids(rest)
+                out[meal][key] = list(who)
+                continue
             ids = _attendance.resolve_member_ids(who)
             out[meal][key] = EVERYONE if set(ids) >= set(all_ids) else ids
     return out
+
+
+# One save at a time per household: a save reads the stored usual week,
+# changes the cells it was sent and writes the whole thing back, so two
+# partial saves racing each other would otherwise lose one's cells.
+_SAVE_LOCKS: dict[int, threading.RLock] = {}
+_SAVE_LOCKS_GUARD = threading.Lock()
+
+
+def _save_lock() -> threading.RLock:
+    with _SAVE_LOCKS_GUARD:
+        return _SAVE_LOCKS.setdefault(household_id(), threading.RLock())
+
+
+def _prepare(grid, variety, snacks_per_day, prep, pending_names=None) -> dict:
+    """Everything a save would write, worked out and checked — raises
+    ValueError on anything invalid, and writes nothing."""
+    from . import rhythm as _rhythm
+
+    conn = get_conn()
+    try:
+        state = _state(conn)
+    finally:
+        conn.close()
+
+    new_grid = (_parse_grid(grid, state["members"], state["grid"], pending_names)
+                if grid is not None else state["grid"])
+
+    choices = {m: state["variety"][m]["choice"] for m in MEALS}
+    if variety is not None:
+        if not isinstance(variety, dict):
+            raise ValueError("variety must be an object of meal → choice.")
+        for meal, choice in variety.items():
+            if meal not in MEALS:
+                raise ValueError(f"variety meal must be one of {', '.join(MEALS)}, not {meal!r}.")
+            if isinstance(choice, dict):
+                choice = choice.get("choice")
+            if choice is not None and choice not in VARIETY_CHOICES[meal]:
+                raise ValueError(
+                    f"{meal} variety must be one of {', '.join(VARIETY_CHOICES[meal])}, not {choice!r}."
+                )
+            choices[meal] = choice
+
+    if snacks_per_day is not None:
+        try:
+            snacks_per_day = int(snacks_per_day)
+        except (TypeError, ValueError):
+            raise ValueError(f"snacks_per_day must be 0 to {SNACKS_PER_DAY_MAX}.")
+        if not 0 <= snacks_per_day <= SNACKS_PER_DAY_MAX:
+            raise ValueError(f"snacks_per_day must be 0 to {SNACKS_PER_DAY_MAX}.")
+
+    prep_days = None
+    if prep is not None:
+        if not isinstance(prep, dict):
+            raise ValueError("prep must be an object with days and length.")
+        raw_days = prep.get("days") or []
+        length = prep.get("length")
+        if raw_days and length is not None and length not in PREP_LENGTHS:
+            raise ValueError(f"prep length must be one of {', '.join(PREP_LENGTHS)}, or null.")
+        minutes = PREP_LENGTHS.get(length) if length else None
+        prep_days = _rhythm._normalize_prep_days([{"weekday": d, "minutes": minutes} for d in raw_days])
+    has_prep_day = bool(prep_days) if prep_days is not None else bool(_prep_answer()["days"])
+    lunch_sent = variety is not None and "lunch" in variety
+    if choices["lunch"] == "meal_prep_ahead" and not has_prep_day and days_on(new_grid, "lunch"):
+        if lunch_sent:
+            raise ValueError("“Meal prep ahead” needs a prep day — pick the day you prep, or another lunch choice.")
+        # The prep day was taken away under a stored "Meal prep ahead": the
+        # lunch goes back to a few in rotation rather than naming a prep
+        # session that no longer exists.
+        choices["lunch"] = PREP_REMOVED_LUNCH_CHOICE
+
+    counts = {}
+    answered_any = False
+    for meal in MEALS:
+        on = len(days_on(new_grid, meal))
+        current = state["variety"][meal]["dishes"]
+        if choices[meal] is not None:
+            counts[meal] = resolve_dishes(meal, choices[meal], on)
+            answered_any = True
+        elif on == 0:
+            counts[meal] = 0
+        elif current == 0:
+            # Back on without a choice: the unanswered default, every day
+            # it's on — not a floor (fill_up_allowed reads it that way).
+            counts[meal] = on
+        else:
+            counts[meal] = min(current, on)
+    return {
+        "stored": {"grid": new_grid, "variety": {m: {"choice": choices[m], "dishes": counts[m]} for m in MEALS}},
+        "counts": counts, "answered_any": answered_any,
+        "snacks_per_day": snacks_per_day, "prep_days": prep_days,
+    }
+
+
+def validate_usual_week(grid=None, variety=None, snacks_per_day=None, prep=None,
+                        pending_names: list[str] | None = None) -> None:
+    """Check a usual-week answer without writing anything (onboarding asks
+    this BEFORE it saves the rest of its answers). Raises ValueError."""
+    _prepare(grid, variety, snacks_per_day, prep, pending_names)
 
 
 def save_usual_week(
@@ -301,100 +424,110 @@ def save_usual_week(
     written into the per-week count columns; a choice sets meal_counts_set
     (the number is theirs). A meal off every day is 0 — "none, thanks" —
     which every existing pass already honours. Raises ValueError on
-    anything invalid, before anything is written.
+    anything invalid, before anything is written. One save at a time per
+    household, and everything it writes (the grid, the counts, snacks, the
+    prep days) is one transaction.
     """
     from . import household as _household
-    from . import rhythm as _rhythm
     from . import preferences as _preferences
+    from . import rhythm as _rhythm
 
-    conn = get_conn()
-    try:
-        state = _state(conn)
-    finally:
-        conn.close()
-
-    new_grid = _parse_grid(grid, state["members"], state["grid"]) if grid is not None else state["grid"]
-
-    choices = {m: state["variety"][m]["choice"] for m in MEALS}
-    if variety is not None:
-        if not isinstance(variety, dict):
-            raise ValueError("variety must be an object of meal → choice.")
-        for meal, choice in variety.items():
-            if meal not in MEALS:
-                raise ValueError(f"variety meal must be one of {', '.join(MEALS)}, not {meal!r}.")
-            if isinstance(choice, dict):
-                choice = choice.get("choice")
-            if choice is not None and choice not in VARIETY_CHOICES[meal]:
-                raise ValueError(
-                    f"{meal} variety must be one of {', '.join(VARIETY_CHOICES[meal])}, not {choice!r}."
+    with _save_lock():
+        plan = _prepare(grid, variety, snacks_per_day, prep)
+        counts = plan["counts"]
+        conn = get_conn()
+        try:
+            conn.execute("INSERT OR IGNORE INTO meal_preferences (household_id) VALUES (?)", (household_id(),))
+            conn.execute(
+                "UPDATE meal_preferences SET usual_week_json = ?, breakfasts_per_week = ?, lunches_per_week = ?, "
+                "dinners_per_week = ?, meal_counts_set = CASE WHEN ? THEN 1 ELSE meal_counts_set END, "
+                "updated_at = datetime('now') WHERE household_id = ?",
+                (json.dumps(plan["stored"]), counts["breakfast"], counts["lunch"], counts["dinner"],
+                 1 if plan["answered_any"] else 0, household_id()),
+            )
+            if plan["snacks_per_day"] is not None:
+                # What set_household_meal_preferences writes for a snacks
+                # answer (both numbers, both answered flags), on this
+                # transaction.
+                per_day = plan["snacks_per_day"]
+                conn.execute(
+                    "UPDATE meal_preferences SET snacks_per_day = ?, snacks_per_day_set = 1, "
+                    "snacks_per_week = ?, snacks_per_week_set = 1 WHERE household_id = ?",
+                    (per_day, _preferences.snacks_per_week_from_per_day(per_day), household_id()),
                 )
-            choices[meal] = choice
-
-    if snacks_per_day is not None:
-        snacks_per_day = int(snacks_per_day)
-        if not 0 <= snacks_per_day <= SNACKS_PER_DAY_MAX:
-            raise ValueError(f"snacks_per_day must be 0 to {SNACKS_PER_DAY_MAX}.")
-
-    prep_days = None
-    if prep is not None:
-        if not isinstance(prep, dict):
-            raise ValueError("prep must be an object with days and length.")
-        raw_days = prep.get("days") or []
-        length = prep.get("length")
-        if raw_days and length is not None and length not in PREP_LENGTHS:
-            raise ValueError(f"prep length must be one of {', '.join(PREP_LENGTHS)}, or null.")
-        minutes = PREP_LENGTHS.get(length) if length else None
-        prep_days = _rhythm._normalize_prep_days([{"weekday": d, "minutes": minutes} for d in raw_days])
-    has_prep_day = bool(prep_days) if prep_days is not None else bool(_prep_answer()["days"])
-    for meal, choice in choices.items():
-        if (meal, choice) in NEEDS_PREP_DAY and not has_prep_day and days_on(new_grid, meal):
-            raise ValueError("“Meal prep ahead” needs a prep day — pick the day you prep, or another lunch choice.")
-
-    # The numbers, resolved against the grid being saved.
-    counts = {}
-    answered_any = False
-    for meal in MEALS:
-        on = len(days_on(new_grid, meal))
-        current = state["variety"][meal]["dishes"]
-        if choices[meal] is not None:
-            counts[meal] = resolve_dishes(meal, choices[meal], on)
-            answered_any = True
-        elif on == 0:
-            counts[meal] = 0
-        elif current == 0:
-            # Back on without a choice: the unanswered default, every day
-            # it's on — not a floor (fill_up_allowed reads it that way).
-            counts[meal] = on
-        else:
-            counts[meal] = min(current, on)
-
-    stored = {
-        "grid": new_grid,
-        "variety": {m: {"choice": choices[m], "dishes": counts[m]} for m in MEALS},
-    }
-    conn = get_conn()
-    try:
-        conn.execute("INSERT OR IGNORE INTO meal_preferences (household_id) VALUES (?)", (household_id(),))
-        conn.execute(
-            "UPDATE meal_preferences SET usual_week_json = ?, breakfasts_per_week = ?, lunches_per_week = ?, "
-            "dinners_per_week = ?, meal_counts_set = CASE WHEN ? THEN 1 ELSE meal_counts_set END, "
-            "updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(stored), counts["breakfast"], counts["lunch"], counts["dinner"],
-             1 if answered_any else 0, household_id()),
-        )
-        conn.commit()
-    finally:
-        conn.close()
-    if snacks_per_day is not None:
-        _preferences.set_household_meal_preferences(
-            snacks_per_day=snacks_per_day,
-            snacks_per_week=_preferences.snacks_per_week_from_per_day(snacks_per_day),
-            mark_complete=False,
-        )
-    if prep_days is not None:
-        _rhythm.set_prep_days(prep_days, source=source)
+                _preferences.keep_snack_counts_consistent(conn, household_id())
+            if plan["prep_days"] is not None:
+                _rhythm._upsert(conn, "", "", "prep_days", json.dumps(plan["prep_days"]), "", source)
+            conn.commit()
+        finally:
+            conn.close()
     _household._log_preference_event("usual_week", "write")
+    if plan["snacks_per_day"] is not None:
+        _household._log_preference_event("snacks_per_day", "write")
+    if plan["prep_days"] is not None:
+        _household._log_preference_event("rhythm:prep_days", "write")
     return get_usual_week()
+
+
+def meal_counts_changed_elsewhere(changed: dict[str, int]) -> None:
+    """
+    An older door (the Different dishes steppers, chat's edit_preference, a
+    reset) just set a meal's count. When the saved grid has that meal off
+    every day and the count is now above 0, the number wins: the meal is
+    back on for everyone every day and its variety choice is cleared —
+    otherwise the grid would say "never" while the count says "three", and
+    generation would plan one dish a day from a meal the grid has off.
+    Nothing for a household with no saved grid.
+    """
+    with _save_lock():
+        conn = get_conn()
+        try:
+            row = _prefs_row(conn)
+            stored = _stored(row)
+            if not stored:
+                return
+            touched = False
+            for meal, count in changed.items():
+                if meal not in MEALS or not count or int(count) <= 0:
+                    continue
+                cells = stored["grid"].get(meal) or {}
+                if all(cells.get(d, EVERYONE) == OFF for d in WEEKDAYS):
+                    stored["grid"][meal] = {d: EVERYONE for d in WEEKDAYS}
+                    stored.setdefault("variety", {})[meal] = {"choice": None, "dishes": int(count)}
+                    touched = True
+            if touched:
+                conn.execute(
+                    "UPDATE meal_preferences SET usual_week_json = ? WHERE household_id = ?",
+                    (json.dumps(stored), household_id()),
+                )
+                conn.commit()
+        finally:
+            conn.close()
+
+
+def prep_days_cleared() -> None:
+    """The prep days were cleared through another door (rhythm.set_prep_days
+    — the Settings chips, chat): a stored "Meal prep ahead" lunch goes back
+    to PREP_REMOVED_LUNCH_CHOICE, number and all, so the usual week never
+    names a prep session that no longer exists."""
+    with _save_lock():
+        conn = get_conn()
+        try:
+            row = _prefs_row(conn)
+            stored = _stored(row)
+            if not stored or ((stored.get("variety") or {}).get("lunch") or {}).get("choice") != "meal_prep_ahead":
+                return
+            grid = {m: {d: (stored["grid"].get(m) or {}).get(d, EVERYONE) for d in WEEKDAYS} for m in MEALS}
+            on = len(days_on(grid, "lunch"))
+            dishes = resolve_dishes("lunch", PREP_REMOVED_LUNCH_CHOICE, on)
+            stored["variety"]["lunch"] = {"choice": PREP_REMOVED_LUNCH_CHOICE, "dishes": dishes}
+            conn.execute(
+                "UPDATE meal_preferences SET usual_week_json = ?, lunches_per_week = ? WHERE household_id = ?",
+                (json.dumps(stored), dishes, household_id()),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
 
 # ---------- generation ----------
@@ -449,10 +582,23 @@ def generation_plan(dates: list[str], skipped: list[str] | None = None) -> dict:
                 elif isinstance(cell, list):
                     out["subsets"][(d, meal)] = list(cell)
         n = state["variety"][meal]["dishes"]
-        out["targets"][meal] = scale_to_period(n, len(planned_days), len(on))
+        if state["variety"][meal]["choice"] == "new_every_day":
+            # Something new every day means one per day the meal is on in
+            # THIS period — a two-week period has twice as many.
+            out["targets"][meal] = len(planned_days) if n > 0 else 0
+        else:
+            out["targets"][meal] = scale_to_period(n, len(planned_days), len(on))
     out["lunch_choice"] = state["variety"]["lunch"]["choice"]
     out["lunch_dishes"] = state["variety"]["lunch"]["dishes"]
     return out
+
+
+def off_slots_on(dates: list[str]) -> set[tuple[str, str]]:
+    """{(date, slot)} the saved usual week has off on these dates — what
+    "Build a plan" on a left-out day and the menu's can_fill must not fill.
+    Empty for a household with no saved usual week."""
+    plan = generation_plan(dates)
+    return {(s["date"], s["slot"]) for s in plan["off_slots"]}
 
 
 def slot_days(dates: list[str], skipped: list[str] | None = None) -> dict | None:
@@ -484,13 +630,17 @@ def scale_to_period(dishes: int, days_this_period: int, days_usual: int) -> int:
     The same rule as meal_variety.prorate_meal_count (scaled to the days,
     rounded up, never below one, never above the days there are) with the
     usual week's own days in place of seven — so a seven-day grid gives
-    exactly what prorate_meal_count gives, and "something new every
-    morning" is one dish per morning whatever the period.
+    exactly what prorate_meal_count gives. Never more than the usual
+    number on a period longer than a week (the number is per week, as
+    prorate_meal_count has it); "Something new every day" is the one choice
+    that grows with the period, and generation_plan counts it as the days
+    on directly rather than through here. A period with none of that meal
+    is 0.
     """
     from . import meal_variety as _meal_variety
 
     if dishes <= 0 or days_this_period <= 0:
-        return 0 if dishes <= 0 else 1
+        return 0
     if days_usual >= 7:
         return _meal_variety.prorate_meal_count(dishes, days_this_period)
     if days_this_period >= days_usual:
@@ -520,9 +670,13 @@ def apply_usual_attendance(plan: dict, dates: list[str]) -> None:
     Write "just these people" from the grid into slot_attendance for the
     period, so the meal is planned, sized and shopped for that table by the
     machinery that already does it (attendance.context_for_week for the
-    model, servings_scale_factor for the list). Only ever writes or
-    removes rows it owns (source usual_week): a trip, the day sheet or the
-    guests chip is the week's own answer and wins.
+    model, servings_scale_factor for the list). Writes or removes the rows
+    it owns (source usual_week). A row the week already has from the day
+    sheet or the guests chip was built on "everyone's here"; the grid's
+    subset is applied to its base instead (their absences plus the people
+    the grid leaves out, their guests kept) — unless that would leave
+    nobody from the household at the meal, when the week's own answer
+    stands as it is. A trip's rows are never touched.
     """
     from . import attendance as _attendance
 
@@ -532,18 +686,27 @@ def apply_usual_attendance(plan: dict, dates: list[str]) -> None:
     try:
         members = [m["id"] for m in _members(conn)]
         rows = conn.execute(
-            "SELECT date, slot, source FROM slot_attendance WHERE household_id = ? AND date >= ? AND date <= ?",
+            "SELECT date, slot, source, absent_member_ids_json, guest_count, away_stretch_id "
+            "FROM slot_attendance WHERE household_id = ? AND date >= ? AND date <= ?",
             (household_id(), min(dates), max(dates)),
         ).fetchall()
     finally:
         conn.close()
-    existing = {(r["date"], r["slot"]): r["source"] for r in rows}
+    existing = {(r["date"], r["slot"]): r for r in rows}
     for d in dates:
         for meal in MEALS:
             key = (d, meal)
             subset = plan["subsets"].get(key)
-            source = existing.get(key)
+            row = existing.get(key)
+            source = row["source"] if row is not None else None
             if source is not None and source != ATTENDANCE_SOURCE:
+                if not subset or source not in WEEK_OWN_SOURCES or row["away_stretch_id"]:
+                    continue
+                absent = set(json.loads(row["absent_member_ids_json"] or "[]")) | {
+                    i for i in members if i not in subset}
+                if not [i for i in members if i not in absent]:
+                    continue
+                _attendance._write(d, meal, sorted(absent), int(row["guest_count"] or 0), source, None)
                 continue
             if subset:
                 absent = [i for i in members if i not in subset]
@@ -637,60 +800,141 @@ def _open_gaps(plan_id: int, dates: list[str]) -> list[dict]:
     return gaps
 
 
-def fill_first_plan_gaps(plan_id: int, dates: list[str], budget=None, picker=None) -> dict:
+# How many quick picks one group of open slots may spend before it falls
+# back to a repeat — more than the swap's two, since a first week that
+# arrives with a question in it is the thing this exists to prevent.
+FIRST_PLAN_PICK_ATTEMPTS = 3
+FIRST_PLAN_FILL_CONSTRAINT = "first_week_fill"
+
+
+def _deal(gaps: list[dict], groups: int) -> list[list[dict]]:
+    """Open slots of one meal dealt in date order into `groups` dishes —
+    Mon A, Tue B, Wed A… — so the week alternates rather than bunching."""
+    out: list[list[dict]] = [[] for _ in range(max(1, groups))]
+    for n, gap in enumerate(sorted(gaps, key=lambda g: g["date"])):
+        out[n % len(out)].append(gap)
+    return [g for g in out if g]
+
+
+def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
     """
     The household's FIRST week never arrives with a meal left open (the
     reveal's "Still deciding"). Runs after every pass of
-    agent._finish_week_slots, on a first plan only. A slot that keeps its
-    question — an allergy ruled everything out, who's home changed, a
-    holiday only they can answer (dinner_gaps.keeps_its_question) — keeps
-    it; anything else that is still open is filled:
+    agent._finish_week_slots, on a first plan only.
 
-      - a breakfast or lunch: another of the week's own dishes for that
-        meal (meal_variety.fill_gaps_with_a_repeat); with none to repeat,
-        one fresh pick through the swap's picker, which the repeat pass
-        then spreads to the rest;
-      - a dinner: dinner_gaps.fill_open_dinners, with the budget below.
+    The only slots left as questions are the ones that genuinely need the
+    person (dinner_gaps.keeps_its_question: an allergy ruled everything
+    out, who's home changed, a holiday only they can answer). Everything
+    else that is still open is filled:
 
-    Its own call budget (allergen_gate.CallBudget), since the week's
-    shared one may be spent by now. Never raises.
+      1. Grouped by meal into as many dishes as that meal's number asks for
+         (never more than its open slots), and every group picked AT THE
+         SAME TIME through main's fast path — allergen_gate.quick_pick, the
+         name-a-dish call — each pick gated for the household's allergies
+         before it is accepted, up to FIRST_PLAN_PICK_ATTEMPTS a group (a
+         rejection is never the end of a group). A pick is saved PENDING,
+         like any new dish of the menu pass, and the recipe pass writes it
+         up with the rest of the week.
+      2. What no pick filled: another of the week's own dishes for that meal
+         (meal_variety.fill_gaps_with_a_repeat, dinner_gaps.
+         fill_open_dinners with no model calls left) — a safe repeat before
+         a question.
+
+    `picker` stands in for quick_pick (tests). Never raises.
     """
     from . import allergen_gate as _allergen_gate
     from . import dinner_gaps as _dinner_gaps
     from . import meal_variety as _meal_variety
+    from . import swap_in_place as _swap
+    from . import weekly_plan as _weekly_plan
+    from . import plates as _plates
+    import contextvars
 
-    out = {"filled": [], "left": []}
-    budget = budget or _allergen_gate.CallBudget()
+    out = {"filled": [], "repeated": [], "left": []}
     try:
         gaps = _open_gaps(plan_id, dates)
         if not gaps:
             return out
-        for meal in ("breakfast", "lunch"):
-            for _ in range(len(dates)):
-                meal_gaps = [g for g in _open_gaps(plan_id, dates) if g["slot"] == meal]
-                if not meal_gaps:
-                    break
-                _meal_variety.fill_gaps_with_a_repeat(plan_id, dates)
-                meal_gaps = [g for g in _open_gaps(plan_id, dates) if g["slot"] == meal]
-                if not meal_gaps:
-                    break
-                gap = meal_gaps[0]
-                row = gap["rows"][0]
-                entry = {"id": row["id"], "date": gap["date"], "slot": meal, "meal": row["meal"] or "",
-                         "derived_from_json": row["derived_from_json"] or "{}"}
-                picked = _meal_variety._repick_entry(
-                    plan_id, entry, budget, avoid=_meal_variety.distinct_dishes(plan_id, meal),
-                    because=f"nothing was planned for this {meal} yet", reject=lambda name: False,
-                    derived_key="first_week_fill", picker=picker,
-                    derived_extra={"constraint": "first_week_fill"},
-                )
-                if picked is None:
-                    break
-                out["filled"].append({"date": gap["date"], "slot": meal, "meal": picked.get("meal")})
-        _dinner_gaps.fill_open_dinners(plan_id, dates, budget=budget, picker=picker, reserve=0)
+        pick_one = picker or _allergen_gate.quick_pick
+        avoidances = _allergen_gate.hard_avoidances()
+        conn = get_conn()
+        try:
+            counts = _counts(_prefs_row(conn))
+        finally:
+            conn.close()
+
+        # 1. One group per dish to pick, contexts built here (they read the
+        # plan as it stands), picks side by side.
+        # At most allergen_gate.MAX_HELD_DISHES picks in flight (the same
+        # cap and worker pool the held-back re-pick uses), every meal with a
+        # gap getting at least one.
+        tasks = []
+        meals_open = [m for m in MEALS if any(g["slot"] == m for g in gaps)]
+        room = _allergen_gate.MAX_HELD_DISHES
+        for n, meal in enumerate(meals_open):
+            meal_gaps = [g for g in gaps if g["slot"] == meal]
+            have = _meal_variety.distinct_dishes(plan_id, meal)
+            wanted = max(1, (counts.get(meal) or 1) - len(have))
+            groups = max(1, min(wanted, len(meal_gaps), room - (len(meals_open) - n - 1)))
+            room -= groups
+            for group in _deal(meal_gaps, groups):
+                first = group[0]
+                entry = {"date": first["date"], "slot": meal, "meal": "", "entry_id": first["rows"][0]["id"]}
+                try:
+                    context = _swap.build_swap_context(plan_id, entry, list(have))
+                    context["replacing_because"] = f"nothing was planned for this {meal} yet."
+                    others = [g["date"] for g in group[1:]]
+                    if others:
+                        context["also_on"] = others
+                except Exception:
+                    logger.exception("Could not build the first-week pick for %s %s", first["date"], meal)
+                    continue
+                tasks.append((contextvars.copy_context(), context, group))
+
+        def _run(task):
+            ctx, context, _group = task
+            try:
+                return ctx.run(_allergen_gate._pick_for_group, context, "", pick_one, avoidances,
+                               FIRST_PLAN_PICK_ATTEMPTS)
+            except Exception:
+                logger.exception("First-week pick for %s %s failed", context.get("date"), context.get("slot"))
+                return {"pick": None, "calls": 0, "seconds": 0.0}
+
+        outcomes = _allergen_gate._run_all(tasks, _run)
+
+        # Written back on this thread, in order.
+        for (_ctx, context, group), outcome in zip(tasks, outcomes):
+            pick = outcome.get("pick")
+            if not pick:
+                continue
+            meal = context["slot"]
+            try:
+                serves = _swap._table_for(group[0]["date"], meal)["serves"]
+                pick["meal_name"] = _swap.honest_meal_name(pick)
+                _allergen_gate._save_pick(pick, serves)
+                for gap in group:
+                    _weekly_plan._replace_slot_entries(
+                        plan_id, [r["id"] for r in gap["rows"]], gap["date"], meal, pick["meal_name"],
+                        food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
+                        reasoning="",
+                        derived_from={"constraint": FIRST_PLAN_FILL_CONSTRAINT},
+                    )
+                    out["filled"].append({"date": gap["date"], "slot": meal, "meal": pick["meal_name"]})
+            except Exception:
+                logger.exception("Writing the first-week pick for %s failed; its slots go to the repeat pass", meal)
+
+        # 2. A repeat of a safe dish already on the week, before a question.
+        if _open_gaps(plan_id, dates):
+            _meal_variety.fill_gaps_with_a_repeat(plan_id, dates)
+            _dinner_gaps.fill_open_dinners(plan_id, dates, budget=_allergen_gate.CallBudget(0), reserve=0)
         out["left"] = [{"date": g["date"], "slot": g["slot"]} for g in _open_gaps(plan_id, dates)]
+        settled = {(f["date"], f["slot"]) for f in out["filled"]} | {(g["date"], g["slot"]) for g in out["left"]}
+        out["repeated"] = [{"date": g["date"], "slot": g["slot"]} for g in gaps
+                           if (g["date"], g["slot"]) not in settled]
         if out["left"]:
             logger.warning("First plan %s still has open slots after filling: %s", plan_id, out["left"])
+        logger.info("First plan %s gaps: %d picked in %d group(s), %d left", plan_id,
+                    len(out["filled"]), len(tasks), len(out["left"]))
     except Exception:
         logger.exception("Filling the first plan's open slots failed for plan %s; it stands as it is", plan_id)
     return out
