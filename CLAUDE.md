@@ -425,6 +425,61 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-30 — A night off on a reheat that owns a side now takes the
+  side's line off the list, and the undo puts it back exactly. Branch
+  `night-off-undo-carries-groceries`, NOT merged at the time of writing.**
+  Loop Board "Taking the night off on a reheat strands its side's grocery
+  line", Emily's option (b). Measured before the fix on both live doors:
+  `tonight_night_off` kind `freeze_reheat` (tonight is the reheat) and kind
+  `cook_on_fed` (the cook lands on tomorrow's reheat and deletes it) each
+  left `Lettuce 1 head` with **zero** ledger rows behind it — on the second
+  door for a salad that was on no night at all.
+  - **Root: `weekly_plan.delete_plan_entry` deliberately left the list
+    alone** ("only for rows whose food is not going anywhere"), true until a
+    reheat could own a side. It now calls
+    `_reverse_meal_grocery_contributions(entry_id, conn=conn)` before the
+    delete. Its three callers are exactly the two night-off doors, the
+    Review stepper's "−" (same `move_cook_onto_fed_night`, so it is fixed
+    too) and `plan_undo.restore` removing a holder row, which owns no
+    links — a no-op there.
+  - **`plan_undo` carries grocery LINES now.** `snapshot` adds `grocery`
+    (every column of each line the touched rows link to); after the write
+    the caller stores `lines_changed(conn, snap)` — only lines the answer
+    changed, as `{before, after}` (`after` None = deleted) — under the
+    record's `grocery`. `restore` runs `_restore_lines` before re-linking:
+    a DELETED line is re-inserted with its own id (`grocery_items` is
+    AUTOINCREMENT, so the id cannot have been reused) — exact; a TRIMMED
+    line (shared with another meal's link) goes back to its before-row
+    **only if it still reads exactly as the answer left it, every
+    column**. **ASSUMPTION, Emily can override:** a shared line the
+    household edited, ticked or removed since keeps their version; the
+    link still comes back, so the meal is on the ledger again. Records
+    stamped before this deploy have no `{before, after}` and restore
+    nothing, as before.
+  - **Exactness, driven:** freeze_reheat and cook_on_fed undo leave
+    `meal_plan_entries`, `prep_tasks`, `meal_plan_grocery_links`,
+    `grocery_items`, `inventory_items` byte-identical to before the tap.
+    The "−" door is exact by its own existing standard (rows byte-exact,
+    list by content): its post-commit `_rescale_after_a_chain_moved`
+    re-ingests the recipe group, **sides included** (the reheat carries the
+    chili's recipe_id), so the lettuce comes back under a new id there —
+    same as the batch's own line always has.
+  - **The `drop` kind is unchanged and still has no undo.** Nothing here
+    needed it to change. With lines now in the record it COULD get one;
+    that is a product call, not taken here.
+  - **Not fixed, on purpose:** a line the night off deleted, then a line of
+    the same name added by hand before Undo — Undo brings the plan's line
+    back beside theirs (two Lettuce lines, both real needs). Side on both
+    ends of a chain (its own card, Needs Your Call): night off on the
+    reheat takes the list 3 heads → 2, not 1, because the cook night's
+    salad is still scaled to cover the night that is now off. Undo → 3.
+  - Tests: `tests/test_reheat_side_is_bought.py` — the characterisation
+    `..._strands_its_sides_line_and_is_NOT_fixed_here` inverted (history in
+    the section comment), 12 tests across both doors and the "−": shared
+    line, edited line, ticked line, in-cart line, double undo, undo after an
+    unrelated add, refused undo. 6 red on main; each GUARD names the
+    mutation that pins it, and each was run.
+
 - **2026-09-30 — "16 of 16 chat turns called nothing" was a column DEFAULT
   being read back as a measurement, and it sent a whole card hunting 27
   rounds that were never missing. Branch
@@ -3470,6 +3525,8 @@ why*, not duplicating the diff.
        `grocery_items` row that no longer exists, which is worse than the
        extra line. `weekly_plan.move_cook_onto_fed_night` is the second
        caller with the same shape, reached by reading rather than measured.
+       **FIXED 2026-09-30** (branch `night-off-undo-carries-groceries`, see
+       that entry): the line goes with the row and plan_undo carries lines.
     3. **A side on BOTH ends of a chain buys three heads for two salads** —
        the cook night's own salad is still scaled to cover the night it
        feeds (the 2026-09-13 round-2 decision, untouched) and the reheat's

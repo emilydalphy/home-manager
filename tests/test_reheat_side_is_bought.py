@@ -467,33 +467,61 @@ def test_a_freeform_reheats_side_is_still_not_bought_and_is_NOT_fixed_here():
     assert _links(reheat) == []
 
 
-def test_taking_the_night_off_on_a_reheat_strands_its_sides_line_and_is_NOT_fixed_here():
-    """CHARACTERISATION — the one thing this fix makes newly possible and
-    does not clean up after. weekly_plan.delete_plan_entry takes a row
-    off the plan WITHOUT touching the grocery list, and its own docstring
-    says it is "only for rows whose food is not going anywhere: a
-    leftovers night the cook itself now lands on, a reheat whose portion
-    is frozen". That precondition was true of every reheat until this
-    card: a reheat owned no shopping, so cascading its links away cost
-    nothing. A reheat with a side of its own owns some.
+# ---------- a night off on a reheat that owns a side (Emily's option (b), 2026-09-30) ----------
+#
+# Was the characterisation test
+# `test_taking_the_night_off_on_a_reheat_strands_its_sides_line_and_is_NOT_fixed_here`.
+# It pinned that tonight_night_off (kind `freeze_reheat`) left the lettuce on
+# the list with ZERO ledger rows behind it, and that Undo only put the link
+# back. Inverted rather than deleted so the history reads: the row's side now
+# comes off the list with the row (weekly_plan.delete_plan_entry reverses it),
+# and plan_undo carries the grocery LINES so Undo puts the line back exactly.
+#
+# Every test here is a CATCH (red on main) unless its docstring says GUARD,
+# and a GUARD names the mutation that pins it (each was run).
 
-    So taking the night off on a reheat (tonight._delete_entry, kind
-    `freeze_reheat`) leaves the lettuce on the list with no ledger row
-    behind it — bounded (one line, still removable by hand, and
-    clear_stale_grocery_items takes it with the week) and not a loss of
-    anything the household said. tonight_night_off_undo puts the link
-    back, because the undo snapshot carries meal_plan_grocery_links.
+GREENS = {
+    "name": "Side greens",
+    "ingredients": [{"item": "Lettuce", "qty": "1 head", "category": "produce"}],
+    "covers": ["vegetable"],
+}
 
-    Deliberately not fixed here: reversing before the delete would leave
-    that snapshot pointing at a grocery_items row that no longer exists,
-    which is worse than the extra line. weekly_plan.move_cook_onto_fed_
-    night is the second caller with the same shape, reached by reading
-    rather than measured. Its own card."""
+
+def _dump():
+    """Everything a night off may touch, byte for byte."""
+    conn = get_conn()
+    out = {
+        t: [tuple(r) for r in conn.execute(f"SELECT * FROM {t} ORDER BY id").fetchall()]
+        for t in ("meal_plan_entries", "prep_tasks", "meal_plan_grocery_links", "grocery_items", "inventory_items")
+    }
+    conn.close()
+    return out
+
+
+def _lettuce_links() -> int:
+    conn = get_conn()
+    n = conn.execute(
+        "SELECT COUNT(*) AS n FROM meal_plan_grocery_links l "
+        "JOIN grocery_items g ON g.id = l.grocery_item_id WHERE g.item = 'Lettuce'"
+    ).fetchone()["n"]
+    conn.close()
+    return n
+
+
+def _lettuce_id() -> int:
+    return next(i["id"] for i in tools.list_grocery_list(status="all") if i["item"] == "Lettuce")
+
+
+def _reheat_tonight(shared: bool = False):
+    """Yesterday cooks Turkey Chili double, tonight reheats it with a green
+    salad. `shared` puts a second, unrelated dinner with its own salad on
+    the week, so both merge onto ONE Lettuce line (2 heads, 2 links).
+
+    The period is anchored on YESTERDAY, not on the household's Monday:
+    the cook has to be the night before tonight, and on a Monday that
+    night falls outside a Monday-start week — the weekday cliff CI's
+    `clock` matrix exists to catch."""
     today = household_today()
-    # The period is anchored on YESTERDAY, not on the household's Monday:
-    # the cook has to be the night before tonight, and on a Monday that
-    # night falls outside a Monday-start week — the weekday cliff CI's
-    # `clock` matrix exists to catch.
     yesterday = today - datetime.timedelta(days=1)
     plan_id = tools.create_weekly_plan(yesterday.isoformat())["weekly_plan_id"]
     _household()
@@ -506,21 +534,248 @@ def test_taking_the_night_off_on_a_reheat_strands_its_sides_line_and_is_NOT_fixe
     )["entry_id"]
     tools.set_cook_ahead(cook, [reheat])
     _plates.attach_sides(reheat, [SALAD], ["vegetable"])
+    other = None
+    if shared:
+        tools.add_recipe(
+            "Fish Tacos",
+            ingredients=[{"item": "White fish", "qty": "1 lb", "category": "meat"}],
+            default_servings=2,
+        )
+        later = (today + datetime.timedelta(days=2)).isoformat()
+        other = tools.plan_meal(later, "Fish Tacos", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+        _plates.attach_sides(other, [GREENS], ["vegetable"])
     tools.approve_weekly_plan(plan_id)
+    return plan_id, cook, reheat, other
+
+
+def test_taking_the_night_off_on_a_reheat_takes_its_sides_line_with_it():
+    """CATCH — the card's first acceptance criterion. On main the lettuce
+    stays at 1 head with no ledger row behind it."""
+    _reheat_tonight()
     assert _list()["Lettuce"] == "1 head"
 
     assert tools.tonight_night_off()["kind"] == "freeze_reheat"
 
-    # The line is still there and now answers to nobody.
-    assert _list()["Lettuce"] == "1 head"
-    conn = get_conn()
-    behind = conn.execute(
-        "SELECT COUNT(*) AS n FROM meal_plan_grocery_links l "
-        "JOIN grocery_items g ON g.id = l.grocery_item_id WHERE g.item = 'Lettuce'"
-    ).fetchone()["n"]
-    conn.close()
-    assert behind == 0, "the stranding is what this test is for; if it is 1, fix the docstring too"
+    assert "Lettuce" not in _list()
+    assert _lettuce_links() == 0
+    # The dish's own shopping is the batch's, and the batch keeps its size.
+    assert _list()["Ground turkey"] == "3 lbs"
 
-    # The undo does put it back, which is what bounds it.
-    tools.tonight_night_off_undo()
+
+def test_undo_puts_the_reheat_and_its_line_back_exactly():
+    """GUARD — the constraint that made this non-trivial, driven rather
+    than reasoned about: every table the night off touched, byte for byte,
+    the Lettuce line back under its OWN id. Green on main only because main
+    never took the line off; pinned by the mutation that drops
+    plan_undo._restore_lines (the line stays gone and so does the link)."""
+    _plan, _cook, reheat, _ = _reheat_tonight()
+    line_id = _lettuce_id()
+    before = _dump()
+
+    tools.tonight_night_off()
+    assert _dump() != before
+    assert tools.tonight_night_off_undo()["status"] == "restored"
+
+    assert _dump() == before
+    assert _lettuce_id() == line_id
     assert _links(reheat) == ["Lettuce"]
+
+
+def test_a_shared_line_is_trimmed_and_undo_puts_the_quantity_back():
+    """CATCH — two nights each carry a green salad, merged onto ONE line.
+    The night off takes only the reheat's head; the line stays for the
+    other night; Undo puts the head back while nobody has touched it."""
+    _plan, _cook, reheat, other = _reheat_tonight(shared=True)
+    assert _list()["Lettuce"] == "2 heads" and _lettuce_links() == 2
+    before = _dump()
+
+    tools.tonight_night_off()
+    assert _list()["Lettuce"] == "1 head"
+    assert _links(other) == ["Lettuce", "White fish"]
+    assert _lettuce_links() == 1
+
+    assert tools.tonight_night_off_undo()["status"] == "restored"
+    assert _dump() == before
+
+
+def test_a_shared_line_the_household_edited_since_keeps_their_number():
+    """GUARD (the assumption Emily can override) — the night off trimmed a
+    shared line to 1 head, then somebody typed 3. Undo puts the reheat
+    back and re-links its salad, and leaves THEIR 3 alone. Pinned by the
+    mutation that restores a trimmed line without the still-as-left
+    comparison (it writes 2 heads over their 3)."""
+    _plan, _cook, reheat, _other = _reheat_tonight(shared=True)
+    tools.tonight_night_off()
+    tools.update_grocery_item(_lettuce_id(), quantity="3 heads")
+
+    assert tools.tonight_night_off_undo()["status"] == "restored"
+
+    assert _list()["Lettuce"] == "3 heads"
+    assert _links(reheat) == ["Lettuce"]
+    assert _lettuce_links() == 2
+
+
+def test_a_shared_line_ticked_into_the_cart_since_is_left_in_the_cart():
+    """CATCH — "exactly as left" is every column, not just the quantity:
+    a line ticked into the cart after the night off keeps its tick and its
+    trimmed quantity rather than being put back as 'needed'."""
+    _reheat_tonight(shared=True)
+    tools.tonight_night_off()
+    tools.mark_grocery_item(_lettuce_id(), "in_cart")
+
+    tools.tonight_night_off_undo()
+
+    line = next(i for i in tools.list_grocery_list(status="all") if i["item"] == "Lettuce")
+    assert (line["quantity"], line["status"]) == ("1 head", "in_cart")
+
+
+def test_a_line_already_in_the_cart_is_left_alone_both_ways():
+    """GUARD — the reversal's standing rule (a line in a cart is the
+    shopper's) holds here too, and so Undo has nothing of the list to put
+    back and the week comes back exactly. Pinned by the mutation that
+    makes _reverse_meal_grocery_contributions reverse in_cart lines."""
+    _reheat_tonight()
+    tools.mark_grocery_item(_lettuce_id(), "in_cart")
+    before = _dump()
+
+    tools.tonight_night_off()
+    line = next(i for i in tools.list_grocery_list(status="all") if i["item"] == "Lettuce")
+    assert (line["quantity"], line["status"]) == ("1 head", "in_cart")
+
+    tools.tonight_night_off_undo()
+    assert _dump() == before
+
+
+def test_a_second_undo_puts_nothing_back_twice():
+    """GUARD — the record goes with the holder it was stamped on, so a
+    second tap (the other phone) is "nothing to put back" and the line is
+    not inserted twice. Pinned by dropping _restore_lines (the first undo
+    then leaves the shared line at 1 head)."""
+    _reheat_tonight(shared=True)
+    tools.tonight_night_off()
+    tools.tonight_night_off_undo()
+    after_first = _dump()
+
+    assert tools.tonight_night_off_undo()["status"] == "refused"
+    assert _dump() == after_first
+    assert _list()["Lettuce"] == "2 heads"
+
+
+def test_undo_after_an_unrelated_grocery_change_still_puts_the_line_back():
+    """GUARD — adding something else to the list in between is not a
+    change to anything the night off touched: Undo still restores the
+    lettuce exactly, and the new line stays. Pinned by dropping
+    _restore_lines, and would catch a still_as_left widened to the whole
+    list."""
+    _reheat_tonight()
+    tools.tonight_night_off()
+    tools.add_grocery_item("Milk", quantity="1 carton", category="dairy")
+
+    assert tools.tonight_night_off_undo()["status"] == "restored"
+
+    assert _list()["Lettuce"] == "1 head"
+    assert _list()["Milk"] == "1 carton"
+
+
+def test_a_refused_undo_leaves_the_line_off_too():
+    """GUARD — an Undo that refuses because the week changed writes
+    nothing at all, the list included: the night off stands, whole.
+    Pinned by the mutation that restores lines before still_as_left."""
+    plan_id, cook, _reheat, _ = _reheat_tonight()
+    tools.tonight_night_off()
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET cooked_status = 'done' WHERE id = ?", (cook,))
+    conn.commit()
+    conn.close()
+    before = _dump()
+
+    assert tools.tonight_night_off_undo()["status"] == "refused"
+    assert _dump() == before
+    assert "Lettuce" not in _list()
+
+
+# ---------- the second door: cook_on_fed (weekly_plan.move_cook_onto_fed_night) ----------
+
+def _cook_tonight_for_tomorrow():
+    """The card's 2026-09-30 measurement: tonight's chili is cooked double
+    for tomorrow, tomorrow's reheat carries a green salad, and every other
+    night of the period has a dinner of its own, so nothing is free and the
+    night off answers `cook_on_fed`."""
+    today = household_today()
+    plan_id = tools.create_weekly_plan(today.isoformat())["weekly_plan_id"]
+    _household()
+    _chili()
+    cook = tools.plan_meal(today.isoformat(), "Turkey Chili", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    tomorrow = (today + datetime.timedelta(days=1)).isoformat()
+    reheat = tools.plan_meal(tomorrow, "Turkey Chili", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    tools.set_cook_ahead(cook, [reheat])
+    for offset in range(2, 7):
+        name = f"Filler {offset}"
+        tools.add_recipe(name, ingredients=[{"item": f"Thing {offset}", "qty": "1 lb", "category": "meat"}],
+                         default_servings=2)
+        day = (today + datetime.timedelta(days=offset)).isoformat()
+        tools.plan_meal(day, name, slot="dinner", weekly_plan_id=plan_id)
+    _plates.attach_sides(reheat, [SALAD], ["vegetable"])
+    tools.approve_weekly_plan(plan_id)
+    return plan_id, cook, reheat
+
+
+def test_cook_on_fed_takes_the_replaced_reheats_side_off_the_list():
+    """CATCH — reproduced on main by the card: "Ground turkey 3 lbs,
+    Lettuce 1 head | lettuce links: 0" after the move. The side lived on
+    the ENTRY that was deleted, so it is on no night at all; its line now
+    goes with it."""
+    _plan, cook, reheat = _cook_tonight_for_tomorrow()
+    assert _list()["Lettuce"] == "1 head"
+
+    out = tools.tonight_night_off()
+    assert out["kind"] == "cook_on_fed"
+
+    assert "Lettuce" not in _list()
+    assert _lettuce_links() == 0
+    assert _list()["Ground turkey"] == "3 lbs"
+
+
+def test_cook_on_fed_undo_puts_the_reheat_and_its_line_back_exactly():
+    """GUARD — the same door, the undo driven: every table byte for byte,
+    the reheat row under its own id with its salad re-linked. Pinned by
+    the mutation that leaves `grocery` out of tonight's undo record."""
+    _plan, _cook, reheat = _cook_tonight_for_tomorrow()
+    before = _dump()
+
+    assert tools.tonight_night_off()["kind"] == "cook_on_fed"
+    assert tools.tonight_night_off_undo()["status"] == "restored"
+
+    assert _dump() == before
+    assert _links(reheat) == ["Lettuce"]
+
+
+def test_the_review_steppers_minus_shares_the_door_and_its_undo_is_exact():
+    """CATCH — drop_dish_from_day (the Review stepper's "−") moves a cook
+    onto its fed night through the SAME move_cook_onto_fed_night, so the
+    replaced reheat's side comes off the list there too, and drop_dish_undo
+    puts the line back with the rest of the week.
+
+    Exact by the "−"'s own standard (test_drop_dish_self_solving): the
+    plan's rows and prep byte for byte, and the list by what it says. The
+    BATCH's line is not id-stable on this door and never was — the rescale
+    after the commit (_rescale_after_a_chain_moved) reverses and re-adds
+    the recipe group's lines, SIDES INCLUDED (the reheat carries the
+    chili's recipe_id, so it is in the group), on the way down and again on
+    Undo. Measured: plan_undo puts the lettuce back under its own id and the
+    rescale then re-adds it under a new one, same quantity, same links."""
+    plan_id, cook, reheat = _cook_tonight_for_tomorrow()
+    before = _dump()
+    before_list = _list()
+
+    out = tools.drop_dish_from_day(plan_id, cook)
+    assert out["status"] == "dropped"
+    assert "Lettuce" not in _list()
+
+    assert tools.drop_dish_undo(plan_id, out["undo_entry_id"])["status"] == "restored"
+    after = _dump()
+    for table in ("meal_plan_entries", "prep_tasks", "inventory_items"):
+        assert after[table] == before[table], table
+    assert _list() == before_list
+    assert _links(reheat) == ["Lettuce"]
+    assert _lettuce_links() == 1

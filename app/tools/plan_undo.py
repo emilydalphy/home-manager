@@ -14,8 +14,10 @@ that it was private to the module that happened to write it first.
 The shape, unchanged from the night off (2026-09-22):
 
   * SNAPSHOT every column of every row the answer is about to touch, plus
-    the grocery links and prep rows hanging off them, BEFORE the first
-    write and on the caller's own transaction.
+    the grocery links and prep rows hanging off them and the grocery lines
+    those links point at, BEFORE the first write and on the caller's own
+    transaction. After the write, lines_changed() keeps the lines the
+    answer actually changed, before and after (2026-09-30).
   * FINGERPRINT those rows immediately after the write. Undo puts the week
     back only while they still look exactly like this — an Undo tapped
     after somebody else cooked, swapped or moved one of these nights must
@@ -60,22 +62,106 @@ def touched_ids(rows_all, direct: set[int], refs: list[str]) -> set[int]:
 
 def snapshot(conn, entry_ids: set[int]) -> dict:
     """Every column of every row an answer is about to touch, with the
-    grocery links and prep rows hanging off them — taken BEFORE the first
-    write, on the caller's own transaction."""
+    grocery links and prep rows hanging off them — and the grocery LINES
+    those links point at — taken BEFORE the first write, on the caller's
+    own transaction.
+
+    The lines are here because deleting a row now reverses what it put on
+    the list (weekly_plan.delete_plan_entry, 2026-09-30): a reheat can own
+    a side, so a night off on one takes the salad's lettuce off the list.
+    `grocery` is the raw before-image; the caller turns it into the record's
+    `grocery` with lines_changed() once its write is done."""
     ids = sorted(entry_ids)
     if not ids:
-        return {"entries": [], "links": [], "prep": []}
+        return {"entries": [], "links": [], "prep": [], "grocery": []}
     marks = ",".join("?" * len(ids))
     hh = household_id()
+    links = row_dicts(
+        conn, f"SELECT * FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
+        (hh, *ids))
+    line_ids = sorted({l["grocery_item_id"] for l in links})
+    lines = []
+    if line_ids:
+        line_marks = ",".join("?" * len(line_ids))
+        lines = row_dicts(
+            conn, f"SELECT * FROM grocery_items WHERE household_id = ? AND id IN ({line_marks})", (hh, *line_ids))
     return {
         "entries": row_dicts(
             conn, f"SELECT * FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks})", (hh, *ids)),
-        "links": row_dicts(
-            conn, f"SELECT * FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
-            (hh, *ids)),
+        "links": links,
         "prep": row_dicts(
             conn, f"SELECT * FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})", (hh, *ids)),
+        "grocery": lines,
     }
+
+
+def _line_now(conn, line_id: int) -> dict | None:
+    rows = row_dicts(conn, "SELECT * FROM grocery_items WHERE household_id = ? AND id = ?",
+                     (household_id(), line_id))
+    return rows[0] if rows else None
+
+
+def lines_changed(conn, snap: dict) -> list[dict]:
+    """
+    The grocery lines the answer itself changed, each as {"before", "after"}
+    — `after` is None for a line it deleted. Called right after the write,
+    on the same transaction, and stored as the record's `grocery` (it
+    replaces the snapshot's raw before-image under that key).
+
+    Only CHANGED lines are kept: a line the answer did not move (in a cart
+    already, or never touched) is not the answer's to put back, and a
+    later rescale of it is somebody else's change.
+    """
+    out = []
+    for before in snap.get("grocery") or []:
+        if not isinstance(before, dict) or "id" not in before:
+            continue
+        after = _line_now(conn, before["id"])
+        if after != before:
+            out.append({"before": before, "after": after})
+    return out
+
+
+def _restore_lines(conn, lines) -> None:
+    """
+    Put the grocery lines the answer changed back as they read before it —
+    on the household's terms (Emily's option (b), 2026-09-30):
+
+      * a line the answer DELETED comes back with its own id, every column
+        as it read. Exact. grocery_items is AUTOINCREMENT, so the id cannot
+        have been handed to anything else since.
+      * a line the answer REDUCED (another meal links it too, so it was
+        trimmed rather than deleted) goes back to its old quantity ONLY if
+        it still reads exactly as the answer left it. If the household has
+        edited, ticked or removed it since, their version stands — a number
+        somebody typed is theirs, and an Undo is not a reason to overwrite
+        it. The link still comes back (restore below), so the meal is on
+        the ledger again either way.
+
+    A record written before this existed has no `grocery`, or carries the
+    snapshot's raw before-image under it (no "before" key); both put
+    nothing back, which is exactly what restore did before.
+    """
+    hh = household_id()
+    known = columns(conn, "grocery_items")
+    for line in lines or []:
+        if not isinstance(line, dict) or not isinstance(line.get("before"), dict):
+            continue
+        before, after = line["before"], line.get("after")
+        now = _line_now(conn, before["id"])
+        if after is None:
+            if now is None:
+                reinsert(conn, "grocery_items", [before])
+            continue
+        if now is None or now != after:
+            continue
+        cols = [c for c in before if c in known and c not in ("id", "household_id")]
+        if cols:
+            conn.execute(
+                f"UPDATE grocery_items SET {', '.join(f'{c} = ?' for c in cols)} "
+                "WHERE id = ? AND household_id = ?",
+                (*[before[c] for c in cols], before["id"], hh),
+            )
 
 
 FINGERPRINT_COLS = ("date", "slot", "slot_state", "cooked_status", "derived_from_json")
@@ -154,9 +240,12 @@ def restore(conn, record: dict, holder_id: int) -> None:
     their prep rows and grocery links with them, and the holder itself gone
     when it is a row the answer invented.
 
-    The grocery LIST is not touched here. A link comes back only if its
-    line is still there — the list is the household's, and a line they have
-    deleted since stays deleted rather than being linked into a meal again.
+    The grocery lines the answer itself changed come back first, by
+    _restore_lines' rule (a deleted line exactly; a trimmed line only if
+    nobody has touched it since). Nothing else on the list is touched. A
+    link then comes back only if its line is there — the list is the
+    household's, and a line they have deleted since stays deleted rather
+    than being linked into a meal again.
     """
     from . import weekly_plan as _weekly_plan
 
@@ -188,6 +277,7 @@ def restore(conn, record: dict, holder_id: int) -> None:
                 tuple(e[c] for c in cols),
             )
     reinsert(conn, "prep_tasks", record.get("prep") or [])
+    _restore_lines(conn, record.get("grocery"))
     links = [
         l for l in record.get("links") or []
         if conn.execute("SELECT 1 FROM grocery_items WHERE id = ?", (l["grocery_item_id"],)).fetchone()

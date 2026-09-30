@@ -678,7 +678,9 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
                         the same size, replacing that night's leftovers; any
                         later fed nights keep their leftovers, now from the
                         new cook night; the portion tonight would have eaten
-                        goes in the freezer. Groceries untouched.
+                        goes in the freezer. The dish's groceries are
+                        untouched; a side the replaced leftovers night
+                        carried comes off the list with it (2026-09-30).
       - 'drop'          feeds nobody, nowhere to move — comes off the week.
 
     `line` is the row's sub-line, a statement of what the tap will do (§8
@@ -817,11 +819,12 @@ def _shrink_chain_into_freezer(conn, source_id: int, gone_ref: str, servings: in
 
 
 def _delete_entry(conn, entry_id: int) -> None:
-    """Take one row off the plan WITHOUT touching the grocery list — its
-    prep rows with it (the order clear_plan_slot uses), its grocery links
-    by the table's own cascade. Only for rows whose food is not going
+    """Take one row off the plan — its prep rows with it, and whatever it
+    put on the grocery list (a reheat's own side; since 2026-09-30, see
+    weekly_plan.delete_plan_entry). Only for rows whose dish is not going
     anywhere: a reheat whose portion is frozen, a leftovers night the cook
-    itself now lands on. Everything removed is in the undo snapshot."""
+    itself now lands on. Everything removed — the grocery lines included —
+    is in the undo snapshot."""
     _weekly_plan.delete_plan_entry(conn, entry_id)
 
 
@@ -863,9 +866,12 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
         travel with it, and the list is not touched);
       - a dinner cooked double for later nights, with no free night, is
         COOKED ON THE FIRST NIGHT IT WAS FEEDING instead, at the same size,
-        and tonight's share goes in the freezer — groceries untouched;
+        and tonight's share goes in the freezer — the dish's groceries
+        untouched (a side the replaced leftovers night carried comes off
+        the list with that row, and Undo puts it back);
       - a leftovers night's portion, and a dinner already cooked, go in
-        the freezer;
+        the freezer (a leftovers night's own side comes off the list with
+        it, and Undo puts it back);
       - otherwise it is DROPPED, which reverses whatever it put on the list
         that is still waiting to be bought and leaves alone anything already
         in a cart or through the till. What was bought and won't keep comes
@@ -1066,8 +1072,9 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
         servings = _leftovers.eaters_at(today, "dinner", conn=conn)
         frozen = _freeze_portion(conn, dish, servings, target["date"])
         # The leftovers entry on the first fed night goes — the cook lands
-        # there instead. Its grocery links (a reheat buys nothing, so
-        # normally none) go by cascade; nothing on the list is reversed.
+        # there instead. A reheat buys no dish, but it can own a SIDE, and
+        # that side's line is reversed with the row (delete_plan_entry,
+        # 2026-09-30) and put back by Undo from the snapshot's lines.
         # The leftovers row on the first fed night goes, the cook lands
         # there, and every other row naming tonight by date re-points at it.
         # weekly_plan owns that move since 2026-09-24, because the Review
@@ -1108,6 +1115,7 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
     record = {
         "kind": kind, "dish": dish, **snap,
         "after": _plan_undo.fingerprint(conn, touched, holder_id),
+        "grocery": _plan_undo.lines_changed(conn, snap),
         "inventory": {"id": frozen["id"], "rev": frozen["rev"]} if frozen else None,
     }
     _plan_undo.stamp(conn, holder_id, NIGHT_OFF_UNDO_KEY, record)
@@ -1121,8 +1129,11 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
     Undo on the night-off toast: put tonight, and every night the answer
     touched, back exactly as they were — the dish on its night, the chain
     as it read, the leftovers night it replaced, its fridge moves on their
-    old dates, and the freezer row it wrote gone. The grocery list is not
-    touched, because none of the undoable shapes touched it.
+    old dates, and the freezer row it wrote gone. The grocery list gets
+    back only what the tap took off it — a reheat's side, reversed with its
+    row — by plan_undo's rule: a deleted line exactly, a line shared with
+    another meal (trimmed, not deleted) only while nobody has touched it
+    since. Nothing else on the list is touched.
 
     Only while nothing has changed since: the rows it touched must still
     look exactly as the tap left them, and the freezer row must be
