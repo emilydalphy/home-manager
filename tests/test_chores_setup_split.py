@@ -231,14 +231,12 @@ def test_progress_dots_still_match_the_question_step_count():
     assert all_steps[: len(intro_steps)] == intro_steps, "the intro isn't at the front"
     assert all_steps[-1] == "reveal"
     question_steps = all_steps[len(intro_steps): all_steps.index("reveal")]
-    # UPDATED 2026-09-27: "Sharing with Claude" (ai-consent) sits between
-    # the last question and the reveal. It isn't a question about the
-    # household — it's the permission to send the answers — so it carries
-    # no pager and has no section.
-    question_steps = [k for k in question_steps if k != "ai-consent"]
+    # UPDATED 2026-09-30: "Sharing with Claude" (ai-consent), between the
+    # last question and the reveal, is in the storyboard's step 4 ("Your
+    # first week") and carries that step's eyebrow like the questions do.
     assert list(sections) == question_steps, (
         "QUESTION_SECTIONS and the question steps of ALL_STEPS disagree — a "
-        "question with no section shows no pager"
+        "question with no section shows no eyebrow"
     )
     numbers = [int(sections[k]) for k in question_steps]
     assert numbers == sorted(numbers), "the long dot would move backwards"

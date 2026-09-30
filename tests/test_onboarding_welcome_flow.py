@@ -82,10 +82,12 @@ def test_the_four_intro_screens_come_before_the_household_step():
     assert m, "ALL_STEPS has moved"
     steps = json.loads(m.group(1).replace("'", '"'))
     assert steps[:5] == INTRO + ["household"], steps[:5]
-    # The questions after them, since 2026-09-11 (Build 6, Emily's decision
-    # G — setup asks only what changes the plan).
-    assert steps[5:] == ["meals", "restrictions", "eating-style", "wont-eat",
-                         "excited-about", "leftovers", "prep", "dinner-time", "kit-repeats",
+    # The questions after them, since 2026-09-30 (the "How your week runs"
+    # storyboard): who helps and never on the plate finish "Who's eating";
+    # the week's shape comes before what you eat.
+    assert steps[5:] == ["helpers", "restrictions", "meals-days", "prep",
+                         "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
+                         "eating-style", "wont-eat", "excited-about", "kit-repeats",
                          # Sharing with Claude, before the first week (2026-09-27).
                          "ai-consent", "reveal"]
 
@@ -213,31 +215,27 @@ console.log(JSON.stringify({ landed: landed, depth: depth() }));
 @_needs_node
 def test_the_progress_strip_is_hidden_during_the_intro_and_starts_at_the_first_question():
     """
-    UPDATED 2026-09-12: the questions' progress cue is the same four-dot
-    pager the intro screens carry, drawn into each question's own foot by
-    renderProgress — so an intro screen, which has no .q-pager and no
-    section, gets nothing drawn, and a question gets four dots with its
-    own section's dot long.
+    UPDATED 2026-09-30: the questions' progress cue is the step eyebrow
+    ("2 of 4 · How your week runs"), drawn into each question's own
+    .q-eyebrow by renderProgress — so an intro screen, which has no eyebrow
+    and no section, gets nothing drawn, and a question names its stop.
     """
     out = _run(_nav_harness() + """
 const seen = {};
 %s.forEach(function (k) {
-  const pager = makeEl('div'); pager._classes.add('q-pager');
-  ELS['step-' + k].appendChild(pager);
+  const eyebrow = makeEl('p'); eyebrow._classes.add('q-eyebrow');
+  ELS['step-' + k].appendChild(eyebrow);
   showStep(k);
-  seen[k] = {
-    dots: pager._children.length,
-    on: pager._children.map(function (d, i) { return d._classes.has('is-on') ? i + 1 : 0; }).filter(Boolean),
-  };
+  seen[k] = eyebrow.textContent;
 });
 console.log(JSON.stringify(seen));
-""" % json.dumps(INTRO + ["household", "restrictions", "leftovers", "kit-repeats"]))
+""" % json.dumps(INTRO + ["household", "meals-days", "eating-style", "ai-consent"]))
     for k in INTRO:
-        assert out[k]["dots"] == 0, f"a question pager was drawn during {k}"
-    # Four dots for the four stops, exactly one of them long.
-    for k, section in (("household", 1), ("restrictions", 2), ("leftovers", 3), ("kit-repeats", 4)):
-        assert out[k]["dots"] == 4, f"{k} has {out[k]['dots']} dots, not four"
-        assert out[k]["on"] == [section], f"{k} lights dot {out[k]['on']}, not {section}"
+        assert out[k] == "", f"a question eyebrow was drawn during {k}"
+    assert out["household"] == "1 of 4 · Who’s eating"
+    assert out["meals-days"] == "2 of 4 · How your week runs"
+    assert out["eating-style"] == "3 of 4 · What you eat"
+    assert out["ai-consent"] == "4 of 4 · Your first week"
 
 
 @_needs_node
@@ -251,7 +249,7 @@ def test_the_page_paints_spruce_during_the_intro_and_ivory_from_the_first_questi
 const body = makeEl('body');
 document.body = body;
 const seen = [];
-['intro-help', 'household', 'intro-know', 'leftovers'].forEach(function (k) {
+['intro-help', 'household', 'intro-know', 'prep'].forEach(function (k) {
   showStep(k); seen.push([k, body.classList.contains('intro-active')]);
 });
 console.log(JSON.stringify(seen));
@@ -260,7 +258,7 @@ console.log(JSON.stringify(seen));
     # 2026-09-11 and resolveStep sends an unknown key to the first screen.
     # 'intro-purpose' was the third step here until Card 1 (2026-09-18)
     # folded it into intro-hello, leaving it with no step of its own.
-    assert out == [["intro-help", True], ["household", False], ["intro-know", True], ["leftovers", False]]
+    assert out == [["intro-help", True], ["household", False], ["intro-know", True], ["prep", False]]
 
 
 # ---------- the styling goes through tokens ----------

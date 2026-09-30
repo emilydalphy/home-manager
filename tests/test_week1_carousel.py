@@ -174,7 +174,11 @@ console.log(JSON.stringify([revealDayCardHtml(days[0], days), revealDayCardHtml(
 
 
 @_needs_node
-def test_an_open_or_empty_slot_has_no_swap_and_says_so_plainly():
+def test_an_open_slot_is_never_drawn_and_an_empty_one_says_so_plainly():
+    """UPDATED 2026-09-30: Week 1 arrives full — the server fills a first
+    plan's open slots before it answers, and one the stream or the menu
+    still calls open is not drawn at all (no "Still deciding" row). A
+    deliberately empty slot still says "Nothing planned", with no Swap."""
     day = {
         "date": "2026-09-23", "before_plan_start": False, "breakfast": None, "snacks": [], "snack": None,
         "lunch": {"title": "Your call", "meta": None, "state": "open", "entry_id": 50, "source": "plan"},
@@ -184,7 +188,8 @@ def test_an_open_or_empty_slot_has_no_swap_and_says_so_plainly():
 const days = revealDaysFromMenu([{json.dumps(day)}]);
 console.log(JSON.stringify(revealDayCardHtml(days[0], days)));
 """)
-    assert "Still deciding" in out and "Nothing planned" in out
+    assert "Still deciding" not in out and 'data-slot="lunch"' not in out
+    assert "Nothing planned" in out
     assert "reveal-swap" not in out
     assert '<span class="reveal-day-count">0 meals</span>' in out
 

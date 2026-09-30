@@ -82,16 +82,18 @@ def _function_body(name: str) -> str:
 # questions are gone with the questions.
 REWORDINGS = [
     # (what Emily wrote, which step it belongs to, what it replaced)
-    # UPDATED 2026-09-18 (Card 4, board 06-prep-days): "Do you like meal
-    # prepping?" was itself replaced by the direct question ("which days"),
-    # so this row now pins the CURRENT wording against the round before it.
-    ("Which days do you want to do your meal prepping?",
-     "step-prep", "Do you like meal prepping?"),
+    # UPDATED 2026-09-30 (the "How your week runs" screens): "Which days do
+    # you want to do your meal prepping?" became "Do you like to cook
+    # ahead?", with the days and the length inside the yes.
+    ("Do you like to cook ahead?",
+     "step-prep", "Which days do you want to do your meal prepping?"),
     ("Anything I should never put on the plate?",
      "step-restrictions", "Dietary preferences or restrictions"),
     ("Anything I should never recommend?",
      "step-wont-eat", "Anything the house just won't eat, no matter what?"),
-    ("Which meals should I plan?", "step-meals", "How many different recipes a week?"),
+    # UPDATED 2026-09-30: "Which meals should I plan?" became the meals x
+    # days grid.
+    ("Who&rsquo;s eating, and when?", "step-meals-days", "Which meals should I plan?"),
     ("What time do you usually have dinner?", "step-dinner-time", "When does dinner usually land?"),
 ]
 
@@ -187,18 +189,19 @@ def test_the_defaults_a_solo_household_gets_are_saved_like_any_other_answer(sign
 
 # ---------- 4. snacks are a per-day question ----------
 
-def test_the_wizard_asks_which_meals_and_sends_counts():
-    """Since 2026-09-11 (Build 6) setup asks WHICH meals to plan, not how
-    many distinct recipes: an unticked meal is sent as a count of 0 (the
-    planner writes that slot empty), a ticked one keeps the old default
-    (7 / 7 / 5, snacks per day 2)."""
-    step = _step_markup("step-meals")
-    assert 'id="meals-chips"' in step
+def test_the_wizard_sends_counts_from_the_week_grid():
+    """Since 2026-09-30 WHICH meals to plan is the meals x days grid: a meal
+    that's off every day is sent as a count of 0, one that's on keeps the
+    old default (7 / 7 / 5, snacks per day 2), and the usual week itself
+    rides along (its variety choice sets the real number, server-side)."""
+    assert 'id="uw-grid"' in _step_markup("step-meals-days")
     assert re.search(r"let snacksPerDay = 2;", ONBOARDING), "the default is no longer 2"
     body = _function_body("plannedMealCounts")
-    assert "plannedMeals.breakfast ? breakfastsPerWeek : 0" in body
-    assert "plannedMeals.snacks ? snacksPerDay : 0" in body
-    assert "...plannedMealCounts()" in _function_body("saveOnboardingAnswers")
+    assert "uwMealOn('breakfast') ? breakfastsPerWeek : 0" in body
+    assert "snacks_per_day: snacksPerDay" in body
+    save = _function_body("saveOnboardingAnswers")
+    assert "...plannedMealCounts()" in save
+    assert "usual_week: usualWeekPayload()" in save
 
 
 def test_onboarding_saves_snacks_per_day_and_derives_the_per_week_count(signed_in):

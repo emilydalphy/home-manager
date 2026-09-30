@@ -270,17 +270,137 @@
     background: linear-gradient(to bottom, transparent, var(--ground));
     pointer-events: none;
   }
-  /* The one progress cue on a question (besides the crumb): the welcome
-     screens' own dot row, four dots for the four stops the last welcome
-     screen listed, the current one long. --ink-strong so it is spruce on
-     ivory and ivory on the dark ground. renderProgress draws it. */
-  .q-pager { display: flex; gap: 6px; justify-content: center; align-items: center; min-height: 6px; }
-  .q-pager span {
-    height: 6px; width: 6px;
-    border-radius: var(--radius-pill);
-    background: var(--hairline-strong);
+  /* The one progress cue on a question (besides the crumb): the step
+     eyebrow, "2 of 4 · How your week runs" (Emily's 2026-09-30 mockups —
+     it replaced the four-dot pager that had replaced it on 2026-09-12, so
+     there is still one cue, not two). 10px/800 caps on --ink-muted, the
+     only uppercase text in the system (§3). renderProgress fills it. */
+  .q-eyebrow {
+    margin: 0 0 12px;
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
   }
-  .q-pager span.is-on { width: 18px; background: var(--ink-strong); }
+  .q-eyebrow:empty { display: none; }
+  /* The variety screens' own three-step progress (breakfast · lunch ·
+     dinner): pips in the foot and one line saying what's next. */
+  .q-pips { display: flex; gap: 6px; justify-content: center; }
+  .q-pips:empty { display: none; }
+  .q-pips span { width: 26px; height: 6px; border-radius: var(--radius-pill); background: var(--hairline-strong); }
+  .q-pips span.is-on { background: var(--ink-strong); }
+  .q-pips-caption {
+    margin: -8px 0 0; text-align: center;
+    font-size: 13px; font-weight: 700; color: var(--ink-secondary);
+  }
+  .q-pips-caption[hidden] { display: none; }
+
+  /* Option cards (helpers, cook ahead, variety): a whole-width card per
+     answer, the title in the display face and one plain line under it. A
+     chosen one is spruce with ivory ink, the chip's own "on". */
+  .q-opts { display: flex; flex-direction: column; gap: 10px; }
+  .q-opt {
+    display: flex; flex-direction: column; gap: 4px;
+    width: 100%; min-height: 56px; padding: 14px 18px;
+    text-align: left; font-family: var(--font-body); color: var(--ink);
+    background: var(--surface); border: 1.5px solid var(--hairline-strong);
+    border-radius: var(--radius-card); cursor: pointer;
+  }
+  .q-opt.is-on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
+  .q-opt-num {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--apricot-label);
+  }
+  .q-opt.is-on .q-opt-num { color: var(--apricot-light); }
+  .q-opt-title {
+    font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.02em; line-height: 1.2;
+  }
+  .q-opt-desc { font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--ink-secondary); }
+  .q-opt.is-on .q-opt-desc { color: var(--ivory-ink-muted); }
+  /* The card that holds controls of its own ("Yes, I have a prep day"):
+     chosen is a heavier spruce rim, not a fill, so the day tiles inside
+     keep their own on/off. */
+  .q-opt-holds { cursor: default; gap: 10px; }
+  .q-opt-holds.is-on { background: var(--surface); color: var(--ink); border: 2.5px solid var(--ink-strong); padding: 13px 17px; }
+  .q-opt-head {
+    display: flex; align-items: center; min-height: 44px; margin: -10px 0 -6px; padding: 0;
+    background: none; border: 0; text-align: left; color: inherit; font: inherit; cursor: pointer;
+  }
+  .q-opt-body { display: flex; flex-direction: column; gap: 10px; }
+  .q-opt-body[hidden] { display: none; }
+  .q-opt-label {
+    margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--apricot-label);
+  }
+  .q-seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .q-seg button, .uw-q {
+    min-height: 44px; padding: 6px 12px; border-radius: var(--radius-control);
+    border: 1.5px solid var(--hairline-strong); background: var(--ground);
+    font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--ink-secondary);
+    cursor: pointer;
+  }
+  .q-seg button.is-on, .uw-q.is-on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
+  /* The helper's optional phone or email, labelled above the box. */
+  .q-fields { display: flex; flex-direction: column; gap: 14px; }
+  .q-fields:empty { display: none; }
+  .q-field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700; color: var(--ink); }
+
+  /* ---------- Who's eating, and when? (2026-09-30) ----------
+     One card per meal: its name and how many days it's on, then the week
+     as seven tiles (M T W T F S S) with who's eating under each letter.
+     Spruce = everyone, celadon = some of you, ground = not planned — the
+     legend above says so in words (§2b S6). The card bleeds 12px into the
+     page gutter so seven tiles stay 44px wide at 375px (hard rule 6).
+     The same tiles are Settings' day row (shell.css .uw-*). */
+  .uw-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; font-weight: 700; color: var(--ink-secondary); }
+  .uw-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .uw-sw { display: inline-block; width: 14px; height: 14px; border-radius: 4px; background: var(--ground); border: 1.5px solid var(--hairline-strong); }
+  .uw-sw.is-all { background: var(--spruce); border-color: var(--spruce); }
+  .uw-sw.is-some { background: var(--celadon-tint); border-color: var(--celadon-edge); }
+  .uw-grid { display: flex; flex-direction: column; gap: 10px; }
+  .uw-card {
+    margin: 0 -12px; padding: 12px 10px;
+    display: flex; flex-direction: column; gap: 9px;
+    background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card);
+  }
+  .uw-card-row { flex-direction: row; justify-content: space-between; align-items: center; }
+  .uw-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 2px; }
+  .uw-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em; color: var(--ink); }
+  .uw-count { font-size: 13px; font-weight: 700; color: var(--apricot-label); }
+  .uw-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+  .uw-day {
+    min-width: 0; height: 48px; padding: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    border-radius: var(--radius-control); border: 1.5px solid var(--hairline-strong);
+    background: var(--ground); color: var(--ink-secondary);
+    font-family: var(--font-body); cursor: pointer;
+  }
+  .uw-day b { font-size: 13px; font-weight: 800; }
+  .uw-day span { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; max-width: 100%; }
+  .uw-day.is-all { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
+  .uw-day.is-some { background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon); }
+  .uw-day.is-open { outline: 3px solid var(--apricot); outline-offset: 1px; }
+  #prep-day-tiles .uw-day { height: 44px; }
+  .uw-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .uw-q { padding: 0 12px; font-size: 13px; }
+  .uw-ct { flex-basis: 100%; margin: 0; font-size: 12px; font-weight: 800; color: var(--apricot-label); }
+  .uw-lunch { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-secondary); padding: 0 2px; }
+  .uw-link {
+    min-height: 44px; padding: 0 2px; background: none; border: 0; cursor: pointer;
+    font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--apricot-label);
+  }
+  .uw-lunch-edit { display: flex; flex-direction: column; gap: 6px; }
+  .uw-lunch-edit .uw-row span { min-width: 64px; font-size: 13px; font-weight: 700; color: var(--ink); }
+  .uw-snacks { display: flex; gap: 5px; }
+  .uw-snacks .uw-q { min-width: 44px; padding: 0 10px; }
+  .uw-sum {
+    margin: 0; padding: 11px 14px;
+    background: var(--celadon-tint); border: 1.5px solid var(--celadon-edge); border-radius: var(--radius-card);
+    font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ink-on-celadon);
+  }
+  .uw-sum[hidden] { display: none; }
   .q-next {
     width: 100%;
     min-height: 54px;
@@ -445,7 +565,7 @@
   .reveal-tab.is-on { background: var(--apricot); color: var(--on-accent-ink); }
   /* Card 6 (2026-09-18, board 08-loading): while the reveal is still
      waiting — nothing to show yet but the spinner — this card says what
-     the first week is being built FROM (revealSetupFacts). Hidden the
+     the first week is being built FROM (revealUsingLines). Hidden the
      instant revealShowDays() runs; the reveal never shows the facts and
      the days at once. */
   .reveal-using {
@@ -523,7 +643,6 @@
     letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-muted); margin: 0;
   }
   .reveal-slot-dish { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.3; margin: 0; }
-  .reveal-slot-dish-open { color: var(--apricot-label); }
   .reveal-slot-dish-empty { color: var(--ink-secondary); font-weight: 500; }
   /* A dish the allergy check held back, while its replacement is picked
      (2026-09-30). Quiet: the same weight as "Nothing planned", no colour
@@ -1030,11 +1149,13 @@
 
 <!-- ---------- The questions (Emily, 2026-09-10 / built 2026-09-12) ----------
      Every question screen is the same shape as a welcome screen, on ivory:
-     the crumb, then .q-body (the question, at most one plain line, the
-     controls), then .q-foot (the four-dot section pager, the quiet line a
-     step that can be passed over carries, the ONE apricot button —
-     .btn-primary, the welcome screens' button). The pager is drawn by renderProgress from QUESTION_SECTIONS;
-     the crumb by renderBackLink. The copy is the 2026-09-11 cleanse,
+     the crumb, then .q-body (the step eyebrow — "2 of 4 · How your week
+     runs" — the question, at most one plain line, the controls), then
+     .q-foot (the quiet line a step that can be passed over carries, the ONE
+     apricot button — .btn-primary, the welcome screens' button). The
+     eyebrow is drawn by renderProgress from QUESTION_SECTIONS (Emily's
+     2026-09-30 mockups put it back in place of the four-dot pager — one
+     progress cue beside the crumb, as before); the crumb by renderBackLink. The copy is the 2026-09-11 cleanse,
      untouched; where a form label was the only thing over a text box, the
      box carries it as its placeholder and a screen reader still gets it
      (.sr-only), per DESIGN_SYSTEM §8.6. -->
@@ -1043,6 +1164,7 @@
 <div id="step-household">
   <button class="back-link" type="button" data-step-back="household" hidden></button>
   <div class="q-body">
+    <p class="q-eyebrow"></p>
     <h1 class="q-title">Who are we planning for?</h1>
     <p class="q-line">Everyone who eats at home.</p>
     <div class="q-controls">
@@ -1056,33 +1178,31 @@
     </div>
   </div>
   <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
     <button class="btn-primary q-next" id="household-next" type="button">Continue</button>
   </div>
 </div>
 
-<!-- Which meals should I plan? (Build 6, 2026-09-11 — Emily's decision G).
-     This one screen replaces the two rhythm screens that used to sit here:
-     "where is everyone at lunch", "which meals together" and "who cooks"
-     were stored and shown but nothing in the planner acted on them
-     (checked in the code the same day), while WHICH meals to plan is what
-     it actually needs. An unticked meal is saved as a count of 0, which the
-     planner already honours by writing that slot empty (agent.py
-     zero_counts). The rhythm tools and the What-we-know rows stay, for
-     households that answered before. -->
-<div id="step-meals" style="display:none">
-  <button class="back-link" type="button" data-step-back="meals" hidden></button>
+
+<!-- Does anyone else help run the house? (Emily, 2026-09-30 — moved up
+     from the loading screen, where it used to be the last thing asked).
+     One option per other adult on the list ("Yes, Greg does"), "Someone not
+     eating here" and "Just me"; a chosen helper gets an optional phone or
+     email. Nothing is written here: the invite link is made once the first
+     week is ready (renderHelperInvites), through the same one-time invite
+     the reveal used to offer (POST /api/household/invites). -->
+<div id="step-helpers" style="display:none">
+  <button class="back-link" type="button" data-step-back="helpers" hidden></button>
   <div class="q-body">
-    <h1 class="q-title">Which meals should I plan?</h1>
-    <p class="q-line">Whatever you don&rsquo;t tap, I leave to you.</p>
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">Does anyone else help run the house?</h1>
+    <p class="q-line">If someone else shops or cooks too, I&rsquo;ll give them their own way in once your first week is ready.</p>
     <div class="q-controls">
-      <div class="chip-row" id="meals-chips"></div>
-      <p class="step-note" id="meals-empty" hidden>I need at least one meal to plan &mdash; tap one.</p>
+      <div class="q-opts" id="helpers-opts"></div>
+      <div class="q-fields" id="helpers-fields"></div>
     </div>
   </div>
   <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
-    <button class="btn-primary q-next" id="meals-next" type="button">Continue</button>
+    <button class="btn-primary q-next" id="helpers-next" type="button">Continue</button>
   </div>
 </div>
 
@@ -1090,6 +1210,7 @@
 <div id="step-restrictions" style="display:none">
   <button class="back-link" type="button" data-step-back="restrictions" hidden></button>
   <div class="q-body">
+    <p class="q-eyebrow"></p>
     <h1 class="q-title">Anything I should never put on the plate?</h1>
     <p class="q-line">Allergies, must-avoids, the way someone eats.</p>
     <div class="q-controls">
@@ -1097,10 +1218,136 @@
     </div>
   </div>
   <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
     <button class="btn-primary q-next" id="restrictions-next" type="button">Continue</button>
   </div>
 </div>
+
+
+<!-- Who's eating, and when? (Emily, 2026-09-30 — replaces "Which meals
+     should I plan?"). Breakfast, lunch and dinner x Monday-Sunday, every
+     cell "everyone" to start; tapping a day opens its who's-eating picker
+     under the row. Saved as usual_week.grid through /api/onboarding/answers
+     (app/tools/usual_week.py). renderMealsDays draws it from usualGrid. -->
+<div id="step-meals-days" style="display:none">
+  <button class="back-link" type="button" data-step-back="meals-days" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">Who&rsquo;s eating, and when?</h1>
+    <p class="q-line">Everyone starts on every meal. Tap a day to pick who&rsquo;s eating it, or to tap off a meal you don&rsquo;t need planned.</p>
+    <div class="q-controls">
+      <div class="uw-legend" aria-hidden="true"><span><span class="uw-sw is-all"></span>Everyone</span><span><span class="uw-sw is-some"></span>Some of you</span><span><span class="uw-sw"></span>Not planned</span></div>
+      <div class="uw-grid" id="uw-grid"></div>
+      <p class="uw-sum" id="uw-sum" aria-live="polite"></p>
+    </div>
+  </div>
+  <div class="q-foot">
+    <button class="btn-primary q-next" id="meals-days-next" type="button">Continue</button>
+  </div>
+</div>
+
+<!-- Do you like to cook ahead? (Emily, 2026-09-30 — replaces "Which days
+     do you want to do your meal prepping?"). No, or yes with the day(s) and
+     "About an hour" / "A longer stretch"; saved as usual_week.prep (the
+     rhythm fact prep_days, 60 / 120 minutes). The line under it reads the
+     answer back (prepReadback). -->
+<div id="step-prep" style="display:none">
+  <button class="back-link" type="button" data-step-back="prep" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">Do you like to cook ahead?</h1>
+    <p class="q-line">A prep day is when you make things for later in the week: lunches, a big batch, sauces.</p>
+    <div class="q-controls">
+      <button type="button" class="q-opt" id="prep-no" aria-pressed="false"><span class="q-opt-title">No, I cook as I go</span><span class="q-opt-desc">Every meal is made the day you eat it.</span></button>
+      <div class="q-opt q-opt-holds" id="prep-yes-card">
+        <button type="button" class="q-opt-head" id="prep-yes" aria-pressed="false"><span class="q-opt-title">Yes, I have a prep day</span></button>
+        <div class="q-opt-body" id="prep-yes-body" hidden>
+          <p class="q-opt-label">Which day?</p>
+          <div class="uw-days" id="prep-day-tiles"></div>
+          <p class="q-opt-label">How long?</p>
+          <div class="q-seg" id="prep-length"></div>
+        </div>
+      </div>
+      <p class="uw-sum" id="prep-readback" hidden></p>
+    </div>
+  </div>
+  <div class="q-foot">
+    <button class="btn-primary q-next" id="prep-next" type="button">Continue</button>
+  </div>
+</div>
+
+<!-- How many different breakfasts / lunches / dinners in a week? (Emily,
+     2026-09-30). One screen per meal, skipped for a meal that is off all
+     week (stepFlow); the options, numbers and descriptions are
+     VARIETY_OPTIONS, the keys app/tools/usual_week.py's VARIETY_CHOICES.
+     "Meal prep ahead" is only offered with a prep day. The pips under the
+     options are the three screens, drawn by renderVarietyFoot. The old
+     "How do you feel about leftovers?" screen went with these: the dinner
+     answer says it (leftoversStanceFromVariety). -->
+<div id="step-variety-breakfast" style="display:none">
+  <button class="back-link" type="button" data-step-back="variety-breakfast" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">How many different breakfasts in a week?</h1>
+    <p class="q-line">You&rsquo;ll still have breakfast all the mornings you selected. This is how many different ones.</p>
+    <div class="q-controls">
+      <div class="q-opts" id="variety-breakfast-opts"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pips" aria-hidden="true"></div>
+    <p class="q-pips-caption" hidden></p>
+    <button class="btn-primary q-next" id="variety-breakfast-next" type="button">Continue</button>
+  </div>
+</div>
+<div id="step-variety-lunch" style="display:none">
+  <button class="back-link" type="button" data-step-back="variety-lunch" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">How many different lunches in a week?</h1>
+    <p class="q-line">You&rsquo;ll still have lunch all the days you selected. This is how many different ones.</p>
+    <div class="q-controls">
+      <div class="q-opts" id="variety-lunch-opts"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pips" aria-hidden="true"></div>
+    <p class="q-pips-caption" hidden></p>
+    <button class="btn-primary q-next" id="variety-lunch-next" type="button">Continue</button>
+  </div>
+</div>
+<div id="step-variety-dinner" style="display:none">
+  <button class="back-link" type="button" data-step-back="variety-dinner" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">How many different dinners in a week?</h1>
+    <p class="q-line">You&rsquo;ll still have dinner all the nights you selected. This is how many different ones.</p>
+    <div class="q-controls">
+      <div class="q-opts" id="variety-dinner-opts"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <div class="q-pips" aria-hidden="true"></div>
+    <p class="q-pips-caption" hidden></p>
+    <button class="btn-primary q-next" id="variety-dinner-next" type="button">Continue</button>
+  </div>
+</div>
+
+<div id="step-dinner-time" style="display:none">
+  <button class="back-link" type="button" data-step-back="dinner-time" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">What time do you usually have dinner?</h1>
+    <p class="q-line">So I can tell you when to start cooking.</p>
+    <div class="q-controls">
+      <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <button class="btn-primary q-next" id="dinner-time-next" type="button">Continue</button>
+    <span class="q-skip-quiet" id="dinner-time-skip">Skip</span>
+  </div>
+</div>
+
 
 <!-- Q4: eating style. Chips first, typing optional (Julia, 2026-09-08:
      "less typing, more clicking of preset options"). This used to be a
@@ -1109,6 +1356,7 @@
 <div id="step-eating-style" style="display:none">
   <button class="back-link" type="button" data-step-back="eating-style" hidden></button>
   <div class="q-body">
+    <p class="q-eyebrow"></p>
     <h1 class="q-title">Is there a certain way you'd like meals to lean?</h1>
     <div class="q-controls">
       <div class="chip-row" id="eating-style-chips"></div>
@@ -1117,16 +1365,17 @@
     </div>
   </div>
   <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
     <button class="btn-primary q-next" id="eating-style-next" type="button">Continue</button>
   </div>
 </div>
+
 
 <!-- Q5: won't eat. Same change as the step above — the presets are the
      answer most households give, and the box is for the one they don't. -->
 <div id="step-wont-eat" style="display:none">
   <button class="back-link" type="button" data-step-back="wont-eat" hidden></button>
   <div class="q-body">
+    <p class="q-eyebrow"></p>
     <h1 class="q-title">Anything I should never recommend?</h1>
     <div class="q-controls">
       <div class="chip-row" id="wont-eat-presets"></div>
@@ -1138,15 +1387,16 @@
     </div>
   </div>
   <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
     <button class="btn-primary q-next" id="wont-eat-next" type="button">Continue</button>
   </div>
 </div>
+
 
 <!-- Q6: excited about -->
 <div id="step-excited-about" style="display:none">
   <button class="back-link" type="button" data-step-back="excited-about" hidden></button>
   <div class="q-body">
+    <p class="q-eyebrow"></p>
     <h1 class="q-title">What are you excited to eat more of lately?</h1>
     <div class="q-controls">
       <div class="chip-row" id="excited-chips"></div>
@@ -1157,67 +1407,10 @@
     </div>
   </div>
   <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
     <button class="btn-primary q-next" id="excited-next" type="button">Continue</button>
   </div>
 </div>
 
-<!-- Leftovers, prep days and dinner time — the three rhythm answers the
-     planner acts on (leftovers_stance shapes the week; prep_days feed the
-     prep sessions; dinner_window sets "start by"). One question per
-     screen, at the welcome flow's scale (Build 6, 2026-09-11). The
-     "how many different recipes" steppers and the "normal week" box that
-     used to sit here left setup: the counts are defaults now (see
-     plannedMeals), and the week's own words are asked every week on the
-     intake's "Anything else". -->
-<div id="step-leftovers" style="display:none">
-  <button class="back-link" type="button" data-step-back="leftovers" hidden></button>
-  <div class="q-body">
-    <h1 class="q-title">How do you feel about leftovers?</h1>
-    <div class="q-controls">
-      <div class="rhythm-chip-row" id="rhythm-leftovers-chips"></div>
-    </div>
-  </div>
-  <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
-    <button class="btn-primary q-next" id="leftovers-next" type="button" disabled>Continue</button>
-  </div>
-</div>
-
-<div id="step-prep" style="display:none">
-  <button class="back-link" type="button" data-step-back="prep" hidden></button>
-  <div class="q-body">
-    <h1 class="q-title">Which days do you want to do your meal prepping?</h1>
-    <p class="q-line">You can select multiple if you want to do a few cook days throughout the week.</p>
-    <div class="q-controls">
-      <div class="rhythm-chip-row" id="rhythm-prep-day-chips"></div>
-      <div class="q-group" id="rhythm-prep-minutes-wrap" style="display:none">
-        <p class="q-sub">Roughly how long?</p>
-        <div class="rhythm-chip-row" id="rhythm-prep-minutes-chips"></div>
-      </div>
-    </div>
-  </div>
-  <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
-    <button class="btn-primary q-next" id="prep-next" type="button">Continue</button>
-  </div>
-</div>
-
-<div id="step-dinner-time" style="display:none">
-  <button class="back-link" type="button" data-step-back="dinner-time" hidden></button>
-  <div class="q-body">
-    <h1 class="q-title">What time do you usually have dinner?</h1>
-    <p class="q-line">So I can tell you when to start cooking.</p>
-    <div class="q-controls">
-      <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
-    </div>
-  </div>
-  <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
-    <button class="btn-primary q-next" id="dinner-time-next" type="button">Continue</button>
-    <span class="q-skip-quiet" id="dinner-time-skip">Skip</span>
-  </div>
-</div>
 
 <!-- Step B: kit. Prevents impossible suggestions outright. The old
      "how do you feel about repeats?" question that used to live here was
@@ -1230,6 +1423,7 @@
 <div id="step-kit-repeats" style="display:none">
   <button class="back-link" type="button" data-step-back="kit-repeats" hidden></button>
   <div class="q-body">
+    <p class="q-eyebrow"></p>
     <h1 class="q-title">Just two more! Almost there.</h1>
     <div class="q-controls">
       <div class="q-group">
@@ -1244,11 +1438,11 @@
     </div>
   </div>
   <div class="q-foot">
-    <div class="q-pager" aria-hidden="true"></div>
     <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
     <button class="btn-primary q-next" id="kit-repeats-next" type="button">Let&rsquo;s plan your first week</button>
   </div>
 </div>
+
 
 <!-- Sharing with Claude (App Store 5.1.2(i), Loop Board 2026-09-27): asked
      once, after the last question and before the first week — the first
@@ -1260,6 +1454,7 @@
 <div id="step-ai-consent" style="display:none">
   <button class="back-link" type="button" data-step-back="ai-consent" hidden></button>
   <div class="q-body">
+    <p class="q-eyebrow"></p>
     <h1 class="q-title" id="aic-title"></h1>
     <p class="q-line" id="aic-lead"></p>
     <div class="q-controls">
@@ -1276,6 +1471,7 @@
     <button class="btn-primary q-next" id="ai-consent-allow" type="button"></button>
   </div>
 </div>
+
 
 <!-- Week 1 — the finish (rule S5). The whole ground is spruce
      (body.reveal-active), the mark and wordmark over "Here's week 1.", the
@@ -1548,10 +1744,11 @@ function pruneRestrictionAnswers() {
   });
 }
 function pruneMemberKeyedAnswers() {
-  // Restrictions are the only member-keyed answers left since the
-  // per-person lunch rows went (Build 6, 2026-09-11); the name stays so
-  // the next member-keyed answer has one place to prune from.
+  // Restrictions, and since 2026-09-30 the helpers picked by name
+  // ("Yes, Greg does"). The usual week's cells are cleaned against the
+  // household on every draw and in the payload (uwCleanCell).
   pruneRestrictionAnswers();
+  pruneHelperAnswers();
 }
 // The first two rows default to Adult (the common case — most households
 // start with the adults in the house); anyone added after that starts
@@ -1570,55 +1767,22 @@ function currentMembers() {
 }
 
 // ---------- Household rhythm ----------
-// Only the three questions planning reads survive (Build 6, 2026-09-11):
-// dinner window, leftovers stance, prep days. They save through
-// /api/onboarding/rhythm, the same storage chat corrections write to
-// (app/tools/rhythm.py).
+// Dinner time is the one rhythm question left with a screen of its own
+// (Build 6, 2026-09-11). Since the "How your week runs" screens
+// (2026-09-30) the other two rhythm answers the planner acts on come from
+// them: the prep answer is saved with the usual week (usual_week.prep,
+// which is the rhythm fact prep_days), and the leftovers stance is no
+// longer asked — the dinner variety answer says it
+// (leftoversStanceFromVariety). Saved through /api/onboarding/rhythm, the
+// same storage chat corrections write to (app/tools/rhythm.py).
 const DINNER_WINDOW_OPTIONS = [
   { key: '5_6ish', label: '5–6ish' },
   { key: '6_8', label: '6–8' },
   { key: 'later', label: 'Later' },
   { key: 'all_over', label: 'All over the place' },
 ];
-// Merged with the old final-step "how do you feel about repeats?" question
-// (Loop Board "Onboarding asks about leftovers twice", Emily 2026-09-05) —
-// this is now the ONE leftovers/repeats question asked anywhere in
-// onboarding. Copy is Emily's exact wording.
-const LEFTOVERS_STANCE_OPTIONS = [
-  { key: 'love_them', label: 'Love them — cook once, eat twice' },
-  { key: 'fine_sometimes', label: 'Fine now and then' },
-  { key: 'fresh_each_night', label: 'Fresh every night' },
-];
-
-// Prep days (Loop Board "Prep days", Emily 2026-09-04/09-08) — the one
-// SKIPPABLE rhythm question, and the only multi-select one. Sunday leads
-// the list because a prep week starts there in Emily's own description
-// ("some prep on Sunday... then another prep Wednesday/Thursday"), and
-// because the payload is built by walking THIS list rather than by tap
-// order, that ordering is also what the saved answer reads back in
-// ("Preps on Sunday (about an hour) and Wednesday.").
-const PREP_DAY_OPTIONS = [
-  { key: 'sunday', label: 'Sun' },
-  { key: 'monday', label: 'Mon' },
-  { key: 'tuesday', label: 'Tue' },
-  { key: 'wednesday', label: 'Wed' },
-  { key: 'thursday', label: 'Thu' },
-  { key: 'friday', label: 'Fri' },
-  { key: 'saturday', label: 'Sat' },
-];
-// One length for both days — the question is "roughly how long", not a
-// stopwatch per session, and asking twice for a two-day answer would cost
-// more taps than the precision is worth. Matches rhythm.PREP_MINUTES_CHOICES.
-const PREP_MINUTES_OPTIONS = [
-  { key: 30, label: '30 min' },
-  { key: 60, label: 'About an hour' },
-  { key: 120, label: 'Longer' },
-];
 
 let rhythmDinnerWindow = '';
-let rhythmLeftoversStance = '';
-let rhythmPrepDays = [];      // ['sunday', 'wednesday'] — which chips are on
-let rhythmPrepMinutes = 0;    // 30 | 60 | 120, or 0 for "they didn't say"
 
 // Single-select chip row: renders `options` into `container`, marking
 // `currentValue` active, and calls `onSelect(key)` when a chip is tapped.
@@ -1639,119 +1803,514 @@ function renderDinnerWindowChips() {
   buildSingleSelectChips(document.getElementById('rhythm-dinner-window-chips'), DINNER_WINDOW_OPTIONS, rhythmDinnerWindow, (key) => {
     rhythmDinnerWindow = key;
     renderDinnerWindowChips();
-    updateRhythm2ContinueState();
   });
-}
-function renderLeftoversChips() {
-  buildSingleSelectChips(document.getElementById('rhythm-leftovers-chips'), LEFTOVERS_STANCE_OPTIONS, rhythmLeftoversStance, (key) => {
-    rhythmLeftoversStance = key;
-    renderLeftoversChips();
-    updateRhythm2ContinueState();
-  });
-}
-// Multi-select chips, uncapped (the two-day cap left with Card 4,
-// 2026-09-18 — Loop Board board 06-prep-days: "any number of days can be
-// on"). "I don't prep ahead" sits in the row as its own chip rather than a
-// separate skip link: it is ON exactly when no day chip is, tapping it
-// clears every day, and tapping a day turns it back off on its own — no
-// flag of its own to keep in step with rhythmPrepDays.
-function renderPrepDayChips() {
-  const row = document.getElementById('rhythm-prep-day-chips');
-  row.innerHTML = '';
-  const noPrep = rhythmPrepDays.length === 0;
-  const noneBtn = document.createElement('button');
-  noneBtn.type = 'button';
-  noneBtn.className = 'rhythm-chip' + (noPrep ? ' active' : '');
-  noneBtn.textContent = "I don’t prep ahead";
-  noneBtn.setAttribute('aria-pressed', noPrep ? 'true' : 'false');
-  noneBtn.addEventListener('click', () => {
-    if (noPrep) return;
-    rhythmPrepDays = [];
-    renderPrepDayChips();
-    renderPrepMinutesChips();
-  });
-  row.appendChild(noneBtn);
-  PREP_DAY_OPTIONS.forEach(opt => {
-    const on = rhythmPrepDays.indexOf(opt.key) !== -1;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'rhythm-chip' + (on ? ' active' : '');
-    btn.textContent = opt.label;
-    btn.dataset.value = opt.key;
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    btn.addEventListener('click', () => {
-      if (on) rhythmPrepDays = rhythmPrepDays.filter(k => k !== opt.key);
-      else rhythmPrepDays.push(opt.key);
-      renderPrepDayChips();
-      renderPrepMinutesChips();
-    });
-    row.appendChild(btn);
-  });
-}
-// The length question only exists once there's a day to ask it about.
-function renderPrepMinutesChips() {
-  const wrap = document.getElementById('rhythm-prep-minutes-wrap');
-  wrap.style.display = rhythmPrepDays.length ? 'flex' : 'none';
-  if (!rhythmPrepDays.length) { rhythmPrepMinutes = 0; return; }
-  buildSingleSelectChips(document.getElementById('rhythm-prep-minutes-chips'), PREP_MINUTES_OPTIONS, rhythmPrepMinutes, (key) => {
-    rhythmPrepMinutes = rhythmPrepMinutes === key ? 0 : key;
-    renderPrepMinutesChips();
-  });
-}
-// Built by walking PREP_DAY_OPTIONS, not by reading rhythmPrepDays — so a
-// household that tapped Wednesday before Sunday still saves Sunday first,
-// and the summary reads in week order rather than in tap order.
-function currentPrepDays() {
-  return PREP_DAY_OPTIONS
-    .filter(o => rhythmPrepDays.indexOf(o.key) !== -1)
-    .map(o => ({ weekday: o.key, minutes: rhythmPrepMinutes || null }));
-}
-
-// Leftovers is the one of the three that gates its Continue: the planner
-// shapes the whole week around it. Prep days and dinner time are skippable.
-function updateRhythm2ContinueState() {
-  const next = document.getElementById('leftovers-next');
-  if (next) next.disabled = !rhythmLeftoversStance;
-}
-function buildLeftoversStep() {
-  renderLeftoversChips();
-  updateRhythm2ContinueState();
-}
-function buildPrepStep() {
-  renderPrepDayChips();
-  renderPrepMinutesChips();
 }
 function buildDinnerTimeStep() {
   renderDinnerWindowChips();
 }
 
-// All six (and the skippable seventh) written in one call. Failures are
-// surfaced (unlike the optional plan-the-week steps below) — these are the
-// locked, required rhythm questions, not a skippable extra, so a household
-// should know if the save didn't go through.
-//
-// It used to run the moment the second rhythm step was left, and now runs
-// with every other write at the end of setup (Emily, 2026-09-09). The
-// reason is the same one that moved the household write: lunch location is
-// stored per member NAME, so a rhythm answer written down before you can go
-// back and correct that name leaves an answer on file for somebody who
-// isn't in the household. Nothing in this app takes one back out.
+// "How do you feel about leftovers?" left setup on 2026-09-30, and what it
+// fed — rhythm.leftovers_stance, which the generation prompt reads as the
+// SHAPE of the week (cook-once-eat-twice pairs or not) — is now read off
+// the dinner variety answer: "Cook big, eat twice" is a household that
+// loves leftovers, "A few in rotation" ("mostly fresh, with a leftovers
+// night or two") is fine with them now and then, "Something new every
+// night" wants dinner fresh. No dinner planned says nothing ('' — the
+// route leaves the fact alone).
+const LEFTOVERS_STANCE_BY_DINNER_VARIETY = {
+  cook_big_eat_twice: 'love_them',
+  few_in_rotation: 'fine_sometimes',
+  new_every_day: 'fresh_each_night',
+};
+function leftoversStanceFromVariety(dinnerOn, choice) {
+  if (!dinnerOn) return '';
+  return LEFTOVERS_STANCE_BY_DINNER_VARIETY[choice] || '';
+}
+
+// Written at the end of setup with every other answer (Emily, 2026-09-09):
+// lunch location is stored per member NAME, so a rhythm answer written
+// before the names are final would outlive a corrected one.
 async function saveRhythmAnswers() {
-  // Only the three the planner acts on (Build 6, 2026-09-11). The route
-  // leaves a rhythm fact alone when its key is absent, so the questions
-  // setup no longer asks are simply not sent.
   const body = {
     dinner_window: rhythmDinnerWindow,
-    leftovers_stance: rhythmLeftoversStance,
-    // Always sent, even empty: [] is the real answer "we don't prep
-    // ahead", and the route only leaves the fact alone when the key is
-    // absent entirely (see OnboardingRhythmRequest.prep_days).
-    prep_days: currentPrepDays(),
+    leftovers_stance: leftoversStanceFromVariety(uwMealOn('dinner'), currentVarietyChoice('dinner')),
   };
+  // Only when the weekday-lunch line was changed: "at home" is what the
+  // planner assumes for anybody with nothing on file.
+  const lunch = lunchLocationPayload();
+  if (lunch) body.lunch_location = lunch;
   const res = await Api.fetch('/api/onboarding/rhythm', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error('Could not save your rhythm');
+}
+
+// ---------- Does anyone else help run the house? (2026-09-30) ----------
+// Moved up from the loading screen. One option per OTHER adult on the list
+// — the first name on it is taken to be whoever is setting up — plus
+// "Someone not eating here" and "Just me". The picks and the optional
+// phone or email live here until the first week is ready; then
+// renderHelperInvites makes each link through the one-time invite
+// (POST /api/household/invites), the same flow the loading screen's
+// question used.
+const HELPER_SOMEONE = 'someone';
+const HELPER_ME = 'me';
+let helperPicks = [];          // 'adult:<name>' | 'someone' | 'me'
+let helperContacts = {};       // pick key -> phone or email, as typed
+let helperSomeoneName = '';
+
+function helperAdults(members) {
+  return (members || []).slice(1).filter(m => m.age_group === 'adult').map(m => m.name);
+}
+function helperOptions(adults) {
+  return adults.map(name => ({
+    key: 'adult:' + name,
+    title: 'Yes, ' + name + ' does',
+    desc: 'They’ll see the plan and the list on their phone',
+  })).concat([
+    { key: HELPER_SOMEONE, title: 'Someone not eating here', desc: 'A nanny, a parent who helps with dinners' },
+    { key: HELPER_ME, title: 'Just me', desc: 'You can add someone later in Settings' },
+  ]);
+}
+// "Just me" is on its own; any helper can be picked with any other.
+function helperToggle(picks, key) {
+  if (key === HELPER_ME) return picks.indexOf(HELPER_ME) !== -1 ? [] : [HELPER_ME];
+  const rest = picks.filter(k => k !== HELPER_ME);
+  return rest.indexOf(key) !== -1 ? rest.filter(k => k !== key) : rest.concat([key]);
+}
+function pruneHelperAnswers() {
+  const adults = helperAdults(currentMembers()).map(n => 'adult:' + n);
+  helperPicks = helperPicks.filter(k => k === HELPER_ME || k === HELPER_SOMEONE || adults.indexOf(k) !== -1);
+  Object.keys(helperContacts).forEach(k => {
+    if (k !== HELPER_SOMEONE && adults.indexOf(k) === -1) delete helperContacts[k];
+  });
+}
+// Who gets a link once the week is ready: [{name, contact}].
+function helpersToInvite() {
+  pruneHelperAnswers();
+  const out = [];
+  helperPicks.forEach(k => {
+    if (k.indexOf('adult:') === 0) out.push({ name: k.slice(6), contact: (helperContacts[k] || '').trim() });
+    else if (k === HELPER_SOMEONE && helperSomeoneName.trim()) {
+      out.push({ name: helperSomeoneName.trim(), contact: (helperContacts[HELPER_SOMEONE] || '').trim() });
+    }
+  });
+  return out;
+}
+function helperFieldHtml(key, label, value, placeholder) {
+  return `<label class="q-field">${escapeHtmlLocal(label)}<input type="text" data-helper-field="${escapeHtmlLocal(key)}" value="${escapeHtmlLocal(value)}" placeholder="${escapeHtmlLocal(placeholder)}" autocomplete="off"></label>`;
+}
+const HELPER_CONTACT_PLACEHOLDER = 'I’ll send the invite when your week is ready';
+function buildHelpersStep() {
+  pruneHelperAnswers();
+  const opts = document.getElementById('helpers-opts');
+  opts.innerHTML = helperOptions(helperAdults(currentMembers())).map(o => {
+    const on = helperPicks.indexOf(o.key) !== -1;
+    return `<button type="button" class="q-opt${on ? ' is-on' : ''}" data-helper="${escapeHtmlLocal(o.key)}" aria-pressed="${on ? 'true' : 'false'}"><span class="q-opt-title">${escapeHtmlLocal(o.title)}</span><span class="q-opt-desc">${escapeHtmlLocal(o.desc)}</span></button>`;
+  }).join('');
+  const fields = [];
+  helperPicks.forEach(k => {
+    if (k.indexOf('adult:') === 0) {
+      fields.push(helperFieldHtml(k, k.slice(6) + '’s phone or email (optional)', helperContacts[k] || '', HELPER_CONTACT_PLACEHOLDER));
+    } else if (k === HELPER_SOMEONE) {
+      fields.push(helperFieldHtml('someone-name', 'Their first name', helperSomeoneName, ''));
+      fields.push(helperFieldHtml(HELPER_SOMEONE, 'Their phone or email (optional)', helperContacts[HELPER_SOMEONE] || '', HELPER_CONTACT_PLACEHOLDER));
+    }
+  });
+  document.getElementById('helpers-fields').innerHTML = fields.join('');
+}
+document.getElementById('helpers-opts').addEventListener('click', e => {
+  const btn = e.target.closest('[data-helper]');
+  if (!btn) return;
+  helperPicks = helperToggle(helperPicks, btn.dataset.helper);
+  buildHelpersStep();
+});
+document.getElementById('helpers-fields').addEventListener('input', e => {
+  const key = e.target && e.target.dataset && e.target.dataset.helperField;
+  if (!key) return;
+  if (key === 'someone-name') helperSomeoneName = e.target.value;
+  else helperContacts[key] = e.target.value;
+});
+
+// ---------- Who's eating, and when? (2026-09-30) ----------
+// The usual week: breakfast, lunch and dinner x Monday-Sunday. A cell is
+// 'all' (everyone), 'off' (don't plan) or a list of the NAMES eating it —
+// names, because nobody is saved until setup finishes (see
+// finishSetupAndReveal), and /api/onboarding/answers saves the usual week
+// after member_names, so a name in a cell resolves there. Every cell
+// starts on 'all' ("Everyone starts on every meal").
+const UW_MEALS = ['breakfast', 'lunch', 'dinner'];
+const UW_MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+const UW_MEAL_PLURALS = { breakfast: 'breakfasts', lunch: 'lunches', dinner: 'dinners' };
+const UW_UNITS = { breakfast: ['morning', 'mornings'], lunch: ['day', 'days'], dinner: ['night', 'nights'] };
+const UW_WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const UW_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const UW_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const UW_QUICK = [
+  { label: 'Every day', days: [0, 1, 2, 3, 4, 5, 6] },
+  { label: 'Weekdays', days: [0, 1, 2, 3, 4] },
+  { label: 'Weekends', days: [5, 6] },
+  { label: 'None', days: [] },
+];
+const UW_SNACK_OPTIONS = [
+  { value: 0, label: 'None' }, { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3 a day' },
+];
+function uwAllRow() { return UW_WEEKDAYS.map(() => 'all'); }
+let usualGrid = { breakfast: uwAllRow(), lunch: uwAllRow(), dinner: uwAllRow() };
+let uwOpen = null;             // { meal, i } — the day whose picker is showing
+let uwLunchEditing = false;
+let lunchLocation = {};        // name -> 'home' | 'out'
+let lunchLocationTouched = false;
+// Snacks are asked PER DAY, default 2 (Julia, 2026-09-08); None/1/2/3 here.
+let snacksPerDay = 2;
+
+function uwIsOn(cell) { return cell !== 'off'; }
+function uwDaysOn(row) { return (row || []).filter(uwIsOn).length; }
+function uwMealOn(meal) { return uwDaysOn(usualGrid[meal]) > 0; }
+// A cell against the household as it stands: a list that names everyone
+// is everyone, and one that names nobody still here is everyone too (the
+// same reading app/tools/usual_week.py's _clean_cell gives a stored one).
+function uwCleanCell(cell, names) {
+  if (cell === 'off' || cell === 'all') return cell;
+  const kept = names.filter(n => (cell || []).indexOf(n) !== -1);
+  if (!kept.length || kept.length >= names.length) return 'all';
+  return kept;
+}
+function uwWho(cell, names) {
+  if (cell === 'off') return '–';
+  const who = cell === 'all' ? names : cell;
+  if (who.length > 3) return cell === 'all' ? 'All' : String(who.length);
+  return who.map(n => String(n || '').trim().charAt(0).toUpperCase()).join(' ');
+}
+function uwCellClass(cell) { return cell === 'all' ? 'is-all' : cell === 'off' ? '' : 'is-some'; }
+function uwCellAria(meal, i, cell) {
+  const day = UW_DAY_NAMES[i] + ' ' + meal;
+  if (cell === 'off') return day + ', not planned';
+  if (cell === 'all') return day + ', everyone';
+  return day + ', ' + revealJoinWords(cell);
+}
+function uwCountLabel(meal, n) {
+  if (!n) return 'Not planned';
+  return n + ' ' + UW_UNITS[meal][n === 1 ? 0 : 1];
+}
+// A quick pick puts its days on for everyone and the rest off.
+function uwSetMany(row, days) { return row.map((_, i) => days.indexOf(i) !== -1 ? 'all' : 'off'); }
+function uwQuickOn(row, days) { return row.every((cell, i) => (days.indexOf(i) !== -1) === uwIsOn(cell)); }
+// The picker under a tapped day: Everyone, a "Just <name>" each for a
+// household of two, a toggle per person for three or more, Don't plan.
+function uwPickerOptions(cell, names) {
+  const opts = [{ key: 'all', label: 'Everyone', on: cell === 'all' }];
+  if (names.length === 2) {
+    names.forEach(n => opts.push({ key: 'just:' + n, label: 'Just ' + n, on: Array.isArray(cell) && cell.length === 1 && cell[0] === n }));
+  } else if (names.length > 2) {
+    names.forEach(n => opts.push({ key: 'toggle:' + n, label: n, toggle: true, on: cell === 'all' || (Array.isArray(cell) && cell.indexOf(n) !== -1) }));
+  }
+  opts.push({ key: 'off', label: 'Don’t plan', on: cell === 'off' });
+  return opts;
+}
+function uwApplyPick(cell, key, names) {
+  if (key === 'all' || key === 'off') return key;
+  if (key.indexOf('just:') === 0) return uwCleanCell([key.slice(5)], names);
+  const n = key.slice(7);
+  let who = cell === 'all' ? names.slice() : cell === 'off' ? [] : cell.slice();
+  who = who.indexOf(n) !== -1 ? who.filter(x => x !== n) : who.concat([n]);
+  if (!who.length) return 'off';
+  return uwCleanCell(who, names);
+}
+function uwTotalMeals(grid) {
+  return UW_MEALS.reduce((t, m) => t + uwDaysOn(grid[m]), 0);
+}
+function uwSummary(grid, snacks) {
+  const total = uwTotalMeals(grid);
+  if (!total) return 'Nothing to plan yet. Tap a day to add it.';
+  const snackPart = snacks === 0 ? 'no snacks' : snacks + (snacks === 1 ? ' snack a day' : ' snacks a day');
+  return 'That’s ' + total + (total === 1 ? ' meal' : ' meals') + ' and ' + snackPart + '.';
+}
+// The weekday-lunch line: who's home for lunch and who packs it
+// (rhythm lunch_location 'home' / 'out' — 'out' is what pre-ticks a packed
+// lunch on the weekly questions).
+function uwLunchLine(names, loc) {
+  return 'Weekdays: ' + names.map(n => n + ((loc || {})[n] === 'out' ? ' packs it' : ' at home')).join(' · ');
+}
+function uwWeekdayLunchOn(grid) { return grid.lunch.slice(0, 5).some(uwIsOn); }
+function lunchLocationPayload() {
+  if (!lunchLocationTouched) return null;
+  const out = {};
+  currentMembers().forEach(m => { out[m.name] = lunchLocation[m.name] === 'out' ? 'out' : 'home'; });
+  return Object.keys(out).length ? out : null;
+}
+
+function uwDayTileHtml(meal, i, cell, names, open) {
+  return `<button type="button" class="uw-day ${uwCellClass(cell)}${open ? ' is-open' : ''}" data-uw-meal="${meal}" data-uw-day="${i}" aria-label="${escapeHtmlLocal(uwCellAria(meal, i, cell))}" aria-expanded="${open ? 'true' : 'false'}"><b>${UW_LETTERS[i]}</b><span>${escapeHtmlLocal(uwWho(cell, names))}</span></button>`;
+}
+function uwMealCardHtml(meal, names) {
+  const row = usualGrid[meal];
+  const openI = uwOpen && uwOpen.meal === meal ? uwOpen.i : -1;
+  let html = `<div class="uw-card" data-uw-card="${meal}">
+    <div class="uw-head"><span class="uw-title">${UW_MEAL_LABELS[meal]}</span><span class="uw-count">${uwCountLabel(meal, uwDaysOn(row))}</span></div>
+    <div class="uw-days">${row.map((cell, i) => uwDayTileHtml(meal, i, cell, names, i === openI)).join('')}</div>`;
+  if (openI >= 0) {
+    html += `<div class="uw-row"><p class="uw-ct">${UW_DAY_NAMES[openI].slice(0, 3)} · who’s eating?</p>` +
+      uwPickerOptions(row[openI], names).map(o =>
+        `<button type="button" class="uw-q${o.on ? ' is-on' : ''}" data-uw-pick="${escapeHtmlLocal(o.key)}" aria-pressed="${o.on ? 'true' : 'false'}">${escapeHtmlLocal(o.label)}</button>`
+      ).join('') + '</div>';
+  } else {
+    html += '<div class="uw-row">' + UW_QUICK.map((q, qi) => {
+      const on = uwQuickOn(row, q.days);
+      return `<button type="button" class="uw-q${on ? ' is-on' : ''}" data-uw-quick="${qi}" aria-pressed="${on ? 'true' : 'false'}">${q.label}</button>`;
+    }).join('') + '</div>';
+  }
+  if (meal === 'lunch' && names.length && uwWeekdayLunchOn(usualGrid)) {
+    html += `<div class="uw-lunch"><span>${escapeHtmlLocal(uwLunchLine(names, lunchLocation))}</span><button type="button" class="uw-link" data-uw-lunch-edit>${uwLunchEditing ? 'Done' : 'Change'}</button></div>`;
+    if (uwLunchEditing) {
+      html += '<div class="uw-lunch-edit">' + names.map(n => {
+        const out = lunchLocation[n] === 'out';
+        return `<div class="uw-row"><span>${escapeHtmlLocal(n)}</span>` +
+          `<button type="button" class="uw-q${out ? '' : ' is-on'}" data-uw-lunch="${escapeHtmlLocal(n)}" data-value="home" aria-pressed="${out ? 'false' : 'true'}">At home</button>` +
+          `<button type="button" class="uw-q${out ? ' is-on' : ''}" data-uw-lunch="${escapeHtmlLocal(n)}" data-value="out" aria-pressed="${out ? 'true' : 'false'}">Packs it</button></div>`;
+      }).join('') + '</div>';
+    }
+  }
+  return html + '</div>';
+}
+function uwSnacksCardHtml() {
+  return '<div class="uw-card uw-card-row"><span class="uw-title">Snacks</span><div class="uw-snacks">' +
+    UW_SNACK_OPTIONS.map(o => `<button type="button" class="uw-q${snacksPerDay === o.value ? ' is-on' : ''}" data-uw-snacks="${o.value}" aria-pressed="${snacksPerDay === o.value ? 'true' : 'false'}">${o.label}</button>`).join('') +
+    '</div></div>';
+}
+function renderMealsDays() {
+  const names = currentMembers().map(m => m.name);
+  UW_MEALS.forEach(meal => { usualGrid[meal] = usualGrid[meal].map(cell => uwCleanCell(cell, names)); });
+  document.getElementById('uw-grid').innerHTML = UW_MEALS.map(meal => uwMealCardHtml(meal, names)).join('') + uwSnacksCardHtml();
+  document.getElementById('uw-sum').textContent = uwSummary(usualGrid, snacksPerDay);
+  const next = document.getElementById('meals-days-next');
+  if (next) next.disabled = uwTotalMeals(usualGrid) === 0;
+}
+function buildMealsDaysStep() {
+  uwOpen = null;
+  renderMealsDays();
+}
+document.getElementById('uw-grid').addEventListener('click', e => {
+  const names = currentMembers().map(m => m.name);
+  const day = e.target.closest('[data-uw-day]');
+  if (day) {
+    const meal = day.dataset.uwMeal, i = Number(day.dataset.uwDay);
+    uwOpen = uwOpen && uwOpen.meal === meal && uwOpen.i === i ? null : { meal: meal, i: i };
+    renderMealsDays();
+    return;
+  }
+  const pick = e.target.closest('[data-uw-pick]');
+  if (pick && uwOpen) {
+    const key = pick.dataset.uwPick;
+    const row = usualGrid[uwOpen.meal];
+    row[uwOpen.i] = uwApplyPick(row[uwOpen.i], key, names);
+    if (key.indexOf('toggle:') !== 0) uwOpen = null;
+    renderMealsDays();
+    return;
+  }
+  const quick = e.target.closest('[data-uw-quick]');
+  if (quick) {
+    const card = quick.closest('[data-uw-card]');
+    const meal = card.dataset.uwCard;
+    usualGrid[meal] = uwSetMany(usualGrid[meal], UW_QUICK[Number(quick.dataset.uwQuick)].days);
+    renderMealsDays();
+    return;
+  }
+  if (e.target.closest('[data-uw-lunch-edit]')) {
+    uwLunchEditing = !uwLunchEditing;
+    renderMealsDays();
+    return;
+  }
+  const lunch = e.target.closest('[data-uw-lunch]');
+  if (lunch) {
+    lunchLocation[lunch.dataset.uwLunch] = lunch.dataset.value;
+    lunchLocationTouched = true;
+    renderMealsDays();
+    return;
+  }
+  const snacks = e.target.closest('[data-uw-snacks]');
+  if (snacks) {
+    snacksPerDay = Number(snacks.dataset.uwSnacks);
+    renderMealsDays();
+  }
+});
+
+// ---------- Do you like to cook ahead? (2026-09-30) ----------
+// Replaces "Which days do you want to do your meal prepping?". No, or yes
+// with the day(s) and how long. Saved as usual_week.prep: the rhythm fact
+// prep_days, "About an hour" = 60 minutes, "A longer stretch" = 120
+// (app/tools/usual_week.py PREP_LENGTHS).
+const PREP_LENGTH_OPTIONS = [
+  { key: 'hour', label: 'About an hour' },
+  { key: 'longer', label: 'A longer stretch' },
+];
+let prepAnswer = '';           // '' (not answered — read as no) | 'no' | 'yes'
+let prepDayKeys = [];          // 'monday'... as tapped
+let prepLength = '';           // '' | 'hour' | 'longer'
+// In week order, whatever order the taps came in; none unless "Yes".
+function currentPrepDayKeys() {
+  return prepAnswer === 'yes' ? UW_WEEKDAYS.filter(d => prepDayKeys.indexOf(d) !== -1) : [];
+}
+function hasPrepDay() { return currentPrepDayKeys().length > 0; }
+function uwDayName(key) { return UW_DAY_NAMES[UW_WEEKDAYS.indexOf(key)] || ''; }
+// The line under the answer (Emily's mockup: "Sunday, a longer stretch.
+// I'll put lunch prep and a big batch cook there, and keep weeknights
+// quick."). Lunch prep only when lunch is planned at all; a big batch
+// only for the longer stretch.
+function prepReadback(days, length, lunchOn) {
+  if (!days.length) return '';
+  const when = revealJoinWords(days.map(uwDayName)) +
+    (length === 'longer' ? ', a longer stretch' : length === 'hour' ? ', about an hour' : '');
+  let what;
+  if (length === 'longer') what = lunchOn ? 'lunch prep and a big batch cook' : 'a big batch cook';
+  else what = lunchOn ? 'lunch prep' : 'the week’s prep';
+  return when + '. I’ll put ' + what + ' there, and keep weeknights quick.';
+}
+function buildPrepStep() {
+  const no = document.getElementById('prep-no');
+  const yesCard = document.getElementById('prep-yes-card');
+  const yes = document.getElementById('prep-yes');
+  no.classList.toggle('is-on', prepAnswer === 'no');
+  no.setAttribute('aria-pressed', prepAnswer === 'no' ? 'true' : 'false');
+  yesCard.classList.toggle('is-on', prepAnswer === 'yes');
+  yes.setAttribute('aria-pressed', prepAnswer === 'yes' ? 'true' : 'false');
+  document.getElementById('prep-yes-body').hidden = prepAnswer !== 'yes';
+  document.getElementById('prep-day-tiles').innerHTML = UW_WEEKDAYS.map((d, i) => {
+    const on = prepDayKeys.indexOf(d) !== -1;
+    return `<button type="button" class="uw-day${on ? ' is-all' : ''}" data-prep-day="${d}" aria-label="${UW_DAY_NAMES[i]}" aria-pressed="${on ? 'true' : 'false'}"><b>${UW_LETTERS[i]}</b></button>`;
+  }).join('');
+  document.getElementById('prep-length').innerHTML = PREP_LENGTH_OPTIONS.map(o =>
+    `<button type="button" class="${prepLength === o.key ? 'is-on' : ''}" data-prep-length="${o.key}" aria-pressed="${prepLength === o.key ? 'true' : 'false'}">${o.label}</button>`
+  ).join('');
+  const line = prepReadback(currentPrepDayKeys(), prepLength, uwMealOn('lunch'));
+  const readback = document.getElementById('prep-readback');
+  readback.textContent = line;
+  readback.hidden = !line;
+  // "Yes" with no day picked isn't an answer yet.
+  document.getElementById('prep-next').disabled = prepAnswer === 'yes' && !hasPrepDay();
+}
+document.getElementById('prep-no').addEventListener('click', () => { prepAnswer = 'no'; buildPrepStep(); });
+document.getElementById('prep-yes').addEventListener('click', () => { prepAnswer = 'yes'; buildPrepStep(); });
+document.getElementById('prep-day-tiles').addEventListener('click', e => {
+  const btn = e.target.closest('[data-prep-day]');
+  if (!btn) return;
+  const d = btn.dataset.prepDay;
+  prepDayKeys = prepDayKeys.indexOf(d) !== -1 ? prepDayKeys.filter(k => k !== d) : prepDayKeys.concat([d]);
+  buildPrepStep();
+});
+document.getElementById('prep-length').addEventListener('click', e => {
+  const btn = e.target.closest('[data-prep-length]');
+  if (!btn) return;
+  prepLength = btn.dataset.prepLength;
+  buildPrepStep();
+});
+
+// ---------- How many different breakfasts / lunches / dinners? ----------
+// One screen per meal (2026-09-30). The keys are
+// app/tools/usual_week.py's VARIETY_CHOICES, which is where each one's
+// number lives; the words are Emily's mockups'. "Meal prep ahead" needs a
+// prep day (the server refuses it without one), so it's only offered with
+// one. "A few in rotation" starts picked — one tap on Continue is an
+// answer.
+const VARIETY_OPTIONS = {
+  breakfast: [
+    { key: 'go_to_or_two', num: '1–2 breakfasts', title: 'A go-to or two', desc: 'Same thing most mornings, something different on the weekend.' },
+    { key: 'few_in_rotation', num: '3–4 breakfasts', title: 'A few in rotation', desc: 'Enough to mix it up, each one made more than once.' },
+    { key: 'new_every_day', num: 'All different', title: 'Something new every morning', desc: 'The most variety, and the most cooking.' },
+  ],
+  lunch: [
+    { key: 'last_nights_dinner', num: 'Mostly leftovers', title: 'Last night’s dinner', desc: 'I’ll make dinner big enough to cover the next day’s lunch.' },
+    { key: 'meal_prep_ahead', num: '1–2 lunches', title: 'Meal prep ahead', desc: 'Made on your prep day, enough for the week.', needsPrepDay: true },
+    { key: 'few_in_rotation', num: '3–4 lunches', title: 'A few in rotation', desc: 'Each one made more than once.' },
+    { key: 'new_every_day', num: 'All different', title: 'Something new every day', desc: 'The most variety, and the most cooking.' },
+  ],
+  dinner: [
+    { key: 'cook_big_eat_twice', num: '2–3 dinners', title: 'Cook big, eat twice', desc: 'Most dinners come back as leftovers the next night.' },
+    { key: 'few_in_rotation', num: '4–5 dinners', title: 'A few in rotation', desc: 'Mostly fresh, with a leftovers night or two.' },
+    { key: 'new_every_day', num: 'All different', title: 'Something new every night', desc: 'The most variety, and the most cooking.' },
+  ],
+};
+const VARIETY_DEFAULT = 'few_in_rotation';
+const VARIETY_STEPS = ['variety-breakfast', 'variety-lunch', 'variety-dinner'];
+let varietyChoice = { breakfast: VARIETY_DEFAULT, lunch: VARIETY_DEFAULT, dinner: VARIETY_DEFAULT };
+function varietyOptionsFor(meal, prepDay) {
+  return VARIETY_OPTIONS[meal].filter(o => !o.needsPrepDay || prepDay);
+}
+// The pick as it stands: one that's no longer offered (the prep day went)
+// falls back to the default rather than being sent for the server to refuse.
+function currentVarietyChoice(meal) {
+  const offered = varietyOptionsFor(meal, hasPrepDay()).map(o => o.key);
+  return offered.indexOf(varietyChoice[meal]) !== -1 ? varietyChoice[meal] : VARIETY_DEFAULT;
+}
+// The foot of one variety screen, from the steps this household is asked:
+// how many pips and how many are on, the "Breakfast · then lunch · then
+// dinner" line (none on the last), and the button ("Next: lunch" while
+// another variety screen follows).
+function varietyFoot(flow, key) {
+  const steps = flow.filter(k => VARIETY_STEPS.indexOf(k) !== -1);
+  const i = steps.indexOf(key);
+  const meals = steps.map(k => k.slice('variety-'.length));
+  const next = flow[flow.indexOf(key) + 1] || '';
+  let caption = '';
+  if (i < steps.length - 1) {
+    caption = meals.map((m, j) => (j <= i ? m : 'then ' + m)).join(' · ');
+    caption = caption.charAt(0).toUpperCase() + caption.slice(1);
+  }
+  return {
+    pips: steps.length > 1 ? steps.length : 0,
+    on: i + 1,
+    caption: caption,
+    nextLabel: VARIETY_STEPS.indexOf(next) !== -1 ? 'Next: ' + next.slice('variety-'.length) : 'Continue',
+  };
+}
+function buildVarietyStep(meal) {
+  const chosen = currentVarietyChoice(meal);
+  document.getElementById('variety-' + meal + '-opts').innerHTML = varietyOptionsFor(meal, hasPrepDay()).map(o => {
+    const on = o.key === chosen;
+    return `<button type="button" class="q-opt${on ? ' is-on' : ''}" data-variety="${o.key}" aria-pressed="${on ? 'true' : 'false'}"><span class="q-opt-num">${escapeHtmlLocal(o.num)}</span><span class="q-opt-title">${escapeHtmlLocal(o.title)}</span><span class="q-opt-desc">${escapeHtmlLocal(o.desc)}</span></button>`;
+  }).join('');
+  const foot = varietyFoot(stepFlow(), 'variety-' + meal);
+  const stepEl = document.getElementById('step-variety-' + meal);
+  const pips = stepEl.querySelector('.q-pips');
+  pips.innerHTML = Array.from({ length: foot.pips }, (_, j) => `<span${j < foot.on ? ' class="is-on"' : ''}></span>`).join('');
+  const caption = stepEl.querySelector('.q-pips-caption');
+  caption.textContent = foot.caption;
+  caption.hidden = !foot.caption;
+  document.getElementById('variety-' + meal + '-next').textContent = foot.nextLabel;
+}
+UW_MEALS.forEach(meal => {
+  document.getElementById('variety-' + meal + '-opts').addEventListener('click', e => {
+    const btn = e.target.closest('[data-variety]');
+    if (!btn) return;
+    varietyChoice[meal] = btn.dataset.variety;
+    buildVarietyStep(meal);
+  });
+});
+
+// Everything the "How your week runs" screens answered, in the shape
+// POST /api/onboarding/answers takes as `usual_week`
+// (app/tools/usual_week.py save_usual_week): the grid by weekday name,
+// 'everyone' / 'off' / [names]; a variety choice for each meal that's on;
+// snacks a day; the prep answer ({days: []} is "we don't prep ahead").
+function usualWeekPayload() {
+  const names = currentMembers().map(m => m.name);
+  const grid = {};
+  const variety = {};
+  UW_MEALS.forEach(meal => {
+    grid[meal] = {};
+    usualGrid[meal].forEach((cell, i) => {
+      const c = uwCleanCell(cell, names);
+      grid[meal][UW_WEEKDAYS[i]] = c === 'all' ? 'everyone' : c;
+    });
+    if (uwMealOn(meal)) variety[meal] = currentVarietyChoice(meal);
+  });
+  const days = currentPrepDayKeys();
+  return {
+    grid: grid,
+    variety: variety,
+    snacks_per_day: snacksPerDay,
+    prep: days.length ? { days: days, length: prepLength || null } : { days: [] },
+  };
 }
 
 // ---------- Q3: restrictions, per member ----------
@@ -1950,55 +2509,21 @@ function commitExcitedCustom() {
   input.value = '';
 }
 
-// ---------- Q7: meals per week ----------
+// ---------- The counts the old answer set still carries ----------
+// The per-week counts (7 / 7 / 5) are still sent with the answer set so
+// an older reader of the route sees the same shape, with a meal that's off
+// every day as 0 (the planner writes that slot empty). The usual week's
+// variety choice, saved after them in the same call, is what sets each
+// meal's number (app/main.py onboarding_answers).
 let dinnersPerWeek = 5;
 let breakfastsPerWeek = 7;
 let lunchesPerWeek = 7;
-// Snacks are asked PER DAY now, on chips, default 2 (Julia, 2026-09-08).
-// "How many different snacks a week" was asking for a number nobody thinks
-// in — a household knows it has a mid-morning and a mid-afternoon snack,
-// not that it rotates three snack recipes. snacks_per_day is the new
-// stored fact (meal_preferences.snacks_per_day) and the planner reads it;
-// snacks_per_week is still written alongside it so nothing downstream
-// changes shape — see saveOnboardingAnswers.
-let snacksPerDay = 2;
-// The per-meal steppers (renderDinnersValue and friends, and the six +/-
-// listeners) left with the "how many different recipes" step on 2026-09-11
-// (Build 6). The three counts keep their defaults (7 / 7 / 5) and are sent
-// by plannedMealCounts; a household changes them in What we know.
-// ---------- Which meals should I plan? ----------
-// One tap per meal. An unticked meal saves as a count of 0 (the planner
-// writes that slot empty); a ticked one keeps the default number of
-// distinct dishes the steppers used to ask for (7 / 7 / 5, snacks per
-// day as before), which the household can change later in What we know.
-const MEAL_OPTIONS = [
-  { key: 'breakfast', label: 'Breakfast' }, { key: 'lunch', label: 'Lunch' },
-  { key: 'dinner', label: 'Dinner' }, { key: 'snacks', label: 'Snacks' },
-];
-let plannedMeals = { breakfast: true, lunch: true, dinner: true, snacks: true };
-function buildMealsStep() {
-  const row = document.getElementById('meals-chips');
-  row.innerHTML = '';
-  MEAL_OPTIONS.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'chip' + (plannedMeals[opt.key] ? ' active' : '');
-    btn.textContent = opt.label;
-    btn.setAttribute('aria-pressed', plannedMeals[opt.key] ? 'true' : 'false');
-    btn.addEventListener('click', () => {
-      plannedMeals[opt.key] = !plannedMeals[opt.key];
-      buildMealsStep();
-    });
-    row.appendChild(btn);
-  });
-  document.getElementById('meals-empty').hidden = MEAL_OPTIONS.some(o => plannedMeals[o.key]);
-}
 function plannedMealCounts() {
   return {
-    breakfasts_per_week: plannedMeals.breakfast ? breakfastsPerWeek : 0,
-    lunches_per_week: plannedMeals.lunch ? lunchesPerWeek : 0,
-    dinners_per_week: plannedMeals.dinner ? dinnersPerWeek : 0,
-    snacks_per_day: plannedMeals.snacks ? snacksPerDay : 0,
+    breakfasts_per_week: uwMealOn('breakfast') ? breakfastsPerWeek : 0,
+    lunches_per_week: uwMealOn('lunch') ? lunchesPerWeek : 0,
+    dinners_per_week: uwMealOn('dinner') ? dinnersPerWeek : 0,
+    snacks_per_day: snacksPerDay,
   };
 }
 
@@ -2077,6 +2602,10 @@ async function savePlanTheWeekAnswers() {
 }
 
 // ---------- Save the 7-question answer set ----------
+// Returns what was sent, plus two things the loading screen reads back
+// that aren't part of this call: the dinner window (saved by
+// saveRhythmAnswers) and the usual week as the server saved it (its
+// variety numbers are the server's, app/tools/usual_week.py).
 async function saveOnboardingAnswers() {
   const body = {
     member_names: currentMembers().map(m => m.name),
@@ -2084,18 +2613,20 @@ async function saveOnboardingAnswers() {
     eating_style: currentEatingStyle(),
     wont_eat: currentWontEat(),
     excited_about: getActiveChips(document.getElementById('excited-chips')),
-    // Which meals to plan (Build 6): an unticked meal is a count of 0.
-    // The route derives snacks_per_week from snacks_per_day (capped at
-    // the column's documented 0-7 range) and marks the snacks question
-    // answered, so every existing reader keeps working while the planner
-    // reads snacks_per_day.
+    // The route derives snacks_per_week from snacks_per_day and marks the
+    // snacks question answered, so every existing reader keeps working.
     ...plannedMealCounts(),
+    // The "How your week runs" answers (2026-09-30), saved after the
+    // names above so the names in the grid resolve.
+    usual_week: usualWeekPayload(),
   };
   const res = await Api.fetch('/api/onboarding/answers', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error('Could not save');
-  return body;
+  let saved = null;
+  try { saved = (await res.json()).usual_week || null; } catch (err) { /* read back from what was sent */ }
+  return Object.assign({}, body, { dinner_window: rhythmDinnerWindow, usual_week_saved: saved });
 }
 
 // ---------- First-plan reveal: Week 1 ----------
@@ -2239,7 +2770,6 @@ function revealDaysFromMenu(menuDays) {
 
 function revealSlotDishHtml(s) {
   if (s.state === 'held') return `<p class="reveal-slot-dish reveal-slot-dish-held">${escapeHtmlLocal(s.placeholder || '')}</p>`;
-  if (s.state === 'open') return `<p class="reveal-slot-dish reveal-slot-dish-open">Still deciding</p>`;
   if (s.state === 'planned_empty' || !s.dish) return `<p class="reveal-slot-dish reveal-slot-dish-empty">Nothing planned</p>`;
   return `<p class="reveal-slot-dish">${escapeHtmlLocal(s.dish)}</p>`;
 }
@@ -2276,7 +2806,11 @@ function revealSlotMeta(day, s, allDays) {
 // only the slots this day has; a Swap under every planned meal (an open or
 // deliberately empty slot has nothing to swap — chat is its way).
 function revealDayCardHtml(day, allDays) {
-  const slots = REVEAL_WEEK_SLOTS.filter(slot => day.slots[slot]);
+  // Week 1 arrives full (2026-09-30): the server fills every open slot on
+  // a first plan before it answers (usual_week.fill_first_plan_gaps), and
+  // a slot the stream still calls open is simply not drawn — the first
+  // week never shows an undecided slot.
+  const slots = REVEAL_WEEK_SLOTS.filter(slot => day.slots[slot] && day.slots[slot].state !== 'open');
   const count = slots.filter(slot => day.slots[slot].state === 'planned' && day.slots[slot].dish).length;
   const rows = slots.map(slot => {
     const s = day.slots[slot];
@@ -2422,36 +2956,27 @@ function wireRevealCarousel() {
 }
 
 // ---------- The loading screen's "what I'm using" card (Card 6) ----------
-// The answers actually given, read from the same places the save calls read
-// them: the answer body for people and restrictions, the rhythm step's own
-// globals for the dinner window and the prep days.
-function revealSetupFacts(answers) {
-  const restrictions = (answers && answers.household_restrictions) || {};
-  // The actual things to avoid — allergy: entries plus won't-eat items,
-  // deduped and lower-cased, for the card's "no shrimp, no peanuts" row.
-  const avoidItems = [];
-  const seenAvoid = new Set();
-  Object.keys(restrictions).forEach(name => {
-    (restrictions[name] || []).forEach(item => {
-      const s = String(item);
-      // currentRestrictions() writes an allergy as "allergy: peanuts", one
-      // entry per thing — so this lists things, not people.
-      if (s.toLowerCase().indexOf('allergy:') === 0) {
-        const thing = s.slice(s.indexOf(':') + 1).trim().toLowerCase();
-        if (thing && !seenAvoid.has(thing)) { seenAvoid.add(thing); avoidItems.push(thing); }
-      }
-    });
-  });
-  ((answers && answers.wont_eat) || []).forEach(item => {
-    const thing = String(item).trim().toLowerCase();
-    if (thing && !seenAvoid.has(thing)) { seenAvoid.add(thing); avoidItems.push(thing); }
-  });
-  return {
-    people: ((answers && answers.member_names) || []).length,
-    avoidItems: avoidItems,
-    dinnerWindow: rhythmDinnerWindow,
-    prepDays: currentPrepDays().map(d => d.weekday),
-  };
+// A fuller read-back since 2026-09-30 (Emily's "Cooking up your first
+// week…" mockup): who's eating; the meals and days ("20 meals · no Friday
+// dinner"); allergies and won't-eats ("Greg: no dairy · no olives");
+// variety ("3 breakfasts · lunches prepped Sunday · 4 dinners"); dinner
+// time and who's out. Every line is built from the answers as saved — the
+// answer body saveOnboardingAnswers sent, with the usual week the server
+// saved (its variety numbers are app/tools/usual_week.py's, not a second
+// copy here) — by revealUsingLines, a plain function of them.
+
+function revealTitleCase(word) {
+  const s = String(word || '');
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
+function revealJoinWords(items) {
+  if (items.length <= 1) return items[0] || '';
+  if (items.length === 2) return items[0] + ' and ' + items[1];
+  return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+}
+function revealJoinOr(items) {
+  if (items.length <= 1) return items[0] || '';
+  return items.slice(0, -1).join(', ') + ' or ' + items[items.length - 1];
 }
 
 // Numbers are digits here, deliberately: the card is a count-back of what
@@ -2464,26 +2989,114 @@ const REVEAL_DINNER_WINDOW_FACT = {
   // is left out of the card entirely rather than padded into it.
 };
 
-function revealTitleCase(word) {
-  const s = String(word || '');
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-}
-function revealJoinWords(items) {
-  if (items.length <= 1) return items[0] || '';
-  if (items.length === 2) return items[0] + ' and ' + items[1];
-  return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+// "20 meals · no Friday dinner": every planned meal in the usual week,
+// then what's off, said the way a person would.
+function revealMealsLine(grid) {
+  let total = 0;
+  const notes = [];
+  UW_MEALS.forEach(meal => {
+    const row = (grid && grid[meal]) || {};
+    const off = [];
+    UW_WEEKDAYS.forEach((d, i) => { if (row[d] === 'off') off.push(i); });
+    total += 7 - off.length;
+    if (!off.length) return;
+    const key = off.join(',');
+    if (off.length === 7) notes.push('no ' + meal);
+    else if (key === '5,6') notes.push('no weekend ' + meal);
+    else if (key === '0,1,2,3,4') notes.push('no weekday ' + meal);
+    else if (off.length <= 2) notes.push('no ' + revealJoinOr(off.map(i => UW_DAY_NAMES[i])) + ' ' + meal);
+    else notes.push(meal + ' ' + uwCountLabel(meal, 7 - off.length));
+  });
+  return total + (total === 1 ? ' meal' : ' meals') + (notes.length ? ' · ' + notes.join(' · ') : '');
 }
 
-// One 20px stroke icon + fact per row — see board 08-loading. A row with
-// nothing to say still renders its "no X" / "no prep days" form: those are
-// real, given answers, not blanks to skip. The dinner window is the one row
-// that's genuinely skippable — REVEAL_DINNER_WINDOW_FACT already leaves out
-// anything not specific enough to read back as a fact.
+// One restriction as the card says it: an allergy is "no peanuts", a diet
+// chip its plain word.
+const REVEAL_RESTRICTION_WORDS = {
+  'vegetarian': 'vegetarian', 'vegan': 'vegan', 'gluten-free': 'no gluten', 'dairy-free': 'no dairy',
+};
+function revealRestrictionPhrase(item) {
+  const s = String(item || '').trim();
+  const lower = s.toLowerCase();
+  if (lower.indexOf('allergy:') === 0) return 'no ' + s.slice(s.indexOf(':') + 1).trim().toLowerCase();
+  return REVEAL_RESTRICTION_WORDS[lower] || lower;
+}
+// "Greg: no dairy · no olives, no bell peppers" — each person's
+// restrictions by name, then the household's won't-eats.
+function revealAvoidLine(restrictions, wontEat) {
+  const parts = [];
+  Object.keys(restrictions || {}).forEach(name => {
+    const phrases = (restrictions[name] || []).map(revealRestrictionPhrase).filter(Boolean);
+    if (phrases.length) parts.push(name + ': ' + phrases.join(', '));
+  });
+  const seen = new Set();
+  const avoid = [];
+  (wontEat || []).forEach(item => {
+    const thing = String(item).trim().toLowerCase();
+    if (thing && !seen.has(thing)) { seen.add(thing); avoid.push('no ' + thing); }
+  });
+  if (avoid.length) parts.push(avoid.join(', '));
+  return parts.length ? revealTitleCase(parts.join(' · ')) : 'No allergies';
+}
+
+// "3 breakfasts · lunches prepped Sunday · 4 dinners", from the usual week
+// the server saved: each meal that's on, its number of different dishes.
+function revealVarietyLine(saved, prepDays) {
+  if (!saved || !saved.variety) return '';
+  const parts = [];
+  UW_MEALS.forEach(meal => {
+    const v = saved.variety[meal] || {};
+    if (!v.dishes) return;
+    if (meal === 'lunch' && v.choice === 'last_nights_dinner') { parts.push('lunches from last night’s dinner'); return; }
+    if (meal === 'lunch' && v.choice === 'meal_prep_ahead' && (prepDays || []).length) {
+      parts.push('lunches prepped ' + revealJoinWords(prepDays.map(uwDayName)));
+      return;
+    }
+    parts.push(v.dishes + ' ' + (v.dishes === 1 ? meal : UW_MEAL_PLURALS[meal]));
+  });
+  return parts.join(' · ');
+}
+
+// "Dinner between 6 and 8 · Emily out Thursday": the dinner window, then
+// anyone a dinner is planned without, by the nights they're out.
+function revealDinnerLine(dinnerWindow, grid, names) {
+  const parts = [];
+  const when = REVEAL_DINNER_WINDOW_FACT[dinnerWindow];
+  if (when) parts.push(when);
+  const dinner = (grid && grid.dinner) || {};
+  (names || []).forEach(name => {
+    const out = [];
+    UW_WEEKDAYS.forEach((d, i) => {
+      const cell = dinner[d];
+      if (Array.isArray(cell) && cell.indexOf(name) === -1) out.push(UW_DAY_NAMES[i]);
+    });
+    if (out.length) parts.push(name + ' out ' + revealJoinWords(out));
+  });
+  return parts.length ? revealTitleCase(parts.join(' · ')) : '';
+}
+
+function revealUsingLines(answers) {
+  const a = answers || {};
+  const usual = a.usual_week || {};
+  const names = a.member_names || [];
+  const lines = [];
+  if (names.length) lines.push({ icon: 'people', text: revealJoinWords(names) });
+  if (usual.grid) lines.push({ icon: 'days', text: revealMealsLine(usual.grid) });
+  lines.push({ icon: 'avoid', text: revealAvoidLine(a.household_restrictions, a.wont_eat) });
+  const variety = revealVarietyLine(a.usual_week_saved, (usual.prep || {}).days || []);
+  if (variety) lines.push({ icon: 'variety', text: revealTitleCase(variety) });
+  const dinner = revealDinnerLine(a.dinner_window, usual.grid, names);
+  if (dinner) lines.push({ icon: 'dinner', text: dinner });
+  return lines;
+}
+
+// One 20px stroke icon + fact per row — see board 08-loading.
 const REVEAL_USING_ICONS = {
   people: '<circle cx="9" cy="8" r="3.2"></circle><path d="M3 20a6 6 0 0 1 12 0"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M15.5 14.5A5 5 0 0 1 22 19"></path>',
+  days: '<rect x="4" y="5" width="16" height="15" rx="3"></rect><path d="M4 10h16M9 3v4M15 3v4"></path>',
   avoid: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path>',
-  dinner: '<circle cx="12" cy="13" r="4"></circle><path d="M12 3v2M4 13H2M22 13h-2M5.6 6.6l1.4 1.4M18.4 6.6L17 8M3 19h18"></path>',
-  prep: '<path d="M4 10h16v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4zM2 10h20M8 6c0-2 2-2 2-4M14 6c0-2 2-2 2-4"></path>',
+  variety: '<path d="M4 12h16M4 7h16M4 17h10"></path>',
+  dinner: '<circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path>',
 };
 function revealUsingRowHtml(iconKey, text) {
   return '<div class="reveal-using-row"><div class="reveal-using-icon">' +
@@ -2491,26 +3104,12 @@ function revealUsingRowHtml(iconKey, text) {
     REVEAL_USING_ICONS[iconKey] + '</svg></div>' +
     `<p class="reveal-using-text">${escapeHtmlLocal(text)}</p></div>`;
 }
-function revealUsingRows(facts) {
-  const rows = [];
-  const people = facts.people || 0;
-  if (people) rows.push(revealUsingRowHtml('people', people + (people === 1 ? ' person' : ' people')));
-  const avoid = (facts.avoidItems || []).map(revealTitleCase);
-  rows.push(revealUsingRowHtml('avoid', avoid.length
-    ? revealTitleCase(avoid.map(item => 'no ' + item.toLowerCase()).join(', '))
-    : 'No allergies'));
-  const dinner = REVEAL_DINNER_WINDOW_FACT[facts.dinnerWindow];
-  if (dinner) rows.push(revealUsingRowHtml('dinner', revealTitleCase(dinner)));
-  const prepDays = (facts.prepDays || []).map(revealTitleCase).filter(Boolean);
-  rows.push(revealUsingRowHtml('prep', prepDays.length ? 'Prep on ' + revealJoinWords(prepDays) : 'No prep days'));
-  return rows.join('');
-}
 function renderRevealUsingFacts(answers) {
   const card = document.getElementById('reveal-using');
   const note = document.getElementById('reveal-using-note');
   if (!card) return;
   const rows = document.getElementById('reveal-using-rows');
-  rows.innerHTML = revealUsingRows(revealSetupFacts(answers));
+  rows.innerHTML = revealUsingLines(answers).map(l => revealUsingRowHtml(l.icon, l.text)).join('');
   card.hidden = false;
   if (note) note.hidden = false;
 }
@@ -2692,19 +3291,18 @@ function wireRevealSwapSheet() {
 
 // ---------- the invite ----------
 // Loop Board "Invite my partner from inside the app" (Emily, 2026-09-25 —
-// a one-time invite link). The end of setup asks one thing: does anyone
-// else help run the house? "Just me" and that's all — nothing else is
-// asked. "Yes" offers "Invite Vineeth" for each other adult already on the
-// list, or asks for a first name when there isn't one (added as an adult,
-// nothing more). The link is one use, seven days (app/invites.py) and goes
-// out through the phone's share sheet with a short message in the
-// inviter's voice; with no share sheet it's copied. The same invite is in
-// Preferences → Who's here afterwards (static/shell.js).
-//
-// This replaced the reveal's "Bring the rest of the house in?" card, which
-// handed out each person's what-they-eat link (member-share) — two invite
-// cards on one finish would be one too many, and the old card's "it's
-// under Preferences later too" wasn't true.
+// a one-time invite link). Who to invite is asked up front since
+// 2026-09-30 ("Does anyone else help run the house?", right after the
+// household — helperPicks); the loading screen doesn't ask it any more.
+// Once the first week is ready, renderHelperInvites puts one "Send Greg's
+// invite" per helper under it. The link is one use, seven days
+// (app/invites.py) and goes out through the phone's share sheet with a
+// short message in the inviter's voice; with no share sheet it's copied.
+// With a phone number or an email given, the tap opens a text or an email
+// to them with the same message and link instead. Someone not on the
+// household list is added as an adult by first name (add_adult), as the
+// old question did. The same invite is in Preferences → Who's here
+// afterwards (static/shell.js).
 const INVITE_MESSAGE = 'I’ve set us up on Pomona for our meals and shopping. ' +
   'This link gets you in on your phone. It works once, within a week.';
 
@@ -2799,61 +3397,56 @@ function markInvited(btn, name) {
   btn.disabled = true;
 }
 
-async function renderInviteOffer() {
+// The text or email a tap opens when the helper gave a way to reach them:
+// an address with an @ is an email, anything with seven or more digits is
+// a phone number, anything else is no way in (the share sheet then).
+function inviteContactHref(contact, message, url) {
+  const c = String(contact || '').trim();
+  if (!c) return '';
+  const text = message + ' ' + url;
+  if (c.indexOf('@') !== -1) {
+    return 'mailto:' + c.replace(/\s+/g, '') + '?subject=' + encodeURIComponent('Pomona') + '&body=' + encodeURIComponent(text);
+  }
+  const number = c.replace(/[^\d+]/g, '');
+  if (number.replace(/\D/g, '').length < 7) return '';
+  return 'sms:' + number + '?&body=' + encodeURIComponent(text);
+}
+
+async function sendHelperInvite(btn, helper) {
+  const body = { name: helper.name };
+  if (!helper.contact || !inviteContactHref(helper.contact, INVITE_MESSAGE, 'x')) {
+    return inviteFromButton(btn, body);
+  }
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try {
+    const made = await mintInvite(body);
+    window.location.href = inviteContactHref(helper.contact, INVITE_MESSAGE, made.url);
+    markInvited(btn, made.name);
+  } catch (err) {
+    revealToast(err.message || 'That didn’t work. Try it again.');
+    btn.disabled = false;
+  }
+}
+
+// One row per helper picked up front, once the week is on screen.
+function renderHelperInvites() {
   const section = document.getElementById('invite-section');
-  section.innerHTML = `
-    <div class="invite-card">
-      <h2>Does anyone else help run the house?</h2>
-      <div class="invite-choice">
-        <button type="button" class="invite-btn" id="invite-yes">Yes</button>
-        <button type="button" class="invite-quiet" id="invite-no">Just me</button>
-      </div>
-      <div id="invite-rows" hidden></div>
-    </div>`;
-  document.getElementById('invite-no').onclick = () => { section.innerHTML = ''; };
-  document.getElementById('invite-yes').onclick = async () => {
-    let adults = [];
-    try {
-      const res = await Api.fetch('/api/household/invites');
-      if (res.ok) adults = ((await res.json()).adults || []).filter(a => !a.is_you);
-    } catch (err) { /* fall through to asking for a name */ }
-    section.querySelector('.invite-choice').remove();
-    const rowsDiv = document.getElementById('invite-rows');
-    rowsDiv.hidden = false;
-    if (adults.length) {
-      adults.forEach(a => {
-        const row = document.createElement('div');
-        row.className = 'invite-row';
-        row.innerHTML = `<span class="name">${escapeHtmlLocal(a.name)}</span>
-          <button type="button" class="invite-btn">Invite ${escapeHtmlLocal(a.name)}</button>`;
-        const btn = row.querySelector('button');
-        btn.addEventListener('click', () => inviteFromButton(btn, { member_id: a.id }));
-        rowsDiv.appendChild(row);
-      });
-      return;
-    }
-    rowsDiv.innerHTML = `
-      <div class="invite-new">
-        <input type="text" class="invite-input" id="invite-name" maxlength="40" autocomplete="off"
-          placeholder="Their first name" aria-label="Their first name">
-        <button type="button" class="invite-btn" id="invite-send">Invite</button>
-      </div>`;
-    const input = document.getElementById('invite-name');
-    const send = document.getElementById('invite-send');
-    input.addEventListener('input', () => {
-      if (send.disabled || send.dataset.ready) return;
-      const name = input.value.trim();
-      send.textContent = name ? 'Invite ' + name : 'Invite';
-    });
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); send.click(); } });
-    send.addEventListener('click', () => {
-      if (send.dataset.ready) return;
-      const name = input.value.trim();
-      if (!name) { input.focus(); return; }
-      inviteFromButton(send, { name: name }).then(() => { if (send.disabled) input.disabled = true; });
-    });
-    input.focus();
-  };
+  section.innerHTML = '';
+  const helpers = helpersToInvite();
+  if (!helpers.length) return;
+  const card = document.createElement('div');
+  card.className = 'invite-card';
+  helpers.forEach(h => {
+    const row = document.createElement('div');
+    row.className = 'invite-row';
+    row.innerHTML = `<span class="name">${escapeHtmlLocal(h.name)}</span>
+      <button type="button" class="invite-btn">Send ${escapeHtmlLocal(h.name)}’s invite</button>`;
+    const btn = row.querySelector('button');
+    btn.addEventListener('click', () => sendHelperInvite(btn, h));
+    card.appendChild(row);
+  });
+  section.appendChild(card);
 }
 
 // ---------- the stream ----------
@@ -3152,7 +3745,8 @@ async function generateFirstPlanAndReveal(answers) {
       actions.style.display = 'flex';
     }
   }
-  await renderInviteOffer();
+  // The helpers' invites go out once there is a week to show them.
+  if (!failed) renderHelperInvites();
 }
 
 // ---------- Navigation ----------
@@ -3169,10 +3763,13 @@ async function generateFirstPlanAndReveal(answers) {
 // progress strip and the body background can tell them from the questions.
 const INTRO_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know'];
 // Build 6 (Emily, 2026-09-11, decision G): setup asks only what changes the
-// plan. rhythm-1, rhythm-2, dinners and typical-week left the flow —
-// 'meals' (which meals to plan) took their place, and the three rhythm
-// answers the planner acts on became one screen each.
-const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'household', 'meals', 'restrictions', 'eating-style', 'wont-eat', 'excited-about', 'leftovers', 'prep', 'dinner-time', 'kit-repeats', 'ai-consent', 'reveal'];
+// plan. The order since 2026-09-30 (Emily's "First run, with your
+// choices" storyboard) follows the four stops the last welcome screen
+// lists: who's eating (the household, who helps, never on the plate), how
+// your week runs (who's eating when, cooking ahead, variety per meal,
+// dinner time), what you eat, your first week. 'meals' ("Which meals
+// should I plan?") and 'leftovers' left the flow that day.
+const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'household', 'helpers', 'restrictions', 'meals-days', 'prep', 'variety-breakfast', 'variety-lunch', 'variety-dinner', 'dinner-time', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
@@ -3184,14 +3781,17 @@ const STEP_TITLES = {
   'intro-talk': 'How it works',
   'intro-know': 'Getting to know you',
   'household': "Who's here",
-  'meals': 'Which meals',
+  'helpers': 'Who helps',
   'restrictions': 'Never on the plate',
+  'meals-days': "Who's eating",
+  'prep': 'Cook ahead',
+  'variety-breakfast': 'Breakfast',
+  'variety-lunch': 'Lunch',
+  'variety-dinner': 'Dinner',
+  'dinner-time': 'Dinner time',
   'eating-style': 'How you eat',
   'wont-eat': 'Never recommend',
   'excited-about': 'Cuisines you like',
-  'leftovers': 'Leftovers',
-  'prep': 'Meal prep',
-  'dinner-time': 'Dinner time',
   'kit-repeats': 'Your kit',
   'ai-consent': 'Sharing with Claude',
 };
@@ -3211,7 +3811,13 @@ function stepFlow() {
   // (typeof: aiConsentStatus is declared further down the script, with the
   // rest of the consent step.)
   const consented = typeof aiConsentStatus !== 'undefined' && aiConsentStatus === 'granted';
-  return ALL_STEPS.filter(k => k !== 'ai-consent' || !consented);
+  return ALL_STEPS.filter(k => {
+    if (k === 'ai-consent') return !consented;
+    // A meal that's off every day of the week has nothing to vary
+    // (2026-09-30): its "how many different" screen is skipped.
+    if (VARIETY_STEPS.indexOf(k) !== -1) return uwMealOn(k.slice('variety-'.length));
+    return true;
+  });
 }
 // The step before `key` in that flow, or '' for the first one.
 function stepBefore(key) {
@@ -3240,53 +3846,50 @@ function resolveStep(key) {
 // isn't in the map because its inputs hold their own text; the reveal isn't
 // because it is not a question.
 const STEP_BUILDERS = {
-  'meals': buildMealsStep,
+  'helpers': buildHelpersStep,
   'restrictions': buildRestrictionsStep,
+  'meals-days': buildMealsDaysStep,
+  'prep': buildPrepStep,
+  'variety-breakfast': function () { buildVarietyStep('breakfast'); },
+  'variety-lunch': function () { buildVarietyStep('lunch'); },
+  'variety-dinner': function () { buildVarietyStep('dinner'); },
+  'dinner-time': buildDinnerTimeStep,
   'eating-style': buildEatingStyleStep,
   'wont-eat': buildWontEatStep,
   'excited-about': buildExcitedStep,
-  'leftovers': buildLeftoversStep,
-  'prep': buildPrepStep,
-  'dinner-time': buildDinnerTimeStep,
   'kit-repeats': buildKitRepeatsStep,
 };
 
-// The one progress cue on a question screen besides the crumb (Emily,
-// 2026-09-12: three at once — a ten-segment strip, a "1 of 4" eyebrow and
-// the crumb — was two too many). Four dots, one per stop of the tour the
-// last welcome screen lists, the current one long: the welcome screens'
-// own pager, on ivory. Which stop a question belongs to is written here
-// once; the pager itself is the empty .q-pager in each question's foot, so
-// a question screen without one shows nothing rather than a strip from
-// somewhere else. The reveal and the intro have no entry — the intro
-// carries its own four-dot pager, and the reveal is where setup ends, not
-// another thing to answer.
+// The one progress cue on a question screen besides the crumb: the step
+// eyebrow, "2 of 4 · How your week runs". It was a "1 of 4 · Who's eating"
+// eyebrow until 2026-09-12, then a four-dot pager (three cues at once —
+// a ten-segment strip, the eyebrow and the crumb — was two too many), and
+// Emily's 2026-09-30 mockups put the eyebrow back in the pager's place.
+// Which stop a question belongs to is written here once; the eyebrow is
+// the empty .q-eyebrow in each question's body. The reveal and the intro
+// have no entry — the intro carries its own four-dot pager, and the
+// reveal is where setup ends, not another thing to answer.
 //
-// The grouping follows the ORDER the questions are asked in, so the long
-// dot only ever moves forward: the people and the meals, then what you
-// eat, then how your week runs, then your first week. (The last welcome
-// screen lists "How your week runs" before "What you eat"; the flow asks
-// them the other way round, and reordering questions is a bigger call
-// than a look — flagged in CLAUDE.md's 2026-09-12 entry.)
+// The grouping is the storyboard's (2026-09-30), and since that day it is
+// also the ORDER the last welcome screen lists the stops in, so the number
+// only ever moves forward.
 const QUESTION_SECTIONS = {
-  'household': 1, 'meals': 1,
-  'restrictions': 2, 'eating-style': 2, 'wont-eat': 2, 'excited-about': 2,
-  'leftovers': 3, 'prep': 3, 'dinner-time': 3,
-  'kit-repeats': 4,
+  'household': 1, 'helpers': 1, 'restrictions': 1,
+  'meals-days': 2, 'prep': 2, 'variety-breakfast': 2, 'variety-lunch': 2, 'variety-dinner': 2, 'dinner-time': 2,
+  'eating-style': 3, 'wont-eat': 3, 'excited-about': 3, 'kit-repeats': 3,
+  'ai-consent': 4,
 };
+const SECTION_NAMES = { 1: 'Who’s eating', 2: 'How your week runs', 3: 'What you eat', 4: 'Your first week' };
 const SECTION_COUNT = 4;
+function stepEyebrow(key) {
+  const section = QUESTION_SECTIONS[key];
+  return section ? section + ' of ' + SECTION_COUNT + ' · ' + SECTION_NAMES[section] : '';
+}
 function renderProgress() {
-  const section = QUESTION_SECTIONS[currentStep];
-  if (!section) return;
   const stepEl = document.getElementById('step-' + currentStep);
-  const pager = stepEl && stepEl.querySelector('.q-pager');
-  if (!pager) return;
-  pager.innerHTML = '';
-  for (let i = 1; i <= SECTION_COUNT; i++) {
-    const dot = document.createElement('span');
-    if (i === section) dot.className = 'is-on';
-    pager.appendChild(dot);
-  }
+  const eyebrow = stepEl && stepEl.querySelector('.q-eyebrow');
+  if (!eyebrow) return;
+  eyebrow.textContent = stepEyebrow(currentStep);
 }
 
 // The back control is written by the flow, not by the markup: each step
@@ -3472,39 +4075,44 @@ function showHouseholdEmptyNote(show) {
   const note = document.getElementById('household-empty');
   if (note) note.hidden = !show;
 }
+// The step after `key` in this household's flow — a variety screen for a
+// meal that's off is skipped going forward exactly as it is going back.
+function goForward(key) {
+  const flow = stepFlow();
+  showStep(flow[flow.indexOf(key) + 1]);
+}
 document.getElementById('household-next').onclick = () => {
   if (!currentMembers().length) { showHouseholdEmptyNote(true); return; }
   showHouseholdEmptyNote(false);
-  showStep('meals');
+  goForward('household');
 };
-document.getElementById('meals-next').onclick = () => {
-  if (!MEAL_OPTIONS.some(o => plannedMeals[o.key])) { buildMealsStep(); return; }
-  showStep('restrictions');
+document.getElementById('helpers-next').onclick = () => { goForward('helpers'); };
+document.getElementById('restrictions-next').onclick = () => { goForward('restrictions'); };
+document.getElementById('meals-days-next').onclick = () => {
+  // Nothing on at all is not a week to plan; the line under the grid says so.
+  if (!uwTotalMeals(usualGrid)) { renderMealsDays(); return; }
+  goForward('meals-days');
 };
-document.getElementById('restrictions-next').onclick = () => {
-  showStep('eating-style');
+document.getElementById('prep-next').onclick = () => {
+  if (prepAnswer === 'yes' && !hasPrepDay()) return;
+  goForward('prep');
 };
-document.getElementById('eating-style-next').onclick = () => {
-  showStep('wont-eat');
+VARIETY_STEPS.forEach(key => {
+  document.getElementById(key + '-next').onclick = () => { goForward(key); };
+});
+document.getElementById('dinner-time-next').onclick = () => { goForward('dinner-time'); };
+document.getElementById('dinner-time-skip').onclick = () => {
+  rhythmDinnerWindow = '';
+  goForward('dinner-time');
 };
+document.getElementById('eating-style-next').onclick = () => { goForward('eating-style'); };
 document.getElementById('wont-eat-next').onclick = () => {
   commitWontEatInput();
-  showStep('excited-about');
+  goForward('wont-eat');
 };
 document.getElementById('excited-next').onclick = () => {
   commitExcitedCustom();
-  showStep('leftovers');
-};
-// The three rhythm answers the planner acts on, one screen each (Build 6).
-document.getElementById('leftovers-next').onclick = () => {
-  if (!rhythmLeftoversStance) return;
-  showStep('prep');
-};
-document.getElementById('prep-next').onclick = () => { showStep('dinner-time'); };
-document.getElementById('dinner-time-next').onclick = () => { showStep('kit-repeats'); };
-document.getElementById('dinner-time-skip').onclick = () => {
-  rhythmDinnerWindow = '';
-  showStep('kit-repeats');
+  goForward('excited-about');
 };
 
 // Both added steps are genuinely skippable — "Skip, I'll tell you as we go"
