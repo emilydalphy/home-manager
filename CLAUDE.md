@@ -588,6 +588,83 @@ why*, not duplicating the diff.
     it is the one other shape that produces this signature, and the next
     person reading these numbers will wonder.
 
+- **2026-09-30 — Marking a SNACK away destroys both of that day's snacks, and
+  the round trip back gives one question where two dishes were. Branch
+  `overnight/snack-away-characterised`, NOT merged at the time of writing.
+  TEST-ONLY — `git diff main -- app/ static/` is empty, and it decides
+  nothing: the Loop Board card it belongs to is Emily's to answer.** Found
+  by driving the reproduction on that card ("A snack's attendance is
+  written and then silently dropped from the week payload") one step
+  further than the card did.
+  - **The card's own report reproduced exactly**, on a throwaway DB through
+    the real tools: a `slot_attendance` row is written for the snack, and
+    `get_week_menu` hands the snack cards back with `serves`, `away_names`,
+    `present_names` and `attendance_summary` all None, while the dinner on
+    the same day carries the full set.
+  - **THE ONE THE CARD DID NOT HAVE, and it is the reason this file exists:**
+    two planned snacks, mark the snack away, and BOTH are deleted and one
+    `planned_empty` shell is written. Mark everybody back and that shell
+    becomes ONE `open` question. **Two dishes in, one question out**, with
+    nothing recording the loss and nothing repairing it —
+    `meal_variety.enforce_snacks_per_day` runs at generation only, so a
+    household that asked for two snacks a day now has a day with one, for
+    good.
+  - **The DINNER round trip is the control and is correct**: one dish in,
+    one open question out, because a dinner slot holds one row. So this is
+    not the away conversion being wrong — it is `clear_plan_slot`, a SLOT
+    operation, applied to the one slot that holds more than one meal.
+    **The third instance of a rule this log has already written down
+    twice**: `swap_meal_in_plan` grew its `old_meal` parameter for exactly
+    this ("a slot holding two snacks would lose both to a swap that was
+    only ever about one of them"), and the 2026-09-13 batch-cook entry
+    states it outright — "`clear_plan_slot` is a SLOT operation, and a slot
+    is not a meal."
+  - **BOUNDED, swept rather than assumed.** All fifteen `clear_plan_slot`
+    call sites in `app/` were checked. Eight pass `"dinner"` outright; two
+    pass `"snack"` and mean it (`agent.py`'s skipped day, `today_meals.py`'s
+    day whose meals have all gone by); `agent.py`'s zero-count pass means it
+    too (a household that asked for no snacks); `repair_leftover_chains`
+    passes a generic slot and never sees a snack, because it skips any row
+    outside `WEEK_SLOTS`. **`typed_requests.py` looked like a second live
+    door and is not one** — it would have made this reachable from the
+    plan-week free-text box rather than only from chat, but it filters its
+    candidates to breakfast/lunch/dinner and `week_intake` subtracts
+    `{"snack"}` from the meal words a typed sentence may name. That leaves
+    **exactly two statements**, both halves of one conversion:
+    `slot_needs._settle_slot_empty` and `_reopen_away_slot`.
+  - **A HYPOTHESIS OF MINE THAT MEASURED FALSE, recorded so nobody chases
+    it.** `_decorate_with_needs` builds the week's trip label from
+    `any(info["need"] == "away" for info in day_needs.values())` — every
+    slot, with no three-meal filter — so I expected a snack marked away to
+    set "Away Wed" while the snack card stayed blank. It does not: the
+    filtering happens upstream in `get_week_slot_needs`, and `trip` comes
+    back None. The fact does not leak anywhere; it is simply dropped.
+  - **It also answers the card's own open question, which changes the
+    decision.** The card asks whether `static/shell.js` renders
+    `serves`/`away_names` on a snack card. It renders them **for no slot at
+    all**: `daySlotCardHtml` draws the eyebrow, the name, the `need` badge,
+    the plate chips and the citation; `reviewTileTags` loops `WEEK_SLOTS`;
+    `dayAttendanceLine` reads `day.dinner`. And `NEED_LABELS` is
+    `{quick, ready_made}`, so an `away` need produces no badge either. So
+    the card's option 1 ("decorate the snacks") would change **nothing on
+    screen** for the case it reproduces, and option 2 ("refuse snack
+    attendance") closes the destroyed-snack defect **completely**, since
+    there is no other door to those two statements.
+  - `tests/test_snack_away_characterised.py` (3), every test labelled
+    CHARACTERISATION in its own docstring and saying which way to invert it
+    under each of Emily's two answers. **Three mutations run and every one
+    bites**: decorating the snacks, i.e. option 1 built (1 red — the
+    "never read back" test), the away conversion no longer clearing the
+    slot (1), and — the one that matters — `clear_plan_slot` keeping a
+    snack slot's extra rows, which is the shape a real fix would take
+    (**2 red**, exactly the two tests that characterise the defect, so they
+    would catch the fix landing). A fourth mutation was written badly and
+    did not bite; it assigned the call to a variable instead of disabling
+    it, so the call still ran. Re-run properly it is the 1 red above — a
+    mutation that misses says the mutation was badly chosen, not that the
+    test is toothless.
+  - Green at all four CI weekday pins and under a `Pacific/Niue` straddle.
+
 - **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
   Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep
   after work, it won't be done in time for tuesday." The one rule lives in
