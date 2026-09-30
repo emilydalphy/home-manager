@@ -24,6 +24,7 @@ from .tools import typed_requests as _typed_requests
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import meal_variety as _meal_variety
+from .tools import leftovers_spread as _leftovers_spread
 from .tools import leftovers as _leftovers_mod
 from .tools import weekday_lunches as _weekday_lunches
 from .tools import bring_over as _bring_over
@@ -6501,6 +6502,18 @@ def _finish_week_slots(
         for d in period for slot in _meal_variety.COUNT_FIELDS
     }
     _hold_counts(first=False)
+
+    # Fewer dinner dishes than nights: each dish covers its share of them,
+    # cooked once (3 dinners over 6 nights = each cooked once, eaten twice),
+    # and a weekend lunch eats last night's dinner rather than a portion
+    # from the freezer (Emily, 2026-09-29). AFTER the count guard, so the
+    # dishes are the ones the week keeps — this only decides which night
+    # holds which, never adds or drops a dish; after break_long_runs and
+    # cap_enforce, whose rules it keeps itself (two in a row, a cook fits
+    # its night's cap — fill_caps, the cap on a dish cooked on the day);
+    # BEFORE the plates pass, so sides land on the cooks it settles. Leaves
+    # a week it can't improve exactly as it is. See tools/leftovers_spread.py.
+    _leftovers_spread.spread_dinners(plan_id, intake, caps=fill_caps, target=count_targets.get("dinner"))
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a

@@ -317,7 +317,13 @@ def test_three_dinners_over_six_nights_is_three_cooks(dinners, emily, picker, mo
     assert chains["leftovers"][friday["id"]]["source"]["slot"] == "dinner"
 
 
-def test_wednesdays_cook_feeds_thursday_dinner_and_friday_lunch(emily, picker, monkeypatch):
+def test_a_dinner_that_feeds_a_lunch_is_cooked_once_for_both(emily, picker, monkeypatch):
+    """Friday's lunch is last night's dinner, and that dinner is cooked once
+    for every meal it feeds — not cooked again the day after the same dish.
+    (Until 2026-09-29 this pinned Wednesday's Tacos feeding Thursday dinner
+    and Friday lunch; Emily's decision that Saturday's lunch eats Friday's
+    dinner moved the week to Stew, Stew, Tacos, Curry, Tacos, Curry — see
+    tests/test_leftovers_weekend_and_even_spread.py.)"""
     mon, dates = emily
     tools.save_week_intake(mon, night_tags={})
     _stub(monkeypatch, _week(dates, ["Stew", "Stew", "Tacos", "Tacos", "Curry", "Curry"], LUNCHES,
@@ -325,11 +331,13 @@ def test_wednesdays_cook_feeds_thursday_dinner_and_friday_lunch(emily, picker, m
     plan_id = agent.generate_weekly_plan(mon, day_count=6)["weekly_plan_id"]
     dinners, lunches = _rows(plan_id, "dinner"), _rows(plan_id, "lunch")
     chains = leftovers.plan_leftover_chains(plan_id)
-    wed = dinners[dates[2]]
-    assert wed["meal"] == "Tacos"
-    assert sorted(wed["derived"]["make_double_for"]) == [f"{dates[3]}:dinner", f"{dates[4]}:lunch"]
-    assert chains["leftovers"][dinners[dates[3]]["id"]]["source"]["entry_id"] == wed["id"]
-    assert chains["leftovers"][lunches[dates[4]]["id"]]["source"]["entry_id"] == wed["id"]
+    thu = dinners[dates[3]]
+    friday_lunch = chains["leftovers"][lunches[dates[4]]["id"]]["source"]
+    assert friday_lunch["slot"] == "dinner" and friday_lunch["meal"] == thu["meal"]
+    cook_id = chains["leftovers"].get(thu["id"], {}).get("source", {}).get("entry_id", thu["id"])
+    assert friday_lunch["entry_id"] == cook_id, "Friday's lunch eats the same pot as Thursday's dinner"
+    cooks = _cooks(plan_id, "dinner")
+    assert len(cooks) == len({c["meal"] for c in cooks}) == 3
 
 
 def test_a_rush_night_whose_dish_they_asked_for_elsewhere_keeps_the_count(emily, picker, monkeypatch):
