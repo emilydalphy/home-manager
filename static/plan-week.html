@@ -776,6 +776,8 @@
 @keyframes pw-pop-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 </style>
 <script src="/static/error-reporter.js"></script>
+<!-- Every server call goes through api.js (one base address, cookies sent). Before any page script, after the reporter whose fetch wrapper it calls through. -->
+<script src="/static/api.js"></script>
 </head>
 <body>
 
@@ -1505,7 +1507,7 @@
   // seven, and a page with no week of its own has nothing left to try.
   async function loadHorizon() {
     try {
-      var res = await fetch('/api/week/planning-period');
+      var res = await Api.fetch('/api/week/planning-period');
       if (!res.ok) throw new Error('planning period lookup failed');
       var period = await res.json();
       if (!period || !period.start_date) throw new Error('planning period missing a start date');
@@ -1541,7 +1543,7 @@
   }
 
   async function fetchPeriod(key) {
-    var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake?day_count=' + dayCount);
+    var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake?day_count=' + dayCount);
     if (!res.ok) throw new Error('prefill failed');
     var body = await res.json();
     if (key !== weekStart + '|' + dayCount) return false;   // the period changed while this was in flight
@@ -1679,7 +1681,7 @@
 
   async function loadAttendance() {
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance');
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/attendance');
       if (!res.ok) throw new Error('attendance load failed');
       var body = await res.json();
       attendance.members = body.members || [];
@@ -2230,7 +2232,7 @@
     var summary = $('day-sheet-body').querySelector('#who-summary');
     try {
       if (attendance.members.length) {
-        var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/day-attendance', {
+        var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/day-attendance', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(daySheetPayload(draft))
@@ -2422,7 +2424,7 @@
     // the notes; the Save under them builds the menu with all three.
     if (answer === 'hosting' && !(hosting && hosting.build)) body.build_menu = false;
     try {
-      var res = await fetch('/api/holidays/answer', {
+      var res = await Api.fetch('/api/holidays/answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -2636,7 +2638,7 @@
     var bounds = awayBounds();
     $('away-save').disabled = true;
     try {
-      var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/away-stretch', {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/away-stretch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3217,7 +3219,7 @@
     cuisineAdding = true;
     $('cta').disabled = true;
     try {
-      var res = await fetch('/api/cuisines', {
+      var res = await Api.fetch('/api/cuisines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name })
@@ -3685,7 +3687,7 @@
   // breath (leaveFlow): a plain fetch can be dropped with the page, and
   // a keepalive one outlives it. Every other save awaits its answer.
   async function saveIntake(payload, keepalive) {
-    var res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake', {
+    var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/intake', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       keepalive: !!keepalive,
@@ -3996,7 +3998,7 @@
   async function streamGenerate(payload) {
     var res;
     try {
-      res = await fetch('/api/week/' + encodeURIComponent(weekStart) + '/generate/stream', {
+      res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/generate/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -4083,7 +4085,7 @@
     while (Date.now() - startedAt < DRAFT_WAIT_CAP_MS) {
       await wait(DRAFT_POLL_MS);
       try {
-        var res = await fetch(url, { cache: 'no-store' });
+        var res = await Api.fetch(url, { cache: 'no-store' });
         if (!res.ok) continue;
         var run = (await res.json()).run;
         if (run && run.state === 'done') return true;
@@ -4231,7 +4233,7 @@
       // question is never asked cold again.
       var remembered = addedCuisines.concat(answers.cuisines).filter(function (c, i, all) { return all.indexOf(c) === i; });
       if (data.cuisines_are_fallback && remembered.length) {
-        await fetch('/api/memory/edit', {
+        await Api.fetch('/api/memory/edit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ field: 'cuisine_preferences', value: remembered })
