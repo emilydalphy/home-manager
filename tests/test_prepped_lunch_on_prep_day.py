@@ -558,6 +558,14 @@ _PRELUDE = (
     + _function("cookFocusPrepTasks") + "\n"
     + _function("kitchenLoosePrepTasks") + "\n"
     + _function("cookPreppedAhead") + "\n"
+    # MOVE_OWNER_WORDS / moveOwnerClause / cookOwnerPrefix —
+    # kitchenTodayRows leads a row's line with whose move it is
+    # (2026-09-30, "Every move has an owner"). The real wording rather
+    # than a stub: cookOwnerPrefix guards its call with `typeof`, so a
+    # forgotten prelude would render no name and no error at all. Every
+    # row in this file carries no owner, so every line is what it was.
+    + _between("  var MOVE_OWNER_WORDS = {", "  // The two groups' own icons")
+    + _function("cookOwnerPrefix") + "\n"
     + _function("kitchenTodayLine") + "\n"
     + _function("kitchenTodayRows") + "\n"
     + _function("kitchenTodayRowHtml") + "\n"

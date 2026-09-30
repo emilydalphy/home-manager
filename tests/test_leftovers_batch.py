@@ -413,6 +413,14 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         # prep day). One rule, one place; a harness without it gets a named
         # ReferenceError rather than a quiet wrong answer.
         + _extract("cookPreppedAhead", src) + "\n"
+        # MOVE_OWNER_WORDS / moveOwnerClause / cookOwnerPrefix —
+        # kitchenTodayRows leads a row's line with whose move it is
+        # (2026-09-30, "Every move has an owner"). The real wording rather
+        # than a stub: cookOwnerPrefix guards its call with `typeof`, so a
+        # forgotten prelude would render no name and no error at all. Every
+        # row in this file carries no owner, so every line is what it was.
+        + src[src.index("  var MOVE_OWNER_WORDS = {"):src.index("  // The two groups' own icons")]
+        + _extract("cookOwnerPrefix", src) + "\n"
         + _extract("kitchenTodayLine", src) + "\n"
         + _extract("kitchenTodayRows", src) + "\n"
         + _extract("kitchenTodayRowHtml", src) + "\n"

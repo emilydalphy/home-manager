@@ -665,6 +665,250 @@ why*, not duplicating the diff.
     test is toothless.
   - Green at all four CI weekday pins and under a `Pacific/Niue` straddle.
 
+- **2026-09-30 — Every move on Today says whose it is, and it is the SAME
+  "who cooks" answer the app already had rather than a second one. Branch
+  `overnight/move-owner-slice-1`, NOT merged at the time of writing.** Loop
+  Board, slice 1 of "Every move has an owner": *as an adult in the household,
+  I want each cook, prep and shop on Today to show whose it is, so that we
+  both know without asking.*
+  - **THE CARD'S OWN INSTRUCTION IS THE SHAPE OF THE BRANCH.** Its
+    2026-09-27 regression review says: "Main already names the cook —
+    `cooker._cook_name()` shows 'Emily's cooking' on the meal clock and in
+    Cook (2026-09-13). **Extend that source; don't add a second 'who cooks'
+    source.**" So `app/tools/move_owner.py` is that function's body, moved
+    out and widened to the other two values of the same `cooking_role` fact,
+    and `cooker._cook_name` is a one-line delegation to it — the whole edit
+    to `cooker.py` is that line, its docstring and one import, deliberately,
+    because another builder is live in that file tonight. There is one
+    reader of `cooking_role`, and a test asserts `get_household_rhythm` no
+    longer appears in `_cook_name`'s body.
+  - **Every move gains `owner` (a member id) and `owner_name`, both
+    nullable, both always present.** Stamped by ONE pass at the end of
+    `moves_for_day` (`_stamp_owners`) rather than by five builders each
+    learning about it: every field it reads (`kind`, `date`, `entry_id`) is
+    already on the move, so the builders are untouched and "a household with
+    no answer renders what it rendered before" is true by construction
+    rather than by diligence.
+  - **The three defaults.** `one_person` names them on every cook.
+    `turns` alternates cook nights. `whoever_free` — and a household that
+    has never been asked, which today is every household — names nobody,
+    and there is no "unassigned" anywhere.
+  - **THE JUDGEMENT CALL, and it is Emily's to overrule in one line
+    (`move_owner._turns_owner`).** "We take turns" records WHO but no ORDER
+    and no ANCHOR, so both are picked in code: the ORDER is the adults as
+    setup named them (`members.id` ascending — the rule
+    `household.first_run_hints` and `db._backfill_member_colors` already use
+    for "which adult", so the rotation and the avatar colours agree about
+    who is first), and the ANCHOR is the plan's first cook DAY. Cook DAYS,
+    not cook meals: the card's words are "alternates cook NIGHTS", and a
+    21-slot week alternating by meal would hand one adult breakfast and the
+    other lunch on the same day, which is not what anyone means by taking
+    turns. Every cook on a day belongs to that day's cook. Deterministic
+    from the plan alone — a tick, a start, a swap of dish and a re-read all
+    leave it exactly where it was, and there are tests on the first two.
+    **Two honest limits**: adding or dropping a cook DAY mid-week
+    re-indexes every day after it (a change to the week rather than a wobble
+    between two reads of the same one — and the tidier-looking alternative,
+    anchoring on the date's distance from `period_start`, is worse: a
+    household cooking Monday, Wednesday and Friday with two adults would
+    give every night to the same person, since 0, 2 and 4 are all even);
+    and with NO plan the anchor is the earliest cook day in a sliding
+    window of loose meals, so it can move as days pass. **One adult and
+    `turns`** is a rotation of one — every cook is theirs, which falls out
+    of `% 1` rather than being a special case. **Three or more** rotate in
+    the same order, one cook day each.
+  - **THERE IS NO "WHO SHOPS" ANSWER ANYWHERE IN THIS APP, so the shop
+    carries no owner — said plainly because it looks like an oversight and
+    is not.** Checked: `household_rhythm` holds seven fact types
+    (lunch_location, meals_together, cooking_role, dinner_window,
+    planning_anchor, leftovers_stance, prep_days) and none of them asks;
+    `meal_preferences` has no such column; `members` has none; and a grep of
+    `app/` and `static/` for shopper / who_shops / shopping_role finds only
+    the grocery list's own use of "shopper" for whoever is holding the
+    phone. Guessing that the one person who COOKS also shops would be
+    exactly the traditional assumption `rhythm.py`'s own docstring exists to
+    refuse. No question was invented and no column was added. A holiday's
+    own shop row (`big_meal.SHOP_MARK`) is left unowned with it, even though
+    it carries the big meal's entry id.
+  - **A FRIDGE MOVE OR A PREP TASK TAKES THE OWNER OF THE MEAL IT IS FOR**,
+    on the cook's night rather than its own, when the task says which meal
+    that is (`prep_tasks.meal_plan_entry_id`). Not a guess: the app files a
+    thaw under the meal it feeds everywhere else (`defrost._describe` writes
+    "for Thursday's skewers"; `cookFocusPrepTasks` shows it on that meal's
+    own screen), and under `turns` it is the useful half — the chicken you
+    move today is for the night somebody else is cooking. A task with no
+    entry behind it ("Soak the beans") gets nobody; matching by dish NAME
+    would be a guess.
+  - **A REHEAT CARRIES NO NAME.** Nothing is cooked on a reheat night and
+    this app is careful about that everywhere (`moves.py` never features
+    one, `cooker` never scales one, `time_caps` exempts one), so "Emily's
+    cooking" over a plate being warmed is a thing that isn't true, and
+    inventing a second verb for it would be inventing a fact nobody stated.
+    A reheat night also does not use up a turn.
+  - **THE WORDING IS ONE CONSTANT, `MOVE_OWNER_WORDS` in `static/shell.js`,
+    beside `MOVE_ICONS`.** Two forms: a cook still ahead of you says
+    "Vineeth's cooking" (the card's own example), every other move — and a
+    cook already done — says only "Vineeth's", because moving something to
+    the fridge is not cooking and a dinner on the table is not being cooked
+    (§8: describe only what is true). Deliberately NOT a past tense
+    ("Emily cooked it"): the owner is whose the move WAS, and who actually
+    ticked it is slice 3's question, not a word's. It LEADS the row's own
+    meta line — "Emily's · for Thursday's skewers" reads the way a person
+    tags a job, where trailing leaves the possessive dangling. Always `'s`,
+    including for a name ending in s.
+  - **Quiet by construction, not by restraint.** The name rides INSIDE the
+    row's existing `.day-node-meta` line, so it takes that line's own ink
+    (`--ink-secondary` on the ground, `--celadon-label` on the tinted
+    next-up row, `--ink-done` on a done one) and cannot become a badge, a
+    chip or a second apricot (rule 5). There is no new CSS class and no new
+    element — a test asserts the absence of one, and that `moveOwnerClause`
+    builds words and never markup.
+  - **Cook reads the same constant.** Its Tonight card's eyebrow already
+    said "MONDAY · TONIGHT · EMILY" from `cook_name`, which is null under
+    `turns`; it now prefers the move's own `owner_name` and falls back to
+    `cook_name` (so a card with no move behind it is exactly what it was),
+    and the "also today" rows lead their line with the same clause through
+    `cookOwnerPrefix`.
+  - **ONE THING THE MOVE'S META LINE CHANGE COULD QUIETLY HAVE BROKEN, and
+    it is the only edit to existing render logic.** The tinted row prints a
+    move's `reason` again only when the meta line does not already carry
+    it, and the test was "does the line START with it" (`indexOf !== 0`).
+    A fridge move's reason IS its meta line, so once a name leads that line
+    the reason is no longer at position 0 and it would have been printed
+    twice. It is `indexOf === -1` now — behaviour-identical for every move
+    without an owner, since a reason either starts the line or appears
+    nowhere in it — with a test that renders exactly that row.
+  - **COST, measured at `sqlite3.connect` over a whole Today payload rather
+    than reasoned about** (at `sqlite3.connect`, not any module's
+    `get_conn`: `move_owner` does `from ..db import get_conn` at module
+    scope, so a module-level patch would not have seen its reads at all —
+    the trap the 2026-09-11 approve-race work records). Same seed, a busy
+    day of five moves: **main 71; this branch 71 unanswered, 71
+    whoever_free, 72 one_person, 72 turns.** The one extra connection is
+    `move_owner._adults`, read once per payload so a name can carry the
+    member id slice 3 will credit a tick with; the two answers that claim
+    nobody never spend it. On a QUIET day (two moves, where today_moves
+    also fetches tomorrow's) main is 60 and this branch **59** for those
+    two — the rhythm threading paying for itself, since `today_moves` used
+    to read the rhythm again for tomorrow and now hands its own down
+    (`moves_for_day` gained `owners=` and `rhythm=` beside `view=`).
+    Rhythm reads by `moves.py` for a whole payload: **1, and it does not
+    grow with the day** — pinned both ways, because `<= 1` alone is green
+    at zero, which is main.
+  - **TWO COMMENTS OF MY OWN SAID `one_person` COSTS NOTHING, AND IT COSTS
+    ONE READ — found by reading my own finished diff against my own
+    measurement, and recorded rather than quietly fixed, because a false
+    comment is what the next reader acts on.** `resolve` reads `_adults()`
+    for `turns` AND `one_person` — the second needs it to match its
+    free-text `who` against the adults on record, so the move can carry the
+    member id slice 3 will credit a tick with (`for_meal` says so, and
+    says it correctly). The module docstring's COST paragraph and the
+    inline comment directly ABOVE that very line both said only `turns`
+    needed it. The measurement above had said otherwise all along (72 for
+    `one_person`, 71 for `whoever_free`) and so had the test
+    (`test_an_answer_that_claims_nobody_never_reads_the_members_table`
+    asserts `(1, 1)` for `one_person` in as many words) — so the code, the
+    test and the number were right and the prose was wrong, which is the
+    one direction of this mistake nothing goes red over.
+  - `tests/test_move_owner.py` (38). **Red-against-main is not a
+    meaningful number for this file and is not quoted**: it imports
+    `app.tools.move_owner` and slices `MOVE_OWNER_WORDS` out of shell.js,
+    neither of which exists there, so against main it is a COLLECTION ERROR
+    — zero tests run. The evidence is mutation instead: **19 mutations run
+    and all 19 bite**, red counts read off the runs — the whole pass a
+    no-op, i.e. main's behaviour (10 red); `turns` picking the first adult
+    every night (4); `turns` rotating by MEAL rather than by cook DAY (7);
+    the adults newest first (3); `whoever_free` rotating like `turns` (3);
+    a reheat night using up a turn (1); a prep move taking its own day's
+    cook (2); `one_person` handing back an id whether it matched or not
+    (1); the rhythm read per `moves_for_day` call (2); the resolver rebuilt
+    per call (3); `_adults` read for the answers that claim nobody (2); the
+    resolver raising taking the day's moves with it (1); one wording for
+    every kind (2); a done cook still said to be cooking (1); the client
+    never rendering the name (2); the tinted row's test back to `!== 0`
+    (1); Cook's card ignoring the move (1); Cook's rows dropping the name
+    (1); and `cooker._cook_name` keeping its own copy of the rule (1).
+  - **THREE OF THE MUTATIONS READ 0 ON THE FIRST RUN AND ALL THREE WERE
+    BADLY CHOSEN RATHER THAN UNPINNED — recorded rather than quietly
+    re-run, because two of them found a real hole in the tests.** (1) "a
+    reheat is treated as a cook" reddened nothing, because `_stamp_owners`
+    branches on `kind` and never asks about a reheat at all — so
+    `_is_a_cook`'s reheat clause is load-bearing for exactly one thing, the
+    rotation's cook days, and the reheat test only ever measured the silence
+    the stamp already guarantees. A test that a reheat night does not use up
+    a turn is what closes it. (2) "a prep task takes its own day's cook"
+    mutated a branch the stamping pass cannot reach (it passes no
+    `task_date`); re-aimed at `_stamp_owners` itself. (3) "whoever_free
+    names the first adult" was neutralised by the `_adults` gate three lines
+    above it. All three bite in their corrected form, at 1, 2 and 3 red.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 8174 passed,
+    0 failed**, against a measured **8136 passed, 0 failed** on
+    `origin/main` — taken in a `git archive` of that commit in a directory
+    of its own, because a suite run in a tree somebody is still writing to
+    is not evidence, and an earlier baseline run in this worktree was
+    discarded for exactly that (as was a branch run, when correcting the two
+    comments above landed mid-flight). +38 is this one new test file
+    exactly; `git diff main -- tests/` adds one file and changes four, each
+    with a note saying what moved.
+  - **Four existing node harnesses needed the new helpers added to their
+    preludes** (`test_cook_shelf`, which `test_real_start_time` reuses, plus
+    `test_kitchen_and_preferences`, `test_leftovers_batch`,
+    `test_prepped_lunch_on_prep_day`): each extracts a FIXED list of
+    functions, and `kitchenTodayRows` gained a callee — the hazard the
+    2026-09-21 `draft-snag-flags` entry names. They get the REAL wording
+    rather than a stub, deliberately: `cookOwnerPrefix` guards its call with
+    `typeof` (this file's own idiom for a Cook builder the tests run alone),
+    so a stub would have rendered no name and no error at all. No assertion
+    in any of them changed; every row they build carries no owner, so every
+    line is byte-for-byte the one it was.
+  - **Verified in a real Chromium at 390×844, light and dark**, on throwaway
+    databases, for a `turns` household and a `one_person` one. Today reads
+    `Chicken Skewers · Emily's cooking · 35 min` and — the feature working
+    rather than a fixture — `Move the chicken thighs to the fridge ·
+    Vineeth's · for tomorrow's skewers`, because tomorrow's dinner is
+    Vineeth's night; the reheat and both shop rows carry no name. Cook's
+    Tonight eyebrow reads `WEDNESDAY · THIS MORNING · VINEETH` under
+    `one_person` and `WEDNESDAY · THIS MORNING` under `turns` (that card is
+    a reheat, so there is no cook to name and `cook_name` is null — correct
+    and honest). Contrast measured off computed styles: `.day-node-meta`
+    **4.70:1 light / 7.36:1 dark** on the card and **4.87:1 / 5.92:1** on
+    the tinted next-up row, `.cook-tonight-eyebrow` **7.81:1 / 6.41:1** —
+    all AA. No sideways scroll (`scrollWidth 390 == clientWidth 390`), no
+    owner line truncated at 390px, and the apricot count is unchanged.
+  - **FOUND AND NOT FIXED, named so nobody reports them as new.** (1)
+    `.cook-week-sub` — the "also today" rows' line, which now leads with the
+    name — is `--ink-inactive` at 12.5px and measures **3.40:1 light /
+    4.87:1 dark**, i.e. sub-AA in light. **Pre-existing** (that class and
+    that token predate this branch and nothing here changed either), so
+    fixing it is a token decision and Emily's, not a slice-1 change — but
+    this branch does put a person's name in it, which makes it worth her
+    eyes now rather than later. (2) BOTH digest readers are untouched and
+    say nothing about who — the name goes on `meta`, which the client
+    composes, while `detail` is what `build_morning_text` AND
+    `build_evening_nudge` read, and it is byte-identical (there is a test;
+    `digest.py` mentions neither `meta` nor `owner` anywhere). Texting
+    somebody their own name at seven in the morning is not what this slice
+    is for; whether it should is Emily's.
+    (3) **THREE SURFACES BUILD THEIR OWN LINE RATHER THAN READING THE
+    MOVE'S, so they name nobody — and one of them is the SAME thaw that IS
+    named on Today, which is worth knowing before somebody reports it as a
+    bug.** Cook's get-ready rows (`cookGetReadyMoves`) read `prep_tasks` and
+    `prep_sessions` straight off the cooker view rather than off
+    `moves_for_day`, so they have no owner to show even though the fridge
+    move for that very task carries one two screens away; Today's Tomorrow
+    card renders `move.detail` rather than the meta line, so tomorrow's
+    first move is unnamed; and Cook's "rest of the week" rows answer about
+    days `moves_for_day` was never asked about. The first is the one worth
+    closing, and closing it means giving that builder a source of owners
+    rather than a second copy of the rule — which is slice 2's shape rather
+    than slice 1's. (4)
+    `one_person` names the same person on every row of a one-adult
+    household, which tells nobody anything — not suppressed, because Cook's
+    Tonight card has done exactly that since 2026-09-13 and making the two
+    disagree is worse than the noise. (5) Nothing can CHANGE whose a move
+    is: that is slice 2, and slices 3 and 4 (crediting a tick, "your move")
+    are untouched.
+
 - **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
   Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep
   after work, it won't be done in time for tuesday." The one rule lives in

@@ -91,6 +91,16 @@ _PRELUDE = (
     # prep day). One rule, one place; a harness without it gets a named
     # ReferenceError rather than a quiet wrong answer.
     + _function("cookPreppedAhead") + "\n"
+    # MOVE_OWNER_WORDS / moveOwnerClause — kitchenTodayRows leads a row's
+    # line with whose move it is (2026-09-30, "Every move has an owner").
+    # Both are pulled in rather than stubbed, so this harness runs the real
+    # wording: cookOwnerPrefix guards its call with `typeof`, so a stub —
+    # or a prelude that simply forgot — would render the rows with no name
+    # and no error at all, which is the "satisfiable by its own stub" trap
+    # CLAUDE.md keeps recording. Every row below carries no owner, so every
+    # line here is byte-for-byte the one it was.
+    + _between("  var MOVE_OWNER_WORDS = {", "  // The two groups' own icons")
+    + _function("cookOwnerPrefix") + "\n"
     + _function("kitchenTodayLine") + "\n"
     + _function("kitchenTodayRows") + "\n"
     + _function("kitchenTodayRowHtml") + "\n"
