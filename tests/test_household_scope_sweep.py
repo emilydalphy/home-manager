@@ -252,10 +252,6 @@ _LATER_TRANCHE = {
         # so this is where it is now.
         (1, "UPDATE meal_plan_entries SET {} WHERE id = ?"),
     ],
-    "app/tools/slot_needs.py": [
-        (1, "UPDATE slot_needs SET recommendation_confirmed = ?, updated_at = datetime('now') WHERE id = ?"),
-        (1, "UPDATE slot_needs SET recommended_batch_from_entry_id = ?, recommended_defrost_item = ?, recommendation_confirmed = 0, updated_at = datetime('now') WHERE id = ?"),
-    ],
     "app/tools/spices.py": [
         (1, "UPDATE grocery_items SET status = 'needed' WHERE id = ?"),
         (1, "UPDATE grocery_items SET status = 'needed', staple_id = ? WHERE id = ?"),
@@ -283,6 +279,7 @@ _DONE_MODULES = (
     "app/tools/meal_variety.py",
     "app/tools/memory.py",
     "app/tools/recipes.py",
+    "app/tools/slot_needs.py",
     "app/tools/staples.py",
     "app/tools/stores.py",
     "app/tools/usage.py",
