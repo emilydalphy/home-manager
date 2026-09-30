@@ -2589,7 +2589,7 @@ async function openRevealSwap(btn) {
     els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, '', `<p class="reveal-sheet-note">One moment — the week's still landing. Tell me instead, or tap Swap again in a second.</p>`);
     return;
   }
-  els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, 'Three other picks:', `<p class="reveal-sheet-note">Finding three you might like…</p>`);
+  els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, 'Three other picks:', `<p class="reveal-sheet-note">Finding three you might like — about five seconds.</p>`);
   try {
     const res = await Api.fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/swap-options', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },

@@ -422,18 +422,25 @@ no exclamation marks.
 }
 
 
-def _options_context(entry: dict, recipe: dict | None, role: str, current: str) -> dict:
+def _options_context(entry: dict, recipe: dict | None, role: str, current: str,
+                     whole_recipe: bool = False) -> dict:
+    """What the model is told about the dish. The OPTIONS call only needs a
+    taste of it (25 ingredients, 6 steps); the CHANGE needs all of it,
+    `whole_recipe`: a method cut at six steps is how a nine-step recipe
+    lost its last three after a change (2026-09-30), and the steps are
+    numbered from 1 so a change can name the one it edits."""
     _swap = _swap_mod()
     memory = _memory_mod().get_household_memory()
     table = _swap._table_for(entry["date"], entry["slot"])
+    ingredients = (recipe or {}).get("ingredients") or []
+    steps = (recipe or {}).get("instructions") or []
+    if not whole_recipe:
+        ingredients, steps = ingredients[:25], steps[:6]
     context = {
         "dish": entry["meal"],
         f"current_{role}": current,
-        "ingredients": [
-            {"item": i.get("item"), "qty": i.get("qty")}
-            for i in ((recipe or {}).get("ingredients") or [])[:25]
-        ],
-        "method": ((recipe or {}).get("instructions") or [])[:6],
+        "ingredients": [{"item": i.get("item"), "qty": i.get("qty")} for i in ingredients],
+        "method": ([{"step": n, "text": t} for n, t in enumerate(steps, 1)] if whole_recipe else steps),
         "slot": entry["slot"],
         "must_not_contain": _swap._hard_exclusions(),
         "dislikes": memory.get("dislikes") or [],
@@ -677,20 +684,170 @@ exclamation mark.""",
 }
 
 
+_ROW_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "item": {"type": "string"},
+        "qty": {"type": "string"},
+        "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
+    },
+    "required": ["item"],
+}
+
+# What a change sends back instead of the whole recipe (Loop Board "Speed:
+# Swap opens instantly and Change-a-part is quicker", 2026-09-30). The full
+# rewrite was ~1000 output tokens for a one-line change and took 9-10 s in
+# production; the diff is the changed rows and the edited steps, applied to
+# the stored recipe by apply_variant_diff, so whatever the model doesn't
+# mention is kept exactly as it is.
+VARIANT_DIFF_TOOL = {
+    "name": "submit_variant_diff",
+    "description": "Only what changes in the dish around the changed part. Anything not named here stays as it is.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "meal_name": VARIANT_TOOL["input_schema"]["properties"]["meal_name"],
+            "ingredients_changed": {
+                "type": "array",
+                "description": "An existing ingredient replaced by another: `replaces` is the existing row's item exactly as listed; the rest is the new row.",
+                "items": {"type": "object", "properties": dict(_ROW_SCHEMA["properties"], replaces={"type": "string"}),
+                          "required": ["replaces", "item"]},
+            },
+            "ingredients_added": {"type": "array", "description": "New rows the change needs.", "items": _ROW_SCHEMA},
+            "ingredients_removed": {"type": "array", "description": "Existing items to drop, exactly as listed.", "items": {"type": "string"}},
+            "steps_changed": {
+                "type": "array",
+                "description": "Steps that must read differently, by their number in `method`, with the whole new text of that step.",
+                "items": {"type": "object", "properties": {"step": {"type": "integer"}, "text": {"type": "string"}}, "required": ["step", "text"]},
+            },
+            "steps_added": {
+                "type": "array",
+                "description": "New steps, placed after the numbered step (0 = at the start).",
+                "items": {"type": "object", "properties": {"after": {"type": "integer"}, "text": {"type": "string"}}, "required": ["after", "text"]},
+            },
+            "steps_removed": {"type": "array", "description": "Step numbers to drop.", "items": {"type": "integer"}},
+            "food_groups": VARIANT_TOOL["input_schema"]["properties"]["food_groups"],
+            "main_protein": {"type": "string"},
+            "prep_time_minutes": {"type": "integer"},
+            "cook_time_minutes": {"type": "integer"},
+            "reason": VARIANT_TOOL["input_schema"]["properties"]["reason"],
+        },
+        "required": ["meal_name", "main_protein", "reason"],
+    },
+}
+
+_DIFF_KEYS = ("ingredients_changed", "ingredients_added", "ingredients_removed",
+              "steps_changed", "steps_added", "steps_removed")
+
+
+def _as_list(value) -> list:
+    return [v for v in value if v] if isinstance(value, list) else []
+
+
+def apply_variant_diff(recipe: dict, diff: dict) -> dict:
+    """The changed recipe: the stored one with the model's diff applied.
+    Returns the pick swap_in_place.apply_pick wants — every ingredient and
+    EVERY step the recipe had, less what the diff removes. Step numbers are
+    the ones the model was shown (1-based, in the stored order); a number
+    that isn't one of them is ignored rather than guessed at. A `replaces`
+    that matches no row is added as a new row, so a change is never lost
+    for a slightly different spelling."""
+    rows = [dict(r) for r in (recipe.get("ingredients") or []) if isinstance(r, dict)]
+    by_name = lambda name: next((i for i, r in enumerate(rows)
+                                 if (r.get("item") or "").strip().lower() == (name or "").strip().lower()), None)
+    appended = []
+    for ch in _as_list(diff.get("ingredients_changed")):
+        if not isinstance(ch, dict) or not (ch.get("item") or "").strip():
+            continue
+        new = {k: ch[k] for k in ("item", "qty", "category") if ch.get(k)}
+        at = by_name(ch.get("replaces"))
+        if at is None:
+            appended.append(new)
+        else:
+            rows[at] = dict(rows[at], **new) if not ch.get("qty") else new
+    for gone in _as_list(diff.get("ingredients_removed")):
+        at = by_name(gone if isinstance(gone, str) else "")
+        if at is not None:
+            rows.pop(at)
+    rows += appended + [r for r in _as_list(diff.get("ingredients_added"))
+                        if isinstance(r, dict) and (r.get("item") or "").strip()]
+
+    steps = list(recipe.get("instructions") or [])
+    edited = {}
+    for ch in _as_list(diff.get("steps_changed")):
+        if isinstance(ch, dict) and isinstance(ch.get("step"), int) and 1 <= ch["step"] <= len(steps) \
+                and (ch.get("text") or "").strip():
+            edited[ch["step"]] = ch["text"].strip()
+    removed = {n for n in _as_list(diff.get("steps_removed")) if isinstance(n, int)}
+    added: dict[int, list[str]] = {}
+    for ch in _as_list(diff.get("steps_added")):
+        if isinstance(ch, dict) and isinstance(ch.get("after"), int) and (ch.get("text") or "").strip():
+            added.setdefault(max(0, min(ch["after"], len(steps))), []).append(ch["text"].strip())
+    out_steps = list(added.get(0, []))
+    for n, text in enumerate(steps, 1):
+        if n not in removed:
+            out_steps.append(edited.get(n, text))
+        out_steps += added.get(n, [])
+
+    pick = {
+        "meal_name": diff.get("meal_name") or recipe.get("name") or "",
+        "ingredients": rows,
+        "instructions": out_steps,
+        "reason": diff.get("reason") or "",
+    }
+    for key in ("food_groups", "cuisine", "main_protein", "prep_time_minutes", "cook_time_minutes"):
+        value = diff.get(key)
+        pick[key] = value if value not in (None, "", []) else recipe.get(key)
+    return pick
+
+
+def _is_diff(answer: dict) -> bool:
+    """A change answers with a diff unless it carries a whole ingredient
+    list (the full rewrite, which a recipe with nothing to diff against
+    still gets)."""
+    return not answer.get("ingredients") and (
+        any(k in answer for k in _DIFF_KEYS) or bool(answer.get("meal_name")))
+
+
+def _can_diff(recipe: dict | None, serves: int) -> bool:
+    """A change is asked as a diff only against a written-up recipe whose
+    amounts are already for the batch being cooked. Otherwise the unchanged
+    rows would keep amounts for a different number of servings, and the
+    whole recipe is rewritten at the right size as it always was."""
+    if not recipe or recipe.get("details_pending"):
+        return False
+    if not recipe.get("ingredients") or not recipe.get("instructions"):
+        return False
+    return int(recipe.get("default_servings") or 4) == int(serves)
+
+
+DIFF_ASK = (
+    "The recipe is given whole, steps numbered. Answer with submit_variant_diff: ONLY the rows and "
+    "steps that change — never the unchanged ones, never the whole recipe. Amounts are already for "
+    "the right number of servings."
+)
+
+
 def _ask_variant(context: dict, role: str = "protein") -> dict:
     from .. import agent
+    # change_part marks a context it wants a diff for; the marker is the
+    # app's, not something to tell the model.
+    context = dict(context)
+    diff = bool(context.pop("_diff", False))
     client = agent._client()
+    tool = VARIANT_DIFF_TOOL if diff else VARIANT_TOOL
     response = agent._create_with_retry(
         client,
         label="plate_part_change",
         model=agent.MODEL,
-        max_tokens=2000,
-        tools=[VARIANT_TOOL],
-        tool_choice={"type": "tool", "name": "submit_variant"},
+        max_tokens=900 if diff else 2000,
+        tools=[tool],
+        tool_choice={"type": "tool", "name": tool["name"]},
         messages=[{
             "role": "user",
             "content": [
-                {"type": "text", "text": VARIANT_INSTRUCTIONS[role], "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": VARIANT_INSTRUCTIONS[role] + (("\n\n" + DIFF_ASK) if diff else ""),
+                 "cache_control": {"type": "ephemeral"}},
                 {"type": "text", "text": f"The dish and the change (JSON):\n{json.dumps(context, indent=2)}"},
             ],
         }],
@@ -812,15 +969,22 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     if len(group) < 2:
         group = [entry]
     serves = _swap.batch_serves(weekly_plan_id, group, entry)
-    context = _options_context(entry, recipe, role, current)
+    as_diff = _can_diff(recipe, serves)
+    context = _options_context(entry, recipe, role, current, whole_recipe=True)
     context[f"new_{role}"] = choice
     context["serves"] = serves
     context["serves_note"] = (
         f"Write every amount for {serves} servings — the whole batch this cook makes"
         + (", tonight and the meals eating its leftovers." if len(group) > 1 else ".")
     )
+    if as_diff:
+        context["_diff"] = True
     ask = asker or (lambda ctx: _ask_variant(ctx, role))
     pick = ask(context) or {}
+    if as_diff and _is_diff(pick):
+        # What changed, put on the stored recipe: every step it had, less
+        # what the change drops (apply_variant_diff).
+        pick = apply_variant_diff(recipe, pick)
     name = (pick.get("meal_name") or "").strip()
     if not name or not _swap._clean_ingredients(pick.get("ingredients")):
         logger.warning("plate_part_change came back with no usable dish")

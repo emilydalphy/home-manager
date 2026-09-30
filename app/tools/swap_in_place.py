@@ -492,6 +492,26 @@ def _save_recipe_if_new(pick: dict, serves: int) -> None:
     add on approval.
     """
     name = pick["meal_name"]
+    if pick.get("details_pending"):
+        # A swap picked on a DRAFT (swap_options.choose_swap_option): the
+        # dish goes in the way the menu pass saves one — a pending row with
+        # the one-line dish_note — and is written up with the rest at
+        # approval (agent.fill_pending_recipes_for_plan). Nothing shops for
+        # a draft, so nothing needs a quantity yet.
+        if not _recipes.existing_recipe_named(name):
+            _recipes.add_recipe(
+                name=name,
+                ingredients=[],
+                food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
+                cuisine=(pick.get("cuisine") or "").strip(),
+                main_protein=(pick.get("main_protein") or "").strip(),
+                default_servings=pick.get("default_servings") or serves or 4,
+                prep_time_minutes=pick.get("prep_time_minutes"),
+                cook_time_minutes=pick.get("cook_time_minutes"),
+                details_pending=True,
+                dish_note=pick.get("dish_note") or "",
+            )
+        return
     ingredients = _clean_ingredients(pick.get("ingredients"))
     if not ingredients:
         return

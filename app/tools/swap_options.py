@@ -414,6 +414,29 @@ def forget_options(entry_id: int) -> None:
     _OPTIONS_CACHE.pop((household_id(), entry_id), None)
 
 
+def _plan_is_approved(weekly_plan_id: int) -> bool:
+    """An approved week is shopped from, so a swap there must carry a full
+    recipe; a draft is not (nothing reaches the grocery list before
+    approval)."""
+    from ..db import get_conn
+    conn = get_conn()
+    row = conn.execute("SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+                       (weekly_plan_id, household_id())).fetchone()
+    conn.close()
+    return bool(row) and row["status"] == "approved"
+
+
+def _dish_note(pick: dict) -> str:
+    """The one line the recipe pass is given for a pending dish: what the
+    card said, and the main items the pick was offered with, so the
+    write-up is of the dish the household tapped."""
+    main = [r["item"] for r in _as_ingredient_rows(pick.get("ingredients")) if r.get("item")]
+    note = (pick.get("reason") or "").strip()
+    if main:
+        note = (note + " " if note else "") + "Built around " + ", ".join(main) + "."
+    return note
+
+
 def needs_write_out(pick: dict) -> bool:
     """A trimmed pick — no steps, and no saved recipe by that name to cook
     from — has to be written out before it can be planned. A pick that
@@ -495,7 +518,22 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         why = _swap.cap_gate(weekly_plan_id, pick, group)
     if why:
         return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
-    if needs_write_out(pick):
+    on_draft = not _plan_is_approved(weekly_plan_id)
+    if on_draft and needs_write_out(pick):
+        # A DRAFT saves the pick straight away as a pending recipe — the
+        # name, the line, the main items as the dish_note — and the
+        # write-up waits for approval with every other new dish
+        # (agent.fill_pending_recipes_for_plan). The wait for the model's
+        # recipe (about 6 s) was for quantities, and nothing shops for a
+        # draft. The title is left as the household tapped it: its
+        # ingredient list is six main items, not a recipe to hold a name
+        # against. The full recipe is gated when it is written.
+        pick = dict(pick, details_pending=True, ingredients=[], dish_note=_dish_note(pick),
+                    cook_time_minutes=_minutes(pick))
+        correct_title = False
+    else:
+        correct_title = True
+    if not on_draft and needs_write_out(pick):
         context = cached.get("context") or _swap.build_swap_context(
             weekly_plan_id, entry, _swap._dedup([entry["meal"]]))
         try:
@@ -520,10 +558,10 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         if why:
             return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if len(group) > 1:
-        out = _swap.apply_pick_to_days(weekly_plan_id, group, pick,
+        out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, correct_title=correct_title,
                                        serves=_swap.batch_serves(weekly_plan_id, group, entry))
     else:
-        out = _swap.apply_pick(weekly_plan_id, entry, pick)
+        out = _swap.apply_pick(weekly_plan_id, entry, pick, correct_title=correct_title)
     out["status"] = "swapped"
     for member in group:
         forget_options(member["entry_id"])
