@@ -24,7 +24,8 @@ def get_household_setup_status() -> dict:
     """
     conn = get_conn()
     members = conn.execute(
-        "SELECT id, name, age_group FROM members WHERE household_id = ?", (household_id(),)
+        "SELECT id, name, age_group, COALESCE(eats_here, 1) AS eats_here FROM members WHERE household_id = ?",
+        (household_id(),),
     ).fetchall()
     pets = conn.execute(
         "SELECT id, name, pet_type FROM pets WHERE household_id = ?", (household_id(),)
@@ -49,7 +50,13 @@ def get_household_setup_status() -> dict:
     chores_on = bool(household and household["chores_enabled"])
     return {
         "has_members": len(members) > 0,
-        "members": [dict(m) for m in members],
+        # A helper who doesn't eat here (2026-09-30, setup's "Someone not
+        # eating here") is marked, so chat never plans a meal for them.
+        "members": [
+            dict(dict(m), eats_here=bool(m["eats_here"]),
+                 **({} if m["eats_here"] else {"note": "helps, doesn't eat here"}))
+            for m in members
+        ],
         "pets": [dict(p) for p in pets],
         "goals": household["goals"] if household else "",
         "chores_enabled": chores_on,

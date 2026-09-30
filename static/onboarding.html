@@ -583,6 +583,9 @@
      the days at once. */
   .reveal-using {
     align-self: stretch;
+    /* The head leaves 56px on the right for the help button; the card
+       takes the full width back so its margins match (2026-09-30). */
+    margin-right: -56px;
     margin-top: 14px;
     background: var(--spruce-raised);
     border-radius: var(--radius-card);
@@ -662,6 +665,18 @@
      that reads as a warning — it fills in within seconds. */
   .reveal-slot-dish-held { color: var(--ink-secondary); font-weight: 500; font-style: italic; }
   .reveal-slot-meta { font-size: 13px; color: var(--ink-secondary); margin: 2px 0 0; }
+  /* A slot left for the person (2026-09-30): its question, then the options
+     as sand buttons (the Swap's own look), or the one way to tell me. */
+  .reveal-slot-ask { font-weight: 600; }
+  .reveal-open-options { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+  .reveal-open-option, .reveal-open-talk {
+    min-height: 44px; padding: 6px 12px; border: 0; border-radius: var(--radius-control);
+    background: var(--sand); color: var(--ink); cursor: pointer; text-align: left;
+    font-family: var(--font-body); font-weight: 700; font-size: 14px;
+    display: inline-flex; flex-direction: column; justify-content: center;
+  }
+  .reveal-open-option span { font-weight: 500; font-size: 12px; color: var(--ink-secondary); }
+  .reveal-open-option:disabled, .reveal-open-talk:disabled { opacity: .55; cursor: default; }
   /* Swap: a sand in-card button, 36px as drawn with the same 44px pad. */
   .reveal-swap {
     position: relative; flex: 0 0 auto; height: 36px; padding: 0 14px; border: 0;
@@ -1915,7 +1930,7 @@ function helpersToInvite() {
 function helperFieldHtml(key, label, value, placeholder) {
   return `<label class="q-field">${escapeHtmlLocal(label)}<input type="text" data-helper-field="${escapeHtmlLocal(key)}" value="${escapeHtmlLocal(value)}" placeholder="${escapeHtmlLocal(placeholder)}" autocomplete="off"></label>`;
 }
-const HELPER_CONTACT_PLACEHOLDER = 'I’ll send the invite when your week is ready';
+const HELPER_CONTACT_PLACEHOLDER = 'Sent when your week is ready';
 function buildHelpersStep() {
   pruneHelperAnswers();
   const opts = document.getElementById('helpers-opts');
@@ -1933,6 +1948,16 @@ function buildHelpersStep() {
     }
   });
   document.getElementById('helpers-fields').innerHTML = fields.join('');
+  updateHelpersNext();
+}
+// "Someone not eating here" with no name isn't somebody to invite yet:
+// Continue waits for the name rather than dropping the pick.
+function helpersNeedName(picks, name) {
+  return picks.indexOf(HELPER_SOMEONE) !== -1 && !String(name || '').trim();
+}
+function updateHelpersNext() {
+  const next = document.getElementById('helpers-next');
+  if (next) next.disabled = helpersNeedName(helperPicks, helperSomeoneName);
 }
 document.getElementById('helpers-opts').addEventListener('click', e => {
   const btn = e.target.closest('[data-helper]');
@@ -1943,7 +1968,7 @@ document.getElementById('helpers-opts').addEventListener('click', e => {
 document.getElementById('helpers-fields').addEventListener('input', e => {
   const key = e.target && e.target.dataset && e.target.dataset.helperField;
   if (!key) return;
-  if (key === 'someone-name') helperSomeoneName = e.target.value;
+  if (key === 'someone-name') { helperSomeoneName = e.target.value; updateHelpersNext(); }
   else helperContacts[key] = e.target.value;
 });
 
@@ -2721,6 +2746,16 @@ function revealSlotFromMenu(slot, entry) {
   const leftover = entry.leftover_from || null;
   let meta = '';
   if (!leftover && entry.meta && entry.meta !== 'reheat' && entry.meta !== 'takeout') meta = entry.meta;
+  if (state === 'open') {
+    // A slot the server left open on purpose — it needs the person: an
+    // allergy ruled every dish out, who's home, a holiday (2026-09-30).
+    // `asked` is what tells it from a stream frame's passing "open".
+    return {
+      slot: slot, state: 'open', asked: true, dish: '', meta: '',
+      question: String(entry.open_question || ''), options: entry.options || [],
+      entryId: entry.entry_id || null, from: '', fromSlot: '', fromMeal: '',
+    };
+  }
   return {
     slot: slot, state: state,
     dish: leftover ? String(leftover.meal || entry.title || '') : String(entry.title || ''),
@@ -2783,6 +2818,18 @@ function revealDaysFromMenu(menuDays) {
   return out;
 }
 
+// An open slot the server kept for the person to answer: its question (or
+// one plain line when it isn't one), then the options it offered — or,
+// with none, the Plan tab's own way out: tell me what you'd like instead.
+function revealOpenSlotHtml(date, s) {
+  const line = s.question || ('Nothing planned for this ' + s.slot + ' yet.');
+  const opts = (s.options || []).map(o =>
+    `<button type="button" class="reveal-open-option" data-open-date="${escapeHtmlLocal(date)}" data-open-slot="${escapeHtmlLocal(s.slot)}" data-choice="${escapeHtmlLocal(o.label)}">${escapeHtmlLocal(o.label)}${o.meta ? `<span>${escapeHtmlLocal(o.meta)}</span>` : ''}</button>`
+  ).join('');
+  return `<p class="reveal-slot-dish reveal-slot-ask">${escapeHtmlLocal(line)}</p>
+    <div class="reveal-open-options">${opts || `<button type="button" class="reveal-open-talk" data-open-date="${escapeHtmlLocal(date)}" data-open-slot="${escapeHtmlLocal(s.slot)}">Tell me what you’d like instead</button>`}</div>`;
+}
+
 function revealSlotDishHtml(s) {
   if (s.state === 'held') return `<p class="reveal-slot-dish reveal-slot-dish-held">${escapeHtmlLocal(s.placeholder || '')}</p>`;
   if (s.state === 'planned_empty' || !s.dish) return `<p class="reveal-slot-dish reveal-slot-dish-empty">Nothing planned</p>`;
@@ -2817,16 +2864,31 @@ function revealSlotMeta(day, s, allDays) {
   return parts.join(' · ');
 }
 
+// "just Greg for dinner" — the day's dinner in the usual week, when only
+// some of the household eat it (the answers as sent: names). '' otherwise.
+function revealDaySubsetNote(date, grid) {
+  const wd = revealWeekdayIndex(date);
+  if (wd === -1 || !grid || !grid.dinner) return '';
+  const cell = grid.dinner[UW_WEEKDAYS[(wd + 6) % 7]];
+  return Array.isArray(cell) && cell.length ? 'just ' + revealJoinWords(cell) + ' for dinner' : '';
+}
+
 // One card. Rows in eating order (Breakfast, Lunch, Dinner, then a snack),
 // only the slots this day has; a Swap under every planned meal (an open or
 // deliberately empty slot has nothing to swap — chat is its way).
 function revealDayCardHtml(day, allDays) {
   // Week 1 arrives full (2026-09-30): the server fills every open slot on
-  // a first plan before it answers (usual_week.fill_first_plan_gaps), and
-  // a slot the stream still calls open is simply not drawn — the first
-  // week never shows an undecided slot.
-  const slots = REVEAL_WEEK_SLOTS.filter(slot => day.slots[slot] && day.slots[slot].state !== 'open');
-  const count = slots.filter(slot => day.slots[slot].state === 'planned' && day.slots[slot].dish).length;
+  // a first plan before it answers (usual_week.fill_first_plan_gaps),
+  // except one that needs the person — an allergy ruled everything out,
+  // who's home, a holiday. That one comes back from the saved week as
+  // `asked` and is drawn with its question and a way to answer it; a slot
+  // the stream calls open while the week is still landing is not drawn.
+  const slots = REVEAL_WEEK_SLOTS.filter(slot => day.slots[slot] && (day.slots[slot].state !== 'open' || day.slots[slot].asked));
+  const count = slots.filter(slot => {
+    const s = day.slots[slot];
+    return (s.state === 'planned' && s.dish) || (s.state === 'open' && s.asked);
+  }).length;
+  const note = revealDaySubsetNote(day.date, ((lastFirstPlanAnswers || {}).usual_week || {}).grid);
   const rows = slots.map(slot => {
     const s = day.slots[slot];
     const meta = revealSlotMeta(day, s, allDays);
@@ -2834,8 +2896,8 @@ function revealDayCardHtml(day, allDays) {
     return `<div class="reveal-slot" data-slot="${escapeHtmlLocal(slot)}">
       <div class="reveal-slot-text">
         <p class="reveal-slot-label">${REVEAL_SLOT_LABELS[slot] || escapeHtmlLocal(slot)}</p>
-        ${revealSlotDishHtml(s)}
-        ${meta ? `<p class="reveal-slot-meta">${escapeHtmlLocal(meta)}</p>` : ''}
+        ${s.state === 'open' ? revealOpenSlotHtml(day.date, s) : revealSlotDishHtml(s)}
+        ${meta && s.state !== 'open' ? `<p class="reveal-slot-meta">${escapeHtmlLocal(meta)}</p>` : ''}
       </div>
       ${swappable ? `<button type="button" class="reveal-swap" data-swap-date="${escapeHtmlLocal(day.date)}" data-swap-slot="${escapeHtmlLocal(slot)}"${s.entryId ? ` data-entry-id="${s.entryId}"` : ''} aria-label="Swap ${escapeHtmlLocal(s.dish)}">${REVEAL_SWAP_ICON}Swap</button>` : ''}
     </div>`;
@@ -2843,7 +2905,7 @@ function revealDayCardHtml(day, allDays) {
   return `<div class="reveal-day" data-date="${escapeHtmlLocal(day.date)}" role="group" aria-label="${escapeHtmlLocal(formatPlanDate(day.date))}">
     <div class="reveal-day-head">
       <p class="reveal-day-name">${escapeHtmlLocal(formatPlanDate(day.date))}</p>
-      <span class="reveal-day-count">${count} ${count === 1 ? 'meal' : 'meals'}</span>
+      <span class="reveal-day-count">${count} ${count === 1 ? 'meal' : 'meals'}${note ? ' · ' + escapeHtmlLocal(note) : ''}</span>
     </div>
     ${rows}
   </div>`;
@@ -2966,7 +3028,11 @@ function wireRevealCarousel() {
   }, { passive: true });
   daysDiv.addEventListener('click', e => {
     const btn = e.target.closest('.reveal-swap');
-    if (btn) openRevealSwap(btn);
+    if (btn) { openRevealSwap(btn); return; }
+    const opt = e.target.closest('.reveal-open-option');
+    if (opt) { resolveRevealOpen(opt); return; }
+    const talk = e.target.closest('.reveal-open-talk');
+    if (talk) revealGoTweak(revealSlotName(talk.getAttribute('data-open-date'), talk.getAttribute('data-open-slot')));
   });
 }
 
@@ -3695,6 +3761,30 @@ let lastFirstPlanAnswers = null;
 // part-week folded forward, gets a plan filed under a Monday that isn't
 // this one.
 let firstPlanWeekStart = '';
+let firstPlanId = null;
+
+// An option on a slot the week left for the person: the Plan tab's own
+// write (POST /api/week/{week}/slot), then the saved week drawn again.
+async function resolveRevealOpen(btn) {
+  const date = btn.getAttribute('data-open-date');
+  const slot = btn.getAttribute('data-open-slot');
+  if (!firstPlanWeekStart || btn.disabled) return;
+  btn.closest('.reveal-open-options').querySelectorAll('button').forEach(b => { b.disabled = true; });
+  try {
+    const res = await Api.fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/slot', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: date, slot: slot, choice: btn.getAttribute('data-choice'), weekly_plan_id: firstPlanId }),
+    });
+    if (!res.ok) throw new Error('slot resolve failed');
+    const days = await fetchRevealMenu(firstPlanId);
+    if (days && days.length) renderRevealDays(days);
+    revealToast(revealSlotName(date, slot) + ' was settled');
+  } catch (err) {
+    console.warn('Settling a first-week slot failed:', err);
+    btn.closest('.reveal-open-options').querySelectorAll('button').forEach(b => { b.disabled = false; });
+    revealToast('That didn’t save. Try it again.');
+  }
+}
 
 async function generateFirstPlanAndReveal(answers) {
   lastFirstPlanAnswers = answers;
@@ -3738,6 +3828,7 @@ async function generateFirstPlanAndReveal(answers) {
     // its menu is the week, checked just below.)
     if (!meals.length && !data.reattached) throw new Error('The first plan came back with no meals');
     firstPlanWeekStart = data.week_start_date || '';
+    firstPlanId = data.weekly_plan_id || null;
     const menuDays = await fetchRevealMenu(data.weekly_plan_id);
     if (data.reattached && !(menuDays && menuDays.length)) throw new Error('The first plan could not be read back');
     renderRevealDays(menuDays && menuDays.length ? menuDays : groupRevealMealsByDay(meals));
@@ -4101,7 +4192,10 @@ document.getElementById('household-next').onclick = () => {
   showHouseholdEmptyNote(false);
   goForward('household');
 };
-document.getElementById('helpers-next').onclick = () => { goForward('helpers'); };
+document.getElementById('helpers-next').onclick = () => {
+  if (helpersNeedName(helperPicks, helperSomeoneName)) return;
+  goForward('helpers');
+};
 document.getElementById('restrictions-next').onclick = () => { goForward('restrictions'); };
 document.getElementById('meals-days-next').onclick = () => {
   // Nothing on at all is not a week to plan; the line under the grid says so.

@@ -105,6 +105,11 @@ def _renderer_harness() -> str:
         _fn("groupRevealMealsByDay"),
         _fn("revealDaysFromMenu"),
         _fn("revealSlotDishHtml"),
+        _fn("revealOpenSlotHtml"),
+        _fn("revealJoinWords"),
+        _const("UW_WEEKDAYS"),
+        "var lastFirstPlanAnswers = null;",
+        _fn("revealDaySubsetNote"),
         _fn("revealMakes"),
         _fn("revealSlotMeta"),
         _fn("revealDayCardHtml"),
@@ -174,11 +179,13 @@ console.log(JSON.stringify([revealDayCardHtml(days[0], days), revealDayCardHtml(
 
 
 @_needs_node
-def test_an_open_slot_is_never_drawn_and_an_empty_one_says_so_plainly():
-    """UPDATED 2026-09-30: Week 1 arrives full — the server fills a first
-    plan's open slots before it answers, and one the stream or the menu
-    still calls open is not drawn at all (no "Still deciding" row). A
-    deliberately empty slot still says "Nothing planned", with no Swap."""
+def test_an_open_slot_the_week_kept_is_asked_and_an_empty_one_says_so_plainly():
+    """UPDATED 2026-09-30: Week 1 arrives full, except a slot the server
+    kept open because it needs the person (an allergy ruled everything out,
+    who's home, a holiday). From the saved week that slot is drawn with its
+    question — or one plain line — and a way to answer it, and it counts
+    as one of the day's meals. A deliberately empty slot still says
+    "Nothing planned", with no Swap."""
     day = {
         "date": "2026-09-23", "before_plan_start": False, "breakfast": None, "snacks": [], "snack": None,
         "lunch": {"title": "Your call", "meta": None, "state": "open", "entry_id": 50, "source": "plan"},
@@ -188,10 +195,11 @@ def test_an_open_slot_is_never_drawn_and_an_empty_one_says_so_plainly():
 const days = revealDaysFromMenu([{json.dumps(day)}]);
 console.log(JSON.stringify(revealDayCardHtml(days[0], days)));
 """)
-    assert "Still deciding" not in out and 'data-slot="lunch"' not in out
+    assert "Still deciding" not in out
+    assert "Nothing planned for this lunch yet." in out and "Tell me what you’d like instead" in out
     assert "Nothing planned" in out
     assert "reveal-swap" not in out
-    assert '<span class="reveal-day-count">0 meals</span>' in out
+    assert '<span class="reveal-day-count">1 meal</span>' in out
 
 
 @_needs_node

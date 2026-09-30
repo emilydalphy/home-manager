@@ -95,3 +95,13 @@ def test_an_ordinary_invite_still_adds_someone_who_eats_here(signed_in):
 def test_setup_sends_someone_not_eating_here_as_a_helper():
     assert "const body = { name: helper.name, eats_here: helper.eatsHere !== false };" in ONBOARDING
     assert "eatsHere: false });" in ONBOARDING
+
+
+def test_chat_sees_the_helper_marked(signed_in):
+    _household(signed_in)
+    _invite_maria(signed_in)
+    members = {m["name"]: m for m in tools.get_household_setup_status()["members"]}
+    assert members["Maria"]["eats_here"] is False and members["Maria"]["note"] == "helps, doesn't eat here"
+    assert members["Emily"]["eats_here"] is True and "note" not in members["Emily"]
+    from app import agent
+    assert "with eats_here false helps run the house but doesn't eat there" in agent.SYSTEM_PROMPT

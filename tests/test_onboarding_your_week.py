@@ -396,7 +396,7 @@ def test_the_helpers_screen_words():
     assert "If someone else shops or cooks too, I&rsquo;ll give them their own way in once your first week is ready." in markup
     script = _script()
     for words in ("A nanny, a parent who helps with dinners", "You can add someone later in Settings",
-                  "’s phone or email (optional)", "I’ll send the invite when your week is ready"):
+                  "’s phone or email (optional)", "Sent when your week is ready"):
         assert words in script
 
 
@@ -505,3 +505,83 @@ def test_some_of_you_differs_from_everyone_in_lightness_in_dark_mode_only():
     # Light keeps the tint.
     assert ".uw-day.is-some { background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon); }" in css
     assert "--celadon:" not in css and "--celadon-tint:" not in css, "no token is redefined here"
+
+
+# ---------- verification follow-ups (2026-09-30) ----------
+
+
+def _reveal_harness() -> str:
+    return "\n".join([
+        _fn("escapeHtmlLocal"), _const("REVEAL_WEEK_SLOTS"), _const("REVEAL_SLOT_LABELS"),
+        _const("REVEAL_DAY_SHORT"), _const("REVEAL_DAY_LONG"), _const("REVEAL_SWAP_ICON"),
+        _fn("revealWeekdayIndex"), _fn("formatPlanDate"), _fn("revealMinutesMeta"),
+        _fn("revealSlotFromStream"), _fn("revealSlotFromMenu"), _fn("revealDaysFromMenu"),
+        _fn("revealSlotDishHtml"), _fn("revealOpenSlotHtml"), _fn("revealJoinWords"), _const("UW_WEEKDAYS"),
+        "var lastFirstPlanAnswers = null;", _fn("revealDaySubsetNote"),
+        _fn("revealMakes"), _fn("revealSlotMeta"), _fn("revealDayCardHtml"),
+    ])
+
+
+@_needs_node
+def test_a_slot_week_1_left_for_the_person_shows_its_question_and_options():
+    day = {
+        "date": "2026-10-01", "before_plan_start": False, "breakfast": None, "snacks": [], "snack": None,
+        "lunch": {"title": "Oats", "meta": "10 min", "state": "planned", "entry_id": 1},
+        "dinner": {"title": "I’d like your call on this one", "state": "open", "entry_id": 9, "source": "open",
+                   "open_question": "Nothing I know is safe for Greg on Thursday — what would you like?",
+                   "options": [{"label": "Grilled salmon", "meta": "25 min"}, {"label": "Takeout"}]},
+    }
+    out = _run(_reveal_harness() + """
+const days = revealDaysFromMenu([%s]);
+const streamed = revealSlotFromStream({ date: '2026-10-01', slot: 'dinner', slot_state: 'open' });
+console.log(JSON.stringify({ html: revealDayCardHtml(days[0], days),
+  stream: revealDayCardHtml({ date: '2026-10-01', slots: { dinner: streamed } }, []) }));
+""" % json.dumps(day))
+    html = out["html"]
+    assert "Nothing I know is safe for Greg on Thursday — what would you like?" in html
+    assert 'class="reveal-open-option" data-open-date="2026-10-01" data-open-slot="dinner" data-choice="Grilled salmon">Grilled salmon<span>25 min</span>' in html
+    assert 'data-choice="Takeout">Takeout</button>' in html
+    assert "reveal-open-talk" not in html, "options offered: no need for the chat line"
+    assert '<span class="reveal-day-count">2 meals</span>' in html, "the open slot counts"
+    # A frame the stream calls open while the week is still landing isn't drawn.
+    assert 'data-slot="dinner"' not in out["stream"]
+
+
+def test_answering_an_open_slot_uses_the_plan_tabs_write():
+    body = _fn("resolveRevealOpen")
+    assert "'/slot'" in body and "choice: btn.getAttribute('data-choice')" in body
+    assert "weekly_plan_id: firstPlanId" in body
+    assert "renderRevealDays(days)" in body and "' was settled'" in body
+    wire = _fn("wireRevealCarousel")
+    assert "resolveRevealOpen(opt)" in wire and "revealGoTweak(revealSlotName(" in wire
+
+
+@_needs_node
+def test_the_day_header_names_who_eats_a_part_dinner():
+    grid = {"dinner": dict(_WEEK, thursday=["Greg"], friday="off")}
+    out = _run(_reveal_harness() + """
+console.log(JSON.stringify([revealDaySubsetNote('2026-10-01', %s), revealDaySubsetNote('2026-10-02', %s),
+  revealDaySubsetNote('2026-09-28', %s), revealDaySubsetNote('2026-10-01', null)]));
+""" % (json.dumps(grid), json.dumps(grid), json.dumps(grid)))
+    assert out == ["just Greg for dinner", "", "", ""]
+    assert "' · ' + escapeHtmlLocal(note)" in _fn("revealDayCardHtml")
+
+
+@_needs_node
+def test_someone_not_eating_here_needs_a_name_before_continue():
+    out = _run("\n".join([_const("HELPER_SOMEONE"), _fn("helpersNeedName")]) + """
+console.log(JSON.stringify([helpersNeedName(['someone'], ''), helpersNeedName(['someone'], '  '),
+  helpersNeedName(['someone'], 'Maria'), helpersNeedName(['adult:Greg'], ''), helpersNeedName([], '')]));
+""")
+    assert out == [True, True, False, False, False]
+    assert "if (helpersNeedName(helperPicks, helperSomeoneName)) return;" in ONBOARDING
+
+
+def test_the_contact_placeholder_fits_at_375():
+    assert "const HELPER_CONTACT_PLACEHOLDER = 'Sent when your week is ready';" in ONBOARDING
+
+
+def test_the_using_card_takes_the_full_width_back():
+    css = ONBOARDING[ONBOARDING.index("  .reveal-using {"):]
+    assert "margin-right: -56px;" in css[: css.index("}")]
+    assert "padding-right: 56px;" in ONBOARDING[ONBOARDING.index("  .reveal-head {"):][:200]
