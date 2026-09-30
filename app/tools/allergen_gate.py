@@ -53,8 +53,12 @@ uses, so what counts as a clash is decided in one place.
 """
 from __future__ import annotations
 
+import concurrent.futures
+import contextvars
+import json
 import logging
 import re
+import time
 
 from . import coordination as _coordination
 from . import meal_plans as _meal_plans
@@ -68,6 +72,18 @@ logger = logging.getLogger("home_manager")
 # Model calls one generation may spend re-picking around an allergen. Each
 # held-back slot costs up to swap_in_place.MAX_PICK_ATTEMPTS of these.
 MAX_REPICK_CALLS = 6
+
+# Distinct held-back DISHES one generation re-picks (2026-09-30). A dish
+# held on four mornings is one dish here, re-picked once for all four
+# (repick_held). Each gets up to swap_in_place.MAX_PICK_ATTEMPTS quick
+# picks of its own, all dishes at the same time; past this many, the rest
+# go straight to open rather than clashing.
+MAX_HELD_DISHES = 6
+
+# Threads for the held-back re-picks. One per dish up to the cap: the
+# calls are independent, and the whole point is that four of them take as
+# long as one.
+_REPICK_WORKERS = MAX_HELD_DISHES
 
 
 # ---------- the matcher, hard clashes only ----------
@@ -376,6 +392,412 @@ def repick_slot(
     )
     logger.info("Allergen re-pick: %s %s %r -> %r", meal_date, slot, dropped, pick["meal_name"])
     return {"status": "repicked", "date": meal_date, "slot": slot, "meal": pick["meal_name"], "dropped": dropped}
+
+
+# ---------- the held-back dishes, all at once (2026-09-30) ----------
+#
+# Production, 2026-09-30, a new household's first week: the menu call took
+# 34.6s, split_safe held 11 slots, and then six re-picks ran ONE AFTER
+# ANOTHER at 6-8s each (42.5s) — four of them re-picking the same scramble
+# on four different mornings, each writing a full recipe, and the budget
+# ran out with two slots still open. The fixes, all here:
+#
+#   * One re-pick per DISH, not per day. The fold already sends a repeated
+#     breakfast once with its dates; a held-back one is replaced once and
+#     the replacement lands on every one of those days.
+#   * Every dish at the same time, each on its own thread with a copy of
+#     the caller's context (the household is a contextvar — see
+#     agent.fill_pending_recipes_for_plan for what a bare worker does).
+#   * The quick "name a dish" call (quick_pick) at the `picks` effort,
+#     not the swap's full write-up. The pick is saved as a PENDING recipe
+#     (details_pending=1 with a dish_note), exactly like a new dish from the
+#     menu pass, so the recipe pass writes it with all the others.
+#   * The gate still runs on every pick before anything is written.
+#
+# Model calls and the matcher run on the threads; every database write
+# happens back on the calling thread, in the held items' order, so the
+# plan is written the same way it always was.
+
+QUICK_PICK_MAX_TOKENS = 1200
+
+QUICK_PICK_TOOL = {
+    "name": "submit_quick_pick",
+    "description": "Name the one replacement dish for this slot. Not a recipe — it is written up later.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "meal_name": {"type": "string", "description": "What the dish IS — never named after an ingredient it leaves out."},
+            "ingredients": {
+                "type": "array",
+                "description": "The main items only — the protein, the starch, the vegetables, the one thing that makes it this dish — as plain grocery names ('Chicken thighs', 'Baby spinach'), at most 6. No quantities, no staples, no steps. The household's allergies are checked against this list.",
+                "items": {"type": "string"},
+            },
+            "dish_note": {
+                "type": "string",
+                "description": "One line for the cook who writes it up later: the technique and the flavour base. Not a step list.",
+            },
+            "food_groups": {
+                "type": "array",
+                "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]},
+                "description": "What the whole plate covers once this dish is on it.",
+            },
+            "cuisine": {"type": "string"},
+            "main_protein": {"type": "string"},
+            "prep_time_minutes": {"type": "integer"},
+            "cook_time_minutes": {"type": "integer"},
+        },
+        "required": ["meal_name", "ingredients", "dish_note"],
+    },
+}
+
+# Appended to the swap's own instructions (same cached prefix, same rules
+# about what this household can have), changing only what is asked for.
+QUICK_PICK_ASK = (
+    "Do not write the recipe out — no quantities and no steps; it is written up later with the "
+    "rest of the week. Name the one dish, its main ingredients and a one-line dish_note, and call "
+    "submit_quick_pick."
+)
+
+
+def quick_pick(context: dict) -> dict:
+    """
+    The quick call: one dish's name, main ingredients and a note — a few
+    hundred output tokens at the `picks` effort (swap_options' own three
+    picks measured ~5s), not the ~2,000-token write-up _pick_replacement
+    asks for. Lazily imports agent, for the same cycle reason as
+    swap_in_place._pick_replacement.
+    """
+    from .. import agent
+
+    client = agent._client()
+    response = agent._create_with_retry(
+        client,
+        label="allergen_quick_pick",
+        model=agent.MODEL,
+        max_tokens=QUICK_PICK_MAX_TOKENS,
+        tools=[QUICK_PICK_TOOL],
+        tool_choice={"type": "tool", "name": "submit_quick_pick"},
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": _swap.INSTRUCTIONS, "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": f"The slot (JSON):\n{json.dumps(context, indent=2)}"},
+                {"type": "text", "text": QUICK_PICK_ASK},
+            ],
+        }],
+        output_config=agent._effort_config("picks"),
+    )
+    if getattr(response, "stop_reason", None) == "max_tokens":
+        logger.warning("allergen_quick_pick hit max_tokens; the pick may be incomplete")
+    for block in response.content:
+        if getattr(block, "type", None) == "tool_use":
+            return dict(block.input or {})
+    return {}
+
+
+def _pick_rows(pick: dict) -> list[dict]:
+    """A quick pick's ingredients are plain names; the matcher reads rows."""
+    rows = []
+    for ing in pick.get("ingredients") or []:
+        if isinstance(ing, dict) and (ing.get("item") or "").strip():
+            rows.append(ing)
+        elif isinstance(ing, str) and ing.strip():
+            rows.append({"item": ing.strip()})
+    return rows
+
+
+def _pick_clashes(pick: dict, avoidances: list[dict]) -> list[dict]:
+    """The gate on one pick: its own main items AND, when it reuses a saved
+    recipe by name, that recipe's list — a reused dish is matched on what
+    it is made of, never on its name alone. The dish_note is matched too,
+    as ingredients_for does for a menu-pass dish."""
+    name = pick["meal_name"]
+    rows = list(_pick_rows(pick))
+    if _recipes.existing_recipe_named(name):
+        rows += _recipes.saved_ingredients(name)
+    note = (pick.get("dish_note") or "").strip()
+    if note:
+        rows.append({"item": note})
+    return hard_clashes(name, ingredients=rows, avoidances=avoidances)
+
+
+def _group_held(held_back: list[dict]) -> list[list[dict]]:
+    """The held items as one group per DISH (slot + name), in first-seen
+    order. The same dish held on four mornings is one group."""
+    groups: dict[tuple, list[dict]] = {}
+    for held in held_back:
+        item = held["item"]
+        key = ((item.get("slot") or "dinner"), (item.get("meal_name") or "").strip().lower())
+        groups.setdefault(key, []).append(held)
+    return list(groups.values())
+
+
+def _pick_for_group(context: dict, dropped: str, pick_one, avoidances: list[dict],
+                    attempts: int | None = None) -> dict:
+    """Up to MAX_PICK_ATTEMPTS quick picks for one dish, each gated before
+    it is accepted, the clashing dish (and any failed attempt) on `avoid`.
+    Runs on a worker thread; writes nothing. Returns {"pick", "calls",
+    "seconds"}; pick is None when nothing safe came back."""
+    started = time.perf_counter()
+    tried = _swap._dedup([dropped] + list(context.get("avoid") or []))
+    calls = 0
+    for attempt in range(1, (attempts or _swap.MAX_PICK_ATTEMPTS) + 1):
+        calls += 1
+        ask = dict(context, avoid=list(tried))
+        try:
+            candidate = pick_one(ask) or {}
+        except Exception:
+            logger.exception("Allergen re-pick for %s %s failed (attempt %d)", context.get("date"), context.get("slot"), attempt)
+            candidate = {}
+        name = (candidate.get("meal_name") or "").strip()
+        if not name:
+            break
+        candidate["meal_name"] = name
+        again = _pick_clashes(candidate, avoidances)
+        if not again:
+            return {"pick": candidate, "calls": calls, "seconds": time.perf_counter() - started}
+        logger.warning("Allergen re-pick offered %r, which has %s (attempt %d)", name, _food_word(again), attempt)
+        tried.append(name)
+    return {"pick": None, "calls": calls, "seconds": time.perf_counter() - started}
+
+
+def _save_pick(pick: dict, serves: int) -> None:
+    """
+    Make the pick a recipe the plan can reference. A pick that came with
+    steps (a full write-up) is saved whole, as the swap saves one; the quick
+    pick is saved PENDING — no ingredients, no steps, its dish_note (with
+    its main items, so the recipe writer and the approval-time gate both
+    see them) — exactly as the menu pass saves a new dish, and the recipe
+    pass writes it with the rest of the week.
+    """
+    if [s for s in (pick.get("instructions") or []) if (s or "").strip()]:
+        _swap._save_recipe_if_new(pick, serves)
+        return
+    name = pick["meal_name"]
+    if _recipes.existing_recipe_named(name):
+        return
+    note = (pick.get("dish_note") or "").strip()
+    mains = [r["item"] for r in _pick_rows(pick)]
+    if mains:
+        note = (note.rstrip(".") + ". " if note else "") + "Main items: " + ", ".join(mains) + "."
+    _recipes.add_recipe(
+        name=name,
+        ingredients=[],
+        food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
+        cuisine=(pick.get("cuisine") or "").strip(),
+        main_protein=(pick.get("main_protein") or "").strip(),
+        default_servings=serves or 4,
+        prep_time_minutes=pick.get("prep_time_minutes"),
+        cook_time_minutes=pick.get("cook_time_minutes"),
+        details_pending=True,
+        dish_note=note,
+    )
+
+
+def repick_held(
+    weekly_plan_id: int, held_back: list[dict], picker=None,
+    avoidances: list[dict] | None = None, on_filled=None, max_dishes: int = MAX_HELD_DISHES,
+) -> list[dict]:
+    """
+    Fill every held-back slot of a new draft with a safe dish, or hand it
+    back — one re-pick per DISH, every dish at the same time.
+
+    `picker` is the model call (quick_pick by default), injectable so tests
+    never touch the API. `on_filled(item)` is told about each slot as its
+    replacement is written — the stream's progress callback, so a screen
+    showing "Finding another breakfast…" fills that row the moment the
+    replacement exists rather than when the whole week is done.
+
+    Returns one {"status": "repicked"|"open", "date", "slot", ...} per held
+    slot.
+    """
+    if not held_back:
+        return []
+    pick_one = picker or quick_pick
+    if avoidances is None:
+        avoidances = hard_avoidances()
+    started = time.perf_counter()
+    groups = _group_held(held_back)
+    picked, over = groups[:max_dishes], groups[max_dishes:]
+    if over:
+        logger.warning(
+            "Allergen re-pick: %d held-back dish(es) past the cap of %d go open", len(over), max_dishes,
+        )
+
+    # Contexts are built HERE, on the calling thread: build_swap_context
+    # reads the plan as written so far (week_other_dishes), and that read
+    # belongs before the fan-out, not racing it.
+    tasks = []
+    for group in picked:
+        first = group[0]["item"]
+        dropped = (first.get("meal_name") or "").strip()
+        entry = {"date": first.get("date"), "slot": first.get("slot") or "dinner", "meal": dropped, "entry_id": None}
+        try:
+            context = _swap.build_swap_context(weekly_plan_id, entry, [dropped])
+            context["replacing_because"] = _replacing_because(dropped, group[0]["clashes"])
+            others = [h["item"].get("date") for h in group[1:] if h["item"].get("date")]
+            if others:
+                context["also_on"] = others
+        except Exception:
+            logger.exception("Could not build the re-pick context for %s %s", entry["date"], entry["slot"])
+            context = None
+        tasks.append((contextvars.copy_context(), context, dropped))
+
+    def _run(task, attempts=None):
+        ctx, context, dropped = task
+        if context is None:
+            return {"pick": None, "calls": 0, "seconds": 0.0}
+        try:
+            return ctx.run(_pick_for_group, context, dropped, pick_one, avoidances, attempts)
+        except Exception:
+            # Anything the worker hits outside the model call itself (a
+            # database read in the gate, say) costs THIS dish its pick —
+            # its days go open — and never the rest of the batch.
+            logger.exception("Allergen re-pick for %s %s failed; its slots go open",
+                             context.get("date"), context.get("slot"))
+            return {"pick": None, "calls": 0, "seconds": 0.0}
+
+    outcomes = _run_all(tasks, _run)
+
+    # Picked side by side, two dishes can come back as the SAME
+    # replacement (neither saw the other's). That only matters where they
+    # would land on the same DATE in the same slot — a day's two snacks
+    # being one snack twice; the same breakfast on two mornings is normal.
+    # The later one is asked once more with the other's name on `avoid`.
+    # If that clashes, fails or comes back the same, the duplicate is KEPT:
+    # never an open slot, which would carry an untrue "I couldn't find a
+    # snack without …" into a week 1 that must arrive full (Emily,
+    # 2026-09-30).
+    def _dates(i):
+        return {h["item"].get("date") for h in picked[i]}
+
+    again: list[tuple[int, str]] = []
+    for i, outcome in enumerate(outcomes):
+        pick = outcome["pick"]
+        if not pick:
+            continue
+        slot = tasks[i][1]["slot"]
+        name = pick["meal_name"].strip().lower()
+        for j in range(i):
+            other = outcomes[j]["pick"]
+            if (other and tasks[j][1]["slot"] == slot and other["meal_name"].strip().lower() == name
+                    and _dates(i) & _dates(j)):
+                again.append((i, other["meal_name"]))
+                break
+    if again:
+        logger.warning("Allergen re-pick: %d dish(es) came back as the same replacement on the same day; asking once more", len(again))
+        redo = []
+        for i, used in again:
+            _ctx, context, dropped = tasks[i]
+            redo.append((contextvars.copy_context(),
+                         dict(context, avoid=_swap._dedup(list(context.get("avoid") or []) + [used])), dropped))
+        second = _run_all(redo, lambda task: _run(task, attempts=1))
+        for (i, used), outcome in zip(again, second):
+            pick = outcome["pick"]
+            if pick and pick["meal_name"].strip().lower() != used.strip().lower():
+                kept = pick
+            else:
+                kept = outcomes[i]["pick"]
+                logger.info("Allergen re-pick: keeping %r twice on the same day rather than opening a slot", used)
+            outcomes[i] = {"pick": kept, "calls": outcomes[i]["calls"] + outcome["calls"],
+                           "seconds": outcomes[i]["seconds"] + outcome["seconds"]}
+
+    results: list[dict] = []
+    for group, outcome in zip(picked, outcomes):
+        results += _write_group(weekly_plan_id, group, outcome["pick"], on_filled)
+    for group in over:
+        results += _write_group(weekly_plan_id, group, None, on_filled)
+
+    logger.info(
+        "Allergen re-pick: %d slot(s) held, %d dish(es) re-picked in parallel, %d call(s), "
+        "%.1fs wall (slowest dish %.1fs), %d landed, %d open",
+        len(held_back), len(picked), sum(o["calls"] for o in outcomes),
+        time.perf_counter() - started, max((o["seconds"] for o in outcomes), default=0.0),
+        sum(1 for r in results if r["status"] == "repicked"),
+        sum(1 for r in results if r["status"] == "open"),
+    )
+    return results
+
+
+# What the stream sends for a dish the gate held, in place of the dish: the
+# row the person sees while its replacement is picked. Plain, and about
+# the meal rather than the allergy (DESIGN_SYSTEM §8) — the allergy is the
+# household's own fact, and the row fills in seconds.
+def held_placeholder(meal_date: str, slot: str) -> dict:
+    return {
+        "date": meal_date, "slot": slot, "slot_state": "held", "meal_name": "",
+        "placeholder": f"Finding another {slot}…",
+    }
+
+
+def _run_all(tasks: list, run) -> list[dict]:
+    """`run` over every task, side by side (one thread each, up to the
+    cap), in the tasks' order."""
+    if not tasks:
+        return []
+    if len(tasks) == 1:
+        return [run(tasks[0])]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tasks), _REPICK_WORKERS)) as pool:
+        return list(pool.map(run, tasks))
+
+
+def _tell(on_filled, item: dict) -> None:
+    if on_filled is None:
+        return
+    try:
+        on_filled(item)
+    except Exception:
+        logger.exception("Re-pick progress callback failed; the plan is written regardless")
+
+
+def _write_group(weekly_plan_id: int, group: list[dict], pick: dict | None, on_filled) -> list[dict]:
+    """One dish's replacement onto every day it was held on — or each of
+    those days handed back as an open question."""
+    out = []
+    first = group[0]
+    dropped = (first["item"].get("meal_name") or "").strip()
+    slot = first["item"].get("slot") or "dinner"
+    if pick is None:
+        for held in group:
+            meal_date = held["item"].get("date")
+            reason = open_reason(slot, held["clashes"])
+            _weekly_plan.plan_slot_open(
+                weekly_plan_id=weekly_plan_id, meal_date=meal_date, slot=slot,
+                open_reason=reason,
+                derived_from={"constraint": ALLERGEN_CONSTRAINT, "dropped": dropped,
+                              "avoided": _food_word(held["clashes"])},
+            )
+            out.append({"status": "open", "date": meal_date, "slot": slot, "reason": reason})
+            _tell(on_filled, {"date": meal_date, "slot": slot, "slot_state": "open",
+                              "open_reason": reason, "meal_name": "", "replaces_held": True})
+        return out
+
+    serves = _swap._table_for(first["item"].get("date"), slot)["serves"]
+    pick["meal_name"] = _swap.honest_meal_name(pick)
+    _save_pick(pick, serves)
+    for held in group:
+        item = held["item"]
+        meal_date = item.get("date")
+        _meal_plans.plan_meal(
+            meal_date=meal_date,
+            meal=pick["meal_name"],
+            slot=slot,
+            food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
+            weekly_plan_id=weekly_plan_id,
+            reasoning=(pick.get("reason") or "").strip(),
+            derived_from={
+                **(item.get("derived_from") or {}),
+                "allergen_repick": {"dropped": dropped, "avoided": _food_word(held["clashes"])},
+            },
+        )
+        logger.info("Allergen re-pick: %s %s %r -> %r", meal_date, slot, dropped, pick["meal_name"])
+        out.append({"status": "repicked", "date": meal_date, "slot": slot, "meal": pick["meal_name"], "dropped": dropped})
+        _tell(on_filled, {
+            "date": meal_date, "slot": slot, "slot_state": "planned", "meal_name": pick["meal_name"],
+            "prep_time_minutes": pick.get("prep_time_minutes"), "cook_time_minutes": pick.get("cook_time_minutes"),
+            "derived_from": item.get("derived_from") or {}, "replaces_held": True,
+        })
+    return out
 
 
 # ---------- the silent sweep ----------

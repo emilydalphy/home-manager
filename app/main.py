@@ -1428,6 +1428,11 @@ class FirstPlanRequest(BaseModel):
     week and nothing carried the answer across.
     """
     start: str = "this_week"
+    # The page's own name for this draft (2026-09-30), the same label the
+    # plan-week screen sends: a reveal that loses its stream asks
+    # /api/week/{week_start}/generate/status?run= how THIS draft ended
+    # before it tries once more on its own.
+    run_token: str | None = Field(default=None, max_length=64)
 
 
 def _first_plan_window(start_next_week: bool) -> tuple[str, int, str]:
@@ -1577,7 +1582,7 @@ def onboarding_generate_first_plan_stream(req: FirstPlanRequest | None = None):
     return _SSEResponse(
         _stream_week_generation(
             week_start=week_start, constraints_notes="", intake_id=None,
-            day_count=day_count, period_start=period_start,
+            day_count=day_count, period_start=period_start, run_token=req.run_token,
         ),
         what=f"First-plan stream for the week of {week_start}", carries_on="generation continues",
     )
@@ -3306,7 +3311,10 @@ def _stream_week_generation(
     threading.Thread(target=lambda: ctx.run(run), daemon=True).start()
 
     yield from _relay_stream_events(
-        events, _DONE, first_frame=_sse_event("status", {"message": "Drafting your week…"}),
+        # `week_start` so a page that did not choose the week (onboarding's
+        # reveal) can still ask the status route how this draft ended if
+        # its connection drops.
+        events, _DONE, first_frame=_sse_event("status", {"message": "Drafting your week…", "week_start": week_start}),
     )
 
 
@@ -3470,6 +3478,9 @@ class SwapChooseRequest(BaseModel):
     entry_id: int
     option: int
     whole_dish: bool = False
+    # The dish name the sheet showed at `option`; the server refuses the tap
+    # if the picks it holds have changed since.
+    meal: str | None = None
 
 
 @app.post("/api/week/{week_start}/swap-options")
@@ -3504,8 +3515,8 @@ def week_swap_choose(week_start: str, req: SwapChooseRequest):
     plan_id = _plan_id_for_week(week_start)
     try:
         if req.whole_dish:
-            return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True)
-        return tools.choose_swap_option(plan_id, req.entry_id, req.option)
+            return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True, meal=req.meal)
+        return tools.choose_swap_option(plan_id, req.entry_id, req.option, meal=req.meal)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -6525,8 +6536,12 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
     def on_item(item):
         events.put(("day", item))
 
+    def on_progress(line):
+        events.put(("progress", {"message": line}))
+
     def run():
         token = agent._WEEK_GEN_PROGRESS.set(on_item)
+        progress_token = agent._TURN_PROGRESS.set(on_progress)
         try:
             reply, updated_history = run_agent_turn(
                 history, message,
@@ -6541,6 +6556,7 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
             events.put(("error", {"status": 500, "detail": f"Server error: {e}"}))
         finally:
             agent._WEEK_GEN_PROGRESS.reset(token)
+            agent._TURN_PROGRESS.reset(progress_token)
             events.put(_DONE)
 
     ctx = contextvars.copy_context()
@@ -6569,6 +6585,23 @@ def chat_stream(req: ChatRequest, request: Request):
         ),
         what="Chat stream", carries_on="the turn continues",
     )
+
+
+@app.post("/api/chat/warm")
+def chat_warm(request: Request):
+    """
+    Called when the chat sheet opens: warms the prompt cache so the first
+    message's round 1 reads it instead of writing it (see
+    agent.warm_chat_cache). Answers at once and does the call on a
+    background thread; nothing the household sees depends on it. Skipped
+    (warming: false) when the cache was touched in the last few minutes.
+    """
+    _enforce_rate_limit(request, "chat_warm")
+    if not agent.claim_chat_warmup():
+        return {"warming": False}
+    ctx = contextvars.copy_context()
+    threading.Thread(target=lambda: ctx.run(agent.warm_chat_cache), daemon=True).start()
+    return {"warming": True}
 
 
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")

@@ -152,6 +152,9 @@ def test_the_draft_never_holds_the_pineapple_dish_and_the_slot_is_repicked(emily
         return _safe()
 
     monkeypatch.setattr(sip, "_pick_replacement", picker)
+    # The held-back slot's own re-pick is the quick pick since 2026-09-30
+    # (allergen_gate.repick_held); same context, same gate.
+    monkeypatch.setattr(allergen_gate, "quick_pick", picker)
 
     plan = agent.generate_weekly_plan(WEEK_START)
     plan_id = plan["weekly_plan_id"]
@@ -194,6 +197,7 @@ def test_a_repick_that_still_clashes_is_tried_once_more_then_the_slot_is_handed_
         return _pineapple(offered[len(picks) - 1])
 
     monkeypatch.setattr(sip, "_pick_replacement", stubborn)
+    monkeypatch.setattr(allergen_gate, "quick_pick", stubborn)
 
     plan = agent.generate_weekly_plan(WEEK_START)
     plan_id = plan["weekly_plan_id"]
@@ -221,6 +225,7 @@ def test_a_picker_that_breaks_opens_the_slot_rather_than_the_week(emilys_house, 
         raise RuntimeError("model down")
 
     monkeypatch.setattr(sip, "_pick_replacement", boom)
+    monkeypatch.setattr(allergen_gate, "quick_pick", boom)
 
     plan = agent.generate_weekly_plan(WEEK_START)
     handed_back = _slot(plan["weekly_plan_id"], DAYS[1], "dinner")
@@ -230,21 +235,31 @@ def test_a_picker_that_breaks_opens_the_slot_rather_than_the_week(emilys_house, 
 
 
 def test_the_repick_budget_caps_what_a_generation_may_spend(emilys_house, monkeypatch):
+    """Since 2026-09-30 the held-back dishes are re-picked one quick pick
+    per DISH, each with its own two attempts, all at once — capped at
+    MAX_HELD_DISHES dishes; a dish past the cap goes straight to open."""
     days = _full_week()
     for i, d in enumerate(x for x in days if x["slot"] == "dinner"):
         d.update(_pineapple(f"Al Pastor Night {i}"))
     monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: days)
     calls = []
+    lock = __import__("threading").Lock()
 
     def stubborn(context):
-        calls.append(1)
-        return _pineapple(f"Still Pineapple {len(calls)}")
+        with lock:
+            calls.append(context["date"])
+            n = len(calls)
+        return _pineapple(f"Still Pineapple {n}")
 
-    monkeypatch.setattr(sip, "_pick_replacement", stubborn)
+    monkeypatch.setattr(allergen_gate, "quick_pick", stubborn)
+    later = []
+    monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: (later.append(1), _pineapple("More Pineapple"))[1])
 
     plan = agent.generate_weekly_plan(WEEK_START)
 
-    assert len(calls) == allergen_gate.MAX_REPICK_CALLS
+    assert len(calls) == allergen_gate.MAX_HELD_DISHES * sip.MAX_PICK_ATTEMPTS
+    assert len(set(calls)) == allergen_gate.MAX_HELD_DISHES, "the seventh dish is never asked about"
+    assert len(later) <= allergen_gate.MAX_REPICK_CALLS, "the passes after keep their own ceiling"
     dinners = [_slot(plan["weekly_plan_id"], d, "dinner") for d in DAYS]
     assert all(s["slot_state"] == "open" for s in dinners)
     assert not any("Pineapple" in n or "Al Pastor" in n for n in _names(plan["weekly_plan_id"]))

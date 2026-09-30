@@ -238,7 +238,12 @@ def test_a_week_of_saved_recipes_makes_no_recipe_call(household, menu_model, rec
 
 def test_a_draft_that_is_never_approved_never_writes_a_recipe(household, menu_model, recipe_model):
     """The whole point: five of nine drafts in production were thrown
-    away. A re-roll must not pay for recipes on the draft it replaces."""
+    away. A re-roll must not pay for recipes on the draft it replaces.
+
+    Since 2026-09-30 that is true of APPROVAL only: the draft's background
+    pass (agent.start_background_recipe_pass, off in this suite) now
+    writes a draft's recipes as soon as it is saved — Emily accepted the
+    cost for an instant Approve. See test_background_recipe_pass.py."""
     week = _week_start()
     menu_model(_menu_week(week, new_dinner="First Draft Dinner"))
     agent.generate_weekly_plan(week)
@@ -566,12 +571,15 @@ def test_a_new_dish_whose_note_names_the_allergen_is_held_back_at_the_draft(hous
         days.append(d)
     menu_model(days)
     # The re-pick's own model call, canned: a safe dish, with ingredients.
-    from app.tools import swap_in_place
-    monkeypatch.setattr(swap_in_place, "_pick_replacement", lambda context: {
+    from app.tools import allergen_gate, swap_in_place
+    safe = lambda context: {
         "meal_name": "Chicken Fried Rice", "reason": "no peanuts",
         "ingredients": [{"item": "Rice", "qty": "2 cups", "category": "pantry"}],
         "food_groups": ["protein", "carb"],
-    })
+    }
+    monkeypatch.setattr(swap_in_place, "_pick_replacement", safe)
+    # The held-back dinner's own re-pick (the quick pick since 2026-09-30).
+    monkeypatch.setattr(allergen_gate, "quick_pick", safe)
 
     plan = agent.generate_weekly_plan(week)
 

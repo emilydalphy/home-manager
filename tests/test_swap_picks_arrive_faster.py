@@ -34,10 +34,21 @@ from types import SimpleNamespace
 import pytest
 
 from app import agent, tools
+from app.db import get_conn
 from app.tools import swap_in_place as _swap
 
 sop = importlib.import_module("app.tools.swap_options")
 from test_week1_carousel import DAY1, _asker, _entry_id, week  # noqa: F401
+
+
+def _approve(plan_id):
+    """Mark the week approved, the one thing that decides whether a chosen
+    pick is written out whole (shopping needs quantities) or saved as a
+    pending recipe (a draft)."""
+    conn = get_conn()
+    conn.execute("UPDATE weekly_plans SET status = 'approved' WHERE id = ?", (plan_id,))
+    conn.commit()
+    conn.close()
 
 
 # ---------- the shape of a pick ----------
@@ -189,6 +200,7 @@ def _writer(full: dict | None = None, fail: bool = False):
 
 def test_choosing_a_trimmed_pick_writes_it_out_then_plans_it(week):
     entry_id = _entry_id(week, DAY1)
+    _approve(week)  # an approved week is shopped from: the full recipe is written before it is planned
     tools.swap_options(week, entry_id, asker=_asker(_option("Lemon chicken traybake"), _option("Fish tacos", protein="Cod fillets")))
     write = _writer()
     out = sop.choose_swap_option(week, entry_id, 0, writer=write)
@@ -229,6 +241,7 @@ def test_a_pick_naming_a_saved_dish_is_not_written_out(week):
 
 def test_a_failed_write_out_changes_nothing_and_keeps_the_picks(week):
     entry_id = _entry_id(week, DAY1)
+    _approve(week)  # an approved week is shopped from: the full recipe is written before it is planned
     tools.swap_options(week, entry_id, asker=_asker(_option("Lemon chicken traybake")))
     out = sop.choose_swap_option(week, entry_id, 0, writer=_writer(fail=True))
     assert out == {"status": "refused", "message": sop.WRITE_OUT_TROUBLE}
@@ -241,6 +254,7 @@ def test_a_failed_write_out_changes_nothing_and_keeps_the_picks(week):
 
 def test_a_write_out_missing_its_ingredients_is_refused_not_planned_thin(week):
     entry_id = _entry_id(week, DAY1)
+    _approve(week)  # an approved week is shopped from: the full recipe is written before it is planned
     tools.swap_options(week, entry_id, asker=_asker(_option("Lemon chicken traybake")))
     out = sop.choose_swap_option(week, entry_id, 0, writer=_writer(full={"meal_name": "Lemon chicken traybake"}))
     assert out["status"] == "refused" and out["message"] == sop.WRITE_OUT_TROUBLE
@@ -252,6 +266,7 @@ def test_the_full_list_is_gated_again_before_it_is_planned(week):
     what they did not. It is checked again, and refused in the swap's own
     words."""
     entry_id = _entry_id(week, DAY1)
+    _approve(week)  # an approved week is shopped from: the full recipe is written before it is planned
     tools.swap_options(week, entry_id, asker=_asker(_option("Lemon chicken traybake")))
     tools.set_member_dietary_restrictions("Emily", ["dairy allergy"])
     full = _writer()(None, _option("Lemon chicken traybake"))
@@ -271,6 +286,7 @@ def test_the_route_still_reaches_choose_without_a_writer(signed_in, week, monkey
                             plan_id, entry_id, avoid=avoid, asker=_asker(_option("Lemon chicken traybake"))))
     seen = _capture(monkeypatch, _writer()(None, _option("Lemon chicken traybake")))
     entry_id = _entry_id(week, DAY1)
+    _approve(week)  # an approved week is shopped from: the full recipe is written before it is planned
     assert signed_in.post(f"/api/week/{WEEK_START}/swap-options", json={"entry_id": entry_id}).status_code == 200
     res = signed_in.post(f"/api/week/{WEEK_START}/swap-choose", json={"entry_id": entry_id, "option": 0})
     assert res.status_code == 200 and res.json()["status"] == "swapped"
@@ -334,6 +350,7 @@ def test_a_write_out_without_steps_or_quantities_is_refused_not_planned_thin(wee
     lines missing their quantities) would land as a recipe the Cooker
     can't cook from. Refused — the same line, nothing written."""
     entry_id = _entry_id(week, DAY1)
+    _approve(week)  # an approved week is shopped from: the full recipe is written before it is planned
     tools.swap_options(week, entry_id, asker=_asker(_option("Lemon chicken traybake")))
     full = _writer()(None, _option("Lemon chicken traybake"))
     if missing == "instructions":

@@ -380,7 +380,9 @@ def test_the_filled_row_carries_a_reason_rather_than_a_blank(recipes):
     # And the rule that would have caught a blank says nothing about it.
     # (The seeded Monday row is hand-planted with no reasoning of its own
     #  and is not this pass's work, so it is not in scope here.)
-    assert [v.date for v in plan_quality._reasoning_is_specific(entries, {})] == [days[0]]
+    # (Blank rows stopped being a finding on 2026-09-30, when the week call
+    #  stopped writing a per-slot reasoning line.)
+    assert plan_quality._reasoning_is_specific(entries, {}) == []
 
 
 def test_the_pass_never_raises(recipes):

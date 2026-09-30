@@ -20,6 +20,11 @@ import time
 LIMITS = {
     "chat": [(30, 60), (300, 3600)],
     "scan": [(10, 60), (60, 3600)],
+    # The chat sheet's cache warm-up (POST /api/chat/warm). Each allowed
+    # call can cost an Anthropic request, and the per-household throttle
+    # already collapses honest use to one per few minutes, so this only
+    # catches a script or a stuck page.
+    "chat_warm": [(6, 60), (40, 3600)],
     # Sign-in attempts, so the shared password can't be brute-forced.
     "login": [(8, 300), (40, 3600)],
     # Opening an invite link (POST /api/join). The same ceiling as a

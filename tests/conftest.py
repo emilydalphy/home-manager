@@ -21,6 +21,10 @@ os.environ["DISABLE_BACKUPS"] = "1"
 # Same for the morning-text loop (app/tools/digest.py) — tests that want it
 # call run_morning_texts_once directly with a stubbed sender.
 os.environ["DISABLE_MORNING_TEXT"] = "1"
+# And the draft's background recipe pass (agent.start_background_recipe_pass):
+# a thread left writing after its test ends would write into the next
+# test's database. Tests of the background pass unset it and join the thread.
+os.environ["DISABLE_BACKGROUND_RECIPES"] = "1"
 # The three variables observability_report.py reads to decide whether to ask
 # the LIVE app or a local database file. They are legitimately set in the
 # overnight environment so the morning error check can run — and with them
