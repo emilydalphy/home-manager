@@ -6081,6 +6081,13 @@ textarea.wwk-text { resize: vertical; }
   font-family: var(--font-body); font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ink-on-celadon);
 }
 .uw-sheet-note { margin: 0; font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--ink-secondary); }
+/* A save the server refused, in its own words, where the answer still is:
+   calm in trouble (§8) — the urgent tint and label, never an urgent fill. */
+.uw-error {
+  margin: 0; padding: 10px 12px; border-radius: var(--radius-control);
+  background: var(--urgent-tint); color: var(--urgent-label);
+  font-family: var(--font-body); font-size: 14px; font-weight: 600; line-height: 1.45;
+}
 .uw-save { width: 100%; min-height: 54px; }
 
 /* ---- buttons ----

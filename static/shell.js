@@ -9706,7 +9706,11 @@
     if (!body || !s) return;
     var el = body.querySelector('.wwk-section[data-section="' + key + '"]');
     if (!el) return;
+    if (key === 'rhythm') uwSyncPrep();
     wwkPreservingFocus(el, function () { wwkMorph(el, wwkSectionInnerHtml(s)); });
+    // Your rhythm's Prep day row says what Prep days holds, and which
+    // lunch choices the meal sheet offers depends on it.
+    if (key === 'prep-days') wwkRenderSection('rhythm');
   }
 
   // Redraw by difference, not by replacement. A save's redraw often runs
@@ -9882,7 +9886,10 @@
       wwkState.facts = before.facts;
       wwkRenderSection(sectionKey);
       if (prefsState.open) renderPrefsRows();
-      showToast('That didn’t save. Try it again.');
+      // A refusal the server explains (a 400 from /api/usual-week) is
+      // said in its own words.
+      if (err && err.userMessage) showToast(err.userMessage);
+      else showToast('That didn’t save. Try it again.');
       return false;
     }
   }
@@ -10331,6 +10338,16 @@
     lunch: { last_nights_dinner: 'Last night’s dinner', meal_prep_ahead: 'Meal prep ahead', few_in_rotation: 'A few in rotation', new_every_day: 'Something new every day' },
     dinner: { cook_big_eat_twice: 'Cook big, eat twice', few_in_rotation: 'A few in rotation', new_every_day: 'Something new every night' }
   };
+  // The sheet's quick picks (MealsDaysLive): the picked days on for
+  // everyone, the rest not planned.
+  var UW_QUICK = [
+    { key: 'every', label: 'Every day', days: [0, 1, 2, 3, 4, 5, 6] },
+    { key: 'weekdays', label: 'Weekdays', days: [0, 1, 2, 3, 4] },
+    { key: 'weekends', label: 'Weekends', days: [5, 6] },
+    { key: 'none', label: 'None', days: [] }
+  ];
+  // The prep answer's two lengths (usual_week.PREP_LENGTHS), said on the row.
+  var UW_PREP_LENGTH_WORDS = { hour: 'about an hour', longer: 'a longer stretch' };
   var UW_SNACK_OPTIONS = [{ value: 0, label: 'None' }, { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3 a day' }];
   var UW_EXPLAINER = 'The meals I plan each week, who’s eating them, and how much they change.';
   var UW_STARTS_NEXT = 'Starts with your next plan. This week stays as it is.';
@@ -10391,11 +10408,59 @@
     var n = v.dishes + ' different';
     return 'Variety: ' + (title ? title + ' · ' + n : n);
   }
-  function uwPrepDaysLine(data) {
+  function uwPrepDayNames(data) {
     var days = ((data && data.prep) || {}).days || [];
-    if (!days.length) return 'None';
     var names = days.map(function (d) { return UW_DAY_NAMES[UW_WEEKDAYS.indexOf(d)] || d; });
     return names.length <= 2 ? names.join(' and ') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  }
+  // The Prep day row: "Sunday (a longer stretch)".
+  function uwPrepDaysLine(data) {
+    var prep = (data && data.prep) || {};
+    if (!(prep.days || []).length) return 'None';
+    var length = UW_PREP_LENGTH_WORDS[prep.length];
+    return uwPrepDayNames(data) + (length ? ' (' + length + ')' : '');
+  }
+  // Prep days (its own section) edits the same fact through the rhythm
+  // route, so the usual week's copy of it is brought up to date from the
+  // memory it just changed — the Prep day row, and whether "Meal prep
+  // ahead" is offered, follow at once (and follow a failed save's revert).
+  // Lengths the way usual_week._prep_answer reads them.
+  function uwSyncPrep() {
+    var mem = wwkMem();
+    var days = mem && mem.rhythm && mem.rhythm.prep_days;
+    if (!uwState.data || !Array.isArray(days)) return;
+    var minutes = days.map(function (d) { return d.minutes || 0; });
+    var most = minutes.length ? Math.max.apply(null, minutes) : 0;
+    uwState.data.prep = {
+      days: days.map(function (d) { return d.weekday; }),
+      length: !most ? null : most <= 75 ? 'hour' : 'longer'
+    };
+  }
+  function uwHasPrep(data) { return (((data && data.prep) || {}).days || []).length > 0; }
+  function uwQuickOn(cells, q) {
+    return cells.every(function (c, i) { return (c !== 'off') === (q.days.indexOf(i) !== -1); });
+  }
+  function uwApplyQuick(q) {
+    return UW_WEEKDAYS.map(function (d, i) { return q.days.indexOf(i) !== -1 ? 'all' : 'off'; });
+  }
+  // POST /api/usual-week. A 400 is the server saying what's wrong in words
+  // meant for the household ("“Meal prep ahead” needs a prep day — …"),
+  // so the error carries them as userMessage, to be shown as they are.
+  async function uwPost(body) {
+    var res = await Api.fetch('/api/usual-week', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      var err = new Error('/api/usual-week ' + res.status);
+      if (res.status === 400) {
+        try {
+          var detail = (await res.json()).detail;
+          if (typeof detail === 'string' && detail) err.userMessage = detail;
+        } catch (e) { /* no body: the plain line */ }
+      }
+      throw err;
+    }
+    return res.json();
   }
   function uwSnacksLabel(n) { return n === 0 ? 'None' : n + ' a day'; }
 
@@ -10464,7 +10529,7 @@
     if (wwkMem()) wwkMem().snacks_per_day = n;
     wwkRenderSection('rhythm');
     try {
-      var saved = await wwkPost('/api/usual-week', { snacks_per_day: n });
+      var saved = await uwPost({ snacks_per_day: n });
       if (saved) uwState.data = saved;
       wwkRenderSection('rhythm');
       wwkFlashSaved('rhythm');
@@ -10474,7 +10539,7 @@
       data.snacks_per_day = before;
       if (wwkMem()) wwkMem().snacks_per_day = before;
       wwkRenderSection('rhythm');
-      showToast('That didn’t save. Try it again.');
+      showToast((err && err.userMessage) || 'That didn’t save. Try it again.');
     }
   }
 
@@ -10504,6 +10569,11 @@
     uwScrimEl.addEventListener('click', closeUwSheet);
     document.getElementById('uw-sheet-handle').addEventListener('click', closeUwSheet);
     uwSheetEl.addEventListener('click', uwSheetClick);
+    // Escape closes this sheet, not What we know under it: caught on the
+    // way down, before the Kitchen sheet's own listener on document.
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && uwSheetEl && !uwSheetEl.hidden) { e.stopPropagation(); closeUwSheet(); }
+    }, true);
   }
   function closeUwSheet() {
     if (!uwSheetEl) return;
@@ -10519,7 +10589,8 @@
       cells: uwCells(data, meal),
       choice: (((data.variety || {})[meal]) || {}).choice || null,
       open: -1,
-      busy: false
+      busy: false,
+      error: ''
     };
     renderUwSheet();
     openSheet(uwSheetEl, uwScrimEl);
@@ -10567,13 +10638,13 @@
       n = Math.max(1, Math.min(stored, on));
     }
     var line = n + ' different ' + (n === 1 ? meal : UW_MEAL_PLURALS[meal]) + ' over ' + on + ' ' + unit;
-    if (choice === 'meal_prep_ahead' && prepDays.length) line += ', made on ' + uwPrepDaysLine(data);
+    if (choice === 'meal_prep_ahead' && prepDays.length) line += ', made on ' + uwPrepDayNames(data);
     return line + '.';
   }
   function uwSheetBodyHtml(data, sheet) {
     var meal = sheet.meal;
     var members = data.members || [];
-    var hasPrep = (((data.prep || {}).days) || []).length > 0;
+    var hasPrep = uwHasPrep(data);
     var html = '<div class="kit-sheet-titlerow uw-sheet-titlerow"><span class="kit-sheet-title" id="uw-sheet-title">' + UW_MEAL_LABELS[meal] + '</span>' +
       '<span class="kit-sheet-hairline"></span>' +
       '<button type="button" class="kit-sheet-close" data-uw="close" aria-label="Close">&times;</button></div>';
@@ -10584,10 +10655,15 @@
         uwPickerOptions(sheet.cells[sheet.open], members).map(function (o) {
           return '<button type="button" class="uw-q' + (o.on ? ' is-on' : '') + '" data-uw="pick" data-value="' + escapeHtml(o.key) + '" aria-pressed="' + (o.on ? 'true' : 'false') + '">' + escapeHtml(o.label) + '</button>';
         }).join('') + '</div>';
+    } else {
+      html += '<div class="uw-row">' + UW_QUICK.map(function (q) {
+        var on = uwQuickOn(sheet.cells, q);
+        return '<button type="button" class="uw-q' + (on ? ' is-on' : '') + '" data-uw="quick" data-value="' + q.key + '" aria-pressed="' + (on ? 'true' : 'false') + '">' + q.label + '</button>';
+      }).join('') + '</div>';
     }
     if (uwDaysOn(sheet.cells)) {
       html += '<p class="wk-swap-eyebrow">How much variety</p><div class="uw-var-opts">' +
-        (((data.variety_choices || {})[meal]) || []).filter(function (c) { return !c.needs_prep_day || hasPrep || sheet.choice === c.key; }).map(function (c) {
+        (((data.variety_choices || {})[meal]) || []).filter(function (c) { return !c.needs_prep_day || hasPrep; }).map(function (c) {
           var on = sheet.choice === c.key;
           return '<button type="button" class="uw-var-opt' + (on ? ' is-on' : '') + '" data-uw="choice" data-value="' + c.key + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
             escapeHtml((UW_VARIETY_TITLES[meal] || {})[c.key] || c.key) + '</button>';
@@ -10595,6 +10671,7 @@
     }
     html += '<p class="uw-sum">' + escapeHtml(uwResultLine(data, meal, sheet.cells, sheet.choice)) + '</p>' +
       '<p class="uw-sheet-note">' + UW_STARTS_NEXT + '</p>' +
+      (sheet.error ? '<p class="uw-error" role="alert">' + escapeHtml(sheet.error) + '</p>' : '') +
       '<button type="button" class="btn-primary uw-save" data-uw="save"' + (sheet.busy ? ' disabled' : '') + '>' + (sheet.busy ? 'Saving…' : 'Save') + '</button>';
     return html;
   }
@@ -10617,11 +10694,15 @@
     } else if (what === 'pick' && sheet.open >= 0) {
       sheet.cells[sheet.open] = uwApplyPick(sheet.cells[sheet.open], value, members);
       if (value.indexOf('toggle:') !== 0) sheet.open = -1;
+    } else if (what === 'quick') {
+      var q = UW_QUICK.filter(function (x) { return x.key === value; })[0];
+      if (q) { sheet.cells = uwApplyQuick(q); sheet.open = -1; }
     } else if (what === 'choice') {
       sheet.choice = value;
     } else if (what === 'save') {
       return uwSaveSheet();
-    }
+    } else return;
+    sheet.error = '';
     renderUwSheet();
   }
   // The body POST /api/usual-week takes for this sheet: the meal's seven
@@ -10641,9 +10722,10 @@
     var sheet = uwState.sheet;
     if (!sheet || sheet.busy) return;
     sheet.busy = true;
+    sheet.error = '';
     renderUwSheet();
     try {
-      var saved = await wwkPost('/api/usual-week', uwSheetPayload(sheet));
+      var saved = await uwPost(uwSheetPayload(sheet));
       if (saved) uwState.data = saved;
       closeUwSheet();
       wwkRenderSection('rhythm');
@@ -10651,9 +10733,11 @@
       toastSaved(savedLine(UW_MEAL_LABELS[sheet.meal], 'saved'));
     } catch (err) {
       console.warn('Usual week save failed:', err);
+      // Said in the sheet, where the answer still is: the server's own
+      // words for a refusal (a 400), the house line for anything else.
       sheet.busy = false;
+      sheet.error = (err && err.userMessage) || 'That didn’t save. Try it again.';
       renderUwSheet();
-      showToast('That didn’t save. Try it again.');
     }
   }
 
@@ -10799,6 +10883,20 @@
     if (keys.indexOf(key) !== -1) keys = keys.filter(function (k) { return k !== key; });
     else keys = keys.concat([key]);
     var next = wwkPrepPayload(keys, minutes);
+    if (!next.length) {
+      // The last prep day going: through /api/usual-week, whose check
+      // refuses it while lunch is "Meal prep ahead" and says why (the
+      // toast carries its words). The rhythm route would take it and
+      // leave lunch planned for a prep day that isn't there.
+      wwkCommit('prep-days', function () {
+        var r = wwkMem().rhythm || (wwkMem().rhythm = {});
+        r.prep_days = [];
+        r.prep_days_summary = '';
+      }, function () {
+        return uwPost({ prep: { days: [] } });
+      }, function (saved) { if (saved && saved.grid) uwState.data = saved; });
+      return;
+    }
     wwkSaveRhythm('prep-days', { prep_days: next }, function () {
       var r = wwkMem().rhythm || (wwkMem().rhythm = {});
       r.prep_days = next;

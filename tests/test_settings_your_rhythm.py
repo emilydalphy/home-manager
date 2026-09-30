@@ -33,6 +33,7 @@ def _settings_harness() -> str:
     fns = ["uwFromServer", "uwToServer", "uwCells", "uwDaysOn", "uwNames", "uwWho", "uwCellClass", "uwCellAria",
            "uwDayRowHtml", "uwChoiceDishes", "uwVarietyLine", "uwPrepDaysLine", "uwSnacksLabel", "uwSetRowHtml",
            "wwkUsualWeekHtml", "uwPickerOptions", "uwApplyPick", "uwResultLine", "uwSheetBodyHtml", "uwSheetPayload",
+           "uwPrepDayNames", "uwHasPrep", "uwQuickOn", "uwApplyQuick",
            "escapeHtml", "wwkChip", "wwkNote"]
 
     def lift(name):
@@ -146,9 +147,11 @@ console.log(JSON.stringify({ body: body, payload: uwSheetPayload(sheet),
 def test_the_sheet_saves_through_the_usual_week_route_and_names_the_meal():
     save = SHELL_JS[SHELL_JS.index("async function uwSaveSheet("):]
     save = save[: save.index("\n  }\n") + 4]
-    assert "wwkPost('/api/usual-week', uwSheetPayload(sheet))" in save
+    assert "uwPost(uwSheetPayload(sheet))" in save
     assert "toastSaved(savedLine(UW_MEAL_LABELS[sheet.meal], 'saved'))" in save
-    assert "showToast('That didn’t save. Try it again.');" in save
+    # A failure is said in the sheet (the server's words for a 400) —
+    # see test_a_400_is_shown_plainly_in_the_sheet below.
+    assert "sheet.error = (err && err.userMessage) || 'That didn’t save. Try it again.';" in save
     assert "#uw-sheet {" in SHELL_CSS and "#uw-sheet[hidden]" in SHELL_CSS
 
 
@@ -176,3 +179,182 @@ def test_the_different_dishes_steppers_are_gone_from_settings():
     assert "WWK_COUNTS" not in SHELL_JS
     assert "field: 'dinners_per_week'" not in SHELL_JS and "field: 'breakfasts_per_week'" not in SHELL_JS
     assert "label: 'Snacks a day'" not in SHELL_JS
+
+
+# ---------- review round (2026-09-30): the card's remaining asks ----------
+
+def _lift(name: str) -> str:
+    s = SHELL_JS.index(f"function {name}(")
+    if SHELL_JS[max(0, s - 6):s] == "async ":
+        s -= 6
+    i = SHELL_JS.index("{", s)
+    depth, j = 0, i
+    while True:
+        if SHELL_JS[j] == "{":
+            depth += 1
+        elif SHELL_JS[j] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return SHELL_JS[s: j + 1]
+
+
+@_needs_node
+def test_the_quick_picks_set_the_row_and_say_which_is_true():
+    out = _run(_settings_harness() + """
+var data = %s;
+var sheet = { meal: 'dinner', cells: uwCells(data, 'dinner'), choice: 'few_in_rotation', open: -1 };
+var seen = { first: uwSheetBodyHtml(data, sheet) };
+UW_QUICK.forEach(function (q) {
+  sheet.cells = uwApplyQuick(q);
+  seen[q.key] = [uwSheetPayload(sheet).grid.dinner, UW_QUICK.filter(function (x) { return uwQuickOn(sheet.cells, x); }).map(function (x) { return x.key; })];
+});
+sheet.cells = uwApplyQuick(UW_QUICK[1]);
+seen.weekdaysHtml = uwSheetBodyHtml(data, sheet);
+sheet.open = 2;
+seen.openHtml = uwSheetBodyHtml(data, sheet);
+console.log(JSON.stringify(seen));
+""" % json.dumps(_usual_week_json(True)))
+    for label in (">Every day<", ">Weekdays<", ">Weekends<", ">None<"):
+        assert label in out["first"]
+    assert 'uw-q" data-uw="quick" data-value="every" aria-pressed="false"' in out["first"], "Friday is off: not every day"
+    days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    assert out["every"] == [{d: "everyone" for d in days}, ["every"]]
+    assert out["weekdays"] == [{**{d: "everyone" for d in days[:5]}, "saturday": "off", "sunday": "off"}, ["weekdays"]]
+    assert out["weekends"] == [{**{d: "off" for d in days[:5]}, "saturday": "everyone", "sunday": "everyone"}, ["weekends"]]
+    assert out["none"] == [{d: "off" for d in days}, ["none"]]
+    assert 'uw-q is-on" data-uw="quick" data-value="weekdays" aria-pressed="true">Weekdays<' in out["weekdaysHtml"]
+    assert "4 different dinners over 5 nights." in out["weekdaysHtml"]
+    # While a day is being chosen for, the quick picks step aside for it.
+    assert "Wed · who’s eating?" in out["openHtml"] and ">Weekdays<" not in out["openHtml"]
+
+
+@_needs_node
+def test_more_than_two_people_get_everyone_a_toggle_each_and_dont_plan():
+    data = _usual_week_json(True)
+    data["members"].append({"id": 3, "name": "Sam"})
+    out = _run(_settings_harness() + """
+var data = %s;
+var members = data.members;
+var sheet = { meal: 'dinner', cells: uwCells(data, 'dinner'), choice: null, open: 0 };
+var html = uwSheetBodyHtml(data, sheet);
+var a = uwApplyPick('all', 'toggle:2', members);
+var b = uwApplyPick(uwApplyPick(a, 'toggle:1', members), 'toggle:3', members);
+var c = uwApplyPick([1, 3], 'toggle:2', members);
+console.log(JSON.stringify({ html: html, a: a, b: b, c: c }));
+""" % json.dumps(data))
+    html = out["html"]
+    for label in (">Everyone<", ">Emily<", ">Greg<", ">Sam<", ">Don’t plan<"):
+        assert label in html, label
+    assert "Just " not in html
+    assert out["a"] == [1, 3]
+    assert out["b"] == "off", "nobody left is Don't plan"
+    assert out["c"] == "all", "everybody is Everyone"
+
+
+@_needs_node
+def test_meal_prep_ahead_is_hidden_without_a_prep_day_even_when_it_was_the_pick():
+    data = _usual_week_json(True)
+    data["prep"] = {"days": [], "length": None}
+    out = _run(_settings_harness() + """
+var data = %s;
+console.log(JSON.stringify(uwSheetBodyHtml(data, { meal: 'lunch', cells: uwCells(data, 'lunch'), choice: 'meal_prep_ahead', open: -1 })));
+""" % json.dumps(data))
+    assert "Meal prep ahead" not in out
+    for label in ("Last night’s dinner", "A few in rotation", "Something new every day"):
+        assert label in out
+
+
+@_needs_node
+def test_the_prep_day_row_says_the_day_and_how_long():
+    data = _usual_week_json(True)
+    data["prep"] = {"days": ["sunday"], "length": "longer"}
+    out = _run(_settings_harness() + """
+var uwState = { data: %s, sheet: null, row: null };
+var a = wwkUsualWeekHtml({ rhythm: {} });
+uwState.data.prep = { days: ['sunday', 'wednesday'], length: 'hour' };
+console.log(JSON.stringify([a, wwkUsualWeekHtml({ rhythm: {} })]));
+""" % json.dumps(data))
+    assert "Sunday (a longer stretch) ›" in out[0]
+    assert "Sunday and Wednesday (about an hour) ›" in out[1]
+
+
+@_needs_node
+def test_prep_days_edits_reach_the_usual_week_row():
+    out = _run(_settings_harness() + _lift("uwSyncPrep") + """
+var prefsState = { memory: { rhythm: { prep_days: [{ weekday: 'saturday', minutes: 120 }] } } };
+function wwkMem() { return prefsState.memory; }
+var uwState = { data: %s };
+uwSyncPrep();
+var one = uwState.data.prep;
+prefsState.memory.rhythm.prep_days = [];
+uwSyncPrep();
+console.log(JSON.stringify([one, uwState.data.prep]));
+""" % json.dumps(_usual_week_json(True)))
+    assert out == [{"days": ["saturday"], "length": "longer"}, {"days": [], "length": None}]
+    render = _lift("wwkRenderSection")
+    assert "if (key === 'rhythm') uwSyncPrep();" in render
+    assert "if (key === 'prep-days') wwkRenderSection('rhythm');" in render
+
+
+def _save_harness(status: int, body: dict, meal: str, choice) -> str:
+    return _settings_harness() + _lift("uwPost") + _lift("uwSaveSheet") + """
+var rendered = [], toasts = [], closed = 0, posted = [];
+var uwState = { data: %s, sheet: null, row: null };
+uwState.sheet = { meal: %s, cells: uwCells(uwState.data, %s), choice: %s, open: -1, busy: false, error: '' };
+var Api = { fetch: async function (path, init) {
+  posted.push([path, JSON.parse(init.body)]);
+  return { ok: %s, status: %d, json: async function () { return %s; } };
+} };
+function renderUwSheet() { rendered.push(uwSheetBodyHtml(uwState.data, uwState.sheet)); }
+function closeUwSheet() { closed++; uwState.sheet = null; }
+function wwkRenderSection() {}
+function wwkFlashSaved() {}
+function savedLine(t, v) { return t + ' was ' + v; }
+function toastSaved(t) { toasts.push(t); }
+function showToast(t) { toasts.push(t); }
+uwSaveSheet().then(function () {
+  console.log(JSON.stringify({ rendered: rendered, toasts: toasts, closed: closed, posted: posted, sheet: uwState.sheet }));
+});
+""" % (json.dumps(_usual_week_json(True)), json.dumps(meal), json.dumps(meal), json.dumps(choice),
+       "true" if status < 400 else "false", status, json.dumps(body))
+
+
+@_needs_node
+def test_a_400_is_shown_plainly_in_the_sheet():
+    message = "“Meal prep ahead” needs a prep day — pick the day you prep, or another lunch choice."
+    out = _run(_save_harness(400, {"detail": message}, "lunch", "meal_prep_ahead"))
+    assert out["closed"] == 0 and out["toasts"] == []
+    assert f'<p class="uw-error" role="alert">{message}</p>' in out["rendered"][-1]
+    assert out["sheet"]["busy"] is False and out["sheet"]["choice"] == "meal_prep_ahead"
+    other = _run(_save_harness(500, {"detail": "Server error: boom"}, "lunch", "few_in_rotation"))
+    assert '<p class="uw-error" role="alert">That didn’t save. Try it again.</p>' in other["rendered"][-1]
+    assert "boom" not in other["rendered"][-1]
+
+
+@_needs_node
+def test_a_good_save_closes_the_sheet_and_names_the_meal():
+    out = _run(_save_harness(200, _usual_week_json(True), "dinner", "few_in_rotation"))
+    assert out["closed"] == 1 and out["toasts"] == ["Dinner was saved"]
+    assert out["posted"][0][0] == "/api/usual-week"
+    assert out["posted"][0][1]["variety"] == {"dinner": "few_in_rotation"}
+
+
+def test_escape_closes_the_meal_sheet_not_what_we_know_under_it():
+    build = _lift("buildUwSheet")
+    assert "if (e.key === 'Escape' && uwSheetEl && !uwSheetEl.hidden) { e.stopPropagation(); closeUwSheet(); }" in build
+    assert "}, true);" in build, "caught on the way down, before the Kitchen sheet's listener"
+
+
+def test_the_last_prep_day_goes_through_the_usual_weeks_check():
+    toggle = _lift("wwkTogglePrepDay")
+    assert "return uwPost({ prep: { days: [] } });" in toggle
+    assert "if (err && err.userMessage) showToast(err.userMessage);" in _lift("wwkCommit")
+
+
+def test_the_prep_check_answers_400_in_words(signed_in):
+    signed_in.post("/api/usual-week", json={"prep": {"days": []}})
+    res = signed_in.post("/api/usual-week", json={"variety": {"lunch": "meal_prep_ahead"}})
+    assert res.status_code == 400
+    assert "needs a prep day" in res.json()["detail"]

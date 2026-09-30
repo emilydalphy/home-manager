@@ -254,8 +254,8 @@ CHECKLIST = {
     # now — a meal's sheet sets its days and its variety, whose number the
     # server writes into breakfasts/lunches/dinners_per_week — and snacks a
     # day is its Snacks row. The "Different dishes a week" steppers are gone.
-    "dinners, breakfasts and lunches a week": ("data-wwk=\"uw-open\"", "wwkPost('/api/usual-week', uwSheetPayload(sheet))"),
-    "snacks a day": ("data-wwk=\"uw-snacks\"", "wwkPost('/api/usual-week', { snacks_per_day: n })"),
+    "dinners, breakfasts and lunches a week": ("data-wwk=\"uw-open\"", "uwPost(uwSheetPayload(sheet))"),
+    "snacks a day": ("data-wwk=\"uw-snacks\"", "uwPost({ snacks_per_day: n })"),
     "kitchen kit": ("data-wwk=\"kit\"", "wwkSavePreference('taste', 'kitchen_kit'"),
     "cuisine preset chip": ("data-wwk=\"cuisine\"", "function wwkToggleCuisine(name)"),
     "table style": ("data-wwk=\"table-style\"", "wwkSavePreference('taste', 'table_style'"),
