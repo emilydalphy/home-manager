@@ -18,6 +18,31 @@ from . import spices as _spices
 logger = logging.getLogger("home_manager")
 
 
+def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
+    """
+    add_recipe with the one refusal a person is owed in front of it: a
+    recipe somebody at the table can't have is never saved (2026-09-30).
+    Until then chat saved it, then plan_meal_for_chat refused to plan it,
+    and the recipe was left behind in the box. agent.TOOL_FUNCTIONS points
+    at this; everything else (the week's own saves, imports, the recipe
+    pass) calls add_recipe itself, the shape plan_meal_for_chat has.
+
+    `override` is the person's own "save it anyway" (a recipe kept for
+    guests, say) — never the model's call. See
+    allergen_gate.refuse_recipe_if_clashing for why this raises.
+    """
+    from . import allergen_gate as _allergen_gate
+    name = kwargs.get("name")
+    if name is None and args:
+        name = args[0]
+    ingredients = kwargs.get("ingredients")
+    if ingredients is None and len(args) >= 2:
+        ingredients = args[1]
+    if isinstance(name, str):
+        _allergen_gate.refuse_recipe_if_clashing(name, ingredients, override=override)
+    return add_recipe(*args, **kwargs)
+
+
 def add_recipe(
     name: str,
     ingredients: list[dict],

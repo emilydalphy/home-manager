@@ -147,10 +147,45 @@ _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
 _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     (frozenset({"butter", "butters"}), re.compile(
         r"\b(?:peanut|almond|cashew|hazelnut|pistachio|pecan|walnut|macadamia|"
-        r"sunflower|pumpkin|sesame|seed|nut|apple|cocoa|cacao|shea)s?\s+butters?\b"
+        r"sunflower|pumpkin|sesame|seed|nut|apple|cocoa|cacao|shea|coconut)s?\s+butters?\b"
     )),
     (frozenset({"milk", "milks"}), re.compile(
         r"\b(?:almond|cashew|coconut|hazelnut|hemp|oat|pea|rice|soy|soya)\s+milks?\b"
+    )),
+    # The plant versions of the other dairy words (2026-09-30, a household
+    # with a dairy-free member lost "Coconut Yogurt Parfait"-shaped dishes
+    # to the gate). Cream of tartar is a baking acid, not cream.
+    (frozenset({"cream", "creams"}), re.compile(
+        r"\b(?:coconut|oat|soy|soya|cashew|almond|rice)\s+creams?\b|\bcream\s+of\s+tartar\b"
+    )),
+    (frozenset({"yogurt", "yogurts", "yoghurt", "yoghurts"}), re.compile(
+        r"\b(?:coconut|oat|soy|soya|cashew|almond)\s+yogh?urts?\b"
+    )),
+    (frozenset({"cheese", "cheeses"}), re.compile(r"\bcashew\s+cheeses?\b")),
+    # A dairy word the line or the name itself says is a plant version:
+    # "dairy-free butter", "vegan cream cheese", "non-dairy milk", "Greek
+    # Yogurt (Dairy-Free)". The qualifier has to sit right against the word
+    # (one describing word allowed between: "dairy-free GREEK yogurt"), so
+    # "Dairy-Free Chicken with Cream Sauce" is still held on "cream" — the
+    # label covers the words it touches, not the whole dish. Deliberately
+    # NOT in the list: buttermilk, whey, ghee, paneer, parmesan. Emily's
+    # 2026-09-20 rule is that a "-free" label can't sneak an allergen in,
+    # and "Dairy-Free Buttermilk Pancakes" is the dish that tests it.
+    # Nor "lactose-free": lactose-free milk is still milk.
+    # The "dairy" of the qualifier itself is in the words too, so the line
+    # "dairy-free butter" doesn't trip the family word on its way past.
+    (frozenset({"dairy", "dairies", "milk", "milks", "butter", "butters", "cheese", "cheeses",
+                "cream", "creams", "yogurt", "yogurts", "yoghurt", "yoghurts"}), re.compile(
+        r"\b(?:vegan|plant[\s-]based|dairy[\s-]free|non[\s-]dairy)\s+"
+        r"(?:(?:greek|greek-style|sour|whipped|heavy|plain|shredded|grated|cream|ice)\s+)?"
+        r"(?:milk|butter|cheese|cream|yogh?urt)s?(?![-a-z0-9])"
+        r"|\b(?:(?:greek|greek-style|sour|whipped|heavy|plain|shredded|grated|cream|ice)\s+)?"
+        r"(?:milk|butter|cheese|cream|yogh?urt)s?\s+(?:dairy[\s-]free|non[\s-]dairy|vegan)(?![-a-z0-9])"
+    )),
+    # The same for egg: vegan or egg-free mayonnaise is made without it.
+    (frozenset({"egg", "eggs", "mayonnaise", "mayonnaises", "mayo", "mayos", "aioli", "aiolis"}), re.compile(
+        r"\b(?:vegan|plant[\s-]based|egg[\s-]free|eggless)\s+(?:mayonnaise|mayo|aioli)s?(?![-a-z0-9])"
+        r"|\b(?:mayonnaise|mayo|aioli)s?\s+(?:egg[\s-]free|vegan)(?![-a-z0-9])"
     )),
     (frozenset({"sugar", "sugars"}), re.compile(r"\bsugar\s+snaps?\b")),
     # Olive oil is a cooking fat, not an olive. A household that avoids
@@ -183,6 +218,44 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
 # though it is none for gluten.
 _GLUTEN_FREE_SEGMENT_RE = re.compile(r"\bgluten[\s-]?free\b|\bgf\b")
 _GLUTEN_WHEAT_LABELS = frozenset({"gluten", "wheat"})
+
+
+# A dish's NAME and the planner's dish_note are labels: they say what the
+# dish is, and they say what it leaves out in the same breath — "Dairy-Free
+# Pancakes", "keep it dairy-free", "no cheese", "olive oil instead of
+# butter". Matching those words as if they were ingredients held back five
+# scrambles, three parfaits and a teriyaki bowl in one household's first
+# week (2026-09-30), and every one of them cost a re-pick call or an empty
+# slot. So in a name or a note, an allergen word that is itself negated
+# doesn't count:
+#
+#   "<word>-free" / "<word> free"         dairy-free, nut-free, egg free
+#   "non-<word>" / "non <word>"           non-dairy
+#   "no/without/instead of/rather than/in place of <word>", and every word
+#   after it joined by "or"/"nor"         no butter or cheese
+#
+# Only the negated OCCURRENCE is cancelled: "no cheese, finish with butter"
+# still holds on butter. The word has to come straight after the negator
+# (an article or "added"/"extra" between is fine), so "no fuss cheese
+# toastie" and "No-Bake Cheese Tart" are still cheese. An INGREDIENT LINE
+# never gets this: a list is what the dish is made of and is matched
+# strictly (only the compounds in _COMPOUND_EXCEPTIONS above discount
+# there). Like those compounds, it only applies to a single-word avoidance.
+_FREE_AFTER_RE = re.compile(r"[\s-]free(?![-a-z0-9])")
+_NON_BEFORE_RE = re.compile(r"(?:^|\s)non[\s-]$")
+_NEGATOR_DET = r"(?:(?:the|any|added|extra)\s+)?"
+_NEG_BEFORE_RE = re.compile(
+    r"(?:^|\s)(?:no|without|instead\s+of|rather\s+than|in\s+place\s+of)\s+" + _NEGATOR_DET
+    + r"(?:[a-z0-9]+\s+(?:or|nor)\s+" + _NEGATOR_DET + r")*$"
+)
+
+
+def _negated(match: re.Match, text: str) -> bool:
+    """Whether this occurrence in a name or a note is the thing left out."""
+    if _FREE_AFTER_RE.match(text, match.end()):
+        return True
+    before = text[:match.start()]
+    return bool(_NON_BEFORE_RE.search(before) or _NEG_BEFORE_RE.search(before))
 
 
 # What turns a sentence into an avoidance. A hard What-we-know fact is
@@ -408,20 +481,28 @@ def _discounted(variant: str, match: re.Match, text: str) -> bool:
     return False
 
 
-def _find_variant(variant: str, text: str, start: int, discountable: bool) -> re.Match | None:
-    """The first whole-word occurrence at or after `start` that actually counts."""
+def _find_variant(
+    variant: str, text: str, start: int, discountable: bool, negatable: bool = False,
+) -> re.Match | None:
+    """The first whole-word occurrence at or after `start` that actually
+    counts. `negatable` is for a name or a note (see _negated); an
+    ingredient line never passes it."""
     for m in re.finditer(r"\b" + re.escape(variant) + r"\b", text):
         if m.start() < start:
             continue
         if discountable and _discounted(variant, m, text):
             continue
+        if discountable and negatable and _negated(m, text):
+            continue
         return m
     return None
 
 
-def _phrase_in(groups: list[set[str]], text: str) -> bool:
+def _phrase_in(groups: list[set[str]], text: str, negatable: bool = False) -> str | None:
     """
-    Whether every word of a phrase appears in `text`, in order.
+    Whether every word of a phrase appears in `text`, in order — and if so,
+    the words that were actually found ("buttermilk", not the "dairy" it
+    was found for), so a held-back dish can say what it was held for.
 
     In order rather than strictly adjacent, so "red meat" still finds "red
     minced meat" — but within ONE stretch of text (see _matches), so it
@@ -430,23 +511,37 @@ def _phrase_in(groups: list[set[str]], text: str) -> bool:
     """
     pos = 0
     discountable = len(groups) == 1
+    found: list[str] = []
     for variants in groups:
         best: re.Match | None = None
         for variant in variants:
-            m = _find_variant(variant, text, pos, discountable)
+            m = _find_variant(variant, text, pos, discountable, negatable)
             if m and (best is None or m.start() < best.start()):
                 best = m
         if best is None:
-            return False
+            return None
+        found.append(best.group(0))
         pos = best.end()
-    return True
+    return " ".join(found)
 
 
 def _matches(
     terms: list[tuple[str, list[set[str]]]],
     segments: list[str],
     gluten_free_segments: set[int] | None = None,
+    label_segments: set[int] | None = None,
 ) -> str | None:
+    """The label of the first avoidance found — see _match_detail."""
+    detail = _match_detail(terms, segments, gluten_free_segments, label_segments)
+    return detail[0] if detail else None
+
+
+def _match_detail(
+    terms: list[tuple[str, list[set[str]]]],
+    segments: list[str],
+    gluten_free_segments: set[int] | None = None,
+    label_segments: set[int] | None = None,
+) -> tuple[str, str] | None:
     """
     The first avoidance found in any one of `segments`, or None.
 
@@ -459,15 +554,23 @@ def _matches(
     they're gluten-free ("Gluten-Free Pasta", "GF flour tortillas"). Those
     segments are skipped only for a GLUTEN or WHEAT avoidance — a nut or
     dairy restriction still has to look at them.
+
+    `label_segments` names the segments that are a name or a planner's note
+    rather than an ingredient line; only those read "dairy-free" / "no
+    cheese" as the thing left out (see _negated).
+
+    Returns (the avoidance's label, the words that matched it), or None.
     """
     gluten_free_segments = gluten_free_segments or set()
+    label_segments = label_segments or set()
     for label, groups in terms:
         skip_if_gluten_free = label in _GLUTEN_WHEAT_LABELS
         for i, segment in enumerate(segments):
             if skip_if_gluten_free and i in gluten_free_segments:
                 continue
-            if _phrase_in(groups, segment):
-                return label
+            word = _phrase_in(groups, segment, negatable=i in label_segments)
+            if word:
+                return label, word
     return None
 
 
@@ -800,7 +903,7 @@ def check_meal_conflicts(
     plan and only be caught by the draft's own banner later.
 
     Returns one dict per clash, with meal/member/restriction/source/
-    severity/matched — no date and no component_category, which belong to
+    severity/matched/matched_word — no date and no component_category, which belong to
     the entry a dish is planned on, not to the dish.
 
     Pass `avoidances` when checking many dishes in a row (check_plan_conflicts
@@ -820,22 +923,29 @@ def check_meal_conflicts(
     # Whitespace collapsed as well as punctuation stripped, so a two-word
     # term ("soy sauce") still matches an ingredient written with odd
     # spacing.
-    raw_segments = [name]
-    raw_segments += [(i.get("item") or "") for i in (ingredients or [])]
-    raw_segments += [(i.get("item") or "") for i in _plates.side_ingredients(sides)]
-    segments = [
-        re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", s.lower())).strip()
-        for s in raw_segments
+    # Each segment carries whether it is a LABEL (the name, or a planner's
+    # dish_note handed over as an `is_dish_note` line by
+    # allergen_gate.ingredients_for) or an ingredient line; only a label
+    # reads "dairy-free" / "no cheese" as what the dish leaves out.
+    raw_segments = [(name, True)]
+    raw_segments += [((i.get("item") or ""), bool(i.get("is_dish_note"))) for i in (ingredients or [])]
+    raw_segments += [((i.get("item") or ""), False) for i in _plates.side_ingredients(sides)]
+    normalised = [
+        (re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", s.lower())).strip(), is_label)
+        for s, is_label in raw_segments
     ]
-    segments = [s for s in segments if s]
+    normalised = [(s, is_label) for s, is_label in normalised if s]
+    segments = [s for s, _ in normalised]
+    label_segments = {i for i, (_, is_label) in enumerate(normalised) if is_label}
     gluten_free_segments = {
         i for i, s in enumerate(segments) if _GLUTEN_FREE_SEGMENT_RE.search(s)
     }
     hits = []
     for avoidance in avoidances:
-        matched = _matches(avoidance["terms"], segments, gluten_free_segments)
-        if not matched:
+        detail = _match_detail(avoidance["terms"], segments, gluten_free_segments, label_segments)
+        if not detail:
             continue
+        matched, matched_word = detail
         hits.append({
             "meal": name,
             "member": avoidance["member"],
@@ -845,6 +955,9 @@ def check_meal_conflicts(
             "source": avoidance["source"],
             "severity": avoidance["severity"],
             "matched": matched,
+            # The words actually found ("buttermilk" for a "dairy"
+            # avoidance) — for the log line that says why a dish was held.
+            "matched_word": matched_word,
         })
     return hits
 

@@ -98,8 +98,14 @@ def ingredients_for(item: dict) -> list[dict]:
     # peanuts and lime"), which names the dish's defining ingredients; it
     # is matched here as one line, so a clean name over a note that says
     # the thing is held back at the draft, not at approval.
+    #
+    # Marked as a note (2026-09-30): a note is written the way a name is,
+    # and says what the dish leaves out as often as what it has — "keep it
+    # dairy-free", "no cheese", "olive oil instead of butter". The matcher
+    # reads a note's negations the way it reads a name's
+    # (coordination._negated); a real ingredient line never gets that.
     note = (item.get("dish_note") or "").strip()
-    return [{"item": note}] if note else []
+    return [{"item": note, "is_dish_note": True}] if note else []
 
 
 def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[dict] | None = None,
@@ -156,12 +162,23 @@ def split_safe(items: list[dict], avoidances: list[dict] | None = None) -> tuple
         if clashes:
             logger.warning(
                 "Generation drafted %r, which has %s — held back, never written",
-                name, ", ".join(sorted({c.get("matched") or c.get("restriction") or "?" for c in clashes})),
+                name, ", ".join(sorted({_held_for(c) for c in clashes})),
             )
             held.append({"item": item, "clashes": clashes})
         else:
             safe.append(item)
     return safe, held
+
+
+def _held_for(clash: dict) -> str:
+    """For the log: the avoidance AND the words that tripped it —
+    "dairy (matched 'buttermilk')" — so a held-back dish can be told apart
+    from a false positive without re-running the matcher by hand."""
+    label = clash.get("matched") or clash.get("restriction") or "?"
+    word = (clash.get("matched_word") or "").strip()
+    if word and word != label:
+        return f"{label} (matched {word!r})"
+    return label
 
 
 # ---------- saying what couldn't be done ----------
@@ -273,6 +290,43 @@ def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, overrid
     clashes = hard_clashes(name, ingredients=own or _recipes.saved_ingredients(name))
     if clashes:
         raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes))
+
+
+def refuse_recipe_if_clashing(name: str, ingredients: list[dict] | None = None,
+                              override: bool = False) -> None:
+    """
+    The gate in front of chat's add_recipe (recipes.add_recipe_for_chat).
+
+    Before this, chat saved whatever recipe the model wrote and the gate
+    only looked when it tried to PLAN it (plan_meal_for_chat) — so a
+    recipe nobody at the table could have was refused there and left
+    behind in the recipe box, saved and orphaned. Matched on the name and
+    the list the model sent, the same matcher every other door uses.
+
+    Raises weekly_plan.SlotRefused, for the reason refuse_if_clashing gives:
+    a raise is what the dispatch reports as "nothing was written". The
+    sentence is written for the MODEL to act on — which dish, which word,
+    and what to do next — since the model, not the person, makes the next
+    move (write it again without that, or pick another dish).
+    """
+    if override:
+        return
+    name = (name or "").strip()
+    if not name:
+        return
+    own = [i for i in (ingredients or []) if isinstance(i, dict) and (i.get("item") or "").strip()]
+    clashes = hard_clashes(name, ingredients=own)
+    if not clashes:
+        return
+    word = next((c.get("matched_word") for c in clashes if c.get("matched_word")), "") or _food_word(clashes)
+    food = _food_word(clashes)
+    who = _person(clashes)
+    cannot = f"{who} can’t have" if who else "this house can’t have"
+    because = f"{word}" if word == food else f"{word} ({food})"
+    raise _weekly_plan.SlotRefused(
+        f"Not saved: {name} has {because}, which {cannot}. "
+        f"Write it again without {word}, or pick a different dish."
+    )
 
 
 # ---------- the re-pick ----------
