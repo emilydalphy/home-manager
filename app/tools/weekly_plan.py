@@ -582,6 +582,13 @@ def plan_slot_open(
     # hold must not reach a write, and a caller that passed its own conn
     # must not have its open transaction spent on one either.
     validate_slot(slot)
+    # An option nobody at the table can have is never offered (strict, on the
+    # label alone): resolve_open_slot would refuse it anyway.
+    from . import allergen_gate as _allergen_gate
+    options = [
+        o for o in (options or [])
+        if not _allergen_gate.hard_clashes(str((o.get("label") if isinstance(o, dict) else o) or ""))
+    ]
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
@@ -1994,6 +2001,11 @@ def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: st
             f"That {slot} is deliberately empty — nothing is planned or bought for it. "
             "Change the night's answer if you're in after all."
         )
+
+    # The same strict allergen check chat and the needs-you card run, asked
+    # before anything is replaced: a refusal leaves the open slot open.
+    from . import allergen_gate as _allergen_gate
+    _allergen_gate.refuse_if_clashing(choice.strip())
 
     was_open = row["slot_state"] == "open"
     # The same one-transaction write a swap uses (_replace_slot_entries):

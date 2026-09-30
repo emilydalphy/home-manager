@@ -1500,7 +1500,8 @@
         body: JSON.stringify(body)
       });
       if (!res.ok) throw new Error('open dinner resolve failed');
-      await res.json();
+      var settled = await res.json();
+      if (settled && settled.status === 'refused') { showToast(settled.message || 'Left as it was.'); return; }
       showToast(choice + ' is on the plan.');
       await loadNeedsYou(panel);
       loadTodayMoves(panel);
@@ -16903,7 +16904,8 @@
         body: JSON.stringify({ date: date, slot: slot, choice: choice })
       });
       if (!res.ok) throw new Error('slot resolve failed');
-      await res.json();
+      var settled = await res.json();
+      if (settled && settled.status === 'refused') { showToast(settled.message || 'Left as it was.'); return; }
       showToast(dayName(date, { weekday: 'long' }) + '’s settled — thank you.');
       // Settling a slot in an already-approved week writes to the shopping
       // list, so anything showing that list is now stale. Background — an
