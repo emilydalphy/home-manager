@@ -670,12 +670,19 @@ def apply_usual_attendance(plan: dict, dates: list[str]) -> None:
     period, so the meal is planned, sized and shopped for that table by the
     machinery that already does it (attendance.context_for_week for the
     model, servings_scale_factor for the list). Writes or removes the rows
-    it owns (source usual_week). A row the week already has from the day
-    sheet or the guests chip was built on "everyone's here"; the grid's
-    subset is applied to its base instead (their absences plus the people
-    the grid leaves out, their guests kept) — unless that would leave
-    nobody from the household at the meal, when the week's own answer
-    stands as it is. A trip's rows are never touched.
+    it owns (source usual_week).
+
+    A row the week has of its own (the day sheet, a toggle, the guests
+    chip) wins over the grid ENTIRELY once the grid has been applied to
+    that slot — slot_attendance.grid_applied, set by every write here and
+    left alone by every later write (attendance._write's upsert doesn't
+    name it), so a person toggling Vineeth back onto a "just Emily"
+    Thursday keeps him through any regeneration. Only a week-own row
+    written BEFORE the grid ever reached that slot (guests set before the
+    first draft) was built on "everyone's here"; that one is rebased once
+    onto the grid's subset (their absences plus the people the grid leaves
+    out, their guests kept) — unless that would leave nobody from the
+    household at the meal. A trip's rows are never touched.
     """
     from . import attendance as _attendance
 
@@ -685,7 +692,7 @@ def apply_usual_attendance(plan: dict, dates: list[str]) -> None:
     try:
         members = [m["id"] for m in _members(conn)]
         rows = conn.execute(
-            "SELECT date, slot, source, absent_member_ids_json, guest_count, away_stretch_id "
+            "SELECT date, slot, source, absent_member_ids_json, guest_count, away_stretch_id, grid_applied "
             "FROM slot_attendance WHERE household_id = ? AND date >= ? AND date <= ?",
             (household_id(), min(dates), max(dates)),
         ).fetchall()
@@ -699,19 +706,33 @@ def apply_usual_attendance(plan: dict, dates: list[str]) -> None:
             row = existing.get(key)
             source = row["source"] if row is not None else None
             if source is not None and source != ATTENDANCE_SOURCE:
-                if not subset or source not in WEEK_OWN_SOURCES or row["away_stretch_id"]:
+                if (not subset or source not in WEEK_OWN_SOURCES or row["away_stretch_id"]
+                        or row["grid_applied"]):
                     continue
                 absent = set(json.loads(row["absent_member_ids_json"] or "[]")) | {
                     i for i in members if i not in subset}
-                if not [i for i in members if i not in absent]:
-                    continue
-                _attendance._write(d, meal, sorted(absent), int(row["guest_count"] or 0), source, None)
+                if [i for i in members if i not in absent]:
+                    _attendance._write(d, meal, sorted(absent), int(row["guest_count"] or 0), source, None)
+                _mark_grid_applied(d, meal)
                 continue
             if subset:
                 absent = [i for i in members if i not in subset]
                 _attendance._write(d, meal, absent, 0, ATTENDANCE_SOURCE, None)
+                _mark_grid_applied(d, meal)
             elif source == ATTENDANCE_SOURCE:
                 _attendance.clear_slot_attendance(d, meal)
+
+
+def _mark_grid_applied(meal_date: str, slot: str) -> None:
+    conn = get_conn()
+    try:
+        conn.execute(
+            "UPDATE slot_attendance SET grid_applied = 1 WHERE household_id = ? AND date = ? AND slot = ?",
+            (household_id(), meal_date, slot),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def weekday_lunches_answer(plan: dict, dates: list[str], skipped: list[str] | None = None) -> dict:
@@ -847,6 +868,7 @@ def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
     from . import swap_in_place as _swap
     from . import weekly_plan as _weekly_plan
     from . import plates as _plates
+    from . import leftovers as _leftovers
     import contextvars
 
     out = {"filled": [], "repeated": [], "left": []}
@@ -911,13 +933,26 @@ def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
                 serves = _swap._table_for(group[0]["date"], meal)["serves"]
                 pick["meal_name"] = _swap.honest_meal_name(pick)
                 _allergen_gate._save_pick(pick, serves)
+                groups_ = [g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS]
+                cook = None
                 for gap in group:
-                    _weekly_plan._replace_slot_entries(
-                        plan_id, [r["id"] for r in gap["rows"]], gap["date"], meal, pick["meal_name"],
-                        food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
-                        reasoning="",
-                        derived_from={"constraint": FIRST_PLAN_FILL_CONSTRAINT},
-                    )
+                    ids = [r["id"] for r in gap["rows"]]
+                    # A dinner dish on several nights is cooked once and eaten
+                    # again (a leftovers chain, dinner_gaps._reheat) while the
+                    # next night is within the three-day reach of the cook.
+                    if (meal == "dinner" and cook is not None
+                            and _leftovers.days_apart(cook["date"], gap["date"]) <= _leftovers.MAX_LEFTOVER_DAYS):
+                        _dinner_gaps._reheat(plan_id, ids, gap["date"], meal, cook,
+                                             {"constraint": FIRST_PLAN_FILL_CONSTRAINT})
+                    else:
+                        written = _weekly_plan._replace_slot_entries(
+                            plan_id, ids, gap["date"], meal, pick["meal_name"],
+                            food_groups=groups_, reasoning="",
+                            derived_from={"constraint": FIRST_PLAN_FILL_CONSTRAINT},
+                        )
+                        if meal == "dinner" and written.get("entry_id"):
+                            cook = {"id": written["entry_id"], "date": gap["date"], "meal": pick["meal_name"],
+                                    "food_groups_json": json.dumps(groups_)}
                     out["filled"].append({"date": gap["date"], "slot": meal, "meal": pick["meal_name"]})
             except Exception:
                 logger.exception("Writing the first-week pick for %s failed; its slots go to the repeat pass", meal)

@@ -1375,6 +1375,10 @@ CREATE TABLE IF NOT EXISTS slot_attendance (
     -- and so a trip's slots can be found and undone together.
     source TEXT NOT NULL DEFAULT '',
     away_stretch_id INTEGER REFERENCES away_stretches(id),
+    -- 1 once the usual week's grid has been applied to this slot
+    -- (usual_week.apply_usual_attendance); a later toggle keeps it, so the
+    -- person's own change wins over the grid on the next draft.
+    grid_applied INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(household_id, date, slot)

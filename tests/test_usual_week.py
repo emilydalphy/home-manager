@@ -687,3 +687,65 @@ def test_first_week_picks_go_through_the_gates_own_pick_check(stub_model, picker
     stub_model(_days(dates, breakfasts=None, lunches=["Wrap"] * 7, dinners=["Chili", "Tacos"] * 3 + ["Stew"]))
     agent.generate_weekly_plan(_monday())
     assert seen, "every first-week pick is gated"
+
+
+# ---------- re-verification round (2026-09-30) ----------
+
+def test_a_person_toggled_back_on_stays_on_through_a_regeneration(stub_model, picker):
+    """The repro: grid says just Emily on Thursday; they tap Vineeth back
+    on for this week; the next draft of the same week keeps him."""
+    people = _two_people()
+    tools.save_usual_week(grid={"dinner": {"thursday": [people["Emily"]]}})
+    week = _monday()
+    dates = tools._week_dates(week)
+    thursday = dates[3]
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili", "Tacos", "Curry", "Stew"] * 2))
+    agent.generate_weekly_plan(week)
+    assert tools.get_slot_attendance(thursday, "dinner")["present_names"] == ["Emily"]
+    tools.set_member_attendance(thursday, "dinner", "Vineeth", present=True)
+    assert tools.get_slot_attendance(thursday, "dinner")["present_names"] == ["Emily", "Vineeth"]
+    agent.generate_weekly_plan(week)
+    att = tools.get_slot_attendance(thursday, "dinner")
+    assert att["present_names"] == ["Emily", "Vineeth"] and att["headcount"] == 2
+
+
+def test_guests_set_before_the_first_draft_sit_on_the_grids_table_once(stub_model, picker):
+    people = _two_people()
+    week = _monday()
+    dates = tools._week_dates(week)
+    thursday = dates[3]
+    tools.set_guest_count(thursday, "dinner", 2)          # before any draft
+    tools.save_usual_week(grid={"dinner": {"thursday": [people["Emily"]]}})
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili", "Tacos", "Curry", "Stew"] * 2))
+    agent.generate_weekly_plan(week)
+    att = tools.get_slot_attendance(thursday, "dinner")
+    assert (att["present_names"], att["guest_count"], att["source"]) == (["Emily"], 2, "guests")
+    # Then they add Vineeth for this week; a regeneration keeps their answer.
+    tools.set_member_attendance(thursday, "dinner", "Vineeth", present=True)
+    agent.generate_weekly_plan(week)
+    att = tools.get_slot_attendance(thursday, "dinner")
+    assert (att["present_names"], att["guest_count"]) == (["Emily", "Vineeth"], 2)
+
+
+def test_a_first_week_dinner_on_several_nights_is_cooked_once_and_eaten_again(stub_model, picker):
+    dates = tools._week_dates(_monday())
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili"] * 7))
+    plan_id = agent.generate_weekly_plan(_monday())["weekly_plan_id"]
+    # Tuesday and Wednesday dinners open, as one group (dinners number 1).
+    tools.set_household_meal_preferences(dinners_per_week=1)
+    for d in dates[1:3]:
+        tools.clear_plan_slot(plan_id, d, "dinner")
+        tools.plan_slot_open(weekly_plan_id=plan_id, meal_date=d, slot="dinner", open_reason="Still deciding",
+                             derived_from={"constraint": "generation_gap"})
+    out = usual_week.fill_first_plan_gaps(plan_id, dates[1:3])
+    assert out["left"] == [] and len(out["filled"]) == 2
+    chains = tools.plan_leftover_chains(plan_id)
+    wednesday = [e for e in chains["leftovers"].values() if e["date"] == dates[2] and e["slot"] == "dinner"]
+    assert wednesday and wednesday[0]["source"]["date"] == dates[1]
+
+
+def test_no_test_can_reach_the_anthropic_api():
+    from app import agent as _agent
+    import anthropic
+    with pytest.raises(anthropic.AuthenticationError, match="never reach"):
+        _agent._client().messages.create(model="x", max_tokens=1, messages=[])

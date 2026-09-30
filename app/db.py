@@ -464,6 +464,12 @@ _MIGRATIONS = [
     # grid from the counts they already have on every read, so an existing
     # household plans exactly as before until it saves an answer.
     ("meal_preferences", "usual_week_json", "TEXT NOT NULL DEFAULT ''"),
+    # Whether the usual week's grid has been applied to this attendance row
+    # (usual_week.apply_usual_attendance). 0 on every existing row: none
+    # were. Only that function sets it, and attendance._write's upsert
+    # never names it, so a later toggle keeps it — which is what makes the
+    # person's own change win over the grid on the next draft.
+    ("slot_attendance", "grid_applied", "INTEGER NOT NULL DEFAULT 0"),
     # Loop Board 19a (Emily, 2026-09-05): stores are asked just-in-time on
     # the Grocery tab's first real trip, not during onboarding — see the
     # Plan stops "Where do you usually shop?" card in shell.js. Empty means
