@@ -10575,6 +10575,7 @@
     var members = data.members || [];
     var hasPrep = (((data.prep || {}).days) || []).length > 0;
     var html = '<div class="kit-sheet-titlerow uw-sheet-titlerow"><span class="kit-sheet-title" id="uw-sheet-title">' + UW_MEAL_LABELS[meal] + '</span>' +
+      '<span class="kit-sheet-hairline"></span>' +
       '<button type="button" class="kit-sheet-close" data-uw="close" aria-label="Close">&times;</button></div>';
     html += '<p class="wk-swap-eyebrow">' + escapeHtml(UW_SHEET_EYEBROW[meal]) + '</p>' +
       uwDayRowHtml(meal, sheet.cells, members, function (i) { return 'data-uw="day" data-value="' + i + '"'; }, sheet.open);
