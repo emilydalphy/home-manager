@@ -719,18 +719,39 @@ def _print_chat_rounds(spread: dict | None, total: int) -> None:
     spread. Silent when every turn took one round, which is the ordinary
     case and needs no line.
 
-    Why the spread rather than the total: a round is a whole model call at
-    the full ~37K briefing, so rounds are most of a chat bill, and an
-    average hides which shape produced them. "43 rounds over 16 turns"
-    reads like every turn looping; "15 turns at 1, one at 28" is one
-    runaway turn and a healthy month, and those want opposite responses.
-    A turn only goes round again when the model asked for a tool or its
-    reply was cut off mid-sentence, so anything above 1 here is one of
-    those two and can be chased.
+    Why the spread rather than the total: a round is a model call at the
+    full ~37K briefing, so rounds are most of a chat bill, and an average
+    hides which shape produced them. "41 rounds over 16 turns" reads like
+    every turn looping; "15 turns at 1, one at 26" is one runaway turn and
+    a healthy month, and those want opposite responses. A turn only goes
+    round again when the model asked for a tool or its reply was cut off
+    mid-sentence, so anything above 1 here is one of those two and can be
+    chased.
+
+    TWO NUMBERS TO KNOW WHEN READING IT. `run_agent_turn` increments
+    `rounds` and THEN checks it against MAX_TOOL_ROUNDS (25), so the
+    largest a row can ever hold is **26** -- and that 26th iteration makes
+    no model call at all, it aborts. So 26 means 25 calls, and it means
+    the household was handed the canned "that got stuck in a loop on my
+    end" apology. It is the one value in here that is a bug report rather
+    than a cost.
+
+    Reads a REMOTE app, so the keys are whatever that deployment sent: a
+    key that is not a number is skipped rather than allowed to take the
+    whole morning report down after it. The call site's own comment three
+    lines up makes that rule; this is the only line in the file that
+    coerces a remote-supplied KEY.
     """
     if not spread:
         return
-    looped = {int(r): n for r, n in spread.items() if int(r) > 1}
+    looped = {}
+    for r, n in spread.items():
+        try:
+            r = int(r)
+        except (TypeError, ValueError):
+            continue
+        if r > 1:
+            looped[r] = n
     if not looped:
         return
     turns = sum(spread.values())

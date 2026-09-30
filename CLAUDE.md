@@ -436,16 +436,32 @@ why*, not duplicating the diff.
   the second anomaly are artifacts. This is the fix and the arithmetic.
   - **THE PROOF THAT THE HYPOTHESIS IS WRONG IS ONE DIVISION, and it is
     worth doing before anything else is believed about this card.**
-    `run_agent_turn`'s dispatch loop has exactly ONE `continue` that
-    re-enters it — the `stop_reason == "max_tokens"` branch — and
     `usage["tools_called"].append(block.name)` sits above every branch of
-    the tool dispatch, so a recorded `[]` really does mean no tool_use
-    block was seen. So on the code as written, 27 extra rounds with no
-    tool names must be 27 max_tokens cut-offs. `max_tokens` is **16000**.
-    27 × 16000 = 432,000 output tokens minimum. The same window's measured
-    output is **20,828** — an average of **484 tokens a round**. The two
-    cannot both be true, so a premise was false.
-  - **The false premise is `tools_called_json == '[]'`.** That column
+    the tool dispatch, so a recorded `[]` really does mean no `tool_use`
+    block was seen — and of the seven `stop_reason` values the API
+    returns, walked one by one against the loop, **`max_tokens` is the
+    only one that sends it round again without recording a name.** (It is
+    not the only way BACK to the top of the loop; see the found-and-not-
+    fixed bullet at the foot of this entry, which is why this sentence
+    names stop reasons rather than saying "exactly one `continue`", as an
+    earlier draft did.) So 27 extra rounds with no tool names would have
+    to be 27 max_tokens cut-offs. `max_tokens` is **16000**. 27 × 16000 =
+    432,000 output tokens minimum. The same window's measured output is
+    **20,828** — an average of **484 tokens a round**. The two cannot both
+    be true, so a premise was false. **And the contradiction does not rest
+    on that 16000**, which is worth saying because it is the one input
+    that cannot be checked against the live rows: it holds for any
+    `max_tokens` above 20,828 ÷ 27 = **772**, and this call's cap has been
+    1024, 4096, 8192 and 16000 over its life — every value it has ever
+    had.
+  - **The false premise is `tools_called_json == '[]'` — inferred, and the
+    inference is named rather than dressed as a measurement.** What is
+    MEASURED is that *a* premise is false (the division above) and that
+    the mechanism below is real (reproduced). WHICH premise failed on
+    Emily's own rows is read off the dates — 27 of the window's 30 days
+    predate the column — and `/api/observability` carries no per-row
+    `created_at`, so it could not be read directly from here. Strong, and
+    not the same thing as measured. That column
     arrived by `ALTER TABLE ... NOT NULL DEFAULT '[]'` (2026-09-23), and
     **SQLite materialises a NOT NULL DEFAULT into every row that is
     already there** — so every chat turn from before that deploy reads
@@ -471,17 +487,53 @@ why*, not duplicating the diff.
     not tappable, and their names (which a pre-column row cannot have
     anyway, but a future writer that forgets the flag could) are not
     folded into "what chat was for".
-  - **NEVER BACKFILLED, and there is a test on it.** The only honest value
-    for a row written before the recording existed is "we do not know";
-    a backfill would invent exactly the history this column exists to stop
-    the report inventing. It also means the ~16 turns already on Emily's
-    database stay unknown for ever, and the report says so in those words
-    rather than quietly dropping them.
+  - **NEVER BACKFILLED, and there is a test on it — but read what the flag
+    MEANS before trusting it, because it is one week wider than it
+    sounds.** It means "predates THIS column", not "predates the
+    recording", and those are two different dates a week apart: every turn
+    recorded between 2026-09-23 (when `tools_called_json` landed) and this
+    deploy carries genuinely measured names and still gets **0**. So the
+    fix throws away a week of real data on top of the pre-column rows —
+    at the card's own observed rate, about four turns. The direction is
+    the safe one (it says less rather than saying something untrue) and it
+    is the same trade `snacks_per_week_set` made, but it is a cost and not
+    a free win.
+  - **THE DATED BACKFILL THAT WOULD RECOVER THAT WEEK WAS CONSIDERED AND
+    DECLINED, and the reason is not squeamishness.** `created_at` is on
+    the table and `_run_once_data_migrations` / `PRAGMA user_version`
+    already exists, so `UPDATE … WHERE created_at >= '2026-09-23'` was
+    available and would look like it lost nothing. It would be wrong in
+    the one direction that matters: **the date a column lands in a commit
+    is not the date it lands in Emily's deployment.** Every row written
+    between that merge and that deploy is pre-column AND dated after
+    2026-09-23, so such a backfill would stamp "measured" onto rows nobody
+    measured — inventing exactly the history this column exists to stop
+    the report inventing, and doing it silently. A cost paid in four turns
+    beats a claim that cannot be checked.
+  - **AND THE CONSEQUENCE OF FLATTENING BOTH ERAS TO 0, said plainly
+    because it is uncomfortable: the report will now print "16 of 16 turns
+    are from before this was recorded" whether the diagnosis above is
+    right or wrong.** The one piece of live evidence that could confirm or
+    refute this entry's story is the thing the fix stops reporting. What
+    settles it instead is the turns recorded from here on: if chat really
+    is talk-only, `talk_only_turns` will say so on measured rows within
+    the month, and if it is not, the tool names will.
   - **The rounds SPREAD is the instrument the card actually asked for**
     ("that should be written down as a fact rather than discovered again
     next month"). `chat_round_spread` is one `GROUP BY rounds` query;
-    the report prints "43 over 16 turns; 1 took 28" and says **nothing at
-    all** when every turn took one round, which is the ordinary case. An
+    the report prints "41 over 16 turns; 1 took 26" and says **nothing at
+    all** when every turn took one round, which is the ordinary case.
+    **26 and not a rounder number, because 26 is the ceiling and it is the
+    one value in there that is a bug report rather than a cost:**
+    `run_agent_turn` increments `rounds` and THEN tests it against
+    `MAX_TOOL_ROUNDS` (25), so no row can ever hold more than 26 — and
+    that 26th iteration makes no model call at all, it aborts and hands
+    the household the canned "that got stuck in a loop on my end" apology.
+    So 26 rounds is 25 calls, `SUM(rounds)` can legitimately exceed
+    `api_calls`' own count for the same window, and an earlier draft of
+    this entry illustrated the feature with "1 took 28" — a number the app
+    cannot produce, in an entry whose whole subject is a number that could
+    not be true. Found by review. An
     average of 2.7 reads like every turn looping and cannot be told from
     one runaway turn beside fifteen healthy ones — and those want opposite
     responses. The data was in the table the whole time, unasked for.
@@ -489,10 +541,12 @@ why*, not duplicating the diff.
     still real.** It is the sibling card's ("Chat: slim the 37K-token
     briefing"), it does not depend on either artifact above, and nothing
     here makes it better or worse.
-  - `tests/test_chat_turns_recorded_flag.py` (13). **All 13 are red
+  - `tests/test_chat_turns_recorded_flag.py` (14). **All 14 are red
     against `main` and that number is worth almost nothing** — the column
-    does not exist there, so eleven die in the seed or on a name rather
-    than on the claim they are named for. Measured against *stub B*
+    does not exist there, so **twelve** die in the seed or on a name and
+    exactly ONE reaches the assertion it is named for. (An earlier draft
+    said eleven; off by one, in the flattering direction, which is the
+    statistic this log keeps having to unpick.) Measured against *stub B*
     instead (the column present and written, the COUNTING and the REPORT
     left at main's behaviour, i.e. the one difference is the fix):
     **3 failed / 10 passed**, and all three fail on their own assertion —
@@ -500,29 +554,39 @@ why*, not duplicating the diff.
     counts, and the report's line. **Five mutations run and every one
     bites**: the INSERT not writing the flag (2 red), the counting not
     excluding unrecorded rows, i.e. main's behaviour (2), the spread query
-    unscoped (1), the rounds line printed unconditionally (1), and a
+    unscoped (1), the rounds line printed unconditionally (1), a
     well-meaning `UPDATE chat_turns SET tools_recorded = 1` backfill in
-    `_run_migrations` (1).
+    `_run_migrations` (1), and the bare `int()` put back on the spread's
+    keys (1). That last one is the review's find and the only line in
+    `observability_report.py` that coerces a key the REMOTE app supplied:
+    a non-numeric one took the whole morning report down for every
+    household after it.
   - **The report reads a REMOTE app, so both new keys are read with
     `.get`** and a deployment older than this answers without them — a
     morning report that crashes tells Emily less than one that omits a
     line. There is a test driving that case.
   - **Numbers, read off the runs at `TZ=America/Toronto` with the report
-    vars unset, both measured rather than one derived: 8149 passed, 0
+    vars unset, both measured rather than one derived: 8150 passed, 0
     failed** on the branch against **8136 passed, 0 failed** on `main`
-    (`7b5f7df`, run in its own checkout) — +13 is this one new test file
+    (`7b5f7df`, run in its own checkout) — +14 is this one new test file
     exactly, and `git diff main -- tests/` adds one file and changes none,
     so no existing test was deleted or weakened.
   - **Found and NOT fixed, named so nobody reports it as new.** A probe
     written while chasing this found that `stop_reason == "tool_use"` with
     NO `tool_use` block in the content loops silently — rounds climb, no
     tool name is recorded, output stays small, which is the live data's
-    exact fingerprint. It is NOT what happened here (the column default
-    above is), and it is very likely unreachable in production, because the
-    loop then appends `{"role": "user", "content": []}` and the real API
-    refuses an empty content list. Written down because it is the one other
-    shape that produces this signature, and the next person reading these
-    numbers will wonder.
+    exact fingerprint — reproduced twice, once by the probe and once
+    independently by this branch's review, which measured `rounds=2,
+    tools='[]', output=24` on a real turn. It is NOT what happened here
+    (the column default above is), and it is **unreachable in production,
+    measured rather than assumed**: the loop then appends `{"role":
+    "user", "content": []}`, the real API refuses an empty content list
+    with a 400, 400 is not in `_RETRYABLE_STATUS_CODES`, so the turn
+    RAISES — `_finish_chat_turn` never runs and **no `chat_turns` row is
+    written at all** (measured: `STATUS 500, CALLS 2, ROWS 0`). A shape
+    that writes no row cannot be in a row's rounds. Written down because
+    it is the one other shape that produces this signature, and the next
+    person reading these numbers will wonder.
 
 - **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
   Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep

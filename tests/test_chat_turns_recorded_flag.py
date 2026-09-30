@@ -15,17 +15,26 @@ shape and the same reason as meal_preferences.snacks_per_week_set. It is
 deliberately never backfilled: the only honest value for a row written
 before the recording existed is "we do not know".
 
-Red against main: the two counting tests and the two report tests. The
-rest are guards -- each says in its own docstring what pins it.
+RED AGAINST MAIN IS 13 OF 13, AND IT IS WORTH ALMOST NOTHING: the column
+is not there, so twelve of them die in the seed or on a name and exactly
+ONE reaches the assertion it is named for. The number that means something
+is measured against a stub with the column present and written and only
+the COUNTING and the REPORT left at main's behaviour -- the one difference
+being the fix itself: **3 failed / 10 passed**, and all three fail on their
+own assertion. Every green test names the mutation that pins it, except
+the four plain guards, which are pinned by M1 and M2 below.
+
+Five mutations, each measured against this file: the INSERT not writing the
+flag (2 red), the counting not excluding unrecorded rows i.e. main's
+behaviour (2), the spread query unscoped (1), the rounds line printed
+unconditionally (1), and a backfilling UPDATE in _run_migrations (1).
 """
 import json
 import sqlite3
-import subprocess
-import sys
 import types
 
 import observability_report as report
-from app import agent, tools
+from app import tools
 from app.db import get_conn
 from app.tools import usage as usage_tools
 from tests.test_agent_turn_recording import _Usage, _text_block, _tool_block, _stub_client
@@ -215,19 +224,24 @@ def test_the_summary_says_how_the_rounds_were_spread(client):
     """
     _seed(rounds=1)
     _seed(rounds=1)
-    _seed(rounds=28)
+    # 26 rather than a rounder number on purpose: run_agent_turn increments
+    # rounds and THEN tests it against MAX_TOOL_ROUNDS (25), so 26 is the
+    # largest a row can hold -- and it is the one value that means the
+    # household got the canned "stuck in a loop" apology. A fixture that
+    # seeds a value the app cannot produce is a fixture nobody can check.
+    _seed(rounds=26)
 
     summary = tools.get_usage_summary(days=7)
-    assert summary["chat_rounds"] == 30
-    assert summary["chat_round_spread"] == {"1": 2, "28": 1}
+    assert summary["chat_rounds"] == 28
+    assert summary["chat_round_spread"] == {"1": 2, "26": 1}
 
 
 def test_the_report_names_the_turns_that_went_round_again(capsys):
     """CATCH: red on main, which has no such line to print."""
-    report._print_chat_rounds({"1": 15, "28": 1}, 43)
+    report._print_chat_rounds({"1": 15, "26": 1}, 41)
     out = capsys.readouterr().out
-    assert "43 over 16 turns" in out
-    assert "1 took 28" in out
+    assert "41 over 16 turns" in out
+    assert "1 took 26" in out
 
 
 def test_the_report_says_nothing_when_every_turn_took_one_round(capsys):
@@ -243,6 +257,18 @@ def test_the_report_says_nothing_when_every_turn_took_one_round(capsys):
 # --------------------------------------------------------------------------
 # What the report says.
 # --------------------------------------------------------------------------
+
+def test_a_spread_key_that_is_not_a_number_cannot_take_the_report_down(capsys):
+    """
+    GUARD, pinned by the mutation that puts the bare int() back. This is
+    the only line in observability_report.py that coerces a KEY the remote
+    app supplied, and the call site three lines above it says in its own
+    comment that a morning report which crashes tells Emily less than one
+    that omits a line. It would take down every household after this one.
+    """
+    report._print_chat_rounds({"many": 1, "2": 1}, 5)
+    assert "1 took 2" in capsys.readouterr().out
+
 
 def test_the_report_says_which_turns_it_could_not_answer_for(capsys):
     """CATCH: red on main, which prints all 16 as "called nothing"."""
