@@ -425,6 +425,90 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-30 — Household scope, tranche 2: five more statements in four
+  modules, and the one of them a person can reach LIES when its guard
+  breaks. Branch `overnight/household-scope-tranche-2`, NOT merged at the
+  time of writing.** The follow-up tranche 1 filed in its own "NOT DONE"
+  bullet. `slot_needs` 2 (the two recommendation writes), `meal_variety` 1
+  (the batch's `derived_from_json`), `memory` 1 (`update_fact`), `usage` 1
+  (`record_error`'s dedupe bump).
+  - **READ THE SEVERITY THE WAY TRANCHE 1 ASKED: NOTHING IS LEAKING.** Every
+    one of the five has a household-filtered read a few lines above it, so
+    no foreign id reaches the write. This closes a hole in the GUARD, not a
+    leak in the app, and the module docstring says so at length.
+  - **`memory.update_fact` IS THE ONE WORTH A BEHAVIOUR TEST, and the reason
+    is its RETURN VALUE rather than its SQL.** It builds its answer out of
+    the values it meant to write and never reads the row back, so a broken
+    guard is silent AND mendacious. Measured, with the guard's household
+    deliberately wrong: `returned {'id': 1, 'found': True, 'text': 'no pork,
+    ever', 'hard': True}` over `on disk [('no pork here', 0)]`. It is also
+    the only one of the five a person reaches by tapping (What we know's
+    edit). So both new tests assert against the DATABASE, never against the
+    dict, and say so in their own docstrings.
+  - **THE SWEEP AND THE NEW TEST CATCH DIFFERENT THINGS, and the mutations
+    say which is which rather than the prose.** Reverting `memory.py` to
+    main's unguarded statement reddens **1** — the sweep's equality test,
+    by name, with "(this module is supposed to be finished)". Pointing the
+    guard at the WRONG household (`household_id() + 1`) reddens **1** — the
+    new round-trip test — and leaves the sweep **green**, because the sweep
+    checks the column is mentioned and never that the value is right, which
+    is a limitation its own docstring already names ("AND household_id = 1
+    would pass"). Neither mutation reddens the other's test. That is the
+    whole argument for the new file's two tests existing beside a sweep that
+    already covers the statement.
+  - **The foreign-id half is driven by the STATEMENT TEXT, not the
+    function**, exactly as the staple pair above it: `update_fact`'s read
+    was household-scoped before this branch, so the belt refuses the id
+    before the braces are ever reached, and there is no way to make the
+    function pass one. Recorded so nobody reads that test's greenness on
+    main as coverage.
+  - **`usage.record_error` IS BEHAVIOURALLY IDENTICAL TO MAIN, measured, and
+    my own brief to the reviewer said otherwise.** I warned that it "can run
+    when no household is bound". It cannot matter if it does: with nothing
+    bound, `household_id()` is the ContextVar's default (1), the dedupe
+    SELECT above the UPDATE is already household-scoped so it only ever
+    finds household 1's row, and the UPDATE is only reached for that row.
+    Branch and main both take `occurrences` 3 → 4. Defence in depth with no
+    behaviour change, which is the honest description of four of the five.
+  - **THE FLOOR HAD ROTTED BY THE TIME THIS BRANCH FINISHED, and the rot was
+    this branch's own doing.** `_SWEEP_FLOOR` is a tripwire on the READER
+    (a sweep that silently stops matching passes for ever). Tranche 1 set it
+    at 40 against its own count of 45 and wrote "well under that so an
+    ordinary later tranche does not have to move it"; tranche 2 took the
+    count to **exactly 40**, so the sentence had stopped being true and the
+    next tranche would have tripped it in the middle of unrelated work.
+    Floor is **30** now, headroom 10, and
+    `test_the_floor_still_has_headroom_for_the_next_tranche` measures the
+    headroom rather than trusting the prose.
+  - **That guard is ONE-SIDED on purpose, and the reason is worth reading
+    before somebody "completes" it.** A maximum-slack assertion — the shape
+    `test_the_floors_have_not_rotted_into_uselessness` takes in the CLAUDE.md
+    tripwire — would only ever fire when the count GROWS, i.e. when new
+    unguarded statements land, which the equality test already reports by
+    name. It would fire second, for a cause already named, and advise
+    raising the floor when the answer is to scope the statements. So it is
+    not written, and the docstring says that rather than leaving it looking
+    like an oversight.
+  - **Two smaller things the branch had lost and this restores.**
+    `_DONE_MODULES`' comment said "the eight modules this branch scoped"
+    over a tuple of twelve. And `usage.py`'s `_LATER_TRANCHE` entry carried
+    the only note anywhere saying `_sql_text` cannot evaluate a Call — so
+    `", ".join(...)` reads back with a dangling comma before WHERE — and
+    that note left with the entry when the statement was scoped. It is in
+    the module docstring's "WHAT IT CANNOT SEE" list now, where the
+    limitation belongs rather than beside one instance of it.
+  - **Numbers, measured on the branch rather than carried forward.** The
+    sweep reads **46 statements in 11 files**, of which **6** are the
+    deliberate exemptions, so **40 in 9 files** reach `_offenders()` and
+    `_LATER_TRANCHE` declares exactly 40: defrost 8, inventory 6, attention
+    5, cooker 5, tonight 4, first_open 3, plan_undo 3, spices 3,
+    weekly_plan 3. `tests/test_household_scope_sweep.py` 41 → **44**.
+  - **NOT DONE, named so nobody reports it as new:** those 40 in 9 files are
+    tranche 3. `weekly_plan.py` is still not finished for the reason tranche
+    1 gives (that file's 2026-09-24 sweep was scoped to `meal_plan_entries`
+    alone). And nothing is verified in a browser — nothing visual changed,
+    and every drive went through the tools.
+
 - **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
   Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep
   after work, it won't be done in time for tuesday." The one rule lives in
@@ -1893,7 +1977,9 @@ why*, not duplicating the diff.
     holidays 1 — one commit each, as the card asks for
     ("one module per commit is easier to review"). **45 are left in 13
     files** and are on a shrinking allowlist; **6 must never be scoped**.
-    107 = 56 + 45 + 6, checked.
+    107 = 56 + 45 + 6, checked. **[Tranche 2, 2026-09-30: 40 in 9 files
+    now — five more scoped, see that entry. Left as written because the
+    arithmetic above is what was true of tranche 1.]**
   - **`app/tools/weekly_plan.py` is NOT finished and is not in this
     tranche**, even though the 2026-09-24 branch "did" it: that sweep was
     scoped to `meal_plan_entries`, and three statements in the same file
@@ -2013,7 +2099,8 @@ why*, not duplicating the diff.
     one — with that file's own narrower claim restated by name so nothing
     went uncovered.
   - **NOT DONE, named so nobody reports it as new.** The other 13 files (45
-    statements) are the later tranches and are listed in `_LATER_TRANCHE`;
+    statements) are the later tranches and are listed in `_LATER_TRANCHE`
+    **[9 files / 40 statements after tranche 2]**;
     eight of those files were off-limits this session because another
     builder was live in them (`tonight.py`, `defrost.py`, `leftovers.py`,
     `cooker.py`, `inventory.py`, `attention.py`, `weekly_plan.py`,

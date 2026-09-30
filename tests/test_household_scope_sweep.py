@@ -27,11 +27,17 @@ green. Parse, never grep.
 
 MEASURED, 2026-09-26, against main (6f6a5b3): 107 statements in 23 files.
 The card said 73 in 14; the real number is higher because this sweep covers
-every owned table rather than a chosen few. 56 are fixed here, in eight
-modules (staples 19, grocery 11, digest 6, recipes 6, household 5,
-week_intake 5, stores 3, holidays 1); 45 are left for a later tranche and
-are listed in _LATER_TRANCHE below; 6 must never be scoped at all and are in
-_CROSS_HOUSEHOLD_ON_PURPOSE.
+every owned table rather than a chosen few. TRANCHE 1 fixed 56 of them, in
+eight modules (staples 19, grocery 11, digest 6, recipes 6, household 5,
+week_intake 5, stores 3, holidays 1).
+
+RE-MEASURED, 2026-09-30, after TRANCHE 2: five more statements, in four
+modules (slot_needs 2, meal_variety 1, memory 1, usage 1). The sweep now
+reads 46 statements in 11 files, of which 6 must never be scoped at all
+(_CROSS_HOUSEHOLD_ON_PURPOSE), so 40 in 9 files reach _offenders() and are
+listed in _LATER_TRANCHE below. Tranche 1 left "45", and its CLAUDE.md entry
+and its card both said "13 files"; all three were true when written and are
+not now, which is why each count here carries the date it was taken.
 
 WHAT IT CANNOT SEE, written down rather than left to be found:
   * SQL assembled through a LOCAL VARIABLE — knowing what the variable holds
@@ -41,6 +47,14 @@ WHAT IT CANNOT SEE, written down rather than left to be found:
     instead of discovering it.
   * A statement handed to something other than .execute/.executemany/
     .executescript — a helper of our own that takes SQL, say.
+  * A CALL inside the SQL. _sql_text evaluates constants, f-strings, `+` and
+    `%`, and nothing else — so usage.py's `", ".join(...)` SET clause read
+    back with a dangling comma before WHERE ("SET occurrences = occurrences
+    + 1, last_seen_at = datetime('now'), WHERE id = ?"). The statement was
+    still SEEN and still judged, because a call becomes nothing rather than
+    swallowing the text around it; only the quoted form was odd. Written
+    down here because tranche 2 scoped that statement and its note went with
+    its _LATER_TRANCHE entry, and the limitation did not.
   * A table this schema does not create. _OWNED_TABLES is derived from
     app/schema.sql at import, so a new table with a household_id column is
     covered the moment it is declared; a table created only by a migration
@@ -66,7 +80,7 @@ import pytest
 
 from app import households
 from app.db import get_conn
-from app.tools import digest, grocery, household, staples
+from app.tools import digest, grocery, household, memory, staples
 from app.tools._shared import DEFAULT_HOUSEHOLD_ID, use_household
 
 _APP = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app")
@@ -269,8 +283,10 @@ _LATER_TRANCHE = {
     ],
 }
 
-# The eight modules this branch scoped. Named so the sweep can say, when it
-# goes red in one of them, that the module is supposed to be finished.
+# The TWELVE modules the two tranches have scoped — eight from tranche 1,
+# four more (meal_variety, memory, slot_needs, usage) from tranche 2. Named
+# so the sweep can say, when it goes red in one of them, that the module is
+# supposed to be finished.
 _DONE_MODULES = (
     "app/tools/digest.py",
     "app/tools/grocery.py",
@@ -366,16 +382,28 @@ def test_no_statement_reaches_a_household_owned_row_by_id_alone():
 # says nothing.
 # --------------------------------------------------------------------------
 
-_SWEEP_FLOOR = 40
+_SWEEP_FLOOR = 30
+_SWEEP_FLOOR_MIN_HEADROOM = 5
 
 
 def test_the_sweep_still_finds_the_statements_it_is_named_for():
     """
-    Measured 107 across 23 files on main, 51 after this branch, of which 6
-    are the deliberate exemptions — so 45 reach _offenders(). The floor is
-    well under that so an ordinary later tranche does not have to move it;
-    when the list is genuinely nearly empty, this test and _LATER_TRANCHE
-    come out together.
+    MEASURED 2026-09-30, after tranche 2: the sweep reads 46 statements in 11
+    files, of which 6 are the deliberate exemptions — so 40 reach
+    _offenders(). The floor sits under that so an ordinary later tranche does
+    not have to move it; when the list is genuinely nearly empty, this test
+    and _LATER_TRANCHE come out together.
+
+    (Tranche 1 set this floor at 40 against its own count of 45. Tranche 2
+    took the count to exactly 40, i.e. to the floor, so the docstring's own
+    "well under that" had stopped being true and the next tranche would have
+    had to move it. That is the rot the test below now measures rather than
+    trusts.)
+
+    WHAT THIS ADDS over the equality test above, which is the stronger guard:
+    that one compares the sweep against _LATER_TRANCHE, so blinding the
+    reader AND shrinking the list to match passes it. This floor is
+    independent of the list, so it catches the pair.
     """
     found = _offenders()
     assert sum(found.values()) >= _SWEEP_FLOOR, (
@@ -383,6 +411,35 @@ def test_the_sweep_still_finds_the_statements_it_is_named_for():
         f"{_SWEEP_FLOOR}. Either a tranche has landed (lower the floor, shrink "
         f"_LATER_TRANCHE) or the sweep has stopped matching — check _sql_text and "
         f"_owned_tables_by_id before believing the good news."
+    )
+
+
+def test_the_floor_still_has_headroom_for_the_next_tranche():
+    """
+    THE FAILURE THIS GUARDS IS THE ONE THAT ALREADY HAPPENED, once, silently.
+    Tranche 1 set the floor at 40 against a count of 45 and wrote "well under
+    that so an ordinary later tranche does not have to move it"; tranche 2
+    took the count to exactly 40 and nothing said the sentence had stopped
+    being true. A floor with no headroom is a floor the next tranche trips
+    for the RIGHT reason and at the WRONG time — in the middle of scoping
+    something, with nothing explaining that the red is bookkeeping.
+
+    Deliberately one-sided. The opposite drift — a floor left far UNDER a
+    growing count, which is what rotted test_frontend_restored_2026_09_08's
+    shell.js floor — cannot happen quietly here: the count only grows when
+    new unguarded statements appear, and the equality test above already goes
+    red by name for those. A maximum-slack assertion would fire second, for a
+    cause already reported, and advise raising the floor when the answer is
+    to scope the statements. So it is not written.
+    """
+    count = sum(_offenders().values())
+    headroom = count - _SWEEP_FLOOR
+    assert headroom >= _SWEEP_FLOOR_MIN_HEADROOM, (
+        f"the sweep finds {count} statements against a floor of {_SWEEP_FLOOR} — "
+        f"{headroom} of headroom, under the {_SWEEP_FLOOR_MIN_HEADROOM} this guard "
+        f"asks for. Lower _SWEEP_FLOOR now, while you are here and know why, "
+        f"rather than leaving the next tranche to trip it. Say the measured count "
+        f"in the docstring above at the same time."
     )
 
 
@@ -771,6 +828,66 @@ def test_a_members_phone_write_stays_in_its_own_household(two_households):
     assert changed.rowcount == 0
     assert rows[DEFAULT_HOUSEHOLD_ID] == "+14165550100"
     assert rows[two_households["other"]] == "", "the other household's Alex has no number"
+
+
+def test_editing_a_fact_lands_on_the_right_households_row(two_households):
+    """
+    memory.update_fact — the one statement tranche 2 scoped that a person
+    reaches by tapping (What we know's edit), and the one worth a behaviour
+    test rather than the statement text alone.
+
+    READ THE ASSERTIONS, NOT THE RETURN VALUE, AND THAT IS THE WHOLE POINT.
+    update_fact builds its answer out of the values it MEANT to write and
+    never reads the row back, so a broken guard is silent AND mendacious: the
+    dict says found/text/hard exactly as asked while the row on disk is
+    untouched. Every assertion below therefore goes to the database.
+    """
+    mine = _seed(DEFAULT_HOUSEHOLD_ID,
+                 lambda: memory.add_fact("food", "no pork here", hard=False))
+    theirs = _seed(two_households["other"],
+                   lambda: memory.add_fact("food", "no pork here", hard=False))
+    assert mine["id"] != theirs["id"]
+
+    memory.update_fact(mine["id"], text="no pork, ever", hard=True)
+
+    conn = get_conn()
+    rows = {
+        r["household_id"]: (r["text"], r["hard"])
+        for r in conn.execute("SELECT household_id, text, hard FROM facts")
+    }
+    conn.close()
+    assert rows[DEFAULT_HOUSEHOLD_ID] == ("no pork, ever", 1)
+    assert rows[two_households["other"]] == ("no pork here", 0), (
+        "the other household's identical fact is untouched"
+    )
+
+
+def test_a_foreign_fact_id_is_refused_and_the_guarded_edit_moves_nothing(two_households):
+    """
+    Both halves, the shape the staple pair above uses. The belt is the read
+    at the top of update_fact, which was household-scoped before this branch;
+    the braces are the UPDATE under it, which was not, and is what tranche 2
+    fixed. Driving the statement text is the only way to exercise the braces,
+    because the belt refuses the id before the write is ever reached.
+    """
+    theirs = _seed(two_households["other"],
+                   lambda: memory.add_fact("food", "shellfish is out", hard=True))
+
+    with pytest.raises(ValueError):
+        memory.update_fact(theirs["id"], text="shellfish is fine")
+
+    conn = get_conn()
+    changed = conn.execute(
+        "UPDATE facts SET text = ?, hard = ?, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        ("shellfish is fine", 0, theirs["id"], DEFAULT_HOUSEHOLD_ID),
+    )
+    conn.commit()
+    still = conn.execute("SELECT text, hard FROM facts WHERE id = ?",
+                         (theirs["id"],)).fetchone()
+    conn.close()
+    assert changed.rowcount == 0
+    assert (still["text"], still["hard"]) == ("shellfish is out", 1)
 
 
 # --------------------------------------------------------------------------
