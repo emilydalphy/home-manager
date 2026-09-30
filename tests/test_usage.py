@@ -481,6 +481,9 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # cache write), sent before the recipes fan out. See
         # agent._warm_recipe_details_cache.
         "generate_recipe_details_llm.warm",
+        # The chat's own cache warm-up, sent when the sheet opens (a
+        # max_tokens=0 request). See agent.warm_chat_cache.
+        "run_agent_turn.warm",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added

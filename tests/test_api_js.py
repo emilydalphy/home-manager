@@ -125,7 +125,7 @@ def test_shell_js_makes_no_bare_fetch_at_all():
         if re.search(r"(?<![\w.$])fetch\(", line)
     ]
     assert bare == []
-    assert SHELL_JS.count("Api.fetch(") == 119  # +1 2026-09-30 swap-picks prefetch; 114 at the first slice + 3 from the 2026-09-27 consent and delete-household branches + 1 net from Move (2026-09-28: move-options/move-meal/move-meal-undo in, swap-nights/-undo out of the Plan sheet)
+    assert SHELL_JS.count("Api.fetch(") == 120  # +1 2026-09-30 swap-picks prefetch, +1 chat warm-up (2026-09-30, /api/chat/warm); 114 at the first slice + 3 from the 2026-09-27 consent and delete-household branches + 1 net from Move (2026-09-28: move-options/move-meal/move-meal-undo in, swap-nights/-undo out of the Plan sheet)
 
 
 # ---------------------------------------------------------------------------

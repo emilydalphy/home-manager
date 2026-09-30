@@ -6471,8 +6471,12 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
     def on_item(item):
         events.put(("day", item))
 
+    def on_progress(line):
+        events.put(("progress", {"message": line}))
+
     def run():
         token = agent._WEEK_GEN_PROGRESS.set(on_item)
+        progress_token = agent._TURN_PROGRESS.set(on_progress)
         try:
             reply, updated_history = run_agent_turn(
                 history, message,
@@ -6487,6 +6491,7 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
             events.put(("error", {"status": 500, "detail": f"Server error: {e}"}))
         finally:
             agent._WEEK_GEN_PROGRESS.reset(token)
+            agent._TURN_PROGRESS.reset(progress_token)
             events.put(_DONE)
 
     ctx = contextvars.copy_context()
@@ -6515,6 +6520,23 @@ def chat_stream(req: ChatRequest, request: Request):
         ),
         what="Chat stream", carries_on="the turn continues",
     )
+
+
+@app.post("/api/chat/warm")
+def chat_warm(request: Request):
+    """
+    Called when the chat sheet opens: warms the prompt cache so the first
+    message's round 1 reads it instead of writing it (see
+    agent.warm_chat_cache). Answers at once and does the call on a
+    background thread; nothing the household sees depends on it. Skipped
+    (warming: false) when the cache was touched in the last few minutes.
+    """
+    _enforce_rate_limit(request, "chat_warm")
+    if not agent.claim_chat_warmup():
+        return {"warming": False}
+    ctx = contextvars.copy_context()
+    threading.Thread(target=lambda: ctx.run(agent.warm_chat_cache), daemon=True).start()
+    return {"warming": True}
 
 
 static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
