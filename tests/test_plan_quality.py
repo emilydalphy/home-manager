@@ -172,9 +172,11 @@ def test_dinner_repeat_does_not_fire_with_no_match():
 
 # ---------- reasoning_is_specific ----------
 
-def test_reasoning_fires_on_a_blank_reason():
+def test_a_blank_reason_is_not_a_finding():
+    """Since 2026-09-30 the week call is not asked for a per-slot reasoning
+    line (it left every screen on 2026-09-27), so blank is the normal case."""
     entries = [_entry(MON, reasoning="")]
-    assert "reasoning_is_specific" in _rule_ids(check_week(entries, {}))
+    assert "reasoning_is_specific" not in _rule_ids(check_week(entries, {}))
 
 
 def test_reasoning_fires_on_banned_filler():

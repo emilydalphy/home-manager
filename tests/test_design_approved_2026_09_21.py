@@ -133,7 +133,7 @@ def _waiting(**over) -> dict:
 def test_while_the_picks_are_found_the_sheet_shows_a_spinner_the_line_and_three_placeholders():
     html = _sheet(_waiting())
     assert '<div class="wk-swap-wait" role="status"><span class="wk-swap-spinner" aria-hidden="true"></span>' \
-           '<p class="wk-swap-loading">Finding three you could have — about ten seconds.</p></div>' in html
+           '<p class="wk-swap-loading">Finding three you could have — about five seconds.</p></div>' in html
     picks = re.search(r'<div class="wk-swap-picks wk-swap-picks-waiting">(.*?)</div>(?=<button)', html, re.S)
     assert picks, "the placeholders sit in the picks' own container"
     card = ('<div class="wk-swap-pick wk-swap-skel" aria-hidden="true"><span class="wk-swap-pick-text">'
@@ -175,12 +175,12 @@ def test_the_picks_take_the_placeholders_places_and_nothing_found_reads_as_befor
 @_needs_node
 def test_the_wait_line_reads_the_one_constant():
     out = _run(_extract_var("SWAP_WAIT_SECONDS", SHELL_JS) + "\n" + _extract("swapWaitLine", SHELL_JS) + "\n"
-               + "var a = swapWaitLine(); SWAP_WAIT_SECONDS = 5; var b = swapWaitLine(); SWAP_WAIT_SECONDS = 45; var c = swapWaitLine();\n"
+               + "var a = swapWaitLine(); SWAP_WAIT_SECONDS = 10; var b = swapWaitLine(); SWAP_WAIT_SECONDS = 45; var c = swapWaitLine();\n"
                + "console.log(JSON.stringify([a, b, c]));")
-    assert out == ["Finding three you could have — about ten seconds.",
-                   "Finding three you could have — about five seconds.",
+    assert out == ["Finding three you could have — about five seconds.",
+                   "Finding three you could have — about ten seconds.",
                    "Finding three you could have — about 45 seconds."]
-    assert "var SWAP_WAIT_SECONDS = 10;" in SHELL_JS
+    assert "var SWAP_WAIT_SECONDS = 5;" in SHELL_JS
 
 
 def test_the_placeholders_shimmer_by_css_and_sit_still_under_reduced_motion():

@@ -190,7 +190,8 @@ class TestLunchesOnTheGo:
         assert "constrained to food that travels well and is fine cold or reheated" in AGENT
         assert "genuinely travels cold" not in AGENT and "holds up till noon" not in AGENT
         assert "packs cold" not in AGENT
-        assert '"travels well, good cold or reheated"' in AGENT
+        # The reasoning-line example that echoed it left with the per-slot
+        # reasoning line (2026-09-30); the rule above is what the model reads.
 
 
 # ==========================================================================

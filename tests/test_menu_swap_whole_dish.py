@@ -275,6 +275,10 @@ def test_a_pick_over_fridays_cap_is_refused_and_nothing_is_written(home):
 def test_a_written_out_recipe_that_runs_long_is_refused_too(home):
     _separate_cooks(home, slot="dinner")
     tools.save_week_intake(START, night_tags={D2: ["rush"]})
+    conn = get_conn()
+    conn.execute("UPDATE weekly_plans SET status = 'approved' WHERE id = ?", (home,))
+    conn.commit()
+    conn.close()
     trimmed = {"meal_name": "Quick Noodles", "reason": "Fast.", "ingredients": ["Noodles"], "minutes": 15}
     entry_id = _id(home, D1, "dinner")
     opened = tools.swap_options(home, entry_id, asker=_asker(trimmed), whole_dish=True)

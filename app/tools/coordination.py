@@ -1335,9 +1335,16 @@ def explain_meal_choice(meal_name: str) -> dict:
     try:
         recipe = _recipes.get_recipe(meal_name)
     except ValueError:
-        return {"meal_name": meal_name, "found": False, "reason": "Not a saved recipe — likely a freeform/one-off meal with no tracked history."}
+        return {"meal_name": meal_name, "found": False,
+                "reason": "Not a saved recipe — likely a freeform/one-off meal with no tracked history.",
+                "planned_as": _planned_as(meal_name)}
     memory = _memory.get_household_memory()
     return {
+        # What drove it on the plan (2026-09-30): the week generator no
+        # longer writes a per-slot reason line, so derived_from — the
+        # structured record of tags, constraint, inputs and their own
+        # words — is what "why this?" is answered from.
+        "planned_as": _planned_as(recipe["name"]),
         "meal_name": recipe["name"],
         "found": True,
         "rating": recipe["rating"],
@@ -1351,6 +1358,37 @@ def explain_meal_choice(meal_name: str) -> dict:
         "temporarily_excluded": bool(recipe["temporarily_excluded"]),
         "household_novelty_preference": memory.get("novelty_preference", "balanced"),
     }
+
+
+def _planned_as(meal_name: str, limit: int = 7) -> list[dict]:
+    """The latest slots this dish is planned on, newest first, each with
+    its derived_from and any stored reason. [] when it is on no plan."""
+    import json as _json
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            """
+            SELECT mpe.date, mpe.slot, mpe.reasoning, mpe.derived_from_json
+            FROM meal_plan_entries mpe
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.household_id = ? AND LOWER(COALESCE(r.name, mpe.freeform_meal, '')) = LOWER(?)
+            ORDER BY mpe.date DESC, mpe.id DESC LIMIT ?
+            """,
+            (household_id(), meal_name, limit),
+        ).fetchall()
+    finally:
+        conn.close()
+    out = []
+    for row in rows:
+        try:
+            derived = _json.loads(row["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            derived = {}
+        item = {"date": row["date"], "slot": row["slot"], "derived_from": derived}
+        if (row["reasoning"] or "").strip():
+            item["reason"] = row["reasoning"].strip()
+        out.append(item)
+    return out
 
 
 def get_feedback_nudge() -> dict:

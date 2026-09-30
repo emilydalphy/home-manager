@@ -99,6 +99,7 @@ function askMessageTargets() { targetCalls++; return []; }
 function loadQuickActionChips() {}
 function closeWeekSheet() {}
 function closeMealsMoreSheet() {}
+function warmAskCache() {}
 function openSheet() {}
 function setAskBackLabel() {}
 function askBackLabel() { return 'Back'; }

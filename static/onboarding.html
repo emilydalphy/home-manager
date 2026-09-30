@@ -525,6 +525,10 @@
   .reveal-slot-dish { font-size: 15px; font-weight: 600; color: var(--ink); line-height: 1.3; margin: 0; }
   .reveal-slot-dish-open { color: var(--apricot-label); }
   .reveal-slot-dish-empty { color: var(--ink-secondary); font-weight: 500; }
+  /* A dish the allergy check held back, while its replacement is picked
+     (2026-09-30). Quiet: the same weight as "Nothing planned", no colour
+     that reads as a warning — it fills in within seconds. */
+  .reveal-slot-dish-held { color: var(--ink-secondary); font-weight: 500; font-style: italic; }
   .reveal-slot-meta { font-size: 13px; color: var(--ink-secondary); margin: 2px 0 0; }
   /* Swap: a sand in-card button, 36px as drawn with the same 44px pad. */
   .reveal-swap {
@@ -2140,6 +2144,17 @@ function revealMinutesMeta(minutes) {
 // (the menu's leftover_from.meal) that says WHICH meal that day it eats —
 // so a cook night can count what it makes (revealMakes).
 function revealSlotFromStream(item) {
+  // 'held': the server's allergy check held this dish back before it ever
+  // reached the screen (agent.generate_weekly_plan_llm's on_day), and its
+  // replacement is being picked. The row says so quietly and fills in when
+  // the replacement's own `day` frame arrives.
+  if (item.slot_state === 'held') {
+    return {
+      slot: item.slot, state: 'held', dish: '', meta: '', entryId: null,
+      placeholder: String(item.placeholder || ('Finding another ' + item.slot + '…')),
+      from: '', fromSlot: '', fromMeal: '',
+    };
+  }
   const state = item.slot_state === 'open' ? 'open' : 'planned';
   const links = String((item.derived_from && item.derived_from.links_to) || '').split(':');
   return {
@@ -2223,6 +2238,7 @@ function revealDaysFromMenu(menuDays) {
 }
 
 function revealSlotDishHtml(s) {
+  if (s.state === 'held') return `<p class="reveal-slot-dish reveal-slot-dish-held">${escapeHtmlLocal(s.placeholder || '')}</p>`;
   if (s.state === 'open') return `<p class="reveal-slot-dish reveal-slot-dish-open">Still deciding</p>`;
   if (s.state === 'planned_empty' || !s.dish) return `<p class="reveal-slot-dish reveal-slot-dish-empty">Nothing planned</p>`;
   return `<p class="reveal-slot-dish">${escapeHtmlLocal(s.dish)}</p>`;
@@ -2359,7 +2375,13 @@ function renderRevealDays(days) {
 // strip all at once.
 function upsertRevealDay(m) {
   if (!m || !m.date || !m.slot) return;
-  revealPutSlot(m.date, revealSlotFromStream(m));
+  // A folded entry (one breakfast on several mornings) lands on EVERY one
+  // of its dates, not just the first. The server fans these out before
+  // sending, so this is belt and braces for a frame that still carries
+  // `dates`.
+  const dates = [m.date].concat(Array.isArray(m.dates) ? m.dates : [])
+    .filter((d, i, all) => d && all.indexOf(d) === i);
+  dates.forEach(date => revealPutSlot(date, revealSlotFromStream(Object.assign({}, m, { date: date }))));
   // The first real day is what turns the waiting screen into a menu.
   revealShowDays();
   renderRevealStrip();
@@ -2589,7 +2611,7 @@ async function openRevealSwap(btn) {
     els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, '', `<p class="reveal-sheet-note">One moment — the week's still landing. Tell me instead, or tap Swap again in a second.</p>`);
     return;
   }
-  els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, 'Three other picks:', `<p class="reveal-sheet-note">Finding three you might like…</p>`);
+  els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, 'Three other picks:', `<p class="reveal-sheet-note">Finding three you might like — about five seconds.</p>`);
   try {
     const res = await Api.fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/swap-options', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -2843,16 +2865,49 @@ async function renderInviteOffer() {
 // `waiter` is the rotating waiting line (static/waiting-lines.js), moved
 // between stages by the same frames that drive the day cards — so the line
 // only ever claims what the stream says is happening.
-async function streamFirstPlan(waiter) {
-  revealStreamDays.clear();
-  const res = await Api.fetch('/api/onboarding/generate-first-plan/stream', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    // The step-A answer, not a guess: the endpoint files the plan for the
-    // household's NEXT period when this says so.
-    body: JSON.stringify({ start: firstPlanStart }),
-  });
-  if (!res.ok || !res.body) throw new Error('Could not generate plan');
+// Two kinds of trouble, told apart the way plan-week.html tells them
+// (2026-09-22): an `error` frame is the server saying the draft failed;
+// losing the connection — the fetch or a read rejecting, or the stream
+// ending with no `done` — says nothing about the draft, which keeps going
+// on the server. The second is marked `lostContact`.
+function revealLostContact(cause) {
+  const err = new Error('lost contact with the first week');
+  err.lostContact = true;
+  err.cause = cause;
+  return err;
+}
+
+// One name per attempt, sent with the request, so the status route answers
+// about THIS draft (GET /api/week/{week}/generate/status?run=).
+function revealNewRunToken() {
+  return 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
+// The week the server is drafting, off the stream's first frame — the page
+// never chose it (_first_plan_window did), and the status route needs it.
+let revealDraftWeekStart = '';
+
+// `keepDays`: a retry keeps what is already on screen — nothing the person
+// has seen is wiped by the app's own second try.
+async function streamFirstPlan(waiter, runToken, keepDays) {
+  if (!keepDays) revealStreamDays.clear();
+  let res;
+  try {
+    res = await Api.fetch('/api/onboarding/generate-first-plan/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // The step-A answer, not a guess: the endpoint files the plan for the
+      // household's NEXT period when this says so.
+      body: JSON.stringify({ start: firstPlanStart, run_token: runToken || null }),
+    });
+  } catch (e) {
+    throw revealLostContact(e);
+  }
+  if (!res.ok || !res.body) {
+    const refused = new Error('Could not generate plan');
+    refused.status = res.status || 0;
+    throw refused;
+  }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -2868,6 +2923,7 @@ async function streamFirstPlan(waiter) {
     if (!dataStr) return;
     const payload = JSON.parse(dataStr);
     if (eventName === 'status') {
+      if (payload.week_start) revealDraftWeekStart = payload.week_start;
       // The server's own message is a single constant ("Drafting your
       // week…"); what it actually tells us is that the request landed and
       // context is being assembled. The waiting line says that at more
@@ -2885,13 +2941,20 @@ async function streamFirstPlan(waiter) {
     } else if (eventName === 'done') {
       finalPlan = payload;
     } else if (eventName === 'error') {
-      throw new Error(payload.detail || 'Could not generate plan');
+      const failed = new Error(payload.detail || 'Could not generate plan');
+      failed.status = payload.status || 0;
+      throw failed;
     }
   }
   while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
+    let chunk;
+    try {
+      chunk = await reader.read();
+    } catch (e) {
+      throw revealLostContact(e);
+    }
+    if (chunk.done) break;
+    buffer += decoder.decode(chunk.value, { stream: true });
     let idx;
     while ((idx = buffer.indexOf('\n\n')) !== -1) {
       const frame = buffer.slice(0, idx);
@@ -2899,8 +2962,100 @@ async function streamFirstPlan(waiter) {
       if (frame.trim()) handleFrame(frame);
     }
   }
-  if (!finalPlan) throw new Error('Could not generate plan');
+  if (!finalPlan) throw revealLostContact(null);
   return finalPlan;
+}
+
+// Worth a second try on its own: a dropped connection, or the server
+// saying it was briefly unable (5xx). A 400 — "every dish clashed", a
+// refused period — would fail the same way again, so it goes straight to
+// "Try again" rather than costing a second draft.
+function revealWorthRetrying(err) {
+  if (!err) return false;
+  if (err.lostContact) return true;
+  return (err.status || 0) >= 500;
+}
+
+// How long a lost draft is waited on before the page gives up on it, and
+// how often it asks. The server keeps going after the stream drops; its
+// run stays "running" through the prep and defrost steps that follow the
+// save, so asking again straight away would start a second full draft
+// behind a first one that is seconds from done.
+const REVEAL_WAIT_CAP_MS = 60000;
+const REVEAL_POLL_FIRST_MS = 1500;
+const REVEAL_POLL_MAX_MS = 5000;
+function revealWait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// After a lost stream: how did that draft end? Waits (short backoff, capped)
+// while the server says it is still running. Resolves to
+//   {state: 'done', planId} | {state: 'failed', status} |
+//   {state: 'absent'}  (the request never became a run, or can't be asked) |
+//   {state: 'running'} (still going at the cap)
+async function revealDraftLanded(runToken) {
+  if (!revealDraftWeekStart || !runToken) return { state: 'absent' };
+  const url = '/api/week/' + encodeURIComponent(revealDraftWeekStart) +
+    '/generate/status?run=' + encodeURIComponent(runToken);
+  const started = Date.now();
+  let delay = REVEAL_POLL_FIRST_MS;
+  let asked = false;
+  while (true) {
+    let run = null;
+    let answered = false;
+    try {
+      const res = await Api.fetch(url, { cache: 'no-store' });
+      if (res.ok) { run = (await res.json()).run; answered = true; }
+    } catch (e) { /* no answer this time — ask again */ }
+    if (answered) {
+      asked = true;
+      if (!run) return { state: 'absent' };
+      if (run.state === 'done' && run.plan_id) return { state: 'done', planId: run.plan_id };
+      if (run.state === 'failed') return { state: 'failed', status: (run.error && run.error.status) || 0 };
+    }
+    if (Date.now() - started >= REVEAL_WAIT_CAP_MS) return { state: asked ? 'running' : 'absent' };
+    await revealWait(delay);
+    delay = Math.min(REVEAL_POLL_MAX_MS, Math.round(delay * 1.5));
+  }
+}
+
+// While a lost draft is being waited on, one plain line in place of the
+// rotating ones — they describe stages the page can no longer see.
+const REVEAL_STILL_WORKING = 'Still putting it together…';
+function revealShowStillWorking(waiter) {
+  if (waiter) waiter.stop();
+  const statusText = document.getElementById('reveal-status-text');
+  if (statusText) statusText.textContent = REVEAL_STILL_WORKING;
+}
+
+// The first week, with ONE try of its own before the person is shown
+// "Try again" (2026-09-30). A dropped connection first finds out how the
+// draft ended — waiting while it is still running, with the one plain
+// line above on screen — and uses it if it landed. Only a draft that
+// failed with a server-side (5xx) error, or one the server never started,
+// is asked for once more; a 400 is not retried, and a draft still running
+// at the cap is left to finish rather than doubled. A "Try again" tapped
+// while that draft is still generating waits for it on the server's week
+// lock and is handed it (agent._generate_weekly_plan_once); one tapped
+// after it has fully finished drafts a fresh week.
+async function draftFirstPlanWithOneRetry(waiter) {
+  const firstToken = revealNewRunToken();
+  try {
+    return await streamFirstPlan(waiter, firstToken, false);
+  } catch (err) {
+    if (!revealWorthRetrying(err)) throw err;
+    console.warn('First-plan stream failed; trying once more on its own:', err && (err.cause || err));
+    if (err.lostContact) {
+      revealShowStillWorking(waiter);
+      const ended = await revealDraftLanded(firstToken);
+      if (ended.state === 'done') {
+        return { weekly_plan_id: ended.planId, week_start_date: revealDraftWeekStart, meals: null, reattached: true };
+      }
+      if (ended.state === 'running') throw err;
+      if (ended.state === 'failed' && ended.status < 500) throw err;
+    }
+    return await streamFirstPlan(waiter, revealNewRunToken(), true);
+  }
 }
 
 // The saved week as the app reads it (GET /api/week-menu): entry ids for
@@ -2957,6 +3112,7 @@ async function generateFirstPlanAndReveal(answers) {
   revealStreamDays.clear();
   revealSelectedDay = 0;
   firstPlanWeekStart = '';
+  revealDraftWeekStart = '';
   let failed = false;
   // Starts in 'reading' rather than waiting for the first frame: the
   // request is already out and context assembly has already begun, so the
@@ -2965,14 +3121,17 @@ async function generateFirstPlanAndReveal(answers) {
     ? window.PomonaWaiting.startWaitingLines(document.getElementById('reveal-status-text'), { stage: 'reading' })
     : null;
   try {
-    const data = await streamFirstPlan(waiter);
+    const data = await draftFirstPlanWithOneRetry(waiter);
     const meals = data.meals || [];
     // A generation that finished and produced nothing is the same news as
     // one that threw, and gets told the same way: a week that isn't there
-    // is a week that isn't there, whichever way it didn't arrive.
-    if (!meals.length) throw new Error('The first plan came back with no meals');
+    // is a week that isn't there, whichever way it didn't arrive. (A draft
+    // picked up after a dropped connection carries no meals of its own;
+    // its menu is the week, checked just below.)
+    if (!meals.length && !data.reattached) throw new Error('The first plan came back with no meals');
     firstPlanWeekStart = data.week_start_date || '';
     const menuDays = await fetchRevealMenu(data.weekly_plan_id);
+    if (data.reattached && !(menuDays && menuDays.length)) throw new Error('The first plan could not be read back');
     renderRevealDays(menuDays && menuDays.length ? menuDays : groupRevealMealsByDay(meals));
   } catch (err) {
     console.warn('First-plan generation failed:', err);

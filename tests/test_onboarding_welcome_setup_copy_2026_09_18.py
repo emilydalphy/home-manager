@@ -256,4 +256,4 @@ def test_generate_first_plan_and_reveal_fills_the_using_card_every_attempt():
     # Filled before the request goes out, same moment renderRevealNumber(null)
     # resets the last attempt's number — not only on success, so a retry
     # after a failure still shows what it's building from.
-    assert body.index("renderRevealUsingFacts(answers)") < body.index("await streamFirstPlan")
+    assert body.index("renderRevealUsingFacts(answers)") < body.index("await draftFirstPlanWithOneRetry")

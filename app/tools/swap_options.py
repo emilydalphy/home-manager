@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 
 from ._shared import household_id
@@ -57,6 +58,16 @@ _OPTIONS_TTL = 30 * 60
 #   "unavailable": bool, "context": the slot JSON the picks were asked
 #   against, kept so the chosen one is written out against the same}
 _OPTIONS_CACHE: dict[tuple[int, int], dict] = {}
+# One ask at a time per slot: a prefetch still in flight when the sheet opens
+# (or a double tap) waits for the first answer and reads it from the cache,
+# so the set the sheet shows is always the set the cache holds.
+_ASK_LOCKS: dict[tuple[int, int], threading.Lock] = {}
+_ASK_LOCKS_GUARD = threading.Lock()
+
+
+def _ask_lock(key: tuple[int, int]) -> threading.Lock:
+    with _ASK_LOCKS_GUARD:
+        return _ASK_LOCKS.setdefault(key, threading.Lock())
 
 # How many main ingredients a pick names. Enough for the allergen gate to
 # see what the dish is made of (the gate matches items, not names), few
@@ -369,6 +380,13 @@ def _swap_options(weekly_plan_id: int, entry: dict, avoid: list[str] | None, ask
                   group: list[dict]) -> dict:
     entry_id = entry["entry_id"]
     key = (household_id(), entry_id)
+    with _ask_lock(key):
+        return _swap_options_locked(weekly_plan_id, entry, avoid, asker, group, key)
+
+
+def _swap_options_locked(weekly_plan_id: int, entry: dict, avoid: list[str] | None, asker,
+                         group: list[dict], key: tuple[int, int]) -> dict:
+    entry_id = entry["entry_id"]
     cached = _OPTIONS_CACHE.get(key)
     # Picks asked for one day are not picks for three, and the other way
     # round: the cache holds for the same set of days only.
@@ -416,6 +434,29 @@ def forget_options(entry_id: int) -> None:
     _OPTIONS_CACHE.pop((household_id(), entry_id), None)
 
 
+def _plan_is_approved(weekly_plan_id: int) -> bool:
+    """An approved week is shopped from, so a swap there must carry a full
+    recipe; a draft is not (nothing reaches the grocery list before
+    approval)."""
+    from ..db import get_conn
+    conn = get_conn()
+    row = conn.execute("SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+                       (weekly_plan_id, household_id())).fetchone()
+    conn.close()
+    return bool(row) and row["status"] == "approved"
+
+
+def _dish_note(pick: dict) -> str:
+    """The one line the recipe pass is given for a pending dish: what the
+    card said, and the main items the pick was offered with, so the
+    write-up is of the dish the household tapped."""
+    main = [r["item"] for r in _as_ingredient_rows(pick.get("ingredients")) if r.get("item")]
+    note = (pick.get("reason") or "").strip()
+    if main:
+        note = (note + " " if note else "") + "Built around " + ", ".join(main) + "."
+    return note
+
+
 def needs_write_out(pick: dict) -> bool:
     """A trimmed pick — no steps, and no saved recipe by that name to cook
     from — has to be written out before it can be planned. A pick that
@@ -446,7 +487,7 @@ WRITE_OUT_TROUBLE = "I couldn’t write that one up just now — nothing changed
 
 
 def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=None,
-                       whole_dish: bool = False) -> dict:
+                       whole_dish: bool = False, meal: str | None = None) -> dict:
     """
     Put the chosen option on the slot. The pick is the one the sheet was
     shown (from the sitting's cache), re-gated at the moment of writing —
@@ -481,6 +522,11 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     if not 0 <= index < len(cached["options"]):
         raise ValueError("That isn't one of the picks.")
     pick = dict(cached["options"][index])
+    # The sheet says which dish it showed at that index. If the cache now
+    # holds a different set (another device, a prefetch that landed after
+    # the sheet opened), tapping card 0 must not plant a dish nobody saw.
+    if meal is not None and (meal or "").strip().lower() != (pick.get("meal_name") or "").strip().lower():
+        raise ValueError("Those picks aren't on offer any more — tap Swap again.")
     if _weekly_plan.night_has_gone(entry["date"]):
         return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
     group = _swap.batch_days(weekly_plan_id, entry_id) if whole_dish else [entry]
@@ -497,7 +543,22 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         why = _swap.cap_gate(weekly_plan_id, pick, group)
     if why:
         return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
-    if needs_write_out(pick):
+    on_draft = not _plan_is_approved(weekly_plan_id)
+    if on_draft and needs_write_out(pick):
+        # A DRAFT saves the pick straight away as a pending recipe — the
+        # name, the line, the main items as the dish_note — and the
+        # write-up waits for approval with every other new dish
+        # (agent.fill_pending_recipes_for_plan). The wait for the model's
+        # recipe (about 6 s) was for quantities, and nothing shops for a
+        # draft. The title is left as the household tapped it: its
+        # ingredient list is six main items, not a recipe to hold a name
+        # against. The full recipe is gated when it is written.
+        pick = dict(pick, details_pending=True, ingredients=[], dish_note=_dish_note(pick),
+                    cook_time_minutes=_minutes(pick))
+        correct_title = False
+    else:
+        correct_title = True
+    if not on_draft and needs_write_out(pick):
         context = cached.get("context") or _swap.build_swap_context(
             weekly_plan_id, entry, _swap._dedup([entry["meal"]]))
         try:
@@ -522,10 +583,10 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         if why:
             return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if len(group) > 1:
-        out = _swap.apply_pick_to_days(weekly_plan_id, group, pick,
+        out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, correct_title=correct_title,
                                        serves=_swap.batch_serves(weekly_plan_id, group, entry))
     else:
-        out = _swap.apply_pick(weekly_plan_id, entry, pick)
+        out = _swap.apply_pick(weekly_plan_id, entry, pick, correct_title=correct_title)
     out["status"] = "swapped"
     for member in group:
         forget_options(member["entry_id"])

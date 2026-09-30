@@ -436,13 +436,33 @@ def test_the_draft_keeps_the_dairy_free_pancakes(pancake_week):
     assert tools.check_plan_conflicts(pancake_week["plan"]["weekly_plan_id"])["settle"] is None
 
 
-def test_a_recipe_pass_that_fails_rechecks_the_name_strictly_and_repicks(pancake_week, monkeypatch):
-    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: {})
+def test_a_label_dish_is_held_on_its_name_before_any_model_call(pancake_week, monkeypatch):
+    """A name that names the allergen on its own fails whatever list comes
+    back, so the recipe pass holds it without spending a write on it."""
+    calls = []
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: calls.append(spec) or {})
     monkeypatch.setattr(allergen_gate, "sweep_plan", pancake_week["fake_sweep"])
 
     result = agent.fill_pending_recipes_for_plan(pancake_week["plan"]["weekly_plan_id"])
 
-    assert result["failed"] == ["Dairy-Free Pancakes"]
+    assert result["clashed"] == ["Dairy-Free Pancakes"] and calls == []
+    assert pancake_week["swept"] and "dairy-free pancakes" in pancake_week["swept"][-1]
+
+
+def test_the_background_pass_leaves_a_label_dish_pending_and_approval_sweeps_it(pancake_week, monkeypatch):
+    """The background pass never re-picks under the household's eyes: the
+    held label dish stays pending, and the approval's own pass sweeps it."""
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: {})
+    monkeypatch.setattr(allergen_gate, "sweep_plan", pancake_week["fake_sweep"])
+    plan_id = pancake_week["plan"]["weekly_plan_id"]
+
+    background = agent.fill_pending_recipes_for_plan(plan_id, wait=False)
+    assert background["clashed"] == ["Dairy-Free Pancakes"]
+    assert pancake_week["swept"] == []
+    assert tools.get_recipe("Dairy-Free Pancakes")["details_pending"] is True
+
+    approval = agent.fill_pending_recipes_for_plan(plan_id)
+    assert approval["clashed"] == ["Dairy-Free Pancakes"]
     assert pancake_week["swept"] and "dairy-free pancakes" in pancake_week["swept"][-1]
 
 
@@ -970,3 +990,32 @@ def test_every_dish_naming_prompt_forbids_allergen_free_labels():
     assert '"Oat Milk Pancakes", not "Dairy-Free Pancakes". A dish with' in agent_src  # chat
     for module in (swap_in_place, swap_options):
         assert '"Oat Milk Pancakes", not "Dairy-Free Pancakes"' in inspect.getsource(module)
+
+
+# ---------- quick_pick (the first-week re-pick) ----------
+
+def test_a_list_less_quick_pick_is_read_as_a_draft(dairy_free):
+    pick = {"meal_name": "Pancakes", "dish_note": "keep it dairy-free, no butter"}
+    assert allergen_gate._pick_clashes(pick, allergen_gate.hard_avoidances()) == []
+
+
+def test_a_quick_pick_with_a_list_keeps_a_strict_name_and_note(dairy_free):
+    av = allergen_gate.hard_avoidances()
+    assert allergen_gate._pick_clashes(
+        {"meal_name": "Dairy-Free Pancakes", "ingredients": ["oat milk", "flour"], "dish_note": "fluffy"}, av)
+    assert allergen_gate._pick_clashes(
+        {"meal_name": "Pancakes", "ingredients": ["oat milk", "flour"], "dish_note": "no butter"}, av)
+    assert allergen_gate._pick_clashes(
+        {"meal_name": "Oat Milk Pancakes", "ingredients": ["oat milk", "flour"], "dish_note": "fluffy"}, av) == []
+
+
+def test_a_list_less_quick_pick_still_holds_a_real_allergen(dairy_free):
+    av = allergen_gate.hard_avoidances()
+    assert allergen_gate._pick_clashes({"meal_name": "Buttermilk Pancakes", "dish_note": "fluffy"}, av)
+    assert allergen_gate._pick_clashes({"meal_name": "Pancakes", "dish_note": "finish with butter"}, av)
+
+
+def test_the_quick_pick_prompt_forbids_allergen_free_labels():
+    assert '"Oat Milk Pancakes", not "Dairy-Free Pancakes"' in allergen_gate.QUICK_PICK_ASK
+    desc = allergen_gate.QUICK_PICK_TOOL["input_schema"]["properties"]["meal_name"]["description"]
+    assert "Dairy-Free" in desc and "Oat Milk Pancakes" in desc
