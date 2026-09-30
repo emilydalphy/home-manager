@@ -847,7 +847,10 @@ sentence to relay ("X has pineapple, which Emily can't have — want me to pick 
 — relay it and offer another, and pass override=true only if the person then says in their own \
 words to do it anyway. add_recipe declines the same way before anything is saved ("Not saved: X \
 has buttermilk…"): write the recipe again without that ingredient or pick another dish, and pass \
-its override=true only when the person says in their own words to save it anyway.
+its override=true only when the person says in their own words to save it anyway. Never put an \
+allergen-free label in a dish's name ("Dairy-Free", "Egg-Free", "Nut-Free", "Non-Dairy", \
+"Vegan"): name it by what's in it — "Oat Milk Pancakes", not "Dairy-Free Pancakes". A dish with \
+a label in its name is declined, because the label itself names the allergen.
 - You still own everything the screens can't express: recipe choice, the per-slot reasons, \
 the explanation for a slot left open, and anything typed to you in chat.
 - When someone tells you something in chat that WOULD HAVE CHANGED an answer on those question \
@@ -3284,7 +3287,10 @@ constraints_notes overrides them.
 - Never name a dish after an ingredient it leaves out. No "Pineapple-Free Fried Rice", no \
 "Nut-Free Brownies" — the name should describe what the dish IS. A meal named after an \
 allergen is alarming to read on the week's menu even when the recipe is safe, and it makes the \
-plan impossible to check at a glance.
+plan impossible to check at a glance. Never put an allergen-free label in a dish's name either — no "Dairy-Free", "Egg-Free", \
+"Nut-Free", "Non-Dairy" or "Vegan" in front of it. Name the dish by what's in it ("Oat Milk \
+Pancakes", not "Dairy-Free Pancakes"); the household's restrictions are already known, and a \
+labelled name is written up under its plain name.
 - Lean toward liked/favorite recipes from saved_recipes (rating='liked' or high \
 times_cooked), but don't just repeat them. household_memory's novelty_preference sets how \
 much new-recipe exposure to aim for this week: "mostly_favorites" -> still surface at least \
@@ -3837,7 +3843,9 @@ match the effort level of what it is.
 person, as they wrote them. Nothing in this recipe may contain any of it — not in the dish, not \
 in a salsa or a sauce or a garnish, not under a "-free" name. The people it names EAT this. \
 Every ingredient list is checked against it after you write it, and a recipe that fails is \
-thrown away and the dish re-chosen.
+thrown away and the dish re-chosen. A dish name's "Dairy-Free" / "Vegan"-style label promises \
+nothing: the recipe is saved under the plain name and every ingredient on your list is what \
+gets checked, so write the list the way the household can eat it.
 - `serves` is this household's own table, and default_servings must be exactly that number: \
 write every ingredient quantity for that many people. This is load-bearing for the shopping \
 list, which buys per portion — a recipe written for 4 in a household of 3 has every quantity \
@@ -4061,6 +4069,14 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     raises, so one bad recipe can't stop the rest of an approval.
     """
     name = recipe["name"]
+    # A draft name with an allergen-free label on it ("Dairy-Free
+    # Pancakes") is written up — and checked, strictly, with the full
+    # list — under its plain name (2026-09-30). If another recipe already
+    # has the plain name the label stays, and the strict check then holds
+    # the dish rather than guess.
+    plain = _allergen_gate.plain_dish_name(name)
+    if plain.lower() != name.lower() and tools.existing_recipe_named(plain):
+        plain = name
     spec = _recipe_details_spec(recipe, slot, shared)
     try:
         for attempt in (1, 2):
@@ -4073,7 +4089,7 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 logger.warning("Recipe pass for %r came back without %s (attempt %d)",
                                name, "ingredients" if not ingredients else "steps", attempt)
                 continue
-            clashes = _allergen_gate.hard_clashes(name, ingredients=ingredients, avoidances=avoidances)
+            clashes = _allergen_gate.hard_clashes(plain, ingredients=ingredients, avoidances=avoidances)
             if clashes:
                 food = _allergen_gate._food_word(clashes)
                 logger.warning("Recipe pass for %r wrote in a must-avoid (%s); %s",
@@ -4092,8 +4108,9 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 cook_time_minutes=detail.get("cook_time_minutes"),
                 advance_prep_notes=detail.get("advance_prep_notes") or "",
                 advance_prep_step_indices=detail.get("advance_prep_step_indices") or [],
+                new_name=plain if plain != name else None,
             )
-            return {"name": name, "ok": True, "clash": []}
+            return {"name": plain, "ok": True, "clash": [], "was": name}
         return {"name": name, "ok": False, "clash": []}
     except Exception:
         logger.exception("Recipe pass failed for %r; it stays pending", name)
@@ -4324,7 +4341,10 @@ constraints_notes overrides them.
 - Never name an item after an ingredient it leaves out. No "Pineapple-Free Fried Rice", no \
 "Nut-Free Brownies" — the name should describe what the item IS. An item named after an \
 allergen is alarming to read in the week's pool even when the recipe is safe, and it makes the \
-plan impossible to check at a glance.
+plan impossible to check at a glance. Never put an allergen-free label in an item's name either — no "Dairy-Free", "Egg-Free", \
+"Nut-Free", "Non-Dairy" or "Vegan" in front of it. Name the item by what's in it ("Oat Milk \
+Pancakes", not "Dairy-Free Pancakes"); the household's restrictions are already known, and a \
+labelled name is written up under its plain name.
 - Lean toward liked/favorite recipes from saved_recipes, but honor novelty_preference the same \
 way as day-based planning — even "mostly_favorites" should include at least one new item \
 somewhere in the pool.
@@ -7607,7 +7627,7 @@ def fill_in_recipe(recipe_name: str) -> dict:
                 _allergen_gate.replace_unwritten_clash(recipe_name, clash)
                 return {"status": "replaced", "name": recipe_name}
             raise ValueError("Couldn't write up this recipe just now — try again.")
-        return tools.get_recipe(recipe_name)
+        return tools.get_recipe(outcome["name"])
     detail = generate_recipe_detail_llm(recipe)
     if not detail.get("instructions"):
         raise ValueError("Couldn't generate instructions for this recipe — try again.")
@@ -9073,6 +9093,9 @@ def run_agent_turn(
     """
     client = _client()
     conversation = conversation + [{"role": "user", "content": user_message}]
+    # One person's message = one turn: an allergen override is only ever
+    # honoured in a turn after the refusal it answers (allergen_gate).
+    _allergen_gate.begin_chat_turn()
     # Where this turn's own entries begin, so the reply can be checked
     # against what the turn actually did — see verify_change_claim.
     turn_start = len(conversation)

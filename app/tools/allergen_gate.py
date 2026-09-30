@@ -53,6 +53,9 @@ uses, so what counts as a clash is decided in one place.
 """
 from __future__ import annotations
 
+import contextvars
+import hashlib
+import itertools
 import logging
 import re
 import threading
@@ -137,6 +140,30 @@ def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[d
         return [{"meal": name, "member": None, "restriction": "", "source": "check_failed",
                  "severity": "hard", "matched": ""}]
     return [h for h in hits if h.get("severity") == "hard"]
+
+
+# The allergen-free labels a dish name must not carry (2026-09-30): every
+# prompt that names a dish says so, and a draft dish that arrives with one
+# anyway is written up at the recipe pass under its plain name — the name
+# is then matched strictly, with the full list, like any other. Narrow on
+# purpose: only the family-negation words come off, never anything else.
+# Gluten-free stays: it describes the pasta or the flour, and
+# coordination's gluten-free segment rule already reads it.
+_FREE_LABEL_RE = re.compile(
+    r"\(?\s*\b(?:(?:dairy|egg|eggs|nut|nuts|tree[\s-]nut|peanut|peanuts|soy|sesame|shellfish|fish|lactose)"
+    r"[\s-]free|non[\s-]dairy|eggless|vegan|plant[\s-]based)\b\s*\)?",
+    re.IGNORECASE,
+)
+
+
+def plain_dish_name(name: str) -> str:
+    """ "Dairy-Free Pancakes" -> "Pancakes"; "Greek Yogurt (Dairy-Free)
+    Parfait" -> "Greek Yogurt Parfait". A name that is nothing BUT a label
+    comes back as it was."""
+    plain = _FREE_LABEL_RE.sub(" ", name or "")
+    plain = re.sub(r"\s{2,}", " ", plain).strip(" -–—,&")
+    plain = re.sub(r"^(?:with|and)\s+", "", plain, flags=re.IGNORECASE).strip()
+    return plain or (name or "").strip()
 
 
 # What an open slot this module wrote records about itself. Named rather
@@ -289,48 +316,89 @@ def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, overrid
     words in this conversation (the tool description says so, and the model
     may not set it on its own). It is the only way a clashing dish goes on
     the week from chat, and it is a decision the person made, not a card
-    the app offered.
+    the app offered — so it is honoured only as an ANSWER: after this same
+    dish (same name, same list) was refused, in a later chat turn (see
+    _override_armed).
     """
-    if override:
-        return
     name = (name or "").strip()
     if not name:
         return
-    own = [i for i in (ingredients or []) if isinstance(i, dict) and (i.get("item") or "").strip()]
-    clashes = hard_clashes(name, ingredients=own or _recipes.saved_ingredients(name))
+    own = _lines(ingredients)
+    checked = own or _recipes.saved_ingredients(name)
+    if override and _override_armed("plan", name, checked):
+        return
+    clashes = hard_clashes(name, ingredients=checked)
     if clashes:
+        _remember_refusal("plan", name, checked)
         raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes))
 
 
-# add_recipe refusals this process has handed out, by (household, lowered
-# recipe name) -> when. The override on chat's add_recipe is honoured only
-# for a recipe that was refused here recently — the person's "save it
-# anyway" is an ANSWER to a refusal, so there has to have been one. A
-# model that sets override=true on its first call gets the refusal
-# instead, and the refusal it gets is what arms the second call. In
-# memory on purpose: a restart forgets them, which costs one extra
-# refusal and never a silent save.
+# The refusals chat's gated doors have handed out, so an override can be
+# checked as an ANSWER to one. Keyed by (door, household, the dish's name
+# with case and spacing folded, a hash of its folded ingredient list) ->
+# (when, which chat turn). An override is honoured only when:
+#   - this exact dish was refused — same name AND same list, so "butter
+#     pancakes" refused over butter does not cover the same name with
+#     shrimp added;
+#   - within RECIPE_OVERRIDE_WINDOW_SECONDS;
+#   - in a LATER chat turn than the refusal: a new message from the person
+#     has to have arrived in between, which is the only place their "do it
+#     anyway" can come from. A model that sets override on its first call,
+#     or retries with it in the same turn, gets the refusal again.
+# In memory on purpose: a restart (or another worker) forgets them, which
+# costs one extra refusal and never a silent write.
 RECIPE_OVERRIDE_WINDOW_SECONDS = 30 * 60
-_RECIPE_REFUSALS: dict[tuple, float] = {}
+_RECIPE_REFUSALS: dict[tuple, tuple[float, int | None]] = {}
 _RECIPE_REFUSALS_LOCK = threading.Lock()
 
+# Which chat turn is running: set once per turn by agent.run_agent_turn
+# (begin_chat_turn), None outside a chat turn — where an override can
+# never be honoured, since there is no person's message to answer.
+_CHAT_TURN: contextvars.ContextVar[int | None] = contextvars.ContextVar("allergen_chat_turn", default=None)
+_TURN_COUNTER = itertools.count(1)
 
-def _refusal_key(name: str) -> tuple:
-    return (_shared.household_id(), (name or "").strip().lower())
+
+def begin_chat_turn() -> int:
+    """Mark the start of one chat turn (one message from the person)."""
+    turn = next(_TURN_COUNTER)
+    _CHAT_TURN.set(turn)
+    return turn
 
 
-def _recently_refused(name: str) -> bool:
+def _lines(ingredients) -> list[dict]:
+    """An ingredient list as dict lines, whether it came as dicts or as
+    plain strings; anything else is dropped."""
+    out = []
+    for line in ingredients or []:
+        if isinstance(line, str) and line.strip():
+            out.append({"item": line})
+        elif isinstance(line, dict) and (line.get("item") or "").strip():
+            out.append(line)
+    return out
+
+
+def _refusal_key(door: str, name: str, ingredients: list[dict] | None = None) -> tuple:
+    folded = sorted(_coordination._fold(i.get("item") or "") for i in _lines(ingredients))
+    digest = hashlib.sha256("\n".join(folded).encode()).hexdigest()[:16]
+    return (door, _shared.household_id(), _coordination._fold(name), digest)
+
+
+def _override_armed(door: str, name: str, ingredients) -> bool:
+    turn = _CHAT_TURN.get()
+    if turn is None:
+        return False
     now = time.monotonic()
     with _RECIPE_REFUSALS_LOCK:
-        for key, at in list(_RECIPE_REFUSALS.items()):
+        for key, (at, _t) in list(_RECIPE_REFUSALS.items()):
             if now - at > RECIPE_OVERRIDE_WINDOW_SECONDS:
                 del _RECIPE_REFUSALS[key]
-        return _refusal_key(name) in _RECIPE_REFUSALS
+        found = _RECIPE_REFUSALS.get(_refusal_key(door, name, ingredients))
+    return bool(found) and found[1] is not None and turn > found[1]
 
 
-def _remember_refusal(name: str) -> None:
+def _remember_refusal(door: str, name: str, ingredients) -> None:
     with _RECIPE_REFUSALS_LOCK:
-        _RECIPE_REFUSALS[_refusal_key(name)] = time.monotonic()
+        _RECIPE_REFUSALS[_refusal_key(door, name, ingredients)] = (time.monotonic(), _CHAT_TURN.get())
 
 
 def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
@@ -346,9 +414,10 @@ def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
     matcher every other door uses. With no list, the name is matched
     strictly.
 
-    `override` is honoured only after a refusal of this same recipe for
-    this household in the last RECIPE_OVERRIDE_WINDOW_SECONDS (see
-    _RECIPE_REFUSALS): never on a first call.
+    `override` is honoured only as an answer to a refusal of this same
+    recipe (name and list) for this household, in a later chat turn, within
+    RECIPE_OVERRIDE_WINDOW_SECONDS (see _RECIPE_REFUSALS): never on a first
+    call, never in the same turn.
 
     Raises weekly_plan.SlotRefused, for the reason refuse_if_clashing gives:
     a raise is what the dispatch reports as "nothing was written". The
@@ -359,18 +428,13 @@ def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
     name = (name or "").strip()
     if not name:
         return
-    if override and _recently_refused(name):
+    own = _lines(ingredients)
+    if override and _override_armed("recipe", name, own):
         return
-    own = []
-    for line in ingredients or []:
-        if isinstance(line, str) and line.strip():
-            own.append({"item": line})
-        elif isinstance(line, dict) and (line.get("item") or "").strip():
-            own.append(line)
     clashes = hard_clashes(name, ingredients=own)
     if not clashes:
         return
-    _remember_refusal(name)
+    _remember_refusal("recipe", name, own)
     word = next((c.get("matched_word") for c in clashes if c.get("matched_word")), "") or _food_word(clashes)
     food = _food_word(clashes)
     who = _person(clashes)

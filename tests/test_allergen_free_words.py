@@ -41,7 +41,9 @@ from app.tools import weekly_plan as _wp
 @pytest.fixture(autouse=True)
 def _no_old_refusals():
     allergen_gate._RECIPE_REFUSALS.clear()
+    token = allergen_gate._CHAT_TURN.set(None)
     yield
+    allergen_gate._CHAT_TURN.reset(token)
     allergen_gate._RECIPE_REFUSALS.clear()
 
 
@@ -124,10 +126,14 @@ def test_a_draft_note_that_says_what_the_dish_leaves_out_is_not_held(dairy_free,
     assert _draft(name, note=note) == [], (name, note)
 
 
-def test_a_name_over_a_real_list_is_decided_by_the_list(dairy_free):
-    """Chat's own dairy-free pancakes: the list is plant milk, so the name's
-    label is believed."""
-    assert _final("Dairy-Free Pancakes", ["flour", "eggs", "oat milk"]) == []
+def test_a_name_over_a_real_list_stays_strict(dairy_free):
+    """Round 2 (2026-09-30): with a list, the name is never read as a
+    label — it backstops any gap in the alias table. Name the dish by what
+    is in it instead."""
+    assert _final("Oat Milk Pancakes", ["flour", "oat milk", "vegan butter"]) == []
+    assert _final("Dairy-Free Pancakes", ["flour", "oat milk", "vegan butter"])
+    assert _draft("Dairy-Free Pancakes", ["flour", "oat milk", "vegan butter"]), \
+        "a draft WITH a list is strict too: only a list-less draft reads its label"
 
 
 # =====================================================================
@@ -239,7 +245,7 @@ def test_a_dairy_free_label_over_a_named_cheese_is_held(dairy_free, name, ingred
         "gruyere", "parmigiano reggiano", "pecorino", "provolone", "mascarpone", "halloumi",
         "burrata", "cottage cheese", "cream cheese", "sour cream", "crème fraîche",
         "creme fraiche", "queso fresco", "kefir", "ice cream", "custard", "monterey jack",
-        "labneh", "tzatziki", "alfredo sauce", "caesar dressing",
+        "labneh", "tzatziki", "alfredo sauce",
     ]],
     *[("egg allergy", w) for w in [
         "meringue", "aioli", "mayo", "custard", "hollandaise", "carbonara sauce", "quiche",
@@ -250,7 +256,7 @@ def test_a_dairy_free_label_over_a_named_cheese_is_held(dairy_free, name, ingred
         "crawfish", "langoustines", "oyster sauce", "dried shrimp", "imitation crab",
     ]],
     *[("fish allergy", w) for w in [
-        "anchovies", "fish sauce", "worcestershire sauce", "sea bass", "dashi", "caesar dressing",
+        "anchovies", "fish sauce", "worcestershire sauce", "sea bass", "dashi",
     ]],
     *[("nut allergy", w) for w in [
         "satay sauce", "pesto", "praline", "marzipan", "nutella", "pine nuts", "peanut sauce",
@@ -356,11 +362,14 @@ def test_chat_plan_meal_checks_a_freeform_name_strictly(dairy_free):
         tools.plan_meal_for_chat("2026-10-05", "Vegan Cheese Pizza", slot="dinner")
 
 
-def test_chat_plan_meal_reads_a_saved_list_over_the_label(dairy_free):
+def test_chat_plan_meal_with_a_saved_list_still_reads_the_name_strictly(dairy_free):
+    tools.add_recipe("Oat Milk Pancakes", ingredients=[{"item": "oat milk", "qty": "1 cup"},
+                                                       {"item": "flour", "qty": "2 cups"}])
+    assert tools.plan_meal_for_chat("2026-10-05", "Oat Milk Pancakes", slot="breakfast")
     tools.add_recipe("Dairy-Free Pancakes", ingredients=[{"item": "oat milk", "qty": "1 cup"},
                                                          {"item": "flour", "qty": "2 cups"}])
-    out = tools.plan_meal_for_chat("2026-10-05", "Dairy-Free Pancakes", slot="breakfast")
-    assert out
+    with pytest.raises(_wp.SlotRefused):
+        tools.plan_meal_for_chat("2026-10-05", "Dairy-Free Pancakes", slot="breakfast")
 
 
 def test_the_approved_week_reads_a_pending_dish_strictly():
@@ -551,13 +560,26 @@ def test_chat_add_recipe_reads_a_list_of_plain_strings_too(dairy_free):
         tools.add_recipe_for_chat("Toastie", ["sourdough", "cheddar"])
 
 
-def test_chat_add_recipe_saves_the_dairy_free_pancakes(dairy_free):
-    agent.TOOL_FUNCTIONS["add_recipe"](
-        name="Dairy-Free Pancakes",
-        ingredients=[{"item": "flour", "qty": "2 cups"}, {"item": "oat milk", "qty": "1 cup"},
-                     {"item": "vegan butter", "qty": "2 tbsp"}],
-    )
-    assert "Dairy-Free Pancakes" in _recipe_names()
+PANCAKE_LIST = [{"item": "flour", "qty": "2 cups"}, {"item": "oat milk", "qty": "1 cup"},
+                {"item": "vegan butter", "qty": "2 tbsp"}]
+
+
+def test_chat_add_recipe_saves_oat_milk_pancakes(dairy_free):
+    agent.TOOL_FUNCTIONS["add_recipe"](name="Oat Milk Pancakes", ingredients=PANCAKE_LIST)
+    assert "Oat Milk Pancakes" in _recipe_names()
+
+
+def test_chat_add_recipe_holds_dairy_free_pancakes_even_over_a_clean_list(dairy_free):
+    with pytest.raises(_wp.SlotRefused, match="dairy"):
+        agent.TOOL_FUNCTIONS["add_recipe"](name="Dairy-Free Pancakes", ingredients=PANCAKE_LIST)
+    assert "Dairy-Free Pancakes" not in _recipe_names()
+
+
+def test_chat_add_recipe_refuses_dairy_free_cheese_pancakes_over_asiago(dairy_free):
+    with pytest.raises(_wp.SlotRefused):
+        allergen_gate.refuse_recipe_if_clashing("Dairy-Free Cheese Pancakes", [{"item": "asiago"}])
+    with pytest.raises(_wp.SlotRefused, match="asiago"):
+        allergen_gate.refuse_recipe_if_clashing("Pancakes", [{"item": "asiago"}])
 
 
 def test_an_override_on_the_first_call_is_not_honoured(dairy_free):
@@ -568,24 +590,76 @@ def test_an_override_on_the_first_call_is_not_honoured(dairy_free):
     assert "Grandma's Cheesecake Bars" not in _recipe_names()
 
 
-def test_an_override_after_a_refusal_of_the_same_recipe_saves_it(dairy_free):
+def test_an_override_in_the_same_turn_as_the_refusal_is_not_honoured(dairy_free):
+    """A new message from the person has to arrive between the refusal and
+    the override: the model retrying with override in one turn is refused."""
+    allergen_gate.begin_chat_turn()
     lines = [{"item": "cream cheese", "qty": "1 block"}]
     with pytest.raises(_wp.SlotRefused):
         tools.add_recipe_for_chat("Grandma's Cheesecake Bars", lines)
-    # A different recipe was never refused: its override is not an answer.
     with pytest.raises(_wp.SlotRefused):
-        tools.add_recipe_for_chat("Cheese Board", [{"item": "brie", "qty": "1"}], override=True)
-    tools.add_recipe_for_chat("grandma's cheesecake bars ", lines, override=True)
-    assert "grandma's cheesecake bars" in {n.lower() for n in _recipe_names()}
+        tools.add_recipe_for_chat("Grandma's Cheesecake Bars", lines, override=True)
 
 
-def test_an_old_refusal_does_not_arm_an_override(dairy_free, monkeypatch):
+def test_an_override_outside_a_chat_turn_is_never_honoured(dairy_free):
+    allergen_gate._CHAT_TURN.set(None)
     lines = [{"item": "cream cheese", "qty": "1 block"}]
     with pytest.raises(_wp.SlotRefused):
         tools.add_recipe_for_chat("Cheesecake Bars", lines)
+    with pytest.raises(_wp.SlotRefused):
+        tools.add_recipe_for_chat("Cheesecake Bars", lines, override=True)
+
+
+def test_an_override_in_a_later_turn_for_the_same_recipe_saves_it(dairy_free):
+    allergen_gate.begin_chat_turn()
+    lines = [{"item": "cream cheese", "qty": "1 block"}]
+    with pytest.raises(_wp.SlotRefused):
+        tools.add_recipe_for_chat("Grandma's Cheesecake Bars", lines)
+    allergen_gate.begin_chat_turn()
+    # A different recipe was never refused: its override is not an answer.
+    with pytest.raises(_wp.SlotRefused):
+        tools.add_recipe_for_chat("Cheese Board", [{"item": "brie", "qty": "1"}], override=True)
+    # Same dish, case and spacing aside.
+    tools.add_recipe_for_chat("  grandma's   CHEESECAKE bars ", lines, override=True)
+    assert "grandma's cheesecake bars" in {" ".join(n.lower().split()) for n in _recipe_names()}
+
+
+def test_an_override_does_not_cover_a_changed_list(dairy_free):
+    """Keyed on content: "butter" refused doesn't cover butter and shrimp."""
+    tools.set_member_dietary_restrictions("Emily", ["dairy free", "shellfish allergy"])
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(_wp.SlotRefused):
+        tools.add_recipe_for_chat("Butter Pancakes", [{"item": "butter"}])
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(_wp.SlotRefused):
+        tools.add_recipe_for_chat("Butter Pancakes", [{"item": "butter"}, {"item": "shrimp"}], override=True)
+    assert "Butter Pancakes" not in _recipe_names()
+
+
+def test_an_old_refusal_does_not_arm_an_override(dairy_free, monkeypatch):
+    allergen_gate.begin_chat_turn()
+    lines = [{"item": "cream cheese", "qty": "1 block"}]
+    with pytest.raises(_wp.SlotRefused):
+        tools.add_recipe_for_chat("Cheesecake Bars", lines)
+    allergen_gate.begin_chat_turn()
     monkeypatch.setattr(allergen_gate, "RECIPE_OVERRIDE_WINDOW_SECONDS", -1)
     with pytest.raises(_wp.SlotRefused):
         tools.add_recipe_for_chat("Cheesecake Bars", lines, override=True)
+
+
+def test_plan_meal_and_swap_overrides_need_the_same_answer(dairy_free):
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(_wp.SlotRefused):
+        tools.plan_meal_for_chat("2026-10-05", "Cheese Toastie", slot="lunch", override=True)
+    allergen_gate.begin_chat_turn()
+    assert tools.plan_meal_for_chat("2026-10-05", "Cheese Toastie", slot="lunch", override=True)
+
+
+def test_every_chat_turn_marks_itself(monkeypatch):
+    """run_agent_turn calls begin_chat_turn once per person's message."""
+    import inspect
+    body = inspect.getsource(agent.run_agent_turn)
+    assert "_allergen_gate.begin_chat_turn()" in body
 
 
 def test_the_other_add_recipe_callers_are_not_gated(dairy_free):
@@ -608,3 +682,169 @@ def test_the_chat_prompt_names_add_recipe_in_the_allergy_paragraph():
     start = source.index("`must_not_contain` — every member's dietary_restrictions")
     paragraph = source[start:start + 1400]
     assert "add_recipe declines the same way" in paragraph
+
+
+# =====================================================================
+# Verifier round 2 (2026-09-30): the name backstops the list, the alias
+# table knows more, and the new false positives are gone
+# =====================================================================
+
+@pytest.mark.parametrize("restriction, name, ingredients", [
+    ("dairy free", "Dairy-Free Soup", ["half-and-half"]),
+    ("dairy free", "Dairy-Free Soup", ["half and half"]),
+    ("egg allergy", "Egg-Free Lemon Curd", ["lemons", "3 yolks", "sugar"]),
+    ("dairy free", "Dairy-Free Cheese Pancakes", ["asiago"]),
+    ("dairy free", "Dairy-Free Pancakes", ["flour", "oat milk", "vegan butter"]),
+])
+def test_a_labelled_name_over_a_list_is_held_on_the_name(restriction, name, ingredients):
+    _restrict(restriction)
+    assert _final(name, ingredients), (name, ingredients)
+    assert _draft(name, ingredients=ingredients), (name, ingredients)
+
+
+@pytest.mark.parametrize("restriction, item", [
+    *[("dairy free", w) for w in [
+        "asiago", "fontina", "gorgonzola", "stilton", "cotija", "pecorino romano", "romano",
+        "chèvre", "chevre", "taleggio", "pepper jack", "velveeta", "fromage frais", "cheese curds",
+        "curds", "beurre blanc", "half-and-half", "half and half", "ranch dressing",
+        "dulce de leche", "panna cotta", "korma paste", "mango lassi", "evaporated milk",
+        "sweetened condensed milk", "whipping cream", "milk chocolate", "flan", "creme brulee",
+        "chocolate mousse", "Gruyère", "Crème fraîche", "chéddar", "ｃｈｅｅｓｅ",
+        "che​ese", "Cheddar­", "vegan buttermilk", "1 cup vegan parmesan",
+        "1 cup vegan cheddar", "dairy-free mozzarella", "dairy-free cream cheese frosting with butter",
+        "vegan sour cream and chive cheddar dip",
+    ]],
+    *[("egg allergy", w) for w in [
+        "3 yolks", "egg yolk", "3 hard-boiled yolks", "3 whites", "brioche buns", "challah",
+        "remoulade", "tartar sauce", "flan", "creme brulee", "chocolate mousse", "shakshuka",
+        "lo mein noodles", "ranch", "coleslaw dressing", "coconut custard",
+    ]],
+    *[("nut allergy", w) for w in [
+        "muhammara", "amaretto", "pignoli", "brazil nuts", "kung pao sauce", "korma sauce",
+        "nut butter", "Nutella", "orgeat", "mole", "chestnuts",
+    ]],
+    *[("shellfish allergy", w) for w in [
+        "lobster bisque", "gumbo", "shrimp paste", "belacan", "langostino", "XO sauce", "ebi",
+        "abalone", "conch", "krill oil", "oyster sauce", "cuttlefish", "prawns",
+    ]],
+    *[("gluten free", w) for w in [
+        "1 lb rigatoni", "ravioli", "gnocchi", "pizza dough", "flour tortillas", "tempura batter",
+        "wontons", "puff pastry", "beer", "phyllo", "2 tbsp roux", "sourdough", "focaccia",
+        "fusilli",
+    ]],
+])
+def test_the_second_alias_audit(restriction, item):
+    _restrict(restriction)
+    assert _final("Dinner", [item]), (restriction, item)
+
+
+@pytest.mark.parametrize("restriction, name, ingredients", [
+    ("fish allergy", "Eggplant Caviar", ["eggplant", "olive oil"]),
+    ("fish allergy", "Miso Soup", ["kombu dashi", "tofu"]),
+    ("fish allergy", "Vegan Caesar Salad", ["romaine", "vegan caesar dressing"]),
+    ("egg allergy", "Vegan Caesar Salad", ["romaine", "vegan caesar dressing"]),
+    ("dairy free", "Vegan Caesar Salad", ["romaine", "vegan caesar dressing"]),
+    ("fish allergy", "The Sole Survivor Stew", ["beans"]),
+    ("fish allergy", "Pike Place Chili", ["beans"]),
+    ("fish allergy", "Sea Salt Soup", ["salt"]),
+    ("fish allergy", "Bass-Boosted Tacos", ["beans"]),
+    ("fish allergy", "Roasted Carrots", ["carrots", "honey"]),
+    ("dairy free", "Chocolate Bar", ["dark chocolate"]),
+    ("dairy free", "Malted Milkshake", ["oat milk", "malt powder"]),
+    ("dairy free", "Coconut Custard", ["coconut milk", "cornstarch"]),
+    ("dairy free", "Vegan Alfredo", ["cashews", "nutritional yeast"]),
+    ("dairy free", "Pasta", ["vegan alfredo sauce"]),
+    ("dairy free", "Tart", ["coconut custard"]),
+    ("egg allergy", "Spritzer", ["white wine"]),
+    ("egg allergy", "Chili", ["white beans"]),
+    ("gluten free", "Float", ["root beer"]),
+    ("gluten free", "Soba", ["buckwheat noodles"]),
+    ("nut allergy", "Stir Fry", ["water chestnuts"]),
+])
+def test_the_second_round_false_positives_pass(restriction, name, ingredients):
+    _restrict(restriction)
+    assert _final(name, ingredients) == [], (restriction, name, ingredients)
+
+
+def test_coconut_custard_is_still_egg():
+    _restrict("egg allergy")
+    assert _final("Coconut Custard", ["coconut milk", "cornstarch"])
+    assert _final("Tart", ["dairy-free custard"])
+
+
+def test_worcestershire_is_still_fish():
+    _restrict("fish allergy")
+    assert _final("Pork Chops", ["1 tbsp worcestershire"])
+
+
+# ---------- the recipe pass writes a labelled draft under its plain name ----------
+
+@pytest.mark.parametrize("name, plain", [
+    ("Dairy-Free Pancakes", "Pancakes"),
+    ("Greek Yogurt (Dairy-Free) Parfait", "Greek Yogurt Parfait"),
+    ("Nut-Free Granola Bars", "Granola Bars"),
+    ("Vegan Alfredo", "Alfredo"),
+    ("Non-Dairy Mac and Cheese", "Mac and Cheese"),
+    ("Gluten-Free Pasta", "Gluten-Free Pasta"),                 # gluten-free describes the pasta
+    ("Tacos with Pineapple-Free Salsa", "Tacos with Pineapple-Free Salsa"),  # narrow: families only
+    ("Vegan", "Vegan"),
+])
+def test_plain_dish_name_takes_off_only_the_family_labels(name, plain):
+    assert allergen_gate.plain_dish_name(name) == plain
+
+
+def test_the_recipe_pass_saves_a_labelled_draft_under_its_plain_name(pancake_week, monkeypatch):
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: {
+        "ingredients": [{"item": "oat milk", "qty": "1 cup"}, {"item": "flour", "qty": "2 cups"}],
+        "instructions": ["Whisk.", "Fry."],
+    })
+    result = agent.fill_pending_recipes_for_plan(pancake_week["plan"]["weekly_plan_id"])
+    assert result["filled"] == ["Pancakes"]
+    names = {m.get("meal") for m in tools.get_weekly_plan(pancake_week["plan"]["weekly_plan_id"])["meals"]}
+    assert "Pancakes" in names and "Dairy-Free Pancakes" not in names
+
+
+def test_the_recipe_pass_holds_the_plain_name_over_a_dairy_list(pancake_week, monkeypatch):
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: {
+        "ingredients": [{"item": "buttermilk", "qty": "1 cup"}, {"item": "flour", "qty": "2 cups"}],
+        "instructions": ["Whisk.", "Fry."],
+    })
+    monkeypatch.setattr(allergen_gate, "sweep_plan", pancake_week["fake_sweep"])
+    result = agent.fill_pending_recipes_for_plan(pancake_week["plan"]["weekly_plan_id"])
+    assert result["clashed"] == ["Dairy-Free Pancakes"]
+
+
+def test_the_recipe_pass_keeps_the_label_when_the_plain_name_is_taken(pancake_week, monkeypatch):
+    """Another recipe is already called "Pancakes": the label stays, and the
+    strict check then holds the dish rather than guess."""
+    tools.add_recipe("Pancakes", ingredients=[{"item": "milk", "qty": "1 cup"}])
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: {
+        "ingredients": [{"item": "oat milk", "qty": "1 cup"}], "instructions": ["Fry."],
+    })
+    monkeypatch.setattr(allergen_gate, "sweep_plan", pancake_week["fake_sweep"])
+    result = agent.fill_pending_recipes_for_plan(pancake_week["plan"]["weekly_plan_id"])
+    assert result["clashed"] == ["Dairy-Free Pancakes"]
+
+
+def test_fill_in_returns_the_renamed_recipe(pancake_week, monkeypatch):
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: {
+        "ingredients": [{"item": "oat milk", "qty": "1 cup"}], "instructions": ["Fry."],
+    })
+    out = agent.fill_in_recipe("Dairy-Free Pancakes")
+    assert out["name"] == "Pancakes" and out["details_pending"] is False
+
+
+# ---------- every prompt that names a dish says: no allergen-free labels ----------
+
+def test_every_dish_naming_prompt_forbids_allergen_free_labels():
+    import importlib
+    import inspect
+    swap_in_place = importlib.import_module("app.tools.swap_in_place")
+    swap_options = importlib.import_module("app.tools.swap_options")
+    agent_src = inspect.getsource(agent)
+    assert agent_src.count('Name the dish by what\'s in it ("Oat Milk') == 1          # the menu pass
+    assert agent_src.count('Name the item by what\'s in it ("Oat Milk') == 1          # the component pass
+    assert "the recipe is saved under the plain name" in agent_src                    # the recipe writer
+    assert '"Oat Milk Pancakes", not "Dairy-Free Pancakes". A dish with' in agent_src  # chat
+    for module in (swap_in_place, swap_options):
+        assert '"Oat Milk Pancakes", not "Dairy-Free Pancakes"' in inspect.getsource(module)

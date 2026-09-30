@@ -104,6 +104,10 @@ _WHEAT_WORDS = {
     "panko", "orzo", "udon", "ramen", "spaghetti", "linguine", "fettuccine", "penne",
     "macaroni", "lasagna", "lasagne", "pita", "naan", "bagel", "croissant", "crouton",
     "malt", "teriyaki", "hoisin",
+    # Second audit (2026-09-30, verifier round 2).
+    "rigatoni", "ravioli", "tortellini", "fusilli", "farfalle", "ziti", "pappardelle",
+    "gnocchi", "dough", "tempura", "wonton", "pastry", "phyllo", "filo", "roux", "beer",
+    "sourdough", "focaccia", "brioche", "challah", "lo mein",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -114,18 +118,25 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             # which lifts the excepted word's own family (satay, groundnut)
             # out along with it.
             "satay", "groundnut", "nutella", "gianduja", "frangipane", "amaretti",
-            "baklava", "nougat", "romesco", "dukkah"},
+            "baklava", "nougat", "romesco", "dukkah",
+            "muhammara", "amaretto", "pignoli", "kung pao", "korma", "orgeat", "mole",
+            "chestnut"},
     "peanut": {"satay", "groundnut"},
     "shellfish": {"shrimp", "prawn", "crab", "lobster", "clam", "mussel",
                   "scallop", "oyster", "squid", "calamari", "crawfish", "crayfish",
-                  "langoustine", "scampi", "octopus", "cockle", "whelk", "bouillabaisse",
-                  "cioppino"},
+                  "langoustine", "langostino", "scampi", "octopus", "cockle", "whelk",
+                  "bouillabaisse", "cioppino", "gumbo", "belacan", "xo sauce", "ebi",
+                  "abalone", "conch", "krill", "cuttlefish"},
+    # No "sole", "pike" or "bass": ordinary words ("The Sole Survivor",
+    # "Pike Place", "Bass-Boosted") that held dishes with no fish in them.
+    # "sea bass" is kept whole. No "caesar" in any family: the dressing's
+    # anchovy, egg and parmesan are on its list, and a vegan caesar isn't.
     "fish": {"salmon", "tuna", "cod", "haddock", "halibut", "trout",
              "mackerel", "sardine", "anchovy", "anchovies", "tilapia", "fish sauce",
-             "bass", "snapper", "sole", "pollock", "mahi", "swordfish", "catfish",
+             "sea bass", "snapper", "pollock", "mahi", "swordfish", "catfish",
              "herring", "flounder", "grouper", "monkfish", "branzino", "carp", "perch",
-             "pike", "lox", "caviar", "roe", "bonito", "dashi", "worcestershire",
-             "nam pla", "surimi", "caesar"},
+             "lox", "caviar", "roe", "bonito", "dashi", "worcestershire",
+             "nam pla", "surimi"},
     # "buttermilk" is here rather than left to "butter"/"milk": whole-word
     # matching reaches neither half of it, and it is unambiguously dairy —
     # the opposite call from "peanut butter", which is spelled with a dairy
@@ -137,16 +148,28 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
               "burrata", "manchego", "emmental", "havarti", "monterey jack", "colby",
               "queso", "quark", "labneh", "skyr", "kefir", "casein", "creme fraiche",
               "custard", "gelato", "cheesecake", "buttercream", "alfredo", "bechamel",
-              "tzatziki", "raita", "tiramisu", "carbonara", "caesar"},
+              "tzatziki", "raita", "tiramisu", "carbonara",
+              "asiago", "fontina", "gorgonzola", "stilton", "cotija", "romano", "chevre",
+              "taleggio", "pepper jack", "velveeta", "fromage", "curds", "beurre",
+              "half and half", "half-and-half", "ranch", "dulce de leche", "panna cotta",
+              "korma", "lassi", "flan", "creme brulee", "mousse"},
     "gluten": set(_WHEAT_WORDS),
     "wheat": set(_WHEAT_WORDS),
+    # "whites" is matched as written (see _VERBATIM_ALIASES), never as
+    # "white": white wine and white beans are not egg.
     "egg": {"eggs", "mayonnaise", "mayo", "aioli", "meringue", "custard", "hollandaise",
             "bearnaise", "carbonara", "frittata", "quiche", "omelet", "omelette", "souffle",
-            "eggnog", "pavlova", "tiramisu", "caesar"},
+            "eggnog", "pavlova", "tiramisu",
+            "yolk", "brioche", "challah", "remoulade", "tartar sauce", "flan",
+            "creme brulee", "mousse", "shakshuka", "lo mein", "ranch", "coleslaw dressing"},
     "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso", "tamari", "shoyu",
             "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara"},
     "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne"},
 }
+# Aliases matched exactly as written, with no singular/plural twin: an
+# egg-white line says "3 whites", and the singular would reach "white
+# wine" and "white beans".
+_VERBATIM_ALIASES: dict[str, set[str]] = {"egg": {"whites"}, "eggs": {"whites"}}
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
 _ALLERGEN_ALIASES["peanuts"] = _ALLERGEN_ALIASES["peanut"]
 _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
@@ -208,8 +231,15 @@ _TITLE_VOCABULARY_ALIASES: dict[str, frozenset[str]] = {
 _DAIRY_PLANT_WORDS = frozenset({
     "dairy", "dairies", "milk", "milks", "butter", "butters", "cheese", "cheeses",
     "cream", "creams", "yogurt", "yogurts", "yoghurt", "yoghurts",
+    "custard", "custards", "alfredo", "alfredos",
 })
 _EGG_PLANT_WORDS = frozenset({"egg", "eggs", "mayonnaise", "mayonnaises", "mayo", "mayos", "aioli", "aiolis"})
+# The family's own name inside a qualifier ("DAIRY-free butter"). On an
+# ingredient line it is discounted with the plant word it qualifies; in a
+# name over a list it never is — "Dairy-Free …" in a name is the claim the
+# 2026-09-20 rule is about, and the list alone decides past it.
+_FAMILY_WORDS = frozenset({"dairy", "dairies", "egg", "eggs"})
+_EGG_LABELS = frozenset({"egg", "eggs"})
 _PLANT_MOD = (
     r"(?:greek|greek-style|sour|whipped|heavy|plain|shredded|grated|cream|ice|"
     r"coconut|oat|soy|soya|almond|cashew|rice)"
@@ -234,6 +264,12 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     )),
     (frozenset({"cheese", "cheeses"}), re.compile(r"\bcashew\s+cheeses?\b")),
     (frozenset({"sugar", "sugars"}), re.compile(r"\bsugar\s+snaps?\b")),
+    # Second-round false positives (2026-09-30): foods named after an
+    # allergen they don't contain.
+    (frozenset({"beer", "beers"}), re.compile(r"\b(?:root|ginger)\s+beers?\b")),
+    (frozenset({"chestnut", "chestnuts"}), re.compile(r"\bwater\s+chestnuts?\b")),
+    (frozenset({"caviar", "caviars"}), re.compile(r"\b(?:eggplant|aubergine)\s+caviars?\b")),
+    (frozenset({"dashi", "dashis"}), re.compile(r"\b(?:kombu|vegan|shiitake|mushroom|kelp)\s+dashis?\b")),
     # Olive oil is a cooking fat, not an olive. A household that avoids
     # olives got a hard clash on essentially every dinner, because olive
     # oil is in most of them — which puts an allergy-shaped gate in front
@@ -263,7 +299,7 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
 # line (what the dish is made of) and in a label that will be checked
 # against a list, and NOT in a name that is final without a list — "Vegan
 # Cheese Pizza" planned from chat on its name alone is cheese.
-_PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
+_PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
     # A dairy word the line or the name itself says is a plant version:
     # "dairy-free butter", "vegan cream cheese", "non-dairy milk". The
     # qualifier has to come FIRST and sit right against the word (one
@@ -282,10 +318,20 @@ _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     # The "dairy" of the qualifier itself is in the words too, so the line
     # "dairy-free butter" doesn't trip the family word on its way past.
     (_DAIRY_PLANT_WORDS, re.compile(
-        r"\b(?:vegan|plant[\s-]based|dairy[\s-]free|non[\s-]dairy)\s+"
+        r"\b(?:vegan|plant[\s-]based)\s+"
         r"(?:" + _PLANT_MOD + r"\s+)?"
-        r"(?:milk|butter|cheese|cream|yogh?urt)s?(?![-a-z0-9])"
+        r"(?:milk|butter|cheese|cream|yogh?urt|custard|alfredo)s?(?![-a-z0-9])"
     )),
+    # "dairy-free custard" still has its eggs: this one says nothing to an
+    # egg allergy (the third element: the avoidances it never speaks for).
+    (_DAIRY_PLANT_WORDS, re.compile(
+        r"\b(?:dairy[\s-]free|non[\s-]dairy)\s+"
+        r"(?:" + _PLANT_MOD + r"\s+)?"
+        r"(?:milk|butter|cheese|cream|yogh?urt|custard|alfredo)s?(?![-a-z0-9])"
+    ), _EGG_LABELS),
+    # Coconut custard is set with starch, not cream — but usually still
+    # with egg, so it is dairy's exception only.
+    (frozenset({"custard", "custards"}), re.compile(r"\bcoconut\s+custards?\b"), _EGG_LABELS),
     # The same for egg: vegan or egg-free mayonnaise is made without it.
     (_EGG_PLANT_WORDS, re.compile(
         r"\b(?:vegan|plant[\s-]based|egg[\s-]free|eggless)\s+(?:mayonnaise|mayo|aioli)s?(?![-a-z0-9])"
@@ -326,14 +372,14 @@ _GLUTEN_WHEAT_LABELS = frozenset({"gluten", "wheat"})
 # fuss cheese toastie" and "No-Bake Cheese Tart" are still cheese.
 #
 # WHEN it applies is the safety half (see check_meal_conflicts'
-# `negate_labels`): only where the label is not the last word — a DRAFT
-# dish that will get a checked ingredient list before anyone shops or
-# cooks, or a name sitting over a real ingredient list that is matched
-# strictly. A dish that is final without a list (a freeform name planned
-# from chat, a recipe the recipe pass failed to write) is matched on its
-# name strictly, because then the name is all there is. An INGREDIENT
-# LINE never gets this. Like the compounds above, it only applies to a
-# single-word avoidance.
+# `negate_labels`): ONLY a draft dish with no ingredient list yet — the
+# menu draft, whose recipe pass will match a real list before anyone shops
+# or cooks. A dish WITH a list keeps a strict name (the name backstops any
+# gap in the alias table: "Dairy-Free Soup" over "half-and-half"), and a
+# dish that is final without a list (a freeform name planned from chat, a
+# recipe the recipe pass failed to write) has nothing but its name. An
+# INGREDIENT LINE never gets this. Like the compounds above, it only
+# applies to a single-word avoidance. (Verifier rounds 1–2, 2026-09-30.)
 _FREE_AFTER_RE = re.compile(r"[\s-]free(?![-a-z0-9]|\s+range)")
 _NON_BEFORE_RE = re.compile(r"(?:^|\s)non[\s-]$")
 _NEG_BEFORE_RE = re.compile(
@@ -566,6 +612,7 @@ def _match_terms(
             variants: set[str] = set()
             for base in {word} | _ALLERGEN_ALIASES.get(word, set()):
                 variants |= _keyword_variants(base)
+            variants |= _VERBATIM_ALIASES.get(word, set())
             variants -= excluded
             if variants:
                 groups.append(variants)
@@ -575,13 +622,22 @@ def _match_terms(
     return out
 
 
-def _discounted(variant: str, match: re.Match, text: str, qualifiers: bool = True) -> bool:
+def _discounted(variant: str, match: re.Match, text: str, mode: str = "line", label: str = "") -> bool:
     """Whether this occurrence sits inside a compound that neutralises it.
-    `qualifiers` False leaves out the plant-version claims (see
-    _PLANT_QUALIFIER_EXCEPTIONS) for a name matched strictly."""
-    tables = _COMPOUND_EXCEPTIONS + (_PLANT_QUALIFIER_EXCEPTIONS if qualifiers else ())
-    for words, compound in tables:
+
+    `mode` is the segment's kind (see check_meal_conflicts): a "strict"
+    name reads only the food-name compounds, never a plant qualifier; a
+    "listed" name reads plant qualifiers but never lets the family's own
+    name ("Dairy-Free …") off; a "line" or a draft "label" reads them all.
+    An entry's third element names the avoidances it never speaks for."""
+    tables = _COMPOUND_EXCEPTIONS + (_PLANT_QUALIFIER_EXCEPTIONS if mode != "strict" else ())
+    if mode == "listed" and variant in _FAMILY_WORDS:
+        tables = _COMPOUND_EXCEPTIONS
+    for entry in tables:
+        words, compound = entry[0], entry[1]
         if variant not in words:
+            continue
+        if len(entry) > 2 and label in entry[2]:
             continue
         for found in compound.finditer(text):
             if found.start() <= match.start() and match.end() <= found.end():
@@ -590,26 +646,22 @@ def _discounted(variant: str, match: re.Match, text: str, qualifiers: bool = Tru
 
 
 def _find_variant(
-    variant: str, text: str, start: int, discountable: bool, negatable: bool = False,
-    qualifiers: bool = True,
+    variant: str, text: str, start: int, discountable: bool, mode: str = "line", label: str = "",
 ) -> re.Match | None:
     """The first whole-word occurrence at or after `start` that actually
-    counts. `negatable` is for a name or a note (see _negated); an
-    ingredient line never passes it. `qualifiers` False is a name matched
-    strictly (see _PLANT_QUALIFIER_EXCEPTIONS)."""
+    counts. Only a draft "label" segment reads negations (see _negated)."""
     for m in re.finditer(r"\b" + re.escape(variant) + r"\b", text):
         if m.start() < start:
             continue
-        if discountable and _discounted(variant, m, text, qualifiers):
+        if discountable and _discounted(variant, m, text, mode, label):
             continue
-        if discountable and negatable and _negated(variant, m, text):
+        if discountable and mode == "label" and _negated(variant, m, text):
             continue
         return m
     return None
 
 
-def _phrase_in(groups: list[set[str]], text: str, negatable: bool = False,
-               qualifiers: bool = True) -> str | None:
+def _phrase_in(groups: list[set[str]], text: str, mode: str = "line", label: str = "") -> str | None:
     """
     Whether every word of a phrase appears in `text`, in order — and if so,
     the words that were actually found ("buttermilk", not the "dairy" it
@@ -626,7 +678,7 @@ def _phrase_in(groups: list[set[str]], text: str, negatable: bool = False,
     for variants in groups:
         best: re.Match | None = None
         for variant in variants:
-            m = _find_variant(variant, text, pos, discountable, negatable, qualifiers)
+            m = _find_variant(variant, text, pos, discountable, mode, label)
             if m and (best is None or m.start() < best.start()):
                 best = m
         if best is None:
@@ -642,9 +694,11 @@ def _matches(
     gluten_free_segments: set[int] | None = None,
     label_segments: set[int] | None = None,
     strict_segments: set[int] | None = None,
+    listed_segments: set[int] | None = None,
 ) -> str | None:
     """The label of the first avoidance found — see _match_detail."""
-    detail = _match_detail(terms, segments, gluten_free_segments, label_segments, strict_segments)
+    detail = _match_detail(terms, segments, gluten_free_segments, label_segments, strict_segments,
+                           listed_segments)
     return detail[0] if detail else None
 
 
@@ -654,6 +708,7 @@ def _match_detail(
     gluten_free_segments: set[int] | None = None,
     label_segments: set[int] | None = None,
     strict_segments: set[int] | None = None,
+    listed_segments: set[int] | None = None,
 ) -> tuple[str, str] | None:
     """
     The first avoidance found in any one of `segments`, or None.
@@ -672,19 +727,28 @@ def _match_detail(
     rather than an ingredient line; only those read "dairy-free" / "no
     cheese" as the thing left out (see _negated). `strict_segments` are a
     name or note matched strictly: not even a plant qualifier counts there.
+    `listed_segments` are a name over a real list: no negation, and the
+    family's own name in a qualifier never counts as left out.
 
     Returns (the avoidance's label, the words that matched it), or None.
     """
     gluten_free_segments = gluten_free_segments or set()
     label_segments = label_segments or set()
     strict_segments = strict_segments or set()
+    listed_segments = listed_segments or set()
     for label, groups in terms:
         skip_if_gluten_free = label in _GLUTEN_WHEAT_LABELS
-        for i, segment in enumerate(segments):
+        # The name is read LAST: when a dish trips on both, the word from
+        # its list ("buttermilk") is the one worth saying, not the label
+        # ("Dairy-Free …") that tripped too.
+        order = list(range(1, len(segments))) + [0] if segments else []
+        for i in order:
+            segment = segments[i]
             if skip_if_gluten_free and i in gluten_free_segments:
                 continue
-            word = _phrase_in(groups, segment, negatable=i in label_segments,
-                              qualifiers=i not in strict_segments)
+            mode = ("label" if i in label_segments else "strict" if i in strict_segments
+                    else "listed" if i in listed_segments else "line")
+            word = _phrase_in(groups, segment, mode, label)
             if word:
                 return label, word
     return None
@@ -1000,10 +1064,12 @@ def conflicts_note_after_approval(conflicts: list[dict]) -> str | None:
 
 
 def _fold(text: str) -> str:
-    """Lowercase, accents and look-alike characters folded ("Gruyère",
-    "crème fraîche", a full-width "Ｄairy"), punctuation to spaces,
+    """Lowercase, zero-width and soft-hyphen characters dropped, accents
+    and full-width characters folded ("Gruyère", "crème fraîche", "Ｄairy"),
+    punctuation to spaces,
     whitespace collapsed — the one shape every segment is matched in."""
-    text = unicodedata.normalize("NFKD", text or "")
+    text = re.sub(r"[\u200b-\u200d\ufeff\u00ad]", "", text or "")
+    text = unicodedata.normalize("NFKD", text)
     text = "".join(ch for ch in text if not unicodedata.combining(ch)).lower()
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s-]", " ", text)).strip()
 
@@ -1035,14 +1101,14 @@ def check_meal_conflicts(
     Pass `avoidances` when checking many dishes in a row (check_plan_conflicts
     does) so the household's restrictions are read once, not per meal.
 
-    `negate_labels` decides whether the name (and a draft's dish_note) may
+    `negate_labels=True` is only for a DRAFT dish that will get a checked
+    ingredient list before anyone shops or cooks, and only takes effect
+    when no list is given: then the name (and the planner's dish_note) may
     read "dairy-free" / "no cheese" as what the dish leaves out (see
-    _negated). True is for a DRAFT dish that will get a checked ingredient
-    list before anyone shops or cooks. Left as None, it is allowed only
-    when a real ingredient list is given — the list is then what decides,
-    matched strictly. With no list and no True, the name is matched
-    strictly: a dish that is final without a list has nothing else to be
-    checked on, and a "-free" label must never sneak the allergen in.
+    _negated). Everywhere else — any dish with a list, and any dish that is
+    final without one — the name is matched strictly, so a "-free" label
+    never sneaks the allergen in and still backstops the alias table
+    (2026-09-30: "Dairy-Free Soup" over "half-and-half").
     """
     name = (meal_name or "").strip()
     if not name:
@@ -1066,27 +1132,38 @@ def check_meal_conflicts(
         (i, False) if isinstance(i, str) else ((i.get("item") or ""), bool(i.get("is_dish_note")))
         for i in (ingredients or []) if isinstance(i, (str, dict))
     ]
-    if negate_labels is None:
-        negate_labels = any(text.strip() and not is_note for text, is_note in lines)
-    # (text, kind): "label" reads negations and plant qualifiers, "line"
-    # (an ingredient) reads leading plant qualifiers only, "strict" (a name
-    # or note with nothing behind it) reads neither.
-    label_kind = "label" if negate_labels else "strict"
-    raw_segments = [(name, label_kind)]
-    raw_segments += [(text, label_kind if is_note else "line") for text, is_note in lines]
+    has_list = any(text.strip() and not is_note for text, is_note in lines)
+    # The name's (and a note's) kind:
+    #   "label"  — a DRAFT dish with NO list: reads "-free", "no X" and plant
+    #              qualifiers, because the recipe pass will match a real list
+    #              before anyone shops or cooks;
+    #   "listed" — any dish WITH a list: the list decides; the name reads a
+    #              leading plant qualifier ("Vegan Alfredo") but never lets
+    #              "Dairy-Free …" off, so it still backstops the alias table;
+    #   "strict" — no list and not a draft: the name is all there is.
+    # An ingredient line is "line": leading plant qualifiers only.
+    if has_list:
+        name_kind = "listed"
+    elif negate_labels:
+        name_kind = "label"
+    else:
+        name_kind = "strict"
+    raw_segments = [(name, name_kind)]
+    raw_segments += [(text, name_kind if is_note else "line") for text, is_note in lines]
     raw_segments += [((i.get("item") or ""), "line") for i in _plates.side_ingredients(sides)]
     normalised = [(_fold(s), kind) for s, kind in raw_segments]
     normalised = [(s, kind) for s, kind in normalised if s]
     segments = [s for s, _ in normalised]
     label_segments = {i for i, (_, kind) in enumerate(normalised) if kind == "label"}
     strict_segments = {i for i, (_, kind) in enumerate(normalised) if kind == "strict"}
+    listed_segments = {i for i, (_, kind) in enumerate(normalised) if kind == "listed"}
     gluten_free_segments = {
         i for i, s in enumerate(segments) if _GLUTEN_FREE_SEGMENT_RE.search(s)
     }
     hits = []
     for avoidance in avoidances:
         detail = _match_detail(avoidance["terms"], segments, gluten_free_segments,
-                               label_segments, strict_segments)
+                               label_segments, strict_segments, listed_segments)
         if not detail:
             continue
         matched, matched_word = detail

@@ -413,6 +413,7 @@ def fill_recipe_details(
     cook_time_minutes: int | None = None,
     advance_prep_notes: str = "",
     advance_prep_step_indices: list[int] | None = None,
+    new_name: str | None = None,
 ) -> dict:
     """
     The recipe pass's save: write a pending recipe out in full — the
@@ -444,6 +445,17 @@ def fill_recipe_details(
         if not row["details_pending"]:
             conn.rollback()
             return get_recipe(recipe_name)
+        # `new_name`: the draft's name with an allergen-free label taken off
+        # ("Dairy-Free Pancakes" -> "Pancakes", allergen_gate.plain_dish_name)
+        # — the name it was checked under. Renamed on the same row, so the
+        # plan's entries (which point at the row) follow it. The caller has
+        # made sure no other recipe already has that name.
+        if new_name and new_name.strip() and new_name.strip().lower() != recipe_name.strip().lower():
+            conn.execute(
+                "UPDATE recipes SET name = ? WHERE id = ? AND household_id = ?",
+                (new_name.strip(), row["id"], household_id()),
+            )
+            recipe_name = new_name.strip()
         conn.execute(
             "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
