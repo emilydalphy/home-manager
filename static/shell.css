@@ -7509,6 +7509,15 @@ span.cook-week-name { cursor: default; }
      2026-09-12 the chores rows use the shared .tick, whose .is-done rule
      above already sets --on-accent-ink in both modes — RULE ONE, dark ink
      on a light accent — so there is nothing left to override. */
+
+  /* --- Your rhythm's day row: "some of you" (Emily, 2026-09-30) ---
+     On dark, --celadon-tint (#1C3B2C) sat 1.10:1 from the "everyone" cell's
+     --spruce (#22422F): only the initials told them apart. Here alone (the
+     tint token is shared) the cell is a LIGHT chip beside the dark one —
+     --celadon fill, Rule 1's --on-accent-ink on it: 8.46:1 ink on fill,
+     5.94:1 fill against the spruce cell, 9.10:1 on --ground, 7.90:1 on
+     --surface. Light mode is unchanged. */
+  :where(:root:not([data-theme="light"])) .uw-day.is-some { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
 }
 /* Forced dark (Settings → Appearance → Dark): the twin of the block above,
    rule for rule. tests/test_appearance.py checks the two match. */
@@ -7524,6 +7533,7 @@ span.cook-week-name { cursor: default; }
 :where(:root[data-theme="dark"]) .notif-row-action { color: var(--ivory-ink); }
 :where(:root[data-theme="dark"]) input::placeholder,
 :where(:root[data-theme="dark"]) textarea::placeholder { color: var(--ink-placeholder); }
+:where(:root[data-theme="dark"]) .uw-day.is-some { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
 
 
 /* ---------- "Something not working?" (Emily's option a, 2026-09-08) ----------

@@ -10884,10 +10884,11 @@
     else keys = keys.concat([key]);
     var next = wwkPrepPayload(keys, minutes);
     if (!next.length) {
-      // The last prep day going: through /api/usual-week, whose check
-      // refuses it while lunch is "Meal prep ahead" and says why (the
-      // toast carries its words). The rhythm route would take it and
-      // leave lunch planned for a prep day that isn't there.
+      // The last prep day going: through /api/usual-week, because its
+      // reply is the whole usual week. With no prep day a stored "Meal
+      // prep ahead" lunch becomes "A few in rotation" on the server
+      // (usual_week.PREP_REMOVED_LUNCH_CHOICE), and adopting the reply is
+      // what makes Your rhythm's lunch line say so at once.
       wwkCommit('prep-days', function () {
         var r = wwkMem().rhythm || (wwkMem().rhythm = {});
         r.prep_days = [];

@@ -347,14 +347,68 @@ def test_escape_closes_the_meal_sheet_not_what_we_know_under_it():
     assert "}, true);" in build, "caught on the way down, before the Kitchen sheet's listener"
 
 
-def test_the_last_prep_day_goes_through_the_usual_weeks_check():
+def test_the_last_prep_day_goes_through_the_usual_week_and_adopts_its_reply():
+    """rhythm-week-grid 8b8b3de: clearing the prep days turns a stored
+    "Meal prep ahead" lunch into "A few in rotation" on the server rather
+    than refusing. The last prep day goes through /api/usual-week so its
+    reply, lunch choice and all, lands on Your rhythm."""
     toggle = _lift("wwkTogglePrepDay")
     assert "return uwPost({ prep: { days: [] } });" in toggle
+    reply = _usual_week_json(True)
+    reply["prep"] = {"days": [], "length": None}
+    reply["variety"]["lunch"] = {"choice": "few_in_rotation", "dishes": 3, "days_on": 7}
+    out = _run(_settings_harness() + _lift("wwkTogglePrepDay") + _lift("wwkPrepPayload") + """
+var WWK_PREP_DAYS = [{ key: 'sunday' }, { key: 'monday' }, { key: 'tuesday' }, { key: 'wednesday' },
+  { key: 'thursday' }, { key: 'friday' }, { key: 'saturday' }];
+var prefsState = { memory: { rhythm: { prep_days: [{ weekday: 'sunday', minutes: 60 }] } } };
+function wwkMem() { return prefsState.memory; }
+var uwState = { data: %s, sheet: null, row: null };
+var calls = [];
+function uwPost(body) { calls.push(body); return %s; }
+function wwkSaveRhythm() { calls.push('rhythm route'); }
+function wwkCommit(section, apply, request, adopt) { apply(); adopt(request()); }
+wwkTogglePrepDay('sunday');
+console.log(JSON.stringify({ calls: calls, prep: prefsState.memory.rhythm.prep_days,
+  html: wwkUsualWeekHtml({ rhythm: {} }) }));
+""" % (json.dumps(_usual_week_json(True)), json.dumps(reply)))
+    assert out["calls"] == [{"prep": {"days": []}}]
+    assert out["prep"] == []
+    assert "Variety: A few in rotation · 3 different" in out["html"]
+    assert "Meal prep ahead" not in out["html"]
+    # And What we know's own saves still say a refusal in its words.
     assert "if (err && err.userMessage) showToast(err.userMessage);" in _lift("wwkCommit")
 
 
+def test_clearing_the_prep_days_moves_lunch_off_meal_prep_ahead(signed_in):
+    res = signed_in.post("/api/usual-week", json={"variety": {"lunch": "meal_prep_ahead"},
+                                                  "prep": {"days": ["sunday"], "length": "hour"}})
+    assert res.status_code == 200, res.text
+    res = signed_in.post("/api/usual-week", json={"prep": {"days": []}})
+    assert res.status_code == 200, res.text
+    assert res.json()["variety"]["lunch"]["choice"] == "few_in_rotation"
+    assert res.json()["prep"]["days"] == []
+
+
 def test_the_prep_check_answers_400_in_words(signed_in):
+    """Picking "Meal prep ahead" with no prep day is still refused, in words
+    the sheet shows as they are (a stale sheet is the only way to send it)."""
     signed_in.post("/api/usual-week", json={"prep": {"days": []}})
     res = signed_in.post("/api/usual-week", json={"variety": {"lunch": "meal_prep_ahead"}})
     assert res.status_code == 400
     assert "needs a prep day" in res.json()["detail"]
+
+
+def test_the_some_of_you_cell_reads_light_beside_the_dark_everyone_cell_in_dark_mode():
+    """Emily, 2026-09-30: on dark, "some of you" (--celadon-tint) was 1.10:1
+    from "everyone" (--spruce). Scoped to the day row — the tint token is
+    shared — it becomes a light chip: --celadon fill, --on-accent-ink ink
+    (Rule 1). Light mode is as it was."""
+    rule = "background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }"
+    assert f':where(:root:not([data-theme="light"])) .uw-day.is-some {{ {rule}' in SHELL_CSS
+    assert f':where(:root[data-theme="dark"]) .uw-day.is-some {{ {rule}' in SHELL_CSS
+    # Both after the base rule, so they win at equal specificity.
+    base = SHELL_CSS.index(".uw-day.is-some { background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon); }")
+    assert base < SHELL_CSS.index(':where(:root:not([data-theme="light"])) .uw-day.is-some')
+    # The shared token itself is untouched.
+    theme = (_HERE.parent / "static" / "theme.css").read_text()
+    assert "--celadon-tint:   #1C3B2C;" in theme and "--celadon-tint:   #E2EDE5;" in theme
