@@ -385,6 +385,9 @@
   #prep-day-tiles .uw-day { height: 44px; }
   .uw-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .uw-q { padding: 0 12px; font-size: 13px; }
+  /* The four quick picks share one row at 375px. */
+  .uw-quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .uw-quick .uw-q { padding: 0 4px; }
   .uw-ct { flex-basis: 100%; margin: 0; font-size: 12px; font-weight: 800; color: var(--apricot-label); }
   .uw-lunch { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-secondary); padding: 0 2px; }
   .uw-link {
@@ -2055,7 +2058,7 @@ function uwMealCardHtml(meal, names) {
         `<button type="button" class="uw-q${o.on ? ' is-on' : ''}" data-uw-pick="${escapeHtmlLocal(o.key)}" aria-pressed="${o.on ? 'true' : 'false'}">${escapeHtmlLocal(o.label)}</button>`
       ).join('') + '</div>';
   } else {
-    html += '<div class="uw-row">' + UW_QUICK.map((q, qi) => {
+    html += '<div class="uw-row uw-quick">' + UW_QUICK.map((q, qi) => {
       const on = uwQuickOn(row, q.days);
       return `<button type="button" class="uw-q${on ? ' is-on' : ''}" data-uw-quick="${qi}" aria-pressed="${on ? 'true' : 'false'}">${q.label}</button>`;
     }).join('') + '</div>';
