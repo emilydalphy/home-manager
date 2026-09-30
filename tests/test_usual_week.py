@@ -13,7 +13,7 @@ import pytest
 
 from app import agent, tools
 from app.db import get_conn
-from app.tools import swap_in_place as sip, usual_week, meal_variety
+from app.tools import allergen_gate, swap_in_place as sip, usual_week, meal_variety
 
 
 WEEKDAYS = usual_week.WEEKDAYS
@@ -79,6 +79,15 @@ def picker(monkeypatch):
         return _pick(next(names))
 
     monkeypatch.setattr(sip, "_pick_replacement", pick)
+
+    def quick(context):
+        calls.append(context)
+        full = _pick(next(names))
+        return {"meal_name": full["meal_name"], "ingredients": ["Stuff"], "dish_note": "Simple.",
+                "food_groups": full["food_groups"]}
+
+    # The fast path (first-week gaps, held-back re-picks) never reaches the API.
+    monkeypatch.setattr(allergen_gate, "quick_pick", quick)
     return calls
 
 
@@ -473,3 +482,196 @@ def test_a_part_week_draft_says_the_grids_number(stub_model, picker):
     assert seen["ctx"]["household_memory"]["breakfasts_per_week"] == 4
     opener = tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"]
     assert any(line.startswith("Four breakfasts this week, not five") for line in opener), opener
+
+
+# ---------- verification round (2026-09-30) ----------
+
+def _skip_day(plan_id, day):
+    for slot in ("breakfast", "lunch", "dinner"):
+        tools.plan_slot_empty(weekly_plan_id=plan_id, meal_date=day, slot=slot,
+                              reason=tools.SKIPPED_DAY_REASON,
+                              derived_from={"constraint": tools.SKIPPED_DAY_CONSTRAINT})
+
+
+def test_build_a_plan_on_a_left_out_day_leaves_the_grids_off_meals_and_sizes_the_subset():
+    people = _two_people()
+    tools.save_usual_week(grid={"breakfast": {"saturday": "off"}, "dinner": {"saturday": [people["Emily"]]}})
+    dates = tools._week_dates(_monday())
+    saturday = dates[5]
+    plan_id = tools.create_weekly_plan(dates[0])["weekly_plan_id"]
+    tools.plan_meal(dates[0], "Tacos", slot="dinner", weekly_plan_id=plan_id)
+    _skip_day(plan_id, saturday)
+    day = next(d for d in tools.get_week_menu(plan_id)["days"] if d["date"] == saturday)
+    assert day["breakfast"]["can_fill"] is False and day["dinner"]["can_fill"] is True
+    seen = []
+
+    def pick(context):
+        seen.append(context)
+        return _pick(f"Filled {context['slot']}")
+
+    out = sip.fill_empty_day(plan_id, saturday, picker=pick)
+    assert out["status"] == "filled"
+    assert [f["slot"] for f in out["filled"]] == ["lunch", "dinner"]
+    rows = [m for m in _meals(plan_id) if m["date"] == saturday and m["slot"] == "breakfast"]
+    assert [m["slot_state"] for m in rows] == ["planned_empty"]
+    assert tools.get_slot_attendance(saturday, "dinner")["headcount"] == 1
+    assert next(c for c in seen if c["slot"] == "dinner")  # picked for the smaller table
+
+
+def test_a_count_set_elsewhere_turns_a_meal_that_was_off_all_week_back_on():
+    tools.save_usual_week(grid={"breakfast": {d: "off" for d in WEEKDAYS}}, variety={"dinner": "few_in_rotation"})
+    assert tools.get_household_memory()["breakfasts_per_week"] == 0
+    tools.set_household_meal_preferences(breakfasts_per_week=3)
+    week = tools.get_usual_week()
+    assert set(week["grid"]["breakfast"].values()) == {"everyone"}
+    assert week["variety"]["breakfast"] == {"choice": None, "dishes": 3, "days_on": 7}
+    assert week["variety"]["dinner"]["choice"] == "few_in_rotation", "the other meals keep their answers"
+    plan = usual_week.generation_plan(tools._week_dates(_monday()))
+    assert plan["off_slots"] == [] and plan["targets"]["breakfast"] == 3
+    assert usual_week.scale_to_period(3, 0, 0) == 0
+
+
+def test_something_new_every_day_over_two_weeks_is_one_a_day():
+    tools.save_usual_week(grid={"breakfast": {"saturday": "off", "sunday": "off"}},
+                          variety={"breakfast": "new_every_day"})
+    start = _monday()
+    dates = tools.period_dates(start, 14)
+    assert usual_week.generation_plan(dates)["targets"]["breakfast"] == 10
+    assert usual_week.generation_plan(dates[:7])["targets"]["breakfast"] == 5
+
+
+def test_taking_the_prep_days_away_moves_meal_prep_ahead_to_a_few_in_rotation():
+    tools.save_usual_week(variety={"lunch": "meal_prep_ahead"}, prep={"days": ["sunday"], "length": "hour"})
+    tools.set_prep_days([])  # the Settings chips / chat
+    week = tools.get_usual_week()
+    assert week["variety"]["lunch"] == {"choice": "few_in_rotation", "dishes": 3, "days_on": 7}
+    assert tools.get_household_memory()["lunches_per_week"] == 3
+    # The same through a usual-week save that only clears the prep days.
+    tools.save_usual_week(variety={"lunch": "meal_prep_ahead"}, prep={"days": ["sunday"], "length": "hour"})
+    week = tools.save_usual_week(prep={"days": []})
+    assert week["variety"]["lunch"]["choice"] == "few_in_rotation"
+    # Sending both at once is still refused.
+    with pytest.raises(ValueError, match="prep day"):
+        tools.save_usual_week(variety={"lunch": "meal_prep_ahead"}, prep={"days": []})
+
+
+def test_onboarding_refuses_a_bad_usual_week_before_writing_anything(signed_in):
+    res = signed_in.post("/api/onboarding/answers", json={
+        "member_names": ["Zed"], "dinners_per_week": 5, "usual_week": {"snacks_per_day": 9},
+    })
+    assert res.status_code == 400
+    assert [m["name"] for m in tools.list_members()] == []
+    assert tools.get_household_memory()["dinners_per_week"] == 7
+    # A grid naming someone this same request adds is fine.
+    res = signed_in.post("/api/onboarding/answers", json={
+        "member_names": ["Zed", "Ana"], "usual_week": {"grid": {"dinner": {"friday": ["Zed"]}}},
+    })
+    assert res.status_code == 200, res.text
+    zed = next(m["id"] for m in res.json()["usual_week"]["members"] if m["name"] == "Zed")
+    assert res.json()["usual_week"]["grid"]["dinner"]["friday"] == [zed]
+
+
+def test_concurrent_partial_saves_keep_each_others_cells():
+    import threading
+    errors = []
+
+    def save(meal, day):
+        try:
+            for _ in range(5):
+                tools.save_usual_week(grid={meal: {day: "off"}})
+        except Exception as e:  # pragma: no cover - reported below
+            errors.append(e)
+
+    threads = [threading.Thread(target=save, args=(m, d)) for m, d in
+               (("breakfast", "monday"), ("lunch", "tuesday"), ("dinner", "wednesday"), ("breakfast", "thursday"))]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == []
+    grid = tools.get_usual_week()["grid"]
+    assert (grid["breakfast"]["monday"], grid["lunch"]["tuesday"], grid["dinner"]["wednesday"],
+            grid["breakfast"]["thursday"]) == ("off", "off", "off", "off")
+
+
+def test_a_guests_row_takes_the_grids_subset_as_its_base(stub_model, picker):
+    people = _two_people()
+    dates = tools._week_dates(_monday())
+    thursday = dates[3]
+    tools.set_guest_count(thursday, "dinner", 2)
+    tools.save_usual_week(grid={"dinner": {"thursday": [people["Emily"]]}})
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili", "Tacos", "Curry", "Stew"] * 2))
+    agent.generate_weekly_plan(_monday())
+    att = tools.get_slot_attendance(thursday, "dinner")
+    assert (att["present_names"], att["guest_count"], att["headcount"]) == (["Emily"], 2, 3)
+
+
+def test_a_rejected_first_week_pick_is_tried_again_and_every_lunch_is_filled(stub_model, monkeypatch):
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["allergy: peanuts"], replace=True)
+    dates = tools._week_dates(_monday())
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=None, dinners=["Chili", "Tacos", "Curry", "Stew"] * 2))
+    asked: dict[str, int] = {}
+    import threading
+    lock = threading.Lock()
+
+    def quick(context):
+        with lock:
+            asked[context["date"]] = asked.get(context["date"], 0) + 1
+            first = asked[context["date"]] == 1
+            n = sum(asked.values())
+        if first:
+            return {"meal_name": "Peanut noodles", "ingredients": ["Peanuts", "Noodles"], "dish_note": "Satay."}
+        return {"meal_name": f"Lunch bowl {n}", "ingredients": ["Rice", "Beans"], "dish_note": "Simple."}
+
+    monkeypatch.setattr(allergen_gate, "quick_pick", quick)
+    monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: pytest.fail("the slow write-up is not used"))
+    plan = agent.generate_weekly_plan(_monday())
+    meals = _meals(plan["weekly_plan_id"])
+    assert [m for m in meals if m["slot_state"] == "open"] == []
+    lunches = [m for m in meals if m["slot"] == "lunch" and m["slot_state"] == "planned"]
+    assert sorted(m["date"] for m in lunches) == dates
+    assert not any("peanut" in (m["meal"] or "").lower() for m in lunches)
+    assert all(v >= 2 for v in asked.values()), "a rejection was not the end of the group"
+    conn = get_conn()
+    pending = conn.execute(
+        "SELECT COUNT(*) FROM recipes WHERE name LIKE 'Lunch bowl%' AND details_pending = 1").fetchone()[0]
+    conn.close()
+    assert pending >= 1
+
+
+def test_with_no_pick_left_a_first_week_gap_is_a_repeat_of_the_weeks_own_dish(stub_model, picker):
+    dates = tools._week_dates(_monday())
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili"] * 7))
+    plan_id = agent.generate_weekly_plan(_monday())["weekly_plan_id"]
+    for d in dates[1:]:
+        tools.clear_plan_slot(plan_id, d, "lunch")
+        tools.plan_slot_open(weekly_plan_id=plan_id, meal_date=d, slot="lunch", open_reason="Still deciding",
+                             derived_from={"constraint": "generation_gap"})
+    out = usual_week.fill_first_plan_gaps(plan_id, dates, picker=lambda ctx: {})
+    assert out["left"] == []
+    lunches = {m["date"]: m["meal"] for m in _meals(plan_id) if m["slot"] == "lunch" and m["slot_state"] == "planned"}
+    assert set(lunches) == set(dates) and set(lunches.values()) == {"Wrap"}
+
+
+def test_an_off_slot_is_never_held_or_re_picked(stub_model, picker):
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["allergy: peanuts"], replace=True)
+    tools.save_usual_week(grid={"breakfast": {"monday": "off"}})
+    dates = tools._week_dates(_monday())
+    days = _days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili"] * 7)
+    for d in days:
+        if d["date"] == dates[0] and d["slot"] == "breakfast":
+            d["meal_name"] = "Peanut butter toast"
+            d["ingredients"] = [{"item": "Peanut butter", "qty": "1"}]
+    stub_model(days)
+    plan = agent.generate_weekly_plan(_monday())
+    assert not [c for c in picker if c.get("date") == dates[0] and c.get("slot") == "breakfast"]
+    monday_breakfast = [m for m in _meals(plan["weekly_plan_id"]) if m["date"] == dates[0] and m["slot"] == "breakfast"]
+    assert [m["slot_state"] for m in monday_breakfast] == ["planned_empty"]
+
+
+def test_the_schema_declares_the_usual_week_column():
+    from pathlib import Path
+    schema = (Path(agent.__file__).parent / "schema.sql").read_text(encoding="utf-8")
+    assert "usual_week_json TEXT NOT NULL DEFAULT ''" in schema

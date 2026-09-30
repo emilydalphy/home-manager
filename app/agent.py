@@ -3733,6 +3733,9 @@ Call submit_weekly_plan with the result."""
         # it. A dish with the allergen is never sent to a screen at all.
         _raw_on_day = on_day
         _stream_avoidances = _allergen_gate.hard_avoidances()
+        # A meal the usual week has off never reaches the screen: it is
+        # written "Not planned" afterwards whatever the model sent.
+        _usual_off = {(s.get("date"), s.get("slot")) for s in (context.get("usual_week_off") or [])}
 
         def _held_on_screen(item):
             name = (item.get("meal_name") or "").strip()
@@ -3750,6 +3753,8 @@ Call submit_weekly_plan with the result."""
             for date in _entry_dates(item) or [None]:
                 if date is None:
                     _raw_on_day(item)
+                    continue
+                if (date, item.get("slot") or "dinner") in _usual_off:
                     continue
                 if held:
                     _raw_on_day(_allergen_gate.held_placeholder(date, item.get("slot") or "dinner"))
@@ -5831,6 +5836,13 @@ def _generate_weekly_plan(
     # on the original, so carry it across or the draft's opener falls back
     # to plain labels and forgets every unmet request.
     plan_report = getattr(items, "report", None) or {}
+    # A meal the usual week has off is written "Not planned" afterwards
+    # whatever the model sent (_finish_week_slots), so a dish it sent there
+    # anyway goes now — before the gate, so it is never held and re-picked
+    # (a quick pick and a "Finding another…" row for a meal nobody eats).
+    if usual_plan["off_slots"]:
+        usual_off = {(s["date"], s["slot"]) for s in usual_plan["off_slots"]}
+        items = [i for i in items if ((i.get("date") or ""), i.get("slot") or "dinner") not in usual_off]
     items, held_back = _allergen_gate.split_safe(items, hard_avoidances)
     items = GeneratedDays(items)
     items.report = plan_report

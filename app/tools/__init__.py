@@ -344,7 +344,7 @@ from .leftovers import covers_note as leftovers_covers_note  # noqa: F401
 from .meal_variety import enforce_distinct_count as enforce_distinct_meal_count  # noqa: F401
 # The household's usual week — meals × days × who's eating, prep, variety
 # (2026-09-30). The API's read and write; generation calls the module.
-from .usual_week import get_usual_week, save_usual_week  # noqa: F401
+from .usual_week import get_usual_week, save_usual_week, validate_usual_week  # noqa: F401
 from .meal_plans import (  # noqa: F401
     create_weekly_plan,
     discard_failed_plan,

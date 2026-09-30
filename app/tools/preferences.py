@@ -475,6 +475,16 @@ def set_household_meal_preferences(
     keep_snack_counts_consistent(conn, household_id())
     conn.commit()
     conn.close()
+    if counts_arrived:
+        # A count set through this older door wins over a saved usual week
+        # that has that meal off every day (usual_week.meal_counts_changed_
+        # elsewhere): the meal is back on, its variety choice cleared.
+        from . import usual_week as _usual_week
+        _usual_week.meal_counts_changed_elsewhere({
+            meal: value for meal, value in (
+                ("breakfast", breakfasts_per_week), ("lunch", lunches_per_week), ("dinner", dinners_per_week),
+            ) if value is not None
+        })
     return {
         "notes": merged_notes,
         "protein_preferences": merged_proteins,
