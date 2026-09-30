@@ -1944,6 +1944,45 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>'
   };
 
+  // WHOSE MOVE IT IS — the one wording, and the only place a name is put
+  // into words on a move. Emily's to change in one line (Loop Board "Every
+  // move has an owner", slice 1, 2026-09-30).
+  //
+  // Quiet by construction: it rides in the row's own meta line, in that
+  // line's own ink, and is not a badge, a chip or an accent (hard rule 5 —
+  // the screen's one apricot belongs to its primary action). A move with
+  // nobody on it says nothing at all; there is no "unassigned".
+  //
+  // It LEADS the line rather than trailing it: "Emily’s · for Thursday’s
+  // skewers" reads the way a person tags a job, where "for Thursday’s
+  // skewers · Emily’s" leaves the possessive dangling with nothing after
+  // it. A cook says what they are doing, because "cooking" is true of it;
+  // every other kind says only whose it is, because moving something to
+  // the fridge is not cooking (§8: describe only what is true). Which
+  // moves carry a name at all is the server's answer — see
+  // app/tools/move_owner.py, and note a reheat and a shop deliberately
+  // carry none.
+  //
+  // Always ’s, including for a name ending in s ("Chris’s cooking"). One
+  // rule beats a possessive-apostrophe special case nobody agrees on.
+  var MOVE_OWNER_WORDS = {
+    cook: function (name) { return name + '’s cooking'; },
+    other: function (name) { return name + '’s'; }
+  };
+
+  function moveOwnerClause(move) {
+    var name = move && move.owner_name;
+    if (!name) return '';
+    // A cook that is DONE takes the plain possessive: "Emily’s cooking" is
+    // not true of a dinner already on the table. Deliberately NOT a past
+    // tense ("Emily cooked it") — the owner is whose the move WAS, and the
+    // app does not yet know who actually ticked it; claiming that is slice
+    // 3's job, not a word's. kitchenTodayRows' badge makes the same move
+    // for the same reason ("Cook" while it is ahead of you, "cooked" after).
+    var form = (!move.done && MOVE_OWNER_WORDS[move.kind]) || MOVE_OWNER_WORDS.other;
+    return form(String(name));
+  }
+
   // The two groups' own icons — the tab bar's bag and pot (ICONS.bag /
   // ICONS.kitchen are the same drawings), in a 32px sand tile at the head
   // of each card so the card reads as "the Shop part of today" and "the
@@ -2032,7 +2071,10 @@
   // payload cached from before that field existed still carries `detail`,
   // which says the clock the tag now says — better than an empty line.
   function moveMetaLine(move) {
-    return move.meta != null ? move.meta : (move.detail || '');
+    var line = move.meta != null ? move.meta : (move.detail || '');
+    var whose = moveOwnerClause(move);
+    if (!whose) return line;
+    return line ? whose + ' · ' + line : whose;
   }
 
   // One row. `state` is 'done', 'now' (the next-up move — exactly one row
@@ -2056,7 +2098,12 @@
       // here only, the way the old card's accent line did. (A fridge
       // move's reason IS its meta line — "for Thursday's skewers", or
       // that with "· still to do" after it — so it is not said twice.)
-      var why = (move.reason && metaLine.indexOf(move.reason) !== 0) ? '<span class="day-node-meta day-node-why">' + escapeHtml(move.reason) + '</span>' : '';
+      // `indexOf(...) === -1`, not `!== 0`: a fridge move's reason IS its
+      // meta line, and once the owner clause leads that line the reason is
+      // no longer at position 0 — `!== 0` would have printed it twice.
+      // Behaviour-identical for every move without an owner (the reason
+      // either starts the line or appears nowhere in it).
+      var why = (move.reason && metaLine.indexOf(move.reason) === -1) ? '<span class="day-node-meta day-node-why">' + escapeHtml(move.reason) + '</span>' : '';
       body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
         '<span class="day-node-eyebrow">Now</span>' +
         '<span class="day-node-title">' + title + '</span>' +
@@ -8451,7 +8498,12 @@
         // eaten, and it is still the row that gets ticked.
         prepped: prepped,
         title: isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner'),
-        line: kitchenTodayLine(meal, move, isReheat, done, prepped),
+        // Whose it is leads the line, exactly as it does on Today —
+        // moveOwnerClause is the one wording (MOVE_OWNER_WORDS), so the two
+        // screens cannot name the same cook two different ways. The typeof
+        // guard is this file's own idiom for a Cook builder that the tests
+        // run alone under node (see cookTonightTimes' cookRealClock read).
+        line: cookOwnerPrefix(move) + kitchenTodayLine(meal, move, isReheat, done, prepped),
         // "Cook" / "Reheat" while it is still ahead of you, and the past
         // tense of whichever it was once it is done — a reheat night was
         // never cooked, it was eaten (REHEAT_ACTION_LABEL says so too).
@@ -8462,6 +8514,14 @@
       });
     });
     return rows;
+  }
+
+  // "Emily’s cooking · " when the move says whose it is, "" otherwise —
+  // the clause and the separator together, so a row with nobody on it is
+  // byte-for-byte the line it was before any of this existed.
+  function cookOwnerPrefix(move) {
+    var whose = (typeof moveOwnerClause === 'function') ? moveOwnerClause(move) : '';
+    return whose ? whose + ' · ' : '';
   }
 
   // "start by 5:35 · 55 min" for a cook; "leftovers from Sunday · reheat ·
@@ -8891,7 +8951,13 @@
 
   function cookTonightCardHtml(row, meals, todayIso, data) {
     var meal = meals[row.idx] || {};
-    var cookName = data && data.cook_name;
+    // The move's own owner first, then the household's standing answer.
+    // They are the same name when one person cooks (both come from the
+    // cooking_role fact — app/tools/move_owner.py is the one reader); they
+    // differ when the household takes turns, where cook_name is null by
+    // design and only the night knows whose it is. A card with no move
+    // behind it still names the standing cook, as it always did.
+    var cookName = (row.move && row.move.owner_name) || (data && data.cook_name);
     var tiles = row.done ? [] : cookTonightTimes(row, meal);
     var note = row.done
       ? (row.isReheat ? 'Eaten.' : 'Cooked.')

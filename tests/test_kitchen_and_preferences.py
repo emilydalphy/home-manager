@@ -71,6 +71,14 @@ def _function(name: str, source: str = SHELL_JS) -> str:
 
 # --- 1. the Kitchen root --------------------------------------------------
 
+
+# The move-owner wording, sliced whole (MOVE_OWNER_WORDS + moveOwnerClause)
+# plus the Cook-side prefix that reads it. See the note at its call site.
+_OWNER_JS = (
+    SHELL_JS[SHELL_JS.index("  var MOVE_OWNER_WORDS = {"):SHELL_JS.index("  // The two groups' own icons")]
+    + _function("cookOwnerPrefix") + "\n"
+)
+
 def test_the_kitchen_root_is_the_cooks_tab():
     """The shelf, tonight, the get-ready rows and the More link, in this
     order, under the band (the shelf design, 2026-09-13). The three
@@ -823,6 +831,13 @@ _SUBTITLE_JS = (
     # prep day). One rule, one place; a harness without it gets a named
     # ReferenceError rather than a quiet wrong answer.
     + _function("cookPreppedAhead") + "\n"
+    # MOVE_OWNER_WORDS / moveOwnerClause / cookOwnerPrefix —
+    # kitchenTodayRows leads a row's line with whose move it is
+    # (2026-09-30, "Every move has an owner"). The real wording rather
+    # than a stub: cookOwnerPrefix guards its call with `typeof`, so a
+    # forgotten prelude would render no name and no error at all. Every
+    # row in this file carries no owner, so every line is what it was.
+    + _OWNER_JS
     + _function("kitchenTodayLine") + "\n"
     + _function("kitchenTodayRows") + "\n"
     + _function("kitchenSubtitle") + "\n"

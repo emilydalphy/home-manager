@@ -13,7 +13,13 @@ which doing it makes sense:
 
     {id, kind, title, detail, reason, date, slot, window_start, window_end,
      weight, action: {label, target}, done, tickable, overdue, entry_id,
-     task_id, duration_min, time_label, meta, chips}
+     task_id, duration_min, time_label, meta, chips, owner, owner_name}
+
+`owner` (a member id) and `owner_name` say whose move it is, and are None on
+most of them — a cook carries one when the household has said who cooks, the
+prep behind that cook carries the same one, and nothing else carries any.
+See move_owner.py, which owns that answer, and _stamp_owners below, which is
+the one place it reaches a move.
 
 `meta` is the one clock-free line under the title on Today (Emily,
 2026-09-17, "Today: Shop / Cook, Morning · Afternoon · Evening"): what the
@@ -71,6 +77,7 @@ from datetime import date, datetime, time, timedelta
 from . import cooker as _cooker
 from . import defrost as _defrost
 from . import grocery as _grocery
+from . import move_owner as _move_owner
 from . import rhythm as _rhythm
 
 logger = logging.getLogger(__name__)
@@ -166,18 +173,36 @@ def _clock(t: time) -> str:
     return f"{hour}:{t.minute:02d}"
 
 
-def _dinner_clock() -> time:
+def _household_rhythm() -> dict:
+    """
+    The rhythm answers, once. `get_household_rhythm` opens a connection, and
+    a day's moves need it twice over — the dinner clock and (2026-09-30) who
+    owns each move — so moves_for_day reads it here and threads it into both
+    rather than paying for it twice. Unreadable is an empty answer, never an
+    exception: every reader below has a default, and a screen that renders
+    nothing because a preference could not be read is the worse failure.
+    """
+    try:
+        return _rhythm.get_household_rhythm()
+    except Exception:
+        logger.exception("Couldn't read the household's rhythm; using the defaults")
+        return {}
+
+
+def _dinner_clock(rhythm: dict | None = None) -> time:
     """
     When dinner actually lands for this household, from the dinner_window
     rhythm fact. defrost.py already owns that mapping (it schedules
     backwards from the same clock) — read it rather than writing a second
     copy that can drift. 'all_over' and an unanswered question both mean
     there is no household clock, so the default stands.
+
+    `rhythm` is the caller's own read of the answers (see _household_rhythm);
+    omitted, it makes one — big_meal, weekly_plan, today_meals and cooker all
+    call this with no arguments and are unchanged by that.
     """
-    try:
-        window = _rhythm.get_household_rhythm().get("dinner_window")
-    except Exception:
-        window = None
+    rhythm = rhythm if rhythm is not None else _household_rhythm()
+    window = rhythm.get("dinner_window")
     return _defrost._DINNER_CLOCK_BY_WINDOW.get(window or "") or DEFAULT_SLOT_HOURS["dinner"]
 
 
@@ -734,12 +759,52 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
 # in its payload. Add the source here (not a new store) once that lands.
 
 
+# ---------- whose move is it ----------
+
+def _stamp_owners(moves: list[dict], owners) -> list[dict]:
+    """
+    Put `owner` (a member id) and `owner_name` on every move — both None
+    wherever nothing is known, which is most households and every move kind
+    but a cook and the prep behind one. See move_owner.py for which kinds
+    carry a name and, more usefully, why the shop and the reheat do not.
+
+    A PASS, deliberately, rather than five builders each learning about
+    this: every field it reads (`kind`, `date`, `entry_id`) is already on
+    the move, so the builders are untouched and a household with no answer
+    renders byte-for-byte what it rendered before this existed. The keys
+    are always present so a reader never has to know whether the payload
+    predates them.
+
+    A holiday's own shop row (big_meal.SHOP_MARK) reaches this as
+    kind='shop' carrying the big meal's entry_id, and is deliberately left
+    unowned with the generic shop: this app has no "who shops" answer to
+    read (move_owner's docstring says where that was checked), and the one
+    who cooks the roast is not necessarily the one who fetches it.
+    """
+    for move in moves:
+        kind = move.get("kind")
+        if kind == "cook":
+            member_id, name = owners.for_meal({"date": move.get("date"), "is_leftovers": False})
+        elif kind in ("fridge", "prep"):
+            # _prep_moves copies prep_tasks.meal_plan_entry_id onto the
+            # move as `entry_id`, so the link to the meal this is for is
+            # already here and needs no second read of the task.
+            member_id, name = owners.for_task({"meal_plan_entry_id": move.get("entry_id")})
+        else:
+            member_id, name = (None, None)
+        move["owner"] = member_id
+        move["owner_name"] = name
+    return moves
+
+
 # ---------- the timeline ----------
 
 def moves_for_day(
     day: str | date | None = None,
     now: datetime | None = None,
     view: dict | None = None,
+    owners: "_move_owner.MoveOwners | None" = None,
+    rhythm: dict | None = None,
 ) -> list[dict]:
     """
     Every move for one day, earliest window first.
@@ -755,11 +820,19 @@ def moves_for_day(
     caller passing one clock can never be answered about another day's
     moves — which is exactly what "today" meant while this read the
     server's date.
+
+    `owners` and `rhythm` are the same bargain as `view`: today_moves reads
+    the household's answers ONCE and hands both down to both of its calls
+    (today's and, when nothing is featured, tomorrow's), so a whole Today
+    payload costs exactly the one rhythm read it cost before whose-move-is-it
+    existed — and never one per move.
     """
     now = now or _household_now()
     target = _as_date(day) if day is not None else now.date()
-    dinner_clock = _dinner_clock()
+    rhythm = rhythm if rhythm is not None else _household_rhythm()
+    dinner_clock = _dinner_clock(rhythm)
     view = view if view is not None else _cooker.get_cooker_view()
+    owners = owners if owners is not None else _move_owner.resolve(view, rhythm)
 
     prep = _prep_moves(view, target, now, dinner_clock)
     shop = _shop_move(view, target, now, dinner_clock)
@@ -780,7 +853,7 @@ def moves_for_day(
         shop = []
     moves = _cook_and_reheat_moves(view, target, dinner_clock) + prep + shop
     moves.sort(key=lambda m: (m["window_start"], -m["weight"], m["id"]))
-    return moves
+    return _stamp_owners(moves, owners)
 
 
 def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | None:
@@ -878,12 +951,19 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
     now = now or _household_now()
     target = _as_date(day) if day is not None else now.date()
     view = _cooker.get_cooker_view()
-    moves = moves_for_day(target, now=now, view=view)
+    # Who owns what is a property of the PLAN, not of the day being asked
+    # about, so today's moves and tomorrow's share one answer — the same
+    # bargain `view` already makes, and what keeps a Today payload at one
+    # read of the rhythm and the members table however many moves it holds.
+    rhythm = _household_rhythm()
+    owners = _move_owner.resolve(view, rhythm)
+    moves = moves_for_day(target, now=now, view=view, owners=owners, rhythm=rhythm)
     featured = featured_move_id(moves, now=now)
 
     tomorrow = None
     if featured is None:
-        ahead = moves_for_day(target + timedelta(days=1), now=now, view=view)
+        ahead = moves_for_day(target + timedelta(days=1), now=now, view=view,
+                              owners=owners, rhythm=rhythm)
         undone = [m for m in ahead if not m["done"]]
         tomorrow = undone[0] if undone else None
 

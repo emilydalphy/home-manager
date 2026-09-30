@@ -20,6 +20,7 @@ from . import freezer_portions as _freezer_portions
 from . import grocery as _grocery
 from . import inventory as _inventory
 from . import leftovers as _leftovers
+from . import move_owner as _move_owner
 from . import plates as _plates
 from . import prep_sessions as _prep_sessions
 from . import quantities as _quantities
@@ -2012,11 +2013,11 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
 
 
 def _cook_name() -> str | None:
-    """The one person who cooks, by name, or None (see get_cooker_view)."""
-    try:
-        role = _rhythm.get_household_rhythm().get("cooking_role") or {}
-    except Exception:
-        return None
-    if role.get("value") != "one_person":
-        return None
-    return (role.get("who") or "").strip() or None
+    """
+    The one person who cooks, by name, or None (see get_cooker_view).
+
+    The body moved to move_owner.py on 2026-09-30, when Today's moves began
+    naming their cook too: `cooking_role` gets ONE reader, not two that can
+    drift about what an answer means.
+    """
+    return _move_owner.one_person_cook_name()
