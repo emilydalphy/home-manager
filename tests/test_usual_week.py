@@ -675,3 +675,15 @@ def test_the_schema_declares_the_usual_week_column():
     from pathlib import Path
     schema = (Path(agent.__file__).parent / "schema.sql").read_text(encoding="utf-8")
     assert "usual_week_json TEXT NOT NULL DEFAULT ''" in schema
+
+
+def test_first_week_picks_go_through_the_gates_own_pick_check(stub_model, picker, monkeypatch):
+    """The same check repick_held uses (allergen_gate._pick_clashes: strict
+    when the pick has a list, draft mode only when it has none)."""
+    seen = []
+    real = allergen_gate._pick_clashes
+    monkeypatch.setattr(allergen_gate, "_pick_clashes", lambda pick, av: (seen.append(pick["meal_name"]), real(pick, av))[1])
+    dates = tools._week_dates(_monday())
+    stub_model(_days(dates, breakfasts=None, lunches=["Wrap"] * 7, dinners=["Chili", "Tacos"] * 3 + ["Stew"]))
+    agent.generate_weekly_plan(_monday())
+    assert seen, "every first-week pick is gated"
