@@ -999,6 +999,7 @@ def _drop_by_cooking_on_the_fed_night(
             "kind": "cook_on_fed", "dish": dish, "source_entry_id": source_id,
             "weekly_plan_id": weekly_plan_id, **snap,
             "after": _plan_undo.fingerprint(conn, touched, holder_id),
+            "grocery": _plan_undo.lines_changed(conn, snap),
         })
         conn.commit()
     except Exception:
@@ -1065,9 +1066,19 @@ def drop_dish_undo(weekly_plan_id: int, entry_id: int) -> dict:
     itself follows. One transaction, lock first, for the reason
     _drop_by_cooking_on_the_fed_night gives.
 
-    The grocery LIST is only ever recomputed, never un-reversed: a line
-    already in a cart or through the till was left alone on the way down
-    and is left alone here too.
+    The batch's own line is only ever recomputed, never un-reversed: a
+    line already in a cart or through the till was left alone on the way
+    down and is left alone here too. The one exception is a SIDE the
+    replaced leftovers night carried, reversed with that row since
+    2026-09-30 (delete_plan_entry): plan_undo puts it back from the record
+    (a deleted line exactly, a trimmed shared line only while nobody has
+    touched it since) — and then the rescale below re-ingests the recipe
+    group, SIDES INCLUDED, because the reheat carries the dish's
+    recipe_id. So on this door the rescale has the last word on the side's
+    line as it always has on the batch's: a number the household typed on
+    a plan line in between is recomputed from the ledger, not kept (the
+    night off, which has no rescale, keeps it). Measured and pinned in
+    test_reheat_side_is_bought.py rather than promised away.
     """
     nothing = {"status": "refused", "message": "There’s nothing to put back."}
     conn = get_conn()
@@ -7806,21 +7817,35 @@ def _rewrite_chain_ref(ref, mapping: dict[str, str]):
 
 def delete_plan_entry(conn, entry_id: int) -> None:
     """
-    Take one row off the plan WITHOUT touching the grocery list — its prep
-    rows with it (the order clear_plan_slot uses), its grocery links by the
-    table's own cascade.
+    Take one row off the plan, its prep rows with it (the order
+    clear_plan_slot uses), and whatever it put on the grocery list with it
+    (_reverse_meal_grocery_contributions, on this connection — a line
+    already in a cart or through the till is left alone, as everywhere).
 
-    Only for rows whose food is not going anywhere: a leftovers night the
+    Only for rows whose DISH is not going anywhere: a leftovers night the
     cook itself now lands on, a reheat whose portion is frozen, a row an
     Undo is about to replace with the one it stood in for. Everything
     removed this way belongs in an undo snapshot (plan_undo) — nothing else
-    can put it back.
+    can put it back — and since 2026-09-30 that snapshot carries the
+    grocery lines too (plan_undo.lines_changed / _restore_lines).
+
+    It used to leave the list alone, on the grounds that such a row buys
+    nothing: a reheat eats a batch somebody else bought. True until a
+    reheat could own a SIDE (the reheat-side card), and then a night off
+    on a Thursday reheat carrying a green salad left the lettuce on the
+    list with nothing on the week behind it — and on the cook_on_fed door,
+    for a night that is still being eaten, a salad on no night at all
+    (Loop Board "Taking the night off on a reheat strands its side's
+    grocery line", Emily's option (b)). For a row that owns no shopping —
+    every reheat without a side, every holder row — the reversal finds no
+    links and changes nothing.
 
     Written in tonight.py first (2026-09-22) and lifted here on 2026-09-24
     when drop_dish_from_day grew the same need, because this module owns
     meal_plan_entries and a second copy of "delete a row and its prep" is
     exactly how the two would come to disagree about whether prep travels.
     """
+    _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
     conn.execute(
         "DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id = ?",
         (household_id(), entry_id),
@@ -7932,7 +7957,9 @@ def move_cook_onto_fed_night(conn, weekly_plan_id: int, entry_id: int,
     it was planned for — Emily's option A, 2026-09-22, and the only answer
     that leaves nobody eating a reheat of a batch nobody cooked.
 
-    The target's leftovers row goes (it is the cook now), the cook moves
+    The target's leftovers row goes (it is the cook now) — and with it any
+    SIDE that row carried, off the list too (delete_plan_entry, 2026-09-30;
+    both callers' undo records carry the line) — the cook moves
     onto its date and slot, every OTHER row that named the old night by
     date re-points at the new one, and the cook's fridge moves travel with
     it by the same rule a nights swap moves them (_shift_defrost_tasks).
