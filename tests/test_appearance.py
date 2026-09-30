@@ -37,7 +37,8 @@ THEMED_PAGES = [
     "chores-setup.html", "member-share.html",
     "not-found.html", "inventory.html", "join.html", "goodbye.html",
 ]
-DARK_FILES = ["theme.css", "shell.css", "login.html", "inventory.html"]
+# onboarding.html: its "Who's eating, and when?" grid's "some of you" cell (2026-09-30).
+DARK_FILES = ["theme.css", "shell.css", "login.html", "inventory.html", "onboarding.html"]
 
 MATCH = ':root:not([data-theme="light"])'
 FORCED = ':root[data-theme="dark"]'

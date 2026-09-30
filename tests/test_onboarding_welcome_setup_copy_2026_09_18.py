@@ -10,13 +10,13 @@ suites those other files already carry:
            "You can just talk to me" rows.
   Card 5 — dinner-time's Skip sits under Continue, styled as a quiet
            italic line rather than the bold .skip-link.
-  Card 6 — the loading screen's "what I'm using" card: one row per fact,
-           built from revealSetupFacts, hidden the moment revealShowDays()
-           runs.
+  Card 6 — the loading screen's "what I'm using" card: one row per fact
+           (built by revealUsingLines since 2026-09-30), hidden the moment
+           revealShowDays() runs.
 
-(Card 2's copy and Card 4's prep-day chips are pinned in
-tests/test_onboarding_welcome_flow.py and tests/test_onboarding_prep_chips.py
-respectively.)
+(Card 2's copy is pinned in tests/test_onboarding_welcome_flow.py. Card 4's
+prep-day chips went with the prep-days screen on 2026-09-30 — "Do you like
+to cook ahead?" is pinned in tests/test_onboarding_your_week.py.)
 """
 from __future__ import annotations
 
@@ -141,51 +141,10 @@ def test_the_reveal_carries_the_using_card_under_the_status_hidden_by_default():
     assert "Not quite right? You can change any of it later." in step
 
 
-@_needs_node
-def _run_using_js(body: str):
-    harness = "\n".join([
-        _const("REVEAL_DINNER_WINDOW_FACT"),
-        _fn("revealTitleCase"),
-        _fn("revealJoinWords"),
-        _fn("escapeHtmlLocal"),
-        _const("REVEAL_USING_ICONS"),
-        _fn("revealUsingRowHtml"),
-        _fn("revealUsingRows"),
-        body,
-    ])
-    return _run(harness)
-
-
-@_needs_node
-def test_using_rows_cover_people_avoid_dinner_and_prep_in_order():
-    facts = {
-        "people": 2, "avoidItems": [], "dinnerWindow": "6_8",
-        "prepDays": ["sunday", "monday"],
-    }
-    out = _run_using_js(f"console.log(JSON.stringify(revealUsingRows({json.dumps(facts)})))")
-    assert out.index(">2 people<") < out.index("No allergies")
-    assert out.index("No allergies") < out.index("Dinner between 6 and 8")
-    assert out.index("Dinner between 6 and 8") < out.index("Prep on Sunday and Monday")
-
-
-@_needs_node
-def test_a_solo_household_with_avoids_and_no_prep_reads_back_as_itself():
-    facts = {
-        "people": 1, "avoidItems": ["shrimp", "peanuts"], "dinnerWindow": "all_over",
-        "prepDays": [],
-    }
-    out = _run_using_js(f"console.log(JSON.stringify(revealUsingRows({json.dumps(facts)})))")
-    assert ">1 person<" in out
-    assert "No shrimp, no peanuts" in out
-    # 'all_over' isn't specific enough to read back — no dinner row at all.
-    assert "Dinner" not in out
-    assert "No prep days" in out
-
-
-def test_reveal_setup_facts_gathers_avoid_items_from_allergies_and_wont_eat():
-    body = _fn("revealSetupFacts")
-    assert "avoidItems" in body
-    assert "answers.wont_eat" in body
+# UPDATED 2026-09-30: the card's rows are the fuller read-back (people by
+# name; meals and days; allergies and won't-eats by person; variety; dinner
+# time and who's out), built by revealUsingLines from the saved answers.
+# Its rows are pinned in tests/test_onboarding_your_week.py.
 
 
 @_needs_node

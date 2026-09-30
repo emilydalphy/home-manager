@@ -39,7 +39,11 @@ CREATE TABLE IF NOT EXISTS members (
     -- When this adult first used Pomona as themselves; NULL until then.
     -- See app/invites.py (mark_joined) and the ("members", "joined_at")
     -- migration in app/db.py.
-    joined_at TEXT
+    joined_at TEXT,
+    -- 0 = a helper who signs in but doesn't eat here ("Someone not eating
+    -- here" at setup, 2026-09-30): never planned for, never counted in
+    -- attendance or servings. See _shared.EATS_HERE_SQL.
+    eats_here INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS pets (

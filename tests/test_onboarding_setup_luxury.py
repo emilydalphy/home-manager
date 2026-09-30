@@ -10,8 +10,9 @@ darker apricot on Continue than the welcome screens' button, an × on every
 name row including the empty ones, and controls hugging the title. This
 file pins what replaced each of those, in the shape a reviewer can check:
 
-- one progress cue per question screen besides the crumb — the welcome
-  screens' four-dot pager in the foot; no strip, no fraction eyebrow;
+- one progress cue per question screen besides the crumb — since
+  2026-09-30 the step eyebrow ("2 of 4 · How your week runs"), where it
+  was the four-dot pager from 2026-09-12; never a strip as well;
 - the one button on every question is the welcome screens' button —
   .btn-primary, --apricot with --on-accent-ink — not a fill of its own;
 - a name row only carries its × once it has a name;
@@ -63,15 +64,16 @@ def _rule(css: str, selector: str) -> str:
 
 
 # ---------- one progress cue ----------
+# UPDATED 2026-09-30: Emily's "How your week runs" mockups put the step
+# eyebrow ("2 of 4 · How your week runs") back in place of the four-dot
+# pager — still one cue besides the crumb, never two.
 
 
 @pytest.mark.parametrize("step", QUESTION_STEPS)
-def test_each_question_screen_carries_exactly_one_pager_and_no_other_cue(step):
+def test_each_question_screen_carries_exactly_one_eyebrow_and_no_other_cue(step):
     markup = _step_markup(f"step-{step}")
-    pagers = markup.count('class="q-pager"')
-    assert pagers == 1, f"{step} has {pagers} pagers"
-    assert "q-eyebrow" not in markup, f"{step} still carries the fraction eyebrow"
-    assert not re.search(r"\d of \d", markup), f"{step} still counts itself out loud"
+    assert markup.count('class="q-eyebrow"') == 1, f"{step} has no step eyebrow"
+    assert 'class="q-pager"' not in markup, f"{step} still carries the dot pager as well"
     # The crumb is the other way back — and there is exactly one of it.
     assert markup.count(f'data-step-back="{step}"') == 1
 
@@ -81,25 +83,19 @@ def test_the_ten_segment_strip_at_the_top_is_gone():
     assert ".progress {" not in _css() and ".dot {" not in _css()
 
 
-def test_the_pager_sits_in_the_foot_just_above_the_button():
+def test_the_eyebrow_sits_between_the_crumb_and_the_question():
     for step in QUESTION_STEPS:
         markup = _step_markup(f"step-{step}")
-        foot = markup[markup.index('class="q-foot"'):]
-        assert 'class="q-pager"' in foot, f"{step}'s pager is not in its foot"
-        assert foot.index('class="q-pager"') < foot.index("btn-primary"), (
-            f"{step}'s pager sits below its button"
+        assert markup.index("data-step-back") < markup.index('class="q-eyebrow"') < markup.index("<h1"), (
+            f"{step}'s eyebrow is not between its crumb and its question"
         )
 
 
-def test_the_pager_is_the_welcome_screens_dot_row_on_ivory():
-    css = _question_css()
-    dot = _rule(css, ".q-pager span")
-    on = _rule(css, ".q-pager span.is-on")
-    assert "var(--hairline-strong)" in dot
-    assert "var(--ink-strong)" in on and "width: 18px" in on
-    # The intro's own pager: the same shape (6px dots, the current one 18px).
-    intro = _rule(_css(), ".intro-pager span.is-on")
-    assert "width: 18px" in intro
+def test_the_eyebrow_is_the_systems_eyebrow():
+    rule = _rule(_question_css(), ".q-eyebrow")
+    assert "font-size: 10px" in rule and "font-weight: 800" in rule
+    assert "text-transform: uppercase" in rule
+    assert "var(--ink-muted)" in rule
 
 
 # ---------- one apricot, the welcome screens' button ----------
@@ -256,19 +252,38 @@ def test_the_dinner_time_line_sits_under_the_question_not_under_the_chips():
 
 @pytest.mark.parametrize("step, words", [
     ("step-household", ["Who are we planning for?", "Everyone who eats at home.", "+ Add person"]),
-    ("step-meals", ["Which meals should I plan?", "Whatever you don&rsquo;t tap, I leave to you."]),
+    ("step-helpers", [
+        "Does anyone else help run the house?",
+        "If someone else shops or cooks too, I&rsquo;ll give them their own way in once your first week is ready.",
+    ]),
+    ("step-meals-days", [
+        "Who&rsquo;s eating, and when?",
+        "Everyone starts on every meal. Tap a day to pick who&rsquo;s eating it, or to tap off a meal you don&rsquo;t need planned.",
+        "Everyone", "Some of you", "Not planned",
+    ]),
     ("step-restrictions", ["Anything I should never put on the plate?", "Allergies, must-avoids, the way someone eats."]),
     ("step-eating-style", ["Is there a certain way you'd like meals to lean?"]),
     ("step-wont-eat", ["Anything I should never recommend?"]),
     ("step-excited-about", ["What are you excited to eat more of lately?"]),
-    ("step-leftovers", ["How do you feel about leftovers?"]),
-    # "I don't prep ahead" is now the first chip renderPrepDayChips draws
-    # (Card 4) rather than static markup, so it's pinned in
-    # test_onboarding_go_back.py's node harness instead of here.
+    # 2026-09-30: "Do you like to cook ahead?" replaced the prep-days
+    # question, and "How do you feel about leftovers?" left setup.
     ("step-prep", [
-        "Which days do you want to do your meal prepping?",
-        "You can select multiple if you want to do a few cook days throughout the week.",
-        "Roughly how long?",
+        "Do you like to cook ahead?",
+        "A prep day is when you make things for later in the week: lunches, a big batch, sauces.",
+        "No, I cook as I go", "Every meal is made the day you eat it.",
+        "Yes, I have a prep day", "Which day?", "How long?",
+    ]),
+    ("step-variety-breakfast", [
+        "How many different breakfasts in a week?",
+        "You&rsquo;ll still have breakfast all the mornings you selected. This is how many different ones.",
+    ]),
+    ("step-variety-lunch", [
+        "How many different lunches in a week?",
+        "You&rsquo;ll still have lunch all the days you selected. This is how many different ones.",
+    ]),
+    ("step-variety-dinner", [
+        "How many different dinners in a week?",
+        "You&rsquo;ll still have dinner all the nights you selected. This is how many different ones.",
     ]),
     ("step-dinner-time", ["What time do you usually have dinner?", "So I can tell you when to start cooking.", "Skip"]),
     ("step-kit-repeats", [
@@ -327,8 +342,8 @@ def test_showstep_stamps_the_arrival_class_on_the_step_it_shows():
     out = _run(_nav_harness() + """
 showStep('household');
 const a = ELS['step-household']._classes.has('step-enter');
-showStep('meals');
-console.log(JSON.stringify([a, ELS['step-meals']._classes.has('step-enter')]));
+showStep('meals-days');
+console.log(JSON.stringify([a, ELS['step-meals-days']._classes.has('step-enter')]));
 """)
     assert out == [True, True]
 

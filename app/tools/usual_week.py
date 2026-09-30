@@ -44,7 +44,7 @@ import threading
 from datetime import date
 
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import EATS_HERE_SQL, household_id
 
 logger = logging.getLogger("home_manager")
 
@@ -122,7 +122,8 @@ def _members(conn) -> list[dict]:
     return [
         {"id": r["id"], "name": r["name"]}
         for r in conn.execute(
-            "SELECT id, name FROM members WHERE household_id = ? ORDER BY id", (household_id(),)
+            f"SELECT id, name FROM members WHERE household_id = ? AND {EATS_HERE_SQL} ORDER BY id",
+            (household_id(),),
         ).fetchall()
     ]
 

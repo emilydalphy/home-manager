@@ -114,11 +114,17 @@ def mark_joined(household_id: int, member_id: int | None) -> None:
         conn.close()
 
 
-def add_adult(household_id: int, name: str) -> int:
+def add_adult(household_id: int, name: str, eats_here: bool = True) -> int:
     """
     Add the person being invited as an adult, by first name only — the
     card's "If the partner isn't in the household yet, the invite step asks
     for their first name". Returns their member id.
+
+    eats_here=False (2026-09-30, setup's "Someone not eating here" — a
+    nanny, a parent who helps with dinners): they sign in and see the plan
+    and the list, but are never planned for (members.eats_here = 0; see
+    tools._shared.EATS_HERE_SQL). Only a NEW person is marked so — someone
+    already in the household keeps whatever they were.
 
     An adult already here under that name (any case) is used as-is rather
     than duplicated. Someone here under that name who is NOT an adult is
@@ -150,6 +156,20 @@ def add_adult(household_id: int, name: str) -> int:
     with use_household(int(household_id)):
         member_id = tools.add_member(clean)["member_id"]
         tools.set_member_age_group(clean, "adult")
+    if not eats_here:
+        conn = get_conn()
+        try:
+            conn.execute(
+                "UPDATE members SET eats_here = 0 WHERE id = ? AND household_id = ?",
+                (int(member_id), int(household_id)),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        # add_member re-synced attendance counting them; now they aren't.
+        with use_household(int(household_id)):
+            from .tools import attendance as _attendance
+            _attendance.reconcile_membership()
     logger.info("Invite added an adult to household %s", household_id)
     return member_id
 

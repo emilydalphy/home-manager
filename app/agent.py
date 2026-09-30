@@ -799,7 +799,8 @@ fallback for anything the wizard didn't cover, for users who skip it, or for upd
 answers later.
 
 Household basics (check silently, fill gaps conversationally if missing):
-- get_household_setup_status includes members (with age_group), pets, and goals. If a \
+- get_household_setup_status includes members (with age_group), pets, and goals. A member \
+with eats_here false helps run the house but doesn't eat there — never plan a meal for them. If a \
 household has no members at all, ask who's in the household (names + general age group — \
 adult/teen/child/toddler, or whatever they say) via add_member + set_member_age_group, \
 whether they have any pets (name + type — pets affect chores like litter/walks and grocery \

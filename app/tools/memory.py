@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import household_id, require_household_row
+from ._shared import EATS_HERE_SQL, household_id, require_household_row
 from . import household as _household
 from . import preferences as _preferences
 from . import rhythm as _rhythm
@@ -167,7 +167,10 @@ def get_household_memory() -> dict:
     conn = get_conn()
     prefs = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)).fetchone()
     members = conn.execute(
-        "SELECT name, age_group, dietary_restrictions_json FROM members WHERE household_id = ?", (household_id(),)
+        # The people meals are planned for — a helper who doesn't eat here
+        # is left out (2026-09-30).
+        f"SELECT name, age_group, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
+        (household_id(),),
     ).fetchall()
     household = conn.execute("SELECT goals FROM households WHERE id = ?", (household_id(),)).fetchone()
 

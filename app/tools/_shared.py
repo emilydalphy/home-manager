@@ -150,6 +150,12 @@ def use_member(value: int | None) -> Iterator[int | None]:
 
 
 _ADULT_SQL = "LOWER(TRIM(age_group)) = 'adult'"
+# The people meals are planned for (2026-09-30). A helper added as
+# "Someone not eating here" (members.eats_here = 0) signs in and sees the
+# plan and the list, but is left out of everything that decides who eats:
+# the members the planner is given, attendance and servings, the usual
+# week's grid. Sign-in, invites and "Who's this?" still read every adult.
+EATS_HERE_SQL = "COALESCE(eats_here, 1) = 1"
 
 
 def _fold_for_compare(name: str) -> str:

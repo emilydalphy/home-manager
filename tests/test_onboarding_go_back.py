@@ -67,9 +67,14 @@ FIRST_STEP = "intro-hello"
 INTRO_STEPS_AFTER_THE_FIRST = ["intro-help", "intro-talk", "intro-know"]
 # The two rhythm-1 tests that used to sit at the end of this file (who cooks re-asked when a second adult is added; a lunch answer for somebody no longer here is dropped) went with the rhythm-1 screen itself on 2026-09-11 — see the note below.
 # UPDATED 2026-09-11 (Build 6 of the screen-by-screen redesign, Emily's decision G): setup asks only what changes the plan. rhythm-1, rhythm-2, dinners and typical-week left the flow; 'meals' took the rhythm screens' place, and leftovers / prep / dinner-time became one screen each.
+# UPDATED 2026-09-30 ("How your week runs" screens): the order is the
+# storyboard's — who's here, who helps, never on the plate; who's eating
+# when, cooking ahead, the three variety screens, dinner time; what you eat;
+# the kit. 'meals' and 'leftovers' left the flow.
 QUESTION_STEPS = [
-    "household", "meals", "restrictions", "eating-style", "wont-eat",
-    "excited-about", "leftovers", "prep", "dinner-time", "kit-repeats",
+    "household", "helpers", "restrictions", "meals-days", "prep",
+    "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
+    "eating-style", "wont-eat", "excited-about", "kit-repeats",
 ]
 # UPDATED 2026-09-27 (App Store consent card): "Sharing with Claude" sits
 # between the last question and the reveal — the first moment anything
@@ -308,23 +313,31 @@ def _nav_harness(builders: str = "", seed: str = "") -> str:
         _STEP_ELEMENTS,
         builders or """
 const BUILT = [];
-function buildMealsStep() { BUILT.push('meals'); }
+function buildHelpersStep() { BUILT.push('helpers'); }
 function buildRestrictionsStep() { BUILT.push('restrictions'); }
+function buildMealsDaysStep() { BUILT.push('meals-days'); }
+function buildPrepStep() { BUILT.push('prep'); }
+function buildVarietyStep(meal) { BUILT.push('variety-' + meal); }
 function buildEatingStyleStep() { BUILT.push('eating-style'); }
 function buildWontEatStep() { BUILT.push('wont-eat'); }
 function buildExcitedStep() { BUILT.push('excited-about'); }
-function buildLeftoversStep() { BUILT.push('leftovers'); }
-function buildPrepStep() { BUILT.push('prep'); }
 function buildDinnerTimeStep() { BUILT.push('dinner-time'); }
 function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
 """,
         _const("INTRO_STEPS"),
         _const("ALL_STEPS"),
+        # The variety screens are asked only for a meal that's on
+        # (2026-09-30); every meal is on unless a test says otherwise.
+        _const("VARIETY_STEPS"),
+        "var MEALS_OFF = [];",
+        "function uwMealOn(meal) { return MEALS_OFF.indexOf(meal) === -1; }",
         _const("STEP_TITLES"),
         # The section pager (2026-09-12): which of the four stops each
         # question belongs to, and how many stops there are.
         _const("QUESTION_SECTIONS"),
+        _const("SECTION_NAMES"),
         _const("SECTION_COUNT"),
+        _fn("stepEyebrow"),
         _fn("stepFlow"),
         _fn("stepBefore"),
         _fn("resolveStep"),
@@ -417,15 +430,18 @@ console.log(JSON.stringify(labels));
         "intro-talk": "‹ What I help with",
         "intro-know": "‹ How it works",
         "household": "‹ Getting to know you",
-        "meals": "‹ Who's here",
-        "restrictions": "‹ Which meals",
-        "eating-style": "‹ Never on the plate",
+        "helpers": "‹ Who's here",
+        "restrictions": "‹ Who helps",
+        "meals-days": "‹ Never on the plate",
+        "prep": "‹ Who's eating",
+        "variety-breakfast": "‹ Cook ahead",
+        "variety-lunch": "‹ Breakfast",
+        "variety-dinner": "‹ Lunch",
+        "dinner-time": "‹ Dinner",
+        "eating-style": "‹ Dinner time",
         "wont-eat": "‹ How you eat",
         "excited-about": "‹ Never recommend",
-        "leftovers": "‹ Cuisines you like",
-        "prep": "‹ Leftovers",
-        "dinner-time": "‹ Meal prep",
-        "kit-repeats": "‹ Dinner time",
+        "kit-repeats": "‹ Cuisines you like",
         "ai-consent": "‹ Your kit",
     }
 
@@ -459,8 +475,8 @@ const back = BUILT.slice();
 console.log(JSON.stringify({ forward: forward, back: back, on: currentStep }));
 """)
     assert out["forward"] == ["restrictions"]
-    assert out["back"] == ["meals"], "going back left the step it landed on undrawn"
-    assert out["on"] == "meals"
+    assert out["back"] == ["helpers"], "going back left the step it landed on undrawn"
+    assert out["on"] == "helpers"
 
 
 # ---------- the phone's own back gesture ----------
@@ -469,14 +485,14 @@ console.log(JSON.stringify({ forward: forward, back: back, on: currentStep }));
 @_needs_node
 def test_the_back_gesture_walks_the_flow_backwards_one_step_at_a_time():
     out = _run(_nav_harness() + """
-['meals', 'restrictions', 'eating-style', 'wont-eat'].forEach(showStep);
+['helpers', 'restrictions', 'eating-style', 'wont-eat'].forEach(showStep);
 const seen = [];
 for (let i = 0; i < 4; i++) { gesture(); seen.push(currentStep); }
 console.log(JSON.stringify({ seen: seen, depth: depth(), left: LEFT_PAGE }));
 """)
     # The page started on the first intro screen, and that is the entry the
     # stack unwinds onto.
-    assert out["seen"] == ["eating-style", "restrictions", "meals", "intro-hello"]
+    assert out["seen"] == ["eating-style", "restrictions", "helpers", "intro-hello"]
     assert out["depth"] == 1, "the gesture didn't unwind the stack it walked in on"
     assert out["left"] is False, "it walked off the page early"
 
@@ -489,16 +505,16 @@ def test_the_control_and_the_gesture_agree_rather_than_fighting_each_other():
     bouncing forward onto the step you just left.
     """
     out = _run(_nav_harness() + """
-['meals', 'restrictions', 'eating-style'].forEach(showStep);
+['helpers', 'restrictions', 'meals-days'].forEach(showStep);
 const depthBefore = depth();
-tapBack('eating-style');
+tapBack('meals-days');
 const afterTap = { on: currentStep, depth: depth() };
 gesture();
 console.log(JSON.stringify({ before: depthBefore, afterTap: afterTap, thenGesture: currentStep }));
 """)
     assert out["before"] == 4
     assert out["afterTap"] == {"on": "restrictions", "depth": 3}
-    assert out["thenGesture"] == "meals", (
+    assert out["thenGesture"] == "helpers", (
         "the gesture after a back tap went forward again — the control pushed "
         "an entry instead of walking one back"
     )
@@ -528,7 +544,7 @@ def test_the_reveal_takes_over_its_entry_instead_of_adding_one():
     the trap below exists for.
     """
     out = _run(_nav_harness() + """
-['meals', 'restrictions'].forEach(showStep);
+['helpers', 'restrictions'].forEach(showStep);
 const before = depth();
 showStep('reveal');
 console.log(JSON.stringify({ before: before, after: depth(), top: top().onboardingStep }));
@@ -582,7 +598,7 @@ def test_a_forward_gesture_from_the_reveal_stays_on_the_reveal_too():
     ahead to swipe to either.
     """
     out = _run(_nav_harness() + """
-['meals', 'restrictions'].forEach(showStep);
+['helpers', 'restrictions'].forEach(showStep);
 showStep('reveal');
 gesture();
 forwardGesture();
@@ -608,7 +624,7 @@ def test_a_reload_mid_setup_throws_away_the_entries_in_front_of_it():
     out = _run(_nav_harness(seed="""
 // Where a previous load of this page had got to: four steps in, with the
 // browser sitting on the third of them.
-[staleEntry('household'), staleEntry('meals'), staleEntry('restrictions'),
+[staleEntry('household'), staleEntry('helpers'), staleEntry('restrictions'),
  staleEntry('restrictions')].forEach(function (s) { HISTORY.push(s); });
 CURSOR = 2;
 """) + """
@@ -631,7 +647,7 @@ console.log(JSON.stringify({ afterLoad: afterLoad, forward: currentStep, len: HI
 @_needs_node
 def test_a_back_gesture_onto_an_entry_from_before_the_reload_collapses_onto_the_first_step():
     out = _run(_nav_harness(seed="""
-[staleEntry('household'), staleEntry('meals'), staleEntry('restrictions')]
+[staleEntry('household'), staleEntry('helpers'), staleEntry('restrictions')]
   .forEach(function (s) { HISTORY.push(s); });
 CURSOR = 2;
 """) + """
@@ -1082,6 +1098,7 @@ function removeRow(block) { block.querySelector('.remove-btn').click(); }
         # its age chips are a different question) — the two handlers it wires
         # are copied onto the stub rows verbatim.
         _fn("currentMembers"),
+        "function pruneHelperAnswers() {}",
         _fn("pruneMemberKeyedAnswers"),
     ])
 

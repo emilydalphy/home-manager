@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import EATS_HERE_SQL, household_id
 from .grocery import _merge_key
 from . import household as _household
 from . import memory as _memory
@@ -80,7 +80,8 @@ def get_meal_planning_setup_status() -> dict:
     """
     conn = get_conn()
     members = conn.execute(
-        "SELECT name, dietary_restrictions_json FROM members WHERE household_id = ?", (household_id(),)
+        f"SELECT name, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
+        (household_id(),),
     ).fetchall()
     prefs = conn.execute(
         "SELECT notes, protein_preferences_json, cuisine_preferences_json, dislikes_json, cooking_time_preference, onboarding_complete "
