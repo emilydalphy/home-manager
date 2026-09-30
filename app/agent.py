@@ -18,7 +18,7 @@ import re
 import threading
 import time
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
-from . import ai_consent, calendar_feed, tools
+from . import ai_consent, calendar_feed, chat_progress, tools
 from .tools import allergen_gate as _allergen_gate
 from .tools import typed_requests as _typed_requests
 from .tools import model_shapes as _model_shapes
@@ -483,6 +483,16 @@ def _effort_config(route: str) -> dict:
 # ~2 seconds instead of sitting on a blank screen for the full call.
 _WEEK_GEN_PROGRESS: contextvars.ContextVar = contextvars.ContextVar(
     "week_gen_progress", default=None
+)
+
+# The chat stream's "what I'm doing now" line. run_agent_turn calls this
+# with a short plain sentence (chat_progress.progress_line) before each
+# tool runs; /api/chat/stream sets it to put a "progress" event on the
+# wire. Unset (plain /api/chat, tests) it does nothing. Display only: it
+# never changes what the turn decides or saves, and a callback that
+# raises is ignored.
+_TURN_PROGRESS: contextvars.ContextVar = contextvars.ContextVar(
+    "turn_progress", default=None
 )
 
 
@@ -9025,6 +9035,84 @@ def verify_change_claim(text: str, new_entries: list[dict]) -> str:
     return CHANGE_CLAIM_RETRACTION
 
 
+def _emit_turn_progress(tool_name: str, tool_input, state: dict) -> None:
+    """Send chat_progress's line for this tool to the stream, if one is listening."""
+    callback = _TURN_PROGRESS.get(None)
+    if callback is None:
+        return
+    line = chat_progress.progress_line(tool_name, tool_input)
+    if line == state.get("last"):
+        return
+    state["last"] = line
+    try:
+        callback(line)
+    except Exception:
+        logger.exception("Sending a chat progress line failed; the turn goes on")
+
+
+# Warming the chat's prompt cache when the sheet opens. The cache entry
+# (tools + SYSTEM_PROMPT, ~37K tokens) lives five minutes from its last
+# use; a first message after that pays a cold write in round 1 (measured
+# in production: 3.05s, 50,112 tokens written). A `max_tokens: 0` request
+# with the same tools and first system block does that write while the
+# household is still typing. Kept per household (the prefix is per
+# household's tool set), and skipped when a warm-up or a real round ran
+# inside the last _CHAT_WARM_FRESH_SECONDS, well inside the five minutes.
+_CHAT_WARM_FRESH_SECONDS = 180
+_CHAT_CACHE_WARM_AT: dict[int, float] = {}
+_CHAT_CACHE_WARM_LOCK = threading.Lock()
+
+
+def _stamp_chat_cache_warm() -> None:
+    with _CHAT_CACHE_WARM_LOCK:
+        _CHAT_CACHE_WARM_AT[tools.household_id()] = time.monotonic()
+
+
+def claim_chat_warmup() -> bool:
+    """
+    True when this household is due a warm-up, and claims it in the same
+    step so two tabs opening at once send one. False when the cache was
+    touched in the last _CHAT_WARM_FRESH_SECONDS.
+    """
+    key = tools.household_id()
+    now = time.monotonic()
+    with _CHAT_CACHE_WARM_LOCK:
+        last = _CHAT_CACHE_WARM_AT.get(key)
+        if last is not None and now - last < _CHAT_WARM_FRESH_SECONDS:
+            return False
+        _CHAT_CACHE_WARM_AT[key] = now
+        return True
+
+
+def warm_chat_cache() -> bool:
+    """
+    Write the chat's prompt-cache prefix with a `max_tokens: 0` request,
+    the same way _warm_recipe_details_cache does: same tools, same first
+    system block (the one carrying the cache breakpoint), same effort,
+    no tool_choice (refused alongside max_tokens 0). The model runs the
+    prefill and answers with nothing. False when the API refused it; the
+    claim is released then so the next open may try again. Never raises.
+    """
+    try:
+        _create_with_retry(
+            _client(),
+            label="run_agent_turn.warm",
+            max_attempts=1,
+            model=MODEL,
+            max_tokens=0,
+            system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+            tools=tools_for_request(),
+            messages=[{"role": "user", "content": "warmup"}],
+            output_config=_effort_config("chat"),
+        )
+        return True
+    except Exception:
+        logger.warning("Warming the chat's cache failed; the first message will write it instead", exc_info=True)
+        with _CHAT_CACHE_WARM_LOCK:
+            _CHAT_CACHE_WARM_AT.pop(tools.household_id(), None)
+        return False
+
+
 def run_agent_turn(
     conversation: list[dict], user_message: str, *, proactive_check: bool = False,
     context: dict | None = None,
@@ -9135,6 +9223,7 @@ def run_agent_turn(
     turn_started = time.perf_counter()
     api_seconds = 0.0
     tool_seconds = 0.0
+    progress_state: dict = {"last": None}
 
     def _log_turn_timing():
         total = time.perf_counter() - turn_started
@@ -9193,6 +9282,9 @@ def run_agent_turn(
             raise
         round_seconds = time.perf_counter() - round_started
         api_seconds += round_seconds
+        # A real round reads (or writes) the same prefix the warm-up does,
+        # which restarts its five-minute clock — so no warm-up is due for a while.
+        _stamp_chat_cache_warm()
 
         logger.info(
             "run_agent_turn round %d took %.2fs, usage: input=%d cache_read=%d cache_creation=%d output=%d",
@@ -9305,6 +9397,11 @@ def run_agent_turn(
             # unknown name is recorded too: the model reaching for a tool
             # this app hasn't got is the sharpest signal on the list.
             usage["tools_called"].append(block.name)
+            # The sheet's line for this tool. Before the gates below so a
+            # declined call still shows something, and only when it
+            # differs from the last one sent (a run of the same lookup
+            # is one line, not a flicker).
+            _emit_turn_progress(block.name, block.input, progress_state)
             # The per-household Chores switch, checked before the tool runs
             # and outside the try below on purpose: a declined call is an
             # answer, not a crash, so it is neither logged as a failure nor

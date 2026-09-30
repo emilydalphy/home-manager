@@ -22149,6 +22149,37 @@
     return err;
   }
 
+  // The loading bubble's line for one stream event, or null to leave it
+  // as it is. "status" is the opening "Thinking…"; "progress" is the
+  // server's plain line for the tool it is running ("Writing Dairy-free
+  // pancakes…"), which replaces it; "day" counts a week being built.
+  function askProgressBubbleText(eventName, body, plannedCount) {
+    if (eventName === 'status' || eventName === 'progress') {
+      return (body && body.message) || null;
+    }
+    if (eventName === 'day') {
+      return 'Building your week — ' + plannedCount +
+        (plannedCount === 1 ? ' thing' : ' things') + ' planned so far…';
+    }
+    return null;
+  }
+
+  // Opening the chat asks the server to warm the prompt cache so the first
+  // message's reply starts sooner. Fire and forget: no answer is needed,
+  // a failure changes nothing, and the server skips it when one ran in
+  // the last few minutes (this only spares the round trip).
+  var ASK_WARM_MIN_GAP_MS = 120000;
+  var askLastWarmAt = 0;
+  function warmAskCache() {
+    var now = Date.now();
+    if (now - askLastWarmAt < ASK_WARM_MIN_GAP_MS) return;
+    if (navigator.onLine === false) return;
+    askLastWarmAt = now;
+    try {
+      Api.fetch('/api/chat/warm', { method: 'POST' }).catch(function () { /* best effort */ });
+    } catch (e) { /* best effort */ }
+  }
+
   async function sendAskMessage(message) {
     if (!message || askSending) return;
     ensureAskSheetBuilt();
@@ -22172,14 +22203,8 @@
       var data = await streamChatMessage(
         { session_id: askSessionId, message: message, context: askContextPayload() },
         function (eventName, body) {
-          var bubbleText = null;
-          if (eventName === 'status') {
-            bubbleText = body.message || null;
-          } else if (eventName === 'day') {
-            plannedCount += 1;
-            bubbleText = 'Building your week — ' + plannedCount +
-              (plannedCount === 1 ? ' thing' : ' things') + ' planned so far…';
-          }
+          if (eventName === 'day') plannedCount += 1;
+          var bubbleText = askProgressBubbleText(eventName, body, plannedCount);
           if (bubbleText) {
             loadingWraps.forEach(function (w) {
               var bubble = w.querySelector('.ask-bubble');
@@ -22302,6 +22327,7 @@
     if (context) setAskContext(context);
     setAskBackLabel(askBackLabel(askContext));
     openSheet(askSheet, askScrim);
+    if (!askAlreadyOpen) warmAskCache();
     if (!askSheetHistoryPushed) {
       window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
       askSheetHistoryPushed = true;
