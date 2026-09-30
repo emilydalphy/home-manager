@@ -312,6 +312,10 @@ def test_a_generated_draft_never_carries_the_clash_at_all(kitchen, monkeypatch):
         allergen_gate._swap, "_pick_replacement",
         lambda ctx: {"meal_name": "Chili", "is_new_recipe": False, "reason": "safe and quick"},
     )
+    monkeypatch.setattr(
+        allergen_gate, "quick_pick",
+        lambda ctx: {"meal_name": "Chili", "is_new_recipe": False, "reason": "safe and quick"},
+    )
 
     plan = agent.generate_weekly_plan(week)
 

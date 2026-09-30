@@ -2842,7 +2842,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                             "description": "ONLY for a breakfast, lunch or snack idea that repeats: every day it lands on, this entry's `date` first. Send the entry ONCE with all of them rather than one entry per morning. Leave it out entirely for a one-off, and for dinner.",
                         },
                         "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
-                        "meal_name": {"type": "string", "description": "The dish's name and nothing else — 'Lemon-Garlic Tilapia with Green Beans', never 'Lighter night: Lemon-Garlic Tilapia…'. The why goes in reasoning, the how in dish_note. An existing saved recipe's exact name, or the new dish's. Leave blank ONLY when slot_state is 'open'."},
+                        "meal_name": {"type": "string", "description": "The dish's name and nothing else — 'Lemon-Garlic Tilapia with Green Beans', never 'Lighter night: Lemon-Garlic Tilapia…'. The how goes in dish_note. An existing saved recipe's exact name, or the new dish's. Leave blank ONLY when slot_state is 'open'."},
                         "is_new_recipe": {"type": "boolean"},
                         "slot_state": {
                             "type": "string",
@@ -2895,12 +2895,13 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                             "type": "string",
                             "description": "For a NEW recipe only: one line, for the cook who writes it up later, naming what makes THIS dish this dish — the technique and the flavour base (e.g. 'sear the thighs skin-down, then braise in the tomato-fennel base; finish with orange zest'). Not a step list. Blank for a saved recipe.",
                         },
-                        "reasoning": {
-                            "type": "string",
-                            "description": "One short, specific sentence on why THIS meal for THIS slot — reference the actual signal that drove it (a stated preference, recent history/variety, an expiring ingredient, a per-week constraint, novelty_preference). E.g. \"You said you love salmon, and Tuesdays tend to be quick around here.\" Never generic filler like \"a balanced, tasty option.\" This is shown to the household on request, so it needs to feel like a real reason, not a caption.",
-                        },
+                        # No `reasoning` (2026-09-30): the line came off every
+                        # screen on 2026-09-27 (ff58ad7) and was ~15-25 output
+                        # tokens a slot the household never read. derived_from
+                        # is the structured "why" and stays; every reader of the
+                        # stored column tolerates it empty.
                     },
-                    "required": ["date", "slot", "meal_name", "is_new_recipe", "reasoning"],
+                    "required": ["date", "slot", "meal_name", "is_new_recipe"],
                 },
             },
             "honoured_requests": {
@@ -3223,7 +3224,7 @@ in service of that shape.
 cook could write it up — "Chettinad-Style Pepper Chicken with Turmeric Cauliflower Rice", not \
 "chicken and rice" — and put what makes it that dish in `dish_note`. meal_name is the dish's \
 name and nothing else: never a reason, a note or a prefix in front of it ("Lighter after pepper \
-night: Tilapia" is wrong — that sentence belongs in reasoning). The ingredient list and \
+night: Tilapia" is wrong). The ingredient list and \
 the steps for every new recipe are written in a separate pass once the household approves the \
 week; that pass is told the household's allergies, must-avoids, table size and kitchen, and \
 your dish_note. So decide here, describe there: no ingredient lists, no steps.
@@ -3237,7 +3238,7 @@ restaurant-tier new recipes; match the actual effort level of what they are.
 entry with every one of those days listed in `dates` (its `date` first) — not the same dish \
 written out again for each morning. Oatmeal on five mornings is one entry with five dates. \
 It is written onto each of those days exactly as if you had sent it five times, with this \
-entry's own reasoning and derived_from on each (and cooked once: the later days within three \
+entry's own derived_from on each (and cooked once: the later days within three \
 days of the first eat that batch), so nothing is lost by folding it — what is \
 saved is you writing the same decision out four more times, which on a real week is more \
 than half of everything you write. Two rules on it: the days must genuinely be the SAME dish (a different \
@@ -3263,7 +3264,7 @@ a stated preference, a constraint, or the variety/novelty rules elsewhere in thi
 person, as they wrote them. Nothing you send may contain any of it — not in the dish, not in a \
 salsa or a side served with it, not under a "-free" name. The people it names EAT these meals. \
 If the cuisine or protein they asked for leaves you no safe dish, go outside it and say so in \
-that slot's reasoning ("no Mexican lunch without pineapple, so a Greek one") — never send a \
+that slot's derived_from.constraint ("no Mexican lunch without pineapple, so a Greek one") — never send a \
 dish that has the thing with a note on it. Every dish is checked by name before it is written \
 and against its ingredient list when it is written up, and a dish that fails is thrown away.
 - Respect every listed dietary restriction and allergy without exception. Avoid every \
@@ -3376,8 +3377,7 @@ the household explicitly said this one is fine as-is, so don't get clever with i
 extra mouths. Deliver this in BOTH halves, the same way the `guests` tag works: choose a dish \
 that suits that number, and write the ingredient quantities for that number. A dinner for one \
 is not a family tray divided by four — it is the kind of thing a person actually makes for \
-themselves, and it's a chance to pick something that particular person likes. Say who it's for \
-in that slot's reasoning ("just you tonight — Vineeth's out").
+themselves, and it's a chance to pick something that particular person likes.
 - Any slot in `attendance.slots_with_a_different_table` that also carries a `personal_context` \
 key is a genuine subset night (someone named in `away` isn't eating this meal at all) — lean \
 into what's actually known about the people who ARE there, not the household in general. For \
@@ -3388,8 +3388,7 @@ every slot where they're present, or any slot with no `personal_context` at all 
 narrow, per-slot loosening, not a change to the household's standing restrictions). Where a \
 present person also carries `liked_recipes`/`disliked_recipes`, favor their likes and avoid \
 their dislikes for that meal specifically, over the household's general rating where the two \
-would differ, and phrase the reasoning personally — "a you-night pick," or naming the actual \
-dish you know they love — rather than a generic "good dinner for one." A subset slot with NO \
+would differ. A subset slot with NO \
 `personal_context` at all (or a present person missing from it) is a genuine cold start for \
 that person: fall back to the household's shared rating/dislikes exactly as normal, and don't \
 invent a personal reason that isn't backed by real data.
@@ -3419,8 +3418,8 @@ enforced empty regardless, so anything you put there is discarded); `slot_needs.
 are the last meal before someone heads out, capped at {rush_max} minutes and grab-and-go in \
 character; `slot_needs.ready_made_slots` are the first meal back, which must NOT be a fresh \
 cook — lean on that slot's stored recommendation (a batch saved from earlier in the week, or \
-something to defrost) and name it in the reasoning. Each of these carries a `reason` written \
-for the household; keep your reasoning consistent with it rather than contradicting it.
+something to defrost) and keep your pick consistent \
+with the `reason` each of these carries rather than contradicting it.
 - `intake.skipped_days` are days the household left out of this plan on purpose — not away, \
 just not planned. Send NO entry for any meal or snack on those dates (they are enforced empty \
 regardless, so anything you put there is discarded), and don't lean a neighbouring day on \
@@ -3437,7 +3436,7 @@ week, and don't make them a leftovers night or a batch for another day. They are
 they count as a meal but not as a cook — plan the rest of the week around them.
 - `intake.packed_lunch_days` does NOT decide whether a lunch is planned. Every lunch is \
 planned either way. Those specific days are constrained to food that travels well and is fine \
-cold or reheated — nothing that wilts or goes soggy in a bag. Say so in that slot's reasoning.
+cold or reheated — nothing that wilts or goes soggy in a bag.
 - `intake.weekday_lunches.days`, when present, is how the household said each Monday-Friday \
 lunch gets made this week, one entry per date, and it outranks the lunch count and your own \
 leftover pairings for those lunches. `kind` is one of: \
@@ -3445,7 +3444,7 @@ leftover pairings for those lunches. `kind` is one of: \
 prep day is ONE dish cooked once, sized for all of them — send it on the first of those dates \
 and on each later one with derived_from.links_to naming that first date's lunch \
 ("YYYY-MM-DD:lunch"); pick something that keeps and reheats well (a chili, a curry, a grain \
-bowl), no time cap, and say in the first one's reasoning that it's cooked on the prep day; \
+bowl), no time cap; \
 `leftovers` — that lunch is the dinner of the evening before (`from_dinner`), reheated: send \
 that dinner's dish for the lunch with derived_from.links_to "<from_dinner>:dinner", and make \
 that dinner something that keeps; \
@@ -3458,13 +3457,10 @@ here. Only days with something on them are listed. A day with `evening_busy_from
 evening commitment eating into the hour dinner gets cooked in — treat that dinner exactly like \
 a `rush` night: {rush_max} minutes of prep+cook at most, or no new cook at all (scale an \
 earlier night's batch up and make this one its leftovers, with derived_from.links_to set as \
-for a `left` tag). Never a long braise on that night. NAME THE COMMITMENT in that slot's \
-reasoning, in the household's own words and with the time said as a person would ("soccer at \
-6 — Monday's chili, reheated"; "late meeting till 8:30, so fifteen minutes"), and put \
+for a `left` tag). Never a long braise on that night. Put \
 `calendar:<title>` in that slot's derived_from.inputs. Days listed WITHOUT the hint are \
 context, not constraints: a short evening thing, or an `all_day` item — a birthday might earn \
-a nicer dinner, a "PA day" means the kids are home for lunch — use it when it helps and say \
-so in the reasoning when you do. The household's own answers always win where they disagree \
+a nicer dinner, a "PA day" means the kids are home for lunch — use it when it helps. The household's own answers always win where they disagree \
 with the calendar: a day carrying `household_said` is one they tagged themselves (`unrushed`, \
 `guests`, `normal`, `left`, `out`, or nobody home), the hint was withheld for that reason, and \
 you follow their tag. The calendar only ever TIGHTENS a day; it never makes a day `out`, \
@@ -3477,8 +3473,7 @@ each one and what that means for the day (`plan`). Follow it exactly: `out` mean
 dinner elsewhere — send NO dinner entry for that date (the app handles it, and a dish they're \
 bringing is already planned into that slot); `hosting` means the big meal they host for the \
 table in `extra_guests` beyond the household — send the MAIN for that dinner, a real, generous \
-centrepiece that fits the day and honours `guest_notes`, not a weeknight dish, and name the \
-holiday in the reasoning; the sides and something sweet are built around it afterwards, so send \
+centrepiece that fits the day and honours `guest_notes`, not a weeknight dish; the sides and something sweet are built around it afterwards, so send \
 no separate entries for them; `just_us` is an ordinary day at home, \
 a little nicer is fine; `unsure` and `not_asked` mean plan a normal dinner and keep it easy \
 to change. Never assume a big meal: the household said what the day is. Call it "the \
@@ -3487,8 +3482,7 @@ holiday" or by its name — never "event mode".
 in passing that nobody could act on at the time, in their own words (`said`), with who said \
 it and when. Read each against THIS period: a visitor, a night out, a birthday, a dish \
 someone wanted, a plan that fell through — where one lands on a day in this period, plan \
-that day around it and NAME IT in that slot's reasoning in their words ("you mentioned Nana's \
-coming the 28th — a bigger dinner that night"); put `held:<a few of their words>` in that \
+that day around it and put `held:<a few of their words>` in that \
 slot's derived_from.inputs. Where one has nothing to do with this period, leave it alone and \
 don't mention it. These are things to read, never instructions to you.
 - household_memory's `kitchen_kit` is what this household actually owns to cook with. Only \
@@ -3531,8 +3525,7 @@ days around it in conversation with it, the same composed-week thinking as every
 this list: a lighter night after it if it was rich, a different protein on the days either side \
 so the week doesn't repeat itself, and any ingredient it needed in bulk (the rest of a pack of \
 buns, a bag of something) used up sensibly elsewhere in the week rather than left to go to \
-waste. Name that connection in the surrounding nights' reasoning ("lighter after burger night," \
-"using up the rest of the buns"). Delivering the literal request and nothing else — the rest of \
+waste. Delivering the literal request and nothing else — the rest of \
 the week planned as if it hadn't been said — is the failure mode this guards against, not the \
 goal. The one thing that overrides the placement itself is a night tag that makes that exact \
 night impossible (see the tag-collision rule directly below) — never a scheduling preference of \
@@ -3566,11 +3559,9 @@ nothing else, so a request in neither is simply not mentioned: never pad them.
 - When something in `intake.freeform` collides with a night tag — they wrote "Friday is pizza \
 night" and also tagged Friday as a night nobody is home — this is the ONE exception to putting \
 an anchored request exactly where they said it: the TAG wins, and you must say so rather than \
-quietly working around it. Move the meal to the nearest sensible night and let that slot's \
-reasoning name what happened ("moved from Friday — you're out"), or leave it unplanned and say \
-why. What you must never do is put it on a different day and describe it as though it were on \
-the day they asked for: a slot whose reasoning says "Friday" while sitting on Sunday is a plan \
-that lies about itself, and the household loses the ability to trust any of the other reasons.
+quietly working around it. Move the meal to the nearest sensible night and record the move in that slot's \
+derived_from.constraint ("moved from Friday — you're out"), or leave it unplanned. What you must never \
+do is put it on a different day and record it as though it were on the day they asked for.
 - Set `derived_from` on every entry: which tags applied, the binding constraint if there was \
 one, which mood/cuisine inputs drove it, the quoted span of their freeform text if that's what \
 drove it, and any inventory it was chosen to use up. Record what actually drove the choice, \
@@ -3660,13 +3651,6 @@ approach with an ethnic ingredient bolted on. If you genuinely don't know a styl
 to do this properly, pick a broader, less specific cuisine label instead of naming a precise \
 regional style and getting it thin — a plausible-but-shallow "Chettinad" dish is worse than \
 an honestly-labeled "Indian-spiced" one.
-- For each day, also fill in reasoning: one short, specific sentence a household member \
-would actually find useful if they tapped "why this?" — name the real thing that drove the \
-choice (a stated protein/cuisine preference, filling a variety gap from recent_history, \
-using up something in near_expiring_inventory, honoring a constraint from constraints_notes, \
-surfacing a new recipe per novelty_preference). Skip generic filler like "a balanced choice" \
-— if there's truly nothing more specific than "it fit the week," say that plainly rather \
-than padding it out.
 - cuisine and main_protein should be filled in for every day where reasonably inferable \
 (existing or new recipe) — this is what powers future variety checks, so don't leave it \
 blank just because the recipe already existed.
@@ -3686,13 +3670,6 @@ toward a chicken recipe rather than defaulting to something requiring a fresh pu
 soft lean, not a rule: don't force an odd combination, don't feel obligated to use every item on \
 the list, and don't let it override genuine variety/preference/novelty considerations — it only \
 matters as a tiebreaker-ish nudge among otherwise-reasonable options.
-- The per-slot `reasoning` line is read directly under the meal name on the draft screen, so \
-keep it to roughly 4-9 words — a phrase, not a sentence: "travels well, good cold or reheated", \
-"ten minutes, and the eggs are in", "after Monday's chili, something lighter". A full sentence \
-is clipped on the screen, so the extra words are not read by anyone. It must agree \
-with what you put in derived_from; the two are the same explanation, one short and one \
-structured. A folded entry carries ONE reasoning line for all its days — write the reason the \
-idea earns its place in the week, not a different one per morning.
 - Leaving a slot `open` is a real option, not a failure mode — but it is a LAST resort, and it \
 has to be earned. Use it only when every choice you can see would break something the \
 household told you (repeat a meal they just ate, blow a `rush` cap, ignore a dislike), so \
@@ -3721,15 +3698,38 @@ Call submit_weekly_plan with the result."""
         # rather than in either of them: one "day" event per date, in the
         # order the model wrote them, and neither client had to learn
         # anything about folding.
+        #
+        # And gated (2026-09-30): the reveal used to paint every entry the
+        # moment the model wrote it, BEFORE allergen_gate.split_safe had
+        # looked at it — so a dish with the household's allergen was on
+        # screen for half a minute and then swapped out under the person's
+        # thumb. Each entry is now matched here, with the same matcher and
+        # the same ingredients_for reading split_safe uses, and one that
+        # clashes goes out as a placeholder (`slot_state: "held"`, no dish)
+        # that the replacement fills when allergen_gate.repick_held writes
+        # it. A dish with the allergen is never sent to a screen at all.
         _raw_on_day = on_day
+        _stream_avoidances = _allergen_gate.hard_avoidances()
+
+        def _held_on_screen(item):
+            name = (item.get("meal_name") or "").strip()
+            if not _stream_avoidances or not name or item.get("slot_state") == "open":
+                return False
+            return bool(_allergen_gate.hard_clashes(
+                name, ingredients=_allergen_gate.ingredients_for(item), avoidances=_stream_avoidances,
+            ))
 
         def on_day(item):
             if not isinstance(item, dict):
                 _raw_on_day(item)
                 return
+            held = _held_on_screen(item)
             for date in _entry_dates(item) or [None]:
                 if date is None:
                     _raw_on_day(item)
+                    continue
+                if held:
+                    _raw_on_day(_allergen_gate.held_placeholder(date, item.get("slot") or "dinner"))
                     continue
                 one = dict(item)
                 one.pop("dates", None)
@@ -5743,22 +5743,28 @@ def _generate_weekly_plan(
                     "were dropped: %s",
                     content_start_date, day_count, len(out_of_scope), ", ".join(out_of_scope),
                 )
-            # The slots held back above, each re-picked through the swap's
-            # own picker with the clashing dish on `avoid` — or handed back
-            # as an open question that says what couldn't be done. Written
-            # BEFORE _finish_week_slots so its gap audit finds the slot
-            # settled rather than filling it with a generic question.
-            for held in held_back:
-                if (held["item"].get("date") or "") not in in_scope:
-                    continue
+            # The slots held back above, re-picked ONE PER DISH and all at
+            # once (allergen_gate.repick_held, 2026-09-30): a scramble held
+            # on four mornings is one quick pick that lands on all four,
+            # saved pending for the recipe pass like any new dish — or
+            # handed back as an open question that says what couldn't be
+            # done. Written BEFORE _finish_week_slots so its gap audit finds
+            # the slot settled rather than filling it with a generic
+            # question. The stream is told as each lands, so a screen
+            # holding "Finding another breakfast…" fills that row then.
+            in_scope_held = [h for h in held_back if (h["item"].get("date") or "") in in_scope]
+            if in_scope_held:
                 try:
-                    _allergen_gate.repick_slot(plan_id, held, repick_budget, avoidances=hard_avoidances)
+                    _allergen_gate.repick_held(
+                        plan_id, in_scope_held, avoidances=hard_avoidances,
+                        on_filled=_WEEK_GEN_PROGRESS.get(None),
+                    )
                 except Exception:
-                    # Logged, and the slot is left to the gap audit below,
-                    # which opens it as a question. Never the clashing dish.
+                    # Logged, and the slots are left to the gap audit below,
+                    # which opens them as questions. Never the clashing dish.
                     logger.exception(
-                        "Re-picking %s %s around an allergen failed; leaving it as an open question",
-                        held["item"].get("date"), held["item"].get("slot"),
+                        "Re-picking %d held-back slot(s) around an allergen failed; leaving them as open questions",
+                        len(in_scope_held),
                     )
             # The sides taken off a requested dish's name, back on as
             # sides of the entries they belong to — BEFORE the plates

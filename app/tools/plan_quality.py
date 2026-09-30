@@ -433,18 +433,15 @@ def _reasoning_is_specific(entries: list[dict], context: dict) -> list[Violation
         if not _is_planned(entry):
             continue
         reasoning = (entry.get("reasoning") or "").strip()
-        # A leftovers night's reason is its cook: the batch the fold wrote
-        # (2026-09-23) carries none of its own, and its headline ("Leftovers
-        # — Monday's Pasta") says why it's there. Not a missing reason.
-        if not reasoning and (entry.get("links_to") or (entry.get("meal_name") or "").startswith("Leftovers")):
-            continue
+        # No reasoning at all is no longer a finding (2026-09-30): the week
+        # generator stopped being asked for the per-slot line once it came
+        # off every screen (2026-09-27, ff58ad7), so an empty one is the
+        # normal case. What is still caught is a line that IS there and is
+        # generic filler — the other passes (swaps, leftovers, big meal)
+        # still write reasons of their own.
         if not reasoning:
-            violations.append(Violation(
-                rule="reasoning_is_specific", severity="warn",
-                date=entry["date"], slot=entry.get("slot"),
-                message=f"{entry['date']} {entry.get('slot')} ('{entry['meal_name']}') has no reasoning at all.",
-            ))
-        elif reasoning.strip().rstrip(".!?…").strip().lower() in _BANNED_REASONING_PHRASES:
+            continue
+        if reasoning.strip().rstrip(".!?…").strip().lower() in _BANNED_REASONING_PHRASES:
             violations.append(Violation(
                 rule="reasoning_is_specific", severity="warn",
                 date=entry["date"], slot=entry.get("slot"),
