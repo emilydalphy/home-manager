@@ -93,6 +93,19 @@ def _monday(offset_weeks: int = 1) -> str:
     return (monday + datetime.timedelta(days=7 * offset_weeks)).isoformat()
 
 
+def _day(offset_days: int) -> str:
+    """
+    A night `offset_days` from the Monday two weeks out — never behind the
+    household's today on any pin. The pure prep_target / move_target tests
+    used to name fixed dates (2026-10-04..10), and both functions refuse a
+    night that has gone (`_has_gone`); once a weekday pin resolved past
+    those dates they measured the clock instead of the rule (the `clock
+    (monday)` failure of 2026-09-30, pin 2026-10-05). Offset -1 is that
+    Monday's Sunday, the night before.
+    """
+    return (datetime.date.fromisoformat(_monday(2)) + datetime.timedelta(days=offset_days)).isoformat()
+
+
 def _asked_for(name: str) -> dict:
     """
     The model's own stamp for "they typed this" — derived_from.freeform,
@@ -378,22 +391,22 @@ def test_a_move_is_only_offered_when_both_nights_come_out_within_their_caps():
     """
     # Two different ways a night fails, so each half of the check is
     # pinned by a night the other half would have let through.
-    caps = {"2026-10-05": 20, "2026-10-06": 20, "2026-10-07": None, "2026-10-08": None}
-    short = {"id": 1, "date": "2026-10-05", "minutes": 60, "movable": False}
+    caps = {_day(0): 20, _day(1): 20, _day(2): None, _day(3): None}
+    short = {"id": 1, "date": _day(0), "minutes": 60, "movable": False}
     others = [
         short,
         # Nearest, and capped at 20 — OUR 60-minute dish does not fit
         # there. Fails the first half.
-        {"id": 2, "date": "2026-10-06", "minutes": 10, "movable": True},
+        {"id": 2, "date": _day(1), "minutes": 10, "movable": True},
         # Uncapped, so our dish fits — but ITS 45-minute dish would come
         # back to the 20-minute night and break it. Fails the second half,
         # and nothing in the first half would have caught it.
-        {"id": 3, "date": "2026-10-07", "minutes": 45, "movable": True},
+        {"id": 3, "date": _day(2), "minutes": 45, "movable": True},
         # Furthest, uncapped, and its dish fits the short night.
-        {"id": 4, "date": "2026-10-08", "minutes": 10, "movable": True},
+        {"id": 4, "date": _day(3), "minutes": 10, "movable": True},
     ]
 
-    assert draft_flags.move_target(short, others, caps) == "2026-10-08"
+    assert draft_flags.move_target(short, others, caps) == _day(3)
 
 
 def test_no_move_is_offered_when_no_night_can_take_it():
@@ -403,9 +416,9 @@ def test_no_move_is_offered_when_no_night_can_take_it():
     drops the `minutes > there` check, which starts offering the capped
     night.
     """
-    caps = {"2026-10-05": 20, "2026-10-06": 20}
-    short = {"id": 1, "date": "2026-10-05", "minutes": 60, "movable": False}
-    others = [short, {"id": 2, "date": "2026-10-06", "minutes": 10, "movable": True}]
+    caps = {_day(0): 20, _day(1): 20}
+    short = {"id": 1, "date": _day(0), "minutes": 60, "movable": False}
+    others = [short, {"id": 2, "date": _day(1), "minutes": 10, "movable": True}]
 
     assert draft_flags.move_target(short, others, caps) is None
 
@@ -418,19 +431,19 @@ def test_the_night_before_is_not_offered_when_nobody_is_home_for_it():
     from them.
     """
     nights = [
-        {"date": "2026-10-04", "slot_state": "planned_empty"},
-        {"date": "2026-10-05", "slot_state": "planned"},
+        {"date": _day(-1), "slot_state": "planned_empty"},
+        {"date": _day(0), "slot_state": "planned"},
     ]
-    assert draft_flags.prep_target("2026-10-05", nights) is None
+    assert draft_flags.prep_target(_day(0), nights) is None
 
     nights[0]["slot_state"] = "planned"
-    assert draft_flags.prep_target("2026-10-05", nights) == "2026-10-04"
+    assert draft_flags.prep_target(_day(0), nights) == _day(-1)
 
 
 def test_the_first_night_of_the_period_has_no_night_before_to_prep_on():
     """GUARD: the plan may not write on a day outside its own period."""
-    nights = [{"date": "2026-10-05", "slot_state": "planned"}]
-    assert draft_flags.prep_target("2026-10-05", nights) is None
+    nights = [{"date": _day(0), "slot_state": "planned"}]
+    assert draft_flags.prep_target(_day(0), nights) is None
 
 
 # --------------------------------------------------- the store's honesty
@@ -1001,19 +1014,19 @@ def test_a_move_is_never_offered_onto_a_night_somebody_has_said_no_on():
     """
     import app.tools.cap_enforce as ce
 
-    night = {"date": "2026-10-07", "meal": "Lasagna", "minutes": 60, "movable": False}
+    night = {"date": _day(2), "meal": "Lasagna", "minutes": 60, "movable": False}
     others = [
         night,
-        {"date": "2026-10-10", "meal": "Quick Eggs", "minutes": 10, "movable": True},
+        {"date": _day(5), "meal": "Quick Eggs", "minutes": 10, "movable": True},
     ]
-    caps = {"2026-10-07": 20, "2026-10-10": None}
+    caps = {_day(2): 20, _day(5): None}
 
-    assert draft_flags.move_target(night, others, caps) == "2026-10-10"
+    assert draft_flags.move_target(night, others, caps) == _day(5)
 
     real = ce.would_offend
     try:
         ce.would_offend = lambda meal, meal_date: (
-            "Vineeth would rather not" if meal == "Lasagna" and meal_date == "2026-10-10" else None
+            "Vineeth would rather not" if meal == "Lasagna" and meal_date == _day(5) else None
         )
         assert draft_flags.move_target(night, others, caps) is None
     finally:
@@ -1032,9 +1045,9 @@ def test_the_veto_is_cap_enforces_own_and_not_a_second_copy_of_it():
     real = ce.would_offend
     try:
         ce.would_offend = lambda meal, meal_date: "everyone would rather not"
-        night = {"date": "2026-10-07", "meal": "Lasagna", "minutes": 60, "movable": False}
-        others = [night, {"date": "2026-10-10", "meal": "Eggs", "minutes": 10, "movable": True}]
-        assert draft_flags.move_target(night, others, {"2026-10-07": 20, "2026-10-10": None}) is None
+        night = {"date": _day(2), "meal": "Lasagna", "minutes": 60, "movable": False}
+        others = [night, {"date": _day(5), "meal": "Eggs", "minutes": 10, "movable": True}]
+        assert draft_flags.move_target(night, others, {_day(2): 20, _day(5): None}) is None
     finally:
         ce.would_offend = real
 
