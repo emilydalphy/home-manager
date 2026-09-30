@@ -38,6 +38,11 @@ _SEQUENCE_SLOTS = _weekly_plan.WEEK_SLOTS
 _ALL_SLOTS = (*_weekly_plan.WEEK_SLOTS, "snack")
 
 
+SNACK_NEED_REFUSAL = (
+    "I don\u2019t track snacks as away or quick \u2014 just breakfast, lunch and dinner."
+)
+
+
 def _validate_slot(slot: str, *, allow_snack: bool = True) -> None:
     valid = _ALL_SLOTS if allow_snack else _SEQUENCE_SLOTS
     if slot not in valid:
@@ -199,6 +204,10 @@ def set_slot_need(
     date.fromisoformat(date_str)
     if need not in NEEDS:
         raise ValueError(f"need must be one of {NEEDS}, not {need!r}.")
+    if slot == "snack":
+        # Same answer as attendance: a snack is never away/quick/ready_made
+        # (marking one away deleted BOTH of the day's snacks).
+        raise ValueError(SNACK_NEED_REFUSAL)
     _validate_slot(slot)
     if need == "normal":
         return clear_slot_need(date_str, slot)

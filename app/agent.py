@@ -2614,12 +2614,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_member_attendance",
-        "description": "Mark ONE person in or out of ONE meal — \"Vineeth's out Thursday\", \"actually I'm home for lunch tomorrow\". This is the small gesture; it is the same write the presence avatars on the weekly plan screen make. The meal still happens for whoever is left, planned and shopped for the smaller number. If it takes the LAST person out, the meal becomes away (nothing planned, nothing bought) automatically — and putting someone back in undoes that. For an extended absence use set_away_stretch instead: it covers a range in one gesture and derives the quick/ready-made edges around it, which repeated single-meal toggles cannot do.",
+        "description": "Mark ONE person in or out of ONE meal — \"Vineeth's out Thursday\", \"actually I'm home for lunch tomorrow\". Breakfast, lunch and dinner only — snacks carry no attendance; if asked, say so plainly. This is the small gesture; it is the same write the presence avatars on the weekly plan screen make. The meal still happens for whoever is left, planned and shopped for the smaller number. If it takes the LAST person out, the meal becomes away (nothing planned, nothing bought) automatically — and putting someone back in undoes that. For an extended absence use set_away_stretch instead: it covers a range in one gesture and derives the quick/ready-made edges around it, which repeated single-meal toggles cannot do.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "date_str": {"type": "string", "description": "ISO date."},
-                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
                 "member": {"type": "string", "description": "The household member's name, as it appears in the household."},
                 "present": {"type": "boolean", "description": "false = they're out for this meal (the usual reason to call this); true = they're back in."},
             },
@@ -2628,12 +2628,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_guest_count",
-        "description": "How many EXTRA people beyond the household are at a meal — \"my parents are coming for dinner Saturday\" is 2. Guests are the same model as everyone else, just with the headcount up: portions and grocery quantities both scale to members-present plus guests. Pass 0 to say the guests are no longer coming.",
+        "description": "How many EXTRA people beyond the household are at a meal — \"my parents are coming for dinner Saturday\" is 2. Guests are the same model as everyone else, just with the headcount up: portions and grocery quantities both scale to members-present plus guests. Pass 0 to say the guests are no longer coming. Breakfast, lunch and dinner only — snacks carry no headcount.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "date_str": {"type": "string", "description": "ISO date."},
-                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"], "description": "Defaults to dinner."},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"], "description": "Defaults to dinner."},
                 "guest_count": {"type": "integer", "description": "Extra mouths beyond the household members present."},
             },
             "required": ["date_str", "guest_count"],
@@ -2650,12 +2650,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_slot_need",
-        "description": "Set (or clear, with need='normal') a single meal slot's planning need: 'away' (nobody home — no planning, no groceries, converts any existing plan for that slot immediately), 'quick' (grab-and-go), or 'ready_made' (covered by a batch/defrost earmark rather than cooked fresh). Use set_away_stretch instead when the household describes a whole trip/range rather than one meal — it derives the quick/ready_made edges automatically. Use this for a single slot, or to hand-correct one slot set_away_stretch produced.",
+        "description": "Set (or clear, with need='normal') a single meal slot's planning need: 'away' (nobody home — no planning, no groceries, converts any existing plan for that slot immediately), 'quick' (grab-and-go), or 'ready_made' (covered by a batch/defrost earmark rather than cooked fresh). Use set_away_stretch instead when the household describes a whole trip/range rather than one meal — it derives the quick/ready_made edges automatically. Use this for a single slot, or to hand-correct one slot set_away_stretch produced. Breakfast, lunch and dinner only — a snack is never away or quick.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "date_str": {"type": "string", "description": "ISO date."},
-                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
                 "need": {"type": "string", "enum": ["normal", "away", "quick", "ready_made"]},
                 "reason": {"type": "string", "description": "Optional — defaults to a plain reason for the need."},
             },
@@ -4612,6 +4612,21 @@ def _begin_week_generation_run(key: tuple, run_token: str | None) -> dict:
         runs.append(run)
         del runs[:-_WEEK_GENERATION_RUNS_KEPT]
         return run
+
+
+_SNACK_REFUSING_TOOLS = {
+    "set_member_attendance": lambda: tools.SNACK_ATTENDANCE_REFUSAL,
+    "set_guest_count": lambda: tools.SNACK_ATTENDANCE_REFUSAL,
+    "set_slot_need": lambda: tools.SNACK_NEED_REFUSAL,
+}
+
+
+def _snack_attendance_refusal(tool_name: str, tool_input) -> str:
+    """The plain answer when the model asks a tool to give a snack an attendance or a need; "" otherwise."""
+    say = _SNACK_REFUSING_TOOLS.get(tool_name)
+    if say and isinstance(tool_input, dict) and tool_input.get("slot") == "snack":
+        return say()
+    return ""
 
 
 def _week_generation_error_status(e: BaseException) -> int:
@@ -9305,6 +9320,24 @@ def run_agent_turn(
                         "type": "tool_result",
                         "tool_use_id": block.id,
                         "content": json.dumps(_chores_off_result()),
+                        "is_error": True,
+                    }
+                )
+                continue
+            # A snack carries no attendance and no need (Loop Board
+            # 2026-09-30, "A snack's attendance is written and then
+            # silently dropped"). The tools refuse it too, but a refusal is
+            # an answer, not a crash: handled here it is neither logged as
+            # a failure nor written to error_events, same as the Chores
+            # switch above. is_error stays True so no "updated" card is
+            # drawn for a write that never happened.
+            _snack_refusal = _snack_attendance_refusal(block.name, block.input)
+            if _snack_refusal:
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": json.dumps({"error": _snack_refusal}),
                         "is_error": True,
                     }
                 )

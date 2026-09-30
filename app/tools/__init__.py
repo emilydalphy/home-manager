@@ -553,6 +553,7 @@ from .sharing import (  # noqa: F401
     revoke_member_share_link,
 )
 from .attendance import (  # noqa: F401
+    SNACK_ATTENDANCE_REFUSAL,
     clear_slot_attendance,
     context_for_week as attendance_context_for_week,
     default_table_size,
@@ -570,6 +571,7 @@ from .attendance import (  # noqa: F401
     summary_line as attendance_summary_line,
 )
 from .slot_needs import (  # noqa: F401
+    SNACK_NEED_REFUSAL,
     NEEDS,
     apply_slot_needs_to_plan,
     clear_slot_need,
