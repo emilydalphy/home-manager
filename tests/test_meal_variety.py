@@ -122,7 +122,7 @@ def test_five_dishes_against_a_preference_of_four_become_four(recipes, stub_mode
     assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
 
 
-def test_a_week_within_the_count_is_left_exactly_as_generated(recipes, stub_model):
+def test_a_week_within_the_count_keeps_its_dishes(recipes, stub_model):
     tools.set_household_meal_preferences(dinners_per_week=4)
     week = _monday()
     generated = ["Chili", "Salmon", "Kofte", "Halloumi Salad", "Chili", "Salmon", "Kofte"]

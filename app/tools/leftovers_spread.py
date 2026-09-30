@@ -93,7 +93,12 @@ MAX_NIGHTS = 8
 # derived_from keys that describe a chain — rebuilt here, never carried
 # over when a night changes dish or role.
 _CHAIN_KEYS = ("links_to", "make_double_for", "make_double_note", _leftovers.BATCH_KEY,
-               "cook_ahead", _leftovers.FROM_FREEZER_KEY)
+               _leftovers.FROM_FREEZER_KEY)
+
+# How many layouts the search scores at most. A six-night week with three
+# dishes is 90 strict layouts; this only bounds a long week with many
+# dishes (the best found so far is used, and only if it beats the week).
+MAX_SCORED = 4000
 
 # A night whose dish the household chose — it keeps that dish whatever the
 # layout (its role, cook or leftovers, may still change, as the count fold
@@ -115,7 +120,7 @@ def _load(plan_id: int) -> list[dict]:
         rows = conn.execute(
             """
             SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, mpe.food_groups_json,
-                   mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal,
+                   mpe.derived_from_json, mpe.reasoning, COALESCE(r.name, mpe.freeform_meal) AS meal,
                    r.prep_time_minutes, r.cook_time_minutes
             FROM meal_plan_entries mpe
             LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -157,8 +162,13 @@ class _StandDown(Exception):
     """The week has something this pass doesn't re-lay; leave it as it is."""
 
 
-def _read_week(plan_id: int, intake: dict | None, answered: set[str]) -> dict:
-    """Everything the search needs, read off the plan as it stands."""
+def _read_week(plan_id: int, intake: dict | None, kinds: dict[str, str]) -> dict:
+    """Everything the search needs, read off the plan as it stands.
+    `kinds` is the week's weekday-lunches answer by date."""
+    from . import weekday_lunches as _weekday_lunches
+
+    answered = set(kinds)
+    prep_days = ((intake or {}).get("weekday_lunches") or {}).get("prep_days") or []
     rows = _load(plan_id)
     chains = _leftovers.plan_leftover_chains(plan_id)
     by_id = {r["id"]: r for r in rows}
@@ -198,9 +208,11 @@ def _read_week(plan_id: int, intake: dict | None, answered: set[str]) -> dict:
         key = dish_of(r)
         if not key:
             raise _StandDown(f"{d} dinner has no dish")
-        dish = dishes.setdefault(key, {"key": key, "name": None, "minutes": None, "food_groups": None})
+        dish = dishes.setdefault(key, {"key": key, "name": None, "minutes": None, "food_groups": None,
+                                       "reasoning": ""})
         if not reheat:
             dish["name"] = dish["name"] or r["meal"]
+            dish["reasoning"] = dish["reasoning"] or (r.get("reasoning") or "")
             if dish["minutes"] is None and (r.get("prep_time_minutes") or r.get("cook_time_minutes")):
                 dish["minutes"] = int(r.get("prep_time_minutes") or 0) + int(r.get("cook_time_minutes") or 0)
             if dish["food_groups"] is None:
@@ -213,6 +225,7 @@ def _read_week(plan_id: int, intake: dict | None, answered: set[str]) -> dict:
             "cook": not reheat,
             "pinned": any(derived.get(k) for k in _THEIR_DISH_KEYS),
             "reheat_only": "left" in (tags.get(d) or []),
+            "must_cook": False,
         })
     for dish in dishes.values():
         if dish["name"] is None:
@@ -232,11 +245,22 @@ def _read_week(plan_id: int, intake: dict | None, answered: set[str]) -> dict:
         if reheat and reheat["source"]["slot"] == "dinner":
             if reheat["source"]["entry_id"] not in night_by_id:
                 raise _StandDown(f"{r['date']} lunch eats a dinner outside the nights laid")
-            key = dish_of(r)
-            before = [n for n in nights if n["date"] < r["date"] and n["dish"] == key]
-            if not before:
-                raise _StandDown(f"{r['date']} lunch has no dinner to follow")
-            riders.append({"row": r, "id": r["id"], "date": r["date"], "anchor": before[-1]["date"],
+            # The dinner this lunch follows: last night's, for a day they
+            # said is "leftovers from dinner"; the prep day's, for a prepped
+            # lunch whose batch is that dinner (a prep-day cook, which then
+            # stays a cook and keeps its dish — its prep_date is the batch);
+            # otherwise the cook it eats now.
+            anchor = night_by_id[reheat["source"]["entry_id"]]["date"]
+            evening = _evening_before(r["date"])
+            prep_date = _weekday_lunches.prep_date_for(r["date"], prep_days) if prep_days else None
+            if kinds.get(r["date"]) == "leftovers" and evening in night_by_date:
+                anchor = evening
+            elif kinds.get(r["date"]) == "prepped" and prep_date in night_by_date:
+                anchor = prep_date
+            if anchor == prep_date or night_by_date[anchor]["row"]["derived"].get("prep_date"):
+                night_by_date[anchor]["must_cook"] = True
+                night_by_date[anchor]["pinned"] = True
+            riders.append({"row": r, "id": r["id"], "date": r["date"], "anchor": anchor,
                            "optional": False})
             continue
         if r["id"] in chains["sources"]:
@@ -299,7 +323,7 @@ def _score(week: dict, assign: list[str], on: tuple[bool, ...], caps: dict | Non
     # counted there, ahead of everything else, so a layout that mends it wins.
     broken = 0
     for i, n in enumerate(nights):
-        if n["reheat_only"] and cook_of[i] == i:
+        if (n["reheat_only"] and cook_of[i] == i) or (n["must_cook"] and cook_of[i] != i):
             broken += 1
         if cook_of[i] == i and caps is not None:
             cap = caps.get((n["date"], "dinner"), caps.get(n["date"]))
@@ -380,13 +404,17 @@ def best_layout(week: dict, caps: dict | None) -> dict | None:
     """The best layout, or None when none keeps every rule."""
     best = None
     choices = list(itertools.product((True, False), repeat=len(week["weekend"])))
+    scored = 0
     for strict in (True, False):
         for assign in _layouts(week, strict):
             for on in choices:
+                scored += 1
                 score = _score(week, assign, on, caps)
                 if score is not None and (best is None or score < best[0]):
                     best = (score, assign, on)
-        if best is not None:
+            if scored >= MAX_SCORED:
+                break
+        if best is not None or scored >= MAX_SCORED:
             break
     if best is None:
         return None
@@ -418,18 +446,13 @@ def _drop_freezer_portion(conn, cook_id: int, night_key: str, eaters: int) -> No
                  (json.dumps(derived), cook_id, household_id()))
 
 
-def _set_derived(entry_id: int, derived: dict) -> None:
-    conn = get_conn()
-    try:
-        conn.execute("UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
-                     (json.dumps(derived), entry_id, household_id()))
-        conn.commit()
-    finally:
-        conn.close()
-
-
 def _write(plan_id: int, week: dict, layout: dict) -> dict:
-    from . import meal_variety as _meal_variety
+    """Write a layout in two phases. First every row whose DISH changes is
+    replaced (the swap's own door, one transaction each, chain keys left
+    off). Then every chain — each night's role, each lunch's link, each
+    cook's make_double_for, a weekend lunch's freezer portion coming off its
+    cook — is written in ONE transaction, so a failure there leaves the
+    chains exactly as they were rather than half-written."""
     from . import weekly_plan as _weekly_plan
 
     nights, dishes = week["nights"], week["dishes"]
@@ -437,96 +460,82 @@ def _write(plan_id: int, week: dict, layout: dict) -> dict:
     cook_of = _groups(assign, nights)
     eaters = list(week["riders"]) + [w for w, yes in zip(week["weekend"], layout["weekend_on"]) if yes]
     out = {"moved": [], "weekend": [], "batched": []}
+    index = {n["date"]: i for i, n in enumerate(nights)}
 
-    # 1. A weekend lunch leaving the freezer: its portion comes off the cook.
+    # Phase 1: the dishes. Date order, dinners then the lunches following them.
+    ids: list[int] = []
+    for i, n in enumerate(nights):
+        dish = dishes[assign[i]]
+        if assign[i] == n["dish"]:
+            ids.append(n["id"])
+            continue
+        row = _weekly_plan._replace_slot_entries(
+            plan_id, [n["id"]], n["date"], "dinner", dish["name"], food_groups=dish["food_groups"],
+            reasoning=dish["reasoning"] if cook_of[i] == i else "",
+            derived_from=dict(_carry(n["row"]["derived"]), replaced=n["row"]["meal"]),
+        )
+        ids.append(row.get("entry_id"))
+        out["moved"].append({"date": n["date"], "from": n["row"]["meal"], "to": dish["name"]})
+    eater_ids: list[int] = []
+    for r in eaters:
+        a = index[r["anchor"]]
+        dish = dishes[assign[a]]
+        if r["optional"] or _leftovers.dish_identity(r["row"]["meal"]) != assign[a]:
+            row = _weekly_plan._replace_slot_entries(
+                plan_id, [r["id"]], r["date"], "lunch", dish["name"], food_groups=dish["food_groups"],
+                reasoning="", derived_from=dict(_carry(r["row"]["derived"]), replaced=r["row"]["meal"]),
+            )
+            eater_ids.append(row.get("entry_id"))
+            if r["optional"]:
+                out["weekend"].append({"date": r["date"], "from": r["row"]["meal"], "to": dish["name"]})
+        else:
+            eater_ids.append(r["id"])
+
+    # Phase 2: the chains, in one transaction.
+    targets: dict[int, list[str]] = {}
+    links: dict[int, int] = {}
+    for i, n in enumerate(nights):
+        if cook_of[i] != i:
+            links[ids[i]] = ids[cook_of[i]]
+            targets.setdefault(ids[cook_of[i]], []).append(f"{n['date']}:dinner")
+    for r, eid in zip(eaters, eater_ids):
+        cook_id = ids[cook_of[index[r["anchor"]]]]
+        links[eid] = cook_id
+        targets.setdefault(cook_id, []).append(f"{r['date']}:lunch")
+    batch_ids = {ids[i] for i in range(len(nights)) if cook_of[i] != i}
+    batch_ids |= {eid for r, eid in zip(eaters, eater_ids) if r["optional"]}
     conn = get_conn()
     try:
+        conn.execute("BEGIN IMMEDIATE")
         for w in eaters:
-            if not w["optional"]:
-                continue
-            frozen = w["row"]["derived"].get(_leftovers.FROM_FREEZER_KEY)
+            frozen = w["row"]["derived"].get(_leftovers.FROM_FREEZER_KEY) if w["optional"] else None
             cook_id = _leftovers_ref(frozen.get("cook")) if isinstance(frozen, dict) else None
             if cook_id is not None:
                 _drop_freezer_portion(conn, cook_id, f"{w['date']}:lunch",
                                       _leftovers.eaters_at(w["date"], "lunch", conn=conn))
+        for eid in list(ids) + eater_ids:
+            row = conn.execute("SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                               (eid, household_id())).fetchone()
+            if row is None:
+                raise RuntimeError(f"entry {eid} went away while the week was being re-laid")
+            derived = _carry(_derived(row))
+            if eid in links:
+                derived["links_to"] = f"entry_id:{links[eid]}"
+            if eid in batch_ids:
+                derived[_leftovers.BATCH_KEY] = True
+            if targets.get(eid):
+                merged = sorted(set(targets[eid]))
+                derived["make_double_for"] = merged
+                derived["make_double_note"] = _weekly_plan._make_double_note_text(merged)
+                out["batched"].append({"cook": eid, "covers": merged})
+            conn.execute("UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                         (json.dumps(derived), eid, household_id()))
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
-
-    # 2. Every night's dish, in date order (a cook's new row exists before
-    # anything links to it).
-    ids: list[int] = []
-    for i, n in enumerate(nights):
-        dish = dishes[assign[i]]
-        if assign[i] != n["dish"]:
-            derived = dict(_carry(n["row"]["derived"]), replaced=n["row"]["meal"])
-            if cook_of[i] != i:
-                derived.update({"links_to": f"entry_id:{ids[cook_of[i]]}", _leftovers.BATCH_KEY: True})
-            row = _weekly_plan._replace_slot_entries(
-                plan_id, [n["id"]], n["date"], "dinner", dish["name"],
-                food_groups=dish["food_groups"], reasoning="", derived_from=derived,
-            )
-            ids.append(row.get("entry_id"))
-            out["moved"].append({"date": n["date"], "from": n["row"]["meal"], "to": dish["name"]})
-        else:
-            ids.append(n["id"])
-    # 3. Roles: a cook carries no link; a reheat links to its cook. The cook
-    # side (make_double_for) is cleared here and rebuilt in step 5.
-    for i, n in enumerate(nights):
-        if assign[i] != n["dish"]:
-            continue
-        derived = _carry(n["row"]["derived"])
-        if cook_of[i] != i:
-            derived.update({"links_to": f"entry_id:{ids[cook_of[i]]}", _leftovers.BATCH_KEY: True})
-        _set_derived(ids[i], derived)
-    targets: dict[int, list[str]] = {}
-    for i, n in enumerate(nights):
-        if cook_of[i] != i:
-            targets.setdefault(ids[cook_of[i]], []).append(f"{n['date']}:dinner")
-
-    # 4. The lunches that eat a dinner follow it.
-    index = {n["date"]: i for i, n in enumerate(nights)}
-    for r in eaters:
-        a = index[r["anchor"]]
-        cook_id = ids[cook_of[a]]
-        dish = dishes[assign[a]]
-        current = _leftovers.dish_identity(r["row"]["meal"])
-        derived = _carry(r["row"]["derived"])
-        derived["links_to"] = f"entry_id:{cook_id}"
-        if r["optional"]:
-            derived[_leftovers.BATCH_KEY] = True
-        if r["optional"] or current != assign[a]:
-            derived["replaced"] = r["row"]["meal"]
-            _weekly_plan._replace_slot_entries(
-                plan_id, [r["id"]], r["date"], "lunch", dish["name"],
-                food_groups=dish["food_groups"], reasoning="", derived_from=derived,
-            )
-            if r["optional"]:
-                out["weekend"].append({"date": r["date"], "from": r["row"]["meal"], "to": dish["name"]})
-        else:
-            _set_derived(r["id"], derived)
-        targets.setdefault(cook_id, []).append(f"{r['date']}:lunch")
-
-    # 5. Each cook names every meal it feeds, and nothing else.
-    for i in range(len(nights)):
-        if cook_of[i] != i:
-            continue
-        conn = get_conn()
-        try:
-            row = conn.execute("SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-                               (ids[i], household_id())).fetchone()
-            if row is not None:
-                derived = _derived(row)
-                derived.pop("make_double_for", None)
-                derived.pop("make_double_note", None)
-                conn.execute("UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
-                             (json.dumps(derived), ids[i], household_id()))
-                conn.commit()
-        finally:
-            conn.close()
-    written = {"batched": []}
-    _meal_variety._write_cook_sides(plan_id, targets, [], written)
-    out["batched"] = written["batched"]
     return out
 
 
@@ -561,7 +570,7 @@ def spread_dinners(plan_id: int, intake: dict | None, caps: dict | None = None,
         if _approved(plan_id):
             out["skipped"] = "approved"
             return out
-        week = _read_week(plan_id, intake, set(_weekday_lunches.kinds_by_date(intake)))
+        week = _read_week(plan_id, intake, _weekday_lunches.kinds_by_date(intake))
         nights, dishes = week["nights"], week["dishes"]
         if not dishes or len(nights) > MAX_NIGHTS:
             out["skipped"] = "nothing to lay"
@@ -585,6 +594,10 @@ def spread_dinners(plan_id: int, intake: dict | None, caps: dict | None = None,
     except _StandDown as why:
         out["skipped"] = str(why)
     except Exception:
-        logger.exception("Spreading the dinners of plan %s failed; the week stands as it was", plan_id)
+        # Phase 2 of _write is one transaction; a failure in phase 1 can
+        # leave some nights with their new dish and no chain yet (each a
+        # plain cook) — never a half-written chain.
+        logger.exception("Spreading the dinners of plan %s failed part-way; chains are whole, "
+                         "some nights may be plain cooks", plan_id)
         out["skipped"] = "error"
     return out

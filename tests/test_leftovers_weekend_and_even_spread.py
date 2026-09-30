@@ -20,6 +20,16 @@ day; Saturday's lunch isn't on that screen. The model's Saturday lunch is a
 repeat of Monday's soup, which the lunch count used to turn into "Leftovers
 from the freezer — Monday's soup".
 
+Her week has a conflict the two decisions can't both win, found building
+this: Tuesday is a prep day, so Tuesday's dinner is the cook the Wednesday
+and Thursday lunches eat; Friday's lunch is Thursday's dinner; and no dish
+may be on three meals in a row. Then Friday's dinner can only be a dish
+cooked Monday or Tuesday (four days before Saturday's lunch — too long in
+the fridge) unless something is cooked a fourth time. So in her exact week
+the dishes stay even and cooked once, and Saturday's lunch keeps its portion
+from the freezer (no extra cooking either way). With Sunday as the only prep
+day, Saturday's lunch is Friday's dinner. Both are pinned below.
+
 Each route test fails on origin/main 7b5f7df. The model and the swap picker
 are stubbed; nothing reaches the API.
 """
@@ -28,7 +38,7 @@ from __future__ import annotations
 import pytest
 
 from app import agent, tools
-from app.tools import leftovers, leftovers_spread, meal_variety
+from app.tools import leftovers, leftovers_spread, meal_variety, weekday_lunches
 
 from tests.test_draft_dish_counts_and_leftovers import (  # noqa: F401 — fixtures
     _assert_her_numbers, _cooks, _monday, _rows, _stub, _via_agent, _via_generate, _via_replan,
@@ -47,7 +57,14 @@ SHAPES = {
 }
 
 
-def _assert_her_week(plan_id: int, dates: list[str]):
+def _sunday_prep_only(mon, dates):
+    tools.save_week_intake(mon, night_tags={}, weekday_lunches={
+        "prep_days": ["sunday"],
+        "days": [{"date": d, "kind": "prepped"} for d in dates[:4]] + [{"date": dates[4], "kind": "leftovers"}],
+    })
+
+
+def _assert_her_week(plan_id: int, dates: list[str], saturday_eats_friday: bool):
     dinners, lunches = _rows(plan_id, "dinner"), _rows(plan_id, "lunch")
     chains = leftovers.plan_leftover_chains(plan_id)
 
@@ -65,17 +82,28 @@ def _assert_her_week(plan_id: int, dates: list[str]):
             assert source["meal"] == dinners[d]["meal"]
             assert 1 <= leftovers.days_apart(source["date"], d) <= leftovers.MAX_LEFTOVER_DAYS
 
-    # Decision 1: Saturday's lunch is Friday's dinner, from the fridge.
     sat_lunch = lunches[dates[5]]
-    assert not leftovers.frozen_portion_on(sat_lunch["derived"]), sat_lunch["meal"]
-    source = chains["leftovers"][sat_lunch["id"]]["source"]
-    assert source["slot"] == "dinner" and sat_lunch["meal"] == dinners[dates[4]]["meal"]
-    assert leftovers.days_apart(source["date"], dates[5]) <= leftovers.MAX_LEFTOVER_DAYS
-    assert dinners[dates[5]]["meal"] != dinners[dates[4]]["meal"], "Saturday's dinner is a different dish"
-    # …and no cook still freezes a portion for it.
-    for rows in (dinners, lunches):
-        for r in rows.values():
-            assert f"{dates[5]}:lunch" not in (r["derived"].get(leftovers.FREEZER_EXTRA_KEY) or {}).get("for", [])
+    if saturday_eats_friday:
+        # Decision 1: Saturday's lunch is Friday's dinner, from the fridge.
+        assert not leftovers.frozen_portion_on(sat_lunch["derived"]), sat_lunch["meal"]
+        source = chains["leftovers"][sat_lunch["id"]]["source"]
+        assert source["slot"] == "dinner" and sat_lunch["meal"] == dinners[dates[4]]["meal"]
+        assert leftovers.days_apart(source["date"], dates[5]) <= leftovers.MAX_LEFTOVER_DAYS
+        assert dinners[dates[5]]["meal"] != dinners[dates[4]]["meal"], "Saturday's dinner is a different dish"
+        # …and no cook still freezes a portion for it.
+        for rows in (dinners, lunches):
+            for r in rows.values():
+                assert f"{dates[5]}:lunch" not in (r["derived"].get(leftovers.FREEZER_EXTRA_KEY) or {}).get("for", [])
+    else:
+        # The conflict in the module docstring: nothing is cooked for it.
+        assert leftovers.frozen_portion_on(sat_lunch["derived"]) or sat_lunch["id"] in chains["leftovers"]
+        # Tuesday's prep batch is Tuesday's dinner, cooked, feeding
+        # Wednesday's and Thursday's lunches.
+        batches = {b["prep_date"]: b for b in weekday_lunches.prepped_batches(plan_id)}
+        tuesday = batches[dates[1]]
+        assert tuesday["cook_date"] == dates[1] and tuesday["slot"] == "dinner"
+        assert tuesday["lunch_dates"] == [dates[2], dates[3]]
+        assert tuesday["cook_entry_id"] in cook_ids
 
     # Friday's lunch is still last night's dinner ("Leftovers from dinner: 1").
     friday = chains["leftovers"][lunches[dates[4]]["id"]]["source"]
@@ -89,14 +117,27 @@ def _assert_her_week(plan_id: int, dates: list[str]):
     _assert_her_numbers(plan_id)
 
 
+ROUTES = dict(zip(["chat-tool", "generate", "stream", "re-plan"], [_via_agent, _via_generate, _via_stream, _via_replan]))
+
+
 @pytest.mark.parametrize("dinners", list(SHAPES.values()), ids=list(SHAPES))
-@pytest.mark.parametrize("route", [_via_agent, _via_generate, _via_stream, _via_replan],
-                         ids=["chat-tool", "generate", "stream", "re-plan"])
+@pytest.mark.parametrize("route", list(ROUTES.values()), ids=list(ROUTES))
 def test_her_week_on_every_route(route, dinners, emily, picker, monkeypatch, signed_in):
+    """Prep Sunday and Tuesday: even, cooked once, Tuesday's batch intact."""
     mon, dates = emily
     tools.save_week_intake(mon, night_tags={})
     _stub(monkeypatch, _week(dates, dinners, HER_LUNCHES, dinner_minutes=25))
-    _assert_her_week(route(mon, signed_in), dates)
+    _assert_her_week(route(mon, signed_in), dates, saturday_eats_friday=False)
+
+
+@pytest.mark.parametrize("dinners", list(SHAPES.values()), ids=list(SHAPES))
+@pytest.mark.parametrize("route", list(ROUTES.values()), ids=list(ROUTES))
+def test_saturday_lunch_is_fridays_dinner_on_every_route(route, dinners, emily, picker, monkeypatch, signed_in):
+    """Prep Sunday only: Saturday's lunch eats Friday's dinner too."""
+    mon, dates = emily
+    _sunday_prep_only(mon, dates)
+    _stub(monkeypatch, _week(dates, dinners, HER_LUNCHES, dinner_minutes=25))
+    _assert_her_week(route(mon, signed_in), dates, saturday_eats_friday=True)
 
 
 def test_a_rush_night_in_the_week_reheats(emily, picker, monkeypatch):
