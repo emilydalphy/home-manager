@@ -4094,29 +4094,64 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
         return {"name": name, "ok": False, "clash": []}
 
 
-# One recipe pass per plan at a time. Two adults tapping Approve together
+# One writer per recipe at a time. Two adults tapping Approve together
 # each read "nothing approved yet" and each ran the pass (review,
 # 2026-09-21: the model called twice for one recipe, the quality rules
-# logged twice) — fill_recipe_details' own guard kept the data right, but
-# the second run was pure spend. The loser waits here and then finds
-# nothing pending. Keyed per household like the week-generation locks.
-_RECIPE_PASS_LOCKS: dict[tuple, threading.Lock] = {}
-_RECIPE_PASS_LOCKS_GUARD = threading.Lock()
+# logged twice). Since 2026-09-30 the draft's own background pass
+# (start_background_recipe_pass) is a third caller, so the claim is per
+# RECIPE, not per plan: approval waits only for the dishes still on its
+# plan that someone else is writing — a dish swapped out mid-pass is not
+# on the plan any more, so it holds nothing up. Each claim is an Event its
+# writer sets when it lets go; whoever was waiting then re-reads what is
+# still pending. In memory only: a redeploy drops every claim along with
+# the threads that held them, and the details_pending flags left on disk
+# are what the next approval works from. Keyed per household like the
+# week-generation locks.
+_RECIPES_IN_FLIGHT: dict[tuple, threading.Event] = {}
+_RECIPES_IN_FLIGHT_GUARD = threading.Lock()
+
+# The longest an approval waits on recipes another pass is writing. Far
+# past a real recipe (a few seconds each, all abreast) — the cap only
+# exists so a hung API call on the background thread can't hold an
+# approval forever. Past it, approval goes ahead and the dish stays
+# pending for the Cook screen's "Fill in this recipe", as a failure would.
+_RECIPE_WAIT_SECONDS = 180.0
 
 
-def _recipe_pass_lock(weekly_plan_id: int) -> threading.Lock:
-    key = (tools.household_id(), int(weekly_plan_id))
-    with _RECIPE_PASS_LOCKS_GUARD:
-        return _RECIPE_PASS_LOCKS.setdefault(key, threading.Lock())
+def _claim_recipes(pending: list[dict]) -> tuple[list[dict], list[threading.Event]]:
+    """Split `pending` into the recipes this caller now owns and the
+    Events of the ones another pass is already writing."""
+    hh = tools.household_id()
+    mine, theirs = [], []
+    with _RECIPES_IN_FLIGHT_GUARD:
+        for recipe in pending:
+            key = (hh, int(recipe["id"]))
+            held = _RECIPES_IN_FLIGHT.get(key)
+            if held is None:
+                _RECIPES_IN_FLIGHT[key] = threading.Event()
+                mine.append(recipe)
+            else:
+                theirs.append(held)
+    return mine, theirs
 
 
-def fill_pending_recipes_for_plan(weekly_plan_id: int) -> dict:
+def _release_recipes(recipes: list[dict]) -> None:
+    hh = tools.household_id()
+    with _RECIPES_IN_FLIGHT_GUARD:
+        for recipe in recipes:
+            held = _RECIPES_IN_FLIGHT.pop((hh, int(recipe["id"])), None)
+            if held is not None:
+                held.set()
+
+
+def fill_pending_recipes_for_plan(weekly_plan_id: int, *, wait: bool = True) -> dict:
     """
     Write up every recipe on this plan that the menu pass left pending —
     in parallel, one call each — and say what happened: {"filled": [...],
     "failed": [...], "clashed": [...]}. Nothing to do is {"filled": [],
     ...} and no model call at all, which is what every approval of a
-    plan made of saved recipes costs.
+    plan made of saved recipes costs — and, since 2026-09-30, what most
+    approvals cost, because the draft's background pass got there first.
 
     A recipe that clashed with a must-avoid after two tries is handed to
     the allergen gate's own re-pick — the same picker a clashing draft
@@ -4124,16 +4159,59 @@ def fill_pending_recipes_for_plan(weekly_plan_id: int) -> dict:
     eat. One that simply failed (an API error, an empty answer) stays
     pending: the approval goes ahead, and the Cook screen's "Fill in this
     recipe" writes it when it's needed.
+
+    `wait` is approval's mode (the default): a recipe another pass is
+    writing right now is waited for, not written again, and one that pass
+    FAILED on is then written here — the fallback that keeps approval
+    exactly as it was before the background pass existed. wait=False is
+    the background pass's mode: it writes what nobody else is writing,
+    leaves the rest to whoever holds them, and never re-picks a slot (see
+    _fill_claimed_recipes).
     """
-    with _recipe_pass_lock(weekly_plan_id):
-        return _fill_pending_recipes_locked(weekly_plan_id)
-
-
-def _fill_pending_recipes_locked(weekly_plan_id: int) -> dict:
-    pending = tools.pending_recipes_for_plan(weekly_plan_id)
     result = {"filled": [], "failed": [], "clashed": []}
-    if not pending:
-        return result
+    deadline = time.monotonic() + _RECIPE_WAIT_SECONDS
+    # Each recipe is attempted at most once by THIS call: a recipe this
+    # call failed on stays pending (as it always has), rather than being
+    # retried in a loop. One someone ELSE failed on is not in here, which
+    # is what makes it this call's to write.
+    attempted: set[int] = set()
+    while True:
+        pending = [r for r in tools.pending_recipes_for_plan(weekly_plan_id) if r["id"] not in attempted]
+        if not pending:
+            break
+        mine, theirs = _claim_recipes(pending)
+        if mine:
+            # Re-read after claiming: a pass that finished (and let go)
+            # between the read above and the claim has already written
+            # some of these, and writing one twice is the spend the
+            # claims exist to prevent.
+            still = {r["id"] for r in tools.pending_recipes_for_plan(weekly_plan_id)}
+            _release_recipes([r for r in mine if r["id"] not in still])
+            mine = [r for r in mine if r["id"] in still]
+        if mine:
+            attempted.update(r["id"] for r in mine)
+            try:
+                part = _fill_claimed_recipes(weekly_plan_id, mine, sweep_clashes=wait)
+            finally:
+                _release_recipes(mine)
+            for k in result:
+                result[k] += part[k]
+        if not theirs or not wait:
+            break
+        for held in theirs:
+            held.wait(max(0.0, deadline - time.monotonic()))
+        if time.monotonic() >= deadline:
+            logger.warning(
+                "Recipe pass for plan %s: gave up waiting on another pass after %.0fs; "
+                "approving with those recipes still pending", weekly_plan_id, _RECIPE_WAIT_SECONDS,
+            )
+            break
+    return result
+
+
+def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_clashes: bool = True) -> dict:
+    """The recipe pass proper, for recipes this caller has claimed."""
+    result = {"filled": [], "failed": [], "clashed": []}
     for recipe in pending:
         must = _typed_requests.plan_must_use(weekly_plan_id, recipe["id"])
         if must:
@@ -4189,7 +4267,12 @@ def _fill_pending_recipes_locked(weekly_plan_id: int) -> dict:
         time.perf_counter() - started, len(pending),
     )
     known_clashes = {o["name"].lower(): o["clash"] for o in outcomes if o["clash"]}
-    if known_clashes:
+    # Only approval re-picks. The background pass runs while the household
+    # is looking at the draft, and a dish changing under them with no word
+    # of why is worse than the wait: a clashed dish stays pending, and
+    # approval writes it again (told the clash) and re-picks there, as it
+    # did before the background pass existed.
+    if known_clashes and sweep_clashes:
         # The sweep re-picks a clashing dish through the swap's own gated
         # picker, or opens the slot — the same last line of defence a
         # finished draft gets. It is told the clash, because the pending
@@ -4208,6 +4291,83 @@ def _fill_pending_recipes_locked(weekly_plan_id: int) -> dict:
             logger.exception("Recipe quality check after the recipe pass failed for plan %s", weekly_plan_id)
     return result
 
+
+
+# Plans with a background recipe pass running right now, per household —
+# so a second trigger for the same draft doesn't start a second thread
+# (the per-recipe claims would stop it writing anything twice anyway;
+# this saves the thread and the cache warm-up call).
+_BACKGROUND_RECIPE_PASSES: set[tuple] = set()
+_BACKGROUND_RECIPE_PASSES_GUARD = threading.Lock()
+
+
+def start_background_recipe_pass(weekly_plan_id: int) -> threading.Thread | None:
+    """
+    Start writing this draft's pending recipes on a background thread, the
+    moment the draft is saved, so Approve finds them written (Emily,
+    2026-09-30: production approvals waited 16s on "Writing up the
+    recipes…" for seven dishes). She accepted the cost: a dish later
+    swapped out, or a draft re-rolled, has already been paid for — about
+    1.5¢ a dish.
+
+    Approval is unchanged in what it guarantees: it still runs the pass
+    itself (fill_pending_recipes_for_plan), which waits for the recipes
+    this thread is mid-way through and writes whatever it failed on, never
+    both. So nothing here has to succeed — a redeploy that kills this
+    daemon thread, an API error, a refused consent: the details_pending
+    flags stay set and approval writes them, as it did before this existed.
+
+    The thread runs inside a copy of the CALLER's context — the household
+    is a contextvar (tools._shared.household_id), and a bare thread would
+    see household 1 and write into the wrong kitchen, or find nothing to
+    write. The week-generation progress callback is cleared in that copy:
+    the draft's stream has closed by the time the recipes are written.
+
+    Returns the thread (tests join it), or None when there was nothing to
+    start: no pending recipes, a pass already running for this plan, or
+    DISABLE_BACKGROUND_RECIPES set (the test suite sets it, so no thread
+    from one test writes into the next test's database). Never raises.
+    """
+    try:
+        if os.environ.get("DISABLE_BACKGROUND_RECIPES"):
+            return None
+        if not weekly_plan_id or not tools.pending_recipes_for_plan(weekly_plan_id):
+            return None
+        key = (tools.household_id(), int(weekly_plan_id))
+        with _BACKGROUND_RECIPE_PASSES_GUARD:
+            if key in _BACKGROUND_RECIPE_PASSES:
+                return None
+            _BACKGROUND_RECIPE_PASSES.add(key)
+    except Exception:
+        logger.exception("Could not start the background recipe pass for plan %s; approval will write them", weekly_plan_id)
+        return None
+
+    def _run():
+        _WEEK_GEN_PROGRESS.set(None)
+        try:
+            outcome = fill_pending_recipes_for_plan(weekly_plan_id, wait=False)
+            logger.info(
+                "Background recipe pass for plan %s: %d written, %d failed, %d clashed",
+                weekly_plan_id, len(outcome["filled"]), len(outcome["failed"]), len(outcome["clashed"]),
+            )
+        except Exception:
+            logger.exception("Background recipe pass for plan %s failed; approval will write them", weekly_plan_id)
+        finally:
+            with _BACKGROUND_RECIPE_PASSES_GUARD:
+                _BACKGROUND_RECIPE_PASSES.discard(key)
+
+    ctx = contextvars.copy_context()
+    thread = threading.Thread(
+        target=lambda: ctx.run(_run), daemon=True, name=f"recipe-pass-{weekly_plan_id}",
+    )
+    try:
+        thread.start()
+    except Exception:
+        with _BACKGROUND_RECIPE_PASSES_GUARD:
+            _BACKGROUND_RECIPE_PASSES.discard(key)
+        logger.exception("Could not start the background recipe pass for plan %s; approval will write them", weekly_plan_id)
+        return None
+    return thread
 
 _GENERATE_COMPONENT_PLAN_TOOL = {
     "name": "submit_component_plan",
@@ -4890,6 +5050,11 @@ def _generate_weekly_plan_once(
     # this is a known place to move off the request path.
     _generate_prep_schedule_if_needed(plan)
     _sync_defrost_tasks_if_needed(plan)
+    # The draft is saved: start writing its new recipes now, while the
+    # household reads it, so Approve has nothing left to wait on. Every
+    # draft passes through here — onboarding's first week, Plan the week
+    # (both endpoints), re-plan and chat all call generate_weekly_plan.
+    start_background_recipe_pass(plan.get("weekly_plan_id"))
     return plan
 
 

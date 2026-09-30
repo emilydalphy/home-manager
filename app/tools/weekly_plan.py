@@ -6334,6 +6334,12 @@ def _write_pending_recipes(weekly_plan_id: int) -> None:
     (the Cook screen fills it when it's needed) and the approval goes
     ahead with what it has; a lost approval over one recipe is the worse
     outcome.
+
+    Since 2026-09-30 the draft's background pass has usually written them
+    already (agent.start_background_recipe_pass), so this finds nothing
+    pending and costs one read. If that pass is still going, this waits
+    only for the dishes still on the plan; if it failed or died with a
+    redeploy, this writes them, exactly as before.
     """
     try:
         from .. import agent as _agent
