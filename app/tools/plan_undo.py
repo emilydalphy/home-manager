@@ -145,7 +145,8 @@ def _restore_lines(conn, lines) -> None:
     hh = household_id()
     known = columns(conn, "grocery_items")
     for line in lines or []:
-        if not isinstance(line, dict) or not isinstance(line.get("before"), dict):
+        if not isinstance(line, dict) or not isinstance(line.get("before"), dict) \
+                or "id" not in line["before"]:
             continue
         before, after = line["before"], line.get("after")
         now = _line_now(conn, before["id"])

@@ -696,7 +696,7 @@ def test_a_refused_undo_leaves_the_line_off_too():
 
 # ---------- the second door: cook_on_fed (weekly_plan.move_cook_onto_fed_night) ----------
 
-def _cook_tonight_for_tomorrow():
+def _cook_tonight_for_tomorrow(greens_on_filler: bool = False):
     """The card's 2026-09-30 measurement: tonight's chili is cooked double
     for tomorrow, tomorrow's reheat carries a green salad, and every other
     night of the period has a dinner of its own, so nothing is free and the
@@ -714,7 +714,10 @@ def _cook_tonight_for_tomorrow():
         tools.add_recipe(name, ingredients=[{"item": f"Thing {offset}", "qty": "1 lb", "category": "meat"}],
                          default_servings=2)
         day = (today + datetime.timedelta(days=offset)).isoformat()
-        tools.plan_meal(day, name, slot="dinner", weekly_plan_id=plan_id)
+        filler = tools.plan_meal(day, name, slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+        if greens_on_filler and offset == 2:
+            # A second salad on the week, merged onto the same Lettuce line.
+            _plates.attach_sides(filler, [GREENS], ["vegetable"])
     _plates.attach_sides(reheat, [SALAD], ["vegetable"])
     tools.approve_weekly_plan(plan_id)
     return plan_id, cook, reheat
@@ -779,3 +782,28 @@ def test_the_review_steppers_minus_shares_the_door_and_its_undo_is_exact():
     assert _list() == before_list
     assert _links(reheat) == ["Lettuce"]
     assert _lettuce_links() == 1
+
+
+def test_on_the_minus_door_the_rescale_has_the_last_word_on_an_edited_side_line():
+    """CHARACTERISATION — found by the branch's independent review, and the
+    one place the "keep the household's number" rule does NOT hold. The
+    night off keeps an edited shared line (test above); the "−" cannot,
+    because drop_dish_undo's rescale (_rescale_after_a_chain_moved) runs
+    AFTER plan_undo and re-ingests the chili's recipe group, sides
+    included — the reheat carries the chili's recipe_id — recomputing the
+    plan line from the ledger. That recompute is how the "−" has always
+    treated the batch's own line; the side now shares it. Pre-existing in
+    kind, bounded (the number is the plan's own answer, never less than
+    the meals need), and the _rescale_leftover_source_grocery card's
+    territory rather than this one's. Invert it if that rescale learns to
+    leave a side's line alone."""
+    plan_id, cook, _reheat = _cook_tonight_for_tomorrow(greens_on_filler=True)
+    assert _list()["Lettuce"] == "2 heads"
+
+    out = tools.drop_dish_from_day(plan_id, cook)
+    assert _list()["Lettuce"] == "1 head"
+    tools.update_grocery_item(_lettuce_id(), quantity="5 heads")
+    tools.drop_dish_undo(plan_id, out["undo_entry_id"])
+
+    assert _list()["Lettuce"] == "2 heads", "the rescale recomputed it; if 5, invert this"
+    assert _lettuce_links() == 2

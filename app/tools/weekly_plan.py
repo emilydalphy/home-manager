@@ -1070,9 +1070,15 @@ def drop_dish_undo(weekly_plan_id: int, entry_id: int) -> dict:
     line already in a cart or through the till was left alone on the way
     down and is left alone here too. The one exception is a SIDE the
     replaced leftovers night carried, reversed with that row since
-    2026-09-30 (delete_plan_entry): it comes back from the record by
-    plan_undo's rule — a deleted line exactly, a trimmed shared line only
-    while nobody has touched it since.
+    2026-09-30 (delete_plan_entry): plan_undo puts it back from the record
+    (a deleted line exactly, a trimmed shared line only while nobody has
+    touched it since) — and then the rescale below re-ingests the recipe
+    group, SIDES INCLUDED, because the reheat carries the dish's
+    recipe_id. So on this door the rescale has the last word on the side's
+    line as it always has on the batch's: a number the household typed on
+    a plan line in between is recomputed from the ledger, not kept (the
+    night off, which has no rescale, keeps it). Measured and pinned in
+    test_reheat_side_is_bought.py rather than promised away.
     """
     nothing = {"status": "refused", "message": "There’s nothing to put back."}
     conn = get_conn()

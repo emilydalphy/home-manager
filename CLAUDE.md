@@ -463,7 +463,17 @@ why*, not duplicating the diff.
     list by content): its post-commit `_rescale_after_a_chain_moved`
     re-ingests the recipe group, **sides included** (the reheat carries the
     chili's recipe_id), so the lettuce comes back under a new id there —
-    same as the batch's own line always has.
+    same as the batch's own line always has. **Found on independent review
+    and pinned, not fixed:** that same rescale means the "keep the
+    household's number" rule does NOT hold on the "−" — edit the trimmed
+    shared line to 5 heads, Undo, and it reads 2 (recomputed from the
+    ledger). `test_on_the_minus_door_the_rescale_has_the_last_word_on_an_
+    edited_side_line`; the `_rescale_leftover_source_grocery` card's
+    territory. Likewise a trimmed line ticked into the cart: the night off
+    leaves it in the cart at 1 head with both links back (one head short
+    for the restored reheat, by the rule); the "−"'s rescale adds a fresh
+    needed 1-head line beside it. The doors disagree there; Emily's call
+    if it matters.
   - **The `drop` kind is unchanged and still has no undo.** Nothing here
     needed it to change. With lines now in the record it COULD get one;
     that is a product call, not taken here.
@@ -473,12 +483,16 @@ why*, not duplicating the diff.
     ends of a chain (its own card, Needs Your Call): night off on the
     reheat takes the list 3 heads → 2, not 1, because the cook night's
     salad is still scaled to cover the night that is now off. Undo → 3.
+    Also seen on review, pre-existing and NOT this card: the undo
+    fingerprint has no `sides_json`, so a side added to the moved cook
+    after a cook_on_fed night off is reverted off the plate by Undo while
+    its grocery lines and links stay — the same stranding, another door.
   - Tests: `tests/test_reheat_side_is_bought.py` — the characterisation
     `..._strands_its_sides_line_and_is_NOT_fixed_here` inverted (history in
     the section comment), 12 tests across both doors and the "−": shared
     line, edited line, ticked line, in-cart line, double undo, undo after an
-    unrelated add, refused undo. 6 red on main; each GUARD names the
-    mutation that pins it, and each was run.
+    unrelated add, refused undo, plus the "−" characterisation above. Each
+    GUARD names the mutation that pins it, and each was run.
 
 - **2026-09-30 — "16 of 16 chat turns called nothing" was a column DEFAULT
   being read back as a measurement, and it sent a whole card hunting 27
