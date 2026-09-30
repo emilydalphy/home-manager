@@ -812,6 +812,57 @@ def _print_themes_across(report: list[dict]) -> None:
         print(f"  theme calls: {_money(cost)} ({calls} calls)")
 
 
+def _food_lines(recent: list[dict]) -> list[tuple[str, str, int]]:
+    """
+    The FOOD findings as they should be READ: one line per distinct sentence,
+    with the number of nights it was found on.
+
+    get_recent_plan_quality already dedupes by (rule, date, slot, message), so
+    every row here is a genuinely different finding. But a RECIPE-level rule —
+    quantities_plausible, steps_match_ingredients — writes a message that names
+    the recipe and not the night, so the same recipe planned on three nights
+    arrives as three rows whose printed text is character-identical.
+
+    MEASURED on the live app, 2026-09-30, household 1: of the six lines this
+    section prints, FIVE were two findings said three and two times
+    ("Turkish-Style Lentil Soup: Butter '1 stick' ..." on 2026-10-03, 09-29 and
+    09-28, and "... Carrots never appear(s) in any step." on the first two of
+    those). So five of six slots carried two pieces of news, and the other 24
+    findings that week — nine of them dinner_repeat_in_history — printed
+    nothing at all.
+
+    Collapsing rather than printing each night's date is the deliberate choice:
+    three nights of one recipe is ONE thing to fix, the recipe, and the count
+    keeps what the dates were there to say. A rule whose message already names
+    its own night (snack_echoes_a_meal, reasoning_is_specific) is unaffected,
+    because those messages differ and so never collapse.
+
+    Order is the order they came in, which is newest first.
+    """
+    seen: dict[tuple[str, str], int] = {}
+    order: list[tuple[str, str]] = []
+    for row in recent:
+        key = (row.get("severity") or "", row.get("message") or "")
+        if key not in seen:
+            seen[key] = 0
+            order.append(key)
+        seen[key] += 1
+    return [(sev, msg, seen[(sev, msg)]) for sev, msg in order]
+
+
+def _food_line_text(severity: str, message: str, nights: int) -> str:
+    """
+    One FOOD line, indented as the section prints it.
+
+    Its own function rather than three tokens inside the print, because the
+    `nights > 1` half is the whole of the reported fix and _print_human takes
+    a whole report to drive — so inlined, the one rule this change adds would
+    have been the one rule no test could reach.
+    """
+    nightly = f"  ({nights} nights)" if nights > 1 else ""
+    return f"      {severity:5} {message}{nightly}"
+
+
 def _print_human(report: list[dict], days: int, source: str) -> None:
     print(f"(read from {source})")
     for h in report:
@@ -945,8 +996,8 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
             redrafts = quality.get("logged") or 0
             extra = f" (logged {redrafts} times across re-drafts)" if redrafts > quality["total"] else ""
             print(f"  FOOD — {quality['total']} in the last {quality['days']}d{extra}: {rules}")
-            for row in quality["recent"][:6]:
-                print(f"      {row['severity']:5} {row['message']}")
+            for line in _food_lines(quality["recent"])[:6]:
+                print(_food_line_text(*line))
 
         # A count, never a word of what was written — see this file's
         # --feedback note. The pointer is the point: without it the read
