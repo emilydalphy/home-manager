@@ -122,7 +122,7 @@ def test_five_dishes_against_a_preference_of_four_become_four(recipes, stub_mode
     assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
 
 
-def test_a_week_within_the_count_is_left_exactly_as_generated(recipes, stub_model):
+def test_a_week_within_the_count_keeps_its_dishes(recipes, stub_model):
     tools.set_household_meal_preferences(dinners_per_week=4)
     week = _monday()
     generated = ["Chili", "Salmon", "Kofte", "Halloumi Salad", "Chili", "Salmon", "Kofte"]
@@ -130,7 +130,13 @@ def test_a_week_within_the_count_is_left_exactly_as_generated(recipes, stub_mode
 
     plan = agent.generate_weekly_plan(week)
 
-    assert [m for _, _, m, _ in _dinners(plan["weekly_plan_id"])] == generated
+    # The four dishes stay exactly the four the model sent. Which night holds
+    # which may change since Emily's 2026-09-29 decision (each dish covers
+    # its share of the nights, cooked once — tools/leftovers_spread.py): the
+    # model's Chili Monday and Friday was two cooks of one dish.
+    dinners = [m for _, _, m, _ in _dinners(plan["weekly_plan_id"])]
+    assert len(dinners) == 7 and set(dinners) == set(generated)
+    assert sorted(dinners.count(d) for d in set(dinners)) == [1, 2, 2, 2]
 
 
 def test_the_default_of_seven_never_touches_a_week(recipes, stub_model):
