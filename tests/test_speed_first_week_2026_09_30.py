@@ -331,7 +331,11 @@ var firstPlanStart = 'this_week';
 var revealDraftWeekStart = '';
 var revealStreamDays = { cleared: 0, clear: function () { this.cleared++; } };
 function upsertRevealDay(m) { upserts.push(m); }
-var document = { getElementById: function () { return null; } };
+var statusEl = { textContent: '' };
+var document = { getElementById: function (id) { return id === 'reveal-status-text' ? statusEl : null; } };
+var stopped = 0;
+var waiterStub = { stop: function () { stopped++; }, setStage: function () {} };
+var REVEAL_STILL_WORKING = 'Still putting it together…';
 function streamOf(parts, ending) {
   var enc = new TextEncoder();
   var i = 0;
@@ -363,7 +367,7 @@ _ERROR = 'event: error\ndata: {"status": 503, "detail": "busy"}\n\n'
 def _run(body: str) -> dict:
     functions = "\n".join(_extract(n) for n in (
         "revealLostContact", "revealNewRunToken", "streamFirstPlan", "revealWorthRetrying", "revealWait",
-        "revealDraftLanded", "draftFirstPlanWithOneRetry",
+        "revealDraftLanded", "revealShowStillWorking", "draftFirstPlanWithOneRetry",
     ))
     script = _PRELUDE + functions + "\n(async function () {\n" + body + "\n})().catch(function (e) {" \
         " console.log(JSON.stringify({ harnessError: String(e && e.stack || e) })); });\n"
@@ -380,11 +384,12 @@ def _attempt(streams_js: str, status=None) -> dict:
       streams = {streams_js};
       statusAnswers = {json.dumps(answers)};
       var result = null, failed = null;
-      try {{ result = await draftFirstPlanWithOneRetry(null); }}
+      try {{ result = await draftFirstPlanWithOneRetry(waiterStub); }}
       catch (e) {{ failed = e.message; }}
       console.log(JSON.stringify({{ result: result, failed: failed, posts: posts.length,
         tokens: posts.map(function (p) {{ return p.run_token; }}), statusReads: statusReads,
-        cleared: revealStreamDays.cleared, upserts: upserts.length }}));
+        cleared: revealStreamDays.cleared, upserts: upserts.length,
+        statusLine: statusEl.textContent, stopped: stopped }}));
     """)
 
 
@@ -418,6 +423,14 @@ def test_a_dropped_stream_still_running_is_waited_on_not_drafted_twice():
     assert out["result"]["weekly_plan_id"] == 77 and out["result"]["reattached"] is True
     assert out["posts"] == 1
     assert len(out["statusReads"]) == 3
+    assert out["statusLine"] == "Still putting it together…", "one plain line while it waits"
+    assert out["stopped"] >= 1, "the rotating lines stop"
+
+
+def test_the_still_working_line_is_the_pages_own():
+    assert "const REVEAL_STILL_WORKING = 'Still putting it together…';" in ONBOARDING
+    assert "revealShowStillWorking(waiter);" in _extract("draftFirstPlanWithOneRetry")
+    assert "is always handed" not in ONBOARDING
 
 
 @_needs_node
@@ -516,7 +529,7 @@ def test_a_broken_gate_on_one_dish_opens_only_that_dishs_slots(emilys_house, mon
     assert _slot(plan_id, nights[1], "dinner")["meal"] == f"Lemon Chicken {nights[1]}"
 
 
-def test_two_dishes_that_come_back_as_the_same_replacement_are_told_apart(emilys_house, monkeypatch):
+def test_the_same_replacement_on_different_days_is_normal_and_not_re_asked(emilys_house, monkeypatch):
     nights = DAYS[1:3]
     monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _dinners_held(nights))
     lock = threading.Lock()
@@ -524,27 +537,68 @@ def test_two_dishes_that_come_back_as_the_same_replacement_are_told_apart(emilys
 
     def quick(context):
         with lock:
-            asked.append(list(context["avoid"]))
-        if "Lemon Chicken" in context["avoid"]:
-            return _quick("Beef and Broccoli", mains=("Beef", "Broccoli", "Rice"))
+            asked.append(context["date"])
         return _quick("Lemon Chicken", mains=("Chicken thighs", "Lemon", "Rice"))
 
     monkeypatch.setattr(allergen_gate, "quick_pick", quick)
     plan_id = agent.generate_weekly_plan(WEEK_START)["weekly_plan_id"]
-    got = sorted(_slot(plan_id, d, "dinner")["meal"] for d in nights)
-    assert got == ["Beef and Broccoli", "Lemon Chicken"]
-    assert len(asked) == 3, "one extra quick pick for the duplicate, no more"
+    assert [_slot(plan_id, d, "dinner")["meal"] for d in nights] == ["Lemon Chicken", "Lemon Chicken"]
+    assert len(asked) == 2, "no re-ask for a dish on two different days"
 
 
-def test_a_duplicate_that_comes_back_the_same_again_goes_open(emilys_house, monkeypatch):
-    nights = DAYS[1:3]
-    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _dinners_held(nights))
-    monkeypatch.setattr(allergen_gate, "quick_pick",
-                        lambda ctx: _quick("Lemon Chicken", mains=("Chicken thighs", "Lemon", "Rice")))
+def _two_held_snacks_on(day):
+    snacks = {(day, "snack")}
+    return _without(_week(), snacks) + [
+        {"date": day, "slot": "snack", "meal_name": name, "is_new_recipe": True, "dish_note": "with pineapple"}
+        for name in ("Pineapple Cup", "Pineapple Skewers")
+    ]
+
+
+def _snacks(plan_id, day):
+    return [m for m in tools.get_weekly_plan(plan_id)["meals"] if m["date"] == day and m["slot"] == "snack"]
+
+
+def test_two_snacks_on_one_day_that_come_back_the_same_are_told_apart(emilys_house, monkeypatch):
+    day = DAYS[2]
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _two_held_snacks_on(day))
+    lock = threading.Lock()
+    asked = []
+
+    def quick(context):
+        with lock:
+            asked.append(list(context["avoid"]))
+        if "Apple Slices with Cheddar" in context["avoid"]:
+            return _quick("Yogurt with Berries", mains=("Greek yogurt", "Blueberries"))
+        return _quick("Apple Slices with Cheddar", mains=("Apple", "Cheddar"))
+
+    monkeypatch.setattr(allergen_gate, "quick_pick", quick)
     plan_id = agent.generate_weekly_plan(WEEK_START)["weekly_plan_id"]
-    rows = [_slot(plan_id, d, "dinner") for d in nights]
-    assert sorted(r["slot_state"] for r in rows) == ["open", "planned"]
-    assert [r["meal"] for r in rows if r["slot_state"] == "planned"] == ["Lemon Chicken"]
+    rows = _snacks(plan_id, day)
+    assert all(r["slot_state"] == "planned" for r in rows)
+    assert sorted(r["meal"] for r in rows) == ["Apple Slices with Cheddar", "Yogurt with Berries"]
+    assert len(asked) == 3, "one extra quick pick for the same-day duplicate, no more"
+
+
+@pytest.mark.parametrize("second", ["same", "clash", "nothing"])
+def test_a_same_day_duplicate_whose_re_ask_does_not_help_is_kept_never_opened(emilys_house, monkeypatch, second):
+    day = DAYS[2]
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _two_held_snacks_on(day))
+
+    def quick(context):
+        if "Apple Slices with Cheddar" in context["avoid"]:
+            if second == "same":
+                return _quick("Apple Slices with Cheddar", mains=("Apple", "Cheddar"))
+            if second == "clash":
+                return _quick("Pineapple Bites", mains=("Pineapple",))
+            return {}
+        return _quick("Apple Slices with Cheddar", mains=("Apple", "Cheddar"))
+
+    monkeypatch.setattr(allergen_gate, "quick_pick", quick)
+    plan_id = agent.generate_weekly_plan(WEEK_START)["weekly_plan_id"]
+    rows = _snacks(plan_id, day)
+    assert rows and all(r["slot_state"] == "planned" for r in rows), "never an open slot"
+    assert not any("couldn’t find" in (r.get("open_reason") or "") for r in rows)
+    assert not any("Pineapple" in (r["meal"] or "") for r in rows)
 
 
 def test_why_this_meal_is_answered_from_derived_from(emilys_house, monkeypatch):

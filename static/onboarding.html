@@ -3019,14 +3019,25 @@ async function revealDraftLanded(runToken) {
   }
 }
 
+// While a lost draft is being waited on, one plain line in place of the
+// rotating ones — they describe stages the page can no longer see.
+const REVEAL_STILL_WORKING = 'Still putting it together…';
+function revealShowStillWorking(waiter) {
+  if (waiter) waiter.stop();
+  const statusText = document.getElementById('reveal-status-text');
+  if (statusText) statusText.textContent = REVEAL_STILL_WORKING;
+}
+
 // The first week, with ONE try of its own before the person is shown
 // "Try again" (2026-09-30). A dropped connection first finds out how the
-// draft ended — waiting while it is still running — and uses it if it
-// landed. Only a draft that failed with a server-side (5xx) error, or one
-// the server never started, is asked for once more; a 400 is not retried,
-// and a draft still running at the cap is left to finish rather than
-// doubled (a later "Try again" is handed that same draft by the server's
-// week lock, agent._generate_weekly_plan_once).
+// draft ended — waiting while it is still running, with the one plain
+// line above on screen — and uses it if it landed. Only a draft that
+// failed with a server-side (5xx) error, or one the server never started,
+// is asked for once more; a 400 is not retried, and a draft still running
+// at the cap is left to finish rather than doubled. A "Try again" tapped
+// while that draft is still generating waits for it on the server's week
+// lock and is handed it (agent._generate_weekly_plan_once); one tapped
+// after it has fully finished drafts a fresh week.
 async function draftFirstPlanWithOneRetry(waiter) {
   const firstToken = revealNewRunToken();
   try {
@@ -3035,6 +3046,7 @@ async function draftFirstPlanWithOneRetry(waiter) {
     if (!revealWorthRetrying(err)) throw err;
     console.warn('First-plan stream failed; trying once more on its own:', err && (err.cause || err));
     if (err.lostContact) {
+      revealShowStillWorking(waiter);
       const ended = await revealDraftLanded(firstToken);
       if (ended.state === 'done') {
         return { weekly_plan_id: ended.planId, week_start_date: revealDraftWeekStart, meals: null, reattached: true };

@@ -660,39 +660,46 @@ def repick_held(
     outcomes = _run_all(tasks, _run)
 
     # Picked side by side, two dishes can come back as the SAME
-    # replacement (neither saw the other's). The first keeps it; each later
-    # one is asked once more with the taken names on `avoid`, and goes
-    # open if that comes back taken again or not at all.
-    taken: dict[str, set[str]] = {}
-    again: list[int] = []
+    # replacement (neither saw the other's). That only matters where they
+    # would land on the same DATE in the same slot — a day's two snacks
+    # being one snack twice; the same breakfast on two mornings is normal.
+    # The later one is asked once more with the other's name on `avoid`.
+    # If that clashes, fails or comes back the same, the duplicate is KEPT:
+    # never an open slot, which would carry an untrue "I couldn't find a
+    # snack without …" into a week 1 that must arrive full (Emily,
+    # 2026-09-30).
+    def _dates(i):
+        return {h["item"].get("date") for h in picked[i]}
+
+    again: list[tuple[int, str]] = []
     for i, outcome in enumerate(outcomes):
         pick = outcome["pick"]
         if not pick:
             continue
         slot = tasks[i][1]["slot"]
         name = pick["meal_name"].strip().lower()
-        if name in taken.setdefault(slot, set()):
-            again.append(i)
-        else:
-            taken[slot].add(name)
+        for j in range(i):
+            other = outcomes[j]["pick"]
+            if (other and tasks[j][1]["slot"] == slot and other["meal_name"].strip().lower() == name
+                    and _dates(i) & _dates(j)):
+                again.append((i, other["meal_name"]))
+                break
     if again:
-        logger.warning("Allergen re-pick: %d dish(es) came back as a replacement already used; asking once more", len(again))
+        logger.warning("Allergen re-pick: %d dish(es) came back as the same replacement on the same day; asking once more", len(again))
         redo = []
-        for i in again:
+        for i, used in again:
             _ctx, context, dropped = tasks[i]
-            used = [outcomes[j]["pick"]["meal_name"] for j in range(len(outcomes))
-                    if j not in again and outcomes[j]["pick"] and tasks[j][1]["slot"] == context["slot"]]
-            redo.append((contextvars.copy_context(), dict(context, avoid=_swap._dedup(list(context.get("avoid") or []) + used)), dropped))
+            redo.append((contextvars.copy_context(),
+                         dict(context, avoid=_swap._dedup(list(context.get("avoid") or []) + [used])), dropped))
         second = _run_all(redo, lambda task: _run(task, attempts=1))
-        for i, outcome in zip(again, second):
+        for (i, used), outcome in zip(again, second):
             pick = outcome["pick"]
-            slot = tasks[i][1]["slot"]
-            name = (pick or {}).get("meal_name", "").strip().lower()
-            if pick and name not in taken[slot]:
-                taken[slot].add(name)
+            if pick and pick["meal_name"].strip().lower() != used.strip().lower():
+                kept = pick
             else:
-                pick = None
-            outcomes[i] = {"pick": pick, "calls": outcomes[i]["calls"] + outcome["calls"],
+                kept = outcomes[i]["pick"]
+                logger.info("Allergen re-pick: keeping %r twice on the same day rather than opening a slot", used)
+            outcomes[i] = {"pick": kept, "calls": outcomes[i]["calls"] + outcome["calls"],
                            "seconds": outcomes[i]["seconds"] + outcome["seconds"]}
 
     results: list[dict] = []
