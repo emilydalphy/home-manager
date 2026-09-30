@@ -55,7 +55,10 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
+import time
 
+from . import _shared
 from . import coordination as _coordination
 from . import meal_plans as _meal_plans
 from . import plates as _plates
@@ -109,11 +112,17 @@ def ingredients_for(item: dict) -> list[dict]:
 
 
 def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[dict] | None = None,
-                 avoidances: list[dict] | None = None) -> list[dict]:
+                 avoidances: list[dict] | None = None, draft: bool = False) -> list[dict]:
     """The hard clashes one dish trips — coordination.check_meal_conflicts,
     narrowed to what may not be served. A matcher that cannot run fails
     CLOSED: the dish is treated as clashing, because "we couldn't look" is
-    not "nothing was found"."""
+    not "nothing was found".
+
+    `draft=True` is only for a dish that will get a checked ingredient
+    list before anyone shops or cooks (the week draft and its re-pick): its
+    name and note may then say what it leaves out ("Dairy-Free Pancakes",
+    "no cheese"). Everywhere else a name without a list is matched
+    strictly — see check_meal_conflicts' `negate_labels`."""
     if avoidances is None:
         avoidances = hard_avoidances()
     if not avoidances:
@@ -121,6 +130,7 @@ def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[d
     try:
         hits = _coordination.check_meal_conflicts(
             name, ingredients=ingredients, sides=sides, avoidances=avoidances,
+            negate_labels=True if draft else None,
         )
     except Exception:
         logger.exception("Allergen check failed for %r; holding it back rather than guessing", name)
@@ -158,7 +168,7 @@ def split_safe(items: list[dict], avoidances: list[dict] | None = None) -> tuple
         if not name or item.get("slot_state") == "open":
             safe.append(item)
             continue
-        clashes = hard_clashes(name, ingredients=ingredients_for(item), avoidances=avoidances)
+        clashes = hard_clashes(name, ingredients=ingredients_for(item), avoidances=avoidances, draft=True)
         if clashes:
             logger.warning(
                 "Generation drafted %r, which has %s — held back, never written",
@@ -292,7 +302,38 @@ def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, overrid
         raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes))
 
 
-def refuse_recipe_if_clashing(name: str, ingredients: list[dict] | None = None,
+# add_recipe refusals this process has handed out, by (household, lowered
+# recipe name) -> when. The override on chat's add_recipe is honoured only
+# for a recipe that was refused here recently — the person's "save it
+# anyway" is an ANSWER to a refusal, so there has to have been one. A
+# model that sets override=true on its first call gets the refusal
+# instead, and the refusal it gets is what arms the second call. In
+# memory on purpose: a restart forgets them, which costs one extra
+# refusal and never a silent save.
+RECIPE_OVERRIDE_WINDOW_SECONDS = 30 * 60
+_RECIPE_REFUSALS: dict[tuple, float] = {}
+_RECIPE_REFUSALS_LOCK = threading.Lock()
+
+
+def _refusal_key(name: str) -> tuple:
+    return (_shared.household_id(), (name or "").strip().lower())
+
+
+def _recently_refused(name: str) -> bool:
+    now = time.monotonic()
+    with _RECIPE_REFUSALS_LOCK:
+        for key, at in list(_RECIPE_REFUSALS.items()):
+            if now - at > RECIPE_OVERRIDE_WINDOW_SECONDS:
+                del _RECIPE_REFUSALS[key]
+        return _refusal_key(name) in _RECIPE_REFUSALS
+
+
+def _remember_refusal(name: str) -> None:
+    with _RECIPE_REFUSALS_LOCK:
+        _RECIPE_REFUSALS[_refusal_key(name)] = time.monotonic()
+
+
+def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
                               override: bool = False) -> None:
     """
     The gate in front of chat's add_recipe (recipes.add_recipe_for_chat).
@@ -301,7 +342,13 @@ def refuse_recipe_if_clashing(name: str, ingredients: list[dict] | None = None,
     only looked when it tried to PLAN it (plan_meal_for_chat) — so a
     recipe nobody at the table could have was refused there and left
     behind in the recipe box, saved and orphaned. Matched on the name and
-    the list the model sent, the same matcher every other door uses.
+    the list the model sent (dict lines or plain strings), the same
+    matcher every other door uses. With no list, the name is matched
+    strictly.
+
+    `override` is honoured only after a refusal of this same recipe for
+    this household in the last RECIPE_OVERRIDE_WINDOW_SECONDS (see
+    _RECIPE_REFUSALS): never on a first call.
 
     Raises weekly_plan.SlotRefused, for the reason refuse_if_clashing gives:
     a raise is what the dispatch reports as "nothing was written". The
@@ -309,15 +356,21 @@ def refuse_recipe_if_clashing(name: str, ingredients: list[dict] | None = None,
     and what to do next — since the model, not the person, makes the next
     move (write it again without that, or pick another dish).
     """
-    if override:
-        return
     name = (name or "").strip()
     if not name:
         return
-    own = [i for i in (ingredients or []) if isinstance(i, dict) and (i.get("item") or "").strip()]
+    if override and _recently_refused(name):
+        return
+    own = []
+    for line in ingredients or []:
+        if isinstance(line, str) and line.strip():
+            own.append({"item": line})
+        elif isinstance(line, dict) and (line.get("item") or "").strip():
+            own.append(line)
     clashes = hard_clashes(name, ingredients=own)
     if not clashes:
         return
+    _remember_refusal(name)
     word = next((c.get("matched_word") for c in clashes if c.get("matched_word")), "") or _food_word(clashes)
     food = _food_word(clashes)
     who = _person(clashes)
@@ -393,7 +446,7 @@ def repick_slot(
         if not name:
             break
         candidate["meal_name"] = name
-        again = hard_clashes(name, ingredients=ingredients_for(candidate), avoidances=avoidances)
+        again = hard_clashes(name, ingredients=ingredients_for(candidate), avoidances=avoidances, draft=True)
         if not again:
             pick = candidate
             break
@@ -484,6 +537,9 @@ def sweep_plan(
         # a side to remove, not a dinner to replace.
         dish_clash = known_clashes.get(name.lower()) or hard_clashes(
             name, ingredients=recipe.get("ingredients"), avoidances=avoidances,
+            # Still a draft dish waiting for the recipe pass: its label may
+            # say what it leaves out. Once the week is approved, strict.
+            draft=bool(recipe.get("details_pending")) and not plan.get("approved_at"),
         )
         if not dish_clash:
             for side in sides:
@@ -545,3 +601,34 @@ def sweep_plan(
         except Exception:
             logger.exception("Allergen sweep could not open %s %s (%s)", meal.get("date"), meal.get("slot"), name)
     return out
+
+
+def replace_unwritten_clash(recipe_name: str, clashes: list[dict]) -> int:
+    """
+    A pending dish the recipe pass could not write, on every week it is
+    planned in, re-picked or opened through sweep_plan — the Cook screen's
+    "Fill in this recipe" answer when the dish turns out to be one the
+    table can't have (2026-09-30). The alternative was "Couldn't write up
+    this recipe" over a dish that stayed on the week unverified.
+
+    Returns how many weeks were swept.
+    """
+    from ..db import get_conn
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT DISTINCT mpe.weekly_plan_id FROM meal_plan_entries mpe "
+            "JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE r.household_id = ? AND LOWER(r.name) = LOWER(?) AND mpe.weekly_plan_id IS NOT NULL",
+            (_shared.household_id(), recipe_name),
+        ).fetchall()
+    finally:
+        conn.close()
+    swept = 0
+    for row in rows:
+        try:
+            sweep_plan(row["weekly_plan_id"], known_clashes={recipe_name: clashes})
+            swept += 1
+        except Exception:
+            logger.exception("Could not re-pick %r on plan %s", recipe_name, row["weekly_plan_id"])
+    return swept

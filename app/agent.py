@@ -845,7 +845,9 @@ under a "-free" name; if what they asked for leaves no safe dish, offer one outs
 and say so. plan_meal and swap_meal_in_plan decline such a dish themselves and hand you the \
 sentence to relay ("X has pineapple, which Emily can't have — want me to pick something else?") \
 — relay it and offer another, and pass override=true only if the person then says in their own \
-words to do it anyway.
+words to do it anyway. add_recipe declines the same way before anything is saved ("Not saved: X \
+has buttermilk…"): write the recipe again without that ingredient or pick another dish, and pass \
+its override=true only when the person says in their own words to save it anyway.
 - You still own everything the screens can't express: recipe choice, the per-slot reasons, \
 the explanation for a slot left open, and anything typed to you in chat.
 - When someone tells you something in chat that WOULD HAVE CHANGED an answer on those question \
@@ -4193,6 +4195,17 @@ def _fill_pending_recipes_locked(weekly_plan_id: int) -> dict:
         time.perf_counter() - started, len(pending),
     )
     known_clashes = {o["name"].lower(): o["clash"] for o in outcomes if o["clash"]}
+    # A recipe that simply failed (timeout, empty answer) was let onto the
+    # draft on its LABEL — "Dairy-Free Pancakes" — on the promise that this
+    # pass would match its real list. That promise wasn't kept, so its
+    # name is matched strictly now, and a name that names the allergen is
+    # re-picked or opened rather than left on an approved week unverified.
+    for name in result["failed"]:
+        strict = _allergen_gate.hard_clashes(name, avoidances=avoidances)
+        if strict:
+            logger.warning("Recipe pass could not write %r and its name alone has %s; re-picking it",
+                           name, _allergen_gate._food_word(strict))
+            known_clashes[name.lower()] = strict
     if known_clashes:
         # The sweep re-picks a clashing dish through the swap's own gated
         # picker, or opens the slot — the same last line of defence a
@@ -7585,6 +7598,14 @@ def fill_in_recipe(recipe_name: str) -> dict:
             recipe, slot, _shared_recipe_details_context(), _allergen_gate.hard_avoidances(),
         )
         if not outcome["ok"]:
+            # A dish the table can't have — the writer kept putting the
+            # allergen in, or it failed and its name alone names one — is
+            # re-picked or opened on its week, not left there with an
+            # apology (2026-09-30).
+            clash = outcome["clash"] or _allergen_gate.hard_clashes(recipe_name)
+            if clash:
+                _allergen_gate.replace_unwritten_clash(recipe_name, clash)
+                return {"status": "replaced", "name": recipe_name}
             raise ValueError("Couldn't write up this recipe just now — try again.")
         return tools.get_recipe(recipe_name)
     detail = generate_recipe_detail_llm(recipe)

@@ -1169,10 +1169,12 @@ def _known_food_words() -> set:
         from . import big_meal as _big_meal
         from . import spices as _spices
         from . import staples as _staples
-        from .coordination import _ALLERGEN_ALIASES
+        # The pre-2026-09-30 alias table (coordination._TITLE_VOCABULARY_ALIASES):
+        # widening the allergy table must not make this rule louder.
+        from .coordination import _TITLE_VOCABULARY_ALIASES as _ALIASES
         phrases = set(_recipes.COOKING_QUANTITIES_PER_4)
         phrases |= set(_spices._SPICES)
-        phrases |= set(_ALLERGEN_ALIASES) | {w for g in _ALLERGEN_ALIASES.values() for w in g}
+        phrases |= set(_ALIASES) | {w for g in _ALIASES.values() for w in g}
         phrases |= set(_big_meal.PERISHABLE_WORDS)
         phrases |= set(_staples._FRIDGE_WORDS) | set(_staples._PANTRY_WORDS) | set(_staples._PANTRY_PHRASES)
         phrases |= {row[0] for row in _recipes._PRODUCE_COUNT_PER_SERVING}
