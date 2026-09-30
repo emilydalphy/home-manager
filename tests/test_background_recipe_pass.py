@@ -51,6 +51,14 @@ def _recipe(name):
     return tools.get_recipe(name)
 
 
+def _until_writing(seen, count: int = 1, timeout: float = 5.0) -> None:
+    """Block until the stubbed writer has been entered `count` times."""
+    deadline = time.monotonic() + timeout
+    while len(seen["specs"]) < count:
+        assert time.monotonic() < deadline, "the background pass never started writing"
+        time.sleep(0.01)
+
+
 def test_saving_a_draft_starts_writing_its_recipes(household, menu_model, recipe_model, background):
     week = _week_start()
     seen = recipe_model()
@@ -153,6 +161,9 @@ def test_a_dish_swapped_out_mid_pass_does_not_hold_up_approval(household, menu_m
     menu_model(_menu_week(week))
     plan = agent.generate_weekly_plan(week)
     plan_id = plan["weekly_plan_id"]
+    # Swap only once the writer has really started on the dish — before
+    # that, the pass may not have read the plan yet and would never see it.
+    _until_writing(seen)
     assert background[0].is_alive()
     # Every Chettinad night swapped for Toast while it is being written.
     toast = _recipe("Toast")
@@ -171,7 +182,8 @@ def test_a_dish_swapped_out_mid_pass_does_not_hold_up_approval(household, menu_m
 
     assert result["status"] == "approved"
     assert elapsed < 1.0, f"approval waited {elapsed:.1f}s on a dish no longer in the week"
-    assert len(seen["specs"]) == 1
+    background[0].join(timeout=10)
+    assert [s["name"] for s in seen["specs"]] == ["Chettinad Pepper Chicken"], "written once, by the background pass"
 
 
 def test_one_pass_per_draft_at_a_time(household, menu_model, recipe_model, background):
@@ -269,3 +281,65 @@ def test_two_approvals_and_the_background_pass_write_each_recipe_once(
 
     assert not errors
     assert len(seen["specs"]) == 1
+
+
+def test_a_failed_re_read_still_lets_go_of_the_claims(household, menu_model, recipe_model, monkeypatch):
+    """A claim that is never released would make every later approval of
+    the plan wait out the full cap for a writer that isn't there."""
+    week = _week_start()
+    seen = recipe_model()
+    menu_model(_menu_week(week))
+    plan = agent.generate_weekly_plan(week)
+    plan_id = plan["weekly_plan_id"]
+    real = tools.pending_recipes_for_plan
+    calls = {"n": 0}
+
+    def _flaky(pid):
+        calls["n"] += 1
+        if calls["n"] == 2:  # the re-read right after claiming
+            raise RuntimeError("database is locked")
+        return real(pid)
+    monkeypatch.setattr(tools, "pending_recipes_for_plan", _flaky)
+
+    with pytest.raises(RuntimeError):
+        agent.fill_pending_recipes_for_plan(plan_id)
+    assert agent._RECIPES_IN_FLIGHT == {}, "the claim was left held"
+
+    monkeypatch.setattr(tools, "pending_recipes_for_plan", real)
+    monkeypatch.setattr(agent, "_RECIPE_WAIT_SECONDS", 2.0)
+    started = time.perf_counter()
+    agent.fill_pending_recipes_for_plan(plan_id)
+    assert time.perf_counter() - started < 1.0
+    assert len(seen["specs"]) == 1
+    assert _recipe("Chettinad Pepper Chicken")["details_pending"] is False
+
+
+def test_a_dish_that_turns_pending_mid_pass_is_written_before_the_pass_ends(
+    household, menu_model, recipe_model, background,
+):
+    """A second trigger for a plan whose pass is running is turned away,
+    so the running pass looks again before it lets go."""
+    week = _week_start()
+    seen = recipe_model(delay=0.4)
+    menu_model(_menu_week(week))
+    plan = agent.generate_weekly_plan(week)
+    plan_id = plan["weekly_plan_id"]
+    _until_writing(seen)
+    late = tools.add_recipe(
+        name="Late Lentil Soup", ingredients=[], details_pending=True, dish_note="simmer the lentils",
+    )
+    conn = get_conn()
+    conn.execute(
+        "UPDATE meal_plan_entries SET recipe_id = (SELECT id FROM recipes WHERE name = 'Late Lentil Soup') "
+        "WHERE id = (SELECT MIN(id) FROM meal_plan_entries WHERE weekly_plan_id = ? AND slot = 'lunch')",
+        (plan_id,),
+    )
+    conn.commit()
+    conn.close()
+    assert late["details_pending"] is True
+    assert agent.start_background_recipe_pass(plan_id) is None, "turned away: a pass is running"
+
+    background[0].join(timeout=10)
+
+    assert sorted(s["name"] for s in seen["specs"]) == ["Chettinad Pepper Chicken", "Late Lentil Soup"]
+    assert tools.pending_recipes_for_plan(plan_id) == []

@@ -4181,17 +4181,21 @@ def fill_pending_recipes_for_plan(weekly_plan_id: int, *, wait: bool = True) -> 
             break
         mine, theirs = _claim_recipes(pending)
         if mine:
-            # Re-read after claiming: a pass that finished (and let go)
-            # between the read above and the claim has already written
-            # some of these, and writing one twice is the spend the
-            # claims exist to prevent.
-            still = {r["id"] for r in tools.pending_recipes_for_plan(weekly_plan_id)}
-            _release_recipes([r for r in mine if r["id"] not in still])
-            mine = [r for r in mine if r["id"] in still]
-        if mine:
-            attempted.update(r["id"] for r in mine)
+            # Everything from the claim on is inside the try: a claim that
+            # is never let go would make every later approval of this plan
+            # wait out _RECIPE_WAIT_SECONDS for a writer that isn't there.
             try:
-                part = _fill_claimed_recipes(weekly_plan_id, mine, sweep_clashes=wait)
+                # Re-read after claiming: a pass that finished (and let go)
+                # between the read above and the claim has already written
+                # some of these, and writing one twice is the spend the
+                # claims exist to prevent.
+                still = {r["id"] for r in tools.pending_recipes_for_plan(weekly_plan_id)}
+                attempted.update(r["id"] for r in mine)
+                to_write = [r for r in mine if r["id"] in still]
+                part = (
+                    _fill_claimed_recipes(weekly_plan_id, to_write, sweep_clashes=wait)
+                    if to_write else {"filled": [], "failed": [], "clashed": []}
+                )
             finally:
                 _release_recipes(mine)
             for k in result:
@@ -4299,6 +4303,8 @@ def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_cla
 # this saves the thread and the cache warm-up call).
 _BACKGROUND_RECIPE_PASSES: set[tuple] = set()
 _BACKGROUND_RECIPE_PASSES_GUARD = threading.Lock()
+# Rounds one background pass runs before it lets go (see _run below).
+_BACKGROUND_RECIPE_ROUNDS = 3
 
 
 def start_background_recipe_pass(weekly_plan_id: int) -> threading.Thread | None:
@@ -4345,11 +4351,22 @@ def start_background_recipe_pass(weekly_plan_id: int) -> threading.Thread | None
     def _run():
         _WEEK_GEN_PROGRESS.set(None)
         try:
-            outcome = fill_pending_recipes_for_plan(weekly_plan_id, wait=False)
-            logger.info(
-                "Background recipe pass for plan %s: %d written, %d failed, %d clashed",
-                weekly_plan_id, len(outcome["filled"]), len(outcome["failed"]), len(outcome["clashed"]),
-            )
+            # A dish that became pending on this plan while the pass was
+            # writing (a trigger that arrived then was turned away above)
+            # is picked up by another round before the pass lets go. Each
+            # recipe gets one round at most, so a failing one can't loop;
+            # anything that slips past the last check is Approve's to write.
+            seen_ids: set[int] = set()
+            for _round in range(_BACKGROUND_RECIPE_ROUNDS):
+                fresh = {r["id"] for r in tools.pending_recipes_for_plan(weekly_plan_id)} - seen_ids
+                if not fresh:
+                    break
+                seen_ids |= fresh
+                outcome = fill_pending_recipes_for_plan(weekly_plan_id, wait=False)
+                logger.info(
+                    "Background recipe pass for plan %s: %d written, %d failed, %d clashed",
+                    weekly_plan_id, len(outcome["filled"]), len(outcome["failed"]), len(outcome["clashed"]),
+                )
         except Exception:
             logger.exception("Background recipe pass for plan %s failed; approval will write them", weekly_plan_id)
         finally:
