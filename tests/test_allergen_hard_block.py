@@ -628,6 +628,16 @@ def test_the_gate_holds_on_an_approved_week_too(tropical):
 
 
 def test_the_persons_own_do_it_anyway_gets_past(tropical):
+    """The override is an ANSWER (2026-09-30): the dish is refused in one
+    chat turn, the person says "do it anyway" in the next, and only then
+    does it go through. A first-call override is refused like any call."""
+    allergen_gate._RECIPE_REFUSALS.clear()
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(_wp.SlotRefused):
+        tools.swap_meal_in_plan_for_chat(tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner", override=True)
+    with pytest.raises(_wp.SlotRefused):
+        tools.plan_meal_for_chat(DAYS[5], "Tropical Fruit Cup", slot="snack", weekly_plan_id=tropical, override=True)
+    allergen_gate.begin_chat_turn()
     out = tools.swap_meal_in_plan_for_chat(tropical, DAYS[3], "Tropical Fruit Cup", slot="dinner", override=True)
     assert out["meal"] == "Tropical Fruit Cup" if "meal" in out else True
     assert _slot(tropical, DAYS[3], "dinner")["meal"] == "Tropical Fruit Cup"

@@ -390,7 +390,9 @@ Rules, in this order:
 anything served with it. An allergy written as a sentence is still an allergy. If honouring it \
 leaves you no good answer, pick a plainer dish rather than a clever one — never a compromise.
 - Never name a dish after an ingredient it leaves out. No "Nut-Free Noodles". The name says what \
-the dish IS.
+the dish IS. No allergen-free label in the name either ("Dairy-Free", \
+"Egg-Free", "Non-Dairy", "Vegan"): "Oat Milk Pancakes", not "Dairy-Free Pancakes" — a dish with \
+a label in its name is turned down, because the label itself names the allergen.
 - `avoid` is what has already been turned down for this slot, including the dish being replaced. \
 Don't come back with any of them, or with a near-identical variant of one.
 - `must_contain`, when present, is something the household asked to use this week ("I have some \

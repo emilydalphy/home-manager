@@ -479,6 +479,7 @@ from .recipes import (  # noqa: F401
     _add_recipe_ingredients_to_grocery_list,
     _maybe_auto_attribute_solo_night,
     add_recipe,
+    add_recipe_for_chat,
     attribute_recipe_feedback,
     check_steps_ingredients_consistency,
     cooking_ingredients,
