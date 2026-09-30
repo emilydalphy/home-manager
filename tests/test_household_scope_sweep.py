@@ -244,9 +244,6 @@ _LATER_TRANCHE = {
         # regex pass. Seen, and left for whoever owns that module.
         (2, "UPDATE inventory_items SET {} WHERE id = ?"),
     ],
-    "app/tools/meal_variety.py": [
-        (1, "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?"),
-    ],
     "app/tools/memory.py": [
         (1, "UPDATE facts SET text = ?, hard = ?, updated_at = datetime('now') WHERE id = ?"),
     ],
@@ -292,6 +289,7 @@ _DONE_MODULES = (
     "app/tools/grocery.py",
     "app/tools/holidays.py",
     "app/tools/household.py",
+    "app/tools/meal_variety.py",
     "app/tools/recipes.py",
     "app/tools/staples.py",
     "app/tools/stores.py",
