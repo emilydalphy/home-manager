@@ -45,9 +45,12 @@ REPORTER_JS = (STATIC / "error-reporter.js").read_text(encoding="utf-8")
 #
 # 150 on main when the card was un-parked (2026-09-27 — the card's "151"
 # was a plain text search, which also caught one `window.fetch('/api`);
-# 47 after shell.js moved onto api.js. LOWER this when a screen migrates. Never raise it: a
+# 47 after shell.js moved onto api.js; 37 after plan-week.html (10 — its
+# eleventh call builds its url in a variable first, which this pattern
+# cannot see, and moved with them).
+# LOWER this when a screen migrates. Never raise it: a
 # new call is written with Api.json / Api.fetch instead (CLAUDE.md).
-RAW_API_FETCH_CEILING = 47
+RAW_API_FETCH_CEILING = 37
 
 _RAW = re.compile(r"(?<![\w.$])fetch\(\s*['\"`]/api")
 
