@@ -1111,6 +1111,24 @@ why*, not duplicating the diff.
   week", and step 5 gains "Just for this week — it starts blank next time."
   Re-planning the SAME week still shows what was typed for it, on purpose.
 
+- **2026-09-30 — Today no longer calls a prepped lunch a cook. Branch
+  `prepped-lunch-today-wording`.** Emily chose option (a) on the Loop Board
+  card: a lunch whose batch was cooked on an earlier (prep) day reads
+  "Chili — prepped Sunday" on Today: no start-by chip, no "Cook this", not
+  a cook in the morning text. `moves._cook_and_reheat_moves` reads the
+  `prepped_ahead` stamp `cooker._apply_prepped_lunches` puts on the cook
+  card and builds a `reheat`-kind move (`reheat:<entry_id>`, meta
+  `prepped Sunday`, action "Mark eaten") instead of a `cook`. Reheat is the
+  one existing kind that means "already made, tick when eaten", so Next up
+  skips it, `set_move_done` still routes the tick to `check_off_meal`, and
+  `digest.build_morning_text` gets one new line for it (step 5b, right
+  after the cooks): "Lunch: Chili — prepped Sunday." — the move's own
+  `meta`, so text and Today cannot differ; the old "Start by noon" is gone.
+  Words match Cook's ("Prepped Sunday") except the lower-case Today's meta
+  lines use. The dish name stays a recipe link on Today
+  (`moveRecipeTarget` accepts a reheat move with `prepped: true`). A lunch cooked on the day is unchanged. Test
+  inverted, not deleted: `test_nows_timeline_no_longer_calls_the_prepped_lunch_a_cook`.
+
 - **2026-09-27 — CLAUDE.md has a tripwire now, and — because the tripwire
   measurably does NOT catch the incident that asked for it — the arithmetic
   that does. Branch `overnight/claude-md-tripwire`, NOT merged at the time of

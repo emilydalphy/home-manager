@@ -2198,14 +2198,16 @@
   }
 
   // The cookFocus payload that opens this move's recipe, or null when
-  // there is no recipe behind it. Only a COOK has one: a reheat is a line
-  // and never a way into a recipe (Kitchen's own rows follow the same
-  // rule), and a fridge move, a prep task or a shop run names no dish at
+  // there is no recipe behind it. Only a COOK has one (and a prepped
+  // lunch, a reheat-kind move flagged `prepped`): any other reheat is a
+  // line and never a way into a recipe, and a fridge move, a prep task or a shop run names no dish at
   // all. moves.py already writes the payload for a cook's action target,
   // so this reads it rather than building a second one that could drift;
   // the fallback covers a payload cached before that field existed.
   function moveRecipeTarget(move) {
-    if (!move || move.kind !== 'cook') return null;
+    // A prepped lunch is a reheat-kind move (moves.py) but the dish is still
+    // one someone may want the recipe for; the fallback below opens it.
+    if (!move || (move.kind !== 'cook' && !(move.kind === 'reheat' && move.prepped))) return null;
     var target = (move.action && move.action.target) || {};
     if (target.cookFocus) return target.cookFocus;
     if (move.entry_id == null) return null;

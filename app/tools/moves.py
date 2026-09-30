@@ -344,6 +344,47 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             })
             continue
 
+        # A lunch whose batch was cooked on an earlier (prep) day is not a
+        # cook today (Emily, 2026-09-30, option (a) on the "Today's timeline
+        # still calls a prepped lunch a cook" card): it reads "Chili —
+        # prepped Sunday", no start time, no "Cook this". It is still tickable
+        # and the tick still logs the lunch (check_off_meal, exactly as a
+        # cook's). The kind is "reheat" because that is the one existing move
+        # kind that is "already made, tick it when it's eaten": Next up skips
+        # it, and the morning text (digest.py) lists only cooks and dinner
+        # reheats, so it stops saying "Start by noon" for it and says nothing.
+        # The words are Cook's own (shell.js kitchenTodayLine: "Prepped " +
+        # weekday), lower-cased the way every Today meta line is.
+        prepped = meal.get("prepped_ahead") or {}
+        if prepped.get("date") and prepped["date"] < day_str:
+            prepped_line = f"prepped {_weekday(prepped['date'])}"
+            moves.append({
+                "id": f"reheat:{meal['entry_id']}",
+                "kind": "reheat",
+                "title": meal.get("meal") or slot.capitalize(),
+                "detail": f"{prepped_line} · {_clock(at.time())}",
+                "reason": "",
+                "date": day_str,
+                "slot": slot,
+                "window_start": at.isoformat(),
+                "window_end": (at + timedelta(hours=SLOT_WINDOW_HOURS)).isoformat(),
+                "weight": WEIGHT_LOW,
+                "action": {"label": REHEAT_ACTION_LABEL, "target": {"kind": "check_meal", "entryId": meal["entry_id"]}},
+                "done": done,
+                "tickable": True,
+                "overdue": False,
+                "entry_id": meal["entry_id"],
+                "task_id": None,
+                "duration_min": 0,
+                "time_label": _slot_time_label(slot, at),
+                "meta": prepped_line,
+                "served_cold": False,
+                "prepped_ahead": dict(prepped),
+                "prepped": True,
+                "chips": [],
+            })
+            continue
+
         # The one total every clock uses — the recipe's minutes, or a
         # longer side's (cooker.cook_total_minutes). Until 2026-09-13 this
         # added prep + cook alone while the Meal step's stops counted the

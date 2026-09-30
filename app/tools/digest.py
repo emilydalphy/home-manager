@@ -427,6 +427,14 @@ def _digest_lines(now_local: datetime) -> list[str]:
             continue
         lines.append(f"{(m['slot'] or 'Meal').capitalize()}: {_tidy(m['title'])}.")
 
+    # 5b. A lunch made on an earlier day: not a job, but worth one line —
+    # "Lunch: Chili — prepped Sunday." (Emily, 2026-09-30, option (a): the
+    # text says it's ready instead of "start by noon"). The words after the
+    # dish are the move's own meta, so the text and Today cannot differ.
+    for m in by_kind.get("reheat", []):
+        if m.get("prepped_ahead") and m["slot"] != "dinner":
+            lines.append(f"{(m['slot'] or 'Meal').capitalize()}: {_tidy(m['title'])} — {_tidy(m['meta'])}.")
+
     # 6. One thing from the attention queue, and the use-it-up nudge.
     try:
         items = _attention.get_attention_items()
