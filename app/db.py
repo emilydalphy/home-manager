@@ -160,6 +160,11 @@ _MIGRATIONS = [
     ("error_events", "reason", "TEXT NOT NULL DEFAULT ''"),
     ("error_events", "request_shape", "TEXT NOT NULL DEFAULT ''"),
     ("chat_turns", "tools_called_json", "TEXT NOT NULL DEFAULT '[]'"),
+    # Deliberately DEFAULT 0 and never backfilled -- see schema.sql. A row
+    # that predates tools_called_json got '[]' materialised into it by this
+    # very list, and 0 here is what stops the report reading that default
+    # back as a measured "called nothing".
+    ("chat_turns", "tools_recorded", "INTEGER NOT NULL DEFAULT 0"),
     ("chat_turns", "theme", "TEXT NOT NULL DEFAULT ''"),
     ("held_things", "ask_text", "TEXT NOT NULL DEFAULT ''"),
     ("chores", "category", "TEXT NOT NULL DEFAULT 'cleaning'"),

@@ -185,9 +185,12 @@ def record_chat_turn(usage: dict | None = None) -> int | None:
     try:
         conn = get_conn()
         cur = conn.execute(
+            # tools_recorded = 1: this row's tool list is a measurement.
+            # Rows written before that column existed carry 0, and the
+            # difference is the whole point -- see schema.sql.
             "INSERT INTO chat_turns (household_id, rounds, input_tokens, cache_read_tokens, "
-            "cache_write_tokens, output_tokens, seconds, tools_called_json) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "cache_write_tokens, output_tokens, seconds, tools_called_json, tools_recorded) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)",
             (household_id(), *(values.get(f, 0) for f in _TURN_FIELDS),
              _tool_names_json(values.get("tools_called"))),
         )
@@ -470,13 +473,23 @@ def _chat_tool_counts(conn, hid: int, since: str) -> dict:
 
     Read defensively: `tools_called_json` is written by _tool_names_json
     above and so is always a list of strings, but this function also runs
-    over rows written before that column existed (default '[]') and over
-    any row a future writer gets wrong. A row it cannot read is counted as
-    unreadable rather than dropped silently, because a count that quietly
-    shrinks is the failure this whole card exists to stop.
+    over any row a future writer gets wrong. A row it cannot read is
+    counted as unreadable rather than dropped silently, because a count
+    that quietly shrinks is the failure this whole card exists to stop.
+
+    A row from before the recording existed is counted as `unrecorded`
+    and nothing else -- NOT as talk-only. That distinction is the reason
+    this function was changed: `tools_called_json` arrived by ALTER TABLE
+    with a NOT NULL DEFAULT, which SQLite materialises into every row that
+    was already there, so a pre-column turn that really did swap three
+    meals reads back '[]' exactly like a turn that called nothing. Counting
+    those as talk-only is what made the 2026-09-26 morning report say "16
+    of 16 turns called nothing" about a month whose 43 model rounds say
+    otherwise -- and sent a whole card after 27 rounds that were never
+    missing. An unknown is reported as an unknown.
     """
     rows = conn.execute(
-        "SELECT tools_called_json FROM chat_turns "
+        "SELECT tools_called_json, tools_recorded FROM chat_turns "
         f"WHERE household_id = ? AND created_at >= datetime('now', '{since}')",
         (hid,),
     ).fetchall()
@@ -484,7 +497,11 @@ def _chat_tool_counts(conn, hid: int, since: str) -> dict:
     talk_only = 0
     tappable_turns = 0
     unreadable = 0
+    unrecorded = 0
     for row in rows:
+        if not row["tools_recorded"]:
+            unrecorded += 1
+            continue
         try:
             names = json.loads(row["tools_called_json"] or "[]")
         except (TypeError, ValueError):
@@ -508,6 +525,10 @@ def _chat_tool_counts(conn, hid: int, since: str) -> dict:
         "talk_only_turns": talk_only,
         "turns_with_a_tap": tappable_turns,
         "unreadable_turns": unreadable,
+        # Turns whose tool list is the column's default rather than a
+        # measurement. Every count above is over the recorded rows only,
+        # so this number is what says how much of the window they cover.
+        "unrecorded_turns": unrecorded,
     }
 
 
@@ -616,6 +637,24 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         (hid,),
     ).fetchone()
 
+    # How the rounds are SPREAD, not just their total. 43 rounds over 16
+    # turns is 2.7 each and reads like every turn looping; it is a very
+    # different fact from 15 turns at 1 round and one at 28, and the
+    # average cannot tell them apart. A round is a whole model call at the
+    # full briefing, so the shape of this is where a chat bill goes --
+    # and the 2026-09-26 investigation that could not answer "where did
+    # 27 extra rounds come from" had this data sitting in the table the
+    # whole time, unasked for.
+    round_spread = {
+        str(r["rounds"]): r["turns"]
+        for r in conn.execute(
+            "SELECT rounds, COUNT(*) AS turns FROM chat_turns "
+            f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+            "GROUP BY rounds ORDER BY rounds",
+            (hid,),
+        ).fetchall()
+    }
+
     chat_tools = _chat_tool_counts(conn, hid, since)
     # Same window as chat_tools for the household's own line, plus the
     # calendar month so the report can roll themes up across households
@@ -638,6 +677,7 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         "chat_tools": chat_tools,
         "chat_themes": chat_themes,
         "chat_rounds": chat["rounds"],
+        "chat_round_spread": round_spread,
         "chat_seconds": round(chat["seconds"], 1),
         "tokens": {
             "input": chat["input_tokens"],

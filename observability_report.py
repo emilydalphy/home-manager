@@ -696,10 +696,46 @@ def _print_chat_tools(chat_tools: dict, turns: int) -> None:
     unreadable = chat_tools.get("unreadable_turns") or 0
     if unreadable:
         print(f"      {unreadable} turns could not be read — worth a look")
+    # Said out loud rather than folded into the counts above, because the
+    # honest reading of a pre-recording turn is "we do not know what it
+    # called", and printing it as "called nothing" is what made a month of
+    # ordinary turns look like a month of pure talk. See schema.sql on
+    # chat_turns.tools_recorded.
+    unrecorded = chat_tools.get("unrecorded_turns") or 0
+    if unrecorded:
+        print(
+            f"      {unrecorded} of {turns} turns are from before this was "
+            f"recorded — the counts above are the other {turns - unrecorded}"
+        )
 
 
 def _theme_phrase(counts: dict) -> str:
     return ", ".join(f"{n} {theme}" for theme, n in counts.items())
+
+
+def _print_chat_rounds(spread: dict | None, total: int) -> None:
+    """
+    How many model calls the window's chat turns took, and how they were
+    spread. Silent when every turn took one round, which is the ordinary
+    case and needs no line.
+
+    Why the spread rather than the total: a round is a whole model call at
+    the full ~37K briefing, so rounds are most of a chat bill, and an
+    average hides which shape produced them. "43 rounds over 16 turns"
+    reads like every turn looping; "15 turns at 1, one at 28" is one
+    runaway turn and a healthy month, and those want opposite responses.
+    A turn only goes round again when the model asked for a tool or its
+    reply was cut off mid-sentence, so anything above 1 here is one of
+    those two and can be chased.
+    """
+    if not spread:
+        return
+    looped = {int(r): n for r, n in spread.items() if int(r) > 1}
+    if not looped:
+        return
+    turns = sum(spread.values())
+    named = ", ".join(f"{n} took {r}" for r, n in sorted(looped.items()))
+    print(f"  Chat rounds — {total} over {turns} turns; {named}")
 
 
 def _print_chat_themes(chat_themes: dict, month_cost: dict | None) -> None:
@@ -821,6 +857,7 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
         chat_tools = usage.get("chat_tools")
         if chat_tools:
             _print_chat_tools(chat_tools, usage["chat_turns"])
+        _print_chat_rounds(usage.get("chat_round_spread"), usage.get("chat_rounds") or 0)
 
         month_cost = usage.get("month_to_date_cost")
         chat_themes = usage.get("chat_themes")

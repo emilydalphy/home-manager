@@ -425,6 +425,89 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-09-30 — "16 of 16 chat turns called nothing" was a column DEFAULT
+  being read back as a measurement, and it sent a whole card hunting 27
+  rounds that were never missing. Branch
+  `overnight/chat-turns-recorded-flag`, NOT merged at the time of writing.**
+  The Loop Board card "Chat costs $2.32 a month to say nothing" opens on
+  three measured anomalies off the live app, and names the second one —
+  43 model rounds for 16 turns that called no tools — as **unexplained**,
+  with the `max_tokens` retry as its stated hypothesis. Both the first and
+  the second anomaly are artifacts. This is the fix and the arithmetic.
+  - **THE PROOF THAT THE HYPOTHESIS IS WRONG IS ONE DIVISION, and it is
+    worth doing before anything else is believed about this card.**
+    `run_agent_turn`'s dispatch loop has exactly ONE `continue` that
+    re-enters it — the `stop_reason == "max_tokens"` branch — and
+    `usage["tools_called"].append(block.name)` sits above every branch of
+    the tool dispatch, so a recorded `[]` really does mean no tool_use
+    block was seen. So on the code as written, 27 extra rounds with no
+    tool names must be 27 max_tokens cut-offs. `max_tokens` is **16000**.
+    27 × 16000 = 432,000 output tokens minimum. The same window's measured
+    output is **20,828** — an average of **484 tokens a round**. The two
+    cannot both be true, so a premise was false.
+  - **The false premise is `tools_called_json == '[]'`.** That column
+    arrived by `ALTER TABLE ... NOT NULL DEFAULT '[]'` (2026-09-23), and
+    **SQLite materialises a NOT NULL DEFAULT into every row that is
+    already there** — so every chat turn from before that deploy reads
+    back `'[]'`, identical to a turn that genuinely called nothing.
+    `_chat_tool_counts` counted those as `talk_only`. The 30-day window
+    the card was measured over (2026-08-27 onward) is mostly pre-column,
+    so "every single turn called zero tools" is the default speaking, and
+    the 27 extra rounds are ordinary tool-calling turns. **Reproduced
+    directly** rather than reasoned: a row inserted with `rounds = 4`,
+    then the migration run over it, reads `tools_called_json = '[]'`.
+  - **`_chat_tool_counts`' own docstring already SAID this** — "this
+    function also runs over rows written before that column existed
+    (default '[]')" — and then counted them as talk-only anyway. The
+    sentence was written as a caveat about reading defensively; what it
+    describes is the report stating something untrue.
+  - **The fix is the answered-flag this repo has used for exactly this
+    before.** `chat_turns.tools_recorded` (schema.sql + `_MIGRATIONS`,
+    `INTEGER NOT NULL DEFAULT 0`), written `1` by `record_chat_turn`.
+    Same shape and same reason as `meal_preferences.snacks_per_week_set`
+    (2026-09-08): a column with a default cannot tell "they said none"
+    from "nobody asked". `_chat_tool_counts` reports those rows as
+    `unrecorded_turns` and counts them as nothing else — not talk-only,
+    not tappable, and their names (which a pre-column row cannot have
+    anyway, but a future writer that forgets the flag could) are not
+    folded into "what chat was for".
+  - **NEVER BACKFILLED, and there is a test on it.** The only honest value
+    for a row written before the recording existed is "we do not know";
+    a backfill would invent exactly the history this column exists to stop
+    the report inventing. It also means the ~16 turns already on Emily's
+    database stay unknown for ever, and the report says so in those words
+    rather than quietly dropping them.
+  - **The rounds SPREAD is the instrument the card actually asked for**
+    ("that should be written down as a fact rather than discovered again
+    next month"). `chat_round_spread` is one `GROUP BY rounds` query;
+    the report prints "43 over 16 turns; 1 took 28" and says **nothing at
+    all** when every turn took one round, which is the ordinary case. An
+    average of 2.7 reads like every turn looping and cannot be told from
+    one runaway turn beside fifteen healthy ones — and those want opposite
+    responses. The data was in the table the whole time, unasked for.
+  - **Anomaly 3 (76% of the bill is cache WRITES) is untouched and is
+    still real.** It is the sibling card's ("Chat: slim the 37K-token
+    briefing"), it does not depend on either artifact above, and nothing
+    here makes it better or worse.
+  - `tests/test_chat_turns_recorded_flag.py` (13). **All 13 are red
+    against `main` and that number is worth almost nothing** — the column
+    does not exist there, so eleven die in the seed or on a name rather
+    than on the claim they are named for. Measured against *stub B*
+    instead (the column present and written, the COUNTING and the REPORT
+    left at main's behaviour, i.e. the one difference is the fix):
+    **3 failed / 10 passed**, and all three fail on their own assertion —
+    the pre-recording row counted as talk-only, its names folded into the
+    counts, and the report's line. **Five mutations run and every one
+    bites**: the INSERT not writing the flag (2 red), the counting not
+    excluding unrecorded rows, i.e. main's behaviour (2), the spread query
+    unscoped (1), the rounds line printed unconditionally (1), and a
+    well-meaning `UPDATE chat_turns SET tools_recorded = 1` backfill in
+    `_run_migrations` (1).
+  - **The report reads a REMOTE app, so both new keys are read with
+    `.get`** and a deployment older than this answers without them — a
+    morning report that crashes tells Emily less than one that omits a
+    line. There is a test driving that case.
+
 - **2026-09-28 — Food made on a prep day is first eaten the NEXT day.
   Branch `prep-day-ready-next-day`.** Emily: "if I'm doing my meal prep
   after work, it won't be done in time for tuesday." The one rule lives in

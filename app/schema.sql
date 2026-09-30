@@ -1630,7 +1630,27 @@ CREATE TABLE IF NOT EXISTS chat_turns (
     --
     -- A turn that called nothing stays '[]', which is itself worth
     -- counting -- it means somebody asked and the app only talked back.
+    --
+    -- READ IT WITH tools_recorded BELOW, ALWAYS. This column arrived by
+    -- ALTER TABLE, and SQLite materialises a NOT NULL DEFAULT into every
+    -- row that was already there -- so a turn from before it landed reads
+    -- back as '[]' too, and is indistinguishable from a real talk-only
+    -- turn by this column alone. That is not hypothetical: it is what
+    -- made a month of ordinary tool-calling turns read as "16 of 16
+    -- called nothing" in the morning report, and sent an investigation
+    -- after 27 rounds that were never missing.
     tools_called_json TEXT NOT NULL DEFAULT '[]',
+    -- Whether this row's tools_called_json is a MEASUREMENT or a default.
+    -- 1 means record_chat_turn wrote the list; 0 means the row predates
+    -- the column and the app was not recording yet. Same shape, and the
+    -- same reason, as meal_preferences.snacks_per_week_set: a column with
+    -- a default cannot tell "they said none" from "nobody asked".
+    --
+    -- Never backfilled, and it must not be: the only honest value for a
+    -- row written before the recording existed is "we do not know", and
+    -- guessing one would invent the very history this column exists to
+    -- stop the report inventing.
+    tools_recorded INTEGER NOT NULL DEFAULT 0,
     -- WHAT THE PERSON ASKED ABOUT, as one label off a fixed list
     -- (app/chat_themes.py THEMES): "swap a meal", "app confusion", ...
     -- Written a moment AFTER the row, by a small Haiku call off the reply's
