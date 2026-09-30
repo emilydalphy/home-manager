@@ -3776,6 +3776,14 @@ async function resolveRevealOpen(btn) {
       body: JSON.stringify({ date: date, slot: slot, choice: btn.getAttribute('data-choice'), weekly_plan_id: firstPlanId }),
     });
     if (!res.ok) throw new Error('slot resolve failed');
+    const settled = await res.json();
+    if (settled && settled.status === 'refused') {
+      // An allergy clash: nothing was written and the slot is still open.
+      // Say why and leave the other options to pick from.
+      btn.closest('.reveal-open-options').querySelectorAll('button').forEach(b => { b.disabled = false; });
+      revealToast(settled.message || 'Left as it was.');
+      return;
+    }
     const days = await fetchRevealMenu(firstPlanId);
     if (days && days.length) renderRevealDays(days);
     revealToast(revealSlotName(date, slot) + ' was settled');

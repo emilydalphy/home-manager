@@ -552,6 +552,10 @@ def test_answering_an_open_slot_uses_the_plan_tabs_write():
     assert "'/slot'" in body and "choice: btn.getAttribute('data-choice')" in body
     assert "weekly_plan_id: firstPlanId" in body
     assert "renderRevealDays(days)" in body and "' was settled'" in body
+    # An allergy refusal is a 200 {"status": "refused", "message"}: said, not
+    # reported as settled.
+    assert "settled.status === 'refused'" in body and "revealToast(settled.message" in body
+    assert body.index("'refused'") < body.index("' was settled'")
     wire = _fn("wireRevealCarousel")
     assert "resolveRevealOpen(opt)" in wire and "revealGoTweak(revealSlotName(" in wire
 
