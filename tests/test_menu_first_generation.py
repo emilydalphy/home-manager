@@ -238,7 +238,12 @@ def test_a_week_of_saved_recipes_makes_no_recipe_call(household, menu_model, rec
 
 def test_a_draft_that_is_never_approved_never_writes_a_recipe(household, menu_model, recipe_model):
     """The whole point: five of nine drafts in production were thrown
-    away. A re-roll must not pay for recipes on the draft it replaces."""
+    away. A re-roll must not pay for recipes on the draft it replaces.
+
+    Since 2026-09-30 that is true of APPROVAL only: the draft's background
+    pass (agent.start_background_recipe_pass, off in this suite) now
+    writes a draft's recipes as soon as it is saved — Emily accepted the
+    cost for an instant Approve. See test_background_recipe_pass.py."""
     week = _week_start()
     menu_model(_menu_week(week, new_dinner="First Draft Dinner"))
     agent.generate_weekly_plan(week)
