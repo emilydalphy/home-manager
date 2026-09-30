@@ -297,14 +297,19 @@ def test_three_dinners_over_six_nights_is_three_cooks(dinners, emily, picker, mo
     """With 3 dinners over 6 nights every dish is cooked once: three cooks,
     the other three nights leftovers of them, none open, and never a dish
     on three meals in a row. CATCH on main for follows-the-number: Tacos was
-    cooked Wednesday AND again Thursday, because Thursday fed Friday's lunch."""
+    cooked Wednesday AND again Thursday, because Thursday fed Friday's lunch.
+
+    Her week preps Sunday and Tuesday, so since Emily's Option B
+    (2026-09-30, "cook on Friday") it is three dishes and FOUR cooks: Friday
+    is one of the three cooked a second time, so Saturday's lunch eats it
+    from the fridge (tests/test_leftovers_weekend_and_even_spread.py)."""
     mon, dates = emily
     tools.save_week_intake(mon, night_tags={})
     _stub(monkeypatch, _week(dates, dinners, LUNCHES, dinner_minutes=25))
     plan_id = agent.generate_weekly_plan(mon, day_count=6)["weekly_plan_id"]
     cooks = _cooks(plan_id, "dinner")
-    assert len(cooks) == 3, [(c["date"], c["meal"]) for c in cooks]
-    assert len({c["meal"] for c in cooks}) == 3, "each dish cooked once"
+    assert len(cooks) == 4 and cooks[-1]["date"] == dates[4], [(c["date"], c["meal"]) for c in cooks]
+    assert len({c["meal"] for c in cooks}) == 3, "three dishes, Friday's cooked a second time"
     rows = _rows(plan_id, "dinner")
     chains = leftovers.plan_leftover_chains(plan_id)
     for d in dates:
@@ -337,7 +342,8 @@ def test_a_dinner_that_feeds_a_lunch_is_cooked_once_for_both(emily, picker, monk
     cook_id = chains["leftovers"].get(thu["id"], {}).get("source", {}).get("entry_id", thu["id"])
     assert friday_lunch["entry_id"] == cook_id, "Friday's lunch eats the same pot as Thursday's dinner"
     cooks = _cooks(plan_id, "dinner")
-    assert len(cooks) == len({c["meal"] for c in cooks}) == 3
+    # Option B (2026-09-30): Friday is a fourth cook, of one of the three dishes.
+    assert len(cooks) == 4 and len({c["meal"] for c in cooks}) == 3
 
 
 def test_a_rush_night_whose_dish_they_asked_for_elsewhere_keeps_the_count(emily, picker, monkeypatch):

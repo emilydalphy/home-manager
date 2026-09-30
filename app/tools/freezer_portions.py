@@ -443,6 +443,73 @@ def defrost_candidates(plan: dict, dinner_window: str | None) -> list[dict]:
     return out
 
 
+def own_portion_candidates(plan: dict, dinner_window: str | None) -> list[dict]:
+    """
+    One fridge move per meal eating a portion THIS week's own cook froze —
+    "Leftovers from the freezer — Monday's Soup" (leftovers.FROM_FREEZER_KEY
+    with a "cook" ref; the cook carries FREEZER_EXTRA_KEY). Emily,
+    2026-09-30: "for the freezer portion - will it remind me the day
+    before to take that out?" A night-off portion (defrost_candidates
+    above) always did; this kind never did, because there is no inventory
+    row to match — the portion only exists once the cook is made.
+
+    Same lead as a night-off portion (PORTION_LEAD_HOURS, so the day
+    before, via defrost._move_date), same sentence with the meal's own
+    slot ("Move the Soup to the fridge — for Saturday's lunch."), and it
+    rides through sync_defrost_tasks, so Today's fridge move, the Now card,
+    the morning text, the evening nudge and Cook's thaw list all show it
+    without a line of their own. A meal already eaten, or eating a
+    night-off portion (KEY, booked above), is skipped.
+    """
+    from . import defrost as _defrost
+    from . import leftovers as _leftovers
+
+    plan_id = plan.get("weekly_plan_id")
+    if not plan_id:
+        return []
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, date, slot, slot_state, cooked_status, derived_from_json FROM meal_plan_entries "
+            "WHERE household_id = ? AND weekly_plan_id = ? AND derived_from_json LIKE ? "
+            "ORDER BY date, id",
+            (household_id(), plan_id, f'%"{_leftovers.FROM_FREEZER_KEY}"%'),
+        ).fetchall()
+    finally:
+        conn.close()
+    out = []
+    for r in rows:
+        try:
+            derived = json.loads(r["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            continue
+        frozen = derived.get(_leftovers.FROM_FREEZER_KEY) if isinstance(derived, dict) else None
+        if not isinstance(frozen, dict) or not str(frozen.get("cook") or "").startswith("entry_id:"):
+            continue
+        if derived.get(KEY) or (r["cooked_status"] or "") == "done" or r["slot_state"] != "planned":
+            continue
+        dish = _leftovers.frozen_portion_on(derived)
+        if not dish:
+            continue
+        try:
+            cook_id = int(str(frozen["cook"]).split(":", 1)[1])
+        except ValueError:
+            cook_id = None
+        out.append({
+            "kind": _defrost.OWN_PORTION_KIND,
+            "inventory_item_id": None,
+            "meal_plan_entry_id": r["id"],
+            "cook_entry_id": cook_id,
+            "task_date": _defrost._move_date(r["date"], PORTION_LEAD_HOURS, dinner_window),
+            "description": _defrost.portion_move_description(dish, r["date"], r["slot"]),
+            "related_meal": dish,
+            "quantity": "",
+            "lead_hours": PORTION_LEAD_HOURS,
+            "lead_tier": "cooked_portion",
+        })
+    return out
+
+
 # ---------- eaten ----------
 
 def portion_eaten(entry_id: int) -> dict | None:

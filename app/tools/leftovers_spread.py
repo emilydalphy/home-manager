@@ -46,10 +46,16 @@ other pass keeps:
     and stays within three days of that dinner's cook;
   - no dish on more than two lunches and dinners in a row.
 
-The layout that is even (no dish more than one night over another) wins,
-then the one with the fewest cooks, then the most even, then the one
-where the most weekend lunches eat last night's dinner, then the one that
-moves the fewest nights from what the week already had. It is written only
+Which layout wins (Emily, 2026-09-30, Option B "cook on Friday": a weekend
+lunch from last night's dinner wins over fewest cooks): the one where the
+most weekend lunches eat last night's dinner — as long as it cooks at most
+one more time per such lunch than the best week without them (_rank) —
+then the even one (no dish more than one night over another), then the
+fewest cooks, then the most even, then the one that moves the fewest
+nights from what the week already had. In her own week (prep Sunday and
+Tuesday) that is Friday cooked fresh: one of her three dishes a second
+time, never a fourth dish (the count guard's number holds), so Saturday's
+lunch eats it from the fridge and Saturday's dinner is another dish. It is written only
 when it is strictly better than the week as it stands, so a week that is
 already right is not touched at all.
 
@@ -400,9 +406,44 @@ def _layouts(week: dict, strict: bool):
     yield from walk(0)
 
 
+def _rank(score: tuple, on: tuple[bool, ...], base_cooks: int | None) -> tuple:
+    """The order layouts are chosen in, from a _score tuple (Emily's
+    Option B, 2026-09-30, "cook on Friday"): a weekend lunch eating last
+    night's dinner wins over fewest cooks — a layout may cook once more
+    than the best week without it for each weekend lunch it points at last
+    night's dinner, never more. Within that budget: most weekend lunches
+    from last night's dinner, then even, then fewest cooks, then the rest.
+    `base_cooks` is the cooks of the best layout with every weekend lunch
+    left as it is (None when there is none, and then there is no budget)."""
+    broken, excess, cooks, spread, weekend_off, moved = score
+    budget = None if base_cooks is None else base_cooks + sum(1 for yes in on if yes)
+    # Only a layout that points a weekend lunch at last night's dinner is
+    # held to the budget; one that leaves them all as they are ranks exactly
+    # as it always did (even first, then fewest cooks).
+    over = 0 if budget is None or not any(on) else max(0, cooks - budget)
+    return (broken, over, weekend_off, excess, cooks, spread, moved)
+
+
+def _base_cooks(found: list[tuple]) -> int | None:
+    """Cooks of the best layout found that leaves every weekend lunch as it is."""
+    off = [f for f in found if not any(f[2])]
+    return min(off, key=lambda f: f[0])[0][2] if off else None
+
+
+def _all_on_within_budget(found: list[tuple]) -> bool:
+    base = _base_cooks(found)
+    return any(all(on) and _rank(score, on, base)[1] == 0 for score, _, on in found)
+
+
 def best_layout(week: dict, caps: dict | None) -> dict | None:
-    """The best layout, or None when none keeps every rule."""
-    best = None
+    """The best layout, or None when none keeps every rule.
+
+    Strict (even) layouts first; the uneven ones are searched too only when
+    a weekend lunch is still off after the strict search — in Emily's own
+    week (prep Sunday and Tuesday) the only layouts where Saturday's lunch
+    eats Friday's dinner cook Friday again, and none of them is exactly
+    even (Option B, see _rank)."""
+    found: list[tuple] = []
     choices = list(itertools.product((True, False), repeat=len(week["weekend"])))
     scored = 0
     for strict in (True, False):
@@ -410,15 +451,20 @@ def best_layout(week: dict, caps: dict | None) -> dict | None:
             for on in choices:
                 scored += 1
                 score = _score(week, assign, on, caps)
-                if score is not None and (best is None or score < best[0]):
-                    best = (score, assign, on)
+                if score is not None:
+                    found.append((score, assign, on))
             if scored >= MAX_SCORED:
                 break
-        if best is not None or scored >= MAX_SCORED:
+        if scored >= MAX_SCORED:
             break
-    if best is None:
+        if found and (not week["weekend"] or _all_on_within_budget(found)):
+            break
+    if not found:
         return None
-    return {"score": best[0], "assign": best[1], "weekend_on": best[2]}
+    base_cooks = _base_cooks(found)
+    best = min(found, key=lambda f: _rank(f[0], f[2], base_cooks))
+    return {"score": _rank(best[0], best[2], base_cooks), "assign": best[1], "weekend_on": best[2],
+            "base_cooks": base_cooks}
 
 
 def _carry(derived: dict) -> dict:
@@ -583,7 +629,8 @@ def spread_dinners(plan_id: int, intake: dict | None, caps: dict | None = None,
             out["skipped"] = "no layout keeps every rule"
             return out
         current = [n["dish"] for n in nights]
-        now = _score(week, current, tuple(False for _ in week["weekend"]), caps, actual_cooks=True)
+        still = tuple(False for _ in week["weekend"])
+        now = _rank(_score(week, current, still, caps, actual_cooks=True), still, layout["base_cooks"])
         if layout["score"] >= now:
             out["skipped"] = "already as good"
             return out

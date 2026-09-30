@@ -25,13 +25,20 @@ this: Tuesday is a prep day, so Tuesday's dinner is the cook the Wednesday
 and Thursday lunches eat; Friday's lunch is Thursday's dinner; and no dish
 may be on three meals in a row. Then Friday's dinner can only be a dish
 cooked Monday or Tuesday (four days before Saturday's lunch — too long in
-the fridge) unless something is cooked a fourth time. So in her exact week
-the dishes stay even and cooked once, and Saturday's lunch keeps its portion
-from the freezer (no extra cooking either way). With Sunday as the only prep
-day, Saturday's lunch is Friday's dinner. Both are pinned below.
+the fridge) unless something is cooked a fourth time.
 
-Each route test fails on origin/main 7b5f7df. The model and the swap picker
-are stubbed; nothing reaches the API.
+Emily, 2026-09-30, Option B "cook on Friday": the weekend lunch wins over
+fewest cooks. Friday's dinner is cooked fresh — one of her three dishes
+cooked a second time, never a fourth dish (Dinners is 3 "different dishes
+a week") — Saturday's lunch eats it from the fridge, and Saturday's dinner
+is a different dish. One extra cook for the one weekend lunch, no more, so
+the dishes can't all be on exactly two nights (that would take five cooks).
+With Sunday as the only prep day, Saturday's lunch is Friday's dinner with
+three cooks, even. Both are pinned below.
+
+The Sunday-only route tests fail on origin/main 7b5f7df; the Sunday and
+Tuesday ones on b212168 (which kept Saturday's lunch frozen). The model and
+the swap picker are stubbed; nothing reaches the API.
 """
 from __future__ import annotations
 
@@ -64,16 +71,26 @@ def _sunday_prep_only(mon, dates):
     })
 
 
-def _assert_her_week(plan_id: int, dates: list[str], saturday_eats_friday: bool):
+def _assert_her_week(plan_id: int, dates: list[str], friday_cooks: bool):
     dinners, lunches = _rows(plan_id, "dinner"), _rows(plan_id, "lunch")
     chains = leftovers.plan_leftover_chains(plan_id)
-
-    # Decision 2: three dishes, each cooked once, each on exactly two nights.
     cooks = _cooks(plan_id, "dinner")
-    assert len(cooks) == 3, [(c["date"], c["meal"]) for c in cooks]
-    assert len({c["meal"] for c in cooks}) == 3, "each dish cooked once"
     nights = [dinners[d]["meal"] for d in dates]
-    assert sorted(nights.count(m) for m in set(nights)) == [2, 2, 2], nights
+    if friday_cooks:
+        # Option B: a fourth cook, and it is Friday's — one of her three
+        # dishes cooked a second time, not a fourth dish.
+        assert len(cooks) == 4, [(c["date"], c["meal"]) for c in cooks]
+        assert len({c["meal"] for c in cooks}) == 3, "still three different dishes"
+        friday = dinners[dates[4]]
+        assert friday["id"] in {c["id"] for c in cooks}, "Friday's dinner is cooked fresh"
+        assert any(c["meal"] == friday["meal"] and c["date"] < dates[4] for c in cooks), \
+            "Friday's cook is a dish cooked earlier in the week"
+        assert len(set(nights)) == 3 and max(nights.count(m) for m in set(nights)) <= 3, nights
+    else:
+        # Decision 2: three dishes, each cooked once, each on exactly two nights.
+        assert len(cooks) == 3, [(c["date"], c["meal"]) for c in cooks]
+        assert len({c["meal"] for c in cooks}) == 3, "each dish cooked once"
+        assert sorted(nights.count(m) for m in set(nights)) == [2, 2, 2], nights
     cook_ids = {c["id"] for c in cooks}
     for d in dates:
         assert dinners[d]["slot_state"] == "planned"
@@ -83,20 +100,17 @@ def _assert_her_week(plan_id: int, dates: list[str], saturday_eats_friday: bool)
             assert 1 <= leftovers.days_apart(source["date"], d) <= leftovers.MAX_LEFTOVER_DAYS
 
     sat_lunch = lunches[dates[5]]
-    if saturday_eats_friday:
-        # Decision 1: Saturday's lunch is Friday's dinner, from the fridge.
-        assert not leftovers.frozen_portion_on(sat_lunch["derived"]), sat_lunch["meal"]
-        source = chains["leftovers"][sat_lunch["id"]]["source"]
-        assert source["slot"] == "dinner" and sat_lunch["meal"] == dinners[dates[4]]["meal"]
-        assert leftovers.days_apart(source["date"], dates[5]) <= leftovers.MAX_LEFTOVER_DAYS
-        assert dinners[dates[5]]["meal"] != dinners[dates[4]]["meal"], "Saturday's dinner is a different dish"
-        # …and no cook still freezes a portion for it.
-        for rows in (dinners, lunches):
-            for r in rows.values():
-                assert f"{dates[5]}:lunch" not in (r["derived"].get(leftovers.FREEZER_EXTRA_KEY) or {}).get("for", [])
-    else:
-        # The conflict in the module docstring: nothing is cooked for it.
-        assert leftovers.frozen_portion_on(sat_lunch["derived"]) or sat_lunch["id"] in chains["leftovers"]
+    # Decision 1: Saturday's lunch is Friday's dinner, from the fridge.
+    assert not leftovers.frozen_portion_on(sat_lunch["derived"]), sat_lunch["meal"]
+    source = chains["leftovers"][sat_lunch["id"]]["source"]
+    assert source["slot"] == "dinner" and sat_lunch["meal"] == dinners[dates[4]]["meal"]
+    assert leftovers.days_apart(source["date"], dates[5]) <= leftovers.MAX_LEFTOVER_DAYS
+    assert dinners[dates[5]]["meal"] != dinners[dates[4]]["meal"], "Saturday's dinner is a different dish"
+    # …and no cook still freezes a portion for it.
+    for rows in (dinners, lunches):
+        for r in rows.values():
+            assert f"{dates[5]}:lunch" not in (r["derived"].get(leftovers.FREEZER_EXTRA_KEY) or {}).get("for", [])
+    if friday_cooks:
         # Tuesday's prep batch is Tuesday's dinner, cooked, feeding
         # Wednesday's and Thursday's lunches.
         batches = {b["prep_date"]: b for b in weekday_lunches.prepped_batches(plan_id)}
@@ -123,11 +137,12 @@ ROUTES = dict(zip(["chat-tool", "generate", "stream", "re-plan"], [_via_agent, _
 @pytest.mark.parametrize("dinners", list(SHAPES.values()), ids=list(SHAPES))
 @pytest.mark.parametrize("route", list(ROUTES.values()), ids=list(ROUTES))
 def test_her_week_on_every_route(route, dinners, emily, picker, monkeypatch, signed_in):
-    """Prep Sunday and Tuesday: even, cooked once, Tuesday's batch intact."""
+    """Prep Sunday and Tuesday (Option B): Friday is cooked fresh so
+    Saturday's lunch eats it; three dishes; Tuesday's batch intact."""
     mon, dates = emily
     tools.save_week_intake(mon, night_tags={})
     _stub(monkeypatch, _week(dates, dinners, HER_LUNCHES, dinner_minutes=25))
-    _assert_her_week(route(mon, signed_in), dates, saturday_eats_friday=False)
+    _assert_her_week(route(mon, signed_in), dates, friday_cooks=True)
 
 
 @pytest.mark.parametrize("dinners", list(SHAPES.values()), ids=list(SHAPES))
@@ -137,20 +152,23 @@ def test_saturday_lunch_is_fridays_dinner_on_every_route(route, dinners, emily, 
     mon, dates = emily
     _sunday_prep_only(mon, dates)
     _stub(monkeypatch, _week(dates, dinners, HER_LUNCHES, dinner_minutes=25))
-    _assert_her_week(route(mon, signed_in), dates, saturday_eats_friday=True)
+    _assert_her_week(route(mon, signed_in), dates, friday_cooks=False)
 
 
 def test_a_rush_night_in_the_week_reheats(emily, picker, monkeypatch):
     """A night short on time is never given a cook it has no time for: the
     model's alternating week (four cooks) is re-laid with Wednesday, a rush
-    night, as a reheat."""
+    night, as a reheat. Friday is the week's fourth cook (Option B:
+    Saturday's lunch eats it), never Wednesday."""
     mon, dates = emily
     tools.save_week_intake(mon, night_tags={dates[2]: ["rush"]})
     _stub(monkeypatch, _week(dates, SHAPES["alternating"], HER_LUNCHES, dinner_minutes=45))
     plan_id = agent.generate_weekly_plan(mon, day_count=6)["weekly_plan_id"]
     wednesday = _rows(plan_id, "dinner")[dates[2]]
     assert wednesday["id"] in leftovers.plan_leftover_chains(plan_id)["leftovers"], wednesday["meal"]
-    assert len(_cooks(plan_id, "dinner")) == 3
+    cooks = _cooks(plan_id, "dinner")
+    assert [c["date"] for c in cooks] == [dates[0], dates[1], dates[3], dates[4]], cooks
+    assert len({c["meal"] for c in cooks}) == 3
 
 
 # ==========================================================================
@@ -246,3 +264,17 @@ def test_an_approved_week_is_never_re_laid():
     conn.commit()
     conn.close()
     assert leftovers_spread.spread_dinners(plan_id, None, target=3)["skipped"] == "approved"
+
+
+def test_a_week_with_no_weekend_lunch_to_switch_ranks_as_before():
+    """Review, 2026-09-30: the one-extra-cook budget is only for a layout
+    that points a weekend lunch at last night's dinner. A layout leaving
+    them all as they are keeps the old order — even before fewest cooks —
+    so an even week with a cook more than the best is not re-laid uneven."""
+    even_four_cooks = (0, 0, 4, 0, 0, 0)     # (broken, excess, cooks, spread, weekend off, moved)
+    uneven_three_cooks = (0, 1, 3, 2, 0, 4)
+    assert leftovers_spread._rank(even_four_cooks, (), 3) < leftovers_spread._rank(uneven_three_cooks, (), 3)
+    assert leftovers_spread._rank(even_four_cooks, (False,), 3)[1] == 0
+    # …while a layout switching a weekend lunch is held to one extra cook.
+    assert leftovers_spread._rank((0, 0, 5, 0, 0, 0), (True,), 3)[1] == 1
+    assert leftovers_spread._rank((0, 1, 4, 2, 0, 0), (True,), 3)[1] == 0

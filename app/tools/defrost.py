@@ -35,6 +35,7 @@ Two things produce a defrost task, both landing in the same prep_tasks rows
 """
 from __future__ import annotations
 
+import json
 import math
 import re
 from datetime import date, datetime, time, timedelta
@@ -87,6 +88,12 @@ from . import weekly_plan as _weekly_plan
 # ground meat, sausages, most fish not caught by the "small/thin" list
 # below. This is the tier Emily's ask was about: a family-pack quantity of
 # an ordinary cut, not the single-portion USDA baseline.
+# detail_json's "kind" on the fridge move for a portion this week's own
+# cook froze (freezer_portions.own_portion_candidates) — the one marker
+# that tells those rows apart from confirm_frozen_items' (both have no
+# inventory row), so each producer only ever sweeps its own.
+OWN_PORTION_KIND = "own_freezer_portion"
+
 STANDARD_LEAD_HOURS = 48.0
 
 # Large roasts / whole birds: USDA's roughly-24h-per-4-5-lb rule of thumb,
@@ -225,7 +232,7 @@ def _describe(item: str, meal: str, meal_date: str) -> str:
     return f"Move the {item} to the fridge — for {_weekday_name(meal_date)}'s {meal}."
 
 
-def portion_move_description(dish: str, meal_date: str) -> str:
+def portion_move_description(dish: str, meal_date: str, slot: str = "dinner") -> str:
     """
     The fridge move for a cooked portion a night off froze
     (freezer_portions): "Move the Kofte to the fridge — for Thursday's
@@ -239,7 +246,7 @@ def portion_move_description(dish: str, meal_date: str) -> str:
     for weekly_plan._release_prep_rows, which holds a thawed portion when a
     swap takes its night off the plan.
     """
-    return f"Move the {dish} to the fridge — for {_weekday_name(meal_date)}'s dinner."
+    return f"Move the {dish} to the fridge — for {_weekday_name(meal_date)}'s {slot or 'dinner'}."
 
 
 def _batch_quantity(ing: dict, batch_factor: float) -> str:
@@ -303,6 +310,10 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
     from . import freezer_portions as _freezer_portions
 
     candidates = _freezer_portions.defrost_candidates(plan, dinner_window)
+    # …and a meal eating a portion this week's own cook put in the freezer
+    # ("Leftovers from the freezer — Monday's Soup"): no inventory row at
+    # all, so it is booked by the entry (see own_portion_candidates).
+    candidates += _freezer_portions.own_portion_candidates(plan, dinner_window)
     if not freezer_items:
         return candidates
     recipes_by_name = {r["name"]: r for r in _recipes.list_recipes()}
@@ -402,6 +413,8 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     """
     conn = get_conn()
     candidates = defrost_candidates_for_plan(weekly_plan_id)
+    own = [c for c in candidates if c.get("kind") == OWN_PORTION_KIND]
+    candidates = [c for c in candidates if c.get("kind") != OWN_PORTION_KIND]
     existing = conn.execute(
         "SELECT id, inventory_item_id, meal_plan_entry_id, task_date FROM prep_tasks "
         "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
@@ -441,6 +454,43 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
             inserted += 1
 
     stale_ids = [r["id"] for r in existing if r["id"] not in kept_ids]
+
+    # The moves for portions this week's own cook froze
+    # (own_portion_candidates): the same keep-status / insert / sweep, keyed
+    # by (meal_plan_entry_id, task_date) and marked in detail_json, because
+    # they have no inventory row — and inventory_item_id IS NULL alone is
+    # confirm_frozen_items' rows, which this must never sweep.
+    own_existing = conn.execute(
+        "SELECT id, meal_plan_entry_id, task_date FROM prep_tasks "
+        "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
+        "AND inventory_item_id IS NULL AND json_extract(detail_json, '$.kind') = ?",
+        (weekly_plan_id, household_id(), OWN_PORTION_KIND),
+    ).fetchall()
+    own_by_key = {(r["meal_plan_entry_id"], r["task_date"]): r["id"] for r in own_existing}
+    for c in own:
+        key = (c["meal_plan_entry_id"], c["task_date"])
+        existing_id = own_by_key.get(key)
+        detail = json.dumps({"kind": OWN_PORTION_KIND, "cook_entry_id": c.get("cook_entry_id")})
+        if existing_id:
+            conn.execute(
+                "UPDATE prep_tasks SET description = ?, related_meal = ?, detail_json = ? "
+                "WHERE id = ? AND household_id = ?",
+                (c["description"], c["related_meal"], detail, existing_id, household_id()),
+            )
+            updated += 1
+        else:
+            cur = conn.execute(
+                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+                "related_meal, status, task_type, meal_plan_entry_id, quantity, detail_json) "
+                "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', ?, '', ?)",
+                (household_id(), weekly_plan_id, c["task_date"], c["description"], c["related_meal"],
+                 c["meal_plan_entry_id"], detail),
+            )
+            existing_id = own_by_key[key] = cur.lastrowid
+            inserted += 1
+        kept_ids.add(existing_id)
+    stale_ids += [r["id"] for r in own_existing if r["id"] not in kept_ids]
+
     if stale_ids:
         conn.executemany("DELETE FROM prep_tasks WHERE id = ?", [(i,) for i in stale_ids])
     conn.commit()
@@ -1222,8 +1272,8 @@ def _release_frozen_item(item_name: str, weekly_plan_id: int | None = None) -> i
     rows = conn.execute(
         "SELECT id, description FROM prep_tasks WHERE household_id = ? " + scope +
         "AND task_type = 'defrost' AND status = 'pending' AND inventory_item_id IS NULL "
-        "AND meal_plan_entry_id IS NOT NULL",
-        params,
+        "AND meal_plan_entry_id IS NOT NULL AND COALESCE(json_extract(detail_json, '$.kind'), '') != ?",
+        [*params, OWN_PORTION_KIND],
     ).fetchall()
     doomed = []
     for r in rows:
