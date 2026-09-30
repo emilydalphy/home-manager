@@ -266,12 +266,6 @@ _LATER_TRANCHE = {
         (1, "SELECT rev FROM inventory_items WHERE id = ?"),
         (2, "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?"),
     ],
-    "app/tools/usage.py": [
-        # The reader shows this one with a dangling comma before WHERE,
-        # because its SET clause is a ", ".join(...) — a Call, which
-        # _sql_text cannot evaluate. It is still seen, and still unguarded.
-        (1, "UPDATE error_events SET occurrences = occurrences + 1, last_seen_at = datetime('now'), WHERE id = ?"),
-    ],
     "app/tools/weekly_plan.py": [
         (1, "SELECT name FROM recipes WHERE id = ?"),
         (1, "SELECT week_start_date FROM weekly_plans WHERE id = ?"),
@@ -291,6 +285,7 @@ _DONE_MODULES = (
     "app/tools/recipes.py",
     "app/tools/staples.py",
     "app/tools/stores.py",
+    "app/tools/usage.py",
     "app/tools/week_intake.py",
 )
 

@@ -886,8 +886,8 @@ def record_error(
                     f"{col} = CASE WHEN ? != '' THEN ? ELSE {col} END"
                     for col in ("trail", "device", "display_mode", "lang", "app_version")
                 )
-                + " WHERE id = ?",
-                tuple(v for value in latest for v in (value, value)) + (existing["id"],),
+                + " WHERE id = ? AND household_id = ?",
+                tuple(v for value in latest for v in (value, value)) + (existing["id"], hid),
             )
         else:
             conn.execute(
