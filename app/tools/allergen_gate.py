@@ -532,7 +532,8 @@ def _group_held(held_back: list[dict]) -> list[list[dict]]:
     return list(groups.values())
 
 
-def _pick_for_group(context: dict, dropped: str, pick_one, avoidances: list[dict]) -> dict:
+def _pick_for_group(context: dict, dropped: str, pick_one, avoidances: list[dict],
+                    attempts: int | None = None) -> dict:
     """Up to MAX_PICK_ATTEMPTS quick picks for one dish, each gated before
     it is accepted, the clashing dish (and any failed attempt) on `avoid`.
     Runs on a worker thread; writes nothing. Returns {"pick", "calls",
@@ -540,7 +541,7 @@ def _pick_for_group(context: dict, dropped: str, pick_one, avoidances: list[dict
     started = time.perf_counter()
     tried = _swap._dedup([dropped] + list(context.get("avoid") or []))
     calls = 0
-    for attempt in range(1, _swap.MAX_PICK_ATTEMPTS + 1):
+    for attempt in range(1, (attempts or _swap.MAX_PICK_ATTEMPTS) + 1):
         calls += 1
         ask = dict(context, avoid=list(tried))
         try:
@@ -642,17 +643,57 @@ def repick_held(
             context = None
         tasks.append((contextvars.copy_context(), context, dropped))
 
-    def _run(task):
+    def _run(task, attempts=None):
         ctx, context, dropped = task
         if context is None:
             return {"pick": None, "calls": 0, "seconds": 0.0}
-        return ctx.run(_pick_for_group, context, dropped, pick_one, avoidances)
+        try:
+            return ctx.run(_pick_for_group, context, dropped, pick_one, avoidances, attempts)
+        except Exception:
+            # Anything the worker hits outside the model call itself (a
+            # database read in the gate, say) costs THIS dish its pick —
+            # its days go open — and never the rest of the batch.
+            logger.exception("Allergen re-pick for %s %s failed; its slots go open",
+                             context.get("date"), context.get("slot"))
+            return {"pick": None, "calls": 0, "seconds": 0.0}
 
-    if len(tasks) == 1:
-        outcomes = [_run(tasks[0])]
-    else:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tasks), _REPICK_WORKERS)) as pool:
-            outcomes = list(pool.map(_run, tasks))
+    outcomes = _run_all(tasks, _run)
+
+    # Picked side by side, two dishes can come back as the SAME
+    # replacement (neither saw the other's). The first keeps it; each later
+    # one is asked once more with the taken names on `avoid`, and goes
+    # open if that comes back taken again or not at all.
+    taken: dict[str, set[str]] = {}
+    again: list[int] = []
+    for i, outcome in enumerate(outcomes):
+        pick = outcome["pick"]
+        if not pick:
+            continue
+        slot = tasks[i][1]["slot"]
+        name = pick["meal_name"].strip().lower()
+        if name in taken.setdefault(slot, set()):
+            again.append(i)
+        else:
+            taken[slot].add(name)
+    if again:
+        logger.warning("Allergen re-pick: %d dish(es) came back as a replacement already used; asking once more", len(again))
+        redo = []
+        for i in again:
+            _ctx, context, dropped = tasks[i]
+            used = [outcomes[j]["pick"]["meal_name"] for j in range(len(outcomes))
+                    if j not in again and outcomes[j]["pick"] and tasks[j][1]["slot"] == context["slot"]]
+            redo.append((contextvars.copy_context(), dict(context, avoid=_swap._dedup(list(context.get("avoid") or []) + used)), dropped))
+        second = _run_all(redo, lambda task: _run(task, attempts=1))
+        for i, outcome in zip(again, second):
+            pick = outcome["pick"]
+            slot = tasks[i][1]["slot"]
+            name = (pick or {}).get("meal_name", "").strip().lower()
+            if pick and name not in taken[slot]:
+                taken[slot].add(name)
+            else:
+                pick = None
+            outcomes[i] = {"pick": pick, "calls": outcomes[i]["calls"] + outcome["calls"],
+                           "seconds": outcomes[i]["seconds"] + outcome["seconds"]}
 
     results: list[dict] = []
     for group, outcome in zip(picked, outcomes):
@@ -680,6 +721,17 @@ def held_placeholder(meal_date: str, slot: str) -> dict:
         "date": meal_date, "slot": slot, "slot_state": "held", "meal_name": "",
         "placeholder": f"Finding another {slot}…",
     }
+
+
+def _run_all(tasks: list, run) -> list[dict]:
+    """`run` over every task, side by side (one thread each, up to the
+    cap), in the tasks' order."""
+    if not tasks:
+        return []
+    if len(tasks) == 1:
+        return [run(tasks[0])]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tasks), _REPICK_WORKERS)) as pool:
+        return list(pool.map(run, tasks))
 
 
 def _tell(on_filled, item: dict) -> None:

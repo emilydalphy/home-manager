@@ -2903,7 +2903,11 @@ async function streamFirstPlan(waiter, runToken, keepDays) {
   } catch (e) {
     throw revealLostContact(e);
   }
-  if (!res.ok || !res.body) throw new Error('Could not generate plan');
+  if (!res.ok || !res.body) {
+    const refused = new Error('Could not generate plan');
+    refused.status = res.status || 0;
+    throw refused;
+  }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -2937,7 +2941,9 @@ async function streamFirstPlan(waiter, runToken, keepDays) {
     } else if (eventName === 'done') {
       finalPlan = payload;
     } else if (eventName === 'error') {
-      throw new Error(payload.detail || 'Could not generate plan');
+      const failed = new Error(payload.detail || 'Could not generate plan');
+      failed.status = payload.status || 0;
+      throw failed;
     }
   }
   while (true) {
@@ -2960,36 +2966,81 @@ async function streamFirstPlan(waiter, runToken, keepDays) {
   return finalPlan;
 }
 
-// After a lost stream: did that draft land anyway? The plan id if so,
-// else null (still running, failed, or the server can't be asked).
+// Worth a second try on its own: a dropped connection, or the server
+// saying it was briefly unable (5xx). A 400 — "every dish clashed", a
+// refused period — would fail the same way again, so it goes straight to
+// "Try again" rather than costing a second draft.
+function revealWorthRetrying(err) {
+  if (!err) return false;
+  if (err.lostContact) return true;
+  return (err.status || 0) >= 500;
+}
+
+// How long a lost draft is waited on before the page gives up on it, and
+// how often it asks. The server keeps going after the stream drops; its
+// run stays "running" through the prep and defrost steps that follow the
+// save, so asking again straight away would start a second full draft
+// behind a first one that is seconds from done.
+const REVEAL_WAIT_CAP_MS = 60000;
+const REVEAL_POLL_FIRST_MS = 1500;
+const REVEAL_POLL_MAX_MS = 5000;
+function revealWait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// After a lost stream: how did that draft end? Waits (short backoff, capped)
+// while the server says it is still running. Resolves to
+//   {state: 'done', planId} | {state: 'failed', status} |
+//   {state: 'absent'}  (the request never became a run, or can't be asked) |
+//   {state: 'running'} (still going at the cap)
 async function revealDraftLanded(runToken) {
-  if (!revealDraftWeekStart || !runToken) return null;
-  try {
-    const res = await Api.fetch('/api/week/' + encodeURIComponent(revealDraftWeekStart) +
-      '/generate/status?run=' + encodeURIComponent(runToken), { cache: 'no-store' });
-    if (!res.ok) return null;
-    const run = (await res.json()).run;
-    return run && run.state === 'done' && run.plan_id ? run.plan_id : null;
-  } catch (e) {
-    return null;
+  if (!revealDraftWeekStart || !runToken) return { state: 'absent' };
+  const url = '/api/week/' + encodeURIComponent(revealDraftWeekStart) +
+    '/generate/status?run=' + encodeURIComponent(runToken);
+  const started = Date.now();
+  let delay = REVEAL_POLL_FIRST_MS;
+  let asked = false;
+  while (true) {
+    let run = null;
+    let answered = false;
+    try {
+      const res = await Api.fetch(url, { cache: 'no-store' });
+      if (res.ok) { run = (await res.json()).run; answered = true; }
+    } catch (e) { /* no answer this time — ask again */ }
+    if (answered) {
+      asked = true;
+      if (!run) return { state: 'absent' };
+      if (run.state === 'done' && run.plan_id) return { state: 'done', planId: run.plan_id };
+      if (run.state === 'failed') return { state: 'failed', status: (run.error && run.error.status) || 0 };
+    }
+    if (Date.now() - started >= REVEAL_WAIT_CAP_MS) return { state: asked ? 'running' : 'absent' };
+    await revealWait(delay);
+    delay = Math.min(REVEAL_POLL_MAX_MS, Math.round(delay * 1.5));
   }
 }
 
 // The first week, with ONE try of its own before the person is shown
-// "Try again" (2026-09-30). A dropped connection first asks whether the
-// draft landed anyway and uses it if so; otherwise the stream is asked
-// for once more. That second request is safe even while the first draft
-// is still running: the server makes it wait for that draft and hands it
-// over (agent._generate_weekly_plan_once) rather than drafting twice.
+// "Try again" (2026-09-30). A dropped connection first finds out how the
+// draft ended — waiting while it is still running — and uses it if it
+// landed. Only a draft that failed with a server-side (5xx) error, or one
+// the server never started, is asked for once more; a 400 is not retried,
+// and a draft still running at the cap is left to finish rather than
+// doubled (a later "Try again" is handed that same draft by the server's
+// week lock, agent._generate_weekly_plan_once).
 async function draftFirstPlanWithOneRetry(waiter) {
   const firstToken = revealNewRunToken();
   try {
     return await streamFirstPlan(waiter, firstToken, false);
   } catch (err) {
+    if (!revealWorthRetrying(err)) throw err;
     console.warn('First-plan stream failed; trying once more on its own:', err && (err.cause || err));
-    if (err && err.lostContact) {
-      const planId = await revealDraftLanded(firstToken);
-      if (planId) return { weekly_plan_id: planId, week_start_date: revealDraftWeekStart, meals: null, reattached: true };
+    if (err.lostContact) {
+      const ended = await revealDraftLanded(firstToken);
+      if (ended.state === 'done') {
+        return { weekly_plan_id: ended.planId, week_start_date: revealDraftWeekStart, meals: null, reattached: true };
+      }
+      if (ended.state === 'running') throw err;
+      if (ended.state === 'failed' && ended.status < 500) throw err;
     }
     return await streamFirstPlan(waiter, revealNewRunToken(), true);
   }

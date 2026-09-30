@@ -323,7 +323,10 @@ var posts = [];
 var statusReads = [];
 var upserts = [];
 var streams = [];
-var statusAnswer = null;
+var statusAnswers = [];
+var REVEAL_WAIT_CAP_MS = 40;
+var REVEAL_POLL_FIRST_MS = 1;
+var REVEAL_POLL_MAX_MS = 2;
 var firstPlanStart = 'this_week';
 var revealDraftWeekStart = '';
 var revealStreamDays = { cleared: 0, clear: function () { this.cleared++; } };
@@ -341,7 +344,8 @@ function streamOf(parts, ending) {
 var Api = { fetch: function (url, opts) {
   if (url.indexOf('/generate/status') !== -1) {
     statusReads.push(url);
-    return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ run: statusAnswer }); } });
+    var answer = statusAnswers.length > 1 ? statusAnswers.shift() : statusAnswers[0];
+    return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ run: answer === undefined ? null : answer }); } });
   }
   posts.push(JSON.parse(opts.body));
   var next = streams.shift();
@@ -358,8 +362,8 @@ _ERROR = 'event: error\ndata: {"status": 503, "detail": "busy"}\n\n'
 
 def _run(body: str) -> dict:
     functions = "\n".join(_extract(n) for n in (
-        "revealLostContact", "revealNewRunToken", "streamFirstPlan", "revealDraftLanded",
-        "draftFirstPlanWithOneRetry",
+        "revealLostContact", "revealNewRunToken", "streamFirstPlan", "revealWorthRetrying", "revealWait",
+        "revealDraftLanded", "draftFirstPlanWithOneRetry",
     ))
     script = _PRELUDE + functions + "\n(async function () {\n" + body + "\n})().catch(function (e) {" \
         " console.log(JSON.stringify({ harnessError: String(e && e.stack || e) })); });\n"
@@ -370,10 +374,11 @@ def _run(body: str) -> dict:
     return out
 
 
-def _attempt(streams_js: str, status: dict | None = None) -> dict:
+def _attempt(streams_js: str, status=None) -> dict:
+    answers = status if isinstance(status, list) else [status]
     return _run(f"""
       streams = {streams_js};
-      statusAnswer = {json.dumps(status)};
+      statusAnswers = {json.dumps(answers)};
       var result = null, failed = null;
       try {{ result = await draftFirstPlanWithOneRetry(null); }}
       catch (e) {{ failed = e.message; }}
@@ -394,14 +399,52 @@ def test_a_dropped_stream_whose_draft_landed_is_picked_up_without_drafting_again
 
 
 @_needs_node
-def test_a_dropped_stream_still_running_is_asked_for_once_more():
-    out = _attempt(json.dumps([[[_STATUS, _DAY], "drop"], [[_STATUS, _DONE], "end"]]),
-                   status={"state": "running"})
+def test_a_dropped_stream_the_server_never_started_is_asked_for_once_more():
+    out = _attempt(json.dumps([[[_STATUS, _DAY], "drop"], [[_STATUS, _DONE], "end"]]), status=None)
     assert out["failed"] is None
     assert out["result"]["weekly_plan_id"] == 77
     assert out["posts"] == 2
     assert out["tokens"][0] != out["tokens"][1]
     assert out["cleared"] == 1, "the retry keeps what is already on screen"
+
+
+@_needs_node
+def test_a_dropped_stream_still_running_is_waited_on_not_drafted_twice():
+    """The run stays "running" through the prep and defrost steps after the
+    save; asking again straight away would start a second full draft."""
+    out = _attempt(json.dumps([[[_STATUS, _DAY], "drop"]]),
+                   status=[{"state": "running"}, {"state": "running"}, {"state": "done", "plan_id": 77}])
+    assert out["failed"] is None
+    assert out["result"]["weekly_plan_id"] == 77 and out["result"]["reattached"] is True
+    assert out["posts"] == 1
+    assert len(out["statusReads"]) == 3
+
+
+@_needs_node
+def test_a_draft_still_running_at_the_cap_is_not_doubled():
+    out = _attempt(json.dumps([[[_STATUS, _DAY], "drop"]]), status=[{"state": "running"}])
+    assert out["result"] is None and out["failed"]
+    assert out["posts"] == 1, "never a second draft behind one still going"
+    assert len(out["statusReads"]) >= 2
+
+
+@_needs_node
+def test_a_dropped_draft_that_failed_on_the_server_is_retried_only_for_5xx():
+    busy = _attempt(json.dumps([[[_STATUS], "drop"], [[_STATUS, _DONE], "end"]]),
+                    status={"state": "failed", "error": {"status": 503}})
+    assert busy["result"]["weekly_plan_id"] == 77 and busy["posts"] == 2
+    refused = _attempt(json.dumps([[[_STATUS], "drop"], [[_STATUS, _DONE], "end"]]),
+                       status={"state": "failed", "error": {"status": 400}})
+    assert refused["result"] is None and refused["posts"] == 1
+
+
+@_needs_node
+def test_a_400_is_not_retried():
+    """"Every dish clashed" fails the same way twice; straight to Try again."""
+    clash = 'event: error\ndata: {"status": 400, "detail": "every dish clashed"}\n\n'
+    out = _attempt(json.dumps([[[_STATUS, clash], "end"], [[_STATUS, _DONE], "end"]]))
+    assert out["failed"] == "every dish clashed"
+    assert out["posts"] == 1
 
 
 @_needs_node
@@ -444,3 +487,77 @@ def test_a_folded_frame_lands_on_every_one_of_its_dates():
     assert json.loads(res.stdout.strip().splitlines()[-1]) == [
         ["2026-09-28", "Oatmeal"], ["2026-09-29", "Oatmeal"], ["2026-09-30", "Oatmeal"],
     ]
+
+
+# ---------- verification follow-ups (2026-09-30) ----------
+
+def _dinners_held(nights, name=lambda i: f"Pineapple Night {i}"):
+    return _without(_week(), {(d, "dinner") for d in nights}) + [
+        {"date": d, "slot": "dinner", "meal_name": name(i), "is_new_recipe": True, "dish_note": "pineapple glaze"}
+        for i, d in enumerate(nights)
+    ]
+
+
+def test_a_broken_gate_on_one_dish_opens_only_that_dishs_slots(emilys_house, monkeypatch):
+    nights = DAYS[1:3]
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _dinners_held(nights))
+    monkeypatch.setattr(allergen_gate, "quick_pick",
+                        lambda ctx: _quick(f"Lemon Chicken {ctx['date']}", mains=("Chicken thighs", "Lemon")))
+    real = allergen_gate._pick_clashes
+
+    def flaky(pick, avoidances):
+        if pick["meal_name"].endswith(nights[0]):
+            raise RuntimeError("database is locked")
+        return real(pick, avoidances)
+
+    monkeypatch.setattr(allergen_gate, "_pick_clashes", flaky)
+    plan_id = agent.generate_weekly_plan(WEEK_START)["weekly_plan_id"]
+    assert _slot(plan_id, nights[0], "dinner")["slot_state"] == "open"
+    assert _slot(plan_id, nights[1], "dinner")["meal"] == f"Lemon Chicken {nights[1]}"
+
+
+def test_two_dishes_that_come_back_as_the_same_replacement_are_told_apart(emilys_house, monkeypatch):
+    nights = DAYS[1:3]
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _dinners_held(nights))
+    lock = threading.Lock()
+    asked = []
+
+    def quick(context):
+        with lock:
+            asked.append(list(context["avoid"]))
+        if "Lemon Chicken" in context["avoid"]:
+            return _quick("Beef and Broccoli", mains=("Beef", "Broccoli", "Rice"))
+        return _quick("Lemon Chicken", mains=("Chicken thighs", "Lemon", "Rice"))
+
+    monkeypatch.setattr(allergen_gate, "quick_pick", quick)
+    plan_id = agent.generate_weekly_plan(WEEK_START)["weekly_plan_id"]
+    got = sorted(_slot(plan_id, d, "dinner")["meal"] for d in nights)
+    assert got == ["Beef and Broccoli", "Lemon Chicken"]
+    assert len(asked) == 3, "one extra quick pick for the duplicate, no more"
+
+
+def test_a_duplicate_that_comes_back_the_same_again_goes_open(emilys_house, monkeypatch):
+    nights = DAYS[1:3]
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _dinners_held(nights))
+    monkeypatch.setattr(allergen_gate, "quick_pick",
+                        lambda ctx: _quick("Lemon Chicken", mains=("Chicken thighs", "Lemon", "Rice")))
+    plan_id = agent.generate_weekly_plan(WEEK_START)["weekly_plan_id"]
+    rows = [_slot(plan_id, d, "dinner") for d in nights]
+    assert sorted(r["slot_state"] for r in rows) == ["open", "planned"]
+    assert [r["meal"] for r in rows if r["slot_state"] == "planned"] == ["Lemon Chicken"]
+
+
+def test_why_this_meal_is_answered_from_derived_from(emilys_house, monkeypatch):
+    days = _week()
+    for d in days:
+        if d["date"] == DAYS[6] and d["slot"] == "dinner":
+            d["derived_from"] = {"tags": ["rush"], "inputs": ["calendar:Soccer practice"]}
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: days)
+    agent.generate_weekly_plan(WEEK_START)
+    out = tools.explain_meal_choice("Chili")
+    wed = [p for p in out["planned_as"] if p["date"] == DAYS[6] and p["slot"] == "dinner"]
+    assert wed and wed[0]["derived_from"]["inputs"] == ["calendar:Soccer practice"]
+    source = Path(agent.__file__).read_text(encoding="utf-8")
+    assert "planned before this was tracked" not in source
+    assert "per-slot reasons of 4-9 words" not in source
+    assert "its `planned_as` lists the slots" in source
