@@ -475,6 +475,8 @@ class TestTheCardChecksAllergies:
         body = res.json()
         assert body["status"] == "refused"
         assert "peanut" in body["message"] and "Sam" in body["message"]
+        # A card has nobody to answer a question: the reason, plainly.
+        assert "?" not in body["message"] and body["message"].endswith("can’t have.")
         assert self._written() == before
 
     def test_a_safe_pick_still_works(self, signed_in):

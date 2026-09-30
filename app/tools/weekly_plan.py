@@ -8420,7 +8420,12 @@ def swap_component_in_plan(
     out one of the proteins) without touching the rest of the plan — the
     component_based equivalent of swap_meal_in_plan. old_meal must match
     the exact meal name currently in that category/plan.
+
+    The same strict allergen check as swap_meal_in_plan_for_chat, asked
+    BEFORE the old item is taken off: a refusal leaves the plan as it was.
     """
+    from . import allergen_gate as _allergen_gate
+    _allergen_gate.refuse_if_clashing(new_meal)
     conn = get_conn()
     week_start_date = conn.execute(
         "SELECT week_start_date FROM weekly_plans WHERE id = ? AND household_id = ?",

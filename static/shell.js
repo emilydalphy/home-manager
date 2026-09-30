@@ -12191,6 +12191,10 @@
       });
       if (!res.ok) throw new Error('dinner resolve failed');
       var fillData = await res.json();
+      if (fillData && fillData.status === 'refused') {
+        showToast(fillData.message || 'Left as it was.');
+        return;
+      }
       showToast(dinnerPlannedToast(meal, fillData));
       // Today's needs-you band and its timeline may cover this same date —
       // if Today has already been built this session, refresh it too so

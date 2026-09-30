@@ -666,3 +666,11 @@ def test_the_chat_prompt_states_the_allergens_as_hard_exclusions():
     assert "want me to pick something else?" in folded
     assert "pass override=true only if the person then says in their own words to do it anyway" in folded
     assert "Keep it anyway" not in source
+
+
+def test_chats_component_swap_declines_a_dish_someone_cant_have_before_touching_the_plan(tropical):
+    # The gate is asked before the old item is looked for, so a refusal
+    # (not the "couldn't find" ValueError) proves nothing was removed.
+    with pytest.raises(_wp.SlotRefused) as caught:
+        tools.swap_component_in_plan(tropical, "protein", "Chili", "Tropical Fruit Cup")
+    assert "pineapple" in str(caught.value)

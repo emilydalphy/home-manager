@@ -4691,7 +4691,13 @@ def resolve_needs_you_dinner(req: ResolveDinnerRequest):
         )
     except tools.SlotRefused as e:
         # A dish somebody at the table can't have: the plain sentence, 200.
-        return {"status": "refused", "message": str(e)}
+        # No chat to answer "want me to pick something else?" here: the
+        # card stays put, so the reason alone is the whole message.
+        from app.tools import allergen_gate as _ag
+        msg = str(e)
+        if msg.endswith(_ag.CHAT_ASK):
+            msg = msg[: -len(_ag.CHAT_ASK)] + "."
+        return {"status": "refused", "message": msg}
     except Exception as e:
         logger.exception("Needs-you dinner resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
