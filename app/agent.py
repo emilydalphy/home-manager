@@ -3454,7 +3454,10 @@ leftover pairings for those lunches. `kind` is one of: \
 prep day is ONE dish cooked once, sized for all of them — send it on the first of those dates \
 and on each later one with derived_from.links_to naming that first date's lunch \
 ("YYYY-MM-DD:lunch"); pick something that keeps and reheats well (a chili, a curry, a grain \
-bowl), no time cap, and say in the first one's reasoning that it's cooked on the prep day; \
+bowl), no time cap, and say in the first one's reasoning that it's cooked on the prep day — \
+and when prepped lunches carry a `batch` (0, 1, …), one prep session cooks that many different \
+dishes: prepped lunches with the same prep day AND the same batch are one dish (linked to the \
+first of THAT batch's dates), and each batch is a different dish; \
 `leftovers` — that lunch is the dinner of the evening before (`from_dinner`), reheated: send \
 that dinner's dish for the lunch with derived_from.links_to "<from_dinner>:dinner", and make \
 that dinner something that keeps; \

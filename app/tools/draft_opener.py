@@ -473,7 +473,8 @@ def batch_line(entries: list[dict]) -> str:
     return f"{_cap(_join(parts))}, {each}{how}."
 
 
-def count_note(day_count: int, memory: dict | None, said: str = "", gone: dict | None = None) -> str:
+def count_note(day_count: int, memory: dict | None, said: str = "", gone: dict | None = None,
+               slot_days: dict | None = None) -> str:
     """
     "Three dinners this week, not four — it's a four-day plan." Said only
     when a count on the household's "Each week I plan" screen was scaled
@@ -491,6 +492,13 @@ def count_note(day_count: int, memory: dict | None, said: str = "", gone: dict |
     the week was drafted (today_meals — those rows are planned_empty): the
     count is of meals actually planned, so they come off it (review,
     2026-09-27), and the line says why.
+
+    `slot_days` ({slot: (days this plan has that meal on, days the usual
+    week has it on)}, usual_week.slot_days) is for a household with a usual
+    week: the count is scaled by the days that meal is actually on, the
+    same number generation was given (usual_week.scale_to_period) — a
+    breakfast on five weekdays is "five" on a five-weekday plan, not
+    "four" for being short of seven.
     """
     gone = gone or {}
     if not memory or (day_count >= 7 and not (any(gone.values()) and memory.get("meal_counts_set"))):
@@ -501,8 +509,15 @@ def count_note(day_count: int, memory: dict | None, said: str = "", gone: dict |
         usual = memory.get(field)
         if usual is None or int(usual) <= 0:
             continue
-        days = max(1, day_count - int(gone.get(slot) or 0))
-        target = _meal_variety.prorate_meal_count(int(usual), days)
+        if slot_days and slot in slot_days:
+            from . import usual_week as _usual_week
+
+            this, usual_on = slot_days[slot]
+            days = max(1, this - int(gone.get(slot) or 0))
+            target = _usual_week.scale_to_period(int(usual), days, usual_on)
+        else:
+            days = max(1, day_count - int(gone.get(slot) or 0))
+            target = _meal_variety.prorate_meal_count(int(usual), days)
         if target != int(usual):
             noun = _NOUN[slot] if target != 1 else slot
             if f"{number_word(target)} {noun}" in said.lower():
@@ -540,11 +555,17 @@ def build_opener(rows, intake: dict | None, period_start: str, day_count: int, d
         recent = recent_dish_names(period_start, plan_id)
     second = _line_two(entries, report, recent, surprise=surprise)
     skipped = {d for d in ((intake or {}).get("skipped_days") or []) if d in period}
+    from . import usual_week as _usual_week
+
+    usual = _usual_week.slot_days(period, sorted(skipped))
+    usual_off = usual["off"] if usual else set()
     gone: dict[str, int] = {}
     for e in entries:
-        if e.get("slot_state") == "planned_empty" and _derived(e).get("constraint") == "already_past":
+        if e.get("slot_state") == "planned_empty" and _derived(e).get("constraint") == "already_past" \
+                and (e.get("date"), e.get("slot")) not in usual_off:
             gone[e["slot"]] = gone.get(e["slot"], 0) + 1
-    third = count_note(max(1, day_count - len(skipped)), memory, said=first, gone=gone)
+    third = count_note(max(1, day_count - len(skipped)), memory, said=first, gone=gone,
+                       slot_days=usual["days"] if usual else None)
     # The planner's own plain lines about an answer it couldn't keep whole
     # (weekly_plan.record_plan_requests' `said`), after the move line.
     said = [str(s).strip() for s in ((report or {}).get("said") or []) if str(s).strip()]

@@ -411,3 +411,65 @@ def test_onboarding_answers_take_the_usual_week(signed_in):
     assert body["usual_week"]["answered"] is True
     assert body["usual_week"]["snacks_per_day"] == 0
     assert body["meal_counts_set"] is True
+
+
+# ---------- one prep session, two lunch dishes ----------
+
+def test_normalize_deals_a_sessions_lunches_between_its_dishes():
+    from app.tools import weekday_lunches
+    dates = tools._week_dates(_monday())
+    answer = weekday_lunches.normalize(
+        {"days": [{"date": d, "kind": "prepped"} for d in dates[:5]], "prep_days": ["sunday"],
+         "dishes_per_prep_day": 2}, dates)
+    assert [d["batch"] for d in answer["days"]] == [0, 1, 0, 1, 0]
+    assert answer["dishes_per_prep_day"] == 2
+    # One dish a session (the screen's own answer) stores exactly what it always did.
+    plain = weekday_lunches.normalize(
+        {"days": [{"date": d, "kind": "prepped"} for d in dates[:5]], "prep_days": ["sunday"]}, dates)
+    assert "dishes_per_prep_day" not in plain and all("batch" not in d for d in plain["days"])
+
+
+def test_meal_prep_ahead_with_one_sunday_prep_cooks_two_lunch_dishes(stub_model, picker):
+    tools.save_usual_week(variety={"lunch": "meal_prep_ahead"}, prep={"days": ["sunday"], "length": "longer"})
+    week = _monday()
+    dates = tools._week_dates(week)
+    sunday_before = (datetime.date.fromisoformat(dates[0]) - datetime.timedelta(days=1)).isoformat()
+    seen = stub_model(_days(dates, breakfasts=["Oats"] * 7,
+                            lunches=["Curry", "Chili", "Curry", "Chili", "Curry", "Wrap", "Wrap"],
+                            dinners=["Tacos", "Stew", "Pasta", "Fish", "Pizza", "Roast", "Soup"]))
+    plan = agent.generate_weekly_plan(week)
+    answer = seen["ctx"]["intake"]["weekday_lunches"]
+    assert [(d["date"], d["batch"]) for d in answer["days"]] == list(zip(dates[:5], [0, 1, 0, 1, 0]))
+    from app.tools import weekday_lunches
+    batches = weekday_lunches.prepped_batches(plan["weekly_plan_id"])
+    assert len(batches) == 2
+    assert {b["prep_date"] for b in batches} == {sunday_before}, "both cooked in the one Sunday session"
+    assert {b["meal"].lower() for b in batches} == {"curry", "chili"}
+    fed = sorted(d for b in batches for d in b["lunch_dates"])
+    assert fed == sorted(dates[:5])
+
+
+# ---------- the draft's count line on a part-week ----------
+
+def test_the_count_line_scales_by_the_days_the_meal_is_on():
+    from app.tools import draft_opener
+    memory = {"breakfasts_per_week": 5, "lunches_per_week": 2, "dinners_per_week": 2, "meal_counts_set": True}
+    # Breakfast on the five weekdays; a Tue-Fri plan has four of them.
+    line = draft_opener.count_note(4, memory, slot_days={"breakfast": (4, 5), "lunch": (4, 7), "dinner": (4, 7)})
+    assert line.startswith("Four breakfasts this week, not five"), line
+    # Scaled by seven (the old rule), the same week said three.
+    assert draft_opener.count_note(4, memory).startswith("Three breakfasts")
+
+
+def test_a_part_week_draft_says_the_grids_number(stub_model, picker):
+    tools.save_usual_week(grid={"breakfast": {"saturday": "off", "sunday": "off"}},
+                          variety={"breakfast": "new_every_day", "lunch": "last_nights_dinner",
+                                   "dinner": "cook_big_eat_twice"})
+    week = _monday()
+    dates = tools._week_dates(week)[1:5]  # Tue-Fri
+    seen = stub_model(_days(dates, breakfasts=["Oats", "Eggs", "Toast", "Granola"], lunches=["Wrap", "Soup", "Wrap", "Soup"],
+                            dinners=["Chili", "Tacos", "Curry", "Stew"]))
+    plan = agent.generate_weekly_plan(week, day_count=4, period_start=dates[0])
+    assert seen["ctx"]["household_memory"]["breakfasts_per_week"] == 4
+    opener = tools.get_week_menu(plan["weekly_plan_id"])["draft_opener"]
+    assert any(line.startswith("Four breakfasts this week, not five") for line in opener), opener

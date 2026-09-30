@@ -450,7 +450,30 @@ def generation_plan(dates: list[str], skipped: list[str] | None = None) -> dict:
         n = state["variety"][meal]["dishes"]
         out["targets"][meal] = scale_to_period(n, len(planned_days), len(on))
     out["lunch_choice"] = state["variety"]["lunch"]["choice"]
+    out["lunch_dishes"] = state["variety"]["lunch"]["dishes"]
     return out
+
+
+def slot_days(dates: list[str], skipped: list[str] | None = None) -> dict | None:
+    """
+    For the draft's count line (draft_opener.count_note): {"off": {(date,
+    slot)}, "days": {slot: (days this period has the meal on, days the
+    usual week has it on)}}, so "three breakfasts this week, not five" is
+    scaled by the days breakfast is actually on, not by seven. None for a
+    household that hasn't saved a usual week (the line reads as before).
+    """
+    plan = generation_plan(dates, skipped)
+    if not plan["answered"]:
+        return None
+    off = {(s["date"], s["slot"]) for s in plan["off_slots"]}
+    kept = [d for d in dates if d not in set(skipped or [])]
+    return {
+        "off": off,
+        "days": {
+            m: (sum(1 for d in kept if (d, m) not in off) if plan["usual_on"][m] else 0, plan["usual_on"][m])
+            for m in MEALS
+        },
+    }
 
 
 def scale_to_period(dishes: int, days_this_period: int, days_usual: int) -> int:
@@ -558,9 +581,15 @@ def weekday_lunches_answer(plan: dict, dates: list[str], skipped: list[str] | No
         else:
             days.append({"date": d, "kind": "prepped"})
     prep_days = _prep_answer()["days"] if choice == "meal_prep_ahead" else []
-    return _weekday_lunches.normalize(
-        {"days": days, "prep_days": prep_days}, dates, skipped=list(skipped_set), strict=False,
-    )
+    answer = {"days": days, "prep_days": prep_days}
+    if prep_days:
+        # "Meal prep ahead" = 2 with ONE prep day is both dishes cooked in
+        # that one session, the week's lunches alternating between them
+        # (weekday_lunches.normalize deals each lunch a `batch`); with two
+        # prep days it is one dish each, as before.
+        dishes = plan.get("lunch_dishes") or VARIETY_CHOICES["lunch"]["meal_prep_ahead"]
+        answer["dishes_per_prep_day"] = max(1, math.ceil(int(dishes) / len(prep_days)))
+    return _weekday_lunches.normalize(answer, dates, skipped=list(skipped_set), strict=False)
 
 
 def settle_off_slots(plan_id: int, off_slots: list[dict], leave: set | None = None) -> None:
