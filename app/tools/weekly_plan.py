@@ -5252,8 +5252,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # A meal of the first day that had already gone by when the
             # week was drafted (today_meals, 2026-09-27) — not an out night.
             past = derived.get("constraint") == "already_past"
+            # A meal the household's usual week has off that day
+            # (usual_week.OFF_CONSTRAINT, 2026-09-30) — not planned, not out.
+            usual_off = derived.get("constraint") == "usual_week_off"
             empty = {
-                "title": "Not planned" if skipped or past else "Out — nothing to cook", "meta": None,
+                "title": "Not planned" if skipped or past or usual_off else "Out — nothing to cook", "meta": None,
                 "source": "empty",
                 "state": "planned_empty", "reason": row["reasoning"], "entry_id": row["id"],
                 # Left out on purpose, not away (2026-09-26): the Which days

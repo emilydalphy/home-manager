@@ -33,6 +33,7 @@ from .tools import cap_enforce as _cap_enforce
 from .tools import dinner_gaps as _dinner_gaps
 from .tools import today_meals as _today_meals
 from .tools import voice as _voice
+from .tools import usual_week as _usual_week
 
 logger = logging.getLogger("home_manager")
 
@@ -3211,10 +3212,10 @@ genuinely cannot choose a meal without guessing, send that slot with slot_state=
 real reason — never send nothing. A DINNER the household is home for is never open: when you \
 cannot choose, reheat an earlier cook or pick something quick — only an allergy that rules out \
 everything is a reason to hand a dinner back. The meals in `past_meals_today` have already gone \
-by (it is `time_now` on `today`'s date): send nothing for them. (Dinners on nights the household is out, and every meal and \
-snack on a day in `intake.skipped_days`, are the exceptions, and they are handled outside this \
-call: `skip_dinner_dates` and `intake.skipped_days` below list them, and you must not send an \
-entry for those.) Guidelines:
+by (it is `time_now` on `today`'s date): send nothing for them. (Dinners on nights the household is out, every meal in `usual_week_off`, and every meal and \
+snack on a day in `intake.skipped_days`, are the exceptions, \
+and they are handled outside this call: `skip_dinner_dates`, `intake.skipped_days` and \
+`usual_week_off` list them, and you must not send an entry for those.) Guidelines:
 - A week should read as composed — a shape across the days that plays off itself (a lighter \
 night after a heavier one, proteins that vary rather than repeat, a batch cooked once and eaten \
 again on purpose) — not seven independent daily decisions stapled together. Everything below is \
@@ -3229,10 +3230,13 @@ week; that pass is told the household's allergies, must-avoids, table size and k
 your dish_note. So decide here, describe there: no ingredient lists, no steps.
 - Dinner gets full treatment same as always: a real, specific, cookable dish. Breakfast, lunch, \
 and snack should be genuinely real meals too, but lower-effort by nature (a bowl of oatmeal, a \
-sandwich, yogurt with fruit, hummus and veggies) — they don't need advance prep, and it's \
-normal and expected for the same breakfast/lunch/snack idea to repeat 2-3 times across the \
-week rather than forcing a fully distinct one every day. Don't stretch these into \
-restaurant-tier new recipes; match the actual effort level of what they are.
+sandwich, yogurt with fruit, hummus and veggies) — they don't need advance prep. How many \
+DIFFERENT ones the week has is the household's number (see the counts rule below), not a habit \
+of yours: a count of 2 is two ideas repeated, a count equal to the days is a new one every day. \
+Only a count nobody chose — household_memory.meal_counts_set false, or a breakfast/lunch count \
+equal to every day planned for a meal not listed in household_memory.variety_answered — leaves \
+it to you, and then repeating the same idea 2-3 times across the week is fine. Don't stretch \
+these into restaurant-tier new recipes; match the actual effort level of what they are.
 - SEND A REPEAT ONCE. When one breakfast, lunch or snack idea covers several days, that is ONE \
 entry with every one of those days listed in `dates` (its `date` first) — not the same dish \
 written out again for each morning. Oatmeal on five mornings is one entry with five dates. \
@@ -3306,8 +3310,8 @@ unless the household asked for it this week — a favourite named in intake.free
 please", a dish in intake.cuisines' territory they clearly want back. Check recent_history's \
 `slot` field; a household that keeps seeing last week's food stops trusting the draft (Emily, \
 2026-09-20 on dinners; 2026-09-28 on snacks: "It keeps giving me the same snack suggestions as \
-previous weeks"). Breakfast and snack repeating WITHIN the current week is normal and expected \
-(see the guideline above) — that is a different question from repeating ACROSS weeks, which is \
+previous weeks"). Breakfast and snack repeating WITHIN the current week is whatever the counts \
+say (see the guideline above) — that is a different question from repeating ACROSS weeks, which is \
 this rule. Breakfast persisting from a previous week is still normal — recent_history's \
 breakfast entries are informational only, not something to avoid repeating — EXCEPT when \
 intake.moods includes "Something new": then breakfast joins the rule too, and a breakfast in \
@@ -3421,6 +3425,11 @@ character; `slot_needs.ready_made_slots` are the first meal back, which must NOT
 cook — lean on that slot's stored recommendation (a batch saved from earlier in the week, or \
 something to defrost) and name it in the reasoning. Each of these carries a `reason` written \
 for the household; keep your reasoning consistent with it rather than contradicting it.
+- `usual_week_off`, when present, lists the meals (a date and a slot each) this household never has \
+planned on that day of the week — their usual week, not a one-off: breakfast on weekdays, say, or \
+no lunch on Saturdays. Send NO entry for them (they are written as not planned regardless), and \
+don't lean another meal on them (no leftovers from, or batch for, a meal that isn't planned). \
+The counts already describe only the meals that ARE planned.
 - `intake.skipped_days` are days the household left out of this plan on purpose — not away, \
 just not planned. Send NO entry for any meal or snack on those dates (they are enforced empty \
 regardless, so anything you put there is discarded), and don't lean a neighbouring day on \
@@ -3580,7 +3589,7 @@ untagged night's derived_from is often one key, or none at all, and that is the 
 rather than a thin one.
 - household_memory's dinners_per_week / breakfasts_per_week / lunches_per_week (0-7) and \
 snack_dishes_per_week (1-7) are counts of DISTINCT meals, not counts of days to plan. Every day still \
-gets all four. "4 breakfasts" means four different breakfast ideas spread across the seven \
+gets all four (except a meal in `usual_week_off`, a skipped day, or a night they are out). "4 breakfasts" means four different breakfast ideas spread across the seven \
 mornings — it does NOT mean three mornings with nothing. Fewer recipes than meals means batch \
 cooking (Emily, 2026-09-23: "If I want 2 types of lunches, but need 4 lunches, you should \
 assume Im making double of each of the recipes"): each recipe is cooked once, bigger, and its \
@@ -5309,6 +5318,25 @@ def _generate_weekly_plan(
     # context, rather than left to the model to work out from
     # snacks_per_week — see preferences.resolve_snacks_per_day for the
     # order it reads its answer in.
+    # The household's usual week (2026-09-30): which meals are on which
+    # days, who eats them, and the different-dish number they chose. Only
+    # for a household that has saved one — for everyone else this finds
+    # nothing and the counts above stand exactly as they were. The number
+    # is scaled to the days THIS period has that meal (usual_week.
+    # scale_to_period — the same rule as above, with the grid's days in
+    # place of seven), and "just these people" goes into slot_attendance so
+    # the model, the servings and the shopping all size that meal for them.
+    first_plan = not _usual_week.household_has_a_plan()
+    usual_period = tools.period_dates(content_start_date, day_count)
+    usual_skipped = [d for d in ((intake or {}).get("skipped_days") or []) if d in usual_period]
+    usual_plan = _usual_week.generation_plan(usual_period, usual_skipped)
+    if usual_plan["answered"]:
+        for slot, field in _meal_variety.COUNT_FIELDS.items():
+            if household_memory.get(field):  # 0 stays "none, thanks"
+                effective_memory[field] = usual_plan["targets"][slot]
+        if usual_plan["variety_answered"]:
+            effective_memory["variety_answered"] = usual_plan["variety_answered"]
+        _usual_week.apply_usual_attendance(usual_plan, usual_period)
     effective_memory["snacks_per_day"] = tools.resolve_snacks_per_day(household_memory)
     # How much carb the plate carries — none / low / normal / lots — read
     # off everything the household said (eating_style, facts, notes) and
@@ -5424,6 +5452,31 @@ def _generate_weekly_plan(
         context["past_meals_today"] = past_meals
     if day_requests:
         context["freeform_on_a_day"] = day_requests
+    # The meals their usual week has off on these dates (see the
+    # `usual_week_off` bullet above); written planned_empty afterwards by
+    # _finish_week_slots whatever comes back. Absent when there are none.
+    if usual_plan["off_slots"]:
+        context["usual_week_off"] = usual_plan["off_slots"]
+    # Their lunch choice, as the weekday-lunches answer it stands for
+    # ("Last night's dinner" → leftovers of the dinner before; "Meal prep
+    # ahead" → prepped on the prep day) — only when this week's own intake
+    # didn't answer step 3, which always wins. The prompt's
+    # intake.weekday_lunches bullet and weekday_lunches.apply_to_plan then
+    # treat it exactly as an answered step 3. `finish_intake` carries it to
+    # _finish_week_slots; `intake` itself stays the stored row.
+    finish_intake = intake
+    usual_lunches = {}
+    if usual_plan["answered"] and not ((intake or {}).get("weekday_lunches") or {}).get("days"):
+        usual_lunches = _usual_week.weekday_lunches_answer(usual_plan, usual_period, usual_skipped)
+    if usual_lunches:
+        finish_intake = dict(intake or {}, weekday_lunches=usual_lunches)
+        if not isinstance(context.get("intake"), dict):
+            context["intake"] = {
+                "night_tags": {}, "skip_dinner_dates": [], "skipped_days": [], "guest_extras": {},
+                "guest_totals": {}, "packed_lunch_days": [], "moods": [], "cuisines": [], "freeform": "",
+                "household": {},
+            }
+        context["intake"]["weekday_lunches"] = usual_lunches
     # Loop Board "Taste UI: whose verdict?" (Emily, 2026-09-08): the same
     # per-person feedback, resolved into ONE shared verdict per table, so
     # the model is handed a decision rather than two people's opinions to
@@ -5774,11 +5827,18 @@ def _generate_weekly_plan(
                     "carb_portion": tools.carb_portion(effective_memory.get("carb_level") or "normal"),
                 })
             _finish_week_slots(
-                plan_id, content_start_date, intake, effective_memory, day_count, skip_days=skip_days,
+                plan_id, content_start_date, finish_intake, effective_memory, day_count, skip_days=skip_days,
                 context=context, repick_budget=repick_budget, report=plan_report, asks=asks_text,
                 planned_count=planned_count, brought_over=brought_over,
                 frozen_portions=frozen_portions,
             )
+            # The household's FIRST week never arrives with a meal left
+            # open ("Still deciding" on the reveal) unless it is a question
+            # only they can answer (an allergy, who's home, a holiday) —
+            # usual_week.fill_first_plan_gaps. Before this returns, so
+            # before the reveal's done event.
+            if first_plan:
+                _usual_week.fill_first_plan_gaps(plan_id, usual_period)
 
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
@@ -6086,6 +6146,17 @@ def _finish_week_slots(
     # such a day the way they skip a day left out.
     snackless_days = _today_meals.clear_snacks_of_gone_days(plan_id, gone_by_day)
 
+    # The meals the household's usual week has off on these days (2026-09-30,
+    # usual_week): planned empty, cleared first — the model was told
+    # (context `usual_week_off`), and told is not prevented. After the
+    # skipped days and the gone meals, which keep their own reasons. Nothing
+    # for a household that hasn't saved a usual week.
+    usual_plan = _usual_week.generation_plan(dates, skipped_days)
+    _usual_week.settle_off_slots(
+        plan_id, usual_plan["off_slots"],
+        leave={(d, s) for d, slots in gone_by_day.items() for s in slots},
+    )
+
     zero_counts = {
         "breakfast": household_memory.get("breakfasts_per_week"),
         "lunch": household_memory.get("lunches_per_week"),
@@ -6304,6 +6375,10 @@ def _finish_week_slots(
     # all three counts, so a slot still sitting at the default 7 (she set
     # dinners to 4 and never touched breakfasts) is read as unanswered
     # too — "seven distinct breakfasts" is not a floor anyone chose.
+    # EXCEPT when they did choose it: since the usual week (2026-09-30) a
+    # number picked on the variety question ("Something new every morning"
+    # = 7) is always a target, the old `< 7` rule applies only to a meal
+    # nobody has answered that way. See usual_week.fill_up_allowed.
     def _hold_counts(first: bool) -> None:
         # `first` is the count pass proper (it may re-pick UP to the number,
         # spending model calls); the second run is the guard after every
@@ -6324,7 +6399,8 @@ def _finish_week_slots(
             tools.enforce_distinct_meal_count(
                 plan_id, household_memory.get(field), slot=slot, asks=count_asks, budget=count_budget,
                 pinned_ids=() if first else _meal_variety.asked_for_ids(plan_id, slot),
-                fill_up=first and bool(household_memory.get("meal_counts_set")) and usual is not None and int(usual) < 7,
+                fill_up=first and _usual_week.fill_up_allowed(
+                    slot, household_memory, usual, usual_on=usual_plan["usual_on"][slot]),
                 usual=usual, day_count=planned_count, caps=caps,
                 refuse=_meal_variety.recent_refusals(intake, week_start_date, plan_id, slot) if first else (),
             )

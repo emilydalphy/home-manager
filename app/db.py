@@ -457,6 +457,13 @@ _MIGRATIONS = [
     # "Each week I plan" numbers are targets, not caps) — see schema.sql
     # and _backfill_meal_counts_set below.
     ("meal_preferences", "meal_counts_set", "INTEGER NOT NULL DEFAULT 0"),
+    # The household's usual week (2026-09-30): the meals × days × who's
+    # eating grid and the variety choice per meal, as JSON — see
+    # tools/usual_week.py, the only writer. '' on every existing row, which
+    # is the truth: nobody has answered it yet, and usual_week derives their
+    # grid from the counts they already have on every read, so an existing
+    # household plans exactly as before until it saves an answer.
+    ("meal_preferences", "usual_week_json", "TEXT NOT NULL DEFAULT ''"),
     # Loop Board 19a (Emily, 2026-09-05): stores are asked just-in-time on
     # the Grocery tab's first real trip, not during onboarding — see the
     # Plan stops "Where do you usually shop?" card in shell.js. Empty means
@@ -935,6 +942,15 @@ def _backfill_meal_counts_set(conn):
     household at 7/7/7 stays unflagged — it may have chosen that, but the
     generation pass this gates (meal_variety._fill_up) spends model calls,
     and "seven distinct breakfasts" is not a floor to enforce on a guess.
+
+    Since the usual week (2026-09-30) a seven IS a floor when it was
+    chosen — "Something new every morning" — and that is known exactly,
+    not guessed: save_usual_week sets meal_counts_set with the choice, and
+    usual_week.fill_up_allowed reads the choice per meal. So this backfill
+    keeps its guess-free rule on purpose: it only speaks for households
+    that answered before either flag existed, and for them a 7 is still
+    the default it always was (changing it here would change how every
+    existing household plans, which the card rules out).
     """
     conn.execute(
         """

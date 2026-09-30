@@ -670,6 +670,24 @@ class HouseholdOnboardingRequest(BaseModel):
     goals: str = ""
 
 
+class UsualWeekRequest(BaseModel):
+    """
+    The household's usual week (2026-09-30) — any part of it; what is left
+    out stays as it is. See tools/usual_week.py for the full contract.
+
+    grid: {"breakfast"|"lunch"|"dinner": {"monday".."sunday": "everyone" |
+      "off" | [member ids or names]}} — partial is fine.
+    variety: {meal: choice key} — keys in GET's `variety_choices`.
+    snacks_per_day: 0-3.
+    prep: {"days": ["sunday", ...], "length": "hour" | "longer" | null};
+      {"days": []} is "we don't prep ahead".
+    """
+    grid: dict | None = None
+    variety: dict | None = None
+    snacks_per_day: int | None = None
+    prep: dict | None = None
+
+
 class OnboardingAnswersRequest(BaseModel):
     """The onboarding-redesign minimum-viable question set (PRD §4.1) — the
     only 7 questions asked before the first plan is generated."""
@@ -688,6 +706,12 @@ class OnboardingAnswersRequest(BaseModel):
     # derives the per-week distinct-recipe count from it.
     snacks_per_week: int | None = None
     snacks_per_day: int | None = None
+    # The usual week (2026-09-30): the new onboarding's grid, prep answer
+    # and variety, saved AFTER the answers above (so the member names just
+    # sent can be named in the grid). When it carries a variety choice its
+    # number wins over the old count fields for that meal. Optional, so an
+    # older client that sends only the counts is unaffected.
+    usual_week: UsualWeekRequest | None = None
 
 
 class OnboardingRhythmRequest(BaseModel):
@@ -1283,10 +1307,51 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             snacks_per_week=req.snacks_per_week,
             snacks_per_day=req.snacks_per_day,
         )
+        if req.usual_week is not None:
+            usual = req.usual_week
+            saved = tools.save_usual_week(
+                grid=usual.grid, variety=usual.variety, snacks_per_day=usual.snacks_per_day,
+                prep=usual.prep, source="onboarding",
+            )
+            memory = dict(tools.get_household_memory(), usual_week=saved)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Onboarding answers save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
+
+
+@app.get("/api/usual-week")
+def get_usual_week():
+    """
+    The household's usual week (2026-09-30): the meals × days × who's
+    eating grid, snacks a day, the prep answer and the variety choice per
+    meal, plus the choices on offer (`variety_choices`) and the members a
+    grid cell can name. `answered: false` means nothing has been saved yet
+    and the grid shown is derived from the household's current settings.
+    """
+    try:
+        return tools.get_usual_week()
+    except Exception as e:
+        logger.exception("Usual week read failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/usual-week")
+def save_usual_week(req: UsualWeekRequest):
+    """Save any part of the usual week (see UsualWeekRequest); answers with
+    the whole usual week as GET /api/usual-week reads it. 400 on anything
+    invalid, before anything is written."""
+    try:
+        return tools.save_usual_week(
+            grid=req.grid, variety=req.variety, snacks_per_day=req.snacks_per_day, prep=req.prep,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Usual week save failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.post("/api/onboarding/rhythm")
