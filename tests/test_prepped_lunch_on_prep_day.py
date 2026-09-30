@@ -772,17 +772,13 @@ class TestTheScreen:
 # ==========================================================================
 
 class TestWhatIsLeft:
-    def test_nows_timeline_still_calls_the_prepped_lunch_a_cook(self, two_adults, stub_model):
-        """CHARACTERISATION, green on main and green here, and deliberately
-        NOT fixed: app/tools/moves.py builds the Monday lunch as a `cook`
-        move with "Start by noon" and "Cook this", so Now and Cook disagree
-        about the same meal.
-
-        Left alone because moves.py is also what the morning text is built
-        from (digest.build_morning_text reads today_moves and nothing else),
-        so changing the words changes an outbound SMS — and what a "prepped
-        Sunday" move should SAY on Now, and whether it is tickable there, is
-        a product decision Emily has not made. Invert this when she does."""
+    def test_nows_timeline_no_longer_calls_the_prepped_lunch_a_cook(self, two_adults, stub_model):
+        """INVERTED 2026-09-30 (was: test_nows_timeline_still_calls_the_prepped_lunch_a_cook,
+        a characterisation of the disagreement). Emily chose option (a) on the
+        Loop Board card: on Today the prepped Monday lunch reads "Chili —
+        prepped Sunday", with no start time and no "Cook this". It is a
+        reheat-kind move (already made; tick it when it is eaten), so it is not
+        a cook and Next up skips it."""
         mon = _next_weekday("monday")
         plan_id, dates = _plan(
             stub_model, mon, {0: "prepped", 1: "prepped"}, ["sunday"],
@@ -792,9 +788,88 @@ class TestWhatIsLeft:
         day = _moves.moves_for_day(
             dates[0], now=datetime.datetime.fromisoformat(dates[0] + "T09:00:00")
         )
-        lunch = next(m for m in day if m.get("kind") == "cook" and m["title"] == "Chili")
-        assert lunch["kind"] == "cook", "if this is no longer a cook, Now was taught the rule"
-        assert any(c.startswith("Start by") for c in lunch["chips"])
+        assert not [m for m in day if m["kind"] == "cook" and m["title"] == "Chili"]
+        lunch = next(m for m in day if m["title"] == "Chili")
+        assert lunch["kind"] == "reheat"
+        assert lunch["meta"] == "prepped Sunday"
+        assert lunch["chips"] == []
+        assert "Start by" not in json.dumps(lunch)
+        assert lunch["action"]["label"] != "Cook this"
+        assert "cookFocus" not in json.dumps(lunch["action"])
+        assert lunch["tickable"] is True
+
+    def test_todays_words_are_cooks_words(self, two_adults, stub_model):
+        """Cook's row says "Prepped " + prepped_ahead.weekday (shell.js
+        kitchenTodayLine); Today's meta is the same words, lower-cased like
+        every Today meta line."""
+        mon = _next_weekday("monday")
+        plan_id, dates = _plan(
+            stub_model, mon, {0: "prepped", 1: "prepped"}, ["sunday"],
+            lunches=["Chili", "Soup", "L2", "L3", "L4", "L5", "L6"],
+        )
+        from app.tools import moves as _moves
+        card = _lunch_cards(plan_id)[dates[0]]
+        day = _moves.moves_for_day(
+            dates[0], now=datetime.datetime.fromisoformat(dates[0] + "T09:00:00")
+        )
+        lunch = next(m for m in day if m["title"] == "Chili")
+        assert "Prepped " + card["prepped_ahead"]["weekday"] == lunch["meta"][0].upper() + lunch["meta"][1:]
+
+    def test_ticking_the_prepped_lunch_on_today_still_logs_it(self, two_adults, stub_model):
+        mon = _next_weekday("monday")
+        plan_id, dates = _plan(
+            stub_model, mon, {0: "prepped", 1: "prepped"}, ["sunday"],
+            lunches=["Chili", "Soup", "L2", "L3", "L4", "L5", "L6"],
+        )
+        from app.tools import moves as _moves
+        now = datetime.datetime.fromisoformat(dates[0] + "T09:00:00")
+        lunch = next(m for m in _moves.moves_for_day(dates[0], now=now) if m["title"] == "Chili")
+        assert _moves.set_move_done(lunch["id"], True)["dispatched_to"] == "check_off_meal"
+        assert _lunch_cards(plan_id)[dates[0]]["cooked_status"] == "done"
+        again = next(m for m in _moves.moves_for_day(dates[0], now=now) if m["title"] == "Chili")
+        assert again["done"] is True
+
+    def test_the_morning_text_says_prepped_sunday_not_start_by(self, two_adults, stub_model):
+        from app.tools import digest
+        mon = _next_weekday("monday")
+        plan_id, dates = _plan(
+            stub_model, mon, {0: "prepped", 1: "prepped"}, ["sunday"],
+            lunches=["Chili", "Soup", "L2", "L3", "L4", "L5", "L6"],
+        )
+        now = datetime.datetime.fromisoformat(dates[0] + "T07:00:00")
+        text = digest.build_morning_text(now) or ""
+        assert "Lunch: Chili \u2014 prepped Sunday." in text, text
+        assert "start by" not in text.lower() and "Start by" not in text, text
+
+    def test_the_prepped_lunch_keeps_its_recipe_link_on_today(self):
+        move = {"id": "reheat:5", "kind": "reheat", "prepped": True, "title": "Chili",
+                "entry_id": 5, "date": "2026-10-05", "slot": "lunch"}
+        plain = {"id": "reheat:9", "kind": "reheat", "title": "Bulgogi", "entry_id": 9}
+        got = _node(
+            _function("moveRecipeTarget") + "\n"
+            "console.log(JSON.stringify({a: moveRecipeTarget(" + json.dumps(move) + "),"
+            " b: moveRecipeTarget(" + json.dumps(plain) + ")}));\n"
+        )
+        assert got["a"]["entryId"] == 5 and got["a"]["title"] == "Chili"
+        assert got["b"] is None
+
+    def test_a_lunch_cooked_on_the_day_is_still_a_cook(self, two_adults, stub_model):
+        """Control: the dinners of the same week are genuine cooks and keep
+        their start time, chip and button."""
+        mon = _next_weekday("monday")
+        plan_id, dates = _plan(
+            stub_model, mon, {0: "prepped", 1: "prepped"}, ["sunday"],
+            lunches=["Chili", "Soup", "L2", "L3", "L4", "L5", "L6"],
+        )
+        from app.tools import moves as _moves
+        day = _moves.moves_for_day(
+            dates[0], now=datetime.datetime.fromisoformat(dates[0] + "T09:00:00")
+        )
+        cooks = [m for m in day if m["kind"] == "cook"]
+        assert cooks, day
+        for c in cooks:
+            assert c["action"]["label"] == "Cook this"
+            assert c["id"].startswith("cook:")
 
     def test_a_past_prep_days_session_is_not_a_get_ready_row_which_is_why_the_tick_stays(
             self, two_adults, stub_model):
