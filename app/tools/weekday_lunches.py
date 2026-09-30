@@ -983,6 +983,106 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
     return out
 
 
+def rehome_prep_batch(plan_id: int, old_cook: dict) -> dict:
+    """
+    A prep-day DINNER that cooked a prepped lunch batch (apply_to_plan's
+    `prep_cook`, stamped prep_day_cook) has just been replaced by a later
+    pass — the no-three-in-a-row pass (dinner_gaps.break_long_runs) is the
+    one that does it: Sun + Tue prep, Chili drafted for every lunch AND for
+    Tuesday's dinner, so Tue lunch / Tue dinner / Wed lunch is three Chilis
+    in a row and Tuesday's dinner is the only meal of the run it may change.
+    _replace_slot_entries unlinks the nights the old cook fed, which left
+    the batch's lunches as three separately cooked Chilis under a sheet that
+    says "Prepped Tuesday" (Loop Board, 2026-09-28).
+
+    So the batch moves to its first lunch — the shape apply_to_plan writes
+    when the prep day has no meal of its own to cook it on: that lunch is
+    the cook, stamped with the prep day (prepped_batches puts the work back
+    on the prep day's session), and every other lunch of the batch reheats
+    it or eats a portion frozen on it, as before. The dishes stay what they
+    were, so no run the break pass just fixed comes back.
+
+    `old_cook` is the replaced row as read BEFORE the replace: its id, meal
+    and derived_from (`derived`). A no-op for anything that was not a
+    prep-day cook. Never raises.
+    """
+    from . import leftovers as _leftovers
+    from . import meal_variety as _meal_variety
+    from . import weekly_plan as _weekly_plan
+
+    out = {"cook": None, "linked": [], "frozen": []}
+    try:
+        derived = old_cook.get("derived") or {}
+        prep_date = str(derived.get("prep_date") or "").strip()
+        if not prep_date or not derived.get("prep_day_cook"):
+            return out
+        old_ref = f"entry_id:{old_cook['id']}"
+        dish = old_cook.get("meal") or ""
+        same = _leftovers.dish_identity(dish)
+        fed = derived.get("make_double_for") or []
+        if isinstance(fed, str):
+            fed = [fed]
+        fed_dates = sorted({t.split(":")[0] for t in fed if t.endswith(":lunch")})
+        lunches, _ = _lunch_and_dinner_rows(plan_id)
+
+        def planned(d):
+            return [r for r in lunches.get(d, []) if r["slot_state"] == "planned"]
+
+        # The lunches it fed from the fridge: unlinked by the replace, still
+        # the batch's dish, still the household's weekday-lunch answer.
+        reheats = []
+        for d in fed_dates:
+            rows = planned(d)
+            if (len(rows) == 1 and not rows[0]["derived"].get("links_to")
+                    and rows[0]["derived"].get("constraint") == CONSTRAINT
+                    and _leftovers.dish_identity(rows[0]["meal"]) == same):
+                reheats.append(rows[0])
+        # …and from the freezer: the replace leaves those pointing at a row
+        # that no longer exists.
+        frozen_rows = [
+            r for d in sorted(lunches) for r in planned(d)
+            if isinstance(r["derived"].get(_leftovers.FROM_FREEZER_KEY), dict)
+            and r["derived"][_leftovers.FROM_FREEZER_KEY].get("cook") == old_ref
+        ]
+        if not reheats:
+            return out
+        first, rest = reheats[0], reheats[1:]
+        note = (f"Cook this {_title(_weekday(prep_date))} for "
+                f"{batch_lunch_phrase([r['date'] for r in reheats + frozen_rows])}.")
+        cook = dict(first["derived"])
+        cook.pop("cook_ahead", None)
+        cook.update({"constraint": CONSTRAINT, "prep_day": derived.get("prep_day") or _weekday(prep_date),
+                     "prep_date": prep_date, "prep_note": note})
+        _save_derived(first["id"], cook, reasoning=note)
+        out["cook"] = first["date"]
+        targets: dict[int, list[str]] = {first["id"]: []}
+        for r in rest:
+            link = dict(r["derived"])
+            link.update({"links_to": f"entry_id:{first['id']}", "cook_ahead": True, "constraint": CONSTRAINT})
+            _save_derived(r["id"], link)
+            targets[first["id"]].append(f"{r['date']}:lunch")
+            out["linked"].append(r["date"])
+        frozen = []
+        for r in frozen_rows:
+            _weekly_plan._replace_slot_entries(
+                plan_id, [r["id"]], r["date"], "lunch",
+                _leftovers.freezer_night_name(first["meal"], first["date"]), reasoning="",
+                derived_from=dict(r["derived"], **{
+                    _leftovers.FROM_FREEZER_KEY: {"cook": f"entry_id:{first['id']}", "dish": first["meal"]},
+                }),
+            )
+            frozen.append((first["id"], r["date"], "lunch"))
+            out["frozen"].append(r["date"])
+        if targets[first["id"]] or frozen:
+            _meal_variety._write_cook_sides(plan_id, {k: v for k, v in targets.items() if v}, frozen,
+                                            {"batched": []})
+        logger.info("Plan %s: prepped batch of %s moved to %s's lunch: %s", plan_id, dish, first["date"], out)
+    except Exception:
+        logger.exception("Moving the prepped batch off replaced entry %s on plan %s failed",
+                         old_cook.get("id"), plan_id)
+    return out
+
+
 def enforce_lunch_count(plan_id: int, intake: dict | None, target: int | None,
                         asks: tuple[str | None, ...] = (), caps: dict | None = None) -> dict:
     """

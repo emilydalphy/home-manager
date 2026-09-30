@@ -503,9 +503,19 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
             d, slot = pos
             ids = [r["id"] for r in rows if r["date"] == d and r["slot"] == slot]
             dish = keys[pos]
+            # A prep-day dinner that cooks a prepped lunch batch: whatever
+            # it becomes, the batch moves to its first lunch rather than
+            # being left as separately cooked lunches (Loop Board,
+            # 2026-09-28; weekday_lunches.rehome_prep_batch).
+            was = {"id": row["id"], "meal": row["meal"], "derived": _derived(row)}
+
+            def _rehome(_was=was):
+                _weekday_lunches.rehome_prep_batch(plan_id, _was)
+
             cook = _weekly_plan._nearest_cook(rows, keys, d, slot, exclude=set(ids))
             if cook is not None:
                 _reheat(plan_id, ids, d, slot, cook, {"constraint": NOT_THREE_IN_A_ROW, "replaced": row["meal"]})
+                _rehome()
                 out["changed"].append({"date": d, "slot": slot, "was": row["meal"], "now": cook["meal"], "as": "reheat"})
                 continue
             cap = _meal_variety._cap_at(caps, d, slot)
@@ -548,6 +558,7 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
                     )
                     _meal_variety._write_cook_sides(
                         plan_id, {written["entry_id"]: [f"{pick['date']}:{pick['slot']}"]}, [], {"batched": []})
+                _rehome()
                 out["changed"].append({"date": d, "slot": slot, "was": row["meal"], "now": pick["meal"], "as": "repeat"})
                 continue
             week = {r["meal"].strip().lower() for r in rows if r["slot"] == slot and (r["meal"] or "").strip()}
@@ -570,6 +581,7 @@ def break_long_runs(plan_id: int, caps: dict | None = None, budget=None, picker=
                     derived_key="run_repick", extra={"constraint": NOT_THREE_IN_A_ROW},
                 )
             if picked is not None:
+                _rehome()
                 out["changed"].append({"date": d, "slot": slot, "was": row["meal"], "now": picked.get("meal"), "as": "repick"})
                 continue
             gave_up.update(run)
