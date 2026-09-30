@@ -1744,7 +1744,7 @@ async function saveRhythmAnswers() {
     // absent entirely (see OnboardingRhythmRequest.prep_days).
     prep_days: currentPrepDays(),
   };
-  const res = await fetch('/api/onboarding/rhythm', {
+  const res = await Api.fetch('/api/onboarding/rhythm', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error('Could not save your rhythm');
@@ -2061,7 +2061,7 @@ async function savePlanTheWeekAnswers() {
   if (kitchenKit.length) writes.push(['kitchen_kit', kitchenKit]);
   for (const [field, value] of writes) {
     try {
-      await fetch('/api/preferences/meal-planning', {
+      await Api.fetch('/api/preferences/meal-planning', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ field, value })
@@ -2087,7 +2087,7 @@ async function saveOnboardingAnswers() {
     // reads snacks_per_day.
     ...plannedMealCounts(),
   };
-  const res = await fetch('/api/onboarding/answers', {
+  const res = await Api.fetch('/api/onboarding/answers', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error('Could not save');
@@ -2591,7 +2591,7 @@ async function openRevealSwap(btn) {
   }
   els.sheet.innerHTML = revealSwapSheetHtml('Swap ' + name, 'Three other picks:', `<p class="reveal-sheet-note">Finding three you might like…</p>`);
   try {
-    const res = await fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/swap-options', {
+    const res = await Api.fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/swap-options', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entry_id: entryId, avoid: [] }),
     });
@@ -2616,7 +2616,7 @@ async function chooseRevealSwap(index) {
   const els = revealSwapSheetEls();
   els.sheet.querySelectorAll('.reveal-pick').forEach(b => { b.disabled = true; });
   try {
-    const res = await fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/swap-choose', {
+    const res = await Api.fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/swap-choose', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entry_id: cur.entryId, option: index }),
     });
@@ -2730,7 +2730,7 @@ function showInviteLink(btn, made) {
 }
 
 async function mintInvite(body) {
-  const res = await fetch('/api/household/invites', {
+  const res = await Api.fetch('/api/household/invites', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
   let data = null;
@@ -2792,7 +2792,7 @@ async function renderInviteOffer() {
   document.getElementById('invite-yes').onclick = async () => {
     let adults = [];
     try {
-      const res = await fetch('/api/household/invites');
+      const res = await Api.fetch('/api/household/invites');
       if (res.ok) adults = ((await res.json()).adults || []).filter(a => !a.is_you);
     } catch (err) { /* fall through to asking for a name */ }
     section.querySelector('.invite-choice').remove();
@@ -2845,7 +2845,7 @@ async function renderInviteOffer() {
 // only ever claims what the stream says is happening.
 async function streamFirstPlan(waiter) {
   revealStreamDays.clear();
-  const res = await fetch('/api/onboarding/generate-first-plan/stream', {
+  const res = await Api.fetch('/api/onboarding/generate-first-plan/stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     // The step-A answer, not a guess: the endpoint files the plan for the
@@ -2910,7 +2910,7 @@ async function streamFirstPlan(waiter) {
 async function fetchRevealMenu(weeklyPlanId) {
   if (!weeklyPlanId) return null;
   try {
-    const res = await fetch('/api/week-menu?weekly_plan_id=' + encodeURIComponent(weeklyPlanId));
+    const res = await Api.fetch('/api/week-menu?weekly_plan_id=' + encodeURIComponent(weeklyPlanId));
     if (!res.ok) return null;
     const menu = await res.json();
     return revealDaysFromMenu(menu.days || []);
@@ -3297,7 +3297,7 @@ async function saveHouseholdMembers() {
     pets: [],
     goals: '',
   };
-  const res = await fetch('/api/onboarding/household', {
+  const res = await Api.fetch('/api/onboarding/household', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error('Could not save household members');
@@ -3624,7 +3624,7 @@ async function approveFirstWeek() {
   btn.disabled = true;
   btn.textContent = 'Approving…';
   try {
-    const res = await fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/approve', {
+    const res = await Api.fetch('/api/week/' + encodeURIComponent(firstPlanWeekStart) + '/approve', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ approved_by: '', confirm_hard_conflicts: revealApproveConfirming }),
     });
