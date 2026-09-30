@@ -901,7 +901,7 @@ def test_fill_in_repicks_a_family_labelled_draft(pancake_week, monkeypatch):
     ("dairy free", "Dairy-Free Bake", "lactose"),
     ("dairy free", "Dairy-Free Salad", "boursin"),
     ("dairy free", "Non-Dairy Mac", "american slices"),
-    ("dairy free", "Dairy-Free Pudding", "2 cups 2%"),
+    ("dairy free", "Dairy-Free Pudding", "2 cups 2% milk"),
     ("egg allergy", "Egg-Free Tart", "lemon curd"),
     ("egg allergy", "Egg-Free Dessert", "zabaglione"),
     ("egg allergy", "Egg-Free Dessert", "sabayon"),
@@ -961,7 +961,7 @@ def test_round_three_false_holds_pass(restriction, name, ingredients):
     ("shellfish allergy", "Okra Gumbo", ["okra", "shrimp"]),
     ("dairy free", "Chocolate Mousse", ["aquafaba"]),
     ("egg allergy", "Tart", ["dairy-free mousse"]),
-    ("dairy free", "Pudding", ["2 cups 2%"]),
+    ("dairy free", "Pudding", ["2 cups 2% milk"]),
 ])
 def test_round_three_still_held(restriction, name, ingredients):
     _restrict(restriction)
@@ -1019,3 +1019,39 @@ def test_the_quick_pick_prompt_forbids_allergen_free_labels():
     assert '"Oat Milk Pancakes", not "Dairy-Free Pancakes"' in allergen_gate.QUICK_PICK_ASK
     desc = allergen_gate.QUICK_PICK_TOOL["input_schema"]["properties"]["meal_name"]["description"]
     assert "Dairy-Free" in desc and "Oat Milk Pancakes" in desc
+
+
+# ---------- round 4: narrow exceptions, each with its paired hold ----------
+
+@pytest.mark.parametrize("restriction, name, ingredients, held", [
+    ("dairy free", "Braised Beans", ["romano beans"], False),
+    ("dairy free", "Roast Peppers", ["romano peppers"], False),
+    ("dairy free", "Pasta", ["romano cheese"], True),
+    ("dairy free", "Pasta", ["pecorino romano"], True),
+    ("dairy free", "Cookies", ["evaporated cane juice"], False),
+    ("dairy free", "Cookies", ["evaporated cane sugar"], False),
+    ("dairy free", "Fudge", ["evaporated milk"], True),
+    ("dairy free", "Fruit Salad", ["custard apple"], False),
+    ("egg allergy", "Fruit Salad", ["custard apple"], False),
+    ("dairy free", "Tart", ["custard"], True),
+    ("egg allergy", "Tart", ["custard"], True),
+    ("dairy free", "Oaxaca-Style Chicken", ["chicken", "chiles"], False),
+    ("dairy free", "Oaxaca Style Chicken", ["chicken", "chiles"], False),
+    ("dairy free", "Chicken", ["oaxaca"], True),
+    ("dairy free", "Chicken", ["oaxaca-style cheese"], True),   # a list line is never a style
+    ("nut allergy", "Mole-Style Chicken", ["chicken", "chiles"], False),
+    ("nut allergy", "Chicken Mole", ["chicken"], True),
+    ("nut allergy", "Chicken", ["mole sauce"], True),
+    ("dairy free", "Flan-Style Pudding", ["coconut milk", "agar"], False),
+    ("dairy free", "Flan", ["coconut milk", "agar"], True),
+    ("dairy free", "Korma-Style Curry", ["chicken", "coconut milk"], False),
+    ("dairy free", "Curry", ["korma paste"], True),
+    ("dairy free", "Stock", ["skim the fat"], False),
+    ("dairy free", "Latte", ["skim milk"], True),
+    ("dairy free", "Pickles", ["2% brine"], False),
+    ("dairy free", "Latte", ["2% milk"], True),
+    ("dairy free", "Latte", ["2 percent milk"], True),
+])
+def test_round_four_narrow_exceptions(restriction, name, ingredients, held):
+    _restrict(restriction)
+    assert bool(_final(name, ingredients)) is held, (restriction, name, ingredients)

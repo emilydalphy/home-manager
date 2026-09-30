@@ -154,9 +154,10 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
               "taleggio", "pepper jack", "velveeta", "fromage", "curds", "beurre",
               "half and half", "half-and-half", "ranch", "dulce de leche", "panna cotta",
               "korma", "lassi", "flan", "creme brulee", "mousse",
-              # Round 3. "2%" is folded to "2 percent" (see _fold).
+              # Round 3. ("2% milk" and "skim milk" are milk already; "2%" and
+              # "skim" alone are not listed — "2% brine", "skim the fat".)
               "grana", "oaxaca", "evaporated", "clotted", "cool whip", "whipped topping",
-              "lactose", "boursin", "american slices", "2 percent", "1 percent", "skim"},
+              "lactose", "boursin", "american slices"},
     "gluten": set(_WHEAT_WORDS),
     "wheat": set(_WHEAT_WORDS),
     # "whites" is matched as written (see _VERBATIM_ALIASES), never as
@@ -284,6 +285,10 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     # chili-sauce bean; a vegetable gumbo has no shellfish.
     (frozenset({"curds", "curd"}), re.compile(r"\b(?:tofu|bean|soy|soya)\s+curds?\b")),
     (frozenset({"ranch", "ranches"}), re.compile(r"\branch[\s-]style\b")),
+    # Round 4: food names that share a word with an allergen alias.
+    (frozenset({"romano", "romanos"}), re.compile(r"\bromano\s+(?:beans?|peppers?)\b")),
+    (frozenset({"evaporated"}), re.compile(r"\bevaporated\s+cane\s+(?:juices?|sugars?)\b")),
+    (frozenset({"custard", "custards"}), re.compile(r"\bcustard\s+apples?\b")),
     (frozenset({"gumbo", "gumbos"}), re.compile(
         r"\b(?:vegan|vegetable|veggie|plant[\s-]based)\s+(?:okra\s+)?gumbos?\b"
         r"|\bgumbos?\s+vegan$"
@@ -669,6 +674,13 @@ def _discounted(variant: str, match: re.Match, text: str, mode: str = "line", la
     return False
 
 
+# "Oaxaca-style Chicken", "Korma-Style Curry": in a NAME (or a note) the
+# word is only a style descriptor. Never on an ingredient line, where
+# "korma paste" or "mole sauce" is the thing itself.
+_STYLE_WORDS = frozenset({"oaxaca", "mole", "moles", "flan", "flans", "korma", "kormas"})
+_STYLE_AFTER_RE = re.compile(r"[\s-]style(?![-a-z0-9])")
+
+
 def _find_variant(
     variant: str, text: str, start: int, discountable: bool, mode: str = "line", label: str = "",
 ) -> re.Match | None:
@@ -678,6 +690,9 @@ def _find_variant(
         if m.start() < start:
             continue
         if discountable and _discounted(variant, m, text, mode, label):
+            continue
+        if (discountable and mode != "line" and variant in _STYLE_WORDS
+                and _STYLE_AFTER_RE.match(text, m.end())):
             continue
         if discountable and mode == "label" and _negated(variant, m, text):
             continue
