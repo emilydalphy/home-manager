@@ -1363,6 +1363,11 @@ class FirstPlanRequest(BaseModel):
     week and nothing carried the answer across.
     """
     start: str = "this_week"
+    # The page's own name for this draft (2026-09-30), the same label the
+    # plan-week screen sends: a reveal that loses its stream asks
+    # /api/week/{week_start}/generate/status?run= how THIS draft ended
+    # before it tries once more on its own.
+    run_token: str | None = Field(default=None, max_length=64)
 
 
 def _first_plan_window(start_next_week: bool) -> tuple[str, int, str]:
@@ -1512,7 +1517,7 @@ def onboarding_generate_first_plan_stream(req: FirstPlanRequest | None = None):
     return _SSEResponse(
         _stream_week_generation(
             week_start=week_start, constraints_notes="", intake_id=None,
-            day_count=day_count, period_start=period_start,
+            day_count=day_count, period_start=period_start, run_token=req.run_token,
         ),
         what=f"First-plan stream for the week of {week_start}", carries_on="generation continues",
     )
@@ -3241,7 +3246,10 @@ def _stream_week_generation(
     threading.Thread(target=lambda: ctx.run(run), daemon=True).start()
 
     yield from _relay_stream_events(
-        events, _DONE, first_frame=_sse_event("status", {"message": "Drafting your week…"}),
+        # `week_start` so a page that did not choose the week (onboarding's
+        # reveal) can still ask the status route how this draft ended if
+        # its connection drops.
+        events, _DONE, first_frame=_sse_event("status", {"message": "Drafting your week…", "week_start": week_start}),
     )
 
 

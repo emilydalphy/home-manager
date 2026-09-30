@@ -571,12 +571,15 @@ def test_a_new_dish_whose_note_names_the_allergen_is_held_back_at_the_draft(hous
         days.append(d)
     menu_model(days)
     # The re-pick's own model call, canned: a safe dish, with ingredients.
-    from app.tools import swap_in_place
-    monkeypatch.setattr(swap_in_place, "_pick_replacement", lambda context: {
+    from app.tools import allergen_gate, swap_in_place
+    safe = lambda context: {
         "meal_name": "Chicken Fried Rice", "reason": "no peanuts",
         "ingredients": [{"item": "Rice", "qty": "2 cups", "category": "pantry"}],
         "food_groups": ["protein", "carb"],
-    })
+    }
+    monkeypatch.setattr(swap_in_place, "_pick_replacement", safe)
+    # The held-back dinner's own re-pick (the quick pick since 2026-09-30).
+    monkeypatch.setattr(allergen_gate, "quick_pick", safe)
 
     plan = agent.generate_weekly_plan(week)
 

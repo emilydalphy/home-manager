@@ -106,7 +106,9 @@ def test_20_travels_well_still_reaches_the_person_where_it_is_used():
     "travels well" as its asked fact until 2026-09-27, when Emily cut every
     reason line from the rows — decision C, "cut it everything".)"""
     assert "entry.asked" not in SHELL_JS
-    assert '"travels well, good cold or reheated"' in _read("app", "agent.py")
+    # Since 2026-09-30 the model no longer writes a per-slot reasoning line
+    # (the example phrase lived in that bullet); the rule itself remains.
+    assert "constrained to food that travels well and is fine" in _read("app", "agent.py")
 
 
 def test_21_one_wording_for_the_way_into_chat():
