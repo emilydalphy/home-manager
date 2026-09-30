@@ -7816,6 +7816,9 @@ class InviteRequest(BaseModel):
     # name of one who isn't yet (added as an adult, nothing else asked).
     member_id: int | None = Field(None, ge=1, le=2**63 - 1)  # SQLite binds 64-bit ints only
     name: str | None = Field(None, max_length=200)
+    # False for setup's "Someone not eating here" (2026-09-30): a new adult
+    # who signs in but is never planned for (members.eats_here = 0).
+    eats_here: bool = True
 
 
 @app.post("/api/household/invites")
@@ -7837,7 +7840,7 @@ def create_household_invite(req: InviteRequest):
         if req.member_id is not None:
             member_id = req.member_id
         elif (req.name or "").strip():
-            member_id = invites.add_adult(household, req.name)
+            member_id = invites.add_adult(household, req.name, eats_here=req.eats_here)
         else:
             raise invites.InviteError("Who are you inviting?")
         token = invites.mint_invite(household, member_id, invited_by=inviter)

@@ -25,7 +25,7 @@ from __future__ import annotations
 import json
 
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import EATS_HERE_SQL, household_id
 from . import household as _household
 
 
@@ -609,7 +609,7 @@ def rhythm_completeness_signals() -> dict:
     """
     conn = get_conn()
     rows = conn.execute(
-        "SELECT name, age_group FROM members WHERE household_id = ?", (household_id(),)
+        f"SELECT name, age_group FROM members WHERE household_id = ? AND {EATS_HERE_SQL}", (household_id(),)
     ).fetchall()
     conn.close()
     adults = [r["name"] for r in rows if (r["age_group"] or "").strip().lower() == "adult"]

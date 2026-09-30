@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import _ADULT_COLORS, get_conn
-from ._shared import current_member, household_id, household_initials
+from ._shared import EATS_HERE_SQL, current_member, household_id, household_initials
 
 
 # Junk "no answer" values that sometimes get written into a restrictions
@@ -145,10 +145,13 @@ def add_member(name: str) -> dict:
 
 
 def list_members() -> list[dict]:
-    """List all household members, including any saved dietary restrictions."""
+    """List the household members meals are planned for, with any saved
+    dietary restrictions. A helper who doesn't eat here (members.eats_here
+    = 0) is not one of them."""
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, name, dietary_restrictions_json FROM members WHERE household_id = ?", (household_id(),)
+        f"SELECT id, name, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
+        (household_id(),),
     ).fetchall()
     # The letter(s) each person is drawn as — one rule for every surface
     # (_shared.display_initials), so the day sheet and the "Who's this?"

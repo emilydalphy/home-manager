@@ -568,6 +568,9 @@ _MIGRATIONS = [
     # NULL = not yet, which is what puts "Invite Vineeth" in Preferences.
     # See app/invites.py.
     ("members", "joined_at", "TEXT"),
+    # 0 = a helper who signs in but doesn't eat here (onboarding's "Someone
+    # not eating here", 2026-09-30). Every existing member eats here.
+    ("members", "eats_here", "INTEGER NOT NULL DEFAULT 1"),
     # Where the household is, for its holidays (app/tools/holidays.py).
     # Both are ASSUMPTIONS for every existing household, the same way the
     # timezone above is: the beta households are in Ontario. Canada is the

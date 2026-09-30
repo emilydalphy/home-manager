@@ -369,9 +369,10 @@ MEMBERS = [{ name: 'Emily', age_group: 'adult' }, { name: 'Ava', age_group: 'chi
 console.log(JSON.stringify({ titles: titles, invites: invites, justMe: justMe, pruned: helpersToInvite() }));
 """)
     assert out["titles"] == ["Yes, Greg does", "Someone not eating here", "Just me"]
-    assert out["invites"] == [{"name": "Greg", "contact": "greg@example.com"}, {"name": "Maria", "contact": ""}]
+    assert out["invites"] == [{"name": "Greg", "contact": "greg@example.com", "eatsHere": True},
+                              {"name": "Maria", "contact": "", "eatsHere": False}]
     assert out["justMe"] == ["me"]
-    assert out["pruned"] == [{"name": "Maria", "contact": ""}], "a helper who left the list is not invited"
+    assert out["pruned"] == [{"name": "Maria", "contact": "", "eatsHere": False}], "a helper who left the list is not invited"
 
 
 @_needs_node

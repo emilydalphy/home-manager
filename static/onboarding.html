@@ -1888,14 +1888,16 @@ function pruneHelperAnswers() {
     if (k !== HELPER_SOMEONE && adults.indexOf(k) === -1) delete helperContacts[k];
   });
 }
-// Who gets a link once the week is ready: [{name, contact}].
+// Who gets a link once the week is ready: [{name, contact, eatsHere}].
+// "Someone not eating here" is eatsHere: false — added as a helper who
+// signs in but is never planned for (members.eats_here = 0).
 function helpersToInvite() {
   pruneHelperAnswers();
   const out = [];
   helperPicks.forEach(k => {
-    if (k.indexOf('adult:') === 0) out.push({ name: k.slice(6), contact: (helperContacts[k] || '').trim() });
+    if (k.indexOf('adult:') === 0) out.push({ name: k.slice(6), contact: (helperContacts[k] || '').trim(), eatsHere: true });
     else if (k === HELPER_SOMEONE && helperSomeoneName.trim()) {
-      out.push({ name: helperSomeoneName.trim(), contact: (helperContacts[HELPER_SOMEONE] || '').trim() });
+      out.push({ name: helperSomeoneName.trim(), contact: (helperContacts[HELPER_SOMEONE] || '').trim(), eatsHere: false });
     }
   });
   return out;
@@ -3416,7 +3418,7 @@ function inviteContactHref(contact, message, url) {
 }
 
 async function sendHelperInvite(btn, helper) {
-  const body = { name: helper.name };
+  const body = { name: helper.name, eats_here: helper.eatsHere !== false };
   if (!helper.contact || !inviteContactHref(helper.contact, INVITE_MESSAGE, 'x')) {
     return inviteFromButton(btn, body);
   }
