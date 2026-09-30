@@ -20678,3 +20678,25 @@ behaviour and now asserts the refusal; the Approve count still counts an open
 snack the MODEL hands back. Existing legacy snack attendance rows in real DBs
 are left in place (readable, clearable with `clear_slot_attendance`, never
 re-derived).
+
+**2026-09-30 — `clock (monday)` red on main: a fixed-date test aged into the
+pin, not the leftovers work (branch `fix-monday-night-before`).** Main went
+red from b212168 on
+`test_the_night_before_is_not_offered_when_nobody_is_home_for_it`
+(`assert None == '2026-10-04'`). b212168 was only the first push to main
+after the Monday pin's date moved: a weekday pin resolves to the next such
+day on or after the real date, so from 2026-09-29 `monday` = 2026-10-05,
+and the test's hand-written night before (2026-10-04) became yesterday.
+`draft_flags.prep_target` (app/tools/draft_flags.py:195) refuses a night
+that `_has_gone` (weekly_plan.night_has_gone, strictly before the
+household's today). None is the right answer, so the product is fine. Proof:
+7b5f7df (before b212168) fails the same way today under `monday`, and
+passes pinned to 2026-09-28; b212168 touches neither draft_flags nor
+night_has_gone. Fix: `_day(offset)` in tests/test_draft_snag_flags.py,
+anchored on `_monday(2)`, replaces the fixed 2026-10-04..10 dates in all
+six pure prep_target / move_target tests. The five others were the same
+time bomb one to two weeks out: move_target also skips gone nights, and
+the first-night test would have kept passing for the wrong reason (night
+gone, not "no row"). Assertions and gaps are unchanged. Rule for pure tests of
+anything that calls night_has_gone: date the fixture off household_today,
+never a literal.
