@@ -69,7 +69,7 @@ _LINES = {
     "propose_plan_changes": lambda i: "Lining up the changes…",
     "generate_weekly_plan": lambda i: "Building the week…",
     "approve_weekly_plan": lambda i: "Approving the plan…",
-    "discard_draft_plan": lambda i: "Clearing the draft…",
+    "discard_draft_plan": lambda i: "Removing the draft…",
     "get_weekly_plan": lambda i: "Checking the plan…",
     "get_meal_plan": lambda i: "Checking the plan…",
     "generate_prep_schedule": lambda i: "Working out the prep…",

@@ -6512,7 +6512,7 @@ def chat_stream(req: ChatRequest, request: Request):
 
 
 @app.post("/api/chat/warm")
-def chat_warm():
+def chat_warm(request: Request):
     """
     Called when the chat sheet opens: warms the prompt cache so the first
     message's round 1 reads it instead of writing it (see
@@ -6520,6 +6520,7 @@ def chat_warm():
     background thread; nothing the household sees depends on it. Skipped
     (warming: false) when the cache was touched in the last few minutes.
     """
+    _enforce_rate_limit(request, "chat_warm")
     if not agent.claim_chat_warmup():
         return {"warming": False}
     ctx = contextvars.copy_context()

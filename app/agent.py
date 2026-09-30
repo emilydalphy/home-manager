@@ -9059,6 +9059,7 @@ def _emit_turn_progress(tool_name: str, tool_input, state: dict) -> None:
 # household's tool set), and skipped when a warm-up or a real round ran
 # inside the last _CHAT_WARM_FRESH_SECONDS, well inside the five minutes.
 _CHAT_WARM_FRESH_SECONDS = 180
+_CHAT_WARM_BACKOFF_SECONDS = 600
 _CHAT_CACHE_WARM_AT: dict[int, float] = {}
 _CHAT_CACHE_WARM_LOCK = threading.Lock()
 
@@ -9108,8 +9109,13 @@ def warm_chat_cache() -> bool:
         return True
     except Exception:
         logger.warning("Warming the chat's cache failed; the first message will write it instead", exc_info=True)
+        # Keep the claim and push it out: while the API refuses (or consent
+        # is missing) every open would otherwise retry at once. The stamp
+        # is set so the claim stays blocked for _CHAT_WARM_BACKOFF_SECONDS.
         with _CHAT_CACHE_WARM_LOCK:
-            _CHAT_CACHE_WARM_AT.pop(tools.household_id(), None)
+            _CHAT_CACHE_WARM_AT[tools.household_id()] = (
+                time.monotonic() + _CHAT_WARM_BACKOFF_SECONDS - _CHAT_WARM_FRESH_SECONDS
+            )
         return False
 
 

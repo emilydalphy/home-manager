@@ -226,14 +226,20 @@ def test_the_warmup_is_a_max_tokens_zero_call_with_the_chats_cached_prefix(monke
     assert kw["output_config"] == agent._effort_config("chat")
 
 
-def test_a_refused_warmup_returns_false_and_releases_the_claim(monkeypatch, fresh_warm_clock):
+def test_a_refused_warmup_returns_false_and_keeps_the_claim_for_a_backoff(monkeypatch, fresh_warm_clock):
     def refuse(**kw):
         raise RuntimeError("400 max_tokens")
 
     monkeypatch.setattr(agent, "_client", lambda: types.SimpleNamespace(messages=types.SimpleNamespace(create=refuse)))
     assert agent.claim_chat_warmup() is True
     assert agent.warm_chat_cache() is False
-    assert agent.claim_chat_warmup() is True  # not stuck behind a warm-up that never happened
+    # Still blocked well past the normal window: a refusing API is not retried on every open...
+    key = next(iter(agent._CHAT_CACHE_WARM_AT))
+    agent._CHAT_CACHE_WARM_AT[key] -= agent._CHAT_WARM_FRESH_SECONDS + 60
+    assert agent.claim_chat_warmup() is False
+    # ...but not for ever.
+    agent._CHAT_CACHE_WARM_AT[key] -= agent._CHAT_WARM_BACKOFF_SECONDS
+    assert agent.claim_chat_warmup() is True
 
 
 def test_throttle_skips_a_second_warmup_within_the_window(monkeypatch, fresh_warm_clock):
@@ -278,3 +284,16 @@ def test_opening_the_sheet_asks_for_the_warmup_once_per_open():
     body = SHELL_JS[a:SHELL_JS.index("  // Clears the sheet back to nothing-said-yet", a)]
     assert "if (!askAlreadyOpen) warmAskCache();" in body
     assert "'/api/chat/warm'" in SHELL_JS
+
+
+def test_the_endpoint_is_rate_limited_and_a_failing_warmup_cannot_be_spammed(signed_in, monkeypatch, fresh_warm_clock):
+    from app import ratelimit
+    calls = []
+    monkeypatch.setattr(agent, "warm_chat_cache", lambda: calls.append(1) or True)
+    monkeypatch.setitem(ratelimit.LIMITS, "chat_warm", [(2, 60)])
+    ratelimit.reset() if hasattr(ratelimit, "reset") else None
+    codes = []
+    for _ in range(4):
+        agent._CHAT_CACHE_WARM_AT.clear()  # take the per-household throttle out of the picture
+        codes.append(signed_in.post("/api/chat/warm").status_code)
+    assert codes[:2] == [200, 200] and codes[-1] == 429
