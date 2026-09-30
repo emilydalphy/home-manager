@@ -1462,6 +1462,11 @@
       });
       if (!res.ok) throw new Error('dinner resolve failed');
       var data = await res.json();
+      if (data && data.status === 'refused') {
+        // An allergy clash: nothing was planned. Say why, leave the card.
+        showToast(data.message || 'Left as it was.');
+        return;
+      }
       showToast(dinnerPlannedToast(meal, data));
       dismissNeedsYouCard(panel, cardEl, data.items || []);
       // Today's timeline and (if it's today) the Week menu both just

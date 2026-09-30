@@ -5943,6 +5943,12 @@ def resolve_needs_you_dinner(
     just with no plan link, the same shape a one-off chat request already
     gets and the shape unplanned_meals_ahead exists to keep visible.
     """
+    # The same strict allergen check chat's plan_meal_for_chat runs (name +
+    # the saved ingredient list, no draft/label negation). Raises
+    # SlotRefused before anything is written to the plan or the list; the
+    # route answers it as 200 {"status": "refused", "message"}.
+    from . import allergen_gate as _allergen_gate
+    _allergen_gate.refuse_if_clashing(meal)
     weekly_plan_id = get_plan_id_for_date(meal_date)
     result = _meal_plans.plan_meal(
         meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,

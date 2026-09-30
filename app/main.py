@@ -4689,6 +4689,9 @@ def resolve_needs_you_dinner(req: ResolveDinnerRequest):
         result = tools.resolve_needs_you_dinner(
             req.date, req.meal, add_ingredients_to_grocery_list=req.add_ingredients
         )
+    except tools.SlotRefused as e:
+        # A dish somebody at the table can't have: the plain sentence, 200.
+        return {"status": "refused", "message": str(e)}
     except Exception as e:
         logger.exception("Needs-you dinner resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
