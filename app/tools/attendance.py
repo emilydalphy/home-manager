@@ -67,6 +67,24 @@ def _validate_slot(slot: str) -> None:
         raise ValueError(f"slot must be one of {_ALL_SLOTS}, not {slot!r}.")
 
 
+# Pomona holds no attendance fact for a snack (Emily, 2026-09-30, Loop Board
+# "A snack's attendance is written and then silently dropped from the week
+# payload"): nothing reads it back, and writing one turned the day's snacks
+# into a single shell (clear_plan_slot is a SLOT operation; a snack slot
+# holds two meals). Every WRITER refuses it with this sentence, which is
+# also what the chat assistant relays. Readers and clear_slot_attendance
+# still accept "snack" so a legacy row can be read and removed.
+SNACK_ATTENDANCE_REFUSAL = (
+    "I don\u2019t track who\u2019s around for snacks \u2014 just breakfast, lunch and dinner."
+)
+
+
+def _validate_writable_slot(slot: str) -> None:
+    if slot == "snack":
+        raise ValueError(SNACK_ATTENDANCE_REFUSAL)
+    _validate_slot(slot)
+
+
 def _member_rows(conn) -> list:
     return conn.execute(
         "SELECT id, name FROM members WHERE household_id = ? ORDER BY id",
@@ -331,7 +349,7 @@ def set_slot_attendance(
     this one.
     """
     date.fromisoformat(date_str)
-    _validate_slot(slot)
+    _validate_writable_slot(slot)
     current = get_slot_attendance(date_str, slot)
     if present_member_ids is None:
         absent = current["absent_member_ids"]
@@ -365,7 +383,7 @@ def set_member_attendance(date_str: str, slot: str, member: str, present: bool =
     which repeated single-meal toggles cannot do.
     """
     date.fromisoformat(date_str)
-    _validate_slot(slot)
+    _validate_writable_slot(slot)
     member_ids = resolve_member_ids([member])
     current = get_slot_attendance(date_str, slot)
     present_set = set(current["present_member_ids"])
@@ -400,10 +418,14 @@ def set_day_attendance(date_str: str, slots: dict, source: str = "sheet") -> dic
     date.fromisoformat(date_str)
     if not isinstance(slots, dict):
         raise ValueError("slots must be an object keyed by meal.")
+    # Refuse before writing anything: a snack in the middle must not leave
+    # the slots ahead of it saved and the ones behind it not.
+    for slot in slots:
+        _validate_writable_slot(slot)
     all_ids = _household_member_ids()
     out: dict[str, dict] = {}
     for slot, spec in slots.items():
-        _validate_slot(slot)
+        _validate_writable_slot(slot)
         if not isinstance(spec, dict):
             raise ValueError(f"The {slot} entry must be an object.")
         absent_given = spec.get("absent")
@@ -511,6 +533,11 @@ def reconcile_membership() -> dict:
     conn.close()
     changed = []
     for row in rows:
+        if row["slot"] == "snack":
+            # A legacy snack row (written before snacks were refused) is
+            # never re-derived: its away path would collapse the day's
+            # snacks, and set_slot_need now refuses a snack.
+            continue
         att = get_slot_attendance(row["date"], row["slot"])
         outcome = _sync_away_need(row["date"], row["slot"], att)
         if outcome in ("set_away", "cleared_away"):

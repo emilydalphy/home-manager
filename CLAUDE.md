@@ -20643,3 +20643,38 @@ card's `.needs-you-card` + `.ny-actions` spruce/outline pair, one
 toast `savedLine(meal, 'marked cooked'|'marked skipped')`, no Undo (Today's
 tick has none). Chat `tab: 'kitchen'` refresh re-reads it. Tests:
 `tests/test_yesterday_check.py`.
+
+**2026-09-30 — A snack carries no attendance: refused, not stored (branch
+`snack-attendance-refused`).** Emily chose option 2 on the Loop Board card
+"A snack's attendance is written and then silently dropped from the week
+payload". Pomona holds no snack attendance fact, so the destroyed-both-snacks
+defect (`slot_needs._settle_slot_empty` / `_reopen_away_slot` call
+`clear_plan_slot`, a SLOT operation, on the one slot that holds two meals) is
+unreachable. **Refused, with `ValueError(SNACK_ATTENDANCE_REFUSAL)`** =
+"I don’t track who’s around for snacks — just breakfast, lunch and dinner.":
+`attendance.set_slot_attendance`, `set_member_attendance`, `set_guest_count`
+(via the first) and `set_day_attendance` (which validates EVERY slot before
+writing any, so a snack among dinner/lunch saves nothing). Via the new
+`attendance._validate_writable_slot`; `_validate_slot` itself, the readers and
+`clear_slot_attendance` still accept "snack" so a legacy row can be read and
+removed. **The second door**: `slot_needs.set_slot_need(…, "snack", …)` also
+ended in `_settle_slot_empty` when `away`, so it refuses too
+(`SNACK_NEED_REFUSAL`, "…snacks as away or quick…"); the read/clear/recommendation
+functions keep `allow_snack=True`. **Chat**: `agent._snack_attendance_refusal`
+intercepts `set_member_attendance` / `set_guest_count` / `set_slot_need` with
+`slot == "snack"` in the tool loop BEFORE the tool runs and returns the
+sentence as an `is_error` tool_result — an answer, not a logged crash and no
+`error_events` row (same precedent as the Chores switch). The three tools' `slot`
+enums and descriptions no longer offer a snack. **Untouched on purpose**:
+`clear_plan_slot`'s two explicit `"snack"` callers (agent.py day-left-out,
+today_meals.py). Tests: `tests/test_snack_attendance_refused.py` replaces
+`test_snack_away_characterised.py` (fail on main, pass here).
+**Follow-ups found in verification, same entry**: `reconcile_membership`
+(run by `add_member`) re-derives every stored attendance row, and a LEGACY
+snack row would have gone through `_reopen_away_slot` → `clear_plan_slot` (the
+same collapse) or hit the new `set_slot_need` refusal; it now skips snack rows.
+`tests/test_review_plus_and_counts.py`'s snack away→back test pinned the old
+behaviour and now asserts the refusal; the Approve count still counts an open
+snack the MODEL hands back. Existing legacy snack attendance rows in real DBs
+are left in place (readable, clearable with `clear_slot_attendance`, never
+re-derived).

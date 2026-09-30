@@ -619,38 +619,24 @@ def test_week_generations_own_finishing_passes_never_hand_back_an_open_snack():
     assert open_snacks == [], open_snacks
 
 
-def test_an_ordinary_attendance_edit_does_hand_back_an_open_snack():
+def test_an_attendance_edit_can_no_longer_hand_back_an_open_snack():
     """
-    THE OTHER HALF, and the leg the first answer to Emily's question got
-    WRONG. It said slot_needs' away-reopen "only validates the three real
-    meals". It does not: _validate_slot defaults to allow_snack=True and
-    both _ALL_SLOTS tuples include 'snack'. So marking somebody away for a
-    snack and then back — an ordinary edit, no assistant anywhere near it —
-    empties the slot and then hands it back as a question.
-
-    Which makes the widening MORE right rather than less: an open snack
-    from an away-reopen is a real decision handed back to the household,
-    and a button promising nothing is left to decide has to count it.
+    REPLACES the test that pinned the snack away-reopen leg (2026-09-30,
+    Emily's option 2: a snack carries no attendance). Marking somebody out
+    of a snack used to empty the slot and hand it back as an open question;
+    it is now refused, and the planned snack is left exactly as it was. The
+    Approve count still counts an open snack the MODEL hands back (the test
+    above); only this second way of producing one is gone.
     """
     plan = _plan()
     tools.add_member("Emily")
     tools.plan_meal(D0, "Trail mix", slot="snack", weekly_plan_id=plan)
-    assert [s for s, _ in _state(D0, "snack")] == ["planned"]
+    before = _state(D0, "snack")
+    assert [s for s, _ in before] == ["planned"]
 
-    tools.set_member_attendance(D0, "snack", "Emily", present=False)
-    assert [s for s, _ in _state(D0, "snack")] == ["planned_empty"]
-
-    tools.set_member_attendance(D0, "snack", "Emily", present=True)
-    assert [s for s, _ in _state(D0, "snack")] == ["open"]
-
-    # ...and it is a real question with a reason on it, which is what makes
-    # it something the Approve button owes the household a count of.
-    conn = get_conn()
-    reason = conn.execute(
-        "SELECT open_reason FROM meal_plan_entries WHERE date = ? AND slot = 'snack' "
-        "ORDER BY id DESC LIMIT 1", (D0,)).fetchone()["open_reason"]
-    conn.close()
-    assert reason and "Emily" in reason
+    with pytest.raises(ValueError):
+        tools.set_member_attendance(D0, "snack", "Emily", present=False)
+    assert _state(D0, "snack") == before
 
 
 # ------------------------------------------- the screen's own functions
