@@ -842,8 +842,9 @@ def set_slot_recommendation(
         raise ValueError(f"No slot need recorded for {date_str} {slot} yet — set one (e.g. 'ready_made') first.")
     conn.execute(
         "UPDATE slot_needs SET recommended_batch_from_entry_id = ?, recommended_defrost_item = ?, "
-        "recommendation_confirmed = 0, updated_at = datetime('now') WHERE id = ?",
-        (batch_from_entry_id, (defrost_item or "").strip(), existing["id"]),
+        "recommendation_confirmed = 0, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (batch_from_entry_id, (defrost_item or "").strip(), existing["id"], household_id()),
     )
     conn.commit()
     conn.close()
@@ -874,8 +875,9 @@ def confirm_slot_recommendation(date_str: str, slot: str, confirmed: bool = True
         conn.close()
         raise ValueError(f"No slot need recorded for {date_str} {slot} yet.")
     conn.execute(
-        "UPDATE slot_needs SET recommendation_confirmed = ?, updated_at = datetime('now') WHERE id = ?",
-        (1 if confirmed else 0, existing["id"]),
+        "UPDATE slot_needs SET recommendation_confirmed = ?, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (1 if confirmed else 0, existing["id"], household_id()),
     )
     conn.commit()
     conn.close()

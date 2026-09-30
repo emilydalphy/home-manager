@@ -862,8 +862,11 @@ def _write_cook_sides(plan_id: int, targets: dict, frozen: list, out: dict) -> N
             merged = sorted(set(have) | set(keys), key=lambda t: t.split(":")[0])
             derived["make_double_for"] = merged
             derived["make_double_note"] = _weekly_plan._make_double_note_text(merged)
-            conn.execute("UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-                         (json.dumps(derived), cook_id))
+            conn.execute(
+                "UPDATE meal_plan_entries SET derived_from_json = ? "
+                "WHERE id = ? AND household_id = ?",
+                (json.dumps(derived), cook_id, household_id()),
+            )
             out["batched"].append({"cook": row["date"], "slot": row["slot"], "covers": sorted(keys)})
         for cook_id, night_date, night_slot in frozen:
             _weekly_plan.freeze_a_portion(conn, cook_id, night_date, night_slot)

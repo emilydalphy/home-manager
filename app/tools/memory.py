@@ -127,8 +127,9 @@ def update_fact(fact_id: int, text: str | None = None, hard: bool | None = None)
     new_text = text.strip() if text is not None else row["text"]
     new_hard = (1 if hard else 0) if hard is not None else row["hard"]
     conn.execute(
-        "UPDATE facts SET text = ?, hard = ?, updated_at = datetime('now') WHERE id = ?",
-        (new_text, new_hard, fact_id),
+        "UPDATE facts SET text = ?, hard = ?, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (new_text, new_hard, fact_id, household_id()),
     )
     conn.commit()
     conn.close()
