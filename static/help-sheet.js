@@ -9,6 +9,10 @@
  * thing. Nothing here depends on shell.js: the sheet builds its own
  * markup, injects its own stylesheet once (every colour a theme.css
  * token, so it follows dark mode), and talks to the one route it needs.
+ * It does depend on static/api.js — its one call goes through Api.fetch,
+ * so a THIRD page loading this file has to load api.js first (both of
+ * today's do). Note the capital: `Api` is that shared file; the lower-case
+ * `api` at the foot of this one is this sheet's own export object.
  *
  *   openHelpSheet({ screenName }) — four rows that say how to change the
  *     week (swap, tell me, nothing's locked in, correct me), the quiet
@@ -199,7 +203,7 @@
       '<h2 class="help-title" id="help-title">' + esc(SNW_TITLE) + '</h2>' +
       '<p class="help-sent">' + esc(SNW_SENT) + '</p>';
     try {
-      global.fetch('/api/feedback', {
+      Api.fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         keepalive: true,

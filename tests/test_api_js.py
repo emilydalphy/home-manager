@@ -47,10 +47,14 @@ REPORTER_JS = (STATIC / "error-reporter.js").read_text(encoding="utf-8")
 # was a plain text search, which also caught one `window.fetch('/api`);
 # 47 after shell.js moved onto api.js; 34 after inventory.html (13);
 # 24 after plan-week.html (10 — its eleventh call builds its url in a
-# variable first, which this pattern cannot see, and moved with them).
+# variable first, which this pattern cannot see, and moved with them);
+# 13 after onboarding.html (11). help-sheet.js's one call moved with it
+# and changes nothing here: it was written `global.fetch('/api…')`, which
+# this pattern cannot see. It was the last such call in static/ — see
+# test_no_raw_call_hides_behind_an_object_any_more.
 # LOWER this when a screen migrates. Never raise it: a
 # new call is written with Api.json / Api.fetch instead (CLAUDE.md).
-RAW_API_FETCH_CEILING = 24
+RAW_API_FETCH_CEILING = 13
 
 _RAW = re.compile(r"(?<![\w.$])fetch\(\s*['\"`]/api")
 
@@ -81,6 +85,26 @@ def test_the_ceiling_is_kept_tight():
     assert total == RAW_API_FETCH_CEILING, (
         f"raw count is {total} but the ceiling says {RAW_API_FETCH_CEILING}: "
         f"lower RAW_API_FETCH_CEILING to {total}"
+    )
+
+
+def test_no_raw_call_hides_behind_an_object_any_more():
+    """The ratchet above deliberately skips `<something>.fetch('/api…')`, so
+    `Api.fetch` does not count itself. help-sheet.js's one call was written
+    `global.fetch('/api/feedback', …)` and was invisible to it for exactly
+    that reason — a raw call wearing the shape of a migrated one. It went
+    through Api.fetch on 2026-09-30 and it was the last of its kind, so this
+    says so: anything but `Api.` in front of a `/api` fetch is a raw call
+    the count above will not see."""
+    dotted = re.compile(r"(\w+)\.fetch\(\s*['\"`]/api")
+    found = {}
+    for path in sorted(list(STATIC.glob("*.html")) + list(STATIC.glob("*.js"))):
+        others = [m.group(1) for m in dotted.finditer(path.read_text(encoding="utf-8")) if m.group(1) != "Api"]
+        if others:
+            found[path.name] = others
+    assert found == {}, (
+        f"a /api call behind an object the ratchet cannot count: {found}. "
+        "Use Api.fetch (static/api.js)."
     )
 
 
