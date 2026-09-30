@@ -222,6 +222,8 @@
   :where(:root[data-theme="dark"]) #inv-scrim, :where(:root[data-theme="dark"]) .inv-scan-scrim-el { background: var(--scrim); }
 </style>
 <script src="/static/error-reporter.js"></script>
+<!-- Every server call goes through api.js (one base address, cookies sent). Before any page script, after the reporter whose fetch wrapper it calls through. -->
+<script src="/static/api.js"></script>
 </head>
 <body>
 
@@ -405,7 +407,7 @@ async function loadNeededItemNames() {
     // would otherwise make an inventory item's own "Add to grocery list"
     // button flip back to un-checked the moment it's added, since that's
     // exactly the case that banner exists to catch.
-    const res = await fetch('/api/grocery-list?status=all');
+    const res = await Api.fetch('/api/grocery-list?status=all');
     if (!res.ok) return;
     const data = await res.json();
     neededItemNames = new Set();
@@ -421,7 +423,7 @@ async function loadInventory() {
   const content = document.getElementById('inv-content');
   try {
     await loadNeededItemNames();
-    const res = await fetch('/api/inventory/by-location');
+    const res = await Api.fetch('/api/inventory/by-location');
     if (!res.ok) throw new Error('failed');
     const data = await res.json();
     const locations = data.locations || [];
@@ -587,7 +589,7 @@ function renderSheet() {
 async function refreshAfterSheetChange() {
   await loadInventory();
   if (currentItem) {
-    const res = await fetch('/api/inventory/by-location');
+    const res = await Api.fetch('/api/inventory/by-location');
     if (res.ok) {
       const data = await res.json();
       const locations = data.locations || [];
@@ -600,28 +602,28 @@ async function refreshAfterSheetChange() {
 
 document.getElementById('inv-qty-minus').addEventListener('click', async () => {
   if (!currentItem) return;
-  try { await fetch(`/api/inventory/${currentItem.id}/quantity`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) }); await refreshAfterSheetChange(); }
+  try { await Api.fetch(`/api/inventory/${currentItem.id}/quantity`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) }); await refreshAfterSheetChange(); }
   catch (err) { alert("Couldn't update that — try again."); }
 });
 document.getElementById('inv-qty-plus').addEventListener('click', async () => {
   if (!currentItem) return;
-  try { await fetch(`/api/inventory/${currentItem.id}/quantity`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) }); await refreshAfterSheetChange(); }
+  try { await Api.fetch(`/api/inventory/${currentItem.id}/quantity`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) }); await refreshAfterSheetChange(); }
   catch (err) { alert("Couldn't update that — try again."); }
 });
 document.getElementById('inv-location-row').addEventListener('click', async (e) => {
   const btn = e.target.closest('.inv-location-btn');
   if (!btn || !currentItem) return;
-  try { await fetch(`/api/inventory/${currentItem.id}/location`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: btn.getAttribute('data-loc') }) }); await refreshAfterSheetChange(); }
+  try { await Api.fetch(`/api/inventory/${currentItem.id}/location`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: btn.getAttribute('data-loc') }) }); await refreshAfterSheetChange(); }
   catch (err) { alert("Couldn't move that — try again."); }
 });
 document.getElementById('inv-bb-minus').addEventListener('click', async () => {
   if (!currentItem) return;
-  try { await fetch(`/api/inventory/${currentItem.id}/expiration`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta_days: -1 }) }); await refreshAfterSheetChange(); }
+  try { await Api.fetch(`/api/inventory/${currentItem.id}/expiration`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta_days: -1 }) }); await refreshAfterSheetChange(); }
   catch (err) { alert("Couldn't update that — try again."); }
 });
 document.getElementById('inv-bb-plus').addEventListener('click', async () => {
   if (!currentItem) return;
-  try { await fetch(`/api/inventory/${currentItem.id}/expiration`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta_days: 1 }) }); await refreshAfterSheetChange(); }
+  try { await Api.fetch(`/api/inventory/${currentItem.id}/expiration`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta_days: 1 }) }); await refreshAfterSheetChange(); }
   catch (err) { alert("Couldn't update that — try again."); }
 });
 document.getElementById('inv-add-to-grocery').addEventListener('click', async () => {
@@ -630,7 +632,7 @@ document.getElementById('inv-add-to-grocery').addEventListener('click', async ()
   if (btn.disabled) return;
   btn.disabled = true;
   try {
-    await fetch('/api/grocery-list/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item: currentItem.item, category: currentItem.category || 'other' }) });
+    await Api.fetch('/api/grocery-list/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ item: currentItem.item, category: currentItem.category || 'other' }) });
     await loadNeededItemNames();
     renderSheet();
   } catch (err) { btn.disabled = false; alert("Couldn't add that — try again."); }
@@ -641,7 +643,7 @@ document.getElementById('inv-used-up').addEventListener('click', async () => {
   const btn = document.getElementById('inv-used-up');
   btn.disabled = true;
   try {
-    await fetch(`/api/inventory/${currentItem.id}/remove`, { method: 'POST' });
+    await Api.fetch(`/api/inventory/${currentItem.id}/remove`, { method: 'POST' });
     closeItemSheet();
     showToast(`${name} marked used up`);
     loadInventory();
@@ -655,7 +657,7 @@ document.getElementById('inv-add-btn').addEventListener('click', async () => {
   const item = itemInput.value.trim();
   if (!item) return;
   try {
-    await fetch('/api/inventory/update', {
+    await Api.fetch('/api/inventory/update', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ item, action: 'add', quantity: qtyInput.value.trim(), location: locSelect.value }),
     });
@@ -760,7 +762,7 @@ function renderScanReview() {
       // is pre-filled from guessLocationForCategory for those, which is a
       // guess wearing a stated answer's clothes, and the freezer check
       // must not read it as one. See tools/inventory.py's scan_source.
-      await fetch('/api/inventory/confirm-scan', {
+      await Api.fetch('/api/inventory/confirm-scan', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items, kind: scanKind || '' }),
       });
@@ -785,7 +787,7 @@ async function runScan(kind, file) {
   try {
     const form = new FormData();
     form.append('photo', file);
-    const res = await fetch(`/api/inventory/scan-${kind}`, { method: 'POST', body: form });
+    const res = await Api.fetch(`/api/inventory/scan-${kind}`, { method: 'POST', body: form });
     if (!res.ok) {
       let detail = '';
       try { detail = (await res.json()).detail || ''; } catch (e) { /* not JSON */ }
