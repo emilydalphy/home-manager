@@ -452,10 +452,21 @@ def test_a_typed_dinner_count_leaves_the_lunches_held_to_their_number(emilys_cou
     assert len(_distinct(plan["weekly_plan_id"], "lunch")) == 3, "the lunches still fold to three"
 
 
-def test_a_slot_left_at_the_default_seven_is_never_filled_up(stub_model, picker):
+def test_an_unchosen_seven_is_never_filled_up_but_a_chosen_one_is(stub_model, picker):
     """She set dinners to 4 and never touched breakfasts: 7 breakfasts is
     the column default, and the model is not sent chasing seven distinct
-    ones — but the four dinners are hers, and short means re-picked."""
+    ones — but the four dinners are hers, and short means re-picked.
+
+    UPDATED 2026-09-30 (the usual week): this used to pin a blanket
+    "a 7 is never filled up" (agent's `int(usual) < 7`). Now a seven the
+    household CHOSE — "Something new every morning" on the variety
+    question — is a target like any other number, and only a seven nobody
+    chose keeps the old rule (usual_week.fill_up_allowed). Both halves are
+    pinned here; tests/test_usual_week.py has the full seven-breakfast week."""
+    from app.tools import usual_week
+    assert usual_week.fill_up_allowed("breakfast", {"meal_counts_set": True}, 7) is False
+    assert usual_week.fill_up_allowed(
+        "breakfast", {"meal_counts_set": True, "variety_answered": ["breakfast"]}, 7) is True
     tools.set_household_meal_preferences(dinners_per_week=4)
     week = _monday()
     dates = tools._week_dates(week)

@@ -217,24 +217,42 @@ def normalize(answer, period: list[str], skipped: list[str] | None = None, stric
         days[iso] = entry
 
     ordered = [days[d] for d in sorted(days)]
+    # How many different dishes ONE prep session cooks (the usual week's
+    # "Meal prep ahead" = 2 with a single prep day, 2026-09-30). 1 — the
+    # screen's own answer — is one dish per prep day, as before, and adds
+    # nothing to the stored shape. Above 1, each prepped lunch carries a
+    # `batch` (0, 1, …) dealt in turn by date within its prep day, so the
+    # week alternates between the session's dishes: Mon A, Tue B, Wed A…
+    try:
+        per_session = max(1, min(3, int(answer.get("dishes_per_prep_day") or 1)))
+    except (TypeError, ValueError):
+        refuse("dishes_per_prep_day must be a number.")
+        per_session = 1
     if any(d["kind"] == "prepped" for d in ordered):
         if not prep_days:
             refuse("Prepped lunches need a prep day.")
             ordered = [d for d in ordered if d["kind"] != "prepped"]
+        dealt: dict[str, int] = {}
         for d in ordered:
             if d["kind"] == "prepped":
                 d["prep_day"] = prep_day_for(d["date"], prep_days)[0]
+                if per_session > 1:
+                    d["batch"] = dealt.get(d["prep_day"], 0) % per_session
+                    dealt[d["prep_day"]] = dealt.get(d["prep_day"], 0) + 1
     if not any(d["kind"] == "prepped" for d in ordered):
         # No prepped lunch, no prep day: the chips aren't on screen then,
         # and a day kept here would be carried into next week unseen.
         prep_days = []
     if not ordered:
         return {}
-    return {
+    out = {
         "counts": {k: sum(1 for d in ordered if d["kind"] == k) for k in KINDS},
         "prep_days": prep_days,
         "days": ordered,
     }
+    if per_session > 1 and any(d.get("batch") for d in ordered):
+        out["dishes_per_prep_day"] = per_session
+    return out
 
 
 def load(raw: str | None) -> dict:
@@ -818,19 +836,22 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
             targets.setdefault(cook["id"], []).append(f"{d['date']}:lunch")
             out["leftovers"].append({"date": d["date"], "from": cook["date"], "dish": cook["meal"]})
 
-        # Prepped: one dish per prep date, cooked on its first lunch.
-        batches: dict[str, list[dict]] = {}
+        # Prepped: one dish per prep date (per `batch` within it, when one
+        # session cooks several — normalize's dishes_per_prep_day), cooked
+        # on its first lunch.
+        batches: dict[tuple, list[dict]] = {}
         for d in days:
             if d["kind"] != "prepped":
                 continue
             prep_date = prep_date_for(d["date"], prep_days)
             if prep_date is None:
                 continue
-            batches.setdefault(prep_date, []).append(d)
+            batches.setdefault((prep_date, int(d.get("batch") or 0)), []).append(d)
+        session_dishes: dict[str, set] = {}
         # Re-read: the leftovers writes above replaced rows.
         lunches, dinners = _lunch_and_dinner_rows(plan_id)
         chains = _leftovers.plan_leftover_chains(plan_id)
-        for n, (prep_date, members) in enumerate(sorted(batches.items())):
+        for n, ((prep_date, batch_no), members) in enumerate(sorted(batches.items())):
             if n:
                 # Re-read between batches: an earlier batch's lunches can
                 # fall ON a later batch's prep day (Sun + Tue prep: Tuesday's
@@ -845,10 +866,13 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                 for d in members
             }
             # The batch's dish: the first of its lunches the model drafted
-            # as a real cook (not a reheat of something else).
+            # as a real cook (not a reheat of something else) — and, for a
+            # session's second dish, not the dish its first batch took.
+            taken = session_dishes.setdefault(prep_date, set())
             model_cook = next(
                 (rows[0] for d in members for rows in [rows_by_date[d["date"]]]
-                 if len(rows) == 1 and _cookable(rows[0]) and rows[0]["id"] not in chains["leftovers"]),
+                 if len(rows) == 1 and _cookable(rows[0]) and rows[0]["id"] not in chains["leftovers"]
+                 and rows[0]["meal"].strip().lower() not in taken),
                 None,
             )
             first = members[0]
@@ -871,7 +895,9 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
             # prep day is cooked on that lunch instead (below) — the same
             # rule plan-week's lunchLine reads ("Cooked that day").
             stale = _leftovers.days_apart(prep_date, first["date"]) > _leftovers.MAX_LEFTOVER_DAYS
-            prep_cook = None if stale else _prep_day_cook(prep_date, first["date"], lunches, dinners, chains)
+            # The prep day's own meal can be ONE batch's cook: a session's
+            # second dish is cooked on its own first lunch's entry.
+            prep_cook = None if stale or batch_no else _prep_day_cook(prep_date, first["date"], lunches, dinners, chains)
             # What the three-day reach counts from: the prep day, unless the
             # batch turns out to be cooked on its own first lunch (below).
             fresh_from = prep_date
@@ -971,6 +997,7 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
                         derived_from=dict(link, replaced=rows[0]["meal"]),
                     )
                 targets.setdefault(cook_id, []).append(f"{d['date']}:lunch")
+            taken.add(dish.strip().lower())
             out["prepped"].append({"prep_date": prep_date, "dish": dish, "lunches": [d["date"] for d in members]})
 
         if targets or frozen:

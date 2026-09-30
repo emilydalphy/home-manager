@@ -140,6 +140,11 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- set_household_meal_preferences; backfilled for a household whose
     -- stored counts are not all the default 7 (db._backfill_meal_counts_set).
     meal_counts_set INTEGER NOT NULL DEFAULT 0,
+    -- The household's usual week (2026-09-30): the meals x days x who's
+    -- eating grid and the variety choice per meal, as JSON. '' = never
+    -- answered (tools/usual_week.py derives the grid from the counts above
+    -- on every read). Written only by usual_week; also in db._MIGRATIONS.
+    usual_week_json TEXT NOT NULL DEFAULT '',
     onboarding_complete INTEGER NOT NULL DEFAULT 0,
     -- design_handoff_plan_the_week. The settings the revisitable setup
     -- screen owns and the two onboarding steps collect. They are separate
@@ -1370,6 +1375,10 @@ CREATE TABLE IF NOT EXISTS slot_attendance (
     -- and so a trip's slots can be found and undone together.
     source TEXT NOT NULL DEFAULT '',
     away_stretch_id INTEGER REFERENCES away_stretches(id),
+    -- 1 once the usual week's grid has been applied to this slot
+    -- (usual_week.apply_usual_attendance); a later toggle keeps it, so the
+    -- person's own change wins over the grid on the next draft.
+    grid_applied INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(household_id, date, slot)

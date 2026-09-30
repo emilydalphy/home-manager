@@ -119,6 +119,52 @@ def _database():
     conn.close()
 
 
+# ---------------------------------------------------------------------------
+# No test reaches the Anthropic API (2026-09-30)
+# ---------------------------------------------------------------------------
+# Every test that meant to talk to a model already stubs it (agent._client,
+# _create_with_retry, generate_weekly_plan_llm, quick_pick, …). The ones
+# that didn't were making REAL requests with the fake test key — ~530 of
+# them per run, each a 401 over the network — which cost time, depended on
+# the network being up, and is the likely cause of a suite that hung at 82%.
+# This makes the SDK itself answer every request on the spot with the same
+# 401 the real service gave, so code under test takes exactly the path it
+# took before and nothing leaves the machine. A test that installs its own
+# stub still wins (it patches above the SDK). `@pytest.mark.real_model_client`
+# opts a test out. functools.wraps keeps the real signature visible, which
+# tests/test_chat_theme_per_turn.py's SDK-signature check reads.
+def _offline_model_error():
+    import anthropic
+    import httpx
+
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    response = httpx.Response(401, request=request)
+    return anthropic.AuthenticationError(
+        "invalid x-api-key (tests never reach the Anthropic API — see tests/conftest.py)",
+        response=response, body=None,
+    )
+
+
+@pytest.fixture(autouse=True)
+def _no_real_model_calls(request, monkeypatch):
+    if request.node.get_closest_marker("real_model_client"):
+        yield
+        return
+    import functools
+
+    from anthropic.resources.messages import Messages
+
+    def _refuse(original):
+        @functools.wraps(original)
+        def offline(self, *args, **kwargs):
+            raise _offline_model_error()
+        return offline
+
+    monkeypatch.setattr(Messages, "create", _refuse(Messages.create))
+    monkeypatch.setattr(Messages, "stream", _refuse(Messages.stream))
+    yield
+
+
 def withdraw_ai_consent(household_id: int = 1, status: str = "") -> None:
     """Put a test household back to never-asked ('') or 'declined' — for the consent tests."""
     conn = get_conn()
@@ -253,6 +299,9 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "real_model_client: let this test's Anthropic SDK calls through (see _no_real_model_calls)",
+    )
     config.addinivalue_line(
         "markers",
         "today(when): pin this test's clock, e.g. @pytest.mark.today('2026-09-13'). "
