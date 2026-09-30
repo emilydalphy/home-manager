@@ -18,6 +18,31 @@ from . import spices as _spices
 logger = logging.getLogger("home_manager")
 
 
+def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
+    """
+    add_recipe with the one refusal a person is owed in front of it: a
+    recipe somebody at the table can't have is never saved (2026-09-30).
+    Until then chat saved it, then plan_meal_for_chat refused to plan it,
+    and the recipe was left behind in the box. agent.TOOL_FUNCTIONS points
+    at this; everything else (the week's own saves, imports, the recipe
+    pass) calls add_recipe itself, the shape plan_meal_for_chat has.
+
+    `override` is the person's own "save it anyway" (a recipe kept for
+    guests, say) — never the model's call. See
+    allergen_gate.refuse_recipe_if_clashing for why this raises.
+    """
+    from . import allergen_gate as _allergen_gate
+    name = kwargs.get("name")
+    if name is None and args:
+        name = args[0]
+    ingredients = kwargs.get("ingredients")
+    if ingredients is None and len(args) >= 2:
+        ingredients = args[1]
+    if isinstance(name, str):
+        _allergen_gate.refuse_recipe_if_clashing(name, ingredients, override=override)
+    return add_recipe(*args, **kwargs)
+
+
 def add_recipe(
     name: str,
     ingredients: list[dict],
@@ -388,6 +413,7 @@ def fill_recipe_details(
     cook_time_minutes: int | None = None,
     advance_prep_notes: str = "",
     advance_prep_step_indices: list[int] | None = None,
+    new_name: str | None = None,
 ) -> dict:
     """
     The recipe pass's save: write a pending recipe out in full — the
@@ -419,6 +445,17 @@ def fill_recipe_details(
         if not row["details_pending"]:
             conn.rollback()
             return get_recipe(recipe_name)
+        # `new_name`: the draft's name with an allergen-free label taken off
+        # ("Dairy-Free Pancakes" -> "Pancakes", allergen_gate.plain_dish_name)
+        # — the name it was checked under. Renamed on the same row, so the
+        # plan's entries (which point at the row) follow it. The caller has
+        # made sure no other recipe already has that name.
+        if new_name and new_name.strip() and new_name.strip().lower() != recipe_name.strip().lower():
+            conn.execute(
+                "UPDATE recipes SET name = ? WHERE id = ? AND household_id = ?",
+                (new_name.strip(), row["id"], household_id()),
+            )
+            recipe_name = new_name.strip()
         conn.execute(
             "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
