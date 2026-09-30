@@ -6002,10 +6002,86 @@ textarea.wwk-text { resize: vertical; }
 /* ---- steppers (the cook screen's .cook-serves-btn, reused) ---- */
 .wwk-count-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
 .wwk-count-label { font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--ink); }
-/* Snacks a day is not a count of dishes, so it stands clear of the
-   "Different dishes a week" group above it — a lead's worth of space
-   and a hairline, nothing louder (2026-09-27). */
-.wwk-count-own { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hairline); }
+
+/* ---- Your rhythm: the usual week (2026-09-30) ----
+   Each meal's week as onboarding's day row (static/onboarding.html .uw-*,
+   the same tiles and the same three states): spruce = everyone, celadon =
+   some of you, ground = not planned. Seven tiles share the panel's width;
+   at 375px each is 44px or wider (hard rule 6). */
+.uw-set-meal { display: flex; flex-direction: column; gap: 7px; padding: 6px 0 2px; }
+.uw-set-title {
+  align-self: flex-start; min-height: 44px; margin: -8px 0 -8px; padding: 0;
+  background: none; border: 0; cursor: pointer; text-align: left;
+  font-family: var(--font-body); font-size: 15px; font-weight: 700; color: var(--ink);
+}
+.uw-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.uw-day {
+  min-width: 0; height: 44px; padding: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border-radius: var(--radius-control); border: 1.5px solid var(--hairline-strong);
+  background: var(--ground); color: var(--ink-secondary);
+  font-family: var(--font-body); cursor: pointer;
+}
+.uw-day b { font-size: 12px; font-weight: 800; }
+.uw-day span { font-size: 9px; font-weight: 800; letter-spacing: .04em; white-space: nowrap; overflow: hidden; max-width: 100%; }
+.uw-day.is-all { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
+.uw-day.is-some { background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon); }
+.uw-day.is-open { outline: 3px solid var(--apricot); outline-offset: 1px; }
+.uw-set-var { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0 6px; font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--ink-secondary); }
+.uw-set-change {
+  min-height: 44px; margin: -12px 0; padding: 0 4px; background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--apricot-label);
+}
+.uw-set-rows { display: flex; flex-direction: column; margin-top: 4px; }
+.uw-set-rows .wwk-chips { padding: 2px 0 10px; }
+.uw-set-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  min-height: 48px; padding: 0; background: none; border: 0; border-bottom: 1.5px solid var(--hairline);
+  cursor: pointer; text-align: left; font-family: var(--font-body); color: var(--ink);
+}
+.uw-set-row:last-child { border-bottom: 0; }
+.uw-set-row-title { font-size: 15px; font-weight: 600; }
+.uw-set-row-value { font-size: 14px; font-weight: 600; color: var(--ink-secondary); text-align: right; }
+/* The meal's sheet: the swap sheet's frame (below), its own ids. */
+#uw-scrim {
+  position: fixed; inset: 0; background: var(--scrim); z-index: 50;
+  opacity: 0; transition: opacity var(--motion-base) var(--motion-ease);
+}
+#uw-scrim.is-open { opacity: 1; }
+#uw-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 51;
+  max-height: 88%; overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 10px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  translate: 0 100%;
+  transition: translate var(--motion-base) var(--motion-ease);
+}
+#uw-sheet.is-open { translate: 0 0; }
+#uw-scrim[hidden], #uw-sheet[hidden] { display: none; }
+@media (min-width: 768px) {
+  #uw-sheet { left: 50%; right: auto; transform: translateX(-50%); width: 520px; max-width: 100%; }
+}
+#uw-sheet-body { display: flex; flex-direction: column; gap: 12px; }
+.uw-sheet-titlerow { padding: 0; }
+.uw-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.uw-ct { flex-basis: 100%; margin: 0; font-family: var(--font-body); font-size: 12px; font-weight: 800; color: var(--apricot-label); }
+.uw-q, .uw-var-opt {
+  min-height: 44px; padding: 0 12px; border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong); background: var(--ground);
+  font-family: var(--font-body); font-weight: 700; font-size: 13px; color: var(--ink-secondary); cursor: pointer;
+}
+.uw-q.is-on, .uw-var-opt.is-on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); }
+.uw-var-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.uw-var-opt { min-height: 48px; padding: 8px 10px; font-size: 14px; line-height: 1.2; text-align: left; }
+.uw-sum {
+  margin: 0; padding: 10px 12px; border-radius: var(--radius-control);
+  background: var(--celadon-tint); border: 1.5px solid var(--celadon-edge);
+  font-family: var(--font-body); font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ink-on-celadon);
+}
+.uw-sheet-note { margin: 0; font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--ink-secondary); }
+.uw-save { width: 100%; min-height: 54px; }
 
 /* ---- buttons ----
    Spruce, never apricot (Rule 5) — a save is not the screen's one action.

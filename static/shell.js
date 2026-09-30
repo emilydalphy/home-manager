@@ -9522,17 +9522,12 @@
     { key: 'stand_mixer', label: 'Stand mixer' }, { key: 'blender', label: 'Blender' },
     { key: 'cast_iron', label: 'Cast iron' }, { key: 'no_dishwasher', label: 'No dishwasher' }
   ];
-  var WWK_COUNTS = [
-    { field: 'dinners_per_week', label: 'Dinners', max: 7 },
-    { field: 'breakfasts_per_week', label: 'Breakfasts', max: 7 },
-    { field: 'lunches_per_week', label: 'Lunches', max: 7 }
-  ];
-  // Snacks are a DAY's worth of sittings (Julia, 2026-09-08), so their own
-  // row and their own ceiling (memory.edit_preference's 6).
-  var WWK_SNACKS = { field: 'snacks_per_day', label: 'Snacks a day', max: 6 };
-  // How many DIFFERENT snack dishes a week (2026-09-27) — a count like the
-  // three above, so it sits with them; at least one (none is "Snacks a
-  // day" at 0). meal_preferences.snack_dishes_per_week, default 2.
+  // The Dinners / Breakfasts / Lunches "Different dishes a week" steppers
+  // and "Snacks a day" left this sheet on 2026-09-30: Your rhythm's usual
+  // week sets each meal's variety and the snacks a day (wwkUsualWeekHtml).
+  // How many DIFFERENT snack dishes a week (2026-09-27); at least one
+  // (none is Snacks at "None"). meal_preferences.snack_dishes_per_week,
+  // default 2.
   var WWK_SNACK_DISHES = { field: 'snack_dishes_per_week', label: 'Snacks', max: 7, min: 1, aria: 'different snacks' };
   // Cuisines you like (Emily, 2026-09-25): the same fifteen chips
   // onboarding's "Cuisines you like" step shows (static/onboarding.html's
@@ -9622,7 +9617,7 @@
   // Preferences sheet's own (loadPrefsCalendar) — one place it is fetched.
   async function loadWhatWeKnow() {
     try {
-      var reads = await Promise.all([Api.fetch('/api/memory'), Api.fetch('/api/facts'), loadPrefsCalendar(), Api.fetch('/api/held'), loadInviteAdults()]);
+      var reads = await Promise.all([Api.fetch('/api/memory'), Api.fetch('/api/facts'), loadPrefsCalendar(), Api.fetch('/api/held'), loadInviteAdults(), loadUsualWeek()]);
       if (reads[0].ok) prefsState.memory = await reads[0].json();
       if (reads[1].ok) wwkState.facts = ((await reads[1].json()).facts) || [];
       if (reads[3] && reads[3].ok) heldState.items = ((await reads[3].json()).held) || [];
@@ -10308,6 +10303,359 @@
     }, wwkAdoptMemory);
   }
 
+  // ---------- Your rhythm: the usual week (2026-09-30) ----------
+  // Emily's "Settings › Your rhythm" mockups: each meal's week as the same
+  // day row onboarding's "Who's eating, and when?" draws (spruce everyone,
+  // celadon some of you, ground not planned), its variety on one line with
+  // a Change, then Snacks, Dinner time and Prep day. Read from and saved to
+  // GET/POST /api/usual-week (app/tools/usual_week.py). A household that
+  // never answered ("answered": false) sees the grid derived from its
+  // counts and "Variety: N different" with nothing picked until it chooses.
+  // The "Different dishes a week" steppers this replaced are gone.
+  var UW_MEALS = ['breakfast', 'lunch', 'dinner'];
+  var UW_WEEKDAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  var UW_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  var UW_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  var UW_MEAL_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+  var UW_MEAL_PLURALS = { breakfast: 'breakfasts', lunch: 'lunches', dinner: 'dinners' };
+  var UW_UNITS = { breakfast: ['morning', 'mornings'], lunch: ['day', 'days'], dinner: ['night', 'nights'] };
+  var UW_SHEET_EYEBROW = {
+    breakfast: 'Which mornings, and who’s eating',
+    lunch: 'Which days, and who’s eating',
+    dinner: 'Which nights, and who’s eating'
+  };
+  // The same titles onboarding's variety screens use (static/onboarding.html
+  // VARIETY_OPTIONS); the numbers come from the server's variety_choices.
+  var UW_VARIETY_TITLES = {
+    breakfast: { go_to_or_two: 'A go-to or two', few_in_rotation: 'A few in rotation', new_every_day: 'Something new every morning' },
+    lunch: { last_nights_dinner: 'Last night’s dinner', meal_prep_ahead: 'Meal prep ahead', few_in_rotation: 'A few in rotation', new_every_day: 'Something new every day' },
+    dinner: { cook_big_eat_twice: 'Cook big, eat twice', few_in_rotation: 'A few in rotation', new_every_day: 'Something new every night' }
+  };
+  var UW_SNACK_OPTIONS = [{ value: 0, label: 'None' }, { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3 a day' }];
+  var UW_EXPLAINER = 'The meals I plan each week, who’s eating them, and how much they change.';
+  var UW_STARTS_NEXT = 'Starts with your next plan. This week stays as it is.';
+
+  // data: the last GET/POST /api/usual-week. sheet: the meal being edited.
+  // row: which of Snacks / Dinner time is open under Your rhythm.
+  var uwState = { data: null, sheet: null, row: null, busy: false };
+
+  // A cell as the server sends it ("everyone" / "off" / [member ids]) and
+  // as these screens hold it ('all' / 'off' / [ids]).
+  function uwFromServer(cell) { return cell === 'off' ? 'off' : Array.isArray(cell) ? cell.slice() : 'all'; }
+  function uwToServer(cell) { return cell === 'all' ? 'everyone' : cell; }
+  function uwCells(data, meal) {
+    var row = ((data && data.grid) || {})[meal] || {};
+    return UW_WEEKDAYS.map(function (d) { return uwFromServer(row[d]); });
+  }
+  function uwDaysOn(cells) { return cells.filter(function (c) { return c !== 'off'; }).length; }
+  function uwNames(members, ids) {
+    return (members || []).filter(function (m) { return ids.indexOf(m.id) !== -1; }).map(function (m) { return m.name; });
+  }
+  function uwWho(cell, members) {
+    if (cell === 'off') return '–';
+    var names = cell === 'all' ? (members || []).map(function (m) { return m.name; }) : uwNames(members, cell);
+    if (names.length > 3) return cell === 'all' ? 'All' : String(names.length);
+    return names.map(function (n) { return String(n || '').trim().charAt(0).toUpperCase(); }).join(' ');
+  }
+  function uwCellClass(cell) { return cell === 'all' ? ' is-all' : cell === 'off' ? '' : ' is-some'; }
+  function uwCellAria(meal, i, cell, members) {
+    var day = UW_DAY_NAMES[i] + ' ' + meal;
+    if (cell === 'off') return day + ', not planned';
+    if (cell === 'all') return day + ', everyone';
+    return day + ', ' + uwNames(members, cell).join(' and ');
+  }
+  // The day row: seven tiles. `attrs(i)` is what a tap on each one does.
+  function uwDayRowHtml(meal, cells, members, attrs, openI) {
+    return '<div class="uw-days">' + cells.map(function (cell, i) {
+      return '<button type="button" class="uw-day' + uwCellClass(cell) + (i === openI ? ' is-open' : '') + '" ' + attrs(i) +
+        ' aria-label="' + escapeHtml(uwCellAria(meal, i, cell, members)) + '"><b>' + UW_LETTERS[i] + '</b><span>' +
+        escapeHtml(uwWho(cell, members)) + '</span></button>';
+    }).join('') + '</div>';
+  }
+  // The number a choice stands for this many days on, from the server's
+  // variety_choices ({key, dishes: n | "days" | "leftovers"}).
+  function uwChoiceDishes(data, meal, choice, on) {
+    var found = (((data && data.variety_choices) || {})[meal] || []).filter(function (c) { return c.key === choice; })[0];
+    if (!found || !on) return null;
+    if (found.dishes === 'leftovers') return 'leftovers';
+    var n = found.dishes === 'days' ? on : found.dishes;
+    return Math.max(1, Math.min(n, on));
+  }
+  // "Variety: A few in rotation · 3 different" — or, never answered,
+  // "Variety: 3 different" with nothing picked.
+  function uwVarietyLine(data, meal) {
+    var v = ((data && data.variety) || {})[meal] || {};
+    if (!v.days_on) return 'Not planned';
+    var title = v.choice ? (UW_VARIETY_TITLES[meal] || {})[v.choice] : '';
+    if (v.choice === 'last_nights_dinner') return 'Variety: ' + title;
+    var n = v.dishes + ' different';
+    return 'Variety: ' + (title ? title + ' · ' + n : n);
+  }
+  function uwPrepDaysLine(data) {
+    var days = ((data && data.prep) || {}).days || [];
+    if (!days.length) return 'None';
+    var names = days.map(function (d) { return UW_DAY_NAMES[UW_WEEKDAYS.indexOf(d)] || d; });
+    return names.length <= 2 ? names.join(' and ') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  }
+  function uwSnacksLabel(n) { return n === 0 ? 'None' : n + ' a day'; }
+
+  function wwkUsualWeekHtml(mem) {
+    var data = uwState.data;
+    var html = wwkNote(UW_EXPLAINER);
+    if (!data) return html + '<p class="wwk-note">Reading it back…</p>';
+    UW_MEALS.forEach(function (meal) {
+      var cells = uwCells(data, meal);
+      html += '<div class="uw-set-meal">' +
+        '<button type="button" class="uw-set-title" data-wwk="uw-open" data-value="' + meal + '">' + UW_MEAL_LABELS[meal] + '</button>' +
+        uwDayRowHtml(meal, cells, data.members, function () { return 'data-wwk="uw-open" data-value="' + meal + '"'; }, -1) +
+        '<p class="uw-set-var">' + escapeHtml(uwVarietyLine(data, meal)) +
+          ' <button type="button" class="uw-set-change" data-wwk="uw-open" data-value="' + meal + '">Change</button></p>' +
+      '</div>';
+    });
+    var dinnerKey = ((mem && mem.rhythm) || {}).dinner_window || '';
+    var dinnerOpt = WWK_DINNER_WINDOW.filter(function (o) { return o.key === dinnerKey; })[0];
+    html += '<div class="uw-set-rows">' +
+      uwSetRowHtml('snacks', 'Snacks', uwSnacksLabel(data.snacks_per_day)) +
+      (uwState.row === 'snacks' ? '<div class="wwk-chips">' + UW_SNACK_OPTIONS.map(function (o) {
+        return wwkChip(o.label, 'data-wwk="uw-snacks" data-value="' + o.value + '"', data.snacks_per_day === o.value ? 'on' : '');
+      }).join('') + '</div>' : '') +
+      uwSetRowHtml('dinner', 'Dinner time', dinnerOpt ? dinnerOpt.label : '—') +
+      (uwState.row === 'dinner' ? '<div class="wwk-chips">' + WWK_DINNER_WINDOW.map(function (o) {
+        return wwkChip(o.label, 'data-wwk="rhythm" data-field="dinner_window" data-value="' + o.key + '"', dinnerKey === o.key ? 'on' : '');
+      }).join('') + '</div>' : '') +
+      uwSetRowHtml('prep', 'Prep day', uwPrepDaysLine(data)) +
+    '</div>';
+    return html;
+  }
+  function uwSetRowHtml(key, title, value) {
+    var open = uwState.row === key;
+    return '<button type="button" class="uw-set-row" data-wwk="uw-row" data-value="' + key + '"' +
+      (key === 'prep' ? '' : ' aria-expanded="' + (open ? 'true' : 'false') + '"') + '>' +
+      '<span class="uw-set-row-title">' + escapeHtml(title) + '</span>' +
+      '<span class="uw-set-row-value">' + escapeHtml(value) + ' ›</span></button>';
+  }
+
+  function uwToggleRow(key) {
+    if (key === 'prep') {
+      // Prep days has its own section; the row goes there.
+      wwkState.openSections['prep-days'] = true;
+      wwkRenderSection('prep-days');
+      wwkScrollTo('prep-days');
+      return;
+    }
+    uwState.row = uwState.row === key ? null : key;
+    wwkRenderSection('rhythm');
+  }
+
+  async function loadUsualWeek() {
+    try {
+      var res = await Api.fetch('/api/usual-week');
+      if (res.ok) uwState.data = await res.json();
+    } catch (err) {
+      console.warn('Usual week lookup failed:', err);
+    }
+  }
+
+  async function uwSaveSnacks(n) {
+    var data = uwState.data;
+    if (!data || data.snacks_per_day === n) return;
+    var before = data.snacks_per_day;
+    data.snacks_per_day = n;
+    if (wwkMem()) wwkMem().snacks_per_day = n;
+    wwkRenderSection('rhythm');
+    try {
+      var saved = await wwkPost('/api/usual-week', { snacks_per_day: n });
+      if (saved) uwState.data = saved;
+      wwkRenderSection('rhythm');
+      wwkFlashSaved('rhythm');
+      toastSaved('Snacks were saved');
+    } catch (err) {
+      console.warn('Snacks save failed:', err);
+      data.snacks_per_day = before;
+      if (wwkMem()) wwkMem().snacks_per_day = before;
+      wwkRenderSection('rhythm');
+      showToast('That didn’t save. Try it again.');
+    }
+  }
+
+  // ---------- the meal sheet: "Which nights, and who's eating" ----------
+  // One sheet per meal, opened from its title, its day row or its Change:
+  // the day row (tap a day for Everyone / Just <name> / Don't plan — a
+  // toggle per person in a house of three or more, as in onboarding), the
+  // variety options, one line saying what that comes to, and Save. Nothing
+  // is written until Save (§2b S10); the pop-up names the meal.
+  var uwSheetEl = null;
+  var uwScrimEl = null;
+
+  function buildUwSheet() {
+    if (uwSheetEl) return;
+    uwScrimEl = document.createElement('div');
+    uwScrimEl.id = 'uw-scrim';
+    uwScrimEl.hidden = true;
+    uwSheetEl = document.createElement('div');
+    uwSheetEl.id = 'uw-sheet';
+    uwSheetEl.hidden = true;
+    uwSheetEl.setAttribute('role', 'dialog');
+    uwSheetEl.setAttribute('aria-modal', 'true');
+    uwSheetEl.setAttribute('aria-labelledby', 'uw-sheet-title');
+    uwSheetEl.innerHTML = '<div class="ask-sheet-handle" id="uw-sheet-handle"></div><div id="uw-sheet-body"></div>';
+    document.body.appendChild(uwScrimEl);
+    document.body.appendChild(uwSheetEl);
+    uwScrimEl.addEventListener('click', closeUwSheet);
+    document.getElementById('uw-sheet-handle').addEventListener('click', closeUwSheet);
+    uwSheetEl.addEventListener('click', uwSheetClick);
+  }
+  function closeUwSheet() {
+    if (!uwSheetEl) return;
+    uwState.sheet = null;
+    closeSheet(uwSheetEl, uwScrimEl);
+  }
+  function openUwSheet(meal) {
+    var data = uwState.data;
+    if (!data || UW_MEALS.indexOf(meal) === -1) return;
+    buildUwSheet();
+    uwState.sheet = {
+      meal: meal,
+      cells: uwCells(data, meal),
+      choice: (((data.variety || {})[meal]) || {}).choice || null,
+      open: -1,
+      busy: false
+    };
+    renderUwSheet();
+    openSheet(uwSheetEl, uwScrimEl);
+  }
+
+  function uwPickerOptions(cell, members) {
+    var opts = [{ key: 'all', label: 'Everyone', on: cell === 'all' }];
+    if (members.length === 2) {
+      members.forEach(function (m) {
+        opts.push({ key: 'just:' + m.id, label: 'Just ' + m.name, on: Array.isArray(cell) && cell.length === 1 && cell[0] === m.id });
+      });
+    } else if (members.length > 2) {
+      members.forEach(function (m) {
+        opts.push({ key: 'toggle:' + m.id, label: m.name, toggle: true, on: cell === 'all' || (Array.isArray(cell) && cell.indexOf(m.id) !== -1) });
+      });
+    }
+    opts.push({ key: 'off', label: 'Don’t plan', on: cell === 'off' });
+    return opts;
+  }
+  function uwApplyPick(cell, key, members) {
+    if (key === 'all' || key === 'off') return key;
+    var ids = members.map(function (m) { return m.id; });
+    var who;
+    if (key.indexOf('just:') === 0) who = [parseInt(key.slice(5), 10)];
+    else {
+      var id = parseInt(key.slice(7), 10);
+      who = cell === 'all' ? ids.slice() : cell === 'off' ? [] : cell.slice();
+      who = who.indexOf(id) !== -1 ? who.filter(function (x) { return x !== id; }) : who.concat([id]);
+    }
+    who = ids.filter(function (x) { return who.indexOf(x) !== -1; });
+    if (!who.length) return 'off';
+    return who.length >= ids.length ? 'all' : who;
+  }
+  // What the sheet's answer comes to, in one line: "4 different dinners
+  // over 6 nights."
+  function uwResultLine(data, meal, cells, choice) {
+    var on = uwDaysOn(cells);
+    if (!on) return 'No ' + meal + ' planned.';
+    var unit = UW_UNITS[meal][on === 1 ? 0 : 1];
+    var prepDays = ((data && data.prep) || {}).days || [];
+    if (choice === 'last_nights_dinner') return 'Lunch is last night’s dinner, ' + on + ' ' + unit + ' a week.';
+    var n = choice ? uwChoiceDishes(data, meal, choice, on) : null;
+    if (n === null) {
+      var stored = (((data && data.variety) || {})[meal] || {}).dishes || on;
+      n = Math.max(1, Math.min(stored, on));
+    }
+    var line = n + ' different ' + (n === 1 ? meal : UW_MEAL_PLURALS[meal]) + ' over ' + on + ' ' + unit;
+    if (choice === 'meal_prep_ahead' && prepDays.length) line += ', made on ' + uwPrepDaysLine(data);
+    return line + '.';
+  }
+  function uwSheetBodyHtml(data, sheet) {
+    var meal = sheet.meal;
+    var members = data.members || [];
+    var hasPrep = (((data.prep || {}).days) || []).length > 0;
+    var html = '<div class="kit-sheet-titlerow uw-sheet-titlerow"><span class="kit-sheet-title" id="uw-sheet-title">' + UW_MEAL_LABELS[meal] + '</span>' +
+      '<button type="button" class="kit-sheet-close" data-uw="close" aria-label="Close">&times;</button></div>';
+    html += '<p class="wk-swap-eyebrow">' + escapeHtml(UW_SHEET_EYEBROW[meal]) + '</p>' +
+      uwDayRowHtml(meal, sheet.cells, members, function (i) { return 'data-uw="day" data-value="' + i + '"'; }, sheet.open);
+    if (sheet.open >= 0) {
+      html += '<div class="uw-row"><p class="uw-ct">' + UW_DAY_NAMES[sheet.open].slice(0, 3) + ' · who’s eating?</p>' +
+        uwPickerOptions(sheet.cells[sheet.open], members).map(function (o) {
+          return '<button type="button" class="uw-q' + (o.on ? ' is-on' : '') + '" data-uw="pick" data-value="' + escapeHtml(o.key) + '" aria-pressed="' + (o.on ? 'true' : 'false') + '">' + escapeHtml(o.label) + '</button>';
+        }).join('') + '</div>';
+    }
+    if (uwDaysOn(sheet.cells)) {
+      html += '<p class="wk-swap-eyebrow">How much variety</p><div class="uw-var-opts">' +
+        (((data.variety_choices || {})[meal]) || []).filter(function (c) { return !c.needs_prep_day || hasPrep || sheet.choice === c.key; }).map(function (c) {
+          var on = sheet.choice === c.key;
+          return '<button type="button" class="uw-var-opt' + (on ? ' is-on' : '') + '" data-uw="choice" data-value="' + c.key + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+            escapeHtml((UW_VARIETY_TITLES[meal] || {})[c.key] || c.key) + '</button>';
+        }).join('') + '</div>';
+    }
+    html += '<p class="uw-sum">' + escapeHtml(uwResultLine(data, meal, sheet.cells, sheet.choice)) + '</p>' +
+      '<p class="uw-sheet-note">' + UW_STARTS_NEXT + '</p>' +
+      '<button type="button" class="btn-primary uw-save" data-uw="save"' + (sheet.busy ? ' disabled' : '') + '>' + (sheet.busy ? 'Saving…' : 'Save') + '</button>';
+    return html;
+  }
+  function renderUwSheet() {
+    var body = document.getElementById('uw-sheet-body');
+    if (!body || !uwState.sheet || !uwState.data) return;
+    body.innerHTML = uwSheetBodyHtml(uwState.data, uwState.sheet);
+  }
+  function uwSheetClick(e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-uw]');
+    var sheet = uwState.sheet;
+    if (!t || !sheet) return;
+    var what = t.getAttribute('data-uw');
+    var value = t.getAttribute('data-value');
+    var members = (uwState.data && uwState.data.members) || [];
+    if (what === 'close') return closeUwSheet();
+    if (what === 'day') {
+      var i = parseInt(value, 10);
+      sheet.open = sheet.open === i ? -1 : i;
+    } else if (what === 'pick' && sheet.open >= 0) {
+      sheet.cells[sheet.open] = uwApplyPick(sheet.cells[sheet.open], value, members);
+      if (value.indexOf('toggle:') !== 0) sheet.open = -1;
+    } else if (what === 'choice') {
+      sheet.choice = value;
+    } else if (what === 'save') {
+      return uwSaveSheet();
+    }
+    renderUwSheet();
+  }
+  // The body POST /api/usual-week takes for this sheet: the meal's seven
+  // cells, and its variety choice when one is picked and the meal is on.
+  function uwSheetPayload(sheet) {
+    var row = {};
+    UW_WEEKDAYS.forEach(function (d, i) { row[d] = uwToServer(sheet.cells[i]); });
+    var body = { grid: {} };
+    body.grid[sheet.meal] = row;
+    if (sheet.choice && uwDaysOn(sheet.cells)) {
+      body.variety = {};
+      body.variety[sheet.meal] = sheet.choice;
+    }
+    return body;
+  }
+  async function uwSaveSheet() {
+    var sheet = uwState.sheet;
+    if (!sheet || sheet.busy) return;
+    sheet.busy = true;
+    renderUwSheet();
+    try {
+      var saved = await wwkPost('/api/usual-week', uwSheetPayload(sheet));
+      if (saved) uwState.data = saved;
+      closeUwSheet();
+      wwkRenderSection('rhythm');
+      wwkFlashSaved('rhythm');
+      toastSaved(savedLine(UW_MEAL_LABELS[sheet.meal], 'saved'));
+    } catch (err) {
+      console.warn('Usual week save failed:', err);
+      sheet.busy = false;
+      renderUwSheet();
+      showToast('That didn’t save. Try it again.');
+    }
+  }
+
   // ---------- Your rhythm ----------
 
   function wwkRhythmHtml(mem) {
@@ -10315,9 +10663,10 @@
     var members = (mem.members || []).map(function (m) { return m.name; });
     var role = r.cooking_role ? r.cooking_role.value : '';
     var who = r.cooking_role ? r.cooking_role.who : '';
-    var html = '';
-    html += wwkLead('When dinner lands') + '<div class="wwk-chips">' +
-      WWK_DINNER_WINDOW.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="dinner_window" data-value="' + o.key + '"', r.dinner_window === o.key ? 'on' : ''); }).join('') + '</div>';
+    // The usual week leads (2026-09-30): each meal's days, who's eating,
+    // its variety, then Snacks / Dinner time / Prep day. "When dinner
+    // lands" moved under its Dinner time row.
+    var html = wwkUsualWeekHtml(mem);
     // From the old /meal-setup page (2026-09-25): the planner holds
     // Monday-Friday dinners to it (app/tools/time_caps.py).
     html += wwkLead('On a weeknight') +
@@ -10517,18 +10866,13 @@
       '</span>' +
       '<span class="wwk-toggle-verb">' + (platesOn ? 'Stop' : 'Start') + '</span>' +
     '</button>';
-    // The counts are how many DIFFERENT dishes of each kind a week — a
-    // target since 373f009 (app/tools/meal_variety.py) — so the rest of
-    // the week is repeats and leftovers (Emily, 2026-09-25).
-    html += wwkLead('Different dishes a week') + wwkNote('Fewer means more leftovers and batch cooking.');
-    WWK_COUNTS.forEach(function (c) { html += wwkStepperHtml(c, mem[c.field]); });
-    // Never below Snacks a day: fewer different snacks than land on a day
-    // would be a day eating one twice, which the draft won't plan.
+    // Breakfasts, lunches and dinners are Your rhythm's variety now
+    // (2026-09-30). Different snacks a week stays here. Never below snacks
+    // a day: fewer different snacks than land on a day would be a day
+    // eating one twice, which the draft won't plan.
     var snackFloor = Math.max(1, typeof mem.snacks_per_day === 'number' ? mem.snacks_per_day : 0);
-    html += wwkStepperHtml(Object.assign({}, WWK_SNACK_DISHES, { min: snackFloor }), wwkSnackDishes(mem));
-    // Snacks a day is how many land on each day, not a count of dishes —
-    // its own line, not under "Different dishes a week" (2026-09-27).
-    html += '<div class="wwk-count-own">' + wwkStepperHtml(WWK_SNACKS, mem.snacks_per_day) + '</div>';
+    html += wwkLead('Different snacks a week') +
+      wwkStepperHtml(Object.assign({}, WWK_SNACK_DISHES, { min: snackFloor }), wwkSnackDishes(mem));
     html += wwkLead('In your kitchen') + '<div class="wwk-chips">' +
       WWK_KIT.map(function (k) { return wwkChip(k.label, 'data-wwk="kit" data-value="' + k.key + '"', (mem.kitchen_kit || []).indexOf(k.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
     html += wwkFactsHtml('taste');
@@ -11041,6 +11385,9 @@
         case 'cooking-who': return wwkSetCookingWho(value);
         case 'lunch': return wwkSetLunch(member, value);
         case 'prep-day': return wwkTogglePrepDay(value);
+        case 'uw-open': return openUwSheet(value);
+        case 'uw-row': return uwToggleRow(value);
+        case 'uw-snacks': return uwSaveSnacks(parseInt(value, 10));
         case 'prep-minutes': return wwkSetPrepMinutes(parseInt(value, 10));
         case 'protein': return wwkCycleProtein(value);
         case 'plates': return wwkTogglePlates();
