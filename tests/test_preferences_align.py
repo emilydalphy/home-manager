@@ -63,17 +63,31 @@ def _constants() -> str:
     return SHELL_JS[start:end]
 
 
+def _usual_week_constants() -> str:
+    """Your rhythm's usual-week words and state (2026-09-30)."""
+    start = SHELL_JS.index("  var UW_MEALS = [")
+    end = SHELL_JS.index("  // A cell as the server sends it")
+    return SHELL_JS[start:end]
+
+
+USUAL_WEEK_FNS = [
+    "wwkUsualWeekHtml", "uwSetRowHtml", "uwFromServer", "uwCells", "uwDaysOn", "uwNames", "uwWho",
+    "uwCellClass", "uwCellAria", "uwDayRowHtml", "uwVarietyLine", "uwPrepDaysLine", "uwSnacksLabel",
+]
+
+
 def _harness(*extra: str) -> str:
     names = [
         "escapeHtml", "wwkChip", "wwkFactChip", "wwkAddChip", "wwkLead", "wwkNote",
         "wwkFactsHtml", "wwkStepperHtml", "wwkSnackDishes", "wwkProteinState", "wwkMem",
         "wwkRhythmHtml", "wwkWeeknightHtml", "wwkTasteHtml",
-        "wwkCuisineStored", "wwkIsPresetCuisine", *extra,
+        "wwkCuisineStored", "wwkIsPresetCuisine", *USUAL_WEEK_FNS, *extra,
     ]
     return (
         "var wwkState = { facts: [], pendingCookWho: false, openSections: {} };\n"
         "var prefsState = { memory: null };\n"
         + _constants() + "\n"
+        + _usual_week_constants() + "\n"
         + "\n".join(_function(n) for n in names) + "\n"
     )
 
@@ -108,30 +122,26 @@ console.log(JSON.stringify({fn}(prefsState.memory)));
 
 # --- 1. Different dishes a week ---------------------------------------------
 
-def test_the_counts_are_called_different_dishes_a_week_with_one_line_under():
+def test_the_different_dishes_steppers_are_gone():
+    """2026-09-30: breakfasts, lunches and dinners are Your rhythm's usual
+    week (days, who's eating, variety) — the "Different dishes a week"
+    steppers and "Snacks a day" left How you eat."""
     html = _render("wwkTasteHtml", MEMORY)
-    assert '<p class="wwk-lead">Different dishes a week</p>' in html
-    assert '<p class="wwk-note">Fewer means more leftovers and batch cooking.</p>' in html
-    assert "Each week I plan" not in html
-    # The line sits between the lead and the first stepper.
-    assert html.index("Different dishes a week") < html.index("Fewer means more") < html.index('data-field="dinners_per_week"')
+    assert "Different dishes a week" not in html
+    assert "Fewer means more leftovers" not in html
+    for field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_day"):
+        assert f'data-field="{field}"' not in html, f"{field} still has a stepper"
+    assert "WWK_COUNTS" not in SHELL_JS and "'Snacks a day'" not in SHELL_JS
 
 
-def test_snacks_is_a_different_dishes_count_and_snacks_a_day_stands_on_its_own():
-    """2026-09-27: "Snacks" (different snack dishes a week) sits with the
-    other counts; "Snacks a day" is its own line, not under that heading."""
+def test_different_snacks_a_week_keeps_its_stepper():
     html = _render("wwkTasteHtml", MEMORY)
-    lunches = html.index('data-field="lunches_per_week"')
-    dishes = html.index('data-field="snack_dishes_per_week"')
-    per_day = html.index('data-field="snacks_per_day"')
-    assert lunches < dishes < per_day
+    assert '<p class="wwk-lead">Different snacks a week</p>' in html
+    assert html.index("Different snacks a week") < html.index('data-field="snack_dishes_per_week"')
     assert '<span class="wwk-count-label">Snacks</span>' in html
-    # Two when the household never set it, and the minus stops at Snacks a day (2).
+    # Two when the household never set it, and the minus stops at snacks a day (2).
     assert re.search(r'data-field="snack_dishes_per_week" data-delta="-1" data-max="7" data-min="2" '
                      r'aria-label="Fewer different snacks">&minus;</button><span class="cook-serves-count">2<', html)
-    own = html[html.index('<div class="wwk-count-own">'):]
-    assert own.index("Snacks a day") < own.index("</div></div>") + 20
-    assert "snack_dishes_per_week" not in own
 
 
 def test_snacks_a_day_above_snacks_brings_snacks_up_on_screen():

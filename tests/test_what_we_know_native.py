@@ -178,9 +178,12 @@ def test_copy_is_kitchen_table_not_form_labels():
     # "Cuisines you like", "Each week I plan" -> "Different dishes a week",
     # and "Meals eaten together" left (nothing reads it); "On a weeknight",
     # "At the table" and "A normal week at yours" came in from /meal-setup.
-    for lead in ("Never on the plate", "When dinner lands", "Plan ready by", "Who cooks",
+    # UPDATED 2026-09-30: "When dinner lands" is Your rhythm's Dinner time
+    # row, and "Different dishes a week" is the usual week's variety (the
+    # snack count kept its stepper as "Different snacks a week").
+    for lead in ("Never on the plate", "Dinner time", "Plan ready by", "Who cooks",
                  "Lunch, on a normal day", "Roughly how long",
-                 "How meals lean", "Cuisines you like", "Rounding out meals", "Different dishes a week",
+                 "How meals lean", "Cuisines you like", "Rounding out meals", "Different snacks a week",
                  "In your kitchen", "Anything else", "Paste a whole list",
                  "On a weeknight", "At the table", "A normal week at yours"):
         assert lead in WWK, f"lead-in {lead!r} missing"
@@ -247,10 +250,12 @@ CHECKLIST = {
     "cuisine remove": ("data-wwk=\"cuisine-remove\"", "wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', value)"),
     "protein 3-state": ("data-wwk=\"protein\"", "function wwkCycleProtein(key)"),
     "complete plates": ("data-wwk=\"plates\"", "wwkSavePreference('taste', 'complete_plates'"),
-    "dinners per week": ("field: 'dinners_per_week'", "data-wwk=\"count\""),
-    "breakfasts per week": ("field: 'breakfasts_per_week'", "data-wwk=\"count\""),
-    "lunches per week": ("field: 'lunches_per_week'", "data-wwk=\"count\""),
-    "snacks a day": ("field: 'snacks_per_day'", "max: 6"),
+    # UPDATED 2026-09-30: the per-meal counts are Your rhythm's usual week
+    # now — a meal's sheet sets its days and its variety, whose number the
+    # server writes into breakfasts/lunches/dinners_per_week — and snacks a
+    # day is its Snacks row. The "Different dishes a week" steppers are gone.
+    "dinners, breakfasts and lunches a week": ("data-wwk=\"uw-open\"", "uwPost(uwSheetPayload(sheet))"),
+    "snacks a day": ("data-wwk=\"uw-snacks\"", "uwPost({ snacks_per_day: n })"),
     "kitchen kit": ("data-wwk=\"kit\"", "wwkSavePreference('taste', 'kitchen_kit'"),
     "cuisine preset chip": ("data-wwk=\"cuisine\"", "function wwkToggleCuisine(name)"),
     "table style": ("data-wwk=\"table-style\"", "wwkSavePreference('taste', 'table_style'"),
