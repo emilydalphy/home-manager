@@ -1954,15 +1954,25 @@ NEVER_OPEN_SLOTS = ("breakfast", "lunch")
 # a later reader can tell this row from one the model sent.
 GAP_FILL_CONSTRAINT = "repeat_fills_gap"
 
-# And the one short sentence the card carries. NOT blank, deliberately —
-# the fold above writes REPEAT_REASON ("") for a swapped-out repeat
-# because Emily asked for no note there, and plan_quality.
-# _reasoning_is_specific duly warns "has no reasoning at all" for every
-# blank row it sees. Trading an open-slot warning for a reasoning warning
-# would be no quieter a morning report and a less actionable one; the
-# same measurement made cap_enforce give a moved dinner MOVE_REASON.
-# There is no "don't announce it" argument here either way: this row
-# stands where there was nothing at all, so a blank would just be a blank.
+# And the one short sentence the card carries. NOT blank — but the reason
+# given for that has EXPIRED, and it is corrected here (2026-10-01)
+# rather than left standing. It used to say that
+# plan_quality._reasoning_is_specific warns "has no reasoning at all" for
+# every blank row, so trading an open-slot warning for a reasoning
+# warning would be no quieter a morning report. That rule stopped firing
+# on a blank on 2026-09-30 (45e2bc0) — the week call is no longer asked
+# for a per-slot line, so blank is the normal case and the rule returns
+# early on it. Measured again on this tree: a blank produces ZERO
+# findings, and only generic filler is caught. The matching claim in
+# cap_enforce.MOVE_REASON's comment is corrected in the same change.
+#
+# The sentence STAYS, on the reason that never depended on the warning
+# and is the stronger one anyway: this row stands where there was nothing
+# at all. A household looking at a filled gap is owed a word about why
+# the app answered instead of asking, and there is no "don't announce
+# it" argument here — the fold's REPEAT_REASON ("") is blank because
+# Emily asked for no note on a swapped-out repeat, which is the app
+# declining to announce something it does anyway. This is not that.
 GAP_FILL_REASON = "Something already on your week, rather than a question."
 
 

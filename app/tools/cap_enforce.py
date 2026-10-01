@@ -128,35 +128,56 @@ MOVED_KEY = "cap_moved"
 # announces the cap either: the pick's reason is about the DISH ("quick on
 # the night"), and what happened is on record in derived_from[REPICK_KEY].
 #
-# An EMPTY reason was the first answer and it was measured to be worse:
-# plan_quality's `reasoning_is_specific` fires "has no reasoning at all"
-# for every row it leaves blank (it exempts a leftovers night and nothing
-# else), so on the card's own seeded week the pass traded 3 cap warnings
-# for 5 reasoning warnings — no quieter a morning report, and a less
-# actionable one. None here means "the pick speaks for itself".
+# An EMPTY reason was the first answer, and the measurement that ruled it
+# out HAS SINCE EXPIRED — corrected 2026-10-01 rather than left standing,
+# because the next reader acts on it. What was measured (2026-09-26) is
+# that `reasoning_is_specific` fired "has no reasoning at all" for every
+# blank row, so the pass traded 3 cap warnings for 5 reasoning warnings.
+# That rule stopped firing on a blank on 2026-09-30 (45e2bc0): the week
+# call is no longer asked for a per-slot line at all, so blank is the
+# normal case and `_reasoning_is_specific` returns early on it. Measured
+# again on this tree: a blank reason produces ZERO findings, and only
+# generic filler is caught.
+#
+# None STILL STANDS, on the reason that never depended on the warning:
+# the pick's own reason is about the DISH ("quick on the night") and what
+# happened is on record in derived_from[REPICK_KEY], so a re-picked
+# dinner keeping the pick's default is the honest answer. Emily's "no
+# note" decision (2026-09-25, meal_variety.REPEAT_REASON) was about not
+# ANNOUNCING what the app does anyway, and nothing here announces the
+# cap. None means "the pick speaks for itself".
 REPICK_REASON = None
 
-# A MOVE IS THE ONE THAT DOES CARRY A SENTENCE, and the reason is measured
-# rather than argued. A moved dinner keeps its dish, so it keeps a reason
-# the model wrote about the night it is no longer on ("lighter after
-# Monday's chili") — which can be plainly false once it has moved. Emptying
-# it was the first answer and it TRADES ONE WARNING FOR ANOTHER: measured,
-# plan_quality's `reasoning_is_specific` fires "has no reasoning at all"
-# for every row, so a two-night trade puts two fresh warnings into the
-# morning report this card exists to quiet. (That rule exempts a leftovers
-# night and nothing else. Worth being exact, since it is tempting to read
-# meal_variety.REPEAT_REASON as a precedent for an empty one: measured, it
-# produces that same warning on main today for every dish IT re-picks. That
-# is a pre-existing consequence of Emily's own copy decision and not this
-# branch's to change for her — but it is not a licence to add more.)
+# A MOVE IS THE ONE THAT DOES CARRY A SENTENCE. A moved dinner keeps its
+# dish, so it keeps a reason the model wrote about the night it is no
+# longer on ("lighter after Monday's chili") — which can be plainly false
+# once it has moved. THAT is why it carries one, and that reason is
+# untouched.
 #
-# So: one short sentence that is true of BOTH sides of any trade this pass
-# makes, whether or not the cap ends up met — the app moved them so the
-# week fits the time the household has. It is behind a tap, never in the
-# face, so it is not an announcement in the sense her plain-copy rule is
-# about. The cost, named: the model's own reason is lost, including the
-# part of it that may have been about the DISH rather than the night.
-# Hers to reword in one line; emptying it re-introduces the warnings above.
+# THE ARGUMENT AGAINST EMPTYING IT HAS EXPIRED, and saying so is the
+# point of this correction (2026-10-01). It used to read "emptying it
+# re-introduces the warnings above", on the 2026-09-26 measurement that
+# `reasoning_is_specific` fired "has no reasoning at all" for every blank
+# row — so a two-night trade put two fresh warnings into the morning
+# report this pass exists to quiet. That rule stopped firing on a blank
+# on 2026-09-30 (45e2bc0), when the week call stopped being asked for a
+# per-slot line and blank became the normal case. Measured again on this
+# tree: a blank reason produces ZERO findings. So emptying this costs
+# nothing in the report, and a future session must not be told otherwise
+# — an unmeasured cost claim in a comment is what the next reader acts
+# on, which is a mistake this log has had to unpick before.
+#
+# What is left is one short sentence that is true of BOTH sides of any
+# trade this pass makes, whether or not the cap ends up met — the app
+# moved them so the week fits the time the household has. It is behind a
+# tap, never in the face, so it is not an announcement in the sense
+# Emily's plain-copy rule is about. The cost, named: the model's own
+# reason is lost, including the part that may have been about the DISH
+# rather than the night.
+#
+# HERS, AND NOW FREE EITHER WAY. Emptying it, or rewording it, is a pure
+# copy decision with no engineering reason pushing back — which it was
+# not when this was written.
 MOVE_REASON = "Moved here so the week fits the time you have."
 
 # A week has seven nights, so a handful of trades settles it; the bound is
