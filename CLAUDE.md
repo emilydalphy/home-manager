@@ -601,11 +601,14 @@ why*, not duplicating the diff.
     variable or a dict is invisible; and it reads `message=` keywords only,
     so a `Violation` built positionally would be missed. All eleven rules
     pass `message=` today, checked.
-  - **Numbers, read off the runs at `TZ=America/Toronto`: 8949 passed, 0
-    failed**, against **8930 collected on `origin/main`** — +19 is this one
-    new test file exactly (20 after the review round added the reader's own
-    guard), and `git diff origin/main -- tests/` adds one file and changes
-    none, so no existing test was deleted or weakened. The four CI weekday
+  - **Numbers, read off the runs at `TZ=America/Toronto`, RE-RUN after the
+    review round rather than carried forward: 8950 passed, 0 failed**,
+    against **8930 collected on `origin/main`** — +20 is this one new test
+    file exactly, and `git diff origin/main -- tests/` adds one file and
+    changes none, so no existing test was deleted or weakened. (The first
+    reading was 8949 / +19, before the review round added the reader's own
+    guard; a count taken before the file was finished is a count of a
+    different file.) The four CI weekday
     pins over the plan_quality family this touches (31 files): **1165
     passed each** at monday, friday, saturday and sunday, and **1165 inside
     a VERIFIED `Pacific/Niue` straddle** — Niue 2026-09-30 against Toronto
