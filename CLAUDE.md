@@ -425,6 +425,195 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-01 — A fridge move follows the meal it is for when that meal is
+  swapped or moved by hand. Branch `overnight/thaw-follows-the-meal`, NOT
+  merged at the time of writing.** Loop Board bug, the known limit the
+  2026-09-30 leftovers card filed in its own words ("reminders are booked
+  when the week is drafted and a later hand swap doesn't recompute them").
+  - **`defrost.sync_defrost_tasks`' OWN DOCSTRING HAS LISTED "a swapped
+    meal" AMONG THE MOMENTS IT IS SAFE TO CALL SINCE THE DAY IT WAS
+    WRITTEN, and nothing called it there.** Its only two callers were plan
+    generation and a manual prep-schedule regenerate, both in `agent.py`
+    — so a week's thaws were worked out ONCE, when the week was drafted,
+    and every hand change after that was judged against the plan as it had
+    been. It makes no model call, so the fix costs nothing but local
+    SQLite.
+  - **Measured on `940df8b` before anything was touched, through the real
+    functions on a throwaway DB, both doors:**
+
+    | | main | this branch |
+    |---|---|---|
+    | **swap** tomorrow's chili → Chicken Skewers (thighs in the freezer) | `prep_tasks` empty before AND after; `defrost_candidates_for_plan` saying "Move the Chicken thighs to the fridge — for Friday's Chicken Skewers." | the row booked, and `thaw_now: ["Move the Chicken thighs to the fridge now."]` |
+    | **move** the same skewers from +4 to +1 (nights swap) | the row shifted onto YESTERDAY (the right day), `get_defrost_today` `[]`, `get_defrost_schedule` `[]`, Today's fridge moves `[]`, result `prep_tasks_moved: 1` and no sentence | the same row, plus the same sentence |
+
+    So on the swap door the app knew exactly what was owed and booked none
+    of it; on the move door it booked the right thing onto a day that had
+    gone, which every surface reads as a calendar day and so shows
+    nowhere.
+  - **TWO HALVES, AND WHICH CRITERION EACH ANSWERS, because three of the
+    four were already partly met and the entry should not read as four
+    fixes.** (1) The SYNC is criterion 1 — `defrost.resync_plan_thaws`,
+    called after the caller's commit. (2) The SENTENCE is criterion 3 —
+    `thaw_now` on the result, built by the new `defrost.thaw_move_sentence`
+    ("Move the chicken thighs to the fridge now." / "… today." / "… on
+    Friday."). (3) **Criterion 2 was ALREADY MET** on the swap doors by
+    `weekly_plan._release_prep_rows` (2026-09-22) — verified rather than
+    assumed, and its tests are GUARDs. (4) **Criterion 4 falls out and is
+    verified rather than claimed**: the booked row shows on `moves.
+    today_moves` (Now and the strip), `digest.build_morning_text`,
+    `digest.build_evening_nudge`, `cooker.get_prep_schedule` AND Cook's
+    own prep session, plus `get_defrost_today` and `get_defrost_schedule`,
+    all in one test.
+  - **AND CRITERION 1 WAS ALREADY MET ON THE MOVE DOORS FOR THE ROW'S
+    DATE, which is why those tests are guards rather than catches.**
+    `weekly_plan._shift_defrost_tasks` (2026-09-13) carries a row by the
+    number of days the meal moved, and that is not luck: `defrost.
+    _move_date` shifts linearly (both the clock branch and the whole-day
+    fallback, floor included), so shifting IS what recomputing gives. What
+    the sync adds there is the invariant — the plan's rows equal what the
+    plan owes, whatever else about the week changed — and the shift still
+    earns its keep, because it is what carries a DONE row's status across
+    a move where a delete-and-reinsert would lose it. **A case where the
+    two genuinely disagree was looked for and NOT found**: the `cook_on_fed`
+    night off shrinks a batch, and the defrost quantity came out `3 lbs`
+    before and after, agreeing with the candidates. Said rather than
+    implied.
+  - **WHERE THE SYNC RUNS, and the one rule that matters: AFTER the
+    commit, never inside.** `sync_defrost_tasks` opens its own connection
+    (and so do the inventory, recipe and rhythm reads under it), and a
+    nested `get_conn` inside an open write transaction is how this repo has
+    twice earned an intermittent "database is locked". Same shape
+    `drop_dish_from_day`'s grocery rescale already takes. Pinned by a
+    RUNTIME guard rather than a source marker — the stub takes a
+    `BEGIN IMMEDIATE` on a connection of its own with a 0.2s timeout, so a
+    regression fails fast instead of waiting out sqlite3's five seconds;
+    the mutation that moves the call above `conn.commit()` reddens 10.
+  - **Five sites, and four of them are funnels rather than doors.**
+    `_replace_slot_entries` (every chat swap, `swap_in_place`,
+    `add_dish_day`, `resolve_open_slot`, `plate_parts.change_part`,
+    `proposals.apply_proposal`, `holidays._plan_dish`,
+    `meal_variety.enforce_distinct_count`) and `replace_dish_on_days` (the
+    multi-day Swap) — the two writes that release a meal's prep rows;
+    `_apply_dinner_nights_swap` **only when it owns its connection**, since
+    a caller that passed one still holds the lock (its docstring already
+    says `days` and `taste_verdicts` are the caller's to take, and this
+    joins them); `meal_move._after_move`, which both the Move sheet and its
+    Undo already call; and `tonight.tonight_night_off`'s existing
+    post-commit block. **Deliberately in the WRITE rather than at each
+    door**: `swap_meal_in_plan`'s own docstring records what the other
+    arrangement costs ("a new caller… is not covered by any of them. Add
+    the ask at your door, or the class comes back"), and here the write is
+    the funnel, so it cannot be forgotten.
+  - **COST, measured at `sqlite3.connect` so a module-local `get_conn`
+    cannot slip past: 4 → 16 connections for a hand swap (~5 ms → ~18 ms),
+    47 → 59 for a nights swap (~66 ms → ~61 ms, i.e. inside the noise).**
+    `resync_plan_thaws` is 12 of those: the sync's own 10, one clock read,
+    one notes read. **And generation pays it too** — `_replace_slot_entries`
+    runs 6 times in a repair-heavy generation (measured, with
+    `repair_snack_clashes` and the count fold both firing), so ~72 extra
+    connections against a model call of 36 seconds, and generation's own
+    sync still runs last. **A short-circuit for the common case was
+    considered and refused**: most households track no freezer item at all
+    (this module's own docstring), so "is anything frozen here" would be a
+    second answer to a question `_candidates_from_plan` already answers,
+    free to drift from it — and a wrong "nothing" puts this bug straight
+    back in the quiet direction.
+  - **THE SENTENCES ARE SCOPED TO THE MEALS THE CHANGE TOUCHED, not to
+    every row on the plan.** A thaw due today that nobody has ticked is
+    true whether or not this swap caused it, but repeating it on every tap
+    turns an urgent sentence into furniture, and "on the spot" means about
+    the thing just done. For a swap that is the new entry **plus any night
+    that was reheating the outgoing cook** — `_replace_slot_entries`
+    collects those while it clears their `links_to`, because such a night
+    becomes an ordinary cook of its own dish and may be owed a move it
+    never had. Both halves are pinned.
+  - **Only PENDING rows**: a move already ticked is food already in the
+    fridge, and "move the chicken now" about it is the app not reading its
+    own records.
+  - **ONE WORDING. `meal_move._thaw_notes` had it first and now reads
+    `defrost.thaw_move_sentence`** — three wordings for one fact is how two
+    screens come to tell a household different things about the same
+    chicken. Its own diff rule (say it when a thaw moved EARLIER) and its
+    `thaw_notes` key are untouched, because `static/shell.js` reads that
+    key and nothing else; what the pass finds still owed today or earlier
+    is MERGED into it. That merge is a real catch: a thaw already overdue
+    that the move pushed LATER and that is still overdue said nothing
+    before, because the diff sees `to > from` and stops.
+  - **NEVER RAISES.** A reminder pass that fails must not report a swap
+    that landed as a swap that did not — the stance
+    `agent._sync_defrost_tasks_if_needed` and `meal_move._after_move`
+    already take. The cost of swallowing is the week's thaws being judged
+    against the plan as it was, which is this card's own bug and is
+    survivable; the cost of raising is telling the household nothing
+    changed over a change that did.
+  - **The chat half needs no screen.** `thaw_now` rides on the tool result,
+    and `swap_meal_in_plan`, `swap_dinner_nights` and `take_the_night_off`
+    each gained one sentence of their description telling the model to say
+    those lines back — the shape `held_thawed` already uses. **The SCREEN
+    half is the follow-up and is deliberately not guessed at**: `shell.js`
+    is untouched (another builder is in it), so the Plan tiles' drag and
+    the night-off sheet carry the data and draw nothing; the Move sheet
+    already draws it through `thaw_notes`. Its own card.
+  - **ALSO NOT DONE, named so nobody reports it as new.** `undo_meal_move`
+    carries `thaw_notes` now and no screen reads it. `clear_plan_slot` and
+    `reset.clear_weekly_plan` are not wired — neither is a swap or a move.
+    And nothing is verified in a browser: `static/` is byte-identical.
+  - `tests/test_thaw_follows_the_meal.py` (31). **16 red against main's
+    `app/`, decomposed in the file's own header rather than quoted: TEN
+    fail on the assertion they are named for** (five on the booking half,
+    two on the missing `thaw_now` key, the orphaned reheat's own sentence,
+    the move sheet's merged line, and the surfaces test on the first of
+    the four), one is a source marker, one is a NAME, and **FOUR are red
+    for a reason other than the one they are named after** — three die at
+    a PREMISE with an `IndexError`, reading `[0]` of a list of booked rows
+    that is empty there, and one because the pass it watches is not there
+    to be watched. Each says which it is.
+  - **THAT NUMBER WAS 14 OF 27 WHEN FIRST MEASURED, AND IS RE-MEASURED
+    HERE RATHER THAN CARRIED FORWARD.** Four tests landed after the first
+    reading, while the three mutations below were being re-aimed, and two
+    of them are behaviour catches — so the figure moved in the branch's
+    favour and was still wrong. A red count taken before the file was
+    finished is a count of a different file, which is the statistic this
+    log keeps having to unpick. Measured in a `git archive` of
+    `origin/main` with the file copied into it, rather than by stashing,
+    because the full suite was running in the worktree at the time.
+  - **NINETEEN mutations run, EIGHTEEN bite**, red counts read off the
+    runs: the sync removed from the swap write, i.e. main's behaviour
+    (**10**); from the multi-day swap (1); from the nights swap (1); from
+    the night off (1); the orphaned reheats dropped from the swap's call
+    (1); the today-or-earlier filter dropped (2); the pending filter
+    dropped (1); the notes widened to every row on the plan (1); the
+    `try` around the sync removed (1); the call moved INSIDE the
+    transaction (**10**, and the file takes 31s instead of about five — the lock
+    being waited out, which is the failure this ordering exists to
+    prevent); `_release_prep_rows` made a no-op (1) and scoped to
+    `inventory_item_id IS NOT NULL` (1); `_thaw_notes` given its own
+    f-strings back (1); its `also` merge dropped (1);
+    `_shift_defrost_tasks` made a no-op (2) and that plus `_after_move`'s
+    sync (5); the sync's `inventory_item_id IS NOT NULL` guard dropped so
+    it sweeps `confirm_frozen_items`' rows (1); its `meal_plan_entry_id IS
+    NOT NULL` guard dropped so it sweeps a ready-made recommendation's (1).
+  - **THE NINETEENTH REDDENS NOTHING AND IS WRITTEN DOWN RATHER THAN
+    RE-AIMED.** Dropping `AND household_id = ?` from `resync_plan_thaws`'
+    own notes query: that query is already scoped by `weekly_plan_id` and
+    a plan belongs to exactly one household, so the clause is defence in
+    depth with nothing behavioural behind it. The sync's own household
+    filter IS pinned, by the cross-household test.
+  - **THREE MUTATIONS REDDENED NOTHING ON THE FIRST RUN AND TWO WERE REAL
+    HOLES IN THE TESTS — recorded rather than quietly re-run, because this
+    is where the evidence came from.** (1) `_release_prep_rows` made a
+    no-op left all 27 of the tests there were then green, because the
+    sync's own sweep then removes the same row: the two halves are
+    indistinguishable on a row the sweep touches, so the guard now uses a
+    `confirm_frozen_items` row, which the sweep deliberately never
+    touches. (2) The notes widened to every row left them all green,
+    because no test had an overdue thaw on a night the swap was not
+    about; one does now. (3) The orphan ids dropped left them all green,
+    because the ROW is booked by the plan-wide sync either way and only
+    the SENTENCE is scoped — so the test for it now has the orphan's own
+    thaw overdue. The four tests those three answers added are also what
+    moved the red count above.
+
 - **2026-09-30 — A night off on a reheat that owns a side now takes the
   side's line off the list, and the undo puts it back exactly. Branch
   `night-off-undo-carries-groceries`, NOT merged at the time of writing.**

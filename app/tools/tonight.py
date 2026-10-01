@@ -921,6 +921,11 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
     }
     use_soon: list[str] = []
     dish = ""
+    # The meals this answer touched, for the fridge-move pass after the
+    # commit below. Declared out here because every shape fills it inside
+    # the transaction and the pass runs after it.
+    plan_id = None
+    touched_entries: list[int] = []
 
     # ONE transaction, and the lock is taken before the first read — the
     # shape _replace_slot_entries and _apply_dinner_nights_swap both use,
@@ -991,11 +996,12 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             # Nothing to move it to and nothing it feeds — the dish comes
             # off the week. No undo: its groceries are reversed here.
             use_soon = _fresh_bought_for(tonight_row["id"], conn=conn)
+            touched_entries = [tonight_row["id"]] if tonight_row is not None else []
             _settle_night_off(plan_id, today, use_soon, conn)
             conn.commit()
             out["said"] = _said(kind, dish, step, use_soon)
         else:
-            _night_off_with_undo(conn, plan, rows, tonight_row, today, step, out)
+            touched_entries = _night_off_with_undo(conn, plan, rows, tonight_row, today, step, out)
             conn.commit()
     except _Refused as refused:
         conn.rollback()
@@ -1012,7 +1018,33 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
     out["use_soon"] = use_soon
     if use_soon:
         _queue_use_soon(dish, use_soon)
+    # And the week's fridge moves, for the same reason and in the same
+    # breath (Loop Board "Thaw reminders follow a meal when it's swapped or
+    # moved by hand"). A night off moves a dinner — 'move' through the very
+    # swap_dinner_nights the Plan tiles use, 'cook_on_fed' onto the first
+    # night it was feeding — and _apply_dinner_nights_swap handed a
+    # connection deliberately leaves every read to its caller, so this is
+    # that read. It matters most on 'cook_on_fed', where the batch SHRINKS
+    # (the new cook night stops being one of its targets), so a fridge
+    # move's quantity is stale until it is recomputed.
+    #
+    # `thaw_now` and not a line in `said`: this answer's own toast is
+    # written for the night off and a thaw sentence welded into it is a
+    # copy decision nobody has made. The field is what the sheet and the
+    # chat tool read; see this card's entry in CLAUDE.md.
+    said = _thaw_resync(plan_id, touched_entries)
+    if said:
+        out["thaw_now"] = said
     return out
+
+
+def _thaw_resync(weekly_plan_id, entry_ids) -> list[str]:
+    """defrost.resync_plan_thaws, imported where it is called — defrost
+    imports this module's neighbours at module scope and never raises, so a
+    failed reminder pass cannot report a settled night as unsettled."""
+    from . import defrost as _defrost
+
+    return _defrost.resync_plan_thaws(weekly_plan_id, entry_ids)
 
 
 class _Refused(Exception):
@@ -1020,9 +1052,14 @@ class _Refused(Exception):
     changed between the household opening the sheet and tapping it."""
 
 
-def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, out: dict) -> None:
+def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, out: dict) -> list[int]:
     """Every shape but the drop, on the tap's open transaction: snapshot,
-    write, fingerprint, and leave the undo record on tonight's row."""
+    write, fingerprint, and leave the undo record on tonight's row.
+
+    Returns the meals this shape touched — the same set the undo snapshot
+    is taken over, so the fridge-move pass after the caller's commit asks
+    about exactly the nights that moved rather than keeping a second copy
+    of which-shape-touches-what."""
     from . import leftovers as _leftovers
 
     plan_id = plan["id"]
@@ -1122,6 +1159,7 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
     out["can_undo"] = True
     out["frozen"] = {"item": frozen["item"], "quantity": frozen["quantity"]} if frozen else None
     out["said"] = _said(kind, dish, step)
+    return list(touched)
 
 
 def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) -> dict:

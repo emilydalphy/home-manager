@@ -153,6 +153,8 @@ from .defrost import (  # noqa: F401
     get_defrost_schedule,
     get_defrost_today,
     sync_defrost_tasks,
+    resync_plan_thaws,
+    thaw_move_sentence,
     meat_items_for_plan,
     confirm_frozen_items,
     mark_defrost_asked,

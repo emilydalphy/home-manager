@@ -36,6 +36,7 @@ Two things produce a defrost task, both landing in the same prep_tasks rows
 from __future__ import annotations
 
 import json
+import logging
 import math
 import re
 from datetime import date, datetime, time, timedelta
@@ -92,6 +93,8 @@ from . import weekly_plan as _weekly_plan
 # cook froze (freezer_portions.own_portion_candidates) — the one marker
 # that tells those rows apart from confirm_frozen_items' (both have no
 # inventory row), so each producer only ever sweeps its own.
+logger = logging.getLogger("home_manager")
+
 OWN_PORTION_KIND = "own_freezer_portion"
 
 STANDARD_LEAD_HOURS = 48.0
@@ -496,6 +499,143 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     conn.commit()
     conn.close()
     return {"weekly_plan_id": weekly_plan_id, "inserted": inserted, "updated": updated, "removed": len(stale_ids)}
+
+
+# ---------- After a hand swap or a hand move (Loop Board "Thaw reminders
+# follow a meal when it's swapped or moved by hand") ----------
+#
+# sync_defrost_tasks' own docstring has listed "a swapped meal" among the
+# moments it is safe to call since the day it was written, and until this
+# card nothing called it there. Its only two callers were plan generation
+# and a manual prep-schedule regenerate (agent.py), so the week's fridge
+# moves were worked out ONCE, when the week was drafted, and every hand
+# change after that was judged against the plan as it had been.
+#
+# Measured on the merge base before this was written, both doors:
+#
+#   a hand swap (swap_meal_in_plan: tomorrow's chili -> Chicken Skewers,
+#   whose thighs are in the freezer)
+#       prep_tasks  : nothing, before and after
+#       what is owed: "Move the Chicken thighs to the fridge — for Friday's
+#                      Chicken Skewers." — a reminder nobody books
+#
+#   a hand move (swap_dinner_nights: the skewers pulled from +4 to +1)
+#       prep_tasks  : the row shifted correctly, onto YESTERDAY
+#       Today / the morning text / the evening nudge / Cook's thaw list:
+#                     nothing, because every one of them reads a calendar
+#                     day and that day has gone
+#       the result  : prep_tasks_moved: 1, and no sentence
+#
+# So the two halves below. The sync is the recomputation; the sentence is
+# the half a count cannot do — a thaw whose day has gone is a row that
+# exists and that no screen can show, which is indistinguishable from no
+# reminder at all unless somebody says so.
+
+
+def thaw_move_sentence(description: str, task_date: str, today: str) -> str | None:
+    """
+    One fridge move, said as an instruction for when it has to happen:
+    "Move the chicken thighs to the fridge today." / "… now." / "… on
+    Friday."
+
+    The move's own words come straight off the row's description, which is
+    written "<the move> — <what it's for>." (_describe, and
+    portion_move_description for a portion), so this keeps the head and
+    drops the tail: the day the sentence names is the day the MOVE has to
+    happen, and the meal's own weekday in the tail would be a second,
+    different day in one sentence.
+
+    `now` rather than a date for a day that has gone — there is no honest
+    instruction for yesterday, and "move it on Wednesday" about last
+    Wednesday is worse than saying nothing. None when the description is
+    not one this app wrote and so has no head to name.
+
+    One wording, read by both halves of this card and by
+    meal_move._thaw_notes, which had it first: three sentences for one
+    fact is how two screens end up telling a household different things
+    about the same chicken.
+    """
+    head = (description or "").split(" — ")[0].rstrip(".").strip()
+    if not head:
+        return None
+    if not task_date or task_date < today:
+        return f"{head} now."
+    if task_date == today:
+        return f"{head} today."
+    return f"{head} on {_weekday_name(task_date)}."
+
+
+def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | None = None) -> list[str]:
+    """
+    Recompute this plan's fridge moves after a hand change, and say which
+    of the named meals' moves now have to start today or earlier.
+
+    Called AFTER the caller's transaction has committed, never inside it —
+    sync_defrost_tasks opens its own connection (and so do the inventory,
+    recipe and rhythm reads under it), and a nested get_conn inside an
+    open write transaction is how this repo has twice earned an
+    intermittent "database is locked". That is also why this is the
+    caller's own line rather than something _replace_slot_entries could do
+    on its connection: the same shape drop_dish_from_day's grocery rescale
+    takes, for the same reason.
+
+    NEVER RAISES. A reminder pass that fails must not report a swap that
+    landed as a swap that did not — the identical stance
+    agent._sync_defrost_tasks_if_needed and meal_move._after_move take.
+    The cost of a failure is the week's thaws being judged against the plan
+    as it was, which is exactly what this card is fixing and is survivable;
+    the cost of raising is telling the household nothing changed over a
+    change that did.
+
+    The sentences are scoped to `entry_ids` — the meals the change
+    actually touched — rather than to every row on the plan. A thaw due
+    today that nobody has ticked is true whether or not this swap caused
+    it, but repeating it on every tap turns an urgent sentence into
+    furniture, and "on the spot" means about the thing just done. An empty
+    `entry_ids` therefore says nothing, which is what a change that
+    touched no meal should say.
+
+    Only PENDING rows: a move already ticked done is food already in the
+    fridge, and "move the chicken now" about chicken that moved yesterday
+    is the app not reading its own records.
+    """
+    if not weekly_plan_id:
+        return []
+    try:
+        sync_defrost_tasks(weekly_plan_id)
+    except Exception:
+        logger.exception(
+            "Recomputing plan %s's fridge moves after a hand change failed; the change itself "
+            "is written, and the week's thaws are still judged against the plan as it was",
+            weekly_plan_id,
+        )
+        return []
+    ids = [int(i) for i in (entry_ids or []) if i]
+    if not ids:
+        return []
+    try:
+        if today is None:
+            today = _cooker.household_today().isoformat()
+        conn = get_conn()
+        try:
+            rows = conn.execute(
+                "SELECT task_date, description FROM prep_tasks "
+                "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
+                f"AND status = 'pending' AND meal_plan_entry_id IN ({','.join('?' * len(ids))}) "
+                "AND task_date <= ? ORDER BY task_date, id",
+                (household_id(), weekly_plan_id, *ids, today),
+            ).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        logger.exception("Reading plan %s's fridge moves after a hand change failed", weekly_plan_id)
+        return []
+    said = []
+    for r in rows:
+        sentence = thaw_move_sentence(r["description"], r["task_date"], today)
+        if sentence and sentence not in said:
+            said.append(sentence)
+    return said
 
 
 def defrost_task_from_ready_made(date_str: str, slot: str) -> dict | None:
