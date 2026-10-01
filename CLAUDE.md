@@ -442,8 +442,11 @@ why*, not duplicating the diff.
     exit, rolls back if the block raises, closes in a `finally` either way.
     `get_conn()` is **byte-identical** and that was a decision with three
     measurements behind it, taken 2026-10-01. (1) **1367 call sites** take
-    `get_conn()`'s return value (521 in `app/`, 840 in `tests/`, 6 in the
-    root scripts) and treat it as a real `sqlite3.Connection` —
+    `get_conn()`'s return value — and that is `grep -rc "get_conn()"`
+    summed over each tree on `origin/main`, re-derived here rather than
+    left as a figure nobody can check: **521 in `app/`, 840 in `tests/`,
+    6 in the root scripts**, which is 1367 exactly (this branch's own
+    test hardening takes `tests/` to 841) and treat it as a real `sqlite3.Connection` —
     `row_factory`, `in_transaction`, `lastrowid`, and tests that patch
     `app.db.get_conn` to hand back one; wrapping it to close on exit means
     handing a proxy to 1367 sites to fix a shape at 171. Measured: making
@@ -662,15 +665,40 @@ why*, not duplicating the diff.
     only the INSTRUMENT moved, to `sqlite3.connect` — the one place every
     path present or future goes through, and the instrument the
     2026-09-30 move-owner entry recommends for exactly this reason. The
-    mutation bites again (1 red). Swept: it is the ONLY test in `tests/`
-    that patches `_recipes.get_conn`, and every other `get_conn` patch
-    names a module this branch did not touch (`weekly_plan`, `cooker`,
-    `holidays`, `swap_in_place`). **This is the hazard of the other 169
-    conversions, written down here rather than discovered each time: a
-    function converted to `write()` is no longer instrumented by a patch
-    on its OWN module's `get_conn`.**
+    mutation bites again (1 red).
+  - **"IT IS THE ONLY TEST THAT PATCHES `_recipes.get_conn`" WAS FALSE,
+    and the sweep that said so was looking for the wrong spelling.**
+    FOUR files instrument it: `test_recipe_rating_validated.py` by name,
+    and `test_approve_race.py`, `test_swap_atomic.py` and
+    `test_replace_slot_entries_two_writes.py` through a `_MODULES` list
+    of module NAMES — which a grep for `recipes.get_conn` cannot see.
+    Measured, and the three split two ways:
+    - **`test_approve_race.py` was never blind**, and it is the shape the
+      other two should have had: beside its per-module counter it patches
+      `db.get_conn` directly and asserts the delta across the
+      transaction's own window is **0**, with a comment saying why ("a
+      local `from ..db import get_conn` firing mid-transaction"). So the
+      `write()` route was already covered there before this branch
+      existed.
+    - **The other two WERE blind**, and are hardened here: `app.db` joins
+      their `_MODULES`, and in
+      `test_replace_slot_entries_two_writes.py` a `_resolve_module`
+      helper does it, since `app.db` is not under `app.tools`. Patching
+      a tool module AND `app.db` cannot double-count, because each
+      entry's `real` is captured before it is replaced. Measured 7 vs 2
+      before, 7 vs 7 after; 210 passed unmutated.
+    **This is the hazard of the other 171 conversions, written down here
+    rather than discovered each time: a function converted to `write()`
+    is no longer instrumented by a patch on its OWN module's
+    `get_conn` — and a sweep for that hazard has to read the module-name
+    lists, not just the attribute access.**
+  - **ONE MORE THING THE SWEEP CANNOT SEE, added to its own list:** a
+    `write()` plus a second never-closed connection reads SAFE to it,
+    because the shape it looks for is the open-code `get_conn` the
+    `write()` replaced.
   - **FOUND AND NOT FIXED, named so nobody reports it as new.** The other
-    169, deliberately — the card says not to wrap them and the review says
+    171 (the figure was 169 in the first draft and the census says 171 —
+    the same off-by-two as the sentence above it), deliberately — the card says not to wrap them and the review says
     the reachable count is plausibly zero; what ships is the shape being
     available and the count being unable to grow. `app/db.py init_db` is
     the cheapest of them and is left for a stated reason rather than
