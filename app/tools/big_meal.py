@@ -1740,7 +1740,18 @@ def set_big_meal_dish(
             cook_minutes = cook_minutes if cook_minutes is not None else match.get("cook_time_minutes")
         clashes = dish_conflicts(name, ingredients, guest_notes)
         if clashes:
-            raise ValueError(f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table.")
+            # A clash is an ANSWER, not a crash. The marker is what the chat
+            # dispatch's refusal arm reads (agent.REFUSALS_OWED_TO_A_PERSON,
+            # 2026-10-01); a bare ValueError here fell into the catch-all
+            # written for a crashed tool, so this gate doing its job wrote an
+            # error_events row, read as BROKEN in the morning report, and put
+            # the sentence — which names a member's restriction — into a
+            # traceback. Measured, through this door, before and after. The
+            # same marker allergen_gate's two gates already raise; it IS a
+            # ValueError and this tool has no route, so nothing else moves.
+            raise _weekly_plan.SlotRefused(
+                f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table."
+            )
         eaters = eaters_for(date_str, int(row["headcount"] or 0))
         main = _clean_main({
             "name": name, "ingredients": ingredients, "instructions": instructions or [],
@@ -1780,7 +1791,10 @@ def set_big_meal_dish(
         raise ValueError(f"{name} needs at least one ingredient so I can shop for it.")
     clashes = dish_conflicts(dish["name"], dish["ingredients"], guest_notes)
     if clashes:
-        raise ValueError(f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table.")
+        # See the main's own clash above: a marker, not a bare ValueError.
+        raise _weekly_plan.SlotRefused(
+            f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table."
+        )
     current = [dict(s, role=s.get("role") or "side") for s in _plates.get_sides(entry["id"])]
     target = (replaces or "").strip().lower()
     if not target and role == "sweet":

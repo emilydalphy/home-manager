@@ -36,6 +36,7 @@ a raise is exactly what a source-marker test cannot see.
 """
 from __future__ import annotations
 
+import datetime
 import json
 import types
 
@@ -214,17 +215,38 @@ def test_a_refused_turn_still_counts_as_writing_nothing(monkeypatch):
 # 2. Every live chat door, and the one that cannot fire yet
 # --------------------------------------------------------------------------
 
-# The chat tools that can raise a refusal marker. plan_meal and
-# swap_meal_in_plan both go through the allergy gate (and
-# swap_meal_in_plan also refuses a night that has already gone);
-# discard_draft_plan refuses an approved week in its own words. The four
-# chores tools cannot fire while Chores is off — CHORES_TOOLS declines
-# above the try — and are here so the set stays honest the day it is on.
+# The chat tools that can raise a refusal marker, COUNTED rather than
+# recalled — the first version of this comment said "three live chat
+# doors" and there are SIX, which an adversarial review of this branch
+# caught. Measured by walking agent.TOOL_FUNCTIONS and asking, for each,
+# which function it really is and whether it or anything one hop under it
+# raises a marker:
+#
+#   plan_meal              -> meal_plans.plan_meal_for_chat      allergy gate
+#   swap_meal_in_plan      -> weekly_plan.swap_meal_in_plan_for_chat
+#                                            allergy gate AND night-gone
+#   swap_component_in_plan -> weekly_plan.swap_component_in_plan allergy gate
+#   add_recipe             -> recipes.add_recipe_for_chat        recipe gate
+#   discard_draft_plan     -> its own "that week's approved" refusal
+#   set_big_meal_dish      -> big_meal's own two allergy gates (section 6)
+#
+# The chores half is three, not four: skip_chore, move_chore and
+# hand_chore reach chores.{skip,move,hand}_chore_instance, which raise
+# ChoreRefused; complete_chore raises neither marker anywhere. It is kept
+# in the list anyway, and that is the point of it — the arm is keyed on
+# the EXCEPTION, never on a tool name, so a tool that cannot raise one
+# today behaves correctly the day it can. None of the four can fire in
+# production at all while Chores is off, since CHORES_TOOLS declines
+# above the try.
 _REFUSING_TOOLS = [
     ("plan_meal", {"meal_date": "2026-10-05", "meal": "Chicken Satay"}, tools.SlotRefused),
     ("swap_meal_in_plan", {"weekly_plan_id": 1, "meal_date": "2026-10-05",
                            "new_meal": "Chicken Satay"}, tools.SlotRefused),
+    ("swap_component_in_plan", {"weekly_plan_id": 1, "component_category": "protein",
+                                "new_meal": "Chicken Satay"}, tools.SlotRefused),
+    ("add_recipe", {"name": "Chicken Satay", "ingredients": []}, tools.SlotRefused),
     ("discard_draft_plan", {"weekly_plan_id": 1}, tools.SlotRefused),
+    ("set_big_meal_dish", {"date_str": "2026-10-12", "name": "Chicken Satay"}, tools.SlotRefused),
     ("skip_chore", {"chore_name": "Bins"}, tools.ChoreRefused),
     ("move_chore", {"chore_name": "Bins", "to_date": "2026-10-05"}, tools.ChoreRefused),
     ("hand_chore", {"chore_name": "Bins", "to_person": "Emily"}, tools.ChoreRefused),
@@ -235,7 +257,7 @@ _REFUSING_TOOLS = [
 @pytest.mark.parametrize("name, tool_input, marker", _REFUSING_TOOLS)
 def test_every_refusing_chat_tool_is_an_answer(monkeypatch, name, tool_input, marker):
     """
-    CATCH, all seven — measured, not assumed. The first draft of this
+    CATCH, all ten — measured, not assumed. The first draft of this
     docstring called the four ChoreRefused cases a NAME miss on the
     grounds that Chores is off on main anyway; they switch Chores ON so
     the dispatch really reaches the tool rather than the switch's own
@@ -446,3 +468,149 @@ def test_the_refusal_sentence_never_reaches_the_logs(monkeypatch, caplog):
     assert "SlotRefused" in logged and "plan_meal" in logged
     # And no traceback: a working gate is not an exception.
     assert not any(r.exc_info for r in caplog.records)
+
+
+# --------------------------------------------------------------------------
+# 6. The big meal's own two allergy gates
+# --------------------------------------------------------------------------
+#
+# Added after the branch's own adversarial review, which found this door
+# open and is right that it leaves criterion 1 ("a refusal written for a
+# person, raised by a chat tool, is not recorded in error_events and not
+# logged as a crash") false as literally written.
+#
+# `set_big_meal_dish` is an un-gated live chat tool with no route, and its
+# two allergy clashes raised a bare ValueError — so the clash fell into
+# the catch-all exactly as plan_meal's did, with the extra harm that the
+# sentence (which names a member's restriction) went into a traceback.
+# Reproduced through this door on a throwaway database before the change:
+#
+#   DIRECT raised ValueError: Peanut Noodle Salad clashes with allergy:
+#     peanuts — pick something else for the table.
+#   error_events: [{'kind': 'tool', 'where_': 'set_big_meal_dish',
+#                   'detail': 'ValueError', 'occurrences': 1}]
+#   get_recent_errors total: 1
+#
+# and after it: SlotRefused, error_events [], total 0, nothing in the log.
+
+def _thanksgiving() -> str:
+    """Next year's, so the plan it sits in is always ahead of today."""
+    found = tools.rule_holidays(datetime.date.today().year + 1)
+    return next(h["date"] for h in found if h["name"] == "Thanksgiving")
+
+
+def _hosted_thanksgiving(monkeypatch) -> str:
+    """Two adults, one allergic to peanuts, hosting a Thanksgiving dinner."""
+    tools.add_member("Emily")
+    tools.set_member_age_group("Emily", "adult")
+    tools.add_member("Sam")
+    tools.set_member_age_group("Sam", "adult")
+    tools.set_member_dietary_restrictions("Sam", ["allergy: peanuts"])
+
+    tg = _thanksgiving()
+    tools.add_recipe(
+        "Roast Chicken",
+        ingredients=[{"item": "whole chicken", "qty": "1", "category": "meat/seafood"}],
+        prep_time_minutes=20, cook_time_minutes=90, default_servings=2,
+    )
+    plan_id = tools.create_weekly_plan(tg)["weekly_plan_id"]
+    tools.plan_meal(tg, "Roast Chicken", slot="dinner", weekly_plan_id=plan_id)
+    # The menu proposer is a model call; this test is about the gate, so it
+    # answers with nothing and the menu is the dinner already planned.
+    monkeypatch.setattr(agent, "generate_big_meal_llm", lambda context: {"dishes": []})
+    tools.answer_holiday(tg, "hosting", headcount=4)
+    return tg
+
+
+PEANUT = {"item": "Peanut butter", "qty": "1 cup", "category": "pantry"}
+
+
+@pytest.mark.parametrize("role", ["main", "side"])
+def test_a_big_meal_allergy_clash_is_an_answer_not_a_crash(monkeypatch, role):
+    """
+    CATCH on both of set_big_meal_dish's gates — the main's (inside the
+    `role == "main"` branch) and the one every other role reaches. Driven
+    through the real dispatch with the REAL tool, not a stub: what is
+    being pinned is which exception the tool raises, which a stub would
+    decide for it.
+    """
+    tg = _hosted_thanksgiving(monkeypatch)
+    _one_tool_turn(
+        monkeypatch, "set_big_meal_dish",
+        {"date_str": tg, "name": "Peanut Noodle Salad", "role": role,
+         "ingredients": [PEANUT]},
+        reply="Sam can't have peanuts — pick something else.",
+    )
+
+    _, conversation = agent.run_agent_turn([], "put a peanut noodle salad on the table")
+
+    assert _error_rows() == [], "a working allergy gate was recorded as breakage"
+    assert tools.get_recent_errors(days=1)["total"] == 0
+    handed = _handed_back(conversation)
+    assert handed["is_error"] is True
+    assert "clashes with allergy: peanuts" in json.loads(handed["content"])["error"]
+
+
+@pytest.mark.parametrize("role", ["main", "side"])
+def test_the_big_meal_gates_raise_the_marker(monkeypatch, role):
+    """
+    CATCH, stated directly rather than through the dispatch, because the
+    whole of the fix is which class is raised and a SlotRefused IS a
+    ValueError — so a test written as `pytest.raises(ValueError)` (which
+    tests/test_big_meal.py's own clash test is) passes either way and
+    cannot see this.
+    """
+    tg = _hosted_thanksgiving(monkeypatch)
+    with pytest.raises(tools.SlotRefused):
+        tools.set_big_meal_dish(tg, "Peanut Noodle Salad", role=role, ingredients=[PEANUT])
+
+
+def test_the_big_meal_clash_sentence_never_reaches_the_logs(monkeypatch, caplog):
+    """
+    CATCH. The sentence carries the restriction verbatim — "clashes with
+    allergy: peanuts" — so on main this door put a member's allergy into
+    a logged traceback, which is the one harm the plan_meal half of this
+    branch is most careful about.
+    """
+    tg = _hosted_thanksgiving(monkeypatch)
+    _one_tool_turn(
+        monkeypatch, "set_big_meal_dish",
+        {"date_str": tg, "name": "Peanut Noodle Salad", "role": "side",
+         "ingredients": [PEANUT]},
+    )
+
+    with caplog.at_level("INFO", logger="home_manager"):
+        agent.run_agent_turn([], "put a peanut noodle salad on the table")
+
+    logged = "\n".join(r.getMessage() for r in caplog.records)
+    assert "peanuts" not in logged and "Sam" not in logged
+    assert "SlotRefused" in logged and "set_big_meal_dish" in logged
+    assert not any(r.exc_info for r in caplog.records)
+
+
+def test_the_big_meals_other_refusals_are_still_recorded(monkeypatch):
+    """
+    GUARD, and the boundary that keeps this narrow. set_big_meal_dish has
+    four other raises and NONE of them moved: a bad role, a main with no
+    ingredients and no saved recipe, a dish with no ingredients, and
+    _require_menu's "no big meal on that day". Those are a caller sending
+    something its own schema forbids — a model mistake, worth seeing in
+    the report — which is the same line the branch draws at the
+    validation markers.
+
+    Pinned by the mutation that widens the gate's marker to cover them:
+    make `role has to be main, side or sweet.` a SlotRefused and this
+    goes red.
+    """
+    tg = _hosted_thanksgiving(monkeypatch)
+    _one_tool_turn(
+        monkeypatch, "set_big_meal_dish",
+        {"date_str": tg, "name": "Peanut Noodle Salad", "role": "pudding",
+         "ingredients": [PEANUT]},
+    )
+
+    agent.run_agent_turn([], "add it as a pudding")
+
+    rows = _error_rows()
+    assert [r["where_"] for r in rows] == ["set_big_meal_dish"]
+    assert rows[0]["detail"] == "ValueError"
