@@ -425,6 +425,67 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-01 — A boundary test on `main` passed only when two statements
+  landed in the same SQLite second, so the suite was intermittently red for
+  a reason nobody could reproduce. Branch
+  `overnight/the-boundary-test-is-a-flake`, NOT merged at the time of
+  writing. TEST-ONLY — `git diff origin/main -- app/ static/` is empty.**
+  Found by arithmetic rather than by a failure: a sub-agent measuring its
+  own baseline read `origin/main` `940df8b` as **1 failed, 8929 passed**,
+  the failure being
+  `test_pre_shop_accuracy_counts.py::test_the_window_boundary_compares_an_instant_against_an_instant`
+  — while the same tree had read **8930 passed** for the orchestrator an
+  hour earlier and the test passed on its own every time it was asked.
+  - **THE APP IS FINE AND THE TEST'S CLAIM IS RIGHT; its MARGIN was one
+    second.** It backdated a ledger row to *exactly* the edge of the
+    window and then asked for the window, and both sides are
+    `datetime('now', '-7 days')` — the `UPDATE` at T1, the `SELECT` at T2
+    — so the assertion reduces to `T1 - 7d >= T2 - 7d`, i.e. **`T1 >=
+    T2`**. SQLite's `datetime()` is whole-second, so it held only while
+    the two statements fell inside the same second. Measured in a
+    twelve-line probe: at a 0.0s gap the row is inside, at 1.1s it is
+    outside. It passed nearly always because the two calls are
+    milliseconds apart, and failed whenever a second boundary fell between
+    them — which under a loaded full suite (and far more so with two
+    suites running at once, which is what this session was doing) is
+    regular rather than exotic.
+  - **THE TWO MARGINS ARE DIFFERENT SIZES AND THAT IS THE WHOLE FIX, so
+    only the INSIDE row moved.** It is an hour inside the edge now, which
+    needs `T2 - T1 < 1 hour` and so cannot flake. The OUTSIDE row stays
+    **one second** out, and must: that small offset is the entire pin on
+    the claim the test is named for. Under the `date('now', '-7 days')`
+    comparison the test exists to forbid, the window opens at midnight
+    UTC, so a row one second past seven days is wrongly inside and
+    `dropped` reads 2 — but widen that offset and the mutation is only
+    caught when the clock is further than it past midnight UTC, so an
+    hour's offset would stop pinning it for an hour of every day. The
+    outside row is robust at one second anyway, since it is outside
+    whenever `T2 >= T1`, i.e. always.
+  - **Both halves are measured, not reasoned.** With a 1.1s gap forced
+    between the backdate and the count, the OLD offsets **fail** and the
+    new ones **pass**; and the mutation that swaps all seventeen
+    `>= datetime('now', …)` comparisons in `usage.py` for `date('now', …)`
+    reddens exactly **1** test, the one it is named for, with the other 22
+    in the file green.
+  - **Swept for siblings and the sweep is clean.** The only other
+    `_backdate` in that file is `-9 days` against a seven-day window, two
+    days of margin; its own "outside" row is the robust direction above.
+    Across `tests/`, no other test stamps a row at exactly a window edge
+    and then reads that window (`tests/test_frozen_clock.py`'s
+    `datetime('now', '-7 days')` is about the pin machinery and
+    `test_shop_checklist.py`'s `-1 day` plan stamp is compared against
+    nothing).
+  - **Why a one-line test fix was worth a branch of its own.** Every
+    "+N is this file exactly" number in this log is the difference between
+    two full-suite counts, so a test that fails a few percent of the time
+    makes that whole class of evidence unreliable — and it leaves `main`
+    intermittently red for a cause nobody can reproduce on demand, which
+    is how a real red gets waved past. It also cost this session one
+    contradictory baseline, which is how it was found.
+  - `tests/test_pre_shop_accuracy_counts.py` 23 → 23: no test added, none
+    deleted, one offset changed and its docstring rewritten to say which
+    margin is load-bearing and why.
+
 - **2026-09-30 — A night off on a reheat that owns a side now takes the
   side's line off the list, and the undo puts it back exactly. Branch
   `night-off-undo-carries-groceries`, NOT merged at the time of writing.**

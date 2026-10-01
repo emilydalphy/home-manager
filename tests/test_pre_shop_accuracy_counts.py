@@ -288,17 +288,41 @@ def test_decisions_older_than_the_window_are_not_counted():
 def test_the_window_boundary_compares_an_instant_against_an_instant():
     """
     Both sides are datetime('now', ...) — UTC instants — so a row stamped
-    exactly seven days ago is inside a seven-day window and one a second
-    older is out. A comparison against a DATE would put the edge at
-    midnight UTC instead, which is not midnight anywhere a household
-    lives.
+    just inside seven days is in a seven-day window and one a second the
+    other side of seven days is out. A comparison against a DATE would put
+    the edge at midnight UTC instead, which is not midnight anywhere a
+    household lives.
+
+    THE TWO MARGINS ARE DIFFERENT SIZES ON PURPOSE, and getting that
+    backwards is what made this test flaky (2026-10-01: a full-suite run
+    of `origin/main` read 1 failed / 8929 passed on exactly this, while it
+    passed on its own every time).
+
+    The INSIDE row is an hour inside the edge rather than exactly on it.
+    On it, the assertion reduced to "the UPDATE and the SELECT landed in
+    the same whole second" — both are `datetime('now', '-7 days')`, so a
+    row stamped at T1 is inside a window opened at T2 only while T1 >= T2,
+    and SQLite's datetime is second-resolution. Measured: a 1.1s gap
+    between the two statements and the inside row falls outside. It passed
+    nearly always because the two calls are milliseconds apart, and failed
+    whenever a second boundary fell between them — which under a loaded
+    full suite is regular.
+
+    The OUTSIDE row stays one SECOND out, and must: that small offset is
+    the whole of what pins the date-not-datetime claim. Under a `date('now',
+    '-7 days')` comparison the window would open at midnight UTC, so a row
+    one second past seven days is wrongly inside and `dropped` reads 2.
+    Widen that offset and the mutation is only caught when the clock is
+    further than it past midnight UTC — an hour's offset would stop pinning
+    it for an hour of every day. The outside row is robust at one second
+    anyway (it is outside whenever T2 >= T1, i.e. always).
     """
     inside = _flagged_line("Butter")
     outside = _flagged_line("Rice", wanted="1 cup", on_hand="6 cups")
     tools.drop_grocery_item_pre_shop(inside, author="user")
     tools.drop_grocery_item_pre_shop(outside, author="user")
 
-    _backdate(inside, "-7 days")
+    _backdate(inside, "-7 days', '+1 hour")
     _backdate(outside, "-7 days', '-1 second")
 
     counts = _counts(days=7)
