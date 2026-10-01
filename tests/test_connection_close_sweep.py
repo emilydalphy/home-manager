@@ -426,7 +426,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
     ],
     "app/tools/defrost.py": [
         "_release_frozen_item", "confirm_frozen_items",
-        "defrost_task_from_ready_made", "mark_defrost_asked", "sync_defrost_tasks"
+        "defrost_task_from_ready_made", "mark_defrost_asked"
     ],
     "app/tools/digest.py": [
         "_run_household_evening", "set_evening_nudge_for_member",
