@@ -363,10 +363,14 @@ def test_the_filled_row_says_why(recipes):
 
 def test_the_filled_row_carries_a_reason_rather_than_a_blank(recipes):
     """
-    NAME-ONLY red against main. plan_quality._reasoning_is_specific warns
-    "has no reasoning at all" for every blank planned row (it exempts a
-    leftovers night and nothing else), so a blank here would trade one
-    warning in the morning report for another.
+    NAME-ONLY red against main. THE REASON THIS DOCSTRING GAVE EXPIRED ON
+    2026-09-30 (`45e2bc0`) — it said `_reasoning_is_specific` warns "has
+    no reasoning at all" for every blank planned row, and that rule skips
+    a blank outright now, so a blank here would cost nothing in the
+    report. This file's BODY already carries that correction; only the
+    docstring was stale. What the row's sentence is still for is the
+    household: a filled gap that says nothing is a dinner with no account
+    of why it is there.
     """
     week = _week_start()
     days = tools._week_dates(week)

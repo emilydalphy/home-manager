@@ -432,8 +432,15 @@ why*, not duplicating the diff.
   three comment blocks and not one line of behaviour.** Found while reading
   the morning error check rather than from a report: household 1's FOOD
   section spent **11 of its 30 findings** in the 7-day window on
-  `reasoning_is_specific`, and every one the report printed read
-  `<date> snack ('Roasted Chickpeas') has no reasoning at all.`
+  `reasoning_is_specific`, and every `reasoning_is_specific` LINE it
+  printed read `<date> snack ('…') has no reasoning at all.` **Said that
+  precisely because the first wording ("every one the report printed")
+  read as a claim about the whole section and is wrong on half of it,
+  which a review measured:** the FOOD section printed six lines, three
+  `reasoning_is_specific` (two of them `'Roasted Chickpeas'`, one
+  `'Cucumber Slices with Tzatziki'`) and three others —
+  `snack_echoes_a_meal` plus two collapsed `quantities_plausible` /
+  `steps_match_ingredients` lines.
   - **THAT IS NOT A LIVE DEFECT, and establishing it is most of the work.**
     The rule stopped producing that message on **2026-09-30 (`45e2bc0`)**:
     the week call is no longer asked for a per-slot reasoning line (it came
@@ -470,9 +477,30 @@ why*, not duplicating the diff.
     note" preference is now FREE.** She decided on 2026-09-25 that a
     swapped-out repeat carries no note (`meal_variety.REPEAT_REASON = ""`),
     and until 2026-09-30 the app could not extend that anywhere else
-    because every blank cost a morning-report warning. That cost is gone,
-    so rewording or emptying `MOVE_REASON` is a pure copy decision with
-    nothing pushing back — which it was not when that comment was written.
+    because every blank cost a morning-report warning. That cost is gone.
+    **"So emptying it is a pure copy decision with nothing pushing back"
+    was the first wording of this bullet and of the comment, and an
+    adversarial review MEASURED IT FALSE — corrected here rather than
+    quietly, because replacing an expired cost claim with a false freedom
+    claim is the same mistake this branch exists to fix, pointing the
+    other way.** Emptying `MOVE_REASON` costs nothing in the morning
+    report (driven end to end: a real generated capped week with a blank
+    moved reason returns ZERO findings from any rule) and costs exactly
+    **ONE red test**, measured across the full 8947:
+    `tests/test_rush_cap_enforced.py::test_a_moved_dinner_loses_a_reason_
+    written_about_the_night_it_left` asserts the moved row's reasoning is
+    non-blank. `REPICK_REASON`'s own sibling in that file does the same
+    for it; only `GAP_FILL_REASON` is genuinely free (408 passed over the
+    eight files touching the gap fill). **And the bite is sharper than a
+    stray red:** both of those tests forbid a blank for the very reason
+    this branch has just retired, so a session acting on the old comment
+    would go red and then have to rediscover from scratch that what
+    stopped it was the expired claim. So: one copy decision plus one test
+    correction, not a pure copy decision. Two secondary readers also
+    behave differently on a blank and neither is a report finding —
+    `coordination.py` omits the `reason` key from the plan history handed
+    to the assistant, and `leftovers_spread.py` falls through to another
+    row's reasoning.
   - **And it closes a real test gap, which is why this is a branch rather
     than a note.** The rule's own behaviour on a blank was already pinned
     twice (`test_plan_quality.py::test_a_blank_reason_is_not_a_finding`,
@@ -494,8 +522,11 @@ why*, not duplicating the diff.
     only main's COMMENTS say otherwise. **Five mutations run and every one
     bites**: the 2026-09-30 fix reverted so a blank warns again (5 red),
     `MOVE_REASON` reworded to banned filler (1), the sweep narrowed so it
-    finds almost nothing (1, and the collected count drops from 16 to 8 —
-    the guard-on-the-guard working), `_BANNED_REASONING_PHRASES` emptied
+    finds almost nothing (1, and the collected count drops from **17 to
+    9** — the guard-on-the-guard working; "16 to 8" in the first wording
+    was the PASSED counts wearing the collected label. The slack in that
+    guard is two: measured, the derivation silently dropping 2 of its 10
+    constants leaves the file green and dropping 3 reddens it), `_BANNED_REASONING_PHRASES` emptied
     (1), and the old message put back in the rule's source as a comment
     only (1).
   - **The prose test reads RAW text, deliberately, and says why**: the
@@ -504,6 +535,35 @@ why*, not duplicating the diff.
     sit within a few lines of a word that dates it ("stopped", "expired",
     "used to", "historical", "corrected", "no longer"), so the claim can
     be recounted as history but not re-made in the present tense.
+    **IT WAS CASE-SENSITIVE AND SO COULD NOT SEE THE ONE CAPITALISED
+    MENTION IN THE REPO — found by review, and the mention is inside the
+    very rule this file is about.** `plan_quality._reasoning_is_specific`
+    opens "No reasoning at all is no longer a finding (2026-09-30)",
+    which the lower-case membership test skipped entirely; that one is
+    correctly dated so the sweep stayed green, and an UNDATED capitalised
+    twin would have sailed through. Reproduced both ways: the identical
+    attack sentence capitalised passed and its lower-case form failed.
+    Lower-cased now, and the capitalised attack reddens.
+  - **AND THE GATE IS WEAK, which is recorded as a measured limitation
+    rather than papered over.** The dating words are this codebase's
+    ordinary prose, so a bare present-tense claim a line or two from an
+    unrelated retraction passes. Counted across `app/` on this branch:
+    "used to" 139, "no longer" 82, "expired" 49, "stopped" 32,
+    "corrected" 23 — **325 occurrences against a nineteen-line window.**
+    A shorter window trades that for false alarms on the long comment
+    blocks this repo writes, and 12/6 is what it is because the claim is
+    a sentence rather than a line. So the sweep catches a claim standing
+    on its own and cannot catch one standing beside somebody else's.
+  - **The second sweep reads the rule's CODE, comment-stripped, and that
+    is what lets it stop caring about casing.** `test_the_rule_itself_no_
+    longer_carries_the_old_message` read raw source, so making it
+    case-insensitive would have reddened it on the CORRECTION — the
+    comment names the message in order to say it is gone. It is
+    `ast.unparse` over the function body now (`_code_of`'s idiom, from
+    `test_holiday_reopen_atomic.py`, which exists because an assertion
+    prose can satisfy is not an assertion; the inverse holds too), and the
+    mutation that puts the message back in the rule still reddens it —
+    measured at 5 red across the file, that test among them.
   - **Found and NOT fixed:** the 9 `dinner_repeat_in_history` findings in
     the same window are a separate, live rule and are untouched; and the
     six-line cap on the FOOD section is still a cap, so a week with more

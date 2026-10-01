@@ -175,9 +175,19 @@ REPICK_REASON = None
 # reason is lost, including the part that may have been about the DISH
 # rather than the night.
 #
-# HERS, AND NOW FREE EITHER WAY. Emptying it, or rewording it, is a pure
-# copy decision with no engineering reason pushing back — which it was
-# not when this was written.
+# HERS, AND CHEAPER THAN IT WAS — but NOT free, and this comment said
+# free until an adversarial review measured it (2026-10-01). Emptying it
+# costs nothing in the MORNING REPORT: plan_quality stopped flagging a
+# blank row on 2026-09-30 (45e2bc0), and a real generated capped week
+# with this blank returns zero findings from any rule. It still costs
+# exactly ONE red test — tests/test_rush_cap_enforced.py::
+# test_a_moved_dinner_loses_a_reason_written_about_the_night_it_left
+# asserts the moved row's reasoning is non-blank, measured across the
+# full 8947. (REPICK_REASON's own sibling test does the same for it.) So
+# emptying this is one copy decision plus one test correction — and that
+# test's stated reason for forbidding a blank is the very measurement
+# retired above, so whoever empties it has to retire that too rather
+# than rediscover it.
 MOVE_REASON = "Moved here so the week fits the time you have."
 
 # A week has seven nights, so a handful of trades settles it; the bound is

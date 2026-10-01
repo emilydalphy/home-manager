@@ -53,10 +53,12 @@ constant added tomorrow is covered without anybody editing this file.
 """
 from __future__ import annotations
 
+import ast
 import importlib
 import inspect
 import pkgutil
 import re
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -197,7 +199,11 @@ def test_emptying_one_of_the_three_now_costs_nothing_in_the_report(name):
 
     What this pins is the sentence the three corrected comments now
     assert and the old ones denied: emptying any of these three produces
-    no reasoning_is_specific finding, so the choice is free. It reddens
+    no reasoning_is_specific finding. NOT that the choice is free: a
+    review measured (2026-10-01) that emptying MOVE_REASON or
+    REPICK_REASON each costs one red test in
+    tests/test_rush_cap_enforced.py, which forbids a blank for the very
+    reason retired here. Only GAP_FILL_REASON is free overall. It reddens
     on any tree where the rule warns on a blank again — which is the
     mutation named in test_a_blank_reason_produces_no_finding above, and
     the day that happens all three comments are false again.
@@ -221,14 +227,35 @@ def test_no_module_claims_in_the_present_tense_that_a_blank_reason_warns():
     checked — the claim lives IN a comment — so this reads the raw text
     and requires every surviving mention of the old message to sit beside
     a word that dates it ("stopped", "expired", "used to", "historical",
-    "corrected"). On main all three mentions are bare present-tense
-    claims and this reddens.
+    "corrected", "no longer"). On main all three mentions are bare
+    present-tense claims and this reddens.
+
+    CASE-INSENSITIVE, and that is a correction rather than a tidy-up
+    (found by review, 2026-10-01). The first cut matched the lower-case
+    string against the raw line, so a capitalised claim was invisible to
+    it — and there IS one, `app/tools/plan_quality.py`'s own "No
+    reasoning at all is no longer a finding", inside the very rule this
+    file is about. That one is correctly dated, so the sweep stays green;
+    what was wrong is that an UNDATED capitalised twin would have sailed
+    through. Reproduced: the identical attack sentence capitalised passed
+    while its lower-case form failed.
+
+    THE GATE IS WEAK, AND THE WEAKNESS IS MEASURED RATHER THAN WAVED AT:
+    the dating words are this codebase's ordinary prose, so a bare
+    present-tense claim within a line or two of an unrelated one passes.
+    Counted across app/ on this branch: "used to" 139, "no longer" 82,
+    "expired" 49, "stopped" 32, "corrected" 23 — 325 occurrences in all,
+    against a window of nineteen lines. So this catches a claim standing
+    on its own and cannot catch one standing next to somebody else's
+    retraction. The honest alternative is a shorter window, which trades
+    that for false alarms on the long comment blocks this repo writes;
+    the window is 12/6 because the claim is a sentence, not a line.
     """
     stale = []
     for path in sorted((REPO / "app").rglob("*.py")):
         text = path.read_text(encoding="utf-8")
         for n, line in enumerate(text.splitlines(), 1):
-            if "no reasoning at all" not in line:
+            if "no reasoning at all" not in line.lower():
                 continue
             # The dating word may be a line or two either side — these are
             # long comment blocks, and the claim is a sentence, not a line.
@@ -249,6 +276,22 @@ def test_the_rule_itself_no_longer_carries_the_old_message():
     if it comes back in the rule, the comments this branch corrected are
     false again and so is the test above. Mutation: re-add the blank-
     reason branch with its old message and this reddens.
+
+    Comment-stripped (ast.unparse drops comments by construction) AND
+    case-insensitive, for the same reason the sweep above is: the rule's
+    own explaining comment names the message in order to say it is gone,
+    so a raw case-insensitive read of the source would be reddened by the
+    correction rather than by a regression. Reading the CODE is what lets
+    the casing stop mattering. The idiom is `_code_of`'s, from
+    test_holiday_reopen_atomic.py — an assertion prose can satisfy is not
+    an assertion, and the inverse holds too.
     """
-    src = inspect.getsource(plan_quality._reasoning_is_specific)
-    assert "no reasoning at all" not in src
+    tree = ast.parse(textwrap.dedent(
+        inspect.getsource(plan_quality._reasoning_is_specific)))
+    body = tree.body[0].body
+    if body and isinstance(body[0], ast.Expr) \
+            and isinstance(body[0].value, ast.Constant) \
+            and isinstance(body[0].value.value, str):
+        body = body[1:]
+    code = "\n".join(ast.unparse(node) for node in body)
+    assert "no reasoning at all" not in code.lower()
