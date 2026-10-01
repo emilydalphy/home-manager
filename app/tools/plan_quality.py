@@ -1554,7 +1554,7 @@ def _seasoning_never_mentioned(entries: list[dict], context: dict) -> list[Viola
             rule="seasoning_never_mentioned", severity="warn",
             date=entry["date"], slot="dinner",
             message=(
-                f"{entry['date']} dinner ('{entry['meal_name']}'): the method never mentions "
+                f"{entry['meal_name']}: the method never mentions "
                 "salt, a spice, an aromatic or an acid."
             ),
         ))
@@ -1588,7 +1588,7 @@ def _method_is_assembly(entries: list[dict], context: dict) -> list[Violation]:
             rule="method_is_assembly", severity="info",
             date=entry["date"], slot="dinner",
             message=(
-                f"{entry['date']} dinner ('{entry['meal_name']}'): the method uses an oven "
+                f"{entry['meal_name']}: the method uses an oven "
                 "or a pan but never browns, blooms or layers anything."
             ),
         ))
@@ -1707,7 +1707,7 @@ def _steps_have_no_cue(entries: list[dict], context: dict) -> list[Violation]:
             rule="steps_have_no_cue", severity="info",
             date=entry["date"], slot="dinner",
             message=(
-                f"{entry['date']} dinner ('{entry['meal_name']}'): no step says when anything "
+                f"{entry['meal_name']}: no step says when anything "
                 "is done — no 'until', no minutes, no temperature."
             ),
         ))
@@ -1749,7 +1749,7 @@ def _no_heat_named(entries: list[dict], context: dict) -> list[Violation]:
             rule="no_heat_named", severity="info",
             date=entry["date"], slot="dinner",
             message=(
-                f"{entry['date']} dinner ('{entry['meal_name']}'): the method uses an oven "
+                f"{entry['meal_name']}: the method uses an oven "
                 "or a pan but never names a heat level or temperature."
             ),
         ))
@@ -1780,7 +1780,7 @@ def _longest_thing_not_first(entries: list[dict], context: dict) -> list[Violati
             rule="longest_thing_not_first", severity="info",
             date=entry["date"], slot="dinner",
             message=(
-                f"{entry['date']} dinner ('{entry['meal_name']}'): the oven, water or rice "
+                f"{entry['meal_name']}: the oven, water or rice "
                 f"is only started at step {first_anchor} of {len(steps)} — the longest thing "
                 "should start first."
             ),
@@ -1810,7 +1810,7 @@ def _minutes_vs_steps(entries: list[dict], context: dict) -> list[Violation]:
             rule="minutes_vs_steps", severity="info",
             date=entry["date"], slot="dinner",
             message=(
-                f"{entry['date']} dinner ('{entry['meal_name']}'): {steps} steps in {total} "
+                f"{entry['meal_name']}: {steps} steps in {total} "
                 "minutes — the estimate is not one a household can hit."
             ),
         ))
