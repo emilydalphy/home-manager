@@ -7110,10 +7110,16 @@ def _replace_slot_entries(
         # (see swap_meal_in_plan's docstring): their own links_to goes too,
         # or a "date:slot" one would quietly name the NEW dish on that slot
         # and an "entry_id:" one a row that no longer exists.
+        orphaned_reheats: list[int] = []
         for old_id in old_entry_ids:
             for target in (sources.get(old_id) or {}).get("targets") or []:
                 if target["entry_id"] not in old_entry_ids:
                     _clear_leftover_link(conn, target["entry_id"])
+                    # Kept for the thaw pass below: a night that was
+                    # reheating the outgoing cook is an ordinary cook from
+                    # here on, so if its own recipe calls for something
+                    # frozen it is owed a fridge move it never had.
+                    orphaned_reheats.append(target["entry_id"])
         for old_id in old_entry_ids:
             # If the OUTGOING entry was itself a reheat night, its source's
             # make_double_for/make_double_note still names it after this
@@ -7178,7 +7184,33 @@ def _replace_slot_entries(
         raise
     finally:
         conn.close()
+
+    # The week's fridge moves, recomputed for the week as it now stands —
+    # AFTER the commit, because every read under it opens its own
+    # connection (see defrost.resync_plan_thaws). Here rather than at each
+    # of this write's doors deliberately: a swap is exactly when a thaw
+    # stops being true, this is the one funnel every swap door goes
+    # through, and swap_meal_in_plan's own docstring records what the
+    # other arrangement costs ("a new caller... is not covered by any of
+    # them. Add the ask at your door, or the class comes back").
+    #
+    # Measured: 6.2 ms a call, and 6 calls in a repair-heavy generation
+    # (plan_quality.repair_snack_clashes and meal_variety's count fold both
+    # reach this write), against generation's own model call of 36 seconds
+    # and its own sync at the end. The redundant ones are idempotent.
+    said = _defrost_resync(weekly_plan_id, [result.get("entry_id"), *orphaned_reheats])
+    if said:
+        result["thaw_now"] = said
     return result
+
+
+def _defrost_resync(weekly_plan_id: int, entry_ids: list) -> list[str]:
+    """defrost.resync_plan_thaws, imported where it is called: defrost
+    imports this module at module scope, so a top-level import here would
+    be a cycle."""
+    from . import defrost as _defrost
+
+    return _defrost.resync_plan_thaws(weekly_plan_id, entry_ids)
 
 
 def swap_meal_in_plan(
@@ -7519,6 +7551,15 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
     out = {"entry_ids": new_ids}
     if held_thawed:
         out["held_thawed"] = held_thawed
+    # The same post-commit recomputation _replace_slot_entries does, and
+    # for the same reason — this is the other write that releases a meal's
+    # prep rows, so without it a multi-day Swap leaves the week's fridge
+    # moves judged against the dish that left. `orphaned` is already
+    # gathered above: a night that was reheating this group is an ordinary
+    # cook now and may be owed a move it never had.
+    said = _defrost_resync(weekly_plan_id, [*new_ids, *orphaned])
+    if said:
+        out["thaw_now"] = said
     return out
 
 
@@ -8372,8 +8413,30 @@ def _apply_dinner_nights_swap(
     }
     if not own_conn:
         # See the docstring: both of the fields below are reads, and the
-        # caller's transaction is still open.
+        # caller's transaction is still open. The thaw recomputation below
+        # is a read AND a write, on a connection of its own, so it is the
+        # caller's to make after ITS commit — tonight.tonight_night_off
+        # does, and a nested get_conn here would sit behind the lock it
+        # still holds.
         return out
+    # The moved dinners' fridge moves, recomputed for the nights they are
+    # on now. _shift_defrost_tasks above has already carried each existing
+    # row by the same number of days, which for every lead tier is the
+    # same answer this gives (_move_date shifts linearly) — so the sync is
+    # not what fixes the DATE; it is what notices a move that should now
+    # exist and did not, or whose batch quantity changed because the chain
+    # shrank, and what sweeps one that should not. The shift still earns
+    # its keep: it is what carries a DONE row's status across the move,
+    # which a delete-and-reinsert would lose.
+    #
+    # The sentence is the half the count could not say. Measured on the
+    # merge base: pulling a frozen cook from +4 to +1 shifted its move onto
+    # YESTERDAY, where Today, the morning text, the evening nudge and
+    # Cook's thaw list all read a calendar day and so showed nothing at
+    # all, under a result saying only `prep_tasks_moved: 1`.
+    said = _defrost_resync(weekly_plan_id, [m["entry_id"] for m in moved])
+    if said:
+        out["thaw_now"] = said
     # Both changed days in get_week_menu's own shape, so the screen
     # splices them in exactly as it does after an in-place swap.
     out["days"] = _menu_days_for(weekly_plan_id, [date_a, date_b])

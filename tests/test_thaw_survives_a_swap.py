@@ -345,7 +345,25 @@ def test_the_swap_still_opens_exactly_one_connection(week_with_a_thaw, monkeypat
     GUARD, and the reason held.hold_thing and cooker.household_zone grew a
     `conn`: SQLite gives one writer at a time, so a nested get_conn inside
     this transaction would sit behind its own lock and die of "database is
-    locked". Mutation: drop `conn=conn` at either call and this fails.
+    locked". Mutation: drop `conn=conn` at either call and this fails
+    (measured, 2026-10-01: dropping it at the chain read reddens all six
+    of this family's tests across three files).
+
+    **THE WINDOW IS THE TRANSACTION AND NOT THE FUNCTION, which is a
+    correction rather than a widening (2026-10-01).** This branch's own
+    post-commit fridge-move resync opens five connections of its own, and
+    they were being counted against a claim this test's message makes
+    about the WRITE TRANSACTION — which the resync is provably outside of,
+    since `_replace_slot_entries` closes its connection in a `finally`
+    before calling it. So the first cut of this branch reddened its own
+    guard and the five siblings with it, and the honest reading is that
+    the instrument had come apart from the claim, not that the design had.
+    Patching `_defrost_resync` gives the third mark; if that call ever
+    goes away the mark is never set and the window falls back to the whole
+    function, i.e. the guard gets stricter rather than weaker. The second
+    assertion is what stops the narrowing being a loosening: the
+    post-commit count is pinned exactly, in the shape
+    test_planning_periods.py's takeover guard already uses.
     """
     import app.db as appdb
     from app.tools import cooker, held, grocery, meal_plans, recipes, leftovers, attendance
@@ -368,6 +386,7 @@ def test_the_swap_still_opens_exactly_one_connection(week_with_a_thaw, monkeypat
 
     marks = {}
     real_replace = wp._replace_slot_entries
+    real_resync = wp._defrost_resync
 
     def marking(*args, **kwargs):
         marks["start"] = dict(opened)
@@ -375,13 +394,31 @@ def test_the_swap_still_opens_exactly_one_connection(week_with_a_thaw, monkeypat
         marks["end"] = dict(opened)
         return out
 
+    def resyncing(*args, **kwargs):
+        marks.setdefault("after_tx", dict(opened))
+        return real_resync(*args, **kwargs)
+
     monkeypatch.setattr(wp, "_replace_slot_entries", marking)
+    monkeypatch.setattr(wp, "_defrost_resync", resyncing)
     tools.swap_meal_in_plan(pid, night, "Bean Chili", slot="dinner")
 
-    assert set(marks) == {"start", "end"}, "the transaction body never ran"
-    delta = {k: marks["end"][k] - marks["start"][k] for k in opened}
-    assert delta == {**{k: 0 for k in opened}, "weekly_plan": 1}, (
-        f"something inside the swap's write transaction opened its own connection: {delta}"
+    assert {"start", "end"} <= set(marks), "the transaction body never ran"
+    closed = marks.get("after_tx", marks["end"])
+    inside = {k: closed[k] - marks["start"][k] for k in opened}
+    assert inside == {**{k: 0 for k in opened}, "weekly_plan": 1}, (
+        f"something inside the swap's write transaction opened its own connection: {inside}"
+    )
+
+    # AND THE POST-COMMIT COST IS PINNED TOO, because a window that stops
+    # at the commit would otherwise let the resync grow unwatched. This is
+    # the exact shape the sibling guards take (test_planning_periods.py's
+    # takeover guard asserts a total and explains every connection in it).
+    # Measured on this tree: the resync re-reads the week's thaws through
+    # weekly_plan (2), defrost (2) and the household clock (1).
+    after = {k: marks["end"][k] - closed[k] for k in opened}
+    assert after == {**{k: 0 for k in opened},
+                     "weekly_plan": 2, "defrost": 2, "cooker": 1}, (
+        f"the post-commit thaw resync's own connection count moved: {after}"
     )
 
 

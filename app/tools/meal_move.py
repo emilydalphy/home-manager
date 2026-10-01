@@ -544,23 +544,36 @@ def move_options(weekly_plan_id: int, entry_id: int) -> dict:
 MOVE_TOKEN_KEY = "move"
 
 
-def _thaw_notes(thaw: list[dict], today: str) -> list[str]:
+def _thaw_notes(thaw: list[dict], today: str, also: list[str] = ()) -> list[str]:
     """One line per fridge move that now has to happen EARLIER than it
     did — the only thaw change worth a word (a later one simply shows up
-    on its day). "Move the chicken thighs to the fridge today."."""
+    on its day). "Move the chicken thighs to the fridge today."
+
+    The sentence itself is defrost.thaw_move_sentence, which this had
+    first and which the swap doors now share (2026-10-01): three wordings
+    for one fact is how two screens come to tell a household different
+    things about the same chicken.
+
+    `also` is what the post-commit recomputation found still owed today or
+    earlier (defrost.resync_plan_thaws), merged in rather than reported as
+    a second field — shell.js reads `thaw_notes` and nothing else, and a
+    move that NEWLY earns a fridge move (the chain shrank, so a cook that
+    was a reheat has its own ingredients now) has no before-and-after for
+    the diff above to see. Deduplicated, since the ordinary case is the
+    same sentence from both halves.
+    """
+    from . import defrost as _defrost  # lazy: it imports weekly_plan, which imports this
+
     notes = []
     for t in thaw:
         if not t.get("to") or not t.get("from") or t["to"] >= t["from"] or t.get("status") == "done":
             continue
-        what = (t.get("description") or "").split(" — ")[0].rstrip(".").strip()
-        if not what:
-            continue
-        if t["to"] < today:
-            notes.append(f"{what} now.")
-        elif t["to"] == today:
-            notes.append(f"{what} today.")
-        else:
-            notes.append(f"{what} on {_weekday(t['to'])}.")
+        note = _defrost.thaw_move_sentence(t.get("description") or "", t["to"], today)
+        if note and note not in notes:
+            notes.append(note)
+    for note in also or ():
+        if note not in notes:
+            notes.append(note)
     return notes
 
 
@@ -651,14 +664,14 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
     by_id = {r["id"]: r for r in snap["rows"]}
     moved = [{"entry_id": i, "meal": by_id[i]["meal"], "slot": by_id[i]["slot"],
               "from": by_id[i]["date"], "to": d} for i, d in placement.items()]
-    _after_move(weekly_plan_id, list(placement))
+    still_owed = _after_move(weekly_plan_id, list(placement))
     dates = sorted({m["from"] for m in moved} | {m["to"] for m in moved})
     return {
         "status": "moved",
         "said": _said(snap, placement, planned["members"], entry_id),
         "moved": moved,
         "move_id": move_id,
-        "thaw_notes": _thaw_notes(done["thaw"], today),
+        "thaw_notes": _thaw_notes(done["thaw"], today, still_owed),
         "prep_tasks_moved": done["prep_moved"],
         "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
         "can_undo": True,
@@ -771,27 +784,53 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
         raise
     finally:
         conn.close()
-    _after_move(weekly_plan_id, list(placement))
+    # The same post-commit pass the move itself makes. Its answer is
+    # carried rather than dropped: an undo is a move too, and keeping one
+    # of _after_move's two callers deaf to it is the asymmetry that becomes
+    # the next bug. No screen reads this one yet (shell.js reads
+    # thaw_notes on the move's own toast only) — the chat tool and the
+    # sheet's undo line are the follow-up on this card.
+    still_owed = _after_move(weekly_plan_id, list(placement))
     by_id = {r["id"]: r for r in snap["rows"]}
     dates = sorted(set(placement.values()) | {by_id[i]["date"] for i in placement})
     src = by_id.get(source_id) if source_id in placement else None
     said = (f"{_cap(short_name(src['meal']))} was moved back to {_weekday(placement[source_id])}"
             if src else "Back as it was")
-    return {
+    out = {
         "status": "restored",
         "said": said,
         "moved": [{"entry_id": i, "meal": by_id[i]["meal"], "from": by_id[i]["date"], "to": d}
                   for i, d in placement.items()],
         "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
     }
+    if still_owed:
+        out["thaw_notes"] = still_owed
+    return out
 
 
-def _after_move(weekly_plan_id: int, moved_ids: list[int]) -> None:
-    """The draft's snag lines, re-said for the week as it now stands — a
+def _after_move(weekly_plan_id: int, moved_ids: list[int]) -> list[str]:
+    """
+    Everything the week owes once a move has committed, and only then —
+    both halves open their own connections, and a nested get_conn inside
+    the move's write transaction is the "database is locked" trap.
+
+    The draft's snag lines, re-said for the week as it now stands — a
     meal that moved onto a short-on-time night gets its line, one that
-    moved off loses it. Never fails the move: the move is written."""
+    moved off loses it. Never fails the move: the move is written.
+
+    And the week's fridge moves, recomputed against the days the meals are
+    on now (defrost.resync_plan_thaws, 2026-10-01). _redate_plan_rows has
+    already carried each EXISTING reminder by the same number of days,
+    which is the same answer recomputing gives for its date; what this
+    adds is a move that should now exist and did not, one that should not
+    and does, and a quantity that changed because a chain's shape did.
+    Returns whatever it now has to start today or earlier, for the caller
+    to merge into its own thaw line.
+    """
     try:
         from . import draft_flags as _draft_flags
         _draft_flags.refresh(weekly_plan_id, moved_ids)
     except Exception:
         logger.exception("Refreshing the draft's flags after a move failed (plan %s)", weekly_plan_id)
+    from . import defrost as _defrost
+    return _defrost.resync_plan_thaws(weekly_plan_id, moved_ids)

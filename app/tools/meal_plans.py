@@ -426,7 +426,8 @@ def discard_failed_plan(weekly_plan_id: int) -> dict:
     hiding the thing that actually went wrong, which is the exact problem
     this whole area is being fixed for.
     """
-    removed = {"weekly_plan_id": weekly_plan_id, "meals_removed": 0, "plan_removed": False}
+    removed = {"weekly_plan_id": weekly_plan_id, "meals_removed": 0,
+               "plan_removed": False, "prep_removed": 0}
     conn = None
     try:
         conn = get_conn()
@@ -434,16 +435,59 @@ def discard_failed_plan(weekly_plan_id: int) -> dict:
             "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
             (weekly_plan_id, household_id()),
         )
-        removed["meals_removed"] = cur.rowcount
+        meals = cur.rowcount
+        # EVERY child row has to be released before the plan can go, because
+        # get_conn sets PRAGMA foreign_keys = ON and schema.sql gives
+        # weekly_plans exactly three children: meal_plan_entries (above),
+        # prep_tasks, and grocery_items.source_weekly_plan_id. One surviving
+        # child does not merely leave a stale row behind -- the DELETE below
+        # raises FOREIGN KEY constraint failed, the except swallows it, and
+        # because the raise lands BEFORE the commit the entry delete above is
+        # discarded with the transaction as well. So the plan is not rolled
+        # back AT ALL and becomes "this week" for whatever finds it, which is
+        # word for word what this function's docstring exists to prevent.
+        # Measured 2026-10-01 on a throwaway database, a reused recipe naming
+        # a frozen item and a raise in generation's unwrapped tail: 1 draft
+        # plan, 28 meal_plan_entries and 7 prep_tasks left standing, with
+        # get_weekly_plan() handing the half-built draft back.
+        #
+        # prep_tasks are DELETED: they describe work for a plan that is being
+        # discarded, and defrost.sync_defrost_tasks rewrites a live plan's
+        # rows from scratch anyway.
+        cur = conn.execute(
+            "DELETE FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        )
+        prep = cur.rowcount
+        # A grocery line is NOT deleted, it is UN-STAMPED. The line may hold
+        # an amount the household typed, so the safe direction is the one
+        # add_grocery_item already calls keep_standing: it becomes a standing
+        # want rather than vanishing. Unreachable from generation today (a
+        # draft never reaches the shopping list -- measured: main rolls back
+        # cleanly in the same reproduction), and the same FK blocks the
+        # rollback if it ever is, on main as much as here.
+        conn.execute(
+            "UPDATE grocery_items SET source_weekly_plan_id = NULL "
+            "WHERE source_weekly_plan_id = ? AND household_id = ?",
+            (weekly_plan_id, household_id()),
+        )
         cur = conn.execute(
             "DELETE FROM weekly_plans WHERE id = ? AND household_id = ?",
             (weekly_plan_id, household_id()),
         )
-        removed["plan_removed"] = cur.rowcount > 0
+        plan_gone = cur.rowcount > 0
         conn.commit()
+        # Counted only once the commit has landed: these are a report of what
+        # was rolled back, and before this they were filled in from rowcount
+        # and then returned unchanged by the failure path -- so a rollback
+        # that had been entirely discarded still answered meals_removed: 1.
+        removed["meals_removed"] = meals
+        removed["prep_removed"] = prep
+        removed["plan_removed"] = plan_gone
         logging.getLogger("home_manager").warning(
-            "Rolled back weekly plan %s after a failed generation (%s meals removed)",
-            weekly_plan_id, removed["meals_removed"],
+            "Rolled back weekly plan %s after a failed generation "
+            "(%s meals, %s prep tasks removed)",
+            weekly_plan_id, meals, prep,
         )
     except Exception:
         logging.getLogger("home_manager").exception(
