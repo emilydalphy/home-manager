@@ -7,7 +7,7 @@ import json
 import logging
 import re
 from urllib.parse import urlsplit
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id
 from . import grocery as _grocery
 from . import household as _household
@@ -1860,36 +1860,47 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
             f"{rating!r} isn't a verdict on a recipe. "
             f"Use one of: {', '.join(RECIPE_RATINGS)}."
         )
-    conn = get_conn()
-    recipe = conn.execute(
-        "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
-        "ORDER BY id LIMIT 1",
-        (household_id(), recipe_name),
-    ).fetchone()
-    if not recipe:
-        conn.close()
-        raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
+    # db.write() rather than get_conn() + conn.close(): the body raises on
+    # purpose in two places (no such recipe, and -- further up -- a word that
+    # is not a verdict), and before this every one of those raises leaked the
+    # connection holding the write lock. See db.write's own docstring; this
+    # function and attribute_recipe_feedback below are the two sites the
+    # 2026-09-27 review named with line numbers as the proof of shape. The
+    # body is otherwise unchanged, including its own conn.commit() -- a second
+    # commit at the end of the block is a no-op.
+    with write() as conn:
+        recipe = conn.execute(
+            "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+            "ORDER BY id LIMIT 1",
+            (household_id(), recipe_name),
+        ).fetchone()
+        if not recipe:
+            raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
 
-    merged_notes = recipe["feedback_notes"]
-    if notes:
-        merged_notes = f"{merged_notes} | {notes}" if merged_notes else notes
+        merged_notes = recipe["feedback_notes"]
+        if notes:
+            merged_notes = f"{merged_notes} | {notes}" if merged_notes else notes
 
-    if rating is not None:
-        conn.execute(
-            "UPDATE recipes SET rating = ?, feedback_notes = ? WHERE id = ? AND household_id = ?",
-            (rating, merged_notes, recipe["id"], household_id()),
-        )
-    else:
-        conn.execute(
-            "UPDATE recipes SET feedback_notes = ? WHERE id = ? AND household_id = ?",
-            (merged_notes, recipe["id"], household_id()),
-        )
-    conn.commit()
-    conn.close()
+        if rating is not None:
+            conn.execute(
+                "UPDATE recipes SET rating = ?, feedback_notes = ? WHERE id = ? AND household_id = ?",
+                (rating, merged_notes, recipe["id"], household_id()),
+            )
+        else:
+            conn.execute(
+                "UPDATE recipes SET feedback_notes = ? WHERE id = ? AND household_id = ?",
+                (merged_notes, recipe["id"], household_id()),
+            )
+        conn.commit()
+        recipe_id = recipe["id"]
 
+    # Outside the block on purpose, exactly as it was outside the old
+    # conn.close(): this opens two connections of its own, and nesting them
+    # inside an open write transaction is how this repo has twice earned an
+    # intermittent "database is locked".
     solo_auto_attribution = None
     if rating is not None:
-        solo_auto_attribution = _maybe_auto_attribute_solo_night(recipe["id"], recipe_name, rating)
+        solo_auto_attribution = _maybe_auto_attribute_solo_night(recipe_id, recipe_name, rating)
     return {
         "name": recipe_name, "rating": rating, "feedback_notes": merged_notes,
         "solo_auto_attribution": solo_auto_attribution,
@@ -2002,50 +2013,49 @@ def attribute_recipe_feedback(
     confirm-first step needed. Always recorded as source='explicit', so it
     can never be silently overwritten by solo-night auto-attribution later.
     """
-    conn = get_conn()
-    recipe = conn.execute(
-        "SELECT id, rating FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-        (household_id(), recipe_name),
-    ).fetchone()
-    if not recipe:
-        conn.close()
-        raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
+    # db.write(), for the reason spelled out at mark_recipe_feedback above:
+    # three of this function's four exits are a raise, and each of them used
+    # to leak the connection holding the write lock.
+    with write() as conn:
+        recipe = conn.execute(
+            "SELECT id, rating FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            (household_id(), recipe_name),
+        ).fetchone()
+        if not recipe:
+            raise ValueError(f"No recipe named '{recipe_name}'. Save it first with add_recipe.")
 
-    resolved_rating = rating or (recipe["rating"] or None)
-    if not resolved_rating:
-        conn.close()
-        raise ValueError(
-            f"'{recipe_name}' has no rating yet to attribute to {member_name} — pass rating explicitly."
-        )
-    # This door ALREADY refused a third word before mark_recipe_feedback's
-    # guard existed — checked 2026-09-26, it is not a sixth instance. What
-    # changed is only where the two words live: its own hard-coded tuple was a
-    # second copy of one rule, so changing RECIPE_RATINGS would have moved one
-    # door and not the other. InvalidRecipeRating is a ValueError subclass, so
-    # every caller that was catching this still catches it; this function is
-    # reachable from chat only (no route), so there is no except ordering to
-    # get right here the way there is on /api/recipe-feedback.
-    if resolved_rating not in RECIPE_RATINGS:
-        conn.close()
-        raise InvalidRecipeRating(
-            f"{resolved_rating!r} isn't a verdict on a recipe. "
-            f"Use one of: {', '.join(RECIPE_RATINGS)}."
-        )
+        resolved_rating = rating or (recipe["rating"] or None)
+        if not resolved_rating:
+            raise ValueError(
+                f"'{recipe_name}' has no rating yet to attribute to {member_name} — pass rating explicitly."
+            )
+        # This door ALREADY refused a third word before mark_recipe_feedback's
+        # guard existed — checked 2026-09-26, it is not a sixth instance. What
+        # changed is only where the two words live: its own hard-coded tuple was a
+        # second copy of one rule, so changing RECIPE_RATINGS would have moved one
+        # door and not the other. InvalidRecipeRating is a ValueError subclass, so
+        # every caller that was catching this still catches it; this function is
+        # reachable from chat only (no route), so there is no except ordering to
+        # get right here the way there is on /api/recipe-feedback.
+        if resolved_rating not in RECIPE_RATINGS:
+            raise InvalidRecipeRating(
+                f"{resolved_rating!r} isn't a verdict on a recipe. "
+                f"Use one of: {', '.join(RECIPE_RATINGS)}."
+            )
 
-    member_id = _household._get_or_create_member(conn, member_name)
-    conn.execute(
-        """
-        INSERT INTO member_recipe_feedback (household_id, recipe_id, member_id, rating, source, notes)
-        VALUES (?, ?, ?, ?, 'explicit', ?)
-        ON CONFLICT(household_id, recipe_id, member_id) DO UPDATE SET
-            rating = excluded.rating, source = 'explicit',
-            notes = CASE WHEN excluded.notes != '' THEN excluded.notes ELSE member_recipe_feedback.notes END,
-            updated_at = datetime('now')
-        """,
-        (household_id(), recipe["id"], member_id, resolved_rating, notes),
-    )
-    conn.commit()
-    conn.close()
+        member_id = _household._get_or_create_member(conn, member_name)
+        conn.execute(
+            """
+            INSERT INTO member_recipe_feedback (household_id, recipe_id, member_id, rating, source, notes)
+            VALUES (?, ?, ?, ?, 'explicit', ?)
+            ON CONFLICT(household_id, recipe_id, member_id) DO UPDATE SET
+                rating = excluded.rating, source = 'explicit',
+                notes = CASE WHEN excluded.notes != '' THEN excluded.notes ELSE member_recipe_feedback.notes END,
+                updated_at = datetime('now')
+            """,
+            (household_id(), recipe["id"], member_id, resolved_rating, notes),
+        )
+        conn.commit()
     _household._log_preference_event(f"member:{member_name}:recipe:{recipe_name}", "write")
     return {"name": recipe_name, "member": member_name, "rating": resolved_rating, "source": "explicit"}
 

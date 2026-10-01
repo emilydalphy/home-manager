@@ -1,4 +1,5 @@
 """SQLite connection helper."""
+import contextlib
 import json
 import logging
 import re
@@ -152,6 +153,115 @@ def get_conn():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+@contextlib.contextmanager
+def write():
+    """
+    THE one blessed way to open a connection for a block that writes:
+    commits if the block finishes, rolls back if it raises, and closes the
+    connection either way.
+
+        with write() as conn:
+            conn.execute("UPDATE ... WHERE id = ? AND household_id = ?", (...))
+
+    WHY THIS EXISTS, and it is not tidiness. get_conn() hands back a bare
+    connection, so a function that opens one, writes through it, and then
+    calls conn.close() as an ordinary statement has NO protection if
+    anything between the two raises. The connection is leaked HOLDING
+    SQLite's write lock, because the write had already begun — and nothing
+    reclaims it: FastAPI keeps the traceback for the response, the traceback
+    keeps the frame, the frame keeps the local `conn`, so gc.collect() does
+    not free it, and on a threadpool worker no other thread may even close
+    it ("SQLite objects created in a thread can only be used in that same
+    thread"). The next writer then waits out sqlite3's busy timeout and
+    fails.
+
+    THE WORST CONSEQUENCE IS THE REPORTING CHANNEL, which is why this is
+    worth a helper rather than a note. tools.record_error needs to WRITE.
+    It cannot, so the one failure the morning report most needs to see is
+    the one it cannot see. Measured 2026-09-26 on a real uvicorn, before
+    recipes._maybe_auto_attribute_solo_night grew its try/finally: the
+    household's very next write waited out the full 5-second timeout and
+    then 500'd, and error_events held NOTHING AT ALL for the crash that
+    caused it. tests/test_write_closes_however_it_leaves.py pins that
+    sentence both ways.
+
+    IT COMMITS FOR THE CALLER, and that direction was chosen rather than
+    fallen into. A converted function that keeps its own conn.commit() is
+    fine — a second commit on a connection with no open transaction is a
+    no-op and does not raise (checked, not assumed; there is a test). A
+    converted function that FORGETS to commit, under a helper that left
+    committing to the caller, would lose the write silently. One of those
+    two mistakes costs nothing and the other is data loss, so the helper
+    takes the safe one.
+
+    IT DOES NOT OPEN A TRANSACTION, and must not. This is about CLOSING,
+    not about transaction boundaries: a block that needs the write lock
+    from its FIRST READ still says `conn.execute("BEGIN IMMEDIATE")`
+    itself, because whether it does is a correctness decision about that
+    particular write and not something an opener can guess. See CLAUDE.md's
+    swap-atomic / atomic-period-takeover / away-night-atomic entries, which
+    are three separate reasons that call is the caller's.
+
+    THE ROLLBACK AND THE CLOSE ARE BELT AND BRACES FOR EACH OTHER, which
+    is narrower than "the rollback is decoration" and was measured rather
+    than assumed. Closing a connection with an open transaction discards
+    it anyway (CLAUDE.md's away-night-atomic entry records measuring that,
+    with the whole suite green after deleting a rollback()), so with the
+    close in place the rollback below buys no behaviour and nothing pins
+    it. The other way round is NOT symmetrical: with the rollback in place
+    and the close lost, the lock is still released and only a file
+    descriptor leaks — so it takes losing BOTH to get back to the failure
+    this helper exists to prevent. Each covers the other's absence, and
+    tests/test_write_closes_however_it_leaves.py has the per-mutation red
+    counts.
+
+    A rollback that itself raises (a connection already broken, or one the
+    block closed for itself) is swallowed: the original failure is the
+    news, and replacing it with ours would be the second mistake
+    record_error's own docstring warns about.
+
+    WHY get_conn() WAS LEFT EXACTLY AS IT IS, rather than this behaviour
+    being folded into it. Three measurements, 2026-10-01:
+      * 1367 call sites take get_conn()'s return value (521 in app/, 840 in
+        tests/, 6 in the root scripts) and treat it as a real
+        sqlite3.Connection — row_factory, .in_transaction, cursor
+        .lastrowid, and tests that patch app.db.get_conn to hand back one.
+        Wrapping it to close on exit means handing a proxy to 1367 sites to
+        fix a shape at 171 (173 before this branch's own two conversions;
+        tests/test_connection_close_sweep.py carries the census).
+      * sqlite3.Connection ALREADY defines __enter__/__exit__, with
+        TRANSACTION semantics: commit on a clean exit, rollback on an
+        exception, and deliberately NO close. So `with get_conn() as c:`
+        has a meaning in the standard library already, and redefining it
+        would change what that spelling means on the one form Python has
+        an answer for. The blessed shape is therefore a different and
+        unmistakable spelling.
+      * There are ZERO `with get_conn()` sites anywhere in this repo today,
+        so that is a hazard being declined rather than one being fixed.
+
+    THERE IS NO read(). A block that only reads is welcome to use this one
+    and pay a commit on a connection with nothing to commit, which is free.
+    A second name that did NOT commit would be a trap the first time a read
+    block grew a write — exactly the silent loss the commit decision above
+    exists to avoid — and a leaked READ connection costs a file descriptor
+    rather than the write lock, which is the whole severity of this. One
+    name cannot be the wrong one of two.
+    """
+    conn = get_conn()
+    try:
+        yield conn
+    except BaseException:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+    else:
+        conn.commit()
+    finally:
+        conn.close()
 
 
 # Lightweight migrations for columns added after the initial schema, so
