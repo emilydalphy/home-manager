@@ -680,6 +680,37 @@ why*, not duplicating the diff.
     functions are passed over by design: that is a different card with a
     different argument, and it is a file descriptor rather than the write
     lock.
+  - **Numbers, read off the runs at `TZ=America/Toronto`, each in a tree
+    nothing else was writing to (the baseline is a `git archive` export of
+    `940df8b`, per this file's own rule): branch 8965 passed, 0 failed;
+    baseline 1 failed, 8929 passed.** 8930 collected either side of the
+    arithmetic plus this branch's two new files' 35 is 8965 exactly, and
+    `git diff origin/main -- tests/` changes no existing test file except
+    the one instrument above, so nothing was deleted or weakened.
+  - **THE BRANCH IS GREEN WHERE THE BASELINE IS NOT, AND THAT IS LUCK
+    RATHER THAN A FIX — said plainly, because "0 failed against main's 1"
+    is exactly the statistic this log keeps having to unpick.** The
+    baseline's one failure is
+    `test_pre_shop_accuracy_counts.py::test_the_window_boundary_compares_
+    an_instant_against_an_instant` (`assert 0 == 1`), and this branch
+    touches neither that test nor `pre_shop.py` nor `grocery.py`
+    (`git diff origin/main --stat` over the three is empty). **It is a
+    pre-existing race against the second tick, demonstrated rather than
+    reasoned about:** the test stamps one row at exactly
+    `datetime('now', '-7 days')` and then asks for a seven-day window,
+    which recomputes that boundary — and SQLite's `now` is whole-second,
+    so the row is inside the window while both statements fall in the same
+    second and one second OUTSIDE it the moment a second ticks between
+    them. Reproduced in eleven lines of plain `sqlite3`: the same stamp
+    reads 1 asked immediately and **0** asked 1.05s later, which is the
+    failure exactly. Run alone on main now it is 23 passed, and 30
+    consecutive runs of that one test on main failed **0** times — which
+    does not refute the mechanism, it sizes the window: the gap is
+    milliseconds, so it only straddles a second occasionally, and the
+    baseline ran against four or five other full suites while this branch's
+    run had fewer. Left alone: it is not this card's, and the honest fix is
+    the test backdating relative to a captured instant rather than to a
+    boundary recomputed later.
   - **Not verified in a browser** — nothing visual changed; `static/` is
     byte-identical, and every measurement here is through the tools or the
     `ast`.
