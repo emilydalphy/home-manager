@@ -760,6 +760,20 @@ why*, not duplicating the diff.
     2026-10-01, `date +%F` read in both zones BEFORE and AFTER the run,
     because a timezone is not a straddle and this log has had to say so
     twice. (111 before the review round's eight tests.)
+  - **MERGING THIS WITH `overnight/the-opener-carries-the-guarantee` NEEDS
+    ONE LINE, AND NEITHER BRANCH CAN DO IT ALONE.** That branch adds a
+    shrink-only allowlist, `UNPROTECTED_WRITERS` in
+    `tests/test_connection_close_sweep.py`, of functions that open a
+    connection, write, and do not close it however the block leaves — and
+    `defrost.sync_defrost_tasks` is on it, correctly, because on `main` it
+    is one. The `try/finally` above takes it off that list's premise, so on
+    the merged tree the sweep fails with `NOW PROTECTED, take it off
+    UNPROTECTED_WRITERS`. **The guard working, in the good direction.**
+    Delete `"sync_defrost_tasks"` from that list's `app/tools/defrost.py`
+    entry (~line 429). Not doable here (this branch has no such list) nor
+    there (the function really is unprotected on that branch alone).
+    **Measured on the two merged: 1 failed / 9104 passed before, 9105 / 0
+    after.**
   - **THE EIGHT TESTS THE REVIEW ROUND ADDED, by what they pin:** four
     on `discard_failed_plan` (the `IntegrityError` reproduction, the
     grocery line surviving un-stamped, the counters not lying, and a
