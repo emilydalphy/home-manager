@@ -696,6 +696,24 @@ why*, not duplicating the diff.
     `write()` plus a second never-closed connection reads SAFE to it,
     because the shape it looks for is the open-code `get_conn` the
     `write()` replaced.
+  - **MERGING THIS WITH `overnight/thaw-follows-the-meal` NEEDS ONE LINE,
+    AND NEITHER BRANCH CAN DO IT ALONE — found by running the suite on the
+    two merged, which is the only place it shows.** That branch wraps
+    `defrost.sync_defrost_tasks` in a `try/finally` (it was leaking the
+    write lock when it raised; see its own entry), so on the merged tree
+    the function is PROTECTED while this branch's allowlist still names it
+    — and `UNPROTECTED_WRITERS` is shrink-only, so the sweep fails saying
+    `NOW PROTECTED, take it off UNPROTECTED_WRITERS: app/tools/defrost.py
+    sync_defrost_tasks()`. **That is the guard working, in the good
+    direction**: a sibling branch improved a function and the tripwire
+    noticed the list had gone stale. The fix is to delete
+    `"sync_defrost_tasks"` from that list's `app/tools/defrost.py` entry
+    (`tests/test_connection_close_sweep.py`, ~line 429). It cannot be done
+    on either branch on its own — on this one the function really is still
+    unprotected, so removing it would be red here; on that one the list
+    does not exist. **Measured on the merged tree: 1 failed / 9104 passed
+    before, and that file goes 23 passed + 1 failed to 24 passed after, so
+    9105 / 0.**
   - **FOUND AND NOT FIXED, named so nobody reports it as new.** The other
     171 (the figure was 169 in the first draft and the census says 171 —
     the same off-by-two as the sentence above it), deliberately — the card says not to wrap them and the review says
