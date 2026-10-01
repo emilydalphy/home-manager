@@ -425,6 +425,91 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-01 — A blank "why this night" costs nothing in the morning
+  report now, and three comments in `app/` still said it did. Branch
+  `overnight/a-blank-reason-costs-nothing-now`, NOT merged at the time of
+  writing. COMMENTS AND TESTS ONLY — `git diff origin/main -- app/` is
+  three comment blocks and not one line of behaviour.** Found while reading
+  the morning error check rather than from a report: household 1's FOOD
+  section spent **11 of its 30 findings** in the 7-day window on
+  `reasoning_is_specific`, and every one the report printed read
+  `<date> snack ('Roasted Chickpeas') has no reasoning at all.`
+  - **THAT IS NOT A LIVE DEFECT, and establishing it is most of the work.**
+    The rule stopped producing that message on **2026-09-30 (`45e2bc0`)**:
+    the week call is no longer asked for a per-slot reasoning line (it came
+    off every screen on 2026-09-27), so a blank is the normal case and
+    `_reasoning_is_specific` returns early on it. Those rows are
+    historical, logged before the deploy, and age out of the window by
+    2026-10-07. Checked rather than assumed — the string survives nowhere
+    in `app/` except in the comments this branch corrects, plus one test
+    fixture in `test_report_food_lines.py`.
+  - **WHAT WAS ACTUALLY WRONG WAS THOSE COMMENTS. Three of them, in two
+    modules, each giving a MEASURED reason for choosing a non-blank
+    reason — and the measurement had expired.** `cap_enforce.REPICK_REASON`
+    ("An EMPTY reason … was measured to be worse"),
+    `cap_enforce.MOVE_REASON` ("emptying it re-introduces the warnings
+    above") and `meal_variety.GAP_FILL_REASON` ("NOT blank, deliberately —
+    … duly warns"). Measured on this tree before anything was touched: a
+    blank reason produces **ZERO** `reasoning_is_specific` findings; only
+    generic filler is caught.
+  - **`MOVE_REASON`'s is the one with teeth**, because it is not a
+    description but an INSTRUCTION to a future session — and it was
+    telling them the opposite of the truth. An unmeasured cost claim in a
+    comment is what the next reader acts on, which this log has had to
+    unpick before (the 2026-09-27 `no-open-breakfast-or-lunch` entry
+    corrects exactly this shape one module over).
+  - **ALL THREE CONSTANTS KEEP THEIR VALUES**, on the reasons that never
+    depended on the warning: a re-picked dinner's own reason is about the
+    DISH and what happened is on record in `derived_from[REPICK_KEY]`; a
+    moved dinner keeps a sentence the model wrote about a night it is no
+    longer on, so it needs replacing with one that is true either way; and
+    a filled gap stands where there was nothing at all, so a household is
+    owed a word about why the app answered instead of asking. Only the
+    justification moved.
+  - **FOR EMILY, the thing worth knowing rather than the fix: her "no
+    note" preference is now FREE.** She decided on 2026-09-25 that a
+    swapped-out repeat carries no note (`meal_variety.REPEAT_REASON = ""`),
+    and until 2026-09-30 the app could not extend that anywhere else
+    because every blank cost a morning-report warning. That cost is gone,
+    so rewording or emptying `MOVE_REASON` is a pure copy decision with
+    nothing pushing back — which it was not when that comment was written.
+  - **And it closes a real test gap, which is why this is a branch rather
+    than a note.** The rule's own behaviour on a blank was already pinned
+    twice (`test_plan_quality.py::test_a_blank_reason_is_not_a_finding`,
+    and `test_speed_first_week_2026_09_30` drives it through a generated
+    week) — neither is duplicated here. What **nothing** pinned is the
+    relationship between the reason constants the app WRITES and the rule
+    that judges them: that no sentence Pomona puts in a "why this night"
+    is itself generic filler. A sweep, DERIVED from the modules rather
+    than hand-listed (every public module-level `*REASON` constant in
+    `app/tools/`, placeholders filled so the sentence judged is the one a
+    household reads), so a reason constant added tomorrow is covered
+    without anybody editing the file. It finds 10 today.
+  - `tests/test_a_blank_reason_costs_nothing_now.py` (17). **1 red against
+    main, and that is the honest number: the prose sweep, which is the
+    only genuine catch, because no behaviour changed.** **One docstring
+    was mislabelled CATCH and is corrected to GUARD on measurement** —
+    `test_emptying_one_of_the_three_now_costs_nothing_in_the_report` is
+    green on main, since main's RULE already does not warn on a blank and
+    only main's COMMENTS say otherwise. **Five mutations run and every one
+    bites**: the 2026-09-30 fix reverted so a blank warns again (5 red),
+    `MOVE_REASON` reworded to banned filler (1), the sweep narrowed so it
+    finds almost nothing (1, and the collected count drops from 16 to 8 —
+    the guard-on-the-guard working), `_BANNED_REASONING_PHRASES` emptied
+    (1), and the old message put back in the rule's source as a comment
+    only (1).
+  - **The prose test reads RAW text, deliberately, and says why**: the
+    defect WAS a comment, so comment-stripping would make the claim
+    unreadable. It requires every surviving mention of the old message to
+    sit within a few lines of a word that dates it ("stopped", "expired",
+    "used to", "historical", "corrected", "no longer"), so the claim can
+    be recounted as history but not re-made in the present tense.
+  - **Found and NOT fixed:** the 9 `dinner_repeat_in_history` findings in
+    the same window are a separate, live rule and are untouched; and the
+    six-line cap on the FOOD section is still a cap, so a week with more
+    than six distinct findings still prints only six (the 2026-09-30
+    `report-food-lines-collapse` entry's own residue).
+
 - **2026-09-30 — A night off on a reheat that owns a side now takes the
   side's line off the list, and the undo puts it back exactly. Branch
   `night-off-undo-carries-groceries`, NOT merged at the time of writing.**
