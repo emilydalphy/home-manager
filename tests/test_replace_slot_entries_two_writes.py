@@ -400,7 +400,25 @@ def test_the_repeat_repair_still_records_why(approved_five_dinners):
 
 # ---------- the mechanics that make it hold ----------
 
-_MODULES = ("weekly_plan", "grocery", "meal_plans", "recipes", "leftovers", "attendance")
+# "db" is app.db itself rather than one of app.tools' modules, and it is in
+# this list because db.write() resolves get_conn from app.db's OWN namespace —
+# so a nested connection opened the blessed way was invisible to every name
+# below it. Measured 2026-10-01: a nested connection injected into
+# recipes._add_recipe_ingredients_for_entries reddened 7 of these counting
+# guards when opened with get_conn() and only 2 when opened with db.write(),
+# and the 2 were the only ones that already patched app.db. See
+# _resolve_module.
+_MODULES = ("weekly_plan", "grocery", "meal_plans", "recipes", "leftovers",
+            "attendance", "db")
+
+
+def _resolve_module(name):
+    """The module each name in _MODULES refers to. Only "db" is not a tool."""
+    if name == "db":
+        import app.db as appdb
+        return appdb
+    import app.tools as tools_pkg
+    return getattr(tools_pkg, name)
 
 
 def test_the_holiday_dish_opens_exactly_one_connection_for_its_transaction(approved_holiday, monkeypatch):
@@ -770,24 +788,31 @@ def _connections_inside(monkeypatch, run) -> dict:
     it, per module.
 
     WHAT IT REALLY COVERS, said precisely because the shape it is lifted
-    from (test_swap_atomic.py's own counter) claims more: SIX named
-    modules, and only those. Each holds its own `get_conn` from a
-    `from ..db import get_conn` at import, so a patch of app.db's name
-    reaches none of them and each binding has to be patched by hand — which
-    means a nested connection opened from a module NOT in this list is
-    invisible here. A reviewer proved that by injecting one from `staples`,
-    which the ingest tree can reach, and this guard saw nothing.
+    from (test_swap_atomic.py's own counter) claims more: the NAMED modules
+    in _MODULES, and only those. Each tool module holds its own `get_conn`
+    from a `from ..db import get_conn` at import, so a patch of app.db's
+    name reaches none of them and each binding has to be patched by hand —
+    which means a nested connection opened from a module NOT in this list
+    is invisible here. A reviewer proved that by injecting one from
+    `staples`, which the ingest tree can reach, and this guard saw nothing.
 
-    It is still worth having: it covers the six modules the write actually
-    walks today, and the hazard fails loudly on its own anyway — a nested
-    connection inside the open transaction waits out SQLite's busy timeout,
-    so the file goes from a second to a minute and most of it goes red.
+    `app.db` IS in the list, and that is the one name that covers a whole
+    class rather than one module: db.write() — the blessed opener — reads
+    get_conn from app.db's own namespace, so until app.db was patched here
+    a nested connection opened the RIGHT way was invisible while the same
+    connection opened the old way was caught. Measured 2026-10-01, a nested
+    connection in recipes._add_recipe_ingredients_for_entries: 7 counting
+    guards red via get_conn(), 2 via db.write().
+
+    It is still worth having beyond that: it covers the six tool modules
+    the write actually walks today, and the hazard fails loudly on its own
+    anyway — a nested connection inside the open transaction waits out
+    SQLite's busy timeout, so the file goes from a second to a minute and
+    most of it goes red.
     """
-    import app.tools as tools_pkg
-
     opened = {m: 0 for m in _MODULES}
     for name in _MODULES:
-        module = getattr(tools_pkg, name)
+        module = _resolve_module(name)
         real = module.get_conn
 
         def counting(_name=name, _real=real):

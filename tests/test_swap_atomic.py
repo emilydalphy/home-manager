@@ -29,6 +29,7 @@ import pytest
 from conftest import household_today
 
 from app import agent, tools
+import app.db as _appdb
 from app.db import DB_PATH, get_conn
 from app.tools import attendance, grocery, leftovers, meal_plans, recipes, weekly_plan
 from app.tools import swap_in_place as sip
@@ -516,9 +517,19 @@ def test_the_generation_snack_repair_leaves_the_day_intact_on_a_failure(monkeypa
 
 # ------------------------------------------------------ the deadlock half
 
+# app.db is in here as well as the six tool modules, and it is the one entry
+# that covers a class rather than a module: db.write() — the blessed opener —
+# resolves get_conn from app.db's OWN namespace, so a nested connection opened
+# the right way was invisible to every name below it. Measured 2026-10-01: a
+# nested connection injected into recipes._add_recipe_ingredients_for_entries
+# reddened 7 counting guards when opened with get_conn() and 2 with db.write(),
+# and the 2 were the only ones that already patched app.db. Patching both a
+# tool module and app.db cannot double-count, because each entry's `real` is
+# captured before it is replaced.
 _MODULES = (
     ("weekly_plan", weekly_plan), ("grocery", grocery), ("meal_plans", meal_plans),
     ("recipes", recipes), ("leftovers", leftovers), ("attendance", attendance),
+    ("db", _appdb),
 )
 
 

@@ -56,6 +56,8 @@ much less than it looks — see the report.
 """
 from __future__ import annotations
 
+import sqlite3
+
 import pytest
 
 from app import tools
@@ -154,28 +156,43 @@ def test_the_empty_string_is_refused_even_though_the_column_documents_it():
 def test_the_check_runs_before_a_connection_is_opened():
     """
     GUARD — red on main only on the missing name, so the mutation is what
-    pins it: move the check below get_conn and this goes red.
+    pins it: move the check below the connection open and this goes red.
 
     It matters for the two reasons the grocery and attention siblings already
     record — a word that is not a verdict never takes the write lock, and a
-    raise below get_conn would skip conn.close() and leak the connection —
+    raise below the open would skip the close and leak the connection —
     plus one this door has of its own: the UPDATE commits, so a check that
     ran after it would be checking a rating it had already destroyed.
+
+    THE INSTRUMENT MOVED ON 2026-10-01 AND THE CLAIM DID NOT. It used to
+    count calls to `_recipes.get_conn`, the module-level name bound by
+    `from ..db import get_conn`. mark_recipe_feedback opens its connection
+    with `db.write()` now (branch overnight/the-opener-carries-the-
+    guarantee), and write() resolves get_conn inside app/db.py — so that
+    patch stopped being on the path and this test went TOOTHLESS while
+    staying green. Measured: the mutation named above reddened this test on
+    main's shape and passed on the converted one.
+
+    It counts `sqlite3.connect` instead, which is the one place every path
+    present or future goes through, and is the instrument CLAUDE.md's
+    move-owner entry (2026-09-30) recommends for exactly this reason: a
+    module-level patch cannot see a connection opened through a name that
+    module does not hold.
     """
     _chili()
     opened = []
-    real = _recipes.get_conn
+    real = sqlite3.connect
 
-    def counting():
+    def counting(*a, **k):
         opened.append(1)
-        return real()
+        return real(*a, **k)
 
-    _recipes.get_conn = counting
+    sqlite3.connect = counting
     try:
         with pytest.raises(tools.InvalidRecipeRating):
             tools.mark_recipe_feedback("Bean Chili", rating="teleported")
     finally:
-        _recipes.get_conn = real
+        sqlite3.connect = real
     assert opened == [], "a word that is not a verdict must not open a connection"
 
 

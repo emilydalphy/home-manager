@@ -1350,6 +1350,342 @@ why*, not duplicating the diff.
     build we no longer run" is still something a reader has to work out.
     That is a second read and its own card. And the eight-shape cap on the
     ERROR section is still a cap.
+- **2026-10-01 — The opener carries the guarantee now: `db.write()` closes
+  however the block leaves, and a sweep stops the count GROWING. Branch
+  `overnight/the-opener-carries-the-guarantee`, NOT merged at the time of
+  writing.** Loop Board bug, Phase 0, Medium. **READ THE SEVERITY THE WAY
+  THE CARD'S OWN 2026-09-27 REGRESSION REVIEW BOUNDS IT, which is the most
+  important thing on it: this is NOT 176 live bugs.** That review says the
+  title overstates it, that 2 of 2 hand-checked candidates were false
+  positives, that reachable cases are "plausibly zero", and — in as many
+  words — *"do not start from 349, or 176, or 288, or 21"*. What is real is
+  the CLASS, its invisibility in the morning report, and that it grows by
+  one every time somebody adds a module. The review's own instruction was
+  to build the fix in the opener, and that is what this is. **No existing
+  call site was wrapped except the two the review named with line numbers.**
+  - **`app/db.py` gains `write()`**, a context manager: commits on a clean
+    exit, rolls back if the block raises, closes in a `finally` either way.
+    `get_conn()` is **byte-identical** and that was a decision with three
+    measurements behind it, taken 2026-10-01. (1) **1367 call sites** take
+    `get_conn()`'s return value — and that is `grep -rc "get_conn()"`
+    summed over each tree on `origin/main`, re-derived here rather than
+    left as a figure nobody can check: **521 in `app/`, 840 in `tests/`,
+    6 in the root scripts**, which is 1367 exactly (this branch's own
+    test hardening takes `tests/` to 841) and treat it as a real `sqlite3.Connection` —
+    `row_factory`, `in_transaction`, `lastrowid`, and tests that patch
+    `app.db.get_conn` to hand back one; wrapping it to close on exit means
+    handing a proxy to 1367 sites to fix a shape at 171. Measured: making
+    `get_conn` return `contextlib.closing(conn)` takes the suite down at
+    SETUP (conftest's own `init_db` goes through it), 11 errors in the new
+    file alone. (2) `sqlite3.Connection` **already** defines
+    `__enter__`/`__exit__`, with TRANSACTION semantics — commit or
+    rollback, deliberately no close — so `with get_conn() as c:` already
+    has a meaning in the standard library, and redefining it would change
+    the one spelling Python has an answer for. (3) There are **ZERO**
+    `with get_conn()` sites anywhere in the repo, so that is a hazard
+    declined rather than one fixed.
+  - **IT COMMITS FOR THE CALLER, and the asymmetry is the reason.** A
+    converted function that keeps its own `conn.commit()` double-commits,
+    and a second commit on a connection with no open transaction is a
+    no-op that does not raise (measured, not assumed; there is a test). A
+    helper that left committing to the caller would make a forgotten
+    commit a silent data loss. One mistake costs nothing, the other costs
+    a write, so the helper takes the safe one — which is also what lets
+    the 171 be converted WITHOUT editing their commits in the same hunk.
+  - **IT DOES NOT OPEN A TRANSACTION and must not.** A block needing the
+    write lock from its FIRST READ still says `BEGIN IMMEDIATE` itself:
+    `swap-atomic`, `atomic-period-takeover` and `away-night-atomic` are
+    three separate reasons that call belongs to the write rather than to
+    the opener, and taking the lock for every caller would change lock
+    timing at all 171 conversion sites at once. Pinned.
+  - **THERE IS NO `read()`, deliberately.** A read block may use `write()`
+    and pay a commit on a connection with nothing to commit, which is
+    free. A second name that did not commit would be a trap the first time
+    a read block grew a write — the silent loss the commit decision above
+    exists to avoid — and a leaked READ connection costs a file descriptor
+    rather than the write lock, which is this card's whole severity.
+  - **THE LEAK WAS REPRODUCED, not described**, before anything was built:
+    write, raise, keep the traceback (which is what FastAPI does), and
+    `gc.collect()` does NOT free it — the reference is on the traceback,
+    not in a cycle — so the next writer fails. Drop the traceback and the
+    lock is free again. `tests/test_write_closes_however_it_leaves.py` is
+    that reproduction, and it is the property the card asked for and
+    nothing pinned: **a raise inside a write window still leaves
+    `error_events` able to record the failure.** It costs ~0.5s rather
+    than the 5.53s the recipe-rating card measured, and that is
+    production's own number: `record_error` sets `PRAGMA busy_timeout =
+    500` itself, deliberately, so a 500 never parks a threadpool worker
+    for five seconds. The one test that measures an ordinary app write
+    lowers its probe's timeout to 300ms and says so.
+  - **A CLAIM OF MINE THAT MEASURED FALSE, corrected rather than quietly
+    adjusted, because it is the shape this log keeps having to unpick.**
+    The first version of `write()`'s docstring said "THE EXPLICIT ROLLBACK
+    IS DEFENCE IN DEPTH AND NOTHING PINS IT", citing this log's own
+    `away-night-atomic` entry, and the test beside it said the mutation
+    that bites is removing the close — "three tests above". Both halves are
+    wrong. Measured: with the rollback kept and the close moved out of the
+    `finally`, **1** test reddens; with the close deleted outright, **2**;
+    and **NEITHER property test** in either case — because `conn.rollback()`
+    releases the write lock on its own even though the connection leaks.
+    It takes losing BOTH to get back to the failure the helper exists to
+    prevent (**3 red**, and that run hangs every later test in the session
+    on conftest's own table wipe, which is the production mechanism
+    reproduced inside the suite). So the two are belt and braces for EACH
+    OTHER, the property tests pin the conjunction, and "the rollback is
+    unpinned" is true only while the close is there. Both docstrings say
+    that now.
+  - **THE SWEEP ANSWERS A DIFFERENT QUESTION FROM THE ONE THAT FAILED, and
+    that is the whole design.** `tests/test_connection_close_sweep.py`
+    does NOT ask "is there a reachable leak here" — that needs to know what
+    can raise between the open and the close, and the two sharpest-looking
+    candidates anybody hand-checked were both wrong. It asks **IS THE CLOSE
+    PROTECTED**, which is a property of a function's SHAPE and decidable,
+    so **there is no false-positive rate to quote** — only a definition to
+    agree with. A function on its census is not accused of leaking; it is
+    recorded as not being protected if it ever does. **Numbers are given
+    for the census, never as a count of bugs.**
+  - **It is narrowed to WRITERS, and that narrowing is the card's own
+    severity argument.** A candidate opens its own connection (`get_conn`,
+    or `db.write`) AND writes through it (a `.commit()`/`.executescript()`,
+    or an INSERT/UPDATE/DELETE/REPLACE/CREATE/DROP/ALTER/BEGIN literal). A
+    leaked read-only connection costs a file descriptor, not the write
+    lock. `cap_enforce.py` — the module the review named as the class
+    growing — is the clean demonstration and is pinned: of its three
+    connections the WRITER (`_note_move`) is protected and reported SAFE,
+    and the two unprotected ones are read-only and passed over.
+  - **MEASURED, 2026-10-01: 497 functions in `app/` open their own
+    connection; 242 write and 255 only read; 71 of the writers are
+    protected and 171 are not** (on `main`: 241 writers, 68 protected, 173
+    not — the two that moved are the tranche below, and the extra candidate
+    is `db.write()` itself, swept by its own sweep and safe). **The 71 are
+    the evidence the sweep measures the right thing**: they are, almost
+    exactly, the functions this log records somebody deliberately
+    protecting — `_replace_slot_entries`, `_release_plan_days`,
+    `_settle_weekly_plan_approval`, `_settle_slot_empty`,
+    `_claim_inventory_depletion`, `record_error`,
+    `_maybe_auto_attribute_solo_night`.
+  - **The 171 are a shrink-only allowlist asserted by EQUALITY** — the
+    shape `test_module_name_collisions.py` and the household-scope sweep
+    already use, and for its reason: a NEW unsafe-shaped writer is a red
+    test NAMING IT, and a FIXED one is a red test saying take it off.
+    Measured both ways: an unsafe writer appended to `held.py` reddens 1
+    and prints `UNPROTECTED: app/tools/held.py _a_new_unsafe_writer()`; an
+    entry removed as if fixed reddens 1 and prints `UNPROTECTED:
+    app/tools/attendance.py _write()`.
+  - **THE EXEMPTION THE CARD ASKED FOR NEEDS NO LIST, and it is worth
+    knowing why.** A function that takes a caller's `conn` and opens none
+    of its own never calls `get_conn`, so the sweep never looks at it —
+    exempt BY CONSTRUCTION. Those functions deliberately neither commit
+    nor close because the caller owns the transaction (`swap-atomic` /
+    `atomic-period-takeover` / `away-night-atomic`), and wrapping one
+    would close a connection the caller is still writing through.
+    `household_deletion._delete_rows`/`_begin`/`household_tables` are the
+    pinned examples. **But a `conn=None` function that FALLS BACK to
+    opening its own IS a candidate and should be** — that branch really
+    owns a connection, and `held.hold_thing`'s `if own_conn: conn.close()`
+    is an unprotected close. Eleven of the 171 are that shape, in their
+    own checked `_OWN_CONN_FALLBACK` set rather than a comment, because
+    the distinction decides HOW each gets fixed: they CANNOT be converted
+    by wrapping the whole body.
+  - **A FALSE NEGATIVE FOUND AND CLOSED BEFORE IT SHIPPED.** The obvious
+    rule — "every close is inside a `finally`" — reads a function holding
+    TWO connections, one protected and one not, as SAFE. Three functions
+    in `app/` are really that shape (`weekly_plan.drop_dish_from_day`,
+    `weekly_plan._freeze_instead`, `meal_variety._write_batches`), so it
+    would have waved three genuine unprotected writes through. The rule is
+    **any bare close makes a function unsafe-shaped**; the cost is that a
+    bare close on a block that demonstrably cannot raise also reads
+    unsafe, and "cannot raise" is reachability, which this sweep refuses to
+    judge. Pinned by name, and the looser rule is a run mutation (2 red).
+  - **A HOLE FOUND BY CONVERTING THE TWO TRANCHE FUNCTIONS AND WATCHING
+    THEM VANISH FROM THE CENSUS ALTOGETHER rather than move to its SAFE
+    side.** `write()` is itself an opener, and the reader did not know it,
+    so a converted function stopped being a candidate. Harmless for the
+    equality assertion and quietly wrong everywhere else: the SAFE floor
+    would decay as the census is worked through, the converted-function
+    guards would have nothing to look up, and a half-done conversion that
+    used `write()` AND left a second bare close behind would be invisible.
+    `write` is matched as a bare NAME or as `db.write`/`_db.write`, never
+    as a plain attribute — `recipe_photos.py:112` is `f.write(...)` on a
+    file, and a reader counting every `.write(` would call that an opener.
+  - **A LIMITATION I ASSERTED AND MEASURED FALSE, caught by my own test
+    rather than by review.** The sweep's docstring claimed SQL assembled
+    through a LOCAL VARIABLE is invisible to it, inheriting the
+    household-scope sweep's limitation. It is not: `_writes` scans every
+    literal in a function rather than tracing which reach `.execute`, so
+    `sql = "UPDATE …"` IS seen. What is genuinely invisible is SQL built by
+    a HELPER FUNCTION. The looseness that follows is stated rather than
+    hidden: **any write-shaped string makes a function a writer,
+    DOCSTRINGS INCLUDED**, so a read-only function whose docstring begins
+    "UPDATE the household's goals, one day." lands on the census. That errs
+    toward sweeping, which is the right direction for a guard whose job is
+    to not miss the next unsafe writer — one wrong line on a list against
+    the thing this card is about. All three are asserted, not described.
+  - **THE GUARD ON THE GUARD, including the validation case the card names
+    by hand.** `recipes._maybe_auto_attribute_solo_night` is where the cost
+    of this class was MEASURED (2026-09-26), and the sweep must both SEE it
+    and report it SAFE — "a sweep that could not find the one instance
+    already proven would not be worth quoting." Plus a candidate floor and
+    a safe floor, because a reader that quietly stops matching would empty
+    the census and the equality test would read that as 171 fixes.
+  - **THE PROOF-OF-SHAPE TRANCHE, and the happy path is DIFFED rather than
+    asserted.** `recipes.mark_recipe_feedback` and
+    `recipes.attribute_recipe_feedback` — the two sites the review named
+    with line numbers — are `with write()` now; the census is 173 → 171.
+    Fourteen scenarios (every refusal on both doors, both happy writes,
+    notes-only, member creation, and BOTH solo-night branches — the
+    explicit-not-clobbered one and the one where it fires) dumped as return
+    values plus every column of `recipes`, `member_recipe_feedback`,
+    `members` and `preference_events`: **SHA256
+    `4104a0b7027fcee0fc55d36e72ba81aa80ed495c47cfecbce1a1900dfedc86c0`
+    before and after.** `_maybe_auto_attribute_solo_night` stays OUTSIDE
+    the block on purpose — it opens two connections of its own, and
+    nesting them inside an open write transaction is how this repo has
+    twice earned an intermittent "database is locked".
+  - **Mutations, red counts read off the runs.** On `write()`: reverted to
+    the unsafe shape (**3**, run one test at a time — see above), close out
+    of the `finally` (**1**), close deleted entirely (**2**), rollback
+    deleted (**0**, documented), commit on a clean exit deleted (**1**),
+    `BEGIN IMMEDIATE` added to the opener (**1**), `get_conn` returning a
+    thin forwarding proxy (**1**, reaching the guard's own assertion) and
+    returning `contextlib.closing` (**11 errors at setup**, which is the
+    1367-sites argument rather than a clean catch). On the sweep:
+    `_opens_a_connection` blinded (**21**), the looser safe rule (**2**),
+    `_writes` always True so read-only functions are swept (**4**), a
+    `finally` close counted as bare (**8**), a new unsafe writer in `app/`
+    (**1**, named), a census entry removed as if fixed (**1**, named), a
+    non-conn-taking name added to `_OWN_CONN_FALLBACK` (**1**), a stale
+    renamed-away name left on the census (**2**).
+  - **Red against main, decomposed rather than quoted.**
+    `test_write_closes_however_it_leaves.py` is **9 of 11 red, and worth
+    almost nothing**: all nine die on `AttributeError: module 'app.db' has
+    no attribute 'write'`, and NOT ONE reaches the assertion it is named
+    after — including the two property tests, which are catches by MUTATION
+    and NAMEs against main, and say so. Its 2 green are the test that
+    asserts the BUG (green on both trees, correctly) and the guard on what
+    this branch deliberately did not change.
+    `test_connection_close_sweep.py` is **4 of 24: three genuine behaviour
+    catches** (the equality guard naming the two unconverted functions, and
+    both parameters of the converted-functions guard on `assert False is
+    True`) **and one name** (`ImportError: cannot import name 'write'`).
+  - **A MERGE PROPERTY, named so nobody reads it as a defect.** The census
+    is a census taken at this commit, so a branch that adds an unsafe-shaped
+    WRITER to a swept file reddens the equality test on merge, naming it.
+    That is the guard working — resolved by one line on the list, or by
+    `with write()` — and it is the same property the household-scope sweep
+    has. `weekly_plan.py`, `defrost.py`, `meal_variety.py` and
+    `cap_enforce.py` were off-limits to this branch (other builders were in
+    them), so their entries were censused and never considered for
+    conversion.
+  - **THE CONVERSION SILENTLY MADE AN EXISTING GUARD TOOTHLESS, and that
+    was found by asking what instruments it rather than by any test going
+    red.** `test_recipe_rating_validated.py::test_the_check_runs_before_a_
+    connection_is_opened` counted calls to `_recipes.get_conn` — the
+    module-level name `from ..db import get_conn` binds. `write()` resolves
+    `get_conn` inside `app/db.py`, so that patch stopped being on the path
+    and the test went green-and-vacuous. **Measured in a copy of the tree
+    rather than guessed: the mutation it names (move the vocabulary guard
+    below the connection open) reddens it 1 on main's shape and reddens
+    NOTHING on the converted one.** The CLAIM is unchanged and still true;
+    only the INSTRUMENT moved, to `sqlite3.connect` — the one place every
+    path present or future goes through, and the instrument the
+    2026-09-30 move-owner entry recommends for exactly this reason. The
+    mutation bites again (1 red).
+  - **"IT IS THE ONLY TEST THAT PATCHES `_recipes.get_conn`" WAS FALSE,
+    and the sweep that said so was looking for the wrong spelling.**
+    FOUR files instrument it: `test_recipe_rating_validated.py` by name,
+    and `test_approve_race.py`, `test_swap_atomic.py` and
+    `test_replace_slot_entries_two_writes.py` through a `_MODULES` list
+    of module NAMES — which a grep for `recipes.get_conn` cannot see.
+    Measured, and the three split two ways:
+    - **`test_approve_race.py` was never blind**, and it is the shape the
+      other two should have had: beside its per-module counter it patches
+      `db.get_conn` directly and asserts the delta across the
+      transaction's own window is **0**, with a comment saying why ("a
+      local `from ..db import get_conn` firing mid-transaction"). So the
+      `write()` route was already covered there before this branch
+      existed.
+    - **The other two WERE blind**, and are hardened here: `app.db` joins
+      their `_MODULES`, and in
+      `test_replace_slot_entries_two_writes.py` a `_resolve_module`
+      helper does it, since `app.db` is not under `app.tools`. Patching
+      a tool module AND `app.db` cannot double-count, because each
+      entry's `real` is captured before it is replaced. Measured 7 vs 2
+      before, 7 vs 7 after; 210 passed unmutated.
+    **This is the hazard of the other 171 conversions, written down here
+    rather than discovered each time: a function converted to `write()`
+    is no longer instrumented by a patch on its OWN module's
+    `get_conn` — and a sweep for that hazard has to read the module-name
+    lists, not just the attribute access.**
+  - **ONE MORE THING THE SWEEP CANNOT SEE, added to its own list:** a
+    `write()` plus a second never-closed connection reads SAFE to it,
+    because the shape it looks for is the open-code `get_conn` the
+    `write()` replaced.
+  - **MERGING THIS WITH `overnight/thaw-follows-the-meal` NEEDS ONE LINE,
+    AND NEITHER BRANCH CAN DO IT ALONE — found by running the suite on the
+    two merged, which is the only place it shows.** That branch wraps
+    `defrost.sync_defrost_tasks` in a `try/finally` (it was leaking the
+    write lock when it raised; see its own entry), so on the merged tree
+    the function is PROTECTED while this branch's allowlist still names it
+    — and `UNPROTECTED_WRITERS` is shrink-only, so the sweep fails saying
+    `NOW PROTECTED, take it off UNPROTECTED_WRITERS: app/tools/defrost.py
+    sync_defrost_tasks()`. **That is the guard working, in the good
+    direction**: a sibling branch improved a function and the tripwire
+    noticed the list had gone stale. The fix is to delete
+    `"sync_defrost_tasks"` from that list's `app/tools/defrost.py` entry
+    (`tests/test_connection_close_sweep.py`, ~line 429). It cannot be done
+    on either branch on its own — on this one the function really is still
+    unprotected, so removing it would be red here; on that one the list
+    does not exist. **Both measured on the merged tree, not derived:
+    1 failed / 9104 passed before, 9105 passed / 0 failed after** (all
+    seven of tonight's branches merged onto `940df8b`, keep-both on every
+    log hunk, `TZ=America/Toronto`).
+  - **FOUND AND NOT FIXED, named so nobody reports it as new.** The other
+    171 (the figure was 169 in the first draft and the census says 171 —
+    the same off-by-two as the sentence above it), deliberately — the card says not to wrap them and the review says
+    the reachable count is plausibly zero; what ships is the shape being
+    available and the count being unable to grow. `app/db.py init_db` is
+    the cheapest of them and is left for a stated reason rather than
+    overlooked: it is a startup path, and the process is dying anyway if
+    the schema or the migrations raise. The eleven `own_conn` entries need
+    their branch broken out first. And 198 unsafe-shaped READ-ONLY
+    functions are passed over by design: that is a different card with a
+    different argument, and it is a file descriptor rather than the write
+    lock.
+  - **Numbers, read off the runs at `TZ=America/Toronto`, each in a tree
+    nothing else was writing to (the baseline is a `git archive` export of
+    `940df8b`, per this file's own rule): branch 8965 passed, 0 failed;
+    baseline 1 failed, 8929 passed.** 8930 collected either side of the
+    arithmetic plus this branch's two new files' 35 is 8965 exactly, and
+    `git diff origin/main -- tests/` changes no existing test file except
+    the one instrument above, so nothing was deleted or weakened.
+  - **THE BRANCH IS GREEN WHERE THE BASELINE IS NOT, AND THAT IS LUCK
+    RATHER THAN A FIX — said plainly, because "0 failed against main's 1"
+    is exactly the statistic this log keeps having to unpick.** The
+    baseline's one failure is
+    `test_pre_shop_accuracy_counts.py::test_the_window_boundary_compares_
+    an_instant_against_an_instant` (`assert 0 == 1`), and this branch
+    touches neither that test nor `pre_shop.py` nor `grocery.py`
+    (`git diff origin/main --stat` over the three is empty). **It is a
+    pre-existing race against the second tick, demonstrated rather than
+    reasoned about:** the test stamps one row at exactly
+    `datetime('now', '-7 days')` and then asks for a seven-day window,
+    which recomputes that boundary — and SQLite's `now` is whole-second,
+    so the row is inside the window while both statements fall in the same
+    second and one second OUTSIDE it the moment a second ticks between
+    them. Reproduced in eleven lines of plain `sqlite3`: the same stamp
+    reads 1 asked immediately and **0** asked 1.05s later, which is the
+    failure exactly. Run alone on main now it is 23 passed, and 30
+    consecutive runs of that one test on main failed **0** times — which
+    does not refute the mechanism, it sizes the window: the gap is
+    milliseconds, so it only straddles a second occasionally, and the
+    baseline ran against four or five other full suites while this branch's
+    run had fewer. Left alone: it is not this card's, and the honest fix is
+    the test backdating relative to a captured instant rather than to a
+    boundary recomputed later.
+  - **Not verified in a browser** — nothing visual changed; `static/` is
+    byte-identical, and every measurement here is through the tools or the
+    `ast`.
 
 - **2026-09-30 — A night off on a reheat that owns a side now takes the
   side's line off the list, and the undo puts it back exactly. Branch
