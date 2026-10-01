@@ -660,9 +660,23 @@ def test_a_moved_dinner_loses_a_reason_written_about_the_night_it_left(capped, s
     where it came from is recorded (MOVE_REASON). Pinned by the mutation
     that leaves the reasoning alone.
 
-    The sentence rather than an empty string, measured: emptying it makes
-    plan_quality's `reasoning_is_specific` fire for every moved row, which
-    is one warning traded for another.
+    THE MEASUREMENT THIS DOCSTRING USED TO CITE EXPIRED ON 2026-09-30
+    (`45e2bc0`), and it is corrected here rather than left: it said the
+    sentence was there because emptying it made plan_quality's
+    `reasoning_is_specific` fire for every moved row, "one warning traded
+    for another". `_reasoning_is_specific` skips a blank row outright now,
+    so an empty MOVE_REASON produces no finding at all — driven on a real
+    generated capped week, zero findings from any rule. The closing
+    assertion's message below says the same expired thing and is now a
+    tautology; proven, by deleting the `assert row["reasoning"]` above it
+    and setting MOVE_REASON to "", which passes.
+
+    SO THIS TEST IS WHAT PUSHES BACK ON EMPTYING IT, and the reason is now
+    the one in `cap_enforce`'s own comment rather than the report: the
+    model's reason was about a night the dish is no longer on, so leaving
+    the row blank throws a true sentence away and replaces it with
+    nothing. If Emily decides a moved night should say nothing, retire
+    this assertion in the same change — do not work around it.
     """
     week = _monday()
     dates = tools._week_dates(week)
@@ -913,10 +927,16 @@ def test_the_model_is_told_which_cap_and_why(capped, stub_model, generate_only):
 
 def test_a_repicked_dinner_keeps_the_picks_own_reason(capped, stub_model, generate_only):
     """
-    CATCH, and it is the measured half of the REPICK_REASON decision: an
-    empty reason makes plan_quality's `reasoning_is_specific` fire "has no
-    reasoning at all", which would trade one warning for another. Pinned by
-    the mutation that sets REPICK_REASON to "".
+    CATCH. ITS STATED REASON EXPIRED ON 2026-09-30 (`45e2bc0`) and is
+    corrected here: it said an empty reason makes plan_quality's
+    `reasoning_is_specific` fire "has no reasoning at all". That rule
+    skips a blank row now, so it fires for nothing. What this test
+    actually pins is the pick's OWN sentence ("ten minutes, one pan") —
+    the mutation that sets REPICK_REASON to "" still reddens it, but on
+    `row["reasoning"] == "ten minutes, one pan"` rather than on any
+    reasoning_is_specific assertion, and the reason to keep the pick's
+    sentence is `cap_enforce`'s own (Emily's 2026-09-25 call was about not
+    ANNOUNCING a repeat, which a dish's "quick on the night" does not do).
     """
     week = _monday()
     dates = tools._week_dates(week)
