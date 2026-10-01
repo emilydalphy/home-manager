@@ -100,6 +100,7 @@ from app.tools import (
     freezer_portions as fp,
     leftovers,
     meal_move,
+    meal_plans as mp,
     moves,
     prep_sessions,
     tonight,
@@ -998,3 +999,296 @@ def test_the_pass_runs_after_the_commit_and_not_inside_the_transaction(frozen_ki
     tools.swap_meal_in_plan(plan_id, _d(5), "Chicken Skewers", slot="dinner")
 
     assert seen == ["free"], seen
+
+
+# ======================================================================
+# 10. A failed generation can still be rolled back
+#
+# Found by an adversarial review of this branch and reproduced here before
+# it was fixed. prep_tasks.weekly_plan_id is NOT NULL REFERENCES
+# weekly_plans(id) and db.get_conn sets PRAGMA foreign_keys = ON, so a plan
+# with a prep row cannot be deleted — and discard_failed_plan's DELETE
+# raises FOREIGN KEY constraint failed, its except swallows that, and
+# because the raise lands before conn.commit() the entry delete above it is
+# discarded with the transaction. Nothing is rolled back.
+#
+# That mechanism is PRE-EXISTING: measured on origin/main 940df8b with a
+# prep row inserted by hand, discard_failed_plan answers plan_removed False
+# and leaves the plan, its entries and its prep row standing, exactly as
+# this branch did before the fix. What this branch changed is REACHABILITY.
+# The resync fires from _replace_slot_entries, which generation's own
+# repair passes call — measured on a dinners_per_week=4 week: 4 resync
+# calls on this branch, 0 on main — so a DRAFT can now carry prep rows
+# while generation's failure path is live. Measured end to end with a
+# reused detailed recipe naming a frozen item and a raise in generation's
+# unwrapped tail (clear_stale_grocery_items), same seed on both trees:
+#
+#                       main            this branch, before the fix
+#   weekly_plans        []              [(1, 'draft')]
+#   meal_plan_entries   0               28
+#   prep_tasks          0               7
+#   get_weekly_plan()   None            the half-built draft
+# ======================================================================
+
+def test_a_draft_with_fridge_moves_on_it_is_still_rolled_back(frozen_kitchen):
+    """
+    CATCH — the blocker. A plan carrying prep rows is deleted outright,
+    rows and all. Before the fix this left the plan, every entry and every
+    prep row standing while reporting meals_removed as though they had
+    gone. Mutation: drop the prep_tasks delete from discard_failed_plan
+    and this fails on the plan still being there.
+    """
+    plan_id = _plan((_d(5), "Chicken Skewers"))
+    assert _defrost_rows(plan_id), "premise: the plan has a fridge move on it"
+
+    out = tools.discard_failed_plan(plan_id)
+
+    assert out["plan_removed"] is True, out
+    assert out["prep_removed"] >= 1, out
+    conn = get_conn()
+    try:
+        assert conn.execute(
+            "SELECT COUNT(*) FROM weekly_plans WHERE id = ?", (plan_id,)
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT COUNT(*) FROM meal_plan_entries WHERE weekly_plan_id = ?", (plan_id,)
+        ).fetchone()[0] == 0
+        assert conn.execute(
+            "SELECT COUNT(*) FROM prep_tasks WHERE weekly_plan_id = ?", (plan_id,)
+        ).fetchone()[0] == 0
+    finally:
+        conn.close()
+
+
+def test_the_rollback_reports_only_what_the_commit_actually_landed(frozen_kitchen, monkeypatch):
+    """
+    CATCH on the second face of the same bug: the counters were filled in
+    from rowcount and returned unchanged by the failure path, so a rollback
+    that had been entirely discarded still answered meals_removed: 1 — a
+    report of work that was rolled back under it. Driven by making the
+    plan delete itself raise, which is the one statement that can.
+    """
+    plan_id = _plan((_d(5), "Chicken Skewers"))
+    real = get_conn
+
+    class Refusing(sqlite3.Connection):
+        def execute(self, sql, *a, **k):
+            if sql.strip().upper().startswith("DELETE FROM WEEKLY_PLANS"):
+                raise sqlite3.IntegrityError("FOREIGN KEY constraint failed")
+            return super().execute(sql, *a, **k)
+
+    def refusing_conn():
+        conn = real()
+        conn.close()
+        out = sqlite3.connect(os.environ["DB_PATH"], factory=Refusing)
+        out.row_factory = sqlite3.Row
+        out.execute("PRAGMA foreign_keys = ON")
+        return out
+
+    monkeypatch.setattr(mp, "get_conn", refusing_conn)
+    out = tools.discard_failed_plan(plan_id)
+
+    assert out == {"weekly_plan_id": plan_id, "meals_removed": 0,
+                   "plan_removed": False, "prep_removed": 0}, out
+    conn = real()
+    try:
+        assert conn.execute(
+            "SELECT COUNT(*) FROM meal_plan_entries WHERE weekly_plan_id = ?", (plan_id,)
+        ).fetchone()[0] == 1, "nothing partial: the discarded delete really was discarded"
+    finally:
+        conn.close()
+
+
+def test_a_grocery_line_is_un_stamped_rather_than_deleted(household):
+    """
+    CATCH, and the one child of weekly_plans whose answer is not "delete".
+    grocery_items.source_weekly_plan_id blocks the rollback the same way —
+    measured identically on main, so it is pre-existing and unreachable
+    from generation today (a draft never reaches the shopping list) — and a
+    line may hold an amount the household typed, so it becomes a standing
+    want rather than vanishing. Mutation: drop the UPDATE and the plan
+    delete raises again.
+    """
+    plan_id = tools.create_weekly_plan(_d(0))["weekly_plan_id"]
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO grocery_items (household_id, item, quantity, category,"
+            " source_weekly_plan_id) VALUES (1, 'Chicken thighs', '2 lbs', 'meat', ?)",
+            (plan_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    out = tools.discard_failed_plan(plan_id)
+    assert out["plan_removed"] is True, out
+
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT item, quantity, source_weekly_plan_id FROM grocery_items"
+        ).fetchone()
+        assert row is not None, "the household's line was deleted rather than un-stamped"
+        assert (row["item"], row["quantity"]) == ("Chicken thighs", "2 lbs")
+        assert row["source_weekly_plan_id"] is None
+    finally:
+        conn.close()
+
+
+def test_a_plan_with_no_children_rolls_back_exactly_as_it_did(household):
+    """
+    GUARD — green on main as well, and here so the fix is a widening and
+    not a change: the ordinary case reports the same two counters it always
+    did, with the new one at zero.
+    """
+    plan_id = tools.create_weekly_plan(_d(0))["weekly_plan_id"]
+    tools.plan_meal(_d(0), "Bean Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    out = tools.discard_failed_plan(plan_id)
+    assert out == {"weekly_plan_id": plan_id, "meals_removed": 1,
+                   "plan_removed": True, "prep_removed": 0}, out
+
+
+# ======================================================================
+# 11. Three things an adversarial review of this branch found that
+#     nothing here could fail on
+# ======================================================================
+
+def test_the_sync_writes_its_rows_into_the_household_it_was_asked_about(frozen_kitchen):
+    """
+    CATCH on a hole in the guard above rather than in the app: that test
+    cannot bite, measured twice by review. sync_defrost_tasks' `existing`
+    query is already scoped by weekly_plan_id and no two households share
+    one, so dropping its household clause reddens nothing — and, worse,
+    making the sync INSERT its rows into ANOTHER household reddened
+    nothing either, across 244 tests in the eight most-related files.
+    That one IS harmful, because get_defrost_today reads by household and
+    not by plan.
+
+    So this asserts it from the READER's side, which is the only side that
+    can tell: a row written for this household's plan is invisible to the
+    other household's Today. Mutation: household_id() + 1 at the sync's
+    INSERT and this fails.
+    """
+    other = households.create_household("Next door", "a-third-passphrase")
+    plan_id = _plan((_d(0), "Chicken Skewers"))
+    tools.swap_meal_in_plan(plan_id, _d(0), "Beef Stew", slot="dinner")
+
+    rows = _defrost_rows(plan_id)
+    assert rows, "premise: the swap booked a move"
+    conn = get_conn()
+    try:
+        owners = {r["household_id"] for r in conn.execute(
+            "SELECT household_id FROM prep_tasks WHERE weekly_plan_id = ?", (plan_id,))}
+    finally:
+        conn.close()
+    assert owners == {1}, owners
+
+    with tools.use_household(other):
+        assert tools.get_defrost_today() == []
+        assert tools.get_defrost_schedule(days=14) == []
+
+
+def test_the_night_off_door_runs_its_pass_outside_the_transaction_too(frozen_kitchen, monkeypatch):
+    """
+    CATCH on the other unpinnable guard review found. _apply_dinner_nights_swap
+    returns before the resync when it was handed a caller's connection,
+    deliberately — and moving the resync ABOVE that return reddened nothing
+    across this file and test_tonight_night_off.py, because
+    tonight_night_off makes its own post-commit resync and so produces the
+    sentence anyway. What the mutation really costs is SQLite's full busy
+    timeout on every night off that moves a dinner: those two files went
+    9.02s -> 14.21s under it.
+
+    So this is the lock probe the swap door already has, on the door that
+    did not have one: at the moment the pass runs, no transaction may be
+    holding the write lock.
+    """
+    plan_id = _plan((_d(0), "Bean Chili"), (_d(1), "Chicken Skewers"))
+    seen: list[str] = []
+    real = df.resync_plan_thaws
+
+    def probing(*args, **kwargs):
+        probe = sqlite3.connect(os.environ["DB_PATH"], timeout=0.2)
+        try:
+            probe.execute("BEGIN IMMEDIATE")
+            probe.rollback()
+            seen.append("free")
+        except sqlite3.OperationalError as exc:
+            seen.append(f"locked: {exc}")
+        finally:
+            probe.close()
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(df, "resync_plan_thaws", probing)
+    out = tonight.tonight_night_off()
+
+    assert seen, f"the night off never ran the pass at all: {out}"
+    assert set(seen) == {"free"}, seen
+
+
+def test_the_pass_never_raises_whatever_it_is_handed(frozen_kitchen):
+    """
+    CATCH. resync_plan_thaws says NEVER RAISES in capitals and nothing at
+    any of its five call sites wraps it, and review found two statements
+    sitting outside both of its inner try blocks — the entry-id conversion
+    and the sentence loop — so a non-int entry id or a task_date this
+    module had not written raised straight out of it. Unreachable from the
+    five call sites today; the point is that the promise should not rest
+    on that. Mutation: remove the outer try and each of these raises.
+    """
+    plan_id = _plan((_d(5), "Chicken Skewers"))
+    for bad in (["not-an-int"], [{"id": 3}], [object()], [None, "x"]):
+        assert df.resync_plan_thaws(plan_id, bad) == [], bad
+    assert df.resync_plan_thaws(plan_id, [1], today="tomorrow") == []
+    assert df.resync_plan_thaws(None, [1]) == []
+
+
+def test_a_failure_part_way_through_the_sync_leaves_the_write_lock_free(frozen_kitchen, monkeypatch):
+    """
+    CATCH. sync_defrost_tasks had no try/finally: every statement near its
+    end runs with inserts already written, so a raise between the first one
+    and conn.close() leaked the connection HOLDING SQLite's write lock —
+    and resync_plan_thaws swallows this module's errors by design, so
+    nothing said so. The household's next write then waited out the busy
+    timeout and failed.
+
+    Reproduced 2026-10-01 outside pytest, with commit() forced to raise:
+    "database is locked" after the full 6s timeout before, free
+    immediately after. Survivable while generation was the only caller
+    (once a week, in a process about to answer an error anyway); this
+    branch calls it from every hand swap, move and night off.
+
+    Note the mutation that pins it is not a one-line revert — taking the
+    `finally` out leaves a `try` with no handler, i.e. a SyntaxError — so
+    this drives the leak itself rather than counting red tests.
+    """
+    plan_id = _plan((_d(5), "Chicken Skewers"))
+    real = df.get_conn
+
+    class Refusing(sqlite3.Connection):
+        """Raises on commit: the inserts have written and the lock is held."""
+        def commit(self):
+            raise RuntimeError("forced, after the writes")
+
+    def refusing_conn():
+        conn = sqlite3.connect(os.environ["DB_PATH"], factory=Refusing, timeout=0.2)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
+
+    monkeypatch.setattr(df, "get_conn", refusing_conn)
+    assert df.resync_plan_thaws(plan_id, [_entry(plan_id, _d(5))["id"]]) == []
+    monkeypatch.undo()
+
+    probe = sqlite3.connect(os.environ["DB_PATH"], timeout=0.2)
+    try:
+        probe.execute("BEGIN IMMEDIATE")
+        probe.rollback()
+    except sqlite3.OperationalError as exc:
+        raise AssertionError(
+            f"the sync leaked its connection holding the write lock: {exc}"
+        ) from None
+    finally:
+        probe.close()

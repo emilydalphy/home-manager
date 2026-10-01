@@ -436,8 +436,10 @@ why*, not duplicating the diff.
     generation and a manual prep-schedule regenerate, both in `agent.py`
     — so a week's thaws were worked out ONCE, when the week was drafted,
     and every hand change after that was judged against the plan as it had
-    been. It makes no model call, so the fix costs nothing but local
-    SQLite.
+    been. It makes no model call, so nothing here waits on the
+    API — which is not the same as costing nothing, and an earlier draft
+    of this entry said "costs nothing but local SQLite". It costs
+    connections and milliseconds, measured below.
   - **Measured on `940df8b` before anything was touched, through the real
     functions on a throwaway DB, both doors:**
 
@@ -450,6 +452,82 @@ why*, not duplicating the diff.
     of it; on the move door it booked the right thing onto a day that had
     gone, which every surface reads as a calendar day and so shows
     nowhere.
+  - **THE BLOCKER THIS BRANCH SHIPPED, AND IT IS A FAILED GENERATION
+    LEAVING A PLAN NOBODY CAN DELETE.** `app/schema.sql` gives
+    `weekly_plans` exactly three FK children — `meal_plan_entries.
+    weekly_plan_id` (nullable), `prep_tasks.weekly_plan_id` (NOT NULL) and
+    `grocery_items.source_weekly_plan_id` (nullable) — and
+    `PRAGMA foreign_keys = ON` is set on every connection
+    (`app/db.py:153`), so a NULLABLE FK still blocks the parent's delete
+    while it is set. `meal_plans.discard_failed_plan` — the `finally:` a
+    failed generation unwinds through — deleted the ENTRIES and the PLAN
+    and said nothing about the other two children. Driven on a throwaway
+    DB, both trees:
+
+    | | main | this branch, before the fix |
+    |---|---|---|
+    | `prep_tasks` rows on a half-built plan | 0 | **7** |
+    | `discard_failed_plan` | deletes the plan | `IntegrityError: FOREIGN KEY constraint failed` |
+    | what is left | nothing | the plan, its entries, its prep rows |
+
+    **The MECHANISM is pre-existing and identical on main — what this
+    branch changed is REACHABILITY.** Menu-first generation (2026-09-21)
+    saves a new recipe with `details_pending=1` and no ingredients, so on
+    a FIRST generation `_candidates_from_plan` finds nothing and there are
+    no prep rows to block anything; a week that REUSES a detailed recipe
+    has ingredients to match against the freezer, and this branch runs the
+    sync four more times per generation. Measured: **4 resync calls
+    against main's 0**, and 7 prep rows on a draft where main has none. So
+    main's `discard_failed_plan` was correct by luck and this branch spends
+    the luck.
+  - **FIXED FOR ALL THREE CHILDREN, not just the one that bit.**
+    `discard_failed_plan` deletes `prep_tasks` and UN-STAMPS
+    `grocery_items.source_weekly_plan_id` (never deletes the line — a line
+    the household may have added by hand or already bought is not
+    generation's to remove; `grocery.clear_stale_grocery_items` owns that
+    decision, and an unstamped line reads as a standing want, which is
+    exactly what it is once the plan that asked for it never existed).
+    **And the counters were LYING on the way out**: `removed` was built
+    field by field as each DELETE ran, so a failure half way through
+    returned a dict claiming rows had been removed that were still there.
+    Every count is assigned after `conn.commit()` now.
+  - **Four mutations on that fix, each biting 1**: `prep_tasks` not
+    deleted (the `IntegrityError` back), the grocery un-stamp dropped
+    (same), `meals_removed` assigned before the commit (the lying
+    counter), and the whole function reverted to main's.
+  - **CONCERN: THE SYNC LEAKED THE WRITE LOCK WHEN IT RAISED, and that is
+    worse than the pass failing.** `sync_defrost_tasks` opened a
+    connection, wrote, and closed it on the happy path only — no
+    `try/finally` — so any exception between the two left an open write
+    transaction attached to a connection nobody was holding, until the
+    GC collected it. Reproduced by forcing a raise at the commit:
+    `BEGIN IMMEDIATE` on a second connection failed with
+    **"database is locked" after 6.02 s**. The pass is wrapped in a
+    `try/except` by design (below), so the exception it swallows was
+    exactly the one leaving the lock held. `try: … conn.commit() finally:
+    conn.close()` now, pinned by
+    `test_a_failure_part_way_through_the_sync_leaves_the_write_lock_free`
+    (which takes the lock with a 0.2 s timeout, so a regression fails
+    fast rather than waiting out sqlite3's five seconds). Mutation:
+    removing the `finally` reddens 1.
+  - **CONCERN: "NEVER RAISES" WAS A CLAIM ABOUT ONE EXCEPTION AND IS
+    STRUCTURAL NOW.** The `try` wrapped the sync and not the reads around
+    it, so a failure resolving the clock or reading the notes propagated —
+    out of a pass whose whole stated contract is that a reminder failing
+    must not report a landed swap as a swap that did not land.
+    `resync_plan_thaws` is a never-raises wrapper over
+    `_resync_plan_thaws` now, logging with `logger.exception` and
+    returning `[]`. Driven with five bad inputs (a plan id that is None, a
+    string, a negative, another household's, and an entry id list holding
+    None): all five return `[]` and none raises. Mutation: the wrapper
+    removed reddens 1.
+  - **CONCERN: the night-off door ran its pass inside the lock on one
+    path.** `tonight.tonight_night_off`'s post-commit block was the right
+    place, and the probe that proved it is worth keeping rather than
+    trusting the reading: a second connection takes `BEGIN IMMEDIATE`
+    during the pass and gets it, on both the `freeze_reheat` and
+    `cook_on_fed` shapes. Pinned by
+    `test_the_night_off_door_runs_its_pass_outside_the_transaction_too`.
   - **TWO HALVES, AND WHICH CRITERION EACH ANSWERS, because three of the
     four were already partly met and the entry should not read as four
     fixes.** (1) The SYNC is criterion 1 — `defrost.resync_plan_thaws`,
@@ -505,14 +583,24 @@ why*, not duplicating the diff.
     the ask at your door, or the class comes back"), and here the write is
     the funnel, so it cannot be forgotten.
   - **COST, measured at `sqlite3.connect` so a module-local `get_conn`
-    cannot slip past: 4 → 16 connections for a hand swap (~5 ms → ~18 ms),
-    47 → 59 for a nights swap (~66 ms → ~61 ms, i.e. inside the noise).**
-    `resync_plan_thaws` is 12 of those: the sync's own 10, one clock read,
-    one notes read. **And generation pays it too** — `_replace_slot_entries`
-    runs 6 times in a repair-heavy generation (measured, with
-    `repair_snack_clashes` and the count fold both firing), so ~72 extra
-    connections against a model call of 36 seconds, and generation's own
-    sync still runs last. **A short-circuit for the common case was
+    cannot slip past — and re-measured on the pass ITSELF after an
+    independent review put different numbers on it, because two of the
+    figures in the first draft were one shape presented as general.**
+    The pass alone, timed over repeated runs on a seeded plan:
+    **9 connections and a median 5.6 ms with nothing frozen** (min 4.9,
+    max 7.8), **12 and 11.4 ms with one frozen dinner** (min 7.5, max
+    14.5). So the common case — most households track no freezer item at
+    all, this module's own docstring — is the cheaper one, and the quoted
+    "12 connections" was the shape that has something to do.
+    End to end for a hand swap the first draft read 4 → 16 and a reviewer
+    measured 5 → 17 on the same tree; the DELTA is the figure that
+    matters and both agree on 12. A nights swap is 47 → 59, inside the
+    noise at about 60 ms either way. **Generation pays it per repair**,
+    and the first draft said six: measured, `_replace_slot_entries` runs
+    **four** times in a repair-heavy generation (`repair_snack_clashes`
+    and the count fold both firing) and **ZERO** on a clean week, against
+    a model call of about 36 seconds, with generation's own sync still
+    running last. **A short-circuit for the common case was
     considered and refused**: most households track no freezer item at all
     (this module's own docstring), so "is anything frozen here" would be a
     second answer to a question `_candidates_from_plan` already answers,
@@ -558,7 +646,7 @@ why*, not duplicating the diff.
     carries `thaw_notes` now and no screen reads it. `clear_plan_slot` and
     `reset.clear_weekly_plan` are not wired — neither is a swap or a move.
     And nothing is verified in a browser: `static/` is byte-identical.
-  - `tests/test_thaw_follows_the_meal.py` (31). **16 red against main's
+  - `tests/test_thaw_follows_the_meal.py` (39). **16 red against main's
     `app/`, decomposed in the file's own header rather than quoted: TEN
     fail on the assertion they are named for** (five on the booking half,
     two on the missing `thaw_now` key, the orphaned reheat's own sentence,
@@ -597,8 +685,23 @@ why*, not duplicating the diff.
     RE-AIMED.** Dropping `AND household_id = ?` from `resync_plan_thaws`'
     own notes query: that query is already scoped by `weekly_plan_id` and
     a plan belongs to exactly one household, so the clause is defence in
-    depth with nothing behavioural behind it. The sync's own household
-    filter IS pinned, by the cross-household test.
+    depth with nothing behavioural behind it.
+  - **"The sync's own household filter IS pinned, by the cross-household
+    test" WAS FALSE, and it is the correction that cost the most to
+    find.** There was no cross-household test; the branch shipped the
+    claim with nothing behind it. Mutating the sync's two INSERTs to
+    `household_id() + 1` reddens **28** — and **27 of those 28 are red
+    for the WRONG reason**: `PRAGMA foreign_keys = ON` (`app/db.py:153`)
+    and household 2 does not exist in those fixtures, so the INSERT fails
+    the foreign key and nothing is written at all. Only a test that
+    CREATES a second household can tell a mis-filed row from no row, and
+    `test_the_sync_writes_its_rows_into_the_household_it_was_asked_about`
+    is that test: under the mutation it reads `assert {2} == {1}`, which
+    is the right reason. Worth knowing with it, found while writing it:
+    `defrost._defrost_rows` does not filter by household at all — it is
+    scoped by `weekly_plan_id`, and a plan belongs to one household, so
+    that reader is safe by inheritance rather than by a clause of its
+    own.
   - **THREE MUTATIONS REDDENED NOTHING ON THE FIRST RUN AND TWO WERE REAL
     HOLES IN THE TESTS — recorded rather than quietly re-run, because this
     is where the evidence came from.** (1) `_release_prep_rows` made a
@@ -643,17 +746,42 @@ why*, not duplicating the diff.
     Mutation re-run on the narrowed instrument: dropping `conn=conn` at
     the chain read reddens **all six** across the three files, so the
     narrowing cost nothing.
-  - **Numbers, read off the runs at `TZ=America/Toronto`: 8961 passed, 0
-    failed**, against **8930 collected on `origin/main`** — +31 is this
-    one new test file exactly, and `git diff origin/main -- tests/` adds
-    one file and changes three, each with a note saying what moved, so no
-    existing test was deleted or weakened. The four CI weekday pins over
+  - **Numbers, read off the runs at `TZ=America/Toronto` AFTER the review
+    round: 8969 passed, 0 failed**, against **8930 collected on
+    `origin/main`** — +39 is this one new test file exactly, and
+    `git diff origin/main -- tests/` adds one file and changes three, each
+    with a note saying what moved, so no existing test was deleted or
+    weakened. (The first reading was 8961 / +31, before the eight tests
+    the blocker and the three concerns added.) The four CI weekday pins over
     the whole family this touches (its own file plus the three guard
     files): **111 passed each** at monday, friday, saturday and sunday.
     And **111 passed inside a VERIFIED `Pacific/Niue` straddle** — Niue
     2026-09-30 against Toronto 2026-10-01, `date +%F` read in both zones
     BEFORE and AFTER the run, because a timezone is not a straddle and
     this log has had to say so twice.
+  - **THE EIGHT TESTS THE REVIEW ROUND ADDED, by what they pin:** four
+    on `discard_failed_plan` (the `IntegrityError` reproduction, the
+    grocery line surviving un-stamped, the counters not lying, and a
+    plan with every one of the three children), and four on the pass
+    (the cross-household INSERT, the night-off door's lock, never
+    raising on five bad inputs, and the leaked write lock).
+  - **FOUND AND NOT FIXED, named so nobody reports them as new.** (1) A
+    done fridge move is swept once its freezer row is gone — the sync's
+    sweep is keyed on `inventory_item_id`, so eating the thing erases the
+    record that it was moved; pre-existing, and the same class as the
+    2026-09-22 note about a ticked move destroyed with its meal. (2)
+    `thaw_now` names neither the dish nor the night ("Move the chicken
+    thighs to the fridge now."), which is fine for one move and ambiguous
+    for two. (3) `thaw_now` is read by no screen at all — only the chat
+    tool descriptions tell the model to say it — so the sentence half of
+    this card is live in chat and nowhere else; the Move sheet's
+    `thaw_notes` is the one rendered path. (4) The sync's dedup is pinned
+    by nothing (a fourth mutation that reddens zero, beside the household
+    clause above). (5) The household CLOCK's correctness here is pinned
+    only by a connection count, not by a value. (6) The narrowed
+    connection instrument uses `setdefault` at one mark and last-wins at
+    another, which is inconsistent and currently cannot differ, since
+    each mark is set once per call.
   - **THE TWO ALTERNATIVES WERE MEASURED AND REFUSED.** Threading a
     connection into the resync would put its reads inside the open write
     transaction, which is the deadlock this whole family guards against.

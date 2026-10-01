@@ -414,90 +414,107 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     once for the ready_made path (see this function's own history), just
     on the other column.
     """
+    # try/finally rather than a bare close, because every statement below
+    # has already written by the time the last ones run: a raise anywhere
+    # between the first INSERT and conn.close() leaks the connection HOLDING
+    # SQLite's write lock, and the household's next write then waits out the
+    # busy timeout and fails. resync_plan_thaws swallows this function's
+    # errors by design, so nothing says so either. Reproduced 2026-10-01 on
+    # a throwaway database outside pytest, with commit() forced to raise:
+    # the next writer got "database is locked" after the full timeout, and
+    # the only sign anything had happened was one log line. The leak was
+    # survivable while generation was the only caller (once a week, in a
+    # process about to answer an error anyway); this module is now called by
+    # every hand swap, move and night off, which is what makes it worth the
+    # four lines. Closing also rolls the half-written sweep back, which is
+    # the right answer: this function rewrites a plan's rows from scratch,
+    # so a partial pass is one the next call replaces wholesale.
     conn = get_conn()
-    candidates = defrost_candidates_for_plan(weekly_plan_id)
-    own = [c for c in candidates if c.get("kind") == OWN_PORTION_KIND]
-    candidates = [c for c in candidates if c.get("kind") != OWN_PORTION_KIND]
-    existing = conn.execute(
-        "SELECT id, inventory_item_id, meal_plan_entry_id, task_date FROM prep_tasks "
-        "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
-        "AND meal_plan_entry_id IS NOT NULL AND inventory_item_id IS NOT NULL",
-        (weekly_plan_id, household_id()),
-    ).fetchall()
-    existing_by_key = {
-        (r["inventory_item_id"], r["meal_plan_entry_id"], r["task_date"]): r["id"] for r in existing
-    }
+    try:
+        candidates = defrost_candidates_for_plan(weekly_plan_id)
+        own = [c for c in candidates if c.get("kind") == OWN_PORTION_KIND]
+        candidates = [c for c in candidates if c.get("kind") != OWN_PORTION_KIND]
+        existing = conn.execute(
+            "SELECT id, inventory_item_id, meal_plan_entry_id, task_date FROM prep_tasks "
+            "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
+            "AND meal_plan_entry_id IS NOT NULL AND inventory_item_id IS NOT NULL",
+            (weekly_plan_id, household_id()),
+        ).fetchall()
+        existing_by_key = {
+            (r["inventory_item_id"], r["meal_plan_entry_id"], r["task_date"]): r["id"] for r in existing
+        }
 
-    kept_ids = set()
-    inserted, updated = 0, 0
-    for c in candidates:
-        key = (c["inventory_item_id"], c["meal_plan_entry_id"], c["task_date"])
-        existing_id = existing_by_key.get(key)
-        if existing_id:
-            conn.execute(
-                "UPDATE prep_tasks SET description = ?, related_meal = ?, quantity = ? WHERE id = ?",
-                (c["description"], c["related_meal"], c["quantity"], existing_id),
-            )
+        kept_ids = set()
+        inserted, updated = 0, 0
+        for c in candidates:
+            key = (c["inventory_item_id"], c["meal_plan_entry_id"], c["task_date"])
+            existing_id = existing_by_key.get(key)
+            if existing_id:
+                conn.execute(
+                    "UPDATE prep_tasks SET description = ?, related_meal = ?, quantity = ? WHERE id = ?",
+                    (c["description"], c["related_meal"], c["quantity"], existing_id),
+                )
+                kept_ids.add(existing_id)
+                updated += 1
+            else:
+                cur = conn.execute(
+                    "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+                    "related_meal, status, task_type, inventory_item_id, meal_plan_entry_id, quantity) "
+                    "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', ?, ?, ?)",
+                    (household_id(), weekly_plan_id, c["task_date"], c["description"], c["related_meal"],
+                     c["inventory_item_id"], c["meal_plan_entry_id"], c["quantity"]),
+                )
+                # Recorded immediately (not just added to kept_ids) so two
+                # identical candidates within the same call — the same
+                # ingredient named twice on one recipe, say — update the row
+                # just inserted instead of inserting a second duplicate.
+                existing_by_key[key] = cur.lastrowid
+                kept_ids.add(cur.lastrowid)
+                inserted += 1
+
+        stale_ids = [r["id"] for r in existing if r["id"] not in kept_ids]
+
+        # The moves for portions this week's own cook froze
+        # (own_portion_candidates): the same keep-status / insert / sweep, keyed
+        # by (meal_plan_entry_id, task_date) and marked in detail_json, because
+        # they have no inventory row — and inventory_item_id IS NULL alone is
+        # confirm_frozen_items' rows, which this must never sweep.
+        own_existing = conn.execute(
+            "SELECT id, meal_plan_entry_id, task_date FROM prep_tasks "
+            "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
+            "AND inventory_item_id IS NULL AND json_extract(detail_json, '$.kind') = ?",
+            (weekly_plan_id, household_id(), OWN_PORTION_KIND),
+        ).fetchall()
+        own_by_key = {(r["meal_plan_entry_id"], r["task_date"]): r["id"] for r in own_existing}
+        for c in own:
+            key = (c["meal_plan_entry_id"], c["task_date"])
+            existing_id = own_by_key.get(key)
+            detail = json.dumps({"kind": OWN_PORTION_KIND, "cook_entry_id": c.get("cook_entry_id")})
+            if existing_id:
+                conn.execute(
+                    "UPDATE prep_tasks SET description = ?, related_meal = ?, detail_json = ? "
+                    "WHERE id = ? AND household_id = ?",
+                    (c["description"], c["related_meal"], detail, existing_id, household_id()),
+                )
+                updated += 1
+            else:
+                cur = conn.execute(
+                    "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+                    "related_meal, status, task_type, meal_plan_entry_id, quantity, detail_json) "
+                    "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', ?, '', ?)",
+                    (household_id(), weekly_plan_id, c["task_date"], c["description"], c["related_meal"],
+                     c["meal_plan_entry_id"], detail),
+                )
+                existing_id = own_by_key[key] = cur.lastrowid
+                inserted += 1
             kept_ids.add(existing_id)
-            updated += 1
-        else:
-            cur = conn.execute(
-                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
-                "related_meal, status, task_type, inventory_item_id, meal_plan_entry_id, quantity) "
-                "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', ?, ?, ?)",
-                (household_id(), weekly_plan_id, c["task_date"], c["description"], c["related_meal"],
-                 c["inventory_item_id"], c["meal_plan_entry_id"], c["quantity"]),
-            )
-            # Recorded immediately (not just added to kept_ids) so two
-            # identical candidates within the same call — the same
-            # ingredient named twice on one recipe, say — update the row
-            # just inserted instead of inserting a second duplicate.
-            existing_by_key[key] = cur.lastrowid
-            kept_ids.add(cur.lastrowid)
-            inserted += 1
+        stale_ids += [r["id"] for r in own_existing if r["id"] not in kept_ids]
 
-    stale_ids = [r["id"] for r in existing if r["id"] not in kept_ids]
-
-    # The moves for portions this week's own cook froze
-    # (own_portion_candidates): the same keep-status / insert / sweep, keyed
-    # by (meal_plan_entry_id, task_date) and marked in detail_json, because
-    # they have no inventory row — and inventory_item_id IS NULL alone is
-    # confirm_frozen_items' rows, which this must never sweep.
-    own_existing = conn.execute(
-        "SELECT id, meal_plan_entry_id, task_date FROM prep_tasks "
-        "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
-        "AND inventory_item_id IS NULL AND json_extract(detail_json, '$.kind') = ?",
-        (weekly_plan_id, household_id(), OWN_PORTION_KIND),
-    ).fetchall()
-    own_by_key = {(r["meal_plan_entry_id"], r["task_date"]): r["id"] for r in own_existing}
-    for c in own:
-        key = (c["meal_plan_entry_id"], c["task_date"])
-        existing_id = own_by_key.get(key)
-        detail = json.dumps({"kind": OWN_PORTION_KIND, "cook_entry_id": c.get("cook_entry_id")})
-        if existing_id:
-            conn.execute(
-                "UPDATE prep_tasks SET description = ?, related_meal = ?, detail_json = ? "
-                "WHERE id = ? AND household_id = ?",
-                (c["description"], c["related_meal"], detail, existing_id, household_id()),
-            )
-            updated += 1
-        else:
-            cur = conn.execute(
-                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
-                "related_meal, status, task_type, meal_plan_entry_id, quantity, detail_json) "
-                "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', ?, '', ?)",
-                (household_id(), weekly_plan_id, c["task_date"], c["description"], c["related_meal"],
-                 c["meal_plan_entry_id"], detail),
-            )
-            existing_id = own_by_key[key] = cur.lastrowid
-            inserted += 1
-        kept_ids.add(existing_id)
-    stale_ids += [r["id"] for r in own_existing if r["id"] not in kept_ids]
-
-    if stale_ids:
-        conn.executemany("DELETE FROM prep_tasks WHERE id = ?", [(i,) for i in stale_ids])
-    conn.commit()
-    conn.close()
+        if stale_ids:
+            conn.executemany("DELETE FROM prep_tasks WHERE id = ?", [(i,) for i in stale_ids])
+        conn.commit()
+    finally:
+        conn.close()
     return {"weekly_plan_id": weekly_plan_id, "inserted": inserted, "updated": updated, "removed": len(stale_ids)}
 
 
@@ -599,6 +616,29 @@ def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | 
     fridge, and "move the chicken now" about chicken that moved yesterday
     is the app not reading its own records.
     """
+    try:
+        return _resync_plan_thaws(weekly_plan_id, entry_ids, today=today)
+    except Exception:
+        # The guarantee above is STRUCTURAL rather than a property of where
+        # the statements inside happen to sit, and it is this way because it
+        # was not: independent review found that `ids = [int(i) for i in ...]`
+        # and the sentence loop were both outside either inner try, so
+        # resync_plan_thaws(pid, ["x"]) raised ValueError and so did a row
+        # whose task_date this module had not written. Unreachable from the
+        # five call sites today (all pass ints or None) and nothing at any
+        # call site wraps this, so the whole promise rested on two unguarded
+        # lines. A promise in capitals wants an outer try, not diligence.
+        logger.exception(
+            "Recomputing plan %s's fridge moves after a hand change failed outright; "
+            "the change itself is written", weekly_plan_id,
+        )
+        return []
+
+
+def _resync_plan_thaws(weekly_plan_id, entry_ids, *, today=None) -> list[str]:
+    """The body of resync_plan_thaws. Its own two try blocks stay, for
+    their own log lines; the wrapper above is what makes NEVER RAISES
+    true of the lines they do not cover."""
     if not weekly_plan_id:
         return []
     try:
