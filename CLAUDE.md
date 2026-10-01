@@ -425,6 +425,102 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-01 — A fault in a RECIPE is one line in the morning report now,
+  however many nights that recipe is on. Branch
+  `overnight/a-recipe-fault-is-one-line`, NOT merged at the time of
+  writing.** Found in the live report through the token rather than from a
+  bug report: the demo household's FOOD section spent **two of its six
+  slots** on ONE recipe's step order, said twice with nothing different in
+  it but a date — and that section had **eleven** findings and room for
+  six, so the duplicate was costing it a piece of news it had space for.
+  - **The 2026-09-30 collapse was right and six messages were breaking
+    it.** That branch made the section fold identical lines and count the
+    nights beside them, and its own docstring states the rule it works by:
+    a recipe-level rule "writes a message that names the recipe and not the
+    night", while a rule whose message already names its night is
+    unaffected. So the MESSAGE decides. Three recipe-level rules obeyed it
+    — `steps_match_ingredients`, `quantities_plausible`,
+    `produce_variety_named`, which are the three that entry measured on —
+    and six did not: every one led its sentence with `{entry['date']}
+    dinner ('{meal_name}')`, so no two nights of one recipe could ever
+    collapse. **Nothing in `observability_report.py` is touched.**
+  - **THE CARD SAID FOUR AND IT IS SIX**, counted off `_RECIPE_RULES`
+    rather than off the one rule the report happened to be printing that
+    morning: `seasoning_never_mentioned`, `method_is_assembly`,
+    `steps_have_no_cue`, `no_heat_named`, `longest_thing_not_first`,
+    `minutes_vs_steps`. All six are gated on `_cooked_dinner`, so the
+    hard-coded word "dinner" in them was at least accurate — checked,
+    because a message saying "dinner" about a lunch would have been a
+    second defect.
+  - **THE SEVENTH IS DELIBERATELY LEFT, and it is the reason this is six
+    messages rather than a sweep.** `_full_plate` also leads with
+    `{entry['date']} dinner (…)` and keeps it: it reads the ENTRY's own
+    `food_groups` — the plate planned for that night, which a side can
+    change on one night and not another — so its date is a fact about the
+    night. Pinned, so a later pass stripping dates by grep rather than by
+    meaning goes red.
+  - **NOTHING IS LOST, and it is driven rather than argued from the key.**
+    The date leaves the SENTENCE and stays on the `Violation`'s own `date`
+    field, so `usage._QUALITY_KEY` is still `(rule, date, slot, message)`
+    and two nights are two rows. Measured end to end on a throwaway
+    database: `total` 2, `by_rule` 2, two rows in `recent`, and the section
+    prints ONE line saying `(2 nights)`.
+  - **MEASURED ON THE LIVE APP, read-only through the report token, before
+    and after — and the honest half is that it does nothing for one of the
+    two households.** Household 6: **11 findings, 10 distinct lines → 9**,
+    the two `longest_thing_not_first` lines become one with `(2 nights)`,
+    **and the freed slot prints a finding that was not being shown at
+    all** ("Turkey Sausage Breakfast Skillet with Sweet Potatoes: step(s)
+    use potatoes, which isn't on the ingredient list."). Household 1: **30
+    findings, 26 distinct lines → 26, no change**, because none of its
+    findings is one of the six — its section is still mostly the historical
+    `reasoning_is_specific` rows the 2026-09-30 blank-reason work explains,
+    which age out by 2026-10-07.
+  - **THE ONE RISK THIS FIX CREATES IS PINNED RATHER THAN NOTED.**
+    `_food_lines` keys on `(severity, message)` and **not** on the rule, so
+    two rules whose sentences became identical would fold into one line and
+    one finding would vanish. While the date led every sentence they could
+    not collide; without it they are six sentences about one dish, and two
+    of them open with the same seven words ("the method uses an oven or a
+    pan but never …"). Measured distinct today, and a test fails on any
+    reword that makes two of them the same. Widening the reporter's key was
+    the alternative and was refused: it is somebody else's function, and
+    the risk is measurable here.
+  - **The wording was pinned by NOTHING, which is how the date survived
+    the collapse.** Every existing test of these six asserts a rule NAME
+    (`test_write_it_down.py`, `test_food_quality_floor.py`); `grep` for any
+    of the six sentences in `tests/` finds nothing. So no existing test
+    needed changing — which is also the evidence that nothing was relying
+    on the old shape.
+  - `tests/test_a_recipe_fault_is_one_line.py` (19). **8 red against main,
+    and the decomposition matters: SIX are the parametrized reproduction**
+    (one per rule, each failing on `len(lines) == 1` with two lines), one
+    is the derived sweep, and the eighth —
+    `test_two_nights_are_still_two_findings_in_the_counts` — is **red for a
+    reason other than the one it is named for**, measured: all four of its
+    COUNT assertions pass on main and it fails on the fifth, the collapsed
+    line. Its docstring says so. **Five mutations run and every one
+    bites**: the dish name dropped as well as the date, i.e. the collapse
+    going too far (2 red), two rules given the same sentence (1),
+    `_full_plate`'s date stripped with them (1), `_RECIPE_RULES` emptied —
+    the guard on the guard (2), and the `Violation`'s own `date` field
+    dropped, which is the one thing that really would collapse the counts
+    (1).
+  - **The sweep is DERIVED from `plan_quality._RECIPE_RULES`**, the
+    module's own register of the rules re-run once the recipe pass has
+    written the ingredients and the steps (2026-09-21) — i.e. of exactly
+    the rules whose findings are about a recipe — so a twelfth recipe rule
+    added tomorrow is covered without anybody editing the test. It reads
+    the SOURCE rather than a driven message on purpose: several of the
+    eleven need a fixture of their own to fire at all, and a sweep that
+    only checks the rules it happens to have fixtures for is a sweep with
+    holes in it.
+  - **Found and NOT fixed, named so nobody reports it as new:** the
+    six-line cap is still a cap, so a week with more than six distinct
+    findings still prints only six — this makes those six worth reading,
+    not all of them. Household 6 has nine distinct lines after the fix and
+    prints six.
+
 - **2026-09-30 — A night off on a reheat that owns a side now takes the
   side's line off the list, and the undo puts it back exactly. Branch
   `night-off-undo-carries-groceries`, NOT merged at the time of writing.**
