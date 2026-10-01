@@ -554,6 +554,18 @@ def test_the_swap_opens_exactly_one_connection_for_its_transaction(monkeypatch, 
     approved swap (the ingest), swapping a reheat night (the unlink and the
     source rescale), and swapping the cook night (the re-buy for the nights
     it fed).
+
+    **THE MARKS ARE THE TRANSACTION, NOT THE FUNCTION — corrected
+    2026-10-01, and the correction is the point.** The post-commit fridge-
+    move resync (`_defrost_resync`, after `finally: conn.close()`) opens
+    connections of its own, so marking the whole of
+    `_replace_slot_entries` counted those against a claim this test's own
+    message makes about the WRITE TRANSACTION. They provably cannot
+    deadlock — the transaction is closed before the resync is called — so
+    reading the whole function made the assertion say something it did not
+    mean. Patching `_defrost_resync` gives the third mark. If that call
+    ever goes away the mark is never set and the window falls back to the
+    whole function, i.e. the guard gets STRICTER rather than weaker.
     """
     if shape == "plain":
         plan_id, entry_id = _plain_plan()
@@ -565,6 +577,7 @@ def test_the_swap_opens_exactly_one_connection_for_its_transaction(monkeypatch, 
     opened = _count_get_conn(monkeypatch)
     marks = {}
     real = weekly_plan._replace_slot_entries
+    real_resync = weekly_plan._defrost_resync
 
     def marking(*args, **kwargs):
         marks["start"] = dict(opened)
@@ -572,13 +585,22 @@ def test_the_swap_opens_exactly_one_connection_for_its_transaction(monkeypatch, 
         marks["end"] = dict(opened)
         return out
 
+    def resyncing(*args, **kwargs):
+        # The commit and the close are behind us by the time this runs —
+        # see the call site. This mark is what makes the assertion below
+        # about the transaction rather than about the whole function.
+        marks.setdefault("after_tx", dict(opened))
+        return real_resync(*args, **kwargs)
+
     monkeypatch.setattr(weekly_plan, "_replace_slot_entries", marking)
+    monkeypatch.setattr(weekly_plan, "_defrost_resync", resyncing)
     tools.swap_meal_in_plan(plan_id, target_day, "Soup", slot="dinner")
 
-    assert set(marks) == {"start", "end"}, "the transaction body never ran"
-    delta = {k: marks["end"][k] - marks["start"][k] for k in opened}
-    assert delta == {**{k: 0 for k in opened}, "weekly_plan": 1}, (
-        f"something inside the swap's write transaction opened its own connection: {delta}"
+    assert {"start", "end"} <= set(marks), "the transaction body never ran"
+    closed = marks.get("after_tx", marks["end"])
+    inside = {k: closed[k] - marks["start"][k] for k in opened}
+    assert inside == {**{k: 0 for k in opened}, "weekly_plan": 1}, (
+        f"something inside the swap's write transaction opened its own connection: {inside}"
     )
 
 

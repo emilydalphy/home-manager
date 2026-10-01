@@ -613,6 +613,47 @@ why*, not duplicating the diff.
     the SENTENCE is scoped — so the test for it now has the orphan's own
     thaw overdue. The four tests those three answers added are also what
     moved the red count above.
+  - **THE BRANCH REDDENED SIX OF ITS OWN FAMILY'S GUARDS AND SHIPPED
+    THAT WAY — the builder never ran the full suite, and this is the
+    correction.** `6 failed, 8955 passed`: three parametrize cases of
+    `test_swap_atomic.py::test_the_swap_opens_exactly_one_connection_for_
+    its_transaction`, two in `test_replace_slot_entries_two_writes.py`,
+    and — the telling one — this branch's OWN
+    `test_thaw_survives_a_swap.py::test_the_swap_still_opens_exactly_one_
+    connection`. All six are the same shape, `{'weekly_plan': 3}` where
+    1 was expected.
+  - **The instrument had come apart from the claim, and the DESIGN is
+    right.** Each of those tests patches `_replace_slot_entries` and
+    marks the connection count on the way in and the way out — the whole
+    FUNCTION — while every one of their messages says "something inside
+    the swap's **write transaction** opened its own connection". The
+    post-commit resync runs after that function's `finally:
+    conn.close()`, so its connections provably cannot deadlock, which is
+    the entire hazard the guards exist for. Reading the whole function
+    made the assertion say something it did not mean.
+  - **Fixed by narrowing the window to the transaction, and the
+    narrowing is pinned not to be a loosening.** A third mark comes from
+    patching `_defrost_resync`; the inside-the-transaction assertion is
+    unchanged in strength, and a second assertion pins the post-commit
+    count EXACTLY — **measured: weekly_plan 2, defrost 2, the household
+    clock 1** — in the shape `test_planning_periods.py`'s takeover guard
+    already uses (assert a total, explain every connection in it). If the
+    resync call ever goes away the third mark is never set and the window
+    falls back to the whole function, i.e. the guard gets STRICTER.
+    Mutation re-run on the narrowed instrument: dropping `conn=conn` at
+    the chain read reddens **all six** across the three files, so the
+    narrowing cost nothing.
+  - **THE TWO ALTERNATIVES WERE MEASURED AND REFUSED.** Threading a
+    connection into the resync would put its reads inside the open write
+    transaction, which is the deadlock this whole family guards against.
+    Moving the call up to the write's doors is **32 call sites across 13
+    modules** (counted, not estimated) and re-introduces the class
+    `swap_meal_in_plan`'s own docstring warns about — "a new caller is
+    not covered by any of them". Asserting the larger total and keeping
+    the whole-function window was the third option and is the one the
+    takeover guard takes; it was refused here because it would stop the
+    guard distinguishing a connection opened INSIDE the transaction from
+    one opened after it, and inside is where the bug class lives.
 
 - **2026-09-30 — A night off on a reheat that owns a side now takes the
   side's line off the list, and the undo puts it back exactly. Branch

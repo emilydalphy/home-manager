@@ -798,6 +798,7 @@ def _connections_inside(monkeypatch, run) -> dict:
 
     marks = {}
     real_replace = wp._replace_slot_entries
+    real_resync = wp._defrost_resync
 
     def marking(*args, **kwargs):
         marks.setdefault("start", dict(opened))
@@ -805,10 +806,26 @@ def _connections_inside(monkeypatch, run) -> dict:
         marks["end"] = dict(opened)
         return out
 
+    def resyncing(*args, **kwargs):
+        # THE WINDOW IS THE TRANSACTION, NOT THE FUNCTION (corrected
+        # 2026-10-01). The post-commit fridge-move resync runs after
+        # `finally: conn.close()`, so its own connections provably cannot
+        # deadlock — counting them against a claim about the WRITE
+        # TRANSACTION made this assertion say something it did not mean.
+        # `setdefault` so a repair pass that calls the write several times
+        # keeps the FIRST transaction's close as its boundary, matching
+        # `start` above. If this call ever goes away the mark is never set
+        # and the window falls back to the whole function, i.e. the guard
+        # gets stricter rather than weaker.
+        marks.setdefault("after_tx", dict(opened))
+        return real_resync(*args, **kwargs)
+
     monkeypatch.setattr(wp, "_replace_slot_entries", marking)
+    monkeypatch.setattr(wp, "_defrost_resync", resyncing)
     run()
-    assert set(marks) == {"start", "end"}, "the transaction body never ran"
-    return {k: marks["end"][k] - marks["start"][k] for k in opened}
+    assert {"start", "end"} <= set(marks), "the transaction body never ran"
+    closed = marks.get("after_tx", marks["end"])
+    return {k: closed[k] - marks["start"][k] for k in opened}
 
 
 def _code_of(fn) -> str:
