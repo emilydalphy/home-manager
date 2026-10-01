@@ -772,8 +772,9 @@ why*, not duplicating the diff.
     Delete `"sync_defrost_tasks"` from that list's `app/tools/defrost.py`
     entry (~line 429). Not doable here (this branch has no such list) nor
     there (the function really is unprotected on that branch alone).
-    **Measured on the two merged: 1 failed / 9104 passed before, 9105 / 0
-    after.**
+    **Both measured on the merged tree, not derived: 1 failed / 9104
+    passed before, 9105 passed / 0 failed after** (all seven of tonight's
+    branches merged onto `940df8b`, `TZ=America/Toronto`).
   - **THE EIGHT TESTS THE REVIEW ROUND ADDED, by what they pin:** four
     on `discard_failed_plan` (the `IntegrityError` reproduction, the
     grocery line surviving un-stamped, the counters not lying, and a
