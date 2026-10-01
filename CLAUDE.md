@@ -649,6 +649,26 @@ why*, not duplicating the diff.
     `cap_enforce.py` were off-limits to this branch (other builders were in
     them), so their entries were censused and never considered for
     conversion.
+  - **THE CONVERSION SILENTLY MADE AN EXISTING GUARD TOOTHLESS, and that
+    was found by asking what instruments it rather than by any test going
+    red.** `test_recipe_rating_validated.py::test_the_check_runs_before_a_
+    connection_is_opened` counted calls to `_recipes.get_conn` — the
+    module-level name `from ..db import get_conn` binds. `write()` resolves
+    `get_conn` inside `app/db.py`, so that patch stopped being on the path
+    and the test went green-and-vacuous. **Measured in a copy of the tree
+    rather than guessed: the mutation it names (move the vocabulary guard
+    below the connection open) reddens it 1 on main's shape and reddens
+    NOTHING on the converted one.** The CLAIM is unchanged and still true;
+    only the INSTRUMENT moved, to `sqlite3.connect` — the one place every
+    path present or future goes through, and the instrument the
+    2026-09-30 move-owner entry recommends for exactly this reason. The
+    mutation bites again (1 red). Swept: it is the ONLY test in `tests/`
+    that patches `_recipes.get_conn`, and every other `get_conn` patch
+    names a module this branch did not touch (`weekly_plan`, `cooker`,
+    `holidays`, `swap_in_place`). **This is the hazard of the other 169
+    conversions, written down here rather than discovered each time: a
+    function converted to `write()` is no longer instrumented by a patch
+    on its OWN module's `get_conn`.**
   - **FOUND AND NOT FIXED, named so nobody reports it as new.** The other
     169, deliberately — the card says not to wrap them and the review says
     the reachable count is plausibly zero; what ships is the shape being
