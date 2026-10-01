@@ -206,9 +206,17 @@ def test_the_report_prints_the_trail_under_the_error(signed_in):
     printed = out.getvalue()
     lines = printed.splitlines()
     head = next(i for i, line in enumerate(lines) if "TypeError on /" in line)
-    assert lines[head + 1].strip() == (
-        "trail: from /login → / → GET /api/coaching 200 → leaving page"
-    ), printed
+    # The trail is under its OWN error — which is the claim — rather than on
+    # the line immediately after the head, which is incidental and moved on
+    # 2026-10-01 when the shape grew a "last seen" line above the trail. The
+    # walk stops at the next head-shaped line so a trail printed under the
+    # WRONG error still fails this.
+    under = []
+    for line in lines[head + 1:]:
+        if not line.startswith(" " * 17):
+            break
+        under.append(line.strip())
+    assert "trail: from /login → / → GET /api/coaching 200 → leaving page" in under, printed
 
 
 def test_the_json_and_the_health_report_carry_it(signed_in, monkeypatch):

@@ -440,7 +440,13 @@ why*, not duplicating the diff.
     docstring's second line is "Run this, read the output, lead with
     anything under BROKEN. That is the whole contract." A reader following
     that this morning goes hunting a Cook-tab crash that was fixed before
-    the week began. **Seven errors last night and seven errors five days
+    the week began — **on `--days 7`, which is not the documented morning
+    command.** Said precisely because the first draft of this entry was
+    not: `.claude/skills/home-manager-loop/SKILL.md` says `--days 1`, and
+    on the default run household 1 reads "Nothing broke." The fix still
+    earns its keep on the default run — the demo household's one genuinely
+    current row goes from no date to "18h ago" — but the quoted seven-day
+    line came from a hand-run `--days 7`. **Seven errors last night and seven errors five days
     ago want opposite responses, and the output could not tell them
     apart.** Second time in one night the report has said BROKEN about
     something that is not broken — the other was the allergy gate, a
@@ -469,45 +475,214 @@ why*, not duplicating the diff.
     client rows and ANOTHER household in the same run had `tool` rows
     seventeen hours old and far more worth reading. Four parametrized
     tests, and the mutation that copies the client gate reddens 4.
-  - **A STRETCH IS PRINTED ONLY WHEN THERE IS ONE, and the first cut got
-    this wrong and shipped it to the live run.** The count on the head
-    line cannot tell four times over three hours from four times over four
-    days, so a repeat says "from 16:29". But the demo household's three
-    refusals span 15:54:19 to 15:54:57 — the instants differ, both render
-    `15:54`, and the first cut duly printed "15:54, from 15:54", which
-    reads like a bug in the report rather than a fact about the error.
-    Compared as PRINTED now, not as instants. Found by running it against
-    the live report, not by reading it.
+  - **A STRETCH IS PRINTED ONLY WHEN THERE IS ONE, AND IT TOOK THREE
+    CUTS, EACH FOUND BY RUNNING IT AGAINST THE REAL REPORT RATHER THAN BY
+    READING IT.** The count on the head line cannot tell four times over
+    three hours from four times over four days, so a repeat says "from
+    16:29". Cut one compared the INSTANTS, so the demo household's three
+    refusals (15:54:19 to 15:54:57) printed "15:54, from 15:54" — noise
+    that reads like a bug in the report. Cut two compared the two PRINTED
+    values, which is the same answer inside one minute of one day and the
+    wrong answer either side of it: live, a **44-second** spread at
+    16:35:38 printed as a stretch, and a constructed **ONE-second** spread
+    across midnight printed as "00:00, from 2026-09-30 23:59" — a second
+    presented as spanning two dates, which is worse than the case cut one
+    fixed. A MINUTE FLOOR on the instants now: the line prints to the
+    minute, so a spread the printing cannot show is not a stretch, and a
+    gap of 60 seconds always moves the printed minute, so this subsumes
+    the string comparison rather than sitting beside it. The `first <
+    last` guard goes with it (a clock skew between the two writes falls
+    out of the same test), which also closes a guard nothing had pinned.
+  - **AND THE STRETCH NOW SPANS EVERY ROW OF THE SHAPE, not just the
+    freshest — the clause was bounded by the dedupe window and said so
+    nowhere.** `usage._DEDUPE_WINDOW` is one day, so ONE row's
+    created_at..last_seen_at can never exceed 24 hours, while the count on
+    the head line is `SUM(occurrences)` over every row of the shape.
+    Driven on three rows of one shape spanning three days: the freshest
+    row alone printed **"(x50) … from 2026-09-30 10:00"**, i.e. fifty hits
+    in nineteen hours with thirty-eight of them earlier — and the
+    function's own comment claimed exactly the discrimination it could not
+    make. `_latest_rows` carries the earliest `created_at` across the
+    shape's rows under a private `_shape_first_seen` (a private key rather
+    than overwriting the column, so the row still reads as the row it is,
+    and `_print_feedback` — which builds its rows by hand and has one row
+    by construction — falls back to its own). Same seed after:
+    **"from 2026-09-28 09:00"**, which is the truth.
   - **MEASURED ON THE LIVE APP, read-only through the token, before and
-    after.** Before: three cook-crash shapes with no date anywhere.
-    After: `last seen 5 days ago — 2026-09-25 18:56, from 16:29` on
-    household 1's, `last seen 6 days ago — 2026-09-24 21:57` on Julia's
-    unknown TypeError, and `last seen 17h ago — 2026-09-30 15:54` on the
-    demo household's three refusals — the one row in the whole run that is
-    actually current.
-  - **ONE CORRECTION TO THE CARD I FILED AN HOUR EARLIER:** it says "six
-    days ago" and the code says five. 18:56 on the 25th to 11:00 on the
-    1st is 5d16h, and "ago" is elapsed time, not a date subtraction. The
-    code is right; the card's wording was the subtraction. Said here
-    because this log keeps having to unpick the other direction.
-  - `tests/test_the_report_says_when.py` (25). **24 red against main, and
-    the decomposition is most of what that number is worth: SEVENTEEN die
-    on a name main has not got** (`_ago` ×10, `_when_line` ×7), **SIX are
-    behaviour catches** on their own `assert "last seen" in ...` (the
-    reproduction, the tool row, and the four kinds), and one is the
-    ordering source marker. **Six mutations run and every one bites**: the
-    line gated on `kind == "client"` (4 red), the relative phrase dropped
-    (4), an unparseable stamp guessed at as "now" rather than dropped (1),
-    the stretch printed whenever the instants differ — the shipped bug
-    above (1), the line moved below the stack (1), and the "just now"
-    window widened to forty days so nothing ever reads as stale (11).
-  - **One test deliberately does NOT assert the relative phrase**, and it
-    is worth a line: the same suite spent tonight removing a flake from
-    `test_pre_shop_accuracy_counts` that came from asserting against the
-    real clock. The stretch test asserts the stamp and the ABSENCE of a
-    stretch; the wording is pinned by `_ago`'s own parametrized test
-    against a fixed `now`.
-  - **Found and NOT fixed, named so nobody reports it as new.** The build
+    after — and re-measured after the review round, because three of the
+    four lines it first quoted have changed.** Before: three cook-crash
+    shapes with no date anywhere. After (`--days 7`, every day-word now
+    agreeing with the stamp beside it):
+
+    ```
+    === My Household (household 1) ===
+      BROKEN — 7 in the last 7d: 7 client
+                     last seen 6 days ago — 2026-09-25 18:56 UTC, from 16:29
+                     last seen 6 days ago — 2026-09-25 16:36 UTC
+                     last seen 6 days ago — 2026-09-25 18:56 UTC
+    === Julia Home (household 3) ===
+                     last seen 7 days ago — 2026-09-24 21:57 UTC
+    === demo household (household 6) ===
+                     last seen 18h ago — 2026-09-30 15:54 UTC
+    ```
+
+    The first draft quoted "5 days ago" and "6 days ago" for the first
+    two (the elapsed reading, both one short of their own stamps) and
+    "17h ago" for the third, and the second line carried a spurious
+    ", from 16:35" — a 44-second spread. The demo household's row is
+    still the one row in the whole run that is actually current.
+    **Worth knowing with it: that row is `tool SlotRefused on plan_meal`,
+    and the sibling branch `overnight/a-refusal-is-not-a-breakage` stops
+    recording those rows at all — so the measured "after" example
+    disappears when that merges.** The fix does not; it is the only
+    genuinely current line the report had, which is the argument for both
+    branches rather than against either.
+  - **THE CARD SAID SIX, THIS ENTRY "CORRECTED" IT TO FIVE AN HOUR
+    LATER, AND THE CARD WAS RIGHT.** The retracted argument was that
+    18:56 on the 25th to 11:00 on the 1st is 5d16h and "ago" is elapsed
+    time — internally consistent, and wrong about what the LINE says,
+    because the day word sits two words from the date it is about. "5
+    days ago — 2026-09-25" on a report run on the 1st is the line
+    disagreeing with itself, which is this branch's own subject.
+  - **SO THE DAY WORDS ARE CALENDAR DAYS AND THE HOURS ARE ELAPSED, and
+    that boundary is the fix rather than a preference.** Measured over
+    every hour a report can be run at against every elapsed hour out to
+    ten days: an elapsed day-word disagreed with the stamp on its own
+    line **2484 of 5208 times (48%)**, always by exactly one day. The
+    sharp case is "yesterday", which has no elapsed reading at all — of
+    the band an elapsed reading calls "yesterday", **100% is the day
+    before yesterday on a report run at midnight, 75% at six in the
+    morning** (which is when this report is actually run), 50% at noon.
+    `(now.date() - when.date()).days` now, with hours left elapsed below
+    a day, because "20h ago" makes no calendar claim and reading it off
+    the dates would call a twenty-minute-old error "yesterday" at ten
+    past midnight. After: **0 of 5208.** Pinned by that sweep as a test
+    rather than by cases, because the defect was a BAND and not a
+    boundary, and the mutation that puts the elapsed reading back reddens
+    8. One honest consequence: the live shape now reads "6 days ago",
+    the two cases in `_ago`'s parametrized table that differ between the
+    two readings moved, and three of this file's tests moved with them —
+    each with the arithmetic written beside it.
+  - **THE STAMP SAYS WHICH CLOCK IT IS NOW, which is four characters and
+    a real confusion.** The stamp is the app's UTC; whoever runs this
+    script is somewhere else. Measured: a row written at 10:03 UTC, read
+    at 06:03 local, printed "just now — 2026-10-01 10:03" — a time in the
+    reader's future. The ARITHMETIC was always right (`_ago` compares two
+    UTC instants, and after the calendar fix both dates are UTC dates
+    too); it was the printing that said nothing. `main`'s own
+    `Last active:` line is unlabelled UTC as well, so the convention is
+    pre-existing — what is new is pairing a reader-anchored phrase with
+    it, in output an agent does arithmetic on.
+  - **A NON-STRING STAMP TOOK THE WHOLE REPORT DOWN.** `_stamp` did
+    `(value or "").strip()`, so an int raised `AttributeError` from inside
+    the print loop — truncating that household's section and never
+    printing the households after it, i.e. one odd row hiding every other
+    household's errors, with `EXIT=1`. Not reachable from this app's own
+    rows (SQLite's TEXT affinity coerces an inserted integer, measured:
+    `typeof(created_at)` is `'text'`), only from a replaced or wrong
+    remote endpoint — and this script reads a REMOTE app over HTTP, so
+    `_stamp` is the only thing standing between the report and whatever
+    that app sent. It takes `object` and refuses a non-string now.
+  - **TWO OF MY OWN TESTS WERE WRONG ABOUT THE LEGACY ROW, in opposite
+    directions, and the review found both.** `_when_line`'s docstring
+    said "A row from a deployment older than these columns prints
+    nothing" and the test for it was VACUOUS — it built a row, threw it
+    away with a ternary used as a statement, and passed `{}` on the
+    iteration that mattered; had it exercised what it constructed it
+    would have FAILED. Because the real pre-column shape is
+    `last_seen_at = ''` with a real `created_at`
+    (`error_events.last_seen_at` is `TEXT NOT NULL DEFAULT ''` while
+    `created_at` is `DEFAULT (datetime('now'))`), and for that shape the
+    code correctly DOES print a line from `created_at` — a fallback
+    nothing pinned, and a shape nothing tested. Both are tests now, and
+    the docstring says the true thing.
+  - `tests/test_the_report_says_when.py` (32 after the review round; 25 as
+    first written). **RE-MEASURED on the finished file rather than carried
+    forward, in a `git archive` of `origin/main` with the file copied in:
+    31 failed, 1 passed. TWENTY-FOUR die on a name main has not got**
+    (`_ago` / `_when_line`), **SEVEN are behaviour catches** on their own
+    assertion — the reproduction, the tool row, the four kinds, and the
+    whole-block ordering test — and ONE passes either way, the guard that
+    a report with no errors still runs end to end ("Nothing broke." never
+    reaches `_print_shape`, so there is nothing for this line to be
+    printed on). The first draft said 24 red / 17 names / 6
+    catches, measured on a 25-test file; both are right about their own
+    file, which is why this one is labelled.
+  - **FIFTEEN mutations run after the review round and every one bites**,
+    red counts read off the runs over this file plus the four report files
+    it shares surfaces with (control 123 passed): the whole line removed
+    (8 red); gated on `kind == "client"`, the trail's own gate (4); the
+    relative phrase dropped from both returns (8); `_when_line` ignoring
+    its `now`, i.e. the flake back (3, at every pin); the day words back
+    to ELAPSED, i.e. the shipped bug (8); the "yesterday" special case
+    removed (2); the minute floor back to a printed-string compare (1);
+    the minute floor removed outright (1); the stretch spanning only the
+    freshest row (1); the stretch reading ONLY the private key, so
+    `_print_feedback` loses its fallback (3); the earliest never carried
+    (1); the non-string guard removed (1); the UTC label dropped (8); an
+    unparseable stamp guessed at as "now" (4); and the line moved below
+    the stack **with a comment left where it was** (1).
+  - **THAT LAST ONE IS THE POINT OF A TEST THE REVIEW REPLACED.** The
+    first cut pinned the ordering with a source marker that read
+    `inspect.getsource` — comments included — behind a `hasattr(rep,
+    "_code_lines")` branch for a comment-stripping helper **that does not
+    exist in this file**, so the branch was dead and the marker was
+    satisfiable by leaving `# _when_line used to go here` behind. It is
+    `test_the_whole_block_prints_in_order_and_loses_nothing` now, driving
+    `_print_shape` and asserting all four indented lines and their order,
+    which is also what notices the new line DISPLACING one of the three
+    that were there — the defect B2 turned out to be.
+  - **THAT PARAGRAPH USED TO SAY "One test deliberately does NOT assert
+    the relative phrase", CITING THE FLAKE THIS SUITE SPENT THE SAME NIGHT
+    REMOVING FROM `test_pre_shop_accuracy_counts` — AND THREE OTHER TESTS
+    IN THE SAME FILE WERE THAT FLAKE.** It was true of the stretch test
+    and false of the file. `_when_line` had no `now` parameter at all, so
+    three tests compared `"5 days ago"` against `datetime.now()`:
+    **all four CI `clock` jobs were red on this branch** (3 failed, 22
+    passed each), and bisecting by pin puts the flip at
+    `--today=2026-10-01T14:57`, i.e. **2026-10-01 18:56:35 UTC** — about
+    five hours after the review that found it, after which they are red
+    for ever. Found by an adversarial review, not by me, in an entry whose
+    own subject is a report saying something untrue.
+    `_when_line` takes an optional `now` now (threaded to `_ago`, which
+    already had one); the one production caller leaves it unset. Green at
+    all four pins and at pins of 2026-11-20, 2027-06-01 and 2030-01-01,
+    so the fix is structural rather than nudged — and the mutation that
+    makes `_when_line` ignore its `now` reddens exactly those three, at
+    every pin rather than only after a date.
+  - **IT BROKE AN EXISTING TEST AND THE FIRST DRAFT OF THIS ENTRY GAVE NO
+    FULL-SUITE FIGURE, which is the one number that would have caught
+    it.** The when-line is inserted at `head + 1`, exactly where
+    `test_client_error_trail.py::test_the_report_prints_the_trail_under_
+    the_error` (the 2026-09-25 trail work) asserted the trail was. The
+    BEHAVIOUR is right — the date is what decides whether the stack below
+    it is worth reading, so it leads the indented lines — and the test was
+    pinning a POSITION that was incidental to its own claim. It walks the
+    indented lines under its error now, stopping at the next head-shaped
+    line so a trail printed under the WRONG error still fails it, with a
+    note saying what moved. Every comparable entry in this log carries a
+    whole-suite number; this one did not, and that is how a −1 hid behind
+    a +25.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 8962 passed, 0
+    failed**, against **8930 collected on `origin/main`** — +32 is this
+    one new test file exactly, and the existing test the first cut broke
+    is green, so the net is +32 rather than +25 −1. Green at all four CI
+    `clock` pins (30, then 32 passed on the file as it grew) and at pins
+    of 2026-11-20, 2027-06-01 and 2030-01-01. **The first draft of this
+    entry gave no whole-suite figure at all**, which is this log's own
+    stated convention and the one number that would have caught the
+    broken test.
+  - **Found and NOT fixed, named so nobody reports it as new.** (a) In the
+    `--feedback` section `_print_feedback` reuses `_print_shape`, so under
+    "errors in the 10 minutes before:" a shape can read "last seen just
+    now — … 02:00 UTC, from 02:00" — the row's own first-seen, which is
+    the whole day's rather than the ten minutes'. The comment two lines
+    above that call already makes this argument about `occurrences`. The
+    clause is TRUE (the shape did first appear then) and the heading is
+    about when it was LAST seen, so this is a judgement about how much
+    context belongs in that section rather than a falsehood; left, and
+    note the C3 fix does not reach there — those rows are built by hand
+    and carry no `_shape_first_seen`. (b) The build
     is printed (`build 88371c1871a7`) with nothing to compare it to — the
     report does not know the app's CURRENT build, so "this error is from a
     build we no longer run" is still something a reader has to work out.
