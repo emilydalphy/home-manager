@@ -463,10 +463,45 @@ why*, not duplicating the diff.
     whenever `T2 >= T1`, i.e. always.
   - **Both halves are measured, not reasoned.** With a 1.1s gap forced
     between the backdate and the count, the OLD offsets **fail** and the
-    new ones **pass**; and the mutation that swaps all seventeen
+    new ones **pass**; the fixed test is **0 failures in 20 runs at
+    `--today=friday`**; and the mutation that swaps all seventeen
     `>= datetime('now', …)` comparisons in `usage.py` for `date('now', …)`
     reddens exactly **1** test, the one it is named for, with the other 22
     in the file green.
+  - **THREE AGENTS HIT THIS INDEPENDENTLY IN ONE NIGHT and root-caused it
+    identically, which is the strongest thing about this entry.** Two were
+    working other cards and each measured a baseline that disagreed with
+    the orchestrator's. Their numbers, which are better than this
+    branch's own:
+    - **The flake rate is LOAD-dependent, not weekday-specific.** On clean
+      `940df8b`, 15 runs each: `--today=friday` **5 failed**, live clock
+      **0 failed**. Across the four CI pins, 12 runs each: monday
+      **1/12**, friday 0/12, saturday 0/12, sunday 0/12. So `clock
+      (monday)` is exposed as well as `clock (friday)`, and a run on its
+      own hides it — 30 consecutive solo runs on main, 0 failures.
+    - **The probability tracks the gap almost exactly** (40 runs per
+      gap): 0s → 0/40, 0.2s → 8/40, 0.5s → 20/40, 0.9s → 36/40.
+    - **Why a PIN makes it worse**, which this entry would not otherwise
+      have explained: `tests/sqlite_clock.py`'s shim is an ordinary
+      Python user function, so `get_pre_shop_flags` + `get_usage_summary`
+      are materially slower under a pin, which widens the gap.
+    - One of them chose `+5 minutes` for the inside row where this branch
+      chose `+1 hour`; the two are the same fix, and the magnitude is
+      free because the date-not-datetime pin rides entirely on the
+      OUTSIDE row's one second.
+  - **A HYPOTHESIS ONE OF THEM MEASURED FALSE, recorded so nobody chases
+    it.** `tests/sqlite_clock.py`'s own docstring warns that its shim
+    evaluates `'now'` once per ROW where real SQLite evaluates it once
+    per STATEMENT, and notes no call site depends on the difference.
+    `usage._pre_shop_counts` is in fact the one statement in that module
+    with several `datetime('now', '{since}')` occurrences (four), and
+    under a pin it really does see **8 distinct `'now'` values spanning
+    9ms** over 200 rows against **1** unpinned — so that sentence is
+    arguably false in letter. **It does not bite**: a four-way
+    disagreement inside the statement is **0 in 400 runs**, because 9ms
+    of spread only matters if it straddles a whole second. A `usage.py`
+    fix was half-written and thrown away on the measurement, which is the
+    right order.
   - **Swept for siblings and the sweep is clean.** The only other
     `_backdate` in that file is `-9 days` against a seven-day window, two
     days of margin; its own "outside" row is the robust direction above.
