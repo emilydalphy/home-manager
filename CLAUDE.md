@@ -515,6 +515,10 @@ why*, not duplicating the diff.
     eleven need a fixture of their own to fire at all, and a sweep that
     only checks the rules it happens to have fixtures for is a sweep with
     holes in it.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 8949 passed, 0
+    failed**, against **8930 collected on `origin/main`** — +19 is this one
+    new test file exactly, and `git diff origin/main -- tests/` adds one
+    file and changes none, so no existing test was deleted or weakened.
   - **Found and NOT fixed, named so nobody reports it as new:** the
     six-line cap is still a cap, so a week with more than six distinct
     findings still prints only six — this makes those six worth reading,
