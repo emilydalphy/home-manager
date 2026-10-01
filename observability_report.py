@@ -90,6 +90,7 @@ script is not the place to invent one.
 from __future__ import annotations
 
 import argparse
+import datetime
 import http.cookiejar
 import json
 import os
@@ -573,6 +574,90 @@ def _latest_rows(errors: dict) -> dict[tuple, dict]:
     return latest
 
 
+# A stored instant, read back as a date. SQLite writes these as
+# "YYYY-MM-DD HH:MM:SS" in UTC (every writer of error_events.created_at and
+# .last_seen_at uses datetime('now')), so this parses that one shape and
+# gives up on anything else rather than guessing.
+def _stamp(value: str | None) -> datetime.datetime | None:
+    text = (value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.datetime.fromisoformat(text.replace(" ", "T"))
+    except ValueError:
+        return None
+    return parsed.replace(tzinfo=datetime.timezone.utc) if parsed.tzinfo is None else parsed
+
+
+def _ago(when: datetime.datetime, now: datetime.datetime | None = None) -> str:
+    """
+    "1h ago", "yesterday", "6 days ago" -- how long before the report was
+    run. Relative rather than only a timestamp because the question a reader
+    is actually asking at BROKEN is "is this now?", and that is the question
+    a bare "2026-09-25 18:56" makes them do arithmetic for at six in the
+    morning.
+
+    Coarse on purpose: anything inside the hour is "just now", because a row
+    written three minutes ago and one written forty are the same news.
+    """
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    seconds = (now - when).total_seconds()
+    if seconds < 0:
+        # A clock skew between the app and whoever is running this. Saying
+        # "in 2 hours" would read as nonsense; the stamp beside it is the
+        # honest part.
+        return "clock ahead"
+    if seconds < 3600:
+        return "just now"
+    hours = int(seconds // 3600)
+    if hours < 24:
+        return f"{hours}h ago"
+    days = int(seconds // 86400)
+    return "yesterday" if days == 1 else f"{days} days ago"
+
+
+def _when_line(row: dict | None) -> str:
+    """
+    When this shape was last seen, and over what stretch -- the one thing
+    BROKEN could not say until 2026-10-01.
+
+    Why it is worth a line of its own: the report's contract is "lead with
+    anything under BROKEN", and 7 errors last night and 7 errors six days
+    ago want opposite responses. On the morning this was written, household
+    1's report led with BROKEN over three shapes last seen SIX DAYS earlier,
+    for a crash fixed on the day they were written -- so a reader following
+    the contract would have gone hunting a bug that was already gone.
+
+    Both timestamps are the server's own (SQLite datetime('now')), so this
+    adds nothing a browser wrote and the "no message reaches here" rule in
+    _print_shape's docstring still holds. A row from a deployment older than
+    these columns prints nothing, the same way the trail does.
+    """
+    row = row or {}
+    last = _stamp(row.get("last_seen_at")) or _stamp(row.get("created_at"))
+    if last is None:
+        return ""
+    stamp = last.strftime("%Y-%m-%d %H:%M")
+    first = _stamp(row.get("created_at"))
+    # The stretch, only when there IS one: a shape seen four times over
+    # three hours is a different thing from four times over four days, and
+    # the count on the head line cannot tell them apart. Same day shows the
+    # time alone, because repeating the date reads as two dates.
+    #
+    # Compared as PRINTED and not as instants, which is a correction rather
+    # than a nicety: the demo household's three refusals span
+    # 15:54:19 to 15:54:57, so `first < last` is true and both render
+    # 15:54 — "from 15:54" beside "15:54" is noise that reads like a bug in
+    # the report. At this resolution a stretch inside one minute IS no
+    # stretch.
+    if first is not None and first < last:
+        first_stamp = (first.strftime("%H:%M") if first.date() == last.date()
+                       else first.strftime("%Y-%m-%d %H:%M"))
+        if first_stamp not in (stamp, stamp[-5:]):
+            return f"last seen {_ago(last)} — {stamp}, from {first_stamp}"
+    return f"last seen {_ago(last)} — {stamp}"
+
+
 def _print_shape(key: tuple, n: int, latest: dict | None = None) -> None:
     """
     One error, printed as what it is and where it is.
@@ -601,6 +686,13 @@ def _print_shape(key: tuple, n: int, latest: dict | None = None) -> None:
         if request:
             head += f" {request}"
     print(head + (f"  (x{n})" if n > 1 else ""))
+    # Before the stack, because this is what decides whether the stack is
+    # worth reading. NOT gated on kind: a tool error and a 5xx have
+    # timestamps too, and the household whose report prompted this had
+    # client rows while another had tool rows.
+    when = _when_line(latest)
+    if when:
+        print(f"                 {when}")
     if stack:
         print(f"                 {stack}")
     # What the person was doing just before, for a browser error that has

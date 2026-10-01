@@ -425,6 +425,95 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-01 — The morning report said BROKEN and never said WHEN, and on
+  the morning this was written it was saying BROKEN about a bug fixed five
+  days earlier. Branch `overnight/the-report-says-when`, NOT merged at the
+  time of writing. REPORT-ONLY — `git diff origin/main -- app/ static/` is
+  empty.** Found by reading the live report rather than from a report of
+  the report. Household 1 led with `BROKEN — 7 in the last 7d: 7 client`
+  over three shapes of the `cookState.prepCutPicks` TypeError — and the
+  live rows say all three were last seen **2026-09-25 18:56**, on builds
+  `88371c1871a7` and `74b481f0388d`, for the crash the 2026-09-25
+  `cook-crash-fix-only` entry records fixing that same day and whose
+  declaration is on `main` today.
+  - **IT IS THE FILE'S OWN CONTRACT THAT MAKES THIS COST SOMETHING.** Its
+    docstring's second line is "Run this, read the output, lead with
+    anything under BROKEN. That is the whole contract." A reader following
+    that this morning goes hunting a Cook-tab crash that was fixed before
+    the week began. **Seven errors last night and seven errors five days
+    ago want opposite responses, and the output could not tell them
+    apart.** Second time in one night the report has said BROKEN about
+    something that is not broken — the other was the allergy gate, a
+    different cause with the same cost.
+  - **THE DATA WAS ALREADY IN HAND, which is why this is 92 lines and no
+    new read.** `_print_shape` is handed `latest`, the most recently seen
+    row for that shape, and already reads `trail`, `device`,
+    `display_mode`, `lang` and `app_version` off it. `created_at` and
+    `last_seen_at` sit on the same row and were being thrown away.
+  - **NOTHING NEW IS EXPOSED, and that mattered more than the convenience
+    here.** Both are the server's own SQLite `datetime('now')` values, so
+    `_print_shape`'s standing rule — "No message reaches here, which is
+    the whole reason this output is safe to read into an agent's context" —
+    is untouched; the line is built from two timestamps and nothing else,
+    pinned by a test that hands it a row whose `detail`, `trail`,
+    `app_version` and `device` are all hostile and gets the same sentence.
+  - **RELATIVE AND ABSOLUTE, not one or the other.** "last seen 5 days ago
+    — 2026-09-25 18:56". The relative half answers the question a reader
+    is actually asking at BROKEN, and the stamp is what survives the
+    report being read an hour after it ran. Coarse inside the hour ("just
+    now"), because a row three minutes old and one forty minutes old are
+    the same news.
+  - **IT PRINTS FOR EVERY KIND, and that is the half most easily got
+    wrong.** `trail:` and `on:` are gated on `kind == "client"`; this must
+    not be, because the household whose report prompted the card had
+    client rows and ANOTHER household in the same run had `tool` rows
+    seventeen hours old and far more worth reading. Four parametrized
+    tests, and the mutation that copies the client gate reddens 4.
+  - **A STRETCH IS PRINTED ONLY WHEN THERE IS ONE, and the first cut got
+    this wrong and shipped it to the live run.** The count on the head
+    line cannot tell four times over three hours from four times over four
+    days, so a repeat says "from 16:29". But the demo household's three
+    refusals span 15:54:19 to 15:54:57 — the instants differ, both render
+    `15:54`, and the first cut duly printed "15:54, from 15:54", which
+    reads like a bug in the report rather than a fact about the error.
+    Compared as PRINTED now, not as instants. Found by running it against
+    the live report, not by reading it.
+  - **MEASURED ON THE LIVE APP, read-only through the token, before and
+    after.** Before: three cook-crash shapes with no date anywhere.
+    After: `last seen 5 days ago — 2026-09-25 18:56, from 16:29` on
+    household 1's, `last seen 6 days ago — 2026-09-24 21:57` on Julia's
+    unknown TypeError, and `last seen 17h ago — 2026-09-30 15:54` on the
+    demo household's three refusals — the one row in the whole run that is
+    actually current.
+  - **ONE CORRECTION TO THE CARD I FILED AN HOUR EARLIER:** it says "six
+    days ago" and the code says five. 18:56 on the 25th to 11:00 on the
+    1st is 5d16h, and "ago" is elapsed time, not a date subtraction. The
+    code is right; the card's wording was the subtraction. Said here
+    because this log keeps having to unpick the other direction.
+  - `tests/test_the_report_says_when.py` (25). **24 red against main, and
+    the decomposition is most of what that number is worth: SEVENTEEN die
+    on a name main has not got** (`_ago` ×10, `_when_line` ×7), **SIX are
+    behaviour catches** on their own `assert "last seen" in ...` (the
+    reproduction, the tool row, and the four kinds), and one is the
+    ordering source marker. **Six mutations run and every one bites**: the
+    line gated on `kind == "client"` (4 red), the relative phrase dropped
+    (4), an unparseable stamp guessed at as "now" rather than dropped (1),
+    the stretch printed whenever the instants differ — the shipped bug
+    above (1), the line moved below the stack (1), and the "just now"
+    window widened to forty days so nothing ever reads as stale (11).
+  - **One test deliberately does NOT assert the relative phrase**, and it
+    is worth a line: the same suite spent tonight removing a flake from
+    `test_pre_shop_accuracy_counts` that came from asserting against the
+    real clock. The stretch test asserts the stamp and the ABSENCE of a
+    stretch; the wording is pinned by `_ago`'s own parametrized test
+    against a fixed `now`.
+  - **Found and NOT fixed, named so nobody reports it as new.** The build
+    is printed (`build 88371c1871a7`) with nothing to compare it to — the
+    report does not know the app's CURRENT build, so "this error is from a
+    build we no longer run" is still something a reader has to work out.
+    That is a second read and its own card. And the eight-shape cap on the
+    ERROR section is still a cap.
+
 - **2026-09-30 — A night off on a reheat that owns a side now takes the
   side's line off the list, and the undo puts it back exactly. Branch
   `night-off-undo-carries-groceries`, NOT merged at the time of writing.**
