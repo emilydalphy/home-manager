@@ -711,9 +711,10 @@ why*, not duplicating the diff.
     (`tests/test_connection_close_sweep.py`, ~line 429). It cannot be done
     on either branch on its own — on this one the function really is still
     unprotected, so removing it would be red here; on that one the list
-    does not exist. **Measured on the merged tree: 1 failed / 9104 passed
-    before, and that file goes 23 passed + 1 failed to 24 passed after, so
-    9105 / 0.**
+    does not exist. **Both measured on the merged tree, not derived:
+    1 failed / 9104 passed before, 9105 passed / 0 failed after** (all
+    seven of tonight's branches merged onto `940df8b`, keep-both on every
+    log hunk, `TZ=America/Toronto`).
   - **FOUND AND NOT FIXED, named so nobody reports it as new.** The other
     171 (the figure was 169 in the first draft and the census says 171 —
     the same off-by-two as the sentence above it), deliberately — the card says not to wrap them and the review says
