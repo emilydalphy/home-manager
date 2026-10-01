@@ -8343,6 +8343,44 @@ CHORES_TOOLS = frozenset({
 })
 
 
+# A refusal written for a PERSON is an ANSWER, not a crash — and the two
+# marker types below are the app's own way of saying which refusals those
+# are. ChoreRefused's own docstring states the rule: "An app that did
+# exactly the right thing must not report itself broken."
+#
+# Every ROUTE that can see one already honours that: it answers a plain
+# 200 {"status": "refused", "message": ...} and logs nothing (four sites
+# in main.py). The chat dispatch had no such arm, so a refusal fell into
+# the catch-all for a crashed tool — a full traceback in the logs and an
+# error_events row — and the morning report duly read a working allergy
+# gate as "demo household: BROKEN — 3 in the last 1d". Tap it on a screen
+# and it is an answer; ask for the same thing in chat and the app reports
+# itself broken.
+#
+# Three things that costs, and the third is the one with teeth: a false
+# alarm to chase; the report's exit code, which voice drift and a one-off
+# dropped request are both deliberately kept out of for exactly this
+# reason (usage.get_recent_errors); and the prune, which evicts
+# error_events oldest-first — so a household that meets the gate
+# routinely quietly deletes real errors, the same mechanism the browser-
+# error dedupe was written to stop.
+#
+# Deliberately NOT the validation markers (InvalidMealStatus,
+# InvalidRecipeRating, DuplicateRecipeName, InvalidSlot and friends).
+# Those mean a caller sent a word its own tool schema forbids, which is a
+# model mistake rather than a household being told no — worth seeing in
+# the report, and rare enough that CLAUDE.md twice accepted the row.
+# These two mean the app answered a person correctly.
+#
+# ChoreRefused cannot fire today — Chores is off for every household, so
+# CHORES_TOOLS declines above before any of its tools run. It is in here
+# so the identical bug does not have to be found twice the day that
+# switch is turned on, and because handling one of two markers whose own
+# docstrings call them the same thing is the half-converted shape this
+# codebase keeps getting bitten by.
+REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused)
+
+
 def _chores_off_result() -> dict:
     """
     What a chores tool answers in a house with the switch off. The
@@ -9789,6 +9827,37 @@ def run_agent_turn(
                 result = fn(**block.input) if fn else {"error": f"Unknown tool {block.name}"}
                 content = json.dumps(result, default=str)
                 is_error = False
+            except REFUSALS_OWED_TO_A_PERSON as refusal:
+                # The app said no, correctly, in a sentence written for the
+                # household to read — so this is an answer and not a crash.
+                # See REFUSALS_OWED_TO_A_PERSON for the whole reason; the
+                # short version is that the morning report was calling a
+                # working allergy gate a breakage.
+                #
+                # THIS ARM MUST COME FIRST. Both markers subclass
+                # ValueError, so below the catch-all it would never run —
+                # the same ordering trap the routes' own `except
+                # tools.SlotRefused` before `except ValueError` exists for,
+                # and there is a test on it.
+                #
+                # The sentence names a dish and what it clashes with (and
+                # so, by implication, a member's restriction), so it is
+                # household content and stays out of stdout: the tool name
+                # and the marker only, at INFO, which is the one line that
+                # replaces a traceback. Same rule as the argument-names
+                # logging below.
+                logger.info(
+                    "Tool %s refused: %s", block.name, type(refusal).__name__
+                )
+                # Byte-identical to what the catch-all produced, so the
+                # model reads exactly the sentence it read before —
+                # nothing about what the household sees changes here.
+                content = json.dumps({"error": str(refusal)})
+                # is_error stays True, for the Chores switch's reason:
+                # it is what keeps _turn_wrote_anything from counting a
+                # refused plan_meal as a write, and summarize_chat_actions
+                # from drawing a card for a meal that was never planned.
+                is_error = True
             except Exception as e:
                 # Log it. Without this line a tool crash is completely
                 # invisible: the error is packaged into the tool_result

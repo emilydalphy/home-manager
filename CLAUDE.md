@@ -425,6 +425,117 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-01 — The morning report called a working allergy gate a
+  breakage, because the chat dispatch had no arm for a refusal. Branch
+  `overnight/a-refusal-is-not-a-breakage`, NOT merged at the time of
+  writing.** Found by the morning error check, which came back **exit 1**:
+  `demo household: BROKEN — 3 in the last 1d: tool SlotRefused on
+  plan_meal`. Nothing broke. That is
+  `allergen_gate.refuse_if_clashing` turning down three dishes somebody at
+  that table cannot eat — the safety feature doing its job, three times,
+  on one real household in one day.
+  - **THE ASYMMETRY IS THE BUG, and the code already states the rule it
+    was breaking.** Every ROUTE that can see a `SlotRefused` answers a
+    plain 200 `{"status": "refused", "message": …}` and logs nothing
+    (four sites in `app/main.py`, checked). The chat dispatch had no such
+    arm, so the raise fell into the `except Exception` written for a
+    CRASHED tool: a full `logger.exception` traceback, and an
+    `error_events` row. Tap it on a screen and it is an answer; ask for
+    the same thing in chat and the app reports itself broken —
+    which `chores.ChoreRefused`'s own docstring forbids in those words:
+    *"An app that did exactly the right thing must not report itself
+    broken."*
+  - **The fix is the shape two sibling gates in the SAME dispatch
+    function already use, each with a comment naming the morning report
+    as the reason**: the per-household Chores switch
+    (`CHORES_TOOLS`) and the snack-attendance refusal
+    (`_snack_attendance_refusal`). This is the third, and the only one of
+    the three currently firing in production. One `except
+    REFUSALS_OWED_TO_A_PERSON` arm, `(tools.SlotRefused,
+    tools.ChoreRefused)`.
+  - **ORDERING IS THE WHOLE OF WHETHER IT WORKS.** Both markers subclass
+    `ValueError`, so an arm placed below the catch-all would never run and
+    the fix would be a no-op that looked finished — the same trap the
+    routes' own `except tools.SlotRefused` before `except ValueError`
+    exists for, and the one the 2026-09-26 recipe-rating work had to pin
+    with a test asking for both codes in one breath. Pinned here by an
+    `ast` read of `run_agent_turn`'s own handler order, and by the
+    mutation: moved below, 11 tests go red.
+  - **NOTHING CHANGES FOR THE HOUSEHOLD, by construction.** The content is
+    byte-identical to what the catch-all produced (`{"error": str(e)}`)
+    and `is_error` stays True — the Chores switch's own reason: it is what
+    keeps `_turn_wrote_anything` from counting a refused `plan_meal` as a
+    write and `summarize_chat_actions` from drawing a card for a meal that
+    was never planned. There is a test driving a model that claims "I've
+    swapped that" over a refusal and getting `CHANGE_CLAIM_RETRACTION`.
+  - **Three harms, and the third is the one with teeth.** A false alarm to
+    chase; the report's exit code, which `voice` drift and a one-off
+    dropped request are BOTH deliberately kept out of `total` for exactly
+    this reason (`usage.get_recent_errors`' own docstring: "it must not
+    turn the report's exit code into 'something broke'"), while a refusal
+    had no such carve-out; and the prune, which evicts `error_events`
+    oldest-first — so a household that meets the gate routinely quietly
+    deletes real errors, the same mechanism the 2026-09-11
+    `client-error-shape` dedupe was written to stop ("one broken screen
+    filling the table quietly deletes every other error in it, which is
+    how a real bug gets hidden by a cosmetic one").
+  - **DELIBERATELY NOT THE VALIDATION MARKERS**, and that line is the one
+    judgement call here. `InvalidMealStatus`, `InvalidChoreStatus`,
+    `InvalidGroceryStatus`, `InvalidAttentionStatus`, `InvalidSlot`,
+    `InvalidRecipeRating` and `DuplicateRecipeName` all mean a caller sent
+    a word its own tool schema forbids — a model mistake rather than a
+    household being told no, worth seeing in the report, and rare enough
+    that this log twice accepted the row on exactly those grounds. One
+    parametrized test per marker says so, and the mutation that adds
+    `InvalidRecipeRating` to the tuple reddens 2.
+  - **`ChoreRefused` is in the set and CANNOT fire today**, which is said
+    out loud rather than left to be found: Chores is off for every
+    household, so `CHORES_TOOLS` declines above the `try`. It is there so
+    the identical bug does not have to be found twice the day that switch
+    is turned on, and because handling one of two markers whose own
+    docstrings call them the same thing is the half-converted shape this
+    codebase keeps getting bitten by. Not Chores work — one name in a
+    tuple in `agent.py`.
+  - **The refusal SENTENCE never reaches the logs.** It names a dish and
+    what it clashes with, and so by implication a member's dietary
+    restriction — household content, under the dispatch's own rule two
+    arms down ("argument NAMES only, never their values"). One `INFO` line
+    replaces the traceback: the tool name and the marker class, nothing
+    else. There is a test asserting neither the member's name nor the
+    allergen appears in `caplog`, and that no record carries `exc_info`.
+  - **Three live chat doors**, enumerated rather than assumed by reading
+    `TOOL_FUNCTIONS`: `plan_meal` and `swap_meal_in_plan` (both through
+    the allergy gate; `swap_meal_in_plan` also for `NIGHT_GONE`) and
+    `discard_draft_plan` ("That week's approved — reopen it or re-plan it
+    instead."). `take_the_night_off` returns a `refused` dict rather than
+    raising, so it was never affected.
+  - `tests/test_a_refusal_is_not_a_breakage.py` (23). **12 red against
+    main, decomposed rather than quoted: 11 behaviour catches and ONE
+    name** (`agent.REFUSALS_OWED_TO_A_PERSON` does not exist there).
+    **One docstring was mislabelled and is corrected in place rather than
+    quietly** — the four `ChoreRefused` parametrize cases were called a
+    NAME miss on the grounds that Chores is off on main anyway; they
+    switch Chores ON so the dispatch really reaches the tool, so on main
+    the tool runs, raises and records a row like any other. They are
+    catches, measured. **Five mutations run and every one bites**:
+    `is_error = False` in the new arm (9 red), `except Exception` in place
+    of the markers (10), a validation marker added to the tuple (2), the
+    sentence logged instead of the marker class (1), and the arm moved
+    below the catch-all (11).
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 8953 passed, 0
+    failed**, against **8930 collected on `origin/main`** — +23 is this one
+    new test file exactly, and `git diff origin/main --stat` is
+    `app/agent.py` alone, 69 insertions and 0 deletions, so no existing
+    test was changed, deleted or weakened.
+  - **FOR EMILY, one option left open.** This makes the gate invisible to
+    the morning report. It could instead get a LINE of its own, the way
+    voice drift and dropped requests already do ("Refused — 3 allergy
+    clashes"): set aside from `total` and the exit code, but still counted
+    and printed. More machinery, and it says more. Not built, because the
+    two nearest precedents in this very function record nothing at all,
+    and inventing a reporting feature nobody asked for under a bug fix is
+    more than this card gets to do. One line to ask for.
+
 - **2026-09-30 — A night off on a reheat that owns a side now takes the
   side's line off the list, and the undo puts it back exactly. Branch
   `night-off-undo-carries-groceries`, NOT merged at the time of writing.**
