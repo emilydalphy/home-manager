@@ -48,8 +48,10 @@ right; six messages were breaking it.
 from __future__ import annotations
 
 import datetime
+import ast
 import inspect
 import re
+import textwrap
 import sys
 from pathlib import Path
 
@@ -296,8 +298,15 @@ def test_two_nights_are_still_two_findings_in_the_counts():
     from app import tools
     from app.db import get_conn
     from app.tools import usage
+    from conftest import household_today
 
-    today = datetime.date.today()
+    # The HOUSEHOLD's clock, never the process's — CLAUDE.md's own gotcha,
+    # and the first cut of this test broke it. Harmless as it stood (nothing
+    # here compares the seeded date against a clock: the window is on
+    # created_at and the plan is forced to approved by hand, measured green
+    # in two verified straddles) and it is the shape the rule names, so it
+    # is not left as the example a later test copies.
+    today = household_today()
     created = tools.create_weekly_plan(today.isoformat(), day_count=7)
     plan_id = created["weekly_plan_id"]
     conn = get_conn()
@@ -369,6 +378,100 @@ def test_the_two_rules_that_name_their_own_night_are_unaffected():
 # 4. The sweep, derived from the module's own list
 # --------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------
+# The sweep's reader. ast, never a line regex — this repo's own log
+# prescribes that twice for exactly this class ("THE FIRST SWEEP WAS
+# DEFEATED BY A PURE REFORMAT … It is `ast` now, which is both shorter and
+# right", 2026-09-24; "with `ast`, never grepped", 2026-09-26) and the
+# first cut of this file ignored both. Measured by an adversarial review:
+# a line regex for f"{entry['date']} caught ONE of eight plausible
+# spellings of the same defect and missed seven — a local variable,
+# entry.get('date'), a triple-quoted f-string, .format(), one leading
+# space, a single-quoted outer f-string, and + concatenation — while a
+# mere mention of the shape in a DOCSTRING reddened it over correct code,
+# which is how a guard gets switched off. ast is blind to comments and
+# docstrings by construction and sees every one of those spellings.
+# --------------------------------------------------------------------------
+
+def _is_entry_date(node, aliases) -> bool:
+    """entry['date'], entry.get('date'), or a local name assigned from one."""
+    if isinstance(node, ast.Name):
+        return node.id in aliases
+    if isinstance(node, ast.Subscript):
+        return (isinstance(node.value, ast.Name) and node.value.id == "entry"
+                and isinstance(node.slice, ast.Constant) and node.slice.value == "date")
+    if isinstance(node, ast.Call):
+        f = node.func
+        return (isinstance(f, ast.Attribute) and f.attr == "get"
+                and isinstance(f.value, ast.Name) and f.value.id == "entry"
+                and len(node.args) == 1 and isinstance(node.args[0], ast.Constant)
+                and node.args[0].value == "date")
+    return False
+
+
+def _date_aliases(tree) -> set:
+    """Local names this function assigns the entry's date to."""
+    out = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and _is_entry_date(node.value, out):
+            for t in node.targets:
+                if isinstance(t, ast.Name):
+                    out.add(t.id)
+        elif isinstance(node, ast.AnnAssign) and node.value is not None \
+                and _is_entry_date(node.value, out):
+            if isinstance(node.target, ast.Name):
+                out.add(node.target.id)
+    return out
+
+
+def _leads_with_the_date(node, aliases) -> bool:
+    """Does this expression's rendered text OPEN with the entry's date?"""
+    if node is None:
+        return False
+    if _is_entry_date(node, aliases):
+        return True
+    if isinstance(node, ast.JoinedStr):
+        for part in node.values:
+            if isinstance(part, ast.Constant):
+                if isinstance(part.value, str) and part.value.strip() == "":
+                    continue          # one leading space is still leading
+                return False
+            if isinstance(part, ast.FormattedValue):
+                return _is_entry_date(part.value, aliases)
+            return False
+        return False
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        return _leads_with_the_date(node.left, aliases)
+    if isinstance(node, ast.Call):
+        f = node.func
+        # "{} dinner ...".format(entry['date'], ...)
+        if isinstance(f, ast.Attribute) and f.attr == "format" and node.args:
+            lead = f.value
+            if isinstance(lead, ast.Constant) and isinstance(lead.value, str) \
+                    and lead.value.lstrip().startswith("{"):
+                return _is_entry_date(node.args[0], aliases)
+        return False
+    return False
+
+
+def _messages_in(src: str):
+    """Every `message=` expression in this source, with its line number."""
+    tree = ast.parse(textwrap.dedent(src))
+    aliases = _date_aliases(tree)
+    out = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            for kw in node.keywords:
+                if kw.arg == "message":
+                    out.append((kw.value, aliases, node.lineno))
+    return out
+
+
+def _messages_of(fn):
+    """The same, for a real rule."""
+    return _messages_in(inspect.getsource(fn))
+
+
 def test_no_recipe_level_rule_leads_its_sentence_with_a_date():
     """
     THE GUARD THAT MAKES THIS STICK, and it is DERIVED rather than
@@ -381,19 +484,91 @@ def test_no_recipe_level_rule_leads_its_sentence_with_a_date():
     It reads the SOURCE and not a driven message, deliberately: several of
     the eleven need a fixture of their own to fire at all, and a sweep that
     only checks the rules it happens to have fixtures for is a sweep with
-    holes in it. What it looks for is the one shape the defect took — an
-    f-string opening with the entry's date.
+    holes in it. It reads it with ast — see the note above this test for
+    the eight spellings that measurement forced, seven of which a line
+    regex missed.
     """
     offenders = []
     for fn in pq._RECIPE_RULES:
-        src = inspect.getsource(fn)
-        for n, line in enumerate(src.splitlines(), 1):
-            if re.search(r'f"\{entry\[.date.\]\}', line):
-                offenders.append(f"{fn.__name__}:{n}")
+        for message, aliases, lineno in _messages_of(fn):
+            if _leads_with_the_date(message, aliases):
+                offenders.append(f"{fn.__name__}:{lineno}")
     assert offenders == [], (
         "a recipe-level rule leads its sentence with a date, so two nights "
         f"of one recipe will spend two lines of the FOOD section: {offenders}"
     )
+
+
+def test_the_sweep_sees_every_spelling_of_the_defect_and_no_prose():
+    """
+    GUARD ON THE READER, which is what the line regex did not have. The
+    eight spellings a review wrote to defeat the first version, plus the
+    docstring mention that made it cry wolf over correct code, driven
+    against the reader directly rather than by editing plan_quality.
+    """
+    def read(src: str) -> bool:
+        return any(_leads_with_the_date(m, a) for m, a, _ in _messages_in(src))
+
+    caught = {
+        "the shipped shape": '''
+            def _rule(entry):
+                return Violation(message=f"{entry['date']} dinner ('x'): no.")
+        ''',
+        "a local variable": '''
+            def _rule(entry):
+                day = entry["date"]
+                return Violation(message=f"{day} dinner ('x'): no.")
+        ''',
+        "entry.get": '''
+            def _rule(entry):
+                return Violation(message=f"{entry.get('date')} dinner: no.")
+        ''',
+        "a triple-quoted f-string": '''
+            def _rule(entry):
+                return Violation(message=f"""{entry['date']} dinner: no.""")
+        ''',
+        "str.format": '''
+            def _rule(entry):
+                return Violation(message="{} dinner: no.".format(entry["date"]))
+        ''',
+        "one leading space": '''
+            def _rule(entry):
+                return Violation(message=f" {entry['date']} dinner: no.")
+        ''',
+        "a single-quoted outer f-string": '''
+            def _rule(entry):
+                return Violation(message=f'{entry["date"]} dinner: no.')
+        ''',
+        "+ concatenation": '''
+            def _rule(entry):
+                return Violation(message=entry["date"] + " dinner: no.")
+        ''',
+    }
+    missed = [name for name, src in caught.items() if not read(src)]
+    assert missed == [], f"the reader cannot see these spellings of the defect: {missed}"
+
+    passed_over = {
+        "the dish name, which is the fix": '''
+            def _rule(entry):
+                return Violation(message=f"{entry['meal_name']}: no.")
+        ''',
+        "a docstring naming the shape": '''
+            def _rule(entry):
+                """Do not write f"{entry['date']} dinner (...)" here."""
+                return Violation(message=f"{entry['meal_name']}: no.")
+        ''',
+        "a comment naming the shape": '''
+            def _rule(entry):
+                # never f"{entry['date']} dinner (...)"
+                return Violation(message=f"{entry['meal_name']}: no.")
+        ''',
+        "the date later in the sentence": '''
+            def _rule(entry):
+                return Violation(message=f"{entry['meal_name']} on {entry['date']}: no.")
+        ''',
+    }
+    wrong = [name for name, src in passed_over.items() if read(src)]
+    assert wrong == [], f"the reader cries wolf over correct code: {wrong}"
 
 
 def test_the_sweep_can_see_all_eleven_recipe_rules():

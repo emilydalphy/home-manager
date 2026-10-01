@@ -438,10 +438,16 @@ why*, not duplicating the diff.
     nights beside them, and its own docstring states the rule it works by:
     a recipe-level rule "writes a message that names the recipe and not the
     night", while a rule whose message already names its night is
-    unaffected. So the MESSAGE decides. Three recipe-level rules obeyed it
-    — `steps_match_ingredients`, `quantities_plausible`,
-    `produce_variety_named`, which are the three that entry measured on —
-    and six did not: every one led its sentence with `{entry['date']}
+    unaffected. So the MESSAGE decides. **FIVE** of the eleven obeyed it
+    — `steps_match_ingredients`, `quantities_plausible` and
+    `produce_variety_named`, which are the three that entry measured on,
+    plus `ingredient_repeat` (week-level, `date=None`, one row per
+    ingredient, so it can never duplicate per night) and
+    `title_promises_an_ingredient` (opens with the dish in quotes). **This
+    said "three", which left two of the eleven silently unaccounted for and
+    a reader doing the arithmetic hunting rules that did not need
+    hunting** — caught on review, and the two are compliant, so only the
+    count was wrong. Six did not: every one led its sentence with `{entry['date']}
     dinner ('{meal_name}')`, so no two nights of one recipe could ever
     collapse. **Nothing in `observability_report.py` is touched.**
   - **THE CARD SAID FOUR AND IT IS SIX**, counted off `_RECIPE_RULES`
@@ -473,16 +479,49 @@ why*, not duplicating the diff.
     all** ("Turkey Sausage Breakfast Skillet with Sweet Potatoes: step(s)
     use potatoes, which isn't on the ingredient list."). Household 1: **30
     findings, 26 distinct lines → 26, no change**, because none of its
-    findings is one of the six — its section is still mostly the historical
-    `reasoning_is_specific` rows the 2026-09-30 blank-reason work explains,
-    which age out by 2026-10-07.
+    findings is one of the six. **What its section IS, measured rather than
+    waved at — this said "mostly the historical `reasoning_is_specific`
+    rows" and that covers about a third of it**: `reasoning_is_specific` 11
+    rows, 11 distinct lines, **3 of the 6 printed slots**, and
+    `dinner_repeat_in_history` 9 rows, 9 distinct lines, **0 printed** —
+    the section's other large block, the same collapsible shape, and
+    outside this card's scope (`_RECIPE_RULES` only). The
+    `reasoning_is_specific` rows age out by 2026-10-07.
+  - **THE "BEFORE AND AFTER" ABOVE IS SIMULATED ON THE AFTER SIDE, and
+    that is the deploy boundary rather than a shortcut.** The live rows
+    were written by the deployed app, which is still running main's
+    wording, so reading them back through this branch's reporter shows them
+    UNCOLLAPSED — measured: household 6's two `longest_thing_not_first`
+    rows are still 2 distinct lines on this tree. The "→ 9" was measured by
+    rewriting the six messages locally over the same rows. The collapse
+    starts working on real rows with the first generation after deploy.
+  - **AND IT IS TRANSIENTLY WORSE ACROSS THAT BOUNDARY — named because
+    nothing else would.** The message is part of `usage._QUALITY_KEY`, so
+    an old-wording row and a new-wording row are two distinct findings for
+    the same `(rule, date, slot)`. Driven on a throwaway database by
+    review: logging the old wording then re-logging post-deploy gives
+    `total 4` and **3** printed lines where one wording twice gives
+    `total 2` and **1**. No route to it was found — the six are gated on
+    `_cooked_dinner` (≥3 instructions), so at generation they fire only for
+    REUSED recipes while `check_recipes_and_log` is called only with the
+    recipes just written; a re-draft retires the old plan out of
+    `_LIVE_QUALITY_JOIN`; two live plans cover different dates. Bounded by
+    the 7-day window either way.
+  - **TWO RECIPES OF THE SAME NAME NOW COLLAPSE INTO ONE LINE.** Four of
+    the six sentences are name-only, so two genuinely different recipes
+    sharing a name and failing the same rule print as one line with
+    "(2 nights)" where main printed two dated lines. Unreachable on a fresh
+    database — the 2026-09-18 `one-recipe-per-name` guard refuses a
+    duplicate name — but that entry says in its own words that existing
+    duplicates are not healed, so a pre-2026-09-18 pair is possible on
+    Emily's. The household cannot tell the two apart by name anyway.
   - **THE ONE RISK THIS FIX CREATES IS PINNED RATHER THAN NOTED.**
     `_food_lines` keys on `(severity, message)` and **not** on the rule, so
     two rules whose sentences became identical would fold into one line and
     one finding would vanish. While the date led every sentence they could
     not collide; without it they are six sentences about one dish, and two
-    of them open with the same seven words ("the method uses an oven or a
-    pan but never …"). Measured distinct today, and a test fails on any
+    of them open with the same ten words ("the method uses an oven or a pan
+    but never …" — counted, after this said seven). Measured distinct today, and a test fails on any
     reword that makes two of them the same. Widening the reporter's key was
     the alternative and was refused: it is somebody else's function, and
     the risk is measurable here.
@@ -501,7 +540,9 @@ why*, not duplicating the diff.
     COUNT assertions pass on main and it fails on the fifth, the collapsed
     line. Its docstring says so. **Five mutations run and every one
     bites**: the dish name dropped as well as the date, i.e. the collapse
-    going too far (2 red), two rules given the same sentence (1),
+    going too far — **2 red applied to ONE rule and 12 applied to all six,
+    and this said 2 without saying which**, which reads as a file figure
+    and is a per-rule one; two rules given the same sentence (1),
     `_full_plate`'s date stripped with them (1), `_RECIPE_RULES` emptied —
     the guard on the guard (2), and the `Violation`'s own `date` field
     dropped, which is the one thing that really would collapse the counts
@@ -515,10 +556,73 @@ why*, not duplicating the diff.
     eleven need a fixture of their own to fire at all, and a sweep that
     only checks the rules it happens to have fixtures for is a sweep with
     holes in it.
+  - **IT READS THAT SOURCE WITH `ast`, AND THE FIRST CUT READ IT WITH A
+    LINE REGEX, WHICH MADE THE SENTENCE ABOVE FALSE — this is the
+    correction that matters most on this branch.** "A twelfth rule is
+    covered" was true only of the ONE spelling the defect happened to
+    take. An adversarial review added a twelfth rule to `_RECIPE_RULES` in
+    eight plausible spellings of the SAME defect and the regex caught one;
+    re-measured here against both readers over the same eight sources,
+    **old 1 of 8, new 8 of 8**:
+
+    | spelling | the line regex | `ast` |
+    |---|---|---|
+    | `f"{entry['date']} dinner …"` | CAUGHT | CAUGHT |
+    | `day = entry["date"]` then `f"{day} …"` | missed | CAUGHT |
+    | `f"{entry.get('date')} …"` | missed | CAUGHT |
+    | a triple-quoted f-string | missed | CAUGHT |
+    | `"{} dinner …".format(entry['date'])` | missed | CAUGHT |
+    | one leading space before the brace | missed | CAUGHT |
+    | a single-quoted outer f-string | missed | CAUGHT |
+    | `entry["date"] + " dinner …"` | missed | CAUGHT |
+    | a DOCSTRING naming the shape, code correct | **CRIES WOLF** | quiet |
+
+    A local variable and one leading space are ordinary things to write.
+    And the last row is the other half: the regex reddened over CORRECT
+    code the moment a comment or docstring mentioned the shape, which is
+    how a guard gets switched off — this log's own words. So it was
+    simultaneously too narrow and too broad, and `ast` fixes both at once
+    (comments and docstrings are invisible to it by construction). **This
+    log had already prescribed exactly this, twice**: 2026-09-24, "THE
+    FIRST SWEEP WAS DEFEATED BY A PURE REFORMAT … It is `ast` now, which is
+    both shorter and right", and 2026-09-26, "with `ast`, never grepped".
+    Writing a line regex here was ignoring both.
+  - **The reader has its own guard**, because a reader this fiddly wants
+    one: `test_the_sweep_sees_every_spelling_of_the_defect_and_no_prose`
+    drives all eight shapes plus four correct ones (the fix itself, a
+    docstring mention, a comment mention, and the date later in the
+    sentence) straight at `_leads_with_the_date`, so neither half can
+    regress without a named failure. Verified against the real module too,
+    all eight installed as a twelfth rule in turn: eight reds, and the
+    docstring-only one green.
+  - **WHAT IT STILL CANNOT SEE**, said rather than left to be found: the
+    alias pass is one function deep (a name assigned `entry["date"]` IN
+    THAT RULE), so a date reaching the sentence through a helper, a loop
+    variable or a dict is invisible; and it reads `message=` keywords only,
+    so a `Violation` built positionally would be missed. All eleven rules
+    pass `message=` today, checked.
   - **Numbers, read off the runs at `TZ=America/Toronto`: 8949 passed, 0
     failed**, against **8930 collected on `origin/main`** — +19 is this one
-    new test file exactly, and `git diff origin/main -- tests/` adds one
-    file and changes none, so no existing test was deleted or weakened.
+    new test file exactly (20 after the review round added the reader's own
+    guard), and `git diff origin/main -- tests/` adds one file and changes
+    none, so no existing test was deleted or weakened. The four CI weekday
+    pins over the plan_quality family this touches (31 files): **1165
+    passed each** at monday, friday, saturday and sunday, and **1165 inside
+    a VERIFIED `Pacific/Niue` straddle** — Niue 2026-09-30 against Toronto
+    2026-10-01, `date +%F` read in both zones BEFORE and AFTER the run.
+  - **The one dated fixture now seeds off the HOUSEHOLD's clock**
+    (`conftest.household_today`), which is this file's own stated gotcha
+    and which the first cut broke. Harmless as it stood and measured so —
+    nothing in that test compares the seeded date against a clock, the
+    window is on `created_at` and the plan is forced to `approved` by hand,
+    green in a verified straddle either way — but it is the shape the rule
+    names, and a test is the example the next one copies.
+  - **One of the twenty tests is a logical subset of another**, found on
+    review and left: `test_every_one_of_the_six_is_still_a_recipe_rule`
+    asserts what the second assertion of
+    `test_the_sweep_can_see_all_eleven_recipe_rules` asserts, and the same
+    mutation reddens both. Twenty tests, nineteen distinct claims; the
+    duplicate is cheap and reads as its own sentence, so it stays.
   - **Found and NOT fixed, named so nobody reports it as new:** the
     six-line cap is still a cap, so a week with more than six distinct
     findings still prints only six — this makes those six worth reading,
