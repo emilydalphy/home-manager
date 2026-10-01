@@ -643,6 +643,17 @@ why*, not duplicating the diff.
     Mutation re-run on the narrowed instrument: dropping `conn=conn` at
     the chain read reddens **all six** across the three files, so the
     narrowing cost nothing.
+  - **Numbers, read off the runs at `TZ=America/Toronto`: 8961 passed, 0
+    failed**, against **8930 collected on `origin/main`** — +31 is this
+    one new test file exactly, and `git diff origin/main -- tests/` adds
+    one file and changes three, each with a note saying what moved, so no
+    existing test was deleted or weakened. The four CI weekday pins over
+    the whole family this touches (its own file plus the three guard
+    files): **111 passed each** at monday, friday, saturday and sunday.
+    And **111 passed inside a VERIFIED `Pacific/Niue` straddle** — Niue
+    2026-09-30 against Toronto 2026-10-01, `date +%F` read in both zones
+    BEFORE and AFTER the run, because a timezone is not a straddle and
+    this log has had to say so twice.
   - **THE TWO ALTERNATIVES WERE MEASURED AND REFUSED.** Threading a
     connection into the resync would put its reads inside the open write
     transaction, which is the deadlock this whole family guards against.
