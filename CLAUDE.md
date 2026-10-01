@@ -754,11 +754,12 @@ why*, not duplicating the diff.
     weakened. (The first reading was 8961 / +31, before the eight tests
     the blocker and the three concerns added.) The four CI weekday pins over
     the whole family this touches (its own file plus the three guard
-    files): **111 passed each** at monday, friday, saturday and sunday.
-    And **111 passed inside a VERIFIED `Pacific/Niue` straddle** — Niue
-    2026-09-30 against Toronto 2026-10-01, `date +%F` read in both zones
-    BEFORE and AFTER the run, because a timezone is not a straddle and
-    this log has had to say so twice.
+    files), re-run on the committed tree: **119 passed each** at monday,
+    friday, saturday and sunday. And **119 passed inside a VERIFIED
+    `Pacific/Niue` straddle** — Niue 2026-09-30 against Toronto
+    2026-10-01, `date +%F` read in both zones BEFORE and AFTER the run,
+    because a timezone is not a straddle and this log has had to say so
+    twice. (111 before the review round's eight tests.)
   - **THE EIGHT TESTS THE REVIEW ROUND ADDED, by what they pin:** four
     on `discard_failed_plan` (the `IntegrityError` reproduction, the
     grocery line surviving un-stamped, the counters not lying, and a
