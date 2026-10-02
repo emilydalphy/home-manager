@@ -518,7 +518,8 @@ def _reveal_harness() -> str:
         _fn("revealSlotFromStream"), _fn("revealSlotFromMenu"), _fn("revealDaysFromMenu"),
         _fn("revealSlotDishHtml"), _fn("revealOpenSlotHtml"), _fn("revealJoinWords"), _const("UW_WEEKDAYS"),
         "var lastFirstPlanAnswers = null;", _fn("revealDaySubsetNote"),
-        _fn("revealMakes"), _fn("revealSlotMeta"), _fn("revealDayCardHtml"),
+        _fn("revealMakes"), _fn("revealSlotMeta"), _fn("revealSnackKey"), _fn("revealIsSnackKey"), _fn("revealPlaceSlot"), _fn("revealDaySlotKeys"),
+        _fn("revealDayCardHtml"),
     ])
 
 

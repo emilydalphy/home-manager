@@ -1255,7 +1255,7 @@ def onboarding_status():
 
 
 @app.post("/api/onboarding/household")
-def onboarding_household(req: HouseholdOnboardingRequest):
+def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     """Save household basics: members (+ age group), pets, and goals. Called directly by the onboarding wizard — no LLM round-trip needed for structured form data."""
     try:
         saved_ids = []
@@ -1270,7 +1270,7 @@ def onboarding_household(req: HouseholdOnboardingRequest):
         # Setup is finishing (onboarding posts its people only at the end):
         # record who set the household up now, before any invite link can
         # exist — see tools/first_open.py, rule 2.
-        tools.record_setup_adult(saved_ids)
+        setup_adult_id = tools.record_setup_adult(saved_ids)
         for p in req.pets:
             if not p.name.strip():
                 continue
@@ -1280,7 +1280,31 @@ def onboarding_household(req: HouseholdOnboardingRequest):
     except Exception as e:
         logger.exception("Household onboarding save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
-    return {"saved": True}
+    response = JSONResponse({"saved": True})
+    # The device that just finished setup is the setter-up's (2026-10-02 QA
+    # walk: "Who's this?" came up right after Approve, asking the person
+    # who had just typed the household in). record_setup_adult returns an id
+    # ONLY on the pass that actually recorded the setter-up — a re-run of
+    # onboarding, or one that finds a setter-up already on file, returns None
+    # and pins nobody — and only when this session has no adult picked yet,
+    # so an existing pick (or an invited adult's) is never overwritten. Other
+    # devices and the other adult get the question as before. Same cookie
+    # write as /api/whoami/pick.
+    if setup_adult_id is not None and tools.current_member() is None:
+        cookie = request.cookies.get(security.COOKIE_NAME)
+        value = security.with_member(cookie, setup_adult_id)
+        if value is None:
+            value = security.issue_session(tools.household_id(), setup_adult_id)
+        response.set_cookie(
+            security.COOKIE_NAME,
+            value,
+            max_age=security.COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="lax",
+            secure=_is_https(request),
+            path="/",
+        )
+    return response
 
 
 @app.post("/api/onboarding/answers")
