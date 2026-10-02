@@ -153,3 +153,24 @@ def test_the_week_strip_tile_has_no_dot_for_a_switched_off_meal():
         + plan_cards._extract("slotDotClass", plan_cards.SHELL_JS) + "\n"
         + f"console.log(JSON.stringify([weekTileHtml({json.dumps(days[0])}, 0, 0), weekTileHtml({json.dumps(days[1])}, 1, 0)].map(h => (h.match(/wk-dot /g) || []).length)));")
     assert out == [2, 3]
+
+
+# ---------- the two other doors the verifier found ----------
+
+@plan_cards._needs_node
+def test_add_a_meal_never_points_at_a_switched_off_meal():
+    off = {"state": "planned_empty", "title": "Out — nothing to cook", "meal_off": True}
+    day = plan_cards._day("2026-10-05", breakfast=off, lunch=plan_cards._entry("Wrap"),
+                          dinner=plan_cards._entry("Chili"))
+    out = plan_cards._run(plan_cards._prelude()
+        + "var asked = [];\nfunction openAskSheet(t) { asked.push(t); }\n"
+        + plan_cards._extract("wkAddMealFor", plan_cards.SHELL_JS) + "\n"
+        + f"wkAddMealFor(null, null, {json.dumps(day)});\nconsole.log(JSON.stringify(asked));")
+    assert len(out) == 1 and "breakfast" not in out[0].lower(), out
+
+
+def test_the_whole_week_sheet_prints_no_words_for_a_switched_off_meal():
+    src = plan_cards.SHELL_JS
+    i = src.index("week-sheet-rows').innerHTML")
+    block = src[i:i + 2500]
+    assert "if (entry.meal_off) return '<span class=\"' + cellClass + ' blank\"></span>';" in block

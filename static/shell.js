@@ -14806,7 +14806,7 @@
       var e = daySlotEntry(day, slot);
       // Never a meal that had already gone by when the week was drafted
       // (the server marks it `past`) — there is nothing left to add it to.
-      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away' && !e.past);
+      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away' && !e.past && !e.meal_off);
     })[0];
     var when = dayName(day.date, { weekday: 'long' });
     if (!free) {
@@ -20922,6 +20922,9 @@
             var entry = day[slot];
             var cellClass = 'week-sheet-cell' + (slot === 'dinner' ? ' dinner' : '');
             if (entry && entry.state === 'planned_empty') {
+              // A meal switched off for the whole usual week says nothing;
+              // the empty cell only keeps the three columns lined up.
+              if (entry.meal_off) return '<span class="' + cellClass + ' blank"></span>';
               return '<span class="' + cellClass + ' blank">' + escapeHtml(entry.title) + '</span>';
             }
             if (entry && entry.state === 'open') {
