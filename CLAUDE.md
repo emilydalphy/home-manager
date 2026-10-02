@@ -438,11 +438,19 @@ why*, not duplicating the diff.
   leftovers night arrives as a not-new name and must buy nothing.
   `meal_variety._pick_a_snack` likewise saves a list-less pick pending.
   Shopping then follows the meal rules unchanged: one line per item summed
-  over the week for the whole household (snacks carry no attendance),
-  staples and already-at-home skipped by the ordinary ingest, swap/remove
-  reverses it. Weeks already drafted or approved before this are not
-  back-filled. `tests/test_snacks_reach_the_grocery_list.py` (6; 5 red on
-  main).
+  over the week for the whole household (snacks carry no attendance), the
+  ordinary ingest's already-at-home check, swap/remove reverses it. (Staples
+  are NOT filtered out at ingest for snacks or dinners — that is whatever
+  the recipe writer leaves off its list.) Review found the other half: a
+  snack on a day whose every meal is away was now bought, and marking a day
+  fully away after approval left its snacks and their groceries. So
+  `slot_needs._settle_slot_empty` (every away / left-out / off / gone-by
+  door) drops the day's snacks, groceries reversed, once all three meals
+  are planned_empty; one meal away keeps them, and coming home again does
+  not put them back. Breakfast/lunch still trust the model's "not new"
+  flag — a possible follow-up. Weeks already drafted or approved before
+  this are not back-filled. `tests/test_snacks_reach_the_grocery_list.py`
+  (9; 8 red on main).
 
 - **2026-10-01 — A boundary test on `main` passed only when two statements
   landed in the same SQLite second, so the suite was intermittently red for

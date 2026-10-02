@@ -159,6 +159,7 @@ def _settle_slot_empty(
             weekly_plan_id=plan_id, meal_date=date_str, slot=slot,
             reason=reason, derived_from=derived_from, conn=conn,
         )
+        _clear_snacks_if_nobody_home(plan_id, date_str, conn)
         if own_conn:
             conn.commit()
     except Exception:
@@ -168,6 +169,30 @@ def _settle_slot_empty(
     finally:
         if own_conn:
             conn.close()
+
+
+def _clear_snacks_if_nobody_home(plan_id: int, date_str: str, conn) -> int:
+    """
+    A day whose every meal is now planned_empty — away, a day left out, the
+    usual week's off meals, meals already gone by — has nobody eating at
+    home, so its snacks go too, with anything they put on the shopping list
+    (clear_plan_slot reverses it, the same reversal a snack swap makes).
+    Loop Board "Snacks never reach the grocery list", review 2026-10-02:
+    once snacks were shopped for, a model week with a snack on an all-away
+    Wednesday bought it, and marking a day fully away after approval left
+    the snacks and their groceries behind. Same test as
+    meal_variety._nobody_home (rows present, every one planned_empty), on
+    the caller's connection. Nothing puts the snacks back if someone comes
+    home again; that is the same as a skipped day.
+    """
+    rows = conn.execute(
+        "SELECT slot_state FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+        "AND date = ? AND slot IN ('breakfast', 'lunch', 'dinner') AND component_category IS NULL",
+        (plan_id, household_id(), date_str),
+    ).fetchall()
+    if not rows or any(r["slot_state"] != "planned_empty" for r in rows):
+        return 0
+    return _weekly_plan.clear_plan_slot(plan_id, date_str, "snack", conn=conn)
 
 
 def set_slot_need(

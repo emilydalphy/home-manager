@@ -29,6 +29,7 @@ DETAILS = {
     APPLE: [{"item": "apples", "qty": "2"}, {"item": "almond butter", "qty": "4 tbsp"}],
     RICE_CAKES: [{"item": "rice cakes", "qty": "4"}, {"item": "sliced turkey", "qty": "4 oz"}],
     "Cheese and Crackers": [{"item": "crackers", "qty": "1 box"}, {"item": "cheddar", "qty": "4 oz"}],
+    "Trail Mix Cups": [{"item": "cashews", "qty": "1 cup"}, {"item": "raisins", "qty": "1/2 cup"}],
 }
 
 
@@ -210,3 +211,62 @@ def test_a_snack_picked_without_a_list_is_saved_pending(chili):
     assert len(rows) == 1 and rows[0]["recipe_id"], rows
     pending = {r["name"] for r in tools.pending_recipes_for_plan(plan_id)}
     assert "Cheese and Crackers" in pending
+
+
+# ---------- a day nobody is home buys no snacks (review, 2026-10-02) ----------
+#
+# Once snacks were shopped for, a snack on a day whose every meal is away was
+# bought too: the away pass (slot_needs.apply_slot_needs_to_plan /
+# set_slot_need) empties breakfast, lunch and dinner only. A day with all
+# three planned_empty now loses its snacks, with their shopping.
+
+
+def _snacks_on(plan_id, day):
+    return [r for r in _snack_rows(plan_id) if r["date"] == day]
+
+
+def test_a_snack_on_a_day_everyone_is_away_is_not_planned_or_bought(chili, stub_models):
+    stub_week, _ = stub_models
+    week = _week_start()
+    wednesday = tools._week_dates(week)[2]
+    tools.set_away_stretch(wednesday, "breakfast", wednesday, "dinner")
+    stub_week(_days(week, lambda d: ["Trail Mix Cups"] if d == wednesday else [APPLE]))
+
+    plan = agent.generate_weekly_plan(week)
+
+    assert _snacks_on(plan["weekly_plan_id"], wednesday) == []
+    tools.approve_weekly_plan(plan["weekly_plan_id"])
+    names = _names()
+    assert "cashews" not in names and "raisins" not in names, names
+    assert "apples" in names, "the other days' snacks are still bought"
+
+
+def test_marking_a_day_away_after_approval_takes_its_snacks_off_the_list(chili, stub_models):
+    stub_week, _ = stub_models
+    week = _week_start()
+    wednesday = tools._week_dates(week)[2]
+    stub_week(_days(week, lambda d: [APPLE, "Trail Mix Cups"] if d == wednesday else [APPLE]))
+    plan = agent.generate_weekly_plan(week)
+    tools.approve_weekly_plan(plan["weekly_plan_id"])
+    assert "cashews" in _names()
+
+    tools.set_away_stretch(wednesday, "breakfast", wednesday, "dinner")
+
+    assert _snacks_on(plan["weekly_plan_id"], wednesday) == []
+    names = _names()
+    assert "cashews" not in names and "raisins" not in names, names
+    assert "apples" in names, "the apple snack on the other six days keeps its shopping"
+
+
+def test_a_day_with_one_meal_away_keeps_its_snacks(chili, stub_models):
+    stub_week, _ = stub_models
+    week = _week_start()
+    wednesday = tools._week_dates(week)[2]
+    stub_week(_days(week, lambda d: [APPLE, "Trail Mix Cups"] if d == wednesday else [APPLE]))
+    plan = agent.generate_weekly_plan(week)
+    tools.approve_weekly_plan(plan["weekly_plan_id"])
+
+    tools.set_slot_need(wednesday, "dinner", "away")
+
+    assert len(_snacks_on(plan["weekly_plan_id"], wednesday)) == 2
+    assert "cashews" in _names()
