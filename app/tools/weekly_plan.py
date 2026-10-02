@@ -3003,6 +3003,7 @@ def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None
         for row in extras:
             _grocery._reverse_meal_grocery_contributions(row["id"])
         if extras:
+            _release_ready_made_recommendations(conn, [r["id"] for r in extras])
             conn.execute(
                 "DELETE FROM meal_plan_entries WHERE id IN (%s) AND household_id = ?"
                 % ",".join("?" * len(extras)),
@@ -3821,6 +3822,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
                 f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({entry_placeholders})",
                 (household_id(), *entry_ids),
             )
+            _release_ready_made_recommendations(conn, entry_ids)
             conn.execute(
                 f"DELETE FROM meal_plan_entries WHERE household_id = ? AND id IN ({entry_placeholders})",
                 (household_id(), *entry_ids),
@@ -7174,6 +7176,10 @@ def _replace_slot_entries(
         # to "what do I need to defrost?", for a meal that is no longer
         # planned. A thaw already TICKED is held rather than lost.
         held_thawed = _release_prep_rows(conn, old_entry_ids)
+        # A ready-made edge suggesting a double batch of the outgoing dish
+        # names a row about to go; cleared, not re-pointed at the new dish
+        # (that is a different meal than the one anybody agreed to double).
+        _release_ready_made_recommendations(conn, old_entry_ids)
         # By id, not by (date, slot): a slot legitimately holding two
         # snacks must lose only the one being replaced. With no old_meal
         # this is every row in the slot, which is exactly what the by-slot
@@ -7547,6 +7553,7 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
         for old_id in old_ids:
             _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
         held_thawed = _release_prep_rows(conn, old_ids)
+        _release_ready_made_recommendations(conn, old_ids)
         deleted = sum(
             conn.execute(
                 "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",

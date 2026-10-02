@@ -431,6 +431,12 @@ def discard_failed_plan(weekly_plan_id: int) -> dict:
     conn = None
     try:
         conn = get_conn()
+        _weekly_plan._release_ready_made_recommendations(conn, [
+            r["id"] for r in conn.execute(
+                "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
+                (weekly_plan_id, household_id()),
+            ).fetchall()
+        ])
         cur = conn.execute(
             "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
             (weekly_plan_id, household_id()),

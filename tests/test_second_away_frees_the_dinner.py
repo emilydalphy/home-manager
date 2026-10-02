@@ -193,3 +193,112 @@ def test_resetting_the_week_does_not_crash():
 
     assert _dinner_states() == []
     assert _recommended_from(entry_id) == []
+
+
+# --------------------------------------- the other doors that delete a row
+#
+# Found by the adversarial verifier on the first commit: the same key blocks
+# every delete of a dinner a ready-made edge names. One test per door, each
+# red on main with the same IntegrityError.
+
+def _tacos():
+    tools.add_recipe("Tacos", ingredients=[{"item": "Tortillas", "qty": "8"}], default_servings=2)
+
+
+def test_swapping_the_recommended_dinner_does_not_crash():
+    """CATCH. The everyday swap (_replace_slot_entries). Cleared, not re-pointed."""
+    plan_id, entry_id = _approved_week()
+    _tacos()
+    _alex_away()
+    edge = _recommended_from(entry_id)[0]
+
+    weekly_plan.swap_meal_in_plan(plan_id, DINNER_DAY, "Tacos", slot="dinner")
+
+    assert _recommended_from(entry_id) == []
+    need = slot_needs.get_slot_need(edge["date"], edge["slot"])
+    assert need["need"] == "ready_made"
+    assert need["recommended_batch_from_entry_id"] is None
+    assert "Black beans" not in _needed_items()
+    assert "Tortillas" in _needed_items()
+
+
+def test_swapping_a_confirmed_recommended_dinner_does_not_crash():
+    """CATCH. The same swap after the household said yes to the double batch."""
+    plan_id, entry_id = _approved_week()
+    _tacos()
+    _alex_away()
+    edge = _recommended_from(entry_id)[0]
+    slot_needs.confirm_slot_recommendation(edge["date"], edge["slot"])
+
+    weekly_plan.swap_meal_in_plan(plan_id, DINNER_DAY, "Tacos", slot="dinner")
+
+    need = slot_needs.get_slot_need(edge["date"], edge["slot"])
+    assert need["recommended_batch_from_entry_id"] is None
+    assert not need["recommendation_confirmed"]
+
+
+def test_the_multi_day_swap_does_not_crash():
+    """CATCH. replace_dish_on_days, the Swap on a multi-day row."""
+    plan_id, entry_id = _approved_week()
+    _tacos()
+    _alex_away()
+
+    weekly_plan.replace_dish_on_days(plan_id, [
+        {"old_entry_id": entry_id, "date": DINNER_DAY, "slot": "dinner", "new_meal": "Tacos"},
+    ])
+
+    assert _recommended_from(entry_id) == []
+    assert _dinner_states() == ["planned"]
+
+
+def test_a_new_plan_taking_over_the_day_does_not_crash():
+    """CATCH. _release_plan_days, reached through retire_overlapping_plans."""
+    plan_id, entry_id = _approved_week()
+    _alex_away()
+    new_plan_id = tools.create_weekly_plan(START.isoformat())["weekly_plan_id"]
+    assert new_plan_id != plan_id
+
+    weekly_plan.retire_overlapping_plans(new_plan_id, START.isoformat(), 7)
+
+    assert _recommended_from(entry_id) == []
+    conn = get_conn()
+    assert conn.execute("SELECT 1 FROM meal_plan_entries WHERE id = ?", (entry_id,)).fetchone() is None
+    conn.close()
+
+
+def test_dedupe_of_a_doubled_slot_does_not_crash():
+    """CATCH. _dedupe_duplicate_slots removing the second row, which the edge names."""
+    plan_id, first_id = _approved_week()
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO meal_plan_entries (household_id, date, slot, weekly_plan_id, slot_state, freeform_meal) "
+        "VALUES (?, ?, 'dinner', ?, 'planned', 'Soup')",
+        (tools.household_id(), DINNER_DAY, plan_id),
+    )
+    dup_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    _alex_away()
+    # _recommend_ready_made picks the newest row on the latest date: the duplicate.
+    assert _recommended_from(dup_id), "setup: the edge must name the row dedupe removes"
+
+    weekly_plan._dedupe_duplicate_slots(plan_id, [{"date": DINNER_DAY, "slot": "dinner", "count": 2}])
+
+    assert _recommended_from(dup_id) == []
+    assert _dinner_states() == ["planned"]
+
+
+def test_discarding_a_failed_plan_removes_its_meals():
+    """CATCH. discard_failed_plan swallows the error, so main reports 0 meals removed and leaves them."""
+    from app.tools import meal_plans
+
+    plan_id, entry_id = _approved_week()
+    _alex_away()
+
+    result = meal_plans.discard_failed_plan(plan_id)
+
+    assert result["meals_removed"] >= 1
+    assert _recommended_from(entry_id) == []
+    conn = get_conn()
+    assert conn.execute("SELECT 1 FROM meal_plan_entries WHERE id = ?", (entry_id,)).fetchone() is None
+    conn.close()
