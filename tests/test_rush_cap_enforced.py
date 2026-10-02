@@ -1196,12 +1196,13 @@ def test_generations_own_fold_puts_a_repeated_over_cap_dinner_out_of_reach(
     assert len(_cap_warnings(plan_id, week)) == 2, "and plan_quality goes on warning"
 
 
-def test_a_lunch_over_its_cap_is_still_only_warned_about(capped, stub_model, run):
+def test_a_lunch_over_its_cap_is_repicked_never_traded(capped, stub_model, run):
     """
-    CHAR. The weekday lunch cap is the week's own answer now (step 3,
-    "Weekday lunches") and swap_dinner_nights is dinner-only; this card is
-    about dinner. A weekday lunch cooked that day is still only warned
-    about. Invert this when lunch is enforced too.
+    INVERTED 2026-10-02 (Loop Board: "A weekday lunch you said you'd cook in
+    20 minutes is drafted at 35"). Was CHAR: lunch only warned about. Lunch
+    is now held to its cap by the re-pick alone — there is no lunch door
+    like swap_dinner_nights, so nothing is ever traded. See
+    tests/test_lunch_cap_enforced.py for the lunch carve-outs.
     """
     week = _monday()
     dates = tools._week_dates(week)
@@ -1220,9 +1221,10 @@ def test_a_lunch_over_its_cap_is_still_only_warned_about(capped, stub_model, run
 
     plan_id, seen = run(week, None)
 
-    assert seen["result"]["repicked"] == [] and seen["result"]["moved"] == []
+    assert seen["result"]["moved"] == [], "no trade: stage 1 is dinner-only"
+    assert {x["slot"] for x in seen["result"]["repicked"]} == {"lunch"}
     lunch_warnings = [v for v in plan_quality.check_week(
         plan_quality._load_plan_entries(plan_id),
         {"prep_days": [], "lunch_kinds": {}},
     ) if v.rule == "weekday_lunch_cap_respected"]
-    assert len(lunch_warnings) == 5, "the five weekday lunches, warned about and not repaired"
+    assert lunch_warnings == [], "the five weekday lunches, each brought inside 20 minutes"
