@@ -1168,6 +1168,9 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     ignoring case and singular/plural) into one line each, combining
     quantities with the
     same logic add_grocery_item uses automatically for new additions.
+    Two weeks' plans each keep their OWN line for the same item while both
+    are live (e.g. this week's turkey and next week's) — that is not a
+    duplicate, and this leaves those two apart on purpose.
     Call this if the user asks to clean up/consolidate the list, or if you
     notice the same item appears more than once — items added since
     consolidation shipped shouldn't duplicate going forward, but this

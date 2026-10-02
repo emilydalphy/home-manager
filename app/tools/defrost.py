@@ -1125,9 +1125,10 @@ def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
     "Chicken Thighs" in the plan.
 
     Scoped to THIS plan's lines — stamped with it (source_weekly_plan_id),
-    or counted into by one of its meals (meal_plan_grocery_links: the
-    ingest restamps a merged line to the LATEST plan, so the stamp alone
-    would lose this week's line to next week's approval) — plus the loose
+    or counted into by one of its meals (meal_plan_grocery_links: a line
+    two weeks share — a spice line, since 2026-10-02 the only plan line
+    the ingest lets another week join — carries the LATEST plan's stamp,
+    so the stamp alone would lose it to next week's approval) — plus the loose
     ones no plan wrote (NULL — a hand-added "chicken thighs" is still the
     line a tapped chip would take off). Never another plan's own line:
     next week's line set aside by next week's step is not this week's

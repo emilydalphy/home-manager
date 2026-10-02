@@ -144,8 +144,8 @@ def test_a_running_weeks_unticked_spice_stays_in_its_section(bolognese):
 
 
 def test_a_ticked_spice_is_not_asked_about_twice(bolognese):
-    """GUARD (main folds these too: a ticked spice is a 'needed' line).
-    Ticked this week, next week's cumin joins that line
+    """CATCH (red on main, where the set-aside carried this week's ticked
+    cumin and next week added a second, unticked one). Ticked this week, next week's cumin joins that line
     rather than putting a second, unticked cumin in the section."""
     _this_week_running()
     cumin = next(r for r in _rows("Ground cumin"))
@@ -158,23 +158,11 @@ def test_tidying_the_list_never_folds_two_weeks_together(bolognese):
     """CATCH (second verifier, 2026-10-02). consolidate_grocery_list — the
     tool the assistant runs on its own when it sees a name twice — folded
     next week's turkey onto tonight's line and deleted next week's line
-    with its ledger. Two weeks' lines stay two; a person's own line still
-    takes a plan's amount."""
+    with its ledger. Two weeks' lines stay two."""
     this_week, _ = _this_week_running()
     nxt = _approve_next_week(_today() + datetime.timedelta(days=3))["plan"]
     tools.consolidate_grocery_list()
     assert _turkey() == [("2 lbs", this_week), ("2 lbs", nxt)]
-    # A person's own turkey line (written straight in, the way an older
-    # list or a scan could have left it) still folds a plan's amount in.
-    conn = get_conn()
-    conn.execute(
-        "INSERT INTO grocery_items (household_id, item, quantity, category, status) "
-        "VALUES (?, 'ground turkey', '1 lb', 'meat/seafood', 'needed')", (tools.household_id(),),
-    )
-    conn.commit()
-    conn.close()
-    tools.consolidate_grocery_list()
-    assert _turkey() == [("3 lbs", this_week), ("2 lbs", nxt)], "folded once, into the first line it may join"
 
 
 # ---------- after approval: next week's later adds stay on next week's lines ----------

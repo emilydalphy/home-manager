@@ -443,7 +443,8 @@ why*, not duplicating the diff.
   and an unticked spice reminder from any week (a reminder, not an amount).
   `consolidate_grocery_list` (which the assistant runs unprompted on a
   repeated name) follows the same rule, or it folded the two weeks straight
-  back. Spice lines are exempt both ways — one jar per name, ticked or not.
+  back. Spice-named lines are exempt from the merge rule — one jar per name,
+  ticked or not (consolidate has no such exemption; the merge keeps it moot).
   Consequence: while two weeks are live the Shop list can show the same item
   twice (one line per week), and approving two weeks ahead gives two lines /
   two packages rather than one summed line — flagged for Emily. Merged `grocery-generic-specific-merge` in first, so this
