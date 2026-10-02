@@ -1104,9 +1104,11 @@ _LIVE_PLAN_STATUSES = ("draft", "approved")
 
 # Why an item's line cannot come off the list even though one exists —
 # the one reason today: another live plan's meal is counted into the same
-# line (the ingest folds two weeks' chicken onto one line while the first
-# is unbought — grocery._merge_target), so this week's yes must not take
-# next week's share off the list. The screen says the fridge half alone.
+# line, so this week's yes must not take that meal's share off the list.
+# Since 2026-10-02 the ingest never folds two weeks' amount lines together
+# (grocery._merge_target), so the way in is a line both weeks joined — a
+# person's own hand-added line, which takes every plan's amount. The screen
+# says the fridge half alone.
 ON_LIST_SHARED = "shared"
 
 

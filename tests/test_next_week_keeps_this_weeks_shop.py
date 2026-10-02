@@ -12,9 +12,11 @@ Planning next week before this week ends must not hide this week's shopping
 Root cause: grocery.set_aside_carried_over_items counted a plan as "last
 week" once its period had STARTED, which takes in the week the household
 is still in. Now only a plan whose period has ENDED is a leftover; a week
-still running keeps its lines on the list as this week's, and they are held
-out of the new week's ingest just long enough that its amounts land on
-their own lines (the 2026-09-13 quantity-inflation fix, kept).
+still running keeps its lines on the list as this week's. And a plan's
+amount never merges onto (or consolidates with) ANOTHER plan's amount line,
+so the new week's amounts — at approval and after it — land on their own
+lines (the 2026-09-13 quantity-inflation fix, kept). Spice lines are the one
+exception: one jar per name, whichever week asked.
 
 Every test marked CATCH is red on main at 926bab4; GUARD tests pass on both.
 """
@@ -94,8 +96,8 @@ def test_next_week_keeps_this_weeks_shop(bolognese):
 
 def test_the_two_weeks_amounts_never_sum_onto_one_line(bolognese):
     """GUARD (the 2026-09-13 inflation fix, kept — passes on main too, where
-    the running week was set aside instead). Held out of the ingest,
-    this week's 2 lbs is still 2 lbs and next week's 2 lbs lands on a line
+    the running week was set aside instead). A plan never merges onto
+    another plan's line, so this week's 2 lbs is still 2 lbs and next week's 2 lbs lands on a line
     of its own rather than making 4 lbs on this week's."""
     _this_week_running()
     _approve_next_week(_today() + datetime.timedelta(days=3))
@@ -125,12 +127,54 @@ def test_the_last_day_of_the_week_is_still_this_week(bolognese):
 
 def test_a_running_weeks_unticked_spice_stays_in_its_section(bolognese):
     """CATCH. The set-aside used to delete an earlier week's unticked
-    spices; this week's cumin is still this week's business, so it stays
-    in the section — once, because a spice reminder is shared across
+    spices, and tonight's meal lost its cumin from the ledger with it;
+    this week's cumin is still this week's business, so tonight keeps it.
+    It shows in the section once, because a spice line is shared across
     weeks rather than an amount owned by one."""
-    _this_week_running()
+    _, tonight = _this_week_running()
     _approve_next_week(_today() + datetime.timedelta(days=3))
     assert [r["status"] for r in _rows("Ground cumin")] == ["spice"]
+    conn = get_conn()
+    linked = conn.execute(
+        "SELECT COUNT(*) FROM meal_plan_grocery_links l JOIN grocery_items g ON g.id = l.grocery_item_id "
+        "WHERE l.meal_plan_entry_id = ? AND g.item = 'Ground cumin'", (tonight,),
+    ).fetchone()[0]
+    conn.close()
+    assert linked == 1, "tonight's cumin is still on the list for tonight"
+
+
+def test_a_ticked_spice_is_not_asked_about_twice(bolognese):
+    """GUARD (main folds these too: a ticked spice is a 'needed' line).
+    Ticked this week, next week's cumin joins that line
+    rather than putting a second, unticked cumin in the section."""
+    _this_week_running()
+    cumin = next(r for r in _rows("Ground cumin"))
+    tools.tick_spice(cumin["id"])
+    _approve_next_week(_today() + datetime.timedelta(days=3))
+    assert [r["status"] for r in _rows("Ground cumin")] == ["needed"]
+
+
+def test_tidying_the_list_never_folds_two_weeks_together(bolognese):
+    """CATCH (second verifier, 2026-10-02). consolidate_grocery_list — the
+    tool the assistant runs on its own when it sees a name twice — folded
+    next week's turkey onto tonight's line and deleted next week's line
+    with its ledger. Two weeks' lines stay two; a person's own line still
+    takes a plan's amount."""
+    this_week, _ = _this_week_running()
+    nxt = _approve_next_week(_today() + datetime.timedelta(days=3))["plan"]
+    tools.consolidate_grocery_list()
+    assert _turkey() == [("2 lbs", this_week), ("2 lbs", nxt)]
+    # A person's own turkey line (written straight in, the way an older
+    # list or a scan could have left it) still folds a plan's amount in.
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO grocery_items (household_id, item, quantity, category, status) "
+        "VALUES (?, 'ground turkey', '1 lb', 'meat/seafood', 'needed')", (tools.household_id(),),
+    )
+    conn.commit()
+    conn.close()
+    tools.consolidate_grocery_list()
+    assert _turkey() == [("3 lbs", this_week), ("2 lbs", nxt)], "folded once, into the first line it may join"
 
 
 # ---------- after approval: next week's later adds stay on next week's lines ----------
@@ -200,9 +244,8 @@ def test_a_week_that_has_ended_is_still_asked_about(bolognese):
 
 
 def test_a_failed_approval_puts_this_weeks_lines_back(bolognese):
-    """GUARD. The hold lives inside the approval's one transaction: if the
-    ingest blows up, nothing of it survives and this week's lines are
-    exactly as they were."""
+    """GUARD. If the approval's ingest blows up, its one transaction rolls
+    back and this week's lines are exactly as they were."""
     this_week, _ = _this_week_running()
     start = _today() + datetime.timedelta(days=3)
     plan = _plan(start)

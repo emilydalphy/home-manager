@@ -326,15 +326,18 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
     belonged to neither week, and tonight's line gone from this week's
     ledger reading. Each week keeps its own line, which is also what the
     2026-09-13 carry-over rule wanted at approval. A plan's add still
-    joins a person's line (standing, see above) and an unticked spice
-    reminder from any week — that is a reminder, not an amount.
+    joins a person's line (standing, see above) and a spice line from any
+    week, ticked or not: the section is one jar per name, not one per week,
+    and a second cumin row beside a ticked one is a question asked twice.
     """
+    from . import spices as _spices  # lazy: spices imports this module
+
     kin = None
     for row in same_name:
         other_plan = row["source_weekly_plan_id"]
         if (
             source_plan is not None and other_plan is not None and other_plan != source_plan
-            and row["status"] != "spice"
+            and row["status"] != "spice" and not _spices.is_spice(row["item"])
         ):
             continue
         merged_qty, merged = consolidate(row["quantity"] or "", quantity)
@@ -1191,31 +1194,49 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     for entries in groups.values():
         if len(entries) < 2:
             continue
-        keep = entries[0]
-        merged_qty = keep["quantity"] or ""
-        keep_name = keep["item"]
-        for extra in entries[1:]:
-            # Two lines the list keeps apart on purpose — a person's "1"
-            # beside a plan's "2 cups" (see _merge_target) — stay apart
-            # here too, rather than being glued into the "1 + 2 cups"
-            # nothing can take back apart.
-            candidate, reconciled = _try_consolidate_quantity(merged_qty, extra["quantity"] or "")
-            if not reconciled:
+        # Each line folds into the first earlier line it may join, by the
+        # same rule add_grocery_item's merge follows (_merge_target): two
+        # DIFFERENT plans' amount lines never fold together (QA walk
+        # 2026-10-02 — with next week approved while this week still runs,
+        # both weeks' turkey is on the list on purpose, and folding them
+        # put next week's amount on tonight's line and deleted next week's
+        # line with its ledger). A person's line may still take a plan's.
+        keepers: list[dict] = []
+        for entry in entries:
+            plan = entry["source_weekly_plan_id"]
+            target = None
+            for k in keepers:
+                if k["source_weekly_plan_id"] is not None and plan is not None and k["source_weekly_plan_id"] != plan:
+                    continue
+                # Two lines the list keeps apart on purpose — a person's "1"
+                # beside a plan's "2 cups" (see _merge_target) — stay apart
+                # here too, rather than being glued into the "1 + 2 cups"
+                # nothing can take back apart.
+                candidate, reconciled = _try_consolidate_quantity(k["merged_qty"], entry["quantity"] or "")
+                if reconciled:
+                    target = (k, candidate)
+                    break
+            if target is None:
+                keepers.append(dict(entry, merged_qty=entry["quantity"] or "", keep_name=entry["item"], absorbed=0))
                 continue
-            merged_qty = candidate
+            k, candidate = target
+            k["merged_qty"] = candidate
             # The variety's name on a plan's line; a person's typed line
             # keeps its wording, as it does in add_grocery_item.
-            if keep["source_weekly_plan_id"] is not None:
-                keep_name = _more_specific_name(keep_name, extra["item"])
+            if k["source_weekly_plan_id"] is not None:
+                k["keep_name"] = _more_specific_name(k["keep_name"], entry["item"])
             conn.execute(
                 "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
-                (extra["id"], household_id()),
+                (entry["id"], household_id()),
             )
+            k["absorbed"] += 1
             merged_count += 1
-        conn.execute(
-            "UPDATE grocery_items SET item = ?, quantity = ? WHERE id = ? AND household_id = ?",
-            (keep_name, merged_qty, keep["id"], household_id()),
-        )
+        for k in keepers:
+            if k["absorbed"]:
+                conn.execute(
+                    "UPDATE grocery_items SET item = ?, quantity = ? WHERE id = ? AND household_id = ?",
+                    (k["keep_name"], k["merged_qty"], k["id"], household_id()),
+                )
     conn.commit()
     conn.close()
     return {"lines_merged_away": merged_count}

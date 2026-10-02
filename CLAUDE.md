@@ -441,8 +441,12 @@ why*, not duplicating the diff.
   Each week keeps its own line; that is also what holds the 2026-09-13
   no-summing rule at approval. A plan still joins a person's hand-added line
   and an unticked spice reminder from any week (a reminder, not an amount).
-  Consequence: approving two weeks ahead now gives two lines rather than one
-  summed line. Merged `grocery-generic-specific-merge` in first, so this
+  `consolidate_grocery_list` (which the assistant runs unprompted on a
+  repeated name) follows the same rule, or it folded the two weeks straight
+  back. Spice lines are exempt both ways — one jar per name, ticked or not.
+  Consequence: while two weeks are live the Shop list can show the same item
+  twice (one line per week), and approving two weeks ahead gives two lines /
+  two packages rather than one summed line — flagged for Emily. Merged `grocery-generic-specific-merge` in first, so this
   branch merges after that one. **Open for Emily:** when a week ends with
   things unbought and next week was approved early, nothing asks on Monday —
   those lines stay on the list as their own lines until the next approval
