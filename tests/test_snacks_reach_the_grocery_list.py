@@ -270,3 +270,23 @@ def test_a_day_with_one_meal_away_keeps_its_snacks(chili, stub_models):
 
     assert len(_snacks_on(plan["weekly_plan_id"], wednesday)) == 2
     assert "cashews" in _names()
+
+
+def test_a_dinner_only_household_keeps_its_snacks_when_one_dinner_is_away(chili, stub_models):
+    """Second review, 2026-10-02: breakfast and lunch planned_empty because
+    the household asked for none ("I've left this to you") are not 'nobody
+    home'. One dinner away on such a day must not take its snacks."""
+    tools.set_household_meal_preferences(breakfasts_per_week=0, lunches_per_week=0)
+    stub_week, _ = stub_models
+    week = _week_start()
+    wednesday = tools._week_dates(week)[2]
+    stub_week(_days(week, lambda d: [APPLE, "Trail Mix Cups"] if d == wednesday else [APPLE]))
+    plan = agent.generate_weekly_plan(week)
+    tools.approve_weekly_plan(plan["weekly_plan_id"])
+    assert len(_snacks_on(plan["weekly_plan_id"], wednesday)) == 2
+    assert "cashews" in _names()
+
+    tools.set_slot_need(wednesday, "dinner", "away")
+
+    assert len(_snacks_on(plan["weekly_plan_id"], wednesday)) == 2
+    assert "cashews" in _names()

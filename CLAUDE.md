@@ -444,13 +444,16 @@ why*, not duplicating the diff.
   the recipe writer leaves off its list.) Review found the other half: a
   snack on a day whose every meal is away was now bought, and marking a day
   fully away after approval left its snacks and their groceries. So
-  `slot_needs._settle_slot_empty` (every away / left-out / off / gone-by
-  door) drops the day's snacks, groceries reversed, once all three meals
-  are planned_empty; one meal away keeps them, and coming home again does
-  not put them back. Breakfast/lunch still trust the model's "not new"
+  `slot_needs._settle_slot_empty` (away, attendance, holiday-out, left-out
+  days; tonight's night-off does NOT go through it) drops the day's snacks,
+  groceries reversed, once every meal on the day is empty AS AN ABSENCE
+  (away need, skipped day, out night). Usual-week "off", a count of 0 and
+  gone-by meals are not absences: a dinner-only household with one dinner
+  away keeps its snacks (second review measured the first cut deleting
+  them). Coming home again does not put snacks back. Breakfast/lunch still trust the model's "not new"
   flag — a possible follow-up. Weeks already drafted or approved before
   this are not back-filled. `tests/test_snacks_reach_the_grocery_list.py`
-  (9; 8 red on main).
+  (10; 8 red on main, 1 more red on the first cut of the away rule).
 
 - **2026-10-01 — A boundary test on `main` passed only when two statements
   landed in the same SQLite second, so the suite was intermittently red for

@@ -171,26 +171,52 @@ def _settle_slot_empty(
             conn.close()
 
 
+def _is_an_absence(derived_from_json: str | None) -> bool:
+    """A planned_empty meal that says NOBODY IS HOME: an away need (a trip,
+    attendance taking the last person out, a holiday out), a day left out
+    of the week, or an out night. Not a meal the household simply doesn't
+    have planned — usual-week "off", a count of 0, a meal already gone by:
+    those say nothing about whether anyone is home to snack."""
+    try:
+        derived = json.loads(derived_from_json or "{}") or {}
+    except (TypeError, ValueError):
+        return False
+    if not isinstance(derived, dict):
+        return False
+    return derived.get("need") == "away" or derived.get("constraint") in (
+        _week_intake.SKIPPED_DAY_CONSTRAINT, "nobody_home",
+    )
+
+
 def _clear_snacks_if_nobody_home(plan_id: int, date_str: str, conn) -> int:
     """
-    A day whose every meal is now planned_empty — away, a day left out, the
-    usual week's off meals, meals already gone by — has nobody eating at
-    home, so its snacks go too, with anything they put on the shopping list
-    (clear_plan_slot reverses it, the same reversal a snack swap makes).
-    Loop Board "Snacks never reach the grocery list", review 2026-10-02:
-    once snacks were shopped for, a model week with a snack on an all-away
-    Wednesday bought it, and marking a day fully away after approval left
-    the snacks and their groceries behind. Same test as
-    meal_variety._nobody_home (rows present, every one planned_empty), on
-    the caller's connection. Nothing puts the snacks back if someone comes
-    home again; that is the same as a skipped day.
+    A day whose every meal is now planned_empty BECAUSE NOBODY IS HOME (see
+    _is_an_absence) loses its snacks too, with anything they put on the
+    shopping list (clear_plan_slot reverses it, the same reversal a snack
+    swap makes). Loop Board "Snacks never reach the grocery list", review
+    2026-10-02: once snacks were shopped for, a model week with a snack on
+    an all-away Wednesday bought it, and marking a day fully away after
+    approval left the snacks and their groceries behind.
+
+    Every empty meal has to be an absence, not merely empty. A household
+    that plans dinners only has breakfast and lunch planned_empty every day
+    ("I've left this to you"); one dinner away does not mean nobody is home
+    to eat a snack, and the second review measured exactly that deleting
+    the day's snacks. When in doubt the snack stays — one snack too many on
+    the list beats a snack nobody bought.
+
+    Runs on the caller's connection. Nothing puts the snacks back if someone
+    comes home again; that is the same as a day left out.
     """
     rows = conn.execute(
-        "SELECT slot_state FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
-        "AND date = ? AND slot IN ('breakfast', 'lunch', 'dinner') AND component_category IS NULL",
+        "SELECT slot_state, derived_from_json FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND household_id = ? AND date = ? "
+        "AND slot IN ('breakfast', 'lunch', 'dinner') AND component_category IS NULL",
         (plan_id, household_id(), date_str),
     ).fetchall()
-    if not rows or any(r["slot_state"] != "planned_empty" for r in rows):
+    if not rows or any(
+        r["slot_state"] != "planned_empty" or not _is_an_absence(r["derived_from_json"]) for r in rows
+    ):
         return 0
     return _weekly_plan.clear_plan_slot(plan_id, date_str, "snack", conn=conn)
 
