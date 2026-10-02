@@ -593,6 +593,24 @@ def generation_plan(dates: list[str], skipped: list[str] | None = None) -> dict:
     return out
 
 
+def switched_off_meals() -> set[str]:
+    """
+    The meals this household has switched off ENTIRELY in its usual week:
+    no day of the grid has them on (breakfast set to None in onboarding, or
+    every cell of its row tapped off). Read through the same state
+    get_usual_week reads, so a household that never saved a usual week gets
+    its grid derived from its counts (a count of 0 is off every day) and
+    the answer is the same. A meal that is on most days and off or empty on
+    one is NOT in this set — that day's row keeps its own wording.
+    """
+    conn = get_conn()
+    try:
+        state = _state(conn)
+    finally:
+        conn.close()
+    return {m for m in MEALS if not days_on(state["grid"], m)}
+
+
 def off_slots_on(dates: list[str]) -> set[tuple[str, str]]:
     """{(date, slot)} the saved usual week has off on these dates — what
     "Build a plan" on a left-out day and the menu's can_fill must not fill.
