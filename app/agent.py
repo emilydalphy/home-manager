@@ -6735,6 +6735,7 @@ def _finish_week_slots(
     _cap_enforce.enforce_minutes_caps(
         plan_id, intake, household_memory,
         budget=repick_budget or _allergen_gate.CallBudget(),
+        dates=dates,
     )
 
     # A breakfast or a lunch is never handed back as a question (Emily's

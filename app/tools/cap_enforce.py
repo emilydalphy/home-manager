@@ -104,6 +104,16 @@ another card.
   "you said you'd cook it in 20" — and an unanswered lunch over 20 is
   recorded in `left` with that reason and still warned about.
 
+  TWO THINGS WORTH KNOWING, found by review. (1) A whole-dish lunch
+  re-pick (_whole_dish_nights, when the household's lunch number is met)
+  also replaces DINNERS of the same dish, held to the tightest cap among
+  them — the mirror of what a dinner re-pick already did on main; the
+  `repicked` record names the lunch only. (2) The pass and plan_quality
+  do not quite agree on a prepped-lunch batch: `nights` reads its markers
+  (prep_date / prep_day_cook / constraint) as a batch with no cap, while
+  plan_quality's `fed` check compares "date:lunch" against "entry_id:N"
+  links and so never matches — the tripwire's own gap, left for its card.
+
   STAGE 1 (THE FREE TRADE) DOES NOT EXIST FOR LUNCH, deliberately.
   swap_dinner_nights is dinner-only by name and by contract, and there is
   no lunch door that re-dates rows in place. Building one means deciding
@@ -682,36 +692,36 @@ def _cook_cap(row: dict, intake: dict | None, memory: dict | None) -> int | None
     return _time_caps.minutes_cap(row["date"], "dinner", tags, memory)
 
 
-def _held_for_later_passes(plan_id: int) -> int:
+def _held_for_later_passes(plan_id: int, dates: list[str] | None = None) -> int:
     """
     The calls the lunch and breakfast re-picks must leave in the shared
     budget: one dish's worth (swap_in_place.MAX_PICK_ATTEMPTS) for every
-    dinner still open — dinner_gaps.fill_open_dinners runs after this and
-    plans those, and an open dinner is Emily's decision A (2026-09-27: never
-    when the household is home) — plus one for the allergen sweep, which
-    dinner_gaps holds back too. A lunch over 20 minutes is a smaller cost
-    than a dinner handed back as a question or a clash left on the week.
-    Found by the adversarial review of this branch (2026-10-02): five
-    over-cap lunches spent all six calls and left an open Wednesday dinner
-    open (tests/test_week_generation.py::test_an_open_dinner_the_model_
-    hands_back_is_planned_instead).
+    dinner gap dinner_gaps.fill_open_dinners will plan after this — counted
+    the way IT counts them (dinner_gaps._dinner_gaps: a date with no dinner
+    row, or only an `open` one that does not keep its question), over the
+    same `dates` the generation hands it — plus one for the allergen sweep,
+    which that fill holds back too. An open dinner is Emily's decision A
+    (2026-09-27: never when the household is home); a lunch over 20 minutes
+    is the smaller cost.
+
+    Found by adversarial review of this branch (2026-10-02): five over-cap
+    lunches spent all six calls and an open Wednesday dinner stayed open.
+    The first version counted `slot_state = 'open'` rows and so missed
+    exactly that case — generation never WRITES the model's open dinner
+    ("left unwritten, so fill_open_dinners plans it below"), so the gap is
+    a date with no dinner row. `dates` None (a direct call) reads every
+    date the plan has a row on.
     """
     from . import swap_in_place as _swap
-    conn = get_conn()
-    try:
-        row = conn.execute(
-            "SELECT COUNT(DISTINCT date) AS n FROM meal_plan_entries "
-            "WHERE weekly_plan_id = ? AND household_id = ? AND slot = 'dinner' "
-            "AND slot_state = 'open' AND component_category IS NULL",
-            (plan_id, household_id()),
-        ).fetchone()
-    finally:
-        conn.close()
-    return _swap.MAX_PICK_ATTEMPTS * (1 + int(row["n"] or 0))
+    rows = _dinner_gaps._plan_rows(plan_id)
+    if dates is None:
+        dates = sorted({r["date"] for r in rows})
+    gaps = len(_dinner_gaps._dinner_gaps(rows, list(dates)))
+    return _swap.MAX_PICK_ATTEMPTS * (1 + gaps)
 
 
 def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None, *,
-                         budget=None, picker=None) -> dict:
+                         budget=None, picker=None, dates: list[str] | None = None) -> dict:
     """
     Make "short on time" true of the week rather than merely asked for.
     Re-arranges first (free), then re-picks what no night can take. Never
@@ -722,7 +732,9 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     both stages, each with why this pass could not touch it, which is what
     plan_quality then warns about; `flagged` the subset the household is
     told about on the draft, which is the ones they asked for by name
-    (dinners only — draft_flags reads dinners). Every `repicked` and `left`
+    (dinners only — draft_flags reads dinners). `dates` is the generation's
+    own days, so the lunch stage knows how many dinner gaps the fill after
+    it must still plan (_held_for_later_passes). Every `repicked` and `left`
     record carries its `slot`: lunch and breakfast are re-picked after the
     dinners, re-pick only (see "LUNCH AND BREAKFAST" in the module
     docstring).
@@ -743,7 +755,14 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
         repicked = repick(plan_id, intake, memory, budget=budget, picker=picker)
     except Exception:
         logger.exception("Plan %s: re-picking a dinner over its time cap failed", plan_id)
-    lunch_budget = _dinner_gaps._Reserved(budget, _held_for_later_passes(plan_id))
+    try:
+        held = _held_for_later_passes(plan_id, dates)
+    except Exception:
+        # Unknown is held as "the whole budget": a lunch over its cap is the
+        # smaller cost than a dinner left open.
+        logger.exception("Plan %s: counting the dinners still to plan failed", plan_id)
+        held = budget.left
+    lunch_budget = _dinner_gaps._Reserved(budget, held)
     for slot in REPICK_ONLY_SLOTS:
         try:
             repicked += repick(plan_id, intake, memory, budget=lunch_budget, picker=picker, slot=slot)

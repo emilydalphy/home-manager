@@ -391,10 +391,39 @@ def test_an_open_dinner_is_still_planned_after_the_lunch_stage(stub_model, monke
         "reasoning": "", "slot_state": "open", "open_reason": "I'd rather ask.",
     })
     stub_model(days)
+    from app.tools import dinner_gaps
+    real_fill = dinner_gaps.fill_open_dinners
+    fills = []
+
+    def _spy(*a, **k):
+        fills.append(real_fill(*a, **k))
+        return fills[-1]
+
+    monkeypatch.setattr(agent._dinner_gaps, "fill_open_dinners", _spy)
 
     plan = agent.generate_weekly_plan(week)
 
     assert _slots_for(plan["weekly_plan_id"])[(wednesday, "dinner")]["slot_state"] == "planned"
+    # And planned by the FIRST fill, with its fresh pick — not rescued by
+    # the fill after the sweep spending the sweep's own reserve (what the
+    # first version of the hold let happen; the review measured it).
+    assert fills and fills[0]["left"] == [] and [r["date"] for r in fills[0]["repicked"]] == [wednesday]
+
+
+def test_the_hold_counts_a_dinner_generation_never_wrote(generate_only):
+    """The model's open dinner is left UNWRITTEN by generation, so the gap
+    is a date with no dinner row; the hold counts it as fill_open_dinners
+    does, plus the sweep's reserve. An allergen-kept question is not a gap."""
+    from app.tools import swap_in_place
+    week, dates, plan_id = _one_long_lunch(generate_only, 0)
+    conn = get_conn()
+    conn.execute("DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND slot = 'dinner' AND date = ?",
+                 (plan_id, dates[2]))
+    conn.commit()
+    conn.close()
+    assert cap_enforce._held_for_later_passes(plan_id, dates) == 2 * swap_in_place.MAX_PICK_ATTEMPTS
+    assert cap_enforce._held_for_later_passes(plan_id, [d for d in dates if d != dates[2]]) == \
+        swap_in_place.MAX_PICK_ATTEMPTS, "a day the generation isn't planning is not a gap"
 
 
 # ---------- 5. the cap told to the model ----------
