@@ -6847,7 +6847,11 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
    The instruction IS the screen — display face at 26px, because it is read
    across a counter rather than held. */
 .cook-cooker-body { gap: 14px; }
-.cook-cooker-eyebrow { margin: 0; white-space: normal; }
+/* Two classes, not one: .cook-eyebrow (below, same specificity) sets
+   white-space: nowrap for its short labels and, coming later, used to win —
+   so a long dish name ("DISH · STEP 10 OF 10") ran the step screen sideways
+   on a phone. The dish name wraps, and a name with no spaces breaks. */
+.cook-eyebrow.cook-cooker-eyebrow { margin: 0; white-space: normal; overflow-wrap: anywhere; min-width: 0; }
 /* One 4px segment per step; lit (apricot) up to the one you are on, the
    rest a hairline. It changes on the tap, it does not animate — the app's
    motions are spoken for (§4), and under reduced motion there is nothing
@@ -7171,10 +7175,15 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
    that does nothing. */
 span.cook-week-name { cursor: default; }
 .cook-badge {
-  height: 24px;
-  flex: 0 0 auto;
-  white-space: nowrap;
-  padding: 0 9px;
+  min-height: 14px; /* + 2 x 5px padding = the 24px chip it always was */
+  /* It can carry a dish name (the prepped batch "feeds" a meal): it shrinks
+     and wraps rather than pushing the row past the screen. */
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 50%;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+  padding: 5px 9px;
   border-radius: 8px;
   background: var(--celadon-tint);
   display: flex;
