@@ -791,7 +791,267 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
         "target_servings": target_servings,
         "scaled_ingredients": scaled_ingredients,
         "unscaled_items": unscaled_items,
+        # The steps at the same size as the list above them (QA walk
+        # 2026-10-02: a doubled lunch said "add 1 cup rice" over a "2 cups
+        # Rice" chip). See scale_steps for what is and isn't rewritten.
+        "scaled_instructions": scale_steps(
+            recipe.get("instructions") or [],
+            ratio,
+            [ing.get("item") or "" for ing in recipe.get("ingredients") or [] if isinstance(ing, dict)],
+        ),
     }
+
+
+# ---------- amounts inside a step (QA walk, 2026-10-02) ----------
+#
+# A recipe's steps are written at its own default_servings, and every
+# scaling pass in this app — a batch night, a night sized to who is
+# eating, the Cook screen's stepper — rescaled the ingredient list and
+# handed the steps over as written. On a doubled lunch that put "add 1 cup
+# rice" directly above a "2 cups Rice" chip, on one screen, at the stove.
+#
+# scale_steps rewrites ONLY an amount it can tell is an amount of food:
+#
+#   - a number followed by a measuring word ("1 cup", "2 tbsp", "3 cloves",
+#     "200g"), or
+#   - a bare count followed by something on the ingredient list ("juice of
+#     1 lime", "2 large eggs").
+#
+# Everything else is left exactly as written, because a step's numbers are
+# mostly NOT amounts: oven temperatures, minutes, "1-inch pieces", a "9x13"
+# dish, "divide among 4 bowls". A number straight after "a"/"an" or inside
+# "(" is a SIZE ("a 12 oz can", "1 can (14 oz)"), and a measure followed by
+# a vessel word ("2 quart saucepan") is a pot, so those are left too. The
+# arithmetic is scale_recipe's own — the same ratio, the same whole-clove
+# and stick-of-butter rules — so the step and the chip under it say one
+# number. A miss leaves the recipe's own words, which is where every step
+# was before this.
+
+_STEP_FRACTION_CHARS = {
+    "½": 0.5, "⅓": 1 / 3, "⅔": 2 / 3, "¼": 0.25, "¾": 0.75,
+    "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
+}
+# The fractions a step is written back out in — the same set and the same
+# 0.05 tolerance as shell.js's humanQtyAmount, so "¾ cup" in a step and the
+# "¾ cup Rice" chip under it come out of one rule.
+_STEP_NICE_FRACTIONS = (
+    (1 / 8, "⅛"), (1 / 4, "¼"), (1 / 3, "⅓"), (3 / 8, "⅜"), (1 / 2, "½"),
+    (5 / 8, "⅝"), (2 / 3, "⅔"), (3 / 4, "¾"), (7 / 8, "⅞"),
+)
+
+# Measuring words a step's amount can carry, as written -> (canonical unit
+# for scale_recipe's rules, singular form, plural form). Abbreviations keep
+# their one spelling. Deliberately NOT here: pint/quart/inch (pots and
+# pieces far more often than food), "c" and "pinch"/"dash" (freeform).
+_STEP_UNIT_WORDS: dict[str, tuple[str, str, str]] = {}
+for _canon, _sing, _plur in (
+    ("cup", "cup", "cups"),
+    ("tbsp", "tablespoon", "tablespoons"),
+    ("tsp", "teaspoon", "teaspoons"),
+    ("lb", "pound", "pounds"),
+    ("lb", "lb", "lbs"),
+    ("oz", "ounce", "ounces"),
+    ("g", "gram", "grams"),
+    ("kg", "kilogram", "kilograms"),
+    ("ml", "milliliter", "milliliters"),
+    ("l", "liter", "liters"),
+    ("clove", "clove", "cloves"),
+    ("can", "can", "cans"),
+    ("stick", "stick", "sticks"),
+    ("slice", "slice", "slices"),
+    ("sprig", "sprig", "sprigs"),
+    ("head", "head", "heads"),
+    ("bunch", "bunch", "bunches"),
+    ("handful", "handful", "handfuls"),
+):
+    _STEP_UNIT_WORDS[_sing] = (_canon, _sing, _plur)
+    _STEP_UNIT_WORDS[_plur] = (_canon, _sing, _plur)
+for _abbr in ("tbsp", "tsp", "oz", "g", "kg", "ml", "l"):
+    _STEP_UNIT_WORDS[_abbr] = (_abbr, _abbr, _abbr)
+
+# A measure followed by one of these sizes the container, not the food.
+_STEP_VESSEL_WORDS = {
+    "can", "cans", "tin", "tins", "jar", "jars", "package", "packages", "pkg",
+    "bag", "bags", "box", "boxes", "bottle", "bottles", "carton", "cartons",
+    "container", "containers", "tub", "tubs", "block", "blocks", "pan", "pans",
+    "pot", "pots", "saucepan", "skillet", "dish", "casserole", "sheet", "tray",
+}
+_STEP_SIZE_WORDS = ("large", "medium", "small", "whole")
+
+_STEP_NUM = (
+    r"(?:\d+\s+\d+/\d+|\d+\s*[½⅓⅔¼¾⅛⅜⅝⅞]|\d+/\d+|\d+(?:\.\d+)?|[½⅓⅔¼¾⅛⅜⅝⅞])"
+)
+# The amount (or a range of two), not glued to a word, a dash, a slash or a
+# decimal point on its left — so "9x13", "350-degree" and "1/2" read whole.
+_STEP_AMOUNT_RE = re.compile(
+    r"(?<![\w./\-–(])(?P<a>" + _STEP_NUM + r")(?:(?P<sep>\s*(?:-|–|to)\s*)(?P<b>" + _STEP_NUM + r"))?"
+)
+_STEP_UNIT_RE = re.compile(
+    r"(?P<sp>\s*)(?P<unit>" + "|".join(sorted(map(re.escape, _STEP_UNIT_WORDS), key=len, reverse=True)) + r")\b",
+    re.IGNORECASE,
+)
+
+
+def _step_number(text: str) -> float | None:
+    t = text.strip()
+    try:
+        if t and t[-1] in _STEP_FRACTION_CHARS:
+            whole = t[:-1].strip()
+            return (float(whole) if whole else 0.0) + _STEP_FRACTION_CHARS[t[-1]]
+        if "/" in t:
+            parts = t.split()
+            frac = parts[-1]
+            num, den = frac.split("/")
+            return (float(parts[0]) if len(parts) == 2 else 0.0) + float(num) / float(den)
+        return float(t)
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def _step_amount_text(amount: float) -> str:
+    """1.5 -> "1 ½", 0.75 -> "¾", 2 -> "2" — humanQtyAmount's rule."""
+    whole = int(amount + 1e-9)
+    frac = amount - whole
+    if frac < 0.02:
+        return str(whole)
+    best, best_diff = None, 0.05
+    for value, char in _STEP_NICE_FRACTIONS:
+        diff = abs(value - frac)
+        if diff < best_diff:
+            best, best_diff = char, diff
+    if best is None:
+        return f"{amount:.2f}".rstrip("0").rstrip(".")
+    return f"{whole} {best}" if whole else best
+
+
+def _step_scaled(amount: float, ratio: float, unit: str | None) -> tuple[float, str | None]:
+    """scale_recipe's arithmetic for one amount, so the step and the chip
+    agree: a stick cut to a fraction becomes tablespoons, and a thing that
+    only comes whole stays whole."""
+    scaled = amount * ratio
+    if unit == "stick" and abs(scaled - round(scaled)) > 1e-9:
+        return scaled * _STICK_TBSP, "tbsp"
+    if unit in _DISCRETE_UNITS:
+        return max(1.0, float(round(scaled))), unit
+    return scaled, unit
+
+
+def _step_ingredient_forms(items: list[str]) -> list[str]:
+    """The words that name an ingredient in a step — shell.js's
+    cookIngredientNouns, plus the last two words ("chicken thighs")."""
+    forms: set[str] = set()
+    for item in items:
+        base = re.sub(r"[^a-z0-9 ]+", " ", str(item or "").split(",")[0].lower()).strip()
+        if not base:
+            continue
+        words = base.split()
+        found = {base, words[-1], " ".join(words[-2:])}
+        for f in list(found):
+            found.add(f[:-1] if f.endswith("s") else f + "s")
+            if f.endswith("es"):
+                found.add(f[:-2])
+            elif f.endswith("o"):
+                found.add(f + "es")
+        forms |= {f for f in found if len(f) >= 3}
+    return sorted(forms, key=len, reverse=True)
+
+
+def _pluralize_noun(phrase: str, many: bool) -> str:
+    head, sep, last = phrase.rpartition(" ")
+    lower = last.lower()
+    if many and not lower.endswith("s"):
+        last = last + ("es" if lower.endswith(("o", "ch", "sh", "x")) else "s")
+    elif not many and lower.endswith("s") and not lower.endswith("ss"):
+        last = last[:-2] if lower.endswith(("oes", "ches", "shes", "xes")) else last[:-1]
+    return f"{head}{sep}{last}"
+
+
+def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = None) -> list:
+    """The recipe's steps with each amount of food multiplied by `ratio`
+    (see the block comment above for which numbers count). A ratio of 1, a
+    non-positive ratio and a non-string step all come back as written."""
+    steps = list(steps or [])
+    if not ratio or ratio <= 0 or abs(ratio - 1) < 1e-9:
+        return steps
+    forms = _step_ingredient_forms(ingredient_items or [])
+    noun_re = (
+        re.compile(
+            r"(?P<sp>\s+)(?P<size>(?:" + "|".join(_STEP_SIZE_WORDS) + r")\s+)?(?P<noun>"
+            + "|".join(map(re.escape, forms)) + r")\b"
+            r"(?P<tail>\s+(?:clove|breast|thigh|fillet|stalk|sprig|slice|piece|wedge)s?\b)?",
+            re.IGNORECASE,
+        )
+        if forms else None
+    )
+
+    def rewrite(step: str) -> str:
+        out, pos = [], 0
+        for m in _STEP_AMOUNT_RE.finditer(step):
+            if m.start() < pos:
+                continue
+            before = step[:m.start()].rstrip().lower()
+            # "a 12 oz can", "an 8 inch pan" — a size, not an amount.
+            if re.search(r"\b(?:a|an)$", before):
+                continue
+            a = _step_number(m.group("a"))
+            b = _step_number(m.group("b")) if m.group("b") else None
+            if a is None or (m.group("b") and b is None):
+                continue
+            rest = step[m.end():]
+            unit_m = _STEP_UNIT_RE.match(rest)
+            if unit_m:
+                after = rest[unit_m.end():]
+                next_word = re.match(r"\s*([a-z]+)", after.lower())
+                if next_word and next_word.group(1) in _STEP_VESSEL_WORDS:
+                    continue  # "2 quart saucepan", "14 oz can"
+                written = unit_m.group("unit")
+                canon, sing, plur = _STEP_UNIT_WORDS[written.lower()]
+                new_a, new_unit = _step_scaled(a, ratio, canon)
+                new_b = _step_scaled(b, ratio, canon)[0] if b is not None else None
+                biggest = new_b if new_b is not None else new_a
+                if new_unit != canon:
+                    unit_text = new_unit  # a stick cut to tablespoons
+                elif sing == plur:
+                    unit_text = written
+                else:
+                    unit_text = plur if biggest > 1 else sing
+                    if written[:1].isupper():
+                        unit_text = unit_text[:1].upper() + unit_text[1:]
+                amount = _step_amount_text(new_a)
+                if new_b is not None:
+                    amount += m.group("sep") + _step_amount_text(new_b)
+                sp = unit_m.group("sp") or (" " if new_unit != canon else "")
+                out.append(step[pos:m.start()] + amount + sp + unit_text)
+                pos = m.end() + unit_m.end()
+                continue
+            noun_m = noun_re.match(rest) if noun_re else None
+            if not noun_m:
+                continue
+            # "2 garlic cloves" counts cloves, and a clove only comes whole —
+            # the same rule scale_recipe gives "2 cloves garlic".
+            whole_only = "clove" if (noun_m.group("tail") or "").strip().lower().startswith(("clove", "slice", "sprig")) else None
+            new_a = _step_scaled(a, ratio, whole_only)[0]
+            new_b = _step_scaled(b, ratio, whole_only)[0] if b is not None else None
+            biggest = new_b if new_b is not None else new_a
+            amount = _step_amount_text(new_a)
+            if new_b is not None:
+                amount += m.group("sep") + _step_amount_text(new_b)
+            # The count word is the one that agrees with the number: "2 garlic
+            # cloves", not "2 garlics clove". Only ever turned when the count
+            # crosses one, so "2 eggs" made 4 is left as the recipe wrote it.
+            noun, tail = noun_m.group("noun"), noun_m.group("tail") or ""
+            was_many = (b if b is not None else a) > 1
+            if was_many != (biggest > 1):
+                if tail:
+                    tail = _pluralize_noun(tail, biggest > 1)
+                else:
+                    noun = _pluralize_noun(noun, biggest > 1)
+            out.append(step[pos:m.start()] + amount + noun_m.group("sp") + (noun_m.group("size") or "") + noun + tail)
+            pos = m.end() + noun_m.end()
+        out.append(step[pos:])
+        return "".join(out)
+
+    return [rewrite(s) if isinstance(s, str) else s for s in steps]
 
 
 # ---------- cooking measurements (Julia, 2026-09-08) ----------

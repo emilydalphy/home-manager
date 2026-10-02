@@ -1187,6 +1187,11 @@ def _scale_card_to_batch(card: dict, batch_servings: int) -> bool:
         return False
     scaled = _recipes.scale_recipe(card["meal"], batch_servings)
     card["ingredients"] = scaled["scaled_ingredients"] + _side_ingredients_for(card, batch_servings)
+    # ...and the steps at the same size. Until 2026-10-02 only the list was
+    # scaled, and a doubled lunch said "add 1 cup rice" over a "2 cups Rice"
+    # chip (QA walk). The sides' steps stay as written, the way their
+    # ingredients do unless the side says what it was written for.
+    card["instructions"] = scaled["scaled_instructions"] + _side_steps(card.get("sides"))
     card["default_servings"] = batch_servings
     card["servings"] = batch_servings
     return True
@@ -1868,6 +1873,10 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             if scalable:
                 scaled = _recipes.scale_recipe(m["meal"], eaters)
                 m["ingredients"] = scaled["scaled_ingredients"] + _side_ingredients_for(m, eaters)
+                # Same rule as a batch night (_scale_card_to_batch): the
+                # steps follow the list, so a recipe for 4 cooked for 3 does
+                # not say "1 cup rice" over a "¾ cup Rice" chip.
+                m["instructions"] = scaled["scaled_instructions"] + _side_steps(m.get("sides"))
                 m["default_servings"] = eaters
             elif m.get("sides"):
                 # No recipe to scale, but the side the household added is
