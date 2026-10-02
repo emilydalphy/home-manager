@@ -385,7 +385,7 @@ def test_the_prompt_says_what_each_kind_means():
         assert kind in AGENT, kind
     assert '"weekday_lunches": intake.get("weekday_lunches") or {},' in AGENT
     finish = AGENT[AGENT.index("def _finish_week_slots("):AGENT.index("_complete_plates_pass(plan_id, household_memory, intake)")]
-    assert finish.index("tools.repair_leftover_chains(plan_id)") < finish.index("_weekday_lunches.apply_to_plan(plan_id, intake)") \
+    assert finish.index("tools.repair_leftover_chains(plan_id)") < finish.index("_weekday_lunches.apply_to_plan(plan_id, intake") \
         < finish.index("_meal_variety.repick_repeats(")
     assert 'if slot == "lunch" and lunches_answered:' in finish
 
