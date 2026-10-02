@@ -67,7 +67,7 @@ def get_week_ingredients(weekly_plan_id: int | None = None) -> dict:
     if not plan.get("weekly_plan_id"):
         return {"weekly_plan_id": None, "dishes": [], "no_ingredient_list": []}
 
-    by_meal: dict[str, dict] = {}
+    by_meal: dict[tuple, dict] = {}
     unchecked: list[str] = []
     for m in plan.get("meals") or []:
         name = (m.get("meal") or "").strip()
@@ -83,16 +83,20 @@ def get_week_ingredients(weekly_plan_id: int | None = None) -> dict:
         ]
         if not items:
             unchecked.append(f"{when}: {name}")
+        for side in sides:
+            if not side["ingredients"]:
+                unchecked.append(f"{when}: {side['name']} (side)")
+        if not items and not sides:
+            continue
         # Keyed on the dish AND whether it has a list: a batch cooked on
-        # Monday and eaten again Tuesday is one dish to check, not two.
-        dish = by_meal.get(name)
+        # Monday and eaten again Tuesday is one dish to check, not two —
+        # but a freeform "Tacos" must never borrow a saved "Tacos" recipe's
+        # ingredients, or be told it has chipotle nobody knows it has.
+        key = (name, bool(items))
+        dish = by_meal.get(key)
         if dish is None:
-            if not items and not sides:
-                continue
-            dish = by_meal[name] = {"meal": name, "when": [], "ingredients": items, "sides": []}
+            dish = by_meal[key] = {"meal": name, "when": [], "ingredients": items, "sides": []}
         dish["when"].append(when)
-        if items and not dish["ingredients"]:
-            dish["ingredients"] = items
         for side in sides:
             if side["name"] not in {s["name"] for s in dish["sides"]}:
                 dish["sides"].append(side)

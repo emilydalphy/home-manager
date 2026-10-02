@@ -9124,7 +9124,10 @@ def _rest_of_week_lines(meal: dict) -> str:
             lines.append(f"- {day['weekday']} {day['date']}: " + "; ".join(parts))
     if not lines:
         return ""
-    return "The week this card is on, for a wider scope (slot: the dish there now):\n" + "\n".join(lines) + "\n"
+    return (
+        "The week this card is on, for a wider scope (slot: the dish there now):\n" + "\n".join(lines) + "\n"
+        "Those are dish names only. For what's IN the food, call get_week_ingredients.\n"
+    )
 
 
 def _build_chat_context_block(context: dict | None) -> dict | None:

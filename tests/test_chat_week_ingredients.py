@@ -222,3 +222,43 @@ def test_a_spicy_question_from_the_plan_tab_gets_the_real_ingredients(monkeypatc
     ]
     assert len(results) == 1 and not results[0]["is_error"]
     assert "Crushed red pepper flakes" in results[0]["content"]
+
+
+# ---------- found by the adversarial review ----------
+
+def test_a_freeform_dish_never_borrows_a_saved_recipes_ingredients():
+    plan_id, _ = _week()
+    # A freeform "Chicken Fajita Bowls"-style clash: same name, no recipe.
+    conn = db.get_conn()
+    conn.execute(
+        "INSERT INTO meal_plan_entries (household_id, weekly_plan_id, date, slot, freeform_meal, food_groups_json) "
+        "SELECT household_id, weekly_plan_id, ?, 'lunch', 'Chicken Fajita Bowls', '[]' "
+        "FROM meal_plan_entries WHERE weekly_plan_id = ? LIMIT 1",
+        (DAYS[6], plan_id),
+    )
+    conn.commit()
+    conn.close()
+    out = tools.get_week_ingredients()
+    fajitas = [d for d in out["dishes"] if d["meal"] == "Chicken Fajita Bowls"]
+    assert len(fajitas) == 1
+    assert all(DAYS[6] not in w for w in fajitas[0]["when"])
+    assert any(DAYS[6] in u and "Fajita" in u for u in out["no_ingredient_list"])
+
+
+def test_a_side_with_nothing_saved_is_named_as_unchecked():
+    _, ids = _week()
+    conn = db.get_conn()
+    conn.execute("UPDATE meal_plan_entries SET sides_json = ? WHERE id = ?",
+                 (json.dumps([{"role": "side", "name": "Slaw", "ingredients": []}]), ids["fajita"]))
+    conn.commit()
+    conn.close()
+    out = tools.get_week_ingredients()
+    assert any("Slaw (side)" in u and DAYS[4] in u for u in out["no_ingredient_list"])
+
+
+def test_the_meal_card_path_says_its_week_is_names_only_too():
+    _, ids = _week()
+    text = agent._build_chat_context_block({"kind": "planned_meal", "entry_id": ids["salmon"]})["text"]
+    assert "Beef and Vegetable Ragu over Pasta" in text
+    assert "Those are dish names only. For what's IN the food, call get_week_ingredients." in text
+    assert "Crushed red pepper flakes" not in text
