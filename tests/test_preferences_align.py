@@ -266,6 +266,24 @@ def test_the_weeknight_limit_is_in_your_rhythm():
     assert '<span class="wwk-count-label">45 minutes at most</span>' in html
     none = _render("wwkRhythmHtml", {**MEMORY, "weeknight_max_minutes": 0})
     assert '<span class="wwk-count-label">No limit</span>' in none
+    # "No limit" and a bare "0" side by side contradicted each other
+    # (QA walk 2026-10-02): at 0 the stepper shows a dash instead.
+    assert '<span class="cook-serves-count">&ndash;</span>' in none
+    assert '<span class="cook-serves-count">0</span>' not in none
+    assert '<span class="cook-serves-count">45</span>' in html
+
+
+def test_the_normal_week_example_fits_any_household():
+    field = re.search(r'placeholder="[^"]*" aria-label="A normal week at yours"', SHELL_JS).group(0)
+    assert "tee-ball" not in field
+    assert 'placeholder="Tuesdays are swimming lessons so we eat at 5.' in SHELL_JS
+
+
+def test_a_toast_sits_above_the_cook_dock_so_back_and_next_stay_tappable():
+    start = SHELL_JS.index("function showToast(")
+    body = SHELL_JS[start:SHELL_JS.index("\n  }\n", start)]
+    assert ".cook-focus .cook-dock" in body
+    assert "toastEl.style.bottom" in body
 
 
 def test_the_weeknight_stepper_moves_in_tens_between_0_and_120():

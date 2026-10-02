@@ -1888,6 +1888,14 @@
     // instead, so "Changes saved" never covers what they were typing.
     var sheetOpen = typeof askSheet !== 'undefined' && askSheet && !askSheet.hidden;
     toastEl.classList.toggle('is-over-sheet', !!sheetOpen);
+    // In cook mode the Back / Next dock sits where the toast usually does.
+    // Sit just above whichever dock is on screen, so the buttons stay tappable.
+    toastEl.style.bottom = '';
+    var dockEl = !sheetOpen && document.querySelector('.cook-focus .cook-dock');
+    if (dockEl && dockEl.offsetParent !== null) {
+      var dockTop = dockEl.getBoundingClientRect().top;
+      toastEl.style.bottom = Math.max(0, Math.round(window.innerHeight - dockTop + 12)) + 'px';
+    }
     toastEl.classList.remove('pop-in');
     void toastEl.offsetWidth; // restart the animation if a toast is already showing
     toastEl.classList.add('pop-in');
@@ -10787,7 +10795,7 @@
     // (meal_preferences.typical_week, week_intake). Saves on blur.
     html += wwkLead('A normal week at yours') +
       '<textarea class="snw-input wwk-text" rows="3" data-wwk-input="typical_week" ' +
-        'placeholder="Tuesdays are tee-ball so we eat at 5. Fridays are usually takeout." aria-label="A normal week at yours">' +
+        'placeholder="Tuesdays are swimming lessons so we eat at 5. Fridays are usually takeout." aria-label="A normal week at yours">' +
         escapeHtml(mem.typical_week || '') + '</textarea>';
     html += wwkFactsHtml('rhythm');
     return html;
@@ -10802,7 +10810,7 @@
       '<span class="wwk-count-label">' + (n ? n + ' minutes at most' : 'No limit') + '</span>' +
       '<span class="cook-serves">' +
         '<button type="button" class="cook-serves-btn" data-wwk="weeknight" data-delta="-' + WWK_WEEKNIGHT.step + '" aria-label="Ten minutes less"' + (n <= 0 ? ' disabled' : '') + '>&minus;</button>' +
-        '<span class="cook-serves-count">' + n + '</span>' +
+        '<span class="cook-serves-count">' + (n ? n : '&ndash;') + '</span>' +
         '<button type="button" class="cook-serves-btn" data-wwk="weeknight" data-delta="' + WWK_WEEKNIGHT.step + '" aria-label="Ten minutes more"' + (n >= WWK_WEEKNIGHT.max ? ' disabled' : '') + '>+</button>' +
       '</span>' +
     '</div>';
