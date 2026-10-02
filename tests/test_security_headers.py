@@ -125,7 +125,7 @@ def test_the_csp_restricts_only_what_it_should(client):
     posts to /login on this origin.
     """
     csp = _headers_for(client)["Content-Security-Policy"]
-    for directive in ("frame-ancestors 'self'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"):
+    for directive in ("frame-ancestors 'self'", "base-uri 'self'", "form-action 'self'", "object-src 'none'", "font-src 'self'"):
         assert directive in csp, f"{directive} should be part of the policy"
     for directive in ("default-src", "script-src", "style-src", "img-src", "connect-src"):
         assert directive not in csp, (

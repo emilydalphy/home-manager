@@ -24135,7 +24135,7 @@
   // 321 and gets CSS's own cut wherever it lands; four realistic
   // 55-character lines measure exactly 321. Two caveats, both real:
   // that was measured in a FALLBACK TYPEFACE rather than Figtree
-  // (fonts.googleapis.com is unreachable from the sandbox), and a
+  // (the sandbox had no copy of the font files), and a
   // character count can never be a pixel guarantee in a proportional face
   // anyway — 55 capital letters overflow by hundreds of pixels. So
   // .prefs-row-sub's own text-overflow stays the backstop, and this number
