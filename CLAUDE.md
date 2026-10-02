@@ -425,6 +425,28 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-02 — Planning next week before this week ended hid this week's
+  shopping. Branch `fix-next-week-hides-shop-2026-10-02`, NOT merged at the
+  time of writing.** Loop Board bug (QA walk 2, High). Root cause:
+  `grocery.set_aside_carried_over_items` counted a plan as "last week" once
+  its period had STARTED, so the week the household is still in was set
+  aside the moment next week was approved — tonight's bolognese went into
+  "Still on the list from last week" and today's Shop row lost its deadline.
+  Now only a plan whose period has ENDED (last day before the household's
+  today, `_other_plans_by_stage`) is a leftover. A still-running week's
+  'needed'/'spice' lines are held out of the new week's ingest
+  (`hold_running_week_lines` / `release_running_week_lines`, inside
+  `approve_weekly_plan`'s one transaction) so the 2026-09-13 no-summing rule
+  still holds: two lines, this week's and next week's, never one inflated
+  one. Not touched: the merge itself (`_merge_target`/`add_grocery_item`),
+  so a meal swapped INTO next week after approval can still merge onto this
+  week's line, as a not-yet-started plan always could. **Open for Emily:**
+  when a week ends with things unbought and next week was approved early,
+  nothing asks on Monday — those lines just stay on the list as their own
+  lines until the next approval sets them aside or generation's cleanup
+  clears them. `tests/test_next_week_keeps_this_weeks_shop.py`; the two
+  carry-over files now approve the new week on its own Monday.
+
 - **2026-10-01 — A boundary test on `main` passed only when two statements
   landed in the same SQLite second, so the suite was intermittently red for
   a reason nobody could reproduce. Branch

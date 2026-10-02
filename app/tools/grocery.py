@@ -1293,6 +1293,32 @@ _CARRIED_KEPT = "carried_kept"
 _CARRIED_DROPPED = "carried_dropped"
 
 
+def _other_plans_by_stage(conn, weekly_plan_id: int) -> dict[str, set]:
+    """
+    Every plan other than `weekly_plan_id`, split by where the household's
+    today sits in its period: 'ended' (its last day is before today — a
+    fully surrendered plan reads as ended from its start, see
+    period_end_date) and 'running' (today is one of its days). A plan that
+    has not begun is in neither. Read on `conn` for the reason
+    set_aside_carried_over_items gives.
+    """
+    today = _household_today(conn=conn).isoformat()
+    stages = {"ended": set(), "running": set()}
+    for plan in conn.execute(
+        "SELECT id, week_start_date, content_start_date, day_count, status FROM weekly_plans "
+        "WHERE household_id = ? AND id != ?",
+        (household_id(), weekly_plan_id),
+    ).fetchall():
+        start, days = _weekly_plan.plan_period(plan)
+        if start > today:
+            continue
+        if _weekly_plan.period_end_date(start, days) < today:
+            stages["ended"].add(plan["id"])
+        else:
+            stages["running"].add(plan["id"])
+    return stages
+
+
 def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     """
     Move every still-'needed' line that came from an EARLIER plan's
@@ -1302,8 +1328,15 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     a single ingredient is added. Returns the lines set aside.
 
     What counts as "from last week": a line whose source_weekly_plan_id is
-    another plan whose period has already STARTED. A plan that hasn't
-    begun yet is not a leftover — a household that approves two weeks in
+    another plan whose period has already ENDED — its last day is before
+    the household's today (see _other_plans_by_stage). Until 2026-10-02
+    this read "has already STARTED", and that took in the week the
+    household is still IN: plan next week on a Friday and tonight's
+    bolognese and tomorrow's Pad Kra Pao went into "Still on the list from
+    last week", off the list and off today's Shop row. A week still
+    running is not a leftover; its lines are held out of the new week's
+    ingest instead (hold_running_week_lines) and stay on the list. A plan
+    that hasn't begun yet is not a leftover either — a household that approves two weeks in
     advance is building next week's list, and asking them to keep-or-drop
     it would be asking about groceries nobody has had the chance to buy.
     Hand-added lines (source NULL) are a person's standing want and are
@@ -1336,16 +1369,7 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
-    today = _household_today(conn=conn).isoformat()
-    started = set()
-    for plan in conn.execute(
-        "SELECT id, week_start_date, content_start_date, day_count, status FROM weekly_plans "
-        "WHERE household_id = ? AND id != ?",
-        (household_id(), weekly_plan_id),
-    ).fetchall():
-        start, _days = _weekly_plan.plan_period(plan)
-        if start <= today:
-            started.add(plan["id"])
+    ended = _other_plans_by_stage(conn, weekly_plan_id)["ended"]
     rows = conn.execute(
         "SELECT id, item, quantity, source_weekly_plan_id FROM grocery_items "
         "WHERE household_id = ? AND status = 'needed' AND excluded_from_list = 0 "
@@ -1353,7 +1377,7 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
         "ORDER BY id",
         (household_id(), weekly_plan_id),
     ).fetchall()
-    set_aside = [r for r in rows if r["source_weekly_plan_id"] in started]
+    set_aside = [r for r in rows if r["source_weekly_plan_id"] in ended]
     if set_aside:
         conn.executemany(
             "UPDATE grocery_items SET status = 'carried', carried_from_plan_id = source_weekly_plan_id "
@@ -1368,7 +1392,7 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
         "AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ?",
         (household_id(), weekly_plan_id),
     ).fetchall()
-    stale_spices = [r for r in stale_spices if r["source_weekly_plan_id"] in started]
+    stale_spices = [r for r in stale_spices if r["source_weekly_plan_id"] in ended]
     if stale_spices:
         conn.executemany(
             "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
@@ -1378,6 +1402,59 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
         conn.commit()
         conn.close()
     return [{"item_id": r["id"], "item": r["item"], "quantity": r["quantity"] or ""} for r in set_aside]
+
+
+# The week the household is still IN, while next week is approved over it
+# (Loop Board, QA walk 2026-10-02). Its unbought lines are this week's
+# shopping — tonight's dinner, tomorrow's — and stay on the list exactly
+# as they are. But the new week's ingest must not land on top of them
+# either: add_grocery_item merges onto any 'needed' line of the same name
+# and stamps the new plan's id on it, which is the quantity inflation
+# set_aside_carried_over_items exists to prevent (2026-09-13). So for the
+# length of the ingest only, inside approve_weekly_plan's one write
+# transaction, those lines step out of the merge's sight and then come
+# straight back with the status they had. Nothing outside the transaction
+# ever sees the step — SQLite readers see the committed list — and a
+# failed approval rolls the whole thing back with it.
+_HELD_FOR_INGEST = "carried"
+
+
+def hold_running_week_lines(weekly_plan_id: int, conn) -> list[tuple[int, str]]:
+    """
+    Take every 'needed' or unticked 'spice' line from a still-running
+    earlier plan out of the merge's sight before `weekly_plan_id`'s
+    ingest. Returns (id, status) pairs for release_running_week_lines.
+    Same filter as set_aside_carried_over_items: hand-added lines,
+    staples' suggestions, excluded lines and anything in a cart are not
+    the plan's and are left alone. `conn` is required — this only makes
+    sense inside the approval's own transaction.
+    """
+    running = _other_plans_by_stage(conn, weekly_plan_id)["running"]
+    if not running:
+        return []
+    rows = conn.execute(
+        "SELECT id, status, source_weekly_plan_id FROM grocery_items "
+        "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 "
+        "AND staple_id IS NULL AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ? "
+        "ORDER BY id",
+        (household_id(), weekly_plan_id),
+    ).fetchall()
+    held = [(r["id"], r["status"]) for r in rows if r["source_weekly_plan_id"] in running]
+    if held:
+        conn.executemany(
+            f"UPDATE grocery_items SET status = '{_HELD_FOR_INGEST}' WHERE id = ? AND household_id = ?",
+            [(item_id, household_id()) for item_id, _status in held],
+        )
+    return held
+
+
+def release_running_week_lines(held: list[tuple[int, str]], conn) -> None:
+    """Put the lines hold_running_week_lines took aside back as they were."""
+    if held:
+        conn.executemany(
+            f"UPDATE grocery_items SET status = ? WHERE id = ? AND household_id = ? AND status = '{_HELD_FOR_INGEST}'",
+            [(status, item_id, household_id()) for item_id, status in held],
+        )
 
 
 def _this_weeks_line(conn, item: str, quantity: str):
