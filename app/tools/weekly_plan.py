@@ -6757,12 +6757,6 @@ def _settle_weekly_plan_approval(
             # rides through so this joins the same transaction rather than
             # committing on its own ahead of the ingest below.
             carried_over = _grocery.set_aside_carried_over_items(weekly_plan_id, conn=conn)
-            # The week still running is NOT a leftover (QA walk 2026-10-02:
-            # plan next week on a Friday and tonight's dinner left the
-            # list). Its lines step out of the ingest's sight so this
-            # week's amounts don't land on top of them, and come back
-            # after the flush below — see grocery.hold_running_week_lines.
-            held_running = _grocery.hold_running_week_lines(weekly_plan_id, conn)
 
             # Grouped by RECIPE, not left one row per meal. A week's shop is
             # a recipe-week question: the same breakfast six mornings needs
@@ -6845,7 +6839,6 @@ def _settle_weekly_plan_approval(
                     added_items.extend(added)
                     already_have.extend(have)
             buffer.flush()
-            _grocery.release_running_week_lines(held_running, conn)
 
             # Counted as distinct names, matching preview_plan_grocery_impact,
             # so the number the draft promised and the number the receipt

@@ -277,12 +277,15 @@ def test_the_shopping_reads_in_two_trips_keeps_well_first(family, recipes, propo
 
 def test_a_line_another_meal_needs_first_goes_on_the_early_trip(family, recipes, proposer):
     tg = _thanksgiving()
-    plan_id = _week_with_dinner(tg, "Roast Chicken")
-    # A soup planned five days before the holiday wants onions too.
+    # A soup planned five days before the holiday, in the SAME week, wants
+    # onions too. (Same week since 2026-10-02: a plan's amount never merges
+    # onto another plan's line any more — Loop Board "Planning next week
+    # before this week ends" — so two weeks' onions are two lines and only
+    # one week's own meals can share one.)
     tools.add_recipe("Onion Soup", ingredients=[{"item": "onions", "qty": "2", "category": "produce"}], default_servings=2)
-    early_plan = tools.create_weekly_plan(_shift(tg, -7))["weekly_plan_id"]
-    tools.plan_meal(_shift(tg, -5), "Onion Soup", slot="dinner", weekly_plan_id=early_plan)
-    tools.approve_weekly_plan(early_plan, approved_by="Emily")
+    plan_id = tools.create_weekly_plan(_shift(tg, -5))["weekly_plan_id"]
+    tools.plan_meal(tg, "Roast Chicken", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_shift(tg, -5), "Onion Soup", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
     tools.answer_holiday(tg, "hosting", headcount=5)
 
@@ -885,10 +888,10 @@ def test_chicken_and_thyme_with_no_section_are_fresh_and_saturdays_onions_go_ear
     tools.add_recipe("Roast Chicken", ingredients=[{"item": "whole chicken", "qty": "1"}, {"item": "fresh thyme", "qty": "1 bunch"},
                                                    {"item": "foil", "qty": "1 roll"}], default_servings=2)
     tools.add_recipe("Onion Soup", ingredients=[{"item": "onions", "qty": "2", "category": "produce"}], default_servings=2)
-    plan_id = _week_with_dinner(tg, "Roast Chicken")
-    earlier = tools.create_weekly_plan(_shift(tg, -7))["weekly_plan_id"]
-    tools.plan_meal(_shift(tg, -2), "Onion Soup", slot="dinner", weekly_plan_id=earlier)  # the Saturday between the trips
-    tools.approve_weekly_plan(earlier, approved_by="Emily")
+    # One week holding both (see test_a_line_another_meal_needs_first_goes_on_the_early_trip).
+    plan_id = tools.create_weekly_plan(_shift(tg, -5))["weekly_plan_id"]
+    tools.plan_meal(tg, "Roast Chicken", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_shift(tg, -2), "Onion Soup", slot="dinner", weekly_plan_id=plan_id)  # the Saturday between the trips
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
     tools.answer_holiday(tg, "hosting", headcount=5)
 

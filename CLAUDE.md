@@ -433,19 +433,22 @@ why*, not duplicating the diff.
   aside the moment next week was approved — tonight's bolognese went into
   "Still on the list from last week" and today's Shop row lost its deadline.
   Now only a plan whose period has ENDED (last day before the household's
-  today, `_other_plans_by_stage`) is a leftover. A still-running week's
-  'needed'/'spice' lines are held out of the new week's ingest
-  (`hold_running_week_lines` / `release_running_week_lines`, inside
-  `approve_weekly_plan`'s one transaction) so the 2026-09-13 no-summing rule
-  still holds: two lines, this week's and next week's, never one inflated
-  one. Not touched: the merge itself (`_merge_target`/`add_grocery_item`),
-  so a meal swapped INTO next week after approval can still merge onto this
-  week's line, as a not-yet-started plan always could. **Open for Emily:**
-  when a week ends with things unbought and next week was approved early,
-  nothing asks on Monday — those lines just stay on the list as their own
-  lines until the next approval sets them aside or generation's cleanup
-  clears them. `tests/test_next_week_keeps_this_weeks_shop.py`; the two
-  carry-over files now approve the new week on its own Monday.
+  today, `_other_plans_by_stage`) is a leftover. **And a plan's amount never
+  merges onto ANOTHER plan's amount line** (`_merge_target`'s `source_plan`):
+  with both weeks' lines on the list, the first same-name line was this
+  week's, so next week's approval — and any meal added or swapped into next
+  week later — summed onto tonight's line and re-owned it (verifier's repro).
+  Each week keeps its own line; that is also what holds the 2026-09-13
+  no-summing rule at approval. A plan still joins a person's hand-added line
+  and an unticked spice reminder from any week (a reminder, not an amount).
+  Consequence: approving two weeks ahead now gives two lines rather than one
+  summed line. Merged `grocery-generic-specific-merge` in first, so this
+  branch merges after that one. **Open for Emily:** when a week ends with
+  things unbought and next week was approved early, nothing asks on Monday —
+  those lines stay on the list as their own lines until the next approval
+  sets them aside or generation's cleanup clears them.
+  `tests/test_next_week_keeps_this_weeks_shop.py`; the carry-over, spice and
+  unit-family tests now approve the new week on its own Monday.
 
 - **2026-10-02 — "Onions" and "Yellow onion" (and "Rice" / "Long-grain white
   rice") are one grocery line now. Branch `grocery-generic-specific-merge`,

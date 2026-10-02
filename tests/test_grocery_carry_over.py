@@ -176,7 +176,10 @@ def test_a_week_that_has_not_started_is_not_last_week(curry):
     _approve_week(1, on_its_monday=False)
     _approve_week(2, on_its_monday=False)
     assert tools.list_carried_over_items() == []
-    assert _needed("Chicken thighs") == "4 lbs", "the pre-carry-over behaviour, unchanged"
+    # Each week its own line since 2026-10-02 (a plan's amount never merges
+    # onto another plan's line — test_next_week_keeps_this_weeks_shop.py);
+    # before that the two summed to "4 lbs" on one line owned by week 2.
+    assert [i["quantity"] for i in tools.list_grocery_list() if i["item"] == "Chicken thighs"] == ["2 lbs", "2 lbs"]
 
 
 def test_an_excluded_or_in_cart_line_is_the_shoppers_not_the_plans(curry):

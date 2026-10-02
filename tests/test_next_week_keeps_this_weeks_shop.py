@@ -16,7 +16,7 @@ still running keeps its lines on the list as this week's, and they are held
 out of the new week's ingest just long enough that its amounts land on
 their own lines (the 2026-09-13 quantity-inflation fix, kept).
 
-Every test here is red on main at 926bab4 except the three marked GUARD.
+Every test marked CATCH is red on main at 926bab4; GUARD tests pass on both.
 """
 from __future__ import annotations
 
@@ -125,11 +125,65 @@ def test_the_last_day_of_the_week_is_still_this_week(bolognese):
 
 def test_a_running_weeks_unticked_spice_stays_in_its_section(bolognese):
     """CATCH. The set-aside used to delete an earlier week's unticked
-    spices; this week's cumin is still this week's."""
-    this_week, _ = _this_week_running()
+    spices; this week's cumin is still this week's business, so it stays
+    in the section — once, because a spice reminder is shared across
+    weeks rather than an amount owned by one."""
+    _this_week_running()
     _approve_next_week(_today() + datetime.timedelta(days=3))
-    cumin = [r for r in _rows("Ground cumin") if r["source_weekly_plan_id"] == this_week]
-    assert [r["status"] for r in cumin] == ["spice"]
+    assert [r["status"] for r in _rows("Ground cumin")] == ["spice"]
+
+
+# ---------- after approval: next week's later adds stay on next week's lines ----------
+# Verifier, 2026-10-02: with this week's lines left on the list, the first
+# same-name line add_grocery_item found was THIS week's, so a meal added to
+# next week afterwards summed onto tonight's turkey and re-owned it.
+
+def _turkey() -> list[tuple[str, int]]:
+    return [(r["quantity"], r["source_weekly_plan_id"]) for r in _rows("Ground turkey") if r["status"] == "needed"]
+
+
+def test_a_meal_added_to_next_week_later_lands_on_next_weeks_line(bolognese):
+    """CATCH (the verifier's repro)."""
+    this_week, _ = _this_week_running()
+    start = _today() + datetime.timedelta(days=3)
+    nxt = _approve_next_week(start)["plan"]
+    tools.plan_meal((start + datetime.timedelta(days=1)).isoformat(), "Bolognese", slot="dinner",
+                    weekly_plan_id=nxt, add_ingredients_to_grocery_list=True)
+    assert _turkey() == [("2 lbs", this_week), ("4 lbs", nxt)]
+
+
+def test_a_swap_in_next_week_lands_on_next_weeks_line(bolognese):
+    """CATCH. A swap buys the new meal's ingredients the same way."""
+    tools.add_recipe("Toast", ingredients=[{"item": "Bread", "qty": "1 loaf", "category": "pantry"}])
+    this_week, _ = _this_week_running()
+    start = _today() + datetime.timedelta(days=3)
+    nxt = _plan(start)
+    tools.plan_meal(start.isoformat(), "Toast", slot="dinner", weekly_plan_id=nxt)
+    tools.approve_weekly_plan(nxt, approved_by="Emily")
+    assert _turkey() == [("2 lbs", this_week)]
+    tools.swap_meal_in_plan(nxt, start.isoformat(), "Bolognese", slot="dinner")
+    assert _turkey() == [("2 lbs", this_week), ("2 lbs", nxt)]
+
+
+def test_a_re_buy_after_swapping_back_lands_on_next_weeks_line(bolognese):
+    """CATCH. Swap away and back again: the second buy is next week's too,
+    and tonight's line never moves."""
+    tools.add_recipe("Toast", ingredients=[{"item": "Bread", "qty": "1 loaf", "category": "pantry"}])
+    this_week, _ = _this_week_running()
+    start = _today() + datetime.timedelta(days=3)
+    nxt = _approve_next_week(start)["plan"]
+    tools.swap_meal_in_plan(nxt, start.isoformat(), "Toast", slot="dinner")
+    assert _turkey() == [("2 lbs", this_week)]
+    tools.swap_meal_in_plan(nxt, start.isoformat(), "Bolognese", slot="dinner")
+    assert _turkey() == [("2 lbs", this_week), ("2 lbs", nxt)]
+
+
+def test_a_plans_add_still_joins_a_persons_own_line(bolognese):
+    """GUARD. The person's standing want still takes the plan's amount, as
+    it always has (source stays NULL)."""
+    tools.add_grocery_item("Ground turkey", "1 lb", category="meat/seafood")
+    _this_week_running()
+    assert _turkey() == [("3 lbs", None)]
 
 
 def test_a_week_that_has_ended_is_still_asked_about(bolognese):

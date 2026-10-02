@@ -286,7 +286,7 @@ def _repeat_or_concatenate(existing_qty: str, new_qty: str, sum_counts: bool) ->
     return f"{existing_qty} + {new_qty}", False
 
 
-def _merge_target(same_name: list, quantity: str, consolidate, standing: bool):
+def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, source_plan: int | None = None):
     """
     Which of the lines already on the list with this name a new amount
     joins — (row, merged quantity, units reconciled) — or None for a line
@@ -316,9 +316,27 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool):
     spices.py). That line is the plan's reminder, not an amount, and a
     person asking for cumin is answering it — their add ticks it onto the
     list (add_grocery_item), so it must land there and not beside it.
+
+    And a plan's amount never joins ANOTHER plan's amount line
+    (`source_plan`, Loop Board, QA walk 2026-10-02). Next week can be
+    approved while this week is still running, and both weeks' lines are
+    on the list at once; the first same-name line is this week's, so a
+    meal added or swapped into next week used to sum onto tonight's
+    "2 lbs ground turkey" and stamp next week's id on it — 4 lbs that
+    belonged to neither week, and tonight's line gone from this week's
+    ledger reading. Each week keeps its own line, which is also what the
+    2026-09-13 carry-over rule wanted at approval. A plan's add still
+    joins a person's line (standing, see above) and an unticked spice
+    reminder from any week — that is a reminder, not an amount.
     """
     kin = None
     for row in same_name:
+        other_plan = row["source_weekly_plan_id"]
+        if (
+            source_plan is not None and other_plan is not None and other_plan != source_plan
+            and row["status"] != "spice"
+        ):
+            continue
         merged_qty, merged = consolidate(row["quantity"] or "", quantity)
         if merged:
             return row, merged_qty, True
@@ -839,7 +857,10 @@ def add_grocery_item(
     wanted = _merge_key(item)
     same_name = [r for r in candidates if _merge_key(r["item"]) == wanted]
     consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
-    target = _merge_target(same_name, quantity, consolidate, standing=source_weekly_plan_id is None)
+    target = _merge_target(
+        same_name, quantity, consolidate, standing=source_weekly_plan_id is None,
+        source_plan=source_weekly_plan_id,
+    )
     # Matched on the same key the list itself merges on. Otherwise a
     # preference saved for "bell peppers" never applies to the line that
     # won the merge under the name "Bell pepper": the app confirms the
@@ -1413,8 +1434,9 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     household is still IN: plan next week on a Friday and tonight's
     bolognese and tomorrow's Pad Kra Pao went into "Still on the list from
     last week", off the list and off today's Shop row. A week still
-    running is not a leftover; its lines are held out of the new week's
-    ingest instead (hold_running_week_lines) and stay on the list. A plan
+    running is not a leftover; its lines stay on the list, and the new
+    week's ingest puts its own amounts on lines of its own because a plan
+    never merges onto another plan's line (_merge_target). A plan
     that hasn't begun yet is not a leftover either — a household that approves two weeks in
     advance is building next week's list, and asking them to keep-or-drop
     it would be asking about groceries nobody has had the chance to buy.
@@ -1481,59 +1503,6 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
         conn.commit()
         conn.close()
     return [{"item_id": r["id"], "item": r["item"], "quantity": r["quantity"] or ""} for r in set_aside]
-
-
-# The week the household is still IN, while next week is approved over it
-# (Loop Board, QA walk 2026-10-02). Its unbought lines are this week's
-# shopping — tonight's dinner, tomorrow's — and stay on the list exactly
-# as they are. But the new week's ingest must not land on top of them
-# either: add_grocery_item merges onto any 'needed' line of the same name
-# and stamps the new plan's id on it, which is the quantity inflation
-# set_aside_carried_over_items exists to prevent (2026-09-13). So for the
-# length of the ingest only, inside approve_weekly_plan's one write
-# transaction, those lines step out of the merge's sight and then come
-# straight back with the status they had. Nothing outside the transaction
-# ever sees the step — SQLite readers see the committed list — and a
-# failed approval rolls the whole thing back with it.
-_HELD_FOR_INGEST = "carried"
-
-
-def hold_running_week_lines(weekly_plan_id: int, conn) -> list[tuple[int, str]]:
-    """
-    Take every 'needed' or unticked 'spice' line from a still-running
-    earlier plan out of the merge's sight before `weekly_plan_id`'s
-    ingest. Returns (id, status) pairs for release_running_week_lines.
-    Same filter as set_aside_carried_over_items: hand-added lines,
-    staples' suggestions, excluded lines and anything in a cart are not
-    the plan's and are left alone. `conn` is required — this only makes
-    sense inside the approval's own transaction.
-    """
-    running = _other_plans_by_stage(conn, weekly_plan_id)["running"]
-    if not running:
-        return []
-    rows = conn.execute(
-        "SELECT id, status, source_weekly_plan_id FROM grocery_items "
-        "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 "
-        "AND staple_id IS NULL AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ? "
-        "ORDER BY id",
-        (household_id(), weekly_plan_id),
-    ).fetchall()
-    held = [(r["id"], r["status"]) for r in rows if r["source_weekly_plan_id"] in running]
-    if held:
-        conn.executemany(
-            f"UPDATE grocery_items SET status = '{_HELD_FOR_INGEST}' WHERE id = ? AND household_id = ?",
-            [(item_id, household_id()) for item_id, _status in held],
-        )
-    return held
-
-
-def release_running_week_lines(held: list[tuple[int, str]], conn) -> None:
-    """Put the lines hold_running_week_lines took aside back as they were."""
-    if held:
-        conn.executemany(
-            f"UPDATE grocery_items SET status = ? WHERE id = ? AND household_id = ? AND status = '{_HELD_FOR_INGEST}'",
-            [(status, item_id, household_id()) for item_id, status in held],
-        )
 
 
 def _this_weeks_line(conn, item: str, quantity: str):
