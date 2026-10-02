@@ -25525,9 +25525,17 @@
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/static/service-worker.js').then(function (reg) {
-        reg.update();
+        // Returned, so the .catch below covers it. update() rejects with a
+        // TypeError the browser writes (no stack) when its job fails, and
+        // the first open is when that happens: no worker yet, register()
+        // still installing one, and the page then leaving for /onboarding
+        // or the controllerchange reload. Dropped on the floor, it reached
+        // the error report as "TypeError on /" at three households' first
+        // open (2026-09-16, 09-24, 10-01). A failed update is retried on
+        // the next load; nothing is lost by letting it fail quietly.
+        return reg.update();
       }).catch(function (err) {
-        console.warn('Service worker registration failed:', err);
+        console.warn('Service worker registration or update failed:', err);
       });
       var reloadedForNewWorker = false;
       navigator.serviceWorker.addEventListener('controllerchange', function () {
