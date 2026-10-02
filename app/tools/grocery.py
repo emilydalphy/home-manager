@@ -80,6 +80,73 @@ _JUST_ADD_S = {
 }
 
 
+# A recipe's plain name and the specific variety a shopper buys when the
+# plain name is all they're given -- the same purchase under two names
+# (Loop Board bug, QA walk 2026-10-02: "Onions 2" beside "Yellow onion 3",
+# "Rice 2 cups" beside "Long-grain white rice 1 cup"). Keyed on the
+# variety's own key (lowercased, last word singularised -- see
+# _plain_name_key) and pointing at the plain name's key, so both land on
+# one line.
+#
+# An ALLOW-LIST, deliberately, never a "the shorter name is inside the
+# longer one" rule. That rule is how "olive oil" once read as "olives"
+# (2026-09-14) and it would merge red onion into onions, brown rice into
+# rice, chicken thighs into chicken -- things a shopper buys separately.
+# Only the variety a plain-named recipe actually means goes here: red,
+# white and green onions, brown/basmati/jasmine rice, whole-wheat and
+# bread flour, brown and icing sugar all stay their own lines. Adding a
+# pair is a product call (one line instead of two) and wants its test in
+# tests/test_grocery_same_purchase.py.
+_SAME_PURCHASE = {
+    "yellow onion": "onion",
+    "cooking onion": "onion",     # the Canadian shelf name for a yellow onion
+    "brown onion": "onion",       # the UK/Australian one
+    "white rice": "rice",
+    "long-grain white rice": "rice",
+    "long grain white rice": "rice",
+    "long-grain rice": "rice",
+    "long grain rice": "rice",
+    "all-purpose flour": "flour",
+    "all purpose flour": "flour",
+    "plain flour": "flour",
+    "granulated sugar": "sugar",
+    "white sugar": "sugar",
+    "granulated white sugar": "sugar",
+}
+
+
+def _plain_name_key(name: str) -> str:
+    """_merge_key without the same-purchase step: the name's own key."""
+    cleaned = " ".join((name or "").strip().lower().split())
+    if not cleaned:
+        return ""
+    words = cleaned.split(" ")
+    # A bare ambiguous noun is left exactly as written, so "Pepper" and
+    # "Peppers" stay the two different things they are.
+    if len(words) == 1 and words[0] in _NUMBER_CHANGES_MEANING:
+        return cleaned
+    words[-1] = _singular_word(words[-1])
+    return " ".join(words)
+
+
+def _names_the_variety(name: str) -> bool:
+    """True when `name` is a variety in _SAME_PURCHASE ("Yellow onion"), not the plain name ("Onions")."""
+    return _plain_name_key(name) in _SAME_PURCHASE
+
+
+def _more_specific_name(current: str, incoming: str) -> str:
+    """
+    Which wording one merged line should carry: the variety over the plain
+    name, because "Yellow onion" tells the shopper which onion and "Onions"
+    does not. Otherwise the name already there stays (two plurals, two
+    varieties, or anything not in _SAME_PURCHASE).
+    """
+    if incoming and _names_the_variety(incoming) and not _names_the_variety(current) \
+            and _merge_key(current) == _merge_key(incoming):
+        return incoming
+    return current
+
+
 def _merge_key(name: str) -> str:
     """
     The name two grocery lines have to share to be the same thing.
@@ -99,17 +166,16 @@ def _merge_key(name: str) -> str:
     rather than combining two things. A duplicate line is visible and
     mildly annoying; a wrong merge is invisible and means something never
     gets bought.
+
+    One step past number: a short allow-list of plain names and the one
+    variety they mean ("Onions" / "Yellow onion", "Rice" / "Long-grain
+    white rice") share a key -- see _SAME_PURCHASE for why it is a list
+    and not a rule.
     """
-    cleaned = " ".join((name or "").strip().lower().split())
-    if not cleaned:
-        return ""
-    words = cleaned.split(" ")
-    # A bare ambiguous noun is left exactly as written, so "Pepper" and
-    # "Peppers" stay the two different things they are.
-    if len(words) == 1 and words[0] in _NUMBER_CHANGES_MEANING:
-        return cleaned
-    words[-1] = _singular_word(words[-1])
-    return " ".join(words)
+    key = _plain_name_key(name)
+    # The variety a plain-named recipe means is the same purchase as the
+    # plain name ("Yellow onion" and "Onions"); see _SAME_PURCHASE.
+    return _SAME_PURCHASE.get(key, key)
 
 
 def _singular_word(word: str) -> str:
@@ -793,14 +859,23 @@ def add_grocery_item(
         # next generation deletes -- so a plan can add quantity to a
         # hand-added item, but it cannot take ownership of it.
         keep_standing = existing["source_weekly_plan_id"] is None
+        # A plan's line takes the more specific of the two names when a
+        # plan's add joins it ("Onions" + "Yellow onion" reads "Yellow
+        # onion"); see _more_specific_name. A person's own line, or a
+        # person's own add, keeps the wording already there -- that is the
+        # line they typed, and the shop sheet's Put back restores amount
+        # and store only, so a rename it caused could not be put back.
+        line_name = existing["item"]
+        if not keep_standing and source_weekly_plan_id is not None:
+            line_name = _more_specific_name(existing["item"], item)
         conn.execute(
-            "UPDATE grocery_items SET quantity = ?, category = ?, "
+            "UPDATE grocery_items SET item = ?, quantity = ?, category = ?, "
             "source_weekly_plan_id = CASE WHEN ? THEN NULL ELSE ? END, "
             # Fills in a store the row doesn't have yet, without
             # overwriting one already chosen for this line.
             "store = CASE WHEN store = '' THEN ? ELSE store END "
             "WHERE id = ? AND household_id = ?",
-            (merged_qty, category, 1 if keep_standing else 0, source_weekly_plan_id,
+            (line_name, merged_qty, category, 1 if keep_standing else 0, source_weekly_plan_id,
              preferred_store, existing["id"], household_id()),
         )
         # A person asking for a spice by name wants it bought: their add
@@ -812,10 +887,9 @@ def add_grocery_item(
                 (existing["id"], household_id()),
             )
         item_id = existing["id"]
-        # The name already on the list, not the one just asked for: the
-        # row keeps its own wording, so saying "item" back means the line
-        # the shopper will actually see.
-        item_name = existing["item"]
+        # The name on the line now, not the one just asked for: saying
+        # "item" back means the line the shopper will actually see.
+        item_name = line_name
         if own_conn:
             conn.commit()
             conn.close()
@@ -1083,7 +1157,7 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     # visible line disappear and parked its quantity somewhere nobody can
     # see. They are left out of consolidation entirely instead.
     rows = conn.execute(
-        "SELECT id, item, quantity, category FROM grocery_items "
+        "SELECT id, item, quantity, category, source_weekly_plan_id FROM grocery_items "
         "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY id",
         (household_id(), status),
     ).fetchall()
@@ -1098,6 +1172,7 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
             continue
         keep = entries[0]
         merged_qty = keep["quantity"] or ""
+        keep_name = keep["item"]
         for extra in entries[1:]:
             # Two lines the list keeps apart on purpose — a person's "1"
             # beside a plan's "2 cups" (see _merge_target) — stay apart
@@ -1107,14 +1182,18 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
             if not reconciled:
                 continue
             merged_qty = candidate
+            # The variety's name on a plan's line; a person's typed line
+            # keeps its wording, as it does in add_grocery_item.
+            if keep["source_weekly_plan_id"] is not None:
+                keep_name = _more_specific_name(keep_name, extra["item"])
             conn.execute(
                 "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
                 (extra["id"], household_id()),
             )
             merged_count += 1
         conn.execute(
-            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
-            (merged_qty, keep["id"], household_id()),
+            "UPDATE grocery_items SET item = ?, quantity = ? WHERE id = ? AND household_id = ?",
+            (keep_name, merged_qty, keep["id"], household_id()),
         )
     conn.commit()
     conn.close()
