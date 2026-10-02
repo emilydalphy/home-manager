@@ -104,6 +104,7 @@ def clear_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
         (household_id(), *entry_ids),
     ).rowcount if entry_ids else 0
+    _weekly_plan._release_ready_made_recommendations(conn, entry_ids)
     conn.execute(
         "DELETE FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ?",
         (weekly_plan_id, household_id()),

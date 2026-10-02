@@ -459,6 +459,7 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str, conn=None) -
             f"DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
             (household_id(), *[r["id"] for r in rows]),
         )
+        _release_ready_made_recommendations(conn, [r["id"] for r in rows])
         conn.execute(
             f"DELETE FROM meal_plan_entries WHERE id IN ({marks}) AND household_id = ?",
             (*[r["id"] for r in rows], household_id()),
@@ -467,6 +468,41 @@ def clear_plan_slot(weekly_plan_id: int, meal_date: str, slot: str, conn=None) -
             conn.commit()
             conn.close()
     return len(rows)
+
+
+def _release_ready_made_recommendations(conn, entry_ids: list[int]) -> int:
+    """
+    Drop any ready-made recommendation that points at a meal about to be
+    deleted. Returns how many were dropped.
+
+    slot_needs.recommended_batch_from_entry_id is the one REAL foreign key
+    into meal_plan_entries without ON DELETE CASCADE (the grocery ledger
+    has one; prep_tasks has no key at all and is deleted by hand above).
+    With PRAGMA foreign_keys=ON that row blocks the DELETE outright —
+    reproduced 2026-10-02: Alex away for Saturday dinner leaves Sunday
+    breakfast a 'ready_made' edge whose batch is Saturday's chili; Sam
+    away too empties Saturday, and the delete raised IntegrityError. The
+    first away never trips it because the dinner is still on the plan for
+    Sam.
+
+    Not CASCADE, deliberately: cascading would delete the NEED itself (the
+    first-meal-back fact), not just the stale suggestion. SET NULL is the
+    right shape but SQLite cannot alter a key in place, so it lives here.
+    Confirmation resets with it — what was confirmed no longer exists, and
+    describe_ready_made then says nothing rather than naming a dinner that
+    is gone — unless the row also carries a defrost item, whose confirmed
+    thaw (defrost.py reads it) is not this meal's to take away. Runs on the caller's connection; commits nothing.
+    """
+    if not entry_ids:
+        return 0
+    marks = ",".join("?" * len(entry_ids))
+    return conn.execute(
+        f"UPDATE slot_needs SET recommended_batch_from_entry_id = NULL, "
+        f"recommendation_confirmed = CASE WHEN TRIM(recommended_defrost_item) = '' "
+        f"THEN 0 ELSE recommendation_confirmed END, updated_at = datetime('now') "
+        f"WHERE household_id = ? AND recommended_batch_from_entry_id IN ({marks})",
+        (household_id(), *entry_ids),
+    ).rowcount
 
 
 def plan_slot_empty(
@@ -857,6 +893,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
     try:
         rescale_source_id = _unlink_leftover_target(weekly_plan_id, entry_id, conn=conn)
         _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
+        _release_ready_made_recommendations(conn, [entry_id])
         conn.execute(
             "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
             (entry_id, household_id()),
@@ -7925,6 +7962,7 @@ def delete_plan_entry(conn, entry_id: int) -> None:
         "DELETE FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id = ?",
         (household_id(), entry_id),
     )
+    _release_ready_made_recommendations(conn, [entry_id])
     conn.execute(
         "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
         (entry_id, household_id()),
