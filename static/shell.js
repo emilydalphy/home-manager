@@ -22356,7 +22356,11 @@
               // veto): nothing written, and the rows say why.
               state.left = true;
               draw();
-              showToast('I left the week as it was — ' + state.refused[0].why + '.', null, 6000);
+              // No rows means the route's own backstop answered: the
+              // server's sentence is the message.
+              showToast(state.refused.length
+                ? 'I left the week as it was — ' + state.refused[0].why + '.'
+                : out.message, null, 6000);
               return;
             }
             state.saved = true;
