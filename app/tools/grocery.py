@@ -1157,7 +1157,7 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     # visible line disappear and parked its quantity somewhere nobody can
     # see. They are left out of consolidation entirely instead.
     rows = conn.execute(
-        "SELECT id, item, quantity, category FROM grocery_items "
+        "SELECT id, item, quantity, category, source_weekly_plan_id FROM grocery_items "
         "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY id",
         (household_id(), status),
     ).fetchall()
@@ -1182,7 +1182,10 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
             if not reconciled:
                 continue
             merged_qty = candidate
-            keep_name = _more_specific_name(keep_name, extra["item"])
+            # The variety's name on a plan's line; a person's typed line
+            # keeps its wording, as it does in add_grocery_item.
+            if keep["source_weekly_plan_id"] is not None:
+                keep_name = _more_specific_name(keep_name, extra["item"])
             conn.execute(
                 "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
                 (extra["id"], household_id()),

@@ -437,9 +437,13 @@ why*, not duplicating the diff.
   onto the plain name's key. Never a "shorter name inside the longer one"
   rule — that is the 2026-09-14 olive-oil-is-olives mistake, and would merge
   red onion, brown rice, chicken breast into chicken. The merged line takes
-  the variety's name only on a plan-owned line joined by a plan's add (and
-  in consolidate); a person's own line or own add keeps its wording, because
-  the shop sheet's Put back restores amount and store by row id, not name.
+  the variety's name only on a plan-owned line (a plan's add, or
+  consolidate on a plan line); a person's own line or own add keeps its
+  wording, because the shop sheet's Put back restores amount and store by
+  row id, not name. The startup sweep
+  `db._merge_duplicate_item_store_preferences` keeps reading the PLAIN key
+  (`_plain_name_key`), so "onions → Costco" beside "yellow onion → Walmart"
+  is not silently cut to one on deploy (review caught the sweep doing that).
   The key is shared app-wide on purpose (store preferences, staples, the
   cook screen's swaps all read it) — one rule, not two. Reversal is
   untouched: it goes by ledger row → grocery_item_id. Pinned by

@@ -200,13 +200,14 @@ def test_a_person_adding_the_plain_name_merges_into_the_variety():
 
 
 def test_cleaning_up_the_list_folds_the_plain_line_into_the_variety():
-    """CATCH: consolidate_grocery_list on a list that already has both."""
+    """CATCH: consolidate_grocery_list on a plan's list that already has both."""
+    pid = _plan()
     conn = get_conn()
     for name, qty in [("Onions", "2"), ("Yellow onion", "3"), ("Red onion", "1")]:
         conn.execute(
-            "INSERT INTO grocery_items (household_id, item, quantity, category, status) "
-            "VALUES (1, ?, ?, 'produce', 'needed')",
-            (name, qty),
+            "INSERT INTO grocery_items (household_id, item, quantity, category, status, source_weekly_plan_id) "
+            "VALUES (1, ?, ?, 'produce', 'needed', ?)",
+            (name, qty, pid),
         )
     conn.commit()
     conn.close()
@@ -279,3 +280,46 @@ def test_red_onion_in_a_week_with_onions_stays_its_own_line():
     tools.plan_meal(WED, "Soup", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id, "Emily")
     assert sorted((r["item"], r["quantity"]) for r in _needed()) == [("Onions", "2"), ("Red onion", "1")]
+
+
+# ---------- review findings (2026-10-02) ----------
+
+
+def test_cleaning_up_keeps_the_wording_of_a_line_a_person_typed():
+    """A typed "Onions" folded with a typed "Yellow onion" keeps "Onions"."""
+    conn = get_conn()
+    for name, qty in [("Onions", "2"), ("Yellow onion", "3")]:
+        conn.execute(
+            "INSERT INTO grocery_items (household_id, item, quantity, category, status) "
+            "VALUES (1, ?, ?, 'produce', 'needed')",
+            (name, qty),
+        )
+    conn.commit()
+    conn.close()
+    tools.consolidate_grocery_list()
+    assert [(r["item"], r["quantity"]) for r in _needed()] == [("Onions", "5")]
+
+
+def test_the_startup_sweep_does_not_delete_a_store_choice_for_the_variety():
+    """
+    CATCH (on the first build of this branch): _merge_duplicate_item_store_preferences
+    runs on every startup and kept only the newest of "rice" / "long grain
+    white rice", silently dropping a store the household chose.
+    """
+    from app import db
+
+    conn = get_conn()
+    conn.execute("INSERT INTO item_store_preferences (household_id, item, store) VALUES (1, 'rice', 'Costco')")
+    conn.execute("INSERT INTO item_store_preferences (household_id, item, store) VALUES (1, 'long grain white rice', 'Walmart')")
+    conn.execute("INSERT INTO item_store_preferences (household_id, item, store) VALUES (1, 'onion', 'Costco')")
+    conn.execute("INSERT INTO item_store_preferences (household_id, item, store) VALUES (1, 'onions', 'Walmart')")
+    db._merge_duplicate_item_store_preferences(conn)
+    conn.commit()
+    rows = sorted(
+        (r["item"], r["store"]) for r in conn.execute(
+            "SELECT item, store FROM item_store_preferences WHERE household_id = 1"
+        ).fetchall()
+    )
+    conn.close()
+    # Both rice choices kept; the plural duplicate still swept (newest wins).
+    assert rows == [("long grain white rice", "Walmart"), ("onions", "Walmart"), ("rice", "Costco")]
