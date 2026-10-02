@@ -330,3 +330,28 @@ def test_review_cases_at_half(step, halved):
 
 def test_a_glued_metric_amount_gets_its_space_back():
     assert _recipes.scale_steps(["Add 250ml milk."], 0.75, REVIEW_INGS) == ["Add 187 ½ ml milk."]
+
+
+# ---------- second review round: guards that over-reached ----------
+
+@pytest.mark.parametrize("step, doubled", [
+    ("Add between 1 and 2 cups stock.", "Add between 2 and 4 cups stock."),
+    ("Stir 2 cups rice into 4 cups boiling water.", "Stir 4 cups rice into 8 cups boiling water."),
+    ("Whisk the eggs into 1 cup milk.", "Whisk the eggs into 2 cups milk."),
+    ("Add 1 cup each of rice and beans.", "Add 2 cups each of rice and beans."),
+    ("Season with 1 tsp each salt and pepper.", "Season with 2 tsp each salt and pepper."),
+    ("Add 2 to 3 cups water each time.", "Add 4 to 6 cups water each time."),
+    ("Spoon 1 cup into each bowl.", "Spoon 1 cup into each bowl."),
+    ("Serve 1 egg each.", "Serve 1 egg each."),
+])
+def test_second_review_cases_at_double(step, doubled):
+    assert _recipes.scale_steps([step], 2, REVIEW_INGS) == [doubled]
+
+
+def test_only_the_noun_a_stick_is_of_decides_whether_it_is_butter():
+    got = _recipes.scale_steps(
+        ["Add 1 stick celery and 2 tbsp butter.", "Melt 1 stick, then add the flour."],
+        0.75,
+        REVIEW_INGS,
+    )
+    assert got == ["Add 1 stick celery and 1 ½ tbsp butter.", "Melt 6 tbsp, then add the flour."]

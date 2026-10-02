@@ -881,9 +881,12 @@ _STEP_SIZE_WORDS = ("large", "medium", "small", "whole")
 # amount of food ("cut into 8 slices", "divide among 4 bowls", "1 per
 # person"); one before "per"/"each" is a per-portion amount, which stays
 # the same however many portions there are.
-_STEP_NOT_AN_AMOUNT_BEFORE = re.compile(r"\b(?:a|an|into|among|between|per|each|each of)$")
+_STEP_NOT_AN_AMOUNT_BEFORE = re.compile(r"\b(?:a|an|per|each|each of)$")
+# ...and after these, a count of PIECES — but "into 4 cups water" is still
+# an amount, so this one only stops a count or a slice.
+_STEP_PIECES_BEFORE = re.compile(r"\b(?:into|among)$")
 _STEP_PER_PORTION_AFTER = re.compile(
-    r"(?:\s+[a-z]+){0,2}?\s*(?:per\b|each\b|(?:into|in|to)\s+each\b)", re.IGNORECASE
+    r"(?:\s+[a-z]+){0,2}?\s*(?:per\b|(?:into|in|to)\s+each\b|each\s*(?:[.,;:)]|$))", re.IGNORECASE
 )
 # "1 can (14 oz)": the bracket sizes the can, so it is left alone.
 _STEP_SIZED_CONTAINER = re.compile(
@@ -899,7 +902,7 @@ _STEP_NUM = (
 # twin of an amount ("1 cup (240 ml)", "2 cups/500 ml"), which scale_steps
 # only rewrites when a measuring word follows.
 _STEP_AMOUNT_RE = re.compile(
-    r"(?<![\w.\-–])(?<!\d/)(?P<a>" + _STEP_NUM + r")(?:(?P<sep>\s*(?:-|–|to)\s*)(?P<b>" + _STEP_NUM + r"))?"
+    r"(?<![\w.\-–])(?<!\d/)(?P<a>" + _STEP_NUM + r")(?:(?P<sep>\s*(?:-|–|to|\s+and\s+)\s*)(?P<b>" + _STEP_NUM + r"))?"
 )
 _STEP_UNIT_RE = re.compile(
     r"(?P<sp>\s*)(?P<unit>" + "|".join(sorted(map(re.escape, _STEP_UNIT_WORDS), key=len, reverse=True)) + r")\b",
@@ -1008,6 +1011,7 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
     if not ratio or ratio <= 0 or abs(ratio - 1) < 1e-9:
         return steps
     forms = _step_ingredient_forms(ingredient_items or [])
+    has_butter = any("butter" in str(i or "").lower() for i in ingredient_items or [])
     noun_re = (
         re.compile(
             r"(?P<sp>\s+)(?P<size>(?:" + "|".join(_STEP_SIZE_WORDS) + r")\s+)?(?P<noun>"
@@ -1028,6 +1032,7 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
             # slices", "among 4 bowls" — a count of pieces.
             if _STEP_NOT_AN_AMOUNT_BEFORE.search(before):
                 continue
+            pieces = bool(_STEP_PIECES_BEFORE.search(before))
             prev = step[m.start() - 1] if m.start() else ""
             bracketed = prev in "(/"
             if prev == "(" and _STEP_SIZED_CONTAINER.search(before[:-1].rstrip()):
@@ -1047,7 +1052,14 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
                     continue  # "1 cup into each bowl", "2 tbsp per person"
                 written = unit_m.group("unit")
                 canon, sing, plur = _STEP_UNIT_WORDS[written.lower()]
-                butter = "butter" in after[:30].lower()
+                if pieces and canon == "slice":
+                    continue  # "cut into 8 slices"
+                # Butter is the noun the stick is OF ("1 stick cold butter"),
+                # or a bare "1 stick" in a recipe that lists butter.
+                butter = bool(
+                    re.match(r"\s*(?:of\s+)?(?:[a-z]+\s+)?butter\b", after.lower())
+                    or (has_butter and re.match(r"\s*(?:[.,;:)]|$)", after))
+                )
                 new_a, new_unit = _step_scaled(a, ratio, canon, butter)
                 new_b = _step_scaled(b, ratio, canon, butter)[0] if b is not None else None
                 biggest = new_b if new_b is not None else new_a
@@ -1068,7 +1080,7 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
                 out.append(step[pos:m.start()] + amount + sp + unit_text)
                 pos = m.end() + unit_m.end()
                 continue
-            noun_m = noun_re.match(rest) if noun_re and not bracketed else None
+            noun_m = noun_re.match(rest) if noun_re and not bracketed and not pieces else None
             if not noun_m or _STEP_PER_PORTION_AFTER.match(rest[noun_m.end():]):
                 continue
             # "2 garlic cloves" counts cloves, and a clove only comes whole —
