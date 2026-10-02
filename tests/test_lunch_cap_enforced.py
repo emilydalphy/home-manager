@@ -451,3 +451,61 @@ def test_an_unanswered_weekday_lunch_is_only_recorded(generate_only):
     assert out["left"] == [{"date": dates[1], "slot": "lunch", "meal": "Long Lunch", "minutes": 45,
                             "cap": 20, "why": "the household hasn't said this lunch is cooked that day"}]
     assert len(_lunch_warnings(plan_id, tools.get_week_intake(week))) == 1, "and it is still warned about"
+
+
+def test_the_hold_skips_an_allergen_question_and_a_nobody_home_night(generate_only):
+    """Neither is a gap fill_open_dinners will plan, so neither holds calls."""
+    from app.tools import swap_in_place
+    week, dates, plan_id = _one_long_lunch(generate_only, 0)
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET slot_state = 'open', derived_from_json = ? "
+                 "WHERE weekly_plan_id = ? AND slot = 'dinner' AND date = ?",
+                 (json.dumps({"constraint": "allergen"}), plan_id, dates[2]))
+    conn.execute("UPDATE meal_plan_entries SET slot_state = 'planned_empty' "
+                 "WHERE weekly_plan_id = ? AND slot = 'dinner' AND date = ?", (plan_id, dates[3]))
+    conn.commit()
+    conn.close()
+    assert cap_enforce._held_for_later_passes(plan_id, dates) == swap_in_place.MAX_PICK_ATTEMPTS
+
+
+def test_if_the_hold_cannot_be_counted_lunch_spends_nothing(generate_only, monkeypatch):
+    week, dates, plan_id = _one_long_lunch(generate_only, 0)
+
+    def _boom(*a, **k):
+        raise RuntimeError("no count")
+
+    monkeypatch.setattr(cap_enforce, "_held_for_later_passes", _boom)
+    out = _enforce(plan_id, _cooked(dates), tools.get_household_memory(), picker=_never)
+    assert out["repicked"] == []
+    assert [x["why"] for x in out["left"]] == ["nothing quicker came back"]
+
+
+def test_a_dinner_repick_is_not_held_to_an_unanswered_lunchs_cap(generate_only, monkeypatch):
+    """
+    The third review's repro: a dinner re-picked WHOLE (their dinner number
+    is met) whose dish is also on an unanswered weekday lunch. That lunch is
+    not enforced, so it must not tighten the dinner's pick to 20.
+    """
+    from test_rush_cap_enforced import _dinners
+    tools.edit_preference("weeknight_max_minutes", 30)
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Big Stew", 45)
+    tools.save_week_intake(week)
+    days = []
+    for i, d in enumerate(dates):
+        days += _day(d, "Big Stew" if i == 1 else "Quick Wrap", dinner="Big Stew" if i == 0 else "Quick Eggs")
+    plan_id = _generate(generate_only, week, days)
+    monkeypatch.setattr(cap_enforce, "rearrange", lambda *a, **k: [])
+
+    def _medium(context):
+        return {"meal_name": "Medium Curry", "reason": "r",
+                "ingredients": [{"item": "curry stuff", "qty": "1", "category": "pantry"}],
+                "instructions": ["Cook.", "Serve."], "food_groups": ["protein", "vegetable", "carb"],
+                "prep_time_minutes": 0, "cook_time_minutes": 25}
+
+    memory = dict(tools.get_household_memory(), meal_counts_set=True, dinners_per_week=2)
+    out = _enforce(plan_id, tools.get_week_intake(week), memory, picker=_medium)
+    assert out["repicked"] and out["repicked"][0]["slot"] == "dinner"
+    assert {r["date"]: r["meal"] for r in _dinners(plan_id)}[dates[0]] == "Medium Curry"

@@ -107,7 +107,8 @@ another card.
   TWO THINGS WORTH KNOWING, found by review. (1) A whole-dish lunch
   re-pick (_whole_dish_nights, when the household's lunch number is met)
   also replaces DINNERS of the same dish, held to the tightest cap among
-  them — the mirror of what a dinner re-pick already did on main; the
+  them (a lunch's own cap counts only when it was answered "cooked" —
+  _cook_cap) — the mirror of what a dinner re-pick already did on main; the
   `repicked` record names the lunch only. (2) The pass and plan_quality
   do not quite agree on a prepped-lunch batch: `nights` reads its markers
   (prep_date / prep_day_cook / constraint) as a batch with no cap, while
@@ -681,11 +682,18 @@ def _cook_cap(row: dict, intake: dict | None, memory: dict | None) -> int | None
         return None
     if row["slot"] == "lunch":
         from . import weekday_lunches as _weekday_lunches
+        kind = _weekday_lunches.kinds_by_date(intake).get(row["date"])
+        if kind != "cooked":
+            # Only a lunch the household SAID is cooked that day is held to
+            # its cap here — the same rule as `nights`' "enforced". Without
+            # this a dinner whole-dish re-pick was held to 20 minutes by an
+            # unanswered lunch of the same dish (third review, 2026-10-02).
+            return None
         batch = bool(derived.get("make_double_for") or derived.get("prep_date")
                      or derived.get("prep_day_cook")
                      or derived.get("constraint") == _weekday_lunches.CONSTRAINT)
         return _time_caps.minutes_cap(row["date"], "lunch", [], memory, is_leftovers=batch,
-                                      lunch_kind=_weekday_lunches.kinds_by_date(intake).get(row["date"]))
+                                      lunch_kind=kind)
     if row["slot"] != "dinner":
         return None
     tags = ((intake or {}).get("night_tags") or {}).get(row["date"]) or []
