@@ -1196,13 +1196,14 @@ def test_generations_own_fold_puts_a_repeated_over_cap_dinner_out_of_reach(
     assert len(_cap_warnings(plan_id, week)) == 2, "and plan_quality goes on warning"
 
 
-def test_a_lunch_over_its_cap_is_repicked_never_traded(capped, stub_model, run):
+def test_an_unanswered_lunch_over_its_cap_is_still_only_warned_about(capped, stub_model, run):
     """
-    INVERTED 2026-10-02 (Loop Board: "A weekday lunch you said you'd cook in
-    20 minutes is drafted at 35"). Was CHAR: lunch only warned about. Lunch
-    is now held to its cap by the re-pick alone — there is no lunch door
-    like swap_dinner_nights, so nothing is ever traded. See
-    tests/test_lunch_cap_enforced.py for the lunch carve-outs.
+    CHAR, narrowed 2026-10-02 (Loop Board: "A weekday lunch you said you'd
+    cook in 20 minutes is drafted at 35"). A weekday lunch the household
+    ANSWERED "cooked that day" is now re-picked inside its cap — see
+    tests/test_lunch_cap_enforced.py. One nobody answered for, as here, is
+    still only warned about and recorded in `left` (cap_enforce's "ONLY A
+    LUNCH THEY SAID IS COOKED", an assumption for Emily). Never traded.
     """
     week = _monday()
     dates = tools._week_dates(week)
@@ -1221,10 +1222,11 @@ def test_a_lunch_over_its_cap_is_repicked_never_traded(capped, stub_model, run):
 
     plan_id, seen = run(week, None)
 
-    assert seen["result"]["moved"] == [], "no trade: stage 1 is dinner-only"
-    assert {x["slot"] for x in seen["result"]["repicked"]} == {"lunch"}
+    assert seen["result"]["repicked"] == [] and seen["result"]["moved"] == []
+    assert [(x["slot"], x["why"]) for x in seen["result"]["left"]] == \
+        [("lunch", "the household hasn't said this lunch is cooked that day")] * 5
     lunch_warnings = [v for v in plan_quality.check_week(
         plan_quality._load_plan_entries(plan_id),
         {"prep_days": [], "lunch_kinds": {}},
     ) if v.rule == "weekday_lunch_cap_respected"]
-    assert lunch_warnings == [], "the five weekday lunches, each brought inside 20 minutes"
+    assert len(lunch_warnings) == 5, "the five weekday lunches, warned about and not repaired"

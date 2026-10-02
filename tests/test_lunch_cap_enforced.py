@@ -9,9 +9,12 @@ Root cause on main: app/tools/cap_enforce.py's loader read
 `weekday_lunch_cap_respected` warned into the morning report only.
 
 The fix is STAGE 2 ONLY for lunch (and breakfast, which has no cap today):
-the same re-pick, against the same shared budget, after the dinners. There is
-no lunch door like swap_dinner_nights, so no free trade. Every carve-out is
-time_caps.minutes_cap's, asked exactly as plan_quality asks it.
+the same re-pick, against the same shared budget, after the dinners and
+leaving what the later dinner fill and allergen sweep need. There is no
+lunch door like swap_dinner_nights, so no free trade. Every carve-out is
+time_caps.minutes_cap's, asked exactly as plan_quality asks it. Only a lunch
+the household SAID is cooked that day (step 3) is re-picked — the
+assumption is pinned by test_an_unanswered_weekday_lunch_is_only_recorded.
 """
 from __future__ import annotations
 
@@ -74,6 +77,12 @@ def _answer(*pairs) -> dict:
     return {"weekday_lunches": {"days": [{"date": d, "kind": k} for d, k in pairs]}}
 
 
+def _cooked(dates) -> dict:
+    """Every lunch of the week answered "cooked that day" (a weekend answer
+    is harmless: time_caps has no weekend lunch cap)."""
+    return _answer(*[(d, "cooked") for d in dates])
+
+
 # ---------- 1. the reported bug, end to end ----------
 
 def test_a_cooked_that_day_lunch_drafted_at_35_is_brought_inside_20(stub_model, run, picker):
@@ -106,11 +115,11 @@ def test_a_cooked_that_day_lunch_drafted_at_35_is_brought_inside_20(stub_model, 
     assert _lunch_warnings(plan_id, tools.get_week_intake(week)) == []
 
 
-def test_the_tripwire_goes_from_five_to_zero(generate_only, picker):
+def test_the_tripwire_goes_from_four_to_zero(generate_only, picker):
     """
-    CATCH, acceptance 3 measured before and after on one seeded week: five
-    weekday lunches over 20, no answer at all (the default — a weekday lunch
-    is cooked that day unless it's a prep day or a chain).
+    CATCH, acceptance 3 measured before and after on one seeded week: four
+    weekday lunches over 20, every one answered "cooked that day". Four is
+    what one budget of six can fix while leaving the allergen sweep its two.
     """
     week = _monday()
     dates = tools._week_dates(week)
@@ -119,19 +128,18 @@ def test_the_tripwire_goes_from_five_to_zero(generate_only, picker):
     _recipe("Long Lunch B", 45)
     _recipe("Long Lunch C", 40)
     _recipe("Long Lunch D", 35)
-    _recipe("Long Lunch E", 30)
     tools.save_week_intake(week)
-    longs = ["Long Lunch A", "Long Lunch B", "Long Lunch C", "Long Lunch D", "Long Lunch E",
+    longs = ["Long Lunch A", "Long Lunch B", "Long Lunch C", "Long Lunch D", "Quick Wrap",
              "Quick Wrap", "Quick Wrap"]
     days = []
     for d, name in zip(dates, longs):
         days += _day(d, name)
     plan_id = _generate(generate_only, week, days)
-    intake = tools.get_week_intake(week)
+    intake = _cooked(dates)
 
-    assert len(_lunch_warnings(plan_id, intake)) == 5, "before: five warnings"
+    assert len(_lunch_warnings(plan_id, intake)) == 4, "before: four warnings"
     out = _enforce(plan_id, intake, tools.get_household_memory(), picker=picker)
-    assert len(out["repicked"]) == 5
+    assert len(out["repicked"]) == 4
     assert _lunch_warnings(plan_id, intake) == [], "after: none"
 
 
@@ -159,7 +167,7 @@ def test_nothing_quicker_leaves_the_lunch_as_drafted_with_its_reason(generate_on
         days += _day(d, "Long Lunch" if i == 2 else "Quick Wrap")
     plan_id = _generate(generate_only, week, days)
 
-    out = _enforce(plan_id, tools.get_week_intake(week),
+    out = _enforce(plan_id, _cooked(dates),
                                            tools.get_household_memory(), picker=lambda c: {})
 
     wed = _lunches(plan_id)[dates[2]]
@@ -181,7 +189,7 @@ def test_a_pick_over_the_lunch_cap_is_refused(generate_only, picker):
     plan_id = _generate(generate_only, week, days)
     picker.minutes = 25
 
-    out = _enforce(plan_id, tools.get_week_intake(week),
+    out = _enforce(plan_id, _cooked(dates),
                                            tools.get_household_memory(), picker=picker)
 
     assert out["repicked"] == []
@@ -209,7 +217,7 @@ def _never(context):
 
 def test_a_weekend_lunch_has_no_cap(generate_only):
     week, dates, plan_id = _one_long_lunch(generate_only, 5)
-    out = _enforce(plan_id, tools.get_week_intake(week),
+    out = _enforce(plan_id, _cooked(dates),
                                            tools.get_household_memory(), picker=_never)
     assert out["repicked"] == [] and out["left"] == []
     assert _lunches(plan_id)[dates[5]]["meal"] == "Long Lunch"
@@ -218,7 +226,7 @@ def test_a_weekend_lunch_has_no_cap(generate_only):
 def test_a_lunch_on_a_standing_prep_day_has_no_cap(generate_only):
     week, dates, plan_id = _one_long_lunch(generate_only, 2)
     memory = dict(tools.get_household_memory(), rhythm={"prep_days": [{"weekday": "wednesday"}]})
-    out = _enforce(plan_id, tools.get_week_intake(week), memory, picker=_never)
+    out = _enforce(plan_id, {}, memory, picker=_never)
     assert out["repicked"] == [] and out["left"] == []
 
 
@@ -255,7 +263,7 @@ def test_either_end_of_a_leftovers_chain_has_no_cap(generate_only):
             days += _day(d, "Quick Wrap")
     plan_id = _generate(generate_only, week, days)
 
-    out = _enforce(plan_id, tools.get_week_intake(week),
+    out = _enforce(plan_id, _cooked(dates),
                                            tools.get_household_memory(), picker=_never)
     assert out["repicked"] == []
     lunches = _lunches(plan_id)
@@ -264,7 +272,7 @@ def test_either_end_of_a_leftovers_chain_has_no_cap(generate_only):
 
 def test_a_lunch_they_asked_for_by_name_is_left_alone_and_said_why(generate_only):
     week, dates, plan_id = _one_long_lunch(generate_only, 3, derived_from={"freeform": "long lunch thursday"})
-    out = _enforce(plan_id, tools.get_week_intake(week),
+    out = _enforce(plan_id, _cooked(dates),
                                            tools.get_household_memory(), picker=_never)
     assert out["repicked"] == []
     assert [(x["slot"], x["why"]) for x in out["left"]] == \
@@ -278,7 +286,7 @@ def test_a_lunch_already_cooked_is_left_alone(generate_only):
                  (_lunches(plan_id)[dates[3]]["id"],))
     conn.commit()
     conn.close()
-    out = _enforce(plan_id, tools.get_week_intake(week),
+    out = _enforce(plan_id, _cooked(dates),
                                            tools.get_household_memory(), picker=_never)
     assert out["repicked"] == []
     assert [x["why"] for x in out["left"]] == ["it is already cooked"]
@@ -295,17 +303,42 @@ def test_breakfast_has_no_cap_and_is_never_touched(generate_only):
     for d in dates:
         days += _day(d, "Quick Wrap", breakfast="Slow Porridge")
     plan_id = _generate(generate_only, week, days)
-    out = _enforce(plan_id, tools.get_week_intake(week),
+    out = _enforce(plan_id, _cooked(dates),
                                            tools.get_household_memory(), picker=_never)
     assert out["repicked"] == [] and out["left"] == []
 
 
-# ---------- 4. budget: one for the week, dinners first ----------
+# ---------- 4. budget: one for the week, and the later passes keep theirs ----------
 
-def test_lunch_spends_what_the_dinners_left_of_one_shared_budget(generate_only):
-    """Dinners and lunches over cap, and a budget of six for the lot: dinner
-    goes first, and lunch gets no fresh six of its own."""
-    from app.tools import allergen_gate
+def test_lunch_leaves_the_allergen_sweep_its_reserve(generate_only):
+    """Five cooked-that-day lunches over cap and nothing quicker ever comes
+    back: the lunch stage spends down to the sweep's two calls and stops."""
+    from app.tools import allergen_gate, swap_in_place
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Long Lunch", 45)
+    tools.save_week_intake(week)
+    days = []
+    for i, d in enumerate(dates):
+        days += _day(d, "Long Lunch" if i < 5 else "Quick Wrap")
+    plan_id = _generate(generate_only, week, days)
+    seen = []
+
+    def _slow(context):
+        seen.append(context)
+        return {}
+
+    budget = allergen_gate.CallBudget()
+    _enforce(plan_id, _cooked(dates), tools.get_household_memory(), picker=_slow, budget=budget)
+    assert budget.left == swap_in_place.MAX_PICK_ATTEMPTS
+    assert len(seen) == allergen_gate.MAX_REPICK_CALLS - swap_in_place.MAX_PICK_ATTEMPTS
+
+
+def test_lunch_shares_the_dinners_budget_rather_than_a_fresh_six(generate_only):
+    """Dinners over their cap spend the shared budget first; lunch gets what
+    is left, never six of its own."""
+    from app.tools import allergen_gate, swap_in_place
     tools.edit_preference("weeknight_max_minutes", 20)
     week = _monday()
     dates = tools._week_dates(week)
@@ -325,18 +358,67 @@ def test_lunch_spends_what_the_dinners_left_of_one_shared_budget(generate_only):
         return {}
 
     budget = allergen_gate.CallBudget()
-    _enforce(plan_id, tools.get_week_intake(week),
-                                     tools.get_household_memory(), picker=_slow, budget=budget)
-    assert len(seen) <= allergen_gate.MAX_REPICK_CALLS
-    assert budget.left == 0
+    _enforce(plan_id, _cooked(dates), tools.get_household_memory(), picker=_slow, budget=budget)
+    slots = [c.get("slot") for c in seen]
+    assert slots[0] == "dinner" and "lunch" in slots
+    assert slots == sorted(slots, key=lambda x: x != "dinner"), "every dinner call before any lunch call"
+    assert budget.left == swap_in_place.MAX_PICK_ATTEMPTS, "one budget, down to the sweep's reserve"
+
+
+def test_an_open_dinner_is_still_planned_after_the_lunch_stage(stub_model, monkeypatch):
+    """
+    The adversarial review's case (2026-10-02): every lunch over its cap and
+    one dinner the model handed back open. The lunch stage must leave the
+    dinner fill its pick — an open dinner is Emily's decision A. Every other
+    night is Chili, so the fill has to spend a model call.
+    """
+    from test_week_generation import _full_week, _slots_for, _week_start  # noqa: F401
+    from app import agent
+    from app.tools import swap_in_place as sip
+    monkeypatch.setattr(sip, "_pick_replacement", lambda ctx: {
+        "meal_name": "Quick Frittata", "reason": "quick", "prep_time_minutes": 5, "cook_time_minutes": 10,
+        "ingredients": [{"item": "eggs", "qty": "6", "category": "dairy"}], "instructions": ["Cook."],
+    })
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}],
+                     prep_time_minutes=10, cook_time_minutes=20)  # 30: over a lunch's 20
+    week = _week_start()
+    dates = tools._week_dates(week)
+    wednesday = dates[2]
+    tools.save_week_intake(week, weekday_lunches={"days": [{"date": d, "kind": "cooked"} for d in dates[:5]]})
+    days = [d for d in _full_week(week) if not (d["date"] == wednesday and d["slot"] == "dinner")]
+    days.append({
+        "date": wednesday, "slot": "dinner", "meal_name": "", "is_new_recipe": False,
+        "reasoning": "", "slot_state": "open", "open_reason": "I'd rather ask.",
+    })
+    stub_model(days)
+
+    plan = agent.generate_weekly_plan(week)
+
+    assert _slots_for(plan["weekly_plan_id"])[(wednesday, "dinner")]["slot_state"] == "planned"
 
 
 # ---------- 5. the cap told to the model ----------
 
 def test_the_model_is_told_it_is_a_lunch_cooked_that_day(generate_only, picker):
     week, dates, plan_id = _one_long_lunch(generate_only, 0)
-    _enforce(plan_id, tools.get_week_intake(week),
+    _enforce(plan_id, _cooked(dates),
                                      tools.get_household_memory(), picker=picker)
     assert picker.calls
     because = picker.calls[0].get("replacing_because") or ""
     assert "lunch" in because and "20 minutes" in because
+
+
+# ---------- 6. the assumption: only a lunch they SAID is cooked ----------
+
+def test_an_unanswered_weekday_lunch_is_only_recorded(generate_only):
+    """
+    ASSUMPTION, Emily's to widen. time_caps caps an unanswered weekday lunch
+    too, and plan_quality warns about it; this pass re-picks only a lunch the
+    household answered "cooked that day", and records the rest in `left`.
+    """
+    week, dates, plan_id = _one_long_lunch(generate_only, 1)
+    out = _enforce(plan_id, tools.get_week_intake(week), tools.get_household_memory(), picker=_never)
+    assert out["repicked"] == []
+    assert out["left"] == [{"date": dates[1], "slot": "lunch", "meal": "Long Lunch", "minutes": 45,
+                            "cap": 20, "why": "the household hasn't said this lunch is cooked that day"}]
+    assert len(_lunch_warnings(plan_id, tools.get_week_intake(week))) == 1, "and it is still warned about"
