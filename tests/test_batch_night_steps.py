@@ -191,14 +191,21 @@ _STEPPED_MEAL = dict(
 )
 
 
-@_needs_node
-def test_a_stepper_tap_moves_the_steps_and_keeps_the_sides_step():
-    got = _run_stepper()
-    assert got["after"] == ["Add 3 cups rice.", "Alongside — Salad: Toss it."]
-    assert got["fresh"] == ["Add 3 cups rice.", "Alongside — Salad: Toss it."]
+_SCALE_FETCH = (
+    "fetch = function (url) {\n"
+    "  var n = parseInt(/servings=(\\d+)/.exec(url)[1], 10);\n"
+    "  var body = { scaled_ingredients: [{ qty: (n / 2) + ' cups', item: 'Rice' }],\n"
+    "               scaled_instructions: ['Add ' + (n / 2) + ' cups rice.'], unscaled_items: [] };\n"
+    "  return Promise.resolve({ ok: true, json: function () { return Promise.resolve(body); } });\n"
+    "};\n"
+)
+
+# A page reload: the in-memory overrides are gone and come back only from
+# the tick record in localStorage (cookReadTicks -> cookReadServes).
+_RELOAD = "cookState.ticksFor = null; cookState.ticks = null; cookState.serves = {}; cookReadTicks();\n"
 
 
-def _run_stepper():
+def _run_js(body: str) -> object:
     base = {
         "data": dict(cj._VIEW, meals=[_STEPPED_MEAL]), "meals": [], "focusIdx": 0,
         "focusStage": "recipe", "serves": {}, "servesSeq": 0, "focusMealKey": "e41",
@@ -211,12 +218,17 @@ def _run_stepper():
         + cj._string_const("COOK_TICKS_PREFIX") + "\n"
         + cj._var_block("HUMAN_QTY_FRACTIONS") + "\n"
         + "\n".join(cj._extract(n) for n in cj._FUNCTIONS) + "\n"
-        + "fetch = function (url) {\n"
-        "  var n = parseInt(/servings=(\\d+)/.exec(url)[1], 10);\n"
-        "  var body = { scaled_ingredients: [{ qty: (n / 2) + ' cups', item: 'Rice' }],\n"
-        "               scaled_instructions: ['Add ' + (n / 2) + ' cups rice.'], unscaled_items: [] };\n"
-        "  return Promise.resolve({ ok: true, json: function () { return Promise.resolve(body); } });\n"
-        "};\n"
+        + _SCALE_FETCH
+        + body
+    )
+    res = nodeharness.run_node(harness, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip())
+
+
+@_needs_node
+def test_a_stepper_tap_moves_the_steps_and_keeps_the_sides_step():
+    got = _run_js(
         "(async function () {\n"
         "  await cookStepServings(fakeStepper(0, 2, 'Sheet-pan chicken thighs', 4));\n"
         "  var after = cookState.data.meals[0].instructions.slice();\n"
@@ -225,19 +237,96 @@ def _run_stepper():
         "  console.log(JSON.stringify({ after: after, fresh: fresh.instructions }));\n"
         "})();"
     )
-    res = nodeharness.run_node(harness, timeout=30)
-    assert res.returncode == 0, f"node failed: {res.stderr}"
-    return json.loads(res.stdout.strip())
+    assert got["after"] == ["Add 3 cups rice.", "Alongside — Salad: Toss it."]
+    assert got["fresh"] == ["Add 3 cups rice.", "Alongside — Salad: Toss it."]
+
+
+@_needs_node
+def test_the_scaled_steps_survive_a_reload_with_the_amounts():
+    """Found on review: cookReadServes rebuilt each stored override from a
+    whitelist without the steps, so a reload put the server's steps back
+    under the cook's amounts — the original bug, one reload later."""
+    got = _run_js(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 2, 'Sheet-pan chicken thighs', 4));\n"
+        + _RELOAD
+        + "  var fresh = JSON.parse(JSON.stringify(STEPPED));\n"
+        "  cookApplyServesOverride([fresh]);\n"
+        "  console.log(JSON.stringify({ ings: fresh.ingredients, steps: fresh.instructions }));\n"
+        "})();"
+    )
+    assert got["ings"] == [{"qty": "3 cups", "item": "Rice"}]
+    assert got["steps"] == ["Add 3 cups rice.", "Alongside — Salad: Toss it."]
+
+
+@_needs_node
+def test_a_dish_swapped_onto_the_entry_keeps_its_own_steps():
+    got = _run_js(
+        "(async function () {\n"
+        "  await cookStepServings(fakeStepper(0, 2, 'Sheet-pan chicken thighs', 4));\n"
+        "  var swapped = JSON.parse(JSON.stringify(STEPPED));\n"
+        "  swapped.meal = 'Lentil soup'; swapped.instructions = ['Simmer the lentils.'];\n"
+        "  cookApplyServesOverride([swapped]);\n"
+        "  console.log(JSON.stringify(swapped.instructions));\n"
+        "})();"
+    )
+    assert got == ["Simmer the lentils."]
 
 
 @_needs_node
 def test_an_override_saved_before_steps_were_part_of_it_leaves_them_as_sent():
-    got = cj._run(
-        "var m = JSON.parse(JSON.stringify(cookState.data.meals[0]));\n"
-        "cookState.serves[cookMealKey(m)] = { servings: 6, ingredients: [], unscaled_items: [] };\n"
-        "cookState.ticksFor = null;\n"
-        "cookApplyServesOverride([m]);\n"
-        "console.log(JSON.stringify(m.instructions));",
-        {"data": dict(cj._VIEW, meals=[_STEPPED_MEAL])},
+    """A tick record written by the previous build has no steps in its
+    override; read back after a reload, the server's steps stand."""
+    got = _run_js(
+        "window.localStorage.setItem(COOK_TICKS_PREFIX + '12', JSON.stringify({ steps: {}, ings: {},\n"
+        "  serves: { e41: { servings: 6, ingredients: [{ qty: '3 cups', item: 'Rice' }], unscaled_items: [] } } }));\n"
+        + _RELOAD
+        + "var fresh = JSON.parse(JSON.stringify(STEPPED));\n"
+        "cookApplyServesOverride([fresh]);\n"
+        "console.log(JSON.stringify({ ings: fresh.ingredients, steps: fresh.instructions }));\n"
     )
-    assert got == _STEPPED_MEAL["instructions"]
+    assert got["ings"] == [{"qty": "3 cups", "item": "Rice"}], "the stored override was really read"
+    assert got["steps"] == _STEPPED_MEAL["instructions"]
+
+
+# ---------- found on review: what scale_steps must not touch ----------
+
+REVIEW_INGS = ["Milk", "Ground beef", "Butter", "Lime wedges", "Bouillon cubes", "Potatoes",
+               "Eggs", "Bay leaves", "Cherries", "Celery", "Cinnamon", "Tomatoes", "Rice"]
+
+
+@pytest.mark.parametrize("step, doubled", [
+    # The metric twin in brackets moves with the amount it restates...
+    ("Add 1 cup (240 ml) milk.", "Add 2 cups (480 ml) milk."),
+    ("Brown 1 lb (450 g) ground beef.", "Brown 2 lbs (900 g) ground beef."),
+    ("Add 2 cups/500 ml milk.", "Add 4 cups/1000 ml milk."),
+    # ...but a can's size is the can's.
+    ("Add 1 can (14 oz) tomatoes.", "Add 2 cans (14 oz) tomatoes."),
+    ("Add 2 (15 oz) cans tomatoes.", "Add 2 (15 oz) cans tomatoes."),
+    # Counts of pieces and portions are not amounts of food.
+    ("Cut each loaf into 8 slices.", "Cut each loaf into 8 slices."),
+    ("Cut the lime into 8 wedges.", "Cut the lime into 8 wedges."),
+    ("Cut the chicken into 16 cubes.", "Cut the chicken into 16 cubes."),
+    ("Bake 1 potato per person.", "Bake 1 potato per person."),
+    ("Use 1 cup milk per 2 people.", "Use 1 cup milk per 2 people."),
+    ("Crack 1 egg into each of 4 cups.", "Crack 1 egg into each of 4 cups."),
+    # Only a stick of BUTTER is ever tablespoons.
+    ("Add 1 stick cinnamon.", "Add 2 sticks cinnamon."),
+    ("Add 1 cup rice.", "Add 2 cups rice."),
+])
+def test_review_cases_at_double(step, doubled):
+    assert _recipes.scale_steps([step], 2, REVIEW_INGS) == [doubled]
+
+
+@pytest.mark.parametrize("step, halved", [
+    ("Add 2 bay leaves.", "Add 1 bay leaf."),
+    ("Pit 2 cherries.", "Pit 1 cherry."),
+    ("Melt 1/2 stick butter.", "Melt 2 tbsp butter."),
+    ("Cut 1 stick of celery.", "Cut 1 stick of celery."),
+])
+def test_review_cases_at_half(step, halved):
+    assert _recipes.scale_steps([step], 0.5, REVIEW_INGS) == [halved]
+
+
+def test_a_glued_metric_amount_gets_its_space_back():
+    assert _recipes.scale_steps(["Add 250ml milk."], 0.75, REVIEW_INGS) == ["Add 187 ½ ml milk."]

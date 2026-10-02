@@ -877,14 +877,29 @@ _STEP_VESSEL_WORDS = {
     "pot", "pots", "saucepan", "skillet", "dish", "casserole", "sheet", "tray",
 }
 _STEP_SIZE_WORDS = ("large", "medium", "small", "whole")
+# A number after one of these is a count of pieces or portions, not an
+# amount of food ("cut into 8 slices", "divide among 4 bowls", "1 per
+# person"); one before "per"/"each" is a per-portion amount, which stays
+# the same however many portions there are.
+_STEP_NOT_AN_AMOUNT_BEFORE = re.compile(r"\b(?:a|an|into|among|between|per|each|each of)$")
+_STEP_PER_PORTION_AFTER = re.compile(
+    r"(?:\s+[a-z]+){0,2}?\s*(?:per\b|each\b|(?:into|in|to)\s+each\b)", re.IGNORECASE
+)
+# "1 can (14 oz)": the bracket sizes the can, so it is left alone.
+_STEP_SIZED_CONTAINER = re.compile(
+    r"\b(?:cans?|tins?|jars?|packages?|bags?|box(?:es)?|bottles?|cartons?|containers?|tubs?|blocks?)\s*$"
+)
 
 _STEP_NUM = (
     r"(?:\d+\s+\d+/\d+|\d+\s*[½⅓⅔¼¾⅛⅜⅝⅞]|\d+/\d+|\d+(?:\.\d+)?|[½⅓⅔¼¾⅛⅜⅝⅞])"
 )
-# The amount (or a range of two), not glued to a word, a dash, a slash or a
-# decimal point on its left — so "9x13", "350-degree" and "1/2" read whole.
+# The amount (or a range of two), not glued to a word, a dash, a decimal
+# point or a number-and-slash on its left — so "9x13", "350-degree" and
+# "1/2" read whole. "(" and a word-and-slash are let through for the metric
+# twin of an amount ("1 cup (240 ml)", "2 cups/500 ml"), which scale_steps
+# only rewrites when a measuring word follows.
 _STEP_AMOUNT_RE = re.compile(
-    r"(?<![\w./\-–(])(?P<a>" + _STEP_NUM + r")(?:(?P<sep>\s*(?:-|–|to)\s*)(?P<b>" + _STEP_NUM + r"))?"
+    r"(?<![\w.\-–])(?<!\d/)(?P<a>" + _STEP_NUM + r")(?:(?P<sep>\s*(?:-|–|to)\s*)(?P<b>" + _STEP_NUM + r"))?"
 )
 _STEP_UNIT_RE = re.compile(
     r"(?P<sp>\s*)(?P<unit>" + "|".join(sorted(map(re.escape, _STEP_UNIT_WORDS), key=len, reverse=True)) + r")\b",
@@ -924,11 +939,14 @@ def _step_amount_text(amount: float) -> str:
     return f"{whole} {best}" if whole else best
 
 
-def _step_scaled(amount: float, ratio: float, unit: str | None) -> tuple[float, str | None]:
+def _step_scaled(amount: float, ratio: float, unit: str | None, butter: bool = True) -> tuple[float, str | None]:
     """scale_recipe's arithmetic for one amount, so the step and the chip
-    agree: a stick cut to a fraction becomes tablespoons, and a thing that
-    only comes whole stays whole."""
+    agree: a stick of butter cut to a fraction becomes tablespoons, and a
+    thing that only comes whole stays whole. A stick of anything else
+    (celery, cinnamon) is just counted."""
     scaled = amount * ratio
+    if unit == "stick" and not butter:
+        return max(1.0, float(round(scaled))), unit
     if unit == "stick" and abs(scaled - round(scaled)) > 1e-9:
         return scaled * _STICK_TBSP, "tbsp"
     if unit in _DISCRETE_UNITS:
@@ -956,13 +974,29 @@ def _step_ingredient_forms(items: list[str]) -> list[str]:
     return sorted(forms, key=len, reverse=True)
 
 
+_F_PLURALS = {"leaf": "leaves", "loaf": "loaves", "half": "halves", "knife": "knives"}
+_F_SINGULARS = {v: k for k, v in _F_PLURALS.items()}
+# -ies words whose singular is -ie, not -y.
+_IE_SINGULARS = {"cookies", "brownies", "pies", "smoothies", "veggies", "sweeties"}
+
+
 def _pluralize_noun(phrase: str, many: bool) -> str:
     head, sep, last = phrase.rpartition(" ")
     lower = last.lower()
     if many and not lower.endswith("s"):
-        last = last + ("es" if lower.endswith(("o", "ch", "sh", "x")) else "s")
+        if lower in _F_PLURALS:
+            last = _F_PLURALS[lower]
+        elif lower.endswith("y") and len(lower) > 1 and lower[-2] not in "aeiou":
+            last = last[:-1] + "ies"
+        else:
+            last = last + ("es" if lower.endswith(("o", "ch", "sh", "x")) else "s")
     elif not many and lower.endswith("s") and not lower.endswith("ss"):
-        last = last[:-2] if lower.endswith(("oes", "ches", "shes", "xes")) else last[:-1]
+        if lower in _F_SINGULARS:
+            last = _F_SINGULARS[lower]
+        elif lower.endswith("ies") and lower not in _IE_SINGULARS:
+            last = last[:-3] + "y"
+        else:
+            last = last[:-2] if lower.endswith(("oes", "ches", "shes", "xes")) else last[:-1]
     return f"{head}{sep}{last}"
 
 
@@ -990,8 +1024,13 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
             if m.start() < pos:
                 continue
             before = step[:m.start()].rstrip().lower()
-            # "a 12 oz can", "an 8 inch pan" — a size, not an amount.
-            if re.search(r"\b(?:a|an)$", before):
+            # "a 12 oz can", "an 8 inch pan" — a size, not an amount; "into 8
+            # slices", "among 4 bowls" — a count of pieces.
+            if _STEP_NOT_AN_AMOUNT_BEFORE.search(before):
+                continue
+            prev = step[m.start() - 1] if m.start() else ""
+            bracketed = prev in "(/"
+            if prev == "(" and _STEP_SIZED_CONTAINER.search(before[:-1].rstrip()):
                 continue
             a = _step_number(m.group("a"))
             b = _step_number(m.group("b")) if m.group("b") else None
@@ -1001,13 +1040,16 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
             unit_m = _STEP_UNIT_RE.match(rest)
             if unit_m:
                 after = rest[unit_m.end():]
-                next_word = re.match(r"\s*([a-z]+)", after.lower())
+                next_word = re.match(r"[\s)]*([a-z]+)", after.lower())
                 if next_word and next_word.group(1) in _STEP_VESSEL_WORDS:
                     continue  # "2 quart saucepan", "14 oz can"
+                if _STEP_PER_PORTION_AFTER.match(after):
+                    continue  # "1 cup into each bowl", "2 tbsp per person"
                 written = unit_m.group("unit")
                 canon, sing, plur = _STEP_UNIT_WORDS[written.lower()]
-                new_a, new_unit = _step_scaled(a, ratio, canon)
-                new_b = _step_scaled(b, ratio, canon)[0] if b is not None else None
+                butter = "butter" in after[:30].lower()
+                new_a, new_unit = _step_scaled(a, ratio, canon, butter)
+                new_b = _step_scaled(b, ratio, canon, butter)[0] if b is not None else None
                 biggest = new_b if new_b is not None else new_a
                 if new_unit != canon:
                     unit_text = new_unit  # a stick cut to tablespoons
@@ -1020,12 +1062,14 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
                 amount = _step_amount_text(new_a)
                 if new_b is not None:
                     amount += m.group("sep") + _step_amount_text(new_b)
-                sp = unit_m.group("sp") or (" " if new_unit != canon else "")
+                # "250ml" made "187 ½ml" reads as nothing; a space goes in
+                # whenever the new amount has one of its own.
+                sp = unit_m.group("sp") or (" " if new_unit != canon or not amount.isdigit() else "")
                 out.append(step[pos:m.start()] + amount + sp + unit_text)
                 pos = m.end() + unit_m.end()
                 continue
-            noun_m = noun_re.match(rest) if noun_re else None
-            if not noun_m:
+            noun_m = noun_re.match(rest) if noun_re and not bracketed else None
+            if not noun_m or _STEP_PER_PORTION_AFTER.match(rest[noun_m.end():]):
                 continue
             # "2 garlic cloves" counts cloves, and a clove only comes whole —
             # the same rule scale_recipe gives "2 cloves garlic".
