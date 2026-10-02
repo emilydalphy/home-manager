@@ -17421,9 +17421,10 @@
   // most titles is the side ("Move the rice"; QA walk 2, 2026-10-02).
   // The same rule as meal_move.short_name on the server.
   function dishShortName(meal) {
-    var text = String(meal || '').replace(/\s*[(\[][^)\]]*[)\]]/g, ' ').trim();
-    var main = text.split(/\s+with\s+/i)[0].split(/\s+/).join(' ').trim();
-    return main || text.split(/\s+/).join(' ') || meal;
+    var text = String(meal || '').replace(/[(\[][^)\]]*[)\]]/g, ' ').split(/\s+/).join(' ').trim();
+    var main = text.split(/(?:^|\s)with\s/i)[0].trim();
+    // Nothing before "with": the whole title as written; no title: "meal".
+    return main || String(meal || '').split(/\s+/).join(' ').trim() || 'meal';
   }
 
   // ---------- The freezer step ----------

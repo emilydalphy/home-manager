@@ -153,6 +153,128 @@ def test_a_lunch_answered_cooked_is_not_left_a_reheat(two_adults, seen_context):
     assert f"{dates[3]}:lunch" not in (tue["derived"].get("make_double_for") or [])
 
 
+def _pick(name, minutes=15):
+    return {
+        "meal_name": name, "is_new_recipe": True, "reason": "A quick lunch.",
+        "ingredients": [{"item": f"{name} stuff", "qty": "1 lb", "category": "pantry"}],
+        "instructions": ["Cook."], "food_groups": ["protein", "carb", "vegetable"],
+        "prep_time_minutes": 5, "cook_time_minutes": minutes - 5,
+    }
+
+
+def _picker(monkeypatch, minutes=15):
+    from app.tools import swap_in_place as sip
+
+    calls = []
+
+    def picker(context):
+        if "must_be_cuisine" in context:
+            return {}
+        calls.append(context)
+        return _pick(f"Quick Lunch {len(calls)}", minutes)
+
+    monkeypatch.setattr(sip, "_pick_replacement", picker)
+    return calls
+
+
+def _all_cooked_week(stub, lunch_links, lunches=None, dinners=None, dinner_minutes=None, lunch_names=None):
+    mon = _monday()
+    dates = tools._week_dates(mon)
+    tools.save_week_intake(mon, weekday_lunches={"prep_days": [], "days": [
+        {"date": dates[i], "kind": "cooked"} for i in range(5)
+    ]})
+    lunches = lunch_names or ["Egg Wrap", "Soup", "Pita", "Noodle Bowl", "Quesadilla", "Toastie", "Panini"]
+    dinners = dinners or ["Tacos", "Roast Chicken", "Pasta", "Stir-fry", "Pizza", "Burgers", "Stew"]
+    days = []
+    for i, d in enumerate(dates):
+        days.append(_slot(d, "breakfast", "Oats"))
+        lunch = _slot(d, "lunch", lunches[i], minutes=15)
+        if i in lunch_links:
+            lunch["derived_from"] = {"links_to": lunch_links[i]}
+        days.append(lunch)
+        days.append(_slot(d, "dinner", dinners[i], minutes=(dinner_minutes or {}).get(i, 30)))
+    stub(days)
+    return mon, dates
+
+
+PORK = "Slow Roast Pork Shoulder"
+
+
+@pytest.fixture
+def pork_thursday(seen_context):
+    seen, stub = seen_context
+
+    def build(links):
+        return _all_cooked_week(
+            stub, links, dinners=["Tacos", "Roast Chicken", PORK, "Stir-fry", "Pizza", "Burgers", "Stew"],
+            lunch_names=["Egg Wrap", "Soup", "Pita", PORK, "Quesadilla", "Toastie", "Panini"],
+            dinner_minutes={2: 180})
+    return build
+
+
+def test_the_pork_shoulder_is_never_cooked_at_thursday_lunch(two_adults, pork_thursday, monkeypatch):
+    calls = _picker(monkeypatch)
+    mon, dates = pork_thursday({3: f"{tools._week_dates(_monday())[2]}:dinner"})
+    plan_id = agent.generate_weekly_plan(mon)["weekly_plan_id"]
+    thu = _rows(plan_id, "lunch")[dates[3]]
+    chains = tools.plan_leftover_chains(plan_id)
+    assert thu["meal"] != PORK and thu["meal"].startswith("Quick Lunch"), thu["meal"]
+    assert thu["id"] not in chains["leftovers"]
+    assert calls, "the re-pick was asked"
+    wed_dinner = _rows(plan_id, "dinner")[dates[2]]
+    assert f"{dates[3]}:lunch" not in (wed_dinner["derived"].get("make_double_for") or [])
+
+
+def test_when_nothing_quick_comes_back_it_stays_leftovers_and_says_so(two_adults, pork_thursday, monkeypatch):
+    from app.tools import weekday_lunches
+
+    _picker(monkeypatch, minutes=60)        # every pick is too long for a 20-minute lunch
+    mon, dates = pork_thursday({3: f"{tools._week_dates(_monday())[2]}:dinner"})
+    said = []
+    real = weekday_lunches.apply_to_plan
+
+    def spy(plan_id, intake, **kw):
+        out = real(plan_id, intake, **kw)
+        said.extend(out.get("said") or [])
+        return out
+    monkeypatch.setattr(weekday_lunches, "apply_to_plan", spy)
+    plan_id = agent.generate_weekly_plan(mon)["weekly_plan_id"]
+    thu = _rows(plan_id, "lunch")[dates[3]]
+    assert thu["meal"] == PORK
+    assert thu["id"] in tools.plan_leftover_chains(plan_id)["leftovers"], "still a reheat, never a noon roast"
+    assert "Thursday’s lunch stays Wednesday’s Slow Roast Pork Shoulder — nothing quick enough to cook that day came back." in said
+
+
+def test_a_leftovers_chain_re_pointed_at_a_dinner_roast_is_re_picked(two_adults, seen_context, monkeypatch):
+    seen, stub = seen_context
+    _picker(monkeypatch)
+    dates = tools._week_dates(_monday())
+    # Mon → Tue → Wed: Wednesday eats Tuesday's leftovers of Monday — a
+    # chain off a chain, which repair_leftover_chains re-points at the
+    # nearest cook: Tuesday's dinner, the Roast.
+    mon, dates = _all_cooked_week(
+        stub, {1: f"{dates[0]}:lunch", 2: f"{dates[1]}:lunch"},
+        lunch_names=["Roast Sandwich", "Roast Sandwich", "Roast Sandwich", "Noodle Bowl", "Quesadilla",
+                     "Toastie", "Panini"],
+        dinners=["Tacos", "Roast", "Pasta", "Stir-fry", "Pizza", "Burgers", "Stew"],
+        dinner_minutes={1: 120})
+    plan_id = agent.generate_weekly_plan(mon)["weekly_plan_id"]
+    lunch = _rows(plan_id, "lunch")
+    chains = tools.plan_leftover_chains(plan_id)
+    for d in dates[:5]:
+        assert lunch[d]["meal"] != "Roast", d
+        assert lunch[d]["id"] not in chains["leftovers"], d
+
+
+def test_a_leftover_name_with_no_chain_is_re_picked(two_adults, seen_context, monkeypatch):
+    seen, stub = seen_context
+    _picker(monkeypatch)
+    mon, dates = _all_cooked_week(
+        stub, {}, lunch_names=["Egg Wrap", "Soup", "Pita", "Leftover Tacos", "Quesadilla", "Toastie", "Panini"])
+    plan_id = agent.generate_weekly_plan(mon)["weekly_plan_id"]
+    assert _rows(plan_id, "lunch")[dates[3]]["meal"].startswith("Quick Lunch")
+
+
 # ==========================================================================
 # Card 2 — the short name is the dish, not its side
 # ==========================================================================
@@ -184,3 +306,19 @@ def test_the_shell_says_the_same():
     res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, res.stderr
     assert json.loads(res.stdout.strip().splitlines()[-1]) == [c[1] for c in CASES]
+
+
+PARITY = ["", "(Pad Kra Pao)", "(only) with rice", "With Love Lasagna", "Chicken with", "  Soup   with  Bread ",
+          "Bowl [GF] (v) with Rice", "Thai Basil Chicken (Pad Kra Pao) with Jasmine Rice"]
+
+
+@_needs_node
+def test_server_and_shell_agree_on_every_title_including_none():
+    m = re.search(r"  function dishShortName\(meal\) \{[\s\S]*?\n  \}\n", SHELL_JS)
+    script = m.group(0) + (f"console.log(JSON.stringify({json.dumps(PARITY)}.concat([null]).map(dishShortName)));")
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    shell = json.loads(res.stdout.strip().splitlines()[-1])
+    server = [meal_move.short_name(t) for t in PARITY + [None]]
+    assert shell == server
+    assert server[:3] == ["meal", "(Pad Kra Pao)", "(only) with rice"] and server[-1] == "meal"

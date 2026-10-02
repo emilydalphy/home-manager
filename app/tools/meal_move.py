@@ -84,10 +84,11 @@ def short_name(dish: str | None) -> str:
     generated titles end in a side, so the sheet warned "The rice would end
     up after its leftovers" about a basil chicken. The same rule as
     shell.js dishShortName."""
-    text = re.sub(r"\s*[(\[][^)\]]*[)\]]", " ", (dish or "")).strip()
-    main = re.split(r"\s+with\s+", text, maxsplit=1, flags=re.IGNORECASE)[0]
-    main = " ".join(main.split())
-    return main or " ".join(text.split()) or "meal"
+    text = " ".join(re.sub(r"[(\[][^)\]]*[)\]]", " ", dish or "").split())
+    main = re.split(r"(?:^|\s)with\s", text, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+    # Nothing before "with" (a title that is all brackets, or starts with
+    # "with"): the whole title as written; no title at all: "meal".
+    return main or " ".join((dish or "").split()) or "meal"
 
 
 def _cap(text: str) -> str:
