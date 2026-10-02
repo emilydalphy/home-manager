@@ -17414,14 +17414,16 @@
     refreshTodayMoves();
   }
 
-  // "Swap the salsa" / "Move the tacos" — the dish's last word, which is
-  // what a person calls it once the sentence has already named it in
-  // full. A one-word dish is its own short name.
+  // "Move the Thai Basil Chicken" for "Thai Basil Chicken (Pad Kra Pao)
+  // with Jasmine Rice" — the main dish: the title before its first
+  // " with ", brackets taken out, in the dish's own capitals. A title
+  // with no "with" is said in full. It used to be the LAST word, which on
+  // most titles is the side ("Move the rice"; QA walk 2, 2026-10-02).
+  // The same rule as meal_move.short_name on the server.
   function dishShortName(meal) {
-    var words = String(meal || '').trim().split(/\s+/);
-    var last = words[words.length - 1] || '';
-    if (words.length < 2 || last.length < 4) return meal;
-    return last.toLowerCase();
+    var text = String(meal || '').replace(/\s*[(\[][^)\]]*[)\]]/g, ' ').trim();
+    var main = text.split(/\s+with\s+/i)[0].split(/\s+/).join(' ').trim();
+    return main || text.split(/\s+/).join(' ') || meal;
   }
 
   // ---------- The freezer step ----------

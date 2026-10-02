@@ -574,7 +574,8 @@ def test_the_move_view_draws_the_servers_days_dimming_the_ones_that_cannot_take_
     assert '<span class="wk-move-line">Nobody’s home</span>' in thu
     assert "wk-swap-tell" not in move and "wk-swap-back" not in move
     # Before the days come back: the title and a spinner, nothing to tap.
-    assert 'id="wk-swap-title">Move the tacos to which day?</h2>' in wait and "wk-swap-spinner" in wait
+    # The main dish's own name (QA walk 2, 2026-10-02), not its last word.
+    assert 'id="wk-swap-title">Move the Black bean tacos to which day?</h2>' in wait and "wk-swap-spinner" in wait
     assert "data-wk-move-to" not in wait
 
 

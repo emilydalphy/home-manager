@@ -198,7 +198,7 @@ class TestOneQuestionAScreen:
         assert "'Last week’s picks, unless you change them.'" in PAGE
         # Step 3 opens filled in from last week (2026-09-25): the lunches
         # by weekday, and the on-the-go days before the rhythm's guess.
-        assert "lunchPrefill(dates, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days)" in PAGE
+        assert "lunchPrefill(dates, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days, data.usual_lunch)" in PAGE
         assert load.index("carriedLunches.on_the_go") < load.index("rhythm_packed_lunch_suggestions")
 
     def test_the_server_tells_the_screen_last_weeks_answers(self):
