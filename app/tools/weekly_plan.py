@@ -505,6 +505,143 @@ def _release_ready_made_recommendations(conn, entry_ids: list[int]) -> int:
     ).rowcount
 
 
+def _hold_ready_made_recommendations(conn, entry_ids: list[int]) -> list[dict]:
+    """
+    The swap's half of _release_ready_made_recommendations: let go of the
+    key on every ready-made suggestion naming one of `entry_ids` (so the
+    DELETE that follows is not blocked), but KEEP the confirmation, and
+    hand back what was held so _follow_swap_with_recommendations can point
+    it at the dish that takes the old one's place.
+
+    Emily, 2026-10-03: when the dinner Pomona suggested doubling is
+    swapped for another dish, the double-batch suggestion moves to the new
+    dish rather than being cleared, and a confirmed double stays confirmed
+    — the new dish is the one to cook double. Deletes, nobody-home nights,
+    a new plan taking over the day and a failed plan's discard still
+    clear it (_release_ready_made_recommendations). Runs on the caller's
+    connection and transaction; commits nothing. Returns
+    [{need_id, old_entry_id}].
+    """
+    if not entry_ids:
+        return []
+    marks = ",".join("?" * len(entry_ids))
+    held = [
+        {"need_id": r["id"], "old_entry_id": r["recommended_batch_from_entry_id"]}
+        for r in conn.execute(
+            f"SELECT id, recommended_batch_from_entry_id FROM slot_needs "
+            f"WHERE household_id = ? AND recommended_batch_from_entry_id IN ({marks})",
+            (household_id(), *entry_ids),
+        ).fetchall()
+    ]
+    if held:
+        conn.execute(
+            f"UPDATE slot_needs SET recommended_batch_from_entry_id = NULL, updated_at = datetime('now') "
+            f"WHERE household_id = ? AND recommended_batch_from_entry_id IN ({marks})",
+            (household_id(), *entry_ids),
+        )
+    return held
+
+
+def _follow_swap_with_recommendations(conn, held: list[dict], new_for_old: dict[int, int]) -> int:
+    """
+    Point each suggestion _hold_ready_made_recommendations let go of at
+    the dish now in the old one's place. The confirmation was never
+    touched, so a confirmed double stays confirmed on the new dish.
+
+    The new row has to still be a dinner the rule would pick — a planned,
+    whole dinner dated before the meal it covers (_recommend_ready_made's
+    own test). A swap is in place, so it always is in practice; when it is
+    not, the suggestion is released exactly as a delete releases it.
+
+    What "confirmed" changes elsewhere: nothing is bought or thawed for a
+    batch suggestion today — confirm_slot_recommendation only creates a
+    fridge move for a DEFROST suggestion, and the grocery list scales by
+    leftover chains (make_double_for), not by this column. So the new
+    dish's groceries and thaws are exactly what the old dish had: its
+    own, bought and resynced by the swap itself. Returns how many moved.
+    """
+    moved = 0
+    for h in held:
+        new_id = new_for_old.get(h["old_entry_id"])
+        need = conn.execute(
+            "SELECT id, date FROM slot_needs WHERE id = ? AND household_id = ?",
+            (h["need_id"], household_id()),
+        ).fetchone()
+        row = conn.execute(
+            "SELECT date FROM meal_plan_entries WHERE id = ? AND household_id = ? AND slot = 'dinner' "
+            "AND slot_state = 'planned' AND component_category IS NULL",
+            (new_id, household_id()),
+        ).fetchone() if new_id else None
+        if need and row and row["date"] < need["date"]:
+            conn.execute(
+                "UPDATE slot_needs SET recommended_batch_from_entry_id = ?, updated_at = datetime('now') "
+                "WHERE id = ? AND household_id = ?",
+                (new_id, h["need_id"], household_id()),
+            )
+            moved += 1
+        else:
+            conn.execute(
+                "UPDATE slot_needs SET recommendation_confirmed = CASE "
+                "WHEN TRIM(recommended_defrost_item) = '' THEN 0 ELSE recommendation_confirmed END, "
+                "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+                (h["need_id"], household_id()),
+            )
+    return moved
+
+
+def _recheck_ready_made_after_redate(conn, entry_ids) -> int:
+    """
+    After meals change date (a night off moving tonight's dish, a nights
+    swap, the Move sheet, an Undo of any of them), a ready-made suggestion
+    may now name a dinner that comes ON or AFTER the meal it was meant to
+    cover — "double Friday's chili" for Thursday's first meal back. Each
+    such suggestion is recomputed, the way _recommend_ready_made would
+    pick it for the week as it now stands (an earlier dinner, a freezer
+    item, or nothing). Loop Board card's default, 2026-10-02: recompute
+    rather than clear. A recomputed suggestion is a new thing to confirm
+    (set_slot_recommendation's rule), so confirmation resets. A row that
+    also carries a defrost item keeps it and just drops the stale batch.
+
+    A dinner that moved but still comes before the meal keeps its
+    suggestion untouched. Runs on the caller's connection, after the
+    dates are written; commits nothing. Returns how many were changed.
+    """
+    from . import slot_needs as _slot_needs  # local import: slot_needs imports this module
+
+    ids = [int(i) for i in entry_ids or [] if i is not None]
+    if not ids:
+        return 0
+    marks = ",".join("?" * len(ids))
+    stale = conn.execute(
+        f"""
+        SELECT sn.id, sn.date, sn.slot, sn.need, sn.recommended_defrost_item
+        FROM slot_needs sn
+        JOIN meal_plan_entries mpe ON mpe.id = sn.recommended_batch_from_entry_id
+        WHERE sn.household_id = ? AND sn.recommended_batch_from_entry_id IN ({marks})
+          AND (mpe.date >= sn.date OR mpe.slot != 'dinner')
+        """,
+        (household_id(), *ids),
+    ).fetchall()
+    for need in stale:
+        if (need["recommended_defrost_item"] or "").strip() or need["need"] != "ready_made":
+            conn.execute(
+                "UPDATE slot_needs SET recommended_batch_from_entry_id = NULL, "
+                "recommendation_confirmed = CASE WHEN TRIM(recommended_defrost_item) = '' "
+                "THEN 0 ELSE recommendation_confirmed END, updated_at = datetime('now') "
+                "WHERE id = ? AND household_id = ?",
+                (need["id"], household_id()),
+            )
+            continue
+        rec = _slot_needs._recommend_ready_made(need["date"], need["slot"], conn=conn)
+        conn.execute(
+            "UPDATE slot_needs SET recommended_batch_from_entry_id = ?, recommended_defrost_item = ?, "
+            "recommendation_confirmed = 0, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+            (rec["recommended_batch_from_entry_id"], rec["recommended_defrost_item"] or "",
+             need["id"], household_id()),
+        )
+    return len(stale)
+
+
 def plan_slot_empty(
     weekly_plan_id: int,
     meal_date: str,
@@ -7194,9 +7331,11 @@ def _replace_slot_entries(
         # planned. A thaw already TICKED is held rather than lost.
         held_thawed = _release_prep_rows(conn, old_entry_ids)
         # A ready-made edge suggesting a double batch of the outgoing dish
-        # names a row about to go; cleared, not re-pointed at the new dish
-        # (that is a different meal than the one anybody agreed to double).
-        _release_ready_made_recommendations(conn, old_entry_ids)
+        # names a row about to go. Held here (the key let go so the DELETE
+        # is not blocked) and pointed at the new dish once it exists —
+        # Emily, 2026-10-03: the suggestion follows the swap, and a
+        # confirmed double stays confirmed.
+        held_ready_made = _hold_ready_made_recommendations(conn, old_entry_ids)
         # By id, not by (date, slot): a slot legitimately holding two
         # snacks must lose only the one being replaced. With no old_meal
         # this is every row in the slot, which is exactly what the by-slot
@@ -7225,6 +7364,10 @@ def _replace_slot_entries(
             add_ingredients_to_grocery_list=approved,
             conn=conn,
         )
+        if held_ready_made:
+            _follow_swap_with_recommendations(
+                conn, held_ready_made, {old_id: result.get("entry_id") for old_id in old_entry_ids},
+            )
         # See swap_meal_in_plan's docstring: breaking a confirmed chain
         # strands the former leftover night(s) with no grocery contribution
         # of their own. Only worth the extra query when the swapped entry
@@ -7570,7 +7713,8 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
         for old_id in old_ids:
             _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
         held_thawed = _release_prep_rows(conn, old_ids)
-        _release_ready_made_recommendations(conn, old_ids)
+        # Followed, not cleared — see _replace_slot_entries.
+        held_ready_made = _hold_ready_made_recommendations(conn, old_ids)
         deleted = sum(
             conn.execute(
                 "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
@@ -7595,6 +7739,8 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
                 add_ingredients_to_grocery_list=False, conn=conn,
             )
             new_ids.append(planned["entry_id"])
+        if held_ready_made:
+            _follow_swap_with_recommendations(conn, held_ready_made, dict(zip(old_ids, new_ids)))
 
         if approved:
             buy = set(new_ids) | set(orphaned)
@@ -8148,6 +8294,9 @@ def move_cook_onto_fed_night(conn, weekly_plan_id: int, entry_id: int,
                 (json.dumps(derived), r["id"], household_id()),
             )
     _shift_defrost_tasks(conn, weekly_plan_id, entry_id, old_date, target["date"])
+    # The cook now lands on a later night: a "first meal back" suggestion
+    # to double it may now name a dinner after the meal it covers.
+    _recheck_ready_made_after_redate(conn, [entry_id])
 
 
 def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str, new_date: str) -> int:
@@ -8306,6 +8455,9 @@ def _redate_plan_rows(
                          "to": t["task_date"], "description": t["description"], "status": t["status"]})
         if move_prep_cuts:
             prep_moved += _shift_late_prep_cuts(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
+    # A "double a batch of X" suggestion whose X now comes on or after the
+    # meal it covers is recomputed — keyed by entry id, it rode along.
+    _recheck_ready_made_after_redate(conn, [r["id"] for r in moving])
     return {"prep_moved": prep_moved, "thaw": thaw, "after": after}
 
 

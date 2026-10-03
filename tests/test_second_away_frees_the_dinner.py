@@ -206,7 +206,8 @@ def _tacos():
 
 
 def test_swapping_the_recommended_dinner_does_not_crash():
-    """CATCH. The everyday swap (_replace_slot_entries). Cleared, not re-pointed."""
+    """CATCH. The everyday swap (_replace_slot_entries). Since Emily's 2026-10-03
+    call the suggestion follows the new dish (tests/test_batch_suggestion_follows_swap.py)."""
     plan_id, entry_id = _approved_week()
     _tacos()
     _alex_away()
@@ -217,7 +218,7 @@ def test_swapping_the_recommended_dinner_does_not_crash():
     assert _recommended_from(entry_id) == []
     need = slot_needs.get_slot_need(edge["date"], edge["slot"])
     assert need["need"] == "ready_made"
-    assert need["recommended_batch_from_entry_id"] is None
+    assert need["recommended_batch_from_entry_id"] not in (None, entry_id)
     assert "Black beans" not in _needed_items()
     assert "Tortillas" in _needed_items()
 
@@ -233,8 +234,8 @@ def test_swapping_a_confirmed_recommended_dinner_does_not_crash():
     weekly_plan.swap_meal_in_plan(plan_id, DINNER_DAY, "Tacos", slot="dinner")
 
     need = slot_needs.get_slot_need(edge["date"], edge["slot"])
-    assert need["recommended_batch_from_entry_id"] is None
-    assert not need["recommendation_confirmed"]
+    assert need["recommended_batch_from_entry_id"] not in (None, entry_id)
+    assert need["recommendation_confirmed"], "followed to the new dish, still confirmed (Emily, 2026-10-03)"
 
 
 def test_the_multi_day_swap_does_not_crash():
