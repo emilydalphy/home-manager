@@ -706,3 +706,47 @@ def _grocery_links_for_date(plan_id: int, day: str, slot: str) -> list:
     ).fetchall()
     conn.close()
     return [r["item"] for r in rows]
+
+
+def test_two_duplicated_slots_are_deduped_without_a_database_lock(recipe):
+    """
+    "Database is locked" regression. _dedupe_duplicate_slots holds one
+    connection with the first duplicated slot's DELETE still uncommitted;
+    its grocery reversal for the NEXT duplicated slot used to open a second
+    connection and wait on that write until sqlite gave up. One duplicated
+    slot never showed it, so it needs two.
+    """
+    from app.db import get_conn
+
+    week = _week_start()
+    plan = tools.create_weekly_plan(week, content_start_date=week, day_count=7)
+    plan_id = plan["weekly_plan_id"]
+    dates = tools._week_dates(week)
+    for day in (dates[1], dates[2]):
+        for _ in range(2):
+            tools.plan_meal(day, "Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    duplicated = [
+        {"date": dates[1], "slot": "dinner", "count": 2},
+        {"date": dates[2], "slot": "dinner", "count": 2},
+    ]
+    import sqlite3  # fail fast instead of waiting out the 5s busy timeout
+    real_connect = sqlite3.connect
+
+    def _fast(*a, **kw):
+        kw["timeout"] = 0.1
+        return real_connect(*a, **kw)
+
+    import pytest as _pytest
+    with _pytest.MonkeyPatch.context() as mp:
+        mp.setattr(sqlite3, "connect", _fast)
+        tools._dedupe_duplicate_slots(plan_id, duplicated)
+
+    conn = get_conn()
+    for day in (dates[1], dates[2]):
+        n = conn.execute(
+            "SELECT COUNT(*) FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? "
+            "AND slot = 'dinner' AND component_category IS NULL", (plan_id, day),
+        ).fetchone()[0]
+        assert n == 1
+    conn.close()

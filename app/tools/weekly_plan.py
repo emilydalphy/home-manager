@@ -3001,7 +3001,9 @@ def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None
         ).fetchall()
         extras = rows[1:]
         for row in extras:
-            _grocery._reverse_meal_grocery_contributions(row["id"])
+            # Same connection as the DELETE below: a second one would block on
+            # this one's open write ("database is locked") from the 2nd duplicate on.
+            _grocery._reverse_meal_grocery_contributions(row["id"], conn=conn)
         if extras:
             _release_ready_made_recommendations(conn, [r["id"] for r in extras])
             conn.execute(
