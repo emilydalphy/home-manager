@@ -859,3 +859,49 @@ def test_generation_hands_the_cap_pass_their_own_words(stub_model, monkeypatch):
     stub_model(days)
     agent.generate_weekly_plan(week)
     assert "Long Lunch on Thursday" in (seen.get("asks") or ())
+
+
+def test_their_words_never_keep_a_slow_DINNER_from_its_cap(generate_only, picker, monkeypatch):
+    """Second review: "less pasta this week" names every pasta, and on a
+    dinner that kept a 60-minute dish on a 30-minute night main fixed. The
+    typed-name reading is lunch's only; dinner keeps main's rule."""
+    tools.edit_preference("weeknight_max_minutes", 30)
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Creamy Tomato Pasta", 60)
+    tools.save_week_intake(week)
+    days = []
+    for i, d in enumerate(dates):
+        days += _day(d, "Quick Wrap", dinner="Creamy Tomato Pasta" if i == 1 else "Quick Eggs")
+    plan_id = _generate(generate_only, week, days)
+    monkeypatch.setattr(cap_enforce, "rearrange", lambda *a, **k: [])
+    out = _enforce(plan_id, tools.get_week_intake(week), tools.get_household_memory(), picker=picker,
+                   asks=(None, "less pasta this week please"))
+    assert [(x["slot"], x["date"]) for x in out["repicked"]] == [("dinner", dates[1])]
+
+
+def test_a_lunch_that_stands_for_its_dish_says_why_not_nothing_quicker(generate_only, picker):
+    """Second review: a lunch whose whole dish cannot be re-picked (a
+    same-dish lunch cooks for a dinner) was never tried; `left` says so."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Big Stew", 45)
+    tools.save_week_intake(week)
+    days = []
+    for i, d in enumerate(dates):
+        if i == 0:
+            days += _day(d, "Big Stew", dinner="Big Stew",
+                         derived_from={"make_double_for": [f"{dates[0]}:dinner"]})
+        elif i == 3:
+            days += _day(d, "Big Stew")
+        else:
+            days += _day(d, "Quick Wrap")
+    plan_id = _generate(generate_only, week, days)
+    memory = dict(tools.get_household_memory(), meal_counts_set=True, lunches_per_week=2)
+    out = _enforce(plan_id, tools.get_week_intake(week), memory, picker=picker)
+    thursday = [x for x in out["left"] if x["date"] == dates[3] and x["slot"] == "lunch"]
+    assert out["repicked"] == [] and not picker.calls
+    assert [x["why"] for x in thursday] == \
+        ["re-picking it alone would break the household's dish count or a batch"]

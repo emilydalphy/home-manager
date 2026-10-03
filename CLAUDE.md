@@ -21818,7 +21818,8 @@ why*, not duplicating the diff.
   answered "cooked", weekend, asked for by name, already cooked) are the
   rule's and unchanged. The "24 red tests" from the first try were fixtures,
   not guards: `test_no_repeat_enforced` / `test_bring_over` /
-  `test_cuisine_chips_honoured` / `test_snack_no_repeat` drafted every
+  `test_cuisine_chips_honoured` (and `test_snack_no_repeat`, through the
+  no-repeat file's shared `_week`) drafted every
   lunch at 25 minutes and the no-repeat picker at 30, so the cap pass
   re-picked lunches those tests never meant to touch; their lunch fixtures
   are now 15 minutes. **A lunch cap never reaches a dinner**: `_cook_cap`
@@ -21833,7 +21834,11 @@ why*, not duplicating the diff.
   answer is the over-cap meal keeps its cuisine through the re-pick
   (`must_be_cuisine`, else it stands); and a meal their own words name
   (`count_asks`, `meal_variety.asked_for_by_name`) is kept even when the
-  model forgot to stamp `freeform`.
+  model forgot to stamp `freeform` — LUNCH only: on a dinner,
+  asked_for_by_name's lean toward keeping ("less pasta") would leave a slow
+  dinner on a rush night unflagged (second review), so dinners keep main's
+  rule. The chip guard does apply to dinners too: a dinner that is a chip's
+  only answer is re-picked within the chip or stands over its cap.
 
 ## Deploying
 

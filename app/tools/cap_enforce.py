@@ -542,7 +542,7 @@ def _cap_reason(night: dict, cap: int, slot: str = "dinner") -> str:
 
 def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
            budget=None, picker=None, slot: str = "dinner",
-           asks: tuple[str | None, ...] = ()) -> list[dict]:
+           asks: tuple[str | None, ...] = (), stood: dict | None = None) -> list[dict]:
     """
     Re-pick every meal of `slot` (dinner unless told otherwise) still over
     its cap, worst overrun first, through the swap's own picker with the cap
@@ -558,7 +558,7 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
     rows = nights(plan_id, intake, memory, slot)
     week_dishes = {(n["meal"] or "").strip().lower() for n in rows if (n["meal"] or "").strip()}
     targets = sorted(
-        (n for n in rows if n["over"] and n["movable"] and not _typed_for(n, asks)),
+        (n for n in rows if n["over"] and n["movable"] and not _typed_for(n, asks, slot)),
         key=lambda n: (-(n["minutes"] - n["cap"]), n["date"]),
     )
     gone: set = set()  # meals already re-picked as part of a whole dish
@@ -574,6 +574,8 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         # is re-picked, every night of it at once, and the count stays.
         also = _whole_dish_nights(plan_id, night, memory, slot)
         if also is None:
+            if stood is not None:
+                stood[night["id"]] = "re-picking it alone would break the household's dish count or a batch"
             logger.info("Plan %s: %s %s %r stays over its cap — re-picking it alone would add a dish "
                         "past the household's number", plan_id, night["date"], slot, night["meal"])
             continue
@@ -640,13 +642,22 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
     return done
 
 
-def _typed_for(night: dict, asks: tuple[str | None, ...]) -> bool:
-    """Whether the household's own words for this week name this meal —
-    meal_variety.asked_for_by_name, the no-repeat pass's reading. The model
-    is asked to stamp `freeform` on a meal a request shaped (`theirs`), and
-    a meal they typed that it forgot to stamp is still one they asked for
-    by name (Emily's exception, 2026-10-03; found by review)."""
-    return bool(asks) and _meal_variety.asked_for_by_name(night["meal"] or "", asks)
+def _typed_for(night: dict, asks: tuple[str | None, ...], slot: str) -> bool:
+    """Whether the household's own words for this week name this LUNCH (or
+    breakfast) — meal_variety.asked_for_by_name, the no-repeat pass's
+    reading. The model is asked to stamp `freeform` on a meal a request
+    shaped (`theirs`), and a meal they typed that it forgot to stamp is
+    still one they asked for by name (Emily's exception, 2026-10-03; found
+    by review).
+
+    Never for a DINNER (second review, 2026-10-03): asked_for_by_name errs
+    toward keeping ("less pasta this week" names every pasta), and on a
+    dinner that would leave a 60-minute dish on a rush night that main
+    fixed — with no draft flag, since draft_flags only flags `theirs`.
+    Dinner keeps main's rule; this card is about lunch."""
+    if slot == "dinner" or not asks:
+        return False
+    return _meal_variety.asked_for_by_name(night["meal"] or "", asks)
 
 
 def _sole_chips(plan_id: int, intake: dict | None, group: set) -> list[str]:
@@ -832,12 +843,13 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     budget = budget or _allergen_gate.CallBudget()
     moved: list[dict] = []
     repicked: list[dict] = []
+    stood: dict[int, str] = {}  # meals a re-pick never tried, and why
     try:
         moved = rearrange(plan_id, intake, memory)
     except Exception:
         logger.exception("Plan %s: re-arranging the week around its time caps failed", plan_id)
     try:
-        repicked = repick(plan_id, intake, memory, budget=budget, picker=picker, asks=asks)
+        repicked = repick(plan_id, intake, memory, budget=budget, picker=picker, asks=asks, stood=stood)
     except Exception:
         logger.exception("Plan %s: re-picking a dinner over its time cap failed", plan_id)
     try:
@@ -851,7 +863,7 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     for slot in REPICK_ONLY_SLOTS:
         try:
             repicked += repick(plan_id, intake, memory, budget=lunch_budget, picker=picker, slot=slot,
-                               asks=asks)
+                               asks=asks, stood=stood)
         except Exception:
             logger.exception("Plan %s: re-picking a %s over its time cap failed", plan_id, slot)
     left = []
@@ -866,8 +878,10 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
                 if not night["over"]:
                     continue
                 why = "nothing quicker came back"
-                if night["movable"] and _typed_for(night, asks):
+                if night["movable"] and _typed_for(night, asks, slot):
                     why = "the household asked for this one by name"
+                elif night["id"] in stood:
+                    why = stood[night["id"]]
                 elif not night["movable"]:
                     if night["reheat"] or night["source"]:
                         why = "it is a batch, not a cook on the day"
