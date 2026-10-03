@@ -72,6 +72,7 @@ _LINES = {
     "discard_draft_plan": lambda i: "Removing the draft…",
     "get_weekly_plan": lambda i: "Checking the plan…",
     "get_meal_plan": lambda i: "Checking the plan…",
+    "get_week_ingredients": lambda i: "Checking the week's ingredients…",
     "generate_prep_schedule": lambda i: "Working out the prep…",
     "add_grocery_item": lambda i: _with("Adding {} to the shopping list…", "Adding to the shopping list…", _text(i.get("item"))),
     "add_grocery_items": lambda i: "Adding to the shopping list…",

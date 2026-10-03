@@ -1008,6 +1008,15 @@ minute and costs real money, so it is not something to spend on someone's behalf
 of a question as small as "what's for dinner tonight?" — same rule as the grocery list, where \
 nothing happens until they say yes. Once they do say yes, generate for the current week (per \
 the week_start_date rule above) and answer from that real, saved result.
+- Asked whether anything on the week is spicy, has nuts, dairy, gluten or any other \
+ingredient, or whether someone can eat the week: call get_week_ingredients and check EVERY \
+dish's ingredients, sides included, before you answer. Never go by dish names — they don't say \
+what's in the food ("ragu" doesn't say chili flakes). Spicy means anything that brings heat: \
+chili flakes, cayenne, chilies fresh or dried, jalapeño, chipotle, hot sauce, sriracha, \
+gochujang, curry paste, hot paprika. Name each dish that has it, with the day and the \
+ingredient ("Wednesday's ragu has red pepper flakes in it. Nothing else this week has any \
+heat."). Say "nothing else" only once every dish is checked; if no_ingredient_list names any, \
+say which ones you couldn't check. Never say you checked something you didn't.
 - If asked "why this?"/"why did you pick X?" about a planned meal, call explain_meal_choice: \
 its `planned_as` lists the slots that dish is on, each with `derived_from` — what actually drove \
 it when it was planned (night `tags`, the binding `constraint`, `inputs` like a cuisine or a \
@@ -2061,6 +2070,14 @@ TOOL_DEFINITIONS = [
     {
         "name": "get_plan_progress",
         "description": "Get a done-vs-outstanding view of a weekly plan: which meals have been cooked and which prep tasks are done, plus counts. Omit weekly_plan_id for the household's current plan. Use this when the user asks 'what's left to cook this week' or similar.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"weekly_plan_id": {"type": "integer"}},
+        },
+    },
+    {
+        "name": "get_week_ingredients",
+        "description": "Every planned dish on a week with its ingredient names (and its side's), one entry per dish, plus no_ingredient_list: the slots with nothing saved to check. Use it before answering whether anything on the week is spicy, has nuts, dairy, gluten or any particular ingredient — dish names alone don't say what's in them. Omit weekly_plan_id for the household's current plan.",
         "input_schema": {
             "type": "object",
             "properties": {"weekly_plan_id": {"type": "integer"}},
@@ -8534,6 +8551,7 @@ TOOL_FUNCTIONS = {
     "check_off_prep_step": tools.check_off_prep_step,
     "check_off_meal": tools.check_off_meal,
     "get_plan_progress": tools.get_plan_progress,
+    "get_week_ingredients": tools.get_week_ingredients,
     "get_cooker_view": tools.get_cooker_view,
     "check_plan_conflicts": tools.check_plan_conflicts,
     "explain_meal_choice": tools.explain_meal_choice,
@@ -9063,6 +9081,8 @@ def _build_week_context_block(context: dict) -> dict | None:
         "quick\" all refer to it. Do not call get_weekly_plan or get_week_menu just to find it — it "
         "is here:\n"
         + "\n".join(lines) + "\n"
+        + "Those are dish names only. For what's IN the food (spicy, nuts, dairy, an ingredient), "
+        "call get_week_ingredients and check every dish before you answer.\n"
         + state_line + "\n"
         "How changes work in this mode — the CHANGE CARD:\n"
         "- To change what's eaten on any slot, call propose_plan_changes ONCE with every row the "
@@ -9119,7 +9139,10 @@ def _rest_of_week_lines(meal: dict) -> str:
             lines.append(f"- {day['weekday']} {day['date']}: " + "; ".join(parts))
     if not lines:
         return ""
-    return "The week this card is on, for a wider scope (slot: the dish there now):\n" + "\n".join(lines) + "\n"
+    return (
+        "The week this card is on, for a wider scope (slot: the dish there now):\n" + "\n".join(lines) + "\n"
+        "Those are dish names only. For what's IN the food, call get_week_ingredients.\n"
+    )
 
 
 def _build_chat_context_block(context: dict | None) -> dict | None:

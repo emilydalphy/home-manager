@@ -806,3 +806,8 @@ from .tonight import (  # noqa: F401
     tonight_night_off,
     tonight_night_off_undo,
 )
+
+# What's actually in the week's food, for the chat to check before it says
+# "nothing this week is spicy" (QA walk, 2026-10-02 — the ragu had chili
+# flakes). Agent tool only; no screen reads it.
+from .week_ingredients import get_week_ingredients  # noqa: F401
