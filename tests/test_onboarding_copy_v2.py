@@ -544,3 +544,9 @@ def test_snacks_per_day_default_is_not_mistaken_for_an_answer():
     assert preferences.resolve_snacks_per_day({"snacks_per_day": 2, "snacks_per_day_set": 0, "snacks_per_week": 5, "snacks_per_week_set": 1}) == 1
     assert preferences.resolve_snacks_per_day({"snacks_per_day": 3, "snacks_per_day_set": 1, "snacks_per_week": 7, "snacks_per_week_set": 1}) == 3
     assert preferences.resolve_snacks_per_day({"snacks_per_day": 2, "snacks_per_day_set": 0, "snacks_per_week": 3, "snacks_per_week_set": 0}) == 2
+
+
+def test_eating_style_chip_uses_us_spelling():
+    html = (Path(__file__).resolve().parent.parent / "static" / "onboarding.html").read_text(encoding="utf-8")
+    assert "'High-fiber'" in html
+    assert "High-fibre" not in html
