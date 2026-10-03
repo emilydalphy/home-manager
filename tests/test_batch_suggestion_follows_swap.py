@@ -253,3 +253,21 @@ def test_moving_the_dinner_with_the_nights_swap_recomputes_too():
                      (need["recommended_batch_from_entry_id"],)).fetchone()["date"]
     conn.close()
     assert d < THU
+
+
+def test_a_swap_onto_a_night_that_cooks_nothing_releases_the_suggestion():
+    """CATCH for the verifier's repro (red before the _cooks_that_night check):
+    a frozen portion replacing the chili is not something to double, so the
+    suggestion is released, not moved onto "leftovers from the freezer"."""
+    from app.tools import freezer_portions
+
+    plan_id, _chili_id, edge = _approved_week_with_alex_away()
+    slot_needs.confirm_slot_recommendation(edge["date"], edge["slot"])
+
+    written = freezer_portions.apply_to_plan(plan_id, [{"dish": "Chili", "on": DINNER_DAY, "inventory_item_id": 1, "quantity": "2 portions"}])
+
+    assert written, "the portion landed on the night"
+    need = slot_needs.get_slot_need(edge["date"], edge["slot"])
+    assert need["recommended_batch_from_entry_id"] is None
+    assert not need["recommendation_confirmed"]
+    assert slot_needs.describe_ready_made(edge["date"], edge["slot"]) is None

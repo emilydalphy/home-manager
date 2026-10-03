@@ -568,11 +568,11 @@ def _follow_swap_with_recommendations(conn, held: list[dict], new_for_old: dict[
             (h["need_id"], household_id()),
         ).fetchone()
         row = conn.execute(
-            "SELECT date FROM meal_plan_entries WHERE id = ? AND household_id = ? AND slot = 'dinner' "
-            "AND slot_state = 'planned' AND component_category IS NULL",
+            "SELECT date, derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ? "
+            "AND slot = 'dinner' AND slot_state = 'planned' AND component_category IS NULL",
             (new_id, household_id()),
         ).fetchone() if new_id else None
-        if need and row and row["date"] < need["date"]:
+        if need and row and row["date"] < need["date"] and _cooks_that_night(row["derived_from_json"]):
             conn.execute(
                 "UPDATE slot_needs SET recommended_batch_from_entry_id = ?, updated_at = datetime('now') "
                 "WHERE id = ? AND household_id = ?",
@@ -587,6 +587,32 @@ def _follow_swap_with_recommendations(conn, held: list[dict], new_for_old: dict[
                 (h["need_id"], household_id()),
             )
     return moved
+
+
+def _cooks_that_night(derived_from_json) -> bool:
+    """
+    Whether a dinner row is a real cook — something a household could make
+    double. A reheat night (links_to), a portion out of the freezer, and a
+    dish being brought to someone else's table are not: a swap that lands
+    one of those must release the suggestion, not move "set aside a double
+    batch of Sunday's leftovers from the freezer" onto it (verifier,
+    2026-10-03, through freezer_portions.apply_to_plan).
+    """
+    from . import freezer_portions as _freezer_portions  # local: it imports this module
+    from . import leftovers as _leftovers
+
+    try:
+        derived = json.loads(derived_from_json or "{}") or {}
+    except (TypeError, ValueError):
+        derived = {}
+    if not isinstance(derived, dict):
+        return True
+    return not (
+        derived.get("links_to")
+        or derived.get(_leftovers.FROM_FREEZER_KEY)
+        or derived.get(_freezer_portions.KEY)
+        or derived.get("holiday_dish")
+    )
 
 
 def _recheck_ready_made_after_redate(conn, entry_ids) -> int:
