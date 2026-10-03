@@ -159,17 +159,23 @@ def test_a_week_that_begins_tomorrow_is_not_asked_about_tonight(monkeypatch):
     assert _statuses()["Next week onions"] == "needed"
 
 
-def test_a_week_that_began_today_is_set_aside_east_of_utc(monkeypatch):
+def test_a_week_that_ended_yesterday_is_set_aside_east_of_utc(monkeypatch):
     """
     CATCH. The same defect from the other side.
 
-    A plan that began the household's TODAY has begun, so whatever is still
-    unbought on it is a leftover and must be set aside — otherwise this
-    week's amounts merge onto last week's line and the quantity climbs.
+    A plan whose last day was the household's YESTERDAY has ended, so
+    whatever is still unbought on it is a leftover and must be set aside —
+    otherwise this week's amounts merge onto last week's line and the
+    quantity climbs. East of UTC the server's date is still that last day.
+
+    (Until 2026-10-02 the line was "has STARTED" and this test seeded a
+    plan beginning today. A week the household is still in is not a
+    leftover — Loop Board, QA walk 2026-10-02 — so the boundary it pins
+    moved to the plan's last day; see test_next_week_keeps_this_weeks_shop.)
     """
     household_today = _ahead(monkeypatch)
-    started = _plan(household_today)
-    approving = _plan(household_today + timedelta(days=7))
+    started = _plan(household_today - timedelta(days=7))
+    approving = _plan(household_today)
     _line(started, "Last week carrots")
 
     set_aside = _grocery.set_aside_carried_over_items(approving)

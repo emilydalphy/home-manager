@@ -509,14 +509,17 @@ def test_two_live_plans_sharing_a_meat_keep_their_freezer_answers_apart():
 
 def test_a_line_two_live_weeks_share_stays_on_the_list_after_one_weeks_yes(signed_in):
     """CATCH (2026-09-21 integration, found in verification) — approve next
-    week while this week's chicken is still unbought and the ingest folds
-    the two onto ONE line ("1 lb" → "2 lbs", restamped to next week's
-    plan; grocery._merge_target). A yes on next week's step used to set
-    that shared line aside, and this week's chicken silently left the
-    list. Now a line another live plan's meal is counted into is not this
-    plan's to take off: the move alone is booked, and the item reads
-    `on_list` False with the reason, so the step promises the fridge half
-    only. Through the real approve path, not a hand-written line."""
+    week while this week's chicken is still unbought. A yes on next week's
+    step used to take this week's chicken off the list with it, because the
+    ingest had folded both weeks onto ONE line restamped to next week.
+
+    Since 2026-10-02 the ingest never folds two weeks together (a plan's
+    amount never merges onto another plan's line — Loop Board "Planning next
+    week before this week ends hides this week's shopping"), so each week
+    has its own line and the yes takes off only its own. The shared-line
+    guard in defrost (ON_LIST_SHARED) still covers a line a person's add or
+    a same-week meal shares; this test now pins the two-week shape through
+    the real approve path, not a hand-written line."""
     _meat()
     this_week = _week()
     assert signed_in.post(f"/api/week/{NEXT_WEEK}/approve", json={"approved_by": "Emily"}).status_code == 200
@@ -527,31 +530,20 @@ def test_a_line_two_live_weeks_share_stays_on_the_list_after_one_weeks_yes(signe
     assert signed_in.post(f"/api/week/{later_week}/approve", json={"approved_by": "Emily"}).status_code == 200
     conn = db.get_conn()
     lines = [dict(r) for r in conn.execute(
-        "SELECT id, quantity, status, source_weekly_plan_id FROM grocery_items WHERE household_id = ?",
+        "SELECT id, quantity, status, source_weekly_plan_id FROM grocery_items WHERE household_id = ? ORDER BY id",
         (tools.household_id(),)).fetchall()]
     conn.close()
-    assert len(lines) == 1 and lines[0]["quantity"] == "2 lbs" and lines[0]["source_weekly_plan_id"] == later, \
-        "the ingest folded both weeks onto one line, stamped with the later plan"
-    line = lines[0]["id"]
-
-    shared = ("Chicken Thighs", False, False)
-    assert _items(this_week) == [shared] and _items(later) == [shared]
-    assert defrost.meat_items_for_plan(this_week)[0]["on_list_reason"] == defrost.ON_LIST_SHARED
-    route = signed_in.get(f"/api/week/{later_week}/defrost-items").json()["items"][0]
-    assert route["on_list"] is False and route["on_list_reason"] == "shared"
+    assert [(l["quantity"], l["source_weekly_plan_id"]) for l in lines] == [("1 lb", this_week), ("1 lb", later)], \
+        "each week its own line, never folded onto the other's"
+    this_line, later_line = lines[0]["id"], lines[1]["id"]
 
     result = defrost.confirm_frozen_items(later, ["Chicken Thighs"])
 
-    assert result["set_aside"] == [] and len(result["created"]) == 1
-    assert _row(line)[0] == "needed", "this week's chicken is still on the list"
+    assert len(result["created"]) == 1
+    assert _row(this_line)[0] == "needed", "this week's chicken is still on the list"
+    assert _row(later_line)[0] != "needed", "next week's own chicken comes off with its yes"
     later_thu = (_monday() + datetime.timedelta(days=17)).isoformat()
     assert _moves(later) == [(_days_before(later_thu, 2), "pending")] and _moves(this_week) == []
-    assert _items(this_week) == [shared] and _items(later) == [("Chicken Thighs", False, True)]
-
-    # And un-tapping on the later week cancels its move alone; the line is untouched.
-    result = defrost.confirm_frozen_items(later, [])
-    assert result["cancelled"] == 1 and result["put_back"] == [] and _row(line)[0] == "needed"
-
 
 def test_the_clock_is_still_read_before_the_write_opens():
     """The ordering guard test_defrost_household_clock pins, restated for
@@ -734,3 +726,36 @@ def test_actually_i_need_it_says_put_back_and_re_reads_the_week_when_a_move_went
 def test_the_not_needed_foot_names_a_freezer_line_as_such():
     foot = _extract("groNotNeededHtml", SHELL_JS)
     assert "it.removed_by === 'freezer'" in foot and "from the freezer" in foot
+
+
+def test_a_persons_line_both_weeks_joined_stays_on_the_list_after_one_weeks_yes(signed_in):
+    """GUARD for ON_LIST_SHARED (2026-10-02). Two weeks' amounts
+    no longer fold onto one plan line, but both still join a person's own
+    hand-added line (grocery._merge_target). A yes on the later week's step
+    must not take that line off the list while this week's meal still
+    counts on it: the move alone is booked and the item reads `on_list`
+    False with the reason."""
+    _meat()
+    hand = _line(qty="1 lb")
+    this_week = _week()
+    assert signed_in.post(f"/api/week/{NEXT_WEEK}/approve", json={"approved_by": "Emily"}).status_code == 200
+    later_week = (_monday() + datetime.timedelta(days=14)).isoformat()
+    later = tools.create_weekly_plan(later_week)["weekly_plan_id"]
+    later_thu = (_monday() + datetime.timedelta(days=17)).isoformat()
+    tools.plan_meal(later_thu, "Chicken Skewers", slot="dinner", weekly_plan_id=later)
+    assert signed_in.post(f"/api/week/{later_week}/approve", json={"approved_by": "Emily"}).status_code == 200
+    conn = db.get_conn()
+    lines = [dict(r) for r in conn.execute(
+        "SELECT id, quantity, source_weekly_plan_id FROM grocery_items WHERE household_id = ?",
+        (tools.household_id(),)).fetchall()]
+    conn.close()
+    assert [(l["id"], l["quantity"], l["source_weekly_plan_id"]) for l in lines] == [(hand, "3 lbs", None)]
+
+    route = signed_in.get(f"/api/week/{later_week}/defrost-items").json()["items"][0]
+    assert route["on_list"] is False and route["on_list_reason"] == defrost.ON_LIST_SHARED
+
+    result = defrost.confirm_frozen_items(later, ["Chicken Thighs"])
+
+    assert result["set_aside"] == [] and len(result["created"]) == 1
+    assert _row(hand)[0] == "needed", "this week's chicken is still on the list"
+    assert _moves(later) == [(_days_before(later_thu, 2), "pending")] and _moves(this_week) == []

@@ -18,6 +18,7 @@ import datetime
 import json
 import shutil
 from pathlib import Path
+from unittest import mock
 
 from conftest import household_today
 
@@ -27,6 +28,7 @@ from shop_harness import CLICK
 
 from app import tools
 from app.db import get_conn
+from app.tools import grocery as _grocery
 from app.tools import spices
 
 
@@ -322,11 +324,20 @@ def test_swapping_out_the_only_meal_that_wanted_a_spice_clears_its_line(curry_we
     assert "Rice" in _needed()
 
 
+def _approve_on_its_monday(plan_id: int) -> None:
+    """Approve next week on its own Monday, so this week has ENDED and its
+    unticked spices are genuinely last week's. A week still running is not
+    a leftover (QA walk 2026-10-02 — test_next_week_keeps_this_weeks_shop.py)."""
+    monday = datetime.date.fromisoformat(_monday(1))
+    with mock.patch.object(_grocery, "_household_today", lambda conn=None: monday):
+        tools.approve_weekly_plan(plan_id, approved_by="Emily")
+
+
 def test_a_new_week_replaces_last_weeks_unticked_spices(curry_week):
     tools.add_recipe("Chili", ingredients=[{"item": "Chili powder", "qty": "1 tbsp", "category": "pantry"}])
     plan_b = tools.create_weekly_plan(_monday(1))["weekly_plan_id"]
     tools.plan_meal(tools._week_dates(_monday(1))[0], "Chili", slot="dinner", weekly_plan_id=plan_b)
-    tools.approve_weekly_plan(plan_b, approved_by="Emily")
+    _approve_on_its_monday(plan_b)
     assert set(_section()) == {"Chili powder"}, "last week's unticked spices were never wanted"
 
 
@@ -336,7 +347,7 @@ def test_a_ticked_spice_from_last_week_goes_through_keep_or_drop(curry_week):
     tools.add_recipe("Chili", ingredients=[{"item": "Ground cumin", "qty": "1 tbsp", "category": "pantry"}])
     plan_b = tools.create_weekly_plan(_monday(1))["weekly_plan_id"]
     tools.plan_meal(tools._week_dates(_monday(1))[0], "Chili", slot="dinner", weekly_plan_id=plan_b)
-    tools.approve_weekly_plan(plan_b, approved_by="Emily")
+    _approve_on_its_monday(plan_b)
     carried = {c["item"]: c for c in tools.list_carried_over_items()}
     assert "Ground cumin" in carried, "ticked, so it was a real line last week"
     assert "Smoked paprika" not in carried, "unticked, so it was never wanted"

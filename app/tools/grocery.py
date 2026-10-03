@@ -286,7 +286,7 @@ def _repeat_or_concatenate(existing_qty: str, new_qty: str, sum_counts: bool) ->
     return f"{existing_qty} + {new_qty}", False
 
 
-def _merge_target(same_name: list, quantity: str, consolidate, standing: bool):
+def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, source_plan: int | None = None):
     """
     Which of the lines already on the list with this name a new amount
     joins — (row, merged quantity, units reconciled) — or None for a line
@@ -316,9 +316,30 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool):
     spices.py). That line is the plan's reminder, not an amount, and a
     person asking for cumin is answering it — their add ticks it onto the
     list (add_grocery_item), so it must land there and not beside it.
+
+    And a plan's amount never joins ANOTHER plan's amount line
+    (`source_plan`, Loop Board, QA walk 2026-10-02). Next week can be
+    approved while this week is still running, and both weeks' lines are
+    on the list at once; the first same-name line is this week's, so a
+    meal added or swapped into next week used to sum onto tonight's
+    "2 lbs ground turkey" and stamp next week's id on it — 4 lbs that
+    belonged to neither week, and tonight's line gone from this week's
+    ledger reading. Each week keeps its own line, which is also what the
+    2026-09-13 carry-over rule wanted at approval. A plan's add still
+    joins a person's line (standing, see above) and a spice line from any
+    week, ticked or not: the section is one jar per name, not one per week,
+    and a second cumin row beside a ticked one is a question asked twice.
     """
+    from . import spices as _spices  # lazy: spices imports this module
+
     kin = None
     for row in same_name:
+        other_plan = row["source_weekly_plan_id"]
+        if (
+            source_plan is not None and other_plan is not None and other_plan != source_plan
+            and row["status"] != "spice" and not _spices.is_spice(row["item"])
+        ):
+            continue
         merged_qty, merged = consolidate(row["quantity"] or "", quantity)
         if merged:
             return row, merged_qty, True
@@ -839,7 +860,10 @@ def add_grocery_item(
     wanted = _merge_key(item)
     same_name = [r for r in candidates if _merge_key(r["item"]) == wanted]
     consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
-    target = _merge_target(same_name, quantity, consolidate, standing=source_weekly_plan_id is None)
+    target = _merge_target(
+        same_name, quantity, consolidate, standing=source_weekly_plan_id is None,
+        source_plan=source_weekly_plan_id,
+    )
     # Matched on the same key the list itself merges on. Otherwise a
     # preference saved for "bell peppers" never applies to the line that
     # won the merge under the name "Bell pepper": the app confirms the
@@ -1144,6 +1168,9 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     ignoring case and singular/plural) into one line each, combining
     quantities with the
     same logic add_grocery_item uses automatically for new additions.
+    Two weeks' plans each keep their OWN line for the same item while both
+    are live (e.g. this week's turkey and next week's) — that is not a
+    duplicate, and this leaves those two apart on purpose.
     Call this if the user asks to clean up/consolidate the list, or if you
     notice the same item appears more than once — items added since
     consolidation shipped shouldn't duplicate going forward, but this
@@ -1170,31 +1197,49 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     for entries in groups.values():
         if len(entries) < 2:
             continue
-        keep = entries[0]
-        merged_qty = keep["quantity"] or ""
-        keep_name = keep["item"]
-        for extra in entries[1:]:
-            # Two lines the list keeps apart on purpose — a person's "1"
-            # beside a plan's "2 cups" (see _merge_target) — stay apart
-            # here too, rather than being glued into the "1 + 2 cups"
-            # nothing can take back apart.
-            candidate, reconciled = _try_consolidate_quantity(merged_qty, extra["quantity"] or "")
-            if not reconciled:
+        # Each line folds into the first earlier line it may join, by the
+        # same rule add_grocery_item's merge follows (_merge_target): two
+        # DIFFERENT plans' amount lines never fold together (QA walk
+        # 2026-10-02 — with next week approved while this week still runs,
+        # both weeks' turkey is on the list on purpose, and folding them
+        # put next week's amount on tonight's line and deleted next week's
+        # line with its ledger). A person's line may still take a plan's.
+        keepers: list[dict] = []
+        for entry in entries:
+            plan = entry["source_weekly_plan_id"]
+            target = None
+            for k in keepers:
+                if k["source_weekly_plan_id"] is not None and plan is not None and k["source_weekly_plan_id"] != plan:
+                    continue
+                # Two lines the list keeps apart on purpose — a person's "1"
+                # beside a plan's "2 cups" (see _merge_target) — stay apart
+                # here too, rather than being glued into the "1 + 2 cups"
+                # nothing can take back apart.
+                candidate, reconciled = _try_consolidate_quantity(k["merged_qty"], entry["quantity"] or "")
+                if reconciled:
+                    target = (k, candidate)
+                    break
+            if target is None:
+                keepers.append(dict(entry, merged_qty=entry["quantity"] or "", keep_name=entry["item"], absorbed=0))
                 continue
-            merged_qty = candidate
+            k, candidate = target
+            k["merged_qty"] = candidate
             # The variety's name on a plan's line; a person's typed line
             # keeps its wording, as it does in add_grocery_item.
-            if keep["source_weekly_plan_id"] is not None:
-                keep_name = _more_specific_name(keep_name, extra["item"])
+            if k["source_weekly_plan_id"] is not None:
+                k["keep_name"] = _more_specific_name(k["keep_name"], entry["item"])
             conn.execute(
                 "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
-                (extra["id"], household_id()),
+                (entry["id"], household_id()),
             )
+            k["absorbed"] += 1
             merged_count += 1
-        conn.execute(
-            "UPDATE grocery_items SET item = ?, quantity = ? WHERE id = ? AND household_id = ?",
-            (keep_name, merged_qty, keep["id"], household_id()),
-        )
+        for k in keepers:
+            if k["absorbed"]:
+                conn.execute(
+                    "UPDATE grocery_items SET item = ?, quantity = ? WHERE id = ? AND household_id = ?",
+                    (k["keep_name"], k["merged_qty"], k["id"], household_id()),
+                )
     conn.commit()
     conn.close()
     return {"lines_merged_away": merged_count}
@@ -1372,6 +1417,32 @@ _CARRIED_KEPT = "carried_kept"
 _CARRIED_DROPPED = "carried_dropped"
 
 
+def _other_plans_by_stage(conn, weekly_plan_id: int) -> dict[str, set]:
+    """
+    Every plan other than `weekly_plan_id`, split by where the household's
+    today sits in its period: 'ended' (its last day is before today — a
+    fully surrendered plan reads as ended from its start, see
+    period_end_date) and 'running' (today is one of its days). A plan that
+    has not begun is in neither. Read on `conn` for the reason
+    set_aside_carried_over_items gives.
+    """
+    today = _household_today(conn=conn).isoformat()
+    stages = {"ended": set(), "running": set()}
+    for plan in conn.execute(
+        "SELECT id, week_start_date, content_start_date, day_count, status FROM weekly_plans "
+        "WHERE household_id = ? AND id != ?",
+        (household_id(), weekly_plan_id),
+    ).fetchall():
+        start, days = _weekly_plan.plan_period(plan)
+        if start > today:
+            continue
+        if _weekly_plan.period_end_date(start, days) < today:
+            stages["ended"].add(plan["id"])
+        else:
+            stages["running"].add(plan["id"])
+    return stages
+
+
 def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     """
     Move every still-'needed' line that came from an EARLIER plan's
@@ -1381,8 +1452,16 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     a single ingredient is added. Returns the lines set aside.
 
     What counts as "from last week": a line whose source_weekly_plan_id is
-    another plan whose period has already STARTED. A plan that hasn't
-    begun yet is not a leftover — a household that approves two weeks in
+    another plan whose period has already ENDED — its last day is before
+    the household's today (see _other_plans_by_stage). Until 2026-10-02
+    this read "has already STARTED", and that took in the week the
+    household is still IN: plan next week on a Friday and tonight's
+    bolognese and tomorrow's Pad Kra Pao went into "Still on the list from
+    last week", off the list and off today's Shop row. A week still
+    running is not a leftover; its lines stay on the list, and the new
+    week's ingest puts its own amounts on lines of its own because a plan
+    never merges onto another plan's line (_merge_target). A plan
+    that hasn't begun yet is not a leftover either — a household that approves two weeks in
     advance is building next week's list, and asking them to keep-or-drop
     it would be asking about groceries nobody has had the chance to buy.
     Hand-added lines (source NULL) are a person's standing want and are
@@ -1415,16 +1494,7 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
-    today = _household_today(conn=conn).isoformat()
-    started = set()
-    for plan in conn.execute(
-        "SELECT id, week_start_date, content_start_date, day_count, status FROM weekly_plans "
-        "WHERE household_id = ? AND id != ?",
-        (household_id(), weekly_plan_id),
-    ).fetchall():
-        start, _days = _weekly_plan.plan_period(plan)
-        if start <= today:
-            started.add(plan["id"])
+    ended = _other_plans_by_stage(conn, weekly_plan_id)["ended"]
     rows = conn.execute(
         "SELECT id, item, quantity, source_weekly_plan_id FROM grocery_items "
         "WHERE household_id = ? AND status = 'needed' AND excluded_from_list = 0 "
@@ -1432,7 +1502,7 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
         "ORDER BY id",
         (household_id(), weekly_plan_id),
     ).fetchall()
-    set_aside = [r for r in rows if r["source_weekly_plan_id"] in started]
+    set_aside = [r for r in rows if r["source_weekly_plan_id"] in ended]
     if set_aside:
         conn.executemany(
             "UPDATE grocery_items SET status = 'carried', carried_from_plan_id = source_weekly_plan_id "
@@ -1447,7 +1517,7 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
         "AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ?",
         (household_id(), weekly_plan_id),
     ).fetchall()
-    stale_spices = [r for r in stale_spices if r["source_weekly_plan_id"] in started]
+    stale_spices = [r for r in stale_spices if r["source_weekly_plan_id"] in ended]
     if stale_spices:
         conn.executemany(
             "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",

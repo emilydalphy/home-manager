@@ -24,11 +24,13 @@ from __future__ import annotations
 
 import datetime
 import random
+from unittest import mock
 
 import pytest
 
 from app import tools
 from app.db import get_conn
+from app.tools import grocery as _grocery
 from tests.conftest import _TABLES
 
 
@@ -57,7 +59,15 @@ def _week(offset_weeks: int, recipe: str, nights: int = 2, slot: str = "dinner")
         tools.plan_meal(
             (monday + datetime.timedelta(days=i)).isoformat(), recipe, slot=slot, weekly_plan_id=plan_id,
         )
-    tools.approve_weekly_plan(plan_id, "Emily")
+    if offset_weeks > 0:
+        # Approved on its own Monday, so the week before has ENDED and its
+        # unbought lines are genuinely last week's. A week still running is
+        # not a leftover (QA walk 2026-10-02) — see
+        # test_next_week_keeps_this_weeks_shop.py.
+        with mock.patch.object(_grocery, "_household_today", lambda conn=None: monday):
+            tools.approve_weekly_plan(plan_id, "Emily")
+    else:
+        tools.approve_weekly_plan(plan_id, "Emily")
     return plan_id
 
 

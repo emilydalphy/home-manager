@@ -425,6 +425,36 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-02 — Planning next week before this week ended hid this week's
+  shopping. Branch `fix-next-week-hides-shop-2026-10-02`, NOT merged at the
+  time of writing.** Loop Board bug (QA walk 2, High). Root cause:
+  `grocery.set_aside_carried_over_items` counted a plan as "last week" once
+  its period had STARTED, so the week the household is still in was set
+  aside the moment next week was approved — tonight's bolognese went into
+  "Still on the list from last week" and today's Shop row lost its deadline.
+  Now only a plan whose period has ENDED (last day before the household's
+  today, `_other_plans_by_stage`) is a leftover. **And a plan's amount never
+  merges onto ANOTHER plan's amount line** (`_merge_target`'s `source_plan`):
+  with both weeks' lines on the list, the first same-name line was this
+  week's, so next week's approval — and any meal added or swapped into next
+  week later — summed onto tonight's line and re-owned it (verifier's repro).
+  Each week keeps its own line; that is also what holds the 2026-09-13
+  no-summing rule at approval. A plan still joins a person's hand-added line
+  and an unticked spice reminder from any week (a reminder, not an amount).
+  `consolidate_grocery_list` (which the assistant runs unprompted on a
+  repeated name) follows the same rule, or it folded the two weeks straight
+  back. Spice-named lines are exempt from the merge rule — one jar per name,
+  ticked or not (consolidate has no such exemption; the merge keeps it moot).
+  Consequence: while two weeks are live the Shop list can show the same item
+  twice (one line per week), and approving two weeks ahead gives two lines /
+  two packages rather than one summed line — flagged for Emily. Merged `grocery-generic-specific-merge` in first, so this
+  branch merges after that one. **Open for Emily:** when a week ends with
+  things unbought and next week was approved early, nothing asks on Monday —
+  those lines stay on the list as their own lines until the next approval
+  sets them aside or generation's cleanup clears them.
+  `tests/test_next_week_keeps_this_weeks_shop.py`; the carry-over, spice and
+  unit-family tests now approve the new week on its own Monday.
+
 - **2026-10-02 — "Onions" and "Yellow onion" (and "Rice" / "Long-grain white
   rice") are one grocery line now. Branch `grocery-generic-specific-merge`,
   NOT merged at the time of writing.** Loop Board bug from the 2026-10-02 QA

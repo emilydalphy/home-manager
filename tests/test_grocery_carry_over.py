@@ -31,6 +31,7 @@ import datetime
 import json
 import shutil
 from pathlib import Path
+from unittest import mock
 
 import nodeharness
 import pytest
@@ -38,6 +39,7 @@ from shop_harness import CLICK
 
 from app import tools
 from app.db import get_conn
+from app.tools import grocery as _grocery
 
 
 REPO = Path(__file__).resolve().parent.parent
@@ -74,7 +76,7 @@ def curry():
     ])
 
 
-def _approve_week(offset_weeks: int, day_index: int = 0, meal: str = "Chicken curry") -> int:
+def _approve_week(offset_weeks: int, day_index: int = 0, meal: str = "Chicken curry", on_its_monday: bool = True) -> int:
     plan_id = tools.create_weekly_plan(_monday(offset_weeks))["weekly_plan_id"]
     if offset_weeks > 0:
         # What generate_weekly_plan does first — and what does NOT clear
@@ -82,7 +84,17 @@ def _approve_week(offset_weeks: int, day_index: int = 0, meal: str = "Chicken cu
         tools.clear_stale_grocery_items(current_weekly_plan_id=plan_id)
     day = tools._week_dates(_monday(offset_weeks))[day_index]
     tools.plan_meal(day, meal, slot="dinner", weekly_plan_id=plan_id)
-    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    if offset_weeks > 0 and on_its_monday:
+        # Approved on the new week's own Monday, so the week before has
+        # ENDED and its unbought lines are genuinely last week's. Approved
+        # while that week is still running (any day up to its Sunday), its
+        # lines are this week's shopping and stay put — see
+        # test_next_week_keeps_this_weeks_shop.py (QA walk 2026-10-02).
+        monday = datetime.date.fromisoformat(_monday(offset_weeks))
+        with mock.patch.object(_grocery, "_household_today", lambda conn=None: monday):
+            tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    else:
+        tools.approve_weekly_plan(plan_id, approved_by="Emily")
     return plan_id
 
 
@@ -140,7 +152,8 @@ def test_approval_reports_what_it_set_aside(curry):
     plan_b = tools.create_weekly_plan(_monday(1))["weekly_plan_id"]
     day = tools._week_dates(_monday(1))[0]
     tools.plan_meal(day, "Chicken curry", slot="dinner", weekly_plan_id=plan_b)
-    result = tools.approve_weekly_plan(plan_b, approved_by="Emily")
+    with mock.patch.object(_grocery, "_household_today", lambda conn=None: datetime.date.fromisoformat(_monday(1))):
+        result = tools.approve_weekly_plan(plan_b, approved_by="Emily")
     assert result["carried_over_count"] == 2
     assert {c["item"] for c in result["carried_over"]} == {"Chicken thighs", "Onion"}
 
@@ -160,10 +173,13 @@ def test_a_hand_added_want_is_left_alone(curry):
 def test_a_week_that_has_not_started_is_not_last_week(curry):
     """Approving two weeks ahead builds next week's list; nobody has had a
     chance to buy it, so there is nothing to keep or drop."""
-    _approve_week(1)
-    _approve_week(2)
+    _approve_week(1, on_its_monday=False)
+    _approve_week(2, on_its_monday=False)
     assert tools.list_carried_over_items() == []
-    assert _needed("Chicken thighs") == "4 lbs", "the pre-carry-over behaviour, unchanged"
+    # Each week its own line since 2026-10-02 (a plan's amount never merges
+    # onto another plan's line — test_next_week_keeps_this_weeks_shop.py);
+    # before that the two summed to "4 lbs" on one line owned by week 2.
+    assert [i["quantity"] for i in tools.list_grocery_list() if i["item"] == "Chicken thighs"] == ["2 lbs", "2 lbs"]
 
 
 def test_an_excluded_or_in_cart_line_is_the_shoppers_not_the_plans(curry):
