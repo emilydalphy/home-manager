@@ -425,6 +425,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-02 — A scaled card's steps say the scaled amounts. Branch
+  `batch-night-steps-amounts`, NOT merged at the time of writing.** QA walk:
+  a doubled lunch read "add 1 cup rice" over a "2 cups Rice" chip. Root
+  cause: `cooker._scale_card_to_batch`, `get_cooker_view`'s attendance pass
+  and the Cook stepper (`/api/recipes/scale`) all rescaled ingredients only;
+  steps were always the recipe's own, at its `default_servings`. New
+  `recipes.scale_steps` (returned by `scale_recipe` as
+  `scaled_instructions`) rewrites ONLY a number + measuring word or a bare
+  count + an ingredient noun, with `scale_recipe`'s arithmetic; temps,
+  times, "1-inch", "a 14 oz can", "2 quart saucepan" untouched. Side steps
+  stay as written. The serving number ("Cooking for 6") and its words are
+  unchanged — wording is Emily's call, options on the card. The prep-
+  schedule context (`agent.py` ~7580) still sends the model unscaled steps
+  beside scaled ingredients, deliberately: model input, not a screen.
+
 - **2026-10-02 — Snacks never reached the grocery list. Branch
   `snacks-on-grocery-list`, NOT merged at the time of writing.** QA walk as a
   new household: two snacks a day on Plan and Today, none of their food on

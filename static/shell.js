@@ -18789,7 +18789,12 @@
         ingredients: o.ingredients,
         unscaled_items: Array.isArray(o.unscaled_items) ? o.unscaled_items : [],
         was_batch: !!o.was_batch,
-        planned_for: parseInt(o.planned_for, 10) || null
+        planned_for: parseInt(o.planned_for, 10) || null,
+        // The steps at the cook's count and the dish they were scaled for
+        // (2026-10-02) — read back too, or a reload would put the server's
+        // steps under the cook's amounts, the very mismatch this carries.
+        instructions: Array.isArray(o.instructions) ? o.instructions : null,
+        dish: typeof o.dish === 'string' ? o.dish : null
       };
     });
     return out;
@@ -20454,6 +20459,11 @@
       var o = cookState.serves[cookMealKey(m)];
       if (!o) return;
       m.ingredients = o.ingredients;
+      // The steps follow the same tap (2026-10-02). An override stored
+      // before steps were part of it has none, and leaves them as sent.
+      // Only for the dish they were scaled from: a swap on the same entry
+      // keeps its own steps rather than inheriting the last dish's.
+      if (o.instructions && o.dish === (m.meal || '')) m.instructions = o.instructions;
       m.default_servings = o.servings;
       m.unscaled_items = o.unscaled_items;
       m.serves_overridden = true;
@@ -20463,6 +20473,18 @@
       // shows it, and the plan's own copy stays true.
       if (o.was_batch) m.servings = o.servings;
     });
+  }
+
+  // The card's steps after a stepper tap: the scale reply's recipe steps
+  // in place of the first N, and the rest (a side's steps) kept. Null when
+  // the reply carries none, so an older server leaves the steps alone.
+  function cookScaledSteps(meal, scaled) {
+    if (!Array.isArray(scaled)) return null;
+    var current = (meal && meal.instructions) || [];
+    // A card with no steps of its own (a reheat, a recipe still being
+    // written) is not handed the recipe's.
+    if (!current.length) return null;
+    return scaled.concat(current.slice(scaled.length));
   }
 
   //
@@ -20511,6 +20533,11 @@
       cookState.serves[cookMealKey(meal)] = {
         servings: next,
         ingredients: data.scaled_ingredients || [],
+        // The recipe's own steps at the new count, then whatever followed
+        // them on the card (a side's "Alongside" steps, which the server
+        // leaves as written) — so "add 1 cup rice" moves with the chip.
+        instructions: cookScaledSteps(meal, data.scaled_instructions),
+        dish: meal.meal || '',
         unscaled_items: data.unscaled_items || [],
         // Remembered so the override knows whether this card's "for N"
         // chip is a batch size that should follow it.

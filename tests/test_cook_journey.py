@@ -193,6 +193,7 @@ _FUNCTIONS = [
     "cookMadeAheadLinesHtml",
     "cookServesShown",
     "cookApplyServesOverride",
+    "cookScaledSteps",
     "cookStepServings",
     "cookFocusMeal",
     "cookFollowFocusedMeal",
