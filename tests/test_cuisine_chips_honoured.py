@@ -45,6 +45,11 @@ def _slot(date, slot, name, **extra):
         "reasoning": f"{name} because", "food_groups": ["protein", "vegetable", "carb"],
         "prep_time_minutes": 10, "cook_time_minutes": 15,
     }
+    if slot == "lunch":
+        # A weekday lunch inside the household's 20-minute lunch cap, which
+        # applies whether or not step 3 was answered (Emily, 2026-10-03):
+        # this file measures its own rule, not cap_enforce's lunch re-pick.
+        d["prep_time_minutes"], d["cook_time_minutes"] = 5, 10
     d.update(extra)
     return d
 

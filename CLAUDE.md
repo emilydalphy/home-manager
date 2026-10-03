@@ -21810,6 +21810,23 @@ why*, not duplicating the diff.
   lunch, breakfast, snack = none. `RUSH_MAX_MINUTES` and
   `WEEKDAY_LUNCH_MAX_MINUTES` live in `time_caps` (imports nothing from the
   app) and are re-exported from `week_intake`.
+- **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
+  2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap
+  build re-picked only a lunch answered "cooked that day" in step 3 and only
+  recorded an unanswered one. Now `cap_enforce` re-picks every weekday lunch
+  over `time_caps.minutes_cap`; the carve-outs (chain ends, prep day unless
+  answered "cooked", weekend, asked for by name, already cooked) are the
+  rule's and unchanged. The "24 red tests" from the first try were fixtures,
+  not guards: `test_no_repeat_enforced` / `test_bring_over` /
+  `test_cuisine_chips_honoured` / `test_snack_no_repeat` drafted every
+  lunch at 25 minutes and the no-repeat picker at 30, so the cap pass
+  re-picked lunches those tests never meant to touch; their lunch fixtures
+  are now 15 minutes. **A lunch cap never reaches a dinner**: `_cook_cap`
+  ignores lunch caps when the dinner is being re-picked, and a lunch's whole
+  dish (`_whole_dish_nights`) spans lunches only. The budget hold
+  (`_held_for_later_passes`) is unchanged. Known cost, not fixed here:
+  `meal_variety.repick_recent_repeats` picks with no time cap, so a no-repeat
+  lunch replacement over 20 minutes is re-picked again by `cap_enforce`.
 
 ## Deploying
 
