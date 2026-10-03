@@ -1319,6 +1319,14 @@ def _pick_a_snack(plan_id: int, date: str, avoid: list[str], budget, picker=None
     if not name or name.lower() in {a.lower() for a in avoid} or _swap.pick_gate(candidate, slot_entry):
         return "", None, ""
     candidate["meal_name"] = name
+    if not _swap._clean_ingredients(candidate.get("ingredients")):
+        # A pick that came back with no list is saved PENDING, the way the
+        # menu pass saves a dish, so the recipe pass writes it up at
+        # approval. Left as it was, _save_recipe_if_new saves nothing for
+        # it and the snack lands freeform: never shopped for (Loop Board
+        # "Snacks never reach the grocery list", 2026-10-02). This runs on
+        # a draft only, so nothing needs a quantity yet.
+        candidate["details_pending"] = True
     _swap._save_recipe_if_new(candidate, _swap._table_for(date, "snack")["serves"])
     return name, candidate.get("food_groups"), (candidate.get("reason") or "").strip()
 

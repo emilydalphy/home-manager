@@ -5940,7 +5940,22 @@ def _generate_weekly_plan(
     try:
 
         def _ensure_recipe_saved(meal_name, item):
-            if not item.get("is_new_recipe"):
+            # A SNACK is saved whatever the model's is_new_recipe says
+            # (Loop Board "Snacks never reach the grocery list", QA walk
+            # 2026-10-02). The menu pass marks a simple snack — "Apple
+            # Slices with Almond Butter" — as not new, as if it were not a
+            # recipe; with no saved row by that name plan_meal then writes
+            # it FREEFORM, and a freeform entry is never written up, never
+            # allergy-checked on its ingredients, and never shopped for.
+            # Measured on that walk: 4 recipes written for a week of 12
+            # slots, six snacks on the plan, none on the list. A snack is
+            # never a leftovers night (a day's two snacks cannot be told
+            # apart by "date:snack", see _expand_repeated_dates), so there
+            # is no reheat name here that ought to stay freeform. Every
+            # OTHER slot keeps trusting the flag on purpose: a leftovers
+            # night is sent as "a leftovers entry naming what it's eating"
+            # and must buy nothing of its own.
+            if not item.get("is_new_recipe") and item.get("slot") != "snack":
                 return
             # Case-insensitively (tools.existing_recipe_named), which is
             # the one rule now. Comparing names exactly let the model's

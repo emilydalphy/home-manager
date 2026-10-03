@@ -425,6 +425,36 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-02 — Snacks never reached the grocery list. Branch
+  `snacks-on-grocery-list`, NOT merged at the time of writing.** QA walk as a
+  new household: two snacks a day on Plan and Today, none of their food on
+  Shop. The menu pass marks a simple snack ("Apple Slices with Almond
+  Butter") `is_new_recipe=false`; `_ensure_recipe_saved` in
+  `agent._generate_weekly_plan` trusted the flag, `plan_meal` found no
+  recipe by that name and wrote the snack FREEFORM — never written up,
+  never allergy-checked on its ingredients, never shopped for (walk log: 4
+  recipes written for a 12-slot week). Fix: a SNACK is saved as a pending
+  recipe whatever the flag says; every other slot still trusts it, because a
+  leftovers night arrives as a not-new name and must buy nothing.
+  `meal_variety._pick_a_snack` likewise saves a list-less pick pending.
+  Shopping then follows the meal rules unchanged: one line per item summed
+  over the week for the whole household (snacks carry no attendance), the
+  ordinary ingest's already-at-home check, swap/remove reverses it. (Staples
+  are NOT filtered out at ingest for snacks or dinners — that is whatever
+  the recipe writer leaves off its list.) Review found the other half: a
+  snack on a day whose every meal is away was now bought, and marking a day
+  fully away after approval left its snacks and their groceries. So
+  `slot_needs._settle_slot_empty` (away, attendance, holiday-out, left-out
+  days; tonight's night-off does NOT go through it) drops the day's snacks,
+  groceries reversed, once every meal on the day is empty AS AN ABSENCE
+  (away need, skipped day, out night). Usual-week "off", a count of 0 and
+  gone-by meals are not absences: a dinner-only household with one dinner
+  away keeps its snacks (second review measured the first cut deleting
+  them). Coming home again does not put snacks back. Breakfast/lunch still trust the model's "not new"
+  flag — a possible follow-up. Weeks already drafted or approved before
+  this are not back-filled. `tests/test_snacks_reach_the_grocery_list.py`
+  (10; 8 red on main, 1 more red on the first cut of the away rule).
+
 - **2026-10-01 — A boundary test on `main` passed only when two statements
   landed in the same SQLite second, so the suite was intermittently red for
   a reason nobody could reproduce. Branch
