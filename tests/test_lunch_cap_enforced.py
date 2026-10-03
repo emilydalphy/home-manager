@@ -727,3 +727,135 @@ def test_a_dinner_repick_is_not_held_to_an_unanswered_lunchs_cap(generate_only, 
     out = _enforce(plan_id, tools.get_week_intake(week), memory, picker=_medium)
     assert out["repicked"] and out["repicked"][0]["slot"] == "dinner"
     assert {r["date"]: r["meal"] for r in _dinners(plan_id)}[dates[0]] == "Medium Curry"
+
+
+# ---------- 8. found by the adversarial review of this branch (2026-10-03) ----------
+
+def test_a_lunch_whole_dish_never_half_rewrites_a_dinner_chain(generate_only, picker):
+    """
+    CATCH. Monday's dinner cooks a double of Big Stew for Tuesday's lunch;
+    Thursday's lunch is Big Stew cooked fresh (45 > 20) and their lunch
+    number is met. A lunch's whole dish is lunches only, and Tuesday's
+    reheat is the DINNER's — so Thursday is re-picked alone and the chain
+    (Monday's double, Tuesday's reheat) is untouched.
+    """
+    from test_rush_cap_enforced import _dinners
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Big Stew", 45)
+    tools.save_week_intake(week)
+    days = []
+    for i, d in enumerate(dates):
+        if i == 0:
+            days += _day(d, "Quick Wrap", dinner="Big Stew")
+            days[-2]["derived_from"] = {"make_double_for": [f"{dates[1]}:lunch"]}
+        elif i == 1:
+            days += _day(d, "Big Stew", derived_from={"links_to": f"{dates[0]}:dinner"})
+        elif i == 3:
+            days += _day(d, "Big Stew")
+        else:
+            days += _day(d, "Quick Wrap")
+    plan_id = _generate(generate_only, week, days)
+    memory = dict(tools.get_household_memory(), meal_counts_set=True, lunches_per_week=2)
+
+    out = _enforce(plan_id, tools.get_week_intake(week), memory, picker=picker)
+
+    lunches = _lunches(plan_id)
+    assert [(x["slot"], x["date"]) for x in out["repicked"]] == [("lunch", dates[3])]
+    assert lunches[dates[3]]["minutes"] <= 20
+    assert lunches[dates[1]]["meal"] == "Big Stew", "the reheat is the dinner's, untouched"
+    monday = next(r for r in _dinners(plan_id) if r["date"] == dates[0])
+    assert monday["meal"] == "Big Stew"
+    assert json.loads(monday["derived_from_json"] or "{}").get("make_double_for") == [f"{dates[1]}:lunch"]
+
+
+def _thai_picker(*names):
+    seen = []
+    queue = list(names)
+
+    def pick(context):
+        seen.append(context)
+        name = queue.pop(0) if queue else "Plain Toast"
+        return {"meal_name": name, "reason": "quick",
+                "ingredients": [{"item": f"{name} stuff", "qty": "1", "category": "pantry"}],
+                "instructions": [f"Cook {name}.", "Serve."],
+                "food_groups": ["protein", "vegetable", "carb"],
+                "prep_time_minutes": 5, "cook_time_minutes": 10}
+    pick.seen = seen
+    return pick
+
+
+def test_a_cuisine_chips_only_answer_keeps_its_cuisine_through_the_repick(generate_only):
+    """
+    CATCH. Their Thai chip's only answer is Monday's 25-minute Pad Thai
+    lunch (unanswered step 3). The cap re-pick asks for Thai and refuses a
+    pick that isn't, so the week keeps a Thai dish inside 20 minutes.
+    """
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Pad Thai", 25)
+    tools.save_week_intake(week, cuisines=["Thai"])
+    days = []
+    for i, d in enumerate(dates):
+        days += _day(d, "Pad Thai" if i == 0 else "Quick Wrap")
+    plan_id = _generate(generate_only, week, days)
+    pick = _thai_picker("Quick Noodles", "Thai Basil Chicken")
+
+    out = _enforce(plan_id, tools.get_week_intake(week), tools.get_household_memory(), picker=pick)
+
+    assert pick.seen and pick.seen[0].get("must_be_cuisine") == "Thai"
+    assert [x["with"] for x in out["repicked"]] == ["Thai Basil Chicken"]
+    assert _lunches(plan_id)[dates[0]]["minutes"] <= 20
+
+
+def test_a_cuisine_chips_only_answer_stands_when_nothing_of_it_is_quick(generate_only):
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Pad Thai", 25)
+    tools.save_week_intake(week, cuisines=["Thai"])
+    days = []
+    for i, d in enumerate(dates):
+        days += _day(d, "Pad Thai" if i == 0 else "Quick Wrap")
+    plan_id = _generate(generate_only, week, days)
+
+    out = _enforce(plan_id, tools.get_week_intake(week), tools.get_household_memory(),
+                   picker=_thai_picker("Quick Noodles", "Plain Toast"))
+
+    assert out["repicked"] == []
+    assert _lunches(plan_id)[dates[0]]["meal"] == "Pad Thai"
+    assert [x["why"] for x in out["left"]] == ["nothing quicker came back"]
+
+
+def test_a_lunch_they_typed_by_name_but_the_model_did_not_stamp_is_kept(generate_only):
+    """CATCH. "Long Lunch on Thursday" in their own words, no `freeform`
+    stamp on the row: still a meal they asked for by name."""
+    week, dates, plan_id = _one_long_lunch(generate_only, 3)
+    out = _enforce(plan_id, tools.get_week_intake(week), tools.get_household_memory(), picker=_never,
+                   asks=(None, "long lunch on thursday please"))
+    assert out["repicked"] == []
+    assert [x["why"] for x in out["left"]] == ["the household asked for this one by name"]
+
+
+def test_generation_hands_the_cap_pass_their_own_words(stub_model, monkeypatch):
+    """The call site passes the week's words (count_asks) through."""
+    import app.agent as agent
+    seen = {}
+
+    def _spy(plan_id, intake, memory, **kwargs):
+        seen.update(kwargs)
+        return {"moved": [], "repicked": [], "left": [], "flagged": []}
+
+    monkeypatch.setattr(agent._cap_enforce, "enforce_minutes_caps", _spy)
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    tools.save_week_intake(week, freeform="Long Lunch on Thursday")
+    days = []
+    for d in dates:
+        days += _day(d, "Quick Wrap")
+    stub_model(days)
+    agent.generate_weekly_plan(week)
+    assert "Long Lunch on Thursday" in (seen.get("asks") or ())

@@ -541,7 +541,8 @@ def _cap_reason(night: dict, cap: int, slot: str = "dinner") -> str:
 
 
 def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
-           budget=None, picker=None, slot: str = "dinner") -> list[dict]:
+           budget=None, picker=None, slot: str = "dinner",
+           asks: tuple[str | None, ...] = ()) -> list[dict]:
     """
     Re-pick every meal of `slot` (dinner unless told otherwise) still over
     its cap, worst overrun first, through the swap's own picker with the cap
@@ -557,7 +558,7 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
     rows = nights(plan_id, intake, memory, slot)
     week_dishes = {(n["meal"] or "").strip().lower() for n in rows if (n["meal"] or "").strip()}
     targets = sorted(
-        (n for n in rows if n["over"] and n["movable"]),
+        (n for n in rows if n["over"] and n["movable"] and not _typed_for(n, asks)),
         key=lambda n: (-(n["minutes"] - n["cap"]), n["date"]),
     )
     gone: set = set()  # meals already re-picked as part of a whole dish
@@ -580,10 +581,22 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
             caps_on = [cap] + [c for c in (_cook_cap(o, intake, memory, slot) for o in also) if c]
             cap = min(caps_on)  # the pick is cooked on each of them
 
-        def _too_long(candidate, cap=cap, night=night):
+        # A cuisine chip this dish is the week's only answer to keeps its
+        # cuisine through the re-pick (adversarial review, 2026-10-03: the
+        # chip pass had already counted a 25-minute Pad Thai lunch as the
+        # Thai chip's answer, then this pass swapped it for anything quick
+        # and the week lost its Thai dish with nothing said).
+        chips = _sole_chips(plan_id, intake, {night["id"]} | {o["id"] for o in also or []})
+
+        def _too_long(candidate, cap=cap, night=night, chips=chips):
             minutes = _swap._pick_minutes(candidate)
             if minutes and minutes > cap:
                 return f"takes {minutes} minutes, and {_weekday(night['date'])} only has {cap}"
+            from . import typed_requests as _typed_requests
+            for chip in chips:
+                why = _typed_requests._pick_is_cuisine(candidate, chip)
+                if why:
+                    return why
             return None
 
         entry = {"id": night["id"], "date": night["date"], "slot": slot,
@@ -601,6 +614,7 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
             reason_line=REPICK_REASON,
             picker=picker,
             also=also or None,
+            context_extra={"must_be_cuisine": chips[0]} if chips else None,
         )
         if replaced is None:
             logger.warning(
@@ -624,6 +638,34 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         logger.info("Plan %s: %s %s was %d minutes against a %d-minute cap — %r -> %r",
                     plan_id, night["date"], slot, night["minutes"], cap, night["meal"], new_name)
     return done
+
+
+def _typed_for(night: dict, asks: tuple[str | None, ...]) -> bool:
+    """Whether the household's own words for this week name this meal —
+    meal_variety.asked_for_by_name, the no-repeat pass's reading. The model
+    is asked to stamp `freeform` on a meal a request shaped (`theirs`), and
+    a meal they typed that it forgot to stamp is still one they asked for
+    by name (Emily's exception, 2026-10-03; found by review)."""
+    return bool(asks) and _meal_variety.asked_for_by_name(night["meal"] or "", asks)
+
+
+def _sole_chips(plan_id: int, intake: dict | None, group: set) -> list[str]:
+    """This week's cuisine chips (intake.cuisines) whose every planned
+    lunch or dinner answering them is in `group` — the meals about to be
+    re-picked — so the re-pick must answer them too."""
+    from . import typed_requests as _typed_requests
+    chips = _typed_requests._unique_chips((intake or {}).get("cuisines"))
+    if not chips:
+        return []
+    entries = [e for e in _typed_requests._load_entries(plan_id)
+               if e["slot"] in ("lunch", "dinner") and e["slot_state"] == "planned" and e["meal"]]
+    out = []
+    for chip in chips:
+        answering = {e["id"] for e in entries
+                     if _typed_requests.dish_is_cuisine(chip, e["meal"], e.get("cuisine"))}
+        if answering and answering <= group:
+            out.append(chip)
+    return out
 
 
 def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None,
@@ -667,6 +709,29 @@ def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None,
     ).fetchall()
     conn.close()
     others = [dict(r) for r in rows if _leftovers.dish_identity(r["meal"]) == key]
+    if slot == "lunch" and others:
+        # A lunch's whole dish is lunches only, so a chain that crosses to
+        # a dinner must not be half-rewritten (adversarial review,
+        # 2026-10-03: Tue's reheat of Monday's dinner was rewritten with
+        # Thursday's fresh lunch, and Monday's batch lost its double). A
+        # lunch eating a dinner's cook is the dinner's, and the lunch
+        # number does not count it (meal_variety.distinct_dishes), so it
+        # is simply not part of this dish; a lunch cooking for a dinner
+        # cannot be re-picked without that dinner, so the night stands.
+        chains = _leftovers.plan_leftover_chains(plan_id)
+        dinner_fed = _meal_variety._dinner_fed_lunch_ids(plan_id, chains)
+        kept = []
+        for o in others:
+            derived = json.loads(o["derived_from_json"] or "{}") or {}
+            if o["id"] in dinner_fed or str(derived.get("links_to") or "").endswith(":dinner"):
+                continue
+            source = chains["sources"].get(o["id"])
+            feeds = [str(t) for t in (derived.get("make_double_for") or [])]
+            if (source and any(t.get("slot") != "lunch" for t in source.get("targets") or [])) \
+                    or any(t.endswith(":dinner") for t in feeds):
+                return None
+            kept.append(o)
+        others = kept
     if not others:
         return []
     for o in others:
@@ -740,7 +805,8 @@ def _held_for_later_passes(plan_id: int, dates: list[str] | None = None) -> int:
 
 
 def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None, *,
-                         budget=None, picker=None, dates: list[str] | None = None) -> dict:
+                         budget=None, picker=None, dates: list[str] | None = None,
+                         asks: tuple[str | None, ...] = ()) -> dict:
     """
     Make "short on time" true of the week rather than merely asked for.
     Re-arranges first (free), then re-picks what no night can take. Never
@@ -771,7 +837,7 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     except Exception:
         logger.exception("Plan %s: re-arranging the week around its time caps failed", plan_id)
     try:
-        repicked = repick(plan_id, intake, memory, budget=budget, picker=picker)
+        repicked = repick(plan_id, intake, memory, budget=budget, picker=picker, asks=asks)
     except Exception:
         logger.exception("Plan %s: re-picking a dinner over its time cap failed", plan_id)
     try:
@@ -784,7 +850,8 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     lunch_budget = _dinner_gaps._Reserved(budget, held)
     for slot in REPICK_ONLY_SLOTS:
         try:
-            repicked += repick(plan_id, intake, memory, budget=lunch_budget, picker=picker, slot=slot)
+            repicked += repick(plan_id, intake, memory, budget=lunch_budget, picker=picker, slot=slot,
+                               asks=asks)
         except Exception:
             logger.exception("Plan %s: re-picking a %s over its time cap failed", plan_id, slot)
     left = []
@@ -799,7 +866,9 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
                 if not night["over"]:
                     continue
                 why = "nothing quicker came back"
-                if not night["movable"]:
+                if night["movable"] and _typed_for(night, asks):
+                    why = "the household asked for this one by name"
+                elif not night["movable"]:
                     if night["reheat"] or night["source"]:
                         why = "it is a batch, not a cook on the day"
                     elif _meal_variety.theirs(night["derived"]):

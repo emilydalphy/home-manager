@@ -21827,6 +21827,13 @@ why*, not duplicating the diff.
   (`_held_for_later_passes`) is unchanged. Known cost, not fixed here:
   `meal_variety.repick_recent_repeats` picks with no time cap, so a no-repeat
   lunch replacement over 20 minutes is re-picked again by `cap_enforce`.
+  Review of the branch found three more and they are fixed: a lunch's whole
+  dish skips a lunch that reheats a DINNER (and stands if a lunch cooks for
+  one), so a dinner chain is never half-rewritten; a cuisine chip whose only
+  answer is the over-cap meal keeps its cuisine through the re-pick
+  (`must_be_cuisine`, else it stands); and a meal their own words name
+  (`count_asks`, `meal_variety.asked_for_by_name`) is kept even when the
+  model forgot to stamp `freeform`.
 
 ## Deploying
 
