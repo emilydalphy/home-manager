@@ -2873,6 +2873,10 @@ class WeekGroceryBuffer:
             line = self._lines[key] = {
                 "item": item, "category": category, "unit": unit, "note": note, "shares": {},
             }
+        else:
+            # "Onions" and "Yellow onion" share a key (grocery._SAME_PURCHASE);
+            # the line carries the variety, which tells the shopper more.
+            line["item"] = _grocery._more_specific_name(line["item"], item)
         line["shares"][entry_id] = line["shares"].get(entry_id, 0.0) + amount
 
     def flush(self) -> None:

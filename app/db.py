@@ -848,7 +848,14 @@ def _merge_duplicate_item_store_preferences(conn):
     # load time would be circular. Safe as a call-time import instead,
     # same trick tools/stores.py and tools/preferences.py use on each
     # other for the same reason.
-    from .tools.grocery import _merge_key
+    #
+    # The plain-name key, NOT _merge_key's same-purchase step (2026-10-02):
+    # a household with "onions" at one store and "yellow onion" at another
+    # chose both of those on purpose, before the two were one line, and
+    # this runs on every startup with no message. Deleting one of them
+    # here would be the app silently throwing away a store choice. Number
+    # and spacing duplicates are still swept, as before.
+    from .tools.grocery import _plain_name_key as _merge_key
 
     rows = conn.execute(
         "SELECT id, household_id, item FROM item_store_preferences ORDER BY id"

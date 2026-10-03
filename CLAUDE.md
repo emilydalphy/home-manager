@@ -425,6 +425,30 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-02 — "Onions" and "Yellow onion" (and "Rice" / "Long-grain white
+  rice") are one grocery line now. Branch `grocery-generic-specific-merge`,
+  NOT merged at the time of writing.** Loop Board bug from the 2026-10-02 QA
+  walk. Root cause: every merge (the approval's `WeekGroceryBuffer` key,
+  `add_grocery_item`, `consolidate_grocery_list`) compares
+  `grocery._merge_key`, which only ignored case, spacing and a trailing s.
+  Fix: `_merge_key` maps a short ALLOW-LIST (`grocery._SAME_PURCHASE`:
+  yellow/cooking/brown onion → onion; white / long-grain (white) rice →
+  rice; all-purpose/plain flour → flour; granulated/white sugar → sugar)
+  onto the plain name's key. Never a "shorter name inside the longer one"
+  rule — that is the 2026-09-14 olive-oil-is-olives mistake, and would merge
+  red onion, brown rice, chicken breast into chicken. The merged line takes
+  the variety's name only on a plan-owned line (a plan's add, or
+  consolidate on a plan line); a person's own line or own add keeps its
+  wording, because the shop sheet's Put back restores amount and store by
+  row id, not name. The startup sweep
+  `db._merge_duplicate_item_store_preferences` keeps reading the PLAIN key
+  (`_plain_name_key`), so "onions → Costco" beside "yellow onion → Walmart"
+  is not silently cut to one on deploy (review caught the sweep doing that).
+  The key is shared app-wide on purpose (store preferences, staples, the
+  cook screen's swaps all read it) — one rule, not two. Reversal is
+  untouched: it goes by ledger row → grocery_item_id. Pinned by
+  `tests/test_grocery_same_purchase.py`.
+
 - **2026-10-02 — A scaled card's steps say the scaled amounts. Branch
   `batch-night-steps-amounts`, NOT merged at the time of writing.** QA walk:
   a doubled lunch read "add 1 cup rice" over a "2 cups Rice" chip. Root
