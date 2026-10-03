@@ -734,11 +734,11 @@ def test_a_read_only_function_is_passed_over_and_cap_enforce_is_the_demonstratio
     """
     seen = {c["name"] for c in _candidates() if c["file"] == "app/tools/cap_enforce.py"}
     assert "_note_move" in seen, "the protected writer in cap_enforce.py is not seen"
-    assert "_load_dinners" not in seen and "_whole_dish_nights" not in seen, (
+    assert "_load_meals" not in seen and "_whole_dish_nights" not in seen, (
         "cap_enforce.py's two read-only connections are being swept; this sweep "
         "is about the write lock — see the module docstring."
     )
-    assert ("app/tools/cap_enforce.py", "_load_dinners") not in _expected()
+    assert ("app/tools/cap_enforce.py", "_load_meals") not in _expected()
     assert ("app/tools/cap_enforce.py", "_whole_dish_nights") not in _expected()
 
 

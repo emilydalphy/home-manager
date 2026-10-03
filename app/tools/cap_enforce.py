@@ -73,10 +73,56 @@ WHAT IS LEFT ALONE, and why each:
     judged, exactly as time_caps' own readers let them through, and moving
     one buys nothing measurable.
   * `planned_empty` and `open` slots, which are not dinners.
-  * lunch. The weekday lunch cap is the week's own answer now (step 3,
-    "Weekday lunches"), and swap_dinner_nights is dinner-only by name and
-    by contract. This card is about dinner; a lunch over its cap is still
-    warned about by plan_quality and is its own card.
+  * lunch and breakfast in STAGE 1. See "LUNCH AND BREAKFAST" below.
+
+LUNCH AND BREAKFAST (2026-10-02, Loop Board "A weekday lunch you said you'd
+cook in 20 minutes is drafted at 35"). A weekday lunch the household said is
+cooked that day has its own cap (time_caps.WEEKDAY_LUNCH_MAX_MINUTES), and
+until this the loader below read dinners only, so nothing held a lunch to
+it: the 35-minute lunch stayed, `left` never named it, and plan_quality's
+`weekday_lunch_cap_respected` warned into the morning report. Lunch and
+breakfast now get STAGE 2 ONLY — the same re-pick, the same shared budget,
+the same "never hand the slot back as a question", run after the dinners so
+dinner keeps first call on the budget. The cap is time_caps.minutes_cap's,
+asked with the week's own weekday-lunches answer (`lunch_kind`) and with
+`is_leftovers` for either end of a chain, exactly as plan_quality asks it,
+so every carve-out (a chain, a standing prep day unless that day's answer
+is "cooked", the weekend, a meal they asked for, a meal already cooked) is
+the rule's and not re-derived here. Breakfast has no cap in time_caps today,
+so for breakfast this runs and finds nothing; it is wired so that a
+breakfast cap, the day the household is asked for one, is enforced without
+another card.
+
+  ONLY A LUNCH THEY SAID IS COOKED THAT DAY IS RE-PICKED — an
+  assumption, and Emily's to widen. time_caps also caps a weekday lunch
+  nobody answered for (no answer reads as "cooked that day"), and
+  plan_quality warns about those too. Enforcing that default was built and
+  measured first: it re-picked every model-drafted 25-minute lunch on every
+  week that skipped step 3, rewrote dishes earlier passes had just chosen
+  (the no-repeat pass's replacement, a cuisine chip's answer) and turned 24
+  existing tests red. So this holds the household's OWN answer — the card's
+  "you said you'd cook it in 20" — and an unanswered lunch over 20 is
+  recorded in `left` with that reason and still warned about.
+
+  TWO THINGS WORTH KNOWING, found by review. (1) A whole-dish lunch
+  re-pick (_whole_dish_nights, when the household's lunch number is met)
+  also replaces DINNERS of the same dish, held to the tightest cap among
+  them (a lunch's own cap counts only when it was answered "cooked" —
+  _cook_cap) — the mirror of what a dinner re-pick already did on main; the
+  `repicked` record names the lunch only. (2) The pass and plan_quality
+  do not quite agree on a prepped-lunch batch: `nights` reads its markers
+  (prep_date / prep_day_cook / constraint) as a batch with no cap, while
+  plan_quality's `fed` check compares "date:lunch" against "entry_id:N"
+  links and so never matches — the tripwire's own gap, left for its card.
+
+  STAGE 1 (THE FREE TRADE) DOES NOT EXIST FOR LUNCH, deliberately.
+  swap_dinner_nights is dinner-only by name and by contract, and there is
+  no lunch door that re-dates rows in place. Building one means deciding
+  what a trade does to a leftovers chain (a lunch is often the reheat end of
+  a dinner) and to a prepped-lunch batch (weekday_lunches' prep-day cook and
+  the lunches it feeds share one dish across days) — the fiddliest part of
+  the week, and its own card. Until then an over-cap lunch is re-picked or
+  left as drafted with the reason in `left`; never traded.
 
 FOUND WHILE MEASURING AND DELIBERATELY NOT FIXED: on a week with a
 leftovers chain, plan_quality goes on warning and this pass cannot help.
@@ -108,6 +154,7 @@ from . import weekly_plan as _weekly_plan
 from . import meal_variety as _meal_variety
 from . import leftovers as _leftovers
 from . import draft_flags as _draft_flags
+from . import dinner_gaps as _dinner_gaps
 from ._shared import household_id
 from ..db import get_conn
 
@@ -212,7 +259,14 @@ def _weekday(meal_date: str) -> str:
         return meal_date
 
 
-def _load_dinners(plan_id: int) -> list[dict]:
+# The slots held to their caps by the re-pick alone, after the dinners (see
+# "LUNCH AND BREAKFAST" in the module docstring). Lunch first: it is the one
+# with a cap today, so it has first call on what the dinners left of the
+# shared budget.
+REPICK_ONLY_SLOTS = ("lunch", "breakfast")
+
+
+def _load_meals(plan_id: int, slot: str) -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         """
@@ -221,26 +275,34 @@ def _load_dinners(plan_id: int) -> list[dict]:
                r.prep_time_minutes, r.cook_time_minutes
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
-        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.slot = 'dinner'
+        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.slot = ?
           AND mpe.component_category IS NULL
         ORDER BY mpe.date ASC, mpe.id ASC
         """,
-        (plan_id, household_id()),
+        (plan_id, household_id(), slot),
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def nights(plan_id: int, intake: dict | None, memory: dict | None) -> list[dict]:
+def _load_dinners(plan_id: int) -> list[dict]:
+    return _load_meals(plan_id, "dinner")
+
+
+def nights(plan_id: int, intake: dict | None, memory: dict | None, slot: str = "dinner") -> list[dict]:
     """
-    Every dinner of this plan, with its own cap and whether this pass may
-    touch it. One read of the plan and one read of the rules, so the two
-    stages below and the tests can never disagree about a night.
+    Every meal of one slot on this plan (dinner unless told otherwise), with
+    its own cap and whether this pass may touch it. One read of the plan and
+    one read of the rules, so the two stages below and the tests can never
+    disagree about a night.
     """
+    from . import weekday_lunches as _weekday_lunches
+
     night_tags = ((intake or {}).get("night_tags") or {})
+    lunch_kinds = _weekday_lunches.kinds_by_date(intake) if slot == "lunch" else {}
     chains = _leftovers.plan_leftover_chains(plan_id)
     out = []
-    for row in _load_dinners(plan_id):
+    for row in _load_meals(plan_id, slot):
         derived = {}
         try:
             derived = json.loads(row.get("derived_from_json") or "{}") or {}
@@ -250,8 +312,21 @@ def nights(plan_id: int, intake: dict | None, memory: dict | None) -> list[dict]
         reheat = bool(row["id"] in chains["leftovers"] or derived.get("links_to")
                       or (isinstance(frozen, dict) and (frozen.get("dish") or "").strip()))
         source = bool(row["id"] in chains["sources"] or derived.get("make_double_for"))
+        if slot != "dinner" and (derived.get("prep_date") or derived.get("prep_day_cook")
+                                 or derived.get("constraint") == _weekday_lunches.CONSTRAINT):
+            # A prepped-lunch batch's cook (weekday_lunches.apply_to_plan):
+            # a batch, not a cook on the day, and the household's own answer.
+            source = True
         minutes = _minutes(row)
-        cap = _time_caps.minutes_cap(row["date"], "dinner", night_tags.get(row["date"]) or [], memory)
+        if slot == "dinner":
+            cap = _time_caps.minutes_cap(row["date"], "dinner", night_tags.get(row["date"]) or [], memory)
+        else:
+            # Asked exactly as plan_quality._weekday_lunch_cap_respected asks
+            # it, so the pass and the tripwire agree about every lunch. Night
+            # tags are about dinner and are not passed.
+            cap = _time_caps.minutes_cap(row["date"], slot, [], memory,
+                                         is_leftovers=reheat or source,
+                                         lunch_kind=lunch_kinds.get(row["date"]))
         out.append({
             "id": row["id"],
             "date": row["date"],
@@ -284,6 +359,10 @@ def nights(plan_id: int, intake: dict | None, memory: dict | None) -> list[dict]
             ),
             "reheat": reheat,
             "source": source,
+            # Whether this pass holds this meal to its cap at all. Every
+            # dinner; a lunch only when the household SAID it is cooked that
+            # day (see "ONLY A LUNCH THEY SAID IS COOKED" in the docstring).
+            "enforced": slot != "lunch" or lunch_kinds.get(row["date"]) == "cooked",
         })
     return out
 
@@ -441,7 +520,7 @@ def rearrange(plan_id: int, intake: dict | None, memory: dict | None) -> list[di
     return made
 
 
-def _cap_reason(night: dict, cap: int) -> str:
+def _cap_reason(night: dict, cap: int, slot: str = "dinner") -> str:
     """
     Why this night is capped, in the household's own terms — their tag, or
     their standing weeknight answer. This is what the MODEL is told
@@ -450,28 +529,33 @@ def _cap_reason(night: dict, cap: int) -> str:
     per REPICK_REASON.
     """
     day = _weekday(night["date"])
+    if slot == "lunch":
+        return f"{day}'s lunch is cooked that day here — {cap} minutes"
+    if slot != "dinner":
+        return f"{day}'s {slot} has {cap} minutes"
     if "rush" in (night["tags"] or []):
         return f"you said {day} is short on time — {cap} minutes"
     return f"weeknights here are {cap} minutes"
 
 
 def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
-           budget=None, picker=None) -> list[dict]:
+           budget=None, picker=None, slot: str = "dinner") -> list[dict]:
     """
-    Re-pick every dinner still over its cap, worst overrun first, through
-    the swap's own picker with the cap as the pick's own refusal. Spends
-    the generation's shared re-pick budget; a night whose pick never
-    arrives stands as generated rather than being handed back empty.
+    Re-pick every meal of `slot` (dinner unless told otherwise) still over
+    its cap, worst overrun first, through the swap's own picker with the cap
+    as the pick's own refusal. Spends the generation's shared re-pick
+    budget; a meal whose pick never arrives stands as generated rather than
+    being handed back empty.
     """
     from . import allergen_gate as _allergen_gate
     from . import swap_in_place as _swap
 
     budget = budget or _allergen_gate.CallBudget()
     done: list[dict] = []
-    rows = nights(plan_id, intake, memory)
+    rows = nights(plan_id, intake, memory, slot)
     week_dishes = {(n["meal"] or "").strip().lower() for n in rows if (n["meal"] or "").strip()}
     targets = sorted(
-        (n for n in rows if n["over"] and n["movable"]),
+        (n for n in rows if n["over"] and n["movable"] and n["enforced"]),
         key=lambda n: (-(n["minutes"] - n["cap"]), n["date"]),
     )
     gone: set = set()  # meals already re-picked as part of a whole dish
@@ -479,16 +563,16 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         if night["id"] in gone:
             continue
         cap = night["cap"]
-        because = _cap_reason(night, cap)
+        because = _cap_reason(night, cap, slot)
         # The household's number of different dinners (Emily, 2026-09-28:
         # "My dinner settings is 3 but it gave me 4 meal types"). A dish on
         # other nights too, re-picked on this night alone, ADDS a dish to a
         # week that already has its number — so when it has, the WHOLE dish
         # is re-picked, every night of it at once, and the count stays.
-        also = _whole_dish_nights(plan_id, night, memory)
+        also = _whole_dish_nights(plan_id, night, memory, slot)
         if also is None:
-            logger.info("Plan %s: %s %r stays over its cap — re-picking it alone would add a dinner "
-                        "past the household's number", plan_id, night["date"], night["meal"])
+            logger.info("Plan %s: %s %s %r stays over its cap — re-picking it alone would add a dish "
+                        "past the household's number", plan_id, night["date"], slot, night["meal"])
             continue
         if also:
             caps_on = [cap] + [c for c in (_cook_cap(o, intake, memory) for o in also) if c]
@@ -500,7 +584,7 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
                 return f"takes {minutes} minutes, and {_weekday(night['date'])} only has {cap}"
             return None
 
-        entry = {"id": night["id"], "date": night["date"], "slot": "dinner",
+        entry = {"id": night["id"], "date": night["date"], "slot": slot,
                  "meal": night["meal"], "derived_from_json": json.dumps(night["derived"])}
         replaced = _meal_variety._repick_entry(
             plan_id, entry, budget,
@@ -518,9 +602,9 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         )
         if replaced is None:
             logger.warning(
-                "Plan %s: %s dinner %r is %d minutes against a %d-minute cap and nothing quicker "
+                "Plan %s: %s %s %r is %d minutes against a %d-minute cap and nothing quicker "
                 "came back; it stands as generated",
-                plan_id, night["date"], night["meal"], night["minutes"], cap,
+                plan_id, night["date"], slot, night["meal"], night["minutes"], cap,
             )
             continue
         # The dish that just left STAYS on `avoid`: it was refused for being
@@ -533,37 +617,45 @@ def repick(plan_id: int, intake: dict | None, memory: dict | None, *,
         new_name = (replaced.get("meal") or "").strip()
         if new_name:
             week_dishes.add(new_name.lower())
-        done.append({"date": night["date"], "dropped": night["meal"], "with": new_name, "cap": cap})
-        logger.info("Plan %s: %s was %d minutes against a %d-minute cap — %r -> %r",
-                    plan_id, night["date"], night["minutes"], cap, night["meal"], new_name)
+        done.append({"date": night["date"], "slot": slot, "dropped": night["meal"], "with": new_name,
+                     "cap": cap})
+        logger.info("Plan %s: %s %s was %d minutes against a %d-minute cap — %r -> %r",
+                    plan_id, night["date"], slot, night["minutes"], cap, night["meal"], new_name)
     return done
 
 
-def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None) -> list[dict] | None:
+def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None,
+                       slot: str = "dinner") -> list[dict] | None:
     """
     The dish's OTHER meals, when re-picking this night alone would put the
     week over the household's number of different dinners; [] when a
     single-night re-pick is fine (no number set, the week is under it, the
     dish is on no other meal); None when neither can be made without going
     over their number (another night of it is cooked, or theirs — asked
-    for, brought over).
+    for, brought over). `slot` is the slot being re-picked, whose number
+    (meal_variety.COUNT_FIELDS) is the one that matters.
     """
     memory = memory or {}
-    target = memory.get("dinners_per_week") if memory.get("meal_counts_set") else None
-    if not target or len(_meal_variety.distinct_dishes(plan_id, "dinner")) < int(target):
+    field = _meal_variety.COUNT_FIELDS.get(slot)
+    target = memory.get(field) if (field and memory.get("meal_counts_set")) else None
+    if not target or len(_meal_variety.distinct_dishes(plan_id, slot)) < int(target):
         return []
+    # Lunch and dinner share dishes (a lunch is often a dinner's reheat), so
+    # a whole dish spans both; breakfast is its own.
+    slots = ("lunch", "dinner") if slot in ("lunch", "dinner") else (slot,)
     key = _leftovers.dish_identity(night["meal"])
     conn = get_conn()
     rows = conn.execute(
-        """
+        f"""
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status, mpe.derived_from_json,
                COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
-          AND mpe.slot IN ('lunch', 'dinner') AND mpe.slot_state = 'planned' AND mpe.id != ?
+          AND mpe.slot IN ({",".join("?" for _ in slots)}) AND mpe.slot_state = 'planned'
+          AND mpe.id != ?
         ORDER BY mpe.date, mpe.id
         """,
-        (plan_id, household_id(), night["id"]),
+        (plan_id, household_id(), *slots, night["id"]),
     ).fetchall()
     conn.close()
     others = [dict(r) for r in rows if _leftovers.dish_identity(r["meal"]) == key]
@@ -580,28 +672,87 @@ def _whole_dish_nights(plan_id: int, night: dict, memory: dict | None) -> list[d
 
 
 def _cook_cap(row: dict, intake: dict | None, memory: dict | None) -> int | None:
-    """The cap on a dinner of the dish being re-picked that is COOKED on its
-    night (a reheat has no cap to fit)."""
+    """The cap on a meal of the dish being re-picked that is COOKED on its
+    day (a reheat has no cap to fit). A lunch is asked the way `nights`
+    asks it (2026-10-02): before, a whole-dish re-pick ignored a weekday
+    lunch's cap, so the new dish could land on a lunch cooked that day at
+    any length."""
     derived = json.loads(row.get("derived_from_json") or "{}") or {}
-    if row["slot"] != "dinner" or derived.get("links_to") or _leftovers.frozen_portion_on(derived):
+    if derived.get("links_to") or _leftovers.frozen_portion_on(derived):
+        return None
+    if row["slot"] == "lunch":
+        from . import weekday_lunches as _weekday_lunches
+        kind = _weekday_lunches.kinds_by_date(intake).get(row["date"])
+        if kind != "cooked":
+            # Only a lunch the household SAID is cooked that day is held to
+            # its cap here — the same rule as `nights`' "enforced". Without
+            # this a dinner whole-dish re-pick was held to 20 minutes by an
+            # unanswered lunch of the same dish (third review, 2026-10-02).
+            return None
+        batch = bool(derived.get("make_double_for") or derived.get("prep_date")
+                     or derived.get("prep_day_cook")
+                     or derived.get("constraint") == _weekday_lunches.CONSTRAINT)
+        return _time_caps.minutes_cap(row["date"], "lunch", [], memory, is_leftovers=batch,
+                                      lunch_kind=kind)
+    if row["slot"] != "dinner":
         return None
     tags = ((intake or {}).get("night_tags") or {}).get(row["date"]) or []
     return _time_caps.minutes_cap(row["date"], "dinner", tags, memory)
 
 
+def _held_for_later_passes(plan_id: int, dates: list[str] | None = None) -> int:
+    """
+    The calls the lunch and breakfast re-picks must leave in the shared
+    budget: one dish's worth (swap_in_place.MAX_PICK_ATTEMPTS) for every
+    dinner gap dinner_gaps.fill_open_dinners will plan after this — counted
+    the way IT counts them (dinner_gaps._dinner_gaps: a date with no dinner
+    row, or only an `open` one that does not keep its question), over the
+    same `dates` the generation hands it — plus one for the allergen sweep,
+    which that fill holds back too. An open dinner is Emily's decision A
+    (2026-09-27: never when the household is home); a lunch over 20 minutes
+    is the smaller cost.
+
+    Found by adversarial review of this branch (2026-10-02): five over-cap
+    lunches spent all six calls and an open Wednesday dinner stayed open.
+    The first version counted `slot_state = 'open'` rows and so missed
+    exactly that case — generation never WRITES the model's open dinner
+    ("left unwritten, so fill_open_dinners plans it below"), so the gap is
+    a date with no dinner row. `dates` None (a direct call) reads every
+    date the plan has a row on.
+    """
+    from . import swap_in_place as _swap
+    rows = _dinner_gaps._plan_rows(plan_id)
+    if dates is None:
+        dates = sorted({r["date"] for r in rows})
+    gaps = len(_dinner_gaps._dinner_gaps(rows, list(dates)))
+    return _swap.MAX_PICK_ATTEMPTS * (1 + gaps)
+
+
 def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None, *,
-                         budget=None, picker=None) -> dict:
+                         budget=None, picker=None, dates: list[str] | None = None) -> dict:
     """
     Make "short on time" true of the week rather than merely asked for.
     Re-arranges first (free), then re-picks what no night can take. Never
     raises: a dinner that is too long is worth a repair, never a lost week.
 
     Returns {"moved": [...], "repicked": [...], "left": [...],
-    "flagged": [...]} — `left` being every dinner still over its cap after
+    "flagged": [...]} — `left` being every meal still over its cap after
     both stages, each with why this pass could not touch it, which is what
     plan_quality then warns about; `flagged` the subset the household is
-    told about on the draft, which is the ones they asked for by name.
+    told about on the draft, which is the ones they asked for by name
+    (dinners only — draft_flags reads dinners). `dates` is the generation's
+    own days, so the lunch stage knows how many dinner gaps the fill after
+    it must still plan (_held_for_later_passes). Every `repicked` and `left`
+    record carries its `slot`: lunch and breakfast are re-picked after the
+    dinners, re-pick only (see "LUNCH AND BREAKFAST" in the module
+    docstring).
     """
+    from . import allergen_gate as _allergen_gate
+
+    # ONE budget for every slot, so lunch spends what the dinners left
+    # rather than a fresh six of its own — and only down to what the passes
+    # after this one need (_held_for_later_passes).
+    budget = budget or _allergen_gate.CallBudget()
     moved: list[dict] = []
     repicked: list[dict] = []
     try:
@@ -612,26 +763,44 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
         repicked = repick(plan_id, intake, memory, budget=budget, picker=picker)
     except Exception:
         logger.exception("Plan %s: re-picking a dinner over its time cap failed", plan_id)
+    try:
+        held = _held_for_later_passes(plan_id, dates)
+    except Exception:
+        # Unknown is held as "the whole budget": a lunch over its cap is the
+        # smaller cost than a dinner left open.
+        logger.exception("Plan %s: counting the dinners still to plan failed", plan_id)
+        held = budget.left
+    lunch_budget = _dinner_gaps._Reserved(budget, held)
+    for slot in REPICK_ONLY_SLOTS:
+        try:
+            repicked += repick(plan_id, intake, memory, budget=lunch_budget, picker=picker, slot=slot)
+        except Exception:
+            logger.exception("Plan %s: re-picking a %s over its time cap failed", plan_id, slot)
     left = []
     flagged: list[dict] = []
     read_back = []
-    try:
-        read_back = nights(plan_id, intake, memory)
-        for night in read_back:
-            if not night["over"]:
-                continue
-            why = "nothing quicker came back"
-            if not night["movable"]:
-                if night["reheat"] or night["source"]:
-                    why = "it is a batch, not a cook on the day"
-                elif _meal_variety.theirs(night["derived"]):
-                    why = "the household asked for this one by name"
-                else:
-                    why = "it is already cooked"
-            left.append({"date": night["date"], "meal": night["meal"],
-                         "minutes": night["minutes"], "cap": night["cap"], "why": why})
-    except Exception:
-        logger.exception("Plan %s: reading back the week's time caps failed", plan_id)
+    for slot in ("dinner",) + REPICK_ONLY_SLOTS:
+        try:
+            rows = nights(plan_id, intake, memory, slot)
+            if slot == "dinner":
+                read_back = rows
+            for night in rows:
+                if not night["over"]:
+                    continue
+                why = "nothing quicker came back"
+                if not night["enforced"]:
+                    why = "the household hasn't said this lunch is cooked that day"
+                elif not night["movable"]:
+                    if night["reheat"] or night["source"]:
+                        why = "it is a batch, not a cook on the day"
+                    elif _meal_variety.theirs(night["derived"]):
+                        why = "the household asked for this one by name"
+                    else:
+                        why = "it is already cooked"
+                left.append({"date": night["date"], "slot": slot, "meal": night["meal"],
+                             "minutes": night["minutes"], "cap": night["cap"], "why": why})
+        except Exception:
+            logger.exception("Plan %s: reading back the week's %s time caps failed", plan_id, slot)
     # The one night this pass deliberately leaves alone AND the household
     # will see — a dish they asked for by name on a night that hasn't the
     # time for it (Emily's scenario 3, 2026-09-23). Built from the SAME
@@ -647,9 +816,9 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
         flagged = []
     if left:
         logger.warning(
-            "Plan %s still has %d dinner(s) over their time cap after re-arranging and re-picking: %s",
+            "Plan %s still has %d meal(s) over their time cap after re-arranging and re-picking: %s",
             plan_id, len(left),
-            "; ".join(f"{x['date']} {x['meal']!r} {x['minutes']}min > {x['cap']}min ({x['why']})"
+            "; ".join(f"{x['date']} {x['slot']} {x['meal']!r} {x['minutes']}min > {x['cap']}min ({x['why']})"
                       for x in left),
         )
     return {"moved": moved, "repicked": repicked, "left": left, "flagged": flagged}
