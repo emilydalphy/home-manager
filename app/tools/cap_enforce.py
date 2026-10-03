@@ -154,6 +154,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import re
 
 from . import time_caps as _time_caps
 from . import weekly_plan as _weekly_plan
@@ -657,7 +658,15 @@ def _typed_for(night: dict, asks: tuple[str | None, ...], slot: str) -> bool:
     Dinner keeps main's rule; this card is about lunch."""
     if slot == "dinner" or not asks:
         return False
-    return _meal_variety.asked_for_by_name(night["meal"] or "", asks)
+    # The WHOLE name, not asked_for_by_name's last-word fallback (third
+    # review: "less pasta this week" kept a 45-minute Creamy Tomato Pasta
+    # lunch). A cap is a promise about the day; only their own naming of
+    # the dish outranks it.
+    key = _meal_variety.repeat_key(night["meal"] or "")
+    if not key:
+        return False
+    return any(re.search(rf"\b{re.escape(key)}\b", _meal_variety.repeat_key(text) or "")
+               for text in asks if text)
 
 
 def _sole_chips(plan_id: int, intake: dict | None, group: set) -> list[str]:

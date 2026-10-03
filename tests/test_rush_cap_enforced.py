@@ -229,8 +229,11 @@ def run(monkeypatch, picker):
         seen = {}
 
         def _wrapped(plan_id, intake, memory, **kwargs):
+            # Every argument generation passes (budget, dates, asks) goes
+            # through; only the picker is the stub's.
             seen["result"] = real(plan_id, intake, memory,
-                                  budget=kwargs.get("budget"), picker=pick or picker)
+                                  **{k: v for k, v in kwargs.items() if k != "picker"},
+                                  picker=pick or picker)
             seen["budget"] = kwargs.get("budget")
             return seen["result"]
 

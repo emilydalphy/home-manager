@@ -905,3 +905,20 @@ def test_a_lunch_that_stands_for_its_dish_says_why_not_nothing_quicker(generate_
     assert out["repicked"] == [] and not picker.calls
     assert [x["why"] for x in thursday] == \
         ["re-picking it alone would break the household's dish count or a batch"]
+
+
+def test_less_of_a_dish_is_not_asking_for_it(generate_only, picker):
+    """Third review: "less pasta this week" must not keep a 45-minute
+    Creamy Tomato Pasta lunch. Only the dish's whole name counts."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Creamy Tomato Pasta", 45)
+    tools.save_week_intake(week)
+    days = []
+    for i, d in enumerate(dates):
+        days += _day(d, "Creamy Tomato Pasta" if i == 2 else "Quick Wrap")
+    plan_id = _generate(generate_only, week, days)
+    out = _enforce(plan_id, tools.get_week_intake(week), tools.get_household_memory(), picker=picker,
+                   asks=(None, "less pasta this week please"))
+    assert [(x["slot"], x["date"]) for x in out["repicked"]] == [("lunch", dates[2])]
