@@ -4373,6 +4373,13 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         }
         for m in meals
     ]
+    # An empty row of a meal switched off for the whole usual week says so
+    # (2026-10-02), so the reveal's fallback can leave it out like the menu.
+    from . import usual_week as _usual_week_mod
+    _switched_off = _usual_week_mod.switched_off_meals()
+    for _d in meal_dicts:
+        if _d["slot_state"] == "planned_empty" and _d["slot"] in _switched_off:
+            _d["meal_off"] = True
 
     # The plan's real first day of content, as opposed to week_start_date
     # (always that week's Monday — the filing key every screen looks this
@@ -5255,6 +5262,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # plan" fills (swap_in_place._fillable_slots leaves it out too).
     from . import usual_week as _usual_week
     usual_week_off = _usual_week.off_slots_on(sorted({r["date"] for r in rows if r["date"]}))
+    # The meals switched off for the WHOLE usual week (2026-10-02): their
+    # empty rows carry `meal_off` so no screen draws a row for them.
+    meals_switched_off = _usual_week.switched_off_meals()
 
     def build_slot(row) -> dict | None:
         # The three states a slot can be in. Only a slot that is genuinely
@@ -5288,6 +5298,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             }
             if past:
                 empty["past"] = True
+            # A meal the household switched off for its whole usual week
+            # (Breakfast: None) is not a row at all — the clients leave it
+            # out. Only an EMPTY row: a dish that is there is always shown.
+            if row["slot"] in meals_switched_off:
+                empty["meal_off"] = True
             return empty
         if row["slot_state"] == "open":
             derived = json.loads(row["derived_from_json"] or "{}")

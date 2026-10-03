@@ -2742,6 +2742,9 @@ function revealSlotFromStream(item) {
 // ("Leftovers — Monday's Chili"); the card says the dish and "from Monday".
 function revealSlotFromMenu(slot, entry) {
   if (!entry) return null;
+  // A meal the household switched off for its whole usual week (Breakfast:
+  // None) is not a row — the server marks the empty entry `meal_off`.
+  if (entry.meal_off && entry.state === 'planned_empty') return null;
   const state = entry.state || 'planned';
   const leftover = entry.leftover_from || null;
   let meta = '';
@@ -2827,6 +2830,8 @@ function groupRevealMealsByDay(meals) {
   const byDate = new Map();
   (meals || []).forEach(m => {
     if (!m || !m.date || !m.slot) return;
+    // A meal switched off for the whole usual week has no row at all.
+    if (m.meal_off && m.slot_state === 'planned_empty') return;
     if (!byDate.has(m.date)) byDate.set(m.date, { date: m.date, slots: {} });
     revealPlaceSlot(byDate.get(m.date).slots, revealSlotFromPlanMeal(m));
   });

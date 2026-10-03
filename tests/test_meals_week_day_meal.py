@@ -356,8 +356,12 @@ def test_the_draft_review_band_is_gone_and_the_decision_moved_under_the_card():
 def test_the_day_step_is_three_equal_cards():
     _assert_in("function dayStepHtml(", SHELL_JS, "the Day step", "shell.js")
     _assert_in("function daySlotCardHtml(", SHELL_JS, "the slot card", "shell.js")
-    _assert_in("WEEK_SLOTS.map(function (slot) { return daySlotCardHtml(day, slot); })", SHELL_JS,
+    # 2026-10-02: filtered first, so a meal switched off for the whole usual
+    # week (`meal_off`) gets no card; every other slot still gets one.
+    _assert_in(".map(function (slot) { return daySlotCardHtml(day, slot); })", SHELL_JS,
                "one card per slot, in slot order", "shell.js")
+    _assert_in("WEEK_SLOTS.filter(function (slot) { return !(day[slot] && day[slot].state === 'planned_empty' && day[slot].meal_off); })",
+               SHELL_JS, "the switched-off meal's card left out", "shell.js")
     _assert_in("‹ This week", SHELL_JS, "the Day step's back link", "shell.js")
     _assert_in("function slotEyebrow(", SHELL_JS, "the slot eyebrow", "shell.js")
     _assert_in("slot_times", SHELL_JS, "the slot clock", "shell.js")

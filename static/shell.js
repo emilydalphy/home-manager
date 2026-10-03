@@ -13065,6 +13065,9 @@
   // 2026-09-14, "Plan root: the week as a strip"): apricot = somebody
   // cooks, celadon = it is already made, grey = nothing to do, an outline
   // = a question still open. One class per slot; the tile draws three.
+  // (A meal the household switched off for its whole usual week — `meal_off`
+  // on the empty entry — gets no dot, no row and no card; checked inline in
+  // the three places that draw one, so no harness needs a new helper.)
   function slotDotClass(day, slot) {
     var entry = day[slot];
     if (entry && entry.state === 'planned') return entry.source === 'leftovers' ? 'is-ahead' : 'is-cook';
@@ -13086,7 +13089,8 @@
       '<span class="wk-tile-dow">' + (day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase()) + '</span>' +
       '<span class="wk-tile-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
       '<span class="wk-tile-dots" aria-hidden="true">' +
-        WEEK_SLOTS.map(function (slot) { return '<span class="wk-dot ' + slotDotClass(day, slot) + '"></span>'; }).join('') +
+        WEEK_SLOTS.filter(function (slot) { return !(day[slot] && day[slot].state === 'planned_empty' && day[slot].meal_off); })
+          .map(function (slot) { return '<span class="wk-dot ' + slotDotClass(day, slot) + '"></span>'; }).join('') +
       '</span>' +
     '</button>';
   }
@@ -13623,7 +13627,8 @@
             '<button type="button" class="btn-primary wk-build-day" data-wk-build-day="' + escapeHtml(day.date) + '">Build a plan</button>' +
           '</div>'
         : '') +
-      (closed ? '' : WEEK_SLOTS.map(function (slot) { return wkMealRowHtml(day, slot, opts); }).join('')) +
+      (closed ? '' : WEEK_SLOTS.filter(function (slot) { return !(day[slot] && day[slot].state === 'planned_empty' && day[slot].meal_off); })
+        .map(function (slot) { return wkMealRowHtml(day, slot, opts); }).join('')) +
     '</div>';
   }
 
@@ -14801,7 +14806,7 @@
       var e = daySlotEntry(day, slot);
       // Never a meal that had already gone by when the week was drafted
       // (the server marks it `past`) — there is nothing left to add it to.
-      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away' && !e.past);
+      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away' && !e.past && !e.meal_off);
     })[0];
     var when = dayName(day.date, { weekday: 'long' });
     if (!free) {
@@ -15188,7 +15193,8 @@
         '<div class="wk-sub">' + escapeHtml(daySubtitle(day)) + '</div>' +
       '</div>' +
       '<div class="wk-slots">' +
-        WEEK_SLOTS.map(function (slot) { return daySlotCardHtml(day, slot); }).join('') +
+        WEEK_SLOTS.filter(function (slot) { return !(day[slot] && day[slot].state === 'planned_empty' && day[slot].meal_off); })
+          .map(function (slot) { return daySlotCardHtml(day, slot); }).join('') +
         daySnackCardsHtml(day) +
       '</div>';
   }
@@ -20916,6 +20922,9 @@
             var entry = day[slot];
             var cellClass = 'week-sheet-cell' + (slot === 'dinner' ? ' dinner' : '');
             if (entry && entry.state === 'planned_empty') {
+              // A meal switched off for the whole usual week says nothing;
+              // the empty cell only keeps the three columns lined up.
+              if (entry.meal_off) return '<span class="' + cellClass + ' blank"></span>';
               return '<span class="' + cellClass + ' blank">' + escapeHtml(entry.title) + '</span>';
             }
             if (entry && entry.state === 'open') {
