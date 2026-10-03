@@ -3460,6 +3460,12 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
     plan_id = _plan_id_for_week(week_start)
     try:
         return tools.swap_meal_in_place(plan_id, req.entry_id, avoid=req.avoid)
+    except tools.SlotRefused as e:
+        # The backstop in apply_pick / apply_pick_to_days (a night gone by,
+        # the over-cap "I left it as it was") is an answer, not a breakage:
+        # the same 200 the other refusal arms give. ABOVE ValueError, which
+        # SlotRefused subclasses — below it this arm would never run.
+        return _card_refusal(e)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except AssistantUnavailableError as e:
@@ -3556,6 +3562,12 @@ def week_swap_choose(week_start: str, req: SwapChooseRequest):
         if req.whole_dish:
             return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True, meal=req.meal)
         return tools.choose_swap_option(plan_id, req.entry_id, req.option, meal=req.meal)
+    except tools.SlotRefused as e:
+        # The backstop in apply_pick / apply_pick_to_days (a night gone by,
+        # the over-cap "I left it as it was") is an answer, not a breakage:
+        # the same 200 the other refusal arms give. ABOVE ValueError, which
+        # SlotRefused subclasses — below it this arm would never run.
+        return _card_refusal(e)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -3608,6 +3620,12 @@ def chat_proposal_apply(proposal_id: str):
     """
     try:
         out = tools.apply_proposal(proposal_id)
+    except tools.SlotRefused as e:
+        # apply_proposal catches apply_pick's refusal per row today; this is
+        # the route's backstop so a refusal that ever escapes it is the
+        # card's answer, not a 500 with a traceback. `refused` stays a list
+        # so the card's Save handler can read it; the sentence is `message`.
+        return dict(_card_refusal(e), refused=[])
     except Exception as e:
         logger.exception("Proposal apply failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -3670,6 +3688,12 @@ def week_change_part(week_start: str, req: ChangePartRequest):
     plan_id = _plan_id_for_week(week_start)
     try:
         return tools.change_part(plan_id, req.entry_id, req.role, req.choice)
+    except tools.SlotRefused as e:
+        # The backstop in apply_pick / apply_pick_to_days (a night gone by,
+        # the over-cap "I left it as it was") is an answer, not a breakage:
+        # the same 200 the other refusal arms give. ABOVE ValueError, which
+        # SlotRefused subclasses — below it this arm would never run.
+        return _card_refusal(e)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except AssistantUnavailableError as e:
