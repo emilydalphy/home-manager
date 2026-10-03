@@ -112,6 +112,7 @@ def _renderer_harness() -> str:
         _fn("revealDaySubsetNote"),
         _fn("revealMakes"),
         _fn("revealSlotMeta"),
+        _fn("revealSnackKey"), _fn("revealIsSnackKey"), _fn("revealPlaceSlot"), _fn("revealDaySlotKeys"),
         _fn("revealDayCardHtml"),
         _fn("revealTabsHtml"),
         _fn("revealPagerHtml"),

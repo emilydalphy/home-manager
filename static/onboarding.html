@@ -2780,7 +2780,40 @@ const revealStreamDays = new Map();
 function revealPutSlot(date, slotShape) {
   if (!date || !slotShape || !slotShape.slot) return;
   if (!revealStreamDays.has(date)) revealStreamDays.set(date, { date: date, slots: {} });
-  revealStreamDays.get(date).slots[slotShape.slot] = slotShape;
+  revealPlaceSlot(revealStreamDays.get(date).slots, slotShape);
+}
+
+// A day holds ONE entry per meal but normally TWO snacks (the default is
+// 2 a day), so a day's slots are keyed by slot — except snacks, which get
+// 'snack', 'snack2', ... like static/shell.js's snackSlotKey. Keying a
+// snack by its bare slot name made the second one overwrite the first
+// (2026-10-02 QA walk: the reveal showed one snack, Plan and Today two).
+// `shape.slot` stays 'snack' (it is what a swap and the chat prefill name);
+// `shape.key` is where it sits. A shape that arrives with no key (the
+// stream, the flat fallback) lands on the snack it IS — the same entry id
+// or the same dish, or a held placeholder it replaces — else the next free key.
+function revealSnackKey(i) { return i === 0 ? 'snack' : 'snack' + (i + 1); }
+function revealIsSnackKey(k) { return k === 'snack' || /^snack\d+$/.test(k); }
+function revealPlaceSlot(slots, shape) {
+  if (shape.slot !== 'snack') { slots[shape.slot] = shape; return; }
+  let key = shape.key || '';
+  if (!key) {
+    const mine = Object.keys(slots).filter(revealIsSnackKey);
+    const same = mine.filter(k => {
+      const o = slots[k];
+      return (shape.entryId && o.entryId === shape.entryId) || (shape.dish && o.dish === shape.dish);
+    })[0] || mine.filter(k => slots[k].state === 'held')[0];
+    if (same) key = same;
+    else { let i = 0; while (slots[revealSnackKey(i)]) i += 1; key = revealSnackKey(i); }
+  }
+  shape.key = key;
+  slots[key] = shape;
+}
+// A day's slot keys in eating order: the three meals, then each snack.
+function revealDaySlotKeys(day) {
+  const keys = Object.keys(day.slots);
+  const snacks = keys.filter(revealIsSnackKey).sort((a, b) => (Number(a.slice(5)) || 1) - (Number(b.slice(5)) || 1));
+  return ['breakfast', 'lunch', 'dinner'].filter(k => keys.indexOf(k) !== -1).concat(snacks);
 }
 function revealOrderedDays() {
   return Array.from(revealStreamDays.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
@@ -2795,7 +2828,7 @@ function groupRevealMealsByDay(meals) {
   (meals || []).forEach(m => {
     if (!m || !m.date || !m.slot) return;
     if (!byDate.has(m.date)) byDate.set(m.date, { date: m.date, slots: {} });
-    byDate.get(m.date).slots[m.slot] = revealSlotFromPlanMeal(m);
+    revealPlaceSlot(byDate.get(m.date).slots, revealSlotFromPlanMeal(m));
   });
   return Array.from(byDate.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 }
@@ -2812,7 +2845,12 @@ function revealDaysFromMenu(menuDays) {
       const s = revealSlotFromMenu(slot, day[slot]);
       if (s) slots[slot] = s;
     });
-    if (day.snack) { const s = revealSlotFromMenu('snack', day.snack); if (s) slots.snack = s; }
+    // A day's snacks are a list (two by default); `snack` alone is the first.
+    const snacks = (day.snacks && day.snacks.length) ? day.snacks : (day.snack ? [day.snack] : []);
+    snacks.forEach((entry, i) => {
+      const s = revealSlotFromMenu('snack', entry);
+      if (s) { s.key = revealSnackKey(i); slots[s.key] = s; }
+    });
     if (Object.keys(slots).length) out.push({ date: day.date, slots: slots });
   });
   return out;
@@ -2883,7 +2921,8 @@ function revealDayCardHtml(day, allDays) {
   // who's home, a holiday. That one comes back from the saved week as
   // `asked` and is drawn with its question and a way to answer it; a slot
   // the stream calls open while the week is still landing is not drawn.
-  const slots = REVEAL_WEEK_SLOTS.filter(slot => day.slots[slot] && (day.slots[slot].state !== 'open' || day.slots[slot].asked));
+  const slots = revealDaySlotKeys(day).filter(slot => day.slots[slot].state !== 'open' || day.slots[slot].asked);
+  const snackCount = slots.filter(revealIsSnackKey).length;
   const count = slots.filter(slot => {
     const s = day.slots[slot];
     return (s.state === 'planned' && s.dish) || (s.state === 'open' && s.asked);
@@ -2893,13 +2932,16 @@ function revealDayCardHtml(day, allDays) {
     const s = day.slots[slot];
     const meta = revealSlotMeta(day, s, allDays);
     const swappable = s.state === 'planned' && !!s.dish;
-    return `<div class="reveal-slot" data-slot="${escapeHtmlLocal(slot)}">
+    // "Snack" alone, "Snack 1" / "Snack 2" when the day has more than one —
+    // the words static/shell.js's slotEyebrowLabel already uses.
+    const label = revealIsSnackKey(slot) && snackCount > 1 ? 'Snack ' + (Number(slot.slice(5)) || 1) : (REVEAL_SLOT_LABELS[s.slot] || escapeHtmlLocal(s.slot));
+    return `<div class="reveal-slot" data-slot="${escapeHtmlLocal(s.slot)}" data-slot-key="${escapeHtmlLocal(slot)}">
       <div class="reveal-slot-text">
-        <p class="reveal-slot-label">${REVEAL_SLOT_LABELS[slot] || escapeHtmlLocal(slot)}</p>
+        <p class="reveal-slot-label">${label}</p>
         ${s.state === 'open' ? revealOpenSlotHtml(day.date, s) : revealSlotDishHtml(s)}
         ${meta && s.state !== 'open' ? `<p class="reveal-slot-meta">${escapeHtmlLocal(meta)}</p>` : ''}
       </div>
-      ${swappable ? `<button type="button" class="reveal-swap" data-swap-date="${escapeHtmlLocal(day.date)}" data-swap-slot="${escapeHtmlLocal(slot)}"${s.entryId ? ` data-entry-id="${s.entryId}"` : ''} aria-label="Swap ${escapeHtmlLocal(s.dish)}">${REVEAL_SWAP_ICON}Swap</button>` : ''}
+      ${swappable ? `<button type="button" class="reveal-swap" data-swap-date="${escapeHtmlLocal(day.date)}" data-swap-slot="${escapeHtmlLocal(s.slot)}"${s.entryId ? ` data-entry-id="${s.entryId}"` : ''} aria-label="Swap ${escapeHtmlLocal(s.dish)}">${REVEAL_SWAP_ICON}Swap</button>` : ''}
     </div>`;
   }).join('');
   return `<div class="reveal-day" data-date="${escapeHtmlLocal(day.date)}" role="group" aria-label="${escapeHtmlLocal(formatPlanDate(day.date))}">
@@ -3334,9 +3376,12 @@ async function chooseRevealSwap(index) {
       if (day) Object.keys(day.slots).forEach(s => revealPutSlot(day.date, day.slots[s]));
     } else {
       const existing = revealStreamDays.get(cur.date);
-      if (existing && existing.slots[cur.slot]) {
-        existing.slots[cur.slot].dish = data.meal || existing.slots[cur.slot].dish;
-        existing.slots[cur.slot].entryId = data.entry_id || existing.slots[cur.slot].entryId;
+      // The swapped row, by its entry id (a day can hold two snacks).
+      const held = existing && Object.keys(existing.slots).map(k => existing.slots[k])
+        .filter(r => cur.entryId ? r.entryId === cur.entryId : r.slot === cur.slot)[0];
+      if (held) {
+        held.dish = data.meal || held.dish;
+        held.entryId = data.entry_id || held.entryId;
       }
     }
     renderRevealStrip();
