@@ -716,7 +716,136 @@ def _fits_night(minutes: int | None, meal_date: str, intake: dict | None) -> boo
     return cap is None or minutes <= cap
 
 
-def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
+REPICK_KEY = "cooked_lunch_repick"
+
+
+def _uncook_cooked_lunches(plan_id: int, days: list[dict], lunches: dict, chains: dict,
+                           intake: dict | None, out: dict, budget=None, picker=None) -> bool:
+    """
+    Every lunch the household answered "Cooked that day" that the draft has
+    as a reheat — a leftovers chain off an earlier cook, a frozen portion,
+    or a "Leftover …" name with no chain — is made a lunch cooked on its own
+    day (QA walk 2, 2026-10-02):
+
+      - the same dish, when it was another LUNCH's and fits the cooked-
+        lunch cap (time_caps.minutes_cap, lunch_kind="cooked");
+      - otherwise a fresh pick within that cap, through the re-pick every
+        generation pass uses (meal_variety._repick_entry: the allergen and
+        taste gate, the shared call budget). A dinner's dish is never
+        cooked at lunch — a slow-roast shoulder at Thursday noon is not
+        what "cooked that day" means.
+
+    When no pick fits, the lunch stays the reheat it was and one plain line
+    says so (`out["said"]`). The chain's cook stops being sized for the
+    lunch (_replace_slot_entries unlinks it; a frozen portion comes off its
+    cook). A lunch carrying their own words is left alone. Returns whether
+    anything was written.
+    """
+    from . import allergen_gate as _allergen_gate
+    from . import leftovers as _leftovers
+    from . import leftovers_spread as _leftovers_spread
+    from . import meal_move as _meal_move
+    from . import meal_variety as _meal_variety
+    from . import memory as _memory
+    from . import time_caps as _time_caps
+    from . import weekly_plan as _weekly_plan
+
+    budget = budget or _allergen_gate.CallBudget()
+    memory = None
+    wrote = False
+    week_lunches = {(r["meal"] or "").strip().lower() for rows in lunches.values() for r in rows if r["meal"]}
+    for d in days:
+        if d.get("kind") != "cooked":
+            continue
+        rows = [r for r in lunches.get(d["date"], []) if r["slot_state"] == "planned"]
+        if len(rows) != 1:
+            continue
+        row = rows[0]
+        derived = row["derived"]
+        if not _meal_move._is_reheat(row, chains) or row["id"] in chains["sources"] \
+                or _request_words(derived, intake):
+            continue
+        if memory is None:
+            memory = _memory.get_household_memory()
+        cap = _time_caps.minutes_cap(d["date"], "lunch", [], memory, lunch_kind="cooked")
+        frozen = derived.get(_leftovers.FROM_FREEZER_KEY) if isinstance(derived.get(_leftovers.FROM_FREEZER_KEY), dict) else {}
+        frozen_cook = str(frozen.get("cook") or "")
+        frozen_cook_id = int(frozen_cook[9:]) if frozen_cook.startswith("entry_id:") and frozen_cook[9:].isdigit() else None
+        link = chains["leftovers"].get(row["id"])
+        source_id = link["source"]["entry_id"] if link else frozen_cook_id
+        source_slot = link["source"]["slot"] if link else None
+        if source_slot is None and frozen_cook_id is not None:
+            source_slot = next((r["slot"] for rows_ in lunches.values() for r in rows_ if r["id"] == frozen_cook_id),
+                               "dinner")
+        dish = (_leftovers.frozen_portion_on(derived) or (link["source"]["meal"] if link else "")
+                or ("" if source_slot is None else row["meal"]) or "").strip()
+        minutes = _entry_minutes(source_id) if source_id else None
+        keep_dish = bool(dish) and source_slot == "lunch" and not (cap and minutes and minutes > cap)
+
+        def _drop_portion():
+            if frozen_cook_id is None:
+                return
+            conn = get_conn()
+            try:
+                _leftovers_spread._drop_freezer_portion(
+                    conn, frozen_cook_id, f"{d['date']}:lunch",
+                    _leftovers.eaters_at(d["date"], "lunch", conn=conn))
+                conn.commit()
+            finally:
+                conn.close()
+
+        if keep_dish:
+            fresh = {k: v for k, v in derived.items()
+                     if k not in ("links_to", "cook_ahead", "repointed", _leftovers.FROM_FREEZER_KEY)}
+            fresh["constraint"] = CONSTRAINT
+            _weekly_plan._replace_slot_entries(
+                plan_id, [row["id"]], d["date"], "lunch", dish,
+                food_groups=_food_groups(row), reasoning="", derived_from=fresh,
+            )
+            # After the replace, so a failed replace leaves the portion on
+            # its cook along with the lunch that eats it.
+            _drop_portion()
+            out.setdefault("cooked", []).append({"date": d["date"], "dish": dish})
+            wrote = True
+            continue
+
+        def _too_long(candidate, cap=cap, day=d["date"]):
+            from . import swap_in_place as _swap
+
+            m = _swap._pick_minutes(candidate)
+            if cap and m and m > cap:
+                return f"takes {m} minutes, and {_title(_weekday(day))}’s lunch only has {cap}"
+            return None
+
+        avoid = sorted(week_lunches | ({dish.lower()} if dish else set()))
+        entry = {"id": row["id"], "date": d["date"], "slot": "lunch", "meal": row["meal"],
+                 "derived_from_json": json.dumps(
+                     {k: v for k, v in derived.items()
+                      if k not in ("links_to", "cook_ahead", "repointed", _leftovers.FROM_FREEZER_KEY)}
+                     | {"constraint": CONSTRAINT})}
+        because = "the household said this lunch is cooked that day"
+        replaced = _meal_variety._repick_entry(
+            plan_id, entry, budget, avoid=avoid, because=because,
+            reject=lambda name: name.strip().lower() in week_lunches,
+            reject_pick=_too_long, derived_key=REPICK_KEY, picker=picker,
+        )
+        if replaced is None:
+            day = _title(_weekday(d["date"]))
+            what = (f"{_title(_weekday(link['source']['date']))}’s {link['source']['meal']}" if link
+                    else (row["meal"] or "leftovers"))
+            out.setdefault("said", []).append(
+                f"{day}’s lunch stays {what} — nothing quick enough to cook that day came back.")
+            continue
+        _drop_portion()
+        new_name = (replaced.get("meal") or "").strip()
+        if new_name:
+            week_lunches.add(new_name.lower())
+        out.setdefault("cooked", []).append({"date": d["date"], "dish": new_name, "repicked": True})
+        wrote = True
+    return wrote
+
+
+def apply_to_plan(plan_id: int, intake: dict | None, budget=None, picker=None) -> dict:
     """
     Make a freshly drafted week's weekday lunches what the household said
     — after the model has answered, the same way every other rule in
@@ -730,9 +859,10 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
     - prepped: the prepped lunches sharing a prep date are one dish, cooked
       on the first of them and eaten on the rest; one more than three days
       after the prep day eats a portion frozen on that cook.
-    - cooked: nothing is written — the lunch's 20-minute cap is what makes
-      it true (time_caps.minutes_cap, read by the fold, the swap and the
-      quality check).
+    - cooked: the lunch's 20-minute cap is what makes it true
+      (time_caps.minutes_cap, read by the fold, the swap and the quality
+      check) — and a cooked lunch the draft left as a reheat is made its
+      own cook of the same dish first (_uncook_cooked_lunches).
 
     Never raises: a week with a lunch left as drafted is better than a
     lost week. Returns what it changed, for the log.
@@ -757,6 +887,17 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
         keys = _leftovers.run_keys(plan_id)
         targets: dict[int, list[str]] = {}
         frozen: list[tuple[int, str, str]] = []
+
+        # Cooked that day means cooked that day: a lunch the draft left as a
+        # reheat is made its own cook of the same dish (QA walk 2,
+        # 2026-10-02: the step said "4 lunches cooked on the day", the model
+        # pointed Thursday's lunch at an away Wednesday, and
+        # repair_leftover_chains re-pointed it at Tuesday's lunch — two-day-old
+        # salad nobody was told about).
+        if _uncook_cooked_lunches(plan_id, days, lunches, chains, intake, out, budget=budget, picker=picker):
+            lunches, dinners = _lunch_and_dinner_rows(plan_id)
+            chains = _leftovers.plan_leftover_chains(plan_id)
+            keys = _leftovers.run_keys(plan_id)
 
         # Leftovers from the evening before.
         for d in days:
@@ -1005,7 +1146,7 @@ def apply_to_plan(plan_id: int, intake: dict | None) -> dict:
             _meal_variety._write_cook_sides(plan_id, targets, frozen, written)
     except Exception:
         logger.exception("Weekday lunches not applied to plan %s; the lunches stand as drafted", plan_id)
-    if out["leftovers"] or out["prepped"] or out["frozen"]:
+    if out["leftovers"] or out["prepped"] or out["frozen"] or out.get("cooked"):
         logger.info("Plan %s weekday lunches: %s", plan_id, out)
     return out
 

@@ -112,7 +112,7 @@ def test_a_dinner_and_its_leftovers_night_move_together_keeping_the_gap():
     out = meal_move.move_meal(w["plan"], w["stew"], THU)
 
     assert out["status"] == "moved"
-    assert out["said"] == "Stew was moved to Thursday, leftovers to Friday"
+    assert out["said"] == "Chicken Stew was moved to Thursday, leftovers to Friday"
     assert _meal(THU)["id"] == w["stew"]
     assert _meal(FRI)["id"] == w["left"]
     assert _meal(MON)["id"] == w["tacos"]
@@ -131,7 +131,7 @@ def test_a_plain_dinner_trades_with_the_day_picked_and_the_toast_names_both():
     out = meal_move.move_meal(w["plan"], w["gnocchi"], SAT)
 
     assert out["status"] == "moved"
-    assert out["said"] == "Gnocchi was moved to Saturday, chili to Wednesday"
+    assert out["said"] == "Sheet-Pan Gnocchi was moved to Saturday, Turkey Chili to Wednesday"
     assert _meal(SAT)["id"] == w["gnocchi"] and _meal(WED)["id"] == w["chili"]
 
 
@@ -152,7 +152,7 @@ def test_undo_puts_every_row_back_and_the_chain_with_them():
     back = meal_move.undo_meal_move(w["plan"], out["move_id"])
 
     assert back["status"] == "restored"
-    assert back["said"] == "Stew was moved back to Monday"
+    assert back["said"] == "Chicken Stew was moved back to Monday"
     for key, day in (("stew", MON), ("left", TUE), ("tacos", THU), ("salmon", FRI)):
         assert _meal(day)["id"] == w[key], key
         assert "moved_from" not in _meal(day)["derived"]
@@ -242,8 +242,8 @@ def test_the_picker_lists_every_other_day_and_dims_the_impossible_ones_with_a_re
     sheet = meal_move.move_options(w["plan"], w["stew"])
     days = {d["date"]: d for d in sheet["days"]}
 
-    assert sheet["title"] == "Move the stew to which day?"
-    assert "Tuesday’s leftovers move with the stew" in sheet["sub"]
+    assert sheet["title"] == "Move the Chicken Stew to which day?"
+    assert "Tuesday’s leftovers move with the Chicken Stew" in sheet["sub"]
     assert MON not in days and len(days) == 6
     # Its own leftovers night: shown, dimmed, said.
     assert days[TUE]["ok"] is False and days[TUE]["reason"] == ""
@@ -290,7 +290,7 @@ def test_no_dish_lands_on_a_third_meal_in_a_row():
     fri = tools.plan_meal(FRI, "Bean Chili", slot="dinner", weekly_plan_id=plan)["entry_id"]
 
     days = _options(plan, fri)
-    assert days[MON]["ok"] is False and days[MON]["reason"] == "That makes three chili meals in a row"
+    assert days[MON]["ok"] is False and days[MON]["reason"] == "That makes three Bean Chili meals in a row"
     out = meal_move.move_meal(plan, fri, MON)
     assert out["status"] == "refused"
     assert _meal(FRI)["id"] == fri

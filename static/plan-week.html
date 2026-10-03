@@ -2853,11 +2853,21 @@
 
   // What the screen opens on, when this week has no answer of its own:
   // last week's, by weekday (weekday_lunches.carryover on the server);
+  // else the lunch variety the household chose (`usual`, the server's
+  // usual_lunch — QA walk 2, 2026-10-02: setup said "A few in rotation"
+  // and the step opened on "Cooked that day" every day):
+  //   "Last night's dinner"  → every lunch leftovers from dinner;
+  //   "Meal prep ahead"      → every lunch made on a prep day;
+  //   "Something new every day" → every lunch cooked that day;
+  //   "A few in rotation"    → that many lunches cooked that day, and the
+  //     rest leftovers from dinner, latest first (a dinner's leftovers is
+  //     not a lunch dish, so the week cooks exactly that many lunches);
   // else, for a household that preps, every lunch made on a prep day;
   // else every lunch cooked that day. A leftovers day that can't be
   // leftovers this week (no dinner the evening before) is made on a prep
   // day instead when the week has any, else cooked.
-  function lunchPrefill(dates, carry, ok, rhythmPrepDays) {
+  function lunchPrefill(dates, carry, ok, rhythmPrepDays, usual) {
+    var choice = (usual && usual.choice) || null;
     var kinds = {};
     var prepDays = [];
     if (carry && carry.kinds) {
@@ -2866,6 +2876,18 @@
       var usual = LUNCH_KINDS.slice().sort(function (a, b) { return tally[b] - tally[a]; })[0];
       dates.forEach(function (d) { kinds[d] = carry.kinds[isoWeekday(d)] || usual; });
       prepDays = (carry.prep_days || []).slice();
+    } else if (choice === 'last_nights_dinner') {
+      dates.forEach(function (d) { kinds[d] = 'leftovers'; });
+    } else if (choice === 'meal_prep_ahead' && (rhythmPrepDays || []).length) {
+      dates.forEach(function (d) { kinds[d] = 'prepped'; });
+      prepDays = rhythmPrepDays.slice();
+    } else if (choice === 'new_every_day') {
+      dates.forEach(function (d) { kinds[d] = 'cooked'; });
+    } else if (choice === 'few_in_rotation' && usual.dishes > 0) {
+      var spare = Math.max(0, dates.length - usual.dishes);
+      dates.slice().sort().reverse().forEach(function (d) {
+        if (spare > 0 && ok(d)) { kinds[d] = 'leftovers'; spare -= 1; } else kinds[d] = 'cooked';
+      });
     } else if ((rhythmPrepDays || []).length) {
       dates.forEach(function (d) { kinds[d] = 'prepped'; });
       prepDays = rhythmPrepDays.slice();
@@ -2964,11 +2986,11 @@
         var usedPrefill = null;
         var missing = dates.filter(function (d) { return !lunch.kinds[d]; });
         if (missing.length) {
-          usedPrefill = lunchPrefill(missing, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days);
+          usedPrefill = lunchPrefill(missing, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days, data.usual_lunch);
           missing.forEach(function (d) { lunch.kinds[d] = usedPrefill.kinds[d]; });
         }
       } else {
-        var pre = lunchPrefill(dates, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days);
+        var pre = lunchPrefill(dates, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days, data.usual_lunch);
         lunch.kinds = pre.kinds;
         lunch.prepDays = pre.prepDays;
       }

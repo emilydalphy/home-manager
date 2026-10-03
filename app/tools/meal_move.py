@@ -74,17 +74,21 @@ def _shift(d: str, days: int) -> str:
 
 
 def short_name(dish: str | None) -> str:
-    """"stew" for "Creamy Chicken and Vegetable Stew" — the dish's last
-    word, lower-cased, which is how the sheet and the toast name it. The
-    same rule as shell.js dishShortName: a one-word dish, or one whose last
-    word is under four letters, is said in full."""
-    text = (dish or "").strip()
-    words = text.split()
-    if not words:
-        return "meal"
-    if len(words) < 2 or len(words[-1]) < 4:
-        return text
-    return words[-1].lower()
+    """"Thai Basil Chicken" for "Thai Basil Chicken (Pad Kra Pao) with
+    Jasmine Rice" — the main dish, which is how the sheet and the toast
+    name it: the title before its first " with ", with anything in
+    brackets taken out, in the dish's own capitals. A title with no
+    "with" is said in full ("Creamy Chicken and Vegetable Stew").
+
+    QA walk 2, 2026-10-02: this used to be the title's LAST word, and most
+    generated titles end in a side, so the sheet warned "The rice would end
+    up after its leftovers" about a basil chicken. The same rule as
+    shell.js dishShortName."""
+    text = " ".join(re.sub(r"[(\[][^)\]]*[)\]]", " ", dish or "").split())
+    main = re.split(r"(?:^|\s)with\s", text, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+    # Nothing before "with" (a title that is all brackets, or starts with
+    # "with"): the whole title as written; no title at all: "meal".
+    return main or " ".join((dish or "").split()) or "meal"
 
 
 def _cap(text: str) -> str:

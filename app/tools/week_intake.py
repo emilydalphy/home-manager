@@ -971,6 +971,18 @@ def add_household_cuisine(name: str) -> dict:
     return {"cuisine": canonical, "added": True, "cuisines": cuisines}
 
 
+def _usual_lunch() -> dict:
+    """The household's saved lunch variety, for step 3's prefill:
+    {"choice": key or None, "dishes": n}. Never raises."""
+    from . import usual_week as _usual_week
+
+    try:
+        lunch = _usual_week.get_usual_week()["variety"]["lunch"]
+        return {"choice": lunch.get("choice"), "dishes": int(lunch.get("dishes") or 0)}
+    except Exception:
+        return {"choice": None, "dishes": 0}
+
+
 def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> list[dict]:
     """
     Per-day packed-lunch suggestions derived from household rhythm (Loop
@@ -1285,6 +1297,12 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
             if d in {(p.get("weekday") if isinstance(p, dict) else str(p)).lower()
                      for p in (_rhythm.get_household_rhythm().get("prep_days") or [])}
         ],
+        # Step 3's starting point for a week with no answer of its own and
+        # none last week: the lunch variety the household chose ("A few in
+        # rotation" …) and its number — {"choice": None, ...} when never
+        # chosen. QA walk 2, 2026-10-02: the step opened on "Cooked that
+        # day" every day whatever setup said. See plan-week.html lunchPrefill.
+        "usual_lunch": _usual_lunch(),
         # What the mood screen opens already knowing: the moods and cuisines
         # the household chose for the period before this one, or None for a
         # first week. See _last_period_intake.

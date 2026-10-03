@@ -6563,7 +6563,7 @@ def _finish_week_slots(
     # tools/weekday_lunches.apply_to_plan — it swallows its own failures.
     lunches_answered = bool(_weekday_lunches.kinds_by_date(intake))
     if lunches_answered:
-        lunch_out = _weekday_lunches.apply_to_plan(plan_id, intake)
+        lunch_out = _weekday_lunches.apply_to_plan(plan_id, intake, budget=repick_budget)
         if report is not None:
             report.setdefault("said_lines", []).extend(lunch_out.get("said") or [])
 
