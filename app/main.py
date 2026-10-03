@@ -351,7 +351,7 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Content-Security-Policy"] = (
-        "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
+        "frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; font-src 'self'"
     )
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     if _is_https(request):

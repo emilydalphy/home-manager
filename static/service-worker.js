@@ -48,7 +48,7 @@
 // never cached here: the grocery list's offline copy is page-level
 // (static/grocery-offline.js), where it can be keyed per household and
 // carry the ticks made without signal.
-const CACHE_NAME = "pomona-shell-v6";
+const CACHE_NAME = "pomona-shell-v7";
 // Where an offline navigation lands when its own URL was never cached.
 // Every entry serves shell.html; the order only decides which copy is tried
 // first.
@@ -57,6 +57,11 @@ const SHELL_ASSETS = [
   "/static/manifest.json",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
+  // Self-hosted fonts, so the first offline open has its typefaces.
+  "/static/fonts/fonts.css",
+  "/static/fonts/bricolage-grotesque-normal-latin.woff2",
+  "/static/fonts/figtree-normal-latin.woff2",
+  "/static/fonts/newsreader-italic-latin.woff2",
 ];
 
 self.addEventListener("install", (event) => {

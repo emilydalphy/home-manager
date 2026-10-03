@@ -91,6 +91,8 @@ _PUBLIC_PREFIXES = (
     "/api/share/",
     "/api/member-share/",
     "/static/icons/",
+    # Self-hosted fonts: sign-in and the share pages need them with no session.
+    "/static/fonts/",
 )
 _PUBLIC_EXACT = frozenset({
     # Not public in any ordinary sense — it carries its own token and 404s
