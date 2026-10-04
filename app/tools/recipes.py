@@ -736,6 +736,48 @@ def get_recipe(recipe_name: str) -> dict:
     return matches[0]
 
 
+def recipe_shelf() -> list[dict]:
+    """
+    The household's saved recipes as a short list, A to Z — Settings →
+    Recipes (Emily, 2026-10-04: "add back the function to add in your own
+    recipe from a link and the recipe view and add it under the settings
+    for now"). Light fields only: the id to open it by, the name, the
+    minutes, and where it came from (recipe_citation's one sentence).
+
+    Reads list_recipes, so it shows exactly what the planner can see —
+    temporarily-excluded dishes included — with ONE exception: a dish the
+    menu pass chose and the recipe pass hasn't written up yet
+    (details_pending) has no ingredients and no steps, so there is nothing
+    to open; it joins the list the moment approval writes it.
+    """
+    rows = [r for r in list_recipes() if not r.get("details_pending")]
+    rows.sort(key=lambda r: ((r.get("name") or "").strip().lower(), r["id"]))
+    return [
+        {
+            "id": r["id"],
+            "name": r["name"],
+            "prep_time_minutes": r.get("prep_time_minutes"),
+            "cook_time_minutes": r.get("cook_time_minutes"),
+            "citation": r.get("citation"),
+            "has_photo": bool(r.get("photo_urls")),
+        }
+        for r in rows
+    ]
+
+
+def get_recipe_by_id(recipe_id: int) -> dict | None:
+    """
+    One saved recipe in full, by its id, for the read-only recipe view in
+    Settings → Recipes — or None when this household has no recipe with
+    that id. Scoped through list_recipes (WHERE household_id = ?), so
+    another household's id is simply not found.
+    """
+    for r in list_recipes():
+        if r["id"] == recipe_id:
+            return r
+    return None
+
+
 def scale_recipe(recipe_name: str, target_servings: int) -> dict:
     """
     Scale a saved recipe's ingredient quantities from its default_servings

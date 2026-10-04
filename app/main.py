@@ -2009,6 +2009,46 @@ def recipe_photo(recipe_id: int, position: int):
     return FileResponse(path, media_type=media_type, headers={"Cache-Control": "private, max-age=3600"})
 
 
+# ---------- Settings → Recipes (Emily, 2026-10-04) ----------
+#
+# The household's saved recipes, to look through and open. Both routes read
+# through tools.list_recipes, which is WHERE household_id = ? — another
+# household's id is a 404, never a row. Declared AFTER /api/recipes/scale
+# and the photo route, and the detail path is typed {recipe_id:int}, so
+# "scale" (or any other word) can never be read as a recipe id.
+
+@app.get("/api/recipes")
+def recipes_list():
+    """The household's recipes, A to Z, light fields only (tools.recipe_shelf)."""
+    try:
+        recipes = tools.recipe_shelf()
+    except Exception:
+        logger.exception("Recipe list failed")
+        raise HTTPException(status_code=500, detail="Couldn't load your recipes just now.")
+    return {"recipes": recipes, "count": len(recipes)}
+
+
+@app.get("/api/recipes/{recipe_id:int}")
+def recipe_detail(recipe_id: int):
+    """One recipe in full — ingredients, steps, times, where it came from."""
+    try:
+        recipe = tools.get_recipe_by_id(recipe_id)
+    except Exception:
+        logger.exception("Recipe lookup failed")
+        raise HTTPException(status_code=500, detail="Couldn't load that recipe just now.")
+    if not recipe:
+        raise HTTPException(status_code=404, detail="No recipe here.")
+    return {
+        key: recipe.get(key)
+        for key in (
+            "id", "name", "ingredients", "instructions", "default_servings",
+            "prep_time_minutes", "cook_time_minutes", "advance_prep_notes",
+            "advance_prep_step_indices", "cuisine", "main_protein", "source_url",
+            "citation", "photo_urls", "details_pending",
+        )
+    }
+
+
 # ---------- the household's calendar (read-only, by subscribe link) ----------
 #
 # Loop Board "Meals: plan the week around what's actually on the household's

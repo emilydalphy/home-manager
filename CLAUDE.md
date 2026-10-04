@@ -425,6 +425,30 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-04 — Settings → Recipes: add from a link or a cookbook, and read
+  a saved recipe. Branch `recipes-in-settings-2026-10-04`, NOT merged at the
+  time of writing.** Emily 2026-10-04: "can you add back the function to add
+  in your own recipe from a link and the recipe view and add it under the
+  settings for now" (the only door was Cook → More, which she couldn't find,
+  and there was no recipe browser at all). A "Recipes" row under "How you
+  eat" in the gear's Preferences sheet ("12 saved" / "None saved yet"; not a
+  `PREFS_ROWS` entry — those all open What we know) opens `#recipes-sheet`
+  (Morning text's frame): "Add from a link" / "Add from a cookbook" (the
+  existing `openRecipeLinkSheet` / `openRecipePhotoSheet`, no In development
+  pill here; Cook → More untouched), then the recipes A to Z with "35 min ·
+  From seriouseats.com" as the quiet line. A recipe opens in place under
+  "‹ Recipes", read-only, drawn by the Plan Meal step's own
+  `recipeIngredientsHtml`/`recipeStepsHtml` (live = false; the look-alike
+  tick boxes hidden). The import sheets take `opts.onDone`: closing them
+  goes back to Recipes, a save lands on the new recipe with "X was added".
+  Backend: `GET /api/recipes` (`tools.recipe_shelf`) and
+  `GET /api/recipes/{recipe_id:int}` (`tools.get_recipe_by_id`), both
+  through `list_recipes`' household filter — another household's id is a
+  404; typed `:int` and declared after `/scale` so no word is read as an id.
+  **Left off the list: `details_pending` dishes** (chosen by the menu pass,
+  not written up yet — nothing to open). Tests:
+  `tests/test_recipes_in_settings.py`.
+
 - **2026-10-02 — Planning next week before this week ended hid this week's
   shopping. Branch `fix-next-week-hides-shop-2026-10-02`, NOT merged at the
   time of writing.** Loop Board bug (QA walk 2, High). Root cause:

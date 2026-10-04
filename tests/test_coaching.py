@@ -583,9 +583,10 @@ def test_a_flex_chips_row_can_actually_be_hidden():
 
 def test_the_tips_sheet_reuses_the_preferences_sheets_own_rules():
     # The selector group grew a third member on 2026-09-11 — the "Morning
-    # text" sheet ("Reach me before the moment") shares the same frame.
-    assert "#prefs-scrim,\n#tips-scrim,\n#morning-scrim {" in SHELL_CSS
-    assert "#prefs-sheet,\n#tips-sheet,\n#morning-sheet {" in SHELL_CSS
+    # text" sheet ("Reach me before the moment") shares the same frame, and
+    # a fourth on 2026-10-04 — Settings → Recipes.
+    assert "#prefs-scrim,\n#tips-scrim,\n#morning-scrim,\n#recipes-scrim {" in SHELL_CSS
+    assert "#prefs-sheet,\n#tips-sheet,\n#morning-sheet,\n#recipes-sheet {" in SHELL_CSS
 
 
 def test_opening_the_report_form_closes_the_tips_sheet():

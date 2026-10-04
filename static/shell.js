@@ -11604,11 +11604,11 @@
       '<div class="rli-body" id="rli-body"></div>';
     document.body.appendChild(rliScrimEl);
     document.body.appendChild(rliSheetEl);
-    rliScrimEl.addEventListener('click', closeRecipeLinkSheet);
-    rliSheetEl.querySelector('#rli-handle').addEventListener('click', closeRecipeLinkSheet);
-    rliSheetEl.querySelector('#rli-close').addEventListener('click', closeRecipeLinkSheet);
+    rliScrimEl.addEventListener('click', dismissRecipeLinkSheet);
+    rliSheetEl.querySelector('#rli-handle').addEventListener('click', dismissRecipeLinkSheet);
+    rliSheetEl.querySelector('#rli-close').addEventListener('click', dismissRecipeLinkSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && rliSheetEl && !rliSheetEl.hidden) closeRecipeLinkSheet();
+      if (e.key === 'Escape' && rliSheetEl && !rliSheetEl.hidden) dismissRecipeLinkSheet();
     });
     rliSheetEl.addEventListener('click', onRecipeLinkClick);
     rliSheetEl.addEventListener('input', function (e) {
@@ -11619,11 +11619,18 @@
     });
   }
 
-  function openRecipeLinkSheet() {
+  // opts.onDone (Settings → Recipes, 2026-10-04): where the household goes
+  // when this sheet closes — called with the saved recipe after a save, or
+  // with nothing when they close it unsaved. Cook → More and the chat
+  // composer pass none, and the sheet just closes as it always did.
+  var rliOnDone = null;
+
+  function openRecipeLinkSheet(opts) {
     buildRecipeLinkSheet();
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
+    rliOnDone = (opts && typeof opts.onDone === 'function') ? opts.onDone : null;
     rliDraft = null;
     rliPhotos = [];
     rliHint = '';
@@ -11644,6 +11651,16 @@
     if (!rliSheetEl) return;
     rliScrimEl.hidden = true;
     rliSheetEl.hidden = true;
+  }
+
+  // The household closing the sheet themselves (the ×, the scrim, the
+  // handle, Escape, Done): back to where they opened it from, if that
+  // asked to be returned to.
+  function dismissRecipeLinkSheet() {
+    var done = rliOnDone;
+    rliOnDone = null;
+    closeRecipeLinkSheet();
+    if (done) done(null);
   }
 
   // The way out of every failure: say it in the ask bar instead. Prefilled
@@ -11825,6 +11842,15 @@
         return data;
       });
     }).then(function (saved) {
+      // Opened from Settings → Recipes: straight back there, on the recipe
+      // just saved (recipesAfterImport says so in a toast).
+      if (rliOnDone) {
+        var done = rliOnDone;
+        rliOnDone = null;
+        closeRecipeLinkSheet();
+        done(Object.assign({ name: payload.name }, saved));
+        return;
+      }
       body.innerHTML =
         '<p class="rli-done">Saved. \u201c' + escapeHtml(saved.name || payload.name) + '\u201d is one of your recipes now.</p>' +
         '<button type="button" class="rli-read" data-rli="another">Add another</button>' +
@@ -11851,8 +11877,9 @@
     }
     else if (what === 'remove-ing') target.closest('.rli-ing').remove();
     else if (what === 'another') openRecipeLinkSheet();
-    else if (what === 'close') closeRecipeLinkSheet();
+    else if (what === 'close') dismissRecipeLinkSheet();
     else if (what === 'ask-instead') {
+      rliOnDone = null;
       closeRecipeLinkSheet();
       openAskSheet('Save this recipe for me: ');
     }
@@ -11897,6 +11924,7 @@
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
+    rliOnDone = typeof opts.onDone === 'function' ? opts.onDone : null;
     rliDraft = null;
     rliPhotos = [];
     rliHint = (opts.hint || '').trim();
@@ -24438,7 +24466,10 @@
             '<span class="prefs-row-sub">' + escapeHtml(line) + '</span>' +
           '</span>' +
           ICONS.arrow +
-        '</button>';
+        '</button>' +
+        // Settings → Recipes (2026-10-04) sits under "How you eat". Not a
+        // PREFS_ROWS entry: those all open a What we know section.
+        (row.section === 'taste' ? recipesPrefsRowHtml() : '');
       }).join('') +
       // Onboarding coaching part 3 (2026-09-08): the permanent way back to
       // "Helpful tips". A .prefs-row like the five above it, but it opens a
@@ -24551,6 +24582,7 @@
     loadPrefsMorningText();
     loadPrefsHeld();
     loadPushSettings();
+    loadRecipes();
     if (prefsState.memory) { renderPrefsRows(); return; }
     try {
       var res = await Api.fetch('/api/memory');
@@ -25221,6 +25253,287 @@
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-morning="open"]');
     if (target) openMorningSheet();
+  });
+
+  // ---------- "Recipes" (Settings, Emily 2026-10-04) ----------
+  //
+  // "can you add back the function to add in your own recipe from a link
+  // and the recipe view and add it under the settings for now." A
+  // Preferences row (after "How you eat") opens this sheet: the two ways
+  // in at the top — the link import and the cookbook photo, the same
+  // sheets Cook → More opens — then the household's saved recipes A to Z
+  // (GET /api/recipes). A recipe opens in place, read-only, with one crumb
+  // back to the list (§2b S8). The ingredients and steps are drawn by the
+  // Plan Meal step's own read-only renderers (recipeIngredientsHtml /
+  // recipeStepsHtml with live = false), not a second renderer; the
+  // look-alike tick boxes are hidden here, since nothing on this screen is
+  // ticked.
+  //
+  // Same sheet frame as Morning text and Helpful tips (#recipes-sheet sits
+  // in their CSS lists). A save from the link or cookbook sheet opened from
+  // here lands back here, on the new recipe, with its toast.
+  var recipesState = { list: null, failed: false, view: 'list', detail: null, detailId: null, detailFailed: false };
+  var recipesSheetEl = null;
+  var recipesScrimEl = null;
+
+  // The Preferences row's line. null = still reading; a failed read says so
+  // rather than sitting on "Reading it back…" for ever.
+  function prefsRecipesLine(state) {
+    var s = state || recipesState;
+    if (!s.list) return s.failed ? 'Couldn’t check just now' : 'Reading it back…';
+    if (!s.list.length) return 'None saved yet';
+    return s.list.length + ' saved';
+  }
+
+  function recipesPrefsRowHtml() {
+    return '<button type="button" class="prefs-row" data-recipes="open">' +
+      '<span class="prefs-row-text">' +
+        '<span class="prefs-row-title">Recipes</span>' +
+        '<span class="prefs-row-sub">' + escapeHtml(prefsRecipesLine()) + '</span>' +
+      '</span>' +
+      ICONS.arrow +
+    '</button>';
+  }
+
+  // "35 min" — prep and cook together, the way the menu rows say a time.
+  function recipeMinutes(r) {
+    var total = (Number(r && r.prep_time_minutes) || 0) + (Number(r && r.cook_time_minutes) || 0);
+    return total > 0 ? total + ' min' : '';
+  }
+
+  // A list row's quiet line: the time and where it came from, whichever
+  // the recipe has. Nothing at all when it has neither.
+  function recipeListLine(r) {
+    var bits = [];
+    var mins = recipeMinutes(r);
+    if (mins) bits.push(mins);
+    if (r && r.citation && r.citation.text) bits.push(r.citation.text);
+    return bits.join(' · ');
+  }
+
+  async function loadRecipes() {
+    try {
+      var res = await Api.fetch('/api/recipes');
+      if (!res.ok) throw new Error('recipes lookup failed');
+      recipesState.list = ((await res.json()).recipes) || [];
+      recipesState.failed = false;
+    } catch (err) {
+      console.warn('Recipes lookup failed:', err);
+      recipesState.failed = true;
+    }
+    if (prefsState.open) renderPrefsRows();
+    if (recipesSheetEl && !recipesSheetEl.hidden && recipesState.view === 'list') renderRecipesSheet();
+  }
+
+  async function loadRecipeDetail(id) {
+    recipesState.detailId = id;
+    recipesState.detail = null;
+    recipesState.detailFailed = false;
+    renderRecipesSheet();
+    try {
+      var res = await Api.fetch('/api/recipes/' + encodeURIComponent(id));
+      if (!res.ok) throw new Error('recipe lookup failed');
+      var data = await res.json();
+      if (recipesState.detailId !== id) return;
+      recipesState.detail = data;
+    } catch (err) {
+      console.warn('Recipe lookup failed:', err);
+      if (recipesState.detailId !== id) return;
+      recipesState.detailFailed = true;
+    }
+    if (recipesState.view === 'detail') renderRecipesSheet();
+  }
+
+  function buildRecipesSheet() {
+    if (recipesSheetEl) return;
+    recipesScrimEl = document.createElement('div');
+    recipesScrimEl.id = 'recipes-scrim';
+    recipesScrimEl.hidden = true;
+    recipesSheetEl = document.createElement('div');
+    recipesSheetEl.id = 'recipes-sheet';
+    recipesSheetEl.hidden = true;
+    recipesSheetEl.setAttribute('role', 'dialog');
+    recipesSheetEl.setAttribute('aria-modal', 'true');
+    recipesSheetEl.setAttribute('aria-labelledby', 'recipes-title');
+    recipesSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="recipes-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="recipes-title">Recipes</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="recipes-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="recipes-body" id="recipes-body"></div>';
+    // Body level, like every other sheet here.
+    document.body.appendChild(recipesScrimEl);
+    document.body.appendChild(recipesSheetEl);
+    recipesScrimEl.addEventListener('click', closeRecipesSheet);
+    recipesSheetEl.querySelector('#recipes-handle').addEventListener('click', closeRecipesSheet);
+    recipesSheetEl.querySelector('#recipes-close').addEventListener('click', closeRecipesSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && recipesSheetEl && !recipesSheetEl.hidden) closeRecipesSheet();
+    });
+    recipesSheetEl.addEventListener('click', onRecipesClick);
+  }
+
+  function recipesListHtml() {
+    var list = recipesState.list;
+    var rows;
+    if (!list) {
+      rows = recipesState.failed
+        ? '<p class="recipes-empty">Couldn’t load your recipes. Close this and try again.</p>'
+        : '<p class="recipes-empty">Reading it back…</p>';
+    } else if (!list.length) {
+      rows = '<p class="recipes-empty">No recipes saved yet.</p>';
+    } else {
+      rows = '<div class="prefs-rows recipes-list">' + list.map(function (r) {
+        var line = recipeListLine(r);
+        return '<button type="button" class="prefs-row" data-recipes="view" data-recipe-id="' + escapeHtml(String(r.id)) + '">' +
+          '<span class="prefs-row-text">' +
+            '<span class="prefs-row-title">' + escapeHtml(r.name || '') + '</span>' +
+            (line ? '<span class="prefs-row-sub">' + escapeHtml(line) + '</span>' : '') +
+          '</span>' +
+          ICONS.arrow +
+        '</button>';
+      }).join('') + '</div>';
+    }
+    return '<div class="kit-rows recipes-add">' +
+        '<button type="button" class="kit-row" data-recipes="link">' +
+          '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
+          '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+        '<button type="button" class="kit-row" data-recipes="photo">' +
+          '<span class="kit-row-icon">' + GRO_ICONS.camera + '</span>' +
+          '<span class="kit-row-text"><span class="kit-row-title">Add from a cookbook</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+      '</div>' +
+      rows;
+  }
+
+  // "Serves 4 · 15 min prep · 30 min cook" — the facts the recipe has, and
+  // nothing for the ones it doesn't.
+  function recipeFactsLine(r) {
+    var bits = [];
+    if (r.default_servings) bits.push('Serves ' + r.default_servings);
+    if (r.prep_time_minutes) bits.push(r.prep_time_minutes + ' min prep');
+    if (r.cook_time_minutes) bits.push(r.cook_time_minutes + ' min cook');
+    return bits.join(' · ');
+  }
+
+  // A link credit is a link: "From seriouseats.com", opening the page in a
+  // new tab. A book (with or without its page photo) is recipeCitationHtml's
+  // own line, the one every other recipe screen draws.
+  function recipeViewCreditHtml(r) {
+    var c = r.citation;
+    if (c && c.kind === 'link' && c.url && /^https?:\/\//i.test(c.url)) {
+      return '<p class="recipe-cite recipes-cite">From <a class="recipes-cite-link" href="' + escapeHtml(c.url) +
+        '" target="_blank" rel="noopener noreferrer">' + escapeHtml(c.host || 'the page') + '</a></p>';
+    }
+    return recipeCitationHtml(c, r.photo_urls, 'recipes-cite');
+  }
+
+  function recipeViewHtml() {
+    var crumb = '<button type="button" class="crumb recipes-crumb" data-recipes="back">&lsaquo; Recipes</button>';
+    var r = recipesState.detail;
+    if (!r) {
+      return crumb + '<p class="recipes-empty">' + (recipesState.detailFailed
+        ? 'Couldn’t open that recipe. Go back and try it again.'
+        : 'Reading it back…') + '</p>';
+    }
+    // The shape the Plan Meal step's renderers read: the dish under `meal`.
+    var meal = {
+      meal: r.name,
+      ingredients: r.ingredients || [],
+      instructions: r.instructions || [],
+      advance_prep_step_indices: r.advance_prep_step_indices || []
+    };
+    var facts = recipeFactsLine(r);
+    var hasBody = meal.ingredients.length || meal.instructions.length;
+    return crumb +
+      '<div class="recipe-body recipes-view">' +
+        recipeTitleHtml(meal) +
+        recipeViewCreditHtml(r) +
+        (facts ? '<p class="recipe-line">' + escapeHtml(facts) + '</p>' : '') +
+        (r.advance_prep_notes ? '<p class="recipe-line">' + escapeHtml(r.advance_prep_notes) + '</p>' : '') +
+        (hasBody
+          ? recipeIngredientsHtml(meal, 'rv', false) + (meal.instructions.length ? recipeStepsHtml(meal, false) : '')
+          : '<p class="recipes-empty">Nothing written down for this one yet.</p>') +
+      '</div>';
+  }
+
+  function renderRecipesSheet() {
+    if (!recipesSheetEl) return;
+    var body = recipesSheetEl.querySelector('#recipes-body');
+    body.innerHTML = recipesState.view === 'detail' ? recipeViewHtml() : recipesListHtml();
+  }
+
+  // opts.id opens straight on that recipe (after a save from here).
+  function openRecipesSheet(opts) {
+    opts = opts || {};
+    buildRecipesSheet();
+    // One sheet at a time.
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    closePrefsSheet();
+    closeSnwSheet();
+    recipesScrimEl.hidden = false;
+    recipesSheetEl.hidden = false;
+    if (opts.id) {
+      recipesState.view = 'detail';
+      loadRecipeDetail(opts.id);
+    } else {
+      recipesState.view = 'list';
+      renderRecipesSheet();
+    }
+    loadRecipes();
+  }
+
+  function closeRecipesSheet() {
+    if (!recipesSheetEl) return;
+    recipesScrimEl.hidden = true;
+    recipesSheetEl.hidden = true;
+  }
+
+  // Back from the link or cookbook sheet, saved or not.
+  function recipesAfterImport(saved) {
+    if (saved && saved.recipe_id) {
+      toastSaved(savedLine(saved.name, 'added'));
+      openRecipesSheet({ id: saved.recipe_id });
+    } else {
+      openRecipesSheet();
+    }
+  }
+
+  function onRecipesClick(e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-recipes]');
+    if (!t || !recipesSheetEl.contains(t)) return;
+    var what = t.getAttribute('data-recipes');
+    if (what === 'view') {
+      recipesState.view = 'detail';
+      loadRecipeDetail(Number(t.getAttribute('data-recipe-id')));
+      var body = recipesSheetEl.querySelector('#recipes-body');
+      if (body) body.scrollTop = 0;
+    } else if (what === 'back') {
+      recipesState.view = 'list';
+      recipesState.detail = null;
+      recipesState.detailId = null;
+      renderRecipesSheet();
+      loadRecipes();
+    } else if (what === 'link') {
+      closeRecipesSheet();
+      openRecipeLinkSheet({ onDone: recipesAfterImport });
+    } else if (what === 'photo') {
+      closeRecipesSheet();
+      openRecipePhotoSheet({ onDone: recipesAfterImport });
+    }
+  }
+
+  // The Preferences row — delegated, like Morning text's.
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-recipes="open"]');
+    if (target) openRecipesSheet();
   });
 
   // ---------- "Helpful tips" ----------

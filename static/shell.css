@@ -7603,7 +7603,8 @@ span.cook-week-name { cursor: default; }
 
 #prefs-scrim,
 #tips-scrim,
-#morning-scrim {
+#morning-scrim,
+#recipes-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
@@ -7612,7 +7613,8 @@ span.cook-week-name { cursor: default; }
 }
 #prefs-sheet,
 #tips-sheet,
-#morning-sheet {
+#morning-sheet,
+#recipes-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -7630,7 +7632,8 @@ span.cook-week-name { cursor: default; }
 }
 #prefs-scrim[hidden], #prefs-sheet[hidden],
 #tips-scrim[hidden], #tips-sheet[hidden],
-#morning-scrim[hidden], #morning-sheet[hidden] { display: none; }
+#morning-scrim[hidden], #morning-sheet[hidden],
+#recipes-scrim[hidden], #recipes-sheet[hidden] { display: none; }
 .prefs-sub {
   font-family: var(--font-body);
   font-size: 13px;
@@ -7682,6 +7685,41 @@ span.cook-week-name { cursor: default; }
   white-space: nowrap;
 }
 .prefs-row svg { width: 17px; height: 17px; flex: 0 0 auto; color: var(--ink-inactive); }
+/* Settings → Recipes (Emily, 2026-10-04): the Preferences sheet's frame
+   (above), the two ways in as Cook → More's .kit-rows card, then the saved
+   recipes as .prefs-rows. A recipe opens in place under a "‹ Recipes"
+   crumb and reads through the Plan Meal step's own recipe cards. */
+.recipes-body {
+  padding: 4px 18px 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.recipes-body .recipes-list { padding: 0; overflow: visible; }
+.recipes-empty {
+  margin: 4px 2px 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
+.recipes-body .recipes-crumb { margin: 0 0 -6px -8px; }
+.recipes-view { display: flex; flex-direction: column; padding-bottom: 8px; }
+.recipes-view .recipe-cite { margin-top: -6px; }
+/* Read-only: the plan's look-alike tick box has nothing to tick here. */
+.recipes-view .recipe-box { display: none; }
+.recipes-cite-link {
+  color: var(--apricot-label);
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* Rule 6 */
+}
+.recipes-cite-link:hover { color: var(--apricot-label-hover); }
 /* The second group — a way out of a bad moment, and the way out of the
    app — sits under a rule as its own pair, reusing the quiet tile the
    Kitchen tab used to carry rather than defining a second one. */
@@ -10048,7 +10086,7 @@ span.cook-week-name { cursor: default; }
    predates and is independent of this ticket). */
 @media (min-width: 768px) {
   #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet, #rli-sheet,
-  #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet {
+  #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet, #recipes-sheet {
     left: 50%;
     right: auto;
     transform: translateX(-50%);
