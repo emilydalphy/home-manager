@@ -71,7 +71,7 @@ landed: the failed count was right and the rest was one short, since
 test_an_ordinary_dinner_pays_nothing_for_the_widening is a GUARD and
 passes on both trees. Re-measured on the tree that ships, not re-quoted.
 
-MUTATIONS RUN, red counts read off the runs over this file, in a
+MUTATIONS RUN (23), red counts read off the runs over this file, in a
 `git archive` of the branch so nothing else was writing to the tree:
 
     the whole widening a no-op (fed_days -> [entry]) ................. 22
@@ -96,6 +96,7 @@ MUTATIONS RUN, red counts read off the runs over this file, in a
     shell.js: runSwapInPlace splicing one day, not every day returned   1
     fed_days' early return removed (the cost guard) ..................  1
     replace_dish_on_days carrying make_double_for without its note ...  1
+    a new module-level name colliding with one already in the file ...  1
 
 Every one bites. FIVE REDDENED NOTHING ON A FIRST RUN AND ALL FIVE ARE
 RECORDED RATHER THAN QUIETLY RE-RUN, because three were badly chosen, one
