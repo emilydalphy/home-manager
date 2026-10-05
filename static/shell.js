@@ -11430,7 +11430,8 @@
   function wwkTimeLimitHtml(field, value) {
     var spec = WWK_TIME_LIMITS[field];
     var n = typeof value === 'number' && value >= 0 ? value : spec.fallback;
-    var line = spec.label + ': ' + (n ? n + ' min or less' : 'no limit');
+    var amount = n % 60 === 0 ? (n / 60) + (n === 60 ? ' hour' : ' hours') : n + ' min';
+    var line = spec.label + ': ' + (n ? amount + ' or less' : 'no limit');
     return '<p class="wwk-note wwk-time-limit-line" aria-live="polite">' + escapeHtml(line) + '</p>' +
       '<div class="wwk-chips">' +
       spec.options.map(function (o) {

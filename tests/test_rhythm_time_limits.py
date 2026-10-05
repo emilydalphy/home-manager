@@ -109,3 +109,10 @@ def test_the_chips_are_wired_and_the_save_route_validates_both_fields():
         with pytest.raises(ValueError):
             tools.edit_preference("weekday_lunch_max_minutes", bad)
     assert tools.get_household_memory()["weekday_lunch_max_minutes"] == 0
+
+
+def test_whole_hours_read_as_hours_on_the_line():
+    assert "Weeknight dinner: 1 hour or less" in _html(weeknight_max_minutes=60)
+    assert "Weeknight dinner: 2 hours or less" in _html(weeknight_max_minutes=120)
+    assert "Weeknight dinner: 90 min or less" in _html(weeknight_max_minutes=90)
+    assert "60 min or less" not in _html(weeknight_max_minutes=60)
