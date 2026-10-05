@@ -566,7 +566,7 @@ def _is_reheat(conn, entry) -> bool:
     return bool(_READS_AS_REHEAT.search(str(entry["freeform_meal"] or "")))
 
 
-def _approved_users_of(conn, recipe_id: int) -> dict[int, list[int]]:
+def _approved_users_of(conn, recipe_id: int, always: list[int] | None = None) -> dict[int, list[int]]:
     """
     {plan_id: [entry ids]} for every entry in an APPROVED plan of this
     household that cooks or reheats `recipe_id`.
@@ -578,14 +578,26 @@ def _approved_users_of(conn, recipe_id: int) -> dict[int, list[int]]:
     shopping for the one left behind would still carry the old
     ingredients. Only approved plans have bought anything; a draft's
     shopping is written at approval from whatever the row says then.
+
+    Only nights still AHEAD: dated on or after the household's today (its
+    clock, `grocery._household_today`, not the server's) and still
+    'planned' — the reading `grocery._live_plan_ids` uses for "not stale".
+    A plan stays 'approved' after its week ends, and last month's Chili or
+    the night already cooked this week must not be bought again onto the
+    live list. `always` is the entries the household actually opened (the
+    meal and its chain), kept whatever their date, so a rewrite of a past
+    day's recipe still redoes that day.
     """
+    today = _grocery._household_today(conn=conn).isoformat()
+    keep = {int(i) for i in (always or [])}
     out: dict[int, list[int]] = {}
     for r in conn.execute(
         "SELECT mpe.id, mpe.weekly_plan_id FROM meal_plan_entries mpe "
         "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
         "WHERE mpe.recipe_id = ? AND mpe.household_id = ? AND wp.status = 'approved' "
-        "ORDER BY mpe.date ASC, mpe.id ASC",
-        (int(recipe_id), household_id()),
+        "AND ((mpe.date >= ? AND mpe.slot_state = 'planned') OR mpe.id IN (%s)) "
+        "ORDER BY mpe.date ASC, mpe.id ASC" % ",".join("?" * len(keep) or ["?"]),
+        (int(recipe_id), household_id(), today, *(keep or {-1})),
     ).fetchall():
         out.setdefault(int(r["weekly_plan_id"]), []).append(int(r["id"]))
     return out
@@ -759,7 +771,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
         ids = _chain_entry_ids(conn, entry)
         # Every approved night on this recipe row, not only this chain: the
         # row is edited in place, so they all change (_approved_users_of).
-        users = _approved_users_of(conn, spec["recipe_id"])
+        users = _approved_users_of(conn, spec["recipe_id"], ids)
         approved = approved or bool(users)
         before = _needed_lines(conn) if approved else {}
         snapshot = dict(conn.execute(
@@ -889,7 +901,7 @@ def undo_recipe_change(request_id: int) -> dict:
                     "said": (f"{who} can’t have {what}, and the old recipe has it in, "
                              "so I can’t put it back." if what else
                              f"{who} can’t eat the old recipe, so I can’t put it back.")}
-        users = _approved_users_of(conn, req["recipe_id"])
+        users = _approved_users_of(conn, req["recipe_id"], _chain_entry_ids(conn, entry))
         approved = bool(users)
         before = _needed_lines(conn) if approved else {}
         _unbuy_users(conn, users)

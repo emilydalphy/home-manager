@@ -211,3 +211,49 @@ def test_an_undo_is_scoped_to_its_own_household(signed_in):
 
     assert _recipe_json(rid) == row_now
     assert [r["outcome"] for r in tools.recent_recipe_change_requests()] == ["rewritten"]
+
+
+# ---------- only what is still ahead ----------
+
+def _lines_of_plan(plan_id):
+    conn = get_conn()
+    try:
+        return sorted(
+            (r["item"], r["quantity"], r["status"]) for r in conn.execute(
+                "SELECT item, quantity, status FROM grocery_items WHERE source_weekly_plan_id = ?",
+                (plan_id,))
+        )
+    finally:
+        conn.close()
+
+
+def test_a_rewrite_leaves_a_finished_approved_week_and_a_cooked_night_alone(signed_in):
+    old_start = household_date(-28)
+    old = tools.create_weekly_plan(old_start, content_start_date=old_start,
+                                   day_count=3)["weekly_plan_id"]
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE weekly_plans SET status = 'approved' WHERE id = ?", (old,))
+        conn.commit()
+    finally:
+        conn.close()
+    _recipe("Chana Masala", [("Chickpeas", "2 cans"), ("Coconut milk", "1 can")])
+    tools.plan_meal(household_date(-27), "Chana Masala", slot="dinner", weekly_plan_id=old,
+                    add_ingredients_to_grocery_list=True)
+    plan = _plan("approved", day_count=5)
+    tue = _entry(plan, TUE, "Chana Masala", buy=True)
+    # A night of this week that is already behind the household's today.
+    cooked = _entry(plan, MON, "Chana Masala", buy=True)
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE meal_plan_entries SET date = ? WHERE id = ?", (household_date(-1), cooked))
+        conn.commit()
+    finally:
+        conn.close()
+    old_lines = _lines_of_plan(old)
+
+    res = _rewrite(tue)
+
+    assert _lines_of_plan(old) == old_lines
+    assert res["entry_ids"] == [tue]
+    assert "Dried chickpeas" in _needed()
