@@ -1486,14 +1486,22 @@ def read_onboarding_note(req: OnboardingNoteRequest):
         return {"read": False, "reading": {}}
     try:
         reading = agent.read_setup_note_llm(note, people=[m["name"] for m in tools.list_members()])
-    except agent.AIConsentRequiredError:
+    except agent.AIConsentRequiredError as e:
         # Named FIRST because it is a subclass of the one below, and this
         # one must NOT degrade quietly: a household that hasn't allowed
         # sharing with Claude gets the plain 503 sentence every other
-        # route gives (_refused_for_consent), not a shrug and a built
-        # week. Reachable here only by revoking consent between the
-        # consent step and this one, since this step comes after it.
-        raise
+        # route gives, not a shrug and a built week. Reachable here only
+        # by revoking consent between the consent step and this one, since
+        # this step comes after it.
+        #
+        # Re-raised as the ordinary 500 the other 83 routes raise, rather
+        # than bare: _refused_for_consent reads it off __cause__ and
+        # record_server_errors turns it into the 503 — the documented path,
+        # which also keeps it out of the morning report as breakage. A bare
+        # raise would reach the unhandled handler instead, which answers
+        # the same 503 and logs a traceback for a household that is simply
+        # working as intended.
+        raise HTTPException(status_code=500, detail=f"Server error: {e}") from e
     except agent.AssistantUnavailableError as e:
         # Anthropic overloaded or a network hiccup. The note is still kept
         # verbatim by the answers call, so a failure here costs the
