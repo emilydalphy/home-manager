@@ -484,6 +484,13 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # The chat's own cache warm-up, sent when the sheet opens (a
         # max_tokens=0 request). See agent.warm_chat_cache.
         "run_agent_turn.warm",
+        # The one follow-up call a just-written recipe gets when its steps
+        # and its ingredient list name different amounts of the same thing
+        # ("3 cups of cashews in the list, the steps use 1 cup" —
+        # Gowthami's household, 2026-10-04). Only when the check fails, so
+        # a recipe whose amounts add up costs nothing. See
+        # agent._settle_recipe_amounts / _repair_recipe_amounts_llm.
+        "generate_recipe_details_llm.amounts",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added

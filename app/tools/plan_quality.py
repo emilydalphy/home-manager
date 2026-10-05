@@ -676,6 +676,11 @@ def steps_ingredients_message(result: dict) -> str:
         parts.append(
             ", ".join(result["unused_ingredients"]) + " never appear(s) in any step"
         )
+    if result.get("amount_mismatches"):
+        parts.append("the steps use " + ", ".join(
+            f"{m['in_steps']} of {m['item']} where the list says {m['listed']}"
+            for m in result["amount_mismatches"]
+        ))
     return "; ".join(parts)
 
 
@@ -692,6 +697,14 @@ def _steps_match_ingredients(entries: list[dict], context: dict) -> list[Violati
     passed over). "info", not "warn": it is a soft signal about a recipe,
     not a broken rule about the week, and like everything here it only
     logs.
+
+    Since 2026-10-05 it also reports an AMOUNT the steps and the list
+    disagree about — "3 cups of cashews in the list, the steps never use
+    the 3 cups" (Gowthami's household). That is the half the card calls a
+    recipe defect: agent._settle_recipe_amounts repairs a recipe against
+    this check before it is saved, so anything that reaches here is a
+    recipe one targeted rewrite could not put right, which is exactly what
+    is worth a line in the morning report.
     """
     violations = []
     for entry in entries:
@@ -699,6 +712,7 @@ def _steps_match_ingredients(entries: list[dict], context: dict) -> list[Violati
             continue
         result = _recipes.check_steps_ingredients_consistency(
             entry.get("ingredients") or [], entry.get("instructions") or [],
+            entry.get("default_servings"),
         )
         if result["ok"]:
             continue

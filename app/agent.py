@@ -3964,6 +3964,19 @@ the grocery list is what decides whether to buy more.
 - `kitchen_kit`, when present, is what this household actually owns to cook with. Only call \
 for equipment on it; a method that needs a food processor they don't have is a recipe they \
 can't cook.
+- THE AMOUNTS HAVE TO ADD UP. Every ingredient on the list gets used by at least one step, and \
+every amount a step names is an amount of something on the list. Where a step names an amount, \
+it has to be the amount the list bought, in a unit that compares to the list's — and if an \
+ingredient is used across several steps, those step amounts have to come to the list's total \
+("2 cups" in one step and "1 cup" in another for a list that says 3 cups). A list that says 3 \
+cups of cashews over steps that only ever use 1 cup is the single thing testers name when they \
+say they can't trust a recipe. When the list's qty is a bought unit the steps can't repeat ("1 \
+head" of cabbage, "1 bunch" of cilantro), the step says the prepped amount instead ("shred half \
+the head", "chop 2 tbsp of the cilantro") — that is not a mismatch, it is the one place the two \
+numbers are allowed to differ. Salt, pepper and cooking oil need no amount in the steps at all, \
+and neither does anything written "to taste", "a pinch" or "for garnish". If you can't give a \
+step an amount that matches the list, refer to the ingredient by name instead ("add the \
+cashews") rather than writing a number that disagrees.
 - Fill in instructions as ordered cooking steps so it's actually cookable, not just a shopping \
 list — this powers the Cook screen. Also fill in prep_time_minutes and cook_time_minutes \
 (keep the planner's numbers unless the method genuinely needs different ones — the night's \
@@ -4051,6 +4064,197 @@ def _warm_recipe_details_cache() -> bool:
     except Exception:
         logger.exception("Warming the recipe pass's cache failed; writing one recipe ahead of the rest instead")
         return False
+
+
+# ---------- the amounts have to add up, before anyone cooks from it ----------
+#
+# Gowthami's household, 2026-10-04: "it says use 3 cups of cashews for
+# example, but then the actually steps doesn't use the 3 cups." The writer
+# is told to make the amounts agree (RECIPE_DETAILS_INSTRUCTIONS), and
+# this file's own standing rule is that telling the generator something is
+# not the same as preventing it — so a recipe is held to its own
+# arithmetic before it is saved, and repaired once if it doesn't hold.
+
+# The repair's own tool, and it is deliberately NOT a second run of
+# generate_recipe_details_llm. That one rewrites the whole recipe,
+# ingredient list included — and the list it would replace is one the
+# allergen gate has already passed, so a rewrite puts a settled safety
+# question back in play. This can change the STEPS, and the AMOUNT of a
+# line that is already on the list, and nothing else: the set of
+# ingredients is untouched, so the gate's verdict still holds exactly.
+_RECIPE_AMOUNTS_REPAIR_TOOL = {
+    "name": "submit_recipe_amounts",
+    "description": "Re-submit the cooking steps so every amount in them matches the ingredient list.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "instructions": {
+                "type": "array", "items": {"type": "string"},
+                "description": "The full ordered steps again, with the amounts put right. Keep everything that was already correct — the same method, heat, times and doneness cues.",
+            },
+            "cooking_quantities": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "item": {"type": "string", "description": "Exactly as it already appears on the ingredient list. Never a new ingredient."},
+                        "cook_qty": {"type": "string", "description": "The corrected amount for the stated servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a plain count. Never a package word."},
+                    },
+                    "required": ["item", "cook_qty"],
+                },
+                "description": "Only for a line where the LIST is what's wrong and the steps were right. Leave it empty when fixing the steps is the answer.",
+            },
+        },
+        "required": ["instructions", "cooking_quantities"],
+    },
+}
+
+
+def _amount_repair_ask(check: dict) -> str:
+    """The mismatch, named line by line, as the repair call is told it."""
+    lines = []
+    for mismatch in check.get("amount_mismatches") or []:
+        lines.append(
+            f"- {mismatch['item']}: the list says {mismatch['listed']}, "
+            f"the steps use {mismatch['in_steps']}."
+        )
+    for item in check.get("unused_ingredients") or []:
+        lines.append(f"- {item}: on the list, and no step ever uses it.")
+    for item in check.get("missing_from_list") or []:
+        lines.append(f"- {item}: a step reaches for it, and it is not on the list.")
+    return "\n".join(lines)
+
+
+def _recipe_findings(check: dict) -> int:
+    """How much is wrong with a recipe, as one number — what makes a
+    repair keepable or not."""
+    return (
+        len(check.get("amount_mismatches") or [])
+        + len(check.get("unused_ingredients") or [])
+        + len(check.get("missing_from_list") or [])
+    )
+
+
+def _repair_recipe_amounts_llm(
+    recipe_name: str, ingredients: list[dict], instructions: list[str], servings: int, check: dict,
+) -> dict:
+    """
+    ONE follow-up call for a recipe whose steps and list disagree, with
+    the mismatch named. Returns the tool input, or {} when the model sent
+    nothing usable or the call failed — a failed repair is not an error,
+    it just means the recipe is saved as written and logged.
+    """
+    listed = "\n".join(
+        f"- {(i.get('item') or '').strip()}: {(i.get('cook_qty') or i.get('qty') or '').strip() or '(no amount)'}"
+        for i in tools.recipes.cooking_ingredients(ingredients, servings)
+        if isinstance(i, dict) and (i.get("item") or "").strip()
+    )
+    steps = "\n".join(f"{n}. {s}" for n, s in enumerate(instructions, 1))
+    prompt = f"""This recipe for "{recipe_name}" (written for {servings} people) doesn't add up. \
+The ingredient list and the cooking steps name different amounts of the same thing, which means \
+nobody can trust it at the stove.
+
+Ingredient list:
+{listed}
+
+Steps:
+{steps}
+
+What doesn't add up:
+{_amount_repair_ask(check)}
+
+Put it right. Every amount a step names must be an amount of something on the list, in a unit \
+that compares to the list's, and the step amounts for one ingredient must add up to what the \
+list says (split across steps is fine: 2 cups in one step and 1 cup in another is 3 cups). Every \
+ingredient on the list has to be used by at least one step.
+
+Usually the STEPS are what to fix. Only send cooking_quantities when the steps were right all \
+along and the list's amount is the wrong number — and then only for an ingredient already on the \
+list, never a new one. Salt, pepper and cooking oil need no amount in the steps at all, and \
+neither does anything the list marks "to taste", "a pinch" or "for garnish".
+
+Call submit_recipe_amounts with the result."""
+    try:
+        response = _create_with_retry(
+            _client(),
+            label="generate_recipe_details_llm.amounts",
+            model=MODEL,
+            max_tokens=2048,
+            tools=[_RECIPE_AMOUNTS_REPAIR_TOOL],
+            tool_choice={"type": "tool", "name": "submit_recipe_amounts"},
+            messages=[{"role": "user", "content": prompt}],
+            output_config=_effort_config("recipes"),
+        )
+    except Exception:
+        logger.exception("The amount repair call failed for %r; saving the recipe as written", recipe_name)
+        return {}
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input
+    return {}
+
+
+def _settle_recipe_amounts(
+    recipe_name: str, ingredients: list[dict], instructions: list[str], servings: int,
+) -> tuple[list[str], list[dict], dict]:
+    """
+    Hold a just-written recipe to its own arithmetic and repair it once if
+    it doesn't hold. Returns (instructions, ingredients, check) — the
+    recipe as it should be saved, plus the check result for whoever logs
+    it.
+
+    THE REPAIR IS KEPT ONLY IF IT IS STRICTLY BETTER, counted in findings.
+    A rewrite that fixes one amount and loses an ingredient is not a
+    repair, and the recipe that already passed the allergen gate is the
+    one worth keeping. A repair that renames an ingredient, or names one
+    the list never had, is dropped on the same principle — this corrects a
+    recipe, it doesn't rewrite one, which is save_cooking_quantities' own
+    rule one door over.
+
+    Past one repair the recipe is SAVED ANYWAY and the caller logs it: the
+    card's own answer is "keep the recipe but log it to the morning report
+    as a recipe defect", and plan_quality's steps_match_ingredients rule
+    is where that line comes out. A household with a slightly-off recipe
+    is better off than one with no dinner.
+    """
+    check = tools.check_steps_ingredients_consistency(ingredients, instructions, servings)
+    if check["ok"]:
+        return instructions, ingredients, check
+    logger.info(
+        "Recipe %r doesn't add up (%s); one repair",
+        recipe_name, plan_quality.steps_ingredients_message(check),
+    )
+    repair = _repair_recipe_amounts_llm(recipe_name, ingredients, instructions, servings, check)
+    repaired_steps = [s for s in (repair.get("instructions") or []) if (s or "").strip()]
+    if not repaired_steps:
+        return instructions, ingredients, check
+    # A corrected amount is written onto the line it belongs to, by name.
+    # An item the list hasn't got is ignored rather than appended: the
+    # allergen gate passed THIS list, and a repair is not a door for a
+    # new ingredient. Defence in depth rather than the load-bearing half,
+    # measured 2026-10-05: an appended ingredient no step uses makes the
+    # re-check worse, so the strictly-better rule below already throws the
+    # repair away, so removing only this filter changes nothing. Removing
+    # both is what lets an invented ingredient through.
+    corrected = _quantities_by_item(repair.get("cooking_quantities"))
+    repaired_ingredients = [
+        {**ing, "cook_qty": corrected[tools.recipes._clean_item(ing.get("item") or "")]}
+        if isinstance(ing, dict) and tools.recipes._clean_item(ing.get("item") or "") in corrected
+        else ing
+        for ing in ingredients
+    ]
+    _known = {tools.recipes._clean_item(i.get("item") or "") for i in ingredients if isinstance(i, dict)}
+    repaired_ingredients = repaired_ingredients + [
+        {"item": k, "qty": v} for k, v in corrected.items() if k not in _known
+    ]
+    after = tools.check_steps_ingredients_consistency(repaired_ingredients, repaired_steps, servings)
+    if _recipe_findings(after) >= _recipe_findings(check):
+        logger.warning(
+            "The repair for %r is no better (%s); keeping the recipe as first written",
+            recipe_name, plan_quality.steps_ingredients_message(after) or "nothing left to say",
+        )
+        return instructions, ingredients, check
+    return repaired_steps, repaired_ingredients, after
 
 
 # How many recipes are written at once. One approval can need fifteen to
@@ -4154,11 +4358,26 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 if attempt == 1:
                     continue
                 return {"name": name, "ok": False, "clash": clashes}
+            servings = detail.get("default_servings") or shared.get("serves") or 4
+            # The amounts have to add up before anyone cooks from it, and
+            # this runs AFTER the allergen gate on purpose: the repair may
+            # only change steps and amounts, so the list the gate just
+            # passed is the list that gets saved.
+            instructions, ingredients, consistency = _settle_recipe_amounts(
+                name, ingredients, detail.get("instructions") or [], servings,
+            )
+            if not consistency["ok"]:
+                # Kept, and said out loud — plan_quality's own rule puts
+                # the same wording in the morning report off the plan.
+                logger.warning(
+                    "Recipe %s quality [steps_match_ingredients/info]: %s",
+                    name, plan_quality.steps_ingredients_message(consistency),
+                )
             tools.fill_recipe_details(
                 name,
                 ingredients=ingredients,
-                instructions=detail.get("instructions") or [],
-                default_servings=detail.get("default_servings") or shared.get("serves") or 4,
+                instructions=instructions,
+                default_servings=servings,
                 prep_time_minutes=detail.get("prep_time_minutes"),
                 cook_time_minutes=detail.get("cook_time_minutes"),
                 advance_prep_notes=detail.get("advance_prep_notes") or "",
@@ -7776,6 +7995,15 @@ The household cooks from this, so:
 {quantity_ask}- Every step carries the real detail: heat or oven temperature, how long, and the \
 doneness cue ("until the edges brown, about 4 minutes"). Use every listed ingredient, and \
 nothing that isn't listed.
+- The amounts have to add up. Where a step names an amount, it is the amount the list gives, in \
+a unit that compares to it — and an ingredient used across several steps has step amounts that \
+come to the list's total (2 cups + 1 cup for a list that says 3 cups). A list saying 3 cups of \
+cashews over steps that only use 1 cup is the thing that makes a recipe untrustworthy. Where \
+the list's amount is a bought unit a step can't repeat ("1 head", "1 bunch"), say the prepped \
+amount instead ("shred half the head"). Salt, pepper and cooking oil need no amount in the \
+steps, and nor does anything written "to taste", "a pinch" or "for garnish". If you can't give \
+a step an amount that matches the list, name the ingredient instead ("add the cashews") rather \
+than a number that disagrees.
 
 Call submit_recipe_detail with the result."""
 
@@ -7967,16 +8195,30 @@ def fill_in_recipe(recipe_name: str) -> dict:
     if not detail.get("instructions"):
         raise ValueError("Couldn't generate instructions for this recipe — try again.")
     servings = detail.get("default_servings") or recipe.get("default_servings") or 4
+    measured = {}
     try:
         measured = measured_cooking_quantities(recipe, detail.get("cooking_quantities"), servings)
-        if measured:
-            tools.save_cooking_quantities(recipe_name, measured)
     except Exception:
-        logger.exception("Saving cooking quantities for %s failed; the recipe itself is unaffected", recipe_name)
+        logger.exception("Reading cooking quantities for %s failed; the recipe itself is unaffected", recipe_name)
+    instructions = detail.get("instructions") or []
     try:
-        consistency = tools.check_steps_ingredients_consistency(
-            recipe.get("ingredients") or [], detail.get("instructions") or [],
+        # The recipe as it would be saved — the measured amounts included,
+        # since those are the numbers the Cook screen prints beside these
+        # steps and so the ones a step has to agree with.
+        proposed = [
+            {**ing, "cook_qty": measured[ing["item"]]}
+            if isinstance(ing, dict) and ing.get("item") in measured else ing
+            for ing in recipe.get("ingredients") or []
+        ]
+        instructions, settled, consistency = _settle_recipe_amounts(
+            recipe_name, proposed, instructions, servings,
         )
+        # A repair that corrected the LIST rides along with the measured
+        # amounts; save_cooking_quantities ignores a name the recipe
+        # hasn't got, and this never adds an ingredient either.
+        for ing in settled:
+            if isinstance(ing, dict) and (ing.get("cook_qty") or "").strip() and ing.get("item"):
+                measured[ing["item"]] = ing["cook_qty"]
         if not consistency["ok"]:
             logger.warning(
                 "Recipe %s quality [steps_match_ingredients/info]: %s",
@@ -7984,9 +8226,14 @@ def fill_in_recipe(recipe_name: str) -> dict:
             )
     except Exception:
         logger.exception("Recipe consistency check failed for %s", recipe_name)
+    try:
+        if measured:
+            tools.save_cooking_quantities(recipe_name, measured)
+    except Exception:
+        logger.exception("Saving cooking quantities for %s failed; the recipe itself is unaffected", recipe_name)
     return tools.update_recipe_details(
         recipe_name,
-        instructions=detail.get("instructions"),
+        instructions=instructions,
         default_servings=detail.get("default_servings"),
         prep_time_minutes=detail.get("prep_time_minutes"),
         cook_time_minutes=detail.get("cook_time_minutes"),
