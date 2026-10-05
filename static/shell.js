@@ -951,7 +951,11 @@
       return;
     }
     if (askSheetHistoryPushed && !(e && e.state && e.state.askSheet)) {
-      closeAskSheet();
+      // The third closing door (card 8, 2026-10-05): the back gesture
+      // asks about unsaved chat changes exactly as the Back button and
+      // the scrim do. Hoisted, so this listener — which is declared far
+      // above the ask sheet — can call it.
+      askSheetCloseRequested();
       return;
     }
     activateTab(currentTabKey(), false);
@@ -9282,6 +9286,16 @@
     return '<section class="cook-tonight' + (row.done ? ' is-done' : '') + (row.isReheat ? ' is-reheat' : '') + '" aria-label="Tonight">' +
       '<span class="cook-tonight-eyebrow">' + escapeHtml(cookTonightEyebrow(meal, todayIso, cookName)) + '</span>' +
       '<h2 class="cook-tonight-dish">' + escapeHtml(row.title) + '</h2>' +
+      // The batch, said on the card too (the card's title: "on the recipe
+      // and on Cook"). The SERVER's sentence, the same one the recipe
+      // screen's line and cook mode's steps read — never a second copy
+      // built here. Above the times and the note, because it is what the
+      // amounts are about; nothing on a plain dinner or a reheat. A done
+      // card drops it: "Double batch: 3 tonight, 3 for lunch tomorrow"
+      // over "Cooked." is a reminder about work already finished.
+      (!row.done && meal.batch_line
+        ? '<p class="cook-tonight-batch">' + escapeHtml(meal.batch_line) + '</p>'
+        : '') +
       (tiles.length
         ? '<div class="cook-tonight-times">' + tiles.map(function (t) {
             return '<div class="cook-tonight-tile">' +
@@ -14817,6 +14831,8 @@
         runMoveMeal(btn.getAttribute('data-wk-move-to'));
       });
     });
+    var retry = body.querySelector('[data-wk-move-retry]');
+    if (retry) retry.addEventListener('click', function () { loadMoveOptions(st); });
     var tell = body.querySelector('#wk-swap-tell');
     if (tell) tell.addEventListener('click', function () {
       // Chat ABOUT this meal: the composer is empty and the meal rides
@@ -15103,18 +15119,54 @@
       escapeHtml(dayName(st.date, { weekday: 'long' }) + ' · ' + slotWord(st.slot)) + '</p>';
     var sheet = st.move;
     var title = (sheet && sheet.title) || ('Move the ' + dishShortName(st.name) + ' to which day?');
+    // Never a blank list (card 7, 2026-10-05). A sheet that could not be
+    // fetched says so with a Try again rather than an empty sheet; a sheet
+    // that loaded and whose MOVE then failed keeps its days, with the
+    // trouble said above them — it used to replace the list with the one
+    // line, which is the same blank sheet by another route.
+    var trouble = st.trouble
+      ? '<p class="wk-swap-trouble">' + escapeHtml(st.trouble) + '</p>'
+      : '';
     var body;
-    if (st.trouble) {
-      body = '<p class="wk-swap-trouble">' + escapeHtml(st.trouble) + '</p>';
-    } else if (!sheet) {
-      body = '<div class="wk-swap-wait" role="status"><span class="wk-swap-spinner" aria-hidden="true"></span></div>';
+    if (!sheet) {
+      body = st.trouble
+        ? '<p class="wk-move-retry-wrap"><button type="button" class="wk-mini" data-wk-move-retry="1">' +
+            WK_ICONS.redo + 'Try again</button></p>'
+        : '<div class="wk-swap-wait" role="status"><span class="wk-swap-spinner" aria-hidden="true"></span></div>';
     } else {
       body = '<div class="wk-swap-picks">' + sheet.days.map(function (d) { return moveDayRowHtml(d, st); }).join('') + '</div>';
     }
+    body = trouble + body;
     return eyebrow +
       '<h2 class="wk-swap-title" id="wk-swap-title">' + escapeHtml(title) + '</h2>' +
       (sheet && sheet.sub && !st.trouble ? '<p class="wk-swap-sub">' + escapeHtml(sheet.sub) + '</p>' : '') +
       body;
+  }
+
+  // The fetch, its own function so Try again can ask again (card 7).
+  async function loadMoveOptions(st) {
+    st.trouble = '';
+    st.move = null;
+    drawSwapSheet();
+    try {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/move-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: st.entryId })
+      });
+      var out = res.ok ? await res.json() : null;
+      if (swapSheetState !== st) return;
+      if (!out || !out.days) {
+        st.trouble = swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE;
+      } else {
+        st.move = out;
+      }
+    } catch (err) {
+      console.warn('Could not fetch the move options:', err);
+      if (swapSheetState !== st) return;
+      st.trouble = SWAP_TROUBLE;
+    }
+    drawSwapSheet();
   }
 
   async function openMoveSheet(panel, day, slot) {
@@ -15131,25 +15183,7 @@
     var thisOpen = swapSheetState;
     drawSwapSheet();
     openSheet(swapSheetEl, swapScrimEl);
-    try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-options', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: entry.entry_id })
-      });
-      var out = res.ok ? await res.json() : null;
-      if (swapSheetState !== thisOpen) return;
-      if (!out || !out.days) {
-        thisOpen.trouble = swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE;
-      } else {
-        thisOpen.move = out;
-      }
-    } catch (err) {
-      console.warn('Could not fetch the move options:', err);
-      if (swapSheetState !== thisOpen) return;
-      thisOpen.trouble = SWAP_TROUBLE;
-    }
-    drawSwapSheet();
+    await loadMoveOptions(thisOpen);
   }
 
   // The toast carries the move's own line ("Stew was moved to Thursday,
@@ -16076,6 +16110,7 @@
         (line ? '<p class="recipe-line">' + escapeHtml(line) + '</p>' : '') +
         (typeof mealSourceLinkHtml === 'function' ? mealSourceLinkHtml(entry) : '') +
         (hasRecipe ? recipeServesHtml(cookMeal, 'wk') : '') +
+        recipeBatchLineHtml(cookMeal) +
         (typeof platePartsRowsHtml === 'function' ? platePartsRowsHtml(day, slot, entry) : '') +
         mealIngredientsHtml(day, slot, entry, info) +
         (hasRecipe ? recipeStepsHtml(cookMeal, false) : mealNoRecipeHtml(slot, info)) +
@@ -20332,6 +20367,28 @@
       '</div>';
   }
 
+  // "Double batch: 3 tonight, 3 for lunch tomorrow." — one line directly
+  // under the stepper on a night that cooks for more than its own table
+  // (Gowthami's household, 2026-10-04: "It needs to call out that it's
+  // double the quantity because its calling for leftovers").
+  //
+  // THE SENTENCE IS THE SERVER'S, WHOLE. leftovers.batch_line builds it
+  // from the chain — this night's table, each leftover night's, the day
+  // and meal of each, and any portions put by for the freezer — and
+  // Cook's Tonight card and cook mode's first and last steps read the
+  // same function's siblings. The client composes nothing, so no surface
+  // can disagree with another about a number or a day.
+  //
+  // A LINE, never a tile and never a chip (rule 5): the screen's one
+  // accent is the dock's "Start cooking". Nothing for a plain dinner, a
+  // reheat, or an unhonoured chain — the field is simply absent, so this
+  // is one falsy check and an older payload behaves exactly as before.
+  function recipeBatchLineHtml(meal) {
+    var said = meal && meal.batch_line;
+    if (!said) return '';
+    return '<p class="recipe-batch">' + escapeHtml(said) + '</p>';
+  }
+
   // Ingredients: one card, the eyebrow, one row per ingredient with a box
   // beside it. Live, the row is cook mode's tick (cookGetOutRowHtml — the
   // same store the steps are ticked in, per device, per plan); on the
@@ -20345,8 +20402,17 @@
     var rows = live
       ? ings.map(function (ing, i) { return cookGetOutRowHtml(ing, i, mealKey); }).join('')
       : ings.map(function (ing) { return recipeIngredientRowHtml(ing); }).join('');
+    // "Ingredients · 8 servings" on a batch night (Emily's card,
+    // 2026-10-05), so the heading answers the question the amounts under
+    // it raise. The number is cookServesShown — the count the amounts
+    // below are really written for, which on a batch card starts as the
+    // whole batch and follows the cook's own stepper taps. Reading
+    // meal.servings instead would leave the heading claiming the batch
+    // over a list the cook had just halved.
+    var count = meal.batch_line ? cookServesShown(meal) : null;
     return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
-      '<span class="cook-eyebrow recipe-eyebrow">Ingredients</span>' +
+      '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
+        (count ? ' &middot; ' + escapeHtml(String(count)) + ' servings' : '') + '</span>' +
       '<ul class="cook-getout">' + rows + '</ul>' +
       cookUnscaledHtml(meal, idx) +
     '</section>';
@@ -20434,6 +20500,7 @@
         recipeTitleHtml(meal) +
         cookRecipeLinesHtml(meal) +
         recipeServesHtml(meal, idx) +
+        recipeBatchLineHtml(meal) +
         (meal.has_full_recipe
           ? recipeIngredientsHtml(meal, idx, true) + recipeStepsHtml(meal, true)
           : '<p class="cook-norecipe recipe-norecipe">No saved recipe for this one — ask me for it in the chat.</p>') +
@@ -20513,7 +20580,20 @@
         cookProgressHtml(steps.length, pos) +
         '<div class="card cook-step-card">' +
           (isAhead ? '<span class="recipe-step-tag">Do ahead</span>' : '') +
+          // The batch, at the pot. The first step carries the fact
+          // ("Double batch: half goes in containers for lunch tomorrow")
+          // and the LAST one the job ("Pack 3 servings for lunch
+          // tomorrow") — Emily's card, 2026-10-05. Both are the server's
+          // sentences, built from the same chain read as the recipe
+          // screen's line, so the three cannot drift apart. A one-step
+          // recipe is first AND last and honestly gets both.
+          (pos === 0 && meal.batch_first_step
+            ? '<p class="cook-step-batch">' + escapeHtml(meal.batch_first_step) + '</p>'
+            : '') +
           '<p class="cook-bigstep">' + escapeHtml(steps[pos] || '') + '</p>' +
+          (pos === steps.length - 1 && meal.batch_last_step
+            ? '<p class="cook-step-batch cook-step-pack">' + escapeHtml(meal.batch_last_step) + '</p>'
+            : '') +
           (needs.length ? '<p class="cook-step-needs">' + escapeHtml(needs.join(' · ')) + '</p>' : '') +
         '</div>' +
         (next ? '<p class="cook-next">' + escapeHtml(next) + '</p>' : '') +
@@ -22730,6 +22810,74 @@
     '</div>';
   }
 
+  // ---------- what Save would actually write ----------
+  // ONE read, because three things are built from it: whether Save is
+  // offered at all, the COUNT on its label, and the sentence above it
+  // naming what the week still shows. A count that disagrees with what
+  // lands is worse than no count (card 8, 2026-10-05) — this is the same
+  // predicate `canSave` has always been, given a name so the dock and the
+  // write can never be read off two different rules.
+  function changeCardPending(proposal) {
+    return ((proposal && proposal.rows) || []).filter(function (r) {
+      return r.action === 'change' && r.candidates && r.candidates.length && !r.problem;
+    });
+  }
+
+  // "Chicken Stew", "Chicken Stew and Tacos", "Chicken Stew, Tacos and
+  // Pizza" — the dishes the week still shows for the rows Save would
+  // change. Read off the rows' own `current`, which is what the card's
+  // "was → would be" line reads, so the two cannot differ.
+  function changeCardOldMeals(rows) {
+    var names = (rows || []).map(function (r) {
+      return r.current && r.current.meal ? String(r.current.meal) : '';
+    }).filter(Boolean);
+    if (!names.length) return '';
+    if (names.length === 1) return names[0];
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  }
+
+  // "Not saved yet. Your week still shows the old Chicken Stew." — the
+  // line above the dock. A row filling a slot that held nothing has no
+  // "old" dish to name, so the sentence drops the clause rather than
+  // promising one.
+  function changeCardNotSavedLine(rows) {
+    var old = changeCardOldMeals(rows);
+    return old
+      ? 'Not saved yet. Your week still shows the old ' + old + '.'
+      : 'Not saved yet. Your week is still as it was.';
+  }
+
+  // "Save 2 changes to the week" / "Save 1 change to the week".
+  function changeCardSaveLabel(n) {
+    return 'Save ' + n + (n === 1 ? ' change' : ' changes') + ' to the week';
+  }
+
+  // "Save the 2 changes to the week?" — the dialog's own question, the
+  // same count from the same read.
+  function changeCardAskLine(n) {
+    return 'Save the ' + n + (n === 1 ? ' change' : ' changes') + ' to the week?';
+  }
+
+  // "Tuesday lunch is now curd rice" — the toast after a save, named off
+  // the rows the server says it APPLIED (card 8's own wording). Several
+  // say how many, because the card's rows list them.
+  // The confirmation, built off the rows the SERVER says it applied —
+  // never off the card's own rows, which are what was asked for. The
+  // wording is unchanged from the in-card Save this card replaced
+  // (S10's savedLine for one night, a plain count for several): this
+  // card moved where Save lives, and rewording a shipped sentence under
+  // it would be a copy change nobody asked for.
+  function changeCardSavedLine(applied) {
+    applied = applied || [];
+    if (applied.length === 1 && applied[0].meal && applied[0].date) {
+      return savedLine(applied[0].meal, 'put on ' + dayName(applied[0].date, { weekday: 'long' }));
+    }
+    if (applied.length) {
+      return applied.length + (applied.length === 1 ? ' night was' : ' nights were') + ' changed';
+    }
+    return '';
+  }
+
   function changeCardHtml(proposal, state) {
     // Once saved or left, the card is a record: no options, no Another.
     var settled = state.saved || state.left;
@@ -22744,15 +22892,12 @@
     } else if (state.left) {
       foot = '<div class="ask-change-foot"><span class="ask-change-done">' + (state.putBack ? 'Back as it was.' : 'Left as it was.') + '</span></div>';
     } else {
-      var canSave = proposal.rows.some(function (r) { return r.action === 'change' && r.candidates && r.candidates.length && !r.problem; });
-      // Not while Another is still finding: a save that races the re-pick
-      // would write one dish and show another.
-      var held = state.saving || state.busyRow !== null;
-      foot = '<div class="ask-change-foot">' +
-        (canSave ? '<button type="button" class="ask-change-save" data-change-save' + (held ? ' disabled' : '') + '>' +
-          (state.saving ? 'Saving…' : 'Save changes') + '</button>' : '') +
-        '<button type="button" class="ask-change-leave" data-change-leave>Leave the week as it was</button>' +
-      '</div>';
+      // The card's own Save and Leave are GONE (card 8, 2026-10-05): both
+      // are in the Ask sheet's dock now, where they are the first thing
+      // the thumb reaches rather than a quiet pair at the foot of a card
+      // that has already scrolled. The card is the record of what would
+      // change; the dock is what changes it.
+      foot = '';
     }
     return rows + foot;
   }
@@ -22774,8 +22919,68 @@
         var target = card.parentElement && card.parentElement.parentElement;
         if (target) target.scrollTop = target.scrollHeight;
       });
+      renderAskSaveDock();
     }
+    state.draw = draw;
+    // The card with changes still waiting: what the dock is about, and
+    // what the three closing doors ask about. One at a time — a new card
+    // replaces the old, exactly as the sheet shows one reply at a time.
+    askChangeDock = state;
     draw();
+  }
+
+  // ---------- The pinned Save (card 8, 2026-10-05) ----------
+  // Gowthami's household, 2026-10-04: "Has to click save changes, but it's
+  // not obvious, kind of hidden for after the draft is done." The Save was
+  // a quiet button at the foot of the change card, so a household could
+  // read a card describing a change, close the sheet and believe the week
+  // had changed when nothing was written. That is a data-honesty failure
+  // (DESIGN_SYSTEM §8), not a styling one — the same shape as a chat reply
+  // claiming a change that had not landed (agent.verify_change_claim),
+  // one screen out.
+  var askChangeDock = null;
+
+  // Whether a card is sitting there with changes nobody has saved. The
+  // one question the dock, the dialog and all three closing doors ask.
+  function askChangeUnsaved() {
+    var st = askChangeDock;
+    if (!st || st.saved || st.left) return null;
+    var pending = changeCardPending(st.proposal);
+    return pending.length ? { state: st, rows: pending } : null;
+  }
+
+  function renderAskSaveDock() {
+    var dock = document.getElementById('ask-save-dock');
+    if (!dock) return;
+    var waiting = askChangeUnsaved();
+    if (!waiting) {
+      dock.innerHTML = '';
+      dock.hidden = true;
+      return;
+    }
+    var st = waiting.state;
+    // Not while Another is still finding: a save that races the re-pick
+    // would write one dish and show another. Unchanged rule, new home.
+    var held = st.saving || st.busyRow !== null;
+    dock.hidden = false;
+    dock.innerHTML =
+      '<p class="ask-save-note">' + escapeHtml(changeCardNotSavedLine(waiting.rows)) + '</p>' +
+      '<button type="button" class="dock-secondary" data-ask-save-keep' + (held ? ' disabled' : '') + '>' +
+        'Keep the week as it was</button>' +
+      '<button type="button" class="dock-primary" data-ask-save-go' + (held ? ' disabled' : '') + '>' +
+        escapeHtml(st.saving ? 'Saving…' : changeCardSaveLabel(waiting.rows.length)) + '</button>';
+    var go = dock.querySelector('[data-ask-save-go]');
+    // Returns the promise, so a caller (and the harness) can tell when
+    // the write has landed. A click handler's return value is ignored by
+    // the browser, and swallowing it is how a save becomes unobservable.
+    if (go) go.addEventListener('click', function () { return saveChangeCard(st); });
+    var keep = dock.querySelector('[data-ask-save-keep]');
+    if (keep) keep.addEventListener('click', function () {
+      st.left = true;
+      askChangeDock = null;
+      if (st.draw) st.draw();
+      renderAskSaveDock();
+    });
   }
 
   function wireChangeCard(card, state, draw) {
@@ -22813,62 +23018,61 @@
           });
       });
     });
-    var save = card.querySelector('[data-change-save]');
-    if (save) {
-      save.addEventListener('click', function () {
-        if (state.saving) return;
-        state.saving = true;
+  }
+
+  // The write, its own function since card 8 (2026-10-05) so the dock's
+  // Save and the closing dialog's Save are one code path rather than two
+  // that can drift about what they write or what they then say.
+  function saveChangeCard(state) {
+    if (!state || state.saving) return Promise.resolve(false);
+    var pid = state.proposal.proposal_id;
+    var draw = state.draw || function () {};
+    state.saving = true;
+    draw();
+    return postJson('/api/chat/proposals/' + encodeURIComponent(pid) + '/apply', {})
+      .then(function (out) {
+        state.saving = false;
+        state.refused = (out && out.refused) || [];
+        if (!out || out.status === 'nothing') {
+          state.left = true;
+          askChangeDock = null;
+          draw();
+          showToast('Nothing to change — the week already says that.');
+          return false;
+        }
+        if (out.status === 'refused') {
+          // Every row was stopped by a gate (an allergen, someone's
+          // veto): nothing written, and the rows say why.
+          state.left = true;
+          askChangeDock = null;
+          draw();
+          // No rows means the route's own backstop answered: the
+          // server's sentence is the message.
+          showToast(state.refused.length
+            ? 'I left the week as it was — ' + state.refused[0].why + '.'
+            : out.message, null, 6000);
+          return false;
+        }
+        state.saved = true;
+        state.proposal = out.proposal || state.proposal;
+        askChangeDock = null;
         draw();
-        postJson('/api/chat/proposals/' + encodeURIComponent(pid) + '/apply', {})
-          .then(function (out) {
-            state.saving = false;
-            state.refused = (out && out.refused) || [];
-            if (!out || out.status === 'nothing') {
-              state.left = true;
-              draw();
-              showToast('Nothing to change — the week already says that.');
-              return;
-            }
-            if (out.status === 'refused') {
-              // Every row was stopped by a gate (an allergen, someone's
-              // veto): nothing written, and the rows say why.
-              state.left = true;
-              draw();
-              // No rows means the route's own backstop answered: the
-              // server's sentence is the message.
-              showToast(state.refused.length
-                ? 'I left the week as it was — ' + state.refused[0].why + '.'
-                : out.message, null, 6000);
-              return;
-            }
-            state.saved = true;
-            state.proposal = out.proposal || state.proposal;
-            draw();
-            var applied = (out.proposal && out.proposal.applied) || [];
-            applied.forEach(function (a) { markRecentlyChanged(a.date, a.slot); });
-            // One night changed says the dish and the night; several say
-            // how many, because the card's own rows list them.
-            var appliedSaid = applied.length === 1 && applied[0].meal
-              ? savedLine(applied[0].meal, 'put on ' + dayName(applied[0].date, { weekday: 'long' }))
-              : (applied.length
-                ? applied.length + (applied.length === 1 ? ' night was' : ' nights were') + ' changed'
-                : '');
-            toastSaved(appliedSaid,
-              { label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);
-            if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
-            else refreshDishIndex();
-          })
-          .catch(function (err) {
-            state.saving = false;
-            draw();
-            showToast(err && err.message ? err.message : 'That didn’t save — try again.');
-          });
+        var applied = (out.proposal && out.proposal.applied) || [];
+        applied.forEach(function (a) { markRecentlyChanged(a.date, a.slot); });
+        // Named off the rows the server says it APPLIED, through the same
+        // one builder the dock's own count comes from.
+        toastSaved(changeCardSavedLine(applied),
+          { label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);
+        if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
+        else refreshDishIndex();
+        return true;
+      })
+      .catch(function (err) {
+        state.saving = false;
+        draw();
+        showToast(err && err.message ? err.message : 'That didn’t save — try again.');
+        return false;
       });
-    }
-    var leave = card.querySelector('[data-change-leave]');
-    if (leave) {
-      leave.addEventListener('click', function () { state.left = true; draw(); });
-    }
   }
 
   function undoChangeCard(state) {
@@ -23359,6 +23563,10 @@
     if (context) setAskContext(context);
     setAskBackLabel(askBackLabel(askContext));
     openSheet(askSheet, askScrim);
+    // Changes still waiting from before the sheet was closed: the dock
+    // says so again (card 8). Closing the sheet never threw the proposal
+    // away, so neither does reopening.
+    renderAskSaveDock();
     if (!askAlreadyOpen) warmAskCache();
     if (!askSheetHistoryPushed) {
       window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
@@ -23436,15 +23644,94 @@
     setAskContext(null);
   }
 
-  askScrim.addEventListener('click', closeAskSheet);
-  document.getElementById('ask-sheet-handle').addEventListener('click', closeAskSheet);
-  document.getElementById('ask-sheet-back').addEventListener('click', closeAskSheet);
+  // ---------- Closing the sheet with changes waiting (card 8) ----------
+  // Every door a PERSON closes the sheet by goes through here: the scrim
+  // tap, the handle, the Back button, Escape, and the back gesture
+  // (the shell's one popstate listener, at the top of this file). Four of
+  // the five called closeAskSheet directly and the fifth still does — the
+  // guard is on the DOORS rather than inside closeAskSheet, because that
+  // function is also called ~30 times programmatically (a sent message,
+  // another sheet opening over this one, an action card jumping tabs),
+  // and asking "save your changes?" there would be asking about a close
+  // nobody did.
+  //
+  // A guard on one of five doors is the bug still shipping, so there is
+  // exactly one of these and every door calls it.
+  var askSaveScrim = document.getElementById('ask-save-scrim');
+  var askSaveDialog = document.getElementById('ask-save-dialog');
+
+  function askSaveDialogIsDown() {
+    return !askSaveDialog || askSaveDialog.hidden;
+  }
+
+  function closeAskSaveDialog() {
+    if (!askSaveScrim) return;
+    closeSheet(askSaveDialog, askSaveScrim);
+  }
+
+  // Returns nothing: the answer arrives later, through the dialog's own
+  // two handlers, which is why the sheet is left standing here.
+  function askSheetCloseRequested() {
+    var waiting = askChangeUnsaved();
+    if (!waiting) { closeAskSheet(); return; }
+    // No dialog in the document (an older cached shell.html) — close, as
+    // it did before this card. NOT "fail closed and leave the sheet up",
+    // which discard_draft's own guard does for a DESTRUCTIVE answer: this
+    // one is not destructive. Closing the sheet does not throw the
+    // proposal away — askChangeDock outlives it and openAskSheet draws
+    // the dock again — so refusing to close would trap somebody in a
+    // sheet whose Save button that same stale HTML has not got either.
+    if (!askSaveDialog) { closeAskSheet(); return; }
+    document.getElementById('ask-save-title').textContent =
+      changeCardAskLine(waiting.rows.length);
+    document.getElementById('ask-save-dialog-note').textContent =
+      changeCardNotSavedLine(waiting.rows);
+    openSheet(askSaveDialog, askSaveScrim);
+    document.getElementById('ask-save-do').focus();
+  }
+
+  if (askSaveScrim) {
+    // The scrim and Escape are "I did not mean to close" — the sheet
+    // stays up, with the dock still showing what is waiting. Neither is
+    // read as "don't save": throwing a household's changes away on a
+    // mis-tap is the thing this dialog exists to prevent.
+    askSaveScrim.addEventListener('click', function () { closeAskSaveDialog(); });
+    document.getElementById('ask-save-dont').addEventListener('click', function () {
+      var waiting = askChangeUnsaved();
+      closeAskSaveDialog();
+      if (waiting) {
+        waiting.state.left = true;
+        askChangeDock = null;
+        if (waiting.state.draw) waiting.state.draw();
+      }
+      renderAskSaveDock();
+      closeAskSheet();
+    });
+    document.getElementById('ask-save-do').addEventListener('click', function () {
+      var waiting = askChangeUnsaved();
+      closeAskSaveDialog();
+      if (!waiting) { closeAskSheet(); return; }
+      // Returned for the same reason the dock's own Save returns it.
+      return saveChangeCard(waiting.state).then(function () { closeAskSheet(); });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !askSaveDialog.hidden) closeAskSaveDialog();
+    });
+  }
+
+  askScrim.addEventListener('click', askSheetCloseRequested);
+  document.getElementById('ask-sheet-handle').addEventListener('click', askSheetCloseRequested);
+  document.getElementById('ask-sheet-back').addEventListener('click', askSheetCloseRequested);
   // Escape closes the sheet at every width now — any keyboard can be
   // attached to any of them, and the sheet is the only ask surface there
   // is (2026-09-11; there used to be a permanent desktop column this
   // didn't apply to).
+  // Gated on the save dialog being down as well: both listeners are on
+  // `document`, and stopPropagation does NOT stop a sibling listener on
+  // the same element — without the gate, Escape would close the dialog
+  // and this would open it again in the same keypress.
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !askSheet.hidden) closeAskSheet();
+    if (e.key === 'Escape' && !askSheet.hidden && askSaveDialogIsDown()) askSheetCloseRequested();
   });
   // Enter-to-send is deliberately NOT wired here. On a touch keyboard,
   // Enter/return inserting a newline (the textarea's native,

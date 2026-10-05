@@ -100,6 +100,15 @@ function loadQuickActionChips() {}
 function closeWeekSheet() {}
 function closeMealsMoreSheet() {}
 function warmAskCache() {}
+// openAskSheet gained this callee on 2026-10-05 (card 8: the pinned
+// "Save N changes to the week"), and this harness extracts a FIXED list
+// of functions, so without it every test in the file dies on a
+// ReferenceError at module scope. A STUB rather than the real function,
+// deliberately: the real one reads #ask-save-dock out of the document and
+// only ever writes to it, and this file asserts on lastAssistantAskText
+// and askInput.value — neither of which it touches — so the stub cannot
+// make any assertion here weaker than it was.
+function renderAskSaveDock() {}
 function openSheet() {}
 function setAskBackLabel() {}
 function askBackLabel() { return 'Back'; }

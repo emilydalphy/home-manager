@@ -210,6 +210,15 @@ _FUNCTIONS = [
     # The recipe and the cooker (2026-09-18).
     "recipeTitleHtml",
     "recipeServesHtml",
+    # ADDED 2026-10-05 (card 9, "a double-batch dinner says so up top").
+    # cookRecipeHtml gained a callee, so without this the whole file is a
+    # module-scope ReferenceError — the fixed-list hazard the 2026-09-21
+    # draft-snag-flags entry names. The REAL function, not a stub,
+    # deliberately: a stub returning '' would render no line and no error,
+    # and this file's "exactly one apricot" and "only a fact under the
+    # title" tests would go on asserting a screen that no longer matches
+    # the one that ships.
+    "recipeBatchLineHtml",
     "recipeIngredientsHtml",
     "recipeIngredientRowHtml",
     "recipeStepsHtml",
@@ -676,6 +685,16 @@ def test_each_cooking_stage_has_exactly_one_apricot():
     assert _focus("recipe").count("cook-hero-action") == 1
     assert _focus("step", step=1).count("cook-hero-action") == 1
     assert _focus("step", step=2).count("cook-hero-action") == 1
+    # ...with the batch sentences on too (card 9, 2026-10-05): they are
+    # <p> lines, so they can never become a second fill. Asserted at run
+    # time rather than left to the CSS, because that is the one thing a
+    # new sentence on a screen is most likely to get wrong.
+    batched = dict(_MEAL, batch_line="Double batch: 3 tonight, 3 for Thursday’s dinner.",
+                   batch_first_step="Double batch: half goes in containers for Thursday’s dinner.",
+                   batch_last_step="Pack 3 servings for Thursday’s dinner.")
+    for stage, step in (("recipe", 0), ("step", 0), ("step", 2)):
+        html = _focus(stage, step=step, meal=batched)
+        assert html.count("cook-hero-action") == 1, (stage, step)
     # Back is an outline, not a second fill.
     back = SHELL_CSS[SHELL_CSS.index(".cook-dock-back {"):]
     back = back[:back.index("}")]
@@ -686,15 +705,34 @@ def test_each_cooking_stage_has_exactly_one_apricot():
 def test_the_recipe_carries_only_a_fact_under_the_title_never_the_batch():
     """DESIGN_SYSTEM §3 and §8: the recipe's quiet line is the recipe's own
     advance-prep note or what an earlier cook already made — a fact about
-    the cooking. The batch ("Cooking for 6 — covers Thursday"), the
-    planner's reasoning and the minutes are the plan's (2026-09-18)."""
+    the cooking. The planner's reasoning and the minutes are the plan's
+    (2026-09-18).
+
+    NARROWED 2026-10-05 (card 9, "a double-batch dinner says so up top").
+    This tripwire fired the same way its sibling in test_recipe_screen.py
+    did — not red, which is the point: its fixture carried covers_note and
+    no batch_line, so it went on passing while its own name had stopped
+    being true. Its real claim is intact and is the one worth keeping:
+    covers_note — "Cooking for 6 — covers tonight and leftovers on
+    Thursday", the PLAN's bookkeeping in the plan's own words — still
+    renders nowhere on this screen, and nor does the reasoning, the
+    minutes or batch_note. What changed is that ONE sentence about the
+    batch is now wanted here, in the chain's own numbers, and it is
+    asserted below rather than left to be inferred from an absence."""
     assert "recipe-line" not in _focus("recipe")
     assert "Quick on a Tuesday" not in _focus("recipe")
     with_batch = dict(_MEAL, covers_note="Cooking for 6 — covers tonight and leftovers on Thursday.",
-                      servings=6, batch_note="Bulk", meal_count=2)
+                      servings=6, batch_note="Bulk", meal_count=2,
+                      batch_line="Double batch: 3 tonight, 3 for Thursday’s dinner.",
+                      batch_first_step="Double batch: half goes in containers for Thursday’s dinner.",
+                      batch_last_step="Pack 3 servings for Thursday’s dinner.")
     html = _focus("recipe", meal=with_batch)
     for gone in ("Cooking for 6", "covers", "recipe-line", "Bulk", "for 6"):
         assert gone not in html, gone
+    # The one sentence, said once — and nothing of cook mode's steps here.
+    assert html.count("recipe-batch") == 1
+    assert "Double batch: 3 tonight, 3 for Thursday’s dinner." in html
+    assert "half goes in containers" not in html and "Pack 3 servings" not in html
     with_note = dict(_MEAL, advance_prep_notes="Marinate the chicken overnight.")
     assert '<p class="recipe-line">Marinate the chicken overnight.</p>' in _focus("recipe", meal=with_note)
     assert "recipe-line" not in _focus("step", step=1, meal=with_note)

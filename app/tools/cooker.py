@@ -1250,6 +1250,35 @@ def _frozen_portion_dish_by_entry(weekly_plan_id: int) -> dict[int, str]:
     return out
 
 
+def _set_batch_sentences(card: dict, source: dict, batch: dict) -> None:
+    """
+    "Double batch: 3 tonight, 3 for lunch tomorrow." — the three sentences
+    the recipe screen, Cook's Tonight card and cook mode's first and last
+    steps all read (Gowthami's household, 2026-10-04: "It needs to call
+    out that it's double the quantity because its calling for leftovers").
+
+    Written here, beside covers_note, so every batch card gets them by the
+    same rule and in the same breath — including a cook-ahead chain, whose
+    `covers_note` says something different on purpose but whose batch
+    arithmetic is identical. All three come out of one read
+    (leftovers._batch_parts), so no surface can disagree with another
+    about a number, a day or a meal.
+
+    Absent rather than empty when there is nothing to say: a plain dinner,
+    a reheat, an unhonoured chain (plan_leftover_chains never hands one
+    over) and a household with nobody on record all leave the card exactly
+    the shape it has always had, so every client reads it with a falsy
+    check and an older payload behaves as before.
+    """
+    for key, said in (
+        ("batch_line", _leftovers.batch_line(source, batch)),
+        ("batch_first_step", _leftovers.batch_first_step_note(source, batch)),
+        ("batch_last_step", _leftovers.batch_last_step_note(source, batch)),
+    ):
+        if said:
+            card[key] = said
+
+
 def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_name: dict) -> None:
     """
     The day-based half of batch cooking (Emily, 2026-09-04): one night
@@ -1289,10 +1318,9 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
             continue
         card["covers"] = []
         _scale_card_to_batch(card, batch["servings"])
-        card["covers_note"] = _leftovers.covers_note(
-            {"date": card["date"], "targets": [], "freezer_servings": batch["freezer"]},
-            batch["servings"],
-        )
+        shape = {"date": card["date"], "targets": [], "freezer_servings": batch["freezer"]}
+        card["covers_note"] = _leftovers.covers_note(shape, batch["servings"])
+        _set_batch_sentences(card, shape, batch)
 
     # A night eating a portion out of the freezer — this week's own cook put
     # it by (leftovers.FROM_FREEZER_KEY, the fold's freezer night) or a night
@@ -1349,6 +1377,7 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
                 if source.get("cook_ahead")
                 else _leftovers.covers_note(source, batch["servings"])
             )
+            _set_batch_sentences(card, source, batch)
         else:
             # Nothing countable to scale to (no members on record yet).
             # The pairing is still real, so still say it — in the words

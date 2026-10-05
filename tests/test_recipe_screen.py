@@ -121,6 +121,12 @@ _RECIPE = (
     + "function recipeCitationHtml() { return ''; }\n"
     + "".join(_extract(n) + "\n" for n in (
         "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml",
+        # recipeBatchLineHtml — the batch line under the stepper
+        # (card 9, 2026-10-05). THE REAL FUNCTION, not a stub: it is
+        # five pure lines over escapeHtml, which this harness already
+        # has, and a stub returning '' would make a test about what
+        # the screen says pass whatever the screen said.
+        "recipeBatchLineHtml",
         "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
         "recipeStepsHtml"))
 )
@@ -376,19 +382,50 @@ def test_the_meal_step_is_the_crumb_the_title_the_count_the_cards_and_the_dock()
 
 @_needs_node
 def test_nothing_about_time_or_the_batch_is_on_the_meal_step():
-    card = dict(_COOK_CARD, cook_started_at="2026-09-14T18:02:00", servings=8,
+    """NARROWED 2026-10-05 (card 9, "a double-batch dinner says so up
+    top"). This tripwire fired — not red, which is the point: its FIXTURE
+    carries no batch_line, so it went on passing while its name had
+    stopped being true. The 2026-09-18 claim it guards is intact and every
+    one of its twenty banned strings still stands — no clock, no hero, no
+    chips, no cook-ahead picker, and none of the covers_note family
+    ("enough for", "covers ", "Cooking for 8") — because what that
+    decision removed was a screen cluttered with the plan's bookkeeping.
+
+    What changed is that ONE sentence about the batch is now wanted here,
+    in the card's own words and the chain's own numbers (Gowthami's
+    household, 2026-10-04: "It needs to call out that it's double the
+    quantity because its calling for leftovers"). So the claim is now "the
+    batch is said once, in that sentence, and in nothing else" — asserted
+    below rather than left to be inferred from an absence."""
+    # default_servings moves with servings on a real batch card
+    # (cooker._scale_card_to_batch sets both to the batch total), which is
+    # what the servings reading — and so the ingredients heading — says.
+    card = dict(_COOK_CARD, cook_started_at="2026-09-14T18:02:00", servings=8, default_servings=8,
                 covers=[{"date": "2026-09-16", "slot": "dinner", "eaters": 4}],
                 covers_note="Cooking for 8 — enough for Wednesday.",
+                batch_line="Double batch: 4 tonight, 4 for Wednesday’s dinner.",
+                batch_first_step="Double batch: half goes in containers for Wednesday’s dinner.",
+                batch_last_step="Pack 4 servings for Wednesday’s dinner.",
                 cook_ahead={"days": [{"entry_id": 11, "date": "2026-09-16", "eaters": 4, "selected": True}]},
                 batch_note="Bulk", meal_count=2)
     html = _screen(_monday(_DINNER), "dinner", [card])
     for gone in ("Start at", "On the table", "Started ", "wk-stop", "wk-clock", "hero-chip", "dinner-hero",
                  "cook-ahead", "batch cook", "should it cover", "enough for", "covers ", "Cooking for 8",
-                 "for 8", "m prep", "m cook", "Bulk", "wk-meal-hero", "Emily’s cooking", "thirty minutes"):
+                 "m prep", "m cook", "Bulk", "wk-meal-hero", "Emily’s cooking", "thirty minutes"):
         assert gone not in html, gone
     assert not re.search(r"\b\d{1,2}:\d{2}\b", html), "no clock on the recipe"
     # The count is the one place the number lives — and it is the batch's.
     assert html.count("cook-serves-count") == 1
+    # The one sentence about the batch, said once. "for 8" left the banned
+    # list above because the batch SIZE is now legitimately on this screen
+    # — in the ingredients heading ("Ingredients · 8 servings") — so that
+    # string can no longer stand in for "the batch is leaking in".
+    assert html.count("recipe-batch") == 1
+    assert "Double batch: 4 tonight, 4 for Wednesday’s dinner." in html
+    assert "Ingredients &middot; 8 servings" in html
+    # ...and cook mode's own step sentences stay in cook mode.
+    assert "half goes in containers" not in html
+    assert "Pack 4 servings" not in html
 
 
 @_needs_node

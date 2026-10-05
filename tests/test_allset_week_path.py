@@ -108,8 +108,22 @@ def test_the_dock_reads_open_grocery_list_when_there_is_nothing_to_ask():
 def test_the_dock_secondary_went_with_see_the_week():
     """All set's sand "See the week" over the apricot was the only
     .dock-secondary; both are gone (2026-09-18). Rule 5 still holds on the
-    dock that is left."""
-    assert ".dock-secondary" not in SHELL_CSS and "dock-secondary" not in SHELL_JS
+    dock that is left.
+
+    NARROWED 2026-10-05 (card 8: the pinned "Save N changes to the week").
+    This tripwire fired, correctly, on `.dock-secondary` coming back — but
+    it came back on a DIFFERENT dock, the Ask sheet's, where the second
+    button is a real second path ("Keep the week as it was") and rule 5
+    forbids a second APRICOT rather than a second button. The claim this
+    test is named for is about ALL SET, so it is asserted about All set's
+    own renderers now rather than about the whole file. The rule-5
+    contrast check below is untouched."""
+    for fn in ("allSetStepHtml", "reviewDecideHtml"):
+        assert "dock-secondary" not in _extract(fn, SHELL_JS), fn
+    # And nowhere on a .wk-decide dock, which is the strip All set's own
+    # "See the week" sat on.
+    i = SHELL_CSS.index(".wk-decide")
+    assert "dock-secondary" not in SHELL_CSS[i:i + 2000]
     light, dark = _light_and_dark()
     for mode, tokens in (("light", light), ("dark", dark)):
         ratio = contrast(tokens["--on-accent-ink"], tokens["--apricot"])

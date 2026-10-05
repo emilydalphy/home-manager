@@ -63,8 +63,18 @@ _PURE = (
     + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
     + "function cookTicked() { return false; }\n"
     + _extract("isSnackSlot") + "\n"
+    # cookServesShown ADDED 2026-10-05 (card 9, "a double-batch dinner
+    # says so up top"): recipeIngredientsHtml gained it as a callee for
+    # the "Ingredients · 8 servings" heading. This file still passed
+    # without it — but only because every fixture below carries no
+    # batch_line, so the ternary short-circuits and the call is never
+    # reached. That is a latent module-scope ReferenceError waiting for
+    # whoever next gives one of these cards a batch, so it is closed here
+    # rather than left. The REAL function, not a stub: the heading's
+    # number is the one thing a stub would get wrong silently.
     + "".join(_extract(n) + "\n" for n in (
         "humanQtyAmount", "humanQtyText", "cookIngredientLabel", "cookUnscaledHtml",
+        "cookServesShown",
         "recipeIngredientRowHtml", "recipeIngredientsHtml", "mealIngredientsHtml"))
 )
 

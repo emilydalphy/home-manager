@@ -392,6 +392,219 @@ def _join_days(days: list[str]) -> str:
     return ", ".join(days[:-1]) + f", and {days[-1]}"
 
 
+# ---------- "Double batch: 4 tonight, 4 for lunch tomorrow" ----------
+# Gowthami's household, 2026-10-04: "It needs to call out that it's double
+# the quantity because its calling for leftovers." Measured on a throwaway
+# DB first (2026-10-05): a Day-0 dinner chained to Day-1's lunch for a
+# household of three comes back from get_cooker_view with servings 6 and
+# "1.5 lbs" of beef, under a "Cooking for 6" stepper, and the ONE sentence
+# that said why — covers_note — is rendered on no client surface at all
+# (grep: shell.js reads it twice, both times as the boolean `was_batch`).
+# So the cook saw doubled amounts with nothing explaining them.
+#
+# THREE SURFACES, ONE READ. The recipe screen's line, Cook's Tonight card
+# and cook mode's first and last steps all come out of _batch_parts below,
+# so they cannot disagree about a number, a day or a meal. Two copies of
+# one sentence is this codebase's named recurring bug generator.
+#
+# "ABOUT 2x" IS A BAND, AND THE CARD DOES NOT GIVE ONE. These two
+# constants are it. A household of three cooking six is 2.00x and reads as
+# double; cooking seven (3 at the table, 4 packed) is 2.33x and still
+# reads as double to anybody holding the pot. Three times the table does
+# not — that is a big batch, and saying "double" about it would be the app
+# saying a thing that isn't true (DESIGN_SYSTEM §8). Under 1.75x the word
+# overstates it in the other direction: half again is not double.
+# To reverse this, change these two numbers — nothing else reads them.
+DOUBLE_BATCH_RATIO_MIN = 1.75
+DOUBLE_BATCH_RATIO_MAX = 2.5
+
+
+def _slot_word(slot: str) -> str:
+    """"lunch" / "dinner" — the meal as a person says it, lower case,
+    because it always lands mid-sentence here."""
+    return (slot or "dinner").strip().lower() or "dinner"
+
+
+def _when_phrase(cook_date: str, target_date: str, slot: str, today: str) -> str:
+    """
+    When a leftover gets eaten, said the way a person would say it
+    (DESIGN_SYSTEM §8): "lunch tomorrow" for the next day, "Tuesday's
+    lunch" otherwise, and "lunch later today" for a lunch cooked big that
+    feeds that same evening — which _eaten_order allows and which
+    "tomorrow" would be plainly wrong about.
+
+    Relative to the COOK night, not to today: the sentence is about this
+    batch, and "tomorrow" means the day after it is cooked wherever the
+    screen is read from. The one exception is the cook night being today,
+    where "tomorrow" is both.
+    """
+    meal = _slot_word(slot)
+    if target_date == cook_date:
+        return f"{meal} later today" if cook_date == today else f"{meal} the same day"
+    if days_apart(cook_date, target_date) == 1:
+        return f"{meal} tomorrow"
+    return f"{_weekday(target_date)}’s {meal}"
+
+
+def _batch_parts(source: dict, batch: dict, today: str | None = None) -> dict | None:
+    """
+    The one read every batch sentence is built from, or None when there is
+    nothing to say.
+
+    `source` is a chains["sources"] entry (or the freezer-only shape
+    cooker.py builds for batch_for_entry); `batch` is what
+    batch_for_source / batch_for_entry answered. Returns:
+
+      {"word": "Double batch" | "Big batch",
+       "cook_servings": 3, "cook_label": "tonight" | "Thursday",
+       "targets": [{"servings": 3, "when": "lunch tomorrow"}, ...],
+       "freezer": 0, "servings": 6}
+
+    None for anything that is not a batch: no servings countable (a
+    household with nobody on record), nothing beyond this night's own
+    table, or a cook whose own table could not be counted — the same
+    silence covers_note's own `servings <= 0` fallback gives, and the same
+    silence an unhonoured chain gets for free, because
+    plan_leftover_chains never hands one to a caller.
+    """
+    today = today or date.today().isoformat()
+    servings = int(batch.get("servings") or 0)
+    cook = int(batch.get("cook_eaters") or 0)
+    extra = int(batch.get("freezer") or 0)
+    targets = batch.get("targets") or []
+    if servings <= 0 or cook <= 0:
+        return None
+    if not targets and not extra:
+        return None
+    ratio = servings / cook
+    word = ("Double batch"
+            if DOUBLE_BATCH_RATIO_MIN <= ratio <= DOUBLE_BATCH_RATIO_MAX
+            else "Big batch")
+    cook_date = source["date"]
+    return {
+        "word": word,
+        "cook_servings": cook,
+        "cook_label": "tonight" if cook_date == today else _weekday(cook_date),
+        "targets": [
+            {
+                "servings": int(t.get("eaters") or 0),
+                "when": _when_phrase(cook_date, t["date"], t["slot"], today),
+            }
+            for t in targets
+        ],
+        "freezer": extra,
+        "servings": servings,
+    }
+
+
+def _servings_words(n: int) -> str:
+    """"1 serving" / "4 servings" — agreement, because these land in a
+    sentence a person reads at the stove."""
+    return f"{n} serving" if n == 1 else f"{n} servings"
+
+
+def _join_tally(clauses: list[str]) -> str:
+    """
+    "3 tonight, 3 for lunch tomorrow" — a TALLY, so two parts take a comma
+    rather than _join_days' "and". That is the card's own locked copy
+    ("Double batch: 4 tonight, 4 for Tuesday\'s lunch") and it is the
+    right reading: these are the shares of one batch being counted off,
+    not two things being listed in a sentence. Three or more keep the
+    final "and", which is where a bare comma would start to read as a
+    sentence that had lost a word.
+    """
+    if len(clauses) < 3:
+        return ", ".join(clauses)
+    return ", ".join(clauses[:-1]) + f", and {clauses[-1]}"
+
+
+def batch_line(source: dict, batch: dict, today: str | None = None) -> str:
+    """
+    "Double batch: 3 tonight, 3 for lunch tomorrow." — the line directly
+    under the "Cooking for" stepper on the recipe, and on Cook's Tonight
+    card (Emily's card, 2026-10-05).
+
+    The numbers are the CHAIN's, never the stepper's: this night's table
+    and each leftover night's, from attendance, plus any portions put by
+    for the freezer. A cook who taps the stepper is overriding how much to
+    make; what the week is FOR does not change with it.
+
+    '' when there is nothing to say — see _batch_parts.
+    """
+    parts = _batch_parts(source, batch, today)
+    if not parts:
+        return ""
+    # "3 tonight" reads as one clause; "3 Wednesday" does not, so a cook
+    # night that is not today takes the same "for" the leftovers do. Found
+    # by a test, not by reading it back.
+    first = (f"{parts['cook_servings']} tonight" if parts["cook_label"] == "tonight"
+             else f"{parts['cook_servings']} for {parts['cook_label']}")
+    clauses = [first] + [
+        f"{t['servings']} for {t['when']}" for t in parts["targets"]
+    ]
+    said = _join_tally(clauses)
+    frozen = f", plus {parts['freezer']} for the freezer" if parts["freezer"] else ""
+    return f"{parts['word']}: {said}{frozen}."
+
+
+def _packing_phrase(parts: dict) -> str:
+    """
+    What the extra is for, as one phrase: "for lunch tomorrow", "for
+    Tuesday's lunch and the freezer", "for the freezer".
+    """
+    wheres = [f"{t['when']}" for t in parts["targets"]]
+    if parts["freezer"]:
+        wheres.append("the freezer")
+    return "for " + _join_days(wheres) if wheres else ""
+
+
+def batch_first_step_note(source: dict, batch: dict, today: str | None = None) -> str:
+    """
+    "Double batch: half goes in containers for lunch tomorrow." — cook
+    mode's first step, so the cook meets the fact at the pot rather than
+    only on the screen before it (Emily's card, 2026-10-05).
+
+    "half" ONLY when it really is half — one leftover night, no freezer
+    portion, and the two shares equal. Anything else names the servings,
+    because "half" about a third of a three-night batch is a sentence
+    somebody would act on and get wrong.
+    """
+    parts = _batch_parts(source, batch, today)
+    if not parts:
+        return ""
+    where = _packing_phrase(parts)
+    if not where:
+        return ""
+    share = sum(t["servings"] for t in parts["targets"]) + parts["freezer"]
+    is_half = (
+        len(parts["targets"]) == 1
+        and not parts["freezer"]
+        and parts["targets"][0]["servings"] == parts["cook_servings"]
+    )
+    if is_half:
+        goes = "half goes"
+    else:
+        goes = _servings_words(share) + (" goes" if share == 1 else " go")
+    return f"{parts['word']}: {goes} in containers {where}."
+
+
+def batch_last_step_note(source: dict, batch: dict, today: str | None = None) -> str:
+    """
+    "Pack 3 servings for lunch tomorrow." — cook mode's last step, which
+    is where the packing actually happens.
+    """
+    parts = _batch_parts(source, batch, today)
+    if not parts:
+        return ""
+    where = _packing_phrase(parts)
+    if not where:
+        return ""
+    share = sum(t["servings"] for t in parts["targets"]) + parts["freezer"]
+    if share <= 0:
+        return ""
+    return f"Pack {_servings_words(share)} {where}."
+
+
 def covers_note(source: dict, servings: int, today: str | None = None) -> str:
     """
     The little note that goes under the "for 6" chip on the one night this

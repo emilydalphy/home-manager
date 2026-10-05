@@ -1440,6 +1440,317 @@ why*, not duplicating the diff.
     that says so. Whoever merges both should read that seam. (4)
     `keeps_as_leftovers`' word list is a STARTING list; extend it when a
     real miss shows up.
+- **2026-10-05 — Move a meal: every day somebody is home can take it,
+  including a day with nothing planned, and a greyed day says why. Branch
+  `overnight/move-save-batch` (card 7), NOT merged at the time of
+  writing.** Loop Board, from Gowthami's household on 2026-10-04: "Move
+  function is not working and its only giving certain days and not sure
+  why it's not recommending all."
+  - **REPRODUCED FIRST on a throwaway DB, which is what identified the
+    rule to change.** A week whose Thursday had no dinner row, a Friday
+    nobody is home for (`planned_empty`) and a Saturday handed back as an
+    `open` question:
+
+    | | offered | blocked |
+    |---|---|---|
+    | before | Mon, Wed, Sat, Sun | Thu "No dinner planned" ← the bug; Fri "Nobody's home" |
+    | after | Mon, Wed, **Thu**, Sat, Sun | Fri "Nobody's home for dinner" |
+
+    So the empty-day rule was the whole of it — and the household's words
+    ("not recommending all") were exactly right.
+  - **A POSITION THE WEEK HOLDS NO ROW FOR IS A VALID DESTINATION when
+    somebody is home for it.** Nothing is there to displace, which makes
+    it the *easiest* day to move onto, not an impossible one. The day the
+    meal LEAVES is handed back as an `open` question — `plan_slot_open`,
+    inside the move's own transaction, the way `drop_dish_from_day`
+    already hands one back — rather than left genuinely absent, which is
+    the one slot state `schema.sql` says cannot exist.
+  - **`planned_empty` IS DELIBERATELY NOT WIDENED INTO.** It means nobody
+    is home, or the household asked for none of that meal, and this file's
+    own standing rule is that such a slot must never be offered as a
+    decision. Three separate bugs have already come from code treating it
+    as a missing meal; this is not a fourth.
+  - **A blocked day's reason is a LINE of its own now, under the day's
+    label, for every blocked day alike.** It used to be written OVER the
+    label for an empty or nobody-home day and UNDER it for every other, so
+    the two reasons a household most needed to read were the two that
+    replaced the day they were about.
+  - **The Move sheet never shows a blank list.** A sheet that could not be
+    fetched says so and offers Try again; a failed MOVE keeps the days it
+    was showing rather than emptying under the tap, which reads as the
+    control having worked.
+  - `tests/test_move_to_an_empty_day.py` (new) plus
+    `tests/test_move_meal_between_days.py` widened for the new rule; the
+    reproduction above is one of them, driven through the real tools.
+
+- **2026-10-05 — Chat changes to the week: a pinned "Save 2 changes to the
+  week", and a warning before leaving. Branch `overnight/move-save-batch`
+  (card 8), NOT merged at the time of writing.** Loop Board, from
+  Gowthami's household on 2026-10-04: "Has to click save changes, but it's
+  not obvious, kind of hidden for after the draft is done."
+  - **THE BUG IS DATA HONESTY, NOT STYLING, and that is what decides the
+    shape of the fix (§8).** The only Save was a quiet spruce button at the
+    FOOT of the chat change card, so a household could ask chat to change
+    the draft, read a card describing the change, close the sheet, and
+    believe the week had changed when nothing was written. Same shape as a
+    chat reply claiming a change that had not landed — which
+    `agent.verify_change_claim` already exists for, one screen out.
+  - **The dock carries it now**: an apricot "Save 2 changes to the week"
+    and a soft "Keep the week as it was" while a card has changes waiting,
+    with one line above them saying what the week still shows. The card's
+    own two buttons are gone — two Saves on one screen is two answers to
+    one question — and all three closing doors (Back, the scrim/handle,
+    and the back gesture) ask inside the app first.
+  - **THE COUNT IS ONE READ.** `changeCardPending()` is the predicate the
+    card's own `canSave` already was, given a name, and the dock's count,
+    the dialog's question, the "Not saved yet" line and the toast are all
+    built from it. A count that disagrees with what lands is worse than no
+    count at all.
+  - **The guard is on the DOORS, not inside `closeAskSheet`.** That
+    function has about thirty programmatic callers — a sent message,
+    another sheet opening over this one, an action card jumping tabs — so
+    asking there would be asking about a close nobody did. `askSheetCloseRequested`
+    is the one door-side function and all three doors go through it.
+  - **The toast is built from what LANDED, not from the card's rows**
+    (`changeCardSavedLine(applied)`), and it says the shipped sentence —
+    `savedLine(meal, 'put on Monday')` for one row, "N nights were changed"
+    for several. An earlier cut of this branch invented new wording there
+    and it was reverted: the words were already right and changing them
+    was not this card's to do.
+  - **`askSaveResolve` was DELETED rather than left standing** — machinery
+    for a promise nobody awaited, unreachable once the dialog's Save
+    returned its own. And the dock's Save now RETURNS its promise, because
+    a click handler's return value is ignored by the browser and swallowing
+    it is how a save becomes unobservable to anything that needs to know
+    it landed.
+  - **Measured against the real database rather than asserted**: with real
+    proposals made in-process, "Don't save" writes nothing and Save writes,
+    both checked against the plan's own rows.
+  - `tests/test_chat_save_changes.py` (25). **Thirteen mutations run,
+    every one biting**, red counts off the runs: the dock never rendering
+    while unsaved — i.e. main's behaviour (14), the count narrowed to one
+    row whatever is waiting (7), each of the three doors' guards removed
+    (1 each), "Don't save" writing anyway (1), the dialog's Save not
+    writing (1), the "Not saved yet" line dropped (2), the card's own Save
+    and Leave left in place (1), "Another" no longer holding the dock's
+    Save (1), the toast built off the card's rows rather than what landed
+    (2), the dock's Save swallowing its own promise (4), and the dialog
+    markup losing its container id (1).
+  - **THREE OF THOSE THIRTEEN ARE SOURCE MARKERS AND ARE SAID TO BE.**
+    The three door guards each redden exactly one test, and there is no
+    real DOM under node, so a tap on a scrim or a back gesture is not
+    reachable in this harness. What IS driven for real is the thing behind
+    all three doors — `askSheetCloseRequested` asking instead of closing,
+    and the dialog's two answers — by five behavioural tests. The doors are
+    pinned by their wiring and the guard by its behaviour, which is the
+    honest division rather than a claim that a harness tapped a scrim.
+  - **Four existing tests were NARROWED, not weakened, each with a note
+    saying what moved**: `test_ask_sheet_preset_does_not_leak_across_tabs`
+    (a stub for the new dock), `test_ask_sheet_close_target` (three markers
+    re-pointed at `askSheetCloseRequested`, which is where closing is now
+    decided), `test_allset_week_path` (its dock-secondary count narrowed to
+    the dock it is about), and `test_chat_change_card` (two markers
+    re-pointed, since the card's buttons moved rather than vanished). No
+    assertion was loosened to get green.
+  - **The dialog is a real dialog**, not the insides of one: its two ids
+    were PREPENDED to each of the five ID-scoped CSS lists that make a
+    dialog a dialog in this app (the 2026-09-13 lesson), so the exact
+    literal anchors in `test_draft_waits_for_approval` still match.
+  - Verified in a real Chromium at 390×844 in both colour schemes against a
+    throwaway DB, with the composer box and every new ink measured off
+    computed styles and recorded in `shell.css`.
+
+- **2026-10-05 — A double-batch dinner says so up top, in the chain's own
+  numbers. Branch `overnight/move-save-batch` (card 9), NOT merged at the
+  time of writing.** Loop Board, from Gowthami's household on 2026-10-04:
+  "It needs to call out that it's double the quantity because its calling
+  for leftovers."
+  - **THE CARD'S PREMISE IS UNDERSTATED, and that was measured on a
+    throwaway DB before anything was touched.** A household of three with
+    a Day-0 dinner chained to Day-1's lunch gets `servings: 6` and
+    ingredients reading "1.5 lbs" of beef under a "Cooking for 6"
+    stepper — and the one sentence that said WHY, `covers_note`
+    ("Cooking for 6 — covers tonight and leftovers on Tuesday."), is
+    rendered on **no client surface at all**. `grep covers_note
+    static/shell.js` finds it twice and NEITHER is a render: one is the
+    boolean `was_batch` inside `cookApplyServesOverride` and the other is
+    the comment two lines above it, which says in as many words that "the
+    recipe screen no longer shows it" (the 2026-09-18 core-loop re-cut
+    took the note with the hero). So the cook was not reading a small note under a
+    big list — there was no note. Doubled amounts, nothing explaining
+    them.
+  - **ONE READ, four surfaces, so no two can disagree about a number.**
+    `leftovers._batch_parts(source, batch, today)` is the one place the
+    arithmetic happens and the three sentences
+    (`batch_line`, `batch_first_step_note`, `batch_last_step_note`) are
+    each a wording of it. `cooker._set_batch_sentences` writes all three
+    beside `covers_note`, from BOTH of that function's batch doors — the
+    chain-source pass and the freezer-only pass (`FREEZER_EXTRA_KEY`, a
+    night off's portion) — so a cook-ahead chain, whose `covers_note` says
+    something different on purpose, gets the same batch arithmetic rather
+    than a second copy of it.
+  - **THE NUMBERS ARE THE CHAIN'S AND DELIBERATELY DO NOT MOVE WITH THE
+    STEPPER, and the heading beside them deliberately does.** A cook who
+    taps "Cooking for" is deciding how much to make tonight; what the week
+    is FOR has not changed, so `batch_line` holds still. The ingredients
+    heading is the opposite question — it is about the amounts directly
+    under it — so it reads `cookServesShown`, which starts at the batch
+    and follows every tap. Reading `meal.servings` there would leave the
+    heading claiming the whole batch over a list the cook had just halved.
+    Both directions are pinned, and a mutation each way bites.
+  - **"ABOUT 2x" IS TWO NAMED CONSTANTS,
+    `leftovers.DOUBLE_BATCH_RATIO_MIN/MAX` (1.75–2.5), and nothing else
+    decides the word.** Three at the table cooking six is 2.00x and seven
+    is 2.33x — both read as double to anybody holding the pot; nine is
+    three times the table and reads "Big batch", because calling that a
+    double batch would be the app saying a thing that isn't true (§8).
+    Reversing it is changing those two numbers.
+  - **WHERE IT IS SAID, and where it is not.** The recipe screen's line
+    sits directly under the stepper on both of that screen's frames
+    (`cookRecipeHtml` and the Plan tab's `mealStepHtml`, which share
+    `recipeBatchLineHtml`); Cook's Tonight card says it above the times;
+    cook mode's FIRST step carries the fact ("half goes in containers for
+    lunch tomorrow") and its LAST step the job ("Pack 3 servings for lunch
+    tomorrow"), because that is where the packing actually happens. **A
+    done Tonight card drops it** — "Double batch: 3 tonight, 3 for lunch
+    tomorrow" over "Cooked." is a reminder about work already finished.
+    **A reheat night says nothing**: nothing is cooked on one, and this app
+    is careful about that everywhere.
+  - **"half" ONLY WHEN IT REALLY IS HALF** — one leftover night, no freezer
+    portion, and the two shares equal. Anything else names the servings,
+    because "half" about a third of a three-night batch is a sentence
+    somebody would act on and get wrong.
+  - **The tally takes a COMMA for two and an "and" for three or more**
+    (`_join_tally`, deliberately not `_join_days`): "3 tonight, 3 for lunch
+    tomorrow" is the shares of ONE batch being counted off, not two things
+    being listed. That is the card's own locked copy.
+  - **The day word is relative to the COOK NIGHT, not to today** — the
+    sentence is about this batch, so "tomorrow" means the day after it is
+    cooked wherever the screen is read from. "tonight" is said only when
+    the cook night really is the household's today
+    (`cooker.household_today`, never the server's), and a lunch cooked big
+    for that same evening says "lunch later today" rather than "tomorrow",
+    which `_eaten_order` allows and which "tomorrow" would be plainly
+    wrong about.
+  - **A SENTENCE IN A `<p>`, never a tile and never a chip (rule 5)** — the
+    recipe screen's one accent is the dock's "Start cooking". Every one of
+    the three inks was chosen for its own background and measured in
+    Chromium off computed styles: `.recipe-batch` `--celadon-label` on the
+    body's ground **5.44:1 light / 8.22:1 dark**; `.cook-tonight-batch`
+    `--celadon` on `--spruce` **7.23:1 / 5.94:1** (`--celadon-label` is a
+    dark ink and near-invisible there, which is why the Tonight card does
+    not inherit the recipe's pair); `.cook-step-batch` `--celadon-label` on
+    the step card's `--surface` **5.76:1 / 7.14:1**.
+  - **ABSENT RATHER THAN EMPTY.** `_set_batch_sentences` writes a key only
+    when its sentence is non-empty, so a plain dinner, a reheat, an
+    unhonoured chain (`plan_leftover_chains` never hands one over) and a
+    household with nobody on record all leave the card exactly the shape it
+    has always had — every client reads it with one falsy check and an older
+    payload behaves as before. Said plainly because no behaviour test can
+    hold it up: `""` and absent render identically, so the mutation that
+    writes the empty string reddens nothing, and that is written into the
+    test file rather than dressed as coverage.
+  - **THE STEPPER IS UNTOUCHED** (Emily, 2026-10-04: "I like how we had a
+    servings adjustments before"). `git diff` touches neither
+    `recipeServesHtml` nor `cookStepServings` nor `.recipe-serves`, and
+    there is a test that says so by reading the source.
+  - **`covers_note` is left exactly as it was**, for the two readers it
+    still has and neither of which is a client surface: `moves.py`'s Today
+    reason line and `agent.py`'s prep-schedule context. This card does not
+    touch either. What changes is that the three COOK surfaces now say the
+    batch in their own words rather than in none.
+  - **`tests/test_double_batch_line.py` (36).** Red-against-main is not
+    quoted and is not a meaningful number for this file: it imports
+    `leftovers.batch_line` and slices `recipeBatchLineHtml` out of
+    shell.js, neither of which exists there, so against main it is a
+    collection error. The evidence is mutation: **22 run, 21 bite** — the
+    no-extra guard removed (1 red), every card given the sentences (3), the
+    numbers made to follow the stepper (1), the day and meal dropped from a
+    leftover's clause (11), the freezer clause dropped (3), the band
+    inverted (13), the line copied onto the reheat night (1), the old
+    `covers_note` printed beside it (1), the client never rendering it (3),
+    the heading dropping the size (2), the heading frozen at the chain (2),
+    "half" said whenever there is any leftover night (1), Cook's Tonight
+    card stopping (1), cook mode's two step sentences dropped (1), the cook
+    night always reading "tonight" (2), "tomorrow" measured from today (2),
+    the same-day clause removed (1), the tally joined with "and" (7),
+    servings losing its singular (1), the sentence interpolated raw (1),
+    and the freezer-only door losing its sentences (1).
+  - **TWO MUTATIONS WERE BADLY AIMED ON THE FIRST RUN and are recorded
+    rather than quietly re-run, because one of them found a real hole.**
+    "Every card given the sentences" first handed `_set_batch_sentences` a
+    shape with no targets and no freezer — which `_batch_parts` refuses —
+    so it wrote nothing and reddened 0: a badly chosen mutation, not a
+    toothless test. "The old `covers_note` printed beside it" reddened 0
+    as well, and that one WAS a hole: the card's own "the batch is said
+    ONCE" rule was pinned only one file over, in `test_recipe_screen.py`'s
+    banned-string tripwire, so a regression in the renderer would have gone
+    red in somebody else's file or not at all. A test for it now lives with
+    the card that makes the claim, and the mutation bites.
+  - **TWO existing tests were NARROWED, not weakened, and both fired the
+    same way — not red, which is the point.** Each carries a fixture with
+    no `batch_line`, so each went on passing while its own name had stopped
+    being true.
+    `test_recipe_screen.py::test_nothing_about_time_or_the_batch_is_on_the_meal_step`
+    and
+    `test_cook_journey.py::test_the_recipe_carries_only_a_fact_under_the_title_never_the_batch`
+    both guard the 2026-09-18 core-loop re-cut, and that claim is intact:
+    every banned string still stands — no clock, no hero, no chips, no
+    cook-ahead picker, no reasoning, no minutes, and none of the
+    `covers_note` family — because what that decision removed was a screen
+    cluttered with the PLAN's bookkeeping in the plan's own words. What
+    moved is that ONE sentence about the batch is now wanted there, so each
+    claim is now "the batch is said once, in that sentence, and in nothing
+    else", asserted rather than inferred from an absence. In
+    `test_recipe_screen.py` only, `"for 8"` left the banned list, because
+    the batch SIZE is now legitimately on that screen in the ingredients
+    heading and that string can no longer stand in for "the batch is
+    leaking in"; `test_cook_journey.py` keeps its own `"for 6"` ban, which
+    still holds. That file's fixture also gained `default_servings=8`
+    beside `servings=8`, because that is what a real batch card carries
+    (`cooker._scale_card_to_batch` sets both to the batch total). Nothing
+    was deleted and no assertion was loosened to get green.
+  - **`test_each_cooking_stage_has_exactly_one_apricot` gained a case
+    rather than being left to the CSS**: it now counts the fills again with
+    all three batch sentences on, on all three stages. A new sentence on a
+    screen is the thing most likely to break rule 5, and a CSS test cannot
+    see a `<p>` that turned out to be a button.
+  - **FIVE node harnesses needed a new callee and a sixth inherits one, and
+    the grep predicted four of them — the pre-flight found the fifth.**
+    Each extracts a FIXED list of shell.js functions, and `mealStepHtml`,
+    `cookRecipeHtml` and `recipeIngredientsHtml` all gained one, which is
+    a module-scope `ReferenceError` taking the whole file down — the
+    hazard the 2026-09-21 `draft-snag-flags` entry names. Measured at
+    **36 failed / 1453 passed** for the first four
+    (`test_meal_opens_the_same_way_everywhere`, `test_meals_week_day_meal`,
+    `test_real_start_time`, `test_recipe_screen`), every one
+    `recipeBatchLineHtml is not defined`; **`test_cook_journey` was the
+    fifth and was found only by running the pre-flight**, at 13 failed,
+    because its own list names `cookRecipeHtml` and my grep for the NEW
+    symbol could not see it by construction.
+    `test_leftovers_page_points_at_its_recipe` inherits the fix through
+    `test_recipe_screen`'s shared `_RECIPE` bundle.
+  - **AND ONE LATENT ReferenceError WAS CLOSED RATHER THAN LEFT.**
+    `test_meal_whats_in_it` extracts `recipeIngredientsHtml`, which gained
+    `cookServesShown` — and it passed anyway, because every fixture in it
+    carries no `batch_line`, so the ternary short-circuits and the call is
+    never reached. A green file, one `batch_line` away from a module-scope
+    crash for whoever next touches it.
+  - **Every one of those six gets the REAL function, not a stub,
+    deliberately and with a dated comment saying so.** A stub returning
+    `''` would render no line and no error, so six files would have gone
+    on asserting a screen that no longer matched the one that ships — and
+    two of them (the apricot count, "only a fact under the title") are
+    exactly the assertions a silent stub would have made meaningless. No
+    assertion in any of them changed.
+  - **Not done, named so nobody reports it as new.** Today's timeline and
+    the morning text still read `covers_note` through `moves.py`, so the
+    batch is said there in the older words; making those three surfaces say
+    the new sentence changes an outbound SMS and is a product call rather
+    than this card's. And the line is on the COOK surfaces only — the Plan
+    tab's day rows and the What we're eating list say nothing about the
+    batch, which is where `plate_note` and the reheat label already carry
+    that night's own story.
 
 - **2026-10-04 — Settings → Recipes: add from a link or a cookbook, and read
   a saved recipe. Branch `recipes-in-settings-2026-10-04`, NOT merged at the
