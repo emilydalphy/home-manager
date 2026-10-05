@@ -80,7 +80,7 @@ def _harness(*extra: str) -> str:
     names = [
         "escapeHtml", "wwkChip", "wwkFactChip", "wwkAddChip", "wwkLead", "wwkNote",
         "wwkFactsHtml", "wwkStepperHtml", "wwkSnackDishes", "wwkProteinState", "wwkMem",
-        "wwkRhythmHtml", "wwkWeeknightHtml", "wwkTasteHtml",
+        "wwkRhythmHtml", "wwkTimeLimitHtml", "wwkTasteHtml",
         "wwkCuisineStored", "wwkIsPresetCuisine", *USUAL_WEEK_FNS, *extra,
     ]
     return (
@@ -260,17 +260,8 @@ def test_lunch_out_reads_on_the_go_and_keeps_its_stored_key():
 
 # --- 5. What moved in from /meal-setup ----------------------------------------
 
-def test_the_weeknight_limit_is_in_your_rhythm():
-    html = _render("wwkRhythmHtml", MEMORY)
-    assert '<p class="wwk-lead">On a weeknight</p>' in html
-    assert '<span class="wwk-count-label">45 minutes at most</span>' in html
-    none = _render("wwkRhythmHtml", {**MEMORY, "weeknight_max_minutes": 0})
-    assert '<span class="wwk-count-label">No limit</span>' in none
-    # "No limit" and a bare "0" side by side contradicted each other
-    # (QA walk 2026-10-02): at 0 the stepper shows a dash instead.
-    assert '<span class="cook-serves-count">&ndash;</span>' in none
-    assert '<span class="cook-serves-count">0</span>' not in none
-    assert '<span class="cook-serves-count">45</span>' in html
+# The weeknight stepper tests lived here until 2026-10-05; the two time limits
+# are chips now and tests/test_rhythm_time_limits.py owns them.
 
 
 def test_the_normal_week_example_fits_any_household():
@@ -284,21 +275,6 @@ def test_a_toast_sits_above_the_cook_dock_so_back_and_next_stay_tappable():
     body = SHELL_JS[start:SHELL_JS.index("\n  }\n", start)]
     assert ".cook-focus .cook-dock" in body
     assert "toastEl.style.bottom" in body
-
-
-def test_the_weeknight_stepper_moves_in_tens_between_0_and_120():
-    out = _run(_harness("wwkSetWeeknight") + f"""
-var saves = [];
-function wwkSavePreference(section, field, value, apply) {{ saves.push([section, field, value]); apply(); }}
-prefsState.memory = {json.dumps({**MEMORY, "weeknight_max_minutes": 110})};
-wwkSetWeeknight(10);   // 120
-wwkSetWeeknight(10);   // already at the top: nothing
-prefsState.memory.weeknight_max_minutes = 0;
-wwkSetWeeknight(-10);  // already 0: nothing
-wwkSetWeeknight(10);   // 10
-console.log(JSON.stringify(saves));
-""")
-    assert out == [["rhythm", "weeknight_max_minutes", 120], ["rhythm", "weeknight_max_minutes", 10]]
 
 
 def test_a_normal_week_at_yours_is_a_box_in_your_rhythm_saved_on_blur():

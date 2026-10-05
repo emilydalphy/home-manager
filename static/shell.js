@@ -10127,15 +10127,33 @@
   ];
   // Folded in from the old /meal-setup page (Emily, 2026-09-25): the three
   // answers it held that this sheet didn't. Same keys and labels it used
-  // (meal_preferences.table_style), same 0-120 in tens for the weeknight
-  // limit (weeknight_max_minutes, 0 = no limit; app/tools/time_caps.py
-  // holds Monday-Friday dinners to it).
+  // (meal_preferences.table_style); the time limits (0 = no limit;
+  // app/tools/time_caps.py holds Monday-Friday dinners and lunches to
+  // them) are WWK_TIME_LIMITS below.
   var WWK_TABLE_STYLES = [
     { key: 'everyone_same', label: 'Everyone eats the same thing' },
     { key: 'kids_differ', label: 'The children often eat something else' },
     { key: 'plate_your_own', label: 'We put it out and everyone plates their own' }
   ];
-  var WWK_WEEKNIGHT = { step: 10, max: 120 };
+  // The two time limits, as the same chips setup asks (onboarding.html's
+  // WEEKNIGHT_MAX_OPTIONS / LUNCH_MAX_OPTIONS; 0 = no limit). Unset reads as
+  // each column's own default: dinner 0 (no cap), lunch 20 (time_caps).
+  var WWK_TIME_LIMITS = {
+    weeknight_max_minutes: {
+      label: 'Weeknight dinner', fallback: 0,
+      options: [
+        { key: 20, label: '20 min' }, { key: 30, label: '30 min' }, { key: 45, label: '45 min' },
+        { key: 60, label: '1 hour' }, { key: 0, label: 'No limit' }
+      ]
+    },
+    weekday_lunch_max_minutes: {
+      label: 'Weekday lunch', fallback: 20,
+      options: [
+        { key: 10, label: '10 min' }, { key: 20, label: '20 min' }, { key: 30, label: '30 min' },
+        { key: 0, label: 'No limit' }
+      ]
+    }
+  };
 
   // The sections, in the Preferences sheet's order, plus "Won't eat"
   // between the people and their rhythm (the household's dislikes had no
@@ -11356,9 +11374,10 @@
     var html = wwkUsualWeekHtml(mem);
     // From the old /meal-setup page (2026-09-25): the planner holds
     // Monday-Friday dinners to it (app/tools/time_caps.py).
-    html += wwkLead('On a weeknight') +
-      wwkNote('The longest a Monday-to-Friday dinner takes, start to finish.') +
-      wwkWeeknightHtml(mem.weeknight_max_minutes);
+    html += wwkLead('Time limits') +
+      wwkNote('The longest a Monday-to-Friday meal takes, start to finish.') +
+      wwkTimeLimitHtml('weeknight_max_minutes', mem.weeknight_max_minutes) +
+      wwkTimeLimitHtml('weekday_lunch_max_minutes', mem.weekday_lunch_max_minutes);
     // The line under each of these two says what the answer does (Emily,
     // 2026-09-25): the anchor sets the weekly questions' days
     // (week_intake), and an on-the-go lunch pre-ticks that day for a
@@ -11402,26 +11421,30 @@
     return html;
   }
 
-  // The weeknight limit's stepper: the same 44px-target stepper as the
-  // counts (wwkStepperHtml), in tens of minutes, 0 to 120. 0 is a real
-  // answer — no limit — so the row says so rather than showing a bare 0.
-  function wwkWeeknightHtml(value) {
-    var n = typeof value === 'number' ? value : 0;
-    return '<div class="wwk-count-row">' +
-      '<span class="wwk-count-label">' + (n ? n + ' minutes at most' : 'No limit') + '</span>' +
-      '<span class="cook-serves">' +
-        '<button type="button" class="cook-serves-btn" data-wwk="weeknight" data-delta="-' + WWK_WEEKNIGHT.step + '" aria-label="Ten minutes less"' + (n <= 0 ? ' disabled' : '') + '>&minus;</button>' +
-        '<span class="cook-serves-count">' + (n ? n : '&ndash;') + '</span>' +
-        '<button type="button" class="cook-serves-btn" data-wwk="weeknight" data-delta="' + WWK_WEEKNIGHT.step + '" aria-label="Ten minutes more"' + (n >= WWK_WEEKNIGHT.max ? ' disabled' : '') + '>+</button>' +
-      '</span>' +
-    '</div>';
+  // One time limit: a line that reads the answer back ("Weeknight dinner:
+  // 45 min or less"), then the chips setup uses. A number none of the chips
+  // expresses (35, from a sentence in setup or from chat) stays readable on
+  // the line and lights no chip, rather than being snapped to a nearby one.
+  // Unset falls back to the column's own default (lunch 20), never to
+  // "no limit"; 0 is the real "no limit" answer.
+  function wwkTimeLimitHtml(field, value) {
+    var spec = WWK_TIME_LIMITS[field];
+    var n = typeof value === 'number' && value >= 0 ? value : spec.fallback;
+    var line = spec.label + ': ' + (n ? n + ' min or less' : 'no limit');
+    return '<p class="wwk-note wwk-time-limit-line" aria-live="polite">' + escapeHtml(line) + '</p>' +
+      '<div class="wwk-chips">' +
+      spec.options.map(function (o) {
+        return wwkChip(o.label, 'data-wwk="time-limit" data-field="' + field + '" data-value="' + o.key + '"', o.key === n ? 'on' : '');
+      }).join('') + '</div>';
   }
 
-  function wwkSetWeeknight(delta) {
-    var current = typeof wwkMem().weeknight_max_minutes === 'number' ? wwkMem().weeknight_max_minutes : 0;
-    var next = Math.max(0, Math.min(WWK_WEEKNIGHT.max, current + delta));
-    if (next === current) return;
-    wwkSavePreference('rhythm', 'weeknight_max_minutes', next, function () { wwkMem().weeknight_max_minutes = next; });
+  function wwkSetTimeLimit(field, minutes) {
+    var spec = WWK_TIME_LIMITS[field];
+    if (!spec || isNaN(minutes)) return;
+    var stored = wwkMem()[field];
+    var current = typeof stored === 'number' && stored >= 0 ? stored : spec.fallback;
+    if (minutes === current) return;
+    wwkSavePreference('rhythm', field, minutes, function () { wwkMem()[field] = minutes; });
   }
 
   function wwkSaveTypicalWeek(text) {
@@ -12126,7 +12149,7 @@
         case 'cuisine-remove': return wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', value);
         case 'cuisine': return wwkToggleCuisine(value);
         case 'table-style': return wwkSetTableStyle(value);
-        case 'weeknight': return wwkSetWeeknight(parseInt(t.getAttribute('data-delta'), 10));
+        case 'time-limit': return wwkSetTimeLimit(t.getAttribute('data-field'), parseInt(value, 10));
         case 'rhythm': return wwkSetRhythm(t.getAttribute('data-field'), value);
         case 'cooking-who': return wwkSetCookingWho(value);
         case 'lunch': return wwkSetLunch(member, value);

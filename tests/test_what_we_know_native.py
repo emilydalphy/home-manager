@@ -176,7 +176,7 @@ def test_copy_is_kitchen_table_not_form_labels():
         assert f"'{label}'" not in WWK and f">{label}<" not in WWK, f"form label {label!r} survived"
     # Reworded 2026-09-25 (Emily, Preferences alignment): "Excited about" ->
     # "Cuisines you like", "Each week I plan" -> "Different dishes a week",
-    # and "Meals eaten together" left (nothing reads it); "On a weeknight",
+    # and "Meals eaten together" left (nothing reads it); "On a weeknight" (now "Time limits", 2026-10-05),
     # "At the table" and "A normal week at yours" came in from /meal-setup.
     # UPDATED 2026-09-30: "When dinner lands" is Your rhythm's Dinner time
     # row, and "Different dishes a week" is the usual week's variety (the
@@ -185,7 +185,7 @@ def test_copy_is_kitchen_table_not_form_labels():
                  "Lunch, on a normal day", "Roughly how long",
                  "How meals lean", "Cuisines you like", "Rounding out meals", "Different snacks a week",
                  "In your kitchen", "Anything else", "Paste a whole list",
-                 "On a weeknight", "At the table", "A normal week at yours"):
+                 "Time limits", "At the table", "A normal week at yours"):
         assert lead in WWK, f"lead-in {lead!r} missing"
     assert "Tap anything to change it. It saves as you go." in WWK, "the one line under the title"
     assert "Things I never suggest" in WWK, "an empty Won't eat says what it does, not 'Not set yet'"
@@ -267,7 +267,9 @@ CHECKLIST = {
     "cooking role who": ("data-wwk=\"cooking-who\"", "cooking_role: 'one_person', cooking_role_who: name"),
     "dinner window": ("data-field=\"dinner_window\"", "/api/onboarding/rhythm"),
     "planning anchor": ("data-field=\"planning_anchor\"", "/api/onboarding/rhythm"),
-    "weeknight limit": ("data-wwk=\"weeknight\"", "wwkSavePreference('rhythm', 'weeknight_max_minutes'"),
+    # Chips since 2026-10-05: one handler for both limits, field in the markup.
+    "weeknight limit": ("data-field=\"' + field + '\"", "wwkSavePreference('rhythm', field, minutes"),
+    "weekday lunch limit": ("data-wwk=\"time-limit\"", "wwkSavePreference('rhythm', field, minutes"),
     "typical week": ("data-wwk-input=\"typical_week\"", "wwkSavePreference('rhythm', 'typical_week'"),
     "leftovers stance": ("data-field=\"leftovers_stance\"", "field === 'leftovers_stance' ? 'taste' : 'rhythm'"),
     # WWK_MAX_PREP_DAYS left with the two-day cap (2026-09-18, Card 4 — "any
