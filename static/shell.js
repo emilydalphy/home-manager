@@ -15037,7 +15037,15 @@
       // "Chicken Skewers was swapped in" — the pick's own name, and "in"
       // rather than the sweep's bare "swapped" because the dish named is
       // the one arriving, not the one leaving (rule 1: clear beats warm).
-      toastSaved(savedLine(picked.meal, 'swapped in'),
+      //
+      // A swap that changed MORE than one meal says the server's own
+      // sentence instead ("Swapped to Chana Masala for Monday dinner and
+      // Tuesday lunch.", swap_in_place.swapped_said): a dinner cooked
+      // double for the next day's lunch is one pot and two meals, and a
+      // toast naming one of them is the bug the server fix is for
+      // (2026-10-04). Built there, beside the rows that were written,
+      // because it counts meals.
+      toastSaved(out.said || savedLine(picked.meal, 'swapped in'),
         { label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);
       await loadWeekMenu(panel);
       if (weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();
@@ -16991,12 +16999,17 @@
         date: day.date, slot: slot,
         avoid: data.avoid || carried, reason: data.reason || '', canUndo: true
       };
-      spliceSwappedDay(data.day);
+      // Every day the swap changed — one, or all of a cook and the meals
+      // eating its leftovers (2026-10-04).
+      (data.days || [data.day]).forEach(spliceSwappedDay);
       renderMealsStep(panel);
       // S10 (Emily, 2026-09-13): the card's own line says why it changed;
       // this names the dish that landed, and offers the same Undo the
-      // line does — two doors to one undo, the same eight seconds.
-      toastSaved(savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in'),
+      // line does — two doors to one undo, the same eight seconds. A swap
+      // that changed more than one meal says the server's own sentence
+      // instead (swap_in_place.swapped_said), for the reason runSwapPick
+      // gives.
+      toastSaved(data.said || savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in'),
         { label: 'Undo', onClick: function () { runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
       // Then the rest of the week, quietly: a swap can change the badge,
       // the subtitle, the draft's clash line and Kitchen's reading of the

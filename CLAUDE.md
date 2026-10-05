@@ -1161,6 +1161,285 @@ why*, not duplicating the diff.
   - **Two apparent bugs in that drive were TEST-SCRIPT ARTIFACTS, named so nobody re-finds them as real.** Playwright auto-scrolls a click target into view, zeroing `#prefs-rows.scrollTop` before the click, which made the scroll restore read 0 — traced working at 178 and at 140 across the ✕, the chevron and the gesture. And `[data-tips="open"]` matches the ask sheet's own `#ask-tips-btn` first in document order, so it has to be scoped to `#prefs-rows`. Worth knowing with them: `page.go_back()` times out here, because the popstate does not change the URL and there is no navigation event — drive it with `page.evaluate('() => history.back()')`.
   - **THE TARGETED PRE-FLIGHT COULD NOT SEE THIS BY CONSTRUCTION, and the full suite found it: two node harnesses ran a function this card changed and died on a `ReferenceError`.** `activateTab` gained `forgetSheetLevels()` and `uwSaveSheet` gained a pop; `tests/test_allset_week_path.py` (7 tests) and `tests/test_settings_your_rhythm.py` (2) extract those for real against a hand-written list of stubs. **The pre-flight grepped for files NAMING a symbol the diff adds, and these two fail precisely because they do NOT name one** — so the sweep rule is "which harness EXTRACTS a function I modified", never "which file mentions a symbol I added". Done mechanically: 27 existing functions modified and 20 added; 23 test files mention one, and **exactly ten extract one for real** (the other 13 define their own stub of the same name, which a text match reads as an extraction). Of the ten, eight assert on the extracted TEXT without executing it or stub the function themselves, so they cannot reference an undefined name — a sound reason rather than luck, confirmed by running all 34 candidate files (**1156 passed, 0 failed**). **Stubbed in both, and NEITHER stub is a no-op, because a no-op would let the new call be deleted in silence:** allset records the call and its three exact-dict assertions carry `forgot: 1` (it is the one harness that runs the real `activateTab`), and the rhythm save's stub is faithful — it runs the stubbed closer so `closed` still counts what it counted, and records the pop, asserted 1 on a good save and 0 on a refusal, a path pinned nowhere else since this card's own file pins the DISMISS paths rather than `uwSaveSheet`. **One app change with them:** `uwSaveSheet`'s `closeUwSheet(); popSheetLevel();` is `dismissUwSheet()`, the one way out the ✕ already uses — the same two steps without the bare pop `popSheetLevelFor` exists to replace, so a save and an ✕ can never land in different places. Three mutations, all biting: `activateTab` not forgetting the stack reddens 7, a good save not popping reddens 1, a refusal popping reddens 1.
   - **Not done, deliberately:** the eight other `inset: -5px` controls that measure 42 (a sweep with its own review, and this card only declines to add a ninth); and the crumb's light-mode 4.44:1, which is a token decision rather than a one-screen hex.
+- **2026-10-05 — Swapping a dinner that feeds tomorrow's lunch changes the
+  lunch too, at batch size, from every door. Branch
+  `overnight/swap-dinner-swaps-lunch`, NOT merged at the time of writing.**
+  Loop Board bug, Phase 0. Gowthami's household, 2026-10-04: "If we change
+  one recipe that should be for dinner, then lunch the next day, it's not
+  changing the lunch the next day for the quantity and including it as
+  well."
+  - **MEASURED on an approved week before anything was touched**, through
+    the week row's own Swap (`swap_options.choose_swap_option` with no
+    `whole_dish` — a one-night dinner row sends none):
+
+    | | before | after the swap, on `main` |
+    |---|---|---|
+    | Mon dinner | Beef Chili (`make_double_for` Tue lunch) | Chana Masala |
+    | Tue lunch | Beef Chili (`links_to` Mon dinner) | **Beef Chili** |
+    | grocery | Beef 2 lbs, Kidney beans 2 cans | **Beef 1 lb, Kidney beans 1 can** + Chickpeas 2 cans |
+
+    So the lunch kept the old dish AND started buying its own ingredients
+    at one table's size, while the new dinner was written for one table
+    too. Three wrong answers from one tap.
+  - **ONE GROUP, SERVER-SIDE, AND THAT IS THE WHOLE SHAPE OF THE FIX.**
+    `swap_in_place.fed_days` — the tapped meal and every meal still ahead
+    that eats out of ITS cook — and `apply_pick` widens to it. So the four
+    doors a person reaches a swap through are covered by one change rather
+    than four: "Swap · I'll pick" (`swap_meal_in_place`), the three-picks
+    sheet (`swap_options.choose_swap_option`), the chat change card
+    (`proposals.apply_proposal`) and the chat tool
+    (`weekly_plan.swap_meal_in_plan_for_chat`). The first three share
+    `apply_pick`; the fourth names a DISH rather than a pick, so it writes
+    through `replace_dish_on_days` directly
+    (`_chat_swap_along_the_chain`), which is the same one transaction the
+    whole-dish Swap already used.
+  - **DOWNSTREAM ONLY, and that is the whole difference from
+    `chain_days`.** Swapping a REHEAT night is the household saying "not
+    Monday's chili again on Tuesday" — an answer about that one meal,
+    which leaves the cook alone and takes the night out of the chain,
+    exactly as it always has. Widening upward would rewrite Monday's
+    dinner on the strength of a tap about Tuesday's lunch.
+  - **THE PICK IS ASKED FOR THE WHOLE BATCH, not one table**, or a dinner
+    that also feeds tomorrow's lunch would be chosen and sized for two
+    people: `build_dish_swap_context` against the strictest of the group's
+    days and `batch_serves` over it — the same two the whole-dish Swap
+    already asked under. And the taste veto is applied to EVERY meal of
+    the group, not only the tapped one: a dinner and the lunch eating it
+    are two tables, and one person's veto on either rules the dish out
+    (Emily's standing rule, 2026-09-22).
+  - **A DISH THAT WON'T KEEP DOESN'T GO IN TOMORROW'S CONTAINER, and the
+    fed meal is not left as the old dish either** (criterion 5).
+    `leftovers.keeps_as_leftovers` is **a WORD LIST on purpose** — the call
+    `plates.is_low_carb` already made, for the same reasons: it runs per
+    swap, the cost of a wrong answer is one meal, and a list anyone can
+    read and argue with beats a judgement nobody can see. **POSITIVE
+    EVIDENCE ONLY, and the bias is deliberate**: an unrecognised dish
+    KEEPS, because a wrong "doesn't keep" takes a leftover lunch away from
+    a household that wanted one, and a wrong "keeps" is one soggy lunch.
+    `_KEEPS_ANYWAY` is the compound carve-out
+    (`coordination._COMPOUND_EXCEPTIONS`' own shape): a pasta salad, a
+    potato salad and a tuna salad are all made ahead on purpose. It also
+    believes a pick that volunteers `keeps_as_leftovers: false` about its
+    own dish — the generation prompt has asked for "something that keeps
+    and reheats well" on a batch since prepped lunches shipped and there
+    has never been a predicate behind it; this is the predicate.
+  - **The fed meal is then FILLED from the week's own dishes, not handed
+    back blank** — `meal_variety.repeat_for_slot`, the same rule
+    generation uses to make "a breakfast or lunch is never open" true
+    (2026-09-27), so the swap's answer and generation's own are ONE
+    answer. Held to that meal's own time cap as a FRESH cook, because
+    `time_caps` lifts a weekday lunch's 20 minutes for either end of a
+    chain and this meal is about to stop being one. With nothing to
+    repeat, the slot becomes a question. **A fed DINNER is always a
+    question rather than a repeat** (`meal_variety.NEVER_OPEN_SLOTS` is
+    breakfast and lunch): a dinner genuinely is a decision, and quietly
+    repeating one nobody asked for is the opposite of what the household
+    wants.
+  - **`weekly_plan.open_slot_instead_of` exists because `plan_slot_open`
+    alone is NOT it, and that was measured rather than reasoned.** That
+    function INSERTS, so without the delete the slot ends up holding the
+    old dish AND a question — `audit_plan_slots`' `duplicated`, and how a
+    night nobody is eating gets shopped for. Its body IS
+    `drop_dish_from_day`'s four steps, lifted out so a second caller
+    cannot drift from them, BY ID and in ONE transaction for that
+    function's own two reasons (a day legitimately holds two snacks; the
+    gap between the delete and the open row is a genuinely ABSENT slot).
+  - **`replace_dish_on_days` gained a per-item `chain`**, the one thing on
+    an item that is about the chain rather than the dish: `{}` means this
+    row LEAVES the chain (and stops counting as one of the group's own
+    meals when the others' links are worked out, so a cook whose only
+    reheat night leaves goes back to cooking for its own table), and an
+    explicit `{"links_to": …}` is carried as given — which is what the
+    UNDO of such a swap needs, since by then there is no chain on the plan
+    to re-derive one from. Absent, it is worked out from the live chains
+    as before; every other caller.
+  - **The confirmation is built beside the rows that were written, not by
+    the screen** — `swapped_said` / `refilled_said` — because it COUNTS
+    MEALS, and this app's rule is that copy which counts things is written
+    where the counting happens (`week_receipt`, `draft_opener`). "Swapped
+    to Chana Masala for Monday dinner and Tuesday lunch." — each day with
+    its own meal word, because a dinner and the lunch eating it are two
+    different meals of two different days and "Monday and Tuesday" would
+    not say which. The refill says what it PUT there rather than only what
+    it took away: "Caesar Salad won’t keep, so I’ve put Egg Wraps on
+    Wednesday lunch."
+  - **`static/shell.js` is THREE LINES**, and that is all it needed: both
+    swap toasts read the server's `said` and fall back to `savedLine`, and
+    `runSwapInPlace` splices every day the swap returned rather than
+    `data.day` alone. **The sheet's PRE-TAP line came for free, which is
+    worth knowing before somebody goes looking for the change**:
+    `swapDaysLine` already handled a group spanning meal types (written
+    for the whole-dish Swap, 2026-09-22) and `openSwapSheet` already
+    copied the response's `dates`/`meals` into the sheet's state
+    unconditionally — so the moment `swap_options` started sending them
+    for a widened plain Swap, the sheet began saying "Swapping Tuesday’s
+    dinner and Wednesday’s lunch." before the tap with no client change at
+    all. Driven under node against the payload the HTTP drive returned.
+  - **COST, measured at `sqlite3.connect` rather than at any module's
+    `get_conn`** — `_shared.py` imports `get_conn` inside the function, so
+    a module-level patch would not see those reads (the trap the
+    2026-09-11 approve-race work records). Through
+    `choose_swap_option` on a one-dinner approved week: **60 connections
+    on the merge base, 87 with the naive widening, 61 with `fed_days`
+    returning early.** `_along_chains` reads the chains AND the whole week
+    payload (`get_week_menu`), which itself reads the chains twice more, so
+    handing it every swap put three `plan_leftover_chains` reads and a
+    week payload on the COMMON path — the ordinary dinner that feeds
+    nothing. The short-circuit is EXACT rather than a heuristic, which is
+    what makes it safe: `plan_leftover_chains` honours a chain only when
+    BOTH halves agree, so a cook with no `make_double_for` of its own can
+    be nobody's source and walking downstream from it could only ever hand
+    back `[entry]`. A swap that really does widen pays the full read —
+    **62 on the merge base against 116 here** — once per tap, on a tap
+    already making a model call. Both numbers are pinned (a ceiling with a
+    lower bound, since `< 75` alone is green at zero).
+  - **THREE TRIPWIRES FIRED AND NONE WAS WEAKENED.** Two in
+    `test_menu_swap_whole_dish.py`: a plain Swap on a cook is no longer a
+    one-day swap at all, so the chain is CARRIED to the new dish rather
+    than unlinked and re-linked by Undo — what each test asserts the
+    household ends up with is unchanged and still asserted, and what was
+    dropped is the intermediate `_chain_of(home) == {}` and the `entry_id:`
+    spelling of a cook-ahead link (the reheat row is replaced in the same
+    transaction, which rewrites it as `date:slot` — the more robust form,
+    since a date:slot link survives a row being replaced and an `entry_id:`
+    one does not). The third, in `test_plan_cards_2026_09_18.py`, pinned
+    the literal `toastSaved(savedLine(picked.meal, 'swapped in'),` and is
+    narrowed to the fallback AND its preference order, which pins strictly
+    more than the old prefix did. **Found by the targeted pre-flight, not
+    predicted.**
+  - **UNPINNED NOW, AND SAID RATHER THAN DELETED.**
+    `weekly_plan.restore_leftover_chain` and `apply_pick`'s own
+    `_chain_record` read are not reached for a cook with a fed meal still
+    ahead — it widens above them — so the only shape left is a cook whose
+    fed meals are ALL already cooked, which `restore_leftover_chain`
+    declines to re-link by its own rule. Kept because it costs one read on
+    a path that has just made a model call, and because a future door
+    handing `group=[entry]` for a real chain would want it; nothing drives
+    it, so do not read its tests as coverage.
+  - `tests/test_swap_dinner_swaps_lunch.py` (40 functions, 51 cases).
+    **30 red against the merge base in a `git archive` of its own**, with
+    the five new names stubbed to merge-base BEHAVIOUR so every test
+    reaches its own
+    assertion — and the 30 decomposed rather than quoted: **25 behaviour
+    catches**, one red on the ABSENCE of `said` rather than on the joining
+    it is about, one DID NOT RAISE (it forces a failure inside
+    `replace_dish_on_days`, which a one-day swap on the merge base never
+    reaches), and three source/name markers. **TWENTY-THREE mutations run
+    and every one bites**, red counts read off the runs: the whole
+    widening a no-op (22), `keeps_as_leftovers` always True (12), a second
+    copy of the repeat rule (8), `swapped_said` without its meal words
+    (3), the undo restoring only the first row (3), the fed meal opened
+    BESIDE the old row (2), `replace_dish_on_days` ignoring a per-item
+    `chain` (2), the undo not handing the recorded chain back (2),
+    `swapped_said` joining with ", " throughout (2), and 1 each for
+    `apply_pick` not widening, `fed_days` walking both ways, the chat door
+    not widening, `keeps_as_leftovers` ignoring the pick's own answer,
+    `NEVER_OPEN_SLOTS` gaining dinner, batch serves from the whole group,
+    `_entry` unscoped by household, the sheet not naming its meals, both
+    shell.js toasts, the splice loop, `fed_days`' early return, and
+    `replace_dish_on_days` carrying `make_double_for` WITHOUT its note, and
+    a new module-level name colliding with one already in its file. The
+    note one was added because criterion 2's second clause ("shows the
+    double-batch callout") was being met and pinned by nothing, so a new
+    dinner batched and silent about it would have gone red nowhere; the
+    shadowing one because the guard's own docstring already NAMED that
+    mutation and nobody had run it, which is the same over-claim as a
+    stale count. The table is in the file's header with a row per
+    mutation, so the number can be checked against the list.
+  - **FIVE MUTATIONS REDDENED NOTHING ON A FIRST RUN AND ALL FIVE ARE
+    WRITTEN DOWN, because three were badly chosen, one was neutralised by
+    a seed, and ONE FOUND A REAL HOLE.** "apply_pick not widening" reddened
+    nothing because the other three doors all pass `group` explicitly, so
+    the `group is None` default is reached only by
+    `proposals.apply_proposal` — the fix's own fourth door — and nothing
+    drove it; `test_the_chat_change_cards_save_widens_too` closes it.
+    "NEVER_OPEN_SLOTS gains dinner" was neutralised by its own seed (with
+    only the cook and the night it feeds there is no other dinner to
+    repeat), re-seeded. "batch serves from the whole group" missed twice:
+    there are TWO copies of the `keeping` line, and even with both mutated
+    `serves` only reaches
+    `default_servings=pick.get("default_servings") or serves or 4` while
+    every pick in the file carries its own — so the docstring claiming the
+    grocery test pinned it is **corrected in place** and a test asserting
+    the SAVED recipe pins it instead. "`_entry` unscoped" was a no-op
+    `pass` ahead of the docstring. And the splice loop still reddens
+    nothing behavioural, so its guard says it is a marker.
+  - **NINE DOCSTRING LABELS WERE WRONG AND ARE CORRECTED, not softened**:
+    five labelled GUARD are red against the merge base and four labelled
+    CATCH are green there. Each now says which half is the catch, which is
+    the guard, and — where it is red for a reason other than the one it is
+    named for — says that instead of counting it as coverage. The file's
+    own header has carried a stale baseline TWICE and both are written into
+    it rather than only the first. It said "24 failed, 11 passed", which
+    summed to 35 when the file held 46 cases; corrected to "30 failed, 20
+    passed (39 functions, 50 cases)", which was measured one test before
+    the last one landed, so the failed count was right and the three
+    other numbers were each one short. **30 failed, 21 passed, 40
+    functions, 51 cases**, re-measured on the commit that ships.
+  - **Numbers, read off the runs at `TZ=America/Toronto`.** The full suite
+    was NOT run (three container restarts under memory pressure), so the
+    evidence is a targeted pre-flight: every test file naming any symbol
+    this diff ADDS or any shared name it MODIFIES. First pass, **105
+    files: 3333 passed, 1 failed** — the `test_plan_cards_2026_09_18.py`
+    tripwire above, which this did not predict — then 0 failed.
+    **THE LIST WAS THEN AUDITED RATHER THAN TRUSTED**, symbol by symbol
+    against `grep -rl --include='*.py'`, and it had three holes: the three
+    other callers of `drop_dish_from_day` (whose four steps
+    `open_slot_instead_of` lifts out), and the sixteen readers of
+    `tests/shop_harness.py`, which slices `savedLine` out of shell.js —
+    not its call sites, which is what moved, but a list that cannot be
+    shown to be complete is not a pre-flight. **124 files, 3666 passed,
+    0 failed** — 1345 + 855 (the two original chunks) + 1138 (the chunk
+    holding the new file) + 260 (the sixteen) + 68 (the three). **Said
+    precisely, because this log's own rule is that a run in a tree
+    somebody is still writing to is not evidence: `app/` and `static/` are
+    BYTE-IDENTICAL across every one of those runs** (`git diff
+    72bf6c9..HEAD -- app/ static/` is empty), and the one file that moved
+    after the first two chunks were measured —
+    `tests/test_swap_dinner_swaps_lunch.py`, a header and one added
+    assertion — is in the third chunk, which was re-measured after it. The
+    new file is 51 on the commit that ships. A belt-and-braces re-run of
+    the first two chunks on the shipping commit was started and did not
+    finish inside the session (eight pytest runs from parallel work on the
+    same box), so those two figures are the ones measured at `72bf6c9`
+    and are labelled as such rather than quietly presented as the
+    shipping commit's. (A first audit read 7, 24 and
+    8 "missing" files for three symbols and every one was a
+    `__pycache__/*.pyc` — `grep -rl` without `--include` matches compiled
+    bytecode, which is how a coverage gap can be invented out of
+    nothing.)
+  - **Driven end to end over real HTTP on a throwaway DB**, with only the
+    model call stubbed: the sheet opens naming both meals (`dates`,
+    `meals`), the tap answers `said` "Swapped to Chana Masala for Tuesday
+    dinner and Wednesday lunch.", `/api/week-menu` reads Tuesday dinner
+    **Chana Masala** and Wednesday lunch **"Leftovers — Tuesday’s Chana
+    Masala"**, `/api/grocery-list` reads **Chickpeas 4 cans and nothing
+    else** (the new recipe at batch size, no line of the old dish, and the
+    lunch holding no grocery links of its own), and `/swap-undo` puts
+    dinner, lunch AND Beef 2 lbs + Kidney beans 2 cans back together. The
+    won't-keep path drives the same way: Caesar Salad on the dinner alone,
+    Egg Wraps on the lunch, the cook down to one table, Undo exact.
+  - **Found and deliberately NOT fixed, named so nobody reports them as
+    new.** (1) The chat TOOL door has no Undo — `swap_meal_in_plan` has
+    never written a `swapped_from`, and inventing one here would be a
+    second undo mechanism rather than this card's business. (2) That door
+    is deliberately NARROW: it widens only when the slot holds exactly ONE
+    row, so a day's two snacks (or an `old_meal` naming one of them) falls
+    straight through to the ordinary swap, and it can never re-implement
+    `swap_meal_in_plan`'s own "which rows am I replacing" rule and
+    disagree with it. (3) The sibling card "Swapping the 'first meal back'
+    dinner moves the double-batch suggestion" has an unmerged branch
+    (`batch-suggestion-follows-swap-2026-10-03`, never pushed) touching the
+    same relationship; this card CARRIES `make_double_for` and
+    `make_double_note` to the new dish rather than moving a suggestion, so
+    the Notion card's "shows the double-batch callout" clause is satisfied
+    by `replace_dish_on_days`' existing write — and is PINNED rather than
+    taken on trust: the new dinner reads "I’ll set aside a double batch
+    tonight — Wednesday eats the leftovers.", and dropping the note from
+    that carry while keeping `make_double_for` reddens exactly the test
+    that says so. Whoever merges both should read that seam. (4)
+    `keeps_as_leftovers`' word list is a STARTING list; extend it when a
+    real miss shows up.
 
 - **2026-10-04 — Settings → Recipes: add from a link or a cookbook, and read
   a saved recipe. Branch `recipes-in-settings-2026-10-04`, NOT merged at the

@@ -592,7 +592,17 @@ def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():
     picked = _extract("runSwapPick", SHELL_JS)
     assert "'/swap-choose'" in picked and "option: picked.index" in picked
     assert "/swap-pick'" not in SHELL_JS and "swap-options?entry_id" not in SHELL_JS, "the duplicate routes are gone"
-    assert "toastSaved(savedLine(picked.meal, 'swapped in')," in SHELL_JS
+    # TRIPWIRE, 2026-10-04 (overnight/swap-dinner-swaps-lunch): this fired,
+    # and the claim did not move — only the call's opening moved. A swap of a
+    # cook that feeds later meals now changes all of them, so the toast says
+    # the server's own sentence for that case ("Swapped to Chana Masala for
+    # Monday dinner and Tuesday lunch.", swap_in_place.swapped_said) and falls
+    # back to THIS line for the ordinary one-meal swap. Narrowed to the
+    # fallback and its preference order, which pins strictly more than the
+    # literal `toastSaved(` prefix did: that the sheet's pick toast still names
+    # the dish that landed, and that the server's sentence wins when there is
+    # one.
+    assert "out.said || savedLine(picked.meal, 'swapped in')" in SHELL_JS
     assert "{ label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);" in SHELL_JS
     assert "'/api/cooker/check-meal'" in _extract("runMealDone", SHELL_JS), "Done is the same server tick Today's move uses"
 

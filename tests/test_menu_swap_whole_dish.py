@@ -486,16 +486,35 @@ def _chain_of(plan_id):
     return {cook: [(t["date"], t["slot"]) for t in s["targets"]] for cook, s in chains["sources"].items()}
 
 
+# TRIPWIRE, 2026-10-04 (overnight/swap-dinner-swaps-lunch): both tests
+# below fired, and neither claim moved — only the mechanism underneath it.
+# A plain Swap on a cook that feeds later meals is no longer a ONE-DAY
+# swap at all: it widens to the whole chain server-side
+# (swap_in_place.fed_days), so the chain is CARRIED to the new dish rather
+# than unlinked and then re-linked by Undo. What each test asserts about
+# what the household ends up with is unchanged and still asserted; what is
+# dropped is the intermediate `_chain_of(home) == {}` (the chain is never
+# broken now) and the `entry_id:` spelling of a cook-ahead link (the reheat
+# row is replaced in the same transaction, which rewrites its link as
+# "date:slot" — replace_dish_on_days' own documented behaviour, and the
+# more robust of the two forms, since a date:slot link survives a row
+# being replaced and an entry_id: one does not).
+#
+# The path they used to drive — apply_pick's `swapped_from.chain` plus
+# weekly_plan.restore_leftover_chain — is now reached only for a cook
+# whose fed nights are all already COOKED, where restore_leftover_chain
+# declines to re-link by its own rule. It is unpinned defence now and says
+# so at both ends; see the branch's Decision log entry.
 def test_undo_of_a_one_day_swap_of_a_cook_puts_its_leftovers_back(home):
-    """Review, 2026-09-27: the day card's Swap on a cook night unlinks the
-    nights it fed (they become ordinary nights), and its Undo put the dish
-    back cooking for one table, the leftovers never re-linked. The swap
-    records the chain; Undo re-links it and the list comes back as it was."""
+    """Review, 2026-09-27: the day card's Swap on a cook night left its
+    Undo putting the dish back cooking for one table, the leftovers never
+    re-linked. Undo puts the chain back and the list comes back as it
+    was — through the whole-chain swap since 2026-10-04."""
     _cook_and_reheat(home)
     tools.approve_weekly_plan(home, "Alex")
     before = _grocery()
     out = _swap_one(home, D1, "dinner")
-    assert out["status"] == "swapped" and _chain_of(home) == {}
+    assert out["status"] == "swapped"
     back = tools.undo_meal_swap(home, out["entry_id"])
     assert _chain_of(home) == {back["entry_id"]: [(D2, "dinner"), (D3, "dinner")]}
     links = {r["date"]: r["derived"].get("links_to") for r in _rows(home, "dinner")}
@@ -505,7 +524,11 @@ def test_undo_of_a_one_day_swap_of_a_cook_puts_its_leftovers_back(home):
     assert _grocery() == before, "the batch bought once, the leftovers nothing"
 
 
-def test_undo_relinks_an_entry_id_link_to_the_new_cook_and_keeps_cook_ahead(home):
+def test_undo_keeps_a_cook_ahead_link_pointing_at_the_restored_cook(home):
+    """Was test_undo_relinks_an_entry_id_link_to_the_new_cook_and_keeps_
+    cook_ahead. A cook-ahead pick's chain survives a swap of its cook and
+    the Undo of it, still naming the restored cook, still reading "Made
+    ahead" — in the date:slot form now (see the tripwire note above)."""
     cook = _dinner_fed_lunch(home)
     lunch = _id(home, D2, "lunch")
     conn = get_conn()
@@ -517,8 +540,9 @@ def test_undo_relinks_an_entry_id_link_to_the_new_cook_and_keeps_cook_ahead(home
     before = _grocery()
     out = _swap_one(home, D1, "dinner")
     back = tools.undo_meal_swap(home, out["entry_id"])
-    derived = next(r["derived"] for r in _rows(home, "lunch") if r["id"] == lunch)
-    assert derived["links_to"] == f"entry_id:{back['entry_id']}" and derived.get("cook_ahead") is True
+    derived = next(r["derived"] for r in _rows(home, "lunch") if r["date"] == D2)
+    assert derived["links_to"] in (f"entry_id:{back['entry_id']}", f"{D1}:dinner")
+    assert derived.get("cook_ahead") is True
     assert _chain_of(home) == {back["entry_id"]: [(D2, "lunch")]}
     assert _grocery() == before
 

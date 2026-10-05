@@ -1061,7 +1061,12 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
         out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, carry_sides=True,
                                        correct_title=False, serves=serves)
     else:
-        out = _swap.apply_pick(weekly_plan_id, entry, pick, carry_sides=True, correct_title=False)
+        # `group` (its own chain_days answer, one meal here) rather than
+        # leaving apply_pick to widen for itself: a Tweak has already read
+        # the chains and asked the model under that group's serves, so a
+        # second read would answer the same question twice.
+        out = _swap.apply_pick(weekly_plan_id, entry, pick, carry_sides=True, correct_title=False,
+                               group=group)
     out["status"] = "changed"
     out["role"] = role
     out["choice"] = choice

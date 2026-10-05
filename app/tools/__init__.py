@@ -339,6 +339,10 @@ from .leftovers import (  # noqa: F401
     batch_for_source,
     eaters_at,
     plan_leftover_chains,
+    # Whether a dish may be the thing in tomorrow's container (2026-10-04):
+    # what a swap of a cook that feeds later meals reads before it puts
+    # the new dish on them.
+    keeps_as_leftovers,
 )
 from .leftovers import covers_note as leftovers_covers_note  # noqa: F401
 # "Four dinners a week" enforced after generation (Emily, 2026-09-13) —
@@ -755,6 +759,9 @@ from .weekly_plan import (  # noqa: F401
 from .swap_in_place import (  # noqa: F401
     swap_meal_in_place,
     undo_meal_swap,
+    # Every meal still ahead that eats out of one cook (2026-10-04): what
+    # a swap of that cook widens to, from every door.
+    fed_days,
     # "Build a plan" on a blank Which days card (2026-09-26): the day's
     # left-out meals, one slot at a time, through the swap's own picker.
     fill_empty_day,
