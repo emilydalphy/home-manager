@@ -213,23 +213,36 @@ def test_a_count_written_for_a_bigger_table_is_still_divided_down(week):
 def test_a_per_portion_amount_still_scales_with_the_eaters(week):
     """
     GUARD — green on main, and the line between the two factors. A weight
-    of meat is not a count: a recipe for four eaten by three needs three
-    quarters of the chicken, and servings_scale_factor is right about all
-    of it.
+    of meat is not a count: a recipe for four eaten by six needs half again
+    as much chicken, and servings_scale_factor is right about all of it.
+
+    THE BIGGER TABLE IS THE WHOLE TEST, and the first version of it used a
+    SMALLER one (three eaters against a recipe for four) and was therefore
+    worthless: the cap is `min(1.0, household / servings)`, so below the
+    recipe's own table the two factors are the SAME NUMBER and nothing can
+    tell them apart. Measured — pointing the per-portion branch at
+    count_scale_for_entry reddened nothing at all until this was seeded the
+    other way round. Both directions are asserted now.
 
     Pinned by the mutation that points the per-portion branch at
-    count_scale_for_entry too, which leaves this at "1.5 lbs".
+    count_scale_for_entry too, which leaves the six-eater line at 1.5 lbs.
     """
-    _household("A", "B", "C")
+    _household("A", "B", "C", "D", "E", "F")
     _plan(
         week, "Roast chicken",
         [{"item": "Chicken breast", "qty": "1.5 lb", "category": "meat"}],
         4, "dinner", [0],
     )
+    _plan(
+        week, "Pulled pork",
+        [{"item": "Pork shoulder", "qty": "1.5 lb", "category": "meat"}],
+        8, "dinner", [1],
+    )
 
     tools.approve_weekly_plan(week, approved_by="A")
 
-    assert _qty("Chicken breast") == "1 lb", "1.125 lbs, rounded once for the shop"
+    assert _qty("Chicken breast") == "2.25 lbs", "six eaters, a recipe for four"
+    assert _qty("Pork shoulder") == "1 lb", "1.125 lbs — six eaters, a recipe for eight"
 
 
 def test_a_guest_night_still_buys_more(week):
