@@ -425,6 +425,34 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — The "Sunday night" CI failures were three test-clock bugs
+  and one real (paused) app bug; tests fixed, CI pins the changeover. Branch
+  `sunday-clock-tests-2026-10-05`, NOT merged at the time of writing.** Loop
+  Board bug, Phase 0. The five red checks on c40f452 were two different
+  things. (1) `straddle` (Tokyo, Kiritimati), both: the process was on
+  Monday, the household still on Sunday. `test_approve_race`'s carry-over
+  test built "last week" from `date.today()`, which on a Sunday evening is
+  the household's CURRENT week — correctly not a leftover, so nothing
+  carried. Now seeded from `household_today()` and pinned to a fixed
+  household Wednesday. `test_plan_chores`' week test caught a **real app
+  bug**: `get_chores_pending` builds its week from the server's
+  `date.today()` while the Plan band reads the household's, so from 20:00
+  every Sunday in Toronto the Chores heading names next week. Chores is
+  paused, so the app is untouched; the test now xfails (strict both ways)
+  only while the two clocks fall in different chores weeks. (2) `clock
+  (saturday)`, three setup errors: `approved_holiday_with_a_thaw` chased
+  the live "next Thanksgiving", which stops working two days before it and
+  for the eleven months after (the plain `pytest` job would have gone red
+  on 2026-10-13). Fixture now pinned to household noon 2026-10-01. CI's
+  `clock` matrix gains `sunday-night` (`pin: sundayT23:30`; conftest's
+  `_parse_pin` now takes a weekday with a time), guarded by
+  `test_ci_pins_the_sunday_night_changeover`. **Left red on purpose:** three
+  tests in `test_double_batch_line.py` (new in this batch) fail whenever the
+  two clocks are on different days, because `leftovers.batch_line` /
+  `covers_note` default "today" to the server's `date.today()` — a second
+  real app bug, live on the Cook card from 20:00 Toronto every evening
+  ("covers Monday" for tonight, "tonight" for tomorrow). Reported for its
+  own card, not fixed here.
 - **2026-10-05 — Swap sheet: "Ask for something else" becomes a labelled box
   (branch `swap-ask-box-2026-10-05`, Loop Board card).** Root cause of the
   tester's confusion (Gowthami, 10-04): the sheet's bare "Ask for something

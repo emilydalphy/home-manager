@@ -33,6 +33,7 @@ import datetime
 import threading
 
 import pytest
+from conftest import household_pin, household_today
 
 from app import tools
 from app.db import get_conn
@@ -41,7 +42,10 @@ from app.tools import attendance, grocery, leftovers, meal_plans, recipes, weekl
 
 
 def _monday() -> datetime.date:
-    today = datetime.date.today()
+    # The HOUSEHOLD's Monday, not the process's (2026-10-05): every "has
+    # this plan's week ended?" the app asks is on the household's clock, and
+    # on a Sunday evening in Toronto a UTC process is already on Monday.
+    today = household_today()
     return today - datetime.timedelta(days=today.weekday())
 
 
@@ -170,7 +174,7 @@ def test_exactly_one_caller_does_the_work_and_the_other_is_the_honest_no_op():
     assert plan["approved_by"] == winner["approved_by"]
 
 
-def test_the_carried_over_receipt_is_not_doubled_either():
+def test_the_carried_over_receipt_is_not_doubled_either(frozen_today):
     """
     Today's merge added set_aside_carried_over_items on the transition into
     approved, and carried_over_count on the result. Both are side effects
@@ -178,7 +182,14 @@ def test_the_carried_over_receipt_is_not_doubled_either():
     already-started plan is approved and left with an unbought line, then
     two callers race to approve a SECOND, also-started plan. Only the
     winner may report having set anything aside.
+
+    Pinned to a fixed Wednesday noon on the household's clock (2026-10-05).
+    It used to read the process's clock, and from 20:00 on a Sunday in
+    Toronto a UTC (or Tokyo, or Kiritimati) process is already on Monday:
+    "last week" was then the week the household is still IN, which is
+    correctly not a leftover, and nothing was carried.
     """
+    frozen_today(household_pin(12, 0, on=datetime.date(2026, 9, 16)))
     tools.add_recipe("Chicken curry", ingredients=[
         {"item": "chicken thighs", "qty": "2 lb"}, {"item": "onion", "qty": "2"},
     ])

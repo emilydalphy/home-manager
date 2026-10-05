@@ -27,6 +27,7 @@ from pathlib import Path
 
 import nodeharness
 import pytest
+from conftest import household_today
 
 from app import tools
 from app.db import get_conn
@@ -36,6 +37,11 @@ REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 
+# The PROCESS's day, on purpose and unlike the house rule in CLAUDE.md:
+# tools.get_chores_pending reads date.today() (the server's day) for its
+# due dates and groups, so this file's due-date arithmetic has to read the
+# same clock to say anything about them. See the week test below for the
+# one place where that disagrees with the household's day.
 TODAY = datetime.date.today()
 
 
@@ -120,6 +126,28 @@ def test_this_week_is_the_households_week_and_beyond_it_is_later(signed_in):
     period = tools.suggest_planning_period(plan_ahead=False)
     week_end = datetime.date.fromisoformat(period["start_date"]) + datetime.timedelta(days=6)
     body = signed_in.get("/api/chores/pending").json()
+    server_week = chores_mod._chores_week(datetime.date.today())[0]
+    if server_week != chores_mod._chores_week(household_today())[0]:
+        # A KNOWN APP BUG, recorded rather than fixed (2026-10-05; Chores is
+        # paused, so its app code is not touched). get_chores_pending builds
+        # its week from date.today() — the SERVER's day — while
+        # suggest_planning_period reads the household's. For the hours the two
+        # are on different days (Toronto from 20:00, every evening, against
+        # production's UTC container; and CI's straddle zones) AND that day
+        # change crosses the household's week boundary — a Sunday evening for
+        # a Monday-start house — the heading names NEXT week while the Plan
+        # band names this one. Strict in both directions: while the two
+        # clocks are in different weeks this must still fail, and the day it
+        # passes the bug is fixed and this branch should go.
+        if body["week_start"] == period["start_date"]:
+            pytest.fail(
+                "get_chores_pending now agrees with the household's week while the "
+                "two clocks disagree: the server-clock bug is fixed — delete this branch."
+            )
+        pytest.xfail(
+            "get_chores_pending reads the server's day, not the household's "
+            f"(server {datetime.date.today()}, household {household_today()})"
+        )
     assert body["week_start"] == period["start_date"]
     assert body["week_end"] == week_end.isoformat()
     assert body["week_label"] == period["label"]
