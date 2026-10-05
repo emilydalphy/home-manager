@@ -174,7 +174,11 @@
   // .pill/.pill-neutral/.kit-row-pill markup Inventory uses. The feature
   // itself is untouched either way: paste a link, read it, review, save
   // all still work. Flipping this back to false removes the pill.
-  var RECIPE_LINK_IN_DEVELOPMENT = true;
+  // Was `true` until 2026-10-05. "Add from a link" is a shipping path now
+  // — it is one of the four ways out of "Change recipe" (card 12), and the
+  // card's own criterion is that the pill goes with it. Left as a constant
+  // rather than deleted so the row has one line to turn it back on with.
+  var RECIPE_LINK_IN_DEVELOPMENT = false;
 
   // The notifications bell and its feed left the app with the Today
   // redesign (Emily, 2026-09-08). Today is a timeline of moves now, and
@@ -4503,6 +4507,22 @@
     // one-line finish and the way back. Cleared by any step change, and by
     // a row coming back (an undo) — see groSortAllRender.
     sortAllDone: false,
+    // "Before you shop" (2026-10-05): which of the pass's steps is on
+    // screen, and the plan whose pass this device has just finished.
+    //
+    // The INDEX is a position in the steps that still have something to
+    // ask, never a step's name — see BEFORE_SHOP_STEPS on why a step can
+    // be added at the front without touching anything that reads it.
+    //
+    // DONE is the SERVER's answer (weekly_plans.before_shop_asked_at, on
+    // the list payload as before_shop.done), and this is only the beat
+    // between finishing the pass and that answer landing. It holds a PLAN
+    // ID rather than a boolean on purpose: a new week is a new plan row,
+    // so the flag stops matching by itself and nothing has to remember to
+    // clear it — the same shape as the approved-week receipt's
+    // per-plan-id dismissal.
+    beforeShopIndex: 0,
+    beforeShopDoneFor: null,
     // What the last bulk assign overwrote: [{item_id, store, decided}] as
     // the rows were BEFORE it ran, so Undo restores each one exactly rather
     // than dumping the lot back into the to-sort queue. Cleared by the undo
@@ -4786,7 +4806,17 @@
     // slice 2, app/tools/big_meal.py): each of its lines carries
     // shop_timing 'early' | 'fresh', and this names the trips. Null on an
     // ordinary week, and the list reads exactly as it always has.
-    return { stores: stores, shopSplit: byStore.shop_split || null };
+    //
+    // beforeShop: whether the pass in front of sorting has been run for
+    // the week being shopped for, and which plan said so (card 13). This
+    // object is BUILT rather than passed through, so a key the server
+    // adds and this line does not name never reaches the screen — which
+    // is exactly what happened to before_shop on its first cut.
+    return {
+      stores: stores,
+      shopSplit: byStore.shop_split || null,
+      beforeShop: byStore.before_shop || null
+    };
   }
 
   function groNeededCount(storeData) {
@@ -5412,7 +5442,12 @@
       groceryState.step = 'list';
     }
     if (groceryState.step === 'carry' && !groceryState.carried.length) groceryState.step = 'list';
-    if (groceryState.step !== 'carry' && groceryState.step !== 'sortall') groceryState.step = 'list';
+    // The pass folds back the same way, and for the same reason: a step
+    // whose question the household answered somewhere else between
+    // opening it and this render is a screen about nothing.
+    if (groceryState.step === 'beforeshop' && !beforeShopSteps(data).length) groceryState.step = 'list';
+    if (groceryState.step !== 'carry' && groceryState.step !== 'sortall' &&
+        groceryState.step !== 'beforeshop') groceryState.step = 'list';
     var step = groceryState.step;
 
     // The root wears the band (and the gear in it); every deeper step
@@ -5447,6 +5482,7 @@
     var storesTyped = groCaptureStoresPromptInput(body);
     var substTyped = groCaptureSubstInput(body);
     if (step === 'carry') body.innerHTML = groCarryHtml(data);
+    else if (step === 'beforeshop') body.innerHTML = beforeShopBodyHtml(data);
     else if (step === 'sortall') groSortAllRender(body, data);
     else body.innerHTML = groListHtml(data);
     if (onRoot) groWatchStoreCards(body);
@@ -5507,6 +5543,15 @@
         title: 'Still on the list from last week',
         sub: groPlural(groceryState.carried.length, 'thing', 'things') + ' · still need them?'
       };
+    }
+    if (step === 'beforeshop') {
+      // The head is the PASS, not the step: "Before you shop" stays put
+      // while the screens change under it, which is what makes it read as
+      // one errand. The step's own question is the h4 at the top of the
+      // body, under the progress bar — the mockup's own structure, and it
+      // keeps the bar from saying "step 2 of 3" twice (it says it once,
+      // in its own ARIA).
+      return { back: '‹ Shop', title: BEFORE_SHOP_LABEL, sub: '' };
     }
     // 'sortall' — the only other step. "Where does this go?" was the
     // queue's question; this screen is named for what it does.
@@ -5588,6 +5633,155 @@
       }).join('') +
     '</div>' +
     '<button type="button" class="gro-sort-later" data-gro="carry-later">Decide later</button>';
+  }
+
+  // ---------- "Before you shop" ----------
+  // Loop Board 'Shop: "Before you shop" — regulars, then spices and oils,
+  // then already-have-it, ending on Sort the list' (2026-10-05).
+  //
+  // The tester's loudest complaint was that sorting is hidden: it was a
+  // quiet row in the middle of the list and nothing said it was the next
+  // step. So LIST's dock gets one apricot that says what to do next, and
+  // behind it a short pass of one-question screens ending ON that sort.
+  //
+  // THE FRAME IS THE SLICE. BEFORE_SHOP_STEPS is the ordered list of
+  // screens; each entry owns its own question and nothing else knows what
+  // is in it. A step is {key, title, line, has, body, dock} —
+  //   has(data)   whether this step has anything to ask THIS week. A step
+  //               with nothing to show is skipped entirely rather than
+  //               rendered empty, which is the card's own rule.
+  //   body(data)  the step's HTML.
+  //   dock(data)  its one primary plus whatever quiet way past it has.
+  // A NEW STEP GOES IN THIS ARRAY, AND "step 0: update your inventory" —
+  // which is coming and is deliberately not this card — GOES AT THE
+  // FRONT. Nothing here reads a step by name or by index, so putting one
+  // first costs one line.
+  //
+  // It is empty today. The three content steps (regulars, spices, already
+  // have these) are slices 2-4 of the same card and are not built, so the
+  // dock reads "Sort the list (N)" and taps straight through to SORT ALL
+  // — which is honest, and is already the whole of what the complaint
+  // asked for. The label becomes "Before you shop" by itself the moment
+  // the first step is registered here.
+  var BEFORE_SHOP_STEPS = [];
+
+  var BEFORE_SHOP_LABEL = 'Before you shop';
+
+  // The steps with something to ask this week, in order. One function, so
+  // the dock's label, the progress bar and "which screen is next" can
+  // never disagree about how many there are.
+  function beforeShopSteps(data) {
+    return BEFORE_SHOP_STEPS.filter(function (s) {
+      try { return !!s.has(data); } catch (e) { return false; }
+    });
+  }
+
+  // What LIST's one primary says and does. Three states, and the middle
+  // one is the point: a pass worth running, a pass already run, and
+  // nothing to sort at all.
+  function beforeShopDockHtml(data) {
+    var unsorted = groUnsorted(data).length;
+    if (!unsorted || groStoresPromptShouldShow()) return '';
+    if (beforeShopSteps(data).length && !beforeShopIsDone(data)) {
+      return '<button type="button" class="dock-primary" data-gro="goto-beforeshop">' +
+        escapeHtml(BEFORE_SHOP_LABEL) + '</button>';
+    }
+    return '<button type="button" class="dock-primary" data-gro="goto-sort">' +
+      'Sort the list</button>';
+  }
+
+  // Has this week's pass been run? The server's answer, or — for the beat
+  // before a re-read lands — this device's own. A household with no plan
+  // at all has nowhere to record it, so the pass is simply offered: an
+  // extra tap beats a question nobody can answer.
+  function beforeShopIsDone(data) {
+    var bs = (data && data.beforeShop) || {};
+    if (bs.done) return true;
+    return bs.weekly_plan_id != null && groceryState.beforeShopDoneFor === bs.weekly_plan_id;
+  }
+
+  // The pass is over: once per week, so say so. Both ways out of the LAST
+  // step come through here — its primary ("Sort the list") and a skip past
+  // it — and nothing else does. Sorting from the list's own row, or from
+  // the dock while the pass had nothing to ask, records nothing: the
+  // household was asked nothing, so there is nothing to say they
+  // answered. See the 'goto-sort' case.
+  //
+  // The POST is not waited on and its failure is not shown: the household
+  // is on their way to the sort and a toast about bookkeeping would stop
+  // them for nothing. A dropped write means the pass is offered again the
+  // next time the list is opened, which is the safe direction — the pass
+  // asks questions and asking twice is cheaper than never asking.
+  function beforeShopFinish() {
+    var bs = (groceryState.data && groceryState.data.beforeShop) || {};
+    if (bs.done || bs.weekly_plan_id == null) return;
+    groceryState.beforeShopDoneFor = bs.weekly_plan_id;
+    groPostEmpty('/api/grocery-list/before-shop-done').catch(function (err) {
+      console.warn('Before you shop: couldn\'t record the pass as done:', err);
+    });
+  }
+
+  // Where the pass is up to, clamped to the steps that still have
+  // something to ask — the list under it is live (another adult can tick
+  // the last spice while this screen is open), so the index is re-read
+  // against it on every render rather than trusted.
+  function beforeShopIndex(data) {
+    var steps = beforeShopSteps(data);
+    var i = groceryState.beforeShopIndex;
+    if (!(i >= 0)) return 0;
+    return Math.min(i, Math.max(0, steps.length - 1));
+  }
+
+  // The pass's position, in the app's OWN progress bar — Cook's
+  // cookProgressHtml, which is already this exact thing (one 4px segment
+  // per step, apricot up to the one you are on) and already carries the
+  // right ARIA. A second bar is how two screens end up disagreeing about
+  // which step you are on, so there is one. It is sliced into the Shop
+  // node harness (shop_harness.cook_progress) because it lives in the
+  // Cook region of this file.
+  //
+  // With one step there is no position to show, so nothing is drawn: a
+  // full bar over a one-screen pass would be saying something untrue.
+  function beforeShopProgressHtml(data) {
+    var steps = beforeShopSteps(data);
+    if (steps.length < 2) return '';
+    return cookProgressHtml(steps.length, beforeShopIndex(data));
+  }
+
+  function beforeShopBodyHtml(data) {
+    var steps = beforeShopSteps(data);
+    if (!steps.length) return '';
+    var step = steps[beforeShopIndex(data)];
+    return beforeShopProgressHtml(data) +
+      '<h4 class="gro-bs-title">' + escapeHtml(step.title) + '</h4>' +
+      '<p class="gro-bs-line">' + escapeHtml(step.line) + '</p>' +
+      step.body(data);
+  }
+
+  // The step's own dock, plus the two things every step has: one primary
+  // and one quiet way past it. The LAST step's primary is "Sort the list"
+  // — the card's own last button — so the pass ends on the thing it was
+  // in front of rather than on a screen saying it is finished.
+  function beforeShopStepDockHtml(data) {
+    var steps = beforeShopSteps(data);
+    if (!steps.length) return '';
+    var at = beforeShopIndex(data);
+    var step = steps[at];
+    var last = at >= steps.length - 1;
+    var own = step.dock ? step.dock(data, last) : '';
+    if (own) return own;
+    // The fallback, for a step that brings no dock of its own. Every step
+    // in the mockup DOES bring one, and theirs are the ones to copy: step
+    // 1 is "Add 2 to the list" over a sand "None this week", steps 2 and 3
+    // are one button each ("Next: sort the list", "Sort the list") where
+    // tapping without ticking anything IS the skip. So this pair uses only
+    // classes that already exist and are already styled — .dock-primary
+    // and .dock-link — rather than inventing a sand button for a screen
+    // no step reaches yet. (Not .gro-sort-later, which the CARRY step
+    // renders and which has no rule in shell.css at all.)
+    return '<button type="button" class="dock-primary" data-gro="bs-next">' +
+        (last ? 'Sort the list' : 'Next') + '</button>' +
+      '<div class="dock-links"><button type="button" class="dock-link" data-gro="bs-skip">Skip this</button></div>';
   }
 
   function groSortRowHtml(data) {
@@ -6861,8 +7055,15 @@
           !groceryState.spices.items.length) {
         return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>' + groAddButtonHtml();
       }
-      return groAddButtonHtml();
+      // The pass in front of sorting, or — once it is done, or when there
+      // is nothing to ask — the sort itself (beforeShopDockHtml, card 13).
+      // It is the list's ONE apricot and can never coexist with "Go to
+      // Plan" above (that branch needs an empty list; this one needs
+      // something unsorted) or with the shops question's own primary
+      // (its own guard). "Add something" stays the outline beside it.
+      return beforeShopDockHtml(data) + groAddButtonHtml();
     }
+    if (step === 'beforeshop') return beforeShopStepDockHtml(data);
     // SORT ALL writes every answer as it is tapped, so there is nothing
     // to save and no button while rows are left — the crumb is the way
     // out. At the finish the one action is the way back.
@@ -8005,11 +8206,45 @@
         activateTab('week', true);
         return;
 
-      // The "N things to sort" row is the only way in, and it opens SORT
-      // ALL — the one way to sort (Emily, 2026-09-18).
+      // SORT ALL is the one way to sort (Emily, 2026-09-18). Three things
+      // open it now: the "N things to sort" row in the list, the dock's
+      // own "Sort the list (N)", and the pass's last step.
+      //
+      // IT RECORDS NOTHING, deliberately. "Has this household been
+      // through the pass this week?" is the pass's own question, and
+      // sorting is not an answer to it — a household that taps the row,
+      // or the dock's sort while the pass had nothing to ask, has been
+      // asked nothing, so stamping the plan would be recording something
+      // that did not happen (§8). Only coming out of the pass's last step
+      // calls beforeShopFinish. The cost of that is one more tap for a
+      // household that sorts without going through the pass, which is
+      // exactly right: the pass still has its questions to ask.
       case 'goto-sort':
         goGroceryStep('sortall');
         return;
+
+      // ----- BEFORE YOU SHOP: the pass in front of sorting (card 13) -----
+      case 'goto-beforeshop':
+        groceryState.beforeShopIndex = 0;
+        goGroceryStep('beforeshop');
+        return;
+
+      // Forward through the pass. The LAST step's primary is the sort —
+      // 'goto-sort' above — so this only ever moves between steps.
+      case 'bs-next':
+      case 'bs-skip': {
+        var bsSteps = beforeShopSteps(groceryState.data);
+        var bsAt = beforeShopIndex(groceryState.data);
+        if (bsAt >= bsSteps.length - 1) {
+          beforeShopFinish();
+          goGroceryStep('sortall');
+          return;
+        }
+        groceryState.beforeShopIndex = bsAt + 1;
+        renderGrocery();
+        if (scrollEl) scrollEl.scrollTop = 0;
+        return;
+      }
 
       // One row of SORT ALL: the chip lights, the row leaves, the answer
       // is written — see groSortAllAssign. The chip is lit by hand because
@@ -10487,6 +10722,29 @@
     try { return await res.json(); } catch (err) { return null; }
   }
 
+  // wwkPost, plus a 400's own sentence as userMessage so wwkCommit's
+  // failure path shows it rather than the generic line (the shape uwPost
+  // already uses for /api/usual-week). Its own function rather than a
+  // change to wwkPost: every other caller of that one keeps the behaviour
+  // it has today.
+  async function wwkPostSaying(path, body) {
+    var res = await Api.fetch(path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    if (!res.ok) {
+      var err = new Error(path + ' ' + res.status);
+      if (res.status === 400) {
+        try {
+          var detail = (await res.json()).detail;
+          if (typeof detail === 'string' && detail) err.userMessage = detail;
+        } catch (e) { /* no body: the plain line */ }
+      }
+      throw err;
+    }
+    try { return await res.json(); } catch (err2) { return null; }
+  }
+
   function wwkAdoptMemory(result) {
     if (result && result.members) prefsState.memory = result;
   }
@@ -10584,8 +10842,28 @@
     var html = '';
     (mem.members || []).forEach(function (m) {
       var name = m.name;
+      // "Main person" (2026-10-05) — the household's own answer to "whose
+      // phone is this set up on", read straight off the payload's
+      // is_primary. A quiet .pill-neutral label rather than a chip: it is
+      // a fact about who this is, not something to do. Exactly one member
+      // carries it, and a household with nobody on record carries none.
+      var mainLabel = m.is_primary
+        ? ' <span class="pill pill-neutral wwk-person-main">Main person</span>'
+        : '';
+      // Moving it is offered to every OTHER adult. This list is already
+      // filtered to people who eat here (EATS_HERE_SQL), so every row in
+      // it qualifies on that count; the server refuses a child, a
+      // stranger and another household's member anyway, each in its own
+      // sentence, so the control only has to not offer what it can see is
+      // wrong. Not in the age group above it — "Make main person" is not
+      // an answer to "Emily is".
+      var moveMain = (!m.is_primary && String(m.age_group || '').toLowerCase() === 'adult')
+        ? '<div class="wwk-chips">' +
+            wwkChip('Make main person', 'data-wwk="primary" data-member-id="' + escapeHtml(String(m.id)) + '"', '') +
+          '</div>'
+        : '';
       html += '<div class="wwk-person">' +
-        '<p class="wwk-person-name">' + escapeHtml(name) + '</p>' +
+        '<p class="wwk-person-name">' + escapeHtml(name) + mainLabel + '</p>' +
         inviteRowHtml(inviteAdultNamed(name)) +
         '<div class="wwk-chips" role="group" aria-label="' + escapeHtml(name) + ' is">' +
           WWK_AGE_GROUPS.map(function (o) {
@@ -10604,6 +10882,7 @@
           }).join('') +
           wwkAddChip('data-wwk="add" data-kind="restriction" data-member="' + escapeHtml(name) + '"') +
         '</div>' +
+        moveMain +
       '</div>';
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
@@ -10835,6 +11114,24 @@
       (wwkMem().members || []).forEach(function (m) { if (m.name === name) m.age_group = key; });
     }, function () {
       return wwkPost('/api/memory/member/age-group', { name: name, age_group: key });
+    }, wwkAdoptMemory);
+  }
+
+  // Move the household's main person (2026-10-05). Addressed by member id,
+  // not by name — two people called Sam are indistinguishable to the rest
+  // of this app and this is the one write where that would move the wrong
+  // person. POST /api/memory/primary-member answers the whole memory
+  // payload like its two neighbours, so wwkAdoptMemory needs nothing new.
+  // A refusal is a 400 whose detail is a sentence written for a reader
+  // ("The main person needs to be one of the adults."), so it is shown as
+  // it stands; wwkCommit's own failure path reverts the optimistic flip.
+  function wwkSetPrimary(id) {
+    wwkCommit('people', function () {
+      (wwkMem().members || []).forEach(function (m) {
+        m.is_primary = String(m.id) === String(id);
+      });
+    }, function () {
+      return wwkPostSaying('/api/memory/primary-member', { member_id: parseInt(id, 10) });
     }, wwkAdoptMemory);
   }
 
@@ -12121,6 +12418,7 @@
       if (!wwkMem()) return;
       switch (what) {
         case 'age': return wwkSetAge(member, value);
+        case 'primary': return wwkSetPrimary(t.getAttribute('data-member-id'));
         case 'restriction-remove': return wwkRemoveRestriction(member, value);
         case 'dislike-remove': return wwkListRemove('wont-eat', 'dislikes', 'dislikes', value);
         case 'cuisine-remove': return wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', value);
@@ -16307,12 +16605,22 @@
     var card = isCook && cookMeal.has_full_recipe && (cookMeal.ingredients || []).length
       ? recipeIngredientsHtml(cookMeal, 'wk', false)
       : '';
-    if (!card && !canAdd) return '';
+    // "Change recipe" (card 12, 2026-10-05): under the ingredients, on
+    // every meal that HAS a recipe to change — never a reheat night, which
+    // has no cook in it (recipeIsChangeable). Offered on a past day too:
+    // the recipe is still the thing they cook from, and the sheet's own
+    // paths refuse what the plan will not take.
+    var change = canAdd || (isCook && cookMeal.has_full_recipe)
+      ? recipeChangeBtnHtml(cookMeal) : '';
+    if (!card && !canAdd && !change) return '';
     return '<section class="wk-whatsin" aria-label="Ingredients">' + card +
-      (canAdd
-        ? '<button type="button" class="wk-ing-add" data-wk-add="' + escapeHtml(slot) + '">' +
-            WK_ADD_ICON + '<span>Add something</span></button>'
-        : '') +
+      '<div class="wk-ing-acts">' +
+        (canAdd
+          ? '<button type="button" class="wk-ing-add" data-wk-add="' + escapeHtml(slot) + '">' +
+              WK_ADD_ICON + '<span>Add something</span></button>'
+          : '') +
+        change +
+      '</div>' +
     '</section>';
   }
 
@@ -20787,7 +21095,10 @@
         recipeServesHtml(meal, idx) +
         recipeBatchLineHtml(meal) +
         (meal.has_full_recipe
-          ? recipeIngredientsHtml(meal, idx, true) + recipeStepsHtml(meal, true)
+          ? recipeIngredientsHtml(meal, idx, true) +
+            // Same button, same sheet, under the same card (card 12).
+            '<div class="wk-ing-acts cook-ing-acts">' + recipeChangeBtnHtml(meal) + '</div>' +
+            recipeStepsHtml(meal, true)
           : '<p class="cook-norecipe recipe-norecipe">No saved recipe for this one — ask me for it in the chat.</p>') +
         // Where the recipe came from, with the page photo a tap away
         // (recipe photo import) — quiet, at the foot.
@@ -26691,6 +27002,378 @@
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-recipes="open"]');
     if (target) openRecipesSheet({ parent: sheetLevelHost(target) });
+  });
+
+  // ---------- "Change recipe" (card 12, Emily-approved 2026-10-04) ----------
+  //
+  // Gowthami's household: "they might like the idea of having a suggestion
+  // meal type, but they don't like that actual recipe." So one outline
+  // button under the ingredients, on BOTH screens that draw a recipe (the
+  // Plan Meal step and Cook's recipe), opening one sheet with four rows:
+  // pick from the household's own book, paste a link, tell Pomona what to
+  // change, or change the meal itself.
+  //
+  // NOT on a reheat night. There is no recipe behind a reheat — the honest
+  // answer there is to change the dinner it comes from, which the Meal
+  // step's own "See Thursday's recipe" already walks to, and which the
+  // server refuses as well as the screen hiding it.
+  //
+  // Emily's override of 2026-10-04 is why the third row is one text box and
+  // one button and no chips at all: "Build no chips... Don't add
+  // recipe-suggestion generation to the recipe writer." Every request is
+  // recorded so the common ones can become buttons later — see
+  // app/tools/recipe_change.py on how, and on the rule prose follows here.
+  var CHANGE_RECIPE_LABEL = 'Change recipe';
+  var CHANGE_RECIPE_ASK_LABEL = 'What would you change? Say it your way';
+
+  var crState = {
+    entryId: null,
+    dish: '',
+    view: 'rows',      // rows | pick | ask
+    search: '',
+    busy: false,
+    said: '',          // a refusal or a block, in the server's own words
+    requestId: null    // the rewrite just made, for the undo chip
+  };
+  var crSheetEl = null;
+  var crScrimEl = null;
+
+  // Whether this screen's meal has a recipe to change at all. A reheat
+  // night, a grab-and-go snack and a slot with nothing planned on it each
+  // have no cook in them, so none of them is offered the button — the same
+  // reading mealRecipeFor already makes for the recipe itself.
+  function recipeIsChangeable(meal) {
+    return !!(meal && meal.entry_id !== null && meal.entry_id !== undefined &&
+      !meal.is_leftovers && meal.has_full_recipe);
+  }
+
+  // The button. .wk-ing-add's own outline shape — surface fill, hairline
+  // edge, 44px (Rule 6) — rather than a new one, so it reads as the plain
+  // control it is and the screen's one apricot stays in the dock (Rule 5).
+  function recipeChangeBtnHtml(meal) {
+    if (!recipeIsChangeable(meal)) return '';
+    return '<button type="button" class="wk-ing-add recipe-change-btn" data-cr="open" ' +
+      'data-entry-id="' + escapeHtml(String(meal.entry_id)) + '" ' +
+      'data-dish="' + escapeHtml(meal.meal || '') + '">' +
+      '<span>' + escapeHtml(CHANGE_RECIPE_LABEL) + '</span></button>';
+  }
+
+  function buildChangeRecipeSheet() {
+    if (crSheetEl) return;
+    crScrimEl = document.createElement('div');
+    crScrimEl.id = 'cr-scrim';
+    crScrimEl.hidden = true;
+    crSheetEl = document.createElement('div');
+    crSheetEl.id = 'cr-sheet';
+    crSheetEl.hidden = true;
+    crSheetEl.setAttribute('role', 'dialog');
+    crSheetEl.setAttribute('aria-modal', 'true');
+    crSheetEl.setAttribute('aria-labelledby', 'cr-title');
+    crSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="cr-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="cr-title">Change the recipe</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="cr-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="recipes-body cr-body" id="cr-body"></div>';
+    document.body.appendChild(crScrimEl);
+    document.body.appendChild(crSheetEl);
+    crScrimEl.addEventListener('click', closeChangeRecipeSheet);
+    crSheetEl.querySelector('#cr-handle').addEventListener('click', closeChangeRecipeSheet);
+    crSheetEl.querySelector('#cr-close').addEventListener('click', closeChangeRecipeSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && crSheetEl && !crSheetEl.hidden) closeChangeRecipeSheet();
+    });
+    crSheetEl.addEventListener('click', onChangeRecipeClick);
+    // The search filters as it is typed; the ask box is read on the tap.
+    crSheetEl.addEventListener('input', function (e) {
+      if (!e.target || e.target.id !== 'cr-search') return;
+      crState.search = e.target.value;
+      var list = crSheetEl.querySelector('#cr-picklist');
+      if (list) list.innerHTML = changeRecipePickRowsHtml();
+    });
+  }
+
+  function openChangeRecipeSheet(entryId, dish) {
+    buildChangeRecipeSheet();
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    closePrefsSheet();
+    closeSnwSheet();
+    closeRecipesSheet();
+    crState.entryId = entryId;
+    crState.dish = dish || '';
+    crState.view = 'rows';
+    crState.search = '';
+    crState.busy = false;
+    crState.said = '';
+    crState.requestId = null;
+    crScrimEl.hidden = false;
+    crSheetEl.hidden = false;
+    renderChangeRecipeSheet();
+    // The household's own recipes, for row 1. Already in hand whenever
+    // Settings → Recipes has been opened this page view; read again so the
+    // list is this moment's rather than whenever that was.
+    loadRecipes();
+  }
+
+  function closeChangeRecipeSheet() {
+    if (!crSheetEl) return;
+    crScrimEl.hidden = true;
+    crSheetEl.hidden = true;
+  }
+
+  function crTitle() {
+    return crState.dish ? 'Change the recipe for ' + crState.dish : 'Change the recipe';
+  }
+
+  // One row per way in, in the mockup's order. Row 4 is dashed because it
+  // is a different KIND of answer — it changes the meal rather than the
+  // recipe — the same way the night-off row is set off from the swaps on
+  // the tonight sheet.
+  function changeRecipeRowsHtml() {
+    return (crState.said ? '<p class="cr-said">' + escapeHtml(crState.said) + '</p>' : '') +
+      '<div class="kit-rows cr-rows">' +
+        '<button type="button" class="kit-row" data-cr="pick">' +
+          '<span class="kit-row-icon">' + KITCHEN_ICONS.book + '</span>' +
+          '<span class="kit-row-text"><span class="kit-row-title">Pick from my recipes</span>' +
+            '<span class="kit-row-sub">' + escapeHtml(crPickSubLine()) + '</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+        '<button type="button" class="kit-row" data-cr="link">' +
+          '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
+          '<span class="kit-row-text"><span class="kit-row-title">Paste a link</span>' +
+            '<span class="kit-row-sub">I’ll read it and save it to your recipes</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+        '<button type="button" class="kit-row" data-cr="ask">' +
+          '<span class="kit-row-icon">' + TIPS_HELP_ICON + '</span>' +
+          '<span class="kit-row-text"><span class="kit-row-title">Tell Pomona what to change</span>' +
+            '<span class="kit-row-sub">Same dish, written your way</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+      '</div>' +
+      '<div class="kit-rows cr-rows cr-rows-other">' +
+        '<button type="button" class="kit-row cr-row-other" data-cr="swap">' +
+          '<span class="kit-row-text"><span class="kit-row-title">Different meal instead</span>' +
+            '<span class="kit-row-sub">I’ll find something else for that night</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+      '</div>';
+  }
+
+  function crPickSubLine() {
+    var list = recipesState.list;
+    if (!list) return recipesState.failed ? 'Couldn’t check just now' : 'Reading them back…';
+    return list.length ? list.length + ' saved' : 'None saved yet';
+  }
+
+  // Row 1, opened: the Settings → Recipes list, searchable, minus the one
+  // this meal already uses (picking the recipe it has is not a change, and
+  // the server says so — offering it would be offering a refusal).
+  function changeRecipePickRowsHtml() {
+    var list = recipesState.list;
+    if (!list) {
+      return '<p class="recipes-empty">' + (recipesState.failed
+        ? 'Couldn’t load your recipes. Go back and try again.'
+        : 'Reading them back…') + '</p>';
+    }
+    var dish = String(crState.dish || '').trim().toLowerCase();
+    var q = String(crState.search || '').trim().toLowerCase();
+    var rows = list.filter(function (r) {
+      if (String(r.name || '').trim().toLowerCase() === dish) return false;
+      if (!q) return true;
+      return String(r.name || '').toLowerCase().indexOf(q) !== -1;
+    });
+    if (!rows.length) {
+      return '<p class="recipes-empty">' + (q ? 'Nothing by that name.' : 'No other recipes saved yet.') + '</p>';
+    }
+    return '<div class="prefs-rows recipes-list">' + rows.map(function (r) {
+      var line = recipeListLine(r);
+      return '<button type="button" class="prefs-row" data-cr="use" data-recipe-id="' + escapeHtml(String(r.id)) + '">' +
+        '<span class="prefs-row-text">' +
+          '<span class="prefs-row-title">' + escapeHtml(r.name || '') + '</span>' +
+          (line ? '<span class="prefs-row-sub">' + escapeHtml(line) + '</span>' : '') +
+        '</span>' + ICONS.arrow +
+      '</button>';
+    }).join('') + '</div>';
+  }
+
+  function changeRecipePickHtml() {
+    return '<button type="button" class="crumb recipes-crumb" data-cr="back">&lsaquo; Back</button>' +
+      (crState.said ? '<p class="cr-said">' + escapeHtml(crState.said) + '</p>' : '') +
+      '<input type="search" class="snw-input cr-search" id="cr-search" placeholder="Find a recipe" ' +
+        'value="' + escapeHtml(crState.search) + '" autocomplete="off" aria-label="Find a recipe">' +
+      '<div id="cr-picklist">' + changeRecipePickRowsHtml() + '</div>';
+  }
+
+  // Row 3, opened. Per Emily's override: the box and the button, nothing
+  // else. The box is always visible and the button is the sheet's one
+  // apricot — there is one action on this screen and this is it.
+  function changeRecipeAskHtml() {
+    return '<button type="button" class="crumb recipes-crumb" data-cr="back">&lsaquo; Back</button>' +
+      '<label class="cr-ask-label" for="cr-ask">' + escapeHtml(CHANGE_RECIPE_ASK_LABEL) + '</label>' +
+      '<textarea class="snw-input cr-ask" id="cr-ask" rows="4" ' +
+        'placeholder="Less spicy, and we don’t have a pressure cooker"></textarea>' +
+      (crState.said ? '<p class="cr-said">' + escapeHtml(crState.said) + '</p>' : '') +
+      '<button type="button" class="cr-go" data-cr="rewrite"' + (crState.busy ? ' disabled' : '') + '>' +
+        (crState.busy ? 'Writing it…' : 'Rewrite the recipe') + '</button>' +
+      '<p class="cr-ask-note">Same dish, same number of people, and nothing anybody here can’t eat.</p>';
+  }
+
+  function renderChangeRecipeSheet() {
+    if (!crSheetEl) return;
+    var title = crSheetEl.querySelector('#cr-title');
+    if (title) title.textContent = crTitle();
+    var body = crSheetEl.querySelector('#cr-body');
+    if (!body) return;
+    body.innerHTML = crState.view === 'pick' ? changeRecipePickHtml()
+      : crState.view === 'ask' ? changeRecipeAskHtml()
+      : changeRecipeRowsHtml();
+  }
+
+  // After any change: the recipe on screen, the week, the list and Today
+  // are all readings of what just moved, so all four are re-read. The
+  // sheet closes first, so nothing lands under it.
+  async function crAfterChange(said, requestId) {
+    closeChangeRecipeSheet();
+    crState.requestId = requestId || null;
+    showToast(said, requestId ? { label: 'Put it back', onClick: function () { crUndo(requestId); } } : null);
+    var panel = panels['week'];
+    if (panel && panel.dataset && panel.dataset.built) await loadWeekMenu(panel);
+    refreshKitchenPanel();
+    refreshGrocerySurfaces();
+  }
+
+  async function crUndo(requestId) {
+    try {
+      var res = await Api.fetch('/api/meal-recipe/undo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: requestId })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error((data && data.detail) || 'That didn’t work just now.');
+      showToast(data.said || 'Put back.');
+      var panel = panels['week'];
+      if (panel && panel.dataset && panel.dataset.built) await loadWeekMenu(panel);
+      refreshKitchenPanel();
+      refreshGrocerySurfaces();
+    } catch (err) {
+      showToast((err && err.message) || 'That didn’t work just now.');
+    }
+  }
+
+  // Row 1's tap and row 2's save both land here: one recipe id, one route.
+  async function crUseRecipe(recipeId) {
+    if (crState.busy) return;
+    crState.busy = true;
+    try {
+      var res = await Api.fetch('/api/meal-recipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: crState.entryId, recipe_id: recipeId })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error((data && data.detail) || 'That didn’t work just now.');
+      // A refusal and a block are both answers, not errors: they are said
+      // where the tap was, and the sheet stays open so "Pick another" has
+      // somewhere to go (the card's own criterion).
+      if (data.status === 'changed') return crAfterChange(data.said);
+      crState.said = data.said || 'That didn’t work just now.';
+      renderChangeRecipeSheet();
+    } catch (err) {
+      crState.said = (err && err.message) || 'That didn’t work just now.';
+      renderChangeRecipeSheet();
+    } finally {
+      crState.busy = false;
+    }
+  }
+
+  async function crRewrite() {
+    if (crState.busy) return;
+    var box = crSheetEl && crSheetEl.querySelector('#cr-ask');
+    var text = box ? String(box.value || '').trim() : '';
+    if (!text) {
+      crState.said = 'Say what you’d change first.';
+      renderChangeRecipeSheet();
+      var again = crSheetEl.querySelector('#cr-ask');
+      if (again) again.focus();
+      return;
+    }
+    crState.busy = true;
+    crState.said = '';
+    renderChangeRecipeSheet();
+    // The box is rebuilt by that render, so what was typed goes back in.
+    var live = crSheetEl.querySelector('#cr-ask');
+    if (live) live.value = text;
+    try {
+      var res = await Api.fetch('/api/meal-recipe/rewrite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: crState.entryId, text: text })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error((data && data.detail) || 'That didn’t come together — try it again.');
+      crState.busy = false;
+      if (data.status === 'rewritten') return crAfterChange(data.said, data.request_id);
+      crState.said = data.said || 'That didn’t come together — try it again.';
+      renderChangeRecipeSheet();
+      var back = crSheetEl.querySelector('#cr-ask');
+      if (back) back.value = text;
+    } catch (err) {
+      crState.busy = false;
+      crState.said = (err && err.message) || 'That didn’t come together — try it again.';
+      renderChangeRecipeSheet();
+      var kept = crSheetEl.querySelector('#cr-ask');
+      if (kept) kept.value = text;
+    }
+  }
+
+  function onChangeRecipeClick(e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-cr]');
+    if (!t || !crSheetEl.contains(t)) return;
+    var what = t.getAttribute('data-cr');
+    if (what === 'pick' || what === 'ask') {
+      crState.view = what;
+      crState.said = '';
+      renderChangeRecipeSheet();
+      var focus = crSheetEl.querySelector(what === 'pick' ? '#cr-search' : '#cr-ask');
+      if (focus) focus.focus();
+    } else if (what === 'back') {
+      crState.view = 'rows';
+      crState.said = '';
+      renderChangeRecipeSheet();
+    } else if (what === 'use') {
+      crUseRecipe(Number(t.getAttribute('data-recipe-id')));
+    } else if (what === 'rewrite') {
+      crRewrite();
+    } else if (what === 'link') {
+      // The existing importer, with this meal waiting at the end of it: a
+      // saved recipe goes straight onto the meal (the card: "the imported
+      // recipe replaces this meal's recipe AND is saved to the household's
+      // recipes"). Backing out of the importer comes back here.
+      var entryId = crState.entryId;
+      var dish = crState.dish;
+      closeChangeRecipeSheet();
+      openRecipeLinkSheet({ onDone: function (saved) {
+        openChangeRecipeSheet(entryId, dish);
+        if (saved && saved.recipe_id) crUseRecipe(saved.recipe_id);
+      } });
+    } else if (what === 'swap') {
+      // The existing Swap, wherever this meal is. The Plan tab's own swap
+      // is the one that knows the day and the slot, so this hands over to
+      // the chat with the dish named rather than reaching into a screen
+      // that may not be built.
+      closeChangeRecipeSheet();
+      openAskSheet('Swap ' + (crState.dish || 'that meal') + ' for something else: ');
+    }
+  }
+
+  // The button on either screen — delegated, like the Recipes row's.
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-cr="open"]');
+    if (!t) return;
+    openChangeRecipeSheet(Number(t.getAttribute('data-entry-id')), t.getAttribute('data-dish') || '');
   });
 
   // ---------- "Helpful tips" ----------

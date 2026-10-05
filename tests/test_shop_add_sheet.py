@@ -79,7 +79,18 @@ console.log(JSON.stringify({
     assert '<button type="button" class="gro-add-open" data-gro="add-open">' in dock
     assert 'stroke-width="2.2"' in dock and 'd="M12 5v14M5 12h14"' in dock, "the plus, a stroke icon"
     assert dock.endswith("Add something</button>")
-    assert "dock-primary" not in dock and "gro-primary" not in dock, "an outline, not the screen's action"
+    # 2026-10-05, card 13 ("Before you shop"): LIST's dock now carries ONE
+    # apricot — the pass in front of sorting, or "Sort the list (N)" when
+    # there is nothing left to ask. Gowthami's household: "Sorting option
+    # is hidden and needs to be clearer that's the next step." So the
+    # claim below is narrowed to what it was always about rather than
+    # dropped: the root grows no action of its OWN (ticking a row is
+    # still it, and the add is still an outline), and the one apricot
+    # there now is the sort, asserted positively.
+    add = dock[dock.index('class="gro-add-open"'):]
+    assert "dock-primary" not in add and "gro-primary" not in add, "an outline, not the screen's action"
+    assert dock.count("dock-primary") == 1 and 'data-gro="goto-sort"' in dock, \
+        "and the dock's one apricot is the sort — tests/test_before_you_shop.py owns it"
     assert out["sortallDock"] == "", "the deeper steps keep their own docks"
 
 

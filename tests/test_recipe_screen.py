@@ -324,6 +324,12 @@ def _screen(day: dict, slot: str, cook_meals: list, ticked: list | None = None,
         + "var GRO_ICONS = { chevRight: '<svg class=\"chev\"></svg>' };\n"
         + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
         + "var WK_ADD_ICON = '<svg/>';\n"
+        # 2026-10-05: mealIngredientsHtml gained a callee (the Change recipe
+        # button), so without these three the whole file is a ReferenceError.
+        # The REAL builder, not a stub: a stub would render nothing and no
+        # error, and these tests would then quietly assert the button's
+        # absence.
+        + "var CHANGE_RECIPE_LABEL = 'Change recipe';\n"
         + f"var TICKED = {json.dumps(ticked or [])};\n"
         + "function cookTicked(kind, key) { return TICKED.indexOf(kind + ':' + key) !== -1; }\n"
         + "function cookStartedMinutes(m) { return m && m.cook_started_at ? 1 : null; }\n"
@@ -332,7 +338,8 @@ def _screen(day: dict, slot: str, cook_meals: list, ticked: list | None = None,
         + _PURE + _RECIPE
         + "".join(_extract(n) + "\n" for n in (
             "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName", "cookMealForEntry",
-            "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml", "mealIngredientsHtml",
+            "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml",
+            "recipeIsChangeable", "recipeChangeBtnHtml", "mealIngredientsHtml",
             "swapStateFor", "swapLineHtml", "mealDockHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )

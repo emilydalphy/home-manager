@@ -86,6 +86,13 @@ _TABLES = [
     "preference_events", "notification_dismissals", "item_store_preferences",
     # push_devices references members, so it goes before them.
     "push_devices",
+    # recipe_change_requests references members too (2026-10-05). It is not
+    # optional: _seed_every_table in test_household_deletion.py puts a row in
+    # EVERY household-scoped table, so a table missing from this list leaks
+    # rows pointing at households and members that later tests delete, and
+    # the next PRAGMA foreign_key_check in the session fails — which is
+    # exactly how this line came to be written.
+    "recipe_change_requests",
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
     "chat_turns", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
     "calendar_feeds", "staple_events", "staples", "morning_text_sends",

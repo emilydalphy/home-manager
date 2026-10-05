@@ -313,6 +313,37 @@ from .primary_member import (  # noqa: F401
     record_primary_member,
     set_primary_member,
 )
+
+# "Change recipe" (2026-10-05). Nothing in here is an agent tool and
+# nothing in here is in agent.TOOL_FUNCTIONS: the request text is prose a
+# person typed, and the one reader of it is a person at a terminal running
+# observability_report.py --recipe-changes (see recipe_change.py's own
+# docstring and feedback.py's, the precedent it follows).
+#
+# "Before you shop" (card 13, 2026-10-05) owns ONE fact: whether the pass
+# in front of sorting has been run for the week being shopped for. Its
+# steps' own work lives where it already did — staples.py, spices.py,
+# pre_shop.py — so this module has two functions and no opinions.
+from .before_shop import (  # noqa: F401
+    before_shop_state,
+    mark_before_shop_done,
+)
+from .recipe_change import (  # noqa: F401
+    OUTCOME_FAILED,
+    OUTCOME_REWRITTEN,
+    OUTCOME_UNDONE,
+    THEMES,
+    apply_rewrite,
+    change_meal_recipe,
+    count_recipe_change_requests,
+    mark_recipe_change_request,
+    recent_recipe_change_requests,
+    recipe_change_blocked,
+    record_recipe_change_request,
+    request_theme,
+    rewrite_spec,
+    undo_recipe_change,
+)
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
     _get_or_create_member,
