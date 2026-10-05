@@ -81,25 +81,43 @@ def test_the_four_intro_screens_come_before_the_household_step():
     m = re.search(r"const ALL_STEPS = (\[.*?\]);", ONBOARDING)
     assert m, "ALL_STEPS has moved"
     steps = json.loads(m.group(1).replace("'", '"'))
-    assert steps[:5] == INTRO + ["household"], steps[:5]
+    # UPDATED 2026-10-05 (the main person): the household step is TWO
+    # screens, "What's your name?" then "Who else lives with you?", so the
+    # first question after the intro is the name. TRIPWIRE FIRED: this
+    # file hard-codes the flow's own order, and the claim it is making --
+    # the four intro screens come first, and the questions follow in the
+    # storyboard's order -- is unchanged. The flow gained a step.
+    assert steps[:5] == INTRO + ["your-name"], steps[:5]
     # The questions after them, since 2026-09-30 (the "How your week runs"
     # storyboard): who helps and never on the plate finish "Who's eating";
     # the week's shape comes before what you eat.
-    assert steps[5:] == ["helpers", "restrictions", "meals-days", "prep",
+    assert steps[5:] == ["household", "helpers", "restrictions", "meals-days", "prep",
                          "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
                          "shop-day",
                          "eating-style", "wont-eat", "excited-about", "kit-repeats",
-                         # Sharing with Claude, before the first week (2026-09-27).
-                         "ai-consent", "reveal"]
+                         # Sharing with Claude, before the first week (2026-09-27),
+                         # then setup's last answer, "Anything else I should know?"
+                         # (2026-10-05) -- which is where the first week is asked
+                         # for, and which needs the consent above it because it
+                         # reads the note with a model call.
+                         "ai-consent", "anything-else", "reveal"]
 
 
 def test_each_intro_screen_is_in_the_markup_in_that_order():
-    positions = [ONBOARDING.index(f'<div id="step-{k}"') for k in INTRO + ["household"]]
+    positions = [ONBOARDING.index(f'<div id="step-{k}"') for k in INTRO + ["your-name", "household"]]
     assert positions == sorted(positions), "the intro screens are out of order in the markup"
 
 
 def test_the_page_starts_on_hello_not_on_the_first_question():
-    assert "showStep(reloadedMidSetup ? 'household' : 'intro-hello'" in ONBOARDING
+    # UPDATED 2026-10-05: which step a reload lands on is ONE named thing
+    # now (firstQuestionStep, read by the popstate handler and the finish
+    # too) rather than a literal written down three times -- the household
+    # split left a hard-coded 'household' in one of the three. The claim
+    # is unchanged: a FIRST visit starts on hello, not on a question.
+    assert "showStep(reloadedMidSetup ? firstQuestionStep() : 'intro-hello'" in ONBOARDING
+    # And the one thing it resolves to is still the first question of the
+    # flow rather than anything else — derived, not written down.
+    assert "return ALL_STEPS[INTRO_STEPS.length];" in ONBOARDING
 
 
 # ---------- the words are Emily's ----------
@@ -207,7 +225,12 @@ const landed = [];
 INTRO.forEach(function (key) { ELS[key + '-next'].click(); landed.push(currentStep); });
 console.log(JSON.stringify({ landed: landed, depth: depth() }));
 """ % json.dumps(INTRO))
-    assert out["landed"] == INTRO[1:] + ["household"]
+    # UPDATED 2026-10-05: the first question is "What's your name?" since
+    # the household step split in two. The claim is unchanged — each
+    # button goes exactly one screen forward and the last lands on the
+    # first question — and it is asked of the flow rather than named, so
+    # a later split can't make this assert something shorter.
+    assert out["landed"] == INTRO[1:] + ["your-name"]
     # One history entry per screen, so the phone's back gesture walks the
     # intro backwards the same way the crumb does.
     assert out["depth"] == len(INTRO) + 1
@@ -230,9 +253,12 @@ const seen = {};
   seen[k] = eyebrow.textContent;
 });
 console.log(JSON.stringify(seen));
-""" % json.dumps(INTRO + ["household", "meals-days", "eating-style", "ai-consent"]))
+""" % json.dumps(INTRO + ["your-name", "household", "meals-days", "eating-style", "ai-consent"]))
     for k in INTRO:
         assert out[k] == "", f"a question eyebrow was drawn during {k}"
+    # UPDATED 2026-10-05: both halves of the split household step are in
+    # the first stop, so both draw its eyebrow. The claim is unchanged.
+    assert out["your-name"] == "1 of 4 · Who’s eating"
     assert out["household"] == "1 of 4 · Who’s eating"
     assert out["meals-days"] == "2 of 4 · How your week runs"
     assert out["eating-style"] == "3 of 4 · What you eat"

@@ -102,10 +102,20 @@ def test_preferences_shows_the_choice_and_opens_the_screen():
 
 
 def test_onboarding_asks_after_the_last_question_and_before_the_first_week():
-    """CATCH. The step sits between the kit question and the reveal — before any AI call."""
+    """
+    CATCH. The step sits after the last question and before any AI call.
+
+    UPDATED 2026-10-05 ("Anything else I should know?"): the reveal is no
+    longer the very next step -- setup's last answer sits between them, and
+    it is the step that reads the note with a model call. So the claim is
+    exactly as before (consent comes before anything goes to Anthropic) and
+    this now pins all four positions rather than three, which is more than
+    it asserted before, not less.
+    """
     steps = json.loads(re.search(r"const ALL_STEPS = (\[.*?\]);", ONBOARDING).group(1).replace("'", '"'))
     assert steps.index("ai-consent") == steps.index("kit-repeats") + 1
-    assert steps.index("reveal") == steps.index("ai-consent") + 1
+    assert steps.index("anything-else") == steps.index("ai-consent") + 1
+    assert steps.index("reveal") == steps.index("anything-else") + 1
     assert '<div id="step-ai-consent"' in ONBOARDING
     after = ONBOARDING[ONBOARDING.index("function afterLastQuestion()"):]
     after = after[: after.index("\n}\n")]
@@ -124,7 +134,22 @@ def test_not_now_in_onboarding_saves_the_answers_without_asking_for_a_week():
 
 
 def test_allow_in_onboarding_saves_the_yes_before_the_week_is_asked_for():
-    """CATCH. The yes is stored first; only then does setup finish and the week get asked for."""
+    """
+    CATCH. The yes is stored first; only then is the week asked for.
+
+    UPDATED 2026-10-05 ("Anything else I should know?"): Allow hands on to
+    setup's last answer rather than finishing setup itself, so the ordering
+    to pin is "the yes is stored before this handler goes anywhere" plus
+    "the week is still asked for downstream of it, never inside it". Both
+    halves are asserted; the claim is unchanged.
+    """
     allow = ONBOARDING[ONBOARDING.index("document.getElementById('ai-consent-allow').onclick"):]
     allow = allow[: allow.index("\n};\n")]
-    assert allow.index("saveAiConsentAnswer(true)") < allow.index("finishSetupAndReveal()")
+    assert allow.index("saveAiConsentAnswer(true)") < allow.index("showStep('anything-else')")
+    # Nothing in this handler asks for a week -- it cannot run before the
+    # yes above it, because it does not run here at all.
+    assert "finishSetupAndReveal(" not in allow
+    # And the week really is asked for from the step it hands on to.
+    note_step = ONBOARDING[ONBOARDING.index("async function runAnythingElseNext()"):]
+    note_step = note_step[: note_step.index("\n}\n")]
+    assert "finishSetupAndReveal()" in note_step

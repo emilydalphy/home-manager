@@ -156,7 +156,7 @@
   .remove-btn svg { width: 16px; height: 16px; }
   .remove-btn:hover { border-color: var(--ink-strong); color: var(--ink-strong); }
   .row.is-empty .remove-btn { display: none; }
-  /* "+ Add person": a quiet spruce-outline row, full width — a secondary,
+  /* "+ Add someone": a quiet spruce-outline row, full width — a secondary,
      never a second fill (hard rule 5). --ink-strong is spruce playing ink,
      so it swings to ivory in dark on its own. */
   .add-btn {
@@ -173,6 +173,68 @@
     cursor: pointer;
   }
   .add-btn:hover { background: var(--sand); }
+
+  /* The pinned "You" row at the top of "Who else lives with you?"
+     (2026-10-05). Its NAME is text rather than a box: it was typed on the
+     screen before and that is the one place it is typed, so going back is
+     how it is changed — which is also what keeps pruneMemberKeyedAnswers
+     honest, since a rename has exactly one door. No × either (the card:
+     "not removable"). The age chips are the ordinary ones; the card asks
+     for them to be editable and they are. */
+  .member-block.is-primary .member-you {
+    display: flex; align-items: center; gap: 10px;
+    min-height: 50px; flex: 1 1 auto; min-width: 0;
+  }
+  .member-you-name {
+    margin: 0; min-width: 0;
+    font-family: var(--font-body); font-size: 16px; font-weight: 700;
+    color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* The badge that says which row is yours. Celadon, not apricot: this
+     screen's one accent belongs to its Next (rule 5), and a badge is a
+     label on a fact rather than something to do.
+     --on-accent-ink, which is RULE ONE and not a preference: --celadon is
+     a LIGHT fill in BOTH modes (#A9C4B0, shared), so dark ink on it is
+     the rule the Pomona rebrand wrote down after finding nine places
+     putting #fff on celadon. --ink-on-celadon is the wrong token despite
+     its name — in dark it is near-white ivory (#F3EBDD), because it is
+     paired with --celadon-TINT (#1C3B2C), the dark tile. Measured off
+     computed styles in a real Chromium at 390x844: 1.58:1 in dark with
+     --ink-on-celadon (badly failing at 11px/800), against 7.23:1 light
+     and 8.46:1 dark with this one. Dark is the HIGHER of the two because
+     --on-accent-ink darkens there (#14261D) while --celadon does not. */
+  .member-you-badge {
+    flex: 0 0 auto;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--celadon);
+    color: var(--on-accent-ink);
+    font-family: var(--font-body); font-size: 11px; font-weight: 800;
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+
+  /* The secondary in a question's foot — "Just me" (2026-10-05), the
+     first instance. Sand rather than apricot, above the primary: rule 5
+     forbids a second APRICOT, not a second button, and the shell's own
+     .dock-secondary made the same call for the same reason. Same shape as
+     .btn-primary so the pair reads as one row; --ink-strong on --sand
+     measures 11.60:1 light / 11.28:1 dark. */
+  .btn-soft {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    background: var(--sand);
+    color: var(--ink-strong);
+    border: none;
+    border-radius: var(--radius-action);
+    padding: 15px 22px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-soft:hover { background: var(--hairline-strong); }
 
   /* Skipping is a real, honest answer on the steps that offer it. In the
      foot it is the quiet line above the one button: 44px tall, centred. */
@@ -413,6 +475,51 @@
     font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ink-on-celadon);
   }
   .uw-sum[hidden] { display: none; }
+
+  /* Setup's last answer, "Anything else I should know?" (Loop Board,
+     Emily 2026-10-04). The box with the mic in it, and the confirm card
+     that shows what Pomona read out of it before any of it is saved.
+
+     The mic sits INSIDE the box's own border rather than beside it: the
+     field is the whole width of the screen here (this is the one step
+     whose answer is a paragraph), so a 44px tile next to it would either
+     squeeze the box or wrap under it. .dictate-btn is theme.css's own
+     shared dictation button, the same one inventory.html uses. */
+  .ae-field { position: relative; }
+  .ae-field textarea { min-height: 132px; padding-right: 52px; }
+  .ae-field .dictate-btn { position: absolute; top: 7px; right: 7px; }
+
+  /* The confirm card. Celadon like every other readback on these screens
+     (.uw-sum), one line per thing that will be saved. */
+  .ae-confirm {
+    margin: 0; padding: 12px 14px;
+    background: var(--celadon-tint); border: 1.5px solid var(--celadon-edge);
+    border-radius: var(--radius-card);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .ae-confirm[hidden] { display: none; }
+  .ae-confirm-eyebrow {
+    margin: 0;
+    font-family: var(--font-body); font-size: 10px; font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--celadon-label);
+  }
+  .ae-confirm-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .ae-confirm-list li {
+    font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.35;
+    color: var(--ink-on-celadon);
+  }
+  /* The one line that is NOT a saved setting: it says the rest of the note
+     is kept as written. Quieter than the list above it for that reason. */
+  .ae-confirm-rest {
+    margin: 0; font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    line-height: 1.35; color: var(--celadon-label);
+  }
+  /* "Reading your note…" while the one model call is out. */
+  .ae-working {
+    margin: 0; font-family: var(--font-body); font-size: 14px; font-weight: 600;
+    color: var(--ink-secondary);
+  }
+  .ae-working[hidden] { display: none; }
   .q-next {
     width: 100%;
     min-height: 54px;
@@ -1082,6 +1189,9 @@
 <script src="/static/api.js"></script>
 <script src="/static/waiting-lines.js"></script>
 <script src="/static/help-sheet.js"></script>
+<!-- The mic on "Anything else I should know?" (2026-10-04). Shared with
+     inventory.html; this page is standalone, so it loads its own copy. -->
+<script src="/static/dictation.js"></script>
 </head>
 <body>
 
@@ -1187,16 +1297,53 @@
      box carries it as its placeholder and a screen reader still gets it
      (.sr-only), per DESIGN_SYSTEM §8.6. -->
 
-<!-- Q1 + Q2: household size and names -->
-<div id="step-household">
+<!-- Q1: "What's your name?" (Emily's 2026-10-04 mockup, first phone;
+     approved and locked in). The household step used to open on a list of
+     names with the first row defaulting to Adult, and from that moment
+     members[0] was SILENTLY the user — helperAdults read it as
+     members.slice(1) and record_setup_adult took the first adult of them.
+     Asking for one name first makes the main person a thing somebody
+     SAID, and the field behind it real: see app/tools/primary_member.py.
+     Nothing is posted here — the name is held in this input until the end
+     of setup, like every other answer (see finishSetupAndReveal). -->
+<div id="step-your-name" style="display:none">
+  <button class="back-link" type="button" data-step-back="your-name" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">What&rsquo;s your name?</h1>
+    <p class="q-line">You&rsquo;ll be the main person for the home. You can add others next.</p>
+    <div class="q-controls">
+      <label class="sr-only" for="your-name-input">Your name</label>
+      <div class="row">
+        <input type="text" id="your-name-input" placeholder="Your name" autocomplete="given-name" />
+      </div>
+      <!-- Said on the step that can fix it rather than in an alert, the
+           same rule as #household-empty below. -->
+      <p class="step-note" id="your-name-empty" hidden>I need your name before I can plan anything.</p>
+    </div>
+  </div>
+  <div class="q-foot">
+    <button class="btn-primary q-next" id="your-name-next" type="button">Next</button>
+  </div>
+</div>
+
+<!-- Q2: "Who else lives with you?" — the SAME screen as before (Emily
+     confirmed this explicitly, 2026-10-04): the existing member rows and
+     "+ Add someone". Only four things changed: the title, the pinned
+     "You" row at the top (its name from the screen before, its age chip
+     editable, no × on it), ONE blank row instead of two, and the "Just
+     me" button. display:none joins it to every other step — it was the
+     only one without it, left over from when it was the first screen,
+     which showed it for a frame before startOnboarding ran. -->
+<div id="step-household" style="display:none">
   <button class="back-link" type="button" data-step-back="household" hidden></button>
   <div class="q-body">
     <p class="q-eyebrow"></p>
-    <h1 class="q-title">Who are we planning for?</h1>
+    <h1 class="q-title">Who else lives with you?</h1>
     <p class="q-line">Everyone who eats at home.</p>
     <div class="q-controls">
       <div id="members"></div>
-      <button class="add-btn" id="add-member" type="button">+ Add person</button>
+      <button class="add-btn" id="add-member" type="button">+ Add someone</button>
       <!-- Said here, on the step that can fix it, rather than in an alert. It
            states the problem and its way out in one line (DESIGN_SYSTEM §8's
            calm-in-trouble rule) and it is the ONLY thing either the Continue
@@ -1204,8 +1351,14 @@
       <p class="step-note" id="household-empty" hidden>I need at least one name before I can plan anything — add whoever's eating.</p>
     </div>
   </div>
+  <!-- Two buttons, ONE apricot (DESIGN_SYSTEM rule 5): Next is this
+       screen's primary and "Just me" is the sand secondary above it — a
+       real button rather than the quiet .skip-link line, because the card
+       asks for a button and because it is not skipping the question, it
+       is answering it. -->
   <div class="q-foot">
-    <button class="btn-primary q-next" id="household-next" type="button">Continue</button>
+    <button class="btn-soft" id="household-just-me" type="button">Just me</button>
+    <button class="btn-primary q-next" id="household-next" type="button">Next</button>
   </div>
 </div>
 
@@ -1528,6 +1681,59 @@
 </div>
 
 
+<!-- "Anything else I should know?" — setup's last answer (Loop Board
+     "Onboarding ends with 'Anything else I should know?'", Emily
+     2026-10-04; mockup 4FyLE2jHTK99qWzCtqHeDL#onboard, third phone).
+     One free box. Three taste steps already carry a small "Anything
+     else?" each; this is the catch-all for everything they have no field
+     for, and it stays a catch-all rather than replacing them.
+
+     It sits AFTER "Sharing with Claude" and immediately before the
+     reveal, and that order is load-bearing rather than cosmetic: this is
+     the step that reads the note with a model call, so consent has to
+     have been given by the time it is on screen. It is also what makes
+     "Build my first week" the truth — this button, not the consent
+     screen's, is where the week is actually asked for.
+
+     TWO STAGES, ONE SCREEN. Stage 'ask' is the box. Stage 'confirm' is
+     the card below it, showing what Pomona read, with "Looks right" and
+     "Change" — because an allergy is the one thing in this app that must
+     never be inferred and saved silently (the 2026-09-04
+     fix-allergy-enforcement work: a false positive here is a safety bug,
+     since a household that learns to click past a warning clicks past the
+     real one too). Nothing at all is written until "Looks right", and the
+     card's lines are built from the fields that will be saved rather than
+     from a sentence the model wrote, so the confirm can only ever approve
+     what it displayed. -->
+<div id="step-anything-else" style="display:none">
+  <button class="back-link" type="button" data-step-back="anything-else" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">Anything else I should know?</h1>
+    <p class="q-line">A free space for anything I should know that we haven&rsquo;t covered yet.</p>
+    <div class="q-controls">
+      <label class="sr-only" for="anything-else-note">Anything else I should know?</label>
+      <div class="ae-field">
+        <textarea id="anything-else-note" rows="5" placeholder="However you like &mdash; a sentence or a list."></textarea>
+        <button type="button" class="dictate-btn" id="anything-else-mic-btn" aria-label="Dictate your note" title="Dictate your note">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.93V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.07A7 7 0 0 0 19 11z"/></svg>
+        </button>
+      </div>
+      <p class="ae-working" id="anything-else-working" hidden>Reading your note&hellip;</p>
+      <div class="ae-confirm" id="anything-else-confirm" hidden>
+        <p class="ae-confirm-eyebrow">From your note</p>
+        <ul class="ae-confirm-list" id="anything-else-confirm-list"></ul>
+        <p class="ae-confirm-rest">The rest of what you wrote I&rsquo;ll keep as you wrote it.</p>
+      </div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <span class="skip-link" id="anything-else-quiet">Nothing else</span>
+    <button class="btn-primary q-next" id="anything-else-next" type="button">Build my first week</button>
+  </div>
+</div>
+
+
 <!-- Week 1 — the finish (rule S5). The whole ground is spruce
      (body.reveal-active), the mark and wordmark over "Here's week 1.", the
      day tabs, and the week as a strip of one card per day with a Swap under
@@ -1748,6 +1954,11 @@ function renderMemberAgeChips(block) {
   const row = block.querySelector('.member-age-chips');
   buildSingleSelectChips(row, AGE_GROUP_OPTIONS, block.dataset.ageGroup || '', (key) => {
     block.dataset.ageGroup = key;
+    // The pinned "You" row is redrawn on every arrival at the step, so its
+    // answer has to live somewhere the redraw reads — the row itself would
+    // forget it. The card asks for that chip to be editable; this is what
+    // makes the edit stick.
+    if (block.classList.contains('is-primary')) primaryAgeGroup = key;
     renderMemberAgeChips(block);
   });
 }
@@ -1805,17 +2016,86 @@ function pruneMemberKeyedAnswers() {
   pruneRestrictionAnswers();
   pruneHelperAnswers();
 }
-// The first two rows default to Adult (the common case — most households
-// start with the adults in the house); anyone added after that starts
-// blank rather than guessing.
-addMemberRow('', 'adult');
+// ---------- The main person ----------
+// The name is typed in exactly ONE place, #your-name-input on the screen
+// before, and this screen shows it. That is not only a design choice: a
+// member's only identity in this app is their NAME, restrictions and the
+// helpers picks are keyed by it, and pruneMemberKeyedAnswers exists
+// because a rename can otherwise hand one person's allergy to another
+// (CLAUDE.md, 2026-09-04 — this app treats a wrong allergy attribution as
+// a safety bug). One box means the rename has one door, and that door
+// prunes.
+function primaryMemberName() {
+  const el = document.getElementById('your-name-input');
+  return el ? el.value.trim() : '';
+}
+// The age group the main person chose for themselves. Held here rather
+// than on the row because the row is redrawn on every arrival; Adult
+// until they say otherwise, which is what the old first row defaulted to.
+let primaryAgeGroup = 'adult';
+
+// The pinned row, as the FIRST .member-block of #members — so it is first
+// in currentMembers() (which is what makes record_setup_adult's device pin
+// and primary_name resolve to them), it takes the list's own separator
+// rules for free, and the "others" rows beneath it are untouched by a
+// redraw. Called on every arrival at the step (STEP_BUILDERS).
+function buildHouseholdStep() {
+  const name = primaryMemberName();
+  let block = membersDiv.querySelector('.member-block.is-primary');
+  if (!name) {
+    // No name (reachable only by a history jump past the screen that asks
+    // for it): no row to pin, and the empty note below says so.
+    if (block) block.remove();
+    return;
+  }
+  if (!block) {
+    block = document.createElement('div');
+    block.className = 'member-block is-primary';
+    block.innerHTML = `
+      <div class="row">
+        <div class="member-you">
+          <p class="member-you-name"></p>
+          <span class="member-you-badge">You</span>
+        </div>
+      </div>
+      <div class="rhythm-chip-row member-age-chips"></div>
+    `;
+    membersDiv.insertBefore(block, membersDiv.firstChild);
+  }
+  block.dataset.ageGroup = primaryAgeGroup;
+  // Drawn, never stored: currentMembers() reads the name from the box on
+  // the screen before, so there is exactly one copy of it. See the note
+  // in currentMembers for what a second copy cost.
+  block.querySelector('.member-you-name').textContent = name;
+  renderMemberAgeChips(block);
+}
+
+// ONE blank row, not two (2026-10-05): the household's first adult is the
+// pinned "You" row above it now, so a second pre-added Adult row would be
+// guessing at a second one. Anyone added after that starts blank rather
+// than guessing, as before.
 addMemberRow('', 'adult');
 document.getElementById('add-member').onclick = () => addMemberRow('');
 
 function currentMembers() {
   return [...membersDiv.querySelectorAll('.member-block')].map(block => {
     return {
-      name: block.querySelector('.member-name').value.trim(),
+      // The pinned "You" row has no box of its own (2026-10-05): its name
+      // was typed on the screen before, so it is read from THERE rather
+      // than from a copy on the row.
+      //
+      // That is not tidiness. A copy on the row is written by
+      // buildHouseholdStep, which runs on ARRIVAL at the step — so while
+      // somebody is typing in the name box the copy still holds the old
+      // name, and pruneMemberKeyedAnswers (which fires on that very
+      // input, and which reads this function) would compare the keyed
+      // answers against a household still containing the name being
+      // corrected. Measured: "Jamie" with an allergy, renamed to "James",
+      // left `restrictionAnswers['Jamie']` behind — the exact orphan the
+      // prune exists to prevent, caused by the prune reading a stale copy.
+      name: (block.classList.contains('is-primary')
+        ? primaryMemberName()
+        : block.querySelector('.member-name').value).trim(),
       age_group: block.dataset.ageGroup || '',
     };
   }).filter(m => m.name);
@@ -1988,8 +2268,17 @@ let helperPicks = [];          // 'adult:<name>' | 'someone' | 'me'
 let helperContacts = {};       // pick key -> phone or email, as typed
 let helperSomeoneName = '';
 
+// Everyone BUT the main person — "does anyone else help run the house?"
+// is a question about the others. It was `.slice(1)`, i.e. everyone but
+// whichever row happened to be first, until 2026-10-05: that was the
+// members[0]-is-the-user convention, and the main person is a real thing
+// now (the pinned "You" row; app/tools/primary_member.py server-side), so
+// this excludes them BY NAME rather than by position.
 function helperAdults(members) {
-  return (members || []).slice(1).filter(m => m.age_group === 'adult').map(m => m.name);
+  const me = primaryMemberName().toLowerCase();
+  return (members || [])
+    .filter(m => m.age_group === 'adult' && m.name.trim().toLowerCase() !== me)
+    .map(m => m.name);
 }
 function helperOptions(adults) {
   return adults.map(name => ({
@@ -2643,6 +2932,15 @@ function buildExcitedStep() {
 }
 // Same reason as commitWontEatInput: a cuisine typed but not entered is
 // still an answer, and tapping Continue must not throw it away.
+// The chips plus any cuisine read out of setup's last answer and
+// confirmed (2026-10-04) — the same shape currentWontEat() uses for its
+// presets-plus-typed answer, rather than writing into the chip row, so
+// nothing depends on whether that step was ever drawn.
+function currentExcitedAbout() {
+  const chips = getActiveChips(document.getElementById('excited-chips'));
+  const seen = new Set(chips.map(c => c.toLowerCase()));
+  return chips.concat(noteCuisines.filter(c => !seen.has(c.toLowerCase())));
+}
 function commitExcitedCustom() {
   const input = document.getElementById('excited-custom');
   if (!input) return;
@@ -2729,6 +3027,10 @@ async function savePlanTheWeekAnswers() {
   // The "normal week" box left setup (Build 6): a household says what a
   // week is like every week, on the intake's Anything else.
   if (kitchenKit.length) writes.push(['kitchen_kit', kitchenKit]);
+  // A Monday-to-Friday cap read out of setup's last answer and confirmed
+  // (2026-10-04). Nothing in setup ASKS for one; this is the only way it
+  // gets set during onboarding, and it is the same field Settings edits.
+  if (noteWeeknightMaxMinutes > 0) writes.push(['weeknight_max_minutes', noteWeeknightMaxMinutes]);
   for (const [field, value] of writes) {
     try {
       await Api.fetch('/api/preferences/meal-planning', {
@@ -2742,6 +3044,251 @@ async function savePlanTheWeekAnswers() {
   }
 }
 
+// ---------- "Anything else I should know?" — setup's last answer ----------
+// Loop Board, Emily 2026-10-04. One free box, read once, confirmed before
+// anything is written.
+//
+// WHY NOTHING HERE POSTS. Every end-of-setup write lives in
+// finishSetupAndReveal (2026-09-09), because add_member is get-or-create
+// by name and nothing in this app deletes a member — so a step that wrote
+// on the way past could leave a household holding a person nobody can
+// remove. This step keeps its answer in the four variables below and lets
+// that one function send it, through the SAME payload the chips send:
+// a restriction read out of the note and a restriction tapped on the
+// restrictions step are byte-identical by the time they reach the server,
+// which is what keeps the clash checker's carefully tuned matcher
+// (coordination._avoidances) the only matcher in the app.
+//
+// THE NOTE IS KEPT WHOLE, always, mapped or not. meal_preferences.notes is
+// the household note the generation prompt already reads, so anything the
+// reading missed still reaches the planner — the card's own rule. Nothing
+// here tries to subtract the mapped parts out of it either: deciding which
+// of somebody's own words to throw away is exactly the judgment that goes
+// wrong, and keeping the paragraph costs nothing.
+let anythingElseNote = '';
+let anythingElseStage = 'ask';      // 'ask' | 'confirm'
+let anythingElseReading = null;     // the model's draft, once confirmed it is applied and cleared
+let anythingElseReadFor = '';       // the note text that draft was read from — see buildAnythingElseStep
+let anythingElseBusy = false;
+// Set once "Looks right" has been tapped, so the answers below are sent
+// and the confirm is never asked for twice about the same reading.
+let anythingElseConfirmed = false;
+// What the reading added that the page had no variable for already.
+let noteCuisines = [];              // unioned into excited_about
+let noteWeeknightMaxMinutes = 0;    // 0 = the note gave no cap
+
+// One line per thing that WILL be saved, built from the fields rather than
+// from any sentence the model wrote. That is the safety rule, not a style
+// choice: a card reading "nut-free school" over a save of "allergy: nuts"
+// would be a confirm approving something it never displayed, and an
+// allergy is the one thing here that must never be written on an
+// inference. Every line below is derived from exactly the value
+// applyAnythingElseReading will use.
+function anythingElseConfirmLines(reading) {
+  const r = reading || {};
+  const lines = [];
+  (r.restrictions || []).forEach(item => {
+    const who = (item && item.person || '').trim();
+    const what = (item && item.what || '').trim();
+    if (!who || !what) return;
+    // The allergy line says the word "allergy", because that is the word
+    // that gets stored ("allergy: nuts") and read back as hard.
+    lines.push(item.allergy ? who + ' — allergy: no ' + what : who + ' — no ' + what);
+  });
+  (r.wont_eat || []).forEach(food => {
+    const f = (food || '').trim();
+    if (f) lines.push('Never recommend ' + f);
+  });
+  (r.cuisines || []).forEach(c => {
+    const name = (c || '').trim();
+    if (name) lines.push('More ' + name);
+  });
+  (r.lunch_out || []).forEach(who => {
+    const name = (who || '').trim();
+    if (name) lines.push(name + ' takes lunch with them');
+  });
+  const mins = Number(r.weeknight_max_minutes || 0);
+  if (mins > 0) lines.push('Weeknights: nothing over ' + mins + ' minutes');
+  const days = (r.prep_days || []).map(d => uwDayName(d)).filter(Boolean);
+  if (days.length) lines.push('Cooking ahead on ' + revealJoinWords(days));
+  (r.kit || []).forEach(key => {
+    const opt = KIT_OPTIONS.find(o => o.key === key);
+    if (!opt) return;
+    lines.push(key === 'no_dishwasher' ? 'No dishwasher' : 'You have a ' + opt.label.toLowerCase());
+  });
+  return lines;
+}
+
+// Only ever called from "Looks right". Writes nothing itself — it moves
+// the reading into the page's own answers, which finishSetupAndReveal then
+// sends in the ordinary way.
+function applyAnythingElseReading(reading) {
+  const r = reading || {};
+  const here = new Set(currentMembers().map(m => m.name));
+  (r.restrictions || []).forEach(item => {
+    const who = (item && item.person || '').trim();
+    const what = (item && item.what || '').trim();
+    // A restriction for somebody who isn't in the household is dropped,
+    // the same rule currentRestrictions() and pruneRestrictionAnswers
+    // already follow — the payload can never name somebody who isn't here.
+    if (!who || !what || !here.has(who)) return;
+    const saved = restrictionAnswers[who] || { chips: [], allergy: '', other: '' };
+    restrictionAnswers[who] = saved;
+    const field = item.allergy ? 'allergy' : 'other';
+    const chip = item.allergy ? 'Allergy' : 'Other';
+    // Joined the way the box itself joins them, so currentRestrictions
+    // splits it back into one "allergy: x" entry each.
+    const parts = (saved[field] || '').split(',').map(v => v.trim()).filter(Boolean);
+    if (!parts.some(v => v.toLowerCase() === what.toLowerCase())) parts.push(what);
+    saved[field] = parts.join(', ');
+    if (saved.chips.indexOf(chip) === -1) saved.chips.push(chip);
+    // "None" and a restriction cannot both be true.
+    saved.chips = saved.chips.filter(c => c !== 'None');
+  });
+  (r.wont_eat || []).forEach(food => {
+    const f = (food || '').trim();
+    if (f && !wontEatItems.some(v => v.toLowerCase() === f.toLowerCase())) wontEatItems.push(f);
+  });
+  (r.cuisines || []).forEach(c => {
+    const name = (c || '').trim();
+    if (name && !noteCuisines.some(v => v.toLowerCase() === name.toLowerCase())) noteCuisines.push(name);
+  });
+  (r.lunch_out || []).forEach(who => {
+    const name = (who || '').trim();
+    if (!name || !here.has(name)) return;
+    lunchLocation[name] = 'out';
+    // Without this the payload is never sent at all (lunchLocationPayload
+    // returns null until the line is touched), so the answer would be
+    // confirmed and then quietly dropped.
+    lunchLocationTouched = true;
+  });
+  const mins = Number(r.weeknight_max_minutes || 0);
+  if (mins > 0) noteWeeknightMaxMinutes = mins;
+  const days = (r.prep_days || []).filter(d => UW_WEEKDAYS.indexOf(d) !== -1);
+  if (days.length) {
+    prepAnswer = 'yes';
+    days.forEach(d => { if (prepDayKeys.indexOf(d) === -1) prepDayKeys.push(d); });
+  }
+  (r.kit || []).forEach(key => {
+    if (KIT_OPTIONS.some(o => o.key === key) && kitchenKit.indexOf(key) === -1) kitchenKit.push(key);
+  });
+}
+
+function buildAnythingElseStep() {
+  const box = document.getElementById('anything-else-note');
+  // The box holds its own text, like the other typed answers on this page
+  // — but it is re-seeded here so going back and forward shows what was
+  // written rather than an empty question.
+  if (box.value !== anythingElseNote) box.value = anythingElseNote;
+  // A reading is only ever about the note it was read from. Edit the note
+  // and the confirm card stops being about it, so the step goes back to
+  // asking rather than offering a stale card to approve.
+  if (anythingElseStage === 'confirm' && (!anythingElseReading || anythingElseReadFor !== anythingElseNote)) {
+    anythingElseStage = 'ask';
+  }
+  const confirming = anythingElseStage === 'confirm';
+  const lines = confirming ? anythingElseConfirmLines(anythingElseReading) : [];
+  document.getElementById('anything-else-confirm').hidden = !confirming;
+  document.getElementById('anything-else-confirm-list').innerHTML =
+    lines.map(l => '<li>' + escapeHtmlLocal(l) + '</li>').join('');
+  document.querySelector('.ae-field').hidden = confirming;
+  document.getElementById('anything-else-working').hidden = !anythingElseBusy;
+  const next = document.getElementById('anything-else-next');
+  const quiet = document.getElementById('anything-else-quiet');
+  next.textContent = confirming ? 'Looks right' : 'Build my first week';
+  quiet.textContent = confirming ? 'Change' : 'Nothing else';
+  next.disabled = anythingElseBusy;
+  quiet.classList.toggle('is-busy', anythingElseBusy);
+}
+
+// The one model call. Skipped entirely for an empty note: "Nothing else"
+// must cost nothing, and there is nothing to read.
+async function readAnythingElseNote() {
+  if (!anythingElseNote) return null;
+  if (anythingElseReadFor === anythingElseNote) return anythingElseReading;
+  const res = await Api.fetch('/api/onboarding/read-note', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note: anythingElseNote }),
+  });
+  if (!res.ok) throw new Error('Could not read that');
+  const body = await res.json();
+  // Remembered against the note it was read from, so tapping Change,
+  // leaving the words alone and tapping again costs no second call.
+  anythingElseReadFor = anythingElseNote;
+  anythingElseReading = (body && body.read && body.reading) ? body.reading : null;
+  return anythingElseReading;
+}
+
+// "Build my first week" / "Looks right" — one button, two stages. "Nothing
+// else" comes through here too, as the empty-note case: setup's one guard
+// has an enumerated list of callers (tests/test_onboarding_go_back.py
+// counts them), and this step is one of them rather than four.
+async function runAnythingElseNext() {
+  if (anythingElseBusy) return;
+  if (anythingElseStage === 'confirm') {
+    anythingElseConfirmed = true;
+    applyAnythingElseReading(anythingElseReading);
+    await finishSetupAndReveal();
+    return;
+  }
+  anythingElseNote = document.getElementById('anything-else-note').value.trim();
+  if (anythingElseNote) {
+    anythingElseBusy = true;
+    buildAnythingElseStep();
+    let reading = null;
+    try {
+      reading = await readAnythingElseNote();
+    } catch (err) {
+      // The note is still saved verbatim by the answers call, so a failed
+      // reading costs the mapping and never the note — and must not stand
+      // between the household and their first week.
+      console.warn('Reading your note failed:', err);
+    } finally {
+      anythingElseBusy = false;
+    }
+    // A reading with nothing in it is not a card worth showing — the
+    // card's own rule for an empty note, and the same answer for a note
+    // that maps to nothing the app has a field for.
+    if (reading && anythingElseConfirmLines(reading).length) {
+      anythingElseStage = 'confirm';
+      buildAnythingElseStep();
+      return;
+    }
+  }
+  buildAnythingElseStep();
+  await finishSetupAndReveal();
+}
+
+document.getElementById('anything-else-next').onclick = () => { runAnythingElseNext(); };
+document.getElementById('anything-else-quiet').onclick = () => {
+  if (anythingElseBusy) return;
+  if (anythingElseStage === 'confirm') {
+    // "Change": back to the box with the words still in it. Nothing was
+    // written, and nothing is — the reading is kept only so that tapping
+    // Build again on an unchanged note costs no second call.
+    anythingElseStage = 'ask';
+    buildAnythingElseStep();
+    document.getElementById('anything-else-note').focus();
+    return;
+  }
+  // "Nothing else": no note, no model call, no confirm. Cleared and then
+  // handed to the one path above, which reads an empty box as "go".
+  anythingElseNote = '';
+  document.getElementById('anything-else-note').value = '';
+  anythingElseReading = null;
+  anythingElseReadFor = '';
+  runAnythingElseNext();
+};
+// Dictation where the app already supports it (static/dictation.js, the
+// same helper inventory.html uses). Absent in a browser with no Web Speech
+// API, which setupDictation handles by hiding the button itself.
+if (typeof setupDictation === 'function') {
+  setupDictation(
+    document.getElementById('anything-else-note'),
+    document.getElementById('anything-else-mic-btn')
+  );
+}
+
 // ---------- Save the 7-question answer set ----------
 // Returns what was sent, plus two things the loading screen reads back
 // that aren't part of this call: the dinner window (saved by
@@ -2753,7 +3300,13 @@ async function saveOnboardingAnswers() {
     household_restrictions: currentRestrictions(),
     eating_style: currentEatingStyle(),
     wont_eat: currentWontEat(),
-    excited_about: getActiveChips(document.getElementById('excited-chips')),
+    excited_about: currentExcitedAbout(),
+    // Setup's last answer, kept exactly as it was written (2026-10-04).
+    // meal_preferences.notes is the household note the generation prompt
+    // already reads, so whatever the reading didn't map still reaches the
+    // planner. Sent whether or not the reading was confirmed — the note is
+    // theirs either way.
+    notes: anythingElseNote,
     // The route derives snacks_per_week from snacks_per_day and marks the
     // snacks question answered, so every existing reader keeps working.
     ...plannedMealCounts(),
@@ -4034,17 +4587,37 @@ const INTRO_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know'];
 // your week runs (who's eating when, cooking ahead, variety per meal,
 // dinner time), what you eat, your first week. 'meals' ("Which meals
 // should I plan?") and 'leftovers' left the flow that day.
-const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'household', 'helpers', 'restrictions', 'meals-days', 'prep', 'variety-breakfast', 'variety-lunch', 'variety-dinner', 'dinner-time', 'shop-day', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'reveal'];
+// UPDATED 2026-10-05: the household step is TWO screens — "What's your
+// name?" then "Who else lives with you?" — so the main person is somebody
+// who said so rather than whichever row happened to be first. See
+// app/tools/primary_member.py.
+const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'your-name', 'household', 'helpers', 'restrictions', 'meals-days', 'prep', 'variety-breakfast', 'variety-lunch', 'variety-dinner', 'dinner-time', 'shop-day', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'anything-else', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
 // remember what you answered two screens ago in order to know whether it is
 // worth tapping.
+// The first question — the step a reload lands on, the step a stale
+// history entry collapses onto, and the step the finish sends a household
+// of nobody back to. ONE name for it because it has THREE readers and
+// splitting the household step in two (2026-10-05) left a hard-coded
+// 'household' in the popstate handler after the other two had been moved:
+// a stale entry collapsed onto a screen whose pinned "You" row is drawn
+// from a name the reload had just thrown away. Derived from the flow
+// rather than written down twice — the first step that is a question.
+function firstQuestionStep() {
+  return ALL_STEPS[INTRO_STEPS.length];
+}
+
 const STEP_TITLES = {
   'intro-hello': 'Hello',
   'intro-help': 'What I help with',
   'intro-talk': 'How it works',
   'intro-know': 'Getting to know you',
+  // 2026-10-05: the household step split in two. "Your name" is the first
+  // question; "Who's here" keeps its name because that is still what the
+  // second screen is about and Preferences' own row reads it back.
+  'your-name': 'Your name',
   'household': "Who's here",
   'helpers': 'Who helps',
   'restrictions': 'Never on the plate',
@@ -4060,6 +4633,7 @@ const STEP_TITLES = {
   'excited-about': 'Cuisines you like',
   'kit-repeats': 'Your kit',
   'ai-consent': 'Sharing with Claude',
+  'anything-else': 'Anything else',
 };
 
 // The steps THIS household is asked, derived from the answers it has given
@@ -4112,6 +4686,12 @@ function resolveStep(key) {
 // isn't in the map because its inputs hold their own text; the reveal isn't
 // because it is not a question.
 const STEP_BUILDERS = {
+  // "Who else lives with you?" is in the map (2026-10-05) where the old
+  // household step was not: the OTHERS' rows still hold their own text,
+  // but the pinned "You" row at the top is drawn from the name typed on
+  // the screen before, so arriving has to redraw it. That is the whole of
+  // "go back, change the name, come forward and it carries through".
+  'household': buildHouseholdStep,
   'helpers': buildHelpersStep,
   'restrictions': buildRestrictionsStep,
   'meals-days': buildMealsDaysStep,
@@ -4125,6 +4705,7 @@ const STEP_BUILDERS = {
   'wont-eat': buildWontEatStep,
   'excited-about': buildExcitedStep,
   'kit-repeats': buildKitRepeatsStep,
+  'anything-else': buildAnythingElseStep,
 };
 
 // The one progress cue on a question screen besides the crumb: the step
@@ -4141,10 +4722,10 @@ const STEP_BUILDERS = {
 // also the ORDER the last welcome screen lists the stops in, so the number
 // only ever moves forward.
 const QUESTION_SECTIONS = {
-  'household': 1, 'helpers': 1, 'restrictions': 1,
+  'your-name': 1, 'household': 1, 'helpers': 1, 'restrictions': 1,
   'meals-days': 2, 'prep': 2, 'variety-breakfast': 2, 'variety-lunch': 2, 'variety-dinner': 2, 'dinner-time': 2, 'shop-day': 2,
   'eating-style': 3, 'wont-eat': 3, 'excited-about': 3, 'kit-repeats': 3,
-  'ai-consent': 4,
+  'ai-consent': 4, 'anything-else': 4,
 };
 const SECTION_NAMES = { 1: 'Who’s eating', 2: 'How your week runs', 3: 'What you eat', 4: 'Your first week' };
 const SECTION_COUNT = 4;
@@ -4302,7 +4883,7 @@ window.addEventListener('popstate', function (e) {
   // whose answers are still true, and take the entry over so the same
   // gesture again goes further back rather than round in a circle.
   if (state.onboardingLoad !== PAGE_LOAD) {
-    showStep('household', { replace: true });
+    showStep(firstQuestionStep(), { replace: true });
     return;
   }
   showStep(key, { push: false });
@@ -4325,6 +4906,14 @@ async function saveHouseholdMembers() {
     members: currentMembers().map(m => ({ name: m.name, age_group: m.age_group })),
     pets: [],
     goals: '',
+    // Who the main person is (2026-10-05) — the name from "What's your
+    // name?". A NAME because that is the only identity this page has;
+    // the route resolves it to an id among the members it just saved and
+    // stores the id (app/tools/primary_member.py). Sent as '' rather than
+    // omitted only when there is genuinely no name, which the checks
+    // above this call make unreachable — and the route reads a blank as
+    // "this request isn't saying", so the resolver answers instead.
+    primary_name: primaryMemberName(),
   };
   const res = await Api.fetch('/api/onboarding/household', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -4342,13 +4931,51 @@ function showHouseholdEmptyNote(show) {
   const note = document.getElementById('household-empty');
   if (note) note.hidden = !show;
 }
+function showYourNameEmptyNote(show) {
+  const note = document.getElementById('your-name-empty');
+  if (note) note.hidden = !show;
+}
 // The step after `key` in this household's flow — a variety screen for a
 // meal that's off is skipped going forward exactly as it is going back.
 function goForward(key) {
   const flow = stepFlow();
   showStep(flow[flow.indexOf(key) + 1]);
 }
+// Nothing is written here — the name is held in the input until the end
+// of setup, like every other answer (see finishSetupAndReveal, and the
+// 2026-09-09 entry on why no step posts on the way past). So Next is a
+// check and a move, and it can never reach the finish.
+document.getElementById('your-name-next').onclick = () => {
+  if (!primaryMemberName()) { showYourNameEmptyNote(true); return; }
+  showYourNameEmptyNote(false);
+  goForward('your-name');
+};
+// Changing the name is pruning it: every answer keyed by a member NAME is
+// dropped the moment this box changes, not when the step that owns it is
+// next drawn — the rule addMemberRow's own × follows, and the reason it
+// follows it (CLAUDE.md, 2026-09-09 and 2026-09-04). The pinned "You" row
+// makes this door MORE reachable than it was, not less: going back one
+// screen and retyping is the whole of the rename path now.
+document.getElementById('your-name-input').addEventListener('input', () => {
+  showYourNameEmptyNote(false);
+  pruneMemberKeyedAnswers();
+});
 document.getElementById('household-next').onclick = () => {
+  if (!currentMembers().length) { showHouseholdEmptyNote(true); return; }
+  showHouseholdEmptyNote(false);
+  goForward('household');
+};
+// "Just me" is an answer, not a skip: it says the household is one
+// person, so it clears the others and goes on. The pinned "You" row is
+// left exactly where it is — it isn't one of the others — so the
+// household that finishes setup has precisely one member.
+document.getElementById('household-just-me').onclick = () => {
+  [...membersDiv.querySelectorAll('.member-block')]
+    .filter(b => !b.classList.contains('is-primary'))
+    .forEach(b => b.remove());
+  // The removed rows may have been named, and restrictions and helper
+  // picks are keyed by name — the same prune the × does.
+  pruneMemberKeyedAnswers();
   if (!currentMembers().length) { showHouseholdEmptyNote(true); return; }
   showHouseholdEmptyNote(false);
   goForward('household');
@@ -4454,8 +5081,11 @@ async function finishSetupAndReveal(opts) {
   // naming later steps behind a page whose answers are all gone. A
   // household of nobody used to post and be handed a generated week.
   if (!currentMembers().length) {
-    showStep('household');
-    showHouseholdEmptyNote(true);
+    // The step that fixes it is "What's your name?" since the split
+    // (2026-10-05): the main person's name is typed there and nowhere
+    // else, so a household of nobody is a household with no name typed.
+    showStep(firstQuestionStep());
+    showYourNameEmptyNote(true);
     return false;
   }
   setupRun = 'running';
@@ -4499,7 +5129,10 @@ function setKitRepeatsBusy(busy) {
 // has already said yes — then straight to the finish, as before.
 function afterLastQuestion() {
   if (stepFlow().indexOf('ai-consent') !== -1) showStep('ai-consent');
-  else finishSetupAndReveal();
+  // Already said yes (a re-run of setup): straight on to setup's last
+  // answer, which is where the first week is asked for now (2026-10-04).
+  // This branch used to finish setup outright.
+  else showStep('anything-else');
 }
 document.getElementById('kit-repeats-next').onclick = () => afterLastQuestion();
 document.getElementById('kit-repeats-skip').onclick = () => {
@@ -4595,13 +5228,12 @@ document.getElementById('ai-consent-allow').onclick = async () => {
     alert(AI_CONSENT_COPY.failed);
     return;
   }
-  // Busy until setup has finished (or failed), so a tap on "Not now"
-  // while the answers are saving can't record a no under a yes.
-  try {
-    await finishSetupAndReveal();
-  } finally {
-    setAiConsentBusy(false);
-  }
+  // On to setup's last answer, "Anything else I should know?" (2026-10-04)
+  // — which is where the week is actually asked for, and which reads the
+  // note with a model call, so the yes above has to be stored first. This
+  // used to finish setup right here instead.
+  setAiConsentBusy(false);
+  showStep('anything-else');
 };
 
 // "Not now": the answers are still saved — the household is set up, just
@@ -4739,7 +5371,12 @@ wireRevealSwapSheet();
 function startOnboarding() {
   const reloadedMidSetup = !!(window.history && window.history.state
     && window.history.state.onboardingStep);
-  showStep(reloadedMidSetup ? 'household' : 'intro-hello', { replace: !reloadedMidSetup });
+  // The first question since the split (2026-10-05), and it has to be
+  // the FIRST one: a reload throws away every answer in memory, including
+  // the name, and the second screen's pinned "You" row is drawn FROM that
+  // name — landing there would show a list with nobody pinned at the top
+  // of it. See firstQuestionStep, which the popstate handler reads too.
+  showStep(reloadedMidSetup ? firstQuestionStep() : 'intro-hello', { replace: !reloadedMidSetup });
 }
 startOnboarding();
 </script>

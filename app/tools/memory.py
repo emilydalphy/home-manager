@@ -9,6 +9,7 @@ from ..db import get_conn
 from ._shared import EATS_HERE_SQL, household_id, require_household_row
 from . import household as _household
 from . import preferences as _preferences
+from . import primary_member as _primary_member
 from . import rhythm as _rhythm
 
 
@@ -164,12 +165,24 @@ def get_household_memory() -> dict:
     settings with no feedback loop — either is None if there's not yet
     enough data this month to say anything meaningful.
     """
+    # The household's main person (2026-10-05) — Settings -> Who's here
+    # shows "Main person" next to them and can move it to another adult.
+    # Resolved BEFORE this function's own connection is opened, and once
+    # rather than per member: primary_member_id() opens one of its own and
+    # can WRITE (it records a household that has never had an answer), and
+    # a nested writing connection inside an open one is how this repo has
+    # twice earned an intermittent "database is locked". One extra
+    # connection per payload, constant, never per member.
+    primary_id = _primary_member.primary_member_id()
     conn = get_conn()
     prefs = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)).fetchone()
     members = conn.execute(
         # The people meals are planned for — a helper who doesn't eat here
-        # is left out (2026-09-30).
-        f"SELECT name, age_group, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
+        # is left out (2026-09-30). `id` since 2026-10-05: Who's here marks
+        # the main person, and moving it needs an id rather than a name —
+        # a name is the only identity this app has for a person and two
+        # people called Sam are indistinguishable to it.
+        f"SELECT id, name, age_group, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
         (household_id(),),
     ).fetchall()
     household = conn.execute("SELECT goals FROM households WHERE id = ?", (household_id(),)).fetchone()
@@ -233,8 +246,10 @@ def get_household_memory() -> dict:
 
     member_list = [
         {
+            "id": m["id"],
             "name": m["name"], "age_group": m["age_group"],
             "dietary_restrictions": json.loads(m["dietary_restrictions_json"]),
+            "is_primary": m["id"] == primary_id,
         }
         for m in members
     ]

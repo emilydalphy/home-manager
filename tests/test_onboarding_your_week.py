@@ -43,13 +43,23 @@ def _script() -> str:
 def test_the_screens_run_in_the_storyboards_order():
     steps = json.loads(_const("ALL_STEPS").split("=", 1)[1].strip().rstrip(";").replace("'", '"'))
     assert steps[4:] == [
+        # UPDATED 2026-10-05 (the main person): the household step is TWO
+        # screens -- "What's your name?" then "Who else lives with you?"
+        # -- so the main person is somebody who said so rather than
+        # whichever row happened to be first. TRIPWIRE FIRED: this file
+        # hard-codes the flow's order. The claim is unchanged; the flow
+        # gained a step.
+        "your-name",
         "household", "helpers", "restrictions",
         "meals-days", "prep", "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
         # UPDATED 2026-10-05 (grocery shop day): the two clock questions
         # together. The claim is unchanged; the flow gained a step.
         "shop-day",
         "eating-style", "wont-eat", "excited-about", "kit-repeats",
-        "ai-consent", "reveal",
+        # UPDATED 2026-10-05: "Anything else I should know?" is setup's
+        # last answer, after the consent card and before the reveal. The
+        # claim is unchanged; the flow gained a step at the end.
+        "ai-consent", "anything-else", "reveal",
     ]
 
 
@@ -64,9 +74,12 @@ def test_the_intro_still_lists_the_four_steps_in_that_order():
 def test_each_question_names_its_step_in_the_eyebrow():
     out = _run(_nav_harness() + """
 console.log(JSON.stringify(%s.map(function (k) { return stepEyebrow(k); })));
-""" % json.dumps(["household", "helpers", "restrictions", "meals-days", "prep", "variety-lunch",
+""" % json.dumps(["your-name", "household", "helpers", "restrictions", "meals-days", "prep", "variety-lunch",
                   "dinner-time", "eating-style", "kit-repeats", "ai-consent", "reveal"]))
     assert out == [
+        # UPDATED 2026-10-05: both halves of the split household step are
+        # in the first stop, so both name it. The claim is unchanged.
+        "1 of 4 · Who’s eating",
         "1 of 4 · Who’s eating", "1 of 4 · Who’s eating", "1 of 4 · Who’s eating",
         "2 of 4 · How your week runs", "2 of 4 · How your week runs", "2 of 4 · How your week runs",
         "2 of 4 · How your week runs", "3 of 4 · What you eat", "3 of 4 · What you eat",
@@ -356,6 +369,24 @@ def test_the_onboarding_payload_saves_through_the_real_route(signed_in):
 def test_the_helper_options_and_picks():
     out = _run("\n".join([
         "var MEMBERS = []; function currentMembers() { return MEMBERS; }",
+        # 2026-10-05: helperAdults excludes the MAIN PERSON by name rather
+        # than members[0] by position -- "does anyone else help run the
+        # house?" is a question about the others, and the main person is a
+        # real thing now (the pinned "You" row; primary_member_id
+        # server-side) instead of whichever row came first. helperAdults is
+        # an ALREADY-EXTRACTED function that gained a callee, which is the
+        # one shape no grep for a new symbol can find (this file never
+        # names primaryMemberName).
+        #
+        # A stand-in that STATES who the main person is, not an empty stub:
+        # primaryMemberName() returning '' would make helperAdults list
+        # EVERYBODY including the main person -- the bug the assertion
+        # below is about -- and the test would pass while asserting less.
+        # The real one reads #your-name-input, which this harness has no
+        # DOM for. Naming Emily makes the claim STRONGER than it was: it
+        # was "whoever is first is left out", it is now "the main person
+        # is left out".
+        "var PRIMARY_NAME = 'Emily'; function primaryMemberName() { return PRIMARY_NAME; }",
         _const("HELPER_SOMEONE"), _const("HELPER_ME"),
         "var helperPicks = []; var helperContacts = {}; var helperSomeoneName = '';",
         _fn("helperAdults"), _fn("helperOptions"), _fn("helperToggle"), _fn("pruneHelperAnswers"), _fn("helpersToInvite"),

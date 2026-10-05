@@ -209,6 +209,14 @@ def clean_state():
         # Who set the household up (first-open welcome) is on the household
         # row too, and names a member the wipe above just deleted.
         conn.execute("UPDATE households SET set_up_by_member_id = NULL WHERE id = 1")
+        # And who the MAIN PERSON is (2026-10-05) — same column shape, same
+        # row, same reason: it names a member the wipe just deleted, so a
+        # test that leaves a primary behind hands the next one a household
+        # whose main person does not exist. Measured rather than assumed:
+        # without this, test_onboarding_your_name's "a household with
+        # nobody in it has no main person" read a dangling id of 2 left by
+        # the test before it.
+        conn.execute("UPDATE households SET primary_member_id = NULL WHERE id = 1")
         # Household 1 has said yes to sharing with Claude, in every test —
         # see _database above for why, and for the tests that undo it.
         conn.execute(
