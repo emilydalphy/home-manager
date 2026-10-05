@@ -14,8 +14,20 @@ model forgets, recipes._PRODUCE_COUNT_PER_SERVING is a deterministic catch
 on the handful of produce where the full-size kind and a small kind are
 both bought by the count: a bare count too high for the ordinary kind is
 flagged into the morning report (plan_quality "produce_variety_named",
-info). Nothing is rewritten — six cucumbers were very likely six Persian
-ones, and only the model knows — and the list line is left as written.
+info). THIS rule still rewrites nothing — six cucumbers were very likely
+six Persian ones, and only the model knows — and a name that says a kind
+is never second-guessed by anything.
+
+CORRECTED 2026-10-05: the sentence used to end "and the list line is left
+as written", and that is no longer true of a BARE name. A sibling rule
+(recipes.per_person_count_problem, Gowthami's household: "it's assuming a
+whole 'apple' or 'tomato' for each one ... way too many") now holds a bare
+count to the most a plausible dish for the recipe's own table uses, and
+recomputes past it. The two questions are different — "which kind did you
+mean?" against "is this a dish amount or a per-person one?" — and only the
+second has an answer the app can act on, so only the second acts. The two
+tests below were the tripwire and are narrowed to the claim that survives;
+see the comments on each.
 """
 from __future__ import annotations
 
@@ -181,14 +193,30 @@ def test_the_rule_is_exposed_on_the_tools_package():
 
 # ---------- nothing is rewritten ----------
 
-def test_the_cook_view_shows_the_count_as_written():
-    """The plausibility table has no vegetable class, and this rule adds
-    none: a count is a word short, not a number wrong."""
-    shown = recipes.cooking_ingredients([{"item": "Cucumbers", "qty": "6", "category": "produce"}], servings=2)
-    assert shown[0]["qty"] == "6"
-    assert recipes.settle_cooking_quantities(
-        [{"item": "Cucumbers", "qty": "6", "category": "produce"}], 2,
-    ) == [{"item": "Cucumbers", "qty": "6", "category": "produce"}]
+def test_the_kind_rule_still_adds_no_measured_class():
+    """
+    The claim this test was written for, and all of it that is still true:
+    the measured-amount table (_PLAUSIBLE_PER_SERVING) has no vegetable
+    class and the KIND rule adds none — a count is a word short, not a
+    measured amount out of range.
+
+    It used to assert the cook view showed "6" and settle_cooking_quantities
+    left the line alone, and on 2026-10-05 it fired as a tripwire: the
+    per-person count rule (per_person_count_problem) recomputes a bare
+    count past anything a dish for the table uses, and "6 cucumbers" for a
+    table of two is three each. That is a DIFFERENT question from this
+    file's, it is the one the Gowthami card asked for in those words
+    ("recomputes from the recipe rather than shipping it"), and the number
+    it hands back is the plausible MAXIMUM for that table (two), not the
+    app's typical figure (one). What has to survive is that the kind rule
+    is not the thing doing it, which is what is asserted here.
+    """
+    line = {"item": "Cucumbers", "qty": "6", "category": "produce"}
+    assert recipes.implausible_quantity("Cucumbers", "6", 2) is None
+    assert _problem("Cucumbers", "6", 2) is not None, "the kind flag still fires"
+    # The sibling rule, named so this test says which rule moved the number.
+    assert recipes.per_person_count_problem("Cucumbers", "6", 2) is not None
+    assert recipes.settle_cooking_quantities([dict(line)], 2)[0]["cook_qty"] == "2"
 
 
 def _this_week():
@@ -233,11 +261,22 @@ def test_persian_cucumbers_and_cucumbers_from_two_recipes_stay_two_lines():
     assert bought["Cucumbers"] == "1"
 
 
-def test_a_vague_count_reaches_the_list_as_written():
-    """The catch is a flag in the morning report, never an edit to the
-    line: the list shows "6" of "Cucumbers", nothing appended."""
+def test_a_vague_count_is_recomputed_now_and_still_flagged_for_its_kind():
+    """
+    The other half of the 2026-10-05 tripwire. This asserted the list showed
+    "6", on the stated ground that the catch is "a flag in the morning
+    report, never an edit to the line". The flag is still a flag and still
+    the only thing THIS rule does — asserted below, because losing it would
+    lose the "which kind did you mean?" question the whole file is about.
+    What changed is that a bare count is no longer shipped at a per-person
+    amount: two eaters, "6 cucumbers", so the week buys the plausible
+    maximum for a table of two.
+    """
     bought = _approve(("Cucumber Salad", [{"item": "Cucumbers", "qty": "6", "category": "produce"}]))
-    assert bought == {"Cucumbers": "6"}
+    assert bought == {"Cucumbers": "2"}
+    # The kind question is untouched: the recipe as written is still worth
+    # asking about, which is what reaches the morning report.
+    assert _problem("Cucumbers", "6", 2) is not None
 
 
 # ---------- the flag: plan quality ----------

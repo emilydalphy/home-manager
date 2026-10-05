@@ -3898,6 +3898,15 @@ list, which buys per portion — a recipe written for 4 in a household of 3 has 
 multiplied by three quarters on the way to the list, so "4 bell peppers" becomes 3 and a week \
 of that arrives as odd fractions nobody wrote. Write it for the real table and the list is \
 simply what you wrote.
+- "For that many people" means the amount THE DISH uses, not an amount per person. This matters \
+most for anything bought by the count — tomatoes, apples, onions, lemons, limes, peppers, \
+avocados, cucumbers, potatoes, carrots, zucchini. A salad for four wants ONE lemon, not four; a \
+pasta sauce for four wants two or three tomatoes, not four; a snack of apple slices wants the \
+apples the plate actually holds. Writing `serves` as the qty on a count line is the single way \
+these come out wrong, because eight meals in a week that each name a count end up buying eight \
+times it: a household of three was shown thirty tomatoes, eighteen cucumbers and fifteen lemons \
+for one week. Per-portion amounts — a weight of meat, a volume of rice, cups of broth — DO \
+scale with the number of people, and those you write for the whole table as above.
 - When the dish names a specific cuisine or regional style (Chettinad, Sichuan, Yucatecan, \
 etc. — not just a broad label like "Indian" or "Mexican"), actually cook like that style, not \
 a generic version wearing its name: use the real spice/aromatic blend that style is known for \
