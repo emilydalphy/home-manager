@@ -503,6 +503,27 @@
     return popSheetLevel();
   }
 
+  // Which sheet a tapped control SITS INSIDE — so the "Something not
+  // working?" tile in Settings opens the form on Settings, while the same
+  // control in an error paragraph halfway down the Shop tab opens it on
+  // the tab. Read off the DOM rather than off whichever sheet happens to
+  // be open, so the answer is about the control that was tapped.
+  var SHEET_LEVEL_HOSTS = [
+    { sel: '#tips-sheet', key: 'tips' },
+    { sel: '#recipes-sheet', key: 'recipes' },
+    { sel: '#rli-sheet', key: 'rli' },
+    { sel: '#wwk-body', key: 'wwk' },
+    { sel: '#prefs-sheet', key: 'prefs' }
+  ];
+
+  function sheetLevelHost(el) {
+    if (!el || !el.closest) return null;
+    for (var i = 0; i < SHEET_LEVEL_HOSTS.length; i++) {
+      if (el.closest(SHEET_LEVEL_HOSTS[i].sel)) return SHEET_LEVEL_HOSTS[i].key;
+    }
+    return null;
+  }
+
   // Leaving the stack behind entirely — a tab change, or a sheet opened
   // from a tab while a stack is somehow still standing. The parents are
   // not coming back, so nothing should reopen them later.
@@ -701,6 +722,10 @@
     // activate the tab first and open it after, so this does not fight
     // them.
     closeKitchenSheet();
+    // And a sheet stack belongs to the sheets that built it (2026-10-05):
+    // leaving for a tab is the household leaving the stack, so nothing
+    // reopens a parent later.
+    forgetSheetLevels();
 
     // The All set screen is shown once, in the page view that approved the
     // week (allSetStepHtml). Leaving Plan by any door — "Open the list", the
@@ -25316,11 +25341,11 @@
       '<div class="morning-body" id="morning-body"></div>';
     document.body.appendChild(morningScrimEl);
     document.body.appendChild(morningSheetEl);
-    morningScrimEl.addEventListener('click', closeMorningSheet);
-    morningSheetEl.querySelector('#morning-handle').addEventListener('click', closeMorningSheet);
-    morningSheetEl.querySelector('#morning-close').addEventListener('click', closeMorningSheet);
+    morningScrimEl.addEventListener('click', dismissMorningSheet);
+    morningSheetEl.querySelector('#morning-handle').addEventListener('click', dismissMorningSheet);
+    morningSheetEl.querySelector('#morning-close').addEventListener('click', dismissMorningSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && morningSheetEl && !morningSheetEl.hidden) closeMorningSheet();
+      if (e.key === 'Escape' && morningSheetEl && !morningSheetEl.hidden) dismissMorningSheet();
     });
     morningSheetEl.addEventListener('click', function (e) {
       var toggle = e.target && e.target.closest && e.target.closest('[data-morning-toggle], [data-evening-toggle]');
@@ -25444,14 +25469,19 @@
     }
   }
 
-  function openMorningSheet() {
+  // `parent` (2026-10-05): the sheet this was opened from. The
+  // Preferences row passes 'prefs', so the x and the back chevron land
+  // back on Settings rather than on the tab.
+  function openMorningSheet(parent) {
     buildMorningSheet();
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
-    closePrefsSheet();
+    if (parent) openOverSheet(parent, dismissMorningSheet);
+    else { forgetSheetLevels(); closePrefsSheet(); }
     closeSnwSheet();
     renderMorningSheet();
+    paintSheetLevelChrome(morningSheetEl, 'Morning text');
     morningScrimEl.hidden = false;
     morningSheetEl.hidden = false;
     loadPrefsMorningText();
@@ -25463,9 +25493,15 @@
     morningSheetEl.hidden = true;
   }
 
+  // The household's own way out: one level up when there is one.
+  function dismissMorningSheet() {
+    closeMorningSheet();
+    popSheetLevel();
+  }
+
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-morning="open"]');
-    if (target) openMorningSheet();
+    if (target) openMorningSheet(sheetLevelHost(target));
   });
 
   // ---------- "Recipes" (Settings, Emily 2026-10-04) ----------
@@ -25579,11 +25615,11 @@
     // Body level, like every other sheet here.
     document.body.appendChild(recipesScrimEl);
     document.body.appendChild(recipesSheetEl);
-    recipesScrimEl.addEventListener('click', closeRecipesSheet);
-    recipesSheetEl.querySelector('#recipes-handle').addEventListener('click', closeRecipesSheet);
-    recipesSheetEl.querySelector('#recipes-close').addEventListener('click', closeRecipesSheet);
+    recipesScrimEl.addEventListener('click', dismissRecipesSheet);
+    recipesSheetEl.querySelector('#recipes-handle').addEventListener('click', dismissRecipesSheet);
+    recipesSheetEl.querySelector('#recipes-close').addEventListener('click', dismissRecipesSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && recipesSheetEl && !recipesSheetEl.hidden) closeRecipesSheet();
+      if (e.key === 'Escape' && recipesSheetEl && !recipesSheetEl.hidden) dismissRecipesSheet();
     });
     recipesSheetEl.addEventListener('click', onRecipesClick);
   }
@@ -25682,6 +25718,11 @@
   }
 
   // opts.id opens straight on that recipe (after a save from here).
+  // opts.parent (2026-10-05): the sheet this was opened from. The
+  // Preferences row passes 'prefs', so the x and the back chevron land
+  // back on Settings. A reopen from the import sheet passes nothing: that
+  // level is already on the stack, and the import's own pop is what
+  // brought the household back here.
   function openRecipesSheet(opts) {
     opts = opts || {};
     buildRecipesSheet();
@@ -25689,8 +25730,10 @@
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
-    closePrefsSheet();
+    if (opts.parent) openOverSheet(opts.parent, dismissRecipesSheet);
+    else closePrefsSheet();
     closeSnwSheet();
+    paintSheetLevelChrome(recipesSheetEl, 'Recipes');
     recipesScrimEl.hidden = false;
     recipesSheetEl.hidden = false;
     if (opts.id) {
@@ -25707,6 +25750,12 @@
     if (!recipesSheetEl) return;
     recipesScrimEl.hidden = true;
     recipesSheetEl.hidden = true;
+  }
+
+  // The household's own way out: one level up when there is one.
+  function dismissRecipesSheet() {
+    closeRecipesSheet();
+    popSheetLevel();
   }
 
   // Back from the link or cookbook sheet, saved or not.
@@ -25746,7 +25795,7 @@
   // The Preferences row — delegated, like Morning text's.
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-recipes="open"]');
-    if (target) openRecipesSheet();
+    if (target) openRecipesSheet({ parent: sheetLevelHost(target) });
   });
 
   // ---------- "Helpful tips" ----------
@@ -25818,22 +25867,27 @@
     // outside the tab panel's stacking and scroll context.
     document.body.appendChild(tipsScrimEl);
     document.body.appendChild(tipsSheetEl);
-    tipsScrimEl.addEventListener('click', closeTipsSheet);
-    tipsSheetEl.querySelector('#tips-handle').addEventListener('click', closeTipsSheet);
-    tipsSheetEl.querySelector('#tips-close').addEventListener('click', closeTipsSheet);
+    tipsScrimEl.addEventListener('click', dismissTipsSheet);
+    tipsSheetEl.querySelector('#tips-handle').addEventListener('click', dismissTipsSheet);
+    tipsSheetEl.querySelector('#tips-close').addEventListener('click', dismissTipsSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && tipsSheetEl && !tipsSheetEl.hidden) closeTipsSheet();
+      if (e.key === 'Escape' && tipsSheetEl && !tipsSheetEl.hidden) dismissTipsSheet();
     });
   }
 
-  function openTipsSheet() {
+  // `parent` (2026-10-05): the sheet this was opened from. The
+  // Preferences row passes 'prefs'; the ask sheet's "?" passes nothing,
+  // so from there the x still lands where it always did.
+  function openTipsSheet(parent) {
     buildTipsSheet();
     // One sheet at a time, the rule every other sheet here follows.
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
-    closePrefsSheet();
+    if (parent) openOverSheet(parent, dismissTipsSheet);
+    else closePrefsSheet();
     closeSnwSheet();
+    paintSheetLevelChrome(tipsSheetEl, 'Helpful tips');
     tipsScrimEl.hidden = false;
     tipsSheetEl.hidden = false;
   }
@@ -25844,11 +25898,17 @@
     tipsSheetEl.hidden = true;
   }
 
+  // The household's own way out: one level up when there is one.
+  function dismissTipsSheet() {
+    closeTipsSheet();
+    popSheetLevel();
+  }
+
   // Delegated, so the Preferences row and the ask sheet's "?" button work
   // without anything wiring a listener.
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-tips]');
-    if (target) openTipsSheet();
+    if (target) openTipsSheet(sheetLevelHost(target));
   });
 
   // ---------- boot ----------
@@ -26012,14 +26072,21 @@
       '<button type="button" class="snw-send" id="snw-send" disabled>Send</button>';
   }
 
-  function openSnwSheet(screenName) {
+  // `parent` (2026-10-05): the sheet this form was opened from — the
+  // Settings tile passes 'prefs', Helpful tips' own "Need help with
+  // something?" row passes 'tips'. The snwLink() in an error paragraph
+  // halfway down a tab passes nothing and closes to the tab as before.
+  function openSnwSheet(screenName, parent) {
     buildSnwSheet();
     // One sheet at a time, the same rule the Kitchen sheets follow.
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
     // Helpful tips' "Need help with something?" opens this form; the tips
-    // sheet goes so it can't sit on top of the form.
+    // sheet goes so it can't sit on top of the form — and comes back when
+    // this one is dismissed, because it is on the stack.
+    if (parent) openOverSheet(parent, dismissSnwSheet);
+    else { forgetSheetLevels(); closePrefsSheet(); }
     closeTipsSheet();
     var screen = snwScreenName(screenName);
     var body = snwSheetEl.querySelector('#snw-body');
@@ -26032,6 +26099,7 @@
     send.addEventListener('click', function () {
       sendSnwReport(what.value, (body.querySelector('#snw-trying') || {}).value, screen);
     });
+    paintSheetLevelChrome(snwSheetEl, 'Something not working?');
     snwScrimEl.hidden = false;
     snwSheetEl.hidden = false;
     what.focus();
@@ -26041,6 +26109,12 @@
     if (!snwSheetEl) return;
     snwScrimEl.hidden = true;
     snwSheetEl.hidden = true;
+  }
+
+  // The household's own way out: one level up when there is one.
+  function dismissSnwSheet() {
+    closeSnwSheet();
+    popSheetLevel();
   }
 
   function sendSnwReport(whatHappened, tryingToDo, screen) {
@@ -26080,7 +26154,7 @@
   // re-bound when a panel re-renders under it.
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-snw]');
-    if (target) openSnwSheet(target.getAttribute('data-snw-screen') || '');
+    if (target) openSnwSheet(target.getAttribute('data-snw-screen') || '', sheetLevelHost(target));
   });
 
   // ---------- Service worker registration ----------
