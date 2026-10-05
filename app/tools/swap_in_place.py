@@ -1275,8 +1275,28 @@ def fed_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
     of a tap about Tuesday's lunch. (The menu row's Swap is never offered
     on a leftovers row at all — shell.js wkMenuRowHtml — so the doors that
     reach a reheat are the Day and Meal steps' own Swap.)
+
+    COST, and the reason for the early return below rather than letting
+    _along_chains answer for itself. That function reads the chains AND
+    the whole week payload (get_week_menu), which itself reads the chains
+    twice more — so handing it every swap put three plan_leftover_chains
+    reads and a week payload on the COMMON path, the ordinary dinner that
+    feeds nothing. Measured through choose_swap_option on a one-dinner
+    approved week, counted at sqlite3.connect: 60 connections on the
+    merge base, 87 with the naive widening, 61 with this early return.
+    A swap that really does widen pays the full read, once per tap, on a
+    tap that is already making a model call.
+
+    The test is EXACT rather than a heuristic, which is what makes the
+    short-circuit safe: plan_leftover_chains honours a chain only when
+    BOTH halves agree, so a cook with no `make_double_for` of its own can
+    be nobody's source, and _along_chains walking downstream from it
+    could only ever hand back `[entry]`. Same answer, no reads.
     """
-    return _along_chains(weekly_plan_id, [_entry(weekly_plan_id, entry_id)], downstream_only=True)
+    entry = _entry(weekly_plan_id, entry_id)
+    if not (entry["derived_from"] or {}).get("make_double_for"):
+        return [entry]
+    return _along_chains(weekly_plan_id, [entry], downstream_only=True)
 
 
 def _along_chains(weekly_plan_id: int, group: list[dict], downstream_only: bool = False) -> list[dict]:

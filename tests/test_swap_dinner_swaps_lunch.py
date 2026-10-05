@@ -131,6 +131,7 @@ import importlib
 import json
 import re
 import shutil
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -891,6 +892,47 @@ def test_the_repeat_rule_is_the_one_generation_uses(home):
     assert "repeat_for_slot" in source
     assert "nights" not in source.split("def instead_of_the_leftovers")[1].split("\ndef ")[0] \
         .split('"""')[2]
+
+
+def test_an_ordinary_dinner_pays_nothing_for_the_widening(home):
+    """GUARD on COST, measured at sqlite3.connect rather than at any
+    module's get_conn, because _shared.py imports get_conn inside the
+    function and a module-level patch would not see those reads
+    (CLAUDE.md's own note from the 2026-09-11 approve-race work).
+
+    fed_days returns early for a cook with no `make_double_for` of its
+    own, and the reason is cost: _along_chains reads the chains AND the
+    whole week payload (get_week_menu), which reads the chains twice
+    more. Without the early return every swap paid that, including the
+    ordinary dinner that feeds nothing.
+
+    Measured through choose_swap_option on a one-dinner approved week:
+    60 connections on the merge base, 87 with the naive widening, 61
+    with the early return — the one extra is fed_days' own _entry read.
+    Mutation: the early return removed — this test (87 > the ceiling).
+    """
+    tools.plan_meal(D1, CHILI, slot="dinner", weekly_plan_id=home)
+    tools.approve_weekly_plan(home, "Alex")
+    cook = next(r["id"] for r in _rows(home) if r["date"] == D1)
+    sop._OPTIONS_CACHE.clear()
+    tools.swap_options(home, cook, asker=_asker(_pick()))
+    real, seen = sqlite3.connect, []
+    def counted(*a, **k):
+        seen.append(1)
+        return real(*a, **k)
+    sqlite3.connect = counted
+    try:
+        tools.choose_swap_option(home, cook, 0)
+    finally:
+        sqlite3.connect = real
+    # A ceiling with headroom, not the exact figure: this path is shared
+    # with the grocery ingest and a neighbouring card may legitimately
+    # move it by one or two. 87 is what the naive widening cost, so the
+    # ceiling has to sit well under it to catch a revert.
+    assert len(seen) < 75, f"the plain swap paid {len(seen)} connections for a widening it does not use"
+    # ...and a lower bound too, because "< 75" is also green at zero,
+    # which would mean the counter stopped counting.
+    assert len(seen) > 20
 
 
 def test_no_module_level_name_is_defined_twice_in_what_this_touched():
