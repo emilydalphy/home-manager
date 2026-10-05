@@ -122,10 +122,12 @@ import datetime
 import importlib
 import json
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 
+import nodeharness
 from conftest import household_today
 from app import tools
 from app.db import get_conn
@@ -142,6 +144,24 @@ D3 = (TODAY + datetime.timedelta(days=3)).isoformat()
 CHILI = "Beef Chili"
 NEW = "Chana Masala"
 SHELL = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+_needs_node = pytest.mark.skipif(shutil.which("node") is None,
+                                 reason="node runs the sheet's own renderer")
+
+
+def _fn(name: str) -> str:
+    """One function out of shell.js, by brace matching."""
+    i = SHELL.index("function " + name + "(")
+    j = SHELL.index("{", i)
+    depth, k = 0, SHELL.index("{", i)
+    while True:
+        if SHELL[k] == "{":
+            depth += 1
+        elif SHELL[k] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        k += 1
+    return SHELL[i:k + 1]
 
 
 def _pick(name=NEW, item="Chickpeas", qty="2 cans", minutes=15):
@@ -507,6 +527,44 @@ def test_the_toast_prefers_the_servers_sentence(home):
     assert "out.said || savedLine(picked.meal, 'swapped in')" in SHELL
     assert "data.said || savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in')" in SHELL
     assert "(data.days || [data.day]).forEach(spliceSwappedDay)" in SHELL
+
+
+@_needs_node
+def test_the_sheet_names_both_meals_before_the_tap_too():
+    """GUARD on shell.js, and the reason no further client change is owed.
+    swapDaysLine already handles a group that spans meal types — it was
+    written for the whole-dish Swap (Emily, 2026-09-22) — and
+    openSwapSheet already copies the RESPONSE's `dates`/`meals` into the
+    sheet's state unconditionally. So the moment the server started
+    sending them for a widened plain Swap, the sheet began saying both
+    meals BEFORE the tap for free; nothing in static/shell.js had to
+    learn about it.
+
+    Driven under node against the payload the HTTP drive actually
+    returned, rather than read off the source: the risk here is a line
+    that renders empty, which a marker test cannot see. Mutation: the
+    sheet never says which meals it is swapping (swap_options dropping
+    `dates`/`meals` for a widened group) — 1 red, the server-side test
+    above; this is its client half."""
+    js = (
+        "function isSnackSlot(s){ return String(s||'').indexOf('snack') === 0; }\n"
+        + "\n".join(_fn(f) for f in ("joinList", "dayName", "slotWord", "swapDaysLine"))
+        + "\nvar SWAP_SLOT_PLURALS = { breakfast: 'breakfasts', lunch: 'lunches',"
+          " dinner: 'dinners', snack: 'snacks' };\n"
+        # Exactly what POST /swap-options answered over real HTTP for a
+        # Monday dinner cooked double for Tuesday's lunch.
+        "console.log(JSON.stringify([\n"
+        "  swapDaysLine({ slot: 'dinner', dates: ['2026-10-06', '2026-10-07'],\n"
+        "                 meals: [{date:'2026-10-06',slot:'dinner'},{date:'2026-10-07',slot:'lunch'}] }),\n"
+        "  swapDaysLine({ slot: 'dinner', dates: ['2026-10-06'],\n"
+        "                 meals: [{date:'2026-10-06',slot:'dinner'}] })\n"
+        "]));"
+    )
+    res = nodeharness.run_node(js, timeout=30)
+    assert res.returncode == 0, res.stderr
+    widened, one_day = json.loads(res.stdout.strip())
+    assert widened == "Swapping Tuesday\u2019s dinner and Wednesday\u2019s lunch."
+    assert one_day == "", "an ordinary one-meal swap says nothing extra"
 
 
 # ---------- 5. a dish that will not keep ----------
