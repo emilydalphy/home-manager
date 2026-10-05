@@ -94,6 +94,8 @@ MUTATIONS RUN, red counts read off the runs over this file, in a
     shell.js: runSwapPick's toast back to savedLine alone ............  1
     shell.js: runSwapInPlace's toast back to savedLine alone .........  1
     shell.js: runSwapInPlace splicing one day, not every day returned   1
+    fed_days' early return removed (the cost guard) ..................  1
+    replace_dish_on_days carrying make_double_for without its note ...  1
 
 Every one bites. FIVE REDDENED NOTHING ON A FIRST RUN AND ALL FIVE ARE
 RECORDED RATHER THAN QUIETLY RE-RUN, because three were badly chosen, one
@@ -290,12 +292,24 @@ def test_the_grocery_list_holds_the_new_dish_at_batch_size_and_nothing_of_the_ol
 def test_the_new_dinner_still_feeds_the_lunch(home):
     """CATCH. "The new dinner is written for the whole batch" — the chain
     is carried to the new dish rather than unlinked, so the Cook card still
-    reads one cook feeding two meals."""
+    reads one cook feeding two meals.
+
+    The card's own second clause is "and shows the double-batch callout",
+    and that callout is make_double_note — the sentence Cook and the Plan
+    row read. replace_dish_on_days rebuilds it from the nights that were
+    KEPT (_make_double_note_text), so it is pinned here rather than taken
+    on trust: carrying make_double_for without the note would leave the
+    new dinner batched and silent about it."""
     cook = _chain(home)
     _opened, out = _sheet_swap(home, cook)
     assert _chains(home) == {out["entry_id"]: [(D2, "lunch")]}
     fed = next(r for r in _rows(home) if r["slot"] == "lunch")
     assert fed["derived"]["links_to"] == f"{D1}:dinner"
+    new_cook = next(r for r in _rows(home) if r["slot"] == "dinner")
+    weekday = datetime.date.fromisoformat(D2).strftime("%A")
+    assert new_cook["derived"]["make_double_note"] == (
+        f"I\u2019ll set aside a double batch tonight \u2014 {weekday} eats the leftovers."
+    )
 
 
 def test_no_separate_line_set_is_left_for_the_lunch(home):
