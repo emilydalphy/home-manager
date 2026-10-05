@@ -34,28 +34,87 @@ swap_meal_in_place takes an injected `picker`.
 
 Each test says CATCH (red against c40f452, this branch's merge base) or
 GUARD (green either way, pinned by a mutation named in the docstring and
-actually run). Measured red counts against the merge base's `app/` and
-`static/`, with this file's own two new names stubbed so every test
-reaches its own assertion (fed_days -> [entry], swapped_said -> ""):
+ACTUALLY RUN). Measured against the merge base's `app/` and `static/` in a
+`git archive` of its own, with the five names this branch adds stubbed to
+MERGE-BASE BEHAVIOUR so every test reaches the assertion it is named for
+(fed_days -> [entry], swapped_said/refilled_said -> "",
+instead_of_the_leftovers -> {}, repeat_for_slot -> None,
+keeps_as_leftovers -> True):
 
-    24 failed, 11 passed
+    29 failed, 19 passed   (37 functions, 48 cases)
 
-and of the 24, every one fails on an assertion it is named for — there is
-no AttributeError and no KeyError in the list.
+NO AttributeError and NO KeyError-on-a-stub in that list. But read the 29
+for less than it looks, because four of them are not behaviour catches and
+each says so in its own docstring:
 
-MUTATIONS RUN, red counts read off the runs over this file:
+  * test_the_toast_prefers_the_servers_sentence and
+    test_the_repeat_rule_is_the_one_generation_uses are SOURCE markers,
+    red there because the line (or the name) does not exist on the merge
+    base — the only kind of red a marker on new code can have;
+  * test_a_failure_part_way_changes_no_meal is red on DID NOT RAISE: it
+    forces a failure inside replace_dish_on_days, which a one-day swap on
+    the merge base never reaches, so it never gets to the atomicity it
+    asserts;
+  * test_three_meals_read_as_a_list is red on the ABSENCE of `said`
+    rather than on the joining it is named for.
 
-    the whole widening a no-op (apply_pick/swap_options/chat door) ...  24
-    fed_days walking both ways (chain_days' rule) ....................   2
-    apply_pick not widening (the screens' two doors only) ............   9
-    the chat door not widening .......................................   4
-    swapped_said naming days without their meal words ................   3
-    keeps_as_leftovers always True ...................................   6
-    keeps_as_leftovers ignoring the pick's own answer ................   1
-    the fed meal opened BESIDE the old row (plan_slot_open alone) ....   2
-    replace_dish_on_days ignoring a per-item `chain` .................   4
-    the undo not handing the recorded chain back .....................   1
-    batch serves taken from the whole group, refills included ........   1
+So: 25 behaviour catches, and four reds that are honest about being
+something else.
+
+THE PREVIOUS VERSION OF THIS HEADER SAID "24 failed, 11 passed" AND THAT
+WAS A STALE NUMBER CARRIED FORWARD — it summed to 35 when the file held
+46 cases, which is how it was caught. Re-measured here rather than
+re-quoted.
+
+MUTATIONS RUN, red counts read off the runs over this file, in a
+`git archive` of the branch so nothing else was writing to the tree:
+
+    the whole widening a no-op (fed_days -> [entry]) ................. 21
+    keeps_as_leftovers always True ................................... 11
+    a second copy of the repeat rule in swap_in_place .................  7
+    swapped_said naming days without their meal words ................  3
+    the undo restoring only the first row ............................  3
+    the fed meal opened BESIDE the old row (plan_slot_open alone) .....  2
+    replace_dish_on_days ignoring a per-item `chain` .................  2
+    the undo not handing the recorded chain back .....................  2
+    swapped_said joining with ", " throughout ........................  2
+    apply_pick not widening (the `group=None` default) ...............  1
+    fed_days walking both ways (chain_days' rule) ....................  1
+    the chat door not widening .......................................  1
+    keeps_as_leftovers ignoring the pick's own answer ................  1
+    NEVER_OPEN_SLOTS gains dinner (a fed dinner repeated) ............  1
+    batch serves from the whole group (BOTH copies of `keeping`) .....  1
+    _entry's read not scoped to the household ........................  1
+    the sheet never says which meals it is swapping ..................  1
+    shell.js: runSwapPick's toast back to savedLine alone ............  1
+    shell.js: runSwapInPlace's toast back to savedLine alone .........  1
+
+FOUR OF THOSE REDDENED NOTHING ON THE FIRST RUN AND ALL FOUR ARE
+RECORDED RATHER THAN QUIETLY RE-RUN, because three were badly chosen and
+one found a real hole:
+
+  * "apply_pick not widening" — 0 red. The other three doors all pass
+    `group` explicitly, so the `group is None` default is reached only by
+    proposals.apply_proposal (the chat change card's Save changes), and
+    NOTHING IN THIS FILE DROVE IT. That default is the fix's own fourth
+    door and it was unpinned. test_the_chat_change_cards_save_widens_too
+    is the test that closes it; the mutation now reddens 1.
+  * "NEVER_OPEN_SLOTS gains dinner" — 0 red, neutralised by its own
+    seed: with only the cook and the night it feeds on the plan there is
+    no other dinner for repeat_for_slot to offer, so the slot opened
+    either way. Re-seeded with a third dinner; 1 red.
+  * "batch serves from the whole group" — 0 red twice over. First
+    because there are TWO copies of the `keeping` line (apply_pick and
+    choose_swap_option) and only one was mutated; then, with both
+    mutated, because `serves` only reaches
+    `default_servings=pick.get("default_servings") or serves or 4` and
+    every pick in this file carries its own default_servings. It is
+    pinned by test_the_new_recipe_is_saved_for_the_batch_that_keeps_it
+    (a pick with none) rather than through the grocery list.
+  * "_entry's read not scoped to the household" — 0 red as first
+    written, which put a no-op `pass` ahead of the docstring. Aimed at
+    the WHERE clause: 1 red.
+
 """
 from __future__ import annotations
 
@@ -245,10 +304,13 @@ def test_fed_days_is_the_cook_and_the_meals_it_feeds(home):
 
 
 def test_swapping_a_reheat_night_leaves_its_cook_alone(home):
-    """CATCH. The whole difference from chain_days, and the reason
-    fed_days is downstream only: "not Monday's chili again on Tuesday" is
-    an answer about that one meal. Mutation — fed_days walking both ways:
-    2 red."""
+    """GUARD — relabelled from CATCH after measuring it. The whole
+    difference from chain_days, and the reason fed_days is downstream
+    only: "not Monday's chili again on Tuesday" is an answer about that
+    one meal. It is GREEN on the merge base, where nothing widens at all,
+    so the cook is left alone there for a different reason than the one
+    this test is named for. Mutation — fed_days walking both ways
+    (chain_days' rule): 1 red, this test."""
     _chain(home)
     fed = next(r["id"] for r in _rows(home) if r["slot"] == "lunch")
     group = tools.fed_days(home, fed)
@@ -411,7 +473,11 @@ def test_the_confirmation_names_both_meals(home):
 
 
 def test_three_meals_read_as_a_list(home):
-    """GUARD. Mutation: joining with ", " throughout — this test."""
+    """GUARD on its own claim, and RED against the merge base for a
+    DIFFERENT reason — said rather than counted as a catch: there is no
+    `said` at all there, so it dies on KeyError before it can reach the
+    joining this test is about. Mutation: swapped_said joining with ", "
+    throughout — 2 red, this among them."""
     cook = _chain(home, fed=((D2, "lunch"), (D3, "dinner")))
     _opened, out = _sheet_swap(home, cook)
     days = [datetime.date.fromisoformat(d).strftime("%A") for d in (D1, D2, D3)]
@@ -430,9 +496,14 @@ def test_a_one_meal_swap_says_nothing_extra(home):
 
 
 def test_the_toast_prefers_the_servers_sentence(home):
-    """GUARD (source). shell.js's two swap toasts read `said` and fall back
-    to savedLine, so the sentence that counts meals is built once, beside
-    the rows. Mutation: either toast back to savedLine alone — this test."""
+    """CATCH (source marker) — relabelled from GUARD after measuring it.
+    shell.js's two swap toasts read `said` and fall back to savedLine, so
+    the sentence that counts meals is built once, beside the rows. Red
+    against the merge base because that line does not exist there, which
+    is the only kind of red a source marker on new code can have — not
+    evidence of behaviour. Mutations: runSwapPick's toast back to
+    savedLine alone — 1 red; runSwapInPlace's — 1 red; this test both
+    times."""
     assert "out.said || savedLine(picked.meal, 'swapped in')" in SHELL
     assert "data.said || savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in')" in SHELL
     assert "(data.days || [data.day]).forEach(spliceSwappedDay)" in SHELL
@@ -609,7 +680,14 @@ def test_a_fed_dinner_is_left_as_a_question_rather_than_repeated(home):
 
 
 def test_undo_restores_the_dinner_the_lunch_and_the_groceries(home):
-    """CATCH. Criterion 6, all three together."""
+    """GUARD — relabelled from CATCH after measuring it. Criterion 6, all
+    three together. GREEN on the merge base, and for a reason worth
+    naming: there the lunch was never changed, so "the lunch is back" is
+    true without anything putting it back, and restore_leftover_chain
+    re-links the chain the one-day swap had broken. It is the only test
+    here that asserts the dinner, the lunch and the list come back
+    TOGETHER. Mutation: _undo_dish_swap restoring only the first row —
+    3 red, this among them."""
     cook = _chain(home)
     before = _grocery()
     _opened, out = _sheet_swap(home, cook)
@@ -621,10 +699,14 @@ def test_undo_restores_the_dinner_the_lunch_and_the_groceries(home):
 
 
 def test_undo_of_a_refilled_lunch_puts_the_chain_back_too(home):
-    """CATCH. The one chain that cannot be re-derived at undo time, since
-    the swap took it off the plan: recorded on the undo note and handed
-    back as replace_dish_on_days' per-item `chain`. Mutation: the undo not
-    handing it back — 1 red."""
+    """GUARD — relabelled from CATCH after measuring it. The one chain
+    that cannot be re-derived at undo time, since the swap took it off the
+    plan: recorded on the undo note and handed back as
+    replace_dish_on_days' per-item `chain`. GREEN on the merge base, where
+    no meal ever leaves the chain, so there is no such chain to put back.
+    Mutations: the undo not handing it back — 2 red;
+    replace_dish_on_days ignoring a per-item `chain` — 2 red; both
+    include this test."""
     tools.add_recipe("Egg Wraps", ingredients=[{"item": "Tortillas", "qty": "4", "category": "pantry"}],
                      food_groups=["protein", "carb", "vegetable"], default_servings=2,
                      prep_time_minutes=5, cook_time_minutes=10, instructions=["Roll it."])
@@ -641,8 +723,12 @@ def test_undo_of_a_refilled_lunch_puts_the_chain_back_too(home):
 
 
 def test_undo_of_an_opened_lunch_puts_the_meal_back(home):
-    """CATCH. The opened row carries the same swap_group token as the rows
-    beside it, which is how _undo_dish_swap finds it."""
+    """GUARD — relabelled from CATCH after measuring it. The opened row
+    carries the same swap_group token as the rows beside it, which is how
+    _undo_dish_swap finds it. GREEN on the merge base, where nothing is
+    ever opened in place of a fed meal. Mutations: the fed meal opened
+    BESIDE the old row (plan_slot_open alone) — 2 red; the undo not
+    handing the recorded chain back — 2 red; both include this test."""
     cook = _chain(home)
     before = _grocery()
     _opened, out = _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
@@ -657,10 +743,12 @@ def test_undo_of_an_opened_lunch_puts_the_meal_back(home):
 
 
 def test_a_draft_still_buys_nothing(home):
-    """GUARD. Nothing reaches the grocery list before approval, and a
-    widened swap is no exception. Mutation: replace_dish_on_days ingesting
-    for a draft — covered by that function's own tests; this pins the
-    seam."""
+    """CATCH on the widening (the lunch keeps the old dish on the merge
+    base, so the meals assertion fails there) plus a GUARD on the half it
+    is named for: nothing reaches the grocery list before approval, and a
+    widened swap is no exception. That half is green either way —
+    replace_dish_on_days' own tests cover the ingest; this pins the seam
+    for the new door."""
     cook = _chain(home, approve=False)
     _sheet_swap(home, cook)
     assert _grocery() == {}
@@ -668,9 +756,14 @@ def test_a_draft_still_buys_nothing(home):
 
 
 def test_a_failure_part_way_changes_no_meal(home):
-    """GUARD. ONE transaction, as the whole-dish Swap already was.
-    Mutation: replace_dish_on_days' rollback removed — that function's own
-    test; this pins it for the new door."""
+    """GUARD on its own claim — ONE transaction, as the whole-dish Swap
+    already was — and RED against the merge base for a reason that is NOT
+    that claim, said rather than counted as a catch: it forces a failure
+    inside replace_dish_on_days, and a one-day swap on the merge base
+    never goes through that function at all, so it fails on DID NOT RAISE
+    without reaching the atomicity it asserts. The claim itself is
+    replace_dish_on_days' own rollback, which that function's tests cover;
+    this pins it for the new door."""
     import app.tools.meal_plans as meal_plans
     cook = _chain(home)
     before = _meals(home)
@@ -696,8 +789,11 @@ def test_a_failure_part_way_changes_no_meal(home):
 def test_the_repeat_rule_is_the_one_generation_uses(home):
     """GUARD. meal_variety.repeat_for_slot is shared with
     fill_gaps_with_a_repeat, so the swap's answer and generation's own are
-    the same answer. Mutation: a second copy of the "fewest nights, then
-    earliest, then name" rule in swap_in_place — this test."""
+    the same answer. RED against the merge base on a NAME it has not got
+    (this reads the module's source for it), which is not evidence of
+    behaviour. Mutation: a second copy of the "fewest nights, then
+    earliest, then name" rule in swap_in_place — 7 red, this among
+    them."""
     import app.tools.meal_variety as mv
     assert re.search(r"def repeat_for_slot\(", mv.__doc__ or "") is None
     assert callable(mv.repeat_for_slot)
