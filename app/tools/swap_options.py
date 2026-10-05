@@ -360,14 +360,21 @@ def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = N
     entry = _swap._entry(weekly_plan_id, entry_id)
     if entry["slot_state"] != "planned" or not entry["meal"]:
         raise ValueError("There's no meal on that slot to swap.")
-    group = _swap.batch_days(weekly_plan_id, entry_id) if whole_dish else [entry]
+    # Whole-dish is every day the menu row stands for AND everything
+    # eating out of any of those cooks (batch_days); a plain Swap is the
+    # one meal AND whatever eats out of ITS cook (fed_days, 2026-10-04).
+    # Both ask the three picks against the strictest of the group's days
+    # and gate every one of them, so a pick that lands on a dinner and the
+    # lunch reheating it has had to fit both.
+    group = (_swap.batch_days(weekly_plan_id, entry_id) if whole_dish
+             else _swap.fed_days(weekly_plan_id, entry_id))
     if len(group) < 2:
         group = [entry]
     out = _swap_options(weekly_plan_id, entry, avoid, asker, group)
-    if whole_dish:
+    if len(group) > 1:
         out["dates"] = [e["date"] for e in group]
         # The slot of each, for a group that spans meal types — a dinner
-        # and the lunch eating its leftovers (batch_days).
+        # and the lunch eating its leftovers (batch_days, fed_days).
         out["meals"] = [{"date": e["date"], "slot": e["slot"]} for e in group]
     return out
 
@@ -529,7 +536,8 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         raise ValueError("Those picks aren't on offer any more — tap Swap again.")
     if _weekly_plan.night_has_gone(entry["date"]):
         return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
-    group = _swap.batch_days(weekly_plan_id, entry_id) if whole_dish else [entry]
+    group = (_swap.batch_days(weekly_plan_id, entry_id) if whole_dish
+             else _swap.fed_days(weekly_plan_id, entry_id))
     if len(group) < 2:
         group = [entry]
     # The picks on offer were asked for THESE days; if the dish's days have
@@ -586,7 +594,10 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, correct_title=correct_title,
                                        serves=_swap.batch_serves(weekly_plan_id, group, entry))
     else:
-        out = _swap.apply_pick(weekly_plan_id, entry, pick, correct_title=correct_title)
+        # `group` rather than letting apply_pick widen for itself: it has
+        # already been read here (and the picks asked and gated against
+        # it), so a second read would answer the same question twice.
+        out = _swap.apply_pick(weekly_plan_id, entry, pick, correct_title=correct_title, group=group)
     out["status"] = "swapped"
     for member in group:
         forget_options(member["entry_id"])

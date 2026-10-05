@@ -618,8 +618,22 @@ def swap_meal_in_place(
     # what was there to begin with — the screen sends this list straight
     # back as the next call's `avoid`.
     tried = _dedup([entry["meal"]] + list(avoid or []))
+    # A cook feeding later meals is one pot, so this swap is one dish on
+    # all of them (fed_days, 2026-10-04) — and the pick has to be asked
+    # for that: the strictest of those days, and the whole batch's serves,
+    # or a dinner swapped for tomorrow's lunch too would be chosen and
+    # written for one table (build_dish_swap_context, batch_serves — the
+    # same two the whole-dish Swap already asks under).
+    group = fed_days(weekly_plan_id, entry_id)
     for attempt in range(1, MAX_PICK_ATTEMPTS + 1):
-        context = build_swap_context(weekly_plan_id, entry, tried)
+        if len(group) > 1:
+            context = build_dish_swap_context(weekly_plan_id, group, tried)
+            batch = batch_serves(weekly_plan_id, group, entry)
+            if batch > (context.get("table") or {}).get("serves", 0):
+                context["cook_for"] = (f"{batch} servings — one cook feeds this meal and the "
+                                       "meals eating its leftovers")
+        else:
+            context = build_swap_context(weekly_plan_id, entry, tried)
         pick = pick_one(context) or {}
         name = (pick.get("meal_name") or "").strip()
         if not name:
@@ -631,8 +645,16 @@ def swap_meal_in_place(
             # Emily's taste rule (2026-09-08): one person who dislikes a dish
             # vetoes it for the whole table that night. The prompt already
             # says so; this makes it a gate rather than a request.
-            verdict = _weekly_plan._taste_verdict_for_slot(name, entry["date"], entry["slot"])
-            if not (verdict and verdict.get("verdict") == "avoid"):
+            # EVERY meal of the group, not only the tapped one: a dinner
+            # and the lunch eating its leftovers are two tables, and one
+            # person's veto on either rules the dish out (Emily's standing
+            # rule, 2026-09-22, which the whole-dish Swap already applies
+            # through _gate_all).
+            verdict = next(
+                (v for v in (_weekly_plan._taste_verdict_for_slot(name, m["date"], m["slot"])
+                             for m in group)
+                 if v and v.get("verdict") == "avoid"), None)
+            if not verdict:
                 break
             logger.warning(
                 "swap_in_place picked %r, which %s would rather not eat (attempt %d)",
@@ -650,7 +672,7 @@ def swap_meal_in_place(
         return {"status": "refused", "message": REFUSAL, "avoid": tried}
 
     tried.append(pick["meal_name"])
-    out = apply_pick(weekly_plan_id, entry, pick)
+    out = apply_pick(weekly_plan_id, entry, pick, group=group)
     out["status"] = "swapped"
     # Both spellings: `tried` caught the name the model wrote, and
     # apply_pick may have shortened it. The screen sends this straight back
@@ -881,7 +903,7 @@ def honest_meal_name(pick: dict) -> str:
 
 
 def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool = False,
-               correct_title: bool = True) -> dict:
+               correct_title: bool = True, group: list[dict] | None = None) -> dict:
     """
     Put an already-chosen dish on `entry`'s slot: save it as a recipe if it
     is new, swap it in through swap_meal_in_plan, and write the undo note.
@@ -918,6 +940,31 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     # would otherwise leave a recipe behind) and no connection is open.
     if _weekly_plan.night_has_gone(entry["date"]):
         raise _weekly_plan.SlotRefused(_weekly_plan.NIGHT_GONE)
+
+    # A COOK FEEDING LATER MEALS IS ONE POT, SO THE SWAP IS ONE DISH ON ALL
+    # OF THEM — widened HERE rather than at each door, which is the whole
+    # shape of the fix (Gowthami's household, 2026-10-04). Every door a
+    # person reaches a swap through shares this one write — "Swap · I'll
+    # pick" (swap_meal_in_place), the three-picks sheet
+    # (swap_options.choose_swap_option), the chat change card
+    # (proposals.apply_proposal) — and before this each of them unlinked
+    # the chain and left the fed meal holding the OLD dish, buying its own
+    # ingredients at one table's size. Measured on an approved week:
+    # Monday's chili swapped to chana masala left Tuesday's lunch as Beef
+    # Chili, the list went from "Beef 2 lbs" to "Beef 1 lb" PLUS the new
+    # dish for one table.
+    #
+    # `group` is the caller's when it has already worked it out (it asked
+    # the model under that group's context, and gated every day of it);
+    # otherwise this reads it, so a door that knows nothing about chains
+    # still widens. A one-meal group is the one-day swap below, byte for
+    # byte.
+    if group is None:
+        group = fed_days(weekly_plan_id, entry["entry_id"])
+    if len(group) > 1:
+        return apply_pick_to_days(weekly_plan_id, group, pick, carry_sides=carry_sides,
+                                  correct_title=correct_title,
+                                  serves=batch_serves(weekly_plan_id, group, entry))
 
     serves = _table_for(entry["date"], entry["slot"])["serves"]
     if correct_title:
@@ -1187,9 +1234,37 @@ def chain_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
     return _along_chains(weekly_plan_id, [_entry(weekly_plan_id, entry_id)])
 
 
-def _along_chains(weekly_plan_id: int, group: list[dict]) -> list[dict]:
+def fed_days(weekly_plan_id: int, entry_id: int) -> list[dict]:
+    """
+    The tapped meal and every meal still ahead that eats out of ITS cook —
+    DOWNSTREAM only, never up. `[entry]` when it feeds nothing, which is
+    most meals.
+
+    This is what a SWAP widens to, from every door (Gowthami's household,
+    2026-10-04: "if we change one recipe that should be for dinner, then
+    lunch the next day, it's not changing the lunch the next day for the
+    quantity and including it as well"). A dinner cooked double for
+    tomorrow's lunch is ONE pot, so changing what is in it changes both
+    meals, and the batch the new dish is written and shopped for is both
+    tables.
+
+    Downstream only, and that is the whole difference from chain_days.
+    Swapping a REHEAT night is the household saying "not Monday's chili
+    again on Tuesday" — an answer about that one meal, which leaves the
+    cook alone and takes the night out of the chain, exactly as it always
+    has. Widening it upward would rewrite Monday's dinner on the strength
+    of a tap about Tuesday's lunch. (The menu row's Swap is never offered
+    on a leftovers row at all — shell.js wkMenuRowHtml — so the doors that
+    reach a reheat are the Day and Meal steps' own Swap.)
+    """
+    return _along_chains(weekly_plan_id, [_entry(weekly_plan_id, entry_id)], downstream_only=True)
+
+
+def _along_chains(weekly_plan_id: int, group: list[dict], downstream_only: bool = False) -> list[dict]:
     """`group`, widened along the plan's confirmed leftover chains to
-    every linked meal still ahead and not cooked."""
+    every linked meal still ahead and not cooked. `downstream_only` walks
+    from a cook to the meals it feeds and never from a reheat to its cook
+    (fed_days); left off it walks both ways (chain_days, batch_days)."""
     from . import leftovers as _leftovers
 
     try:
@@ -1212,7 +1287,7 @@ def _along_chains(weekly_plan_id: int, group: list[dict]) -> list[dict]:
         grew = False
         for i in list(ids):
             linked = [t["entry_id"] for t in (chains["sources"].get(i) or {}).get("targets") or []]
-            reheat = chains["leftovers"].get(i)
+            reheat = None if downstream_only else chains["leftovers"].get(i)
             if reheat:
                 linked.append(reheat["source"]["entry_id"])
             for j in linked:
@@ -1379,6 +1454,30 @@ def cap_gate(weekly_plan_id: int, pick: dict, entries: list[dict]) -> str | None
     return None
 
 
+# The confirmation a swap that changed more than one meal says back
+# (Gowthami's household, 2026-10-04: a dinner cooked double for the next
+# day's lunch is two meals, and the toast named one). Built HERE, beside
+# the rows that were written, rather than composed by the screen: the
+# sentence counts meals, and this app's own rule is that copy which counts
+# things is written where the counting happens (weekly_plan.week_receipt,
+# draft_opener) so the words and the week cannot drift apart.
+#
+# "Swapped to Chana Masala for Monday dinner and Tuesday lunch." — the
+# days in the order they fall, each with its own meal word, because a
+# dinner and the lunch eating it are two different meals of two different
+# days and "Monday and Tuesday" would not say which.
+def swapped_said(meal: str, entries: list[dict]) -> str:
+    when = [f"{_weekday(e['date'])} {e.get('slot') or 'dinner'}".strip() for e in entries]
+    when = [w for w in when if w]
+    if not when:
+        return ""
+    if len(when) == 1:
+        joined = when[0]
+    else:
+        joined = ", ".join(when[:-1]) + " and " + when[-1]
+    return f"Swapped to {meal} for {joined}."
+
+
 def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
                        carry_sides: bool = False, correct_title: bool = True,
                        serves: int | None = None) -> dict:
@@ -1454,7 +1553,13 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
         "can_undo": True,
         "day": days[0] if days else None,
         "days": days,
+        # Which meals, not only which days: a dinner and the lunch eating
+        # its leftovers are two meal types on two dates (batch_days,
+        # fed_days), so `dates` alone cannot say what changed.
+        "meals": [{"date": e["date"], "slot": e["slot"]} for e in entries],
     }
+    if len(entries) > 1:
+        out["said"] = swapped_said(pick["meal_name"], entries)
     verdict = _weekly_plan._taste_verdict_for_slot(pick["meal_name"], first["date"], first["slot"])
     if verdict:
         out["taste_verdict"] = verdict
