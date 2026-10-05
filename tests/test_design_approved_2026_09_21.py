@@ -134,7 +134,7 @@ def test_while_the_picks_are_found_the_sheet_shows_a_spinner_the_line_and_three_
     html = _sheet(_waiting())
     assert '<div class="wk-swap-wait" role="status"><span class="wk-swap-spinner" aria-hidden="true"></span>' \
            '<p class="wk-swap-loading">Finding three you could have — about five seconds.</p></div>' in html
-    picks = re.search(r'<div class="wk-swap-picks wk-swap-picks-waiting">(.*?)</div>(?=<button)', html, re.S)
+    picks = re.search(r'<div class="wk-swap-picks wk-swap-picks-waiting">(.*?)</div>(?=<form)', html, re.S)
     assert picks, "the placeholders sit in the picks' own container"
     card = ('<div class="wk-swap-pick wk-swap-skel" aria-hidden="true"><span class="wk-swap-pick-text">'
             '<span class="wk-swap-skel-row"><span class="wk-swap-skel-line wk-swap-skel-name"></span></span>'
@@ -146,8 +146,8 @@ def test_while_the_picks_are_found_the_sheet_shows_a_spinner_the_line_and_three_
     # tacos to another day" line went on 2026-09-28 — Move is its own
     # button on the row now (tests/test_move_meal_between_days.py).
     assert "wk-swap-move" not in html and "to another day" not in html
-    assert html.endswith('<button type="button" class="wk-swap-else" id="wk-swap-tell">Ask for something else</button>')
-    assert html.index("wk-swap-picks-waiting") < html.index("wk-swap-tell")
+    assert html.endswith('</form>') and 'id="wk-swap-ask-form"' in html
+    assert html.index("wk-swap-picks-waiting") < html.index("wk-swap-ask-form")
 
 
 @_needs_node
@@ -159,15 +159,15 @@ def test_the_picks_take_the_placeholders_places_and_nothing_found_reads_as_befor
     assert "wk-swap-skel" not in found and "wk-swap-wait" not in found and "wk-swap-spinner" not in found
     assert found.count('class="wk-swap-pick" data-wk-swap-pick="') == 3
     # Same container, same position in the sheet — after the title, before "Ask for something else".
-    assert found.index("wk-swap-title") < found.index('<div class="wk-swap-picks">') < found.index("wk-swap-tell")
+    assert found.index("wk-swap-title") < found.index('<div class="wk-swap-picks">') < found.index("wk-swap-ask-form")
     waiting = _sheet(_waiting())
-    assert waiting.index("wk-swap-title") < waiting.index('<div class="wk-swap-picks wk-swap-picks-waiting">') < waiting.index("wk-swap-tell")
+    assert waiting.index("wk-swap-title") < waiting.index('<div class="wk-swap-picks wk-swap-picks-waiting">') < waiting.index("wk-swap-ask-form")
     # Nothing to offer: the line stays what it was, with "tell me" under it.
     empty = _sheet(_waiting(options=None, trouble="Nothing I’d put there instead — tell me what you’d like."))
     assert '<p class="wk-swap-trouble">Nothing I’d put there instead — tell me what you’d like.</p>' in empty
     assert "wk-swap-skel" not in empty and "wk-swap-spinner" not in empty
-    assert 'id="wk-swap-tell">Ask for something else</button>' in empty
-    opened = _extract("openSwapSheet", SHELL_JS)
+    assert 'id="wk-swap-ask-form"' in empty and "Not quite? Tell me what you’d like" in empty
+    opened = _extract("fetchSwapPicks", SHELL_JS)
     assert "'Nothing I’d put there instead — tell me what you’d like.'" in opened
     assert "'I couldn’t think of options just now — tell me what you’d like instead.'" in opened
 

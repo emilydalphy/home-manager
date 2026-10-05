@@ -3076,13 +3076,36 @@
       '<div class="shell-card needs-you-card tonight-card" data-card-type="tonight_ask">' +
         '<div class="ny-kicker">Dinner</div>' +
         '<div class="ny-title">' + escapeHtml('Tonight: ' + tonightDishName(data.dinner) + '. Still good?') + '</div>' +
-        '<div class="ny-actions">' +
+        '<div class="ny-actions is-single">' +
           '<button type="button" class="btn-gold" id="tonight-yes">Yes</button>' +
-          '<button type="button" class="btn-sand" id="tonight-else">Something else</button>' +
         '</div>' +
+        // The old bare "Something else" button, now a labelled box (Loop
+        // Board "Swap sheet: Ask for something else becomes a labelled
+        // box", 2026-10-05). Words open the chat about tonight's dinner
+        // and send them; an empty send is the old button — the sheet of
+        // nights to trade with, and the night off.
+        askBoxHtml('tonight-ask', '', false) +
       '</div>';
     slot.querySelector('#tonight-yes').addEventListener('click', function () { keepTonight(panel); });
-    slot.querySelector('#tonight-else').addEventListener('click', function () { openTonightSheet(panel); });
+    wireAskBox(slot, 'tonight-ask', function (text) {
+      if (!text) { openTonightSheet(panel); return; }
+      askAboutTonight(data, text);
+    });
+  }
+
+  // Tonight's box with words in it: the chat opens about tonight's dinner
+  // (the same subject a planned meal carries everywhere else,
+  // mealAskContext) and the words go as the household's own message.
+  function askAboutTonight(data, text) {
+    var name = tonightDishName(data.dinner);
+    openAskSheet('', {
+      kind: 'planned_meal',
+      entry_id: data.dinner.entry_id,
+      date: data.date,
+      slot: 'dinner',
+      label: 'Tonight’s dinner · ' + name
+    });
+    sendAskMessage('For tonight’s dinner, I’d like ' + text);
   }
 
   // Yes: the card goes at once (§6, the common case never waits) and the
@@ -15063,7 +15086,6 @@
     } else {
       picks = '<div class="wk-swap-picks">' + st.options.map(function (o) { return swapPickHtml(o, st); }).join('') + '</div>';
     }
-    var wait = st.busy ? ' disabled' : '';
     return eyebrow +
       '<h2 class="wk-swap-title" id="wk-swap-title">' + escapeHtml(swapSheetTitle(st)) + '</h2>' +
       (daysLine ? '<p class="wk-swap-sub">' + escapeHtml(daysLine) + '</p>' : '') +
@@ -15074,7 +15096,50 @@
       // (st.trouble): there is no "one" to be close.
       (st.trouble ? '' : '<p class="wk-swap-tweak-note">If one’s close but not quite right, you can always tweak it after.</p>') +
       picks +
-      '<button type="button" class="wk-swap-else" id="wk-swap-tell"' + wait + '>Ask for something else</button>';
+      askBoxHtml('wk-swap-ask', st.draft || '', st.busy);
+  }
+
+  // The labelled box under the suggestions on the Swap sheet and on Now's
+  // Tonight card (Loop Board "Swap sheet: Ask for something else becomes a
+  // labelled box", 2026-10-05; tester, 2026-10-04: "Make the option for the
+  // something else into a box you can type in"). Always visible — the old
+  // bare button hid what it did. One builder so the two places say the same
+  // thing; `id` prefixes the form, field and button so each can be found.
+  var ASK_BOX_LABEL = 'Not quite? Tell me what you’d like';
+  var ASK_BOX_PLACEHOLDER = 'e.g. something with paneer, under 30 minutes';
+
+  function askBoxHtml(id, value, disabled) {
+    return '<form class="ask-box" id="' + id + '-form" novalidate>' +
+      '<label class="ask-box-label" for="' + id + '-input">' + escapeHtml(ASK_BOX_LABEL) + '</label>' +
+      '<div class="ask-box-row">' +
+        '<textarea class="ask-box-input" id="' + id + '-input" rows="2" maxlength="300"' +
+          ' autocomplete="off" enterkeyhint="send" placeholder="' + escapeHtml(ASK_BOX_PLACEHOLDER) + '">' +
+          escapeHtml(value || '') + '</textarea>' +
+        '<button type="submit" class="ask-box-send" id="' + id + '-send"' + (disabled ? ' disabled' : '') + '>Send</button>' +
+      '</div>' +
+    '</form>';
+  }
+
+  // Wires an askBoxHtml form: `onSend(text)` gets the trimmed words, or ''
+  // for an empty send. `onType(text)` keeps a draft so a redraw of the sheet
+  // doesn't empty the field.
+  function wireAskBox(root, id, onSend, onType) {
+    var form = root.querySelector('#' + id + '-form');
+    var input = root.querySelector('#' + id + '-input');
+    if (!form || !input) return;
+    if (onType) input.addEventListener('input', function () { onType(input.value); });
+    // A textarea so the example reads in full on a phone; Enter still sends
+    // (Shift+Enter, or a keyboard mid-composition, doesn't).
+    input.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && !ev.shiftKey && !ev.isComposing) {
+        ev.preventDefault();
+        if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    });
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      onSend(input.value.replace(/\s+/g, ' ').trim());
+    });
   }
 
   // The sheet keeps its waiting height while the picks land (board D5,
@@ -15125,17 +15190,11 @@
     });
     var retry = body.querySelector('[data-wk-move-retry]');
     if (retry) retry.addEventListener('click', function () { loadMoveOptions(st); });
-    var tell = body.querySelector('#wk-swap-tell');
-    if (tell) tell.addEventListener('click', function () {
-      // Chat ABOUT this meal: the composer is empty and the meal rides
-      // along as the turn's subject (mealAskContext), so a plain "make it
-      // beef, not turkey" is enough.
-      var day = st.day;
-      var context = mealAskContext(day, st.slot);
-      closeSwapSheet();
-      if (context) openAskSheet('', context);
-      else openAskSheet('Swap ' + dayName(st.date, { weekday: 'long' }) + '’s ' + slotWord(st.slot) + ' for something else');
-    });
+    // The box: the words go to /swap-options as `request`; sent empty it
+    // asks for different ones ("show me different ones", what the old
+    // button's chat door amounted to for a household with nothing to say).
+    wireAskBox(body, 'wk-swap-ask', function (text) { askSwapAgain(st, text); },
+      function (text) { st.draft = text; });
   }
 
   // Picks fetched ahead (Loop Board "Speed: Swap opens instantly", 2026-09-30).
@@ -15223,6 +15282,67 @@
     buttons.forEach(function (btn) { io.observe(btn); });
   }
 
+  // One ask for the sheet's picks, the first open and the box alike. `ask`
+  // is {request, avoid}; the answer lands on `st` and the sheet is redrawn —
+  // unless the sheet has moved on (closed, or opened for another slot) while
+  // the call was out. Every name the household has been shown goes into
+  // st.shown, so "different ones" never offers one back.
+  async function fetchSwapPicks(st, ask) {
+    var body = st.wholeDish
+      ? { entry_id: st.entryId, avoid: ask.avoid || [], whole_dish: true }
+      : { entry_id: st.entryId, avoid: ask.avoid || [] };
+    if (ask.request) body.request = ask.request;
+    try {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      var out = null;
+      if (res.ok) out = await res.json();
+      else if (res.status === 404) out = { message: swapRouteMessage(await res.json().catch(function () { return null; })) };
+      if (swapSheetState !== st) return;
+      if (out && out.dates && out.dates.length) st.dates = out.dates;
+      if (out && out.meals && out.meals.length) st.meals = out.meals;
+      if (!out || !out.options || !out.options.length) {
+        // A 404 says why in its own words (a slot with no meal on it); an
+        // empty list is the model finding nothing safe, or not answering.
+        // The box is right under this line, so it points at it.
+        st.trouble = (out && out.message) ||
+          (out && out.options && !out.options_unavailable
+            ? 'Nothing I’d put there instead — tell me what you’d like.'
+            : 'I couldn’t think of options just now — tell me what you’d like instead.');
+      } else {
+        st.options = out.options;
+        st.shown = (st.shown || []).concat(out.options.map(function (o) { return o.meal; }));
+      }
+    } catch (err) {
+      console.warn('Could not fetch the swap picks:', err);
+      if (swapSheetState !== st) return;
+      st.trouble = 'I couldn’t think of options just now — tell me what you’d like instead.';
+    }
+    drawSwapSheet();
+  }
+
+  // The box's send. Words: options that fit them. Nothing typed: different
+  // ones than any shown so far. Either way the sheet goes back to its wait
+  // (the placeholders hold the height, so nothing jumps).
+  async function askSwapAgain(st, text) {
+    if (!st || swapSheetState !== st || st.busy || st.asking) return;
+    if (!st.options && !st.trouble) return; // the first picks are still on their way
+    var avoid = (st.shown || []).filter(function (m, i, all) { return all.indexOf(m) === i; });
+    st.asking = true;
+    st.draft = text;
+    st.options = null;
+    st.trouble = '';
+    drawSwapSheet();
+    try {
+      await fetchSwapPicks(st, { request: text, avoid: text ? [] : avoid });
+    } finally {
+      st.asking = false;
+    }
+  }
+
   // opts.wholeDish / opts.dates: the Swap on a "What we're eating" row
   // standing for several days (wkMenuRowHtml's data-wk-swap-dish, Emily
   // 2026-09-22). The pick then lands on every one of them — the server
@@ -15248,36 +15368,7 @@
     swapSheetHold(thisOpen);
     await prefetchSwapSettle(entry.entry_id, thisOpen.wholeDish);
     if (swapSheetState !== thisOpen) return;
-    try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-options', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(thisOpen.wholeDish
-          ? { entry_id: entry.entry_id, avoid: [], whole_dish: true }
-          : { entry_id: entry.entry_id, avoid: [] })
-      });
-      var out = null;
-      if (res.ok) out = await res.json();
-      else if (res.status === 404) out = { message: swapRouteMessage(await res.json().catch(function () { return null; })) };
-      if (swapSheetState !== thisOpen) return;
-      if (out && out.dates && out.dates.length) thisOpen.dates = out.dates;
-      if (out && out.meals && out.meals.length) thisOpen.meals = out.meals;
-      if (!out || !out.options || !out.options.length) {
-        // A 404 says why in its own words (a slot with no meal on it); an
-        // empty list is the model finding nothing safe, or not answering.
-        thisOpen.trouble = (out && out.message) ||
-          (out && out.options && !out.options_unavailable
-            ? 'Nothing I’d put there instead — tell me what you’d like.'
-            : 'I couldn’t think of options just now — tell me what you’d like instead.');
-      } else {
-        thisOpen.options = out.options;
-      }
-    } catch (err) {
-      console.warn('Could not fetch the swap picks:', err);
-      if (swapSheetState !== thisOpen) return;
-      thisOpen.trouble = 'I couldn’t think of options just now — tell me what you’d like instead.';
-    }
-    drawSwapSheet();
+    await fetchSwapPicks(thisOpen, {});
   }
 
   // The day as the screen holds it NOW — a swap replaces the day object

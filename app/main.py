@@ -3723,6 +3723,9 @@ class SwapOptionsRequest(BaseModel):
     # those days out from entry_id (swap_in_place.dish_days) — the client
     # says only that it means the whole dish, never which days.
     whole_dish: bool = False
+    # The Swap sheet's box (2026-10-05): what the household typed they'd
+    # like instead. Empty / absent is the plain ask.
+    request: str | None = Field(default=None, max_length=1000)
 
 
 class SwapChooseRequest(BaseModel):
@@ -3748,9 +3751,12 @@ def week_swap_options(week_start: str, req: SwapOptionsRequest):
     """
     plan_id = _plan_id_for_week(week_start)
     try:
+        # `request` only when there is one: the call shape of every
+        # existing caller (and test double) stays as it was.
+        extra = {"request": req.request} if (req.request or "").strip() else {}
         if req.whole_dish:
-            return tools.swap_options(plan_id, req.entry_id, avoid=req.avoid, whole_dish=True)
-        return tools.swap_options(plan_id, req.entry_id, avoid=req.avoid)
+            return tools.swap_options(plan_id, req.entry_id, avoid=req.avoid, whole_dish=True, **extra)
+        return tools.swap_options(plan_id, req.entry_id, avoid=req.avoid, **extra)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
