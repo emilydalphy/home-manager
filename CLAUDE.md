@@ -541,6 +541,185 @@ why*, not duplicating the diff.
     that the fact is on `/api/memory`'s rhythm payload, which is what both
     of those screens read, so neither has to invent a second source for it.
 
+- **2026-10-05 — Onboarding asks for YOUR name first, and the household has
+  a main person. Branch `overnight/onboarding-names`, NOT merged at the time
+  of writing.** Loop Board, High, Phase 1 — Beta. The design was approved
+  and locked (Emily, 2026-10-04): the `household` step splits into "What's
+  your name?" (one field, Next) and "Who else lives with you?" (the person
+  from screen 1 pinned at the top with a "You" badge, age chip editable, not
+  removable; "+ Add someone"; Next / **Just me**), and that first person
+  becomes the household's **main person** — a field, one per household,
+  shown and movable in Settings → Who's here.
+  - **`members[0]` WAS SILENTLY THE USER, and that implicit convention is
+    what the field replaces.** Two readers depended on it: `helperAdults`
+    took `.slice(1)` to work out which adults to offer as helpers, and
+    `record_setup_adult` pinned the first saved member to the device. So
+    dragging a name to the top of the list changed who the app thought you
+    were, and nothing said so. `helperAdults` now excludes the main person
+    BY NAME; the `.slice(1)` mutation reddens exactly the test that puts
+    the primary last on the list.
+  - **`primary_member_id` is NOT `set_up_by_member_id`, and the two must
+    not be folded together.** They answer different questions and have
+    opposite rules. `set_up_by_member_id` is a fact about the past — the
+    member the setup device's pin was written for, which the first-open
+    welcome rests on — and must never move. `primary_member_id` is the
+    household's answer to "whose home is this", and the card's own wording
+    says Settings MOVES it. A field whose job is not moving cannot be the
+    field that moves. `app/tools/primary_member.py` carries the long
+    version at the top.
+  - **An id, never a name.** The route resolves `primary_name` against the
+    members THIS request saved and stores the id, so a later rename cannot
+    move it — and `members[0]` is deliberately not read as the fallback,
+    since that is the convention being replaced. A request naming nobody
+    leaves the resolver to answer.
+  - **An existing household resolves to `set_up_by_member_id`, else its
+    first adult, and the resolve is RECORDED by a conditional UPDATE** —
+    the `first_open_state` shape, so two readers at the same instant cannot
+    settle on different people. There are two halves IN SERIES and both are
+    worth keeping: `db._backfill_primary_member` (idempotent, every
+    startup, the `_backfill_member_colors` shape) answers for a household
+    nothing has read yet, and `primary_member_id()`'s lazy resolve answers
+    for one made BETWEEN two startups by `create_household.py` or by a
+    test. Measured: removing the backfill alone reddens nothing, removing
+    the lazy half reddens nine.
+  - **A recorded main person who has stopped being an adult eating here is
+    read PAST, never re-pointed.** Quietly moving a field somebody set in
+    Settings is worse than answering around it, so the resolve hands back
+    somebody for the ANSWER and leaves the column alone. Pinned by its own
+    mutation (the lazy resolve re-pointing: 1 red).
+  - **A SECOND pass through setup never moves it**, the same rule
+    `record_setup_adult` states for its own field, for a reason of this
+    one's own: moving it is Settings' job, so a re-run of setup must not
+    silently overrule a choice made there. `record_primary_member` writes
+    only while the column is NULL.
+  - **A HELPER WHO DOES NOT EAT HERE IS NEVER THE MAIN PERSON, and that
+    gap was found by running the mutations rather than by reading.**
+    Neutering `_EATS_HERE_SQL` reddened NOTHING — the clause is in all four
+    of the module's statements and was pinned by none of them, so a nanny
+    or a helping grandparent (`members.eats_here = 0`, an adult who signs
+    in and whom nobody plans a meal for) could have been resolved into the
+    job by being the first adult on file, and Settings would have accepted
+    being pointed at one. There is a test now, seeded through the invite
+    route so `eats_here` is 0 for the reason the app sets it.
+  - **Nothing reaches the household until setup finishes** — the standing
+    rule from 2026-09-09, and screen 1 keeps it: Next is a check and a
+    move, never a post. `add_member` is get-or-create by name and nothing
+    in this app deletes a member, so a name typed, corrected and continued
+    past must not have left a first copy behind. The mutation that makes
+    screen 1 call `saveHouseholdMembers` reddens 3.
+  - **Changing the name PRUNES, on `input` rather than on the next
+    render.** Restrictions and helper picks are keyed by member NAME, and
+    this app treats a transferred allergy as a safety bug (2026-09-04). The
+    pinned row makes the rename door MORE reachable, not less — going back
+    one screen and retyping is the whole of the rename path now.
+    **This found a real bug in my own page code while the test was being
+    written:** `currentMembers()` read the primary's name from a
+    `dataset.memberName` copy written only on ARRIVAL at the step, so the
+    prune compared keyed answers against a household still containing the
+    old name and left `restrictionAnswers['Jamie']` behind. It reads the
+    box now and the copy is gone — one source of truth for that name.
+  - **The popstate handler hard-coded `showStep('household')`** for a stale
+    history entry, which the symbol grep could never have found: after a
+    reload, a back gesture would land on a screen whose pinned You row is
+    drawn from a name the reload had just thrown away. "The first question"
+    is ONE derived thing now, `firstQuestionStep()`, with three readers.
+  - **"Just me" is an answer, not a skip.** It clears the other rows,
+    prunes their keyed answers and goes on, leaving the pinned row where it
+    is — so the household that finishes setup has precisely one member.
+    Driven in a browser: exactly ONE member row on disk afterwards and no
+    orphan facts.
+  - **Settings reads the fact off `/api/memory`'s members** (`id`,
+    `is_primary`) and moves it through `POST /api/memory/primary-member`,
+    which refuses a child, a stranger, a helper who does not eat here, and
+    another household's member — each in its own sentence. The resolve is
+    read BEFORE `get_conn()` in `memory.py` because it can WRITE, and a
+    nested writing connection has twice earned "database is locked" in this
+    repo.
+  - **STILL OWED, and the branch is not finished without it:
+    `static/shell.js` is another builder's tonight, so Who's here does not
+    yet SHOW "Main person" or offer the move.** The backend half is
+    complete and tested (`is_primary` and `id` on every member row, the
+    route, the refusals); what is missing is `wwkPeopleHtml` rendering the
+    label and a control POSTing `member_id`. The card's "Settings shows and
+    lets it be moved" is therefore half-shipped.
+  - **The "You" badge was 1.58:1 in dark, measured.** It is `--celadon` as
+    drawn and I had paired it with `--ink-on-celadon` on the strength of
+    the token's name — that token is near-white ivory in dark because it
+    belongs with `--celadon-TINT`, the dark TILE, while `--celadon` itself
+    is the same light `#A9C4B0` in both modes. `--on-accent-ink` is Rule
+    One and is what `theme.css`'s own `.pill-success` already does with
+    this fill: 7.23:1 light, 8.46:1 dark, re-measured. The CSS comment had
+    also quoted a pair of ratios I had never measured; it records the
+    measured failure and the measured fix now.
+  - **Three existing test files were narrowed, each with a dated comment
+    saying what moved, and none weakened.** The four onboarding flow
+    harnesses gained the new step and `buildHouseholdStep` to their stub
+    lists (hazard 3/5: they extract a FIXED list of functions, so a new
+    callee of an already-extracted one is a `ReferenceError` that kills the
+    file) — and `test_onboarding_your_week.py`'s `helperAdults` harness
+    gets a `primaryMemberName` stand-in that STATES the main person rather
+    than an empty stub, so the exclusion is really exercised.
+    `test_what_we_know_full_coverage.py`'s age-group round trip compared
+    the WHOLE member dicts and went red on two keys it has nothing to say
+    about; it asserts the three fields its claim is made of now, and is
+    proved not weakened by a mutation that drops `id = ?` from the UPDATE
+    so every member's age group moves at once.
+  - **The literal-colour guard reads comment-stripped CSS now, and the
+    first cut of that change was genuinely weaker.**
+    `test_onboarding_setup_luxury.py` scanned the raw text, so a hex quoted
+    in an explanatory comment read as a literal colour in a rule — the four
+    values it exempted one at a time all sat in ONE prose line recording a
+    measured ratio, and the badge's comment added five more. An allowlist
+    that grows once per documented decision is one that eventually gets
+    switched off. The first cut finished with `split("/*")[0]`, which
+    TRUNCATES at the first comment and was safe only while the
+    complete-comment regex above it kept matching — neuter that regex and
+    nearly every rule went unscanned with the file still green, found by
+    mutating rather than reading. Three anchors now assert the rules the
+    file is about are still inside what it scanned.
+  - **`tests/conftest.py`'s `clean_state` resets the new column** —
+    measured, a dangling id of 2 leaked into the next test. Same column
+    shape, same row, same reason as `set_up_by_member_id` beside it.
+  - `tests/test_onboarding_your_name.py` (39). **Fifteen mutations run,
+    fourteen bite**, red counts read off the runs against a 179-passed
+    control: the primary not set from screen 1 (**5**), the pinned row
+    removable (1), `helperAdults` back to `.slice(1)` (1), "Just me"
+    leaving the other rows (3), screen 1 posting early (3),
+    `record_primary_member` overwriting a non-NULL column (1), the lazy
+    resolve re-pointing it (1), `is_primary` dropped from `/api/memory`
+    (3), the name box not pruning (1), the lazy resolve removed (**9**),
+    the route reading `saved_members[0]` (1), `set_primary_member` dropping
+    its adult check (2), dropping its household filter (1),
+    `_EATS_HERE_SQL` neutered (1) — and the db.py backfill removed, which
+    reddens **0** for the in-series reason above and says so.
+  - **Verified in a real Chromium at 390×844 on a throwaway DB, both
+    colour schemes, four walks** (light/dark × full/just-me), end to end
+    to the reveal including going BACK from screen 2, retyping the name and
+    coming forward: the pinned row follows the box, the helpers step offers
+    `["Yes, Vineeth does", "Someone not eating here", "Just me"]` with the
+    main person excluded, "Just me" leaves one member on disk with
+    `primary_member_id` set and no orphan facts, exactly one apricot per
+    screen (the foot's "Just me" is sand), every target ≥44px, no sideways
+    scroll, tokens only, zero console errors.
+  - **FOUND AND NOT FIXED, named so nobody reports it as new: marking
+    YOURSELF a teen on screen 2 silently hands the main person to somebody
+    else.** The pinned row's age chip is editable by the approved design,
+    so it can be set to teen or child. Measured end to end: "Sam" (teen,
+    typed their own name) plus "Dana" (adult) leaves
+    `primary_member_id` NULL — `record_primary_member` refuses a
+    non-adult, correctly — and the lazy resolve then answers Dana, so
+    Who's here will say "Main person" next to Dana. Defensible (the card's
+    own words are "moved to another adult", so a teen cannot be it, and
+    naming somebody beats naming nobody) and SILENT, which is the part
+    worth Emily's eyes. The alternative is refusing to let the pinned row
+    be a non-adult, which contradicts the approved design.
+
+  - **Not done, deliberately: no second device pin.**
+    `record_setup_adult` plus the cookie already pin the setup device, and
+    card 3 (device memory) is unmerged — building a second pin against an
+    unmerged design is how two mechanisms end up disagreeing about who is
+    holding the phone.
+
 - **2026-10-05 — Setup ends on one free box, and nothing it says about an
   allergy is written until the household has read it back. Branch
   `overnight/onboarding-anything-else`, stacked on
