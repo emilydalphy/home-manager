@@ -425,6 +425,223 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — A whole tomato is what the DISH uses, not one each: five days
+  of apple slices bought fifteen apples. Branch
+  `overnight/grocery-rounding-per-person`, NOT merged at the time of writing.**
+  Loop Board bug, from Gowthami's household: "it's assuming a whole 'apple' or
+  'tomato' for each one, when it's not a whole one per person per recipe so
+  it's way too many".
+  - **ROUNDING WAS NOT THE BUG, and the card's own title points at the wrong
+    thing — read this before touching `_shopping_round`.** The round-once work
+    (2026-09-05, "17 peppers") and the unrounded per-meal ledger (2026-09-30)
+    are both correct and untouched. What inflates a count is
+    `attendance.servings_scale_factor`, which is `eaters / default_servings`
+    and therefore MULTIPLIES a stated count whenever `default_servings` is
+    smaller than the household. The reported week's snack recipe was written
+    for ONE, planned five days, in a household of three: factor 3.0, fifteen
+    apples. The arithmetic was right about every per-portion amount and wrong
+    about every count.
+  - **Reproduced over real HTTP before anything was touched, same seed and
+    same route both sides** (the card's own shape: 2 adults + 1 child, five
+    dinners, five lunches, fruit snacks, on a throwaway DB). `main` against
+    this branch, `POST /api/week/{w}/approve` then `GET /api/grocery-list`:
+    **Apples 15 → 5, Cucumbers 15 → 10, Tomatoes 21 → 16, Avocados 9 → 3**,
+    with Bell peppers 3, Lemons 3, Onions 3 and Chicken breast 1 lb
+    **identical on both sides**, and `groceries_added: 8` on both — so four
+    lines are corrected, four already-right lines are untouched, and no line
+    appeared or vanished.
+  - **A COUNT IS ITS OWN QUESTION, and that is the whole change.**
+    `attendance.count_scale_factor` is `servings_scale_factor` with the
+    RECIPE anchor capped at 1.0: it still DIVIDES a count written for a
+    bigger table, and never multiplies one above what the recipe wrote. A
+    per-portion amount genuinely scales — a recipe for two eaten by three
+    needs half again as much chicken and rice — and one lemon flavours a
+    salad for two or for three.
+  - **The cap is on the recipe anchor ONLY, and the split is deliberate.**
+    `default_servings` is the least trustworthy field a recipe has (nothing
+    backfills it, `add_recipe` defaults it to four, an import or a chat add
+    can say anything), so multiplying by it amplifies its error in the one
+    direction that hurts. ATTENDANCE is the household's own word and still
+    applies in both directions, so **a guest night still buys more** —
+    `grocery_scale_factor`'s own answer is untouched, and there is a test
+    driving a seven-eater night.
+  - **A no-op on a well-formed recipe**, which is what generation is told to
+    write: where `default_servings` IS the real table the factor is
+    unchanged, so this bites exactly where the number was least worth
+    trusting. Measured byte-identical on such a week.
+  - **The plausibility guard RECOMPUTES, and it recomputes to the CEILING
+    rather than to `cooking_quantity` — the one place it deliberately
+    differs from its sibling, and not an oversight.**
+    `_PER_PERSON_COUNT_CEILING` is the most a plausible dish uses per person
+    (tomato 1, apple 1, lemon 1, potato 2, carrot 2, …);
+    `per_person_count_problem` reports past it in
+    `implausible_quantity`'s own `{"class", "family", "per_serving", "low",
+    "high"}` shape so one message function and one reader
+    (`_implausible_lines`) serve both questions; `plausible_count_quantity`
+    fixes it. `plausible_cooking_quantity` has nothing generous to fall back
+    to — a measured amount out of range has no honest upper bound — where a
+    count does, and the gap is large: measured, `cooking_quantity` for
+    cucumbers is ONE at a table of two and still one at four, where the
+    ceiling allows two and four. Clamping to a typical amount would be a far
+    bigger intervention than the card asks for, would stop the answer moving
+    with the table, and would collide at full force with the 2026-09-13
+    decision that a wild count is **a word short, not a number wrong**.
+  - **It FLOORS, which is the one place this does not err generously and has
+    to not** — the ceiling is a maximum, so rounding past it hands back a
+    number this very function would flag again. Floored at one whole thing:
+    no recipe naming a count wants none of it. The unit never changes, which
+    is the other reason `cooking_quantity` could not simply be preferred —
+    its answer for potatoes is "1.5 lb", and turning a count line into a
+    weight line answers a different question and breaks the grocery merge,
+    which is by name and unit.
+  - **Applied at the INGEST, not only at save time.**
+    `recipes._add_recipe_ingredients_for_entries` is the one choke point
+    every ingest goes through, so this covers the recipes already on disk as
+    well as the ones written from now on. A line is a bare count only when
+    it is neither a counted pack nor a package and its unit is in
+    `_PER_PERSON_COUNT_UNITS` (bare, each, ct, pc, piece…): **a package and a
+    counted pack keep their own paths and their own factor** — one bottle is
+    one bottle, and a dozen eggs really does scale with the eaters. The batch
+    factor still multiplies a count, so a leftovers chain still cooks double.
+  - **THE TWO COUNT TABLES SHARE ALL SIX OF THE OLDER ONE'S NOUNS AND
+    DISAGREE ABOUT TWO OF THEM, AND THAT IS NOT A DRIFT TO BE TIDIED.**
+    `_PRODUCE_COUNT_PER_SERVING` (2026-09-13) asks "is this so many that the
+    recipe probably meant a smaller KIND?" and only ever flags, so its answer
+    has to be generous — a high count is the EVIDENCE the small kind was
+    meant. This one asks "is this more than a dish uses, whatever the kind?"
+    and recomputes. Measured: **tomato 2 against 1 and apple 2 against 1**,
+    with cucumber (1), potato (2), pepper (1.5) and onion (1.5) agreeing.
+    What they share is only the standing-down rule — a named small kind, a
+    kind said in the amount, the spice rack — never the number, and the four
+    agreeing is a coincidence of two separate judgements rather than a shared
+    one, so a future divergence must not be read as drift and "fixed".
+  - **TWO DRAFTS OF THAT COMMENT WERE WRONG AND BOTH ARE CORRECTED IN PLACE
+    AT THE TABLE, because it is the comment a future reader acts on.** The
+    first said "the two do not disagree" — true of the names, false of the
+    numbers. The second, written to fix it, said they "CARRY DIFFERENT
+    NUMBERS FOR THOSE SIX NOUNS" — four of the six agree, so that
+    overstated it by a factor of three, in a comment whose whole job was
+    unpicking an overstatement. Found by printing both tables rather than by
+    re-reading either. `test_the_two_count_tables_are_independent_judgements`
+    pins the claim that survives — the disagreement is real and neither table
+    reads the other — and deliberately does NOT freeze the four that agree,
+    which would build the very fold the comment warns against; mutating the
+    tomato ceiling onto the kind table's number reddens 5, that test by
+    name.
+  - **THE PROMPT IS THE OTHER HALF, in all five writers.** The count bullet
+    sits in `RECIPE_DETAILS_INSTRUCTIONS` directly under the `serves` bullet
+    it qualifies ("'For that many people' means the amount THE DISH uses, not
+    an amount per person"), and a one-sentence clause — "A COUNT is the amount
+    the DISH uses, never one each: a salad for four wants ONE lemon, not
+    four." — is in the `add_recipe` tool's `qty` description,
+    `generate_component_plan_llm`, `_SIDE_INSTRUCTIONS` and
+    `_BIG_MEAL_INSTRUCTIONS`, since any of the five can write a count line.
+    **The first draft of the bullet cited measurements nobody had taken**
+    ("thirty tomatoes, eighteen cucumbers"); it quotes the real figures now
+    (fifteen apples, fifteen cucumbers) and a test pins the quoted number, so
+    the prompt cannot go back to inventing one.
+  - **THE JUDGEMENT CALL, Emily's to overrule in one line
+    (`count_scale_factor`'s `min(1.0, …)`): a household LARGER than the
+    recipe's table buys the recipe's own count, not more.** A household of
+    six eating three dinners each written for four and each naming "4
+    tomatoes" buys the twelve the recipes name; main buys eighteen. (Four
+    for a table of four is exactly one a head, so it is AT the ceiling and
+    the guard stands down — this is the cap acting alone, which is why it is
+    the right example and a wilder count would not be.) That is the rule
+    working — the count is the dish's — and it is the one case where it is
+    arguable, because six people eating a four-serving dish are plausibly
+    cooking more of it, so for a bulk count this can under-buy. Bounded:
+    never below the recipe's own number, and the report was OVERBUYING, so
+    this direction can only reduce. Per-portion amounts in the same recipe DO
+    scale up for them, so the two halves of one dinner scale differently;
+    `test_a_count_is_never_multiplied_above_what_the_recipe_wrote` carries
+    the note.
+  - **An existing tripwire fired and was narrowed honestly, not weakened.**
+    Two tests in `tests/test_ingredient_variety.py` pinned that a wild count
+    reaches the list and the cook view AS WRITTEN — true of the kind rule,
+    which only ever flags, and now false, because this rule recomputes. Both
+    keep every claim that survives (the kind flag still fires, no measured
+    class is added, `cook_qty` is unchanged) and say in their own names and
+    comments that the tripwire fired and why; that file's module docstring is
+    corrected in place with a dated paragraph. 26 test functions either side —
+    nothing added, nothing removed.
+  - `tests/test_grocery_counts_per_dish.py` (33). **Red against main is 13 of
+    33 and is decomposed in the file's own header rather than quoted: NINE
+    fail on the assertion they are named for**, three die on a name main has
+    not got (the only kind of red a test of a new symbol can have), and the
+    thirteenth is red on a property of the measuring STUB rather than on its
+    own claim and says so. The card's two named tests are in it verbatim (three recipes each
+    using "1 tomato" for four buys 3 not 12; a fruit snack for one child over
+    five days buys 5 not 15). **THIRTY-THREE mutations run, THIRTY-TWO bite**,
+    red counts read off the runs against a 296-test control: the whole cap
+    removed (13), the cap halved (26), the recipe anchor left uncapped (5),
+    the cap applied to attendance too (1), the household/nobody-home guard
+    dropped (6), the ingest taking the per-portion factor on a count (5), the
+    per-portion branch taking the count factor (1), the recompute never
+    running (4), the batch factor dropped from a count (2), each recipe's
+    share rounded again (9), the ledger holding the rounded total (9), the
+    tomato ceiling put below one whole thing (10), the recompute with no floor
+    of one (8), the guard comparing with `>=` so one-each is flagged (1), the
+    recompute rounding up instead of flooring (1), a dropped note (1), the
+    unit check ignored (1), the spice rack ignored (1), a named small kind
+    ignored (1), the small-kind word list ignored (1), the small-kind note
+    ignored (1), a freeform amount read as a count (1), the family key
+    dropped (1), `plausible_cooking_quantity` no longer reading the count rule
+    (3), `_implausible_lines` no longer reading it (3), both package
+    re-exports dropped (1 each), the prompt losing the rule (1), and the
+    prompt quoting an invented measurement (1).
+  - **SEVEN of those did not bite on the first run and every one was a GUARD
+    whose named mutation could not reach it — all seven are recorded rather
+    than quietly re-run, because the diagnosis is the useful part.** Each
+    needed a real discriminator the seed did not have: the two factor cases
+    wanted a household of six against a recipe for four (at three-and-four
+    the two factors agree), `_produce_class` wanted "Roma tomatoes",
+    `is_spice` wanted "Chili powder", the small-kind list wanted "Baby
+    carrots", the unit check wanted "Potatoes 12 lb", and the counted pack
+    wanted six eaters against a recipe for four. One is left UNPINNED and
+    says so in its own docstring:
+    `ingest_package_no_longer_excluded_from_bare_count` reddens nothing,
+    because the unit check excludes a package independently — the `not
+    package` term is defence in depth and nothing would catch losing it.
+  - **One of my own claims was attached to the wrong test** — the
+    `>=` mutation was credited to the exactly-one-per-person case and really
+    reddens the tomato-ceiling one; corrected.
+  - **MY OWN PROCESS ERROR, written down because it cost real work and will
+    happen again: never edit `app/` while a mutation harness is running.**
+    The harness restores its pre-mutation snapshot in a `finally`, so an edit
+    made mid-run is clobbered silently — detected only by a `grep -c` coming
+    back 0. The rule is to wait for every `mutate.py` to exit and confirm
+    `git diff HEAD -- app/` is empty before touching the tree.
+  - **Numbers, read off the runs at `TZ=America/Toronto`.** The new file 33
+    passed; `tests/test_ingredient_variety.py` 84 passed.
+    `test_the_whole_week_the_tester_reported` asserts Apples 5, Cucumbers 10,
+    Tomatoes 16 and Chicken breast 1 lb, which is byte-for-byte what the HTTP
+    drive above returns — so the suite and the wire agree about the reported
+    week rather than each being checked on its own. **The full suite was
+    deliberately NOT run** — the container had restarted three times under
+    memory pressure — so the pre-flight is targeted instead: every file naming
+    a symbol this diff adds or a shared name it modifies, in five batches,
+    **348 + 175 + 371 + 304 + 205 passed, 0 failed**, after the two tripwire
+    tests above were narrowed. An AST sweep confirms **no added name shadows a
+    module-level name** in `recipes.py`, `attendance.py` or `quantities.py`,
+    and no added name collides anywhere in `app/` or `tests/` — the hazard a
+    card the same night hit in this very file, turning 35 tests red with half
+    of it silent.
+  - **Found and NOT fixed, named so nobody reports it as new.** (1) Nothing
+    backfills `default_servings`, so every recipe already on disk still says
+    four and the cap is doing the work for all of them — the 2026-09-05 entry
+    says the same thing and it is still true. (2) The guard's ceilings are a
+    starting table of 36 nouns (the six the kind rule knows plus thirty more,
+    British spellings counted); a count of something not in it is
+    never recomputed, which is the quiet direction and this module's stated
+    bias (an extra line beats a missing dinner). (3) `cooking_quantity` and
+    the ceiling disagree about the same noun by design (above), so a flagged
+    line's cook amount and its recomputed shopping amount can differ — correct
+    for the two different questions, and worth knowing before anyone folds
+    them. (4) Nothing re-quantifies an already-approved line when attendance
+    changes afterwards; that is `_add_recipe_ingredients_for_entries`' own
+    standing limitation, unchanged.
+
 - **2026-10-04 — Settings → Recipes: add from a link or a cookbook, and read
   a saved recipe. Branch `recipes-in-settings-2026-10-04`, NOT merged at the
   time of writing.** Emily 2026-10-04: "can you add back the function to add
