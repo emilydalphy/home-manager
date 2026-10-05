@@ -3,6 +3,7 @@ The grocery list: adding, merging, marking, clearing and repairing items.
 """
 from __future__ import annotations
 
+import re
 import json
 from datetime import date
 from ..db import get_conn
@@ -97,6 +98,44 @@ _JUST_ADD_S = {
 # bread flour, brown and icing sugar all stay their own lines. Adding a
 # pair is a product call (one line instead of two) and wants its test in
 # tests/test_grocery_same_purchase.py.
+# Words in an item NAME that never change what goes in the trolley, so two
+# lines differing only by one of them are the same purchase ("Store-bought
+# hummus" / "Hummus").
+#
+# Kept SHORT and deliberately NOT a general "drop the adjectives" rule.
+# This app reads fresh-vs-dried herbs as genuinely different purchases
+# (spices.py counts basil as a rack item only when written "dried"), and
+# low-fat-vs-full-fat milk is two products. So "fresh" and "low-fat" are
+# NOT here, even though the card that asked for this named "fresh": only a
+# word that cannot name a different product belongs. "full-fat" is safe
+# because stripping it leaves the plain name, and "low-fat milk" keeps its
+# own key either way.
+#
+# NOTE ON THE CARD'S "when the other line doesn't specify": a merge key is
+# a pure function of ONE name, so it cannot be conditional on what some
+# other line happens to say — two keys are either equal or they are not.
+# Stripping unconditionally is the only form that fits, and it is the safe
+# one here for the reason above.
+_NAME_FILLER = (
+    "store-bought", "store bought", "shop-bought", "shop bought",
+    "full-fat", "full fat",
+)
+
+# Preparation a recipe asks for AFTER a comma ("Baby spinach, chopped").
+# Dropped ONLY post-comma, which is the whole care in it: a LEADING
+# adjective can name the product -- "Diced tomatoes" is a tin and not a
+# fresh tomato -- so a general strip of these words would merge two things
+# a shopper buys separately.
+_NAME_PREP_AFTER_COMMA = {
+    "chopped", "diced", "minced", "sliced", "shredded", "grated", "crushed",
+    "cubed", "julienned", "halved", "quartered", "peeled", "trimmed",
+    "rinsed", "drained", "softened", "melted", "divided", "thawed",
+    "packed", "lightly packed", "well shaken", "plus more", "to taste",
+    "for serving", "for garnish", "optional", "room temperature",
+    "at room temperature",
+}
+
+
 _SAME_PURCHASE = {
     "yellow onion": "onion",
     "cooking onion": "onion",     # the Canadian shelf name for a yellow onion
@@ -112,12 +151,85 @@ _SAME_PURCHASE = {
     "granulated sugar": "sugar",
     "white sugar": "sugar",
     "granulated white sugar": "sugar",
+    # Yogurt (Loop Board bug, Gowthami's household 2026-10-04: three
+    # variations of plain yogurt on one list). Greek yogurt IS a plain
+    # yogurt -- strained -- so it is the same purchase, and because it is
+    # the VARIETY the merged line keeps its name (see _more_specific_name),
+    # which is the safe direction: buying Greek satisfies a recipe that
+    # asked for plain, where buying plain fails one that asked for Greek.
+    # FLAVOURED yogurt is a different purchase and stays its own line --
+    # "strawberry yogurt" and "vanilla greek yogurt" are not here, and the
+    # allow-list design is what keeps them out rather than a rule.
+    # Bare "yogurt" is deliberately NOT mapped: it could be flavoured, and
+    # this module's stated bias is to fail toward two lines.
+    "plain greek yogurt": "plain yogurt",
+    "greek yogurt": "plain yogurt",
+    "plain greek yoghurt": "plain yogurt",
+    "greek yoghurt": "plain yogurt",
+    "plain yoghurt": "plain yogurt",
 }
+
+
+def _is_prep_segment(segment: str) -> bool:
+    """
+    Is this post-comma segment only PREPARATION?
+
+    Matched on the whole segment and, failing that, on its LAST word, so
+    the adverb family comes for free: "finely chopped", "roughly diced" and
+    "thinly sliced" are all the prep word they end in, and the list does
+    not have to enumerate every adverb anyone might write. Hard to
+    construct a counter-example -- a segment ending in "chopped" is not
+    something else -- and an unrecognised segment is still kept rather than
+    dropped, so the failure direction is a name that keeps a word it did
+    not need.
+    """
+    if segment in _NAME_PREP_AFTER_COMMA:
+        return True
+    words = segment.split(" ")
+    return len(words) > 1 and words[-1] in _NAME_PREP_AFTER_COMMA
+
+
+def _uninvert_name(cleaned: str) -> str:
+    """
+    "yogurt, plain" is the same thing as "plain yogurt", so a comma-inverted
+    name is written back out the way a shopper says it: the first segment is
+    the thing, every later one describes it and moves in front.
+
+    A later segment that is only PREPARATION is dropped rather than moved
+    ("Baby spinach, chopped" is baby spinach), which is the historical case
+    this repo has been bitten by -- see the 2026-08-30 Decision log entry on
+    prep descriptors blocking a merge. Anything the list does not recognise
+    is KEPT as a modifier, so an unknown word can never silently vanish
+    from a name.
+    """
+    if "," not in cleaned:
+        return cleaned
+    parts = [p.strip() for p in cleaned.split(",") if p.strip()]
+    if not parts:
+        return ""
+    head, rest = parts[0], parts[1:]
+    mods = [p for p in rest if not _is_prep_segment(p)]
+    return " ".join(mods + [head])
+
+
+def _drop_name_filler(cleaned: str) -> str:
+    """Take the words that cannot change the purchase out of the key."""
+    out = cleaned
+    for filler in _NAME_FILLER:
+        out = re.sub(r"\b%s\b" % re.escape(filler), " ", out)
+    out = " ".join(out.split())
+    # A name that is NOTHING but filler keeps itself: "Store-bought" alone
+    # is a bad line, and keying it to "" would merge it with every other
+    # bad line on the list.
+    return out or cleaned
 
 
 def _plain_name_key(name: str) -> str:
     """_merge_key without the same-purchase step: the name's own key."""
     cleaned = " ".join((name or "").strip().lower().split())
+    if not cleaned:
+        return ""
+    cleaned = _drop_name_filler(_uninvert_name(cleaned))
     if not cleaned:
         return ""
     words = cleaned.split(" ")
@@ -132,6 +244,46 @@ def _plain_name_key(name: str) -> str:
 def _names_the_variety(name: str) -> bool:
     """True when `name` is a variety in _SAME_PURCHASE ("Yellow onion"), not the plain name ("Onions")."""
     return _plain_name_key(name) in _SAME_PURCHASE
+
+
+def _refold_quantity_segments(qty: str) -> str:
+    """
+    Re-sum the same-unit segments of an already-"+"-joined quantity, so a
+    third amount joining a line that could not reconcile the first two
+    still lands on whichever segment shares its unit.
+
+    `_try_consolidate_quantity` merges a PAIR, and once a line reads
+    "500 g + 1 cup" neither side parses as one amount, so every later add
+    just lengthened the string: three recipes wanting plain yogurt read
+    "500 g + 1 cup + 200 g" where the honest answer is "700 g + 1 cup".
+    Folding the segments one at a time is what repair_grocery_quantities
+    has always done for lines mangled before that fix; this is that loop,
+    extracted so the repair and the live merge cannot disagree.
+
+    Segments that genuinely do not reconcile (mass against volume, "a
+    bunch") are left joined exactly as the fallback would write them, so
+    this is idempotent and never guesses a conversion.
+    """
+    if " + " not in (qty or ""):
+        return qty
+    kept: list[str] = []
+    for seg in (part.strip() for part in qty.split(" + ")):
+        if not seg:
+            continue
+        for i, already in enumerate(kept):
+            candidate, reconciled = _try_consolidate_quantity(already, seg)
+            # Only a REAL reconciliation counts. Folding left to right into
+            # one accumulator cannot work -- the accumulator itself becomes
+            # "500 g + 1 cup", which parses as nothing, so every later
+            # segment just lengthened it. Each segment is offered to each
+            # one already kept instead, and the flag is what says whether
+            # the units actually met.
+            if reconciled:
+                kept[i] = candidate
+                break
+        else:
+            kept.append(seg)
+    return " + ".join(kept) or qty
 
 
 def _more_specific_name(current: str, incoming: str) -> str:
@@ -876,6 +1028,10 @@ def add_grocery_item(
     preferred_store = pref["store"] if pref else ""
     if target:
         existing, merged_qty, merged = target
+        # A third amount joining a line the first two could not
+        # reconcile still has to find its own unit; see
+        # _refold_quantity_segments.
+        merged_qty = _refold_quantity_segments(merged_qty)
         # A row with no source_weekly_plan_id is something a person asked
         # for directly, and clear_stale_grocery_items is required to leave
         # those alone forever. Stamping this week's plan id onto it during
@@ -1273,10 +1429,11 @@ def repair_grocery_quantities(status: str = "needed") -> dict:
         qty = r["quantity"] or ""
         if " + " not in qty and "," not in qty:
             continue  # nothing to clean on this line
-        segments = [s.strip() for s in qty.split(" + ") if s.strip()]
-        cleaned = ""
-        for seg in segments:
-            cleaned, _ = _try_consolidate_quantity(cleaned, seg)
+        cleaned = _refold_quantity_segments(qty)
+        if " + " not in qty:
+            # A single segment still wants its prep descriptor folded out,
+            # which is the other half of what this repair is for.
+            cleaned, _ = _try_consolidate_quantity("", qty)
         if cleaned != qty:
             conn.execute(
                 "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
