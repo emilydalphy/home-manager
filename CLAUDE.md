@@ -486,6 +486,18 @@ why*, not duplicating the diff.
     plus the `Api.fetch(` tripwire in `tests/test_api_js.py` (+3: one call
     site each for the three routes, all through `Api.fetch` because each
     reads a sentence off a 200 or 400 body).
+  - **Review follow-ups (same day).** A rewrite and its undo edit the
+    `recipes` row IN PLACE, so they now unbuy and rebuy EVERY night in an
+    approved, non-retired plan that uses that `recipe_id` (this week's
+    unchained Friday, another approved week), in the same transaction, and
+    the toast's count covers all of it (`_approved_users_of`). Picking a
+    recipe with no ingredients (or `details_pending`) on an approved week
+    is refused ("That recipe doesn’t have its ingredients yet…") instead of
+    taking the old lines off and buying nothing. An undo refuses, writing
+    nothing, when the meal no longer points at that recipe, when a newer
+    un-undone rewrite of the same recipe sits on top, or when the restored
+    recipe now clashes with someone's allergy (names who and what).
+    Tests: `tests/test_recipe_change_followups.py`.
   - **Merge note:** the branch carries part of the 2026-10-05 batch through
     its own merge (the Settings main-person row); conflicts were only the
     Decision log and the tripwire count (129 once the silent re-pick's +1 is
