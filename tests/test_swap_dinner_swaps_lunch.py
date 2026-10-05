@@ -41,7 +41,7 @@ MERGE-BASE BEHAVIOUR so every test reaches the assertion it is named for
 instead_of_the_leftovers -> {}, repeat_for_slot -> None,
 keeps_as_leftovers -> True):
 
-    30 failed, 20 passed   (39 functions, 50 cases)
+    30 failed, 21 passed   (40 functions, 51 cases)
 
 No AttributeError anywhere in that list. But read the 30 for less than it
 looks, because five of them are not behaviour catches on their own claim
@@ -62,10 +62,14 @@ and each says so in its own docstring:
     ---
     30
 
-THE PREVIOUS VERSION OF THIS HEADER SAID "24 failed, 11 passed" AND THAT
-WAS A STALE NUMBER CARRIED FORWARD — it summed to 35 when the file held
-46 cases, which is how it was caught. Re-measured here rather than
-re-quoted, on the tree that ships.
+THIS NUMBER HAS DRIFTED TWICE AND BOTH ARE WRITTEN DOWN, because a count
+nobody can re-derive is the one thing a header like this must not carry.
+It said "24 failed, 11 passed" first, which summed to 35 when the file
+held 46 cases — that is how it was caught. It then said "30 failed, 20
+passed (39 functions, 50 cases)", measured one test before the last one
+landed: the failed count was right and the rest was one short, since
+test_an_ordinary_dinner_pays_nothing_for_the_widening is a GUARD and
+passes on both trees. Re-measured on the tree that ships, not re-quoted.
 
 MUTATIONS RUN, red counts read off the runs over this file, in a
 `git archive` of the branch so nothing else was writing to the tree:
