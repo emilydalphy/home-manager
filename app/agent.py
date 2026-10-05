@@ -1637,7 +1637,7 @@ TOOL_DEFINITIONS = [
                         "type": "object",
                         "properties": {
                             "item": {"type": "string", "description": "The plain grocery-list name ('Carrots', never 'Carrots, julienned'), naming the kind whenever the count depends on it ('Persian cucumbers' with qty '6' — a bare 'Cucumbers' reads as full-size English ones)."},
-                            "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead."},
+                            "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead. A COUNT is the amount the DISH uses, never one each: a salad for four wants ONE lemon, not four."},
                             "category": {
                                 "type": "string",
                                 "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -3898,6 +3898,16 @@ list, which buys per portion — a recipe written for 4 in a household of 3 has 
 multiplied by three quarters on the way to the list, so "4 bell peppers" becomes 3 and a week \
 of that arrives as odd fractions nobody wrote. Write it for the real table and the list is \
 simply what you wrote.
+- "For that many people" means the amount THE DISH uses, not an amount per person. This matters \
+most for anything bought by the count — tomatoes, apples, onions, lemons, limes, peppers, \
+avocados, cucumbers, potatoes, carrots, zucchini. A salad for four wants ONE lemon, not four; a \
+pasta sauce for four wants two or three tomatoes, not four; a snack of apple slices wants the \
+apples the plate actually holds. Writing `serves` as the qty on a count line is the single way \
+these come out wrong, because a meal that repeats buys it again every time: measured on one \
+real week, a household of three was shown FIFTEEN apples for five days of apple slices and \
+fifteen cucumbers for five packed lunches. Per-portion amounts — a weight of meat, a volume of \
+rice, cups of broth — DO scale with the number of people, and those you write for the whole \
+table as above.
 - When the dish names a specific cuisine or regional style (Chettinad, Sichuan, Yucatecan, \
 etc. — not just a broad label like "Indian" or "Mexican"), actually cook like that style, not \
 a generic version wearing its name: use the real spice/aromatic blend that style is known for \
@@ -4857,7 +4867,8 @@ a lb, a can) — except eggs and garlic, which are the number the recipe uses ("
 cloves"), never "1 dozen" or "1 head" — not how much ends up used once prepped, and keep the item name itself \
 free of prep descriptors ("Baby spinach", never "Baby spinach, chopped") — but DO name the kind \
 whenever the count depends on it ("Persian cucumbers" with qty "6", never a bare "Cucumbers" \
-meaning small ones: a bare name reads as the full-size kind) — see the day-based prompt's \
+meaning small ones: a bare name reads as the full-size kind). A COUNT is the amount the DISH \
+uses, never one each: a salad for four wants ONE lemon, not four. See the day-based prompt's \
 guidance on this and on not re-adding a fresh unit of a staple (spices, oil, condiments) on \
 every item that uses it, same rules apply here.
 - current_inventory lists what's already on hand — still include those ingredients in a new \
@@ -7303,7 +7314,8 @@ curry, not couscous; a sharp slaw with something rich.
 - Write each ingredient's qty as it's actually bought at the store (a head, a bunch, a bag, a \
 lb, a box) — except eggs and garlic, which are the number the side uses ("2" eggs, "2 cloves"), \
 never "1 dozen" or "1 head" — name the kind of produce when the count depends on it ("Persian cucumbers" with qty \
-"6" — a bare "Cucumbers" reads as full-size English ones), and don't re-buy staples the \
+"6" — a bare "Cucumbers" reads as full-size English ones). A COUNT is the amount the DISH \
+uses, never one each: a side salad for four wants ONE lemon, not four. Don't re-buy staples the \
 household certainly has (salt, pepper, oil) — leave those out of the ingredient list entirely \
 even though the steps use them.
 - Set `covers` to what the side genuinely supplies. If you're asked for a vegetable and a carb \
@@ -7430,8 +7442,9 @@ Rules:
 already decided and you build around it), `side_count` sides that belong with it, and exactly one \
 sweet. It should feel like the day — a Thanksgiving table, a Christmas table, an Easter lunch — \
 in the household's own register, not a restaurant's.
-- Every quantity is for `eaters` people, written as it's bought at the store. Don't re-buy salt, \
-pepper or oil.
+- Every quantity is for `eaters` people, written as it's bought at the store. A COUNT is the \
+amount the DISH uses, never one each: a salad for eight wants two or three lemons, not eight. \
+Don't re-buy salt, pepper or oil.
 - Honour every dietary restriction and every guest note exactly, for every dish. "Sam's \
 vegetarian" means at least the sides and the sweet are vegetarian and hearty enough to be his \
 dinner; "no nuts" means no nuts anywhere, including the sweet. A restriction is never traded \

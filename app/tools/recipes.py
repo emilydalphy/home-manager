@@ -1692,10 +1692,16 @@ def plausible_cooking_quantity(item: str, qty: str, servings: int | None = None,
     own figure for that item scaled to the table (cooking_quantity), or —
     for an item the table has never met — the nearer bound of its class's
     range, written in the unit the line came in (tablespoons for a stick).
+
+    A BARE COUNT is the second question (per_person_count_problem, further
+    down): nine apples is not a measured amount out of range, it is a
+    count a dish for three never uses. One entry point rather than two, so
+    the cook view and the grocery list cannot end up holding different
+    opinions about the same line.
     """
     problem = implausible_quantity(item, qty, servings)
     if not problem:
-        return qty
+        return plausible_count_quantity(item, qty, servings)
     table = cooking_quantity(item, servings=_servings_or_base(servings), shopping_qty=shopping_qty)
     if table and not implausible_quantity(item, table, servings):
         return table
@@ -1725,6 +1731,14 @@ def _implausible_lines(ingredients: list[dict], servings: int | None, as_written
     it is the qty line itself, cook_qty or no — what the model wrote, and
     what a cook would have read before the guard existed — which is what
     the plan-quality flag reports.
+   
+    TWO questions are asked of each line, and both answer in the same
+    shape so there is one reader rather than two: a measured amount out of
+    range for the table (implausible_quantity), and a bare COUNT past
+    anything a dish for that table uses (per_person_count_problem,
+    Gowthami 2026-10-04). A line can only be one or the other — a count is
+    not a measured amount — so the first answer wins and nothing is
+    reported twice.
     """
     out = []
     for index, ing in enumerate(ingredients or []):
@@ -1736,7 +1750,10 @@ def _implausible_lines(ingredients: list[dict], servings: int | None, as_written
         read = stored if stored and not as_written and not _quantity_problem(item, stored) else qty
         if not item or not read or _quantity_problem(item, read):
             continue
-        problem = implausible_quantity(item, read, servings)
+        problem = (
+            implausible_quantity(item, read, servings)
+            or per_person_count_problem(item, read, servings)
+        )
         if problem:
             out.append({
                 "index": index, "item": item, "qty": read, "problem": problem,
@@ -1749,10 +1766,17 @@ def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> 
     """
     The pre-save pass: the same ingredient dicts, with a cook_qty written
     onto any line whose cooking amount is out of range for `servings`
-    (see _PLAUSIBLE_PER_SERVING). Everything else is returned untouched —
-    a line that measures sensibly gets no cook_qty it did not have, and
-    the shopping qty is never rewritten. Logged at INFO so a run of these
-    is visible without a database.
+    (see _PLAUSIBLE_PER_SERVING) or whose bare count is past anything a
+    dish for `servings` uses (see _PER_PERSON_COUNT_CEILING). Everything
+    else is returned untouched — a line that measures sensibly gets no
+    cook_qty it did not have, and the shopping qty is never rewritten
+    here. Logged at INFO so a run of these is visible without a database.
+
+    The shopping qty staying as written is not an oversight for a COUNT
+    line, where the two amounts are the same number: the grocery ingest
+    holds that line to the same rule on the way to the list
+    (_add_recipe_ingredients_for_entries), which is what covers every
+    recipe already saved as well as every one saved from here.
     """
     fixes = {line["index"]: line for line in _implausible_lines(ingredients, servings)}
     if not fixes:
@@ -1796,8 +1820,33 @@ def implausible_quantity_message(line: dict, servings: int | None) -> str:
 # where the ordinary full-size kind and a small kind are both bought by
 # the count, and the count alone says which one was meant. It only ever
 # FLAGS (plan_quality._produce_variety_named → the morning report); no
-# amount and no name is rewritten, and the grocery list shows the line as
-# the recipe wrote it.
+# amount and no name is rewritten by THIS table.
+#
+# "and the grocery list shows the line as the recipe wrote it" used to
+# finish that sentence, and since 2026-10-04 it is no longer true in
+# general: _PER_PERSON_COUNT_CEILING below does recompute a count past
+# anything a dish for the table uses, and six of its words are these six
+# nouns.
+#
+# THE TWO TABLES DISAGREE ABOUT TWO OF THOSE SIX NOUNS AND THAT IS NOT A
+# DRIFT TO BE TIDIED — they answer different questions, so neither is the
+# other's ceiling. This one asks "is this too many of the ORDINARY kind?",
+# and its answer has to be generous, because a high count is the EVIDENCE
+# that the small kind was meant. That one asks "is this more than a dish
+# for this table uses, whatever the kind?" — so tomato is 1 there against
+# 2 here, and apple 1 against 2. The other four happen to agree today
+# (cucumber 1, potato 2, pepper 1.5, onion 1.5) and nothing holds them
+# together: agreeing is a coincidence of two separate judgements, not a
+# shared number, so do not read it as one and do not "fix" a future
+# divergence. Both directions really happen: a bare "8 tomatoes" for four
+# is two each, which this table passes and that one recomputes; "6 Persian
+# cucumbers" is six each, which this table passes (a kind was named) and
+# that one leaves alone for the same reason
+# (_per_person_count_ceiling asks _produce_class, so a name that says a
+# kind is never second-guessed by either). What the two share is only the
+# standing-down rule, never the number. An earlier draft of this comment
+# said "the two do not disagree", which is true of the names and false of
+# the numbers.
 #
 # Each entry: (the bare noun, the words that still mean the ordinary kind,
 # what the ordinary kind is called, the small kind to ask about or None,
@@ -1917,6 +1966,186 @@ def produce_count_message(item: str, qty: str, problem: dict, servings: int | No
         return f"{item} '{qty}' is a lot for {table}"
     ask = f"{problem['small']} ones? The recipe" if problem["small"] else "the recipe"
     return f"{item} '{qty}' would be a lot of {problem['ordinary']} for {table} — {ask} should say which kind"
+
+
+# ---------- a count that is a per-person amount (Gowthami, 2026-10-04) ----------
+#
+# "The quantities are off for some of the grocery list items... it's
+# assuming a whole 'apple' or 'tomato' for each one, when it's not a whole
+# one per person per recipe so it's way too many."
+#
+# A SECOND question about a bare count, and deliberately not the one
+# _PRODUCE_COUNT_PER_SERVING above asks. That table asks "does this count
+# only make sense for the SMALL KIND?" — six cucumbers is six Persian ones
+# or a crazy amount of English ones, only the model knows which, so it
+# flags and nothing is rewritten. This one asks "is this count past
+# anything a dish for this many people uses, whatever the kind?" — and
+# that has an answer the app can act on, because the count it should have
+# been is still a count, in the same unit, and no kind explains it. So
+# this one RECOMPUTES, and it is the belt rather than the fix: the fix is
+# attendance.count_scale_factor (a stated count is never multiplied above
+# what the recipe wrote) and the prompt rule that a count is the DISH's.
+#
+# Each entry is (words, the most a plausible dish for ONE person uses).
+# EVERY CEILING IS AT LEAST ONE WHOLE THING PER PERSON, which is the line
+# the card itself draws ("> 1 tomato per person per meal, > 1 apple per
+# person per snack") and the line this module's standing bias wants: this
+# clamps a number DOWN, and the bias is the other way (see
+# quantities._PACKAGE_UNITS — an extra line beats a missing dinner). So
+# nothing a plausible recipe writes is overruled. A Greek salad for three
+# with three tomatoes passes; an apple each for three people passes; a
+# French onion soup for four with six onions passes. Twelve tomatoes for
+# four does not, and neither does nine apples for three.
+# A starting vocabulary, not a greengrocer's: the everyday produce a
+# week's recipes are built from and bought by the count. Extend it when a
+# real miss shows up.
+#
+# WHAT IT IS NOT: a weight ("1.5 lb potatoes"), a package ("1 bag"), a
+# counted pack (eggs by the dozen, garlic by the head — _counted_pack_share
+# owns those), a unit the count is OF rather than the thing itself ("3
+# stalks", "1 head"), a spice-rack name, or a count of a named small kind
+# ("Persian cucumbers", "6 small tomatoes"), which is the question the
+# table above owns and must not be second-guessed here.
+_PER_PERSON_COUNT_CEILING = (
+    # flavourings and aromatics bought whole
+    ("lemon", 1), ("lime", 1), ("shallot", 1.5), ("jalapeno", 1.5), ("jalapeño", 1.5),
+    ("serrano", 1.5), ("habanero", 1.5), ("chili", 1.5), ("chilli", 1.5), ("chile", 1.5),
+    ("onion", 1.5), ("leek", 1.5),
+    # vegetables that bulk the dish out
+    ("tomato", 1), ("cucumber", 1), ("pepper", 1.5), ("potato", 2), ("sweet potato", 2),
+    ("carrot", 2), ("zucchini", 1.5), ("courgette", 1.5), ("eggplant", 1), ("aubergine", 1),
+    ("beet", 1.5), ("beetroot", 1.5), ("parsnip", 2), ("turnip", 1.5), ("avocado", 1),
+    # whole fruit, where one per person really is a snack
+    ("apple", 1), ("banana", 1), ("orange", 1), ("pear", 1), ("peach", 1),
+    ("nectarine", 1), ("plum", 2), ("kiwi", 1), ("mango", 1),
+)
+
+# The unit a bare count comes in. None is the ordinary one ("3"); the rest
+# are ways of writing the same thing. `dozen` is deliberately absent,
+# though _COUNT_UNITS above carries it: a dozen of anything is a PACK, and
+# _counted_pack_share owns that question.
+_PER_PERSON_COUNT_UNITS = frozenset({None, "each", "ct", "count", "pc", "pcs", "piece", "pieces"})
+
+# A name that says a small kind outright, for the nouns
+# _PRODUCE_COUNT_PER_SERVING does not cover. For the six it does cover,
+# _produce_class answers this properly (it knows which words mean the
+# ORDINARY kind); this list is the same idea for the rest.
+_SMALL_KIND_WORDS = frozenset({
+    "small", "mini", "baby", "little", "cherry", "grape", "pearl", "cocktail",
+    "fingerling", "new", "mandarin", "clementine", "crab", "persian", "champagne",
+})
+
+# The nouns the kind question already owns, so this one can ask it there
+# rather than keeping a second opinion about cucumbers.
+_PRODUCE_KIND_NOUNS = frozenset(entry[0] for entry in _PRODUCE_COUNT_PER_SERVING)
+
+
+def _per_person_count_ceiling(item: str) -> tuple[str, float] | None:
+    """
+    (the word matched, its per-serving ceiling) for an ingredient this
+    table has an opinion about, longest word first so "sweet potato" beats
+    "potato" — or None.
+
+    None for a spice-rack name however its words read ("red pepper flakes"
+    is not a count of peppers), and None for a name that says a SMALL KIND:
+    six Persian cucumbers is six Persian cucumbers, and the 2026-09-13
+    decision that a named kind is never second-guessed holds here too. For
+    the six nouns _PRODUCE_COUNT_PER_SERVING covers that judgement is
+    _produce_class's, which knows which words mean the ordinary kind; for
+    the rest it is _SMALL_KIND_WORDS.
+    """
+    clean = _clean_item(item)
+    if not clean or _spices.is_spice(item):
+        return None
+    best: tuple[str, float] | None = None
+    for word, ceiling in _PER_PERSON_COUNT_CEILING:
+        if _item_matches(clean, word) and (best is None or len(word) > len(best[0])):
+            best = (word, ceiling)
+    if best is None:
+        return None
+    noun = best[0]
+    if noun in _PRODUCE_KIND_NOUNS:
+        # The kind table's own reading: None there means the name named a
+        # kind (or an unrelated noun), and either way this is not ours.
+        return best if _produce_class(item) else None
+    words = set(re.findall(r"[a-zà-ÿ'-]+", clean))
+    return None if words & _SMALL_KIND_WORDS else best
+
+
+def per_person_count_problem(item: str, qty: str, servings: int | None = None) -> dict | None:
+    """
+    Why a bare COUNT is past anything a dish for `servings` people uses, or
+    None when it is fine (an amount that is not a bare count, an item the
+    table has no opinion about, a named small kind, a count inside the
+    ceiling).
+
+    The shape is implausible_quantity's on purpose — {"class", "family",
+    "per_serving", "low", "high"} — so one message function and one reader
+    (_implausible_lines) serve both questions rather than two of each.
+    `family` is always "count" here, which is what tells the fix below to
+    stay in the line's own unit.
+    """
+    found = _per_person_count_ceiling(item)
+    if not found:
+        return None
+    word, ceiling = found
+    core, note = _quantities._split_quantity_note((qty or "").strip())
+    if any(w in note.lower().split() for w in _SMALL_KIND_NOTES):
+        return None   # "6 small" is the kind said in the amount
+    parsed = _quantities._parse_quantity(core)
+    if not parsed or parsed[1] not in _PER_PERSON_COUNT_UNITS:
+        return None
+    per_serving = parsed[0] / _servings_or_base(servings)
+    if per_serving <= ceiling:
+        return None
+    return {
+        "class": word, "family": "count", "per_serving": per_serving,
+        "low": 0, "high": ceiling,
+    }
+
+
+def plausible_count_quantity(item: str, qty: str, servings: int | None = None) -> str:
+    """
+    `qty` itself when its bare count is a dish amount, otherwise the most a
+    plausible dish for THIS recipe's own table uses: the ceiling for the
+    matched word times `servings`, in the unit the line came in.
+
+    THE CEILING AND NOT cooking_quantity, which is the one place this
+    deliberately differs from its sibling plausible_cooking_quantity, and
+    the difference is not an oversight. That one has nothing generous to
+    fall back to — a measured amount out of range has no honest upper
+    bound, so the app's own typical figure is the only answer available. A
+    COUNT does have one, and the gap between the two is large: measured,
+    cooking_quantity's answer for cucumbers is ONE at a table of two and
+    still one at a table of four, where the ceiling allows two and four.
+    Clamping a flagged line to a typical amount rather than to the
+    plausible maximum would be a far bigger intervention than the card
+    asks for ("beyond a sane per-person-per-meal amount ... recomputes"),
+    it would make the answer stop moving with the table, and it would
+    collide at full force with the 2026-09-13 decision that a count is a
+    word short rather than a number wrong. The ceiling errs the way this
+    whole module errs (quantities._PACKAGE_UNITS: an extra line beats a
+    missing dinner).
+
+    The unit never changes, which is also why cooking_quantity could not
+    simply be preferred where it exists: its answer for potatoes is
+    "1.5 lb", a weight, and turning a count line into a weight line would
+    answer a different question and break the merge the grocery list does
+    by name and unit.
+
+    It FLOORS rather than rounds up, which is the one place this does not
+    err generously and has to not: the ceiling is the maximum a plausible
+    dish uses, so rounding past it would hand back a number this very
+    function would flag again. Floored at one whole thing, because no
+    recipe that names a count wants none of it.
+    """
+    problem = per_person_count_problem(item, qty, servings)
+    if not problem:
+        return qty
+    core, note = _quantities._split_quantity_note((qty or "").strip())
+    unit = (_quantities._parse_quantity(core) or (0, None))[1]
+    fixed = max(1.0, float(int(problem["high"] * _servings_or_base(servings) + 1e-9)))
+    return _quantities._with_note(_quantities._format_quantity(fixed, unit), note)
 
 
 def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str = "") -> str | None:
@@ -3531,6 +3760,14 @@ def _add_recipe_ingredients_for_entries(
     # itself for no reason.
     entry_conn = get_conn() if own_conn else conn
     scale_for_entry: dict[int, float] = {}
+    # The same factor for a BARE COUNT of a whole thing, which is the same
+    # composition with the recipe anchor capped at 1.0 — see
+    # attendance.count_scale_factor. Two factors per entry rather than one
+    # because the question is per INGREDIENT and the reads are per entry:
+    # a Tuesday dinner's chicken scales with the eaters and its lemons do
+    # not, and asking attendance again per ingredient would be a
+    # connection per ingredient per meal.
+    count_scale_for_entry: dict[int, float] = {}
     contributing_ids: list[int] = []
     chains_by_plan: dict[int, dict] = {}
     # "Bring over from last week" (Emily, 2026-09-25): a meal brought over
@@ -3560,6 +3797,12 @@ def _add_recipe_ingredients_for_entries(
                     bought_by_entry[entry_id] = bought
         scale = (
             _attendance.servings_scale_factor(
+                entry_row["date"], entry_row["slot"], default_servings, conn=entry_conn,
+            )
+            if entry_row else 1.0
+        )
+        count_scale = (
+            _attendance.count_scale_factor(
                 entry_row["date"], entry_row["slot"], default_servings, conn=entry_conn,
             )
             if entry_row else 1.0
@@ -3612,9 +3855,16 @@ def _add_recipe_ingredients_for_entries(
             batch = _leftovers.batch_for_entry(entry_id, chains, conn=entry_conn) if chain_scale else None
             if batch:
                 if batch["servings"] > 0 and batch["cook_eaters"] > 0:
-                    scale *= batch["servings"] / batch["cook_eaters"]
+                    # Both factors, because a batch really is more food: a
+                    # cook for six uses twice the lemons of a cook for
+                    # three. Only the RECIPE anchor is capped for a count,
+                    # never this.
+                    batch_factor = batch["servings"] / batch["cook_eaters"]
+                    scale *= batch_factor
+                    count_scale *= batch_factor
         contributing_ids.append(entry_id)
         scale_for_entry[entry_id] = scale
+        count_scale_for_entry[entry_id] = count_scale
     if own_conn:
         entry_conn.close()
     # Every meal in this group was a reheat, so the group buys nothing —
@@ -3667,10 +3917,6 @@ def _add_recipe_ingredients_for_entries(
         if not contributing_ids:
             already_have.append(ing["item"])
             continue
-        # Every meal in this group added together — the same sum the
-        # buffer arrives at one share at a time, so the kitchen is asked
-        # about the week's amount and not one night's.
-        week_scale = sum(scale_for_entry[e] for e in contributing_ids)
         # The recipe's own wording decides the path, before any headcount
         # scaling — scaling can only ever turn a package into the same
         # package (you cannot buy two thirds of a jar), so asking the
@@ -3683,8 +3929,39 @@ def _add_recipe_ingredients_for_entries(
         # strips a prep descriptor ("3, diced") itself.
         core, note = _quantities._split_quantity_note(raw_qty.strip())
         pack_share = _counted_pack_share(ing["item"], core, default_servings)
-        parsed_core = _quantities._parse_quantity(core)
         package = _quantities.package_unit(raw_qty)
+        # A BARE COUNT of a whole thing — three tomatoes, two lemons, one
+        # apple — is the one shape where the shopping amount and the
+        # cooking amount are the same number, and the one the household
+        # reported as "way too many" (Gowthami, 2026-10-04). Two things
+        # are different for it, both about the number that goes IN rather
+        # than the rounding that comes out:
+        #
+        #  - it is held to the most a plausible dish for this table uses
+        #    (plausible_count_quantity), so a recipe that wrote the count
+        #    per person rather than per dish does not ship it. Applied
+        #    here rather than only at save time because this is the one
+        #    choke point every ingest goes through, so it covers the
+        #    recipes already on disk as well as the ones written from now
+        #    on — the same argument the brought-over read above makes.
+        #  - it uses count_scale_for_entry, which never multiplies that
+        #    stated count above what the recipe wrote.
+        #
+        # A package and a counted pack keep their own paths and their own
+        # factor: one bottle is one bottle, and a dozen eggs really does
+        # scale with the eaters.
+        bare_count = (
+            not pack_share and not package
+            and (_quantities._parse_quantity(core) or (0, ""))[1] in _PER_PERSON_COUNT_UNITS
+        )
+        if bare_count:
+            core = plausible_count_quantity(ing["item"], core, default_servings)
+        parsed_core = _quantities._parse_quantity(core)
+        factor_for_entry = count_scale_for_entry if bare_count else scale_for_entry
+        # Every meal in this group added together — the same sum the
+        # buffer arrives at one share at a time, so the kitchen is asked
+        # about the week's amount and not one night's.
+        week_scale = sum(factor_for_entry[e] for e in contributing_ids)
         # What this whole recipe-week claims on the ingredient, written the
         # way the branches below write it into the buffer — so the kitchen
         # is asked about the amount that would actually be bought. A
@@ -3723,7 +4000,7 @@ def _add_recipe_ingredients_for_entries(
             for entry_id in contributing_ids:
                 buffer.add(
                     entry_id, ing["item"], category,
-                    share * scale_for_entry[entry_id], small_unit, note,
+                    share * factor_for_entry[entry_id], small_unit, note,
                 )
         elif package:
             add_result = _grocery.add_grocery_item(
@@ -3741,7 +4018,7 @@ def _add_recipe_ingredients_for_entries(
                 for entry_id in contributing_ids:
                     buffer.add(
                         entry_id, ing["item"], category,
-                        parsed[0] * scale_for_entry[entry_id], parsed[1], note,
+                        parsed[0] * factor_for_entry[entry_id], parsed[1], note,
                     )
             else:
                 # "A bunch", "to taste", blank. No number to scale or sum,
