@@ -1355,7 +1355,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_morning_text",
-        "description": "Set up or change the once-a-day morning text — a short text each morning saying what today needs (tonight's cook, the freezer, the shop). 'Text me at 7 each morning on 416-555-0100' = phone + time + on=true. Every field is optional; only what's given changes. Pass `name` for whose number it is when the household has more than one adult and they didn't say (the tool asks if it can't tell). Turning it off is always accepted; turning it on needs a number on record. The result's `configured` says whether the app can actually send texts yet (Twilio keys set) — if false, say plainly that the number is saved and texts will start once texting is switched on, don't promise a text tomorrow.",
+        "description": "Set up or change the once-a-day morning text — a short text each morning saying what today needs (tonight's cook, the freezer, the shop). 'Text me at 7 each morning on 416-555-0100' = phone + time + on=true. Every field is optional; only what's given changes. Pass `name` for whose number it is when the household has more than one adult and they didn't say (the tool asks if it can't tell). Turning it off is always accepted; turning it on needs a number on record. The result's `configured` says whether the app can actually send texts yet (Twilio keys set) — if false, say plainly that the number is saved and texts will start once texting is switched on, don't promise a text tomorrow. WHAT THE MESSAGE INCLUDES is one setting for the WHOLE household (it changes for everyone who gets it, whoever asks): `parts` replaces the lot ('just tell me the meals' = parts [\"meals\"]), `add_parts` adds one ('also tell me when to start cooking dinner' = add_parts [\"start\"]) and `drop_parts` takes one away ('stop telling me about the shop' = drop_parts [\"shop\"]). Use add_parts/drop_parts for anything that sounds like 'as well' or 'stop', and `parts` only when they name the whole list — you cannot read the current set first, so a delta is the safe way to add one thing. The result's `parts` is what it now includes; read it back rather than guessing. A part with nothing on it today is simply left out of that morning's message, and a morning with nothing in any chosen part sends nothing at all — say that rather than promising a message every day.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1364,6 +1364,21 @@ TOOL_DEFINITIONS = [
                 "on": {"type": "boolean", "description": "true = send it, false = stop."},
                 "name": {"type": "string", "description": "Which adult this is for, when it isn't obvious."},
                 "timezone": {"type": "string", "description": "IANA zone like America/Toronto or America/Vancouver. Only when they say they're somewhere else — the default is Toronto."},
+                "parts": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": list(tools.MORNING_PART_CHOICES)},
+                    "description": "The WHOLE list of what the message includes, replacing what's there. meals = what you're eating today; freezer = anything to move to the fridge; prep = anything to get ready ahead; start = when to start cooking dinner; shop = a shop something today is waiting on; away = who's at the table tonight. An empty list means a message with none of those in it. Only use this when they name the whole list.",
+                },
+                "add_parts": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": list(tools.MORNING_PART_CHOICES)},
+                    "description": "Parts to ADD to what the message already includes — 'also tell me…', 'as well'. Same keys as `parts`.",
+                },
+                "drop_parts": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": list(tools.MORNING_PART_CHOICES)},
+                    "description": "Parts to take OUT of what the message includes — 'stop telling me about…', 'I don't need…'. Same keys as `parts`.",
+                },
             },
             "required": [],
         },

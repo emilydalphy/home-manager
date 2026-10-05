@@ -663,6 +663,22 @@ _MIGRATIONS = [
     # is stored; nothing else reads it yet.
     ("households", "timezone", "TEXT NOT NULL DEFAULT 'America/Toronto'"),
     ("households", "morning_text_time", "TEXT NOT NULL DEFAULT '07:00'"),
+    # Loop Board "Morning message: the household chooses what it includes"
+    # (Emily, 2026-10-04): ONE setting for the whole household, not one per
+    # member — "to keep it simple", so everyone who gets the message gets
+    # the same parts. A JSON list of keys from digest.MORNING_PART_CHOICES.
+    #
+    # '' on every existing household, which is the truth (nobody has been
+    # asked) and which digest.morning_text_parts reads back as the three
+    # the card switches on — today's meals, the freezer, the prep. NOT
+    # backfilled with those three, because '[]' has to stay available as a
+    # real answer meaning "none of the six" and a backfill would spend the
+    # sentinel on an answer nobody gave. See schema.sql's comment.
+    #
+    # What the three-on default COSTS, named here because it is a line
+    # going quiet rather than a line arriving: the shop reminder is in
+    # every morning text today and is off until somebody ticks it.
+    ("households", "morning_text_parts", "TEXT NOT NULL DEFAULT ''"),
     # Where the text goes (E.164, '' = none on record) and whether this
     # person said yes to it. Off by default — an explicit yes, never an
     # inferred one.

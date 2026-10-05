@@ -150,6 +150,16 @@ def test_a_seeded_day_is_one_short_message_in_plain_words(monkeypatch):
     monkeypatch.setenv("HOME_MANAGER_URL", "https://pomona.example")
     _adults()
     _seed_day()
+    # TRIPWIRE, 2026-10-05: this went red when the household got to choose
+    # what the message includes (digest.MORNING_PART_CHOICES), because the
+    # card switches only three parts on by default and the shop reminder is
+    # not one of them. The CLAIM is unchanged — all three seeded things land
+    # in one short message, in plain words, with the link last — so the
+    # household says here that it wants the shop line, which is what it
+    # always implicitly did. That the default is the three and not four is a
+    # separate claim with its own test (test_an_unanswered_household_gets_
+    # the_three_the_card_switches_on).
+    tools.set_morning_text_parts(["meals", "freezer", "prep", "shop"])
 
     text = tools.build_morning_text(datetime.combine(TODAY, dt.time(7, 0)))
 
