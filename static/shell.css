@@ -5727,6 +5727,53 @@ button.cook-ready-row { cursor: pointer; }
   cursor: pointer;
 }
 .kit-sheet-close:hover { background: var(--sand); }
+/* 34px of ink inside a 44px target (rule 6). The box is absolutely
+   positioned, so it adds nothing to the layout — the same trick
+   .gro-icon-btn and .dish-link already use. Pre-existing: every sheet's x
+   in this app was a bare 34px until this went in (2026-10-05). */
+.kit-sheet-close, .kit-sheet-back { position: relative; }
+.kit-sheet-close::after, .kit-sheet-back::after { content: ''; position: absolute; inset: -5px; }
+
+/* The stacked header (Gowthami, 2026-10-04; the mockup's third phone under
+   "Save + close"): a back chevron before the title on a sheet that was
+   opened from another sheet, and a crumb under the row naming where this
+   screen sits. Both are hidden on a sheet opened from a tab — there is no
+   level to go up to, and its x lands on the tab as it always did.
+   The chevron matches its x sibling exactly: same 34px box, same radius,
+   same hairline, same ink, so the two controls read as one pair. */
+.kit-sheet-back {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  border: 1.5px solid var(--hairline-strong);
+  background: transparent;
+  color: var(--ink-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.kit-sheet-back:hover { background: var(--sand); }
+.kit-sheet-back[hidden] { display: none; }
+.kit-sheet-back svg { width: 18px; height: 18px; }
+/* "Preferences > What we know". Plain text, as drawn — the chevron beside
+   the title is the control; this is what carries the NAME of the screen
+   one level up, which is how a back control here goes up one level by
+   name (the standing nav rule). Measured on --ground at 390px:
+   --ink-secondary is 4.44:1 light / 8.48:1 dark, the value this app's
+   supporting copy already carries everywhere. */
+.kit-sheet-crumb {
+  margin: -2px 0 0;
+  padding: 0 18px;
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+.kit-sheet-crumb[hidden] { display: none; }
 .kit-sheet-frame {
   flex: 1 1 auto;
   width: 100%;
