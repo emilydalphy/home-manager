@@ -182,7 +182,12 @@ def test_lunches_move_too():
     assert sheet["sub"] == "The two lunches trade places."
     days = {d["date"]: d for d in sheet["days"]}
     assert days[FRI]["ok"] is False and days[FRI]["reason"] == "Same dish"
-    assert days[TUE]["ok"] is False and days[TUE]["meal"] == "No lunch planned" and days[TUE]["reason"] == ""
+    # Tuesday holds no lunch row. Card 7 (2026-10-05) INVERTS this: that
+    # is a valid destination when somebody is home for it, and refusing it
+    # is the bug the card was raised for ("only giving certain days").
+    # This file's own claim — that lunches move, and that the same dish is
+    # still refused — is untouched above.
+    assert days[TUE]["ok"] is True and days[TUE]["meal"] == "Nothing planned"
 
     out = meal_move.move_meal(plan, soup, WED)
 
@@ -253,8 +258,14 @@ def test_the_picker_lists_every_other_day_and_dims_the_impossible_ones_with_a_re
     # Thursday: its leftovers would land on Friday, where nobody's home.
     assert days[THU]["ok"] is False
     assert days[THU]["reason"] == "Its leftovers would land on Friday, and nobody’s home"
-    # Friday itself: nobody's home.
-    assert days[FRI]["ok"] is False and days[FRI]["meal"] == "Nobody’s home" and days[FRI]["reason"] == ""
+    # Friday itself: nobody's home. The CLAIM is unchanged — Friday is
+    # dimmed and says why — but card 7 (2026-10-05) moved the reason out of
+    # the day's LABEL and into the line under it, for every blocked day
+    # alike ("each shows its reason as a visible line under the day"), and
+    # named the slot in it. The tripwire fired on where the sentence sits,
+    # not on whether it is said.
+    assert days[FRI]["ok"] is False and days[FRI]["meal"] == "Not planned"
+    assert days[FRI]["reason"] == "Nobody’s home for dinner"
     assert days[WED]["ok"] is True and days[WED]["meal"] == "Sheet-Pan Gnocchi"
 
 

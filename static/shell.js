@@ -14427,6 +14427,8 @@
         runMoveMeal(btn.getAttribute('data-wk-move-to'));
       });
     });
+    var retry = body.querySelector('[data-wk-move-retry]');
+    if (retry) retry.addEventListener('click', function () { loadMoveOptions(st); });
     var tell = body.querySelector('#wk-swap-tell');
     if (tell) tell.addEventListener('click', function () {
       // Chat ABOUT this meal: the composer is empty and the meal rides
@@ -14705,18 +14707,54 @@
       escapeHtml(dayName(st.date, { weekday: 'long' }) + ' · ' + slotWord(st.slot)) + '</p>';
     var sheet = st.move;
     var title = (sheet && sheet.title) || ('Move the ' + dishShortName(st.name) + ' to which day?');
+    // Never a blank list (card 7, 2026-10-05). A sheet that could not be
+    // fetched says so with a Try again rather than an empty sheet; a sheet
+    // that loaded and whose MOVE then failed keeps its days, with the
+    // trouble said above them — it used to replace the list with the one
+    // line, which is the same blank sheet by another route.
+    var trouble = st.trouble
+      ? '<p class="wk-swap-trouble">' + escapeHtml(st.trouble) + '</p>'
+      : '';
     var body;
-    if (st.trouble) {
-      body = '<p class="wk-swap-trouble">' + escapeHtml(st.trouble) + '</p>';
-    } else if (!sheet) {
-      body = '<div class="wk-swap-wait" role="status"><span class="wk-swap-spinner" aria-hidden="true"></span></div>';
+    if (!sheet) {
+      body = st.trouble
+        ? '<p class="wk-move-retry-wrap"><button type="button" class="wk-mini" data-wk-move-retry="1">' +
+            WK_ICONS.redo + 'Try again</button></p>'
+        : '<div class="wk-swap-wait" role="status"><span class="wk-swap-spinner" aria-hidden="true"></span></div>';
     } else {
       body = '<div class="wk-swap-picks">' + sheet.days.map(function (d) { return moveDayRowHtml(d, st); }).join('') + '</div>';
     }
+    body = trouble + body;
     return eyebrow +
       '<h2 class="wk-swap-title" id="wk-swap-title">' + escapeHtml(title) + '</h2>' +
       (sheet && sheet.sub && !st.trouble ? '<p class="wk-swap-sub">' + escapeHtml(sheet.sub) + '</p>' : '') +
       body;
+  }
+
+  // The fetch, its own function so Try again can ask again (card 7).
+  async function loadMoveOptions(st) {
+    st.trouble = '';
+    st.move = null;
+    drawSwapSheet();
+    try {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/move-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: st.entryId })
+      });
+      var out = res.ok ? await res.json() : null;
+      if (swapSheetState !== st) return;
+      if (!out || !out.days) {
+        st.trouble = swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE;
+      } else {
+        st.move = out;
+      }
+    } catch (err) {
+      console.warn('Could not fetch the move options:', err);
+      if (swapSheetState !== st) return;
+      st.trouble = SWAP_TROUBLE;
+    }
+    drawSwapSheet();
   }
 
   async function openMoveSheet(panel, day, slot) {
@@ -14733,25 +14771,7 @@
     var thisOpen = swapSheetState;
     drawSwapSheet();
     openSheet(swapSheetEl, swapScrimEl);
-    try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-options', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: entry.entry_id })
-      });
-      var out = res.ok ? await res.json() : null;
-      if (swapSheetState !== thisOpen) return;
-      if (!out || !out.days) {
-        thisOpen.trouble = swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE;
-      } else {
-        thisOpen.move = out;
-      }
-    } catch (err) {
-      console.warn('Could not fetch the move options:', err);
-      if (swapSheetState !== thisOpen) return;
-      thisOpen.trouble = SWAP_TROUBLE;
-    }
-    drawSwapSheet();
+    await loadMoveOptions(thisOpen);
   }
 
   // The toast carries the move's own line ("Stew was moved to Thursday,

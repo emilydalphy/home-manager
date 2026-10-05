@@ -8915,6 +8915,13 @@ span.cook-week-name { cursor: default; }
   color: var(--ink-secondary);
 }
 .wk-swap-trouble { color: var(--ink); }
+/* The Move sheet's Try again (card 7, 2026-10-05): "never a blank list" —
+   a sheet that could not be fetched says so and offers the ask again.
+   .wk-mini is the sheet-sized button this app already has, 36px in a 44px
+   tap target (rule 6, through its own ::before); nothing new, and no
+   second accent — the label is --ink on --surface, 12.78:1 light /
+   14.40:1 dark, the pair .wk-mini already carries everywhere. */
+.wk-move-retry-wrap { margin: 12px 0 0; }
 /* The Swap sheet's reassurance line (Emily, 2026-09-26): supporting copy
    under the title (and the days line on a whole-dish swap), one step
    larger than .wk-swap-sub so it reads as a sentence, not a caption. */

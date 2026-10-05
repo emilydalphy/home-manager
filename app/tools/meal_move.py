@@ -123,7 +123,60 @@ def _snapshot(weekly_plan_id: int, conn) -> dict:
     ).fetchall()
     rows = [dict(r) for r in rows]
     chains = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)
-    return {"plan": dict(plan), "start": start, "end": end, "rows": rows, "chains": chains}
+    return {"plan": dict(plan), "start": start, "end": end, "rows": rows, "chains": chains,
+            "home": _home_at_empty_slots(conn, start, end, rows)}
+
+
+def _home_at_empty_slots(conn, start: str, end: str, rows: list[dict]) -> dict:
+    """{(date, slot): True if somebody is home} for the lunch-and-dinner
+    positions this week holds NO ROW for (2026-10-05, card 7).
+
+    Read HERE, once, so plan_move stays pure over the snapshot — the
+    module's own rule, and the one that lets the picker ask plan_move of
+    every day at once and the write ask it again inside its transaction.
+    Normally this reads nothing at all: a generated week has a row in every
+    slot (audit_plan_slots asserts exactly that), so an empty position is
+    the leftover of a delete path and the ordinary case is zero queries.
+
+    `conn` is passed down rather than opened: this runs inside
+    move_meal's BEGIN IMMEDIATE, where a nested get_conn is the
+    "database is locked" trap. get_slot_attendance only ever reads on a
+    connection it was handed.
+    """
+    from . import attendance as _attendance  # lazy: it imports weekly_plan, which reaches back here
+    filled = {(r["date"], r["slot"]) for r in rows}
+    out: dict[tuple[str, str], bool] = {}
+    d = start
+    while d <= end:
+        for slot in MOVABLE_SLOTS:
+            if (d, slot) in filled:
+                continue
+            try:
+                att = _attendance.get_slot_attendance(d, slot, conn=conn)
+            except Exception:
+                # A clock or a member read that fails must not make the
+                # whole Move sheet refuse: an unreadable table reads as
+                # the app's own default, everybody's home.
+                logger.exception("Reading attendance for %s %s failed", d, slot)
+                out[(d, slot)] = True
+                continue
+            # household_size 0 is "nobody has told us who lives here",
+            # NOT "nobody is home" — attendance.nobody_home is a headcount
+            # test, so an empty members table makes it true of every slot
+            # of every day. Reading it as a refusal would have blocked
+            # every empty day for a household mid-onboarding, which is the
+            # bug this card is about wearing the other hat. The app's own
+            # stance elsewhere (grocery_scale_factor, servings_scale_factor)
+            # is the same: size 0 means unknown, so take the default.
+            out[(d, slot)] = att["household_size"] == 0 or not att["nobody_home"]
+        d = _shift(d, 1)
+    return out
+
+
+def _somebody_home(snap: dict, d: str, slot: str) -> bool:
+    """Whether a position the week holds no row for has anybody at it. An
+    unasked position reads as the app's own default — everybody's home."""
+    return bool(snap.get("home", {}).get((d, slot), True))
 
 
 def _derived(row: dict) -> dict:
@@ -161,15 +214,37 @@ def _slot_row(snap: dict, d: str, slot: str) -> dict | None:
     return None
 
 
+def _nobody_home_row(row: dict) -> bool:
+    """Whether a planned_empty row is empty because nobody is eating.
+
+    Read from the CONSTRAINT, never from _empty_reason's sentence. That
+    sentence used to be the discriminator, and re-wording it for card 7
+    (2026-10-05) silently turned a leftovers night landing on a
+    nobody-home day from "and nobody’s home" into "which isn’t
+    planned" — a reader of a shared string broken by a change to the
+    string, which is the trap this repo keeps writing down. One fact, one
+    reader.
+    """
+    derived = _derived(row)
+    constraint = derived.get("constraint")
+    return constraint not in ("already_past", _weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT)
+
+
 def _empty_reason(row: dict, slot: str) -> str:
-    """Why a day's meal can't take part, when nobody's eating it."""
+    """Why a day's meal can't take part, when nobody's eating it.
+
+    Named for the slot ("Nobody’s home for dinner") since 2026-10-05:
+    the reason is now a line of its own under the day's label rather than
+    standing IN its place, so it has to read as a sentence about this
+    meal rather than about the day.
+    """
     derived = _derived(row)
     constraint = derived.get("constraint")
     if constraint == "already_past":
         return "Already gone by"
     if constraint == _weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT:
-        return f"No {slot} planned"
-    return "Nobody’s home"
+        return f"No {slot} planned that day"
+    return f"Nobody’s home for {slot}"
 
 
 # ---------- the placement ----------
@@ -183,7 +258,12 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
     inside its transaction. `today` is the household's date (ISO).
 
     Returns {"ok": True, "placement": {entry_id: new_date}, "members",
-    "displaced", "delta"} or {"ok": False, "reason": short sentence}.
+    "displaced", "delta", "opens"} or {"ok": False, "reason": short
+    sentence}. `opens` is the (date, slot) positions the meal leaves that
+    nothing comes back to — a day the week held no row for is a valid
+    destination (card 7, 2026-10-05), and when the meal lands on one the
+    day it left is handed back as an open question rather than left
+    absent. Ordinarily empty.
     Raises ValueError for a request no screen should make (a breakfast, a
     day off the plan, the same day, a meal that isn't on this plan).
     """
@@ -251,13 +331,30 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
         tapped = pos[0] == to_date
         wd = _weekday(pos[0])
         if there is None:
-            return {"ok": False, "reason": f"No {m['slot']} planned" if tapped
-                    else f"Its leftovers would land on {wd}, with no {m['slot']} planned"}
+            # A position the week holds NO row for is a valid destination
+            # when somebody is home for it (Emily, card 7, 2026-10-05 —
+            # the tester's "only giving certain days"). Nothing is
+            # displaced from it, so the day the meal LEAVES ends up with
+            # nothing coming back: it is handed back as an open question
+            # below, the way drop_dish_from_day hands one back.
+            #
+            # planned_empty is a different answer and stays refused: it
+            # means nobody is home, or the household asked for none of
+            # that meal, and such a slot must never be offered as a
+            # decision.
+            if not _somebody_home(snap, *pos):
+                reason = f"Nobody’s home for {m['slot']}"
+                return {"ok": False, "reason": reason if tapped
+                        else f"Its leftovers would land on {wd}, and nobody’s home"}
+            if pos[0] < today:
+                return {"ok": False, "reason": "Already gone by" if tapped
+                        else f"Its leftovers would land on {wd}, which has gone by"}
+            continue
         if there["slot_state"] == "planned_empty":
             reason = _empty_reason(there, m["slot"])
             if tapped:
                 return {"ok": False, "reason": reason}
-            if reason == "Nobody’s home":
+            if _nobody_home_row(there):
                 return {"ok": False, "reason": f"Its leftovers would land on {wd}, and nobody’s home"}
             return {"ok": False, "reason": f"Its leftovers would land on {wd}, which isn’t planned"}
         if (there["cooked_status"] or "") == "done":
@@ -277,20 +374,27 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
     # Same slot for each pair: a lunch only ever trades with a lunch. The
     # chain's own rows keep their slots, so the counts per slot agree.
     placement = dict(targets)
+    opens: list[tuple[str, str]] = []
     for slot_name in {p[1] for p in vacated}:
         free = [p for p in vacated if p[1] == slot_name]
         going = [r for r in displaced if r["slot"] == slot_name]
-        if len(free) != len(going):
+        # More rows coming back than places for them is still a refusal.
+        # FEWER is the empty-destination case: the meal landed somewhere
+        # the week held no row, so one of the places it left has nothing
+        # coming back to it and is handed back as a question.
+        if len(going) > len(free):
             return {"ok": False, "reason": "That would leave a meal with nowhere to go"}
         for r, p in zip(going, free):
             placement[r["id"]] = p[0]
+        opens.extend(free[len(going):])
 
     after = _after_rows(rows, placement)
     said = _structural_refusal(snap, rows, after, placement, source)
     if said:
         return {"ok": False, "reason": said}
     return {"ok": True, "placement": placement, "members": [m["id"] for m in members],
-            "displaced": [r["id"] for r in displaced], "delta": delta}
+            "displaced": [r["id"] for r in displaced], "delta": delta,
+            "opens": sorted(opens, key=lambda p: (p[0], _leftovers._SLOT_ORDER.get(p[1], 9)))}
 
 
 def _after_rows(rows: list[dict], placement: dict[int, str]) -> list[dict]:
@@ -521,11 +625,14 @@ def move_options(weekly_plan_id: int, entry_id: int) -> dict:
                     if not note and here is not None and here["id"] in by_after:
                         note = _time_note(here, by_after[here["id"]], caps, own=False)
                     entry["note"] = note or ""
-            elif here is None or here["slot_state"] == "planned_empty":
-                # The day's own emptiness is the reason: said once, as the
-                # day's line ("Nobody’s home"), not twice.
-                entry["meal"] = out["reason"] or label
             else:
+                # The reason is a LINE of its own under the day's label,
+                # for every blocked day alike (card 7, 2026-10-05: "each
+                # shows its reason as a visible line under the day, not
+                # only on tap"). It used to be written OVER the label for
+                # an empty or nobody-home day and under it for every
+                # other, so which of the two lines a household had to
+                # read depended on why the day was out.
                 entry["reason"] = out["reason"]
             days.append(entry)
         d = _shift(d, 1)
@@ -645,18 +752,21 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
             conn.rollback()
             return {"status": "refused", "message": "The week just changed — try that again."}
         placement = planned["placement"]
+        opens = planned.get("opens") or []
         n = len(placement)
         cuts = _prep_cuts_that_will_shift(conn, weekly_plan_id, snap, placement)
         done = _weekly_plan._redate_plan_rows(
             conn, weekly_plan_id, snap["rows"], placement,
             token_for=lambda r: {"date": r["date"], "at": at, MOVE_TOKEN_KEY: move_id,
                                  "to": placement[r["id"]], "n": n, "source": entry_id,
+                                 **({"opened": [f"{d}:{sl}" for d, sl in opens]} if opens else {}),
                                  **({"prep_cuts": cuts[r["id"]]} if cuts.get(r["id"]) else {})},
             move_prep_cuts=True,
         )
         if "refused" in done:
             conn.rollback()
             return {"status": "refused", "message": done["refused"]}
+        _open_the_days_left_behind(conn, weekly_plan_id, snap, opens, entry_id, placement, move_id)
         _resay_freezer_nights(conn, snap, placement)
         conn.commit()
     except Exception:
@@ -680,6 +790,50 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
         "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
         "can_undo": True,
     }
+
+
+MOVE_OPENED_CONSTRAINT = "moved_away"
+
+
+def _opened_reason(dish: str, to_date: str) -> str:
+    """The question a day left behind asks: "You moved the Tacos to
+    Thursday, so this one is yours to fill."
+
+    drop_dish_from_day's own sentence, one verb over ("You cut X back, so
+    this one is yours to fill") — one pattern for the one thing both doors
+    do, which is take a meal off a day and hand the day back.
+    """
+    return f"You moved the {dish} to {_weekday(to_date)}, so this one is yours to fill."
+
+
+def _open_the_days_left_behind(conn, weekly_plan_id: int, snap: dict,
+                               opens: list, source_id: int, placement: dict[int, str],
+                               move_id: str) -> None:
+    """Hand back every position the move left with nothing coming to it.
+
+    `open`, never `planned_empty` and never nothing: planned_empty means
+    nobody is home or the household asked for none of that meal and must
+    never be offered as a decision, and a slot that is simply ABSENT is
+    the bug plan_slot_open exists to prevent. Written on the move's own
+    connection and inside its transaction — plan_slot_open takes a `conn`
+    for exactly this, and the gap between re-dating the rows and stating
+    the day empty would otherwise be a genuinely missing slot.
+
+    The move id goes on the row so Undo can find what this move opened
+    and take it back off (undo_meal_move).
+    """
+    if not opens:
+        return
+    by_id = {r["id"]: r for r in snap["rows"]}
+    dish = short_name(by_id[source_id]["meal"]) if source_id in by_id else "that meal"
+    landed = placement.get(source_id) or ""
+    for d, slot in opens:
+        _weekly_plan.plan_slot_open(
+            weekly_plan_id, d, slot, _opened_reason(dish, landed),
+            derived_from={"constraint": MOVE_OPENED_CONSTRAINT, MOVE_TOKEN_KEY: move_id,
+                          "moved": source_id},
+            conn=conn,
+        )
 
 
 def _prep_cuts_that_will_shift(conn, weekly_plan_id: int, snap: dict, placement: dict[int, str]) -> dict:
@@ -755,6 +909,7 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
         expected = None
         source_id = None
         restore_cuts: dict[str, str] = {}
+        opened: list[str] = []
         for r in snap["rows"]:
             token = _derived(r).get(_weekly_plan.NIGHTS_MOVED_KEY) or {}
             if not isinstance(token, dict) or token.get(MOVE_TOKEN_KEY) != move_id:
@@ -765,12 +920,48 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
                 raise ValueError("That meal has been cooked since, so it stays where it is.")
             placement[r["id"]] = token.get("date")
             restore_cuts.update(token.get("prep_cuts") or {})
+            for pos in token.get("opened") or []:
+                if pos not in opened:
+                    opened.append(pos)
             expected = token.get("n")
             source_id = token.get("source")
         if not placement or (expected and expected != len(placement)):
             raise ValueError("That move has changed since, so there’s nothing to put back.")
+        # A day the move handed back as a question has to be taken back off
+        # before the meal returns to it, or the day ends up holding two rows
+        # for one slot — the DUPLICATES audit_plan_slots reports, and how a
+        # night nobody is home ends up with groceries bought for it.
+        #
+        # Only this move's own open rows, and only while they are still
+        # exactly what the move left. One the household has answered since
+        # is a real decision, and putting the old meal back on top of it
+        # would throw that away: it refuses and changes nothing, the same
+        # answer this Undo already gives a row that moved again.
+        take_off: list[int] = []
+        for pos in opened:
+            d, _, slot = pos.partition(":")
+            row = _slot_row(snap, d, slot)
+            if row is None:
+                continue  # already gone — nothing to take off, nothing in the way
+            derived = _derived(row)
+            if row["slot_state"] != "open" or derived.get(MOVE_TOKEN_KEY) != move_id:
+                raise ValueError(
+                    f"{_weekday(d)}’s {slot} has been answered since, so there’s "
+                    "nothing to put back.")
+            take_off.append(row["id"])
+        # Taken off BEFORE the meals are re-dated, and kept out of the
+        # picture _redate_plan_rows judges: the row sits on exactly the
+        # position a meal is about to come back to, so leaving it in would
+        # have two rows claiming one (date, slot) in the week that
+        # function's chain checks read.
+        for row_id in take_off:
+            conn.execute(
+                "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (row_id, household_id()),
+            )
+        rows = [r for r in snap["rows"] if r["id"] not in set(take_off)]
         done = _weekly_plan._redate_plan_rows(
-            conn, weekly_plan_id, snap["rows"], placement, token_for=None, move_prep_cuts=True,
+            conn, weekly_plan_id, rows, placement, token_for=None, move_prep_cuts=True,
         )
         if "refused" in done:
             conn.rollback()
