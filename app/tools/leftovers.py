@@ -489,6 +489,84 @@ def served_cold(recipe: dict | None, slot: str | None) -> bool:
     return recipe.get("cook_time_minutes") == 0
 
 
+# ---------- does a dish keep as a leftover? ----------
+#
+# A cook feeding tomorrow's lunch is one pot, so a swap of it puts the new
+# dish on both meals (swap_in_place.fed_days, 2026-10-04). A dish that is
+# only itself fresh — a salad, a plate of nachos — must not be the thing
+# in tomorrow's container, so the fed meal becomes a question Pomona
+# answers instead.
+#
+# The generation prompt has asked for "something that keeps and reheats
+# well" on a batch since prepped lunches shipped (agent.py), and there has
+# never been a predicate behind it. This is the predicate, and it is a
+# WORD LIST on purpose — the call plates.is_low_carb already made, for the
+# same reasons: it runs per swap, the cost of a wrong answer is one meal,
+# and a list anyone can read and argue with beats a judgement nobody can
+# see. Extend it when a real miss shows up.
+#
+# POSITIVE EVIDENCE ONLY, and the bias is deliberate: an unrecognised dish
+# KEEPS. A wrong "doesn't keep" takes a leftover lunch away from a
+# household that wanted one and hands them a repeat; a wrong "keeps" is one
+# soggy lunch. Neither is good, and the first is the one that argues with
+# a household about their own week — so when in doubt a word stays out.
+#
+# `_DOES_NOT_KEEP` is matched against the dish's NAME only, whole word or
+# whole phrase. Not the ingredients: "lettuce" is in a wrap that keeps and
+# in a salad that doesn't, so the ingredient says nothing the name hasn't
+# already said.
+_DOES_NOT_KEEP = (
+    "salad", "slaw", "ceviche", "sashimi", "sushi", "tartare", "tempura",
+    "souffle", "soufflé", "smoothie", "omelette", "omelet", "nachos",
+    "bruschetta", "grilled cheese", "quesadilla", "fried egg", "poached egg",
+    "scrambled eggs", "avocado toast", "french toast", "caesar",
+)
+# ...except where the word is standing there and is not the thing — the
+# same shape coordination._COMPOUND_EXCEPTIONS takes for an allergen word
+# inside a compound food. A pasta salad, a potato salad and a tuna salad
+# are all made ahead on purpose.
+_KEEPS_ANYWAY = (
+    "pasta salad", "potato salad", "bean salad", "grain salad", "lentil salad",
+    "chickpea salad", "quinoa salad", "rice salad", "couscous salad", "farro salad",
+    "barley salad", "egg salad", "tuna salad", "chicken salad", "salmon salad",
+    "noodle salad", "three bean salad",
+)
+
+
+def keeps_as_leftovers(pick: dict | None) -> bool:
+    """
+    Whether a dish may be the thing in tomorrow's container.
+
+    `pick` is a swap's chosen dish (swap_in_place), so two signals are
+    read, in this order:
+
+      * `keeps_as_leftovers` false, when the pick says so — the model has
+        volunteered a problem with its own dish and there is no reason to
+        argue with it. A pick that says nothing is not a pick that said
+        yes;
+      * the dish's NAME against _DOES_NOT_KEEP above, so "telling the
+        generator something is not the same as preventing it" (CLAUDE.md's
+        own standing rule) holds here too.
+
+    True for everything else, including every dish with no name at all —
+    see the bias note above.
+    """
+    if (pick or {}).get("keeps_as_leftovers") is False:
+        return False
+    name = ((pick or {}).get("meal_name") or "").strip().lower()
+    if not name:
+        return True
+    if any(exception in name for exception in _KEEPS_ANYWAY):
+        return True
+    for word in _DOES_NOT_KEEP:
+        if " " in word:
+            if word in name:
+                return False
+        elif re.search(r"\b" + re.escape(word) + r"\b", name):
+            return False
+    return True
+
+
 def reheat_note(recipe: dict | None) -> str:
     """
     A recipe's own reheating advice, if it happens to carry any.

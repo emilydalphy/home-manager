@@ -2072,6 +2072,38 @@ def _gaps(plan_id: int, slot: str, dates: list[str]) -> list[dict]:
     return gaps
 
 
+def repeat_for_slot(plan_id: int, slot: str, date: str, cap: int | None = None,
+                    avoid: str | None = None) -> dict | None:
+    """
+    The dish fill_gaps_with_a_repeat would put on `slot` on `date`:
+    another of this week's own dishes for that meal, the one already on
+    the fewest nights, ties to the earliest then by name — so the answer
+    is one a test can predict. None when the week has nothing to repeat,
+    or nothing that fits `cap`.
+
+    Shared with swap_in_place: a swap to a dish that does not keep as a
+    leftover takes the fed meal out of the chain, and that meal is filled
+    from this same supply rather than handed back as a question
+    (2026-10-04; CLAUDE.md's rule that a week never shows an open
+    breakfast or lunch). ONE rule, two callers, so the swap's answer and
+    generation's own are the same answer.
+
+    `avoid` is a dish name not to offer — the one being swapped away from,
+    which would otherwise be the obvious repeat.
+    """
+    try:
+        chains = _leftovers.plan_leftover_chains(plan_id)
+        supply = _fill_supply(plan_id, slot, chains)
+    except Exception:
+        logger.exception("Could not read the week to repeat a dish into %s %s", date, slot)
+        return None
+    skip = (avoid or "").strip().lower()
+    fits = [d for d in supply if _fits(d, cap) and d["name"].strip().lower() != skip]
+    if not fits:
+        return None
+    return min(fits, key=lambda d: (d["nights"], d["first"], d["name"]))
+
+
 def fill_gaps_with_a_repeat(plan_id: int, dates: list[str], caps: dict | None = None) -> dict:
     """
     Make "a breakfast or lunch is never open" true rather than measured.

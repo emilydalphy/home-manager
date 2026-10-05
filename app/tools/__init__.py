@@ -339,6 +339,10 @@ from .leftovers import (  # noqa: F401
     batch_for_source,
     eaters_at,
     plan_leftover_chains,
+    # Whether a dish may be the thing in tomorrow's container (2026-10-04):
+    # what a swap of a cook that feeds later meals reads before it puts
+    # the new dish on them.
+    keeps_as_leftovers,
 )
 from .leftovers import covers_note as leftovers_covers_note  # noqa: F401
 # "Four dinners a week" enforced after generation (Emily, 2026-09-13) —

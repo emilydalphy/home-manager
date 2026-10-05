@@ -591,7 +591,15 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         if why:
             return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if len(group) > 1:
+        if correct_title:
+            # The keeps-as-a-leftover read is of the NAME, so the name is
+            # settled first (apply_pick does the same, for the same
+            # reason).
+            pick["meal_name"] = _swap.honest_meal_name(pick)
+            correct_title = False
         out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, correct_title=correct_title,
+                                       instead=_swap.instead_of_the_leftovers(
+                                           weekly_plan_id, entry, group, pick),
                                        serves=_swap.batch_serves(weekly_plan_id, group, entry))
     else:
         # `group` rather than letting apply_pick widen for itself: it has

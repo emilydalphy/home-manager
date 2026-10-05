@@ -7452,7 +7452,11 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
     it, it just added it so i have two meals instead of 1").
 
     `items` is one dict per slot being replaced: {old_entry_id, date, slot,
-    new_meal, food_groups, reasoning, derived_from}. `derived_from` is what
+    new_meal, food_groups, reasoning, derived_from}. `new_meal` is per
+    item, so one call may put a different dish on one of the slots — which
+    is what a swap to a dish that does not keep as a leftover does to the
+    meal that was eating the leftovers (swap_in_place, 2026-10-04).
+    `derived_from` is what
     the caller wants the new row to carry (the swap's undo note, the
     group's token); its leftover-chain keys (_CHAIN_KEYS) are NOT taken
     from it — they are worked out here, against the chains as this
@@ -7471,6 +7475,21 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
         swapped) drops out of the new cook's batch and, on an approved
         week, buys for itself (the _reingest_unlinked_entries rule);
       * separate cooks stay separate cooks.
+
+    An item may override that with `chain`, and it is the one thing on an
+    item that is about the chain rather than the dish:
+
+      * `chain: {}` — this row LEAVES the chain. It carries no link, and
+        it stops counting as one of the group's own meals when the others'
+        links are worked out, so a cook whose only reheat night leaves
+        goes back to cooking for its own table. Used by a swap to a dish
+        that does not keep (swap_in_place.apply_pick_to_days' `instead`);
+      * `chain: {"links_to": …}` / `{"make_double_for": […], …}` — carry
+        exactly these. Used by the Undo of such a swap
+        (swap_in_place._undo_dish_swap), which has to put a chain back
+        that is no longer on the plan to be read.
+      * absent — worked out from the live chains, as above. Every other
+        caller.
 
     Why a function of its own and not N calls to swap_meal_in_plan — two
     reasons. N transactions can leave the week half swapped (Thursday new,
@@ -7531,21 +7550,27 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
             raise RuntimeError("Part of that meal changed under this swap — nothing was changed; try again.")
 
         chains = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)
+        # An explicit `chain` on an item wins; an empty one also takes that
+        # row out of the group as far as everyone else's links go (see the
+        # docstring), so a cook whose only reheat night leaves the chain
+        # stops cooking double for it.
+        explicit = {int(i["old_entry_id"]): dict(i["chain"]) for i in items if i.get("chain") is not None}
+        chain_group = group - {i for i, fields in explicit.items() if not fields}
         chain_fields: dict[int, dict] = {}
         for old_id in old_ids:
             fields: dict = {}
             source = chains["sources"].get(old_id)
             if source:
-                kept = [f"{t['date']}:{t['slot']}" for t in source["targets"] if t["entry_id"] in group]
+                kept = [f"{t['date']}:{t['slot']}" for t in source["targets"] if t["entry_id"] in chain_group]
                 if kept:
                     fields["make_double_for"] = kept
                     fields["make_double_note"] = _make_double_note_text(kept)
             reheat = chains["leftovers"].get(old_id)
-            if reheat and reheat["source"]["entry_id"] in group:
+            if old_id in chain_group and reheat and reheat["source"]["entry_id"] in chain_group:
                 fields["links_to"] = f"{reheat['source']['date']}:{reheat['source']['slot']}"
                 if reheat.get("cook_ahead"):
                     fields["cook_ahead"] = True
-            chain_fields[old_id] = fields
+            chain_fields[old_id] = explicit[old_id] if old_id in explicit else fields
         # Reheat nights this group feeds now and will not feed after: they
         # stay on the plan (not in the group) with nothing bought for them.
         orphaned = [
@@ -7832,23 +7857,54 @@ def _chat_swap_along_the_chain(args: tuple, kwargs: dict, new_meal) -> dict | No
         return None
     if len(group) < 2:
         return None
-    items = [{
-        "old_entry_id": member["entry_id"], "date": member["date"], "slot": member["slot"],
-        "new_meal": new_meal,
-        "food_groups": kwargs.get("food_groups") if member["entry_id"] == rows[0]["id"] else None,
-        "reasoning": kwargs.get("reasoning") or "" if member["entry_id"] == rows[0]["id"] else "",
-        "derived_from": member["derived_from"],
-    } for member in group]
+    cook = next(m for m in group if m["entry_id"] == rows[0]["id"])
+    # A dish that won't keep doesn't go in tomorrow's container here either
+    # (swap_in_place.instead_of_the_leftovers — the same read, so chat and
+    # the screens answer the same way about the same dish).
+    instead = _swap.instead_of_the_leftovers(plan_id, cook, group, {"meal_name": new_meal})
+    to_open = [m for m in group if m["entry_id"] in instead and not instead[m["entry_id"]].get("meal")]
+    items = []
+    for member in group:
+        if member in to_open:
+            continue
+        other = instead.get(member["entry_id"])
+        items.append({
+            "old_entry_id": member["entry_id"], "date": member["date"], "slot": member["slot"],
+            "new_meal": other["meal"] if other else new_meal,
+            "food_groups": (other.get("food_groups") or [] if other
+                            else kwargs.get("food_groups") if member is cook else None),
+            "reasoning": (other.get("reasoning") or "" if other
+                          else kwargs.get("reasoning") or "" if member is cook else ""),
+            "derived_from": member["derived_from"],
+            **({"chain": {}} if other else {}),
+        })
     result = replace_dish_on_days(plan_id, items)
+    planned = [m for m in group if m not in to_open and m["entry_id"] not in instead]
+    refilled = [{"date": m["date"], "slot": m["slot"], "meal": instead[m["entry_id"]]["meal"]}
+                for m in group if m["entry_id"] in instead and m not in to_open]
+    for member in to_open:
+        try:
+            plan_slot_open(plan_id, member["date"], member["slot"],
+                           f"{new_meal} won’t keep, so this one is yours to fill.")
+            refilled.append({"date": member["date"], "slot": member["slot"], "meal": ""})
+        except Exception:
+            logger.exception("Could not open %s %s after a chat swap that won't keep",
+                             member["date"], member["slot"])
+    said = _swap.swapped_said(new_meal, planned)
+    if refilled:
+        refilled.sort(key=lambda r: (r["date"], r["slot"]))
+        said = (said + " " + _swap.refilled_said(new_meal, refilled)).strip()
     out = {
         "entry_id": result["entry_ids"][0],
         "entry_ids": result["entry_ids"],
         "date": meal_date,
-        "dates": [m["date"] for m in group],
+        "dates": [m["date"] for m in planned],
         "slot": slot,
-        "meals": [{"date": m["date"], "slot": m["slot"]} for m in group],
-        "said": _swap.swapped_said(new_meal, group),
+        "meals": [{"date": m["date"], "slot": m["slot"]} for m in planned],
+        "said": said,
     }
+    if refilled:
+        out["refilled"] = refilled
     if result.get("held_thawed"):
         out["held_thawed"] = result["held_thawed"]
     verdict = _taste_verdict_for_slot(new_meal, meal_date, slot)
