@@ -296,6 +296,16 @@ from .first_open import (  # noqa: F401
     mark_first_open_seen,
     record_setup_adult,
 )
+# The household's main person (2026-10-05) — one per household, a member
+# id, shown in Settings -> Who's here and movable to another adult. See
+# primary_member.py for why this is not set_up_by_member_id.
+from .primary_member import (  # noqa: F401
+    PRIMARY_NOT_AN_ADULT,
+    PRIMARY_NOT_A_MEMBER,
+    primary_member_id,
+    record_primary_member,
+    set_primary_member,
+)
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
     _get_or_create_member,

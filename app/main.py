@@ -668,6 +668,18 @@ class HouseholdOnboardingRequest(BaseModel):
     members: list[MemberInput] = []
     pets: list[PetInput] = []
     goals: str = ""
+    # Who typed their own name on onboarding's FIRST screen, "What's your
+    # name?" (2026-10-05) — the household's main person. A NAME on the
+    # wire because that is the only identity onboarding has to offer; the
+    # route resolves it to a member id among the ones it has just saved,
+    # and the id is what is stored (see app/tools/primary_member.py).
+    #
+    # None means "this request isn't saying" — the onboarding-route
+    # convention, where None is "not part of this answer" and "" would be
+    # "that is my answer, clear it". A request that doesn't name one leaves
+    # primary_member_id to resolve the way an existing household's does,
+    # which is what keeps every other caller of this route unchanged.
+    primary_name: str | None = None
 
 
 class UsualWeekRequest(BaseModel):
@@ -841,6 +853,17 @@ class MemberAgeGroupRequest(BaseModel):
     for it, so most households reach this page with it unset."""
     name: str
     age_group: str
+
+
+class PrimaryMemberRequest(BaseModel):
+    """
+    Settings -> Who's here: move the household's main person to another
+    adult (2026-10-05). A member ID, not a name — a name is the only
+    identity this app has for a person and two people called Sam are
+    indistinguishable to it, which is exactly the limit the stored field
+    exists to avoid inheriting. /api/memory's members carry their id.
+    """
+    member_id: int
 
 
 class MemberRestrictionsRequest(BaseModel):
@@ -1275,18 +1298,36 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     """Save household basics: members (+ age group), pets, and goals. Called directly by the onboarding wizard — no LLM round-trip needed for structured form data."""
     try:
         saved_ids = []
+        # (id, name) for each member this request saved, in the order they
+        # were typed — what primary_name is resolved against below.
+        saved_members = []
         for m in req.members:
             if not m.name.strip():
                 continue
             added = tools.add_member(m.name.strip())
             if isinstance(added, dict) and added.get("member_id") is not None:
                 saved_ids.append(added["member_id"])
+                saved_members.append((added["member_id"], m.name.strip()))
             if m.age_group:
                 tools.set_member_age_group(m.name.strip(), m.age_group)
         # Setup is finishing (onboarding posts its people only at the end):
         # record who set the household up now, before any invite link can
         # exist — see tools/first_open.py, rule 2.
         setup_adult_id = tools.record_setup_adult(saved_ids)
+        # And who the MAIN PERSON is (2026-10-05) — a different question
+        # from the one above, which is a fact about the past that must
+        # never move; see app/tools/primary_member.py on why there are two
+        # fields. Resolved to an id among the members THIS request saved,
+        # by name, so the stored value is an id and a later rename cannot
+        # move it. members[0] is deliberately NOT read as the answer: that
+        # implicit convention is exactly what this card replaces, and a
+        # request that names nobody leaves the resolver to answer.
+        wanted = (req.primary_name or "").strip().lower()
+        if wanted:
+            for mid, mname in saved_members:
+                if mname.strip().lower() == wanted:
+                    tools.record_primary_member(mid)
+                    break
         for p in req.pets:
             if not p.name.strip():
                 continue
@@ -1952,6 +1993,34 @@ def set_memory_member_restrictions(req: MemberRestrictionsRequest):
         logger.exception("Setting member dietary restrictions failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
+
+
+@app.post("/api/memory/primary-member")
+def set_memory_primary_member(req: PrimaryMemberRequest):
+    """
+    Move the household's main person to another adult — Settings ->
+    Who's here (2026-10-05). Answers the whole memory payload, like its
+    two neighbours above, so the screen re-reads the people and their
+    `is_primary` from one place rather than patching its own copy.
+
+    400 with the refusal's own sentence for somebody who isn't an adult
+    eating here, or isn't in this household at all — written for a reader,
+    so Who's here shows it as it stands (see app/tools/primary_member.py).
+    Another household's member id takes that same door rather than moving
+    anything: every statement in there is scoped by household_id().
+    """
+    try:
+        tools.set_primary_member(req.member_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Setting the main person failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    try:
+        return tools.get_household_memory()
+    except Exception as e:
+        logger.exception("Memory lookup after setting the main person failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.get("/api/cooker-view")
