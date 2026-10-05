@@ -364,11 +364,23 @@ def test_a_package_unit_in_the_fill_triggers_one_repair_call(monkeypatch):
         _response(_tool_block("submit_cooking_quantities", {
             "cooking_quantities": [{"item": "Olive oil", "cook_qty": "1/4 cup"}],
         })),
+        # A THIRD call since 2026-10-05, and _detail's own steps are why:
+        # they wilt a spinach this recipe never lists, which main's check
+        # already reported (missing_from_list ['spinach'], identical on
+        # both trees) and only logged. A recipe that fails the check is
+        # repaired now, so it costs one call. The claim below — a
+        # cooking-quantity repair naming only the offending line — is
+        # unchanged.
+        _response(_tool_block("submit_recipe_amounts", {
+            "instructions": _detail([]).input["instructions"], "cooking_quantities": [],
+        })),
     )
 
     agent.fill_in_recipe("Lemon Pasta")
 
-    assert messages.tools_seen == ["submit_recipe_detail", "submit_cooking_quantities"]
+    assert messages.tools_seen == [
+        "submit_recipe_detail", "submit_cooking_quantities", "submit_recipe_amounts",
+    ]
     # Only the offending line is in the repair prompt — the instructions
     # from the first call are already good and aren't paid for twice.
     repair_prompt = messages.prompts[1]
@@ -391,11 +403,21 @@ def test_a_repair_that_comes_back_wrong_falls_back_to_the_table(monkeypatch):
         _response(_tool_block("submit_cooking_quantities", {
             "cooking_quantities": [{"item": "Olive oil", "cook_qty": "1 large bottle"}],
         })),
+        # The amount repair, see the note in the test above: _detail's
+        # steps name a spinach this recipe doesn't list, which fails the
+        # check on main too.
+        _response(_tool_block("submit_recipe_amounts", {
+            "instructions": _detail([]).input["instructions"], "cooking_quantities": [],
+        })),
     )
 
     agent.fill_in_recipe("Lemon Pasta")
 
-    assert len(messages.prompts) == 2
+    # Two for the quantities (the fill and its one repair), plus the one
+    # amount repair. Never a SECOND quantity round trip, which is this
+    # test's own claim.
+    assert messages.tools_seen.count("submit_cooking_quantities") == 1
+    assert len(messages.prompts) == 3
     saved = tools.get_recipe("Lemon Pasta")["ingredients"][0]
     assert saved["cook_qty"] == "2 tbsp"
     assert saved["qty"] == "1 bottle", "the shopping amount is untouched"
@@ -497,7 +519,11 @@ def test_a_recipe_whose_steps_and_ingredients_agree_is_quiet():
         ["Boil the spaghetti.", "Warm the olive oil and wilt the spinach.", "Toss together."],
     )
 
-    assert result == {"ok": True, "unused_ingredients": [], "missing_from_list": []}
+    # amount_mismatches joined the result on 2026-10-05 (the steps and the
+    # list have to name the same amounts); the claim here is unchanged.
+    assert result == {
+        "ok": True, "unused_ingredients": [], "missing_from_list": [], "amount_mismatches": [],
+    }
 
 
 def test_an_unknown_food_word_in_a_step_is_not_guessed_at():

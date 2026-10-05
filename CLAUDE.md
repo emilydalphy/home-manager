@@ -751,6 +751,185 @@ why*, not duplicating the diff.
     editing a file a second session is working in is what cost this night
     half an hour already. One sentence, its own follow-up — and the merge
     above makes the list right whichever way the model writes it.
+- **2026-10-05 — Three cups of cashews, and the steps only ever use one.
+  Branch `overnight/recipe-amounts-add-up`, NOT merged at the time of
+  writing.** Gowthami's household (beta tester), 2026-10-04: "it says use 3
+  cups of cashews for example, but then the actually steps doesn't use the 3
+  cups", filed under "Blockers to use it effectively: Recipe quality: can't
+  trust the recipe". `recipes.check_steps_ingredients_consistency` could
+  already see an ingredient no step touches and a step reaching for something
+  nobody bought — it compared NAMES ONLY, so a step using a third of what the
+  list bought read as perfectly fine, and the one thing it did was log, at
+  `info`, nowhere a household could act on it.
+  - **Reproduced over real HTTP on a throwaway DB through
+    `/api/cooker/fill-recipe`** (the Cook screen's "Fill in this recipe"),
+    only the model call stubbed, before anything was touched: the saved
+    recipe reads `Cashews: 3 cups` on the list and "Soak **1 cup** of
+    cashews" in the steps, `check ok False`, and the morning-report line
+    "the steps use 1 cup of Cashews where the list says 3 cups". After:
+    one repair call, and the steps read "2 cups of the cashews" plus "the
+    last 1 cup of cashews" — `ok True`. A recipe whose amounts add up the
+    first time makes **no** repair call.
+  - **EVERYTHING IN THE CHECK FAILS QUIET, and that is the design rather
+    than a caveat.** A step amount it cannot read, a unit it cannot
+    convert, an amount it cannot pin to one ingredient: all passed over,
+    never guessed at. The only thing that can ever be a finding is a
+    number the recipe wrote twice, in units that convert, disagreeing with
+    itself. Same bias the name half already states — a false "your amounts
+    don't add up" on a good recipe is worse than a missed one, because a
+    household that learns to click past this learns to click past the real
+    one.
+  - **AN AMOUNT BELONGS TO THE NEAREST LISTED INGREDIENT AFTER IT AND TO
+    NO OTHER.** "Toss with 2 tbsp olive oil and the cashews" names one
+    amount and it is the oil's; crediting every name in reach reports a
+    correct recipe. Cost: "1 cup each of rice and quinoa" only ever
+    credits the rice, which is the quiet direction.
+  - **A SINGLE STEP AMOUNT EQUAL TO THE LIST AMOUNT IS ENOUGH, and this is
+    the thing to read before touching the module: it absorbs three
+    separate precision guards.** A step saying "add the 3 cups" and a later
+    one "blend the 3 cups" are the same cashews, not six cups — summing
+    alone would report that recipe as wrong. The consequence, measured: a
+    mis-attribution is INVISIBLE unless the victim's own amount is SPLIT
+    across steps, so three of this branch's own window/scoring guards were
+    pinned by nothing until they were re-seeded that way.
+  - **The repair is a tool of its own, deliberately NOT a second run of
+    `generate_recipe_details_llm`.** That one rewrites the whole recipe,
+    ingredient list included, and the list it would replace is one the
+    allergen gate has already passed — a rewrite puts a settled safety
+    question back in play. `submit_recipe_amounts` may change the STEPS and
+    the AMOUNT of a line already on the list, and nothing else, so the
+    gate's verdict still holds exactly. It runs AFTER the gate in both
+    writers, and a source test plus a mutation pin that ordering.
+  - **KEPT ONLY IF STRICTLY BETTER, counted in findings** — a rewrite that
+    fixes one amount and loses an ingredient is not a repair. Past one
+    repair the recipe is SAVED ANYWAY and logged, which is the card's own
+    answer, and `plan_quality.steps_match_ingredients` is where the line
+    comes out. Measured for real: with a repair whose own steps don't add
+    up, the repair is discarded, the recipe is saved as first written, and
+    the report line is produced.
+  - **The "repair may never add an ingredient" filter is DEFENCE IN DEPTH,
+    not the load-bearing half** — measured, 0 red on its own: an appended
+    ingredient no step uses makes the re-check worse, so the
+    strictly-better rule throws the whole repair away. Removing both is
+    what lets an invented ingredient through (2 red). Written at the code,
+    because that filter is what the gate's safety is usually described as
+    resting on.
+  - **Both prompts are asked for it too** (`RECIPE_DETAILS_INSTRUCTIONS`
+    and the fill prompt): the check and the repair are the backstop, and
+    the writer being asked is what makes most recipes right first time —
+    this file's own rule, read the other way round.
+  - **THE DOUBLE-BATCH CRITERION WAS ALREADY TRUE AND IS NOT THIS
+    BRANCH'S DOING.** `cooker._scale_card_to_batch` has scaled
+    `scaled_instructions` beside the list since 2026-10-02 ("a doubled
+    lunch said 'add 1 cup rice' over a '2 cups Rice' chip"). Checked
+    rather than assumed.
+  - **AND IT BROKE THAT VERY FUNCTION FIRST, by shadowing two names.** The
+    check's first cut called its pattern `_STEP_AMOUNT_RE` and its vessel
+    words `_STEP_VESSEL_WORDS` — both already `scale_steps`' own, three
+    hundred lines up the same file — and a module-level name defined twice
+    means the LATER one wins for the whole module. So the batch rewriter
+    read the check's: `IndexError: no such group` on every step it was
+    handed (35 red in `tests/test_batch_night_steps.py`), and, with nothing
+    raising at all, its vessel words swapped for the check's — 22 of the
+    packaging words whose number sizes a container it must not scale ("1
+    (14 oz) can") gone, 20 cookware words in, measured by diffing the sets.
+    The silent half is the worse one and only one test in the batch family
+    sees it. Fixed by giving the check its own `_CHECK_` namespace rather
+    than renaming the group back: `scale_steps`' pattern captures an amount
+    or a RANGE in named groups it substitutes into, the check's wants the
+    measuring word after the number, and the two vessel sets are packaging
+    words against cookware — two patterns for two questions is right, one
+    name for both is not. **The pre-flight missed it because it grepped the
+    symbols the diff ADDED, and `_STEP_AMOUNT_RE` read as one of those;
+    grepping it would not have helped either, since no test names it. The
+    question that catches this is "does this name already exist in the file
+    I am editing", so it is a test now** —
+    `test_no_module_in_app_defines_one_top_level_name_twice`, `ast` over
+    every module in `app/`, no allowlist because measured: all of `app/` is
+    clean of this today. Mutations: the regex collision put back 37 red,
+    the vessel collision 3, the check on the rewriter's pattern 16.
+    Pre-flight re-run on the names the diff MODIFIED: 51 files, 2121 tests.
+  - **THE CALL-SITE TRIPWIRE FIRED and was updated the way its own message
+    asks.** `test_usage.py::test_every_llm_call_site_passes_the_shared_
+    model_constant` counts `_create_with_retry` sites in agent.py; the
+    repair is a 16th. The new label `generate_recipe_details_llm.amounts`
+    is named, `observability_report.py` has its friendly name, and
+    `app/schema.sql`'s comment — which said "thirteen" and was already two
+    behind before this card — says sixteen. The assertion is unchanged and
+    equally strict.
+  - **THE SWAP PATH IS NOT COVERED, AND THE FIX FOR IT WAS BUILT AND
+    REVERTED, which is the most useful thing here to have written down.**
+    On an approved week `swap_options.choose_swap_option` calls `_write_out`
+    — a model call that writes a full recipe with steps — and
+    `swap_in_place._save_recipe_if_new` saves them unchecked; and
+    `plan_quality.check_recipes_and_log` has exactly one caller, inside the
+    approval pass, so a post-approval swap's recipe never reaches
+    `plan_quality_events` either. Wiring the settle into
+    `_save_recipe_if_new` (the one door every swap saves through, and after
+    the gate by `apply_pick`'s own contract) reddened
+    `test_swap_in_place.py`'s `assert calls["n"] == 1, "one meal, one model
+    call"` and `test_swap_picks_arrive_faster.py`'s label capture. That is
+    a documented product decision — "Swap is one small call now, not a chat
+    turn" (2026-09-08) — on a SYNCHRONOUS path with a household waiting at
+    the sheet, so doubling it is Emily's call rather than a verification
+    pass's. Worse, the settle repairs ANY finding, so on the swap path it
+    would fire on the name half too, which the app has only ever logged.
+    Reverted whole (`git diff main -- app/tools/swap_in_place.py` is
+    empty); its own card. Check-only logging was considered and rejected —
+    a bare `logger.warning` there goes nowhere Emily reads.
+  - **Unpinned and said so rather than contrived into a test:**
+    `_STEP_AMOUNT_REACH` widened to the whole clause, and the clause-break
+    window stop removed, each redden NOTHING (the single-amount rule
+    above is why). Both kept — a tighter window is the quiet direction —
+    with the measurement at the constant, because the first version of
+    that comment claimed all three window rules were what keeps one
+    amount off two ingredients and only the next-number stop is.
+    `_STEP_NOT_AN_AMOUNT` is mostly belt and braces behind the stray rule
+    for the same reason: emptied it reddens one test, and not the
+    parametrized one written for it.
+  - `tests/test_recipe_amounts_add_up.py` (56 cases). **RED AGAINST MAIN IS
+    54 OF 54 AND IS WORTH NOTHING** — every test passes the new `servings`
+    argument, so against main every one is a `TypeError` before it reaches
+    an assertion. (The file's own first header claimed "14 of 31"; neither
+    number reproduces.) The honest figure is against a stub with everything
+    present and only the check and the settle neutered: **16 failed / 38
+    passed**, of which five are red for a reason other than their own claim
+    and each says so. **THIRTY-FIVE mutations run and thirty-three bite**,
+    counts in the docstrings: the check reverted (16 red), the tolerance
+    widened to 1.0 (15), no step amount read as zero (4), every name in the
+    window credited (2), the unpinned-amount rule removed (2), the
+    stated-qty guard removed (2), both bought-unit guards removed (2),
+    `amount_mismatches` out of the message (2), an empty repair treated as
+    a repair (2), a no-better repair kept (2), and one red each for the
+    exact-match tolerance, the vessel words, `_STEP_MAX_COUNT`, the stray
+    unit family, `_STEP_ONLY_WORDS`, the position-only score, the rack
+    exemption, `_STEP_NOT_AN_AMOUNT`, the fractions, the servings
+    threading, sum-only, the next-number window stop, the isinstance
+    guard, the settle a no-op, the settle asked unconditionally, a raising
+    repair, the settle above the gate, the Cook fill's wiring, the
+    corrected list dropped, the prompt's rule, the mismatch unnamed in the
+    repair prompt, and the findings count ignoring the name half.
+  - **FOUR MUTATIONS WERE BADLY AIMED FIRST TIME and are recorded rather
+    than quietly re-run**: one was syntactically broken, two deleted only
+    the LAST LINE of a multi-line set (so `saucepan` and `minutes`
+    survived), and one inserted the settle after the clash `return` rather
+    than before it. **And FIVE red counts quoted in docstrings did not
+    reproduce** — corrected in place with the measurement named, including
+    a tolerance pair that had its two numbers the wrong way round.
+  - **Pre-flight rather than the full suite** (the container is
+    memory-constrained): `grep -l` for every symbol the diff touches AND every shared name it
+    MODIFIES, 51 files, **2121 passed**. No dates in the new file, so the `clock` pins
+    are untouched. Two pre-existing test files were updated honestly in the
+    same change, each with a note saying what moved and no claim weakened —
+    `test_recipe_quantities.py`'s two fill tests now see a third call,
+    because `_detail`'s own steps wilt a spinach the recipe never lists,
+    which is a `missing_from_list` finding IDENTICAL ON MAIN that main only
+    logged.
+  - **Not verified against a live model** — no working key in the sandbox,
+    so the repair's behaviour against a real model is unverified; the code
+    path is driven end to end with the call stubbed. The chat `add_recipe`
+    tool is deliberately NOT settled: a household-authored recipe is
+    theirs, and a model rewriting its steps is not a repair.
 
 - **2026-10-04 — Settings → Recipes: add from a link or a cookbook, and read
   a saved recipe. Branch `recipes-in-settings-2026-10-04`, NOT merged at the

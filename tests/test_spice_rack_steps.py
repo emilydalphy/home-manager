@@ -53,7 +53,11 @@ def test_seasoning_with_salt_is_not_a_finding():
         ],
     )
 
-    assert result == {"ok": True, "unused_ingredients": [], "missing_from_list": []}
+    # amount_mismatches joined the result on 2026-10-05 (the steps and the
+    # list have to name the same amounts); the claim here is unchanged.
+    assert result == {
+        "ok": True, "unused_ingredients": [], "missing_from_list": [], "amount_mismatches": [],
+    }
 
 
 @pytest.mark.parametrize(

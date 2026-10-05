@@ -2101,17 +2101,407 @@ def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -
 _STEP_ONLY_WORDS = {"water", "ice"}
 
 
-def check_steps_ingredients_consistency(ingredients: list[dict], instructions: list[str]) -> dict:
-    """
-    A soft accuracy check on a recipe: does the method match the list?
+# ---------- does the method use what the list bought, in the amount it bought? ----------
+#
+# Gowthami's household, 2026-10-04: "it says use 3 cups of cashews for
+# example, but then the actually steps doesn't use the 3 cups." The name
+# half of the check below has always been able to see an ingredient no
+# step touches. It could not see a step that touches it for a THIRD of
+# what the list bought, and to a cook that reads as the same thing — a
+# recipe you can't trust.
+#
+# EVERY NAME THIS SECTION DEFINES IS PREFIXED _CHECK_, and that is not
+# decoration: the first cut of it called two of them _STEP_AMOUNT_RE and
+# _STEP_VESSEL_WORDS, which are scale_steps' own, three hundred lines up.
+# A module-level name defined twice means the LATER one wins for the whole
+# file, so the batch rewriter started reading this section's pattern and
+# raised on every step it was handed, and its vessel words were swapped
+# for these without anything raising at all. _STEP_ names belong to the
+# rewriter; _CHECK_ names belong here.
+#
+# EVERYTHING HERE FAILS QUIET, and that is the whole design rather than a
+# caveat. A step amount this cannot read, a unit it cannot convert, an
+# amount it cannot pin to one ingredient: all passed over, never guessed
+# at. It is the bias the name half already states — a false "your amounts
+# don't add up" on a good recipe is worse than a missed one, because a
+# household that learns to click past this learns to click past the real
+# one — and it is why the only thing that can ever be a finding here is a
+# number the recipe wrote twice, in units that convert, disagreeing with
+# itself.
 
-    Two ways a generated recipe quietly goes wrong, both of which read to a
-    household as "the recipe details are not accurate" (Julia, 2026-09-08):
+# A number in a step is very often not an amount of food: it is a clock, a
+# thermometer, a ruler or a dial. A closed list of the words that say so,
+# because the alternative is reading "bake for 25 minutes" as twenty-five
+# of something.
+_CHECK_NOT_AN_AMOUNT = {
+    "minute", "minutes", "min", "mins", "second", "seconds", "sec", "secs",
+    "hour", "hours", "hr", "hrs", "day", "days", "week", "weeks",
+    "degree", "degrees", "f", "c", "fahrenheit", "celsius",
+    "inch", "inches", "cm", "mm", "foot", "feet",
+    "percent", "serving", "servings", "person", "people", "portion", "portions",
+    "time", "times", "batch", "batches", "step", "steps", "side", "sides",
+    "layer", "layers", "half", "halves", "third", "thirds", "quarter", "quarters",
+}
+
+# ...and a measuring word in front of one of THESE sizes the vessel rather
+# than what goes in it: "a 2 quart saucepan", "a 9 inch baking dish".
+# Quart and litre are real measures ("1 quart of stock"), so they can't
+# simply join the list above.
+#
+# DELIBERATELY NOT scale_steps' own _STEP_VESSEL_WORDS, and the _CHECK_
+# prefix on both of this section's patterns is there to stop what happened
+# on 2026-10-05: these two were first written under the batch rewriter's
+# names, silently shadowed them for the whole module, and broke
+# scale_steps outright. Two patterns serving two different QUESTIONS is
+# fine; one name serving both is not. The rewriter's set is the
+# PACKAGING words whose number sizes a container it must not scale ("1
+# (14 oz) can"); this one is the COOKWARE a number can size instead ("2
+# quart saucepan"). They overlap on pan/pot/dish and disagree on
+# everything else, and merging them would add twenty words to what the
+# rewriter refuses to scale — a change to the batch rewriter, which this
+# check does not get to make.
+_CHECK_VESSEL_WORDS = {
+    "pan", "pot", "skillet", "saucepan", "dish", "tray", "sheet", "baking",
+    "casserole", "dutch", "oven", "bowl", "ramekin", "tin", "mould", "mold",
+    "plate", "board", "rack", "griddle", "wok", "pressure", "slow", "air",
+    "container", "jar", "loaf", "pie", "cake", "muffin", "springform",
+}
+
+# The biggest number a step counts out of something you eat. Above it, a
+# bare number with no unit on it is a dial ("sear at 450", "oven to 400"),
+# never three dozen of anything — and a bare count is exactly the shape
+# that would otherwise read an oven temperature as an ingredient amount.
+_CHECK_MAX_COUNT = 36
+
+# How far past an amount a step may name the thing it is an amount OF:
+# "2 cups of the toasted cashews" is sixteen characters of prep words. The
+# window ALSO stops at the next number and at any clause break.
+#
+# MEASURED, 2026-10-05, because the first version of this comment said all
+# three of those were what keeps "2 cups rice and 1 cup chicken stock"
+# from crediting the rice with both: only the NEXT-NUMBER stop is, and it
+# has a test. Widening this cap to the whole clause, and removing the
+# clause break outright, each redden nothing — they are belt and braces,
+# and the reason no test can tell is that a mis-attribution under the
+# single-amount rule in _amounts_add_up only ever makes this check
+# QUIETER unless the victim's own amount is split across steps. Both are
+# kept: a tighter window is the quiet direction, which is this module's
+# whole stance.
+_CHECK_AMOUNT_REACH = 48
+
+_CHECK_CLAUSE_BREAK_RE = re.compile(r"[,;.:()\n]|\bthen\b|\buntil\b|\bwhile\b")
+
+# Its own pattern rather than scale_steps' _STEP_AMOUNT_RE, because the two
+# ask different things of a step: that one captures an amount OR A RANGE
+# ("2-3 cloves") in named groups it substitutes a rescaled number into,
+# and never looks at the word afterwards; this one wants the number and
+# the measuring word right after it, and a range would read as one amount.
+_CHECK_AMOUNT_RE = re.compile(
+    r"(?<![\w./])(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*°?\s*([a-z]+)?"
+)
+
+# A model writes "1½ cups" as often as "1 1/2 cups", and a fraction this
+# cannot read is a step amount this cannot see.
+_VULGAR_FRACTIONS = {
+    "\u00bd": " 1/2", "\u2153": " 1/3", "\u2154": " 2/3", "\u00bc": " 1/4",
+    "\u00be": " 3/4", "\u215b": " 1/8", "\u215c": " 3/8", "\u215d": " 5/8",
+    "\u215e": " 7/8",
+}
+
+# How far two amounts may differ and still be the same amount. Recipes
+# round — a third of a cup is written "0.33 cup" as readily as "1/3" — so
+# an exact comparison would report arithmetic nobody got wrong. A tenth is
+# wide enough for that and nowhere near the halves, thirds and doubles
+# that are the actual bug.
+_CHECK_AMOUNT_TOLERANCE = 0.1
+
+
+def _normalized_step(step: str) -> str:
+    text = (step or "").lower()
+    for glyph, ascii_form in _VULGAR_FRACTIONS.items():
+        text = text.replace(glyph, ascii_form)
+    return text
+
+
+def _parse_step_number(amount_str: str) -> float | None:
+    """"1 1/2", "3/4", "0.5" as a number. None for anything else."""
+    try:
+        if "/" in amount_str:
+            parts = amount_str.split()
+            if len(parts) == 2:
+                num, den = parts[1].split("/")
+                return float(parts[0]) + float(num) / float(den)
+            num, den = amount_str.split("/")
+            return float(num) / float(den)
+        return float(amount_str)
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def _names_a_known_food(text: str) -> bool:
+    """
+    Whether a stretch of step text names food this app has a word for: the
+    measurement table's own keys, which is the vocabulary the
+    missing-from-list half already uses, plus the two things a step names
+    without the list ever having to carry them. Asked only of an amount
+    that matched no LISTED ingredient, so it runs for a handful of words
+    rather than for every number in the recipe.
+    """
+    return any(_item_matches(text, word) for word in _STEP_ONLY_WORDS) or any(
+        _item_matches(text, key) for key in COOKING_QUANTITIES_PER_4
+    )
+
+
+def _amounts_in_one_step(
+    step: str, item_words: list[list[str]],
+) -> tuple[list[tuple[int, float, str | None]], list[tuple[float, str | None]]]:
+    """
+    What one step's numbers are amounts OF: (which listed ingredient,
+    amount, unit) for the ones that can be pinned down, and the bare
+    (amount, unit) of the ones that can't.
+
+    AN AMOUNT BELONGS TO THE NEAREST LISTED INGREDIENT AFTER IT AND TO NO
+    OTHER, which is the rule that keeps this honest. "Toss with 2 tbsp
+    olive oil and the cashews" names one amount, and it is the oil's;
+    crediting every name in reach would hand the cashews two tablespoons
+    and report a recipe that is perfectly correct. The cost is that "1 cup
+    each of rice and quinoa" only ever credits the rice, which is the
+    quiet direction.
+
+    THE SECOND LIST IS WHY THIS DOESN'T CRY WOLF ON A BATCH COOKED IN TWO
+    PANS, and it was a real false positive before it existed. "Brown 1 lb
+    of ground beef... push aside and brown the remaining 1 lb" is two
+    pounds of a two-pound list, and the second amount names nothing at all
+    — the beef is three words back in the previous step. No positional
+    rule can reach it, so the honest reading is that an amount nobody can
+    pin down means the sum is INCOMPLETE, and a sum that might be short is
+    not evidence of anything. See _amount_mismatches, which passes over
+    any ingredient such an amount could have been more of.
+    """
+    text = _normalized_step(step)
+    matches = list(_CHECK_AMOUNT_RE.finditer(text))
+    found, strays = [], []
+    for position, match in enumerate(matches):
+        amount = _parse_step_number(match.group(1))
+        if amount is None:
+            continue
+        word = (match.group(2) or "").strip()
+        unit = None
+        if word:
+            if word in _CHECK_NOT_AN_AMOUNT:
+                continue
+            unit = _quantities._UNIT_ALIASES.get(
+                word, _quantities._normalize_container_word(word)
+            ) or None
+            if unit not in _measured_units():
+                # Not a measuring word at all — "4 chicken thighs", where
+                # the word after the number is the ingredient itself. Read
+                # as a bare count, and the window below starts at the word
+                # rather than past it.
+                unit = None
+        # The window: from the end of what was matched to whichever comes
+        # first of the next number, a clause break, and _CHECK_AMOUNT_REACH.
+        start = match.end() if unit else match.start(2) if match.group(2) else match.end()
+        stop = len(text) if position + 1 >= len(matches) else matches[position + 1].start()
+        stop = min(stop, start + _CHECK_AMOUNT_REACH)
+        window = text[start:stop]
+        break_at = _CHECK_CLAUSE_BREAK_RE.search(window)
+        if break_at:
+            window = window[:break_at.start()]
+        # A bare number above _CHECK_MAX_COUNT is a dial, not a count of
+        # food — and a bare count is the one shape that would otherwise
+        # read an oven temperature as an ingredient amount.
+        if unit is None and amount > _CHECK_MAX_COUNT:
+            continue
+        # "2 quart saucepan", "1 large bowl": the word right after the
+        # amount sizes the vessel, so the number is the pan's.
+        words_after = window.split()
+        if words_after and words_after[0] in _CHECK_VESSEL_WORDS:
+            continue
+        index = _nearest_listed_item(window, item_words)
+        if index is not None:
+            found.append((index, amount, unit))
+        elif not _names_a_known_food(window):
+            # It is an amount of SOMETHING and this cannot say what. An
+            # amount of broth nobody listed is the missing_from_list
+            # half's finding, not a stray; an amount of nothing nameable
+            # is what makes a sum untrustworthy.
+            strays.append((amount, unit))
+    return found, strays
+
+
+def _nearest_listed_item(window: str, item_words: list[list[str]]) -> int | None:
+    """
+    Which listed ingredient a step's amount is an amount of: the one most
+    of whose name words are in the window, earliest wins a tie. Counting
+    the words matched is what tells "chicken stock" from "chicken thighs"
+    when the window says chicken stock — the first matches both on
+    "chicken", the second matches on both its words. Two names that are
+    equally good a match for the same words (a bell pepper and black
+    pepper, where the window says only "pepper") go to the one listed
+    first; black pepper is a rack item and exempt from this check anyway.
+    """
+    best = None
+    for index, words in enumerate(item_words):
+        hits = []
+        for word in words:
+            at = re.search(rf"(?<![a-z]){re.escape(word)}e?s?(?![a-z])", window)
+            if at:
+                hits.append(at.start())
+        if not hits:
+            continue
+        score = (-len(hits), min(hits))
+        if best is None or score < best[0]:
+            best = (score, index)
+    return None if best is None else best[1]
+
+
+def _amount_a_step_should_name(ing: dict) -> tuple[float, str | None] | None:
+    """
+    The amount a step has to agree with, or None when there is nothing to
+    hold a step to.
+
+    The ingredient dict has already been through cooking_ingredients, so
+    its qty IS the number the Cook screen prints next to these very steps
+    — which is the only number worth comparing a step against. Nothing
+    that isn't a plain count or a measuring unit comes back: "1 head" of
+    cabbage and "1 bottle" of oil are how it is bought, and a step
+    shredding three cups of it is not disagreeing with them.
+    """
+    parsed = _quantities._parse_quantity((ing.get("qty") or "").strip())
+    if not parsed:
+        return None
+    amount, unit = parsed
+    if amount <= 0:
+        return None
+    if unit is not None and unit not in _measured_units():
+        return None
+    return amount, unit
+
+
+def _amounts_add_up(listed: tuple[float, str | None], in_steps: list[tuple[float, str | None]]) -> bool | None:
+    """
+    Do the step amounts come to the list amount? None when the question
+    can't be answered honestly — a unit that doesn't convert into the
+    list's, or no step amount at all.
+
+    A SINGLE STEP AMOUNT EQUAL TO THE LIST AMOUNT IS ENOUGH, and that is
+    not a softening: a step saying "add the 3 cups of cashews" and a later
+    one saying "blend the 3 cups until smooth" are the same cashews, not
+    six cups of them. Summing alone would report that recipe, which is
+    right, as wrong.
+    """
+    amount, unit = listed
+    converted = []
+    for step_amount, step_unit in in_steps:
+        value = _quantities._convert_to_unit(step_amount, step_unit, unit)
+        if value is None:
+            return None
+        converted.append(value)
+    if not converted:
+        return None
+    slack = max(abs(amount) * _CHECK_AMOUNT_TOLERANCE, 1e-6)
+    if any(abs(value - amount) <= slack for value in converted):
+        return True
+    return abs(sum(converted) - amount) <= slack
+
+
+def _an_unpinned_amount_could_be_more_of_it(
+    strays: list[tuple[float, str | None]], unit: str | None,
+) -> bool:
+    """Whether one of the step amounts this couldn't pin down might have
+    been more of an ingredient measured in `unit` — in which case that
+    ingredient's step amounts don't add up to a trustworthy total and are
+    left alone."""
+    return any(
+        _quantities._convert_to_unit(1.0, stray_unit, unit) is not None
+        for _amount, stray_unit in strays
+    )
+
+
+def _amount_mismatches(ingredients: list[dict], instructions: list[str], servings: int | None) -> list[dict]:
+    """
+    The lines where the list and the steps name different amounts of the
+    same thing — {"item", "listed", "in_steps"} each, in list order.
+
+    A SPICE-RACK ITEM IS EXEMPT, for the reason the name half of this
+    check already exempts one: the list's amount for salt or cooking oil
+    is the app's own figure rather than the recipe's (the Shop tab never
+    sells them per recipe — see the long note under
+    check_steps_ingredients_consistency), so holding a step to it is
+    holding the recipe to a number it never wrote. The card says so in as
+    many words: "to taste", "a pinch", "for garnish" and
+    salt/pepper/oil-for-the-pan don't need an amount in the steps.
+    Those three phrases need no rule of their own — none of them parses as
+    a number, so _amount_a_step_should_name passes them over already.
+    """
+    raw_lines = list(ingredients or [])
+    lines = cooking_ingredients(raw_lines, servings)
+    item_words = []
+    for ing in lines:
+        name = (ing.get("item") or "").strip() if isinstance(ing, dict) else ""
+        item_words.append([w for w in re.findall(r"[a-z]+", _clean_item(name)) if len(w) > 2])
+    by_index: dict[int, list[tuple[float, str | None]]] = {}
+    strays: list[tuple[float, str | None]] = []
+    for step in instructions or []:
+        attributed, unpinned = _amounts_in_one_step(step or "", item_words)
+        for index, amount, unit in attributed:
+            by_index.setdefault(index, []).append((amount, unit))
+        strays.extend(unpinned)
+    out = []
+    for index, (raw, ing) in enumerate(zip(raw_lines, lines)):
+        if not isinstance(ing, dict) or not isinstance(raw, dict):
+            continue
+        item = (ing.get("item") or "").strip()
+        if not item or _spices.is_spice(item):
+            continue
+        # THE RECIPE HAS TO HAVE WRITTEN AN AMOUNT OF ITS OWN. A blank qty
+        # comes back from cooking_ingredients filled in off
+        # COOKING_QUANTITIES_PER_4 — the app's figure for what a quarter
+        # cup of parsley is, not a claim the recipe made — and holding a
+        # step to it reports a mismatch between the recipe and this
+        # module. Same reasoning as the rack exemption above, and it is
+        # what "to taste" / "a pinch" / "for garnish" / blank all land on.
+        stated = (raw.get("cook_qty") or raw.get("qty") or "").strip()
+        if not _quantities._parse_quantity(stated):
+            continue
+        listed = _amount_a_step_should_name(ing)
+        if not listed:
+            continue
+        in_steps = by_index.get(index) or []
+        if _amounts_add_up(listed, in_steps) is not False:
+            continue
+        if _an_unpinned_amount_could_be_more_of_it(strays, listed[1]):
+            continue
+        out.append({
+            "item": item,
+            "listed": _quantities._format_quantity(listed[0], listed[1]),
+            "in_steps": " + ".join(_quantities._format_quantity(a, u) for a, u in in_steps),
+        })
+    return out
+
+
+def check_steps_ingredients_consistency(
+    ingredients: list[dict], instructions: list[str], servings: int | None = None,
+) -> dict:
+    """
+    An accuracy check on a recipe: does the method match the list?
+
+    Three ways a generated recipe quietly goes wrong, all of which read to
+    a household as "the recipe details are not accurate" (Julia,
+    2026-09-08):
 
     - an ingredient bought and then never used — it appears in no step;
     - a step reaching for something that was never on the list ("stir in
       the heavy cream", no cream anywhere), which is how a household finds
-      out mid-cook that they didn't buy it.
+      out mid-cook that they didn't buy it;
+    - an ingredient the steps DO use, for an amount that isn't the one the
+      list bought — "3 cups of cashews in the list, the steps never use
+      the 3 cups" (Gowthami's household, 2026-10-04). See
+      _amount_mismatches and the long note above it: that half fails quiet
+      by construction, and `servings` is the table the amounts are written
+      for, since the amount a step has to agree with is the one the Cook
+      screen prints beside it.
 
     Only the second half needs a vocabulary of food words, and it uses the
     measurement table's own keys as that vocabulary — one list to maintain
@@ -2140,8 +2530,10 @@ def check_steps_ingredients_consistency(ingredients: list[dict], instructions: l
     reaching for broth nobody bought is how a household finds out
     mid-cook.
 
-    Returns {"ok", "unused_ingredients", "missing_from_list"} and never
-    raises — an observation, not a gate.
+    Returns {"ok", "unused_ingredients", "missing_from_list",
+    "amount_mismatches"} and never raises — an observation, and the thing
+    agent._settle_recipe_amounts repairs a recipe against before it is
+    saved.
     """
     names = [
         n for n in (
@@ -2151,7 +2543,7 @@ def check_steps_ingredients_consistency(ingredients: list[dict], instructions: l
     ]
     steps = [s for s in (instructions or []) if (s or "").strip()]
     if not names or not steps:
-        return {"ok": True, "unused_ingredients": [], "missing_from_list": []}
+        return {"ok": True, "unused_ingredients": [], "missing_from_list": [], "amount_mismatches": []}
 
     text = " ".join(steps).lower()
     unused = []
@@ -2179,10 +2571,12 @@ def check_steps_ingredients_consistency(ingredients: list[dict], instructions: l
     # Report the longest name for a thing, not every fragment of it:
     # "heavy cream", never "heavy cream" and "cream".
     missing = [m for m in matched if not any(m != other and m in other for other in matched)]
+    mismatches = _amount_mismatches(ingredients or [], steps, servings)
     return {
-        "ok": not unused and not missing,
+        "ok": not unused and not missing and not mismatches,
         "unused_ingredients": unused,
         "missing_from_list": sorted(missing),
+        "amount_mismatches": mismatches,
     }
 
 
