@@ -19,6 +19,20 @@ CREATE TABLE IF NOT EXISTS households (
     -- rows themselves are never touched by the switch, so turning it on
     -- for a household that already has chores shows them at once.
     chores_enabled INTEGER NOT NULL DEFAULT 0,
+    -- Which parts the morning message includes, for the whole household
+    -- (Loop Board "Morning message: the household chooses what it
+    -- includes", Emily, 2026-10-04: "one setting per household for now, to
+    -- keep it simple" — everyone who gets the message gets the same parts).
+    -- A JSON list of keys from digest.MORNING_PART_CHOICES, in any order.
+    --
+    -- '' is NOT '[]' and the difference is the whole point: '' means nobody
+    -- has answered, read back as digest.MORNING_PART_DEFAULTS, and '[]'
+    -- means they answered "none of the six", which is a real answer and
+    -- must not read back as the defaults. That is the meal_preferences
+    -- .snacks_per_week_set lesson served by one column instead of two: a
+    -- column with a default cannot tell "they said none" from "nobody
+    -- asked", unless the sentinel is a value the answer can never be.
+    morning_text_parts TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
