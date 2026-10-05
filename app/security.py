@@ -21,6 +21,18 @@ That pick is trusted per device — a second adult's own secret is a later
 slice — and it is re-verified against the household's members on every use
 (`tools.current_member()`), never taken on the cookie's word alone.
 
+Since 2026-10-05 the pick also survives the session it was made in. The
+beta tester was asked "Who's this?" on every open, because the answer lived
+only in a cookie that every /login replaced and that expired thirty days
+after the passphrase was typed whether or not the phone was in daily use.
+So there are now two things, with two different lives: the session cookie,
+which ends when somebody signs out and renews itself while they keep
+using the app (`_renew_if_due`), and a long-lived `pomona_device_member`
+cookie saying which adult this BROWSER is (`device_token`), which /login
+re-applies when the passphrase opens the household it names
+(`device_member_for_login`). The device one is deliberately not cleared by
+signing out: a phone signed out and back in is the same phone.
+
 What changed for the beta: signing in now establishes **which household**
 the session belongs to, not merely that the caller is allowed in. The
 household id travels in the signed cookie, and `auth_middleware` binds it
@@ -72,6 +84,46 @@ logger = logging.getLogger("home_manager")
 
 COOKIE_NAME = "hm_session"
 COOKIE_MAX_AGE = 30 * 24 * 60 * 60  # 30 days
+
+# How old a session cookie has to be before an ordinary request re-mints
+# it (`_renew_if_due`). The 30 days above were counted from the ONE moment
+# the passphrase was typed, so a phone used every single day was signed
+# out a month later anyway — which is how the beta tester met the
+# "Who's this?" screen again and again. Re-minting makes the life a
+# sliding one: an active device is never more than a day from a fresh
+# thirty, and a device nobody opens still goes cold on time.
+#
+# A day, rather than every request, because each renewal is a Set-Cookie
+# header on a response that did not need one. Same shape as
+# touch_household_active's fifteen-minute throttle, for the same reason.
+COOKIE_RENEW_AFTER = 24 * 60 * 60
+
+# "This phone is Vineeth's" — the half of the pick that outlives the
+# session (Loop Board "This phone remembers who's using it, even after
+# signing in again", 2026-10-04).
+#
+# Separate cookie, separate life. The session cookie is the household's
+# sign-in and must end when somebody signs out; which adult holds the
+# phone is a fact about the PHONE, and signing out and back in does not
+# make it a different phone. So /login re-applies this one (see
+# `device_member_for_login`) and /logout deliberately leaves it alone.
+#
+# Signed with the same secret as the session, for the reason the whole of
+# this file exists: /login turns what this cookie says into a SIGNED
+# claim the rest of the app then trusts, and promoting an unsigned thing
+# the browser sent into a signed thing the server said is the exact shape
+# of bug this app keeps getting bitten by. It is not the only thing
+# standing between a device and a member it may not have — see
+# `device_member_for_login` — but it is the first.
+DEVICE_COOKIE = "pomona_device_member"
+# Longer than the session on purpose: the point is to outlast it. The same
+# 400 days as push.DEVICE_COOKIE_MAX_AGE, which is the other cookie in this
+# app that means "this phone" rather than "this sitting" — one number for
+# one idea. (Chrome caps a cookie at 400 days anyway, so asking for more
+# would buy nothing; what Safari does to it is not something this comment
+# is going to claim without measuring.)
+DEVICE_COOKIE_MAX_AGE = 400 * 24 * 60 * 60
+
 # The largest integer SQLite can bind — see _decode_session.
 _SQLITE_MAX_INT = 2**63 - 1
 
@@ -269,6 +321,154 @@ def with_member(cookie: str | None, member_id: int | None) -> str | None:
     return issue_session(household_id, member_id, session_id=sid, issued_at=issued)
 
 
+# ---------- "This phone is mine" (the device token) ----------
+
+
+# What the device token's signature covers, on top of the two numbers.
+#
+# Not decoration. A device token is `<household>.<member>.<hmac>` — three
+# dot-separated parts — and so is the LEGACY session cookie shape
+# `_decode_session` still honours, `<sid>.<issued>.<hmac>`. Same grammar,
+# same secret, and the payload HMAC'd was the same string, so one was a
+# validly signed instance of the other: measured, `read_session_parts` on
+# `device_token(1, 1791186880)` came back as a household-1 session with
+# session id "1", refused only because the member id it read as a sign-in
+# time has to look recent. Member ids start at 1 and count up, so nothing
+# could reach that — but two cookie formats one deletion away from being
+# interchangeable is not a thing to leave standing. Tagging the payload
+# means a device token is not a session cookie for any value at all.
+_DEVICE_SIG_DOMAIN = "dev"
+
+
+def device_token(household_id: int, member_id: int) -> str:
+    """
+    Mint the long-lived device cookie's value: `<household>.<member>.<hmac>`.
+
+    No session id and no issued-at: this says nothing about a sitting, only
+    which adult of which household this browser belongs to. The household
+    is in it because a phone can be signed into more than one — a shared
+    tablet, or Emily's phone opening the demo household — and "the adult
+    this device is" is only ever an answer about one of them.
+    """
+    payload = f"{int(household_id)}.{int(member_id)}"
+    sig = _device_sig(payload)
+    return f"{payload}.{_b64(sig)}"
+
+
+def _device_sig(payload: str) -> bytes:
+    return hmac.new(
+        _secret(), f"{_DEVICE_SIG_DOMAIN}.{payload}".encode("utf-8"), hashlib.sha256
+    ).digest()
+
+
+def read_device_token(cookie: str | None) -> tuple[int, int] | None:
+    """
+    `(household_id, member_id)` from a validly signed device cookie, else
+    None. Both are bounded the same way `_decode_session` bounds them: a
+    number SQLite cannot bind is not an id, and handing one to a query
+    raises OverflowError from inside it.
+    """
+    if not cookie:
+        return None
+    parts = cookie.split(".")
+    if len(parts) != 3:
+        return None
+    raw_household, raw_member, sig = parts
+    expected = _device_sig(f"{raw_household}.{raw_member}")
+    try:
+        if not hmac.compare_digest(expected, _unb64(sig)):
+            return None
+        household_id = int(raw_household)
+        member_id = int(raw_member)
+    except (ValueError, TypeError):
+        return None
+    if not (0 < household_id <= _SQLITE_MAX_INT):
+        return None
+    if not (0 < member_id <= _SQLITE_MAX_INT):
+        return None
+    return household_id, member_id
+
+
+def device_member_for_login(
+    cookie: str | None, household_id: int
+) -> tuple[int | None, bool]:
+    """
+    `(the adult this device should be signed in as, is the cookie spent)`.
+
+    THREE things have to be true for an adult to come back, and the
+    signature is only the first of them. The cookie has to be one this
+    server minted; it has to name the household the passphrase just
+    opened; and that member has to still be an adult of it. A device
+    cannot carry a member of a household it is not signing into, because
+    the household it names is compared against the one the CREDENTIAL
+    established — never the other way round, and never taken from the
+    cookie.
+
+    The third check is what answers "if the remembered member was removed
+    from the household, ask again". `tools.current_member()` would already
+    read a removed member as nobody, so the pick could not stick either
+    way; checking here means the question is asked at the one moment
+    somebody is already looking at a screen, rather than a stale id being
+    quietly re-minted into every session from now on.
+
+    SPENT is the second value, and it is deliberately narrower than "not
+    an answer". It means the cookie names THIS household and somebody who
+    has left it — an answer that can never come back, so the caller clears
+    it. A cookie naming ANOTHER household is not spent: it is somebody
+    else's answer, still true for them, and a shared tablet whose other
+    household never had to pick (one adult, so never asked) would lose its
+    memory for nothing if signing in here threw it away.
+    """
+    read = read_device_token(cookie)
+    if read is None or read[0] != int(household_id):
+        return None, False
+    member_id = read[1]
+    # `households`, not `tools`: this is the auth path asking about an
+    # explicit household id, with nothing bound yet (/login is a public
+    # path), which is the same question household_exists already answers
+    # from there.
+    if not households.adult_exists(household_id, member_id):
+        return None, True
+    return member_id, False
+
+
+def set_device_cookie(response, request, household_id: int, member_id: int) -> None:
+    """Remember this device's adult on the response. One writer, so every
+    door that pins a device (the pick, an invite link, finishing setup)
+    writes the same cookie with the same flags."""
+    response.set_cookie(
+        DEVICE_COOKIE,
+        device_token(household_id, member_id),
+        max_age=DEVICE_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=request_is_https(request),
+        path="/",
+    )
+
+
+def clear_device_cookie(response) -> None:
+    """Forget this device's adult. Only where the answer has stopped being
+    true at all — an adult who removed themselves, a household that is
+    gone, a device whose cookie names neither. NOT on sign-out: signing
+    out and back in is the same phone, and remembering that is the point."""
+    response.delete_cookie(DEVICE_COOKIE, path="/")
+
+
+def request_is_https(request) -> bool:
+    """
+    Is the browser on https? Railway terminates TLS at its proxy, so the
+    app itself sees http and X-Forwarded-Proto is what says otherwise.
+
+    Here rather than in main.py because every cookie this app sets needs
+    the answer and two readings of one header is one too many.
+    """
+    forwarded = request.headers.get("x-forwarded-proto", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip() == "https"
+    return request.url.scheme == "https"
+
+
 def read_session(cookie: str | None) -> str | None:
     """Return the session id if the cookie is validly signed and unexpired, else None."""
     parts = read_session_parts(cookie)
@@ -396,7 +596,9 @@ async def auth_middleware(request, call_next):
         stale_cookie = True
 
     if session:
-        return await _call_as_household(session[1], call_next, request, session[3])
+        response = await _call_as_household(session[1], call_next, request, session[3])
+        _renew_if_due(request, response, session)
+        return response
 
     wants_html = "text/html" in request.headers.get("accept", "")
     if wants_html and request.method == "GET":
@@ -408,6 +610,54 @@ async def auth_middleware(request, call_next):
         # sending a cookie that will fail this same check forever.
         response.delete_cookie(COOKIE_NAME, path="/")
     return response
+
+
+def _sets_session_cookie(response) -> bool:
+    """Does this response already say something about the session cookie?
+
+    Load-bearing, not tidiness: /api/whoami/pick's whole job is to put a
+    new member into this cookie, and a renewal built from the cookie the
+    REQUEST carried would overwrite that with the pick thrown away. Same
+    for /login, the invite link, and the routes that sign somebody out.
+    Whoever wrote the cookie on this response meant it; the renewal is
+    only ever for the responses nobody else is touching.
+    """
+    name = f"{COOKIE_NAME}="
+    return any(h.startswith(name) for h in response.headers.getlist("set-cookie"))
+
+
+def _renew_if_due(request, response, session) -> None:
+    """
+    Sliding expiry: once a day, re-mint the session with today's date on
+    it, so a phone in daily use is never signed out.
+
+    Everything else about the cookie is carried over — the session id (the
+    chat history is keyed on it) and the member (re-minting must never be
+    a way to forget who this is). Only the sign-in time moves, which is
+    the one thing being extended.
+
+    Never raises. A cookie is bookkeeping for a request that has already
+    been answered, and this runs on every authenticated request; a browser
+    that keeps the cookie it has is signed in exactly as long as it was
+    before, which is the behaviour this whole app had until now.
+    """
+    try:
+        _, household_id, issued, member = session
+        if time.time() - issued < COOKIE_RENEW_AFTER:
+            return
+        if _sets_session_cookie(response):
+            return
+        response.set_cookie(
+            COOKIE_NAME,
+            issue_session(household_id, member, session_id=session[0]),
+            max_age=COOKIE_MAX_AGE,
+            httponly=True,
+            samesite="lax",
+            secure=request_is_https(request),
+            path="/",
+        )
+    except Exception:
+        logger.exception("Renewing the session cookie failed")
 
 
 # Reading the app is not using the app.

@@ -143,6 +143,30 @@ def household_exists(household_id: int) -> bool:
     return row is not None
 
 
+def adult_exists(household_id: int, member_id: int) -> bool:
+    """
+    Is this member an adult of this household, right now?
+
+    Asked by the auth path (`security.device_member_for_login`) about an
+    explicit household id, with nothing bound — /login is a public path,
+    so there is no ContextVar to read and `tools.current_member()` cannot
+    answer. Same shape and same reason as `household_exists` above.
+
+    The age-group test is `tools._shared._ADULT_SQL`'s, written out rather
+    than imported: this module deliberately depends on nothing in
+    `app/tools/`, and onboarding writes "Adult" capitalised, so the
+    comparison has to fold case either way.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id FROM members "
+        "WHERE id = ? AND household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
+        (int(member_id), int(household_id)),
+    ).fetchone()
+    conn.close()
+    return row is not None
+
+
 def list_households() -> list[dict]:
     """Every household and whether it has a stored passphrase. Never returns hashes."""
     conn = get_conn()
@@ -239,6 +263,7 @@ def _validate_passphrase(passphrase: str) -> None:
 __all__ = [
     "DEFAULT_HOUSEHOLD_ID",
     "MIN_PASSPHRASE_LENGTH",
+    "adult_exists",
     "authenticate",
     "create_household",
     "hash_passphrase",
