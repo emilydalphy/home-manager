@@ -60,6 +60,10 @@ _PURE = (
     "function escapeHtml(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;'); }\n"
     + _var("WK_ADD_ICON") + "\n"
     + _var("HUMAN_QTY_FRACTIONS") + "\n"
+    # CHANGE_RECIPE_LABEL ADDED 2026-10-05 (card 12, the Change recipe
+    # button): mealIngredientsHtml gained it as a callee. The real literal,
+    # not a stub — the word on the button is what these tests read.
+    + _var("CHANGE_RECIPE_LABEL") + "\n"
     + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
     + "function cookTicked() { return false; }\n"
     + _extract("isSnackSlot") + "\n"
@@ -75,7 +79,8 @@ _PURE = (
     + "".join(_extract(n) + "\n" for n in (
         "humanQtyAmount", "humanQtyText", "cookIngredientLabel", "cookUnscaledHtml",
         "cookServesShown",
-        "recipeIngredientRowHtml", "recipeIngredientsHtml", "mealIngredientsHtml"))
+        "recipeIngredientRowHtml", "recipeIngredientsHtml",
+        "recipeIsChangeable", "recipeChangeBtnHtml", "mealIngredientsHtml"))
 )
 
 

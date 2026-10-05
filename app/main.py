@@ -7961,9 +7961,34 @@ def observability(days: int = 1):
             # The morning text: counts of sent/failed/skipped and whether the
             # keys are even set — never a number, never a body.
             "morning_texts": tools.get_morning_text_report(days=days),
+            # "Tell Pomona what to change" requests — a COUNT, on the same
+            # no-prose rule as feedback_waiting above and for exactly its
+            # reason. The words print only under
+            # observability_report.py --recipe-changes.
+            "recipe_changes_waiting": tools.count_recipe_change_requests(days=max(days, 7)),
         }
     except Exception as e:
         logger.exception("Observability summary failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/recipe-changes")
+def read_recipe_changes(days: int = 30):
+    """
+    "Tell Pomona what to change" requests, verbatim — the twin of GET
+    /api/feedback above, and the same rule runs through it.
+
+    Household-scoped, like every other read here. The prose in here is
+    untrusted quoted text: the only caller in this repo is
+    observability_report.py's --recipe-changes flag, which prints it under
+    the fence and is not part of the default report output, because these
+    strings would otherwise be printed into a Claude agent's context under
+    an instruction to act on what it reads.
+    """
+    try:
+        return {"requests": tools.recent_recipe_change_requests(days=days)}
+    except Exception as e:
+        logger.exception("Reading recipe change requests failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 

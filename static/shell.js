@@ -174,7 +174,11 @@
   // .pill/.pill-neutral/.kit-row-pill markup Inventory uses. The feature
   // itself is untouched either way: paste a link, read it, review, save
   // all still work. Flipping this back to false removes the pill.
-  var RECIPE_LINK_IN_DEVELOPMENT = true;
+  // Was `true` until 2026-10-05. "Add from a link" is a shipping path now
+  // — it is one of the four ways out of "Change recipe" (card 12), and the
+  // card's own criterion is that the pill goes with it. Left as a constant
+  // rather than deleted so the row has one line to turn it back on with.
+  var RECIPE_LINK_IN_DEVELOPMENT = false;
 
   // The notifications bell and its feed left the app with the Today
   // redesign (Emily, 2026-09-08). Today is a timeline of moves now, and
@@ -15972,12 +15976,22 @@
     var card = isCook && cookMeal.has_full_recipe && (cookMeal.ingredients || []).length
       ? recipeIngredientsHtml(cookMeal, 'wk', false)
       : '';
-    if (!card && !canAdd) return '';
+    // "Change recipe" (card 12, 2026-10-05): under the ingredients, on
+    // every meal that HAS a recipe to change — never a reheat night, which
+    // has no cook in it (recipeIsChangeable). Offered on a past day too:
+    // the recipe is still the thing they cook from, and the sheet's own
+    // paths refuse what the plan will not take.
+    var change = canAdd || (isCook && cookMeal.has_full_recipe)
+      ? recipeChangeBtnHtml(cookMeal) : '';
+    if (!card && !canAdd && !change) return '';
     return '<section class="wk-whatsin" aria-label="Ingredients">' + card +
-      (canAdd
-        ? '<button type="button" class="wk-ing-add" data-wk-add="' + escapeHtml(slot) + '">' +
-            WK_ADD_ICON + '<span>Add something</span></button>'
-        : '') +
+      '<div class="wk-ing-acts">' +
+        (canAdd
+          ? '<button type="button" class="wk-ing-add" data-wk-add="' + escapeHtml(slot) + '">' +
+              WK_ADD_ICON + '<span>Add something</span></button>'
+          : '') +
+        change +
+      '</div>' +
     '</section>';
   }
 
@@ -20447,7 +20461,10 @@
         recipeServesHtml(meal, idx) +
         recipeBatchLineHtml(meal) +
         (meal.has_full_recipe
-          ? recipeIngredientsHtml(meal, idx, true) + recipeStepsHtml(meal, true)
+          ? recipeIngredientsHtml(meal, idx, true) +
+            // Same button, same sheet, under the same card (card 12).
+            '<div class="wk-ing-acts cook-ing-acts">' + recipeChangeBtnHtml(meal) + '</div>' +
+            recipeStepsHtml(meal, true)
           : '<p class="cook-norecipe recipe-norecipe">No saved recipe for this one — ask me for it in the chat.</p>') +
         // Where the recipe came from, with the page photo a tap away
         // (recipe photo import) — quiet, at the foot.
@@ -26173,6 +26190,378 @@
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-recipes="open"]');
     if (target) openRecipesSheet();
+  });
+
+  // ---------- "Change recipe" (card 12, Emily-approved 2026-10-04) ----------
+  //
+  // Gowthami's household: "they might like the idea of having a suggestion
+  // meal type, but they don't like that actual recipe." So one outline
+  // button under the ingredients, on BOTH screens that draw a recipe (the
+  // Plan Meal step and Cook's recipe), opening one sheet with four rows:
+  // pick from the household's own book, paste a link, tell Pomona what to
+  // change, or change the meal itself.
+  //
+  // NOT on a reheat night. There is no recipe behind a reheat — the honest
+  // answer there is to change the dinner it comes from, which the Meal
+  // step's own "See Thursday's recipe" already walks to, and which the
+  // server refuses as well as the screen hiding it.
+  //
+  // Emily's override of 2026-10-04 is why the third row is one text box and
+  // one button and no chips at all: "Build no chips... Don't add
+  // recipe-suggestion generation to the recipe writer." Every request is
+  // recorded so the common ones can become buttons later — see
+  // app/tools/recipe_change.py on how, and on the rule prose follows here.
+  var CHANGE_RECIPE_LABEL = 'Change recipe';
+  var CHANGE_RECIPE_ASK_LABEL = 'What would you change? Say it your way';
+
+  var crState = {
+    entryId: null,
+    dish: '',
+    view: 'rows',      // rows | pick | ask
+    search: '',
+    busy: false,
+    said: '',          // a refusal or a block, in the server's own words
+    requestId: null    // the rewrite just made, for the undo chip
+  };
+  var crSheetEl = null;
+  var crScrimEl = null;
+
+  // Whether this screen's meal has a recipe to change at all. A reheat
+  // night, a grab-and-go snack and a slot with nothing planned on it each
+  // have no cook in them, so none of them is offered the button — the same
+  // reading mealRecipeFor already makes for the recipe itself.
+  function recipeIsChangeable(meal) {
+    return !!(meal && meal.entry_id !== null && meal.entry_id !== undefined &&
+      !meal.is_leftovers && meal.has_full_recipe);
+  }
+
+  // The button. .wk-ing-add's own outline shape — surface fill, hairline
+  // edge, 44px (Rule 6) — rather than a new one, so it reads as the plain
+  // control it is and the screen's one apricot stays in the dock (Rule 5).
+  function recipeChangeBtnHtml(meal) {
+    if (!recipeIsChangeable(meal)) return '';
+    return '<button type="button" class="wk-ing-add recipe-change-btn" data-cr="open" ' +
+      'data-entry-id="' + escapeHtml(String(meal.entry_id)) + '" ' +
+      'data-dish="' + escapeHtml(meal.meal || '') + '">' +
+      '<span>' + escapeHtml(CHANGE_RECIPE_LABEL) + '</span></button>';
+  }
+
+  function buildChangeRecipeSheet() {
+    if (crSheetEl) return;
+    crScrimEl = document.createElement('div');
+    crScrimEl.id = 'cr-scrim';
+    crScrimEl.hidden = true;
+    crSheetEl = document.createElement('div');
+    crSheetEl.id = 'cr-sheet';
+    crSheetEl.hidden = true;
+    crSheetEl.setAttribute('role', 'dialog');
+    crSheetEl.setAttribute('aria-modal', 'true');
+    crSheetEl.setAttribute('aria-labelledby', 'cr-title');
+    crSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="cr-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="cr-title">Change the recipe</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="cr-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="recipes-body cr-body" id="cr-body"></div>';
+    document.body.appendChild(crScrimEl);
+    document.body.appendChild(crSheetEl);
+    crScrimEl.addEventListener('click', closeChangeRecipeSheet);
+    crSheetEl.querySelector('#cr-handle').addEventListener('click', closeChangeRecipeSheet);
+    crSheetEl.querySelector('#cr-close').addEventListener('click', closeChangeRecipeSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && crSheetEl && !crSheetEl.hidden) closeChangeRecipeSheet();
+    });
+    crSheetEl.addEventListener('click', onChangeRecipeClick);
+    // The search filters as it is typed; the ask box is read on the tap.
+    crSheetEl.addEventListener('input', function (e) {
+      if (!e.target || e.target.id !== 'cr-search') return;
+      crState.search = e.target.value;
+      var list = crSheetEl.querySelector('#cr-picklist');
+      if (list) list.innerHTML = changeRecipePickRowsHtml();
+    });
+  }
+
+  function openChangeRecipeSheet(entryId, dish) {
+    buildChangeRecipeSheet();
+    closeAskSheet();
+    closeWeekSheet();
+    closeKitchenSheet();
+    closePrefsSheet();
+    closeSnwSheet();
+    closeRecipesSheet();
+    crState.entryId = entryId;
+    crState.dish = dish || '';
+    crState.view = 'rows';
+    crState.search = '';
+    crState.busy = false;
+    crState.said = '';
+    crState.requestId = null;
+    crScrimEl.hidden = false;
+    crSheetEl.hidden = false;
+    renderChangeRecipeSheet();
+    // The household's own recipes, for row 1. Already in hand whenever
+    // Settings → Recipes has been opened this page view; read again so the
+    // list is this moment's rather than whenever that was.
+    loadRecipes();
+  }
+
+  function closeChangeRecipeSheet() {
+    if (!crSheetEl) return;
+    crScrimEl.hidden = true;
+    crSheetEl.hidden = true;
+  }
+
+  function crTitle() {
+    return crState.dish ? 'Change the recipe for ' + crState.dish : 'Change the recipe';
+  }
+
+  // One row per way in, in the mockup's order. Row 4 is dashed because it
+  // is a different KIND of answer — it changes the meal rather than the
+  // recipe — the same way the night-off row is set off from the swaps on
+  // the tonight sheet.
+  function changeRecipeRowsHtml() {
+    return (crState.said ? '<p class="cr-said">' + escapeHtml(crState.said) + '</p>' : '') +
+      '<div class="kit-rows cr-rows">' +
+        '<button type="button" class="kit-row" data-cr="pick">' +
+          '<span class="kit-row-icon">' + KITCHEN_ICONS.book + '</span>' +
+          '<span class="kit-row-text"><span class="kit-row-title">Pick from my recipes</span>' +
+            '<span class="kit-row-sub">' + escapeHtml(crPickSubLine()) + '</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+        '<button type="button" class="kit-row" data-cr="link">' +
+          '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
+          '<span class="kit-row-text"><span class="kit-row-title">Paste a link</span>' +
+            '<span class="kit-row-sub">I’ll read it and save it to your recipes</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+        '<button type="button" class="kit-row" data-cr="ask">' +
+          '<span class="kit-row-icon">' + TIPS_HELP_ICON + '</span>' +
+          '<span class="kit-row-text"><span class="kit-row-title">Tell Pomona what to change</span>' +
+            '<span class="kit-row-sub">Same dish, written your way</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+      '</div>' +
+      '<div class="kit-rows cr-rows cr-rows-other">' +
+        '<button type="button" class="kit-row cr-row-other" data-cr="swap">' +
+          '<span class="kit-row-text"><span class="kit-row-title">Different meal instead</span>' +
+            '<span class="kit-row-sub">I’ll find something else for that night</span></span>' +
+          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
+        '</button>' +
+      '</div>';
+  }
+
+  function crPickSubLine() {
+    var list = recipesState.list;
+    if (!list) return recipesState.failed ? 'Couldn’t check just now' : 'Reading them back…';
+    return list.length ? list.length + ' saved' : 'None saved yet';
+  }
+
+  // Row 1, opened: the Settings → Recipes list, searchable, minus the one
+  // this meal already uses (picking the recipe it has is not a change, and
+  // the server says so — offering it would be offering a refusal).
+  function changeRecipePickRowsHtml() {
+    var list = recipesState.list;
+    if (!list) {
+      return '<p class="recipes-empty">' + (recipesState.failed
+        ? 'Couldn’t load your recipes. Go back and try again.'
+        : 'Reading them back…') + '</p>';
+    }
+    var dish = String(crState.dish || '').trim().toLowerCase();
+    var q = String(crState.search || '').trim().toLowerCase();
+    var rows = list.filter(function (r) {
+      if (String(r.name || '').trim().toLowerCase() === dish) return false;
+      if (!q) return true;
+      return String(r.name || '').toLowerCase().indexOf(q) !== -1;
+    });
+    if (!rows.length) {
+      return '<p class="recipes-empty">' + (q ? 'Nothing by that name.' : 'No other recipes saved yet.') + '</p>';
+    }
+    return '<div class="prefs-rows recipes-list">' + rows.map(function (r) {
+      var line = recipeListLine(r);
+      return '<button type="button" class="prefs-row" data-cr="use" data-recipe-id="' + escapeHtml(String(r.id)) + '">' +
+        '<span class="prefs-row-text">' +
+          '<span class="prefs-row-title">' + escapeHtml(r.name || '') + '</span>' +
+          (line ? '<span class="prefs-row-sub">' + escapeHtml(line) + '</span>' : '') +
+        '</span>' + ICONS.arrow +
+      '</button>';
+    }).join('') + '</div>';
+  }
+
+  function changeRecipePickHtml() {
+    return '<button type="button" class="crumb recipes-crumb" data-cr="back">&lsaquo; Back</button>' +
+      (crState.said ? '<p class="cr-said">' + escapeHtml(crState.said) + '</p>' : '') +
+      '<input type="search" class="snw-input cr-search" id="cr-search" placeholder="Find a recipe" ' +
+        'value="' + escapeHtml(crState.search) + '" autocomplete="off" aria-label="Find a recipe">' +
+      '<div id="cr-picklist">' + changeRecipePickRowsHtml() + '</div>';
+  }
+
+  // Row 3, opened. Per Emily's override: the box and the button, nothing
+  // else. The box is always visible and the button is the sheet's one
+  // apricot — there is one action on this screen and this is it.
+  function changeRecipeAskHtml() {
+    return '<button type="button" class="crumb recipes-crumb" data-cr="back">&lsaquo; Back</button>' +
+      '<label class="cr-ask-label" for="cr-ask">' + escapeHtml(CHANGE_RECIPE_ASK_LABEL) + '</label>' +
+      '<textarea class="snw-input cr-ask" id="cr-ask" rows="4" ' +
+        'placeholder="Less spicy, and we don’t have a pressure cooker"></textarea>' +
+      (crState.said ? '<p class="cr-said">' + escapeHtml(crState.said) + '</p>' : '') +
+      '<button type="button" class="cr-go" data-cr="rewrite"' + (crState.busy ? ' disabled' : '') + '>' +
+        (crState.busy ? 'Writing it…' : 'Rewrite the recipe') + '</button>' +
+      '<p class="cr-ask-note">Same dish, same number of people, and nothing anybody here can’t eat.</p>';
+  }
+
+  function renderChangeRecipeSheet() {
+    if (!crSheetEl) return;
+    var title = crSheetEl.querySelector('#cr-title');
+    if (title) title.textContent = crTitle();
+    var body = crSheetEl.querySelector('#cr-body');
+    if (!body) return;
+    body.innerHTML = crState.view === 'pick' ? changeRecipePickHtml()
+      : crState.view === 'ask' ? changeRecipeAskHtml()
+      : changeRecipeRowsHtml();
+  }
+
+  // After any change: the recipe on screen, the week, the list and Today
+  // are all readings of what just moved, so all four are re-read. The
+  // sheet closes first, so nothing lands under it.
+  async function crAfterChange(said, requestId) {
+    closeChangeRecipeSheet();
+    crState.requestId = requestId || null;
+    showToast(said, requestId ? { label: 'Put it back', onClick: function () { crUndo(requestId); } } : null);
+    var panel = panels['week'];
+    if (panel && panel.dataset && panel.dataset.built) await loadWeekMenu(panel);
+    refreshKitchenPanel();
+    refreshGrocerySurfaces();
+  }
+
+  async function crUndo(requestId) {
+    try {
+      var res = await Api.fetch('/api/meal-recipe/undo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: requestId })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error((data && data.detail) || 'That didn’t work just now.');
+      showToast(data.said || 'Put back.');
+      var panel = panels['week'];
+      if (panel && panel.dataset && panel.dataset.built) await loadWeekMenu(panel);
+      refreshKitchenPanel();
+      refreshGrocerySurfaces();
+    } catch (err) {
+      showToast((err && err.message) || 'That didn’t work just now.');
+    }
+  }
+
+  // Row 1's tap and row 2's save both land here: one recipe id, one route.
+  async function crUseRecipe(recipeId) {
+    if (crState.busy) return;
+    crState.busy = true;
+    try {
+      var res = await Api.fetch('/api/meal-recipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: crState.entryId, recipe_id: recipeId })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error((data && data.detail) || 'That didn’t work just now.');
+      // A refusal and a block are both answers, not errors: they are said
+      // where the tap was, and the sheet stays open so "Pick another" has
+      // somewhere to go (the card's own criterion).
+      if (data.status === 'changed') return crAfterChange(data.said);
+      crState.said = data.said || 'That didn’t work just now.';
+      renderChangeRecipeSheet();
+    } catch (err) {
+      crState.said = (err && err.message) || 'That didn’t work just now.';
+      renderChangeRecipeSheet();
+    } finally {
+      crState.busy = false;
+    }
+  }
+
+  async function crRewrite() {
+    if (crState.busy) return;
+    var box = crSheetEl && crSheetEl.querySelector('#cr-ask');
+    var text = box ? String(box.value || '').trim() : '';
+    if (!text) {
+      crState.said = 'Say what you’d change first.';
+      renderChangeRecipeSheet();
+      var again = crSheetEl.querySelector('#cr-ask');
+      if (again) again.focus();
+      return;
+    }
+    crState.busy = true;
+    crState.said = '';
+    renderChangeRecipeSheet();
+    // The box is rebuilt by that render, so what was typed goes back in.
+    var live = crSheetEl.querySelector('#cr-ask');
+    if (live) live.value = text;
+    try {
+      var res = await Api.fetch('/api/meal-recipe/rewrite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: crState.entryId, text: text })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) throw new Error((data && data.detail) || 'That didn’t come together — try it again.');
+      crState.busy = false;
+      if (data.status === 'rewritten') return crAfterChange(data.said, data.request_id);
+      crState.said = data.said || 'That didn’t come together — try it again.';
+      renderChangeRecipeSheet();
+      var back = crSheetEl.querySelector('#cr-ask');
+      if (back) back.value = text;
+    } catch (err) {
+      crState.busy = false;
+      crState.said = (err && err.message) || 'That didn’t come together — try it again.';
+      renderChangeRecipeSheet();
+      var kept = crSheetEl.querySelector('#cr-ask');
+      if (kept) kept.value = text;
+    }
+  }
+
+  function onChangeRecipeClick(e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-cr]');
+    if (!t || !crSheetEl.contains(t)) return;
+    var what = t.getAttribute('data-cr');
+    if (what === 'pick' || what === 'ask') {
+      crState.view = what;
+      crState.said = '';
+      renderChangeRecipeSheet();
+      var focus = crSheetEl.querySelector(what === 'pick' ? '#cr-search' : '#cr-ask');
+      if (focus) focus.focus();
+    } else if (what === 'back') {
+      crState.view = 'rows';
+      crState.said = '';
+      renderChangeRecipeSheet();
+    } else if (what === 'use') {
+      crUseRecipe(Number(t.getAttribute('data-recipe-id')));
+    } else if (what === 'rewrite') {
+      crRewrite();
+    } else if (what === 'link') {
+      // The existing importer, with this meal waiting at the end of it: a
+      // saved recipe goes straight onto the meal (the card: "the imported
+      // recipe replaces this meal's recipe AND is saved to the household's
+      // recipes"). Backing out of the importer comes back here.
+      var entryId = crState.entryId;
+      var dish = crState.dish;
+      closeChangeRecipeSheet();
+      openRecipeLinkSheet({ onDone: function (saved) {
+        openChangeRecipeSheet(entryId, dish);
+        if (saved && saved.recipe_id) crUseRecipe(saved.recipe_id);
+      } });
+    } else if (what === 'swap') {
+      // The existing Swap, wherever this meal is. The Plan tab's own swap
+      // is the one that knows the day and the slot, so this hands over to
+      // the chat with the dish named rather than reaching into a screen
+      // that may not be built.
+      closeChangeRecipeSheet();
+      openAskSheet('Swap ' + (crState.dish || 'that meal') + ' for something else: ');
+    }
+  }
+
+  // The button on either screen — delegated, like the Recipes row's.
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-cr="open"]');
+    if (!t) return;
+    openChangeRecipeSheet(Number(t.getAttribute('data-entry-id')), t.getAttribute('data-dish') || '');
   });
 
   // ---------- "Helpful tips" ----------
