@@ -156,7 +156,7 @@
   .remove-btn svg { width: 16px; height: 16px; }
   .remove-btn:hover { border-color: var(--ink-strong); color: var(--ink-strong); }
   .row.is-empty .remove-btn { display: none; }
-  /* "+ Add person": a quiet spruce-outline row, full width — a secondary,
+  /* "+ Add someone": a quiet spruce-outline row, full width — a secondary,
      never a second fill (hard rule 5). --ink-strong is spruce playing ink,
      so it swings to ivory in dark on its own. */
   .add-btn {
@@ -2055,11 +2055,10 @@ function buildHouseholdStep() {
     membersDiv.insertBefore(block, membersDiv.firstChild);
   }
   block.dataset.ageGroup = primaryAgeGroup;
-  // dataset rather than an input: currentMembers() reads it from here, and
-  // there is no box on this row to type into.
-  block.dataset.memberName = name;
+  // Drawn, never stored: currentMembers() reads the name from the box on
+  // the screen before, so there is exactly one copy of it. See the note
+  // in currentMembers for what a second copy cost.
   block.querySelector('.member-you-name').textContent = name;
-  block.querySelector('.member-you').setAttribute('aria-label', name + ' — you, the main person');
   renderMemberAgeChips(block);
 }
 
@@ -2073,10 +2072,21 @@ document.getElementById('add-member').onclick = () => addMemberRow('');
 function currentMembers() {
   return [...membersDiv.querySelectorAll('.member-block')].map(block => {
     return {
-      // The pinned "You" row carries its name as data rather than in a box
-      // (2026-10-05) — it was typed on the screen before.
+      // The pinned "You" row has no box of its own (2026-10-05): its name
+      // was typed on the screen before, so it is read from THERE rather
+      // than from a copy on the row.
+      //
+      // That is not tidiness. A copy on the row is written by
+      // buildHouseholdStep, which runs on ARRIVAL at the step — so while
+      // somebody is typing in the name box the copy still holds the old
+      // name, and pruneMemberKeyedAnswers (which fires on that very
+      // input, and which reads this function) would compare the keyed
+      // answers against a household still containing the name being
+      // corrected. Measured: "Jamie" with an allergy, renamed to "James",
+      // left `restrictionAnswers['Jamie']` behind — the exact orphan the
+      // prune exists to prevent, caused by the prune reading a stale copy.
       name: (block.classList.contains('is-primary')
-        ? (block.dataset.memberName || '')
+        ? primaryMemberName()
         : block.querySelector('.member-name').value).trim(),
       age_group: block.dataset.ageGroup || '',
     };
@@ -4952,7 +4962,9 @@ document.getElementById('household-next').onclick = () => {
 // left exactly where it is — it isn't one of the others — so the
 // household that finishes setup has precisely one member.
 document.getElementById('household-just-me').onclick = () => {
-  [...membersDiv.querySelectorAll('.member-block:not(.is-primary)')].forEach(b => b.remove());
+  [...membersDiv.querySelectorAll('.member-block')]
+    .filter(b => !b.classList.contains('is-primary'))
+    .forEach(b => b.remove());
   // The removed rows may have been named, and restrictions and helper
   // picks are keyed by name — the same prune the × does.
   pruneMemberKeyedAnswers();

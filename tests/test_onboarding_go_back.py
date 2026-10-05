@@ -186,6 +186,14 @@ function makeEl(tag) {
         if (cls) cls[1].split(/\s+/).filter(Boolean).forEach(c => child._classes.add(c));
         const data = /data-member="([^"]*)"/.exec(attrs);
         if (data) child.dataset.member = data[1];
+        // 2026-10-05: and the VALUE a template writes into a box, which a
+        // browser obviously honours and this stub was silently dropping —
+        // so addMemberRow('Greg') built a row whose name box read ''. The
+        // only way to drive the member list through the page's own
+        // functions rather than stubbing currentMembers() wholesale.
+        // Additive: a template that writes no value leaves '' as before.
+        const val = /\svalue="([^"]*)"/.exec(attrs);
+        if (val) child.value = val[1];
         child._parent = this;
         this._children.push(child);
       }
@@ -205,6 +213,26 @@ function makeEl(tag) {
       contains: function (c) { return el._classes.has(c); }
     },
     appendChild: function (c) { c._parent = el; el._children.push(c); return c; },
+    // 2026-10-05: a member row takes itself off the list (addMemberRow's
+    // own × and "Just me" both call it). A browser has it; additive.
+    remove: function () {
+      if (!el._parent) return;
+      el._parent._children = el._parent._children.filter(function (c) { return c !== el; });
+      el._parent = null;
+    },
+    // 2026-10-05: the pinned "You" row is put at the TOP of #members (it
+    // has to be first — currentMembers() reads the rows in order, the
+    // route saves them in that order, and record_setup_adult takes the
+    // first adult of them, which is what pins the device's session to the
+    // main person). A real browser has both of these; the stub simply
+    // hadn't been asked for them. Additive — nothing already here changes.
+    get firstChild() { return el._children[0] || null; },
+    insertBefore: function (c, ref) {
+      c._parent = el;
+      const at = ref ? el._children.indexOf(ref) : -1;
+      if (at === -1) el._children.push(c); else el._children.splice(at, 0, c);
+      return c;
+    },
     addEventListener: function (evt, fn) { (el._listeners[evt] = el._listeners[evt] || []).push(fn); },
     click: function () {
       if (el.onclick) el.onclick();

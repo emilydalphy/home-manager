@@ -251,7 +251,19 @@ def test_the_dinner_time_line_sits_under_the_question_not_under_the_chips():
 
 
 @pytest.mark.parametrize("step, words", [
-    ("step-household", ["Who are we planning for?", "Everyone who eats at home.", "+ Add person"]),
+    # UPDATED 2026-10-05 (the main person): the household step is TWO
+    # screens, and the TITLE is the one piece of copy that changed on the
+    # second one -- Emily confirmed on 2026-10-04 that it otherwise reuses
+    # "Who are we planning for?"'s screen exactly. So the line under it is
+    # still verbatim, and "+ Add person" is "+ Add someone", which the card
+    # asks for by name. This table's claim -- the 2026-09-11 copy cleanse
+    # is still the copy -- is unchanged; the words moved because Emily
+    # moved them.
+    ("step-your-name", [
+        "What&rsquo;s your name?",
+        "You&rsquo;ll be the main person for the home. You can add others next.",
+    ]),
+    ("step-household", ["Who else lives with you?", "Everyone who eats at home.", "+ Add someone"]),
     ("step-helpers", [
         "Does anyone else help run the house?",
         "If someone else shops or cooks too, I&rsquo;ll give them their own way in once your first week is ready.",
