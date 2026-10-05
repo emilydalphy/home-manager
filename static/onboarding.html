@@ -4579,6 +4579,18 @@ const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'you
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
 // remember what you answered two screens ago in order to know whether it is
 // worth tapping.
+// The first question — the step a reload lands on, the step a stale
+// history entry collapses onto, and the step the finish sends a household
+// of nobody back to. ONE name for it because it has THREE readers and
+// splitting the household step in two (2026-10-05) left a hard-coded
+// 'household' in the popstate handler after the other two had been moved:
+// a stale entry collapsed onto a screen whose pinned "You" row is drawn
+// from a name the reload had just thrown away. Derived from the flow
+// rather than written down twice — the first step that is a question.
+function firstQuestionStep() {
+  return ALL_STEPS[INTRO_STEPS.length];
+}
+
 const STEP_TITLES = {
   'intro-hello': 'Hello',
   'intro-help': 'What I help with',
@@ -4853,7 +4865,7 @@ window.addEventListener('popstate', function (e) {
   // whose answers are still true, and take the entry over so the same
   // gesture again goes further back rather than round in a circle.
   if (state.onboardingLoad !== PAGE_LOAD) {
-    showStep('household', { replace: true });
+    showStep(firstQuestionStep(), { replace: true });
     return;
   }
   showStep(key, { push: false });
@@ -5052,7 +5064,7 @@ async function finishSetupAndReveal(opts) {
     // The step that fixes it is "What's your name?" since the split
     // (2026-10-05): the main person's name is typed there and nowhere
     // else, so a household of nobody is a household with no name typed.
-    showStep('your-name');
+    showStep(firstQuestionStep());
     showYourNameEmptyNote(true);
     return false;
   }
@@ -5339,12 +5351,12 @@ wireRevealSwapSheet();
 function startOnboarding() {
   const reloadedMidSetup = !!(window.history && window.history.state
     && window.history.state.onboardingStep);
-  // 'your-name' since the split (2026-10-05), and it has to be: a reload
-  // throws away every answer in memory, including the name, and the
-  // household step's pinned "You" row is drawn FROM that name. Landing on
-  // the second screen would show a list with nobody pinned at the top of
-  // it. The first question is still the honest place to land.
-  showStep(reloadedMidSetup ? 'your-name' : 'intro-hello', { replace: !reloadedMidSetup });
+  // The first question since the split (2026-10-05), and it has to be
+  // the FIRST one: a reload throws away every answer in memory, including
+  // the name, and the second screen's pinned "You" row is drawn FROM that
+  // name — landing there would show a list with nobody pinned at the top
+  // of it. See firstQuestionStep, which the popstate handler reads too.
+  showStep(reloadedMidSetup ? firstQuestionStep() : 'intro-hello', { replace: !reloadedMidSetup });
 }
 startOnboarding();
 </script>

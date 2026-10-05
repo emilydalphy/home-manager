@@ -75,8 +75,17 @@ INTRO_STEPS_AFTER_THE_FIRST = ["intro-help", "intro-talk", "intro-know"]
 # shop is, straight after "When's dinner?" -- the two clock questions
 # together. Its own step, its own way back, like every other question. No
 # claim in this file changed; the flow gained a step.
+# UPDATED 2026-10-05 (the main person): the household step is TWO
+# screens -- "What's your name?" then "Who else lives with you?" -- so
+# that the household's main person is somebody who said so rather than
+# whichever row happened to be first. TRIPWIRE FIRED: this list is the
+# flow's own order, so a step added to the flow has to be added here or
+# every claim in this file is made about a shorter flow than the page has.
+# No claim changed; the flow gained a step, and it gained it at the front
+# of the questions rather than at the end, which is why the two reload
+# tests and the empty-household pair below moved with it.
 QUESTION_STEPS = [
-    "household", "helpers", "restrictions", "meals-days", "prep",
+    "your-name", "household", "helpers", "restrictions", "meals-days", "prep",
     "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
     "shop-day",
     "eating-style", "wont-eat", "excited-about", "kit-repeats",
@@ -351,6 +360,19 @@ function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
 // step draws. The real one is driven by
 // tests/test_onboarding_anything_else.py instead.
 function buildAnythingElseStep() { BUILT.push('anything-else'); }
+// "Who else lives with you?" (2026-10-05) is in STEP_BUILDERS where the
+// old household step was not -- its pinned "You" row is drawn from the
+// name typed on the screen before, so arriving has to redraw it. Same
+// fixed-function-list hazard as the two above: STEP_BUILDERS is lifted
+// wholesale, so a builder it names and this list does not is a
+// ReferenceError that takes every test in this file with it. A STUB
+// rather than the page's own buildHouseholdStep, deliberately and for
+// that one's own reasons -- it reads #members and #your-name-input, which
+// this file's DOM stub does not build, and every test here is about where
+// back GOES rather than about what a step draws. Nothing in this file
+// asserts on what the household step draws, so the stub costs no
+// assertion; the real one is driven by tests/test_onboarding_your_name.py.
+function buildHouseholdStep() { BUILT.push('household'); }
 """,
         _const("INTRO_STEPS"),
         _const("ALL_STEPS"),
@@ -366,6 +388,13 @@ function buildAnythingElseStep() { BUILT.push('anything-else'); }
         _const("SECTION_NAMES"),
         _const("SECTION_COUNT"),
         _fn("stepEyebrow"),
+        # 2026-10-05: ONE name for "the first question", read by the
+        # popstate handler, startOnboarding and the finish. Lifted rather
+        # than restated so this file can never disagree with the page
+        # about which step that is -- which is exactly what went wrong
+        # when the household step split and the popstate handler kept a
+        # hard-coded 'household' after the other two readers had moved.
+        _fn("firstQuestionStep"),
         _fn("stepFlow"),
         _fn("stepBefore"),
         _fn("resolveStep"),
@@ -457,7 +486,11 @@ console.log(JSON.stringify(labels));
         "intro-help": "‹ Hello",
         "intro-talk": "‹ What I help with",
         "intro-know": "‹ How it works",
-        "household": "‹ Getting to know you",
+        # UPDATED 2026-10-05: the first question is "What's your name?",
+        # so it is the one that goes back to the intro and "Who's here" --
+        # which is what the second screen still is -- goes back to it.
+        "your-name": "‹ Getting to know you",
+        "household": "‹ Your name",
         "helpers": "‹ Who's here",
         "restrictions": "‹ Who helps",
         "meals-days": "‹ Never on the plate",
@@ -659,7 +692,7 @@ def test_a_reload_mid_setup_throws_away_the_entries_in_front_of_it():
     out = _run(_nav_harness(seed="""
 // Where a previous load of this page had got to: four steps in, with the
 // browser sitting on the third of them.
-[staleEntry('household'), staleEntry('helpers'), staleEntry('restrictions'),
+[staleEntry('your-name'), staleEntry('helpers'), staleEntry('restrictions'),
  staleEntry('restrictions')].forEach(function (s) { HISTORY.push(s); });
 CURSOR = 2;
 """) + """
@@ -668,21 +701,25 @@ forwardGesture();
 console.log(JSON.stringify({ afterLoad: afterLoad, forward: currentStep, len: HISTORY.length }));
 """)
     # A reload skips the intro: they have been introduced, and their answers
-    # are gone — the household step is the first one whose answers are still
-    # true, so it is where a reload starts.
-    assert out["afterLoad"]["on"] == "household", "a reload didn't start on the household step"
+    # are gone — the FIRST QUESTION is where a reload starts.
+    # UPDATED 2026-10-05: that is "What's your name?" rather than the list of
+    # names, and it has to be: a reload throws away the name in memory, and
+    # the second screen's pinned "You" row is drawn FROM that name, so
+    # landing there would show a list with nobody pinned at the top of it.
+    # The claim is unchanged — a reload starts on the first question.
+    assert out["afterLoad"]["on"] == "your-name", "a reload didn't start on the first question"
     assert out["afterLoad"]["len"] == 4, (
         "the stale forward entry survived the reload — a forward swipe reaches "
         "a question whose answers are gone"
     )
     assert out["afterLoad"]["at"] == 4
-    assert out["forward"] == "household"
+    assert out["forward"] == "your-name"
 
 
 @_needs_node
 def test_a_back_gesture_onto_an_entry_from_before_the_reload_collapses_onto_the_first_step():
     out = _run(_nav_harness(seed="""
-[staleEntry('household'), staleEntry('helpers'), staleEntry('restrictions')]
+[staleEntry('your-name'), staleEntry('helpers'), staleEntry('restrictions')]
   .forEach(function (s) { HISTORY.push(s); });
 CURSOR = 2;
 """) + """
@@ -695,7 +732,9 @@ for (let i = 0; i < 2; i++) {
 }
 console.log(JSON.stringify({ seen: seen, retaken: stamps }));
 """)
-    assert out["seen"] == ["household", "household"], (
+    # UPDATED 2026-10-05: the first question is "What's your name?" — see
+    # the test above. The claim is unchanged.
+    assert out["seen"] == ["your-name", "your-name"], (
         "a gesture landed on a step whose answers the reload had emptied"
     )
     assert out["retaken"] == [True, True], (
@@ -734,6 +773,12 @@ def _finish_harness(members: str = "[{ name: 'Robin', age_group: 'adult' }]",
         """
 ELS['household-empty'] = makeEl('p');
 ELS['household-empty'].hidden = true;
+// 2026-10-05: the finish sends a household of nobody back to the step
+// that FIXES it, and since the split that is "What's your name?" -- the
+// main person's name is typed there and nowhere else, so a household of
+// nobody is a household with no name typed. Its own note, its own line.
+ELS['your-name-empty'] = makeEl('p');
+ELS['your-name-empty'].hidden = true;
 ELS['kit-repeats-next'] = makeEl('button');
 ELS['kit-repeats-next'].disabled = false;
 ELS['kit-repeats-skip'] = makeEl('span');
@@ -753,6 +798,7 @@ var setupRun = 'idle';
 function alert() {}
 """ % (save_ms, members),
         _fn("showHouseholdEmptyNote"),
+        _fn("showYourNameEmptyNote"),
         _async_fn("finishSetupAndReveal"),
         _fn("setKitRepeatsBusy"),
         _const("KIT_SKIP_LABEL"),
@@ -847,12 +893,17 @@ def test_setup_cannot_complete_with_nobody_in_the_household():
   showStep('kit-repeats');
   await tapSkip();
   console.log(JSON.stringify({
-    posts: POSTS, on: currentStep, noteShown: !ELS['household-empty'].hidden
+    posts: POSTS, on: currentStep, noteShown: !ELS['your-name-empty'].hidden
   }));
 })();
 """)
     assert out["posts"] == [], "a household of nobody wrote itself down"
-    assert out["on"] == "household", "it didn't send them back to the step that fixes it"
+    # UPDATED 2026-10-05: the step that fixes it is "What's your name?" --
+    # the main person's name is typed there and nowhere else, so a household
+    # of nobody is a household with no name typed. The claim is unchanged:
+    # nothing is written, and they land on the step that fixes it with the
+    # line showing.
+    assert out["on"] == "your-name", "it didn't send them back to the step that fixes it"
     assert out["noteShown"] is True
 
 
@@ -865,10 +916,16 @@ def test_the_empty_household_is_told_in_a_line_on_the_step_not_an_alert():
     markup = _step_markup("step-household")
     assert 'id="household-empty"' in markup
     assert "add whoever's eating" in markup
-    # Both doors to the check say it the same way, and neither says it in an
-    # alert. (The alert left in finishSetupAndReveal's catch is a different
-    # thing entirely — a save that failed on the network, untouched here.)
-    assert "showHouseholdEmptyNote(true)" in _fn("finishSetupAndReveal")
+    # UPDATED 2026-10-05: the name step carries the same kind of line for the
+    # same reason, and it is the one the FINISH shows now (the step that
+    # fixes a household of nobody is the one the name is typed on). Both
+    # doors still say it on the step rather than in an alert — the claim is
+    # unchanged, there are simply two steps that can be short of a name.
+    name_markup = _step_markup("step-your-name")
+    assert 'id="your-name-empty"' in name_markup
+    assert "I need your name" in name_markup
+    assert "showYourNameEmptyNote(true)" in _fn("finishSetupAndReveal")
+    assert "showYourNameEmptyNote(true)" in ONBOARDING.split("your-name-next")[2]
     assert "showHouseholdEmptyNote(true)" in ONBOARDING.split("household-next")[2]
     assert "alert('Add at least one person" not in ONBOARDING
 
