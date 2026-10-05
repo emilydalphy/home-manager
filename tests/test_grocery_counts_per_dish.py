@@ -366,8 +366,13 @@ def test_a_count_at_exactly_one_per_person_is_left_alone(week):
     is a dish amount and is not touched. A pasta sauce for four really does
     use four tomatoes, and three such dinners really do want twelve.
 
-    Pinned by the mutation that makes per_person_count_problem compare with
-    `>=`, which takes this to 4 (one tomato a dinner).
+    Pinned by the mutation that drops the tomato ceiling to 0.5, which
+    takes this to 6. NOT by the one that makes per_person_count_problem
+    compare with `>=`: measured, that reddens only
+    test_the_recompute_floors_so_it_can_never_be_flagged_again, because at
+    exactly the ceiling the recompute hands back the number it was given —
+    the guard fires and changes nothing. An earlier draft of this docstring
+    claimed that mutation and was wrong.
     """
     _household("A", "B", "C", "D")
     for i in range(3):
@@ -503,14 +508,23 @@ def test_a_weight_is_not_a_count(week):
 def test_a_counted_pack_keeps_its_own_path(week):
     """
     GUARD — green on main. A dozen of anything is a PACK, and
-    _counted_pack_share owns that question: four meals that each say "1
-    dozen" buy one carton, not four, and the pieces really do scale with
-    the eaters.
+    _counted_pack_share owns that question: eggs are written as the NUMBER
+    the recipe uses, the week's eggs add up, and the line is written in
+    whole cartons once. The pieces really do scale with the eaters, so a
+    pack takes the per-portion factor and not the capped one.
+
+    SEEDED SIX EATERS AGAINST A RECIPE FOR FOUR ON PURPOSE, and the first
+    version was seeded three against four and could not fail: below the
+    recipe's own table the two factors are the same number, and "egg" is in
+    neither count table, so nothing about the line differed either way.
+    Measured — the mutation below reddened nothing until this was re-seeded.
+    Six eaters, 6 eggs a morning for three mornings is 27 pieces, which is
+    three cartons; the capped factor would buy two.
 
     Pinned by the mutation that drops `not pack_share` from the bare_count
-    test, which takes the eggs line off its pack path.
+    test, which takes the eggs line onto the capped factor and buys 2 dozen.
     """
-    _household("A", "B", "C")
+    _household("A", "B", "C", "D", "E", "F")
     _plan(
         week, "Omelette",
         [{"item": "Eggs", "qty": "6", "category": "dairy"}],
@@ -519,7 +533,7 @@ def test_a_counted_pack_keeps_its_own_path(week):
 
     tools.approve_weekly_plan(week, approved_by="A")
 
-    assert _qty("Eggs") == "2 dozen", "13.5 eggs, written in whole cartons once"
+    assert _qty("Eggs") == "3 dozen", "27 eggs, written in whole cartons once"
 
 
 def test_a_package_keeps_its_own_path(week):
@@ -528,8 +542,16 @@ def test_a_package_keeps_its_own_path(week):
     name it — the 2026-09-04 package work — and a package is not a count of
     a whole thing.
 
-    Pinned by the mutation that drops `not package` from the bare_count
-    test.
+    NOTHING PINS THE `not package` CLAUSE AND THAT IS SAID RATHER THAN
+    CLAIMED, because this file has already had to unpick two mutations that
+    did not bite. A package is excluded from the count path TWICE: by that
+    clause and, independently, by the unit check beside it — the unit of "1
+    bottle" parses as "bottle", which is not a bare-count unit. Measured:
+    dropping `not package` reddens nothing at all, in this file or in the
+    five quantity files beside it. It is belt and braces, kept because it
+    says what is meant where the classification happens, and this test
+    guards the BEHAVIOUR (which the unit check holds up) rather than that
+    clause.
     """
     _household("A", "B", "C")
     for i in range(3):
