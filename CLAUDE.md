@@ -541,6 +541,195 @@ why*, not duplicating the diff.
     that the fact is on `/api/memory`'s rhythm payload, which is what both
     of those screens read, so neither has to invent a second source for it.
 
+- **2026-10-05 — The weekday lunch limit is the household's number, and setup
+  asks for both time limits on a step it already has. Branch
+  `overnight/time-limits`, NOT merged at the time of writing.** Loop Board
+  "Time limits" (High, Phase 1 — Beta). Gowthami's household, 2026-10-04:
+  "It doesn't give the option on time limits." Two halves. `weeknight_max_minutes`
+  had existed since the rhythm work and **setup never asked for it** — it was
+  reachable only from Settings and from a sentence typed into setup's last
+  answer, so a household that never opened either had no cap on a weeknight
+  dinner at all. And the weekday lunch cap was `time_caps.WEEKDAY_LUNCH_MAX_MINUTES`,
+  a **hard-coded 20** with no column behind it, so it could not be changed from
+  anywhere.
+  - **ONE NEW COLUMN, `meal_preferences.weekday_lunch_max_minutes`
+    (`INTEGER NOT NULL DEFAULT 20`), and 0 means no limit — the convention
+    `weeknight_max_minutes` already uses, not a second one.** The DEFAULT is
+    what makes criterion 4 ("existing households keep today's behaviour") true
+    **by construction rather than by diligence**: SQLite materialises a
+    NOT NULL DEFAULT into every row already on disk, so every existing
+    household reads back exactly the 20 the constant used to hand them. There
+    is nothing to backfill and nothing to migrate, and that was measured
+    rather than argued — a test strips the column out of `schema.sql` with a
+    regex, opens that legacy database with the new code in a subprocess, and
+    asserts the ALTER lands and the household reads 20.
+  - **DELIBERATELY NO `..._set` FLAG, and the reason is written at the column
+    because the next person will want to add one.**
+    `meal_preferences.snacks_per_week_set` exists (2026-09-08) because a
+    NOT NULL DEFAULT cannot tell "they said 3" from "nobody asked", and the
+    snacks screen has to read that difference back. Here it has nothing to
+    read it back FOR: 20 is simultaneously the default BEHAVIOUR (what
+    `time_caps` handed every household until today) and the default ANSWER
+    (the card's own chip), so "they said 20" and "nobody asked" want the same
+    plan. The column is the whole answer.
+  - **`time_caps.weekday_lunch_cap(memory)` is the one reader, and ABSENT IS
+    NOT 0 — which is the whole subtlety and is why it is a function rather
+    than a `.get()` at each call site.** Three readings, not two: a number is
+    the number; **0 is "no limit"** and returns None; **a missing key is
+    "nobody told me", and falls back to the 20** — because half the callers
+    build a PARTIAL memory dict rather than passing
+    `get_household_memory()` whole, and reading a partial dict's silence as
+    "no limit" would quietly uncap every weekday lunch in the app. Anything
+    unreadable (a string, a negative) falls back to the default rather than
+    raising: a cap is not worth a 500.
+  - **FINDING THE ONE PARTIAL DICT IS WHAT THIS BRANCH IS ACTUALLY ABOUT, and
+    it was found by tracing every call site rather than by reading the new
+    code.** `plan_quality._weekday_lunch_cap_respected` builds its own
+    `{"rhythm": {"prep_days": ...}}` to ask `time_caps` with — so with the
+    constant gone it would have asked about a household it knew nothing
+    about, and the morning report would have warned about a lunch that was
+    inside the cap the household had actually set. `quality_context` carries
+    the key now, with a comment at the line saying why. **Proved rather than
+    asserted**: an instrumented probe counted every `minutes_cap` call through
+    a real generation — **125 calls, 125 dicts carrying the key, 0 missing.**
+    And the rule is only ever reached through `check_week`, which is only
+    reached from the one context build that was patched (traced; the
+    `_RECIPE_RULES` build never runs it), so one patch covers it.
+  - **Four other readers gained the key so that no reader is told a different
+    number**: `memory.get_household_memory` (which falls back to
+    `time_caps.WEEKDAY_LUNCH_MAX_MINUTES` rather than a second literal 20 —
+    one copy of the number, and `time_caps` imports nothing from the app so
+    there is no cycle), `weekly_plan.get_meal_planning_preferences` (its own
+    docstring's rule: a preference the app acts on but will not show is one
+    the household cannot correct), `week_intake._build_preferences_snapshot`,
+    and `edit_preference`, whose validation is **shared with its sibling in
+    one branch** because the two mean the same thing — whole minutes, never
+    negative, 0 for no cap. One convention for the pair, not two.
+  - **THE PROMPT NAMES THE FIELD INSTEAD OF INLINING THE NUMBER, and that is a
+    caching decision rather than a style one.** Three prompt rules said "20"
+    in words. A per-household number interpolated into the **cached**
+    instructions block would give every household its own cache prefix, so the
+    rules now name `weekday_lunch_max_minutes` and the number rides in the
+    per-request context where it was already going. The
+    `lunch_max = tools.WEEKDAY_LUNCH_MAX_MINUTES` assignment is gone, replaced
+    by a comment saying what it would have cost.
+  - **SETUP ASKS ON A STEP IT ALREADY HAS, never a new one.** Both questions
+    are `.q-group` blocks under `.q-sub` headings on the dinner-time step —
+    this page's own established "two things to answer on one screen" shape (the
+    kit step). **Adding a step was the hazard deliberately avoided**:
+    `ALL_STEPS`, the back-link map and the four onboarding flow test files are
+    all untouched, so nothing about setup's navigation moved.
+  - **The lunch question is asked only when somebody eats lunch at home on a
+    weekday** (`weekdayLunchAtHome`: a weekday lunch in the usual-week grid AND
+    at least one member whose `lunchLocation` is not `out`). It is hidden by
+    `[hidden]` plus a `.q-group[hidden] { display: none; }` guard, because a
+    class rule that sets `display` beats the UA sheet's `[hidden]` — the trap
+    this repo has now hit four times. A household where everyone takes lunch
+    out writes **nothing** for it: the column default is already 20, so
+    writing nothing says nothing rather than answering for them.
+  - **The weeknight limit is written UNCONDITIONALLY, including after a Skip**,
+    which is a judgment call: 45 and 20 are the card's default ANSWERS, and a
+    household that skipped still wants their first week to fit an evening.
+  - **ONE PAGE VARIABLE, because setup can set the weeknight limit twice.**
+    Setup's last answer can read a number out of a sentence
+    (`applyAnythingElseReading`), and it used to keep it on its own
+    `noteWeeknightMaxMinutes`. Two variables for one column is two writers that
+    can race, so the reading writes into the SAME `weeknightMaxMinutes` the
+    chips do and there is ONE write at the end. **The note wins over the chip**,
+    deliberately: it is the LAST question in setup and the explicitly
+    confirmed one, which is the honest precedence.
+  - **An out-of-chip value stays readable and lights no chip.** A household on
+    35 minutes (from a sentence, or from Settings before this) sees no chip
+    selected and a `.uw-sum` line reading "35 minutes at most" — measured in
+    the browser at 10.65:1 light / 10.37:1 dark. A chip row that silently
+    rounded their answer to the nearest chip would be the app changing an
+    answer nobody changed.
+  - **Verified in a real Chromium at 390×844 in BOTH colour schemes** on a
+    throwaway database: every chip 46px tall (above the 44px floor), no
+    sideways scroll (scrollWidth 390 == clientWidth 390), defaults lighting at
+    45 and 20, the lunch group `display: none` when everyone takes lunch out,
+    the out-of-chip readback, and **exactly ONE apricot fill per scheme** — the
+    step's Continue button at 342×54. The two selected chips are **spruce**
+    (`.rhythm-chip.active`), which is what keeps rule 5 true with two chip rows
+    on one screen. Contrast off computed styles: `.q-sub` 12.78:1 / 14.4:1,
+    selected chip label on its fill 11.76:1 / 9.39:1, unselected 13.52:1 /
+    12.49:1. `.q-line` is 4.44:1 in light — the app-wide `--ink-secondary`
+    value, 0.06 under AA, pre-existing on this page's own class and not
+    introduced here.
+  - **Driven end to end over real HTTP** on a throwaway database: both answers
+    post through `/api/preferences/meal-planning` (the route onboarding itself
+    uses), both read back on `/api/memory` AND
+    `/api/preferences/meal-planning`, a refusal is a **400** with its own
+    sentence and leaves the column untouched, and `0` reads back as 0. Then,
+    against **the same database the HTTP writes landed in**, all three doors
+    that hold a lunch to a clock read the household's own number: the picker
+    (`_meal_minutes_cap` lunch **30**, dinner **45** — two different columns,
+    both HTTP-written), the swap gate (`build_swap_context max_minutes` **30**
+    for the weekday lunch, **45** for that same day's dinner), and
+    `plan_quality` (a 45-minute weekday lunch is **1 violation at 30, 0 at 60,
+    0 at no-limit, and 1 at 20 when the key is absent** — the absent-is-not-0
+    rule, measured). Which lunches are capped did not change: a leftovers
+    chain, a prepped lunch and a weekend lunch are all still uncapped.
+  - **A MEASUREMENT HAZARD WORTH MORE THAN THE FIX, because it cost an hour and
+    looked exactly like a live defect.** The first HTTP run reported `-5` and
+    `"soon"` **accepted with HTTP 200** and `"soon"` stored in the column. The
+    code was correct; the **uvicorn process was serving a mutated module** —
+    a mutation run in the same worktree had stripped the validation block out
+    of `memory.py` while the server was importing it, and `git checkout -- .`
+    afterwards could not un-import it. On the clean tree every refusal is a
+    400. **Never drive HTTP against a worktree while a mutation run is
+    applying mutations to it**, and restart the server after one.
+  - **A SECOND MEASUREMENT HAZARD, same cause, opposite direction: two
+    mutations read 0 red and both were artifacts of a killed run.** Another
+    builder's full suite in a sibling worktree starved mine (3s of CPU in 968s),
+    so the run was killed mid-flight and its "0 red" readings described a tree
+    whose mutation had not finished being applied. Re-measured on a quiet
+    container: **M10 is 3 red and M11 is 2 red.** A 0 produced under load is
+    not a measurement.
+  - **`tests/test_time_limits.py` (44 cases)**, six sections: the number is the
+    household's, which lunches are capped did not change, absent-is-not-0
+    across every partial dict shape, what the model is told, setup's chip rows
+    under node, and setup's save under node. **Eleven mutations run and every
+    one bites**: the column ignored so `time_caps` uses 20 again, i.e. main's
+    behaviour (**7 red**); the column default changed from 20 to 0 (1);
+    0-means-no-limit inverted (3); the onboarding weeknight default changed
+    from 45 to 20 (3); the lunch question shown unconditionally (3);
+    `savePlanTheWeekAnswers` not writing the lunch limit (2);
+    `get_household_memory` not carrying the key (**9**); `plan_quality`'s
+    synthetic dict not carrying it (2); the out-of-chip line never rendered (1);
+    `edit_preference` not validating the new field (3); and the note kept on
+    its own variable (2).
+  - **Three existing tests were NARROWED, never weakened, each with a dated
+    comment at the line saying what moved** — and the evidence that they kept
+    their teeth is that **one of them is among M11's two reds**.
+    `test_onboarding_anything_else.py`'s node harness declared
+    `noteWeeknightMaxMinutes`, a variable this branch retires; it declares
+    `weeknightMaxMinutes` instead, and **no assertion changed**.
+    `test_time_limits_30_and_lunch_20.py` and `test_weekday_lunches.py` each
+    pinned a prompt sentence that said "20" in words; they pin the sentence
+    that names the field, and the second half of the first one — that the old
+    hard-coded wording is **absent** — is new rather than removed.
+  - **A PRE-EXISTING DEFECT ON `main`, found on the way, MEASURED, and
+    deliberately NOT fixed here — its own card.** `edit_preference`'s column
+    write has no `try/finally`, so an `IntegrityError` leaks the connection
+    **holding SQLite's write lock**. Measured: `edit_preference("typical_week",
+    None)` raises `IntegrityError: NOT NULL constraint failed`, and the next
+    write then **fails after 5.01 seconds with `OperationalError: database is
+    locked`**. Reachable from chat today — `typical_week` is in
+    `simple_text_columns` and is unvalidated. It is also why mutation M10 hangs
+    rather than failing fast. Not this card's to fix, and not made worse by it:
+    both new fields are validated **above** the write, so neither can reach it.
+  - **NOT DONE, and it is criterion 3 — deliberately deferred by instruction,
+    not forgotten.** Settings → Your rhythm still shows the weeknight limit
+    alone, through `WWK_WEEKNIGHT` / `wwkWeeknightHtml` / `wwkSetWeeknight` in
+    `static/shell.js`, which this branch does not touch. So a household can
+    **set** the lunch limit in setup and **cannot correct it** afterwards from
+    a screen — only through chat (`edit_preference`) — which is exactly the
+    gap `get_meal_planning_preferences`' own docstring warns about, now
+    narrowed to one field and one screen. The owed change is specified in
+    full, including how an out-of-chip value stays readable and seven tests to
+    write, and it is one file.
+
 - **2026-10-05 — Onboarding asks for YOUR name first, and the household has
   a main person. Branch `overnight/onboarding-names`, NOT merged at the time
   of writing.** Loop Board, High, Phase 1 — Beta. The design was approved
