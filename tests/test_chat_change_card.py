@@ -370,16 +370,30 @@ def test_the_card_is_drawn_under_the_reply_and_saves_with_the_pop_up():
     assert "if (data.proposal) mountChangeCard(replyEls, data.proposal);" in SHELL_JS
     i = SHELL_JS.index("function wireChangeCard(")
     body = SHELL_JS[i:SHELL_JS.index("function undoChangeCard(")]
-    assert "/apply'" in body and "/another'" in body and "/choose'" in body
+    assert "/another'" in body and "/choose'" in body
+    # Card 8 (2026-10-05) lifted the apply out of wireChangeCard into
+    # saveChangeCard, so the dock's Save and the closing dialog's Save are
+    # one code path rather than two that can drift. The CLAIMS below are
+    # unchanged — the write still goes through /apply, the pop-up still
+    # names what landed with an Undo, the week still reloads — they are
+    # just read off the function that now does it.
+    save = SHELL_JS[SHELL_JS.index("function saveChangeCard("):
+                    SHELL_JS.index("function undoChangeCard(")]
+    assert "/apply'" in save
     # The pop-up names what the save actually put on the week
     # (copy sweep finding 1): one night says the dish and the night,
-    # several say how many, because the card's rows list them.
-    assert "toastSaved(appliedSaid," in body
-    assert "{ label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);" in body
-    assert "markRecentlyChanged(a.date, a.slot)" in body
-    assert "loadWeekMenu(panels.week)" in body
-    # Every control the card draws is wired, and none of the copy asks a question.
-    for marker in ("Save changes", "Leave the week as it was", ">Another<", "Kept", "Finding another…"):
+    # several say how many, because the card's rows list them. The
+    # sentence is changeCardSavedLine now — the ONE builder the dock's
+    # count is also read from, so the two cannot disagree.
+    assert "toastSaved(changeCardSavedLine(applied)," in save
+    assert "{ label: 'Undo', onClick: function () { undoChangeCard(state); } }, SWAP_UNDO_MS);" in save
+    assert "markRecentlyChanged(a.date, a.slot)" in save
+    assert "loadWeekMenu(panels.week)" in save
+    # Every control is wired, and none of the copy asks a question. Save
+    # and "Keep the week as it was" are the Ask sheet's DOCK now, not the
+    # card's foot (card 8): the card is the record of what would change.
+    for marker in ("Save ' + n + (n === 1 ? ' change' : ' changes') + ' to the week",
+                   "Keep the week as it was", ">Another<", "Kept", "Finding another…"):
         assert marker in SHELL_JS, marker
     assert "class=\"wk-changed\">Changed</span>" in SHELL_JS
 
@@ -475,11 +489,18 @@ def test_a_row_that_landed_before_a_later_row_raised_can_still_be_undone(week, m
 
 def test_the_shell_says_why_a_row_was_left_and_holds_save_while_another_runs():
     i = SHELL_JS.index("function changeRowHtml(")
-    body = SHELL_JS[i:SHELL_JS.index("function mountChangeCard(")]
+    body = SHELL_JS[i:SHELL_JS.index("function changeCardPending(")]
     assert "refusedWhy" in body and "stays — " in body
-    assert "var held = state.saving || state.busyRow !== null;" in body
-    j = SHELL_JS.index("function wireChangeCard(")
-    wire = SHELL_JS[j:SHELL_JS.index("function undoChangeCard(")]
-    assert "if (out.status === 'refused') {" in wire
-    assert "I left the week as it was — " in wire
+    # "Another" still disables Save while it works — unchanged rule, new
+    # home (card 8, 2026-10-05): the Save is the Ask sheet's dock now, so
+    # the hold is read there. A save that raced the re-pick would write
+    # one dish and show another.
+    dock = SHELL_JS[SHELL_JS.index("function renderAskSaveDock("):
+                    SHELL_JS.index("function wireChangeCard(")]
+    assert "var held = st.saving || st.busyRow !== null;" in dock
+    assert "data-ask-save-go' + (held ? ' disabled' : '')" in dock
+    save = SHELL_JS[SHELL_JS.index("function saveChangeCard("):
+                    SHELL_JS.index("function undoChangeCard(")]
+    assert "if (out.status === 'refused') {" in save
+    assert "I left the week as it was — " in save
     assert ".replace('Left as it was.'" not in SHELL_JS

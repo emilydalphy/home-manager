@@ -2463,6 +2463,65 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   outline: 2px solid var(--apricot);
   outline-offset: 2px;
 }
+/* The pinned Save for a chat change card (card 8, 2026-10-05). Gowthami's
+   household: "Has to click save changes, but it's not obvious, kind of
+   hidden". It sits above the composer, at the foot of the sheet, and is
+   the SHEET's one apricot — the send button beside it is a SPRUCE fill
+   with an apricot glyph, not an apricot fill, so Rule 5 is satisfied
+   without touching it.
+
+   The soft second button is .dock-secondary, re-created here: the
+   DESIGN_SYSTEM row for it ("a full-width sand button ... ABOVE the
+   apricot") has had no instance since All set became one button on
+   2026-09-18, and rule 5 forbids a second APRICOT, not a second button.
+   Above the apricot, as that row says and as All set did, so the primary
+   is the easiest thing to reach.
+
+   It sits between #ask-context and #ask-composer, so the composer is
+   still reachable: measured in Chromium at 390x844, the composer's box
+   is top 748 / bottom 826 with the dock up.
+
+   Contrast measured off computed styles at 390x844, both schemes:
+     .ask-save-note   --ink on --sand          11.60:1 light / 11.28:1 dark
+     .dock-primary    --on-accent-ink/apricot   5.40:1 light /  7.38:1 dark
+     .dock-secondary  --ink on --surface       13.52:1 light / 12.49:1 dark
+   The dock's apricot is the sheet's ONE fill (rule 5) — measured: with
+   the dock up, exactly one visible element is filled --apricot, and it is
+   this button. The send button is a spruce fill with an apricot glyph. */
+.ask-save-dock {
+  margin: 0 16px 10px;
+  padding: 12px 14px 14px;
+  border-radius: 18px;
+  background: var(--sand);
+  border: 1.5px solid var(--apricot-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ask-save-dock[hidden] { display: none; }
+.ask-save-note {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: var(--ink);
+}
+.ask-save-dock .dock-secondary {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--radius-action);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline-strong);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+.ask-save-dock .dock-secondary:hover { background: var(--sand-deep); }
+.ask-save-dock .dock-secondary:disabled { opacity: .6; cursor: default; }
+
 .ask-composer-send {
   flex-shrink: 0;
   width: 40px;
@@ -4053,6 +4112,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    screen it is asking about stays live. (The `data-motion="dialog"`
    attribute covers the box's own fade and scale, and only that — the note
    beside it in the Motion section is about the ANIMATION, not the box.) */
+#ask-save-scrim,
 #reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim, #push-ask-scrim {
   position: fixed;
   inset: 0;
@@ -4060,6 +4120,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   animation: fadeIn .18s ease;
   z-index: 50;
 }
+#ask-save-dialog,
 #reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog, #leave-dialog, #push-ask-dialog {
   position: fixed;
   z-index: 51;
@@ -4078,6 +4139,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   padding: 22px 22px 20px;
   animation: sheetUp .2s cubic-bezier(.2,.8,.2,1);
 }
+#ask-save-scrim[hidden], #ask-save-dialog[hidden],
 #reset-scrim[hidden], #reset-dialog[hidden],
 #dinner-confirm-scrim[hidden], #dinner-confirm-dialog[hidden],
 #approve-who-scrim[hidden], #approve-who-dialog[hidden],
@@ -9913,6 +9975,7 @@ span.cook-week-name { cursor: default; }
 }
 #ask-scrim, #week-sheet-scrim, #kit-sheet-scrim, #meals-more-scrim, #cook-more-scrim,
 #gro-scan-scrim, #prefs-scrim, #notif-scrim,
+#ask-save-scrim,
 #reset-scrim, #dinner-confirm-scrim, #approve-who-scrim, #discard-draft-scrim, #leave-scrim, #push-ask-scrim {
   animation: none;
   opacity: 0;
@@ -9921,6 +9984,7 @@ span.cook-week-name { cursor: default; }
 #ask-scrim.is-open, #week-sheet-scrim.is-open, #kit-sheet-scrim.is-open,
 #meals-more-scrim.is-open, #cook-more-scrim.is-open, #gro-scan-scrim.is-open, #prefs-scrim.is-open,
 #notif-scrim.is-open,
+#ask-save-scrim.is-open,
 #reset-scrim.is-open, #dinner-confirm-scrim.is-open, #approve-who-scrim.is-open,
 #discard-draft-scrim.is-open, #leave-scrim.is-open, #push-ask-scrim.is-open {
   opacity: 1;

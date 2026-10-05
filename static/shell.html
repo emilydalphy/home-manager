@@ -162,6 +162,15 @@
          card ("About Tuesday's dinner · Turkey Burgers"). Filled by
          renderAskContext() in shell.js; empty and hidden otherwise. -->
     <div class="ask-context" id="ask-context" hidden></div>
+    <!-- The chat change card's Save, pinned (Gowthami's household,
+         2026-10-04: "Has to click save changes, but it's not obvious, kind
+         of hidden"). It used to be a quiet button at the FOOT of the card,
+         so a household could read a card describing a change, close the
+         sheet, and believe the week had changed when nothing was written —
+         a data-honesty failure, not a styling one. Filled and emptied by
+         renderAskSaveDock() in shell.js; empty and hidden otherwise, and
+         the card's own buttons are gone. -->
+    <div class="ask-save-dock" id="ask-save-dock" hidden></div>
     <form id="ask-composer" class="ask-composer-bar">
       <textarea id="ask-input" class="ask-composer-input" rows="1" placeholder="What&rsquo;s on your mind?" autocomplete="off"></textarea>
       <!-- A photograph of a cookbook page goes to the same review sheet
@@ -413,6 +422,23 @@
     <div class="reset-actions">
       <button type="button" class="btn-outline-plum" id="discard-draft-cancel">Cancel</button>
       <button type="button" class="btn-gold" id="discard-draft-confirm">Keep my week</button>
+    </div>
+  </div>
+
+  <!-- Closing the Ask sheet with chat changes still unsaved asks INSIDE
+       the app (card 8, 2026-10-05) rather than letting the sheet go and
+       the changes with it. Its ids are in all FIVE lists in shell.css —
+       the scrim, the box, the [hidden] guard and the scrim's two
+       transition lists — because those rules are ID-scoped, and reusing
+       the classes alone got a dialog shipped in document flow under the
+       tab bar with aria-modal lying (2026-09-14, worktree-discard-draft). -->
+  <div id="ask-save-scrim" hidden></div>
+  <div id="ask-save-dialog" hidden data-motion="dialog" role="dialog" aria-modal="true" aria-labelledby="ask-save-title">
+    <h2 class="reset-title" id="ask-save-title">Save the changes to the week?</h2>
+    <p class="reset-note" id="ask-save-dialog-note">Your week still shows the old meals.</p>
+    <div class="reset-actions">
+      <button type="button" class="btn-outline-plum" id="ask-save-dont">Don&rsquo;t save</button>
+      <button type="button" class="btn-gold" id="ask-save-do">Save</button>
     </div>
   </div>
 

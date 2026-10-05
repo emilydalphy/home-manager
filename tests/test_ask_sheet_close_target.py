@@ -68,22 +68,33 @@ def test_back_button_is_a_real_44px_target():
 
 
 def test_close_ask_sheet_is_wired_to_back_button_and_scrim():
+    # The CLAIM is unchanged — all three affordances dismiss the sheet, and
+    # none of them is history.back(). What moved is the name of the one
+    # function they go through: card 8 (2026-10-05) put a guard in front of
+    # closeAskSheet for unsaved chat changes, and the guard has to be on the
+    # DOORS rather than inside closeAskSheet, which is also called ~30 times
+    # programmatically. askSheetCloseRequested closes the sheet itself when
+    # nothing is waiting. This tripwire fired on the rename, not on a
+    # missing wire.
     _assert_wired = (
-        "document.getElementById('ask-sheet-back').addEventListener('click', closeAskSheet)"
+        "document.getElementById('ask-sheet-back').addEventListener('click', askSheetCloseRequested)"
     )
     assert _assert_wired in SHELL_JS, (
-        "The #ask-sheet-back button is not wired to closeAskSheet in shell.js."
+        "The #ask-sheet-back button is not wired to the sheet's close path in shell.js."
     )
-    assert "askScrim.addEventListener('click', closeAskSheet)" in SHELL_JS, (
-        "The scrim tap must call closeAskSheet directly and reliably — this "
+    assert "askScrim.addEventListener('click', askSheetCloseRequested)" in SHELL_JS, (
+        "The scrim tap must close the sheet directly and reliably — this "
         "was one of Julia's three complaints (the handle being the only "
         "reliable dismiss)."
     )
     # The handle stays as a secondary affordance, not removed.
     assert (
-        "document.getElementById('ask-sheet-handle').addEventListener('click', closeAskSheet)"
+        "document.getElementById('ask-sheet-handle').addEventListener('click', askSheetCloseRequested)"
         in SHELL_JS
     )
+    # And the one door really does close the sheet when nothing is waiting.
+    i = SHELL_JS.index("function askSheetCloseRequested()")
+    assert "closeAskSheet(); return;" in SHELL_JS[i:i + 900]
 
 
 def test_escape_closes_the_sheet():
@@ -97,11 +108,12 @@ def test_escape_closes_the_sheet():
     assert escape_blocks, "No document-level keydown listener found in shell.js."
     matches = [
         body for body in escape_blocks
-        if "Escape" in body and "closeAskSheet" in body
+        if "Escape" in body and "askSheetCloseRequested" in body
     ]
     assert matches, (
         "No keydown listener closes the ask sheet on Escape. Expected one "
-        "guarded on e.key === 'Escape' that calls closeAskSheet()."
+        "guarded on e.key === 'Escape' that calls the sheet's close path "
+        "(askSheetCloseRequested since card 8, 2026-10-05)."
     )
     # Must not fire while the sheet is already hidden.
     assert any("askSheet.hidden" in body for body in matches), (
@@ -138,10 +150,16 @@ def test_popstate_cooperates_with_the_ask_sheet_without_a_second_listener():
     )
     assert popstate_fn, "Could not locate the shell's popstate listener body."
     body = popstate_fn.group(1)
-    assert "askSheetHistoryPushed" in body and "closeAskSheet" in body, (
+    # Card 8 (2026-10-05): the back GESTURE is the third of the three
+    # closing doors and goes through the same guard the Back button and
+    # the scrim do, so the unsaved-changes question is asked however the
+    # sheet is dismissed. The claim is unchanged — ONE listener, which
+    # notices the sheet's own pushed entry and dismisses the sheet rather
+    # than changing tabs — only the function it calls was renamed.
+    assert "askSheetHistoryPushed" in body and "askSheetCloseRequested" in body, (
         "The shared popstate listener must check askSheetHistoryPushed and "
-        "call closeAskSheet when the back gesture is leaving the sheet's own "
-        "pushed entry."
+        "call the sheet's close path when the back gesture is leaving the "
+        "sheet's own pushed entry."
     )
 
 
