@@ -75,6 +75,7 @@ from datetime import date, datetime, time, timedelta
 # from get_cooker_view / list_grocery_list / get_household_rhythm, each of
 # which is already request-scoped (see _shared.household_id).
 from . import cooker as _cooker
+from . import day_meals as _day_meals
 from . import defrost as _defrost
 from . import grocery as _grocery
 from . import move_owner as _move_owner
@@ -291,27 +292,20 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
         at = _slot_dt(day, slot, dinner_clock)
         done = meal.get("cooked_status") == "done"
         if meal.get("is_leftovers"):
-            source = meal.get("leftovers_from") or {}
             # "Made ahead — Sunday's Egg White Bites" vs "Leftovers —
             # Sunday's Bulgogi": the same fact, one honest word apart (see
             # leftovers.made_ahead_headline). The list wants the dish as
             # the title and the provenance as the small grey line.
+            # EXTRACTED 2026-10-05 (Today's own meals row now says the
+            # same thing on the same screen — day_meals.provenance_note is
+            # the one implementation). A portion out of the freezer has no
+            # night on this week to point at — a night off froze it,
+            # possibly weeks and two plans ago (cooker._apply_leftover_
+            # chains' own pass; the chain pass always sets leftovers_from,
+            # so a dateless reheat is exactly this one) — so it says where
+            # it came from rather than leaving "leftovers from" dangling.
             headline = meal.get("leftovers_headline") or ""
-            made_ahead = headline.startswith("Made ahead")
-            lead = "made ahead" if made_ahead else "leftovers from"
-            source_date = source.get("date")
-            if source_date:
-                provenance = f"{lead} {_weekday(source_date)}"
-            elif made_ahead:
-                provenance = lead
-            else:
-                # A portion out of the freezer has no night on this week to
-                # point at — a night off froze it, possibly weeks and two
-                # plans ago (cooker._apply_leftover_chains' own pass; the
-                # chain pass always sets leftovers_from, so a dateless
-                # reheat is exactly this one). Saying where it came from
-                # instead of leaving "leftovers from" dangling.
-                provenance = "from the freezer"
+            provenance = _day_meals.provenance_note(meal)
             # A made-ahead portion eaten cold is not reheated (Emily,
             # 2026-09-25), so the line drops the word: "made ahead
             # Wednesday · 3:30". cooker._apply_leftover_chains decides it
@@ -357,7 +351,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
         # weekday), lower-cased the way every Today meta line is.
         prepped = meal.get("prepped_ahead") or {}
         if prepped.get("date") and prepped["date"] < day_str:
-            prepped_line = f"prepped {_weekday(prepped['date'])}"
+            # day_meals.provenance_note again — one wording, two surfaces.
+            prepped_line = _day_meals.provenance_note(meal)
             moves.append({
                 "id": f"reheat:{meal['entry_id']}",
                 "kind": "reheat",
@@ -794,6 +789,74 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     }]
 
 
+# ---------- the shopping-day line ----------
+
+# Today's fourth section is a LINE, not a task (the card: "a celadon line,
+# not a task"), on every day but the household's own shopping day — "You
+# shop on Saturday. 14 things on the list so far." On shopping day the
+# existing Shop card takes its place, stops and all, because that is the day
+# the list is a job rather than a fact.
+#
+# ASSUMPTION (Emily's to reverse in one line, _shop_day_line below): a
+# TOP-UP shop day counts as a shopping day too. It is a day the household
+# shops, and showing them a line telling them when they shop on a day they
+# are shopping would be the screen arguing with itself.
+#
+# WORDING, also one line: "You shop on Saturday." names the day they gave,
+# then the list's own size. "Nothing on the list yet" rather than "0 things"
+# — a count of nothing is a number where a sentence belongs (§8), and the
+# same call _standing_list_move's own title makes.
+
+def _shop_day_line(shop_day: str, count: int) -> str:
+    """The celadon line's words. '' with no shop day on record — the caller
+    says the other thing then, because an unanswered question is a real
+    state and "No shopping day set" is an offer, not a statement."""
+    if not shop_day:
+        return ""
+    things = f"{count} thing{'' if count == 1 else 's'} on the list so far." if count else "Nothing on the list yet."
+    return f"You shop on {shop_day.capitalize()}. {things}"
+
+
+def _shop_block(day: date, rhythm: dict) -> dict:
+    """
+    What Today's Shop section says, decided here rather than on the screen:
+    which weekday the household shops, whether `day` is one of them, how
+    many things are still to buy, and the line itself.
+
+    The count is `list_grocery_list(status="needed")`'s own length — the
+    same read _shop_move makes and the same number the Shop tab's needed
+    view opens on. It is read here rather than taken off a shop MOVE
+    because the line has to be true on a day with no move at all: a
+    household with nothing to cook against its list gets no shop move
+    (_shop_move's own rule) and still shops on Saturday.
+
+    KNOWN, and inherited rather than introduced: that count can differ from
+    the Shop tab's by the pre-shop "maybe already home" filter, which lives
+    in main.py's grocery routes rather than in list_grocery_list. See
+    _standing_list_move's docstring, which measured it; the honest fix is
+    for one of the two to stop disagreeing about what is on the list, and
+    it is its own card.
+    """
+    shop_day = (rhythm.get("shop_day") or "").strip().lower()
+    top_up = (rhythm.get("top_up_shop_day") or "").strip().lower()
+    try:
+        count = len(_grocery.list_grocery_list(status="needed"))
+    except Exception:
+        logger.exception("Today's shop line could not read the grocery list")
+        count = 0
+    weekday = day.strftime("%A").lower()
+    return {
+        "shop_day": shop_day or None,
+        "top_up_shop_day": top_up or None,
+        "is_shop_day": bool(shop_day) and weekday in {shop_day, top_up} - {""},
+        "count": count,
+        "line": _shop_day_line(shop_day, count),
+        # The household's own sentence for the setting, for the row that
+        # opens it (rhythm.shop_days_summary) — '' when never answered.
+        "summary": rhythm.get("shop_days_summary") or "",
+    }
+
+
 # TODO(prep sessions): a scheduled prep session is a high-weight move with a
 # "Start prep" action, but nothing on main reports one yet — there is no
 # /api/week/{ws}/prep-sessions route and get_cooker_view carries no session
@@ -1000,6 +1063,13 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
     owners = _move_owner.resolve(view, rhythm)
     moves = moves_for_day(target, now=now, view=view, owners=owners, rhythm=rhythm)
     featured = featured_move_id(moves, now=now)
+    # The day's meals, top of the screen (day_meals.for_day) — read off the
+    # SAME cooker view the moves are, so Today's meals row and its Cook row
+    # can never be built from two different reads of one week. Two reads of
+    # their own: who is in the household, and which of today's slots deviate
+    # from everyone's-home — both once for the whole payload, never per meal.
+    people = _day_meals.household_people()
+    day_meals = _day_meals.for_day(target, view, people=people)
 
     tomorrow = None
     if featured is None:
@@ -1017,6 +1087,14 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         # The badge is about the day this payload is about — the household's
         # today unless a caller named one — never the plan's own status alone.
         "week_state": _week_state(view, target),
+        # One row per planned meal, in eating order with snacks between
+        # lunch and dinner (day_meals.SLOT_ORDER). [] on a day with nothing
+        # planned, which is what Today reads as "Nothing planned today".
+        "day_meals": day_meals,
+        # Today's fourth section: the shopping-day line, or (on the
+        # household's own shopping day) the fact that the Shop card belongs
+        # there instead. See _shop_block.
+        "shop": _shop_block(target, rhythm),
         "tomorrow": tomorrow,
         # The quiet label beside the date when today is a holiday — name
         # and answer, or None on an ordinary day (see holidays.py).
