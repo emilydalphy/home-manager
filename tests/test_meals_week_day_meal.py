@@ -226,11 +226,13 @@ def test_a_tile_selects_its_day_in_place_without_a_new_screen():
     assert ": (weekState.step === 'week' ? 'week' : 'day');" in meal
 
 
-@pytest.mark.parametrize("dot", ["is-cook", "is-ahead", "is-open"])
-def test_the_row_dots_carry_the_whole_legend(dot):
-    """Apricot cooks, celadon is already made, an outline is still a
-    question. The dot IS the legend — there is no key anywhere on screen."""
-    _assert_in(".wk-dot." + dot, SHELL_CSS, "the " + dot + " dot", "shell.css")
+def test_the_strip_has_no_dot_styles_or_dot_code():
+    """Emily, 2026-10-05 (tester): the colour dots under the dates were
+    confusing — the markup, the CSS and the class-picker are all gone."""
+    for gone in (".wk-tile-dots", ".wk-dot {", ".wk-dot.is-"):
+        assert gone not in SHELL_CSS, gone + " is back in shell.css"
+    for gone in ("slotDotClass", "wk-tile-dots", "wk-dot "):
+        assert gone not in SHELL_JS, gone + " is back in shell.js"
 
 
 def test_names_truncate_to_one_line():
@@ -243,13 +245,12 @@ def test_an_open_slot_keeps_its_pick_on_the_root():
     (§2b S7). Since 2026-09-18 the root is rows (wkMealRowHtml, Done +
     Swap), not the Day step's cards, so the card's old "quiet" option is
     gone; the Day step's card always carries its actions, and the root's
-    open row offers Pick. The outline dot on the tile says the question is
-    still open."""
+    open row offers Pick. (The outline dot on the tile that used to flag the
+    open question went 2026-10-05; the open row is how it is found.)"""
     card = _extract("daySlotCardHtml", SHELL_JS)
     assert "opts.quiet" not in card and "slotActionsHtml(day, slot, false) +" in card
     row = _extract("wkMealRowHtml", SHELL_JS)
     assert "entry.state === 'open'" in row and "Pick" in row
-    _assert_in("if (entry && entry.state === 'open') return 'is-open';", SHELL_JS, "the open-slot dot", "shell.js")
 
 
 @pytest.mark.parametrize("badge", ["SET", "DRAFT", "NOTHING YET"])
@@ -525,11 +526,10 @@ _DAYNAME_STUB = "function dayName(d, opts){ return 'Thursday'; }\n"
 
 def _week_tile_html(day: dict) -> str:
     """weekTileHtml(day, 0, 0), one tile of the strip on the Week root — the
-    day, the date and the three-dot legend for breakfast, lunch, dinner."""
+    day and the date (no dots under it since 2026-10-05)."""
     harness = (
         _ESCAPE_STUB + _DAYNAME_STUB
         + "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
-        + _extract("slotDotClass", SHELL_JS) + "\n"
         + _extract("weekTileHtml", SHELL_JS) + "\n"
         + f"console.log(JSON.stringify(weekTileHtml({json.dumps(day)}, 0, 0)));\n"
     )
@@ -587,16 +587,15 @@ def test_a_day_with_zero_snacks_renders_no_snack_tiles():
 
 
 @_needs_node
-def test_the_tile_draws_the_three_meal_dots_and_never_a_snack_dot():
-    """The strip's legend is breakfast · lunch · dinner (WEEK_SLOTS) — a
-    snack never earns a fourth dot, so a tile reads the same on a day with
-    three snacks as on a day with none."""
+def test_the_tile_has_no_dots_whatever_the_day_holds():
+    """The tile is the day and the date: no dot for a cook, a leftover, an
+    open question or a snack. An open slot is found on the day's own cards."""
     day = _plain_day([_REAL_COOK_SNACK])
     day["dinner"] = {"state": "planned", "title": "Chili", "source": "plan"}
     day["lunch"] = {"state": "planned", "title": "Chili", "source": "leftovers"}
     day["breakfast"] = {"state": "open"}
     html = _week_tile_html(day)
-    assert re.findall(r'wk-dot ([\w-]+)"', html) == ["is-open", "is-ahead", "is-cook"]
+    assert "wk-dot" not in html and "wk-tile-dots" not in html
     assert 'data-wk-tile="0"' in html and 'aria-pressed="true"' in html
 
 

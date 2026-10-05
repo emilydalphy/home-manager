@@ -13786,24 +13786,11 @@
     }
   }
 
-  // The dot is the whole legend, on the strip's tiles now (Emily,
-  // 2026-09-14, "Plan root: the week as a strip"): apricot = somebody
-  // cooks, celadon = it is already made, grey = nothing to do, an outline
-  // = a question still open. One class per slot; the tile draws three.
-  // (A meal the household switched off for its whole usual week — `meal_off`
-  // on the empty entry — gets no dot, no row and no card; checked inline in
-  // the three places that draw one, so no harness needs a new helper.)
-  function slotDotClass(day, slot) {
-    var entry = day[slot];
-    if (entry && entry.state === 'planned') return entry.source === 'leftovers' ? 'is-ahead' : 'is-cook';
-    if (entry && entry.state === 'open') return 'is-open';
-    return 'is-none';
-  }
-
   // One tile of the strip: the day as an eyebrow (TODAY on today's — a
-  // highlight says why, §2b S6), the date in the display face, the three
-  // dots. Every tile is a button; the selected one carries aria-pressed
-  // and the spruce rim, and past days sit dimmed but still open.
+  // highlight says why, §2b S6), the date in the display face. No dots under
+  // it (Emily, 2026-10-05, tester: "confusing and not helpful") — an open
+  // question is found on the day's own cards. Every tile is a button; the
+  // selected one carries aria-pressed and the spruce rim, and past days sit dimmed but still open.
   function weekTileHtml(day, i, selectedIndex) {
     var selected = i === selectedIndex;
     var label = dayName(day.date, { weekday: 'long', month: 'long', day: 'numeric' }) +
@@ -13813,10 +13800,6 @@
         '" data-wk-tile="' + i + '" aria-pressed="' + (selected ? 'true' : 'false') + '" aria-label="' + escapeHtml(label) + '">' +
       '<span class="wk-tile-dow">' + (day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase()) + '</span>' +
       '<span class="wk-tile-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
-      '<span class="wk-tile-dots" aria-hidden="true">' +
-        WEEK_SLOTS.filter(function (slot) { return !(day[slot] && day[slot].state === 'planned_empty' && day[slot].meal_off); })
-          .map(function (slot) { return '<span class="wk-dot ' + slotDotClass(day, slot) + '"></span>'; }).join('') +
-      '</span>' +
     '</button>';
   }
 

@@ -8507,20 +8507,6 @@ span.cook-week-name { cursor: default; }
   color: var(--ink);
 }
 .wk-tile.is-today .wk-tile-num { font-size: 19px; font-weight: 800; color: var(--ink-strong); }
-.wk-tile-dots { display: flex; gap: 3px; margin-top: 2px; }
-/* The whole legend, in three dots: apricot cooks, celadon is already made,
-   grey is nothing to do, and an outline is a question still open. */
-.wk-dot {
-  flex: 0 0 auto;
-  width: 6px;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--hairline-strong);
-  box-sizing: border-box;
-}
-.wk-dot.is-cook { background: var(--apricot-deep); }
-.wk-dot.is-ahead { background: var(--celadon); }
-.wk-dot.is-open { background: transparent; border: 1.5px solid var(--apricot-deep); }
 
 /* The day under the strip: the Day step's cards (.wk-slot-card), 12px
    apart like .wk-slots, without its FAB clearance — the foot and the

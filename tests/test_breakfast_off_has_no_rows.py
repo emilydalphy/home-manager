@@ -146,13 +146,12 @@ console.log(JSON.stringify([wkDayCardHtml({json.dumps(days[0])}, 0, {{}}), wkDay
 
 
 @plan_cards._needs_node
-def test_the_week_strip_tile_has_no_dot_for_a_switched_off_meal():
+def test_the_week_strip_tile_has_no_dots():
     days = _plan_days()
     out = plan_cards._run(plan_cards._prelude()
         + plan_cards._extract("weekTileHtml", plan_cards.SHELL_JS) + "\n"
-        + plan_cards._extract("slotDotClass", plan_cards.SHELL_JS) + "\n"
-        + f"console.log(JSON.stringify([weekTileHtml({json.dumps(days[0])}, 0, 0), weekTileHtml({json.dumps(days[1])}, 1, 0)].map(h => (h.match(/wk-dot /g) || []).length)));")
-    assert out == [2, 3]
+        + f"console.log(JSON.stringify([weekTileHtml({json.dumps(days[0])}, 0, 0), weekTileHtml({json.dumps(days[1])}, 1, 0)].map(h => (h.match(/wk-dot/g) || []).length)));")
+    assert out == [0, 0]
 
 
 # ---------- the two other doors the verifier found ----------
