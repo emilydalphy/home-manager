@@ -694,6 +694,12 @@ class OnboardingAnswersRequest(BaseModel):
     member_names: list[str] = []
     household_restrictions: dict[str, list[str]] = {}  # member name -> restrictions, only for members who have any
     eating_style: str = ""
+    # Setup's last answer (2026-10-04), "Anything else I should know?" --
+    # kept verbatim as meal_preferences.notes, the household note the
+    # generation prompt already reads. '' is safe rather than destructive:
+    # save_onboarding_answers merges a falsy `notes` as "keep what's
+    # there", so an older client that doesn't send this clears nothing.
+    notes: str = ""
     wont_eat: list[str] = []
     excited_about: list[str] = []
     dinners_per_week: int = 7
@@ -1345,6 +1351,7 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             member_names=req.member_names,
             household_restrictions=req.household_restrictions,
             eating_style=req.eating_style,
+            notes=req.notes,
             wont_eat=req.wont_eat,
             excited_about=req.excited_about,
             dinners_per_week=req.dinners_per_week,
@@ -1448,6 +1455,56 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
         logger.exception("Onboarding rhythm save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+class OnboardingNoteRequest(BaseModel):
+    """Setup's last answer -- free text, as typed. See read_onboarding_note."""
+    note: str = ""
+
+
+@app.post("/api/onboarding/read-note")
+def read_onboarding_note(req: OnboardingNoteRequest):
+    """
+    Read setup's "Anything else I should know?" note for the settings the
+    app already has a home for, and hand the reading BACK rather than
+    saving it (Loop Board "Onboarding ends with 'Anything else I should
+    know?'", Emily 2026-10-04).
+
+    Nothing here writes. The step shows the reading on a confirm card, and
+    only a "Looks right" sends it -- through the ordinary
+    /api/onboarding/answers payload a person tapping the chips sends, so
+    an allergy read out of a note and an allergy typed into the
+    restrictions step are the same write. That ordering is a safety rule
+    rather than a nicety: see agent.read_setup_note_llm's own note, and
+    the 2026-09-04 fix-allergy-enforcement work it cites.
+
+    An empty note is answered without a model call at all -- there is
+    nothing to read, and "Nothing else" must cost nothing.
+    """
+    note = (req.note or "").strip()
+    if not note:
+        return {"read": False, "reading": {}}
+    try:
+        reading = agent.read_setup_note_llm(note, people=[m["name"] for m in tools.list_members()])
+    except agent.AIConsentRequiredError:
+        # Named FIRST because it is a subclass of the one below, and this
+        # one must NOT degrade quietly: a household that hasn't allowed
+        # sharing with Claude gets the plain 503 sentence every other
+        # route gives (_refused_for_consent), not a shrug and a built
+        # week. Reachable here only by revoking consent between the
+        # consent step and this one, since this step comes after it.
+        raise
+    except agent.AssistantUnavailableError as e:
+        # Anthropic overloaded or a network hiccup. The note is still kept
+        # verbatim by the answers call, so a failure here costs the
+        # mapping and never the note -- the step builds its week rather
+        # than stopping the household on it.
+        logger.warning("Reading setup's note failed: %s", e)
+        return {"read": False, "reading": {}, "unavailable": True}
+    except Exception as e:
+        logger.exception("Reading setup's note failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"read": bool(reading), "reading": reading or {}}
 
 
 @app.get("/api/members/{name}/share-link")
