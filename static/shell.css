@@ -5730,9 +5730,42 @@ button.cook-ready-row { cursor: pointer; }
 /* 34px of ink inside a 44px target (rule 6). The box is absolutely
    positioned, so it adds nothing to the layout — the same trick
    .gro-icon-btn and .dish-link already use. Pre-existing: every sheet's x
-   in this app was a bare 34px until this went in (2026-10-05). */
+   in this app was a bare 34px until this went in (2026-10-05).
+
+   The z-index is what makes the 44 real, and it was measured rather than
+   assumed. Everything after these buttons in the title row paints over an
+   un-layered ::after — the title, the hairline, the crumb under the row —
+   so elementFromPoint at the corners of the 44px box found the title and
+   the crumb, not the button: 44 wide and tall, about 39 of it reachable
+   (hits top and left, misses right and bottom). Nothing it now covers is
+   interactive, and the 5px of the handle above it dismisses the same sheet
+   this does.
+
+   The pattern this was copied from does not need the lift, which is why it
+   never showed there: .prefs-gear's own box is already 44x44 and its
+   ::after is belt and braces. Measured on the root band's gear: all nine
+   probe points hit.
+
+   AND IT IS SIZED, not inset. `inset: -5px` is the house spelling
+   (.gro-icon-btn, .wwk-chip-x, .cook-serves-btn and five more) and on a
+   34px control with a 1.5px border it does NOT reach 44: an absolutely
+   positioned child is laid out against the PADDING box, so the -5px grows
+   31 to 42, not 34 to 44. Measured by walking out from the centre a pixel
+   at a time until the hit test stopped answering with the button: 42 by
+   42. Every one of those eight is 42 rather than the 44 its own comment
+   claims — pre-existing, not swept here, and the reason these two are
+   written as an explicit 44 centred on the control instead. */
 .kit-sheet-close, .kit-sheet-back { position: relative; }
-.kit-sheet-close::after, .kit-sheet-back::after { content: ''; position: absolute; inset: -5px; }
+.kit-sheet-close::after, .kit-sheet-back::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  translate: -50% -50%;
+  z-index: 1;
+}
 
 /* The stacked header (Gowthami, 2026-10-04; the mockup's third phone under
    "Save + close"): a back chevron before the title on a sheet that was

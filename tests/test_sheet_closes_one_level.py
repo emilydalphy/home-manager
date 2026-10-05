@@ -721,9 +721,23 @@ def test_the_back_control_and_the_crumb_are_styled_and_hidable():
     assert re.search(r"\.kit-sheet-back\s*\{", SHELL_CSS)
     assert ".kit-sheet-back[hidden] { display: none; }" in SHELL_CSS
     assert ".kit-sheet-crumb[hidden] { display: none; }" in SHELL_CSS
-    # 34px of ink in a 44px target (rule 6), the way .gro-icon-btn does it.
+    # 34px of ink in a 44px target (rule 6) — SIZED rather than inset, and
+    # lifted above the title and the crumb that come after it in the row.
+    # Both halves were measured by walking out from the centre a pixel at a
+    # time: the house `inset: -5px` spelling gives 42 on a bordered 34px
+    # control (an absolutely positioned child is laid out against the
+    # padding box), and without the z-index the reach was 39.
     assert ".kit-sheet-close, .kit-sheet-back { position: relative; }" in SHELL_CSS
-    assert ".kit-sheet-close::after, .kit-sheet-back::after { content: ''; position: absolute; inset: -5px; }" in SHELL_CSS
+    rule = re.search(r"\.kit-sheet-close::after, \.kit-sheet-back::after \{([^}]*)\}", SHELL_CSS, re.S)
+    assert rule, "static/shell.css has no ::after rule for the sheet header's two controls"
+    body = rule.group(1)
+    for want in ("width: 44px", "height: 44px", "top: 50%", "left: 50%",
+                 "translate: -50% -50%", "z-index: 1"):
+        assert want in body, (
+            f"the 44px tap target needs `{want}` — measured, `inset: -5px` "
+            "reaches 42 and no z-index reaches 39"
+        )
+    assert "inset: -5px" not in body
 
 
 # --------------------------------------------------------------------------
