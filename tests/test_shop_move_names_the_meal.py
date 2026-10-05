@@ -96,6 +96,13 @@ def test_the_morning_text_says_it_too():
     """
     _week_with({"breakfast": ("Overnight Oats", "Rolled oats"),
                 "dinner": ("Bean Chili", "Black beans")})
+    # TRIPWIRE, 2026-10-05: the shop reminder became one of the six parts a
+    # household ticks (digest.MORNING_PART_CHOICES) and the card leaves it
+    # off by default, so this household has to ask for it. The claim is
+    # untouched: when the text DOES carry the shop line, the word has to
+    # follow the deadline — "Shop for breakfast" over a 7:35 one and never
+    # "Shop for tonight".
+    tools.set_morning_text_parts(["meals", "shop"])
     text = _digest.build_morning_text(now_local=_at(7))
     assert "Shop for breakfast" in text
     assert "Shop for tonight" not in text, (
