@@ -1937,12 +1937,35 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>';
 
   // ---------- Today: Shop and Cook ----------
+  // (The marker line above is the ANCHOR two node harnesses lift this whole
+  // region out of shell.js by — tests/test_today_shop_cook.py and
+  // tests/test_move_owner.py both _region/_slice from it to
+  // "function tomorrowCardHtml(". Keep it; add new builders INSIDE the
+  // region and they come along for free, which is the hazard the 2026-10-05
+  // card and the "fixed function list" notes elsewhere in tests/ are about.)
+  //
+  // FOUR SECTIONS since 2026-10-05 (Loop Board "Today: the day's meals at
+  // the top, then Cook tonight, Prep and a shopping-day line"; Gowthami's
+  // household, 2026-10-04: "Today screen should show what the meals are for
+  // the day, and have a prep section"). In this order:
+  //
+  //   1. THE DAY'S MEALS (todayMealsCardHtml) — one row per planned meal,
+  //      breakfast, lunch, snacks, dinner. The question a person opening the
+  //      app in the morning actually has, answered first.
+  //   2. COOK (the pot) — the day's cooks and reheats.
+  //   3. PREP (the knife) — fridge moves and the rest of the day's prep,
+  //      which used to be rows inside Cook. Split out because taking
+  //      something out of the freezer for Wednesday is not cooking tonight.
+  //   4. SHOP — on the household's own shopping day, the card below (the
+  //      bag, one row per store stop). On every other day a celadon LINE,
+  //      not a task: "You shop on Saturday. 14 things on the list so far."
+  //      (todayShopLineHtml.) Shop used to be FIRST, on the reasoning that
+  //      "the trip is what the day's cooking waits on"; it is last now
+  //      because on six days in seven it is a fact rather than a job.
+  //
   // Emily, 2026-09-17 (Loop Board "Today: rename Now → Today; group by
   // Shop / Cook; Morning · Afternoon · Evening"; mockup 17a-today-tags).
-  // Today's content is two cards in the gutter: SHOP (the bag; one row per
-  // store stop, "Costco · 6 things" over the first few things) and COOK
-  // (the pot; fridge moves, prep, cooks and reheats in day order). A group
-  // with nothing in it is not drawn. Each row is the move's tick on the
+  // A group with nothing in it is not drawn. Each row is the move's tick on the
   // left (44px of tap around 28px of dot, Rule 6 — the dot says the state:
   // done = celadon with a tick, now = apricot with the kind's icon, later =
   // surface with a hairline), the title and one clock-free meta line, and
@@ -2013,9 +2036,21 @@
   // ICONS.kitchen are the same drawings), in a 32px sand tile at the head
   // of each card so the card reads as "the Shop part of today" and "the
   // Cook part of today" without saying so.
+  // The group cards, in the order they are drawn (dayGroupsHtml walks this
+  // object's own keys in order). Shop moved to the end on 2026-10-05; Prep
+  // is new there, holding what used to be rows inside Cook.
+  //
+  // COOK'S TITLE IS "Cook", not the card's "Cook tonight" — ASSUMPTION, and
+  // one line to reverse. This card holds every cook the day has, breakfast's
+  // included, because the tick on those rows is the only one the household
+  // has; a card headed "Cook tonight" with this morning's idli in it says a
+  // thing that is not true (§8). What the card asked for by that name —
+  // tonight's cook with its start time, its total time and the batch line —
+  // is on the row itself (dayNodeWhyHtml).
   var DAY_GROUPS = {
-    shop: { title: 'Shop', icon: MOVE_ICONS.shop },
-    cook: { title: 'Cook', icon: MOVE_ICONS.cook }
+    cook: { title: 'Cook', icon: MOVE_ICONS.cook },
+    prep: { title: 'Prep', icon: MOVE_ICONS.prep },
+    shop: { title: 'Shop', icon: MOVE_ICONS.shop }
   };
 
   // The node's dot — and, for a move with a tick behind it, the tick
@@ -2112,34 +2147,68 @@
   // 2026-09-09) and the dot undoes. `text` overrides the title and meta
   // (a shop's store stops — todayShopRowsHtml); the tick, the tag and the
   // state are the move's either way.
+  // The quiet line under a row's meta: what the move is FOR, and — on a
+  // cook still to do — when to start it. ONE function for both states, so
+  // the tinted row and a plain one can never say different amounts about
+  // the same cook.
+  //
+  // The start time is read off `move.chips` (moves.py: "Start by 5:45", or
+  // "Started 6:02" once "Start cooking" has been tapped), never re-derived
+  // here — the start-by arithmetic is the server's precisely so Today and
+  // Cook cannot disagree about when to start, and a second implementation
+  // of it in the browser is the thing that rule exists to prevent. The
+  // minutes are already the row's meta line, so they are not said twice.
+  //
+  // `indexOf(...) === -1`, not `!== 0`: a fridge move's reason IS its meta
+  // line, and once the owner clause leads that line the reason is no
+  // longer at position 0 — `!== 0` would have printed it twice.
+  // Behaviour-identical for every move without an owner (the reason either
+  // starts the line or appears nowhere in it).
+  function dayNodeWhyHtml(move, state, metaLine) {
+    var bits = [];
+    if (move.kind === 'cook' && state !== 'done') {
+      var start = (move.chips || []).filter(function (c) { return /^Start/.test(c); })[0];
+      if (start) bits.push(start);
+    }
+    // The double-batch line ("Cooking for 6 — covers tonight and leftovers
+    // on Thursday") — a fact about the cook, not the planner explaining
+    // itself.
+    if (move.reason && String(metaLine || '').indexOf(move.reason) === -1) bits.push(move.reason);
+    if (!bits.length) return '';
+    return '<span class="day-node-meta day-node-why">' + escapeHtml(bits.join(' · ')) + '</span>';
+  }
+
   function dayStripNodeHtml(move, state, text) {
     var id = escapeHtml(move.id);
     var title = escapeHtml((text && text.title) || move.title);
     var metaLine = text ? (text.meta || '') : moveMetaLine(move);
     var meta = metaLine ? '<span class="day-node-meta">' + escapeHtml(metaLine) + '</span>' : '';
     var body;
+    var why = dayNodeWhyHtml(move, state, metaLine);
+    // A reheat says so where the row starts (the card, 2026-10-04:
+    // "Leftover/reheat meals show as 'Reheat' rows here"). Its own class,
+    // NOT .day-node-eyebrow: that one is the tinted row's word for itself,
+    // it is drawn in --celadon-label (which only reads on the tint), and
+    // there is exactly one of it on the screen — a second would be the
+    // second NOW. A reheat is never the tinted row anyway (moves.py: made-
+    // ahead food is a line, never the card), so the two never collide.
+    var kindWord = (move.kind === 'reheat' && !move.prepped) ?
+      '<span class="day-node-kind">Reheat</span>' : '';
     if (state === 'now') {
       // The one tinted row: the word for it (S6), the title, the meta, and
       // what the move is FOR — a batch's "covers Thursday" — under them,
-      // here only, the way the old card's accent line did. (A fridge
-      // move's reason IS its meta line — "for Thursday's skewers", or
-      // that with "· still to do" after it — so it is not said twice.)
-      // `indexOf(...) === -1`, not `!== 0`: a fridge move's reason IS its
-      // meta line, and once the owner clause leads that line the reason is
-      // no longer at position 0 — `!== 0` would have printed it twice.
-      // Behaviour-identical for every move without an owner (the reason
-      // either starts the line or appears nowhere in it).
-      var why = (move.reason && metaLine.indexOf(move.reason) === -1) ? '<span class="day-node-meta day-node-why">' + escapeHtml(move.reason) + '</span>' : '';
+      // here only, the way the old card's accent line did.
       body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
         '<span class="day-node-eyebrow">Now</span>' +
         '<span class="day-node-title">' + title + '</span>' +
         meta + why +
       '</button>';
     } else if (state === 'done') {
-      body = '<span class="day-node-text">' + moveDishHtml(move, 'day-node-title') + meta + '</span>';
+      body = '<span class="day-node-text">' + kindWord + moveDishHtml(move, 'day-node-title') + meta + '</span>';
     } else {
       body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
-        '<span class="day-node-title">' + title + '</span>' + meta +
+        kindWord +
+        '<span class="day-node-title">' + title + '</span>' + meta + why +
       '</button>';
     }
     return '<div class="day-node is-' + state + '" data-move-id="' + id + '">' +
@@ -2187,22 +2256,156 @@
     '</div>';
   }
 
-  // Both groups, or whichever of them has something in it. Shop first:
-  // the trip is what the day's cooking waits on.
-  function dayGroupsHtml(moves, featured) {
+  // Which group a move belongs in. Cooking and reheating are Cook; a
+  // fridge move, a soak, a marinade and a batch-prep task are Prep. Until
+  // 2026-10-05 the second list was rows inside the first.
+  var COOK_KINDS = { cook: 1, reheat: 1 };
+
+  // THE DAY'S MEALS — the first card on Today, and the one the card is
+  // named after. One row per planned meal (moves.py's payload carries them
+  // as `day_meals`, built by app/tools/day_meals.py): breakfast, lunch,
+  // snacks, dinner.
+  //
+  // Everything it says is the server's: the dish names, the grey note
+  // ("leftovers from Sunday", "makes tomorrow's lunch"), who a meal is for
+  // and where each person will be. Nothing here composes a sentence or
+  // counts anything — the one place that wording lives is day_meals.py, so
+  // this card and the Cook row below it cannot describe the same reheat two
+  // different ways.
+  //
+  // WHAT THE PER-PERSON LINE CAN SAY is measured in that module's
+  // docstring, and it is narrower than the card's examples: the app records
+  // no per-person dish at all (meal_plan_entries has no member column), and
+  // `lunch_location` is 'home' | 'out' | 'varies' — there is no "office",
+  // no "school" and no "nut-free thermos" anywhere in it. A line says what
+  // is on record and nothing else (§8).
+  function todayMealWhoHtml(line) {
+    var initials = (line.initials || []).map(function (i) {
+      return '<span class="day-meal-initial">' + escapeHtml(i) + '</span>';
+    }).join('');
+    var bits = [line.who, line.where].filter(Boolean).join(' · ');
+    return '<span class="day-meal-who">' + initials +
+      '<span class="day-meal-names">' + escapeHtml(bits) + '</span>' +
+    '</span>';
+  }
+
+  // One row. Tapping it opens that meal — through openRecipeFor, the one
+  // door to the one screen in this app with a recipe on it (Emily,
+  // 2026-09-09). A reheat has no recipe behind it, so that row is a plain
+  // span rather than a button that would go nowhere: the same rule
+  // moveRecipeTarget makes for every dish name on Today, and the reason the
+  // row says "leftovers from Sunday" instead.
+  function todayMealRowHtml(row) {
+    var label = '<span class="day-meal-slot">' + escapeHtml(row.label) + '</span>';
+    var note = row.note ? '<span class="day-meal-note">' + escapeHtml(row.note) + '</span>' : '';
+    var open = todayMealTarget(row) ? ' day-meal-open' : '';
+    var tag = todayMealTarget(row) ? 'button type="button"' : 'span';
+    var close = todayMealTarget(row) ? 'button' : 'span';
+    var attr = todayMealTarget(row) ? ' data-meal-open="' + escapeHtml(String(row.entry_id)) + '"' : '';
+    if (row.per_person) {
+      // The meal label above one line per person (Emily, 2026-10-04): the
+      // round initial, the name, where they will be in grey, and the dish
+      // on the line below. People who share both a dish and a place share
+      // a line ("Gowthami + Ravi") — see day_meals._lines_for.
+      return '<div class="day-meal is-people">' + label +
+        row.lines.map(function (line) {
+          return '<' + tag + ' class="day-meal-line' + open + '"' + attr + '>' +
+            todayMealWhoHtml(line) +
+            '<span class="day-meal-dish">' + escapeHtml(line.dish) + '</span>' +
+          '</' + close + '>';
+        }).join('') +
+        note +
+      '</div>';
+    }
+    var who = (row.lines[0] && row.lines[0].who) || '';
+    var where = (row.lines[0] && row.lines[0].where) || '';
+    // "everyone", or the names when it is not everyone ("Gowthami + Ravi"),
+    // then where they will be, then where the food came from — one grey
+    // line, the card's "short grey note".
+    var sub = [who, where, row.note].filter(Boolean).join(' · ');
+    return '<' + tag + ' class="day-meal' + open + '"' + attr + '>' + label +
+      '<span class="day-meal-dish">' + escapeHtml(row.dishes.join(', ')) + '</span>' +
+      (sub ? '<span class="day-meal-note">' + escapeHtml(sub) + '</span>' : '') +
+    '</' + close + '>';
+  }
+
+  // The cookFocus payload a meals row opens, or null when there is no
+  // recipe behind it. Deliberately the same rule as moveRecipeTarget's:
+  // a reheat is a line and never a way into a recipe.
+  function todayMealTarget(row) {
+    if (!row || row.is_leftovers || row.entry_id == null) return null;
+    return { entryId: row.entry_id, date: row.date || null, slot: row.slot || null,
+             title: (row.dishes && row.dishes[0]) || '' };
+  }
+
+  function todayMealsCardHtml(rows) {
+    return '<div class="shell-card day-group day-meals">' +
+      '<div class="day-group-head">' +
+        '<span class="day-group-icon">' + MOVE_ICONS.reheat + '</span>' +
+        '<span class="day-group-title">Today’s meals</span>' +
+      '</div>' +
+      // Nothing planned is a sentence, not an empty card. The day's own
+      // empty moment still applies over it (renderTodayEmpty) — that one
+      // is the offer to do something about it.
+      (rows.length ? rows.map(todayMealRowHtml).join('')
+                   : '<div class="day-meal is-none"><span class="day-meal-dish">Nothing planned today</span></div>') +
+    '</div>';
+  }
+
+  // THE SHOPPING-DAY LINE — a celadon line, not a task (the card). Every
+  // word of it is the server's (moves._shop_block): which day they shop,
+  // how many things are on the list, and the sentence. On the household's
+  // own shopping day this is not drawn at all and the Shop CARD takes its
+  // place, because that is the day the list is a job rather than a fact.
+  //
+  // Never answered is a real state and says so: "No shopping day set. Pick
+  // one" opens the rhythm setting (the Stores row under What we know),
+  // which is where that question lives.
+  function todayShopLineHtml(shop) {
+    if (!shop || shop.is_shop_day) return '';
+    if (!shop.shop_day) {
+      return '<button type="button" class="shell-card day-shopline is-unset" data-shop-setting="1">' +
+        '<span class="day-shopline-icon">' + MOVE_ICONS.shop + '</span>' +
+        '<span class="day-shopline-text">No shopping day set. <span class="day-shopline-cta">Pick one</span></span>' +
+      '</button>';
+    }
+    return '<div class="shell-card day-shopline">' +
+      '<span class="day-shopline-icon">' + MOVE_ICONS.shop + '</span>' +
+      '<span class="day-shopline-text">' + escapeHtml(shop.line) + '</span>' +
+    '</div>';
+  }
+
+  // The day, card by card: the meals, then Cook, then Prep, then Shop —
+  // and on a day the household does not shop, Shop is the celadon line
+  // rather than the card. A group with nothing in it is not drawn.
+  function dayGroupsHtml(moves, featured, shop, dayMeals) {
     var stateOf = function (m) { return m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later'); };
     var shops = moves.filter(function (m) { return m.kind === 'shop'; });
-    var cooks = dayStripOrder(moves.filter(function (m) { return m.kind !== 'shop'; }));
-    var html = '';
-    if (shops.length) {
+    var cooks = dayStripOrder(moves.filter(function (m) { return COOK_KINDS[m.kind]; }));
+    var preps = dayStripOrder(moves.filter(function (m) { return m.kind !== 'shop' && !COOK_KINDS[m.kind]; }));
+    var html = todayMealsCardHtml(dayMeals || []);
+    if (cooks.length) {
+      // No count on Cook: the ticks are the progress (same call as the
+      // band). Nothing on Today is a score (Emily, 2026-09-24).
+      html += dayGroupHtml('cook', '',
+        cooks.map(function (m) { return dayStripNodeHtml(m, stateOf(m)); }).join(''));
+    }
+    if (preps.length) {
+      // No count here either, and for the same reason — a checklist of
+      // today's prep is not "1 of 3 done".
+      html += dayGroupHtml('prep', '',
+        preps.map(function (m) { return dayStripNodeHtml(m, stateOf(m)); }).join(''));
+    }
+    // A day with no moves at all is the empty moment's, not a card's: the
+    // shop line would read "You shop on Saturday" over a screen already
+    // saying there is nothing on today.
+    if (!moves.length) return html;
+    if (shops.length && (!shop || shop.is_shop_day)) {
       var stops = shops.reduce(function (n, m) { return n + todayShopStops(m); }, 0);
       html += dayGroupHtml('shop', stops + (stops === 1 ? ' stop' : ' stops'),
         shops.map(function (m) { return todayShopRowsHtml(m, stateOf(m)); }).join(''));
-    }
-    if (cooks.length) {
-      // No count on Cook: the ticks are the progress (same call as the band).
-      html += dayGroupHtml('cook', '',
-        cooks.map(function (m) { return dayStripNodeHtml(m, stateOf(m)); }).join(''));
+    } else {
+      html += todayShopLineHtml(shop);
     }
     return html;
   }
@@ -2304,12 +2507,13 @@
     panel._featured = featured;
     renderTodayDock(panel);
 
-    // The two groups (dayGroupsHtml): Shop, then Cook — every move, done
-    // ones included, in the order they sit on the day; the featured move
-    // is the one 'now' row, in its own place rather than lifted out.
+    // The day's four sections (dayGroupsHtml): the meals, Cook, Prep and
+    // Shop — every move, done ones included, in the order they sit on the
+    // day; the featured move is the one 'now' row, in its own place rather
+    // than lifted out.
     var restEl = panel.querySelector('#today-rest');
     if (!restEl) return;
-    var html = '<div class="day-groups">' + dayGroupsHtml(moves, featured) + '</div>';
+    var html = '<div class="day-groups">' + dayGroupsHtml(moves, featured, data.shop, data.day_meals) + '</div>';
     var pending = moves.filter(function (m) { return !m.done; });
     // Nothing left to do today. Say so, and — when there is one — name
     // tomorrow's first move rather than leaving a blank screen, after the
@@ -2344,6 +2548,28 @@
         e.stopPropagation();
         var move = todayMoveById(panel, btn.getAttribute('data-move-dish'));
         if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Today', tab: 'today' });
+      });
+    });
+    // A meals row opens that meal (todayMealTarget) — the same door every
+    // dish name on Today uses, so the back link reads "‹ Today".
+    panel.querySelectorAll('[data-meal-open]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-meal-open');
+        var row = (data.day_meals || []).filter(function (r) { return String(r.entry_id) === id; })[0];
+        var target = todayMealTarget(row);
+        if (target) openRecipeFor(target, { label: 'Today', tab: 'today' });
+      });
+    });
+    // "No shopping day set. Pick one" — straight to where that question
+    // lives (the Stores row under What we know, which is what the rhythm
+    // step writes); not a new screen, and not an onboarding question.
+    panel.querySelectorAll('[data-shop-setting]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        // The shop day lives in What we know's "Your rhythm" section
+        // (wwkRhythmHtml's "Grocery shop" chips), which is where the
+        // onboarding step writes it — so this opens that, rather than
+        // being a second place to answer the same question.
+        if (typeof openKitchenSheet === 'function') openKitchenSheet('memory', 'rhythm');
       });
     });
   }
