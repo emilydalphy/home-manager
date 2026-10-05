@@ -45,6 +45,9 @@ def test_the_screens_run_in_the_storyboards_order():
     assert steps[4:] == [
         "household", "helpers", "restrictions",
         "meals-days", "prep", "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
+        # UPDATED 2026-10-05 (grocery shop day): the two clock questions
+        # together. The claim is unchanged; the flow gained a step.
+        "shop-day",
         "eating-style", "wont-eat", "excited-about", "kit-repeats",
         "ai-consent", "reveal",
     ]

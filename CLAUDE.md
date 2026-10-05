@@ -481,6 +481,29 @@ why*, not duplicating the diff.
     rows, and the "it changes week to week" answer — and the Skip link —
     store exactly that. Only `'off'` is ever written to `shop_reminder`, so
     the default can change later without a migration.
+  - **A NEW ONBOARDING STEP BREAKS FOUR NODE HARNESSES, AND A TARGETED
+    PRE-FLIGHT DID NOT SEE IT — recorded because the lesson is about the
+    verification, not the code.** The targeted pre-flight this branch was
+    verified on (756 passed) was built by grepping `tests/` for the symbols
+    the diff touches; it did not include the onboarding STEP machinery
+    (`QUESTION_STEPS`, `STEP_BUILDERS`, `ALL_STEPS`), so the full suite then
+    came back **28 failed / 9349 passed** — every one of them in
+    `test_onboarding_go_back.py` (19), `test_onboarding_welcome_flow.py`
+    (4), `test_onboarding_your_week.py` (3) and
+    `test_onboarding_setup_luxury.py` (2), and all 28 confirmed MINE by
+    running those four files against clean `main` (135 passed there). Two
+    causes, both the documented fixed-list hazard: `STEP_BUILDERS` is lifted
+    into the harness wholesale, so the builder it now names and the harness's
+    hand-written stub list did not was a `ReferenceError` that took every
+    test in the file with it; and `ALL_STEPS` is the Python-side flow list
+    three of those files hard-code, so the step divs and the expected order
+    had to gain the step. **No assertion was weakened**: each file gained
+    `shop-day` with an `UPDATED 2026-10-05` note in that file's own house
+    style, the back-link chain now reads "‹ Dinner time" into shop-day and
+    "‹ Shop day" into How-you-eat, and the four files are **137 passed**.
+    **The honest conclusion: a grep-built pre-flight is only as good as the
+    grep, and for a change that adds a STEP or a TAB the list to run is the
+    flow's own test files, not the ones naming the functions you edited.**
   - **THE 2026-09-30 "WHO SHOPS" TRIPWIRE FIRED, AND THE CLAIM IT GUARDS
     SURVIVED — worth reading, because it is the one existing test this card
     turns red.** `test_move_owner.py::test_no_rhythm_fact_type_asks_who_shops`

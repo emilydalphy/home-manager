@@ -87,6 +87,7 @@ def test_the_four_intro_screens_come_before_the_household_step():
     # the week's shape comes before what you eat.
     assert steps[5:] == ["helpers", "restrictions", "meals-days", "prep",
                          "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
+                         "shop-day",
                          "eating-style", "wont-eat", "excited-about", "kit-repeats",
                          # Sharing with Claude, before the first week (2026-09-27).
                          "ai-consent", "reveal"]
