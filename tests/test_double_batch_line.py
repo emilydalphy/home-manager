@@ -405,6 +405,31 @@ def test_the_old_covers_note_is_still_there_for_its_other_readers():
     assert src["covers_note"].startswith("Cooking for 6 — covers tonight")
 
 
+@pytest.mark.live_clock("holds its own instant: the server and the household must be on different days")
+def test_tonight_is_the_households_tonight_not_the_servers():
+    """cook-card-household-day (2026-10-05). 01:00 UTC Monday is 21:00 Sunday
+    in Toronto: the server is on Monday, the household is still on Sunday.
+    With no `today` given, covers_note and batch_line must call Sunday's
+    dinner "tonight" and name Monday's dinner by its day. They used to read
+    date.today() and said the opposite — "covers Monday" for tonight."""
+    from freezegun import freeze_time
+
+    sunday, monday = "2026-10-04", "2026-10-05"
+    targets = [{"date": "2026-10-06", "slot": "lunch", "eaters": 3}]
+    batch = _batch(3, [("2026-10-06", "lunch", 3)])
+    with freeze_time("2026-10-05T01:00:00+00:00"):
+        assert datetime.date.today().isoformat() == monday  # the server's day
+        assert ck.household_today().isoformat() == sunday   # the household's
+        tonight = lo.covers_note(_src(date=sunday, targets=targets), 6)
+        tomorrow = lo.covers_note(_src(date=monday, targets=targets), 6)
+        said = lo.batch_line(_src(date=sunday), batch)
+        other = lo.batch_line(_src(date=monday), batch)
+    assert tonight == "Cooking for 6 — covers tonight and leftovers on Tuesday."
+    assert tomorrow == "Cooking for 6 — covers Monday and leftovers on Tuesday."
+    assert said.startswith("Double batch: 3 tonight")
+    assert other.startswith("Double batch: 3 for Monday")
+
+
 def test_the_grocery_note_for_those_ingredients_is_unchanged():
     """The card: "The grocery line note for those ingredients is unchanged
     — already scaled; no new note there." Asserted rather than assumed."""
