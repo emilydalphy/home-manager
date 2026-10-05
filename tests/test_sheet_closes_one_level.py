@@ -84,12 +84,21 @@ function El(opts) {
   this.attrs = {};
   this.hidden = false;
   this.scrollTop = 0;
-  this.innerHTML = '';
+  this._html = '';
   this.textContent = '';
   this.type = '';
   this.listeners = {};
   this.parentNode = null;
 }
+// Writing innerHTML replaces the content, which in a real browser puts the
+// scroller back at the top. Modelled, because three of this file's
+// assertions are about a scroll position surviving a re-render, and with a
+// plain property every one of them passed whether the code kept the place or
+// threw it away (measured: four mutations bit nothing until this went in).
+Object.defineProperty(El.prototype, 'innerHTML', {
+  get: function () { return this._html; },
+  set: function (v) { this._html = v; this.scrollTop = 0; }
+});
 El.prototype.setAttribute = function (k, v) { this.attrs[k] = String(v); };
 El.prototype.getAttribute = function (k) { return k in this.attrs ? this.attrs[k] : null; };
 El.prototype.addEventListener = function (k, f) { this.listeners[k] = f; };
@@ -170,12 +179,15 @@ global.document = {
 // Which sheets are up, and what the stack's close/open hooks did.
 var open = { prefs: false, kit: false, uw: false, recipes: false, tips: false };
 var log = [];
+// Each real opener renders its body before the stack restores the scroll
+// position (openPrefsSheet -> renderPrefsRows, openRecipesSheet ->
+// renderRecipesSheet), so the stubs write their scroller too.
 function closePrefsSheet() { open.prefs = false; log.push('close prefs'); }
-function openPrefsSheet() { open.prefs = true; log.push('open prefs'); }
+function openPrefsSheet() { open.prefs = true; log.push('open prefs'); PREFS_ROWS.innerHTML = '<p>Settings</p>'; }
 function closeRecipesSheet() { open.recipes = false; log.push('close recipes'); }
-function openRecipesSheet() { open.recipes = true; log.push('open recipes'); }
+function openRecipesSheet() { open.recipes = true; log.push('open recipes'); RECIPES_BODY.innerHTML = '<p>Recipes</p>'; }
 function closeTipsSheet() { open.tips = false; log.push('close tips'); }
-function openTipsSheet() { open.tips = true; log.push('open tips'); }
+function openTipsSheet() { open.tips = true; log.push('open tips'); TIPS_BODY.innerHTML = '<p>Tips</p>'; }
 
 function closeKitchenSheet() { open.kit = false; }
 function dismissKitchenSheet() { closeKitchenSheet(); popSheetLevel(); }
@@ -184,6 +196,26 @@ function openSection(section, parent) {
   else forgetSheetLevels();
   open.kit = true;
   paintSheetLevelChrome(KIT, section);
+}
+
+// Settings -> Recipes, the one stack level whose parent has both a close and
+// an open hook — so a `stays` child over it is where "left exactly where it
+// was" can actually be measured.
+function openRecipes(parent) {
+  if (parent) openOverSheet(parent, dismissRecipesSheet);
+  open.recipes = true;
+  paintSheetLevelChrome(RECIPES, 'Recipes');
+}
+function dismissRecipesSheet() { closeRecipesSheet(); popSheetLevel(); }
+
+// The kept page photo, over the recipe it came from (#rph-sheet has a
+// z-index of its own, so the recipe stays on screen under it).
+var photoUp = false;
+function rphClose() { photoUp = false; popSheetLevel(); }
+function openPhotoViewer(parent) {
+  if (parent) openOverSheet(parent, rphClose, { stays: true });
+  photoUp = true;
+  paintSheetLevelChrome(RECIPES, 'The page');
 }
 
 function closeUwSheet() { open.uw = false; }
@@ -386,10 +418,55 @@ console.log(JSON.stringify({ deepest: deepest, middle: middle, outer: outer }));
 # --------------------------------------------------------------------------
 
 @_needs_node
-def test_a_stays_child_leaves_its_parent_exactly_where_it_was():
-    """#uw-sheet carries its own z-index above #kit-sheet, so What we know is
-    visible under it. Closing it must not re-open or re-scroll a sheet that
-    never moved."""
+def test_a_stays_child_leaves_its_parent_on_screen_and_does_not_reopen_it():
+    """#rph-sheet carries its own z-index above the recipe it was opened from,
+    so that recipe stays on screen under it. Closing the viewer must neither
+    close the parent on the way in nor re-open and re-scroll it on the way
+    out — it never moved, so there is nothing to put back.
+
+    Over RECIPES rather than What we know because Recipes is the one stacked
+    parent with both a close and an open hook: over a parent with neither,
+    a wrongful close and a wrongful reopen are both no-ops and nothing here
+    could fail."""
+    out = _node(_script("""
+openPrefsSheet();
+openRecipes('prefs');
+RECIPES_BODY.scrollTop = 310;
+log.length = 0;
+openPhotoViewer('recipes');
+var up = { recipes: open.recipes, photo: photoUp, scroll: RECIPES_BODY.scrollTop,
+           depth: sheetLevelDepth(), label: sheetBackLabel(), log: log.slice() };
+// Something moved the recipe under the viewer (a late read, a tap). A
+// wrongful reopen would put it back to 310.
+RECIPES_BODY.scrollTop = 999;
+log.length = 0;
+rphClose();
+console.log(JSON.stringify({
+  up: up,
+  after: { recipes: open.recipes, photo: photoUp, scroll: RECIPES_BODY.scrollTop,
+           depth: sheetLevelDepth(), log: log.slice() }
+}));
+"""))
+    assert out["up"]["recipes"] is True, "a stays child must not close its parent"
+    assert out["up"]["log"] == [], "and must not re-render it either"
+    assert out["up"]["scroll"] == 310
+    assert out["up"]["label"] == "Recipes"
+    assert out["up"]["depth"] == 2
+    assert out["after"]["recipes"] is True and out["after"]["photo"] is False
+    assert out["after"]["log"] == [], (
+        "a parent that was left on screen must not be re-opened on the pop"
+    )
+    assert out["after"]["scroll"] == 999, (
+        "nothing moved, so there is no remembered position to restore"
+    )
+    assert out["after"]["depth"] == 1, "and the level below it is untouched"
+
+
+@_needs_node
+def test_a_stays_child_over_what_we_know_reads_back_its_parents_name():
+    """The usual-week sheet, the other `stays` child. Its parent has no close
+    or open hook at all — the level is recorded only to give this sheet the
+    chevron and the crumb."""
     out = _node(_script("""
 openSection('What we know', null);
 WWK_BODY.scrollTop = 310;
@@ -401,7 +478,7 @@ console.log(JSON.stringify({
   after: { kit: open.kit, uw: open.uw, scroll: WWK_BODY.scrollTop, depth: sheetLevelDepth() }
 }));
 """))
-    assert out["up"]["kit"] is True, "a stays child must not close its parent"
+    assert out["up"]["kit"] is True
     assert out["up"]["scroll"] == 310
     assert out["up"]["label"] == "What we know"
     assert out["after"] == {"kit": True, "uw": False, "scroll": 310, "depth": 0}
