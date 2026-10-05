@@ -41,22 +41,44 @@ restrictions step's own box produces and sent in the same
 /api/onboarding/answers payload, so coordination._avoidances stays the
 only place in the app that reads a restriction for a clash.
 
-TEN MUTATIONS RUN, AND EVERY ONE BITES (red counts read off the runs):
+ELEVEN MUTATIONS RUN AND EVERY ONE BITES, plus one measured no-bite with
+its reason. Red counts read off the runs, over the seven files of the
+pre-flight (control: 152 passed):
 
-  1. the allergy written BEFORE the confirm (applyAnythingElseReading
-     called from the 'ask' branch instead of the confirm one) — 3 red
-  2. "Change" applying the reading anyway — 2 red
-  3. the note not stored (`notes` dropped from the answers payload) — 3
-  4. the model called for an empty note (the `if (!note)` guard in
-     read_onboarding_note removed) — 2
-  5. the fence removed from the prompt — 1
-  6. the confirm card shown for an empty note (buildAnythingElseStep
-     ignoring the stage) — 3
-  7. the mappable settings not saved (applyAnythingElseReading a no-op) — 6
-  8. the reading applied without checking who is in the household — 1
+  1. the allergy applied the moment the reading comes back, before the
+     card is drawn -- 1 red
+  2. "Change" applying the reading anyway -- 1
+  3. the note not stored (`notes` dropped from the answers payload) -- 1
+  4. the model called for an empty note (BOTH guards, see below) -- 1
+  5. the fence removed from the prompt -- 1
+  6. buildAnythingElseStep ignoring the stage, so the confirm card is up
+     for an empty note -- 6
+  7. applyAnythingElseReading a no-op, i.e. nothing mappable saved -- 2
+  8. the reading applied without checking who is in the household -- 1
   9. a stale reading (the note edited after it) still offered to
-     approve — 1
- 10. the step's own ledger label dropped (label="llm") — 1
+     approve -- 1
+ 10. the step's own ledger label dropped (label="llm") -- 2
+ 11. the same note read twice (the cache key dropped) -- 1
+
+ no-bite, recorded rather than dropped: removing the route's own
+ empty-note guard ALONE reddens nothing, because it and
+ read_setup_note_llm's are in series -- the route's returns first, so the
+ agent's is unreachable from it. Mutation 4 removes both. Each is
+ belt-and-braces for the other and both are worth keeping: the route's
+ answers without a client, and the function's holds for any caller.
+
+TWO OF THESE FOUND REAL HOLES IN THIS FILE RATHER THAN IN THE CODE, which
+is the reason to run them:
+
+  * Mutation 1 originally passed everything here. The confirm-branch test
+    below seeds `anythingElseStage = 'confirm'` directly, so it exercises
+    the tap and never the path TO the card -- which is exactly where an
+    allergy would get written early.
+    test_the_whole_journey_writes_nothing_until_the_tap_that_approves_it
+    was written for it and is now the strongest test in the file.
+  * Mutation 4 was first aimed at the route's guard alone and reddened
+    nothing. That is the series-guard fact above, not a weak test; the
+    mutation was badly chosen and is recorded both ways.
 """
 import importlib.util
 import json
@@ -632,6 +654,47 @@ const before = state();
     assert after["kit"] == ["slow_cooker", "no_dishwasher"]
     assert after["finished"] == 1
     assert out["confirmed"] is True
+
+
+@_needs_node
+def test_the_whole_journey_writes_nothing_until_the_tap_that_approves_it():
+    """
+    CATCH, and the one that matters most — the card's "review before save"
+    by the route a household actually takes, rather than by standing on
+    the confirm card and tapping it.
+
+    Written because a mutation found the hole: a version of
+    runAnythingElseNext that applied the reading the moment it came back,
+    before the card was even drawn, passed every other test in this file.
+    The confirm-branch test above seeds the stage directly, so it never
+    exercises the path TO the card, which is where an allergy would get
+    written early.
+    """
+    out = _run(_harness(seed="""
+NEXT_BODY = { read: true, reading: {
+  restrictions: [{ person: 'Arjun', allergy: true, what: 'nuts' }],
+  wont_eat: ['olives'],
+} };
+(async function () {
+  ELS['anything-else-note'].value = 'Arjun is allergic to nuts and we hate olives';
+  await runAnythingElseNext();
+  const showing = state();
+  await runAnythingElseNext();
+  console.log(JSON.stringify({ showing: showing, after: state() }));
+})();
+"""))
+    showing = out["showing"]
+    assert showing["confirmHidden"] is False, "the card was never shown"
+    assert showing["lines"] == ["Arjun — allergy: no nuts", "Never recommend olives"]
+    assert showing["stage"] == "confirm"
+    # The whole point: on screen, not on disk, and the week not built.
+    assert showing["restrictions"] == {}, "the allergy was written before the confirm"
+    assert showing["wontEat"] == [], "the won't-eat was written before the confirm"
+    assert showing["finished"] == 0, "setup finished before the confirm was answered"
+    # And the tap that approves it is the one that writes.
+    assert out["after"]["restrictions"] == {"Arjun": ["allergy: nuts"]}
+    assert out["after"]["wontEat"] == ["olives"]
+    assert out["after"]["finished"] == 1
 
 
 @_needs_node
