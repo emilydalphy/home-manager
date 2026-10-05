@@ -438,9 +438,17 @@ def test_a_named_small_kind_is_never_second_guessed(week):
     are twenty cherry tomatoes. The count alone says which kind was meant,
     so a name that says a kind is left exactly as written.
 
-    Pinned by the mutation that drops the _SMALL_KIND_WORDS /
-    _produce_class check from _per_person_count_ceiling, which clamps both
-    of these.
+    TWO GUARDS, AND THE TEST NEEDS BOTH, which was measured rather than
+    reasoned. For the six nouns the kind table owns, "is a kind named?" is
+    _produce_class's judgement; for every other name it is
+    _SMALL_KIND_WORDS. "Persian" and "cherry" are in BOTH, so dropping the
+    _produce_class branch reddened nothing at all until a name only
+    _produce_class knows was added — "Roma tomatoes" is a kind to that
+    table (so it stands down) and just a word to the word list.
+
+    Pinned by two mutations: dropping the _produce_class branch, which
+    clamps the Roma line to 2; and dropping the _SMALL_KIND_WORDS check,
+    which clamps the Persian cucumbers.
     """
     _household("A", "B")
     _plan(
@@ -448,11 +456,13 @@ def test_a_named_small_kind_is_never_second_guessed(week):
         [_count("Persian cucumbers", "6"), _count("Cherry tomatoes", "20")],
         2, "dinner", [0],
     )
+    _plan(week, "Roma sauce", [_count("Roma tomatoes", "20")], 2, "dinner", [1])
 
     tools.approve_weekly_plan(week, approved_by="A")
 
     assert _qty("Persian cucumbers") == "6"
     assert _qty("Cherry tomatoes") == "20"
+    assert _qty("Roma tomatoes") == "20", "a kind only _produce_class knows"
 
 
 def test_a_small_kind_said_in_the_amount_is_not_second_guessed():
@@ -476,10 +486,21 @@ def test_a_spice_rack_name_is_not_a_count_of_the_thing():
     flakes" is not two peppers, and the spice rack already owns that
     judgement (spices.is_spice).
 
-    Pinned by the mutation that drops the is_spice guard, which flags this.
+    THE FIRST TWO LINES ARE SAVED BY A DIFFERENT GUARD, measured:
+    "pepper" is one of the six nouns the kind table owns, so _produce_class
+    declines them ("flakes" and "seasoning" name no kind of pepper it
+    knows) and dropping is_spice changes nothing for either. "Chili powder"
+    is the one that needs the spice rack — "chili" is in the ceiling table
+    and in neither the kind nouns nor _SMALL_KIND_WORDS — so it is the line
+    the mutation reddens.
+
+    Pinned by the mutation that drops the is_spice guard from
+    _per_person_count_ceiling, which reads "Chili powder" as two chillies.
     """
     assert recipes.per_person_count_problem("Red pepper flakes", "2", 1) is None
     assert recipes.per_person_count_problem("Lemon pepper seasoning", "3", 1) is None
+    assert recipes.per_person_count_problem("Chili powder", "2", 1) is None
+    assert recipes.per_person_count_problem("Chilli flakes", "3", 1) is None
 
 
 def test_a_weight_is_not_a_count(week):
@@ -490,9 +511,19 @@ def test_a_weight_is_not_a_count(week):
     weight line (or the reverse) would also break the merge the grocery
     list does by name and unit.
 
+    THE BIG WEIGHT IS THE PART THAT PINS IT, measured. "1.5 lb" of
+    potatoes for four is 0.375 per serving, well inside the potato ceiling
+    of 2, so dropping the unit check reddened nothing — the arithmetic was
+    saving the line, not the rule. A weight whose NUMBER is past the
+    ceiling is what shows the difference: twelve pounds of potatoes for
+    four is three "per serving" to anything that forgets lb is not a count,
+    and would be rewritten to eight — a weight silently cut by a third.
+
     Pinned by the mutation that drops the unit check from
-    per_person_count_problem.
+    per_person_count_problem, which flags the twelve-pound line.
     """
+    assert recipes.per_person_count_problem("Potatoes", "12 lb", 4) is None
+    assert recipes.per_person_count_problem("Tomatoes", "5 lb", 2) is None
     _household("A", "B", "C")
     _plan(
         week, "Mash",
