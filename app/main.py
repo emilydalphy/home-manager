@@ -740,6 +740,16 @@ class OnboardingRhythmRequest(BaseModel):
     # `| None` rather than defaulting to []. Every other field on this
     # model reads its own falsy value the same way.
     prep_days: list[dict] | None = None
+    # The eighth, also skippable (Loop Board "Onboarding asks 'When do you
+    # usually do the grocery shop?'", Emily 2026-10-04). Same None-means-
+    # "not about this" rule as prep_days above, with one difference worth
+    # knowing: here the empty STRING is the real answer that clears the day
+    # ("it changes week to week"), so these are `| None` on a str rather
+    # than plain `str = ""` — a plain default would make every rhythm save
+    # from any other screen silently clear the household's shop day.
+    shop_day: str | None = None
+    top_up_shop_day: str | None = None
+    remind_before_shop: bool | None = None
 
 
 class ChoreProfileRequest(BaseModel):
@@ -1401,7 +1411,9 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
     lands, when the week should be ready, and the household's leftovers
     stance (Loop Board "Onboarding: household rhythm without traditional
     assumptions") — plus the skippable seventh, prep_days (Loop Board
-    "Prep days"). Called directly by the onboarding wizard's two rhythm
+    "Prep days") and the eighth, the grocery shop day (Loop Board
+    "Onboarding asks 'When do you usually do the grocery shop?'"). Called
+    directly by the onboarding wizard's rhythm and shop-day
     steps, placed after household members and before the food questions
     per Emily's stated learning hierarchy (rhythm before habits before
     preferences). The same six facts are also settable/correctable via
@@ -1425,6 +1437,9 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
             planning_anchor=req.planning_anchor,
             leftovers_stance=req.leftovers_stance,
             prep_days=req.prep_days,
+            shop_day=req.shop_day,
+            top_up_shop_day=req.top_up_shop_day,
+            remind_before_shop=req.remind_before_shop,
             source="onboarding",
         )
     except ValueError as e:

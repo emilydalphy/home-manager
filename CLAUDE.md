@@ -425,6 +425,99 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — The grocery shop day: an eighth household rhythm fact, and
+  the plan-week nudge opens two days before it. Branch
+  `overnight/grocery-shop-day`, NOT merged at the time of writing.** Tester
+  batch 2026-10-04, card 10. Emily, adding to Gowthami's first-week
+  feedback: "would be great if there was a screen in the onboarding that
+  also asked when the typical grocery shop day is during the week, so that
+  you can have that context for the day summary", plus "a reminder to plan
+  before shop day".
+  - **NO SCHEMA CHANGE, and that is the decision the card left open.** It
+    says "new fields"; `household_rhythm` is already where every
+    household-level answer of this kind lives, and `prep_days` set the
+    precedent of adding a fact type with no migration. Two rows,
+    `shop_day` and `top_up_shop_day`, plus `shop_reminder` — not one
+    list-valued row like `prep_days`, because they are two different
+    questions and only the main one anchors anything.
+  - **`None` means "not part of this answer" and `""` means "that is my
+    answer, clear it", and getting that wrong would have been silent.**
+    `/api/onboarding/rhythm` is the ONE route every Settings rhythm chip
+    posts to as well as onboarding, so a plain `str = ""` default on the
+    request model would make editing "who cooks" clear the household's
+    shop day. The three new fields are `str | None` / `bool | None` for
+    that reason, with the reason written at the model.
+  - **A plan-ready day THIS rule derived follows a changed shop day; one a
+    PERSON gave never does — and that was found by driving the screens
+    rather than by reading the code.** A household that answered Saturday
+    (so the anchor defaulted to Friday) and later corrected it to
+    Wednesday was left reading "plan ready Fridays" over a Wednesday shop:
+    the list promised two days AFTER the trip it is for, which is the one
+    thing this card exists to prevent. `rhythm.ANCHOR_FROM_SHOP_DAY` is
+    the `source` value the default writes, and it is the only thing that
+    tells the two apart. **Clearing the shop day leaves the plan-ready day
+    alone**, deliberately: it is its own question with its own chip row in
+    Settings, and taking it away would lose an answer the household is
+    looking at.
+  - **The reminder is a REASON for the existing nudge, never a second
+    card.** `weekly_plan._plan_before_shop_day` returns the shop day when
+    today is exactly `rhythm.PLAN_BEFORE_SHOP_LEAD_DAYS` (2) before it, and
+    `get_week_planning_nudge` ORs that into the branch that decides whether
+    a covered week is worth mentioning — so the nudge opens early and adds
+    one line saying why ("You shop Wednesday. I'll have the list ready the
+    day before."). The nudge already knows which week to offer and already
+    goes quiet once that week is planned; two cards asking the household to
+    plan the same week would be the duplication the 2026-09-08 re-cut
+    existed to remove. Once a week falls out of the arithmetic rather than
+    needing a dismissal of its own.
+  - **ASSUMPTION, written on the card rather than decided quietly.** The
+    card's addition says "if next week's plan isn't APPROVED yet"; the
+    existing nudge's contract is "there is no live plan for that week", so
+    a household sitting on an unapproved DRAFT gets no reminder. The
+    conservative reading was taken because the card itself says it shows as
+    the existing nudge. A "remind me to approve the draft" sentence is a
+    different card.
+  - **Nothing is told apart from "never asked".** No shop day at all is no
+    rows, and the "it changes week to week" answer — and the Skip link —
+    store exactly that. Only `'off'` is ever written to `shop_reminder`, so
+    the default can change later without a migration.
+  - **THE 2026-09-30 "WHO SHOPS" TRIPWIRE FIRED, AND THE CLAIM IT GUARDS
+    SURVIVED — worth reading, because it is the one existing test this card
+    turns red.** `test_move_owner.py::test_no_rhythm_fact_type_asks_who_shops`
+    asserts that no key on the rhythm payload contains "shop", so that the day
+    a "who shops" answer lands, the shop move stops carrying `owner: None`.
+    This card puts FOUR shop keys on that payload (`shop_day`,
+    `top_up_shop_day`, `shop_days_summary`, `shop_reminder_on`) and not one of
+    them names a person: they say WHEN, never WHO. So the test is narrowed
+    rather than weakened — the four are allowlisted in `_SHOP_KEYS_ABOUT_WHEN`
+    and compared by **equality**, so a fifth shop key of any kind still goes
+    red and whoever adds it has to say which kind it is. The sibling test that
+    drives the behaviour (`..._the_shop_carries_no_name_...`) is untouched and
+    still green, which is the half that actually proves the shop has no owner.
+  - `tests/test_grocery_shop_day.py` (30). **TEN mutations run and every
+    one bites**: `shop_days_summary` returning "" (4 red);
+    `get_household_rhythm` dropping `shop_day` (11); the anchor default
+    removed (3); `shop_reminder_on` forced True (1); the reminder ignoring
+    its lead-time window (8); the reminder ignoring the OFF toggle (1); the
+    nudge no longer opening early, i.e. main's own behaviour (1); the
+    source check dropped so a person's answer is overruled (2); never
+    re-defaulting, i.e. the shipped defect (1); and clearing the shop day
+    deleting the plan-ready day with it (2).
+  - **Driven end to end over real HTTP on a throwaway database** (the
+    answer, the clear, the refusal leaving nothing behind, an unrelated
+    chip save not clearing it, both directions of the anchor rule, and the
+    nudge with and without the reminder day), and **in a real Chromium at
+    390x844 in both colour schemes**: all fourteen day tiles measure 44px
+    or more, no sideways scroll, the screen's one apricot is its Next
+    button, and Today reads "Shall I put Oct 5-11 together? You shop
+    Wednesday. I'll have the list ready the day before." with Settings
+    showing the chips and Preferences reading "dinner around 7 - plan ready
+    Fridays - shop Wednesday, top-up Saturday".
+  - **NOT DONE, and they are the two sibling cards:** Today's own shop line
+    and the morning message's shopping-day option. What this card pins is
+    that the fact is on `/api/memory`'s rhythm payload, which is what both
+    of those screens read, so neither has to invent a second source for it.
+
 - **2026-10-04 — Settings → Recipes: add from a link or a cookbook, and read
   a saved recipe. Branch `recipes-in-settings-2026-10-04`, NOT merged at the
   time of writing.** Emily 2026-10-04: "can you add back the function to add

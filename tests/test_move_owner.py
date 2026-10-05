@@ -423,16 +423,37 @@ def test_the_shop_carries_no_name_because_this_app_has_no_answer_for_it():
     assert moves["shop"]["owner"] is None
 
 
+# Every "shop" key the rhythm payload carries today, and every one of them is
+# about WHEN the shop is rather than WHO does it
+# (overnight/grocery-shop-day, 2026-10-05). THIS SET MAY ONLY SHRINK: the test
+# below compares it by EQUALITY, so a new shop key of any kind goes red and
+# whoever adds one has to say which kind it is. A WHO answer means the shop
+# move should stop carrying `owner: None`, and the sibling test above is the
+# one to invert.
+_SHOP_KEYS_ABOUT_WHEN = {
+    "shop_day",
+    "top_up_shop_day",
+    "shop_days_summary",
+    "shop_reminder_on",
+}
+
+
 def test_no_rhythm_fact_type_asks_who_shops():
     """
     The other half of the claim above, stated where it can go stale: if a
     "who shops" answer is ever added, this goes red and the shop's owner
     should stop being None. Read off the rhythm's own payload rather than a
     grep, so a new fact type shows up here the day it lands.
+
+    IT FIRED ONCE, ON PURPOSE, AND THE CLAIM SURVIVED: the shop DAY fact
+    (2026-10-05) put four "shop" keys on this payload, and not one of them
+    names a person. They are allowlisted above by equality rather than
+    skipped by a substring, so the next shop key still has to be looked at.
     """
     _adults("Emily")
     keys = set(tools.get_household_rhythm())
-    assert not any("shop" in k for k in keys), sorted(keys)
+    shop_keys = {k for k in keys if "shop" in k}
+    assert shop_keys == _SHOP_KEYS_ABOUT_WHEN, sorted(shop_keys)
 
 
 def test_every_move_carries_both_keys_whether_or_not_anybody_owns_it():

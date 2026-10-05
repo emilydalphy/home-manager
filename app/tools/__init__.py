@@ -538,6 +538,7 @@ from .rhythm import (  # noqa: F401
     get_household_rhythm,
     planning_anchor_label,
     prep_days_summary,
+    shop_days_summary,
     prep_minutes_label,
     rhythm_completeness_signals,
     save_rhythm_answers,
@@ -548,6 +549,7 @@ from .rhythm import (  # noqa: F401
     set_meals_together,
     set_planning_anchor,
     set_prep_days,
+    set_shop_days,
 )
 from .sharing import (  # noqa: F401
     eater_add_dietary_restriction,

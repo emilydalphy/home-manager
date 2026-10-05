@@ -1375,6 +1375,34 @@
   </div>
 </div>
 
+<!-- When do you usually do the grocery shop? (Emily, 2026-10-04, from
+     Gowthami's household's first week: "so that you can have that context
+     for the day summary"). Part of "How your week runs" rather than a stop
+     of its own, because the shop day IS how a week runs: it anchors when
+     the plan has to be final (set_shop_days defaults planning_anchor to
+     the day before it), what Today says, and the reminder two days out.
+     Skippable, and "it changes week to week" is a real answer that stores
+     nothing. -->
+<div id="step-shop-day" style="display:none">
+  <button class="back-link" type="button" data-step-back="shop-day" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">When do you usually do the grocery shop?</h1>
+    <p class="q-line">I&rsquo;ll have the list ready the day before and plan around it.</p>
+    <div class="q-controls">
+      <div class="uw-days" id="shop-day-tiles"></div>
+      <p class="q-opt-label">Top-up shop too?</p>
+      <div class="uw-days" id="shop-topup-tiles"></div>
+      <div class="rhythm-chip-row" id="shop-varies-row"></div>
+      <p class="uw-sum" id="shop-readback" hidden></p>
+    </div>
+  </div>
+  <div class="q-foot">
+    <button class="btn-primary q-next" id="shop-day-next" type="button">Next</button>
+    <span class="q-skip-quiet" id="shop-day-skip">Skip</span>
+  </div>
+</div>
+
 
 <!-- Q4: eating style. Chips first, typing optional (Julia, 2026-09-08:
      "less typing, more clicking of preset options"). This used to be a
@@ -1836,6 +1864,75 @@ function buildDinnerTimeStep() {
   renderDinnerWindowChips();
 }
 
+// ---------- When do you usually do the grocery shop? (2026-10-04) ----------
+// Two single-pick day rows and one escape chip. The main shop is what
+// everything downstream reads (the plan-ready day, Today's shop line, the
+// reminder two days out); the top-up is optional and can be left empty.
+//
+// "It changes week to week" is a real answer and clears both — the same
+// rule set_shop_days follows on the server, said once here so the screen
+// and the write cannot disagree about what a cleared day means.
+let shopDay = '';
+let shopTopUpDay = '';
+
+function buildShopDayStep() {
+  const dayRow = (containerId, picked, attr) => {
+    document.getElementById(containerId).innerHTML = UW_WEEKDAYS.map((d, i) => {
+      const on = picked === d;
+      return `<button type="button" class="uw-day${on ? ' is-all' : ''}" data-${attr}="${d}" aria-label="${UW_DAY_NAMES[i]}" aria-pressed="${on ? 'true' : 'false'}"><b>${UW_LETTERS[i]}</b></button>`;
+    }).join('');
+  };
+  dayRow('shop-day-tiles', shopDay, 'shop-day');
+  dayRow('shop-topup-tiles', shopTopUpDay, 'shop-topup');
+  const varies = !shopDay && !shopTopUpDay;
+  document.getElementById('shop-varies-row').innerHTML =
+    `<button type="button" class="rhythm-chip${varies ? ' active' : ''}" id="shop-varies" aria-pressed="${varies ? 'true' : 'false'}">It changes week to week</button>`;
+  const readback = document.getElementById('shop-readback');
+  readback.textContent = shopReadback();
+  readback.hidden = !readback.textContent;
+}
+
+// The line under the answer. A local stand-in for what Today and Settings
+// say once this is saved, so the screen reads back the consequence rather
+// than the two days it just repeated back at you.
+function shopReadback() {
+  if (!shopDay) return '';
+  let line = 'I’ll have your list ready on ' + uwDayName(dayBeforeKey(shopDay)) + ', in time for your ' + uwDayName(shopDay) + ' shop.';
+  if (shopTopUpDay) line += ' And a short top-up list for ' + uwDayName(shopTopUpDay) + '.';
+  return line;
+}
+// The weekday before a weekday, wrapping Monday round to Sunday — the twin
+// of rhythm._day_before, which is what actually sets the plan-ready day.
+function dayBeforeKey(key) {
+  const i = UW_WEEKDAYS.indexOf(key);
+  return UW_WEEKDAYS[(i - 1 + UW_WEEKDAYS.length) % UW_WEEKDAYS.length];
+}
+
+document.getElementById('shop-day-tiles').addEventListener('click', e => {
+  const btn = e.target.closest('[data-shop-day]');
+  if (!btn) return;
+  const d = btn.dataset.shopDay;
+  // Tapping the day that's already on clears it — a single-pick row with
+  // no way back out is a row you can't correct.
+  shopDay = shopDay === d ? '' : d;
+  // A top-up with no main shop says nothing (set_shop_days clears it too).
+  if (!shopDay) shopTopUpDay = '';
+  buildShopDayStep();
+});
+document.getElementById('shop-topup-tiles').addEventListener('click', e => {
+  const btn = e.target.closest('[data-shop-topup]');
+  if (!btn) return;
+  const d = btn.dataset.shopTopup;
+  shopTopUpDay = shopTopUpDay === d ? '' : d;
+  buildShopDayStep();
+});
+document.getElementById('shop-varies-row').addEventListener('click', e => {
+  if (!e.target.closest('#shop-varies')) return;
+  shopDay = '';
+  shopTopUpDay = '';
+  buildShopDayStep();
+});
+
 // "How do you feel about leftovers?" left setup on 2026-09-30, and what it
 // fed — rhythm.leftovers_stance, which the generation prompt reads as the
 // SHAPE of the week (cook-once-eat-twice pairs or not) — is now read off
@@ -1866,6 +1963,11 @@ async function saveRhythmAnswers() {
   // planner assumes for anybody with nothing on file.
   const lunch = lunchLocationPayload();
   if (lunch) body.lunch_location = lunch;
+  // Always sent, even empty: '' is the real "it changes week to week"
+  // answer and skipping the screen means the same thing, so there is
+  // nothing for an omitted field to preserve at the end of setup.
+  body.shop_day = shopDay;
+  body.top_up_shop_day = shopTopUpDay;
   const res = await Api.fetch('/api/onboarding/rhythm', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
@@ -3932,7 +4034,7 @@ const INTRO_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know'];
 // your week runs (who's eating when, cooking ahead, variety per meal,
 // dinner time), what you eat, your first week. 'meals' ("Which meals
 // should I plan?") and 'leftovers' left the flow that day.
-const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'household', 'helpers', 'restrictions', 'meals-days', 'prep', 'variety-breakfast', 'variety-lunch', 'variety-dinner', 'dinner-time', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'reveal'];
+const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'household', 'helpers', 'restrictions', 'meals-days', 'prep', 'variety-breakfast', 'variety-lunch', 'variety-dinner', 'dinner-time', 'shop-day', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
@@ -3952,6 +4054,7 @@ const STEP_TITLES = {
   'variety-lunch': 'Lunch',
   'variety-dinner': 'Dinner',
   'dinner-time': 'Dinner time',
+  'shop-day': 'Shop day',
   'eating-style': 'How you eat',
   'wont-eat': 'Never recommend',
   'excited-about': 'Cuisines you like',
@@ -4017,6 +4120,7 @@ const STEP_BUILDERS = {
   'variety-lunch': function () { buildVarietyStep('lunch'); },
   'variety-dinner': function () { buildVarietyStep('dinner'); },
   'dinner-time': buildDinnerTimeStep,
+  'shop-day': buildShopDayStep,
   'eating-style': buildEatingStyleStep,
   'wont-eat': buildWontEatStep,
   'excited-about': buildExcitedStep,
@@ -4038,7 +4142,7 @@ const STEP_BUILDERS = {
 // only ever moves forward.
 const QUESTION_SECTIONS = {
   'household': 1, 'helpers': 1, 'restrictions': 1,
-  'meals-days': 2, 'prep': 2, 'variety-breakfast': 2, 'variety-lunch': 2, 'variety-dinner': 2, 'dinner-time': 2,
+  'meals-days': 2, 'prep': 2, 'variety-breakfast': 2, 'variety-lunch': 2, 'variety-dinner': 2, 'dinner-time': 2, 'shop-day': 2,
   'eating-style': 3, 'wont-eat': 3, 'excited-about': 3, 'kit-repeats': 3,
   'ai-consent': 4,
 };
@@ -4270,6 +4374,14 @@ document.getElementById('dinner-time-next').onclick = () => { goForward('dinner-
 document.getElementById('dinner-time-skip').onclick = () => {
   rhythmDinnerWindow = '';
   goForward('dinner-time');
+};
+document.getElementById('shop-day-next').onclick = () => { goForward('shop-day'); };
+document.getElementById('shop-day-skip').onclick = () => {
+  // Skipping is the same answer as "it changes week to week" — the card's
+  // own rule, so there is one state for "no shop day" rather than two.
+  shopDay = '';
+  shopTopUpDay = '';
+  goForward('shop-day');
 };
 document.getElementById('eating-style-next').onclick = () => { goForward('eating-style'); };
 document.getElementById('wont-eat-next').onclick = () => {
