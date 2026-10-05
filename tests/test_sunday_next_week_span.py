@@ -74,6 +74,11 @@ def pin_today(monkeypatch):
                 timezone=datetime.timezone,
             ),
         )
+
+        # _first_plan_window reads the household's day now (cooker.household_today),
+        # so the pin has to cover that clock as well as main's date.today().
+        from app.tools import cooker as _cooker_clock
+        monkeypatch.setattr(_cooker_clock, "household_today", lambda *a, **k: _FixedToday._value)
         # ...and the household's clock with it, or the pin means two dates
         # under a straddling timezone. See conftest.pin_household_clock.
         pin_household_clock(monkeypatch)

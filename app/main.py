@@ -1643,7 +1643,9 @@ def _first_plan_window(start_next_week: bool) -> tuple[str, int, str]:
       the next whole period instead, because a one-day plan is a lot of
       machinery for a single dinner.
     """
-    today = datetime.date.today()
+    # The household's day: the server is already tomorrow from 8pm Toronto,
+    # which made a Sunday-evening sign-up's part-week start on Monday.
+    today = tools.cooker.household_today()
     # plan_ahead=False: the person just chose this week or next on the
     # screen, so the CURRENT period is wanted whatever the weekday. The
     # Friday rule (tools.PLAN_AHEAD_FROM_WEEKDAY, 2026-09-11) is for the

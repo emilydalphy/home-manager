@@ -444,7 +444,11 @@ def holidays_for_period(start_date: str, day_count: int = 7) -> list[dict]:
 
 def get_upcoming_holidays(start_date: str = "", day_count: int = 60) -> list[dict]:
     """The holidays in a window from a date (today by default) — the chat's "what's coming up"."""
-    start = start_date or date.today().isoformat()
+    # The household's day, not the server's (UTC is tomorrow from 8pm Toronto).
+    # Neither real caller (main.holidays_in_window, the chat tool) passes one
+    # when the person didn't name a date. cooker imported at call time.
+    from .cooker import household_today
+    start = start_date or household_today().isoformat()
     date.fromisoformat(start)
     return holidays_for_period(start, max(1, min(int(day_count or 60), 366)))
 

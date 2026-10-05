@@ -425,6 +425,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — Holidays, calendar feed, first-plan window and the chat's
+  date block read the household's day, not the server's. Branch
+  `server-day-sweep-2026-10-05`.** The server is UTC, already tomorrow from
+  8pm Toronto. Swept each `date.today()` default and checked its callers:
+  fixed `holidays.get_upcoming_holidays` (neither caller passes a start),
+  `calendar_feed.events_for_period/check/connect/refresh` (routes and the
+  planner pass no `today`), `main._first_plan_window` (no param; a Saturday
+  evening sign-up lost a day and folded to next week) and the chat date
+  block (`agent.py`, `tools.cooker.household_today()`). That block sits
+  AFTER the `cache_control` breakpoint, so the cached prefix is untouched.
+  Left: `holiday_needs_you_item` (only caller passes the household's day,
+  weekly_plan.py:5940) and `_coming_week_count` (all three callers pass
+  `today`). `household_today()` works outside a request (household 1 by
+  default, falls back to the server date if the clock is unreadable).
+  Tests: `tests/test_server_day_sweep.py`.
+
 - **2026-10-05 — The phone remembers who's using it, and the session stops
   timing out under a phone in daily use. Branch
   `overnight/device-remembers-member`, NOT merged at the time of writing.**

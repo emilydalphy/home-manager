@@ -9993,7 +9993,10 @@ def run_agent_turn(
     # longer the same for every household — a paused module's tools are
     # left out (tools_for_request) — so the cached prefix is per switch
     # setting rather than one shared by the whole organisation.
-    today = datetime.date.today()
+    # The household's day, not the server's (UTC is tomorrow from 8pm Toronto).
+    # This block sits AFTER the cache_control breakpoint, so changing what it
+    # says never touches the cached prefix.
+    today = tools.cooker.household_today()
     system_blocks = [
         {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
         {

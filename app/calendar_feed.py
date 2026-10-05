@@ -823,6 +823,17 @@ def _store_error(message: str) -> None:
     conn.close()
 
 
+def _household_today() -> date:
+    """
+    Today where the HOUSEHOLD lives — the default for every "today" in this
+    module. The server (UTC) is already tomorrow from 8pm Toronto, which
+    shifted the feed's read window and the planner's calendar a day early.
+    Deferred import: tools/__init__ pulls this module in via week_intake.
+    """
+    from .tools.cooker import household_today
+    return household_today()
+
+
 def _coming_week_count(events: list[dict], today: date | None = None) -> int:
     today = today or date.today()
     end = today + timedelta(days=6)
@@ -879,7 +890,7 @@ def events_for_period(start_date: str, day_count: int, *, today: date | None = N
     row = _row()
     if row is None:
         return None
-    today = today or date.today()
+    today = today or _household_today()
     dates = period_dates(start_date, day_count)
     if not dates:
         return {"events": [], "timezone": row["timezone"], "note": None, "unavailable": False}
@@ -1002,7 +1013,7 @@ def check(url: str, *, today: date | None = None) -> dict:
     CalendarFeedError with the sentence to show.
     """
     url = normalise_url(url)
-    today = today or date.today()
+    today = today or _household_today()
     parsed = read_feed_now(url, today, today + timedelta(days=6))
     events = parsed["events"]
     return {
@@ -1025,7 +1036,7 @@ def connect(url: str, label: str = "", *, today: date | None = None) -> dict:
     that doesn't work is refused rather than stored. Returns status().
     """
     url = normalise_url(url)
-    today = today or date.today()
+    today = today or _household_today()
     window_start, window_end = today - timedelta(days=1), today + timedelta(days=CACHE_DAYS_AHEAD)
     parsed = read_feed_now(url, window_start, window_end)
     label = clean_title(label or "", MAX_LABEL_CHARS) or _label_for(parsed, url)
@@ -1053,7 +1064,7 @@ def refresh(*, today: date | None = None) -> dict:
     row = _row()
     if row is None:
         raise CalendarFeedError(MSG_NO_FEED, "no_feed")
-    today = today or date.today()
+    today = today or _household_today()
     window_start, window_end = today - timedelta(days=1), today + timedelta(days=CACHE_DAYS_AHEAD)
     try:
         parsed = read_feed_now(row["url"], window_start, window_end)
