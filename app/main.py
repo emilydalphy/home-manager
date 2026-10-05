@@ -953,8 +953,8 @@ class MorningPartsRequest(BaseModel):
     The "What should it include?" boxes. ONE setting for the whole
     household (Emily, 2026-10-04), so this carries no member_id — unlike
     its two neighbours, which are each about one adult's own number and
-    switch. `parts` is the whole answer: an empty list is "none of the
-    six", which is a real answer and is stored as one.
+    switch. `parts` is the whole answer: an empty list is "none of
+    them", which is a real answer and is stored as one.
     """
     parts: list[str]
 
@@ -2364,7 +2364,7 @@ def morning_text_preview_route(parts: str | None = None):
     With no `parts`, this is exactly today's message for this household.
     `parts` is a comma-separated override for "as it would read if you
     ticked this", which is what lets the boxes repaint the preview before
-    anything is saved; an empty string is the real answer "none of the six"
+    anything is saved; an empty string is the real answer "none of them"
     rather than "no override given", which is why the two cases are told
     apart by the parameter being absent rather than by it being falsy. A
     key this version does not know is dropped rather than refused — a

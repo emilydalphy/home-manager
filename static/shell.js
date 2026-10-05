@@ -26274,6 +26274,7 @@
   var morningPreview = null;    // { state: 'loading' | 'ready' | 'failed', data }
   var morningPreviewSeq = 0;
   var morningPreviewTimer = null;
+  var MORNING_PARTS_FAILED = 'Everything saved except what it should include. Try Save again.';
   var MORNING_TICK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
     'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
 
@@ -26421,6 +26422,7 @@
     var rows = Array.prototype.slice.call(body.querySelectorAll('.morning-adult'));
     if (save) save.disabled = true;
     var problem = null;
+    var partsFailed = false;
     var last = null;
     // What it includes — the household's one answer, saved once, before
     // the per-adult rows. Its answer carries the fresh preview too.
@@ -26429,14 +26431,14 @@
         var partsRes = await Api.fetch('/api/morning-text/parts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ parts: morningPartsChosen(prefsState.morningText) }) });
         var partsData = await partsRes.json();
-        if (!partsRes.ok) problem = (partsData && partsData.detail) || 'That didn’t save. Try again in a moment.';
+        if (!partsRes.ok) partsFailed = true;
         else {
           if (partsData.settings) prefsState.morningText = partsData.settings;
           morningParts = (partsData.parts || []).slice();
           if (partsData.preview) { morningPreviewSeq++; morningPreview = { state: 'ready', data: partsData.preview }; paintMorningPreview(); }
         }
       } catch (err) {
-        problem = 'That didn’t save. Try again in a moment.';
+        partsFailed = true;
       }
     }
     for (var i = 0; i < rows.length; i++) {
@@ -26482,6 +26484,10 @@
       if (problem) {
         // Calm, and the way out in the same breath (DESIGN_SYSTEM §8).
         note.textContent = problem;
+      } else if (partsFailed) {
+        // The rows saved and the boxes didn't: say which, so nobody
+        // thinks the ticks took. The ticks stay as they are on screen.
+        note.textContent = MORNING_PARTS_FAILED;
       } else {
         var anyOn = (prefsState.morningText && prefsState.morningText.adults || []).some(function (a) { return a.on; });
         if (!anyOn) note.textContent = 'Saved. No texts until it’s switched on.';

@@ -37,6 +37,8 @@ from __future__ import annotations
 import datetime as dt
 import json
 
+import re
+
 import pytest
 
 from app import households, tools
@@ -159,20 +161,22 @@ def nolink(monkeypatch):
 # What is on offer, and what a household that has never been asked gets
 # ---------------------------------------------------------------------------
 
-def test_the_six_boxes_are_the_cards_six_in_the_cards_order():
-    """CATCH. The order is the message's order too, not only the screen's."""
-    assert tools.MORNING_PART_CHOICES == ("meals", "freezer", "prep", "start", "shop", "away")
+def test_the_seven_boxes_are_in_the_cards_order():
+    """CATCH. The order is the message's order too, not only the screen's.
+    Seven since Emily's call of 2026-10-05: "Food to use up" (kitchen) is a
+    box of its own, last."""
+    assert tools.MORNING_PART_CHOICES == ("meals", "freezer", "prep", "start", "shop", "away", "kitchen")
+    assert tools.MORNING_PARTS_ALWAYS == ()
 
 
-def test_an_unanswered_household_gets_the_three_the_card_switches_on():
+def test_an_unanswered_household_gets_the_five_switched_on():
     """
-    CATCH, and the one that says plainly what the card's defaults COST: the
-    shop reminder is in every morning text today and is not one of the
-    three, so it is off until somebody ticks it. One tuple to change.
+    CATCH. Emily, 2026-10-05: Shopping and Food to use up are on by default,
+    so a household nobody has asked keeps every line it already got.
     """
     _adults()
-    assert tools.MORNING_PART_DEFAULTS == ("meals", "freezer", "prep")
-    assert tools.morning_text_parts() == ["meals", "freezer", "prep"]
+    assert tools.MORNING_PART_DEFAULTS == ("meals", "freezer", "prep", "shop", "kitchen")
+    assert tools.morning_text_parts() == ["meals", "freezer", "prep", "shop", "kitchen"]
     assert _stored() == "", "nobody has answered, and that is what is on disk"
 
 
@@ -185,8 +189,8 @@ def test_the_settings_carry_every_box_with_its_words_and_whether_it_is_ticked():
     _adults()
     choices = tools.get_morning_text_settings()["part_choices"]
     assert [c["key"] for c in choices] == list(tools.MORNING_PART_CHOICES)
-    assert [c["on"] for c in choices] == [True, True, True, False, False, False]
-    assert [c["default"] for c in choices] == [True, True, True, False, False, False]
+    assert [c["on"] for c in choices] == [True, True, True, False, True, False, True]
+    assert [c["default"] for c in choices] == [True, True, True, False, True, False, True]
     for c in choices:
         assert c["label"] and c["says"], c
         assert c["label"] == tools.MORNING_PART_WORDS[c["key"]]["label"]
@@ -210,6 +214,11 @@ def test_every_sentence_a_person_reads_about_this_is_in_the_one_block():
     said = [w["label"] for w in tools.MORNING_PART_WORDS.values()]
     said += [w["says"] for w in tools.MORNING_PART_WORDS.values()]
     said.append(tools.MORNING_START_LINE.split("{")[0].strip())
+    said.append(digest.MORNING_SHOP_DAY_LINE.split("{")[0].strip())
+    # MORNING_SHOP_THINGS_NONE is left out on purpose: it is word for word
+    # the sentence Today's shop line says (moves._shop_day_line), so the
+    # text and the screen agree about an empty list.
+    said.append(digest.MORNING_SHOP_THINGS_ONE)
 
     # STRING LITERALS, read with ast — not raw source. A comment is allowed
     # to mention a phrase (agent.py has "Today's meals" in two of them, about
@@ -225,7 +234,12 @@ def test_every_sentence_a_person_reads_about_this_is_in_the_one_block():
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 literals.append(node.value)
     for phrase in said:
-        where = [text[:70] for text in literals if phrase in text]
+        # A one-word label ("Shopping") is an ordinary word inside many
+        # literals; for those only a literal that IS the label is a copy.
+        where = [
+            text[:70] for text in literals
+            if (phrase in text if " " in phrase else text.strip() == phrase)
+        ]
         assert not where, f"{phrase!r} is a literal outside digest.py's one block: {where}"
 
 
@@ -263,6 +277,50 @@ def test_the_shop_is_the_timed_shop_move_and_nothing_else(nolink):
     _everything()
     lines = _lines(["shop"])
     assert len(lines) == 1 and lines[0].startswith("Shop for tonight — 1 item, by")
+
+
+def test_a_household_on_the_defaults_still_gets_the_timed_shop_line(nolink):
+    """
+    CATCH on Emily's 2026-10-05 call: nobody loses a line they got before
+    the boxes existed. On bb137be every morning text carried the timed shop
+    line; an unanswered household (Shopping on by default) still does.
+    """
+    _adults()
+    _everything()
+    lines = _lines()  # the household's own answer: nobody has been asked
+    assert sum(1 for x in lines if x.startswith("Shop for tonight — 1 item, by")) == 1
+
+
+def _shop_today():
+    tools.set_shop_days(shop_day=MORNING.strftime("%A").lower())
+
+
+def test_on_the_shop_day_it_is_the_shop_day_line(nolink):
+    """CATCH. Shopping covers the household's own shop day too."""
+    _adults()
+    _seed_day(dinner=False)
+    tools.add_grocery_item("Milk")
+    tools.add_grocery_item("Bread")
+    _shop_today()
+    assert _lines(["shop"]) == ["You shop today. 2 things on the list."]
+
+
+def test_a_shop_day_with_a_cook_waiting_is_one_line_not_two(nolink):
+    """CATCH. Both apply: one line, carrying the cook's deadline."""
+    _adults()
+    _everything()
+    _shop_today()
+    lines = _lines(["shop"])
+    assert len(lines) == 1
+    assert re.fullmatch(r"You shop today, by \d{1,2}:\d{2}\. \d+ things? on the list\.", lines[0]), lines
+
+
+def test_not_the_shop_day_and_nothing_timed_says_nothing(nolink):
+    _adults()
+    _seed_day(dinner=False)
+    tools.add_grocery_item("Milk")
+    tools.set_shop_days(shop_day=(MORNING + dt.timedelta(days=1)).strftime("%A").lower())
+    assert _lines(["shop"]) == []
 
 
 def test_the_start_time_is_a_line_of_its_own_naming_only_the_clock(nolink):
@@ -379,23 +437,21 @@ def test_guests_are_in_the_away_line_because_the_box_asks_who_is_at_the_table(no
 # The seventh part nobody is offered a box for
 # ---------------------------------------------------------------------------
 
-def test_the_kitchen_nudge_is_a_part_that_is_not_a_choice(nolink):
+def test_food_to_use_up_is_a_box_and_unticking_all_seven_is_no_message(nolink):
     """
-    CATCH. The attention queue's item and the use-it-up nudge are in the
-    morning text today and belong to none of the card's six, so they are a
-    part that is always in — which is neither a seventh checkbox the design
-    has not got nor two lines silently lost.
+    CATCH. Emily, 2026-10-05: the attention item and the use-it-up nudge
+    are the seventh box, "Food to use up", on by default — and with every
+    box unticked there is no message, whatever is in the fridge.
     """
     _adults()
-    assert "kitchen" in tools.MORNING_PARTS
-    assert "kitchen" not in tools.MORNING_PART_CHOICES
-    assert tools.MORNING_PARTS_ALWAYS == ("kitchen",)
+    assert tools.MORNING_PART_WORDS["kitchen"]["label"] == "Food to use up"
     tools.add_attention_item(kind="use_soon", summary="Use up the spinach")
-    tools.set_morning_text_parts([])
     pv = digest.morning_text_preview(now_local=MORNING)
-    assert pv["chosen"] == []
     assert pv["parts"] == ["kitchen"]
     assert pv["lines"] == ["Use up the spinach."]
+    tools.set_morning_text_parts([])
+    pv = digest.morning_text_preview(now_local=MORNING)
+    assert pv["chosen"] == [] and pv["would_send"] is False and pv["text"] is None
 
 
 def test_the_kitchen_part_is_last_so_it_never_outranks_a_chosen_one(nolink):
@@ -605,13 +661,13 @@ def test_the_chat_door_adds_and_drops_one_part_in_one_turn():
 
 def test_a_delta_on_an_unanswered_household_composes_off_the_defaults():
     """
-    CATCH. "Also tell me about the shop" from a household that has never
-    been asked adds to the three the card switches on — it does not replace
+    CATCH. "Also tell me who's away" from a household that has never been
+    asked adds to the five switched on by default — it does not replace
     them with one part.
     """
     _adults("Emily")
-    assert tools.set_morning_text(add_parts=["shop"])["parts"] == [
-        "meals", "freezer", "prep", "shop"
+    assert tools.set_morning_text(add_parts=["away"])["parts"] == [
+        "meals", "freezer", "prep", "shop", "away", "kitchen"
     ]
 
 
@@ -797,7 +853,7 @@ def test_the_routes_read_the_boxes_save_them_and_preview_in_one_trip(signed_in):
     _adults("Emily")
     _everything()
     got = signed_in.get("/api/morning-text").json()
-    assert got["parts"] == ["meals", "freezer", "prep"]
+    assert got["parts"] == ["meals", "freezer", "prep", "shop", "kitchen"]
     assert [c["key"] for c in got["part_choices"]] == list(tools.MORNING_PART_CHOICES)
 
     res = signed_in.post("/api/morning-text/parts", json={"parts": ["meals", "away"]})
@@ -845,7 +901,7 @@ def test_the_preview_route_takes_an_override_and_tells_none_from_unasked(signed_
     none = signed_in.get("/api/morning-text/preview?parts=").json()
     assert none["chosen"] == [] and none["would_send"] is False and none["text"] is None
     unasked = signed_in.get("/api/morning-text/preview").json()
-    assert unasked["chosen"] == ["meals", "freezer", "prep"]
+    assert unasked["chosen"] == ["meals", "freezer", "prep", "shop", "kitchen"]
 
 
 def test_the_preview_route_drops_a_stale_key_rather_than_refusing(signed_in):
@@ -863,7 +919,7 @@ def test_the_save_route_refuses_a_key_nobody_knows_with_the_sentence(signed_in):
     res = signed_in.post("/api/morning-text/parts", json={"parts": ["meals", "biscuits"]})
     assert res.status_code == 400
     assert "biscuits" in res.json()["detail"]
-    assert tools.morning_text_parts() == ["meals", "freezer", "prep"], "nothing was stored"
+    assert tools.morning_text_parts() == ["meals", "freezer", "prep", "shop", "kitchen"], "nothing was stored"
 
 
 def test_the_save_route_needs_no_member_id_because_the_setting_is_the_households(signed_in):

@@ -120,27 +120,25 @@ _TIME_RE = re.compile(r"^\s*(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)?\s*$", re.I)
 # said — copying them here would be two wordings for one line.
 
 # The order of the message, which is the card's own order for the boxes.
-MORNING_PART_CHOICES = ("meals", "freezer", "prep", "start", "shop", "away")
+# `kitchen` ("Food to use up": the attention queue's one item and the
+# use-it-up nudge) was an always-on part with no box until Emily's call of
+# 2026-10-05 made it the seventh box, on by default. Nothing is always in
+# any more: unticking all seven means no message, ever.
+MORNING_PART_CHOICES = ("meals", "freezer", "prep", "start", "shop", "away", "kitchen")
 
 # Parts nobody is offered a box for, and which are therefore always in.
-# `kitchen` is the attention queue's one item and the use-it-up nudge
-# (_digest_parts' section 7). It is a part — one key, one place in the
-# order, one pass — and not a choice, for two reasons: the card names six
-# boxes, so a seventh would be a checkbox the design has not got; and both
-# of those lines are in the morning text today, so dropping them would be a
-# silent loss, which is the one kind of change this log keeps having to
-# unpick. The cost runs the other way and is real: a household that unticks
-# all six still gets a text when the milk is going off. `morning_text_on` is
-# how the message is stopped; unticking every box is not.
-MORNING_PARTS_ALWAYS = ("kitchen",)
+# Empty since 2026-10-05 (see above); kept as the seam rather than deleted.
+MORNING_PARTS_ALWAYS: tuple = ()
 
 # Everything, in the order it is composed.
 MORNING_PARTS = MORNING_PART_CHOICES + MORNING_PARTS_ALWAYS
 
-# What a household that has never been asked gets: the three the card
-# switches on. Change this tuple and every unanswered household changes
-# with it — which is the lever if the shop reminder should have stayed on.
-MORNING_PART_DEFAULTS = ("meals", "freezer", "prep")
+# What a household that has never been asked gets. Emily, 2026-10-05:
+# Shopping and Food to use up are ON by default, so nobody on the defaults
+# loses a line the morning text already carried (the timed shop line, the
+# use-it-up nudge). Change this tuple and every unanswered household
+# changes with it.
+MORNING_PART_DEFAULTS = ("meals", "freezer", "prep", "shop", "kitchen")
 
 # The screen's words. `label` is the checkbox; `says` is the line under it
 # saying what that part puts in the message. PLACEHOLDERS, all of them.
@@ -149,16 +147,29 @@ MORNING_PART_WORDS = {
     "freezer": {"label": "What to take out of the freezer", "says": "Anything to move to the fridge."},
     "prep": {"label": "Prep to do today", "says": "Anything to get ready ahead."},
     "start": {"label": "When to start cooking dinner", "says": "The time tonight's cook has to begin."},
-    "shop": {"label": "Shopping day reminder", "says": "A shop something today is waiting on."},
+    "shop": {"label": "Shopping", "says": "Your shopping day, or a shop tonight's cook is waiting on."},
     "away": {"label": "Who's away tonight", "says": "Who's at the table and who isn't."},
+    "kitchen": {"label": "Food to use up", "says": "Anything to use before it goes off."},
 }
 
-# The one sentence this module composes itself rather than reading off a
-# move or the feed. A line of its own and never a clause on "Tonight:" —
+# The sentences this module composes itself rather than reading off a
+# move or the feed. PLACEHOLDERS, like the rest of this block.
+#
+# The start line is a line of its own and never a clause on "Tonight:" —
 # they are two separate boxes, so each has to be able to stand without the
 # other, and "Start Chicken Skewers by 5:45" would name the dish the
-# household had just unticked. PLACEHOLDER, like the rest of this block.
+# household had just unticked.
 MORNING_START_LINE = "Start cooking at {clock}."
+
+# Shopping on the household's own shop day (rhythm `shop_day` /
+# `top_up_shop_day`, the same is_shop_day Today's Shop section reads). One
+# line even when a cook is also waiting on the shop: `{by}` is then
+# MORNING_SHOP_DAY_BY with that cook's deadline, else ''.
+MORNING_SHOP_DAY_LINE = "You shop today{by}. {things}"
+MORNING_SHOP_DAY_BY = ", {deadline}"
+MORNING_SHOP_THINGS_NONE = "Nothing on the list yet."
+MORNING_SHOP_THINGS_ONE = "1 thing on the list."
+MORNING_SHOP_THINGS_MANY = "{count} things on the list."
 
 
 def _read_parts(raw: str | None) -> list[str]:
@@ -166,7 +177,7 @@ def _read_parts(raw: str | None) -> list[str]:
     The stored answer, read back as part keys in message order.
 
     '' is "nobody has answered" and reads as MORNING_PART_DEFAULTS; '[]' is
-    "none of the six", a real answer, and reads as none. A stored key this
+    "none of them", a real answer, and reads as none. A stored key this
     version does not know is dropped rather than carried, so renaming a
     part is a rename and not a migration. A blob nothing can read falls back
     to the defaults and says so in the log — the stance _zone already takes
@@ -211,14 +222,14 @@ def _checked_parts(parts) -> list[str]:
 
 def _write_parts(parts) -> str:
     """The answer as stored: known keys only, in message order, as JSON. An
-    empty list is stored as '[]' and never as '', or "none of the six" would
+    empty list is stored as '[]' and never as '', or "none of them" would
     read back next time as the three defaults."""
     return json.dumps(_checked_parts(parts))
 
 
 def morning_text_parts() -> list[str]:
     """
-    Which of the six this household's morning message includes, in message
+    Which of the seven this household's morning message includes, in message
     order. The always-on parts are NOT in here: this is the household's own
     answer, which is what the screen ticks. What the message is actually
     built from is _included_parts.
@@ -234,7 +245,7 @@ def morning_text_parts() -> list[str]:
 
 
 def _included_parts(chosen) -> list[str]:
-    """What the message is built from: the chosen six-subset plus the parts
+    """What the message is built from: the chosen subset plus the parts
     nobody is offered a choice about, in message order."""
     keep = {str(k).strip().lower() for k in chosen} | set(MORNING_PARTS_ALWAYS)
     return [k for k in MORNING_PARTS if k in keep]
@@ -319,7 +330,7 @@ def _household_row(conn) -> dict:
         "timezone": (row["timezone"] if row else None) or DEFAULT_TIMEZONE,
         "time": (row["morning_text_time"] if row else None) or DEFAULT_SEND_TIME,
         # Raw, not read: _read_parts tells '' (nobody asked) from '[]'
-        # (none of the six), and a `or` here would turn one into the other.
+        # (none of them), and a `or` here would turn one into the other.
         "parts": (row["morning_text_parts"] if row else "") or "",
     }
 
@@ -344,10 +355,10 @@ def get_morning_text_settings() -> dict:
     Who gets the morning text, at what hour, on which clock, and what it
     includes — the Preferences row and its sheet read exactly this.
 
-    `parts` is the household's own answer and `part_choices` is the six
+    `parts` is the household's own answer and `part_choices` is the seven
     boxes to draw, each already carrying its label, its one-line
     description and whether it is ticked. The screen renders the section
-    off part_choices rather than holding its own copy of the six, so
+    off part_choices rather than holding its own copy of the seven, so
     adding or rewording one is a change to MORNING_PART_WORDS and nothing
     else.
     """
@@ -560,7 +571,7 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
     MORNING_PARTS. Read entirely off today_moves and the live feed —
     nothing here that Today wouldn't also show.
 
-    `included` is the part keys to build, which is the chosen six-subset
+    `included` is the part keys to build, which is the chosen subset
     plus the always-on ones (_included_parts). A part that is not in it is
     not BUILT rather than built and filtered, so a household that doesn't
     want to know who's away pays nothing for the attendance read — which is
@@ -705,11 +716,34 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
     # there (moves._standing_list_move) — true, and not one of today's
     # JOBS, which is all this text is for. (It is one of today's moves:
     # by_kind is built from today_moves, which is why this has to skip it.)
+    #
+    # On the household's own shop day (Emily, 2026-10-05: the box is
+    # "Shopping" and covers both) it is the shop-day line instead, ONE line
+    # even when a cook is also waiting on the list: that cook's deadline
+    # rides on it as a clause ("You shop today, by 5:55. 14 things on the
+    # list."), never a second line saying the same errand twice. The
+    # deadline only rides when it is a clock today — "by tomorrow" on a shop
+    # day would argue with "today", and "still to do" is already what
+    # "You shop today" says.
     if "shop" in want:
-        for m in by_kind.get("shop", []):
-            if not m.get("timed", True):
-                continue
-            parts.append(("shop", f"{_tidy(m['title'])} — {_tidy(m['detail'])}."))
+        timed = [m for m in by_kind.get("shop", []) if m.get("timed", True)]
+        block = payload.get("shop") or {}
+        if block.get("is_shop_day"):
+            count = int(block.get("count") or 0)
+            things = (
+                MORNING_SHOP_THINGS_NONE if not count
+                else MORNING_SHOP_THINGS_ONE if count == 1
+                else MORNING_SHOP_THINGS_MANY.format(count=count)
+            )
+            when = str(timed[0].get("time_label") or "") if timed else ""
+            by = (
+                MORNING_SHOP_DAY_BY.format(deadline=when)
+                if when.startswith("by ") and when != "by tomorrow" else ""
+            )
+            parts.append(("shop", MORNING_SHOP_DAY_LINE.format(by=by, things=things)))
+        else:
+            for m in timed:
+                parts.append(("shop", f"{_tidy(m['title'])} — {_tidy(m['detail'])}."))
 
     # 6. WHO'S AWAY TONIGHT (2026-10-04) — attendance's own sentence, word
     # for word. summary_line is where "Dinner for 3 — Vineeth's out." lives
@@ -730,8 +764,8 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
         if summary:
             parts.append(("away", summary))
 
-    # 7. THE KITCHEN: one thing from the attention queue, and the use-it-up
-    # nudge. Always in — see MORNING_PARTS_ALWAYS.
+    # 7. FOOD TO USE UP ("kitchen"): one thing from the attention queue, and
+    # the use-it-up nudge. A box since 2026-10-05, on by default.
     if "kitchen" in want:
         try:
             items = _attention.get_attention_items()
@@ -754,7 +788,7 @@ def _trim_to_budget(tagged: list[tuple[str, str]], budget: int) -> tuple[list[st
     parts that got none of theirs in.
 
     ADMISSION IS BY PART, not by position: every part's FIRST line is
-    offered before any part's SECOND. That is the answer to what six
+    offered before any part's SECOND. That is the answer to what seven
     switchable parts do to a character budget — before this, lines were
     offered strictly in order, so three fridge moves could eat the room a
     part the household had explicitly ticked was waiting for, and the part
@@ -809,7 +843,7 @@ def _compose_morning(now_local: datetime | None, link: bool, parts) -> dict:
     whole promise is that it is the same text the sender would send, and
     two composers is how that stops being true.
 
-    `parts` is the chosen six-subset; None reads the household's answer.
+    `parts` is the chosen subset; None reads the household's answer.
     """
     # The default is the HOUSEHOLD's clock, never the server's. The container
     # runs UTC and households default to America/Toronto, so from 8pm local

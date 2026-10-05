@@ -145,3 +145,38 @@ def test_the_preview_asks_the_composer_with_the_ticks_and_save_posts_the_househo
     css = SHELL_CSS[SHELL_CSS.index("What should it include? · for everyone"):SHELL_CSS.index(".morning-preview-quiet")]
     assert "min-height: 48px; /* Rule 6 */" in css
     assert not re.search(r"#[0-9a-fA-F]{3,6}\b", css)
+
+
+_SAVE_HARNESS = "\n".join([
+    _var("MORNING_PARTS_FAILED", "'", "';"), _extract("morningPartsChosen"), _extract("paintMorningPreview"),
+    "async " + _extract("saveMorningSheet"),
+    "var morningParts = ['meals']; var morningPreview = null; var morningPreviewSeq = 0;",
+    "var prefsState = { open: false, morningText: { time: '07:00', parts: ['meals'], adults: [{ member_id: 7, name: 'Emily', on: true }] } };",
+    "function renderPrefsRows() {} function morningClock() { return '7'; }",
+    "var note = { hidden: true, textContent: '' };",
+    "function el(attrs) { return { value: attrs.value, getAttribute: function (n) { return attrs[n]; } }; }",
+    "var row = { getAttribute: function () { return '7'; }, querySelector: function (q) {",
+    "  if (q.indexOf('tel') !== -1) return el({ value: '+14165550100' });",
+    "  if (q.indexOf('data-morning-toggle') !== -1) return el({ 'aria-pressed': 'true' });",
+    "  return null; } };",
+    "var body = { querySelector: function (q) { if (q === '#morning-note') return note;",
+    "  if (q === '[data-morning-part]') return {}; return null; },",
+    "  querySelectorAll: function () { return [row]; } };",
+    "var morningSheetEl = { querySelector: function (q) { return q === '#morning-body' ? body : null; } };",
+])
+
+
+@_needs_node
+@pytest.mark.parametrize("parts_ok, says", [
+    (False, "Everything saved except what it should include. Try Save again."),
+    (True, "Saved. Next one’s at 7."),
+])
+def test_a_failed_parts_save_says_which_part_failed(parts_ok, says):
+    script = _SAVE_HARNESS + "\n" + (
+        "var Api = { fetch: async function (url) { var ok = url.indexOf('/parts') === -1 || " + ("true" if parts_ok else "false") + ";"
+        " return { ok: ok, json: async function () { return ok ? { parts: ['meals'], settings: prefsState.morningText, configured: true } : { detail: 'no' }; } }; } };\n"
+        "saveMorningSheet().then(function () { console.log(JSON.stringify(note.textContent)); });"
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    assert json.loads(res.stdout.strip()) == says

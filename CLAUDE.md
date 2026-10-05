@@ -433,28 +433,36 @@ why*, not duplicating the diff.
   to include". Emily's change on the card overrides "per person": **ONE
   setting per household**, `households.morning_text_parts`, a JSON list of
   keys; everyone who gets the message gets the same parts.
-  - **Six parts, in this order, and the message is the ticked ones only:**
-    meals · freezer · prep · start · shop · away
-    (`digest.MORNING_PART_CHOICES`). A part with nothing today says nothing;
-    nothing in any ticked part is no message at all, as an empty day always
-    was. Defaults for a household nobody has asked (stored `''`): meals,
-    freezer, prep. `'[]'` is the real answer "none of the six" and never
-    reads back as the defaults.
-  - **The shop reminder goes quiet for every household that hasn't ticked
-    it.** It was in every morning text until now; the card switches it off
-    by default. `MORNING_PART_DEFAULTS` is the one lever if that's wrong.
-  - **`kitchen` (the attention item + use-it-up nudge) is always in and has
-    no box** (`MORNING_PARTS_ALWAYS`): the card names six boxes, and both
-    lines were already in the text. Cost: a household that unticks all six
-    still gets a text when the milk is going off. `morning_text_on` is the
-    off switch, not the boxes.
-  - **Every word about a part is in one block** (`MORNING_PART_WORDS` +
-    `MORNING_START_LINE` in `digest.py`), because Emily will review them;
+  - **Seven parts, in this order, and the message is the ticked ones
+    only:** meals · freezer · prep · start · shop ("Shopping") · away ·
+    kitchen ("Food to use up") (`digest.MORNING_PART_CHOICES`). A part with
+    nothing today says nothing; nothing in any ticked part is no message at
+    all. Nothing is always in (`MORNING_PARTS_ALWAYS` is empty): unticking
+    all seven means no message, ever. Defaults for a household nobody has
+    asked (stored `''`): meals, freezer, prep, shop, kitchen. `'[]'` is the
+    real answer "none of them" and never reads back as the defaults.
+  - **Emily's two calls, 2026-10-05, so nobody loses a line they got
+    before:** Shopping and Food to use up are boxes ON by default (the
+    first cut had the shop reminder off by default and the use-it-up lines
+    always-on with no box). A household on the defaults still gets the
+    timed "Shop for tonight — 1 item, by 5:55." line, pinned by
+    `test_a_household_on_the_defaults_still_gets_the_timed_shop_line`.
+  - **Shopping covers both.** On the household's own shop day (`today_moves`'
+    `shop.is_shop_day`, the same read Today's Shop section uses, top-up day
+    included) it is the shop-day line, "You shop today. 14 things on the
+    list."; other days, the timed shop line as before. **Both apply = one
+    line**: the cook's deadline rides on it ("You shop today, by 5:55. …"),
+    only when it is a clock today (not "by tomorrow", not "still to do").
+  - **Every word about a part is in one block** (`MORNING_PART_WORDS`,
+    `MORNING_START_LINE`, `MORNING_SHOP_DAY_LINE` / `_BY` / `_THINGS_*` in
+    `digest.py`), because Emily will review them. "Nothing on the list
+    yet." is word for word Today's own (`moves._shop_day_line`). The guard
+    test matches a one-word label ("Shopping") only as a whole literal;
     the screen draws its labels off `part_choices` and holds no copy of
     its own. The `says` line per part is sent but NOT drawn — the mockup
     shows labels only, and the preview already says what each part does.
   - **Settings → Morning text, under the people:** "What should it include?
-    · for everyone", six whole-row `role="checkbox"` buttons at 48px, then
+    · for everyone", seven whole-row `role="checkbox"` buttons at 48px, then
     **Preview**. A tick repaints the preview from
     `GET /api/morning-text/preview?parts=…` — the sender's own composer, so
     it can't drift — debounced 150ms, a sequence number dropping late
@@ -462,10 +470,12 @@ why*, not duplicating the diff.
     send reads "Nothing to tell you today with these, so no message would
     go out." A tick saves nothing: **Save** posts `/api/morning-text/parts`
     (no member id) before the per-adult rows (§2b S10), and its answer
-    carries the fresh preview. Unsaved ticks are dropped on close. No
+    carries the fresh preview. If the boxes fail and the rows save, the
+    note says so: "Everything saved except what it should include. Try Save
+    again." (`MORNING_PARTS_FAILED`). Unsaved ticks are dropped on close. No
     boxes when the house has no adults (nothing would save or send).
   - Chat: `set_morning_text` takes `add_parts` / `drop_parts` / `parts`.
-    Tests: `tests/test_morning_message_parts.py` (backend, 52),
+    Tests: `tests/test_morning_message_parts.py` (backend, 56),
     `tests/test_morning_message_settings.py` (the sheet, under node).
     `tests/test_evening_nudge.py`'s harness now lifts the parts helpers too,
     since `renderMorningSheet` draws them.

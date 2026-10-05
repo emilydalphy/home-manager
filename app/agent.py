@@ -1367,7 +1367,7 @@ TOOL_DEFINITIONS = [
                 "parts": {
                     "type": "array",
                     "items": {"type": "string", "enum": list(tools.MORNING_PART_CHOICES)},
-                    "description": "The WHOLE list of what the message includes, replacing what's there. meals = what you're eating today; freezer = anything to move to the fridge; prep = anything to get ready ahead; start = when to start cooking dinner; shop = a shop something today is waiting on; away = who's at the table tonight. An empty list means a message with none of those in it. Only use this when they name the whole list.",
+                    "description": "The WHOLE list of what the message includes, replacing what's there. meals = what you're eating today; freezer = anything to move to the fridge; prep = anything to get ready ahead; start = when to start cooking dinner; shop = shopping: the shop day, or a shop tonight's cook is waiting on; away = who's at the table tonight; kitchen = food to use up before it goes off. An empty list means a message with none of those in it. Only use this when they name the whole list.",
                 },
                 "add_parts": {
                     "type": "array",
