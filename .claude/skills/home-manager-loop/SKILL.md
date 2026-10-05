@@ -337,8 +337,8 @@ only thing it never does is merge (or push without her go-ahead); those stay her
    decision of Emily's — e.g. re-adding "Just this week?", "Before you start", the Shop
    trip).** Cards are written once; Emily's decisions keep moving in walkthroughs, mockups
    and chat. So before investigating: (a) read any `Current as of …` block at the top of
-   the card first — it overrides the body; (b) grep the CLAUDE.md Decision log and the
-   memory files for the screens, buttons, copy and functions the card names, for anything
+   the card first — it overrides the body; (b) grep the Decision log (`docs/DECISION_LOG.md`, moved
+   out of CLAUDE.md 2026-10-05) and the memory files for the screens, buttons, copy and functions the card names, for anything
    dated AFTER the card was written or last edited; (c) check each named screen, button or
    function still exists on `origin/main`. If a later decision contradicts the card, or the
    card names something that was removed on purpose, **do not build the old version and do

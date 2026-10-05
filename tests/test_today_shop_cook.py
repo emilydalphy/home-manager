@@ -31,7 +31,8 @@ import nodeharness
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
-CLAUDE_MD = (REPO / "CLAUDE.md").read_text(encoding="utf-8")
+# The Decision log moved out of CLAUDE.md on 2026-10-05.
+DECISION_LOG = (REPO / "docs" / "DECISION_LOG.md").read_text(encoding="utf-8")
 
 _needs_node = pytest.mark.skipif(
     shutil.which("node") is None, reason="node is needed to execute the strip's own builders"
@@ -617,5 +618,5 @@ def test_the_old_card_and_row_rules_are_retired():
 
 
 def test_the_decision_log_has_the_entry():
-    assert "2026-09-13 — Now is one strip down the day" in CLAUDE_MD
-    assert "2026-09-17 — Today: Shop and Cook, tagged by part of the day" in CLAUDE_MD
+    assert "2026-09-13 — Now is one strip down the day" in DECISION_LOG
+    assert "2026-09-17 — Today: Shop and Cook, tagged by part of the day" in DECISION_LOG

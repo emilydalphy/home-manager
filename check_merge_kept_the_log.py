@@ -62,7 +62,7 @@ import re
 import subprocess
 import sys
 
-LOG_FILE = "CLAUDE.md"
+LOG_FILE = "docs/DECISION_LOG.md"  # moved out of CLAUDE.md 2026-10-05
 
 # The Decision log's own heading format, unchanged since the file was
 # started. Kept IDENTICAL to ENTRY_HEADING in
@@ -320,7 +320,7 @@ def main(argv: list[str]) -> int:
         for heading in sorted(missing.elements()):
             print(f"   {heading[:96]}")
         print(
-            "\nAlmost always this is a merge that resolved CLAUDE.md by "
+            "\nAlmost always this is a merge that resolved the log by "
             "taking one side. Redo it hunk by hunk, keeping both sides — see "
             "the 2026-09-08 entry in the log itself. Do NOT resolve this "
             "file with --ours or --theirs.\n"

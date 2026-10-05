@@ -57,6 +57,11 @@ import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
+# The Decision log moved out of CLAUDE.md into docs/DECISION_LOG.md on
+# 2026-10-05 (CLAUDE.md had reached 24,000 lines, re-read by every session).
+# Every guard below on the LOG reads LOG_MD; CLAUDE_MD is the short briefing.
+LOG_PATH = "docs/DECISION_LOG.md"
+LOG_MD = (REPO / "docs" / "DECISION_LOG.md").read_text(encoding="utf-8")
 CLAUDE_MD = (REPO / "CLAUDE.md").read_text(encoding="utf-8")
 
 # A Decision log entry heading. The log's own format, used unchanged since
@@ -66,18 +71,18 @@ CLAUDE_MD = (REPO / "CLAUDE.md").read_text(encoding="utf-8")
 ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 
 # --- the floors ----------------------------------------------------------
-# All three were taken on the merge-batch-2026-10-05 tree (the twelve
-# overnight branches of 2026-10-05 merged): 24705 lines, 260 entries, newest
-# entry 2026-10-05. Earlier floors: ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
+# All three were taken on docs/DECISION_LOG.md right after the move out of
+# CLAUDE.md (2026-10-05, on top of main 8295894): 24543 lines, 269 entries,
+# newest entry 2026-10-05. Earlier floors: ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
 # grown well past them; only lower one for a deletion you can point at.
 
-LINE_FLOOR = 24500
-ENTRY_FLOOR = 255
+LINE_FLOOR = 24000
+ENTRY_FLOOR = 264
 NEWEST_ENTRY_ON_OR_AFTER = "2026-10-05"
 
 
 def _entry_dates() -> list[str]:
-    return ENTRY_HEADING.findall(CLAUDE_MD)
+    return ENTRY_HEADING.findall(LOG_MD)
 
 
 # --- 1. the file as a whole ----------------------------------------------
@@ -89,9 +94,9 @@ def test_claude_md_did_not_suddenly_get_shorter():
     and this catches the shape of it even for work that has no named anchor
     below. Raise the floor when the file grows well past it; only lower it
     for a deletion you can point at, and say which one in the same commit."""
-    lines = CLAUDE_MD.count("\n") + 1
+    lines = LOG_MD.count("\n") + 1
     assert lines > LINE_FLOOR, (
-        f"CLAUDE.md is {lines} lines — suspiciously short (floor {LINE_FLOOR}, "
+        f"docs/DECISION_LOG.md is {lines} lines — suspiciously short (floor {LINE_FLOOR}, "
         "set from 19030 on origin/main at ee741f8). A merge that resolves "
         "this file by taking one side whole loses whatever the other side "
         "had. Check `git log -p --follow CLAUDE.md` for a merge that took "
@@ -111,7 +116,7 @@ def test_the_decision_log_did_not_lose_entries():
     a count that has gone DOWN wants explaining rather than adjusting for."""
     n = len(_entry_dates())
     assert n >= ENTRY_FLOOR, (
-        f"CLAUDE.md's Decision log has {n} dated entries — fewer than the "
+        f"docs/DECISION_LOG.md has {n} dated entries — fewer than the "
         f"floor of {ENTRY_FLOOR} (set from 219 on origin/main at ee741f8). "
         "Entries are never deleted here, only corrected in place, so this is "
         "a merge or an edit that dropped history. Do not lower the floor to "
@@ -147,10 +152,10 @@ def test_no_entry_is_written_in_a_shape_the_counter_cannot_see():
     which cannot fail on drift by construction — it only ever validated the
     headings that had already matched. Measured: breaking the em dash on 30
     headings left it green."""
-    strict = {m.start() for m in ENTRY_HEADING.finditer(CLAUDE_MD)}
+    strict = {m.start() for m in ENTRY_HEADING.finditer(LOG_MD)}
     missed = [
-        CLAUDE_MD[m.start() : CLAUDE_MD.find("\n", m.start())][:90]
-        for m in LOOSE_HEADING.finditer(CLAUDE_MD)
+        LOG_MD[m.start() : LOG_MD.find("\n", m.start())][:90]
+        for m in LOOSE_HEADING.finditer(LOG_MD)
         if m.start() not in strict
     ]
     assert not missed, (
@@ -175,7 +180,7 @@ def test_the_newest_entry_is_still_recent():
     forward. It simply gets less useful as it ages, so raise it alongside the
     two floors above."""
     dates = _entry_dates()
-    assert dates, "CLAUDE.md has no Decision log entries at all"
+    assert dates, "docs/DECISION_LOG.md has no entries at all"
     newest = max(dates)
     assert newest >= NEWEST_ENTRY_ON_OR_AFTER, (
         f"the newest Decision log entry is dated {newest}, but this file was "
@@ -203,9 +208,9 @@ def test_the_newest_entries_are_still_named_in_the_log():
     readers lack. A floor says how much is there; an anchor says WHICH work
     is written down, so a resolution that keeps the length and swaps the
     content still fails."""
-    missing = [anchor for anchor in NEWEST_ANCHORS if anchor not in CLAUDE_MD]
+    missing = [anchor for anchor in NEWEST_ANCHORS if anchor not in LOG_MD]
     assert not missing, (
-        "these Decision log entries are gone from CLAUDE.md:\n  "
+        "these Decision log entries are gone from docs/DECISION_LOG.md:\n  "
         + "\n  ".join(missing)
         + "\nThey were on origin/main at ee741f8. If one was deliberately "
         "reworded, update NEWEST_ANCHORS in the same commit; if it is simply "
@@ -223,7 +228,7 @@ def test_the_newest_entries_are_still_named_in_the_log():
 # where the filename is in the path division and the parens hold the
 # encoding. Search on the assignment, or on the filename alone.
 READER_ASSIGNMENT = re.compile(
-    r'^CLAUDE_MD\s*=.*"CLAUDE\.md".*read_text', re.M
+    r'^\w+\s*=.*"DECISION_LOG\.md".*read_text', re.M
 )
 
 KNOWN_READERS = (
@@ -248,7 +253,7 @@ def test_the_existing_readers_still_read_the_file():
     found = _reader_files()
     for name in KNOWN_READERS:
         assert name in found, (
-            f"tests/{name} no longer reads CLAUDE.md. It is one of the "
+            f"tests/{name} no longer reads docs/DECISION_LOG.md. It is one of the "
             "tripwires on that file; if its anchor was genuinely superseded, "
             "move the anchor rather than dropping the reader."
         )
@@ -261,7 +266,7 @@ def _assert_sources(path):
     assertion is still there — and a COMMENTED-OUT one satisfies a substring
     search perfectly. Measured on the first cut of this file: replacing
     test_cook_shelf.py's assertion with
-    `pass  # assert "2026-09-13 — Cook's root is the shelf" in CLAUDE_MD`
+    `pass  # assert "2026-09-13 — Cook's root is the shelf" in LOG_MD`
     left all sixteen tests green and that file green too, which is precisely
     the weakening this test is named for. It is the repo's own
     comment-stripping idiom, one level up: parse, don't match.
@@ -290,12 +295,12 @@ def test_the_two_older_readers_still_assert_on_what_they_read():
     ):
         asserts = _assert_sources(REPO / "tests" / name)
         assert any(anchor in a for a in asserts), (
-            f"tests/{name} no longer ASSERTS {anchor!r} against CLAUDE.md. "
+            f"tests/{name} no longer ASSERTS {anchor!r} against docs/DECISION_LOG.md. "
             "The string may still be in the file — in a comment, or in a "
             "docstring — but a commented-out assertion is not a tripwire."
         )
-        assert anchor in CLAUDE_MD, (
-            f"{anchor!r} is gone from CLAUDE.md — tests/{name} should be red "
+        assert anchor in LOG_MD, (
+            f"{anchor!r} is gone from docs/DECISION_LOG.md — tests/{name} should be red "
             "too; if it is not, its assertion has been weakened"
         )
 
@@ -305,7 +310,7 @@ def test_the_sweep_that_missed_them_still_misses_them():
     used to conclude that nothing read CLAUDE.md, and it is still wrong — kept
     here so the next person reaching for it sees, in one run, that it answers
     empty over files that demonstrably do read the file."""
-    wrong = re.compile(r"(open|read_text|Path)\([^)]*CLAUDE")
+    wrong = re.compile(r"(open|read_text|Path)\([^)]*DECISION_LOG")
     for name in KNOWN_READERS:
         source = (REPO / "tests" / name).read_text(encoding="utf-8")
         assert READER_ASSIGNMENT.search(source), f"{name} should be a reader"
@@ -331,12 +336,12 @@ def test_the_floors_cannot_see_the_2026_09_26_shape():
     the merged tree is bigger than the baseline by construction. What catches
     it is arithmetic at merge time: the ten branches added +1328 lines between
     them and the merged tree showed +292."""
-    lines = CLAUDE_MD.count("\n") + 1
+    lines = LOG_MD.count("\n") + 1
     entries = len(_entry_dates())
 
     # The mangled tree of 2026-09-26: main, plus 292 of the 1328 lines its
     # branches were owed, and one of the ten branch entries surviving.
-    mangled = CLAUDE_MD + "\n" + "\n".join(
+    mangled = LOG_MD + "\n" + "\n".join(
         ["- **2026-09-27 — A branch entry that survived the merge.**"]
         + ["  padding that stands in for that entry's body."] * 290
     )
@@ -351,16 +356,18 @@ def test_the_floors_cannot_see_the_2026_09_26_shape():
 
 
 # --- 6. the rule is written down where a session will read it --------------
+# CLAUDE.md is what a session reads first, so the merge rule lives THERE
+# even though the log it protects moved to docs/DECISION_LOG.md (2026-10-05).
+
+CLAUDE_MD_MAX_LINES = 1500
+
 
 def test_the_hunk_by_hunk_rule_names_this_file_too():
-    """The shell.js entry states the rule for shell.js alone. 2026-09-26 shows
-    the accident is not specific to one file — it is specific to resolving a
-    conflict with --ours/--theirs inside a script that then believes it did
-    something else — so the rule has to name CLAUDE.md as well, or the next
-    session reads a rule that does not cover the file it is about to mangle."""
-    assert "`static/shell.js` OR in `CLAUDE.md`" in CLAUDE_MD, (
-        "the hunk-by-hunk merge rule no longer names CLAUDE.md alongside "
-        "static/shell.js — see the 2026-09-08 entry"
+    """The rule has to name the log file alongside static/shell.js, and point
+    at both guards, in the file every session reads first."""
+    assert "`static/shell.js` OR in\n  `docs/DECISION_LOG.md`" in CLAUDE_MD, (
+        "CLAUDE.md's merge rule no longer names docs/DECISION_LOG.md alongside "
+        "static/shell.js"
     )
     assert "tests/test_claude_md_tripwire.py" in CLAUDE_MD, (
         "CLAUDE.md no longer names this file as the tripwire, so a session "
@@ -368,9 +375,23 @@ def test_the_hunk_by_hunk_rule_names_this_file_too():
     )
     assert "check_merge_kept_the_log.py" in CLAUDE_MD, (
         "CLAUDE.md no longer names the merge-arithmetic check. It is the only "
-        "thing that catches a merge dropping a BRANCH's own entry — measured, "
-        "every test in this file passes that shape — so a rule that does not "
-        "name it sends the next session to a guard that cannot see the bug."
+        "thing that catches a merge dropping a BRANCH's own entry."
+    )
+
+
+def test_claude_md_stays_a_briefing_not_a_log():
+    """2026-10-05: the log moved out because CLAUDE.md had reached 24,000
+    lines and every session and sub-agent paid to read it. New entries belong
+    in docs/DECISION_LOG.md; this fails if they start landing here again."""
+    lines = CLAUDE_MD.count("\n") + 1
+    assert lines < CLAUDE_MD_MAX_LINES, (
+        f"CLAUDE.md is {lines} lines (ceiling {CLAUDE_MD_MAX_LINES}). Decision "
+        "log entries go in docs/DECISION_LOG.md, not here."
+    )
+    assert "docs/DECISION_LOG.md" in CLAUDE_MD
+    assert not ENTRY_HEADING.findall(CLAUDE_MD), (
+        "CLAUDE.md has a dated Decision log entry in it again — move it to "
+        "docs/DECISION_LOG.md"
     )
 
 
@@ -415,6 +436,7 @@ def _tiny_repo(tmp_path):
     which is where every real branch appends, and the half a merge touches."""
     repo = tmp_path / "tiny"
     repo.mkdir()
+    (repo / "docs").mkdir()
     _git(repo, "init", "-q", "-b", "base")
     _git(repo, "config", "user.email", "x@y")
     _git(repo, "config", "user.name", "x")
@@ -426,12 +448,12 @@ def _tiny_repo(tmp_path):
         "## Decision log\n\n- **2026-01-01 — The first thing.**\n"
         + "  Its body.\n" * 6
     )
-    (repo / "CLAUDE.md").write_text(log, encoding="utf-8")
-    _git(repo, "add", "CLAUDE.md")
+    (repo / LOG_PATH).write_text(log, encoding="utf-8")
+    _git(repo, "add", LOG_PATH)
     _git(repo, "commit", "-qm", "base")
     for name, date in (("one", "2026-02-01"), ("two", "2026-03-01")):
         _git(repo, "checkout", "-q", "-b", name, "base")
-        (repo / "CLAUDE.md").write_text(
+        (repo / LOG_PATH).write_text(
             log.replace(
                 "## Decision log\n\n",
                 f"## Decision log\n\n- **{date} — Branch {name}.**\n"
@@ -440,7 +462,7 @@ def _tiny_repo(tmp_path):
             ),
             encoding="utf-8",
         )
-        _git(repo, "add", "CLAUDE.md")
+        _git(repo, "add", LOG_PATH)
         _git(repo, "commit", "-qm", name)
     _git(repo, "checkout", "-q", "base")
     return repo
@@ -452,8 +474,8 @@ def _keep_both(repo) -> None:
     One implementation, used by every fixture here — two copies of the rule
     under test is how a fixture quietly stops reproducing the thing it is
     named after."""
-    text = (repo / "CLAUDE.md").read_text(encoding="utf-8")
-    (repo / "CLAUDE.md").write_text(
+    text = (repo / LOG_PATH).read_text(encoding="utf-8")
+    (repo / LOG_PATH).write_text(
         "\n".join(
             line
             for line in text.split("\n")
@@ -476,7 +498,7 @@ def _merge(repo, resolve: str) -> None:
         if out.returncode == 0:
             continue
         if resolve == "ours":
-            _git(repo, "checkout", "--ours", "CLAUDE.md")
+            _git(repo, "checkout", "--ours", LOG_PATH)
         else:  # keep both sides, which is the rule
             _keep_both(repo)
         _git(repo, "add", "-A")
@@ -573,7 +595,7 @@ def test_the_arithmetic_refuses_to_compare_a_tree_with_itself(tmp_path):
             cwd=str(repo), capture_output=True, text=True,
         )
         if out.returncode != 0:
-            _git(repo, "checkout", "--ours", "CLAUDE.md")
+            _git(repo, "checkout", "--ours", LOG_PATH)
             _git(repo, "add", "-A")
             _git(repo, "commit", "-qm", f"merge {name}")
     result = _run(repo, "base", "one", "two")
@@ -616,7 +638,7 @@ def _entry(date, name, body=3):
 
 
 def _prepend(repo, text):
-    p = repo / "CLAUDE.md"
+    p = repo / LOG_PATH
     p.write_text(
         p.read_text(encoding="utf-8").replace(
             "## Decision log\n\n", f"## Decision log\n\n{text}\n", 1
@@ -652,12 +674,12 @@ def test_an_entry_gained_from_elsewhere_cannot_cancel_one_the_merge_dropped(
         cwd=str(repo), capture_output=True, text=True,
     )
     assert out.returncode != 0, "the fixture needs a real conflict"
-    _git(repo, "checkout", "--ours", "CLAUDE.md")
+    _git(repo, "checkout", "--ours", LOG_PATH)
     _git(repo, "add", "-A")
     _git(repo, "commit", "-qm", "merge one --ours")
 
     # the truth the guard has to reach
-    assert "Branch one." not in (repo / "CLAUDE.md").read_text(encoding="utf-8")
+    assert "Branch one." not in (repo / LOG_PATH).read_text(encoding="utf-8")
 
     result = _run(repo, "base", "one")
     assert result.returncode == 1, (
@@ -710,7 +732,7 @@ def test_a_branch_that_rewords_existing_lines_is_not_reported_as_a_loss(
     CLAUDE.md."""
     repo = _tiny_repo(tmp_path)
     _git(repo, "checkout", "-q", "-b", "reword", "base")
-    p = repo / "CLAUDE.md"
+    p = repo / LOG_PATH
     p.write_text(
         p.read_text(encoding="utf-8").replace(
             "  Its body.", "  Its CORRECTED body."
@@ -765,7 +787,7 @@ def test_the_arithmetic_catches_a_body_that_vanished_under_its_heading(
     which is most of what a Decision log entry IS."""
     repo = _tiny_repo(tmp_path)
     _merge(repo, "both")
-    p = repo / "CLAUDE.md"
+    p = repo / LOG_PATH
     kept = [
         line
         for line in p.read_text(encoding="utf-8").split("\n")
@@ -792,6 +814,8 @@ def test_an_indented_sub_bullet_is_not_an_entry_and_cannot_be_told_apart():
     drift signal, and a reformat that indents real entries is a shape neither
     the tests nor the script can see."""
     indented = re.compile(r"^[ \t]+- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
+    # The sub-bullet sits in CLAUDE.md's Current state, which stayed in
+    # CLAUDE.md when the log moved out (2026-10-05).
     found = indented.findall(CLAUDE_MD)
     assert found, (
         "the sub-bullet this limit is documented against is gone from "
@@ -823,10 +847,10 @@ def test_the_floors_have_not_rotted_into_uselessness():
     So this fails when the slack gets wide enough to be worth nothing, and
     says what to do. Raising the floor is the fix; deleting this test is not.
     """
-    lines = CLAUDE_MD.count("\n") + 1
+    lines = LOG_MD.count("\n") + 1
     slack = lines - LINE_FLOOR
     assert slack < MAX_FLOOR_SLACK, (
-        f"CLAUDE.md is {lines} lines and LINE_FLOOR is {LINE_FLOOR}, so the "
+        f"docs/DECISION_LOG.md is {lines} lines and LINE_FLOOR is {LINE_FLOOR}, so the "
         f"floor now only catches a loss bigger than {slack} lines — the "
         "2026-09-26 incident lost about a thousand. Raise LINE_FLOOR (and "
         "ENTRY_FLOOR, and NEWEST_ENTRY_ON_OR_AFTER) to just under the "

@@ -44,7 +44,8 @@ SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
 DESIGN = (REPO / "DESIGN_SYSTEM.md").read_text(encoding="utf-8")
-CLAUDE_MD = (REPO / "CLAUDE.md").read_text(encoding="utf-8")
+# The Decision log moved out of CLAUDE.md on 2026-10-05.
+DECISION_LOG = (REPO / "docs" / "DECISION_LOG.md").read_text(encoding="utf-8")
 
 _needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
 
@@ -510,7 +511,7 @@ def test_design_system_and_the_decision_log_say_cooks_root_has_a_dock_now():
     assert "2026-09-13" in rule2
     # The empty-moment row: still no dock on an empty night.
     assert "no dock on a night with nothing to cook" in DESIGN
-    assert "2026-09-13 — Cook's root is the shelf" in CLAUDE_MD
+    assert "2026-09-13 — Cook's root is the shelf" in DECISION_LOG
 
 
 # --------------------------------------------------------------------------
