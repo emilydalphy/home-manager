@@ -123,7 +123,17 @@ console.log(JSON.stringify({
     assert 0 <= b < c < d, "the cards, in stop order"
     assert out["preShop"] == -1
     assert 'data-gro="add-open"' in out["dock"] and "Add something" in out["dock"], "the dock holds Add something"
-    assert "dock-primary" not in out["dock"] and "gro-primary" not in out["dock"], "and nothing apricot: ticking a row is the action"
+    # 2026-10-05, card 13 ("Before you shop"): LIST's dock now carries ONE
+    # apricot — the pass in front of sorting, or "Sort the list (N)" when
+    # there is nothing left to ask. Gowthami's household: "Sorting option
+    # is hidden and needs to be clearer that's the next step." So the
+    # claim below is narrowed to what it was always about rather than
+    # dropped: the root grows no action of its OWN (ticking a row is
+    # still it, and the add is still an outline), and the one apricot
+    # there now is the sort, asserted positively.
+    assert "gro-primary" not in out["dock"]
+    assert out["dock"].count("dock-primary") == 1 and 'data-gro="goto-sort"' in out["dock"], \
+        "ticking a row is still the action; the dock's one apricot is the sort"
 
 
 @_needs_node

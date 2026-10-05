@@ -211,6 +211,15 @@ def _gro_dock_body():
     return SHELL_JS[start:end]
 
 
+def _before_shop_dock_body():
+    """What LIST's one primary says and does (card 13, 2026-10-05) — the
+    dock delegates to it, so the no-dock rule is partly this function's
+    now."""
+    start = SHELL_JS.index("function beforeShopDockHtml(")
+    end = SHELL_JS.index("function beforeShopIsDone(", start)
+    return SHELL_JS[start:end]
+
+
 def test_shops_root_has_no_action_and_the_add_button_is_an_outline():
     """Until 2026-09-18 "Start the trip" sat in the dock over the list. The
     list is the checklist now: the root has no single action (ticking a
@@ -287,11 +296,29 @@ def test_a_screen_with_no_single_action_has_no_dock():
     standing no-dock example now, and an empty dock collapses rather
     than leaving a bare hairline across the bottom of a screen with
     nothing to say.
+
+    2026-10-05, card 13 ("Before you shop"): LIST's dock grew ONE apricot,
+    and it is a decision rather than drift — Gowthami's household could
+    not find the sort step, so the dock says what to do next. The rule
+    this test is named for is untouched: a screen with no single action
+    still has no dock, and Shop's LIST with nothing left to sort still
+    has no action of its own (beforeShopDockHtml returns '' on an empty
+    `groUnsorted`, which is asserted below). What changed is that a list
+    with unsorted things on it DOES have a single next action.
     """
     dock = _gro_dock_body()
     assert "start-trip" not in dock
     assert "!groStoresPromptShouldShow() &&" in dock, "never over the shops question"
-    assert "return groAddButtonHtml();" in dock.split("data-gro=\"goto-plan\"", 1)[1][:120], "LIST's dock is the add button and nothing apricot"
+    after_plan = dock.split("data-gro=\"goto-plan\"", 1)[1]
+    assert "return beforeShopDockHtml(data) + groAddButtonHtml();" in after_plan[:600], \
+        "LIST's dock is the pass's one primary plus the add button"
+    # Nothing to sort, nothing to say: the one primary stands down and the
+    # add outline is the whole dock, exactly as it was before card 13.
+    pass_dock = _before_shop_dock_body()
+    assert "if (!unsorted || groStoresPromptShouldShow()) return '';" in pass_dock, \
+        "no sort to offer means no dock action"
+    assert "dock-primary" not in pass_dock.split("return '';", 1)[0], \
+        "and the stand-down comes before any button is built"
     sortall = dock.split("if (step === 'sortall') {", 1)[1]
     assert "return '';" in sortall[:120], "SORT ALL with rows left renders no dock"
     assert ".gro-dock:empty { display: none; }" in SHELL_CSS

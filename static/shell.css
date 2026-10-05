@@ -4503,6 +4503,165 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    Cook's .kit-row shape; it was an apricot "3 TO SORT" badge in the head
    until the root band (2026-09-11), which carries no button. */
 .gro-sortrow { margin-bottom: 4px; }
+/* ---------- "Before you shop" — the pass in front of sorting ----------
+   Card 13, 2026-10-05. Gowthami's household: "Sorting option is hidden
+   and needs to be clearer that's the next step", and she didn't see
+   staples or understand the spices section either. So the dock carries
+   one apricot that names the next thing, and behind it a short pass of
+   one-question screens ending ON the sort.
+
+   Two rules, and only two: the progress bar is the app's OWN
+   (.cook-progress, Cook's step bar — same four lines, same apricot, same
+   ARIA, so the two screens can never disagree about what a step bar
+   looks like) and each step's content is its own to style. The step's
+   question and its line are what every step shares.
+
+   Contrast measured off computed styles in Chromium at 390x844, both
+   schemes (re-measured 2026-10-05 with the three real steps):
+     .gro-bs-title          --ink on --ground          12.78:1 / 14.40:1
+     .gro-bs-line           --ink-secondary on ground   4.44:1 /  8.48:1
+     .cook-progress-seg.is-done vs the unlit segment
+                            --apricot vs --hairline-strong
+                                                        1.80:1 /  4.65:1
+   The line's 4.44 is the app's own supporting-copy value, 0.06 under AA
+   in light everywhere it is used (see .cr-ask-note, card 12, the same
+   evening) — raising it means moving --ink-secondary, which is Emily's.
+   The bar's lit-vs-unlit pair clears 1.4.11's 3:1 for a state indicator
+   in DARK and not in LIGHT, and that half is INHERITED rather than
+   introduced: it is Cook's bar unchanged. The position it carries is
+   also said in words by role="progressbar"'s own ARIA (measured
+   aria-valuenow=1 aria-valuemax=2 on step 1 of 2), so nothing on this
+   screen is only-in-colour. Worth her eyes; not a one-screen hex. */
+.gro-bs-title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.gro-bs-line {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
+/* The three steps' own pieces (2026-10-05, finishing the card). Existing
+   vocabulary throughout: the list's own row and box (.gro-row/.gro-box) in
+   a .shell-card, the shops picker's chip (.gro-pill / .gro-pill-on) for the
+   spices, the celadon nudge for "Garam masala goes on the list.", and the
+   eyebrow for "Already on the list". Tokens only. */
+.gro-bs-card { padding: 4px 14px; }
+.gro-bs-row { cursor: pointer; border-top: 1.5px solid var(--hairline); }
+.gro-bs-row:first-child { border-top: none; }
+.gro-bs-why { font-weight: 500; color: var(--ink-secondary); }
+.gro-bs-add-open {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.gro-bs-add { display: flex; gap: 8px; align-items: center; }
+.gro-bs-add-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+.gro-bs-add-go, .gro-bs-confirm-yes {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.gro-bs-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.gro-bs-said {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--celadon-tint);
+  color: var(--ink-on-celadon);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+}
+.gro-bs-said[hidden] { display: none; }
+.gro-bs-onlist { display: flex; flex-direction: column; margin-top: 8px; }
+.gro-bs-eyebrow {
+  margin: 0 0 2px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.gro-bs-onrow {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.gro-bs-onrow .gro-bs-why { font-weight: 500; }
+.gro-bs-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 0 2px 8px; }
+.gro-bs-confirm-q { flex: 1 0 100%; font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink); }
+.gro-bs-confirm-no {
+  min-height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.gro-bs-foot { margin: 0; font-family: var(--font-body); font-size: 14px; color: var(--ink-secondary); }
+/* Step 1's "None this week": the mockup's sand button under the apricot —
+   a real second path, quiet, never a second fill colour that acts. */
+.gro-bs-none {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--sand);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.gro-bs-none:hover { background: var(--sand-deep); }
 /* ---------- The crumb: every deeper screen's one way back ----------
    Nav v2 rule 1 (Emily, 2026-09-09): a screen deeper than a tab root
    carries exactly ONE of these and it NAMES its parent — "‹ This week",
@@ -6296,6 +6455,14 @@ button.wwk-chip-text { cursor: pointer; min-height: 34px; }
 /* "+ Add" is a chip too — it becomes an input when tapped. --ink-strong
    like every "add" link in the app. */
 .wwk-chip-add { color: var(--ink-strong); font-weight: 700; }
+/* Settings → Regulars (2026-10-05): one row per staple — the name and its
+   rhythm in words, Pause/Resume as a chip, × to take it off. */
+.wwk-reg-list { display: flex; flex-direction: column; }
+.wwk-reg-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-top: 1.5px solid var(--hairline); }
+.wwk-reg-row:first-child { border-top: none; }
+.wwk-reg-name { flex: 1 1 auto; min-width: 0; font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--ink); }
+.wwk-reg-sub { font-weight: 500; color: var(--ink-secondary); }
+.wwk-reg-row.is-paused .wwk-reg-name { color: var(--ink-secondary); }
 
 /* ---- text ----
    .snw-input is the app's one text field (16px, so iOS never zooms). */

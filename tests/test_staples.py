@@ -531,7 +531,7 @@ def test_grocery_screen_source_markers():
         "We have plenty",
         "Not this trip",
         "Make it a staple",
-        "function groStaplesHtml",
+        "function wwkRegularsHtml",  # Settings → Regulars (2026-10-05) replaced the Shop foot card
         "/api/grocery-list/' + stLineId + '/staple",
         "/api/staples/' + stResult.id + '/undo",
         "/api/staples/' + goneStapleId + '/undo",
@@ -745,14 +745,15 @@ def test_api_returns_the_staples_grouped_by_section(signed_in):
 
 
 def test_staples_card_source_markers_for_sections():
+    # The sectioned Staples card at the foot of Shop went on 2026-10-05
+    # ("Before you shop" — Settings → Regulars lists them now), so its
+    # row/section markers went with it; the sections still arrive on the
+    # payload and the spice due line is unchanged.
     for needle in (
-        "function groStapleRowHtml",
         "groceryState.stapleSections",
-        'class="gro-staple-sec" data-section="',
-        "escapeHtml(sec.label)",
         "gro-spice-due",
         "Probably running low",
     ):
         assert needle in SHELL_JS, needle
-    for cls in (".gro-staple-sec", ".gro-spice-due"):
+    for cls in (".gro-spice-due",):
         assert cls in SHELL_CSS, cls

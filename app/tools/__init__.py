@@ -328,6 +328,18 @@ from .primary_member import (  # noqa: F401
 # person typed, and the one reader of it is a person at a terminal running
 # observability_report.py --recipe-changes (see recipe_change.py's own
 # docstring and feedback.py's, the precedent it follows).
+#
+# "Before you shop" (card 13, 2026-10-05) owns ONE stored fact — whether
+# the pass in front of sorting has been run for the week being shopped for —
+# plus the one read its three steps draw from and step 1's add. The steps'
+# own writes go through staples.py, spices.py and pre_shop.py.
+from .before_shop import (  # noqa: F401
+    add_regulars,
+    before_shop_state,
+    before_shop_steps,
+    mark_before_shop_done,
+    undo_add_regulars,
+)
 from .recipe_change import (  # noqa: F401
     OUTCOME_FAILED,
     OUTCOME_REWRITTEN,

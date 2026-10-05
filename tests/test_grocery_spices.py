@@ -508,29 +508,18 @@ console.log(JSON.stringify(groListHtml(groceryState.data)));
 
 
 @_needs_node
-def test_the_staples_card_groups_under_section_headings():
+def test_the_staples_card_is_gone_from_the_foot_of_the_list():
+    """The sectioned Staples card left Shop on 2026-10-05 ("Before you
+    shop"): regulars are ticked on that pass's step 1 and kept in Settings →
+    Regulars. Staples loaded with the list draw nothing at its foot."""
     out = _node("""
 setUp([], { items: [], recently_bought: [] });
 groceryState.staples = [
-  { id: 1, item: 'Ground cumin', section: 'spices', section_label: 'Spices', cadence_words: 'about every 2 months', due_words: '', paused: false },
-  { id: 2, item: 'Coffee', section: 'pantry', section_label: 'Pantry basics', cadence_words: 'about every 3 weeks', due_words: 'due next week', paused: false },
-  { id: 3, item: 'Dish soap', section: 'household', section_label: 'Household supplies', cadence_words: 'about every month', due_words: '', paused: true }
+  { id: 2, item: 'Coffee', section: 'pantry', section_label: 'Pantry basics', cadence_words: 'about every 3 weeks', due_words: '', paused: false }
 ];
-groceryState.stapleSections = [
-  { section: 'spices', label: 'Spices', staples: [groceryState.staples[0]] },
-  { section: 'pantry', label: 'Pantry basics', staples: [groceryState.staples[1]] },
-  { section: 'household', label: 'Household supplies', staples: [groceryState.staples[2]] }
-];
-groceryState.staplesOpen = true;
 console.log(JSON.stringify(groListHtml(groceryState.data)));
 """)
-    assert out.count('class="gro-staple-sec"') == 3
-    for label in ("Spices", "Pantry basics", "Household supplies"):
-        assert '<span class="gro-eyebrow">' + label + '</span>' in out, label
-    assert out.index("Spices</span>") < out.index("Ground cumin") < out.index("Pantry basics") < out.index("Coffee") \
-        < out.index("Household supplies") < out.index("Dish soap")
-    assert "3 things you buy on a rhythm" in out
-    assert out.count('data-gro="staple-pause"') == 2 and out.count('data-gro="staple-resume"') == 1
+    assert "staple-pause" not in out and "you buy on a rhythm" not in out
 
 
 @_needs_node

@@ -5615,10 +5615,73 @@ def get_grocery_list_view(status: str = "needed"):
             result["shop_split"] = _stamp_shop_split(needed)
             _stamp_freezing_offers(needed)
             _stamp_pre_shop_flags(needed)
+            # "Before you shop" (2026-10-05): whether the pass in front of
+            # sorting has already been run for the week being shopped for.
+            # On the needed view only — it is the one the Shop tab opens
+            # on, and the other statuses are read by screens that have no
+            # pass to offer.
+            result["before_shop"] = tools.before_shop_state()
     except Exception as e:
         logger.exception("Grocery list lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+@app.post("/api/grocery-list/before-shop-done")
+def mark_before_shop_done():
+    """
+    The household has been through "Before you shop" for this week — the
+    pass is not offered again until the next plan. See
+    app/tools/before_shop.py on why that stamp is a column on the plan
+    rather than a date anything compares.
+
+    Never an error: the tool swallows its own failures and answers
+    done=False, because refusing to let somebody on to the sort screen
+    over a failed write is the worse answer.
+    """
+    return tools.mark_before_shop_done()
+
+
+@app.get("/api/grocery-list/before-shop")
+def get_before_shop_steps_view():
+    """What the three "Before you shop" steps show — regulars with why each
+    is ticked, this week's spices, and the things Pomona thinks are already
+    home — plus each step's "Already on the list" with who added it and
+    when. See app/tools/before_shop.py."""
+    try:
+        return tools.before_shop_steps()
+    except Exception as e:
+        logger.exception("Before you shop lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class BeforeShopRegularsRequest(BaseModel):
+    items: list[str] = []
+
+
+class BeforeShopUndoRequest(BaseModel):
+    item_ids: list[int] = []
+
+
+@app.post("/api/grocery-list/before-shop/regulars")
+def add_before_shop_regulars(req: BeforeShopRegularsRequest):
+    """Step 1's "Add N to the list": each ticked regular goes on as a
+    staple's line (a starter becomes a staple first). Never a second line."""
+    try:
+        return tools.add_regulars(req.items)
+    except Exception as e:
+        logger.exception("Adding regulars failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/grocery-list/before-shop/regulars-undo")
+def undo_before_shop_regulars(req: BeforeShopUndoRequest):
+    """The Undo on step 1's toast: the lines it just made come off."""
+    try:
+        return tools.undo_add_regulars(req.item_ids)
+    except Exception as e:
+        logger.exception("Undoing the regulars add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.get("/api/grocery-list/by-store")
@@ -5629,6 +5692,11 @@ def get_grocery_list_by_store_view(status: str = "needed"):
     the main /api/grocery-list endpoint for status='needed', so a flagged
     item's own row carries the flag on the Shop tab's store cards and in
     "Sort them all" — see _stamp_pre_shop_flags.
+
+    This is the view the Shop tab actually opens on (groLoadAllData reads
+    by-store for the needed half and /api/grocery-list only for the bought
+    one), so everything the list screen needs is stamped here as well as
+    there — before_shop included.
     """
     try:
         result = tools.get_grocery_list_by_store(status=status)
@@ -5637,6 +5705,7 @@ def get_grocery_list_by_store_view(status: str = "needed"):
             result["shop_split"] = _stamp_shop_split(needed)
             _stamp_freezing_offers(needed)
             _stamp_pre_shop_flags(needed)
+            result["before_shop"] = tools.before_shop_state()
     except Exception as e:
         logger.exception("Grocery list by-store lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
