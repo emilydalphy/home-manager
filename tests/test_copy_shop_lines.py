@@ -61,11 +61,12 @@ def test_the_paused_staple_toast_stops_after_what_happened():
     assert "under Staples if you want it back" not in SHELL_JS, (
         "a sentence about where a control lives — the Undo chip is the way back"
     )
-    # And the way back is real: the Staples section draws every paused
+    # And the way back is real: Settings → Regulars (2026-10-05, which
+    # replaced the Staples card at the foot of Shop) draws every paused
     # staple with a Resume button on it.
-    row = SHELL_JS[SHELL_JS.index("function groStapleRowHtml("):]
+    row = SHELL_JS[SHELL_JS.index("function wwkRegularsHtml("):]
     row = row[:row.index("\n  }\n")]
-    assert "st.paused" in row and "Resume" in row
+    assert "s.paused" in row and "Resume" in row
 
 
 # ---------------------------------------------------------------------------

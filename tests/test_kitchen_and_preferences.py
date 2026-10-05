@@ -559,6 +559,9 @@ def test_a_brand_new_household_is_told_nothing_it_never_said(signed_in):
         # nothing connected its honest answer is this, and nothing more.
         "Your calendar": "Not connected",
         "Stores": "Not set yet",
+        # Regulars (2026-10-05) reads /api/staples, not memory; with none,
+        # what the row is for — never a default.
+        "Regulars": "Things you buy most weeks",
     }
 
 

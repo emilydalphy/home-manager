@@ -3,33 +3,16 @@
 
 Loop Board 'Shop: "Before you shop" — regulars, then spices and oils, then
 already-have-it, ending on Sort the list' (High, Phase 1). Gowthami's
-household, Sunday 2026-10-04, after a week of real use:
+household, 2026-10-04: "Sorting option is hidden and needs to be clearer
+that's the next step", the staples card was never seen, and the spices
+section's instructions were unclear.
 
-    "Sorting option is hidden and needs to be clearer that's the next step."
-
-She also never saw the staples card and didn't understand the spices
-section. The card's answer is one errand in front of the list: Shop's dock
-carries ONE apricot that names the next thing, and behind it a short pass
-of one-question screens that ends ON the sort.
-
-SLICE 1 — THE FRAME, which is what this file covers. The card's own Notes
-allow slices and name them: "(1) frame + sort as the clear last step, (2)
-regulars step, (3) spices step, (4) already-have-it step." The three
-content steps are slices 2-4 and are NOT built, so BEFORE_SHOP_STEPS ships
-empty and the dock reads "Sort the list (N)" — which is honest, and is
-already the whole of the complaint above. The label becomes "Before you
-shop" by itself the moment a step is registered.
-
-So the frame is what is tested, and it is tested the way slice 2 will
-reach it: with a PROBE pushed into BEFORE_SHOP_STEPS. That is deliberate.
-A frame whose only exercised path is the empty one is a frame nobody has
-driven, and the card explicitly asks for one a step can be added to at the
-FRONT ("step 0: update your inventory" is coming and is not this card).
-
-Red against the parent commit: not quoted, and it would mean nothing —
-app/tools/before_shop.py, the route, the column and every one of the
-screen functions are new, so the whole file is a name error there rather
-than a behaviour catch. The evidence is the mutation table in the report.
+Started overnight as a frame with no steps (2026-10-05 WIP) and finished
+the same day. Emily asked for fewer tests, so this file covers what the card
+itself names — the steps appear in order, staples added in step 1 appear on
+the list, a spice tapped in step 2 becomes a needed line, items ticked in
+step 3 leave the sort count — plus the once-a-week stamp, the pre-tick rule
+and "Already on the list", and that skipping every step changes nothing.
 """
 from __future__ import annotations
 
@@ -110,13 +93,6 @@ def test_finishing_it_once_is_what_stops_it_coming_back():
     assert _asked(pid) is not None
 
 
-def test_finishing_it_twice_says_the_same_thing():
-    """CATCH. Two taps, a retried POST, a replay — none of them is an error
-    and none of them changes the answer."""
-    pid = _plan()
-    first = tools.mark_before_shop_done()
-    second = tools.mark_before_shop_done()
-    assert first == second == {"done": True, "weekly_plan_id": pid}
 
 
 def test_a_new_week_is_a_new_plan_so_the_pass_comes_back():
@@ -146,24 +122,6 @@ def test_a_household_with_no_plan_at_all_is_offered_the_pass_and_stamps_nothing(
     assert tools.mark_before_shop_done() == {"done": False, "weekly_plan_id": None}
 
 
-def test_the_stamp_is_scoped_to_the_household():
-    """CATCH. Every write in this app is, and this one names the household
-    in its WHERE even though it has already resolved the row by id — the
-    belt-and-braces rule the 2026-09-26 sweep put on every owned table."""
-    mine = _plan()
-    conn = get_conn()
-    try:
-        conn.execute("INSERT INTO households (id, name) VALUES (99, 'Next door')")
-        conn.commit()
-    finally:
-        conn.close()
-    with tools.use_household(99):
-        theirs = _plan()
-    tools.mark_before_shop_done()
-    assert _asked(mine) is not None
-    assert _asked(theirs) is None, "the other household's week is untouched"
-    with tools.use_household(99):
-        assert tools.before_shop_state() == {"done": False, "weekly_plan_id": theirs}
 
 
 def test_a_read_that_fails_does_not_take_the_grocery_list_down_with_it():
@@ -175,14 +133,6 @@ def test_a_read_that_fails_does_not_take_the_grocery_list_down_with_it():
         assert tools.before_shop_state() == {"done": False, "weekly_plan_id": None}
 
 
-def test_a_failed_write_lets_them_on_to_the_sort_anyway():
-    """CATCH. They are on their way to the sort screen; stopping them over
-    bookkeeping would be the worse answer. A dropped write means the pass
-    is offered once more, which is the safe direction — asking twice is
-    cheaper than never asking."""
-    _plan()
-    with mock.patch("app.tools.before_shop.get_conn", side_effect=sqlite3.OperationalError("nope")):
-        assert tools.mark_before_shop_done() == {"done": False, "weekly_plan_id": None}
 
 
 # ---------------------------------------------------------------------------
@@ -203,13 +153,6 @@ def test_the_state_rides_on_the_view_the_shop_tab_actually_opens(signed_in):
     assert plain["before_shop"] == by_store["before_shop"], "both needed views agree"
 
 
-def test_the_bought_view_says_nothing_about_a_pass_it_cannot_offer(signed_in):
-    """GUARD. Pinned by the "state on every status" mutation: the bought
-    view is read by screens with no pass in front of them, and a key there
-    would be an answer to a question nobody asked."""
-    _plan()
-    tools.add_grocery_item("Orzo", "1 box", category="pantry")
-    assert "before_shop" not in signed_in.get("/api/grocery-list?status=bought").json()
 
 
 def test_the_route_records_the_pass_and_is_safe_to_call_twice(signed_in):
@@ -221,670 +164,323 @@ def test_the_route_records_the_pass_and_is_safe_to_call_twice(signed_in):
     assert signed_in.post("/api/grocery-list/before-shop-done").json() == first.json()
 
 
-def test_the_route_needs_a_signed_in_household(client):
-    """GUARD on the app's own auth middleware, pinned here because this
-    route writes."""
-    assert client.post("/api/grocery-list/before-shop-done").status_code == 401
+
+# ---------------------------------------------------------------------------
+# 3. What the steps show (app/tools/before_shop.py)
+# ---------------------------------------------------------------------------
+
+
+def _bought(staple_item, days_ago):
+    conn = get_conn()
+    try:
+        sid = conn.execute("SELECT id FROM staples WHERE item = ?", (staple_item,)).fetchone()["id"]
+        conn.execute(
+            "INSERT INTO staple_events (household_id, staple_id, kind, source, on_date) VALUES (1, ?, 'bought', 'seed', ?)",
+            (sid, (household_today() - datetime.timedelta(days=days_ago)).isoformat()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _choices(steps, part="regulars"):
+    return {c["name"]: (c["ticked"], c["reason"]) for c in steps[part]["choices"]}
+
+
+def test_a_household_with_no_regulars_gets_the_starter_set_unticked():
+    """CATCH. The card's starter list, in its order; no history, no tick
+    and no reason."""
+    steps = tools.before_shop_steps()
+    assert steps["regulars"]["starter"] is True
+    assert [c["name"] for c in steps["regulars"]["choices"]] == tools.before_shop.STARTER_REGULARS
+    assert all(c["ticked"] is False and c["reason"] == "" for c in steps["regulars"]["choices"])
+
+
+def test_regulars_are_pre_ticked_from_what_pomona_already_knows():
+    """CATCH. The card's rule of thumb, one row per branch: in inventory ->
+    unticked with where; bought longer ago than it usually lasts -> ticked;
+    bought recently -> unticked with when; no history -> unticked, silent."""
+    for item, cat in [("Coffee", "pantry"), ("Cream", "dairy"), ("Bread", "pantry"), ("Dish soap", "household")]:
+        tools.add_staple(item, category=cat)
+    _bought("Coffee", 20)
+    _bought("Bread", 3)
+    tools.update_inventory_items([{"item": "Cream", "quantity": "1 carton", "location": "fridge"}], action="add")
+    got = _choices(tools.before_shop_steps())
+    assert got["Coffee"] == (True, "usually lasts 2 weeks")
+    assert got["Cream"] == (False, "in the fridge")
+    assert got["Bread"] == (False, "bought 3 days ago")
+    assert got["Dish soap"] == (False, "")
+
+
+def test_a_regular_already_on_the_list_is_not_a_choice_and_says_who_and_when():
+    """CATCH. Emily's change on the card: anything already on this week's
+    list moves to its own "Already on the list" section, with who added it
+    and when — "you" for the person looking."""
+    tools.add_staple("Milk", category="dairy")
+    tools.add_staple("Eggs", category="dairy")
+    me = tools.add_member("Emily")["member_id"]
+    tools.add_member("Ravi")
+    conn = get_conn()
+    conn.execute("UPDATE members SET age_group = 'adult'")
+    conn.commit()
+    conn.close()
+    with tools.use_member(me):
+        tools.add_grocery_item("Milk", "2 L", category="dairy")
+        tools.add_grocery_item("Eggs", "12", category="dairy", added_by="Ravi")
+        steps = tools.before_shop_steps()
+    assert steps["regulars"]["choices"] == []
+    on = {r["name"]: r["who"] for r in steps["regulars"]["on_list"]}
+    assert on == {"Milk": "you added it today", "Eggs": "Ravi added it today"}
+
+
+def test_regulars_ticked_in_step_1_go_on_the_list_once_and_undo_takes_them_off():
+    """CATCH — the card's own test: staples added in step 1 appear on the
+    list. A starter name becomes a staple; a name already on the list never
+    gets a second line; Undo takes off exactly what was added."""
+    tools.add_grocery_item("Milk", "2 L", category="dairy")
+    out = tools.add_regulars(["Coffee", "Milk", "coffee"])
+    assert [a["item"] for a in out["added"]] == ["Coffee"]
+    needed = [i["item"] for i in tools.list_grocery_list(status="needed")]
+    assert sorted(needed) == ["Coffee", "Milk"]
+    assert {s["item"] for s in tools.list_staples()} >= {"Coffee", "Milk"}
+    tools.undo_add_regulars([a["item_id"] for a in out["added"]])
+    assert [i["item"] for i in tools.list_grocery_list(status="needed")] == ["Milk"]
+
+
+def test_a_spice_tapped_in_step_2_becomes_a_needed_line():
+    """CATCH — the card's own test. Step 2's chip is the existing spice
+    tick, so the line it makes is an ordinary needed one, and on the next
+    read it is "Already on the list", not a choice."""
+    item_id = tools.add_grocery_item("Garam masala", "1 tsp", category="pantry", added_by="ai")["item_id"]
+    conn = get_conn()
+    conn.execute("UPDATE grocery_items SET status = 'spice' WHERE id = ?", (item_id,))
+    conn.commit()
+    conn.close()
+    assert [c["name"] for c in tools.before_shop_steps()["spices"]["choices"]] == ["Garam masala"]
+    tools.tick_spice(item_id, ticked=True)
+    assert [i["item"] for i in tools.list_grocery_list(status="needed")] == ["Garam masala"]
+    spices = tools.before_shop_steps()["spices"]
+    assert spices["choices"] == [] and [r["name"] for r in spices["on_list"]] == ["Garam masala"]
+
+
+def test_step_3_pre_ticks_the_flags_but_never_a_line_somebody_added_by_hand():
+    """CATCH. The pre-shop flags are step 3's rows, ticked; a line a person
+    put on the list starts unticked and says who added it — "never offers
+    to drop an item a person added by hand this week without saying so"."""
+    pid = _plan(approved=True)
+    onion = tools.add_grocery_item("Onions", "3", category="produce", added_by="ai")["item_id"]
+    conn = get_conn()
+    conn.execute("UPDATE grocery_items SET source_weekly_plan_id = ? WHERE id = ?", (pid, onion))
+    conn.commit()
+    conn.close()
+    tools.add_grocery_item("Rice", "1 lb", category="pantry", added_by="Ravi")
+    tools.update_inventory_items([{"item": "Onions", "quantity": "6"}, {"item": "Rice", "quantity": "5 lb"}], action="add")
+    rows = {r["name"]: (r["ticked"], r["reason"]) for r in tools.before_shop_steps()["have"]["rows"]}
+    assert rows["Onions"][0] is True
+    assert rows["Rice"] == (False, "Ravi added it today")
+
+
+def test_the_steps_route_answers_signed_in(signed_in):
+    """GUARD on the one read the screen makes."""
+    body = signed_in.get("/api/grocery-list/before-shop").json()
+    assert set(body) == {"regulars", "spices", "have"}
+    added = signed_in.post("/api/grocery-list/before-shop/regulars", json={"items": ["Tea"]}).json()["added"]
+    assert [a["item"] for a in added] == ["Tea"]
 
 
 # ---------------------------------------------------------------------------
-# 3. The dock: Shop's one apricot says what to do next
+# 4. The screen (node, the region's own functions)
 # ---------------------------------------------------------------------------
 
-# A probe pass. This is how slice 2 will register a step, and registering
-# one is the only way to drive the frame at all — see the module docstring.
-# `has` is what makes a step with nothing to ask disappear rather than
-# render empty, which is the card's own rule.
-_PROBE = """
-function probe(key, opts) {
-  opts = opts || {};
+_SCREEN = """
+function bsPayload() {
   return {
-    key: key,
-    title: opts.title || ('Probe ' + key),
-    line: opts.line || ('The ' + key + ' line.'),
-    has: opts.has || function () { return true; },
-    body: opts.body || function () { return '<p class="probe-' + key + '">body</p>'; },
-    dock: opts.dock || null
+    regulars: {
+      choices: [
+        { name: 'Coffee', staple_id: 1, ticked: true, reason: 'usually lasts 2 weeks' },
+        { name: 'Cream', staple_id: 2, ticked: false, reason: 'in the fridge' }
+      ],
+      on_list: [{ item_id: 50, name: 'Milk', who: 'you added it Wednesday', quantity: '2 L', category: 'dairy' }]
+    },
+    spices: { choices: [{ item_id: 60, name: 'Garam masala' }], on_list: [{ item_id: 61, name: 'Ghee', who: 'since Tuesday' }] },
+    have: { rows: [{ item_id: 2, name: 'Thing 2', ticked: true, reason: 'bought Sep 26' },
+                   { item_id: 3, name: 'Thing 3', ticked: false, reason: 'Ravi added it Monday' }] }
   };
 }
-function withSteps() {
-  BEFORE_SHOP_STEPS.length = 0;
-  for (var i = 0; i < arguments.length; i++) BEFORE_SHOP_STEPS.push(arguments[i]);
+function ready(payload) {
+  const data = setUp(5, [], ['Costco', 'Loblaws']);
+  data.beforeShop = { done: false, weekly_plan_id: 7 };
+  groceryState.bsData = payload || bsPayload();
+  return data;
 }
-// Two shops with one thing each plus a loose thing, so there is always
-// something unsorted and sorting is a real question (groCanSort).
-function unsortedList() {
-  return setUp(1, [
-    { store: 'Costco', items: [{ id: 3, item: 'Orzo', quantity: '1 box', store: 'Costco', store_decided: 1, category: 'pantry', status: 'needed' }] },
-    { store: 'Loblaws', items: [{ id: 10, item: 'Lemons', quantity: '3', store: 'Loblaws', store_decided: 1, category: 'produce', status: 'needed' }] }
-  ], ['Costco', 'Loblaws']);
-}
-function sortedList() {
-  return setUp(0, [
-    { store: 'Costco', items: [{ id: 3, item: 'Orzo', quantity: '1 box', store: 'Costco', store_decided: 1, category: 'pantry', status: 'needed' }] },
-    { store: 'Loblaws', items: [{ id: 10, item: 'Lemons', quantity: '3', store: 'Loblaws', store_decided: 1, category: 'produce', status: 'needed' }] }
-  ], ['Costco', 'Loblaws']);
-}
+function stepTitle() { const m = /gro-bs-title">([^<]*)</.exec(screenHtml()); return m ? m[1] : null; }
+function dockOf() { return groDockHtml(groceryState.data, groScreenStep()); }
 """
 
 
-def _node(body: str, timeout: int = 30):
-    res = nodeharness.run_node(
-        STUB + cook_progress() + grocery_block() + CLICK + FIXTURE + _PROBE + body,
-        timeout=timeout,
-    )
+def _screen(body: str):
+    res = nodeharness.run_node(STUB + cook_progress() + grocery_block() + CLICK + FIXTURE + _SCREEN + body, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())
 
 
 @needs_node
-def test_the_screen_carries_the_state_off_the_by_store_payload():
-    """CATCH, and the client half of the bug above. groLoadAllData BUILDS
-    the object the screen reads rather than passing the response through,
-    so a key the server sends and that function does not name never
-    arrives — which is exactly how before_shop went missing on the first
-    cut. Driving the real function is the only way to see that: every
-    other test here hands `data.beforeShop` over by name, so the mapping
-    itself is covered by nothing."""
-    out = _node("""
-// api.js resolves `fetch` by name at request time, in this same scope, so
-// re-pointing the binding is what lets the real groLoadAllData read a real
-// by-store payload. The bought view is read second and says nothing about
-// the pass, which is the other half of the contract.
-var BY_STORE = {
-  stores: [{ store: 'Costco', sections: [{ items: [{ id: 3, item: 'Orzo', status: 'needed' }] }] }],
-  before_shop: { done: false, weekly_plan_id: 7 }
-};
-fetch = function (url) {
-  var body = url.indexOf('by-store') !== -1 ? BY_STORE : { sections: [] };
-  return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve(body); } });
-};
-groLoadAllData().then(function (built) {
-  console.log(JSON.stringify({ beforeShop: built.beforeShop }));
-});
+def test_the_dock_says_before_you_shop_until_the_pass_is_done_then_sort_the_list_n():
+    """CATCH. The tester could not find the sort: the list's one apricot now
+    names the next thing."""
+    out = _screen("""
+ready();
+const first = dockOf();
+groceryState.data.beforeShop.done = true;
+const after = dockOf();
+console.log(JSON.stringify({ first: first, after: after }));
 """)
-    assert out["beforeShop"] == {"done": False, "weekly_plan_id": 7}
+    assert 'data-gro="goto-beforeshop"' in out["first"] and "Before you shop" in out["first"]
+    assert 'data-gro="goto-sort"' in out["after"] and "Sort the list (5)" in out["after"]
 
 
 @needs_node
-def test_a_payload_with_no_state_on_it_leaves_the_screen_with_none():
-    """GUARD. A deployment older than the column answers without the key,
-    and the frame reads a missing state as "no pass to offer" rather than
-    crashing on it — the stance every other optional key on this payload
-    takes."""
-    out = _node("""
-fetch = function () {
-  return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve({ sections: [] }); } });
-};
-groLoadAllData().then(function (built) {
-  console.log(JSON.stringify({ beforeShop: built.beforeShop }));
-});
-""")
-    assert out["beforeShop"] is None
-
-
-@needs_node
-def test_with_nothing_registered_the_dock_is_the_sort_and_says_how_many():
-    """CATCH, and it is slice 1 shipping honestly. No steps built yet, so
-    the pass has nothing to ask and the dock goes straight to the thing the
-    tester could not find — named, counted, and the list's one apricot."""
-    out = _node("""
-var data = unsortedList();
-console.log(JSON.stringify({
-  steps: BEFORE_SHOP_STEPS.length,
-  dock: groDockHtml(data, 'list')
-}));
-""")
-    assert out["steps"] == 0, "the frame ships with no steps — slices 2-4 register them"
-    dock = out["dock"]
-    assert 'data-gro="goto-sort"' in dock and ">Sort the list (1)<" in dock
-    assert "Before you shop" not in dock, "nothing to ask means nothing to open"
-    assert dock.count("dock-primary") == 1, "one apricot (rule 5)"
-
-
-@needs_node
-def test_a_step_with_something_to_ask_turns_the_dock_into_the_pass():
-    """CATCH. The moment slice 2 registers its step, the label becomes the
-    card's own words — with no change to this function."""
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a'));
-console.log(JSON.stringify({ dock: groDockHtml(data, 'list'), label: BEFORE_SHOP_LABEL }));
-""")
-    assert out["label"] == "Before you shop"
-    assert 'data-gro="goto-beforeshop"' in out["dock"]
-    assert ">Before you shop<" in out["dock"]
-    assert "goto-sort" not in out["dock"], "the sort is the pass's last button, not a second one"
-    assert out["dock"].count("dock-primary") == 1
-
-
-@needs_node
-def test_a_step_with_nothing_to_ask_this_week_is_not_counted_at_all():
-    """CATCH. "Skipped entirely when there is nothing to show" — the card's
-    rule for step 3, applied by the frame to every step, so a step never
-    has to render an empty screen."""
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a', { has: function () { return false; } }), probe('b'));
-console.log(JSON.stringify({
-  live: beforeShopSteps(data).map(function (s) { return s.key; }),
-  registered: BEFORE_SHOP_STEPS.length
-}));
-""")
-    assert out["registered"] == 2
-    assert out["live"] == ["b"], "only the step with something to ask"
-
-
-@needs_node
-def test_a_step_whose_has_throws_is_dropped_rather_than_breaking_the_dock():
-    """GUARD, pinned by the "no try around has()" mutation. A step's own
-    question is its own business and slice 2's will read staples; a throw
-    there must cost that step, never Shop's dock."""
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a', { has: function () { throw new Error('nope'); } }), probe('b'));
-console.log(JSON.stringify({
-  live: beforeShopSteps(data).map(function (s) { return s.key; }),
-  dock: groDockHtml(data, 'list')
-}));
-""")
-    assert out["live"] == ["b"]
-    assert 'data-gro="goto-beforeshop"' in out["dock"]
-
-
-@needs_node
-def test_a_pass_already_run_this_week_sends_you_straight_to_the_sort():
-    """CATCH. The card: "Done once per week; afterwards the list opens
-    straight to its sorted view.\""""
-    out = _node("""
-var data = unsortedList();
-data.beforeShop = { done: true, weekly_plan_id: 7 };
-withSteps(probe('a'));
-console.log(JSON.stringify({ dock: groDockHtml(data, 'list') }));
-""")
-    assert ">Sort the list (1)<" in out["dock"]
-    assert "goto-beforeshop" not in out["dock"]
-
-
-@needs_node
-def test_the_devices_own_answer_covers_the_beat_before_the_server_catches_up():
-    """CATCH. The POST is not waited on, so between finishing the pass and
-    the re-read landing the dock would otherwise offer it again. The local
-    flag holds a PLAN ID rather than a boolean: a new week is a new row, so
-    it stops matching by itself and nothing has to remember to clear it."""
-    out = _node("""
-var data = unsortedList();
-data.beforeShop = { done: false, weekly_plan_id: 7 };
-withSteps(probe('a'));
-var before = beforeShopIsDone(data);
-groceryState.beforeShopDoneFor = 7;
-var sameWeek = beforeShopIsDone(data);
-data.beforeShop = { done: false, weekly_plan_id: 8 };
-var nextWeek = beforeShopIsDone(data);
-console.log(JSON.stringify({ before: before, sameWeek: sameWeek, nextWeek: nextWeek }));
-""")
-    assert out["before"] is False
-    assert out["sameWeek"] is True, "this device just finished it"
-    assert out["nextWeek"] is False, "a new week asks again, with nothing to clear"
-
-
-@needs_node
-def test_a_household_with_no_plan_still_gets_the_pass_offered():
-    """GUARD, pinned by the "done when there is no plan" mutation. There is
-    nothing to stamp, so the honest answer is to ask."""
-    out = _node("""
-var data = unsortedList();
-data.beforeShop = { done: false, weekly_plan_id: null };
-groceryState.beforeShopDoneFor = null;
-withSteps(probe('a'));
-console.log(JSON.stringify({ done: beforeShopIsDone(data), dock: groDockHtml(data, 'list') }));
-""")
-    assert out["done"] is False
-    assert 'data-gro="goto-beforeshop"' in out["dock"]
-
-
-@needs_node
-def test_a_fully_sorted_list_grows_no_action_at_all():
-    """GUARD, and the rule it protects is nav v2's: "a screen with no single
-    action has NO dock". Nothing to sort means nothing to say, so the add
-    outline is the whole dock, exactly as it was before this card."""
-    out = _node("""
-var data = sortedList();
-withSteps(probe('a'));
-console.log(JSON.stringify({
-  unsorted: groUnsorted(data).length,
-  dock: groDockHtml(data, 'list')
-}));
-""")
-    assert out["unsorted"] == 0
-    assert "dock-primary" not in out["dock"], "no sort to offer, no apricot"
-    assert 'data-gro="add-open"' in out["dock"], "the add outline is still there"
-
-
-@needs_node
-def test_the_shops_question_is_answered_before_anything_else():
-    """GUARD, pinned by the "no stores-prompt guard" mutation. That card
-    carries its own primary, so a second one beside it would be two
-    apricots on one screen — and it asks where the household shops, which
-    sorting by store depends on."""
-    out = _node("""
-var data = unsortedList();
-data.usualStores = [];
-groceryState.usualStores = [];
-groceryState.storesPromptDismissed = false;
-withSteps(probe('a'));
-console.log(JSON.stringify({
-  shows: groStoresPromptShouldShow(),
-  pass: beforeShopDockHtml(data)
-}));
-""")
-    assert out["shows"] is True
-    assert out["pass"] == "", "nothing until the shops question is answered"
-
-
-@needs_node
-def test_a_one_shop_household_is_never_sent_to_sort_anything():
-    """GUARD. Emily, 2026-09-09: a household with one shop or none has no
-    sorting question — groUnsorted returns nothing for them, which takes
-    the pass's last button off with it rather than offering a screen that
-    asks them to choose between one option and itself."""
-    out = _node("""
-var data = setUp(2, [], ['Costco']);
-withSteps(probe('a'));
-console.log(JSON.stringify({
-  canSort: groCanSort(data),
-  unsorted: groUnsorted(data).length,
-  dock: groDockHtml(data, 'list')
-}));
-""")
-    assert out["canSort"] is False
-    assert out["unsorted"] == 0
-    assert "dock-primary" not in out["dock"]
-
-
-# ---------------------------------------------------------------------------
-# 4. The pass itself: one screen, one question, one primary
-# ---------------------------------------------------------------------------
-
-
-@needs_node
-def test_tapping_the_dock_opens_the_pass_at_its_first_step():
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a'), probe('b'));
-groceryState.beforeShopIndex = 9;
+def test_the_steps_appear_in_order_and_the_last_button_is_sort_the_list():
+    """CATCH — the card's own test: regulars, then spices and oils, then
+    already-have-it, one primary each, ending on Sort the list."""
+    out = _screen("""
+ready();
 clickIfRendered({ gro: 'goto-beforeshop' });
-console.log(JSON.stringify({ step: groceryState.step, at: groceryState.beforeShopIndex }));
+const seen = [];
+seen.push([stepTitle(), dockOf()]);
+clickIfRendered({ gro: 'bs-next' });          // "None this week"
+seen.push([stepTitle(), dockOf()]);
+clickIfRendered({ gro: 'bs-next' });          // spices' "Next"
+seen.push([stepTitle(), dockOf()]);
+console.log(JSON.stringify(seen));
 """)
-    assert out["step"] == "beforeshop"
-    assert out["at"] == 0, "the pass starts at the start, whatever a previous visit left"
+    titles = [s[0] for s in out]
+    assert titles == ["Need any of your regulars?", "Out of any of these?", "Already have these?"]
+    assert "Add 1 to the list" in out[0][1] and "None this week" in out[0][1]
+    assert ">Next<" in out[1][1]
+    assert "Sort the list" in out[2][1] and "Keep them all on the list" in out[2][1]
+    for _title, dock in out:
+        assert dock.count("dock-primary") == 1, "one apricot per screen"
 
 
 @needs_node
-def test_the_head_names_the_errand_and_the_body_asks_the_question():
-    """CATCH. The mockup's own structure: "Before you shop" stays put in the
-    head while the screens change under it — that is what makes it read as
-    one errand — and the step's question is the h4 at the top of the body,
-    under the progress bar."""
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a', { title: 'Need any of your regulars?', line: 'I have ticked the ones you are probably low on.' }), probe('b'));
-console.log(JSON.stringify({
-  head: groHeadFor(data, 'beforeshop'),
-  body: beforeShopBodyHtml(data)
-}));
+def test_already_on_the_list_is_its_own_quiet_section_and_asks_before_taking_off():
+    """CATCH. Emily's change: no pill, a section at the foot of the step;
+    a tap asks "Take milk off the list?" before anything is written."""
+    out = _screen("""
+ready();
+clickIfRendered({ gro: 'goto-beforeshop' });
+const html = screenHtml();
+clickIfRendered({ gro: 'bs-off', id: '50' });
+const asking = screenHtml();
+const postsBefore = POSTS.length;
+clickIfRendered({ gro: 'bs-off-yes', id: '50', kind: 'line' });
+settle(function () {
+  console.log(JSON.stringify({
+    html: html, asking: asking, wrote: POSTS.slice(postsBefore).map(function (p) { return p.url; }),
+    after: screenHtml(), toast: lastToast()
+  }));
+});
 """)
-    assert out["head"]["title"] == "Before you shop"
-    assert out["head"]["back"] == "‹ Shop"
-    assert out["head"]["sub"] == "", "the bar says where you are; the head does not say it twice"
-    body = out["body"]
-    assert '<h4 class="gro-bs-title">Need any of your regulars?</h4>' in body
-    assert '<p class="gro-bs-line">I have ticked the ones you are probably low on.</p>' in body
-    assert body.index("cook-progress") < body.index("gro-bs-title") < body.index("gro-bs-line")
-    assert body.endswith('<p class="probe-a">body</p>'), "the step's own body, last"
+    assert "Already on the list" in out["html"] and "you added it Wednesday" in out["html"]
+    assert out["html"].index("Already on the list") > out["html"].index("Cream"), "at the bottom of the step"
+    assert "Take milk off the list?" not in out["html"]
+    assert "Take milk off the list?" in out["asking"]
+    assert out["wrote"] == ["/api/grocery-list/50/remove"]
+    assert 'data-gro="bs-off" data-id="50"' not in out["after"], "the row leaves the section"
+    assert out["toast"]["msg"] == "Milk was taken off the list" and out["toast"]["action"] == "Undo"
 
 
 @needs_node
-def test_the_progress_bar_is_the_apps_own_and_counts_the_steps_that_are_live():
-    """CATCH. One bar in the app (cookProgressHtml, Cook's), not a second —
-    "two renderers is how two screens end up saying different things".
-    A step with nothing to ask is not in it, because it is not in the pass."""
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a'), probe('b', { has: function () { return false; } }), probe('c'));
-var first = beforeShopProgressHtml(data);
-groceryState.beforeShopIndex = 1;
-var second = beforeShopProgressHtml(data);
-console.log(JSON.stringify({ first: first, second: second }));
+def test_ticked_regulars_are_posted_and_a_tapped_spice_is_written_at_once():
+    """CATCH. Step 1's primary sends what is ticked (Pomona's pre-tick plus
+    the person's); step 2's chip writes on the tap and says so."""
+    out = _screen("""
+ready();
+clickIfRendered({ gro: 'goto-beforeshop' });
+clickIfRendered({ gro: 'bs-reg-tick', idx: '1' });
+clickIfRendered({ gro: 'bs-reg-go' });
+settle(function () {
+  const regPost = posts('/before-shop/regulars')[0];
+  const title2 = stepTitle();
+  clickIfRendered({ gro: 'bs-spice', id: '60' });
+  settle(function () {
+    console.log(JSON.stringify({
+      reg: regPost && regPost.body, title2: title2,
+      spice: posts('/api/grocery-list/60/spice').map(function (p) { return p.body; }),
+      said: /gro-bs-said" role="status">([^<]*)</.exec(screenHtml())[1]
+    }));
+  });
+});
 """)
-    assert 'class="cook-progress"' in out["first"]
-    assert out["first"].count("cook-progress-seg") == 2, "two live steps, two segments"
-    assert out["first"].count("is-done") == 1, "lit up to the one you are on"
-    assert 'aria-valuemax="2" aria-valuenow="1"' in out["first"]
-    assert out["second"].count("is-done") == 2
-    assert 'aria-valuenow="2"' in out["second"]
+    assert out["reg"] == {"items": ["Coffee", "Cream"]}
+    assert out["title2"] == "Out of any of these?"
+    assert out["spice"] == [{"ticked": True}]
+    assert out["said"] == "Garam masala goes on the list."
 
 
 @needs_node
-def test_a_one_screen_pass_draws_no_bar_because_there_is_no_position_to_show():
-    """GUARD, pinned by the "bar at one step too" mutation. A full bar over
-    a one-screen errand is saying something untrue (§8)."""
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a'));
-console.log(JSON.stringify({ bar: beforeShopProgressHtml(data), body: beforeShopBodyHtml(data) }));
-""")
-    assert out["bar"] == ""
-    assert "cook-progress" not in out["body"]
-    assert "gro-bs-title" in out["body"], "the question is still asked"
-
-
-@needs_node
-def test_the_last_steps_primary_is_the_sort_and_the_ones_before_it_are_not():
-    """CATCH. The card: "The last button is 'Sort the list', which opens the
-    existing SORT ALL screen." The pass ends ON the thing it was in front
-    of, not on a screen saying it is finished."""
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a'), probe('b'));
-var first = beforeShopStepDockHtml(data);
-groceryState.beforeShopIndex = 1;
-var last = beforeShopStepDockHtml(data);
-console.log(JSON.stringify({ first: first, last: last }));
-""")
-    assert ">Next</button>" in out["first"]
-    assert ">Sort the list</button>" in out["last"]
-    for dock in (out["first"], out["last"]):
-        assert dock.count("dock-primary") == 1, "one primary per step (rule 5)"
-        assert 'data-gro="bs-skip"' in dock, "any step can be skipped"
-
-
-@needs_node
-def test_a_step_may_bring_its_own_dock_and_is_told_whether_it_is_the_last():
-    """CATCH. The seam slices 2-4 need: the mockup's step 1 is "Add 2 to the
-    list" over a sand "None this week", step 2 is one button reading "Next:
-    sort the list". Neither is the frame's business, so a step that brings
-    a dock gets it rendered instead of the fallback."""
-    out = _node("""
-var data = unsortedList();
-withSteps(
-  probe('a', { dock: function (d, last) { return '<i>a:' + last + '</i>'; } }),
-  probe('b', { dock: function (d, last) { return '<i>b:' + last + '</i>'; } })
-);
-var first = beforeShopStepDockHtml(data);
-groceryState.beforeShopIndex = 1;
-var last = beforeShopStepDockHtml(data);
-console.log(JSON.stringify({ first: first, last: last }));
-""")
-    assert out["first"] == "<i>a:false</i>"
-    assert out["last"] == "<i>b:true</i>"
-
-
-@needs_node
-def test_next_and_skip_both_move_on_and_neither_leaves_the_pass_early():
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a'), probe('b'), probe('c'));
-groceryState.step = 'beforeshop';
+def test_items_ticked_in_step_3_leave_the_sort_count():
+    """CATCH — the card's own test. The footer counts what will be left to
+    sort, and the primary drops the ticked rows (and keeps the rest)."""
+    out = _screen("""
+ready();
+clickIfRendered({ gro: 'goto-beforeshop' });
 clickIfRendered({ gro: 'bs-next' });
-var afterNext = { step: groceryState.step, at: groceryState.beforeShopIndex };
-clickIfRendered({ gro: 'bs-skip' });
-var afterSkip = { step: groceryState.step, at: groceryState.beforeShopIndex };
-console.log(JSON.stringify({ afterNext: afterNext, afterSkip: afterSkip }));
-""")
-    assert out["afterNext"] == {"step": "beforeshop", "at": 1}
-    assert out["afterSkip"] == {"step": "beforeshop", "at": 2}
-
-
-@needs_node
-def test_the_end_of_the_pass_lands_on_sort_all_and_records_the_pass_once():
-    """CATCH. Both ways out of the last step come through one place, so the
-    sort and a skip past it are the same answer to "have you been through
-    this?\""""
-    out = _node("""
-var data = unsortedList();
-data.beforeShop = { done: false, weekly_plan_id: 4 };
-withSteps(probe('a'));
-groceryState.step = 'beforeshop';
 clickIfRendered({ gro: 'bs-next' });
-console.log(JSON.stringify({
-  step: groceryState.step,
-  doneFor: groceryState.beforeShopDoneFor,
-  posts: posts('/api/grocery-list/before-shop-done').length
-}));
+const foot = /gro-bs-foot">([^<]*)</.exec(screenHtml())[1];
+const line = /gro-bs-line">([^<]*)</.exec(screenHtml())[1];
+clickIfRendered({ gro: 'bs-have-go' });
+settle(function () {
+  console.log(JSON.stringify({
+    foot: foot, line: line,
+    drops: POSTS.filter(function (p) { return /\\/pre-shop$/.test(p.url); }).map(function (p) { return [p.url, p.body.decision]; }),
+    step: groceryState.step, finished: posts('/before-shop-done').length
+  }));
+});
 """)
-    assert out["step"] == "sortall", "the pass ends on the sort"
-    assert out["doneFor"] == 4
-    assert out["posts"] == 1
+    assert out["foot"] == "Only 4 things left to sort, down from 5."
+    assert out["line"].startswith("Pomona thinks you have 1 of these at home.")
+    assert sorted(out["drops"]) == [["/api/grocery-list/2/pre-shop", "drop"], ["/api/grocery-list/3/pre-shop", "keep"]]
+    assert out["step"] == "sortall" and out["finished"] == 1
 
 
 @needs_node
-def test_skipping_every_step_lands_on_the_same_sort_screen():
-    """CATCH, and it is the card's "any step can be skipped" taken to its
-    end: a household that answers nothing is exactly where they were
-    before this card existed."""
-    out = _node("""
-var data = unsortedList();
-data.beforeShop = { done: false, weekly_plan_id: 4 };
-withSteps(probe('a'), probe('b'), probe('c'));
-groceryState.step = 'beforeshop';
-clickIfRendered({ gro: 'bs-skip' });
-clickIfRendered({ gro: 'bs-skip' });
-clickIfRendered({ gro: 'bs-skip' });
-console.log(JSON.stringify({ step: groceryState.step, doneFor: groceryState.beforeShopDoneFor }));
+def test_skipping_every_step_writes_nothing_but_the_once_a_week_stamp():
+    """CATCH. "Nothing here is required; skipping every step lands on the
+    same list as today." The only write is the stamp that stops the pass
+    coming back this week."""
+    out = _screen("""
+ready();
+clickIfRendered({ gro: 'goto-beforeshop' });
+clickIfRendered({ gro: 'bs-next' });
+clickIfRendered({ gro: 'bs-next' });
+clickIfRendered({ gro: 'bs-next' });
+settle(function () {
+  console.log(JSON.stringify({ urls: POSTS.map(function (p) { return p.url; }), step: groceryState.step }));
+});
 """)
+    assert out["urls"] == ["/api/grocery-list/before-shop-done"]
     assert out["step"] == "sortall"
-    assert out["doneFor"] == 4
 
 
 @needs_node
-def test_sorting_without_going_through_the_pass_records_nothing():
-    """CATCH, and it is the judgment call of this slice. "Has this
-    household been through the pass this week?" is the pass's own
-    question, and sorting is not an answer to it — a household that taps
-    the quiet row in the list, or the dock's sort while the pass had
-    nothing to ask, has been asked nothing. Stamping the plan there would
-    record something that did not happen (§8), and the cost of not doing
-    it is one more tap for somebody who sorted without being asked."""
-    out = _node("""
-var data = unsortedList();
-data.beforeShop = { done: false, weekly_plan_id: 4 };
-clickIfRendered({ gro: 'goto-sort' });
-console.log(JSON.stringify({
-  step: groceryState.step,
-  doneFor: groceryState.beforeShopDoneFor,
-  posts: posts('/api/grocery-list/before-shop-done').length
-}));
-""")
-    assert out["step"] == "sortall", "the sort still opens"
-    assert out["doneFor"] is None
-    assert out["posts"] == 0
-
-
-@needs_node
-def test_a_pass_already_recorded_is_not_recorded_again():
-    """GUARD, pinned by the "always post" mutation. A re-entered pass, a
-    retried tap or a replay would otherwise each be a write."""
-    out = _node("""
-var data = unsortedList();
-data.beforeShop = { done: true, weekly_plan_id: 4 };
-withSteps(probe('a'));
-groceryState.step = 'beforeshop';
+def test_a_step_with_nothing_to_ask_is_skipped_and_the_frame_takes_a_step_in_front():
+    """CATCH. Step 3 is skipped entirely when there's nothing to show, so
+    spices' button becomes the sort. And the frame reads no step by name:
+    a step put at the FRONT (step 0, "Update your inventory?", is coming)
+    is simply the first screen."""
+    out = _screen("""
+const p = bsPayload(); p.have.rows = [];
+ready(p);
+clickIfRendered({ gro: 'goto-beforeshop' });
 clickIfRendered({ gro: 'bs-next' });
-console.log(JSON.stringify({ posts: posts('/api/grocery-list/before-shop-done').length }));
+const spicesDock = dockOf();
+groceryState.step = 'list';
+BEFORE_SHOP_STEPS.unshift({ key: 'zero', title: 'Step zero', line: '', has: function () { return true; },
+  body: function () { return ''; }, dock: null });
+clickIfRendered({ gro: 'goto-beforeshop' });
+console.log(JSON.stringify({ spicesDock: spicesDock, first: stepTitle() }));
 """)
-    assert out["posts"] == 0
-
-
-@needs_node
-def test_a_dropped_write_is_not_said_out_loud():
-    """GUARD. They are on their way to the sort; a toast about bookkeeping
-    would stop them for nothing, and the server's answer is that the pass
-    comes back once — which is the safe direction."""
-    out = _node("""
-var data = unsortedList();
-data.beforeShop = { done: false, weekly_plan_id: 4 };
-withSteps(probe('a'));
-groceryState.step = 'beforeshop';
-FAIL_ON = 1;
-clickIfRendered({ gro: 'bs-next' });
-var step = groceryState.step;
-// The write is a promise, so its rejection lands on a microtask AFTER
-// this line would have run. Reading TOASTS synchronously would pass
-// whatever the catch does, which is not a test of anything — the read is
-// in a timer so every microtask has drained by the time it happens.
-setTimeout(function () {
-  console.log(JSON.stringify({ step: step, toasts: TOASTS.slice() }));
-}, 0);
-""")
-    assert out["step"] == "sortall", "the sort opens anyway"
-    assert out["toasts"] == []
-
-
-@needs_node
-def test_a_step_whose_question_went_away_under_it_folds_back_to_the_list():
-    """CATCH. The list is live — the other adult can tick the last spice
-    while this screen is open — so a step about nothing is a screen about
-    nothing. The same fold-back CARRY and SORT ALL already have."""
-    out = _node("""
-var data = unsortedList();
-groceryState.data = data;
-withSteps(probe('a', { has: function () { return LIVE; } }));
-var LIVE = true;
-groceryState.step = 'beforeshop';
-var openOk = groScreenStep();
-LIVE = false;
-console.log(JSON.stringify({ openOk: openOk, after: groScreenStep() }));
-""")
-    assert out["openOk"] == "beforeshop"
-    assert out["after"] == "list"
-
-
-@needs_node
-def test_the_position_is_re_read_against_the_live_steps_rather_than_trusted():
-    """CATCH. Same reason: the steps can shrink while the pass is open, and
-    an index past the end would render nothing at all."""
-    out = _node("""
-var data = unsortedList();
-withSteps(probe('a'), probe('b'), probe('c'));
-groceryState.beforeShopIndex = 2;
-var deep = beforeShopIndex(data);
-withSteps(probe('a'));
-var shrunk = beforeShopIndex(data);
-groceryState.beforeShopIndex = -4;
-var silly = beforeShopIndex(data);
-console.log(JSON.stringify({ deep: deep, shrunk: shrunk, silly: silly }));
-""")
-    assert out["deep"] == 2
-    assert out["shrunk"] == 0, "clamped to the steps that are left"
-    assert out["silly"] == 0
-
-
-@needs_node
-def test_the_crumb_is_the_way_out_and_it_names_shop():
-    """GUARD on nav v2 rule 1 — one way back per screen, naming its parent,
-    never a bare arrow and never history.back()."""
-    out = _node("""
-var data = unsortedList();
-groceryState.data = data;
-withSteps(probe('a'));
-groceryState.step = 'beforeshop';
-var html = screenHtml();
-clickIfRendered({ gro: 'step-back' });
-console.log(JSON.stringify({
-  crumbs: (html.match(/class="crumb"/g) || []).length,
-  back: groHeadFor(data, 'beforeshop').back,
-  landed: groceryState.step
-}));
-""")
-    assert out["crumbs"] == 1
-    assert out["back"] == "‹ Shop"
-    assert out["landed"] == "list"
-
-
-# ---------------------------------------------------------------------------
-# 5. Guards on the frame itself
-# ---------------------------------------------------------------------------
-
-
-def _fn(name: str) -> str:
-    start = SHELL_JS.index("function " + name + "(")
-    depth = 0
-    i = SHELL_JS.index("{", start)
-    for j in range(i, len(SHELL_JS)):
-        if SHELL_JS[j] == "{":
-            depth += 1
-        elif SHELL_JS[j] == "}":
-            depth -= 1
-            if depth == 0:
-                return SHELL_JS[start:j + 1]
-    raise AssertionError(name)
-
-
-def test_a_new_step_goes_in_one_array_and_nothing_reads_a_step_by_name():
-    """GUARD, and it is the card's own requirement: "Build the frame so a
-    step can be added IN FRONT — a 'step 0: update your inventory' is
-    coming and is explicitly NOT this card." A frame that read a step by
-    name or by index would make that a rewrite instead of one line."""
-    frame = SHELL_JS[
-        SHELL_JS.index('// ---------- "Before you shop" ----------'):
-        SHELL_JS.index("  function groSortRowHtml(")
-    ]
-    code = "\n".join(
-        line for line in frame.splitlines()
-        if not line.strip().startswith("//")
-    )
-    for named in ("'regulars'", '"regulars"', "'spices'", '"spices"', "BEFORE_SHOP_STEPS[0]"):
-        assert named not in code, f"the frame reads a step by {named} — a step cannot be added in front"
-    assert "BEFORE_SHOP_STEPS.filter(" in code, "the live steps are derived, never listed"
-
-
-def test_the_frame_ships_with_no_steps_so_slice_1_says_only_what_is_true():
-    """GUARD. BEFORE_SHOP_STEPS is empty until slice 2, which is why the
-    dock reads "Sort the list (N)" today. If this goes red because a step
-    landed, the dock's label changed with it and that is the point — come
-    and invert it."""
-    assert "var BEFORE_SHOP_STEPS = [];" in SHELL_JS
-
-
-def test_the_pass_reuses_the_apps_one_progress_bar():
-    """GUARD, pinned by the "a second bar" mutation. .cook-progress is
-    Cook's step bar and is already exactly this; a Grocery copy of the same
-    four rules is how two screens end up disagreeing about what a step bar
-    looks like."""
-    assert "return cookProgressHtml(steps.length, beforeShopIndex(data));" in _fn("beforeShopProgressHtml")
-    for invented in (".gro-bs-bar", ".gro-bs-pip"):
-        assert invented not in SHELL_CSS, f"{invented} is a second progress bar"
-    assert ".cook-progress-seg.is-done { background: var(--apricot); }" in SHELL_CSS
-
-
-def test_the_passs_two_shared_rules_are_tokens_only():
-    """GUARD on hard rule 9."""
-    block = SHELL_CSS[
-        SHELL_CSS.index('/* ---------- "Before you shop"'):
-        SHELL_CSS.index("/* ---------- The crumb:")
-    ]
-    import re
-    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block.replace("390x844", "")), "tokens only"
-    assert "--ink-secondary" in block and "--ink)" in block
-
-
-def test_the_dock_delegates_rather_than_keeping_a_second_copy_of_the_rule():
-    """GUARD. One function decides what Shop's one primary says, so the
-    label, the count and "has this been run" can never disagree."""
-    dock = _fn("groDockHtml")
-    assert "return beforeShopDockHtml(data) + groAddButtonHtml();" in dock
-    assert "if (step === 'beforeshop') return beforeShopStepDockHtml(data);" in dock
-    assert "Sort the list" not in dock, "the wording lives in beforeShopDockHtml, once"
-
-
-def test_only_the_pass_itself_records_having_been_through_the_pass():
-    """GUARD, pinned by the "goto-sort finishes the pass" mutation — which
-    is what the first cut did, and it quietly meant a household who sorted
-    from the list's own row never got asked the regulars question that
-    week."""
-    handlers = SHELL_JS[SHELL_JS.index("case 'goto-sort':"):]
-    handlers = handlers[:handlers.index("case 'sortall-pick':")]
-    assert "beforeShopFinish()" not in handlers.split("case 'bs-next':")[0], \
-        "sorting is not an answer to a question nobody asked"
-    assert handlers.count("beforeShopFinish();") == 1, "the pass's last step, and nothing else"
+    assert "Sort the list" in out["spicesDock"]
+    assert out["first"] == "Step zero"

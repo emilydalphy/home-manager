@@ -60,7 +60,8 @@ def test_grocery_steps_are_tab_states_not_routes():
     # A refresh lands on LIST because that is where the state starts.
     _in("step: 'list',", SHELL_JS, "the starting step", "shell.js")
     # Anything but the three states folds to the root.
-    _in("if (groceryState.step !== 'carry' && groceryState.step !== 'sortall') groceryState.step = 'list';",
+    # (2026-10-05: a fourth state, "Before you shop" — 'beforeshop'.)
+    _in("if (groceryState.step !== 'carry' && groceryState.step !== 'sortall' &&\n        groceryState.step !== 'beforeshop') groceryState.step = 'list';",
         SHELL_JS, "the fold to the root", "shell.js")
     _not_in("groTripIndex", SHELL_JS, "the trip's history state", "shell.js")
 
@@ -240,8 +241,10 @@ def test_the_quiet_sections_keep_their_places():
     _in("function groNotNeededHtml(", SHELL_JS, "the not-needed foot (the wrap-up's confirmation half)", "shell.js")
     _in("data-gro=\"undo-already-have\"", SHELL_JS, "its way back", "shell.js")
     _in("function groSpicesHtml(", SHELL_JS, "the spices section", "shell.js")
-    _in("function groStaplesHtml(", SHELL_JS, "the staples card", "shell.js")
-    _in("return groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml() + groStaplesHtml();", SHELL_JS,
+    # The closed Staples card left the foot on 2026-10-05 ("Before you
+    # shop"): regulars are step 1 of that pass and Settings → Regulars now.
+    _not_in("function groStaplesHtml(", SHELL_JS, "the staples card (moved to Settings → Regulars)", "shell.js")
+    _in("return groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml();", SHELL_JS,
         "the foot in one place", "shell.js")
     _not_in("function groAlreadyHaveHtml(", SHELL_JS, "the old two-part confirmation", "shell.js")
 

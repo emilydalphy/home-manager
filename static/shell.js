@@ -4479,7 +4479,6 @@
     // a person.
     staples: [],
     stapleSections: [],
-    staplesOpen: false,
     // "Spices this week" (app/tools/spices.py): every spice the week's
     // recipes call for, waiting UNTICKED in one section rather than spread
     // through the aisles — the list assumes a spice rack (Emily,
@@ -4523,6 +4522,16 @@
     // per-plan-id dismissal.
     beforeShopIndex: 0,
     beforeShopDoneFor: null,
+    // The steps' content (GET /api/grocery-list/before-shop), the copy the
+    // open pass draws from (bsView), and the little bits of the pass's own
+    // screen state: which "Already on the list" row is asking "Take it off
+    // the list?", the spice step's confirmation line, and whether "+ Add a
+    // regular" is open.
+    bsData: null,
+    bsSnap: null,
+    bsConfirmOff: null,
+    bsSaid: '',
+    bsAddOpen: false,
     // What the last bulk assign overwrote: [{item_id, store, decided}] as
     // the rows were BEFORE it ran, so Undo restores each one exactly rather
     // than dumping the lot back into the to-sort queue. Cleared by the undo
@@ -5100,6 +5109,12 @@
         e.preventDefault();
         panel.querySelector('[data-gro="stores-prompt-add"]').click();
       }
+      // Enter in "+ Add a regular" adds it (Before you shop, step 1).
+      if (e.target.id === 'gro-bs-add-input') {
+        e.preventDefault();
+        var bsGo = panel.querySelector('[data-gro="bs-reg-add"]');
+        if (bsGo) bsGo.click();
+      }
       // Enter in a "What instead?" field is "Put it on the list" — the
       // common case; "I have it" stays a tap.
       if (e.target.classList && e.target.classList.contains('gro-subst-input')) {
@@ -5245,7 +5260,7 @@
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
     try {
-      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried(), groLoadSpices()]);
+      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried(), groLoadSpices(), groLoadBeforeShop()]);
       // The server's answer is the copy; what the screen shows is that plus
       // any ticks still waiting to be sent, so a tick made a moment ago in
       // a dead zone doesn't vanish the instant one bar comes back.
@@ -5657,13 +5672,218 @@
   // FRONT. Nothing here reads a step by name or by index, so putting one
   // first costs one line.
   //
-  // It is empty today. The three content steps (regulars, spices, already
-  // have these) are slices 2-4 of the same card and are not built, so the
-  // dock reads "Sort the list (N)" and taps straight through to SORT ALL
-  // — which is honest, and is already the whole of what the complaint
-  // asked for. The label becomes "Before you shop" by itself the moment
-  // the first step is registered here.
-  var BEFORE_SHOP_STEPS = [];
+  // The three steps (2026-10-05, finishing the card). Their content is ONE
+  // read, GET /api/grocery-list/before-shop (app/tools/before_shop.py),
+  // loaded with the list into groceryState.bsData. While the pass is open
+  // the screens draw from a COPY taken as it opened (groceryState.bsSnap),
+  // so a spice tapped onto the list stays a lit chip on the step it was
+  // tapped on instead of jumping to "Already on the list" under the thumb,
+  // and a ticked regular stays where it was. The list itself is re-read
+  // underneath as writes land.
+  //
+  // Anything already on this week's list is never a choice: it sits in the
+  // step's own quiet "Already on the list" section with who added it and
+  // when (Emily's change on the card, 2026-10-04), and a tap there asks
+  // "Take it off the list?" first.
+  var BEFORE_SHOP_STEPS = [
+    {
+      key: 'regulars',
+      title: 'Need any of your regulars?',
+      line: 'I’ve ticked the ones you’re probably low on. Change anything that’s wrong.',
+      has: function () { return bsPart('regulars').choices.length > 0; },
+      body: bsRegularsHtml,
+      dock: bsRegularsDockHtml
+    },
+    {
+      key: 'spices',
+      title: 'Out of any of these?',
+      line: 'This week’s recipes use them. Most kitchens already have them, so they’re not on the list. Tap the ones you need to buy.',
+      has: function () { return bsPart('spices').choices.length > 0; },
+      body: bsSpicesHtml,
+      dock: null
+    },
+    {
+      key: 'have',
+      title: 'Already have these?',
+      line: bsHaveLine,
+      has: function () { return bsPart('have').rows.length > 0; },
+      body: bsHaveHtml,
+      dock: bsHaveDockHtml
+    }
+  ];
+
+  // What the steps draw from: the copy taken when the pass opened, or —
+  // on the list, deciding what the dock says — the latest read.
+  function bsView() {
+    if (groceryState.step === 'beforeshop' && groceryState.bsSnap) return groceryState.bsSnap;
+    return groceryState.bsData || null;
+  }
+  function bsPart(key) {
+    var v = bsView() || {};
+    var empty = { regulars: { choices: [], on_list: [] }, spices: { choices: [], on_list: [] }, have: { rows: [] } };
+    return v[key] || empty[key];
+  }
+
+  async function groLoadBeforeShop() {
+    try {
+      var res = await Api.fetch('/api/grocery-list/before-shop');
+      groceryState.bsData = res.ok ? await res.json() : null;
+    } catch (err) { groceryState.bsData = null; }
+  }
+
+  // "Already on the list" — the quiet section at the foot of each step.
+  // Plain rows, no box, ink-secondary; hidden when empty. A tap opens the
+  // one question, in the row, rather than a dialog over the step.
+  function bsOnListHtml(rows, kind) {
+    if (!rows || !rows.length) return '';
+    return '<div class="gro-bs-onlist">' +
+      '<p class="gro-bs-eyebrow">Already on the list</p>' +
+      rows.map(function (r) {
+        var id = String(r.item_id);
+        var asking = groceryState.bsConfirmOff === id;
+        return '<div class="gro-bs-onrow-wrap">' +
+          '<button type="button" class="gro-bs-onrow" data-gro="bs-off" data-id="' + id + '" ' +
+            'aria-expanded="' + (asking ? 'true' : 'false') + '">' +
+            escapeHtml(r.name) + (r.who ? ' <span class="gro-bs-why">· ' + escapeHtml(r.who) + '</span>' : '') +
+          '</button>' +
+          (asking
+            ? '<div class="gro-bs-confirm" role="group" aria-label="' + escapeHtml('Take ' + r.name + ' off the list?') + '">' +
+                '<span class="gro-bs-confirm-q">Take ' + escapeHtml(bsLower(r.name)) + ' off the list?</span>' +
+                '<button type="button" class="gro-bs-confirm-yes" data-gro="bs-off-yes" data-id="' + id + '" data-kind="' + kind + '">Take it off</button>' +
+                '<button type="button" class="gro-bs-confirm-no" data-gro="bs-off-no">Keep it</button>' +
+              '</div>'
+            : '') +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+  // "Take milk off the list?" — a name said mid-sentence, unless it is a
+  // proper noun the household typed in capitals throughout ("BBQ sauce").
+  function bsLower(name) {
+    var s = String(name || '');
+    return /^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+  }
+
+  // ----- step 1: regulars -----
+  function bsRegularsHtml() {
+    var part = bsPart('regulars');
+    var rows = part.choices.map(function (c, i) {
+      return '<div class="gro-row gro-bs-row" data-gro="bs-reg-tick" data-idx="' + i + '">' +
+        '<button type="button" class="gro-box' + (c.ticked ? ' checked' : '') + '" role="checkbox" ' +
+          'aria-checked="' + (c.ticked ? 'true' : 'false') + '" data-gro="bs-reg-tick" data-idx="' + i + '" ' +
+          'aria-label="' + escapeHtml((c.ticked ? 'Don’t add ' : 'Add ') + c.name) + '">' +
+          (c.ticked ? GRO_ICONS.tick : '') + '</button>' +
+        '<p class="gro-name">' + escapeHtml(c.name) +
+          (c.reason ? ' <span class="gro-bs-why">· ' + escapeHtml(c.reason) + '</span>' : '') + '</p>' +
+      '</div>';
+    }).join('');
+    var add = groceryState.bsAddOpen
+      ? '<div class="gro-bs-add">' +
+          '<input type="text" class="gro-bs-add-input" id="gro-bs-add-input" autocomplete="off" ' +
+            'placeholder="Oat milk, dish soap…" aria-label="A regular to add" maxlength="80">' +
+          '<button type="button" class="gro-bs-add-go" data-gro="bs-reg-add">Add</button>' +
+        '</div>'
+      : '<button type="button" class="gro-bs-add-open" data-gro="bs-reg-add-open">+ Add a regular</button>';
+    return '<div class="shell-card gro-bs-card">' + rows + '</div>' + add +
+      bsOnListHtml(part.on_list, 'line');
+  }
+  function bsTickedRegulars() {
+    return bsPart('regulars').choices.filter(function (c) { return c.ticked; });
+  }
+  function bsRegularsDockHtml(data, last) {
+    var n = bsTickedRegulars().length;
+    var label = n ? 'Add ' + n + ' to the list' : (last ? 'Sort the list' : 'Next');
+    return '<button type="button" class="dock-primary" data-gro="bs-reg-go">' + escapeHtml(label) + '</button>' +
+      '<button type="button" class="gro-bs-none" data-gro="bs-next">None this week</button>';
+  }
+
+  // ----- step 2: spices and oils -----
+  function bsSpicesHtml() {
+    var part = bsPart('spices');
+    var chips = part.choices.map(function (c) {
+      var on = !!c.picked;
+      return '<button type="button" class="gro-pill gro-bs-chip' + (on ? ' gro-pill-on' : '') + '" ' +
+        'data-gro="bs-spice" data-id="' + String(c.item_id) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+        escapeHtml(c.name) + '</button>';
+    }).join('');
+    var said = groceryState.bsSaid
+      ? '<p class="gro-bs-said" role="status">' + escapeHtml(groceryState.bsSaid) + '</p>'
+      : '<p class="gro-bs-said" role="status" hidden></p>';
+    return '<div class="gro-bs-chips">' + chips + '</div>' + said + bsOnListHtml(part.on_list, 'spice');
+  }
+
+  // ----- step 3: already have these? -----
+  function bsHaveTicked() {
+    return bsPart('have').rows.filter(function (r) { return r.ticked; });
+  }
+  function bsHaveHtml(data) {
+    var rows = bsPart('have').rows.map(function (r) {
+      var id = String(r.item_id);
+      return '<div class="gro-row gro-bs-row" data-gro="bs-have-tick" data-id="' + id + '">' +
+        '<button type="button" class="gro-box' + (r.ticked ? ' checked' : '') + '" role="checkbox" ' +
+          'aria-checked="' + (r.ticked ? 'true' : 'false') + '" data-gro="bs-have-tick" data-id="' + id + '" ' +
+          'aria-label="' + escapeHtml((r.ticked ? 'Still need ' : 'Already have ') + r.name) + '">' +
+          (r.ticked ? GRO_ICONS.tick : '') + '</button>' +
+        '<p class="gro-name">' + escapeHtml(r.name) +
+          (r.reason ? ' <span class="gro-bs-why">· ' + escapeHtml(r.reason) + '</span>' : '') + '</p>' +
+      '</div>';
+    }).join('');
+    var before = groUnsorted(data).length;
+    var leaving = {};
+    bsHaveTicked().forEach(function (r) { leaving[String(r.item_id)] = true; });
+    var after = groUnsorted(data).filter(function (it) { return !leaving[String(it.id)]; }).length;
+    var foot = after < before
+      ? '<p class="gro-bs-foot">' + (after
+          ? 'Only ' + groPlural(after, 'thing', 'things') + ' left to sort, down from ' + before + '.'
+          : 'Nothing left to sort.') + '</p>'
+      : '';
+    return '<div class="shell-card gro-bs-card">' + rows + '</div>' + foot;
+  }
+  // The step's line counts what is ticked, so it is the step's own rather
+  // than a fixed string: "Pomona thinks you have 6 of these at home."
+  function bsHaveLine() {
+    var n = bsHaveTicked().length;
+    // Every row unticked is a list a person added to by hand: nothing to
+    // claim, so the line only says what a tick does.
+    if (!n) return 'Tick anything you already have at home.';
+    return 'Pomona thinks you have ' + n + ' of these at home. Untick anything you’ve run out of.';
+  }
+  // The primary acts on Pomona's pre-ticks, so this step also needs a way
+  // past it that changes nothing — "nothing here is required" — said as
+  // what it does rather than "Skip".
+  function bsHaveDockHtml(data, last) {
+    return '<button type="button" class="dock-primary" data-gro="bs-have-go">' +
+      (last ? 'Sort the list' : 'Next') + '</button>' +
+      '<div class="dock-links"><button type="button" class="dock-link" data-gro="bs-next">Keep them all on the list</button></div>';
+  }
+
+  // "Coffee was added" / "Coffee and Milk were added" / "3 things were
+  // added" — the house toast (§2b S10), naming the things while there is
+  // room to.
+  function bsNamesSaid(names, verbed) {
+    if (names.length === 1) return savedLine(names[0], verbed);
+    if (names.length === 2) return savedName(names[0]) + ' and ' + savedName(names[1]) + ' were ' + verbed;
+    return savedCount(names.length, verbed);
+  }
+
+  // Forward one step, or — off the last one — out of the pass and onto the
+  // sort, which is where the pass was always going.
+  function bsAdvance() {
+    var steps = beforeShopSteps(groceryState.data);
+    var at = beforeShopIndex(groceryState.data);
+    groceryState.bsConfirmOff = null;
+    groceryState.bsSaid = '';
+    groceryState.bsAddOpen = false;
+    if (at >= steps.length - 1) {
+      beforeShopFinish();
+      groceryState.bsSnap = null;
+      goGroceryStep('sortall');
+      return;
+    }
+    groceryState.beforeShopIndex = at + 1;
+    renderGrocery();
+    if (scrollEl) scrollEl.scrollTop = 0;
+  }
 
   var BEFORE_SHOP_LABEL = 'Before you shop';
 
@@ -5687,7 +5907,7 @@
         escapeHtml(BEFORE_SHOP_LABEL) + '</button>';
     }
     return '<button type="button" class="dock-primary" data-gro="goto-sort">' +
-      'Sort the list</button>';
+      'Sort the list (' + unsorted + ')</button>';
   }
 
   // Has this week's pass been run? The server's answer, or — for the beat
@@ -5754,7 +5974,7 @@
     var step = steps[beforeShopIndex(data)];
     return beforeShopProgressHtml(data) +
       '<h4 class="gro-bs-title">' + escapeHtml(step.title) + '</h4>' +
-      '<p class="gro-bs-line">' + escapeHtml(step.line) + '</p>' +
+      '<p class="gro-bs-line">' + escapeHtml(typeof step.line === 'function' ? step.line(data) : step.line) + '</p>' +
       step.body(data);
   }
 
@@ -5770,18 +5990,10 @@
     var last = at >= steps.length - 1;
     var own = step.dock ? step.dock(data, last) : '';
     if (own) return own;
-    // The fallback, for a step that brings no dock of its own. Every step
-    // in the mockup DOES bring one, and theirs are the ones to copy: step
-    // 1 is "Add 2 to the list" over a sand "None this week", steps 2 and 3
-    // are one button each ("Next: sort the list", "Sort the list") where
-    // tapping without ticking anything IS the skip. So this pair uses only
-    // classes that already exist and are already styled — .dock-primary
-    // and .dock-link — rather than inventing a sand button for a screen
-    // no step reaches yet. (Not .gro-sort-later, which the CARRY step
-    // renders and which has no rule in shell.css at all.)
+    // A step with no dock of its own (spices) has one button, and tapping
+    // it without choosing anything IS the skip — the mockup's own shape.
     return '<button type="button" class="dock-primary" data-gro="bs-next">' +
-        (last ? 'Sort the list' : 'Next') + '</button>' +
-      '<div class="dock-links"><button type="button" class="dock-link" data-gro="bs-skip">Skip this</button></div>';
+        (last ? 'Sort the list' : 'Next') + '</button>';
   }
 
   function groSortRowHtml(data) {
@@ -5816,9 +6028,8 @@
       // would, and the dock stays quiet.
       if (groceryState.spices.items.length) return html + groListFootHtml();
       // The empty moment (emptyMomentHtml): one sentence, and "Go to
-      // Plan" in the dock (groDockHtml). The staples card keeps its place
-      // under it — a rhythm is a real thing even on an empty list. So
-      // does the "Getting elsewhere" foot: the last thing on the list set
+      // Plan" in the dock (groDockHtml). The "Getting elsewhere" foot
+      // keeps its place under it: the last thing on the list set
       // aside by a thumb-slip has to be findable from the empty screen
       // it left behind.
       return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groListFootHtml();
@@ -5864,9 +6075,9 @@
 
   // The quiet sections under the cards, in one place so every branch of
   // LIST ends the same way: what's set aside, what's not needed this
-  // week, the spices, the staples.
+  // week, the spices.
   function groListFootHtml() {
-    return groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml() + groStaplesHtml();
+    return groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml();
   }
 
   // ---------- Getting elsewhere: what's set aside ----------
@@ -6180,7 +6391,11 @@
     var id = String(it.id);
     var bought = groIsBought(it);
     var open = groceryState.openRowId === id;
-    var staple = !!it.staple_id;
+    // A regular somebody ticked on "Before you shop" also carries its
+    // staple_id (so buying it teaches the rhythm), but it is theirs, not a
+    // guess: "Probably running low" is only for a line Pomona put there on
+    // its own (added_by 'staple').
+    var staple = !!it.staple_id && (!it.added_by || it.added_by === 'staple');
     return '<div class="gro-row gro-line' + (bought ? ' done' : '') + (open ? ' open' : '') +
         (staple ? ' gro-line-staple' : '') + '" data-gro="line-tick" data-id="' + id + '" data-bought="' + (bought ? '1' : '0') + '">' +
       '<button type="button" class="gro-box' + (bought ? ' checked' : '') + '" role="checkbox" ' +
@@ -6426,58 +6641,9 @@
     return groceryState.staples.some(function (st) { return groStapleKey(st.item) === key; });
   }
 
-  // ---------- Staples ----------
-  // One quiet card at the foot of LIST, closed by default: what the
-  // household buys on a rhythm, each with when Pomona thinks it is next due,
-  // under its section — Spices, Pantry basics, Fridge basics, Household
-  // supplies, Other — as an eyebrow, the same one the aisles wear
-  // (Emily, 2026-09-13: "sections under it, and the spices is one
-  // section so it's easy to organize"). Nothing here is a question — a due
-  // staple is already on the list above as a line (a due spice waits for
-  // a recipe and is pre-ticked in Spices this week instead). Pause and
-  // Remove are the only verbs; Resume undoes a pause.
-  function groStaplesHtml() {
-    var staples = groceryState.staples;
-    if (!staples.length) return '';
-    var open = groceryState.staplesOpen;
-    var sections = groceryState.stapleSections.length
-      ? groceryState.stapleSections
-      : [{ section: 'other', label: '', staples: staples }];
-    var html = '<div class="gro-staples">' +
-      '<button type="button" class="gro-ps-head" data-gro="staples-toggle" aria-expanded="' + open + '">' +
-        GRO_ICONS.basket +
-        '<span class="gro-ps-text">' +
-          '<span class="gro-ps-title">Staples</span>' +
-          '<span class="gro-ps-sub">' + groPlural(staples.length, 'thing', 'things') + ' you buy on a rhythm</span>' +
-        '</span>' +
-        '<span class="gro-ps-check">' + (open ? 'Hide' : 'See') + '</span>' +
-      '</button>';
-    if (open) {
-      html += '<div class="gro-staples-body">' +
-        sections.map(function (sec) {
-          return '<div class="gro-staple-sec" data-section="' + escapeHtml(sec.section) + '">' +
-            (sec.label ? '<span class="gro-eyebrow">' + escapeHtml(sec.label) + '</span>' : '') +
-            sec.staples.map(groStapleRowHtml).join('') +
-          '</div>';
-        }).join('') +
-      '</div>';
-    }
-    return html + '</div>';
-  }
-
-  function groStapleRowHtml(st) {
-    var meta = st.paused
-      ? 'Paused'
-      : st.cadence_words + (st.due_words ? ' · ' + st.due_words : '');
-    return '<div class="gro-staple-row' + (st.paused ? ' paused' : '') + '">' +
-      '<span class="gro-staple-name">' + escapeHtml(st.item) + '</span>' +
-      '<span class="gro-staple-meta">' + escapeHtml(meta) + '</span>' +
-      '<button type="button" class="gro-staple-act" data-gro="' + (st.paused ? 'staple-resume' : 'staple-pause') + '" ' +
-        'data-id="' + st.id + '" data-name="' + escapeHtml(st.item) + '">' + (st.paused ? 'Resume' : 'Pause') + '</button>' +
-      '<button type="button" class="gro-staple-act" data-gro="staple-remove" data-id="' + st.id + '" ' +
-        'data-name="' + escapeHtml(st.item) + '">Remove</button>' +
-    '</div>';
-  }
+  // (The Staples card that sat here, closed, at the foot of LIST went on
+  // 2026-10-05 with "Before you shop": regulars are ticked for a trip on
+  // that pass's step 1 and kept in Settings → Regulars — wwkRegularsHtml.)
 
   // Every store already on the list, plus the household's usual stores — so
   // a store can be chosen before anything is tagged to it. Shared by SORT
@@ -8226,23 +8392,186 @@
       // ----- BEFORE YOU SHOP: the pass in front of sorting (card 13) -----
       case 'goto-beforeshop':
         groceryState.beforeShopIndex = 0;
+        groceryState.bsConfirmOff = null;
+        groceryState.bsSaid = '';
+        groceryState.bsAddOpen = false;
+        // The copy the steps draw from while the pass is open (bsView).
+        groceryState.bsSnap = groceryState.bsData ? JSON.parse(JSON.stringify(groceryState.bsData)) : null;
         goGroceryStep('beforeshop');
         return;
 
       // Forward through the pass. The LAST step's primary is the sort —
       // 'goto-sort' above — so this only ever moves between steps.
+      // Forward through the pass without changing anything: step 2's
+      // "Next" (a spice tapped there is already on the list) and step 1's
+      // "None this week". Off the last step it lands on the sort.
       case 'bs-next':
-      case 'bs-skip': {
-        var bsSteps = beforeShopSteps(groceryState.data);
-        var bsAt = beforeShopIndex(groceryState.data);
-        if (bsAt >= bsSteps.length - 1) {
-          beforeShopFinish();
-          goGroceryStep('sortall');
-          return;
-        }
-        groceryState.beforeShopIndex = bsAt + 1;
+        bsAdvance();
+        return;
+
+      // ----- step 1: regulars -----
+      case 'bs-reg-tick': {
+        var regC = bsPart('regulars').choices[Number(el.dataset.idx)];
+        if (!regC) return;
+        regC.ticked = !regC.ticked;
         renderGrocery();
-        if (scrollEl) scrollEl.scrollTop = 0;
+        return;
+      }
+      case 'bs-reg-add-open':
+        groceryState.bsAddOpen = true;
+        renderGrocery();
+        var bsField = document.getElementById('gro-bs-add-input');
+        if (bsField) bsField.focus();
+        return;
+      case 'bs-reg-add': {
+        var bsInput = document.getElementById('gro-bs-add-input');
+        var bsName = bsInput ? bsInput.value.replace(/\s+/g, ' ').trim() : '';
+        if (!bsName) return;
+        el.disabled = true;
+        groPost('/api/staples/add', { item: bsName }).then(function (r) {
+          var regs = bsPart('regulars');
+          var shown = (r && r.item) || bsName;
+          var already = regs.choices.some(function (c) { return c.name.toLowerCase() === shown.toLowerCase(); });
+          if (!already) regs.choices.push({ name: shown, staple_id: r && r.id, ticked: true, reason: '' });
+          groceryState.bsAddOpen = false;
+          renderGrocery();
+          toastSaved(savedLine(shown, 'added to your regulars'));
+        }).catch(function () {
+          el.disabled = false;
+          showToast("Couldn't add that — try again.");
+        });
+        return;
+      }
+      case 'bs-reg-go': {
+        var regNames = bsTickedRegulars().map(function (c) { return c.name; });
+        if (!regNames.length) { bsAdvance(); return; }
+        el.disabled = true;
+        groPost('/api/grocery-list/before-shop/regulars', { items: regNames }).then(function (r) {
+          var added = (r && r.added) || [];
+          bsAdvance();
+          loadGrocery({ background: true });
+          if (!added.length) return;
+          var said = bsNamesSaid(added.map(function (a) { return a.item; }), 'added');
+          toastSaved(said, {
+            label: 'Undo',
+            onClick: function () {
+              groDo(function () {
+                return groPost('/api/grocery-list/before-shop/regulars-undo',
+                  { item_ids: added.map(function (a) { return a.item_id; }) });
+              }, "Couldn't put that back — try again.");
+            }
+          });
+        }).catch(function () {
+          el.disabled = false;
+          showToast("That didn't save — try again.");
+        });
+        return;
+      }
+
+      // ----- step 2: spices and oils -----
+      // A tap puts it on the list there and then — the card's own words,
+      // "tapping one adds it to the list immediately" — and the line under
+      // the chips says so. A second tap takes it back off.
+      case 'bs-spice': {
+        var spC = null;
+        bsPart('spices').choices.forEach(function (c) { if (String(c.item_id) === String(id)) spC = c; });
+        if (!spC) return;
+        var spOn = !spC.picked;
+        spC.picked = spOn;
+        groceryState.bsSaid = spOn ? spC.name + ' goes on the list.' : spC.name + ' is off the list.';
+        renderGrocery();
+        groPost('/api/grocery-list/' + id + '/spice', { ticked: spOn }).then(function () {
+          loadGrocery({ background: true });
+        }).catch(function () {
+          spC.picked = !spOn;
+          groceryState.bsSaid = '';
+          renderGrocery();
+          showToast("That didn't save — try again.");
+        });
+        return;
+      }
+
+      // ----- step 3: already have these? -----
+      case 'bs-have-tick': {
+        bsPart('have').rows.forEach(function (r) { if (String(r.item_id) === String(id)) r.ticked = !r.ticked; });
+        renderGrocery();
+        return;
+      }
+      // Ticked: "Already had on hand", off the list and out of the sort —
+      // the pre-shop check's own drop, so it lands where that does.
+      // Unticked: the check's keep, so it isn't asked again.
+      case 'bs-have-go': {
+        var haveRows = bsPart('have').rows.slice();
+        var dropped = haveRows.filter(function (r) { return r.ticked; });
+        el.disabled = true;
+        Promise.all(haveRows.map(function (r) {
+          return groPost('/api/grocery-list/' + r.item_id + '/pre-shop', { decision: r.ticked ? 'drop' : 'keep' });
+        })).then(function () {
+          return loadGrocery({ background: true });
+        }).then(function () {
+          bsAdvance();
+          if (!dropped.length) return;
+          var said = bsNamesSaid(dropped.map(function (r) { return r.name; }), 'moved to Already had on hand');
+          toastSaved(said, {
+            label: 'Undo',
+            onClick: function () {
+              groDo(function () {
+                return Promise.all(dropped.map(function (r) {
+                  return groPostEmpty('/api/grocery-list/' + r.item_id + '/pre-shop-undo');
+                }));
+              }, "Couldn't put that back — try again.");
+            }
+          });
+        }).catch(function () {
+          el.disabled = false;
+          showToast("That didn't save — try again.");
+          loadGrocery({ background: true });
+        });
+        return;
+      }
+
+      // ----- "Already on the list", on every step -----
+      case 'bs-off':
+        groceryState.bsConfirmOff = groceryState.bsConfirmOff === String(id) ? null : String(id);
+        renderGrocery();
+        return;
+      case 'bs-off-no':
+        groceryState.bsConfirmOff = null;
+        renderGrocery();
+        return;
+      case 'bs-off-yes': {
+        var offKind = el.dataset.kind;
+        var offPart = bsPart(offKind === 'spice' ? 'spices' : 'regulars');
+        var offRow = null;
+        offPart.on_list.forEach(function (r) { if (String(r.item_id) === String(id)) offRow = r; });
+        if (!offRow) return;
+        el.disabled = true;
+        var offReq = offKind === 'spice'
+          ? groPost('/api/grocery-list/' + id + '/spice', { ticked: false })
+          : groPostEmpty('/api/grocery-list/' + id + '/remove');
+        offReq.then(function (r) {
+          offPart.on_list = offPart.on_list.filter(function (x) { return x !== offRow; });
+          groceryState.bsConfirmOff = null;
+          renderGrocery();
+          loadGrocery({ background: true });
+          var stapleId = r && r.staple_id;
+          toastSaved(savedLine(offRow.name, 'taken off the list'), {
+            label: 'Undo',
+            onClick: function () {
+              offPart.on_list.push(offRow);
+              groDo(function () {
+                if (offKind === 'spice') return groPost('/api/grocery-list/' + offRow.item_id + '/spice', { ticked: true });
+                if (stapleId) return groPostEmpty('/api/staples/' + stapleId + '/undo');
+                return groPost('/api/grocery-list/add', {
+                  item: offRow.name, quantity: offRow.quantity || '', category: offRow.category || 'other'
+                });
+              }, "Couldn't put that back — try again.");
+            }
+          });
+        }).catch(function () {
+          el.disabled = false;
+          showToast("That didn't save — try again.");
+        });
         return;
       }
 
@@ -8485,11 +8814,6 @@
         return;
       }
 
-      case 'staples-toggle':
-        groceryState.staplesOpen = !groceryState.staplesOpen;
-        renderGrocery();
-        return;
-
       // ----- Spices this week -----
       case 'spices-toggle':
         groceryState.spicesOpen = !groceryState.spicesOpen;
@@ -8505,30 +8829,6 @@
         groDo(function () {
           return groPost('/api/grocery-list/' + id + '/spice', { ticked: !wasTicked });
         }, "Couldn't save that — try again.");
-        return;
-      }
-
-      case 'staple-pause':
-      case 'staple-resume': {
-        var pausing = action === 'staple-pause';
-        var pName = el.dataset.name || 'That';
-        el.disabled = true;
-        groDo(function () {
-          return groPostEmpty('/api/staples/' + id + '/' + (pausing ? 'pause' : 'resume'));
-        }, "Couldn't update that — try again.").then(function (ok) {
-          if (ok) showToast(pausing ? pName + ' paused' : pName + ' back on the rhythm');
-        });
-        return;
-      }
-
-      case 'staple-remove': {
-        var rmName = el.dataset.name || 'That';
-        el.disabled = true;
-        groDo(function () {
-          return groPostEmpty('/api/staples/' + id + '/remove');
-        }, "Couldn't remove that — try again.").then(function (ok) {
-          if (ok) showToast(rmName + ' isn\u2019t a staple any more');
-        });
         return;
       }
 
@@ -10270,6 +10570,7 @@
   var wwkState = {
     open: false,
     facts: null,           // every freeform fact, all categories (/api/facts)
+    regulars: null,        // the household's staples (/api/staples) — Regulars
     openSections: {},      // section key -> true while expanded
     pendingCookWho: false, // "Mostly one person" tapped, nobody named yet
     importOpen: false,     // the Stores section's paste-a-list block
@@ -10388,8 +10689,88 @@
     { key: 'prep-days', title: 'Prep days', line: prefsPrepLine, body: wwkPrepDaysHtml },
     { key: 'taste', title: 'How you eat', line: prefsEatingLine, body: wwkTasteHtml },
     { key: 'calendar', title: 'Your calendar', line: prefsCalendarLine, body: wwkCalendarHtml },
-    { key: 'stores', title: 'Stores', line: prefsStoresLine, body: wwkStoresHtml }
+    { key: 'stores', title: 'Stores', line: prefsStoresLine, body: wwkStoresHtml },
+    // Regulars (2026-10-05, "Before you shop"): near Stores, as the card
+    // asks. Its line and rows read wwkState.regulars (/api/staples).
+    { key: 'regulars', title: 'Regulars', line: prefsRegularsLine, body: wwkRegularsHtml }
   ];
+
+  // ---------- Regulars ----------
+  // Loop Board 'Shop: "Before you shop"' (2026-10-05): the household's
+  // staples — what they buy on a rhythm — with add / pause / remove, on
+  // the existing /api/staples routes. This is where they are managed now;
+  // the closed Staples card at the foot of Shop went with the same card,
+  // and "Before you shop" step 1 is where they are ticked for a trip.
+  // The spice rack (the Spices section of staples) is not listed: those
+  // are kept by "Spices this week", not by a person.
+  function wwkRegulars() {
+    return (wwkState.regulars || []).filter(function (s) { return s.section !== 'spices'; });
+  }
+  function wwkRegularsHtml() {
+    var regs = wwkRegulars();
+    var rows = regs.map(function (s) {
+      var id = escapeHtml(String(s.id));
+      return '<div class="wwk-reg-row' + (s.paused ? ' is-paused' : '') + '">' +
+        '<span class="wwk-reg-name">' + escapeHtml(s.item) +
+          ' <span class="wwk-reg-sub">· ' + escapeHtml(s.paused ? 'paused' : s.cadence_words) + '</span></span>' +
+        '<button type="button" class="wwk-chip" data-wwk="reg-pause" data-id="' + id + '" data-paused="' + (s.paused ? '1' : '0') + '">' +
+          (s.paused ? 'Resume' : 'Pause') + '</button>' +
+        '<button type="button" class="wwk-chip-x" data-wwk="reg-remove" data-id="' + id + '" ' +
+          'aria-label="' + escapeHtml('Take ' + s.item + ' off your regulars') + '">&times;</button>' +
+      '</div>';
+    }).join('');
+    return wwkLead('Things you buy most weeks.') +
+      '<div class="wwk-reg-list">' + rows + '</div>' +
+      '<div class="wwk-chips">' + wwkAddChip('data-wwk="add" data-kind="regular"', 'Add a regular') + '</div>';
+  }
+  async function wwkLoadRegulars() {
+    try {
+      var res = await Api.fetch('/api/staples');
+      wwkState.regulars = res.ok ? ((await res.json()).staples || []) : [];
+    } catch (err) { wwkState.regulars = wwkState.regulars || []; }
+  }
+  // Each edit: change the row on tap, write it, re-read on the way out so
+  // the line under "Regulars" and the rows agree with the server. A failed
+  // write puts the row back and says so.
+  async function wwkRegularsDo(apply, request, said) {
+    apply();
+    wwkRenderSection('regulars');
+    try {
+      await request();
+      toastSaved(said);
+    } catch (err) {
+      console.warn('Regulars save failed:', err);
+      showToast("That didn't save — try again.");
+    }
+    await wwkLoadRegulars();
+    wwkRenderSection('regulars');
+    if (prefsState.open) renderPrefsRows();
+  }
+  function wwkRegularById(id) {
+    return (wwkState.regulars || []).filter(function (s) { return String(s.id) === String(id); })[0] || null;
+  }
+  function wwkRegularPause(id) {
+    var s = wwkRegularById(id);
+    if (!s) return;
+    var pausing = !s.paused;
+    wwkRegularsDo(function () { s.paused = pausing; },
+      function () { return wwkPost('/api/staples/' + encodeURIComponent(id) + (pausing ? '/pause' : '/resume')); },
+      savedLine(s.item, pausing ? 'paused' : 'resumed'));
+  }
+  function wwkRegularRemove(id) {
+    var s = wwkRegularById(id);
+    if (!s) return;
+    wwkRegularsDo(function () {
+      wwkState.regulars = (wwkState.regulars || []).filter(function (x) { return x !== s; });
+    }, function () { return wwkPost('/api/staples/' + encodeURIComponent(id) + '/remove'); },
+      savedLine(s.item, 'taken off your regulars'));
+  }
+  function wwkRegularAdd(text) {
+    wwkRegularsDo(function () {
+      wwkState.regulars = (wwkState.regulars || []).concat([{ id: 'new', item: text, section: 'other', paused: false, cadence_words: '' }]);
+    }, function () { return wwkPost('/api/staples/add', { item: text }); },
+      savedLine(text, 'added to your regulars'));
+  }
 
   function wwkSection(key) {
     for (var i = 0; i < WWK_SECTIONS.length; i++) if (WWK_SECTIONS[i].key === key) return WWK_SECTIONS[i];
@@ -10436,7 +10817,7 @@
   // Preferences sheet's own (loadPrefsCalendar) — one place it is fetched.
   async function loadWhatWeKnow() {
     try {
-      var reads = await Promise.all([Api.fetch('/api/memory'), Api.fetch('/api/facts'), loadPrefsCalendar(), Api.fetch('/api/held'), loadInviteAdults(), loadUsualWeek()]);
+      var reads = await Promise.all([Api.fetch('/api/memory'), Api.fetch('/api/facts'), loadPrefsCalendar(), Api.fetch('/api/held'), loadInviteAdults(), loadUsualWeek(), wwkLoadRegulars()]);
       if (reads[0].ok) prefsState.memory = await reads[0].json();
       if (reads[1].ok) wwkState.facts = ((await reads[1].json()).facts) || [];
       if (reads[3] && reads[3].ok) heldState.items = ((await reads[3].json()).held) || [];
@@ -12323,7 +12704,8 @@
     cuisine: 'Sichuan, Mexican…',
     'store-item': 'Rotisserie chicken…',
     store: 'Trader Joe’s…',
-    fact: 'Something I should know'
+    fact: 'Something I should know',
+    regular: 'Coffee, dish soap…'
   };
 
   function wwkOpenAdd(btn) {
@@ -12350,7 +12732,7 @@
     input._done = true;
     text = (text === undefined ? input.value : text).trim();
     var kind = input.getAttribute('data-kind');
-    var section = { restriction: 'people', dislike: 'wont-eat', cuisine: 'taste', 'store-item': 'stores', store: 'stores' }[kind];
+    var section = { restriction: 'people', dislike: 'wont-eat', cuisine: 'taste', 'store-item': 'stores', store: 'stores', regular: 'regulars' }[kind];
     if (kind === 'fact') section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[input.getAttribute('data-category')];
     if (!text) { wwkRenderSection(section); return; }
     if (kind === 'restriction') wwkAddRestriction(input.getAttribute('data-member'), text);
@@ -12358,6 +12740,7 @@
     else if (kind === 'cuisine') wwkListAdd('taste', 'cuisine_preferences', 'cuisine_preferences', text);
     else if (kind === 'store-item') wwkAddStoreItem(input.getAttribute('data-store'), text);
     else if (kind === 'store') wwkAddStore(text);
+    else if (kind === 'regular') wwkRegularAdd(text);
     else if (kind === 'fact') wwkAddFact(input.getAttribute('data-category'), text);
   }
 
@@ -12441,6 +12824,8 @@
         case 'count': return wwkSetCount(t.getAttribute('data-field'), parseInt(t.getAttribute('data-delta'), 10), parseInt(t.getAttribute('data-max'), 10), parseInt(t.getAttribute('data-min') || '0', 10));
         case 'kit': return wwkToggleKit(value);
         case 'fact-delete': return wwkDeleteFact(t.getAttribute('data-id'));
+        case 'reg-pause': return wwkRegularPause(t.getAttribute('data-id'));
+        case 'reg-remove': return wwkRegularRemove(t.getAttribute('data-id'));
         case 'add': return wwkOpenAdd(t);
         case 'item-forget': return wwkForgetStoreItem(store, value);
         case 'item-move': return wwkMoveStoreItem(store, value);
@@ -25819,6 +26204,15 @@
   // static/memory.html). The row and the section it opens read back the
   // same line from the same function, so tapping through never changes
   // the words.
+  // The Regulars row's line (2026-10-05): the household's regulars by
+  // name, read off What we know's copy (wwkState.regulars, /api/staples).
+  // Guarded so the row reads its empty line before that copy exists.
+  function prefsRegularsLine() {
+    var all = (typeof wwkState !== 'undefined' && wwkState.regulars) || [];
+    var regs = all.filter(function (s) { return s.section !== 'spices'; });
+    return regs.length ? regs.map(function (s) { return s.item; }).join(', ') : 'Things you buy most weeks';
+  }
+
   var PREFS_ROWS = [
     // What the chat is holding (2026-09-15) — the same row opens the same
     // What we know section; its line reads heldState, not memory.
@@ -25828,7 +26222,8 @@
     { title: 'Prep days', section: 'prep-days', line: prefsPrepLine },
     { title: 'How you eat', section: 'taste', line: prefsEatingLine },
     { title: 'Your calendar', section: 'calendar', line: prefsCalendarLine },
-    { title: 'Stores', section: 'stores', line: prefsStoresLine }
+    { title: 'Stores', section: 'stores', line: prefsStoresLine },
+    { title: 'Regulars', section: 'regulars', line: prefsRegularsLine }
   ];
 
   // ---------- the sheet ----------
@@ -26002,6 +26397,10 @@
     loadPrefsHeld();
     loadPushSettings();
     loadRecipes();
+    // The Regulars row's line ("Coffee, Milk, Dish soap") — re-read on
+    // every open, like the calendar's, since Shop's "Before you shop" can
+    // add one between opens.
+    wwkLoadRegulars().then(function () { if (prefsState.open) renderPrefsRows(); });
     if (prefsState.memory) { renderPrefsRows(); return; }
     try {
       var res = await Api.fetch('/api/memory');

@@ -5580,6 +5580,48 @@ def mark_before_shop_done():
     return tools.mark_before_shop_done()
 
 
+@app.get("/api/grocery-list/before-shop")
+def get_before_shop_steps_view():
+    """What the three "Before you shop" steps show — regulars with why each
+    is ticked, this week's spices, and the things Pomona thinks are already
+    home — plus each step's "Already on the list" with who added it and
+    when. See app/tools/before_shop.py."""
+    try:
+        return tools.before_shop_steps()
+    except Exception as e:
+        logger.exception("Before you shop lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class BeforeShopRegularsRequest(BaseModel):
+    items: list[str] = []
+
+
+class BeforeShopUndoRequest(BaseModel):
+    item_ids: list[int] = []
+
+
+@app.post("/api/grocery-list/before-shop/regulars")
+def add_before_shop_regulars(req: BeforeShopRegularsRequest):
+    """Step 1's "Add N to the list": each ticked regular goes on as a
+    staple's line (a starter becomes a staple first). Never a second line."""
+    try:
+        return tools.add_regulars(req.items)
+    except Exception as e:
+        logger.exception("Adding regulars failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/grocery-list/before-shop/regulars-undo")
+def undo_before_shop_regulars(req: BeforeShopUndoRequest):
+    """The Undo on step 1's toast: the lines it just made come off."""
+    try:
+        return tools.undo_add_regulars(req.item_ids)
+    except Exception as e:
+        logger.exception("Undoing the regulars add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/grocery-list/by-store")
 def get_grocery_list_by_store_view(status: str = "needed"):
     """

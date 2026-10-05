@@ -425,6 +425,74 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
+  then already-have-it, ending on Sort the list. Branch
+  `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop
+  Board, Phase 1, High. Gowthami's household, 2026-10-04: the sort step was
+  hidden, the Staples card was never seen, the spices instructions were
+  unclear. Finishes the overnight WIP (`overnight/before-you-shop-wip`,
+  23193c2), which was the frame with no steps; that branch was cut from
+  `overnight/recipe-change-and-shop`, so its commits (Change recipe, main
+  person) come along in this branch's merge.
+  - **The list's one apricot names the next thing.** LIST's dock reads
+    "Before you shop" while the week's list has unsorted things and the pass
+    hasn't been run for this plan, "Sort the list (N)" after. Once per week
+    = `weekly_plans.before_shop_asked_at` (the WIP's column, kept), stamped
+    only by leaving the pass's last step. A one-shop household has nothing
+    to sort, so no pass (same rule as the sort row).
+  - **One read for all three steps**, `GET /api/grocery-list/before-shop`
+    (`before_shop.before_shop_steps`), loaded with the list. While the pass
+    is open the screens draw from a copy taken as it opened (`bsSnap`), so a
+    tapped spice stays a lit chip instead of jumping sections under the
+    thumb. Steps live in `BEFORE_SHOP_STEPS`; a step with nothing to ask is
+    skipped, and nothing reads a step by name, so step 0 (inventory, its own
+    Design card) goes at the front in one line.
+  - **Step 1 regulars** = non-spice, unpaused staples (or the card's starter
+    set when the household has none). Pre-tick rule, in order: confident
+    inventory match with a quantity → unticked, "in the fridge"; no
+    purchase history → unticked, silent; last bought ≥ usual gap → ticked,
+    "usually lasts 2 weeks"; else unticked, "bought 6 days ago". Usual gap
+    = learned/told cadence, else the card's rule of thumb (7 fridge/bread,
+    14 coffee/tea, 30 household). Inventory is read in `before_shop.py`,
+    NOT `staples.py`, which keeps its promise never to read it. "Add N to
+    the list" → `POST …/before-shop/regulars` (a starter becomes a staple
+    first; the line is a staple's line, attributed to the person — so it
+    does NOT show "Probably running low": `groLineHtml` now shows that line
+    only for `added_by = 'staple'`). Toast names them, Undo removes them.
+    "None this week" changes nothing. "+ Add a regular" makes a staple in
+    place, ticked.
+  - **Step 2 spices** are the existing "Spices this week" lines; a chip tap
+    is `tick_spice` there and then, with "Garam masala goes on the list."
+    The foot card stays, same wording. One button: "Next" (or "Sort the
+    list" when step 3 has nothing).
+  - **Step 3 already-have** = the pre-shop flags, pre-ticked, reason
+    "bought Thursday" / "in the freezer". A line a person added by hand
+    starts UNTICKED and says who ("Ravi added it Monday"). Primary drops
+    the ticked (pre-shop "drop" → Already had on hand) and keeps the rest,
+    then SORT ALL; footer "Only 18 things left to sort, down from 24."
+    **Assumption:** the primary acts on Pomona's pre-ticks, so the step got
+    a quiet `.dock-link` "Keep them all on the list" — the card's "nothing
+    is required" needs a way past that writes nothing. Not in the mockup.
+  - **"Already on the list" is Emily's later change, not the pill**: its
+    own quiet section at the foot of steps 1 and 2, plain ink-secondary
+    rows, "Milk · you added it Wednesday", hidden when empty; a tap opens
+    "Take milk off the list?" inline (Take it off / Keep it), toast + Undo.
+    Who/when from `grocery_items.added_by` + `created_at` in the household's
+    zone: 'ai' → "for this week's meals", 'staple' → "Pomona added it …".
+    A chat add is recorded under the session adult, so "From the chat" is
+    not sayable — reads as theirs. A spice line made by the recipes shows
+    no date (its created_at is the approval, not the tick).
+  - **Settings → Regulars** (Preferences, after Stores): staples with
+    Pause/Resume, ×, "+ Add a regular", on the existing /api/staples
+    routes; the spice rack isn't listed. The closed Staples card at the
+    foot of Shop is gone (`groStaplesHtml`, its three handlers).
+  - Checked in a browser at 390px, light and dark, against a seeded
+    /tmp DB: every step, the take-off question, the add field, skip-all
+    (lands on SORT ALL with the list unchanged), Settings → Regulars pause.
+    Contrast measured: new text on ground is `--ink-secondary` 4.44:1 light
+    / 8.48 dark and the eyebrow `--ink-muted` 4.33:1 light — both the app's
+    existing values, inherited, not new tokens.
+
 - **2026-10-05 — The phone remembers who's using it, and the session stops
   timing out under a phone in daily use. Branch
   `overnight/device-remembers-member`, NOT merged at the time of writing.**
