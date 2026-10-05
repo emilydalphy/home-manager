@@ -552,6 +552,7 @@ def save_onboarding_answers(
     lunches_per_week: int = 7,
     snacks_per_week: int | None = None,
     snacks_per_day: int | None = None,
+    notes: str = "",
 ) -> dict:
     """
     Save all onboarding-redesign questions in one call: household
@@ -596,11 +597,22 @@ def save_onboarding_answers(
             continue
         _household.set_member_dietary_restrictions(name.strip(), restrictions, replace=True)
 
+    # notes is setup's last answer, "Anything else I should know?"
+    # (2026-10-04) -- kept verbatim as the household note the generation
+    # prompt already reads. An empty string is "this call isn't about the
+    # note" and leaves whatever is stored alone: set_household_meal_
+    # preferences merges a falsy notes as "keep what's there", so a caller
+    # that predates this clears nothing.
     set_household_meal_preferences(
         eating_style=eating_style,
+        notes=notes,
         mark_complete=False,
     )
     _household._log_preference_event("onboarding_eating_style", "write")
+    # Its own event, like each of the other answers -- it is a real
+    # preference write and counts toward the Memory view's growth number.
+    if (notes or "").strip():
+        _household._log_preference_event("onboarding_anything_else", "write")
 
     conn = get_conn()
     conn.execute(

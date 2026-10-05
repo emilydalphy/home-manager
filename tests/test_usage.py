@@ -491,6 +491,12 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # a recipe whose amounts add up costs nothing. See
         # agent._settle_recipe_amounts / _repair_recipe_amounts_llm.
         "generate_recipe_details_llm.amounts",
+        # Setup's last answer (2026-10-04): the "Anything else I should
+        # know?" note, read ONCE for the settings the app already has a
+        # home for. Saves nothing on its own -- the household confirms the
+        # reading first. See agent.read_setup_note_llm and
+        # /api/onboarding/read-note.
+        "read_setup_note_llm",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added

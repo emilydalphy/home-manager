@@ -39,6 +39,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import nodeharness
+
 REPO = Path(__file__).resolve().parent.parent
 TESTS = REPO / "tests"
 SHELL_JS = REPO / "static" / "shell.js"
@@ -91,3 +93,67 @@ def test_the_limit_this_guards_is_smaller_than_the_file_being_sliced():
         "static/shell.js is now smaller than the per-argument limit; the "
         "guard above is no longer load-bearing and its docstring should say so"
     )
+
+
+# ---------------------------------------------------------------------------
+# "Brings its own Api" is three spellings, not one (added 2026-10-05)
+# ---------------------------------------------------------------------------
+# nodeharness prepends the real static/api.js when a harness calls through
+# `Api.` and does not declare its own stub. Its test for "declares its own"
+# was the literal string `var Api` — a string standing in for a concept — so
+# a harness writing `const Api` (or `let`) got api.js prepended ON TOP of its
+# own stub and node refused the whole file with "Identifier 'Api' has already
+# been declared", before one assertion ran. Found by tests/test_time_limits.py,
+# whose stub is `const`, and only because the full suite was run.
+#
+# The CATCH is the const case. The three GUARDS beside it are what stop the
+# widening from having gone too far: a harness that brings no stub must still
+# be given api.js, and one that never mentions Api must still be given
+# nothing — that second one is what keeps 48 other harness files running
+# byte-for-byte as they did.
+
+
+def test_a_harness_that_declares_its_own_api_is_not_given_a_second_one():
+    """
+    CATCH. Red before the widening for `const` and `let`: both got api.js
+    prepended, which is a duplicate declaration and a SyntaxError in node.
+    Asserted on all three spellings together rather than one, because the
+    bug was precisely that one of them was privileged over the others.
+    """
+    for keyword in ("var", "let", "const"):
+        script = "%s Api = { fetch: function () {} };\nApi.fetch('/x');\n" % keyword
+        assert nodeharness._api_prelude(script) == "", (
+            f"a harness declaring `{keyword} Api` was handed a second copy of "
+            "api.js, which node refuses as a duplicate declaration"
+        )
+
+
+def test_a_harness_that_brings_no_stub_still_gets_the_real_api_js():
+    """
+    GUARD, and the half the widening could have broken: narrowing "brings its
+    own" too far would silently stop prepending for the six files that DO
+    call through `Api.` without a stub, and they would stop at
+    "Api is not defined". Pinned by mutation: making _api_prelude return ""
+    unconditionally fails this and nothing else in this file.
+    """
+    assert "Api" in nodeharness._api_prelude("Api.fetch('/api/week-menu');\n")
+
+
+def test_a_harness_that_never_mentions_api_is_still_given_nothing():
+    """
+    GUARD. This is what keeps every other harness in the repo byte-for-byte
+    as it was: api.js is prepended only on mention, so a slice that never
+    touches the server runs exactly the script it always ran.
+    """
+    assert nodeharness._api_prelude("function f() { return 1; }\n") == ""
+
+
+def test_the_word_api_inside_another_identifier_is_not_a_declaration():
+    """
+    GUARD on the word boundaries. `var ApiThing` is not an Api stub, and
+    reading it as one would withhold api.js from a harness that needs it —
+    the failure mode of the previous test, reached by a different route.
+    Pinned by mutation: dropping the `\\b` after `Api` fails this.
+    """
+    script = "var ApiThing = 1;\nApi.fetch('/x');\n"
+    assert "Api" in nodeharness._api_prelude(script)

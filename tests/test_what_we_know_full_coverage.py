@@ -50,10 +50,16 @@ def test_setting_a_members_age_group_round_trips(signed_in, household_with_membe
     res = signed_in.post("/api/memory/member/age-group", json={"name": "Priya", "age_group": "adult"})
     assert res.status_code == 200
 
-    assert tools.get_household_memory()["members"] == [
-        {"name": "Priya", "age_group": "adult", "dietary_restrictions": []},
-        {"name": "Sam", "age_group": "", "dietary_restrictions": []},
-    ]
+    # Narrowed 2026-10-05 (onboarding-names): this used to compare the whole
+    # member dicts, and `members` gained `id` and `is_primary` when Settings
+    # learned to show and move the main person. The claim here is that an age
+    # group ROUND TRIPS and lands on the right person -- the three fields
+    # below are every one it is about, asserted exactly as before, Sam's
+    # blank included so "it set the wrong member's" still fails.
+    assert [
+        (m["name"], m["age_group"], m["dietary_restrictions"])
+        for m in tools.get_household_memory()["members"]
+    ] == [("Priya", "adult", []), ("Sam", "", [])]
     people = signed_in.get("/api/facts?category=people").json()
     members = {m["name"]: m for m in people["onboarding"]["members"]}
     assert members["Priya"]["age_group"] == "adult"

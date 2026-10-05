@@ -251,7 +251,19 @@ def test_the_dinner_time_line_sits_under_the_question_not_under_the_chips():
 
 
 @pytest.mark.parametrize("step, words", [
-    ("step-household", ["Who are we planning for?", "Everyone who eats at home.", "+ Add person"]),
+    # UPDATED 2026-10-05 (the main person): the household step is TWO
+    # screens, and the TITLE is the one piece of copy that changed on the
+    # second one -- Emily confirmed on 2026-10-04 that it otherwise reuses
+    # "Who are we planning for?"'s screen exactly. So the line under it is
+    # still verbatim, and "+ Add person" is "+ Add someone", which the card
+    # asks for by name. This table's claim -- the 2026-09-11 copy cleanse
+    # is still the copy -- is unchanged; the words moved because Emily
+    # moved them.
+    ("step-your-name", [
+        "What&rsquo;s your name?",
+        "You&rsquo;ll be the main person for the home. You can add others next.",
+    ]),
+    ("step-household", ["Who else lives with you?", "Everyone who eats at home.", "+ Add someone"]),
     ("step-helpers", [
         "Does anyone else help run the house?",
         "If someone else shops or cooks too, I&rsquo;ll give them their own way in once your first week is ready.",
@@ -310,7 +322,36 @@ def test_no_italics_no_emoji_no_literal_colours_on_the_question_screens():
     assert "font-style: italic" in skip_quiet_rule, "the carve-out no longer matches .q-skip-quiet"
     question_only_sans_skip_quiet = question_only.replace(skip_quiet_rule, "")
     assert "font-style" not in question_only_sans_skip_quiet
-    literals = re.findall(r"#[0-9a-fA-F]{3,6}\b", question_only.replace("#7C7161", "").replace("#FBF6EE", "").replace("#BFB6A5", "").replace("#101F19", ""))
+    # Narrowed 2026-10-05 (onboarding-names): this used to scan the raw text,
+    # so a hex quoted in an EXPLANATORY COMMENT read as a literal colour in a
+    # rule. All four values it exempted one at a time (#7C7161, #FBF6EE,
+    # #BFB6A5, #101F19) sat in ONE prose line recording a measured contrast
+    # ratio, and the "You" badge's comment added five more -- an allowlist
+    # that grows once per documented decision is one that eventually gets
+    # switched off. A hex in a comment is not a colour the browser applies,
+    # and recording the measured value beside the token is this repo's own
+    # convention (theme.css does it throughout).
+    #
+    # Two things keep it no looser than it was, both mutation-checked. The
+    # first cut of this used `question_only.split("/*")[0]` to deal with the
+    # banner the slice above cuts in half, which TRUNCATED at the first
+    # comment and left nearly every rule unscanned -- caught by neutering the
+    # stripper and watching the file stay green. So: complete comments go,
+    # one dangling opener goes, nothing else is dropped, and the two
+    # assertions below say the stripper ran AND that the rules this file is
+    # about are still in what it scanned.
+    code_only = re.sub(r"/\*.*?\*/", "", question_only, flags=re.S)
+    code_only = re.sub(r"/\*.*\Z", "", code_only, flags=re.S)
+    assert "/*" not in code_only and len(code_only) < len(question_only), (
+        "the comment stripper did not run -- a literal colour in a comment "
+        "would pass over"
+    )
+    for anchor in (".q-title", ".member-you-badge", ".btn-soft"):
+        assert anchor in code_only, (
+            f"{anchor} fell out of the stripped CSS -- the stripper is eating "
+            "rules, so a literal colour in one would pass over"
+        )
+    literals = re.findall(r"#[0-9a-fA-F]{3,6}\b", code_only)
     assert literals == [], f"literal colours in the question CSS: {literals}"
     for step in QUESTION_STEPS:
         markup = _step_markup(f"step-{step}")

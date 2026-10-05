@@ -438,6 +438,10 @@ def _build_preferences_snapshot(conn) -> dict:
         "wont_eat": json.loads(prefs["dislikes_json"]),
         "protein": json.loads(prefs["protein_preferences_json"]),
         "weeknight_max_minutes": prefs["weeknight_max_minutes"],
+        # In the snapshot for this function's own reason: a 28-minute lunch
+        # in an old plan is explained by the household having had a
+        # 30-minute lunch limit that week, and unreadable without it.
+        "weekday_lunch_max_minutes": prefs["weekday_lunch_max_minutes"],
         "cooking_time_preference": prefs["cooking_time_preference"],
         "repeats": prefs["repeats_tolerance"],
         "kit": json.loads(prefs["kitchen_kit_json"]),

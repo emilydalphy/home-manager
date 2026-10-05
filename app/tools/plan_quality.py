@@ -83,6 +83,7 @@ becomes the other):
         "rush_dates": {"2026-09-10"},      # dates tagged `rush` this week
         "unrushed_dates": {"2026-09-12"},  # dates tagged `unrushed`: no weeknight cap
         "weeknight_max_minutes": 30 | None | 0,
+        "weekday_lunch_max_minutes": 20 | None | 0,
         "prep_days": [{"weekday": "sunday"}],  # rhythm.prep_days: no lunch cap that day
         "recent_history": [
             {"date": ..., "slot": ..., "meal": ..., "cuisine": ...,
@@ -319,7 +320,13 @@ def _weekday_lunch_cap_respected(entries: list[dict], context: dict) -> list[Vio
     time_caps.minutes_cap decides, the same rule the generator and the
     swap sheet use. Warn only, like the dinner caps above.
     """
-    memory = {"rhythm": {"prep_days": context.get("prep_days") or []}}
+    # Rebuilt rather than passed whole: this rule only ever needed the prep
+    # days. It needs the household's own lunch limit too since 2026-10-05 —
+    # see the note at quality_context, where it is put in for this.
+    memory = {
+        "rhythm": {"prep_days": context.get("prep_days") or []},
+        "weekday_lunch_max_minutes": context.get("weekday_lunch_max_minutes"),
+    }
     # How the week's intake says each weekday lunch is made (step 3,
     # 2026-09-25): "cooked" keeps the cap even on a prep day.
     kinds = context.get("lunch_kinds") or {}
@@ -2329,6 +2336,13 @@ def check_and_log(plan_id: int, generation_context: dict) -> list[Violation]:
             "rush_dates": {d for d, tags in night_tags.items() if "rush" in tags},
             "unrushed_dates": {d for d, tags in night_tags.items() if "unrushed" in tags},
             "weeknight_max_minutes": memory.get("weeknight_max_minutes"),
+            # Carried through because _weekday_lunch_cap_respected builds its
+            # own partial memory dict to ask time_caps with, and a partial
+            # dict that omits this reads as "absent", i.e. the 20 this
+            # household may have changed (Loop Board "Time limits",
+            # 2026-10-05). The morning report would then warn about a lunch
+            # that is inside the cap the household actually set.
+            "weekday_lunch_max_minutes": memory.get("weekday_lunch_max_minutes"),
             "prep_days": (memory.get("rhythm") or {}).get("prep_days") or [],
             "lunch_kinds": _weekday_lunches.kinds_by_date(intake_ctx),
             "recent_history": generation_context.get("recent_history") or [],

@@ -503,6 +503,7 @@ _CALL_SITE_LABELS = {
     "_scan_image_for_items": "photo scan (receipt/fridge/pantry)",
     "generate_chore_recommendations": "chore recommendations",
     "chat_theme": "chat themes (what chat was about)",
+    "read_setup_note_llm": "setup's \u201cAnything else?\u201d note",
 }
 
 # Emily's target, set 2026-09-03: all-in API cost under this, per

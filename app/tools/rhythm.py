@@ -87,6 +87,50 @@ MAX_PREP_DAYS = 7
 # buckets the chips ask in.
 PREP_MINUTES_CHOICES = (30, 60, 120)
 
+# Emily, 2026-10-04, from Gowthami's household's first week: "would be
+# great if there was a screen in the onboarding that also asked when the
+# typical grocery shop day is during the week, so that you can have that
+# context for the day summary."
+#
+# An eighth rhythm fact, and skippable like prep_days — a household that
+# shops whenever it suits them has answered nothing wrong, so this is
+# deliberately absent from rhythm_completeness_signals too. Stored as TWO
+# household-level rows ('shop_day' for the main shop, 'top_up_shop_day'
+# for the second, smaller one) rather than one list-valued row the way
+# prep_days is: these two are not interchangeable days of one answer, they
+# are two different questions, and only the main one anchors anything (the
+# plan-ready day, the Today line, the shop-day reminder). A top-up day
+# with no main shop is not a state the screens can say anything useful
+# about, so clearing the main clears the top-up with it.
+#
+# No shop day at all is a real answer ("it changes week to week") and
+# reads as no rows, which is the same as never having been asked. The two
+# are deliberately not told apart: nothing in the app behaves differently
+# for them, and a second column that only ever meant "we asked and they
+# shrugged" is the snacks_per_week_set shape without the reason that one
+# needed it.
+SHOP_DAY_WEEKDAYS = PLANNING_ANCHOR_WEEKDAYS  # 'monday' ... 'sunday'
+
+# Two days before the shop day, a household whose next week isn't approved
+# yet gets the plan-week nudge whether or not the ordinary Friday rule
+# would have opened it — the list can't be ready for Saturday if the week
+# is planned on Saturday. Emily, same comment: "a reminder to plan before
+# shop day."
+PLAN_BEFORE_SHOP_LEAD_DAYS = 2
+
+# The reminder is on unless the household turns it off, so an absent row
+# means on. Only 'off' is ever written — the toggle going back on deletes
+# the row rather than writing 'on', so "they never said" and "they said
+# yes" stay the same state and the default can be changed later without a
+# migration having to tell them apart.
+SHOP_REMINDER_OFF = "off"
+
+# The `source` a planning_anchor carries when set_shop_days derived it from
+# the shop day rather than a person answering the question. It is what lets
+# a derived plan-ready day follow a changed shop day while an answered one
+# stays exactly as the household left it.
+ANCHOR_FROM_SHOP_DAY = "shop_day_default"
+
 
 def _upsert(conn, member_name: str, weekday: str, fact_type: str, value: str, who: str, source: str) -> None:
     conn.execute(
@@ -245,6 +289,149 @@ def planning_anchor_label(value: str) -> str:
     if value == "as_we_go":
         return "As we go — planned a few days at a time"
     return ""
+
+
+def _validate_shop_day(value, field: str) -> str:
+    """
+    A shop weekday, validated the way every other rhythm answer is: one
+    of SHOP_DAY_WEEKDAYS, or '' for "they haven't said / it varies".
+    Raises rather than guessing, so a typo from chat never lands as a day
+    nothing reads back.
+    """
+    day = (value or "").strip().lower()
+    if day and day not in SHOP_DAY_WEEKDAYS:
+        raise ValueError(f"{field} must be one of {SHOP_DAY_WEEKDAYS}, not {value!r}.")
+    return day
+
+
+def _day_before(weekday: str) -> str:
+    """The weekday before a weekday, wrapping Monday back round to Sunday."""
+    i = SHOP_DAY_WEEKDAYS.index(weekday)
+    return SHOP_DAY_WEEKDAYS[i - 1]
+
+
+def set_shop_days(
+    shop_day=None,
+    top_up_day=None,
+    remind_before_shop=None,
+    source: str = "onboarding",
+) -> dict:
+    """
+    Set the day the household does its main grocery shop, and optionally
+    the day of a smaller top-up shop. Household-level.
+
+    None means "not part of this answer" and leaves the stored day alone;
+    '' is a real answer and CLEARS it ("it changes week to week"), the
+    same distinction set_prep_days draws between an omitted list and an
+    empty one. Clearing the main shop clears the top-up too — see
+    SHOP_DAY_WEEKDAYS for why a top-up on its own says nothing.
+
+    Two things ride along, both from Emily's 2026-10-04 comment:
+
+    - Setting a main shop day with no `planning_anchor` on record DEFAULTS
+      the anchor to the day before it, because that is what "I'll have the
+      list ready the day before" on the screen promises. It never
+      overwrites an anchor the household chose — a household that said
+      "ready by Wednesday" and shops on Saturday meant both.
+    - `remind_before_shop` is the "Remind me to plan before shop day"
+      toggle. True deletes the row (on is the default, see
+      SHOP_REMINDER_OFF); False writes 'off'.
+    """
+    main = _validate_shop_day(shop_day, "shop_day")
+    top_up = _validate_shop_day(top_up_day, "top_up_day")
+    if shop_day is not None and not main:
+        # "It changes week to week" — the top-up goes with it.
+        top_up = ""
+        top_up_day = ""
+
+    conn = get_conn()
+    logged: list[str] = []
+    try:
+        if shop_day is not None:
+            if main:
+                _upsert(conn, "", "", "shop_day", main, "", source)
+            else:
+                conn.execute(
+                    "DELETE FROM household_rhythm WHERE household_id = ? AND fact_type = 'shop_day'",
+                    (household_id(),),
+                )
+            logged.append("rhythm:shop_day")
+        if top_up_day is not None:
+            if top_up:
+                _upsert(conn, "", "", "top_up_shop_day", top_up, "", source)
+            else:
+                conn.execute(
+                    "DELETE FROM household_rhythm WHERE household_id = ? AND fact_type = 'top_up_shop_day'",
+                    (household_id(),),
+                )
+            logged.append("rhythm:top_up_shop_day")
+        if remind_before_shop is not None:
+            if remind_before_shop:
+                conn.execute(
+                    "DELETE FROM household_rhythm WHERE household_id = ? AND fact_type = 'shop_reminder'",
+                    (household_id(),),
+                )
+            else:
+                _upsert(conn, "", "", "shop_reminder", SHOP_REMINDER_OFF, "", source)
+            logged.append("rhythm:shop_reminder")
+        if main:
+            # The anchor default. Read on this connection so it sees the
+            # shop day just written and can't be raced by a second reader.
+            #
+            # A plan-ready day THIS rule wrote follows the shop day when the
+            # shop day moves, and one a PERSON gave never does. Without that
+            # distinction, a household that answered Saturday and later
+            # corrected it to Wednesday was left reading "plan ready
+            # Fridays" over a Wednesday shop — the list promised two days
+            # AFTER the trip it is for, which is the whole thing this card
+            # exists to prevent. The `source` column is what tells the two
+            # apart, and ANCHOR_FROM_SHOP_DAY is the one value this rule
+            # ever writes, so nothing else can be mistaken for it.
+            existing = conn.execute(
+                "SELECT value, source FROM household_rhythm"
+                " WHERE household_id = ? AND fact_type = 'planning_anchor'",
+                (household_id(),),
+            ).fetchone()
+            theirs = existing is not None and (existing["value"] or "").strip()
+            ours = theirs and (existing["source"] or "") == ANCHOR_FROM_SHOP_DAY
+            if not theirs or ours:
+                _upsert(conn, "", "", "planning_anchor", _day_before(main), "", ANCHOR_FROM_SHOP_DAY)
+                logged.append("rhythm:planning_anchor")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+    for field in logged:
+        _household._log_preference_event(field, "write")
+    rhythm = get_household_rhythm()
+    return {
+        "shop_day": rhythm["shop_day"],
+        "top_up_shop_day": rhythm["top_up_shop_day"],
+        "shop_days_summary": rhythm["shop_days_summary"],
+        "shop_reminder_on": rhythm["shop_reminder_on"],
+        "planning_anchor": rhythm["planning_anchor"],
+    }
+
+
+def shop_days_summary(shop_day: str = "", top_up_day: str = "") -> str:
+    """
+    The one line Settings and What We Know read the shop days back as:
+    "Grocery shop: Saturday \u00b7 top-up Wednesday", or just "Grocery shop:
+    Saturday". Returns '' with no main shop day on record, so an
+    unanswered question says nothing at all rather than saying "no shop
+    day" \u2014 the rule planning_anchor_label and prep_days_summary both follow.
+    """
+    main = (shop_day or "").strip().lower()
+    if not main:
+        return ""
+    line = f"Grocery shop: {main.capitalize()}"
+    top_up = (top_up_day or "").strip().lower()
+    if top_up:
+        line += f" \u00b7 top-up {top_up.capitalize()}"
+    return line
 
 
 def set_leftovers_stance(value: str, source: str = "onboarding") -> dict:
@@ -424,6 +611,9 @@ def get_household_rhythm() -> dict:
     planning_anchor = None
     leftovers_stance = None
     prep_days: list[dict] = []
+    shop_day = None
+    top_up_shop_day = None
+    shop_reminder = None
     for row in rows:
         if row["fact_type"] == "lunch_location":
             entry = lunch_location.setdefault(row["member_name"], {"standing": None, "overrides": {}})
@@ -441,6 +631,12 @@ def get_household_rhythm() -> dict:
             planning_anchor = row["value"]
         elif row["fact_type"] == "leftovers_stance":
             leftovers_stance = row["value"]
+        elif row["fact_type"] == "shop_day":
+            shop_day = row["value"]
+        elif row["fact_type"] == "top_up_shop_day":
+            top_up_shop_day = row["value"]
+        elif row["fact_type"] == "shop_reminder":
+            shop_reminder = row["value"]
         elif row["fact_type"] == "prep_days":
             # A list-valued fact (see PREP_DAY_WEEKDAYS). A row written
             # before this was list-shaped, or hand-edited into something
@@ -462,6 +658,11 @@ def get_household_rhythm() -> dict:
         "leftovers_stance": leftovers_stance,
         "prep_days": prep_days,
         "prep_days_summary": prep_days_summary(prep_days),
+        "shop_day": shop_day,
+        "top_up_shop_day": top_up_shop_day,
+        "shop_days_summary": shop_days_summary(shop_day or "", top_up_shop_day or ""),
+        # Absent means ON (SHOP_REMINDER_OFF) — only 'off' is ever written.
+        "shop_reminder_on": shop_reminder != SHOP_REMINDER_OFF,
     }
 
 
@@ -474,6 +675,9 @@ def save_rhythm_answers(
     planning_anchor: str = "",
     leftovers_stance: str = "",
     prep_days: list | None = None,
+    shop_day=None,
+    top_up_shop_day=None,
+    remind_before_shop=None,
     source: str = "onboarding",
 ) -> dict:
     """
@@ -538,6 +742,16 @@ def save_rhythm_answers(
     # whole function needs, already built for set_prep_days.
     normalized_prep_days = _normalize_prep_days(prep_days) if prep_days is not None else None
 
+    # Validated here with the rest, written below by set_shop_days rather
+    # than inline: the shop day carries two side effects of its own (the
+    # planning_anchor default, the reminder toggle) and one copy of that
+    # reasoning is enough. It runs after this function's own commit, so a
+    # bad shop day still refuses the whole call — which is the guarantee
+    # this function exists for — while a valid one is a second small
+    # transaction rather than a second implementation.
+    _validate_shop_day(shop_day, "shop_day")
+    _validate_shop_day(top_up_shop_day, "top_up_shop_day")
+
     # -- every field above is valid; now the one write, one commit. --
     logged: list[str] = []
     conn = get_conn()
@@ -579,6 +793,14 @@ def save_rhythm_answers(
     if normalized_prep_days == []:
         from . import usual_week as _usual_week
         _usual_week.prep_days_cleared()
+
+    if shop_day is not None or top_up_shop_day is not None or remind_before_shop is not None:
+        set_shop_days(
+            shop_day=shop_day,
+            top_up_day=top_up_shop_day,
+            remind_before_shop=remind_before_shop,
+            source=source,
+        )
 
     return get_household_rhythm()
 

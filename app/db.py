@@ -396,6 +396,11 @@ _MIGRATIONS = [
     ("meal_preferences", "kitchen_kit_json", "TEXT NOT NULL DEFAULT '[]'"),
     ("meal_preferences", "repeats_tolerance", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "weeknight_max_minutes", "INTEGER NOT NULL DEFAULT 0"),
+    # The weekday lunch limit (Loop Board "Time limits", 2026-10-05). The
+    # DEFAULT is what makes criterion 4 true by construction: an existing
+    # household's row gains 20, which is exactly the number the hard-coded
+    # time_caps.WEEKDAY_LUNCH_MAX_MINUTES was giving them. 0 means no limit.
+    ("meal_preferences", "weekday_lunch_max_minutes", "INTEGER NOT NULL DEFAULT 20"),
     ("meal_preferences", "table_style", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "typical_week", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "next_week_notes", "TEXT NOT NULL DEFAULT ''"),
@@ -775,6 +780,16 @@ _MIGRATIONS = [
     ("households", "ai_consent_at", "TEXT"),
     ("households", "ai_consent_version", "TEXT NOT NULL DEFAULT ''"),
     ("households", "ai_consent_member_id", "INTEGER"),
+    # The household's MAIN PERSON (Loop Board "onboarding asks 'What's your
+    # name?' first", 2026-10-05) — see app/tools/primary_member.py for the
+    # whole rule and for why this is NOT set_up_by_member_id. A member id,
+    # never a name: a name is the only identity this app has for a person
+    # and two people called Sam are indistinguishable to it. NULL on every
+    # existing household; _backfill_primary_member below resolves one the
+    # card's way (the setter-up, whose id this device's pin is written for,
+    # else the first adult) at the next startup, and primary_member_id()
+    # resolves one lazily for a household made between startups.
+    ("households", "primary_member_id", "INTEGER"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -1161,6 +1176,7 @@ def _run_migrations(conn):
     _backfill_snack_dishes(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
+    _backfill_primary_member(conn)
     _run_once_data_migrations(conn)
 
 
@@ -1234,6 +1250,52 @@ def _mark_existing_members_first_open_seen(conn):
         if chosen is not None:
             conn.execute(
                 "UPDATE households SET set_up_by_member_id = ? WHERE id = ?", (chosen, hid)
+            )
+
+
+def _backfill_primary_member(conn):
+    """
+    Every household that has never recorded a main person gets one, the
+    card's way: "primary = the member already pinned on the setup device,
+    or the first adult."
+
+    Being pinned on a device lives in the signed session cookie, so it
+    cannot be read here — but households.set_up_by_member_id IS the member
+    that pin is written for (POST /api/onboarding/household sets the cookie
+    to the id record_setup_adult returns), so it is the database-readable
+    form of the same answer. Else the first adult by creation order.
+
+    Idempotent and run every startup, like _backfill_member_colors rather
+    than like the run-once data migrations: it only ever touches a
+    household whose primary is still NULL, so it can never overrule a move
+    made in Settings, and a household made by create_household.py — or one
+    that reached this column before it had any adults — picks one up the
+    next time the app starts. A household with no adult eating here yet
+    (one mid-onboarding) gets nothing and is simply asked again.
+    """
+    households = conn.execute(
+        "SELECT id FROM households WHERE primary_member_id IS NULL"
+    ).fetchall()
+    for household in households:
+        hid = household["id"]
+        adult = "LOWER(TRIM(age_group)) = 'adult' AND COALESCE(eats_here, 1) = 1"
+        chosen = conn.execute(
+            f"SELECT m.id AS mid FROM households h JOIN members m "
+            f"ON m.id = h.set_up_by_member_id AND m.household_id = h.id "
+            f"WHERE h.id = ? AND {adult}",
+            (hid,),
+        ).fetchone()
+        mid = chosen["mid"] if chosen else None
+        if mid is None:
+            first = conn.execute(
+                f"SELECT id FROM members WHERE household_id = ? AND {adult} "
+                "ORDER BY id ASC LIMIT 1",
+                (hid,),
+            ).fetchone()
+            mid = first["id"] if first else None
+        if mid is not None:
+            conn.execute(
+                "UPDATE households SET primary_member_id = ? WHERE id = ?", (mid, hid)
             )
 
 

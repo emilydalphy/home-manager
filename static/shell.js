@@ -1438,6 +1438,14 @@
           '<span class="plan-nudge-eyebrow">' + (nudge.is_current_week ? 'THIS WEEK' : 'NEXT WEEK') + '</span>' +
         '</div>' +
         '<div class="plan-nudge-title">Shall I put ' + escapeHtml(nudge.week_label) + ' together?</div>' +
+        // Why today, when the ordinary Friday rule hasn't opened this yet:
+        // the shop is two days off and the list can't be ready for it if
+        // the week is planned on the day (Emily, 2026-10-04). The server
+        // decides whether to say it (weekly_plan._plan_before_shop_day);
+        // this is the only screen that reads it.
+        (nudge.shop_day_label
+          ? '<div class="plan-nudge-body">You shop ' + escapeHtml(nudge.shop_day_label) + '. I’ll have the list ready the day before.</div>'
+          : '') +
       '</div>';
     // On a day with nothing on it the empty moment asks this instead
     // (renderTodayEmpty) — the card is hidden there, not rebuilt.
@@ -9858,6 +9866,10 @@
     { key: 'saturday', label: 'Sat' }
   ];
   var WWK_PREP_MINUTES = [{ key: 30, label: '30 min' }, { key: 60, label: 'About an hour' }, { key: 120, label: 'Longer' }];
+  // The grocery shop day (2026-10-04). Same seven days as the prep row,
+  // listed separately because these two rows are different questions and
+  // a relabelling of one must not quietly move the other.
+  var WWK_SHOP_DAYS = WWK_PREP_DAYS;
   // Taste: the same lists the old page carried (its PROTEIN_OPTIONS /
   // KIT_OPTIONS / RECIPE_COUNT_FIELDS / SNACKS_PER_DAY_FIELD). No onboarding
   // step collects protein preferences, so that list is this sheet's own.
@@ -11128,6 +11140,19 @@
     // on the go?").
     html += wwkLead('Plan ready by') + wwkNote('Sets which days I suggest each week.') + '<div class="wwk-chips">' +
       WWK_PLANNING_ANCHOR.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="planning_anchor" data-value="' + o.key + '"', r.planning_anchor === o.key ? 'on' : ''); }).join('') + '</div>';
+    // Under the plan-ready day, because setting a shop day is what gives a
+    // household that answer in the first place (rhythm.set_shop_days
+    // defaults the anchor to the day before the shop). Tapping the day
+    // that's already on clears it, which is how a single-pick row is
+    // correctable at all; clearing the main shop clears the top-up with it.
+    html += wwkLead('Grocery shop') + wwkNote('I’ll have the list ready the day before.') + '<div class="wwk-chips">' +
+      WWK_SHOP_DAYS.map(function (o) { return wwkChip(o.label, 'data-wwk="shop-day" data-value="' + o.key + '"', r.shop_day === o.key ? 'on' : ''); }).join('') + '</div>';
+    if (r.shop_day) {
+      html += wwkLead('Top-up shop') + '<div class="wwk-chips">' +
+        WWK_SHOP_DAYS.map(function (o) { return wwkChip(o.label, 'data-wwk="shop-topup" data-value="' + o.key + '"', r.top_up_shop_day === o.key ? 'on' : ''); }).join('') + '</div>';
+      html += '<div class="wwk-chips">' +
+        wwkChip('Remind me to plan before shop day', 'data-wwk="shop-reminder"', r.shop_reminder_on === false ? 'off' : 'on') + '</div>';
+    }
     html += wwkLead('Who cooks') + '<div class="wwk-chips">' +
       WWK_COOKING_ROLE.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="cooking_role" data-value="' + o.key + '"', role === o.key ? 'on' : ''); }).join('') + '</div>';
     if (role === 'one_person' || wwkState.pendingCookWho) {
@@ -11266,6 +11291,37 @@
       var r = wwkMem().rhythm || (wwkMem().rhythm = {});
       r.prep_days = next;
       r.prep_days_summary = wwkPrepSummary(next);
+    });
+  }
+
+  // ---------- Grocery shop day ----------
+
+  function wwkSetShopDay(key) {
+    var r = wwkMem().rhythm || {};
+    var next = r.shop_day === key ? '' : key;
+    // The server clears the top-up with the main shop (set_shop_days);
+    // sending it explicitly keeps the screen and the write saying the
+    // same thing rather than relying on the reply to correct the screen.
+    var body = { shop_day: next, top_up_shop_day: next ? (r.top_up_shop_day || '') : '' };
+    wwkSaveRhythm('rhythm', body, function () {
+      var m = wwkMem().rhythm || (wwkMem().rhythm = {});
+      m.shop_day = next || null;
+      if (!next) m.top_up_shop_day = null;
+    });
+  }
+
+  function wwkSetTopUpDay(key) {
+    var r = wwkMem().rhythm || {};
+    var next = r.top_up_shop_day === key ? '' : key;
+    wwkSaveRhythm('rhythm', { top_up_shop_day: next }, function () {
+      (wwkMem().rhythm || (wwkMem().rhythm = {})).top_up_shop_day = next || null;
+    });
+  }
+
+  function wwkToggleShopReminder() {
+    var on = (wwkMem().rhythm || {}).shop_reminder_on !== false;
+    wwkSaveRhythm('rhythm', { remind_before_shop: !on }, function () {
+      (wwkMem().rhythm || (wwkMem().rhythm = {})).shop_reminder_on = !on;
     });
   }
 
@@ -11849,6 +11905,9 @@
         case 'cooking-who': return wwkSetCookingWho(value);
         case 'lunch': return wwkSetLunch(member, value);
         case 'prep-day': return wwkTogglePrepDay(value);
+        case 'shop-day': return wwkSetShopDay(value);
+        case 'shop-topup': return wwkSetTopUpDay(value);
+        case 'shop-reminder': return wwkToggleShopReminder();
         case 'uw-open': return openUwSheet(value);
         case 'uw-row': return uwToggleRow(value);
         case 'uw-snacks': return uwSaveSnacks(parseInt(value, 10));
@@ -24920,6 +24979,10 @@
     var anchor = rhythm.planning_anchor || '';
     if (anchor === 'as_we_go') bits.push('planned as you go');
     else if (anchor) bits.push('plan ready ' + anchor.charAt(0).toUpperCase() + anchor.slice(1) + 's');
+    // The shop day, said the way the section itself says it (the server's
+    // own shop_days_summary, minus the lead-in this row doesn't need).
+    var shop = rhythm.shop_days_summary || '';
+    if (shop) bits.push(shop.replace(/^Grocery shop: /, 'shop ').replace(/ · top-up /, ', top-up '));
     // Empty: what the answer does, not "Not set yet" (copy cleanse, 2026-09-11).
     return bits.length ? bits.join(' · ') : 'Sets when to start cooking';
   }

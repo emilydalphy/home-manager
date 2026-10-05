@@ -1536,6 +1536,14 @@ def get_meal_planning_preferences() -> dict:
         "kitchen_kit": json.loads(field("kitchen_kit_json", "[]")),
         "repeats_tolerance": field("repeats_tolerance", ""),
         "weeknight_max_minutes": field("weeknight_max_minutes", 0),
+        # Here for this function's own stated rule: "a preference the app is
+        # acting on but won't show is one the household can't correct". The
+        # planner acts on it (time_caps.minutes_cap), so it is shown. The
+        # fallback is the default rather than 0, because 0 is the answer
+        # "no limit" and a household with no row has not given it.
+        "weekday_lunch_max_minutes": field(
+            "weekday_lunch_max_minutes", _time_caps.WEEKDAY_LUNCH_MAX_MINUTES
+        ),
         "cooking_time_preference": field("cooking_time_preference", ""),
         "table_style": field("table_style", ""),
         "eating_style": field("eating_style", ""),
@@ -1705,6 +1713,42 @@ def _attention_moves_on(today: date, start_date: str, day_count: int) -> bool:
     return (today - start).days >= PLAN_AHEAD_FROM_WEEKDAY or (end - today).days <= 1
 
 
+def _plan_before_shop_day(today: date) -> dict | None:
+    """
+    The "plan it before you shop" reminder, or None: the household's main
+    grocery shop day when today is exactly
+    rhythm.PLAN_BEFORE_SHOP_LEAD_DAYS before the next one of them, and
+    they have not turned the reminder off.
+
+    Emily, 2026-10-04: a list cannot be ready for Saturday if the week is
+    planned on Saturday, so the nudge has to open before the shop rather
+    than only from the ordinary Friday rule. It is a REASON for the
+    existing nudge to be shown, never a second card — the nudge already
+    knows which week to offer and already goes quiet once that week is
+    planned, and two cards asking the household to plan the same week
+    would be the duplication the 2026-09-08 re-cut existed to remove.
+
+    Once a week falls out of the arithmetic rather than needing a
+    dismissal of its own: a weekday comes round once every seven days, so
+    "exactly two days before it" is one day in seven.
+    """
+    from . import rhythm as _rhythm
+
+    rhythm = _rhythm.get_household_rhythm()
+    shop_day = (rhythm.get("shop_day") or "").strip().lower()
+    if not shop_day or not rhythm.get("shop_reminder_on"):
+        return None
+    if shop_day not in _rhythm.SHOP_DAY_WEEKDAYS:
+        return None
+    # Days until the next shop day, 1-7 (never 0: today being the shop day
+    # means the next one is a week away, and the reminder is about the shop
+    # that has not happened yet).
+    until = (_rhythm.SHOP_DAY_WEEKDAYS.index(shop_day) - today.weekday()) % 7 or 7
+    if until != _rhythm.PLAN_BEFORE_SHOP_LEAD_DAYS:
+        return None
+    return {"shop_day": shop_day, "shop_day_label": shop_day.capitalize()}
+
+
 def _rhythm_anchor() -> str:
     """
     The household's stored planning_anchor, or '' if it has never answered.
@@ -1813,6 +1857,8 @@ def get_week_planning_nudge() -> dict:
     covering = _live_plan_covering(conn, today.isoformat())
     conn.close()
 
+    shop_reminder = _plan_before_shop_day(today)
+
     target = None
     target_days = suggestion["day_count"]
     is_current = False
@@ -1834,7 +1880,11 @@ def get_week_planning_nudge() -> dict:
         # _attention_moves_on).
         cover_start, cover_days = plan_period(covering)
         cover_end = date.fromisoformat(period_end_date(cover_start, cover_days))
-        if _attention_moves_on(today, cover_start, cover_days):
+        # The shop-day reminder opens the same offer EARLY (see
+        # _plan_before_shop_day) — the week after this one, two days before
+        # the shop. Not a different week and not a different card: the one
+        # thing it changes is whether the offer is on screen yet.
+        if _attention_moves_on(today, cover_start, cover_days) or shop_reminder:
             following = cover_end + timedelta(days=1)
             if _plan_covers_any(following.isoformat(), target_days) is None:
                 target = following
@@ -1844,7 +1894,7 @@ def get_week_planning_nudge() -> dict:
     week_start = target.isoformat()
     if f"plan_week_nudge:{week_start}" in dismissed:
         return {"show": False, "week_start": week_start, "dismissed": True}
-    return {
+    out = {
         "show": True,
         "week_start": week_start,
         "week_label": _format_period_range(week_start, target_days),
@@ -1852,6 +1902,12 @@ def get_week_planning_nudge() -> dict:
         "is_current_week": is_current,
         "dismiss_key": f"plan_week_nudge:{week_start}",
     }
+    if shop_reminder:
+        # The screen says WHY it is asking today ("You shop Saturday."),
+        # which is the whole of the reminder — the offer underneath it is
+        # the one the nudge always makes.
+        out.update(shop_reminder)
+    return out
 
 
 def _plan_covers_any(start_date: str, day_count: int) -> int | None:

@@ -668,6 +668,18 @@ class HouseholdOnboardingRequest(BaseModel):
     members: list[MemberInput] = []
     pets: list[PetInput] = []
     goals: str = ""
+    # Who typed their own name on onboarding's FIRST screen, "What's your
+    # name?" (2026-10-05) — the household's main person. A NAME on the
+    # wire because that is the only identity onboarding has to offer; the
+    # route resolves it to a member id among the ones it has just saved,
+    # and the id is what is stored (see app/tools/primary_member.py).
+    #
+    # None means "this request isn't saying" — the onboarding-route
+    # convention, where None is "not part of this answer" and "" would be
+    # "that is my answer, clear it". A request that doesn't name one leaves
+    # primary_member_id to resolve the way an existing household's does,
+    # which is what keeps every other caller of this route unchanged.
+    primary_name: str | None = None
 
 
 class UsualWeekRequest(BaseModel):
@@ -694,6 +706,12 @@ class OnboardingAnswersRequest(BaseModel):
     member_names: list[str] = []
     household_restrictions: dict[str, list[str]] = {}  # member name -> restrictions, only for members who have any
     eating_style: str = ""
+    # Setup's last answer (2026-10-04), "Anything else I should know?" --
+    # kept verbatim as meal_preferences.notes, the household note the
+    # generation prompt already reads. '' is safe rather than destructive:
+    # save_onboarding_answers merges a falsy `notes` as "keep what's
+    # there", so an older client that doesn't send this clears nothing.
+    notes: str = ""
     wont_eat: list[str] = []
     excited_about: list[str] = []
     dinners_per_week: int = 7
@@ -740,6 +758,16 @@ class OnboardingRhythmRequest(BaseModel):
     # `| None` rather than defaulting to []. Every other field on this
     # model reads its own falsy value the same way.
     prep_days: list[dict] | None = None
+    # The eighth, also skippable (Loop Board "Onboarding asks 'When do you
+    # usually do the grocery shop?'", Emily 2026-10-04). Same None-means-
+    # "not about this" rule as prep_days above, with one difference worth
+    # knowing: here the empty STRING is the real answer that clears the day
+    # ("it changes week to week"), so these are `| None` on a str rather
+    # than plain `str = ""` — a plain default would make every rhythm save
+    # from any other screen silently clear the household's shop day.
+    shop_day: str | None = None
+    top_up_shop_day: str | None = None
+    remind_before_shop: bool | None = None
 
 
 class ChoreProfileRequest(BaseModel):
@@ -825,6 +853,17 @@ class MemberAgeGroupRequest(BaseModel):
     for it, so most households reach this page with it unset."""
     name: str
     age_group: str
+
+
+class PrimaryMemberRequest(BaseModel):
+    """
+    Settings -> Who's here: move the household's main person to another
+    adult (2026-10-05). A member ID, not a name — a name is the only
+    identity this app has for a person and two people called Sam are
+    indistinguishable to it, which is exactly the limit the stored field
+    exists to avoid inheriting. /api/memory's members carry their id.
+    """
+    member_id: int
 
 
 class MemberRestrictionsRequest(BaseModel):
@@ -1273,18 +1312,36 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     """
     try:
         saved_ids = []
+        # (id, name) for each member this request saved, in the order they
+        # were typed — what primary_name is resolved against below.
+        saved_members = []
         for m in req.members:
             if not m.name.strip():
                 continue
             added = tools.add_member(m.name.strip())
             if isinstance(added, dict) and added.get("member_id") is not None:
                 saved_ids.append(added["member_id"])
+                saved_members.append((added["member_id"], m.name.strip()))
             if m.age_group:
                 tools.set_member_age_group(m.name.strip(), m.age_group)
         # Setup is finishing (onboarding posts its people only at the end):
         # record who set the household up now, before any invite link can
         # exist — see tools/first_open.py, rule 2.
         setup_adult_id = tools.record_setup_adult(saved_ids)
+        # And who the MAIN PERSON is (2026-10-05) — a different question
+        # from the one above, which is a fact about the past that must
+        # never move; see app/tools/primary_member.py on why there are two
+        # fields. Resolved to an id among the members THIS request saved,
+        # by name, so the stored value is an id and a later rename cannot
+        # move it. members[0] is deliberately NOT read as the answer: that
+        # implicit convention is exactly what this card replaces, and a
+        # request that names nobody leaves the resolver to answer.
+        wanted = (req.primary_name or "").strip().lower()
+        if wanted:
+            for mid, mname in saved_members:
+                if mname.strip().lower() == wanted:
+                    tools.record_primary_member(mid)
+                    break
         for p in req.pets:
             if not p.name.strip():
                 continue
@@ -1354,6 +1411,7 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             member_names=req.member_names,
             household_restrictions=req.household_restrictions,
             eating_style=req.eating_style,
+            notes=req.notes,
             wont_eat=req.wont_eat,
             excited_about=req.excited_about,
             dinners_per_week=req.dinners_per_week,
@@ -1420,7 +1478,9 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
     lands, when the week should be ready, and the household's leftovers
     stance (Loop Board "Onboarding: household rhythm without traditional
     assumptions") — plus the skippable seventh, prep_days (Loop Board
-    "Prep days"). Called directly by the onboarding wizard's two rhythm
+    "Prep days") and the eighth, the grocery shop day (Loop Board
+    "Onboarding asks 'When do you usually do the grocery shop?'"). Called
+    directly by the onboarding wizard's rhythm and shop-day
     steps, placed after household members and before the food questions
     per Emily's stated learning hierarchy (rhythm before habits before
     preferences). The same six facts are also settable/correctable via
@@ -1444,6 +1504,9 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
             planning_anchor=req.planning_anchor,
             leftovers_stance=req.leftovers_stance,
             prep_days=req.prep_days,
+            shop_day=req.shop_day,
+            top_up_shop_day=req.top_up_shop_day,
+            remind_before_shop=req.remind_before_shop,
             source="onboarding",
         )
     except ValueError as e:
@@ -1452,6 +1515,64 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
         logger.exception("Onboarding rhythm save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+class OnboardingNoteRequest(BaseModel):
+    """Setup's last answer -- free text, as typed. See read_onboarding_note."""
+    note: str = ""
+
+
+@app.post("/api/onboarding/read-note")
+def read_onboarding_note(req: OnboardingNoteRequest):
+    """
+    Read setup's "Anything else I should know?" note for the settings the
+    app already has a home for, and hand the reading BACK rather than
+    saving it (Loop Board "Onboarding ends with 'Anything else I should
+    know?'", Emily 2026-10-04).
+
+    Nothing here writes. The step shows the reading on a confirm card, and
+    only a "Looks right" sends it -- through the ordinary
+    /api/onboarding/answers payload a person tapping the chips sends, so
+    an allergy read out of a note and an allergy typed into the
+    restrictions step are the same write. That ordering is a safety rule
+    rather than a nicety: see agent.read_setup_note_llm's own note, and
+    the 2026-09-04 fix-allergy-enforcement work it cites.
+
+    An empty note is answered without a model call at all -- there is
+    nothing to read, and "Nothing else" must cost nothing.
+    """
+    note = (req.note or "").strip()
+    if not note:
+        return {"read": False, "reading": {}}
+    try:
+        reading = agent.read_setup_note_llm(note, people=[m["name"] for m in tools.list_members()])
+    except agent.AIConsentRequiredError as e:
+        # Named FIRST because it is a subclass of the one below, and this
+        # one must NOT degrade quietly: a household that hasn't allowed
+        # sharing with Claude gets the plain 503 sentence every other
+        # route gives, not a shrug and a built week. Reachable here only
+        # by revoking consent between the consent step and this one, since
+        # this step comes after it.
+        #
+        # Re-raised as the ordinary 500 the other 83 routes raise, rather
+        # than bare: _refused_for_consent reads it off __cause__ and
+        # record_server_errors turns it into the 503 — the documented path,
+        # which also keeps it out of the morning report as breakage. A bare
+        # raise would reach the unhandled handler instead, which answers
+        # the same 503 and logs a traceback for a household that is simply
+        # working as intended.
+        raise HTTPException(status_code=500, detail=f"Server error: {e}") from e
+    except agent.AssistantUnavailableError as e:
+        # Anthropic overloaded or a network hiccup. The note is still kept
+        # verbatim by the answers call, so a failure here costs the
+        # mapping and never the note -- the step builds its week rather
+        # than stopping the household on it.
+        logger.warning("Reading setup's note failed: %s", e)
+        return {"read": False, "reading": {}, "unavailable": True}
+    except Exception as e:
+        logger.exception("Reading setup's note failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {"read": bool(reading), "reading": reading or {}}
 
 
 @app.get("/api/members/{name}/share-link")
@@ -1891,6 +2012,34 @@ def set_memory_member_restrictions(req: MemberRestrictionsRequest):
         logger.exception("Setting member dietary restrictions failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
+
+
+@app.post("/api/memory/primary-member")
+def set_memory_primary_member(req: PrimaryMemberRequest):
+    """
+    Move the household's main person to another adult — Settings ->
+    Who's here (2026-10-05). Answers the whole memory payload, like its
+    two neighbours above, so the screen re-reads the people and their
+    `is_primary` from one place rather than patching its own copy.
+
+    400 with the refusal's own sentence for somebody who isn't an adult
+    eating here, or isn't in this household at all — written for a reader,
+    so Who's here shows it as it stands (see app/tools/primary_member.py).
+    Another household's member id takes that same door rather than moving
+    anything: every statement in there is scoped by household_id().
+    """
+    try:
+        tools.set_primary_member(req.member_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Setting the main person failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    try:
+        return tools.get_household_memory()
+    except Exception as e:
+        logger.exception("Memory lookup after setting the main person failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.get("/api/cooker-view")

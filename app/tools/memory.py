@@ -9,7 +9,13 @@ from ..db import get_conn
 from ._shared import EATS_HERE_SQL, household_id, require_household_row
 from . import household as _household
 from . import preferences as _preferences
+from . import primary_member as _primary_member
 from . import rhythm as _rhythm
+# time_caps imports nothing from the app (that is its whole point), so
+# reading its default here cannot make a cycle — and it means the default
+# this dict falls back to and the default minutes_cap falls back to are
+# the same number rather than two copies of 20.
+from . import time_caps as _time_caps
 
 
 # List-valued preference fields — see _coerce_str_list and get_household_memory's
@@ -164,12 +170,24 @@ def get_household_memory() -> dict:
     settings with no feedback loop — either is None if there's not yet
     enough data this month to say anything meaningful.
     """
+    # The household's main person (2026-10-05) — Settings -> Who's here
+    # shows "Main person" next to them and can move it to another adult.
+    # Resolved BEFORE this function's own connection is opened, and once
+    # rather than per member: primary_member_id() opens one of its own and
+    # can WRITE (it records a household that has never had an answer), and
+    # a nested writing connection inside an open one is how this repo has
+    # twice earned an intermittent "database is locked". One extra
+    # connection per payload, constant, never per member.
+    primary_id = _primary_member.primary_member_id()
     conn = get_conn()
     prefs = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)).fetchone()
     members = conn.execute(
         # The people meals are planned for — a helper who doesn't eat here
-        # is left out (2026-09-30).
-        f"SELECT name, age_group, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
+        # is left out (2026-09-30). `id` since 2026-10-05: Who's here marks
+        # the main person, and moving it needs an id rather than a name —
+        # a name is the only identity this app has for a person and two
+        # people called Sam are indistinguishable to it.
+        f"SELECT id, name, age_group, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
         (household_id(),),
     ).fetchall()
     household = conn.execute("SELECT goals FROM households WHERE id = ?", (household_id(),)).fetchone()
@@ -233,8 +251,10 @@ def get_household_memory() -> dict:
 
     member_list = [
         {
+            "id": m["id"],
             "name": m["name"], "age_group": m["age_group"],
             "dietary_restrictions": json.loads(m["dietary_restrictions_json"]),
+            "is_primary": m["id"] == primary_id,
         }
         for m in members
     ]
@@ -323,6 +343,16 @@ def get_household_memory() -> dict:
         "kitchen_kit": _as_str_list(json.loads(prefs["kitchen_kit_json"])) if prefs else [],
         "repeats_tolerance": prefs["repeats_tolerance"] if prefs else "",
         "weeknight_max_minutes": prefs["weeknight_max_minutes"] if prefs else 0,
+        # The weekday lunch limit (Loop Board "Time limits", 2026-10-05). It
+        # HAS to be here rather than only in the column, because this dict is
+        # the `memory` every reader of time_caps.minutes_cap hands it — the
+        # generator's plate and variety passes, the swap sheet, cap_enforce
+        # and the quality check. A household with no meal_preferences row at
+        # all gets the default rather than 0: 0 is the answer "no limit", and
+        # nobody has given it.
+        "weekday_lunch_max_minutes": (
+            prefs["weekday_lunch_max_minutes"] if prefs else _time_caps.WEEKDAY_LUNCH_MAX_MINUTES
+        ),
         "table_style": prefs["table_style"] if prefs else "",
         "typical_week": prefs["typical_week"] if prefs else "",
         # "Every meal is a full plate" (Emily, 2026-09-05) — whether the app
@@ -495,7 +525,10 @@ def edit_preference(field: str, value) -> dict:
     'repeats_tolerance' (DEPRECATED — str: 'cook_once_eat_twice', 'one_a_week'
     or 'all_different'; superseded by leftovers_stance, see the note below),
     'weeknight_max_minutes' (int — a real cap on Mon-Fri dinners; 0 means no
-    cap), 'snack_dishes_per_week' (int, 1-7 — how many DIFFERENT snack dishes
+    cap), 'weekday_lunch_max_minutes' (int — the same for a Monday-Friday
+    lunch COOKED THAT DAY; 0 means no cap, and a lunch that reheats an
+    earlier cook or lands on a prep day has never had one),
+    'snack_dishes_per_week' (int, 1-7 — how many DIFFERENT snack dishes
     a week; snacks_per_day still says how many land on each day), 'table_style' (str), 'complete_plates' (bool — whether the app may
     add a small side to a meal that came out short of a full plate: protein
     + vegetable, plus a carb unless their eating style is low-carb. On by
@@ -525,7 +558,8 @@ def edit_preference(field: str, value) -> dict:
         "dislikes", "novelty_preference", "usual_stores", "eating_style",
         "dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week",
         "snacks_per_day", "snack_dishes_per_week",
-        "kitchen_kit", "weeknight_max_minutes", "complete_plates",
+        "kitchen_kit", "weeknight_max_minutes", "weekday_lunch_max_minutes",
+        "complete_plates",
         *simple_text_columns,
     }
     if field not in valid_fields:
@@ -575,13 +609,16 @@ def edit_preference(field: str, value) -> dict:
                 "a day would eat the same snack twice."
             )
         value = dishes
-    if field == "weeknight_max_minutes":
+    # Both time limits, validated the same way because they mean the same
+    # thing: whole minutes, never negative, 0 for no cap (Loop Board "Time
+    # limits", 2026-10-05 — one convention for the pair, not two).
+    if field in ("weeknight_max_minutes", "weekday_lunch_max_minutes"):
         try:
             minutes = int(value)
         except (TypeError, ValueError):
-            raise ValueError("weeknight_max_minutes must be a whole number of minutes (0 for no cap).")
+            raise ValueError(f"{field} must be a whole number of minutes (0 for no cap).")
         if minutes < 0:
-            raise ValueError("weeknight_max_minutes can't be negative.")
+            raise ValueError(f"{field} can't be negative.")
         value = minutes
     if field == "repeats_tolerance" and value not in ("", "cook_once_eat_twice", "one_a_week", "all_different"):
         raise ValueError("repeats_tolerance must be 'cook_once_eat_twice', 'one_a_week' or 'all_different'.")
@@ -616,11 +653,13 @@ def edit_preference(field: str, value) -> dict:
         )
 
     _household._log_preference_event(field, "write")
-    if field in simple_text_columns or field in ("kitchen_kit", "weeknight_max_minutes", "complete_plates",
+    if field in simple_text_columns or field in ("kitchen_kit", "weeknight_max_minutes",
+                                                 "weekday_lunch_max_minutes", "complete_plates",
                                                  "snack_dishes_per_week"):
         column = {
             "kitchen_kit": "kitchen_kit_json",
             "weeknight_max_minutes": "weeknight_max_minutes",
+            "weekday_lunch_max_minutes": "weekday_lunch_max_minutes",
             "complete_plates": "complete_plates",
             "snack_dishes_per_week": "snack_dishes_per_week",
             **simple_text_columns,

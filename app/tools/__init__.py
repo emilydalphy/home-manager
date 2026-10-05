@@ -296,6 +296,16 @@ from .first_open import (  # noqa: F401
     mark_first_open_seen,
     record_setup_adult,
 )
+# The household's main person (2026-10-05) — one per household, a member
+# id, shown in Settings -> Who's here and movable to another adult. See
+# primary_member.py for why this is not set_up_by_member_id.
+from .primary_member import (  # noqa: F401
+    PRIMARY_NOT_AN_ADULT,
+    PRIMARY_NOT_A_MEMBER,
+    primary_member_id,
+    record_primary_member,
+    set_primary_member,
+)
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
     _get_or_create_member,
@@ -544,6 +554,7 @@ from .rhythm import (  # noqa: F401
     get_household_rhythm,
     planning_anchor_label,
     prep_days_summary,
+    shop_days_summary,
     prep_minutes_label,
     rhythm_completeness_signals,
     save_rhythm_answers,
@@ -554,6 +565,7 @@ from .rhythm import (  # noqa: F401
     set_meals_together,
     set_planning_anchor,
     set_prep_days,
+    set_shop_days,
 )
 from .sharing import (  # noqa: F401
     eater_add_dietary_restriction,
@@ -650,7 +662,7 @@ from .usage import (  # noqa: F401
     record_plan_quality,
     touch_household_active,
 )
-from .time_caps import minutes_cap, caps_for_slot  # noqa: F401
+from .time_caps import minutes_cap, caps_for_slot, weekday_lunch_cap  # noqa: F401
 from .cap_enforce import enforce_minutes_caps  # noqa: F401
 from .week_intake import (  # noqa: F401
     MOOD_GUIDANCE,

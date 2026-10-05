@@ -71,16 +71,38 @@ INTRO_STEPS_AFTER_THE_FIRST = ["intro-help", "intro-talk", "intro-know"]
 # storyboard's — who's here, who helps, never on the plate; who's eating
 # when, cooking ahead, the three variety screens, dinner time; what you eat;
 # the kit. 'meals' and 'leftovers' left the flow.
+# UPDATED 2026-10-05 (grocery shop day): 'shop-day' asks when the weekly
+# shop is, straight after "When's dinner?" -- the two clock questions
+# together. Its own step, its own way back, like every other question. No
+# claim in this file changed; the flow gained a step.
+# UPDATED 2026-10-05 (the main person): the household step is TWO
+# screens -- "What's your name?" then "Who else lives with you?" -- so
+# that the household's main person is somebody who said so rather than
+# whichever row happened to be first. TRIPWIRE FIRED: this list is the
+# flow's own order, so a step added to the flow has to be added here or
+# every claim in this file is made about a shorter flow than the page has.
+# No claim changed; the flow gained a step, and it gained it at the front
+# of the questions rather than at the end, which is why the two reload
+# tests and the empty-household pair below moved with it.
 QUESTION_STEPS = [
-    "household", "helpers", "restrictions", "meals-days", "prep",
+    "your-name", "household", "helpers", "restrictions", "meals-days", "prep",
     "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
+    "shop-day",
     "eating-style", "wont-eat", "excited-about", "kit-repeats",
 ]
 # UPDATED 2026-09-27 (App Store consent card): "Sharing with Claude" sits
 # between the last question and the reveal — the first moment anything
 # would go to Anthropic. It has a way back ("‹ Your kit") like a question.
 CONSENT_STEP = "ai-consent"
-STEPS_AFTER_THE_FIRST = INTRO_STEPS_AFTER_THE_FIRST + QUESTION_STEPS + [CONSENT_STEP]
+# UPDATED 2026-10-05 ("Anything else I should know?"): setup's last answer
+# sits after the consent card and immediately before the reveal, and that
+# order is the point -- it is the step that reads the note with a model
+# call, so consent has to already have been given. Not one of
+# QUESTION_STEPS: that list is the questions asked BEFORE consent, and
+# tests/test_onboarding_setup_luxury.py parametrizes over it. No claim in
+# this file changed; the flow gained a step at the end.
+NOTE_STEP = "anything-else"
+STEPS_AFTER_THE_FIRST = INTRO_STEPS_AFTER_THE_FIRST + QUESTION_STEPS + [CONSENT_STEP, NOTE_STEP]
 ALL_STEPS = [FIRST_STEP] + STEPS_AFTER_THE_FIRST + ["reveal"]
 
 
@@ -164,6 +186,14 @@ function makeEl(tag) {
         if (cls) cls[1].split(/\s+/).filter(Boolean).forEach(c => child._classes.add(c));
         const data = /data-member="([^"]*)"/.exec(attrs);
         if (data) child.dataset.member = data[1];
+        // 2026-10-05: and the VALUE a template writes into a box, which a
+        // browser obviously honours and this stub was silently dropping —
+        // so addMemberRow('Greg') built a row whose name box read ''. The
+        // only way to drive the member list through the page's own
+        // functions rather than stubbing currentMembers() wholesale.
+        // Additive: a template that writes no value leaves '' as before.
+        const val = /\svalue="([^"]*)"/.exec(attrs);
+        if (val) child.value = val[1];
         child._parent = this;
         this._children.push(child);
       }
@@ -183,6 +213,26 @@ function makeEl(tag) {
       contains: function (c) { return el._classes.has(c); }
     },
     appendChild: function (c) { c._parent = el; el._children.push(c); return c; },
+    // 2026-10-05: a member row takes itself off the list (addMemberRow's
+    // own × and "Just me" both call it). A browser has it; additive.
+    remove: function () {
+      if (!el._parent) return;
+      el._parent._children = el._parent._children.filter(function (c) { return c !== el; });
+      el._parent = null;
+    },
+    // 2026-10-05: the pinned "You" row is put at the TOP of #members (it
+    // has to be first — currentMembers() reads the rows in order, the
+    // route saves them in that order, and record_setup_adult takes the
+    // first adult of them, which is what pins the device's session to the
+    // main person). A real browser has both of these; the stub simply
+    // hadn't been asked for them. Additive — nothing already here changes.
+    get firstChild() { return el._children[0] || null; },
+    insertBefore: function (c, ref) {
+      c._parent = el;
+      const at = ref ? el._children.indexOf(ref) : -1;
+      if (at === -1) el._children.push(c); else el._children.splice(at, 0, c);
+      return c;
+    },
     addEventListener: function (evt, fn) { (el._listeners[evt] = el._listeners[evt] || []).push(fn); },
     click: function () {
       if (el.onclick) el.onclick();
@@ -322,7 +372,35 @@ function buildEatingStyleStep() { BUILT.push('eating-style'); }
 function buildWontEatStep() { BUILT.push('wont-eat'); }
 function buildExcitedStep() { BUILT.push('excited-about'); }
 function buildDinnerTimeStep() { BUILT.push('dinner-time'); }
+// The grocery shop-day step (2026-10-05). STEP_BUILDERS is lifted
+// wholesale, so a builder it names and this list does not is a
+// ReferenceError that takes every test in the file with it -- the
+// fixed-function-list hazard the 2026-09-21 draft-snag-flags entry
+// names. No assertion here changed.
+function buildShopDayStep() { BUILT.push('shop-day'); }
 function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
+// Setup's last answer (2026-10-05), same fixed-function-list hazard as
+// the line above: STEP_BUILDERS names it, so this list has to. A STUB
+// rather than the page's own buildAnythingElseStep, deliberately -- that
+// one reads six elements out of the step (the box, the mic, the confirm
+// card, the two foot controls) which this file's DOM stub does not build,
+// and every test here is about where back GOES rather than about what a
+// step draws. The real one is driven by
+// tests/test_onboarding_anything_else.py instead.
+function buildAnythingElseStep() { BUILT.push('anything-else'); }
+// "Who else lives with you?" (2026-10-05) is in STEP_BUILDERS where the
+// old household step was not -- its pinned "You" row is drawn from the
+// name typed on the screen before, so arriving has to redraw it. Same
+// fixed-function-list hazard as the two above: STEP_BUILDERS is lifted
+// wholesale, so a builder it names and this list does not is a
+// ReferenceError that takes every test in this file with it. A STUB
+// rather than the page's own buildHouseholdStep, deliberately and for
+// that one's own reasons -- it reads #members and #your-name-input, which
+// this file's DOM stub does not build, and every test here is about where
+// back GOES rather than about what a step draws. Nothing in this file
+// asserts on what the household step draws, so the stub costs no
+// assertion; the real one is driven by tests/test_onboarding_your_name.py.
+function buildHouseholdStep() { BUILT.push('household'); }
 """,
         _const("INTRO_STEPS"),
         _const("ALL_STEPS"),
@@ -338,6 +416,13 @@ function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
         _const("SECTION_NAMES"),
         _const("SECTION_COUNT"),
         _fn("stepEyebrow"),
+        # 2026-10-05: ONE name for "the first question", read by the
+        # popstate handler, startOnboarding and the finish. Lifted rather
+        # than restated so this file can never disagree with the page
+        # about which step that is -- which is exactly what went wrong
+        # when the household step split and the popstate handler kept a
+        # hard-coded 'household' after the other two readers had moved.
+        _fn("firstQuestionStep"),
         _fn("stepFlow"),
         _fn("stepBefore"),
         _fn("resolveStep"),
@@ -429,7 +514,11 @@ console.log(JSON.stringify(labels));
         "intro-help": "‹ Hello",
         "intro-talk": "‹ What I help with",
         "intro-know": "‹ How it works",
-        "household": "‹ Getting to know you",
+        # UPDATED 2026-10-05: the first question is "What's your name?",
+        # so it is the one that goes back to the intro and "Who's here" --
+        # which is what the second screen still is -- goes back to it.
+        "your-name": "‹ Getting to know you",
+        "household": "‹ Your name",
         "helpers": "‹ Who's here",
         "restrictions": "‹ Who helps",
         "meals-days": "‹ Never on the plate",
@@ -438,11 +527,18 @@ console.log(JSON.stringify(labels));
         "variety-lunch": "‹ Breakfast",
         "variety-dinner": "‹ Lunch",
         "dinner-time": "‹ Dinner",
-        "eating-style": "‹ Dinner time",
+        # UPDATED 2026-10-05 (grocery shop day): the shop-day question sits
+        # between "When's dinner?" and "How you eat", so it goes back to
+        # dinner time and "How you eat" now goes back to it.
+        "shop-day": "‹ Dinner time",
+        "eating-style": "‹ Shop day",
         "wont-eat": "‹ How you eat",
         "excited-about": "‹ Never recommend",
         "kit-repeats": "‹ Cuisines you like",
         "ai-consent": "‹ Your kit",
+        # UPDATED 2026-10-05: setup's last answer goes back to the consent
+        # card it was reached through.
+        "anything-else": "‹ Sharing with Claude",
     }
 
 
@@ -624,7 +720,7 @@ def test_a_reload_mid_setup_throws_away_the_entries_in_front_of_it():
     out = _run(_nav_harness(seed="""
 // Where a previous load of this page had got to: four steps in, with the
 // browser sitting on the third of them.
-[staleEntry('household'), staleEntry('helpers'), staleEntry('restrictions'),
+[staleEntry('your-name'), staleEntry('helpers'), staleEntry('restrictions'),
  staleEntry('restrictions')].forEach(function (s) { HISTORY.push(s); });
 CURSOR = 2;
 """) + """
@@ -633,21 +729,25 @@ forwardGesture();
 console.log(JSON.stringify({ afterLoad: afterLoad, forward: currentStep, len: HISTORY.length }));
 """)
     # A reload skips the intro: they have been introduced, and their answers
-    # are gone — the household step is the first one whose answers are still
-    # true, so it is where a reload starts.
-    assert out["afterLoad"]["on"] == "household", "a reload didn't start on the household step"
+    # are gone — the FIRST QUESTION is where a reload starts.
+    # UPDATED 2026-10-05: that is "What's your name?" rather than the list of
+    # names, and it has to be: a reload throws away the name in memory, and
+    # the second screen's pinned "You" row is drawn FROM that name, so
+    # landing there would show a list with nobody pinned at the top of it.
+    # The claim is unchanged — a reload starts on the first question.
+    assert out["afterLoad"]["on"] == "your-name", "a reload didn't start on the first question"
     assert out["afterLoad"]["len"] == 4, (
         "the stale forward entry survived the reload — a forward swipe reaches "
         "a question whose answers are gone"
     )
     assert out["afterLoad"]["at"] == 4
-    assert out["forward"] == "household"
+    assert out["forward"] == "your-name"
 
 
 @_needs_node
 def test_a_back_gesture_onto_an_entry_from_before_the_reload_collapses_onto_the_first_step():
     out = _run(_nav_harness(seed="""
-[staleEntry('household'), staleEntry('helpers'), staleEntry('restrictions')]
+[staleEntry('your-name'), staleEntry('helpers'), staleEntry('restrictions')]
   .forEach(function (s) { HISTORY.push(s); });
 CURSOR = 2;
 """) + """
@@ -660,7 +760,9 @@ for (let i = 0; i < 2; i++) {
 }
 console.log(JSON.stringify({ seen: seen, retaken: stamps }));
 """)
-    assert out["seen"] == ["household", "household"], (
+    # UPDATED 2026-10-05: the first question is "What's your name?" — see
+    # the test above. The claim is unchanged.
+    assert out["seen"] == ["your-name", "your-name"], (
         "a gesture landed on a step whose answers the reload had emptied"
     )
     assert out["retaken"] == [True, True], (
@@ -699,6 +801,12 @@ def _finish_harness(members: str = "[{ name: 'Robin', age_group: 'adult' }]",
         """
 ELS['household-empty'] = makeEl('p');
 ELS['household-empty'].hidden = true;
+// 2026-10-05: the finish sends a household of nobody back to the step
+// that FIXES it, and since the split that is "What's your name?" -- the
+// main person's name is typed there and nowhere else, so a household of
+// nobody is a household with no name typed. Its own note, its own line.
+ELS['your-name-empty'] = makeEl('p');
+ELS['your-name-empty'].hidden = true;
 ELS['kit-repeats-next'] = makeEl('button');
 ELS['kit-repeats-next'].disabled = false;
 ELS['kit-repeats-skip'] = makeEl('span');
@@ -718,6 +826,7 @@ var setupRun = 'idle';
 function alert() {}
 """ % (save_ms, members),
         _fn("showHouseholdEmptyNote"),
+        _fn("showYourNameEmptyNote"),
         _async_fn("finishSetupAndReveal"),
         _fn("setKitRepeatsBusy"),
         _const("KIT_SKIP_LABEL"),
@@ -812,12 +921,17 @@ def test_setup_cannot_complete_with_nobody_in_the_household():
   showStep('kit-repeats');
   await tapSkip();
   console.log(JSON.stringify({
-    posts: POSTS, on: currentStep, noteShown: !ELS['household-empty'].hidden
+    posts: POSTS, on: currentStep, noteShown: !ELS['your-name-empty'].hidden
   }));
 })();
 """)
     assert out["posts"] == [], "a household of nobody wrote itself down"
-    assert out["on"] == "household", "it didn't send them back to the step that fixes it"
+    # UPDATED 2026-10-05: the step that fixes it is "What's your name?" --
+    # the main person's name is typed there and nowhere else, so a household
+    # of nobody is a household with no name typed. The claim is unchanged:
+    # nothing is written, and they land on the step that fixes it with the
+    # line showing.
+    assert out["on"] == "your-name", "it didn't send them back to the step that fixes it"
     assert out["noteShown"] is True
 
 
@@ -830,10 +944,16 @@ def test_the_empty_household_is_told_in_a_line_on_the_step_not_an_alert():
     markup = _step_markup("step-household")
     assert 'id="household-empty"' in markup
     assert "add whoever's eating" in markup
-    # Both doors to the check say it the same way, and neither says it in an
-    # alert. (The alert left in finishSetupAndReveal's catch is a different
-    # thing entirely — a save that failed on the network, untouched here.)
-    assert "showHouseholdEmptyNote(true)" in _fn("finishSetupAndReveal")
+    # UPDATED 2026-10-05: the name step carries the same kind of line for the
+    # same reason, and it is the one the FINISH shows now (the step that
+    # fixes a household of nobody is the one the name is typed on). Both
+    # doors still say it on the step rather than in an alert — the claim is
+    # unchanged, there are simply two steps that can be short of a name.
+    name_markup = _step_markup("step-your-name")
+    assert 'id="your-name-empty"' in name_markup
+    assert "I need your name" in name_markup
+    assert "showYourNameEmptyNote(true)" in _fn("finishSetupAndReveal")
+    assert "showYourNameEmptyNote(true)" in ONBOARDING.split("your-name-next")[2]
     assert "showHouseholdEmptyNote(true)" in ONBOARDING.split("household-next")[2]
     assert "alert('Add at least one person" not in ONBOARDING
 
@@ -965,6 +1085,14 @@ def test_the_guard_does_not_depend_on_a_button_being_passed_in():
     # UPDATED 2026-09-27: definition + the last question's hand-on
     # (afterLastQuestion, which both of its taps go through) + the consent
     # step's Allow and Not now.
+    # UPDATED 2026-10-05 ("Anything else I should know?"): still four, a
+    # DIFFERENT four. The last question and the consent step's Allow both
+    # hand on to setup's last answer now rather than finishing, and that
+    # step finishes from exactly two places -- "Looks right" on the confirm
+    # card, and the one path "Build my first week" and "Nothing else"
+    # share. The NUMBER is the claim rather than the names: a bounded,
+    # enumerated set of callers is what stops a new control starting a
+    # second concurrent run, which is what the three-state guard is for.
     assert ONBOARDING.count("finishSetupAndReveal(") == 4
 
 
