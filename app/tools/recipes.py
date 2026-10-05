@@ -2110,6 +2110,15 @@ _STEP_ONLY_WORDS = {"water", "ice"}
 # what the list bought, and to a cook that reads as the same thing — a
 # recipe you can't trust.
 #
+# EVERY NAME THIS SECTION DEFINES IS PREFIXED _CHECK_, and that is not
+# decoration: the first cut of it called two of them _STEP_AMOUNT_RE and
+# _STEP_VESSEL_WORDS, which are scale_steps' own, three hundred lines up.
+# A module-level name defined twice means the LATER one wins for the whole
+# file, so the batch rewriter started reading this section's pattern and
+# raised on every step it was handed, and its vessel words were swapped
+# for these without anything raising at all. _STEP_ names belong to the
+# rewriter; _CHECK_ names belong here.
+#
 # EVERYTHING HERE FAILS QUIET, and that is the whole design rather than a
 # caveat. A step amount this cannot read, a unit it cannot convert, an
 # amount it cannot pin to one ingredient: all passed over, never guessed
@@ -2124,7 +2133,7 @@ _STEP_ONLY_WORDS = {"water", "ice"}
 # thermometer, a ruler or a dial. A closed list of the words that say so,
 # because the alternative is reading "bake for 25 minutes" as twenty-five
 # of something.
-_STEP_NOT_AN_AMOUNT = {
+_CHECK_NOT_AN_AMOUNT = {
     "minute", "minutes", "min", "mins", "second", "seconds", "sec", "secs",
     "hour", "hours", "hr", "hrs", "day", "days", "week", "weeks",
     "degree", "degrees", "f", "c", "fahrenheit", "celsius",
@@ -2138,7 +2147,20 @@ _STEP_NOT_AN_AMOUNT = {
 # than what goes in it: "a 2 quart saucepan", "a 9 inch baking dish".
 # Quart and litre are real measures ("1 quart of stock"), so they can't
 # simply join the list above.
-_STEP_VESSEL_WORDS = {
+#
+# DELIBERATELY NOT scale_steps' own _STEP_VESSEL_WORDS, and the _CHECK_
+# prefix on both of this section's patterns is there to stop what happened
+# on 2026-10-05: these two were first written under the batch rewriter's
+# names, silently shadowed them for the whole module, and broke
+# scale_steps outright. Two patterns serving two different QUESTIONS is
+# fine; one name serving both is not. The rewriter's set is the
+# PACKAGING words whose number sizes a container it must not scale ("1
+# (14 oz) can"); this one is the COOKWARE a number can size instead ("2
+# quart saucepan"). They overlap on pan/pot/dish and disagree on
+# everything else, and merging them would add twenty words to what the
+# rewriter refuses to scale — a change to the batch rewriter, which this
+# check does not get to make.
+_CHECK_VESSEL_WORDS = {
     "pan", "pot", "skillet", "saucepan", "dish", "tray", "sheet", "baking",
     "casserole", "dutch", "oven", "bowl", "ramekin", "tin", "mould", "mold",
     "plate", "board", "rack", "griddle", "wok", "pressure", "slow", "air",
@@ -2149,7 +2171,7 @@ _STEP_VESSEL_WORDS = {
 # bare number with no unit on it is a dial ("sear at 450", "oven to 400"),
 # never three dozen of anything — and a bare count is exactly the shape
 # that would otherwise read an oven temperature as an ingredient amount.
-_STEP_MAX_COUNT = 36
+_CHECK_MAX_COUNT = 36
 
 # How far past an amount a step may name the thing it is an amount OF:
 # "2 cups of the toasted cashews" is sixteen characters of prep words. The
@@ -2165,11 +2187,16 @@ _STEP_MAX_COUNT = 36
 # QUIETER unless the victim's own amount is split across steps. Both are
 # kept: a tighter window is the quiet direction, which is this module's
 # whole stance.
-_STEP_AMOUNT_REACH = 48
+_CHECK_AMOUNT_REACH = 48
 
-_STEP_CLAUSE_BREAK_RE = re.compile(r"[,;.:()\n]|\bthen\b|\buntil\b|\bwhile\b")
+_CHECK_CLAUSE_BREAK_RE = re.compile(r"[,;.:()\n]|\bthen\b|\buntil\b|\bwhile\b")
 
-_STEP_AMOUNT_RE = re.compile(
+# Its own pattern rather than scale_steps' _STEP_AMOUNT_RE, because the two
+# ask different things of a step: that one captures an amount OR A RANGE
+# ("2-3 cloves") in named groups it substitutes a rescaled number into,
+# and never looks at the word afterwards; this one wants the number and
+# the measuring word right after it, and a range would read as one amount.
+_CHECK_AMOUNT_RE = re.compile(
     r"(?<![\w./])(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*°?\s*([a-z]+)?"
 )
 
@@ -2186,7 +2213,7 @@ _VULGAR_FRACTIONS = {
 # an exact comparison would report arithmetic nobody got wrong. A tenth is
 # wide enough for that and nowhere near the halves, thirds and doubles
 # that are the actual bug.
-_STEP_AMOUNT_TOLERANCE = 0.1
+_CHECK_AMOUNT_TOLERANCE = 0.1
 
 
 def _normalized_step(step: str) -> str:
@@ -2252,7 +2279,7 @@ def _amounts_in_one_step(
     any ingredient such an amount could have been more of.
     """
     text = _normalized_step(step)
-    matches = list(_STEP_AMOUNT_RE.finditer(text))
+    matches = list(_CHECK_AMOUNT_RE.finditer(text))
     found, strays = [], []
     for position, match in enumerate(matches):
         amount = _parse_step_number(match.group(1))
@@ -2261,7 +2288,7 @@ def _amounts_in_one_step(
         word = (match.group(2) or "").strip()
         unit = None
         if word:
-            if word in _STEP_NOT_AN_AMOUNT:
+            if word in _CHECK_NOT_AN_AMOUNT:
                 continue
             unit = _quantities._UNIT_ALIASES.get(
                 word, _quantities._normalize_container_word(word)
@@ -2273,23 +2300,23 @@ def _amounts_in_one_step(
                 # rather than past it.
                 unit = None
         # The window: from the end of what was matched to whichever comes
-        # first of the next number, a clause break, and _STEP_AMOUNT_REACH.
+        # first of the next number, a clause break, and _CHECK_AMOUNT_REACH.
         start = match.end() if unit else match.start(2) if match.group(2) else match.end()
         stop = len(text) if position + 1 >= len(matches) else matches[position + 1].start()
-        stop = min(stop, start + _STEP_AMOUNT_REACH)
+        stop = min(stop, start + _CHECK_AMOUNT_REACH)
         window = text[start:stop]
-        break_at = _STEP_CLAUSE_BREAK_RE.search(window)
+        break_at = _CHECK_CLAUSE_BREAK_RE.search(window)
         if break_at:
             window = window[:break_at.start()]
-        # A bare number above _STEP_MAX_COUNT is a dial, not a count of
+        # A bare number above _CHECK_MAX_COUNT is a dial, not a count of
         # food — and a bare count is the one shape that would otherwise
         # read an oven temperature as an ingredient amount.
-        if unit is None and amount > _STEP_MAX_COUNT:
+        if unit is None and amount > _CHECK_MAX_COUNT:
             continue
         # "2 quart saucepan", "1 large bowl": the word right after the
         # amount sizes the vessel, so the number is the pan's.
         words_after = window.split()
-        if words_after and words_after[0] in _STEP_VESSEL_WORDS:
+        if words_after and words_after[0] in _CHECK_VESSEL_WORDS:
             continue
         index = _nearest_listed_item(window, item_words)
         if index is not None:
@@ -2373,7 +2400,7 @@ def _amounts_add_up(listed: tuple[float, str | None], in_steps: list[tuple[float
         converted.append(value)
     if not converted:
         return None
-    slack = max(abs(amount) * _STEP_AMOUNT_TOLERANCE, 1e-6)
+    slack = max(abs(amount) * _CHECK_AMOUNT_TOLERANCE, 1e-6)
     if any(abs(value - amount) <= slack for value in converted):
         return True
     return abs(sum(converted) - amount) <= slack

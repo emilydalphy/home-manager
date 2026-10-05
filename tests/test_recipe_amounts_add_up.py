@@ -43,6 +43,8 @@ than being quietly corrected.
 """
 from __future__ import annotations
 
+import ast
+import pathlib
 import types
 
 import pytest
@@ -328,7 +330,7 @@ def test_a_stated_amount_the_app_corrected_is_held_to_what_the_cook_sees():
 # because a household that learns to click past this learns to click past
 # the real one. Every case here is green on main (which compares no
 # amounts at all) and green here, and the mutation that pins the lot is
-# removing _STEP_NOT_AN_AMOUNT / _STEP_VESSEL_WORDS / _STEP_MAX_COUNT.
+# removing _CHECK_NOT_AN_AMOUNT / _STEP_VESSEL_WORDS / _CHECK_MAX_COUNT.
 # --------------------------------------------------------------------------
 
 @pytest.mark.parametrize("step", [
@@ -380,7 +382,7 @@ def test_an_oven_dial_is_not_a_count_of_the_food():
     bare 400 within reach of a listed ingredient's name with no second
     number to stop the window — the size cap is the only thing between
     that and a reported four-hundred-thigh mismatch. Pinned by the
-    mutation that lifts _STEP_MAX_COUNT (1 red).
+    mutation that lifts _CHECK_MAX_COUNT (1 red).
     """
     result = tools.check_steps_ingredients_consistency(
         [{"item": "Chicken thighs", "qty": "4"}],
@@ -831,6 +833,90 @@ def test_a_repair_that_answers_with_no_steps_keeps_the_recipe(monkeypatch):
 
     assert instructions == _BAD[1]
     assert check["ok"] is False
+
+
+# --------------------------------------------------------------------------
+# 6b. ...and nothing in app/ defines one module-level name twice, because
+#     that is how this card broke the batch rewriter.
+# --------------------------------------------------------------------------
+
+def _module_level_names(tree) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    counts[target.id] = counts.get(target.id, 0) + 1
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            counts[node.name] = counts.get(node.name, 0) + 1
+    return counts
+
+
+def test_no_module_in_app_defines_one_top_level_name_twice():
+    """
+    CATCH, and the one here that is about the mistake rather than the
+    feature. This card's first cut wrote _STEP_AMOUNT_RE and
+    _STEP_VESSEL_WORDS for the consistency check — both names scale_steps
+    already owned three hundred lines up. A module-level name defined twice
+    means the LATER one wins for the whole file, so the batch rewriter
+    started reading the check's pattern and raised `IndexError: no such
+    group` on every step it was handed (35 tests red in
+    test_batch_night_steps.py), and its vessel words were swapped for the
+    check's with nothing raising at all — 22 of the packaging words whose
+    number sizes a container it must not scale ("1 (14 oz) can") simply
+    gone.
+
+    THE SILENT HALF IS WHY THIS IS A TEST AND NOT A LESSON. The crash was
+    found the moment anything ran; a vessel-word set quietly replaced is a
+    doubled batch telling a cook the wrong number, and nothing in the
+    suite need ever have gone red for it.
+
+    Read with `ast` rather than grepped, for the reason
+    test_leftover_chain_household_filter.py gives at length: a text sweep
+    in this repo was once defeated by a pure reformat. No allowlist, and
+    that is measured rather than hoped — every module in app/ is clean of
+    this today, so the honest floor is zero and a first offender is a red
+    test rather than an entry on a list.
+    """
+    offenders = []
+    for path in sorted(pathlib.Path("app").rglob("*.py")):
+        try:
+            tree = ast.parse(path.read_text())
+        except SyntaxError:  # pragma: no cover - a broken file fails elsewhere
+            continue
+        for name, count in _module_level_names(tree).items():
+            if count > 1:
+                offenders.append(f"{path}: {name} defined {count} times")
+
+    assert offenders == [], (
+        "a module-level name is defined twice, so the later one silently wins "
+        "for the whole file — rename one of them (the consistency check in "
+        "app/tools/recipes.py carries a _CHECK_ prefix for exactly this "
+        "reason):\n  " + "\n  ".join(offenders)
+    )
+
+
+def test_the_check_and_the_batch_rewriter_keep_their_own_patterns():
+    """
+    GUARD on the fix, one level down from the sweep above: the sweep sees a
+    name defined twice in ONE file, and this says the two questions have
+    two patterns at all. scale_steps' _STEP_AMOUNT_RE captures an amount or
+    a RANGE in named groups it substitutes a rescaled number into; the
+    check's _CHECK_AMOUNT_RE wants the number and the measuring word right
+    after it, and would read a range as one amount. Pinned by the mutation
+    that points the check at the rewriter's pattern (its own tests go red
+    on the missing group, which is the same IndexError from the other
+    side).
+    """
+    assert recipes._STEP_AMOUNT_RE.groupindex.keys() >= {"a", "b"}, (
+        "scale_steps substitutes by group name"
+    )
+    assert recipes._CHECK_AMOUNT_RE.groupindex == {}
+    assert recipes._STEP_AMOUNT_RE.pattern != recipes._CHECK_AMOUNT_RE.pattern
+    # ...and the two vessel sets really are different questions: the
+    # rewriter's packaging words, the check's cookware.
+    assert "can" in recipes._STEP_VESSEL_WORDS and "can" not in recipes._CHECK_VESSEL_WORDS
+    assert "saucepan" in recipes._CHECK_VESSEL_WORDS
 
 
 # --------------------------------------------------------------------------
