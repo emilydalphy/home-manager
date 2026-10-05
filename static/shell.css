@@ -2812,7 +2812,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .tab-btn.has-badge:not(.active) .tab-badge { display: block; }
 .tab-btn .tab-badge.is-urgent {
-  color: var(--urgent-ink);
+  color: var(--urgent-label);
   background: var(--urgent);
 }
 
@@ -6135,6 +6135,19 @@ button.cook-ready-row { cursor: pointer; }
   color: var(--ink);
   margin: 0;
 }
+/* "Main person" (2026-10-05): the design system's own .pill-neutral,
+   beside the name rather than under it. No new colours — celadon-tint
+   with --ink-on-celadon is the pairing that component already ships and
+   the one that measures (12.26:1 light / 11.84:1 dark; the --celadon fill
+   wants --on-accent-ink instead, Rule One). The name's own tight tracking
+   is undone here so a 12px label does not read as squeezed, and
+   vertical-align lifts the inline-flex pill onto the name's own line. */
+.wwk-person-main {
+  margin-left: 8px;
+  letter-spacing: 0;
+  font-weight: 700;
+  vertical-align: 1px;
+}
 /* Invite the other adult (2026-09-25): under an adult's name in Who's
    here. "Invite Vineeth" is an outline button — not apricot, nothing in
    this sheet is urgent — and once they've joined it's a quiet line with
@@ -7960,7 +7973,8 @@ span.cook-week-name { cursor: default; }
 #prefs-scrim,
 #tips-scrim,
 #morning-scrim,
-#recipes-scrim {
+#recipes-scrim,
+#cr-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
@@ -7970,7 +7984,8 @@ span.cook-week-name { cursor: default; }
 #prefs-sheet,
 #tips-sheet,
 #morning-sheet,
-#recipes-sheet {
+#recipes-sheet,
+#cr-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -7989,7 +8004,8 @@ span.cook-week-name { cursor: default; }
 #prefs-scrim[hidden], #prefs-sheet[hidden],
 #tips-scrim[hidden], #tips-sheet[hidden],
 #morning-scrim[hidden], #morning-sheet[hidden],
-#recipes-scrim[hidden], #recipes-sheet[hidden] { display: none; }
+#recipes-scrim[hidden], #recipes-sheet[hidden],
+#cr-scrim[hidden], #cr-sheet[hidden] { display: none; }
 .prefs-sub {
   font-family: var(--font-body);
   font-size: 13px;
@@ -8067,6 +8083,75 @@ span.cook-week-name { cursor: default; }
 .recipes-view .recipe-cite { margin-top: -6px; }
 /* Read-only: the plan's look-alike tick box has nothing to tick here. */
 .recipes-view .recipe-box { display: none; }
+/* "Change recipe" (card 12, 2026-10-05). The BUTTON is .wk-ing-add's own
+   outline shape, so there is nothing new to look at: the only reason it
+   has a class at all is the row it shares with "Add something" on the
+   Meal step, which wraps rather than overflowing on a narrow phone. No
+   apricot on either screen (Rule 5) — the dock has it.
+
+   The SHEET rides #recipes-sheet's frame (above) and its .recipes-body.
+   Its one apricot is "Rewrite the recipe", which is the one action on
+   that screen. Contrast, measured in Chromium at 390x844: .cr-said
+   --urgent-label on --urgent-tint (measured below); .cr-ask-note
+   --ink-secondary on --ground 4.44:1 / 8.48:1 (the app-wide supporting
+   value); .cr-go --on-accent-ink on --apricot 7.72:1 / 8.59:1. */
+.wk-ing-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.wk-ing-acts:empty { display: none; }
+.cook-ing-acts { margin-top: 12px; }
+.recipe-change-btn { font-size: 14px; }
+/* Row 4 reads as a different KIND of answer — it changes the meal rather
+   than the recipe — so it is set off the way the night-off row is set off
+   from the swaps on the tonight sheet: its own card, a dashed edge. */
+/* The "Different meal instead" card is dashed because it is a different
+   KIND of answer — it changes the night, not the recipe. The dash is on
+   the CARD, which is .kit-rows' own 1.5px --hairline border with its
+   style swapped; the first cut dashed the ROW instead, and .kit-row sets
+   `border: none`, so `border-style: dashed` brought all four sides back
+   at the initial `medium` width in currentColor — a 3px near-black box
+   round the quietest thing on the screen, louder than the three rows
+   above it. Caught by looking at it. */
+.cr-rows-other { border-style: dashed; }
+.cr-said {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--urgent-tint);
+  color: var(--urgent-label);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.cr-search { width: 100%; }
+.cr-ask-label {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
+.cr-ask { width: 100%; resize: vertical; min-height: 92px; }
+.cr-ask-note {
+  margin: -4px 0 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+}
+.cr-go {
+  align-self: stretch;
+  min-height: 48px; /* Rule 6 */
+  border: none;
+  border-radius: var(--radius-control);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.cr-go:disabled { opacity: .65; cursor: default; }
 .recipes-cite-link {
   color: var(--apricot-label);
   font-weight: 700;
@@ -10451,7 +10536,7 @@ span.cook-week-name { cursor: default; }
    predates and is independent of this ticket). */
 @media (min-width: 768px) {
   #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet, #rli-sheet,
-  #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet, #recipes-sheet {
+  #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet, #recipes-sheet, #cr-sheet {
     left: 50%;
     right: auto;
     transform: translateX(-50%);

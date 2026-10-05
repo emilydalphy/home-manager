@@ -219,6 +219,14 @@ _FUNCTIONS = [
     # title" tests would go on asserting a screen that no longer matches
     # the one that ships.
     "recipeBatchLineHtml",
+    # ADDED 2026-10-05 (card 12, "Change recipe"). Same fixed-list hazard
+    # one card later: cookRecipeHtml gained this callee, so without the
+    # pair the whole file is a module-scope ReferenceError. The REAL
+    # functions, not stubs — a stub returning '' would render no button and
+    # no error, and this file's apricot count and "only a fact under the
+    # title" tests would go on describing a screen that no longer ships.
+    "recipeIsChangeable",
+    "recipeChangeBtnHtml",
     "recipeIngredientsHtml",
     "recipeIngredientRowHtml",
     "recipeStepsHtml",
@@ -256,6 +264,11 @@ def _run(body: str, state: dict | None = None) -> object:
         + f"var MEAL = {json.dumps(_MEAL)};\n"
         + f"var OTHER = {json.dumps(_OTHER_MEAL)};\n"
         + _string_const("COOK_TICKS_PREFIX")
+        + "\n"
+        # CHANGE_RECIPE_LABEL ADDED 2026-10-05 (card 12, the Change recipe
+        # button): cookRecipeHtml gained recipeChangeBtnHtml as a callee, and
+        # the word on that button is read from here rather than duplicated.
+        + _string_const("CHANGE_RECIPE_LABEL")
         + "\n"
         # cookIngredientLabel reads amounts through humanQtyText (item 14,
         # design-tidy pass 2026-09-11) — its own array of nice fractions,

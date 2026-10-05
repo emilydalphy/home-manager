@@ -480,6 +480,7 @@ def _cook_screen(meal: dict, stage: str) -> str:
         + "function cookFocusPrepHtml() { return ''; }\n"
         + "function cookMadeAheadLinesHtml() { return ''; }\n"
         + _var("NUMBER_WORDS") + "\n" + _var("TENS_WORDS") + "\n"
+        + _var("CHANGE_RECIPE_LABEL") + "\n"
         + "".join(_extract(n) + "\n" for n in (
             "numberWord", "minutesInWords", "clockLabel", "mealTotalMinutes", "mealClockSides", "mealClockTotal",
             "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "cookStepNeeds",
@@ -489,6 +490,14 @@ def _cook_screen(meal: dict, stage: str) -> str:
             # has, and a stub returning '' would make a test about what
             # the screen says pass whatever the screen said.
             "recipeBatchLineHtml",
+            # recipeIsChangeable/recipeChangeBtnHtml — the Change recipe
+            # button under the ingredients (card 12, 2026-10-05).
+            # cookRecipeHtml gained them as callees, so without the pair
+            # this harness is a ReferenceError. The real functions, not
+            # stubs: a stub returning '' would render no button and no
+            # error, and the "no clock anywhere on the recipe" assertions
+            # below would stop reading the screen that ships.
+            "recipeIsChangeable", "recipeChangeBtnHtml",
             "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
             "recipeStepsHtml", "cookRecipeLinesHtml", "cookDockHtml", "cookDockCookedHtml", "cookRecipeDockHtml",
             "cookRecipeHtml", "cookProgressHtml", "cookNextStepLine", "cookCookerDockHtml", "cookCookerHtml",

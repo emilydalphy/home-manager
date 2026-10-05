@@ -8,11 +8,13 @@ whole contract.
     python observability_report.py --days 7
     python observability_report.py --json     # for a machine to read
     python observability_report.py --feedback # what people WROTE — see below
+    python observability_report.py --recipe-changes  # recipe asks — see below
 
---feedback, and why it is a flag
---------------------------------
-"Something not working?" reports are the one thing in this app that is
-free text a person typed. The default output above never prints a word of
+--feedback and --recipe-changes, and why they are flags
+------------------------------------------------------
+"Something not working?" reports and "Tell Pomona what to change"
+requests are the two things in this app that are free text a person
+typed. The default output above never prints a word of
 them, on purpose, and adding them to it would be a mistake rather than a
 convenience: this report is printed into a Claude agent's context, under
 an instruction to act on what it reads, and free text from an untrusted
@@ -20,10 +22,18 @@ end arriving there is an injection channel, not just a privacy question.
 It is the same rule that makes the client-error path keep an error's shape
 and throw its wording away.
 
-So the reports are opt-in, for a person at a terminal, and everything
-`--feedback` prints is fenced and labelled as untrusted quoted text. The
-default run says only how many are waiting, which is a number and carries
-nothing anybody wrote.
+So both are opt-in, for a person at a terminal, and everything
+`--feedback` and `--recipe-changes` print is fenced and labelled as
+untrusted quoted text. The default run says only how many are waiting,
+which is a number and carries nothing anybody wrote.
+
+`--recipe-changes` exists because Emily asked (2026-10-04) to "track every
+request so the common ones can become buttons later": it lists them
+verbatim, grouped under the rough theme each reads as, so the shape of
+what people ask for is visible at a glance and the words themselves are
+still there to read. The theme is derived at print time from a word list
+in app/tools/recipe_change.py, never stored, so correcting that list
+corrects every row rather than only the ones filed after it.
 
 Exit codes, so a caller can branch without parsing: 0 nothing broke,
 1 something broke, 2 no data could be read at all. The last one is
@@ -256,6 +266,8 @@ def _collect_over_http(days: int) -> list[dict]:
                 "plan_quality": data.get("plan_quality") or {},
                 # .get again: a deployment older than the morning text.
                 "morning_texts": data.get("morning_texts") or {},
+                # .get once more: a deployment older than "Change recipe".
+                "recipe_changes_waiting": data.get("recipe_changes_waiting") or 0,
             }
         )
     return out
@@ -304,6 +316,9 @@ def _collect_from_db(days: int) -> list[dict]:
                     "feedback_with_errors": tools.count_feedback_with_errors(days=max(days, 7)),
                     "plan_quality": tools.get_recent_plan_quality(days=max(days, 7)),
                     "morning_texts": tools.get_morning_text_report(days=days),
+                    # A number only, on the no-prose rule: how many recipe
+                    # change requests are on file.
+                    "recipe_changes_waiting": tools.count_recipe_change_requests(days=max(days, 7)),
                 }
             )
     return out
@@ -407,6 +422,77 @@ def _collect_feedback_from_db(days: int) -> list[dict]:
     return out
 
 
+def _collect_recipe_changes_over_http(days: int) -> list[dict]:
+    base, phrases = _base_url(), _passphrases()
+    if not base or not phrases:
+        raise NoData("not configured for the web")
+    out = []
+    for i, phrase in enumerate(phrases, start=1):
+        try:
+            opener = _sign_in(base, phrase)
+            who = _get_json(opener, f"{base}/api/whoami")
+            data = _get_json(opener, f"{base}/api/recipe-changes?days={int(days)}")
+        except (NoData, urllib.error.URLError, OSError, ValueError) as e:
+            out.append({
+                "household_id": None,
+                "household": f"passphrase #{i}",
+                "unreachable": str(e) if isinstance(e, NoData) else f"{type(e).__name__}: {e}",
+            })
+            continue
+        out.append({
+            "household_id": who.get("household_id"),
+            "household": who.get("household_name") or f"household {who.get('household_id')}",
+            # .get, for the reason every other reader here uses it: a
+            # deployment older than this feature answers 404 or answers
+            # without the key, and a report that crashes tells you less
+            # than one that says nothing was found.
+            "requests": data.get("requests") or [],
+        })
+    return out
+
+
+def _collect_recipe_changes_from_db(days: int) -> list[dict]:
+    from app.db import DB_PATH
+
+    if not os.path.exists(DB_PATH):
+        raise NoData(f"no database file at {DB_PATH}")
+
+    from app import tools
+    from app.db import get_conn
+
+    conn = get_conn()
+    try:
+        households = [
+            (r["id"], r["name"])
+            for r in conn.execute("SELECT id, name FROM households ORDER BY id").fetchall()
+        ]
+    except sqlite3.OperationalError as e:
+        raise NoData(f"{DB_PATH} is not a Home Manager database ({e})")
+    finally:
+        conn.close()
+
+    out = []
+    for hid, name in households:
+        with tools.use_household(hid):
+            out.append({
+                "household_id": hid,
+                "household": name,
+                "requests": tools.recent_recipe_change_requests(days=days),
+            })
+    return out
+
+
+def collect_recipe_changes(days: int) -> list[dict]:
+    """
+    The recipe change requests, from the same source and in the same
+    precedence as collect(). Never called unless --recipe-changes was
+    passed — see collect_feedback on why that matters.
+    """
+    if _base_url():
+        return _collect_recipe_changes_over_http(days)
+    return _collect_recipe_changes_from_db(days)
+
+
 def collect_feedback(days: int) -> list[dict]:
     """
     The reports, from the same source and in the same precedence as
@@ -481,6 +567,56 @@ def _print_feedback(report: list[dict], days: int) -> None:
                 for line in str(trying).splitlines():
                     print(f"  | {line}")
             print("  ------------------------------------------------------------")
+
+
+# The five rough themes, in app/tools/recipe_change.THEMES' own order, so
+# the headings read the same way every night. Imported where this script
+# can (a local database read), and hard-coded as a fallback where it
+# cannot: this script reads REMOTE deployments too, and must not import the
+# app to print. A theme the app grows and this list has not is printed
+# under its own raw name rather than vanishing.
+_RECIPE_CHANGE_THEMES = ("time", "equipment", "spice", "authenticity", "ingredient swap", "other")
+
+
+def _print_recipe_changes(report: list[dict], days: int) -> None:
+    print("\n" + "=" * 68)
+    print("RECIPE CHANGE REQUESTS — the last %sd" % days)
+    print(_UNTRUSTED_HEADER)
+    print("=" * 68)
+    for h in report:
+        print(f"\n=== {h['household']} (household {h['household_id']}) ===")
+        if h.get("unreachable"):
+            print(f"  UNREACHABLE — {h['unreachable']}")
+            continue
+        requests = h.get("requests") or []
+        if not requests:
+            print("  Nothing asked.")
+            continue
+        # Grouped by theme so the shape of what people ask for is the first
+        # thing read, and verbatim underneath so the words themselves are
+        # still there. A theme this list does not know is printed last
+        # under its own name rather than dropped.
+        known = list(_RECIPE_CHANGE_THEMES)
+        extra = sorted({str(r.get("theme") or "other") for r in requests} - set(known))
+        for theme in known + extra:
+            rows = [r for r in requests if str(r.get("theme") or "other") == theme]
+            if not rows:
+                continue
+            print(f"\n  --- {theme} ({len(rows)}) ------------------------------------")
+            for r in rows:
+                # Everything on this line is the APP's own: the date it
+                # stored, the dish from the plan, the member from the
+                # session, and one of three outcome words this app writes.
+                # 'rewritten' means nobody put it back, which is what kept
+                # means here (see recipe_change.OUTCOMES).
+                who = r.get("member_name") or "(device not picked)"
+                kept = "kept" if r.get("outcome") == "rewritten" else str(r.get("outcome") or "")
+                print(f"  [{r.get('created_at', '')}] {r.get('dish_name') or '(no dish)'}"
+                      f" · {who} · {kept}")
+                print("  --- untrusted, what they asked for -------------------------")
+                for line in str(r.get("request_text") or "").splitlines() or [""]:
+                    print(f"  | {line}")
+                print("  ------------------------------------------------------------")
 
 
 # ---------- printing ----------
@@ -1171,6 +1307,16 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 + " — read with `python observability_report.py --feedback`"
             )
 
+        # The same shape for the recipe asks: a count and the pointer, never
+        # a word of what was asked. A flag nobody knows to run is a read
+        # path that does not exist.
+        asks = h.get("recipe_changes_waiting") or 0
+        if asks:
+            print(
+                f"  {asks} recipe change {'request' if asks == 1 else 'requests'} on file"
+                " — read with `python observability_report.py --recipe-changes`"
+            )
+
         # The morning text ("Reach me before the moment", 2026-09-11). One
         # line, only when there is something to say: someone has signed up
         # or a send was attempted. Counts and a status, never a number or a
@@ -1235,6 +1381,16 @@ def main() -> int:
             "see this file's docstring."
         ),
     )
+    ap.add_argument(
+        "--recipe-changes",
+        action="store_true",
+        dest="recipe_changes",
+        help=(
+            "also print what people asked to be changed about a recipe, in "
+            "their own words, grouped by rough theme and fenced as untrusted "
+            "quoted text. Off by default on purpose — see this file's docstring."
+        ),
+    )
     args = ap.parse_args()
 
     try:
@@ -1258,15 +1414,27 @@ def main() -> int:
         except NoData as e:
             print(f"\nCouldn't read the feedback reports: {e}", file=sys.stderr)
 
+    # Same rule, same reason: not fetched unless asked for.
+    recipe_changes = None
+    if args.recipe_changes:
+        try:
+            recipe_changes = collect_recipe_changes(max(args.days, 30))
+        except NoData as e:
+            print(f"\nCouldn't read the recipe change requests: {e}", file=sys.stderr)
+
     if args.json:
         out = {"source": source, "households": report}
         if feedback is not None:
             out["feedback_untrusted_quoted_text"] = feedback
+        if recipe_changes is not None:
+            out["recipe_changes_untrusted_quoted_text"] = recipe_changes
         print(json.dumps(out, indent=2))
     else:
         _print_human(report, args.days, source)
         if feedback is not None:
             _print_feedback(feedback, max(args.days, 30))
+        if recipe_changes is not None:
+            _print_recipe_changes(recipe_changes, max(args.days, 30))
 
     # Exit 1 when something is worth leading with. An unreachable household
     # counts: not knowing whether the tester had a bad day is itself the

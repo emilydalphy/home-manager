@@ -1876,6 +1876,47 @@ CREATE TABLE IF NOT EXISTS feedback_reports (
 CREATE INDEX IF NOT EXISTS idx_feedback_reports_household_created
     ON feedback_reports (household_id, created_at);
 
+-- "Tell Pomona what to change" — what the household asked to be different
+-- about a recipe, kept so the common asks can become buttons later (Emily,
+-- 2026-10-04: "track every request so the common ones can become buttons
+-- later").
+--
+-- `request_text` is the SECOND place in this app that stores free text
+-- somebody typed, and it follows the first one's rule exactly
+-- (feedback_reports above, Emily's option (a) of 2026-09-08): the prose is
+-- kept verbatim, the default morning report carries a COUNT only, and the
+-- words print behind observability_report.py's own flag inside a fence
+-- marking them untrusted. Nothing around the prose is free text: the dish
+-- name is the plan's, the member is the session's own adult, the outcome is
+-- one of three words this app writes.
+--
+-- The theme the report groups by is NOT stored: it is derived at read time
+-- (recipe_change.request_theme), so correcting the word list corrects every
+-- row at once rather than only the ones filed after the correction.
+CREATE TABLE IF NOT EXISTS recipe_change_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER REFERENCES members(id),  -- whoever's device asked; NULL if unpicked
+    dish_name TEXT NOT NULL DEFAULT '',        -- the plan's own name for the meal
+    request_text TEXT NOT NULL DEFAULT '',     -- verbatim, the point of the table
+    meal_plan_entry_id INTEGER,                -- no FK: the entry may be swapped away
+    recipe_id INTEGER,                         -- the recipe as it was when asked
+    -- rewritten | undone | failed. Nothing writes 'kept': a request nobody
+    -- undid IS kept, and a second write to say so would be the app making
+    -- up a fact about somebody's silence.
+    outcome TEXT NOT NULL DEFAULT 'rewritten',
+    -- What the rewrite replaced, so the undo puts it back exactly rather
+    -- than regenerating a different answer to a different question
+    -- (plan_undo's shape: the record of a change is where what-it-replaced
+    -- belongs, and a version table for one undo would be a second place a
+    -- recipe lives). NULL for a request that changed no recipe contents --
+    -- a pick from the household's own book re-points the entry instead.
+    previous_json TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_recipe_change_requests_household_created
+    ON recipe_change_requests (household_id, created_at);
+
 -- The household's calendar, read from its private subscribe link (Loop
 -- Board "Meals: plan the week around what's actually on the household's
 -- calendar", 2026-09-11). One feed per household in this first version.

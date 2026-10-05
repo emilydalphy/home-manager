@@ -55,12 +55,20 @@ def _screen(day: dict, status: str, cookable: bool = True) -> str:
         + "var GRO_ICONS = { chevRight: '<svg></svg>' };\n"
         + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
         + "var WK_ADD_ICON = '<svg/>';\n"
+        # 2026-10-05 (card 12): mealIngredientsHtml gained the Change
+        # recipe button as a callee. These fixtures do not reach that
+        # branch today, so the file was green without them — a latent
+        # module-scope ReferenceError waiting for whoever next gives one
+        # of these meals a full recipe, so it is closed here rather than
+        # left. The real builder, not a stub.
+        + "var CHANGE_RECIPE_LABEL = 'Change recipe';\n"
         + "function cookTicked() { return false; }\n"
         + "function cookStartedMinutes() { return null; }\n"
         + _PURE + _RECIPE
         + "".join(_extract(n) + "\n" for n in (
             "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName", "cookMealForEntry",
-            "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml", "mealIngredientsHtml",
+            "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml",
+            "recipeIsChangeable", "recipeChangeBtnHtml", "mealIngredientsHtml",
             "swapStateFor", "swapLineHtml", "leftoversEatenNow", "mealSourceLinkHtml", "mealDockHtml",
             "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, 'dinner')));\n"
