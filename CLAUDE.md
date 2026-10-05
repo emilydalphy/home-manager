@@ -425,6 +425,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — Plan strip: the three dots under the dates are gone (branch
+  `plan-no-dots-2026-10-05`).** A tester (2026-10-04): "The colour dots on the
+  dates are confusing and not helpful - remove them." `weekTileHtml` no longer
+  draws `.wk-tile-dots`; `slotDotClass` and the `.wk-tile-dots` / `.wk-dot`
+  (+ `is-cook` / `is-ahead` / `is-open`) CSS are deleted. Selected rim and the
+  TODAY tint are untouched. An open question is still found on the day's own
+  cards (open slot keeps Pick), so no dot was needed. Tests that pinned the dots
+  (`test_meals_week_day_meal.py`, `test_breakfast_off_has_no_rows.py`) now assert
+  the tile has none. The unrelated `.wk-dot-page` pager dots stay. `.day-rail-*`
+  CSS (incl. `.day-rail-dot`) is old dead CSS, not touched here. DESIGN_SYSTEM.md
+  § The strip (Plan root) updated.
+
 - **2026-10-05 — The phone remembers who's using it, and the session stops
   timing out under a phone in daily use. Branch
   `overnight/device-remembers-member`, NOT merged at the time of writing.**
@@ -24702,15 +24714,3 @@ the first-night test would have kept passing for the wrong reason (night
 gone, not "no row"). Assertions and gaps are unchanged. Rule for pure tests of
 anything that calls night_has_gone: date the fixture off household_today,
 never a literal.
-
-**2026-10-05 — Plan strip: the three dots under the dates are gone (branch
-`plan-no-dots-2026-10-05`).** A tester (2026-10-04): "The colour dots on the
-dates are confusing and not helpful - remove them." `weekTileHtml` no longer
-draws `.wk-tile-dots`; `slotDotClass` and the `.wk-tile-dots` / `.wk-dot`
-(+ `is-cook` / `is-ahead` / `is-open`) CSS are deleted. Selected rim and the
-TODAY tint are untouched. An open question is still found on the day's own
-cards (open slot keeps Pick), so no dot was needed. Tests that pinned the dots
-(`test_meals_week_day_meal.py`, `test_breakfast_off_has_no_rows.py`) now assert
-the tile has none. The unrelated `.wk-dot-page` pager dots stay. `.day-rail-*`
-CSS (incl. `.day-rail-dot`) is old dead CSS, not touched here. DESIGN_SYSTEM.md
-§ The strip (Plan root) updated.
