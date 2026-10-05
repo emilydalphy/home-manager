@@ -597,10 +597,13 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
             # reason).
             pick["meal_name"] = _swap.honest_meal_name(pick)
             correct_title = False
+        instead = _swap.instead_of_the_leftovers(weekly_plan_id, entry, group, pick)
+        # The batch is the meals that KEEP the dish (apply_pick says the
+        # same): a fed meal leaving the chain is not eating out of this pot.
+        keeping = [m for m in group if m["entry_id"] not in instead]
         out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, correct_title=correct_title,
-                                       instead=_swap.instead_of_the_leftovers(
-                                           weekly_plan_id, entry, group, pick),
-                                       serves=_swap.batch_serves(weekly_plan_id, group, entry))
+                                       instead=instead,
+                                       serves=_swap.batch_serves(weekly_plan_id, keeping, entry))
     else:
         # `group` rather than letting apply_pick widen for itself: it has
         # already been read here (and the picks asked and gated against

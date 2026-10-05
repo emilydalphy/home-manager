@@ -7806,6 +7806,74 @@ def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
     return swap_meal_in_plan(*args, **kwargs)
 
 
+def open_slot_instead_of(weekly_plan_id: int, entry_id: int, open_reason: str,
+                         derived_from: dict | None = None) -> int | None:
+    """
+    Take ONE planned meal off the week and put a question in its place —
+    the row's own id, in one transaction, with whatever it put on the
+    shopping list taken back off. Returns the open row's id, or None when
+    that entry is already gone.
+
+    BY ID rather than by slot, and ONE transaction, for the two reasons
+    drop_dish_from_day's own comment spells out: a day legitimately holds
+    two snacks and must lose only the one being taken off, and the gap
+    between the delete and the open row is a genuinely ABSENT slot — the
+    one state this app's rule says can never exist. Its body IS that
+    function's four steps, lifted out so a second caller cannot drift from
+    them: swap_in_place.apply_pick_to_days, for a meal that was eating a
+    cook's leftovers when the dish replacing it will not keep and the week
+    has nothing to repeat into that slot (2026-10-04).
+
+    plan_slot_open on its own is NOT this — measured, which is how this
+    function came to exist: it INSERTS, so without the delete the slot ends
+    up holding the old dish AND a question, which is audit_plan_slots'
+    `duplicated` and is how a night nobody is eating gets shopped for.
+    """
+    conn = get_conn()
+    rescale_source_id = None
+    opened = None
+    try:
+        row = conn.execute(
+            "SELECT id, date, slot FROM meal_plan_entries "
+            "WHERE id = ? AND household_id = ? AND weekly_plan_id = ?",
+            (entry_id, household_id(), weekly_plan_id),
+        ).fetchone()
+        if row is None:
+            conn.rollback()
+            return None
+        rescale_source_id = _unlink_leftover_target(weekly_plan_id, entry_id, conn=conn)
+        _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
+        # Its prep rows go with it, as replace_dish_on_days does for a row
+        # it deletes. The `held_thawed` that write surfaces is not surfaced
+        # here, and it is the one thing this function does not report: the
+        # only caller takes a REHEAT night off the week, and nothing books
+        # a fridge move for a night nothing is cooked on
+        # (defrost._candidates_from_plan). A prep-cut row is not a thaw.
+        _release_prep_rows(conn, [entry_id])
+        _release_ready_made_recommendations(conn, [entry_id])
+        conn.execute(
+            "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        )
+        opened = plan_slot_open(weekly_plan_id, row["date"], row["slot"] or "dinner", open_reason,
+                                derived_from=derived_from, conn=conn)["entry_id"]
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    # The one step that cannot join the transaction above (the same note
+    # drop_dish_from_day carries): it re-ingests through the whole recipe
+    # tree, every function of which opens its own connection.
+    if rescale_source_id is not None and _weekly_plan_is_approved(weekly_plan_id):
+        try:
+            _rescale_leftover_source_grocery(rescale_source_id, entry_id)
+        except Exception:
+            logger.exception("Could not rescale the cook after opening %s", entry_id)
+    return opened
+
+
 def _chat_swap_along_the_chain(args: tuple, kwargs: dict, new_meal) -> dict | None:
     """
     A chat swap of a cook that feeds later meals, applied to all of them —

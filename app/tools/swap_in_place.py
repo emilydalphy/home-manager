@@ -969,9 +969,12 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
             pick["meal_name"] = honest_meal_name(pick)
             correct_title = False
         instead = instead_of_the_leftovers(weekly_plan_id, entry, group, pick)
+        # The batch the new dish is written for is the meals that KEEP it:
+        # a fed meal leaving the chain is not eating out of this pot.
+        keeping = [m for m in group if m["entry_id"] not in instead]
         return apply_pick_to_days(weekly_plan_id, group, pick, carry_sides=carry_sides,
                                   correct_title=correct_title, instead=instead,
-                                  serves=batch_serves(weekly_plan_id, group, entry))
+                                  serves=batch_serves(weekly_plan_id, keeping, entry))
 
     serves = _table_for(entry["date"], entry["slot"])["serves"]
     if correct_title:
@@ -1619,7 +1622,13 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
     # Nothing to repeat on a day in `instead` means it is handed back as a
     # question rather than planned; that cannot be one row of this write
     # (replace_dish_on_days plants a dish on every item), so it is opened
-    # after the commit and the day is kept out of the group.
+    # FIRST, one transaction each, and the day is kept out of the group.
+    #
+    # First rather than last, which is not a tidiness choice: the row has
+    # to be gone before the group's own write reads the chains, or the
+    # cook's make_double_for is still confirmed by it, the cook is bought
+    # for a batch nobody eats, and the orphan handling buys the OLD dish's
+    # ingredients for a night about to become a question.
     to_open = [e for e in entries if e["entry_id"] in instead and not instead[e["entry_id"]].get("meal")]
     entries = [e for e in entries if e not in to_open]
     def undo_note(entry: dict) -> dict:
@@ -1641,6 +1650,30 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
         derived.update({"swapped_from": swapped_from, "swapped_in_place_at": now,
                         "carry_sides": bool(carry_sides), "swap_group": token})
         return derived
+
+    refilled = []
+    for entry in to_open:
+        try:
+            # Carries the same undo note and the same swap_group token as
+            # the rows below, so Undo puts this day back with them
+            # (_undo_dish_swap finds the group by that token).
+            # Its place in the chain comes OFF the row (it is leaving the
+            # chain) and is kept only on the undo note, where Undo reads
+            # it: an open row is not a chain target to
+            # plan_leftover_chains, so a links_to left on it would be
+            # inert and misleading at once.
+            note = {k: v for k, v in undo_note(entry).items() if k not in _weekly_plan._CHAIN_KEYS}
+            note["instead_of_leftovers"] = {"of": entry["meal"], "for": pick["meal_name"]}
+            if _weekly_plan.open_slot_instead_of(
+                    weekly_plan_id, entry["entry_id"],
+                    f"{pick['meal_name']} won’t keep, so this one is yours to fill.",
+                    derived_from=note) is None:
+                continue
+        except Exception:
+            logger.exception("Could not open %s %s after a swap that won't keep",
+                             entry["date"], entry["slot"])
+            continue
+        refilled.append({"date": entry["date"], "slot": entry["slot"], "meal": ""})
 
     items = []
     for entry in entries:
@@ -1676,21 +1709,6 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
         # fed_days), so `dates` alone cannot say what changed.
         "meals": [{"date": e["date"], "slot": e["slot"]} for e in entries],
     }
-    refilled = []
-    for entry in to_open:
-        try:
-            # Carries the same undo note and the same swap_group token as
-            # the rows above, so Undo puts this day back with them
-            # (_undo_dish_swap finds the group by that token).
-            _weekly_plan.plan_slot_open(
-                weekly_plan_id, entry["date"], entry["slot"],
-                f"{pick['meal_name']} won’t keep, so this one is yours to fill.",
-                derived_from=undo_note(entry))
-        except Exception:
-            logger.exception("Could not open %s %s after a swap that won't keep",
-                             entry["date"], entry["slot"])
-            continue
-        refilled.append({"date": entry["date"], "slot": entry["slot"], "meal": ""})
     refilled += [{"date": e["date"], "slot": e["slot"], "meal": instead[e["entry_id"]]["meal"]}
                  for e in entries if e["entry_id"] in instead]
     if len(entries) > 1 or refilled:
