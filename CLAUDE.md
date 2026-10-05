@@ -530,6 +530,101 @@ why*, not duplicating the diff.
     half an hour already. One sentence, its own follow-up — and the merge
     above makes the list right whichever way the model writes it.
 
+- **2026-10-05 — "Plain yogurt", "yogurt, plain" and "plain Greek yogurt" are
+  one line now, and a third amount finally finds its own unit. Branch
+  `overnight/one-line-for-one-thing`, NOT merged at the time of writing.**
+  Tester batch 2026-10-04, card 5. Gowthami's household: "It's showing the
+  same ingredients multiple times (3 variations of a plain yogurt)."
+  - **Reproduced first on a throwaway DB: three lines where the card wants
+    one**, and `_merge_key` said exactly why — it lowercased and
+    singularised the LAST word and nothing else, so `", plain"` was not
+    normalised and yogurt was in no `_SAME_PURCHASE` pair.
+  - **Three narrow rules, each deliberately narrower than "drop the
+    adjectives".** (a) A comma-inverted name is written back out the way a
+    shopper says it (`_uninvert_name`: the first segment is the thing, every
+    later one describes it and moves in front), and a later segment that is
+    only PREPARATION is dropped rather than moved — "Baby spinach, chopped"
+    is baby spinach, which is the 2026-08-30 prep-descriptor case reaching
+    the NAME instead of the quantity. (b) A short closed list of filler
+    words comes out of the key (`_NAME_FILLER`). (c) The yogurt pairs join
+    `_SAME_PURCHASE`, the existing allow-list.
+  - **PREP IS DROPPED ONLY AFTER A COMMA, and that is the whole care in
+    it.** A LEADING adjective can name the product: a tin of **diced
+    tomatoes** is not a fresh tomato, and "crushed" and "shredded" are the
+    same trap. So a general strip of those words would merge two things a
+    shopper buys separately. A post-comma segment is matched on the whole
+    segment and, failing that, on its LAST word, which buys the adverb
+    family for free ("finely chopped", "roughly diced") without
+    enumerating every adverb — and an unrecognised segment is KEPT as a
+    modifier, so a word the list has never seen can never silently vanish
+    from a name.
+  - **"fresh" IS NOT FILLER HERE, although the card names it.** `spices.py`
+    counts basil as a rack item only when written "dried", so stripping
+    "fresh" would let a dried-herb line absorb a fresh-herb one — a
+    distinction this app reads elsewhere. Low-fat against full-fat milk is
+    two products for the same reason; only "full-fat" is filler, because
+    stripping it leaves the plain name and "low-fat milk" keeps its own key
+    either way. A test pins all three OUT of the list rather than leaving
+    it to a reader's judgement.
+  - **The card's "when the other line doesn't specify" cannot be built as
+    written, and the reason is worth knowing: a merge key is a pure
+    function of ONE name.** Two keys are either equal or they are not, so
+    there is no form in which a word is filler conditional on what some
+    other line happens to say. Stripping unconditionally is the only shape
+    that fits, and the list above is what makes it safe.
+  - **THE MERGED LINE READS "Plain Greek yogurt", NOT the card's "Plain
+    yogurt" with a "Greek for the raita" note — a deliberate deviation on a
+    point the card itself marks as an assumption, and it is the safe
+    direction.** Buying Greek satisfies a recipe that asked for plain;
+    buying plain fails one that asked for Greek. It is `_more_specific_name`'s
+    existing rule doing the work, it needs no note, no new column and no new
+    surface, and `grocery_items` has nowhere to put a note today. One line
+    in `_SAME_PURCHASE` reverses it if Emily wants the card's wording.
+  - **A person's own line is still never renamed under them** — that branch
+    only takes the more specific name for a PLAN's add, because the shop
+    sheet's Put back restores amount and store only, so a rename it caused
+    could not be put back. Unchanged, and pinned (2 red).
+  - **`_refold_quantity_segments`: a third amount joining a line the first
+    two could not reconcile now finds the segment that shares its unit.**
+    `_try_consolidate_quantity` merges a PAIR, so once a line read
+    "500 g + 1 cup" neither side parsed and every later add just lengthened
+    the string — measured, "500 g + 1 cup + 200 g" where the honest answer
+    is "700 g + 1 cup". **Folding left to right into one accumulator cannot
+    work**, which is why `repair_grocery_quantities`' own loop never did
+    this and its docstring overclaimed: the accumulator itself becomes the
+    unparseable string. Each segment is offered to each one already kept,
+    and the RECONCILED FLAG rather than the candidate is what says whether
+    the units met. Extracted so the live merge and that repair cannot
+    disagree; the repair now folds "3, diced + 1, diced + 1, diced" to "5",
+    which it never managed before. Idempotent, and mass against volume is
+    still never converted.
+  - **Bare "yogurt" is deliberately NOT mapped to plain** — it could be
+    flavoured, and this module's stated bias is to fail toward two lines.
+    One entry reverses it; pinned so nobody adds it by accident.
+  - `tests/test_grocery_one_line_for_one_thing.py` (43). **TWELVE mutations
+    run and every one bites** (control 0 red): the whole fix reverted, i.e.
+    main's behaviour (13 red); comma names no longer un-inverted (10); the
+    yogurt pairs removed (6); a post-comma prep segment moved rather than
+    dropped (4); filler no longer stripped (3); the refold a no-op (2);
+    "fresh" added to the filler list (2); a plan's add no longer taking the
+    more specific name (2); prep matched on the whole segment only (1); an
+    all-filler name keyed to nothing (1); the refold folding on the
+    candidate rather than the flag (1); bare "yogurt" mapped to plain (1).
+  - **NINETEEN dangerous pairs are pinned APART**, which is the half with
+    teeth: coconut milk / milk, sweet potato / potato, green onion / onion,
+    red onion / onion, brown rice / rice, chicken thighs / chicken,
+    whole-wheat flour / flour, brown sugar / sugar, flavoured against plain
+    yogurt both ways, fresh against dried basil, diced against fresh
+    tomatoes, shredded cheese / cheese, the fat levels, and olive oil /
+    olives — the one this repo has been bitten by before.
+  - **NOT DONE, and it is an acceptance criterion:** the card also asks that
+    the recipe writer be told to name staples in their plain shopping form
+    ("plain yogurt", not "yogurt, plain"). That is a prompt line in
+    `app/agent.py`, which another builder held for the whole of this run, and
+    editing a file a second session is working in is what cost this night
+    half an hour already. One sentence, its own follow-up — and the merge
+    above makes the list right whichever way the model writes it.
+
 - **2026-10-04 — Settings → Recipes: add from a link or a cookbook, and read
   a saved recipe. Branch `recipes-in-settings-2026-10-04`, NOT merged at the
   time of writing.** Emily 2026-10-04: "can you add back the function to add
