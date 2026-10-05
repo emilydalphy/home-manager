@@ -573,7 +573,12 @@ def test_the_morning_sheet_carries_the_evening_switch():
     assert "fetch('/api/evening-nudge')" in SHELL_JS
     render = SHELL_JS[SHELL_JS.index("function renderMorningSheet()"):SHELL_JS.index("async function saveMorningSheet()")]
     assert "data-evening-toggle" in render and "Evening nudge" in render
-    save = SHELL_JS[SHELL_JS.index("async function saveMorningSheet()"):SHELL_JS.index("function openMorningSheet()")]
+    # NOTE 2026-10-05 (every x closes one level): openMorningSheet gained a
+    # `parent` argument, so the old `"function openMorningSheet()"` boundary
+    # no longer exists. Sliced on the open paren instead — same region, and
+    # it cannot break on the next argument either. Nothing this test asserts
+    # moved.
+    save = SHELL_JS[SHELL_JS.index("async function saveMorningSheet()"):SHELL_JS.index("function openMorningSheet(")]
     assert "fetch('/api/evening-nudge', { method: 'POST'" in save
     assert "break;" not in save
     # The toggle is the same 44px button as the morning one, and the row

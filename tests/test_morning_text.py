@@ -811,7 +811,12 @@ def test_the_preferences_sheet_has_a_morning_text_row():
 def test_the_morning_sheet_saves_by_member_and_never_guesses():
     assert "morningSheetEl.id = 'morning-sheet';" in SHELL_JS
     assert "method: 'POST'" in SHELL_JS
-    body = SHELL_JS[SHELL_JS.index("async function saveMorningSheet()"):SHELL_JS.index("function openMorningSheet()")]
+    # NOTE 2026-10-05 (every x closes one level): openMorningSheet gained a
+    # `parent` argument, so the old `"function openMorningSheet()"` boundary
+    # no longer exists. Sliced on the open paren instead — same region, and
+    # it cannot break on the next argument either. Nothing this test asserts
+    # moved.
+    body = SHELL_JS[SHELL_JS.index("async function saveMorningSheet()"):SHELL_JS.index("function openMorningSheet(")]
     assert "fetch('/api/morning-text', { method: 'POST'" in body
     # Every adult's row is tried even when an earlier one is refused.
     assert "break;" not in body
