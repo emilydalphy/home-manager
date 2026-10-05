@@ -271,6 +271,11 @@ def _freeze_main_clock(monkeypatch, frozen: datetime.date):
         ),
     )
 
+    # _first_plan_window reads the household's day now (cooker.household_today),
+    # so the pin has to cover that clock as well as main's date.today().
+    from app.tools import cooker as _cooker_clock
+    monkeypatch.setattr(_cooker_clock, "household_today", lambda *a, **k: frozen)
+
 
 def test_onboarding_on_sunday_skips_the_degenerate_one_day_part_week(signed_in, monkeypatch):
     """
