@@ -242,7 +242,9 @@ def _bought_words(days: int) -> str:
 def _regular_guess(name: str, staple: dict | None, last_bought, inventory: list, today) -> tuple[bool, str]:
     """
     (ticked, reason) for one regular — the card's rule, in order:
-    in any inventory location -> unticked, "in the fridge";
+    in any inventory location -> unticked, "in the fridge" (a row with a
+      blank quantity counts: it means "there, amount unknown" — a chat
+      "picked up coffee" — and a used-up row is deleted, not blanked);
     no purchase history -> unticked, no reason;
     last bought longer ago than it usually lasts -> ticked, "usually lasts 2 weeks";
     otherwise unticked, "bought 6 days ago".
@@ -250,7 +252,7 @@ def _regular_guess(name: str, staple: dict | None, last_bought, inventory: list,
     from . import cooker as _cooker
 
     match, confident = _cooker._find_inventory_match(name, inventory)
-    if match is not None and confident and (match.get("quantity") or "").strip():
+    if match is not None and confident:
         return False, _LOCATION_WORDS.get(match.get("location") or "", "at home")
     if last_bought is None:
         return False, ""
@@ -304,7 +306,19 @@ def before_shop_steps() -> dict:
             (household_id(),),
         ).fetchall()
         purchased = conn.execute(
-            "SELECT item, created_at FROM grocery_items WHERE household_id = ? AND status = 'purchased'",
+            # When it was BOUGHT: inventory_added_at is stamped by the tick
+            # (mark_grocery_item); created_at is only when the line was
+            # made, and is the fallback for an older row without the stamp.
+            "SELECT item, COALESCE(inventory_added_at, created_at) AS bought_at FROM grocery_items "
+            "WHERE household_id = ? AND status = 'purchased'",
+            (household_id(),),
+        ).fetchall()
+        # Set aside as "getting it elsewhere": still a line (add_regulars
+        # won't add a second one), so the step shows it as already handled
+        # rather than offering a tick that would do nothing.
+        elsewhere = conn.execute(
+            "SELECT id, item, quantity, category FROM grocery_items WHERE household_id = ? "
+            "AND status IN ('needed', 'in_cart') AND excluded_from_list = 1",
             (household_id(),),
         ).fetchall()
         bought_events = conn.execute(
@@ -323,6 +337,9 @@ def before_shop_steps() -> dict:
     live_by_key: dict[str, object] = {}
     for r in live:
         live_by_key.setdefault(_grocery._merge_key(r["item"]), r)
+    elsewhere_by_key: dict[str, object] = {}
+    for r in elsewhere:
+        elsewhere_by_key.setdefault(_grocery._merge_key(r["item"]), r)
     last_by_staple = {}
     for r in bought_events:
         try:
@@ -331,7 +348,7 @@ def before_shop_steps() -> dict:
             pass
     last_by_key: dict[str, object] = {}
     for r in purchased:
-        d = _household_date_of(r["created_at"], zone)
+        d = _household_date_of(r["bought_at"], zone)
         k = _grocery._merge_key(r["item"])
         if d is not None and (k not in last_by_key or d > last_by_key[k]):
             last_by_key[k] = d
@@ -354,6 +371,13 @@ def before_shop_steps() -> dict:
                 # For the screen's Undo after "Take it off the list?": a
                 # removed line comes back as the same name and amount.
                 "quantity": row["quantity"] or "", "category": row["category"] or "other",
+            })
+            continue
+        aside = elsewhere_by_key.get(key)
+        if aside is not None:
+            reg_on_list.append({
+                "item_id": aside["id"], "name": aside["item"], "who": "getting it elsewhere",
+                "quantity": aside["quantity"] or "", "category": aside["category"] or "other",
             })
             continue
         last = last_by_staple.get(staple["id"]) if staple is not None else None

@@ -5260,7 +5260,13 @@
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
     try {
-      var pair = await Promise.all([groLoadAllData(), groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried(), groLoadSpices(), groLoadBeforeShop()]);
+      // "Before you shop" is read AFTER the list: the list read is what puts
+      // due regulars on (sync_due_staples), and read in parallel the steps
+      // could still count one of those as a choice.
+      var pair = await Promise.all([
+        groLoadAllData().then(function (d) { return groLoadBeforeShop().then(function () { return d; }); }),
+        groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried(), groLoadSpices()
+      ]);
       // The server's answer is the copy; what the screen shows is that plus
       // any ticks still waiting to be sent, so a tick made a moment ago in
       // a dead zone doesn't vanish the instant one bar comes back.

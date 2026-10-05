@@ -486,6 +486,18 @@ why*, not duplicating the diff.
     Pause/Resume, ×, "+ Add a regular", on the existing /api/staples
     routes; the spice rack isn't listed. The closed Staples card at the
     foot of Shop is gone (`groStaplesHtml`, its three handlers).
+  - **Review fixes, same day.** An inventory row with a BLANK quantity
+    counts as there (blank = "amount unknown"; a used-up row is deleted),
+    so it unticks a regular. "Bought N days ago" reads the purchase
+    (`inventory_added_at`), `created_at` only as the fallback. A regular
+    whose line is set aside "getting it elsewhere" is listed under Already
+    on the list ("Butter · getting it elsewhere"), since `add_regulars`
+    would add nothing for it. The steps are read AFTER the list read, which
+    is what puts due regulars on.
+  - **Known, left as is:** the once-a-week stamp lands on the CURRENT plan
+    (`_current_weekly_plan_row`). A household shopping ahead for next week
+    stamps this week's plan, so next week's pass is still offered when that
+    week becomes current — one extra offer, never a missed one.
   - Checked in a browser at 390px, light and dark, against a seeded
     /tmp DB: every step, the take-off question, the add field, skip-all
     (lands on SORT ALL with the list unchanged), Settings → Regulars pause.

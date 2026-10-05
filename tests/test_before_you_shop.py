@@ -212,6 +212,64 @@ def test_regulars_are_pre_ticked_from_what_pomona_already_knows():
     assert got["Dish soap"] == (False, "")
 
 
+def test_an_inventory_row_with_no_amount_still_means_it_is_there():
+    """CATCH (review, 2026-10-05). A blank quantity is "there, amount
+    unknown" — chat's "picked up coffee" — and a used-up row is deleted, not
+    blanked. So it unticks the regular even when the last purchase is old."""
+    tools.add_staple("Coffee", category="pantry")
+    _bought("Coffee", 20)
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO inventory_items (household_id, item, quantity, category, location) "
+        "VALUES (1, 'Coffee', '', 'pantry', 'pantry')"
+    )
+    conn.commit()
+    conn.close()
+    assert _choices(tools.before_shop_steps())["Coffee"] == (False, "in the pantry")
+
+
+def test_bought_n_days_ago_counts_from_the_purchase_not_the_listing():
+    """CATCH (review). A line made a month ago and ticked two days ago was
+    bought two days ago: inventory_added_at is the tick, created_at only
+    the listing (the fallback for an older row)."""
+    item_id = tools.add_grocery_item("Milk", "2 L", category="dairy")["item_id"]
+    conn = get_conn()
+    conn.execute(
+        "UPDATE grocery_items SET status = 'purchased', created_at = datetime('now', '-30 days'), "
+        "inventory_added_at = datetime('now', '-2 days') WHERE id = ?",
+        (item_id,),
+    )
+    conn.commit()
+    conn.close()
+    assert _choices(tools.before_shop_steps())["Milk"] == (False, "bought 2 days ago")
+
+
+def test_a_regular_set_aside_for_elsewhere_is_already_handled_not_a_choice():
+    """CATCH (review). add_regulars never adds a second line beside one set
+    aside as "getting it elsewhere", so the step must not offer a tick that
+    would do nothing: it says where the line is instead."""
+    tools.add_staple("Butter", category="dairy")
+    item_id = tools.add_grocery_item("Butter", "1 lb", category="dairy")["item_id"]
+    conn = get_conn()
+    conn.execute("UPDATE grocery_items SET excluded_from_list = 1 WHERE id = ?", (item_id,))
+    conn.commit()
+    conn.close()
+    steps = tools.before_shop_steps()
+    assert "Butter" not in _choices(steps)
+    assert {r["name"]: r["who"] for r in steps["regulars"]["on_list"]} == {"Butter": "getting it elsewhere"}
+    assert tools.add_regulars(["Butter"])["added"] == []
+
+
+def test_the_steps_are_read_after_the_list_that_adds_due_regulars():
+    """GUARD (review). The list read is what puts due regulars on
+    (sync_due_staples); reading the steps beside it, in parallel, could
+    offer one of them as a choice."""
+    load = SHELL_JS[SHELL_JS.index("async function loadGrocery("):]
+    load = load[:load.index("\n  }\n")]
+    assert "groLoadAllData().then(function (d) { return groLoadBeforeShop()" in load
+    assert load.count("groLoadBeforeShop()") == 1
+
+
 def test_a_regular_already_on_the_list_is_not_a_choice_and_says_who_and_when():
     """CATCH. Emily's change on the card: anything already on this week's
     list moves to its own "Already on the list" section, with who added it
