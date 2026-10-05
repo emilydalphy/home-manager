@@ -1256,7 +1256,21 @@ def onboarding_status():
 
 @app.post("/api/onboarding/household")
 def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
-    """Save household basics: members (+ age group), pets, and goals. Called directly by the onboarding wizard — no LLM round-trip needed for structured form data."""
+    """
+    Save household basics: members (+ age group), pets, and goals. Called
+    directly by the onboarding wizard — no LLM round-trip needed for
+    structured form data.
+
+    It is also where the phone that set the household up is told whose it
+    is. Until this call there is nobody to be: onboarding posts its people
+    only at the end (finishSetupAndReveal), so a household with two adults
+    goes from having none to having both in one request — and the device
+    that typed them in would be asked "Who's this?" on the very next
+    screen about people it had just named. The adult `record_setup_adult`
+    chose is pinned here instead: in the session since the 2026-10-02 QA
+    walk, and on the device since 2026-10-05, so setup finishing is an
+    answer to the question for next time as well as for this sitting.
+    """
     try:
         saved_ids = []
         for m in req.members:
@@ -1303,6 +1317,11 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
             samesite="lax",
             secure=_is_https(request),
             path="/",
+        )
+        # ...and the half that outlives this session, so the next sign-in
+        # on this phone does not ask again (app/security.py, DEVICE_COOKIE).
+        security.set_device_cookie(
+            response, request, tools.household_id(), setup_adult_id
         )
     return response
 
@@ -6897,12 +6916,10 @@ def _render_login(next_path: str, error: str = "") -> HTMLResponse:
 
 
 def _is_https(request: Request) -> bool:
-    # Railway terminates TLS at its proxy, so the app itself sees http —
-    # X-Forwarded-Proto is what says whether the browser is on https.
-    forwarded = request.headers.get("x-forwarded-proto", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip() == "https"
-    return request.url.scheme == "https"
+    # One reading of X-Forwarded-Proto, in app/security.py — the middleware
+    # sets a cookie of its own now (the session renewal), so the answer is
+    # needed in both files and two copies of it is one too many.
+    return security.request_is_https(request)
 
 
 @app.get("/login")
@@ -6943,16 +6960,34 @@ def login_submit(request: Request, password: str = Form(""), next: str = Form("/
         logger.warning("Failed sign-in attempt from %s", ratelimit.caller_id(request))
         return _render_login(next, "That passphrase didn't match. Try again.")
     logger.info("Sign-in for household %s", household_id)
+    # Does this phone already know whose it is? The device cookie says so,
+    # and `device_member_for_login` is where it is checked: the household
+    # it names has to be the one this PASSPHRASE just opened, and that
+    # member has to still be an adult of it. Both false means the session
+    # starts with nobody picked, exactly as it did before — the shell asks,
+    # and the answer comes back here next time.
+    device = request.cookies.get(security.DEVICE_COOKIE)
+    member_id, device_spent = security.device_member_for_login(device, household_id)
+    if member_id is not None:
+        logger.info("Signed in as member %s — this device remembered", member_id)
     response = RedirectResponse(url=security.sanitize_next(next), status_code=303)
     response.set_cookie(
         security.COOKIE_NAME,
-        security.issue_session(household_id),
+        security.issue_session(household_id, member_id),
         max_age=security.COOKIE_MAX_AGE,
         httponly=True,
         samesite="lax",
         secure=_is_https(request),
         path="/",
     )
+    if device_spent:
+        # It names somebody who has left this household — an answer that
+        # can never come back, and a cookie that will fail this same check
+        # for the next four hundred days is worse than no cookie. A cookie
+        # naming ANOTHER household is deliberately left alone: it is still
+        # that household's answer, and throwing it away here would cost a
+        # shared tablet its memory for nothing.
+        security.clear_device_cookie(response)
     return response
 
 
@@ -7777,7 +7812,14 @@ def whoami(request: Request):
     member = tools.current_member()
     adults = tools.household_adults()
     first_open = tools.first_open_state(member)
-    if member is not None and tools.member_id() is not None:
+    # Is this DEVICE pinned to that adult, or is `member` merely the one
+    # adult a one-adult household resolves to with nobody picked? The
+    # shell's localStorage copy may only ever record the first
+    # (static/shell.js, writeDeviceMember): a phone that was never asked
+    # must not quietly answer for the household's only adult the day a
+    # second one joins.
+    picked_here = member is not None and tools.member_id() is not None
+    if picked_here:
         # A device that carries its own pick is somebody using Pomona as
         # themselves — the "joined" Preferences shows in place of Invite.
         # Only on a pick: the overnight report reads this route with none,
@@ -7789,6 +7831,9 @@ def whoami(request: Request):
         "member": member,
         "adults": adults,
         "needs_pick": member is None and len(adults) > 1,
+        # See `picked_here` above: what the SESSION carries, not what the
+        # household happens to resolve to.
+        "picked_on_this_device": picked_here,
         "chores_enabled": bool(row and row["chores_enabled"]),
         # The other adult's first open (tools/first_open.py): true once, for
         # an adult who didn't set the household up, until they leave the
@@ -7877,6 +7922,12 @@ def whoami_pick(req: WhoamiPickRequest, request: Request):
         secure=_is_https(request),
         path="/",
     )
+    # ...and the half that outlives this session, so the next sign-in on
+    # this phone does not ask again (app/security.py, DEVICE_COOKIE). The
+    # member was checked against this household's adults above, so what
+    # goes in is a fact at the moment it is written — and is checked again
+    # on the way back out.
+    security.set_device_cookie(response, request, tools.household_id(), req.member_id)
     return response
 
 
@@ -8010,6 +8061,10 @@ def join_household(req: JoinRequest, request: Request):
         secure=_is_https(request),
         path="/",
     )
+    # The link said whose phone this is, so the phone is told too — an
+    # invited adult who signs out and back in is still themselves, and
+    # the link is spent and cannot say it a second time.
+    security.set_device_cookie(response, request, household_id, member_id)
     return response
 
 
@@ -8055,6 +8110,11 @@ def _leave_state() -> dict:
 def _signed_out(payload: dict, request: Request | None = None) -> JSONResponse:
     response = JSONResponse(payload)
     response.delete_cookie(security.COOKIE_NAME, path="/")
+    # The one place "this phone is Vineeth's" stops being true rather than
+    # merely stopping for now: the adult has removed themselves, or the
+    # household is gone. Sign-out does NOT do this — that is the same
+    # phone, and remembering it is the whole point of the cookie.
+    security.clear_device_cookie(response)
     # The phone's notification row is already gone with the household or
     # the member (both delete push_devices rows); this clears the cookie
     # and, belt and braces, anything left under it.

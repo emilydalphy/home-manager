@@ -282,11 +282,26 @@ def test_a_member_marked_a_child_after_being_picked_means_asked_again(client, tw
 
 
 def test_the_pick_does_not_leak_between_requests(client, two_adults):
-    """Same shape as the household test: alternate sessions, nothing sticks."""
+    """
+    Same shape as the household test: alternate sessions, nothing sticks.
+
+    This used to end by signing in again and asserting the new session had
+    NO pick — which was the bug the 2026-10-05 device-token work fixed, not
+    a property worth keeping (the tester was asked "Who's this?" on every
+    open because of exactly that). What that half was really guarding is
+    here instead: a sign-in on a device that has never said whose it is
+    still starts with nobody, and nothing is bound outside a request. The
+    remembering is pinned in tests/test_device_remembers_member.py.
+    """
     _sign_in(client)
     client.post("/api/whoami/pick", json={"member_id": two_adults["Vineeth"]})
     assert client.get("/api/whoami").json()["member"]["name"] == "Vineeth"
-    _sign_in(client)  # a fresh sign-in is a fresh cookie with no pick
+    client.post("/api/whoami/pick", json={"member_id": two_adults["Emily"]})
+    assert client.get("/api/whoami").json()["member"]["name"] == "Emily"
+    assert tools.member_id() is None, "nothing bound outside a request"
+
+    client.cookies.delete(security.DEVICE_COOKIE)
+    _sign_in(client)
     assert client.get("/api/whoami").json()["member"] is None
     assert tools.member_id() is None, "nothing bound outside a request"
 

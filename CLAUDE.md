@@ -425,6 +425,134 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — The phone remembers who's using it, and the session stops
+  timing out under a phone in daily use. Branch
+  `overnight/device-remembers-member`, NOT merged at the time of writing.**
+  Loop Board bug, Phase 0, High. Gowthami's household, 2026-10-04: "each
+  time we had to reclick who it was that was using it." The pick lived in
+  ONE place and that place was the session — `/login` minted a fresh cookie
+  with nobody in it, and `COOKIE_MAX_AGE` counted thirty days from the one
+  moment the passphrase was typed however often the phone was opened. So
+  the answer to "Who's this?" was good until the next sign-out, and no
+  longer.
+  - **Two cookies now, with two different lives.** `hm_session` is the
+    household's sign-in: it ends on sign-out and RE-MINTS itself once a day
+    while the app is in use (`_renew_if_due`, `COOKIE_RENEW_AFTER` = 24h),
+    carrying the session id (the chat history is keyed on it) and the
+    member over — only the date moves. `pomona_device_member` is which
+    adult this BROWSER is: `<household>.<member>.<hmac>`, 400 days (the
+    same number as `push.DEVICE_COOKIE_MAX_AGE`, one number for one idea),
+    re-applied by `/login`, and **deliberately not cleared by signing out**
+    — signing out and back in is the same phone.
+  - **THREE things have to be true for an adult to come back, and the
+    signature is only the first** (`security.device_member_for_login`): the
+    cookie has to be one this server minted, it has to name the household
+    the PASSPHRASE just opened — never the other way round, and never taken
+    from the cookie — and that member has to still be an adult of it.
+    SPENT is deliberately narrower than "not an answer": only a cookie
+    naming THIS household and somebody who has left it is cleared. One
+    naming ANOTHER household is left alone, or a shared tablet whose other
+    household never had to pick would lose its memory for nothing.
+  - **THE SIGNATURE IS DOMAIN-SEPARATED, and that is not decoration.**
+    `<household>.<member>.<hmac>` is the same three-part grammar as the
+    LEGACY session cookie `<sid>.<issued>.<hmac>` that `_decode_session`
+    still honours, over the same payload string with the same secret — so
+    one WAS a validly signed instance of the other. Measured before the
+    fix: `read_session_parts(device_token(1, <a recent unix time>))` came
+    back as a household-1 session with session id "1", refused only because
+    the member id read as a sign-in time has to look recent. Member ids
+    start at 1 and count up, so nothing could reach it; two cookie formats
+    one deletion away from interchangeable is not a thing to leave
+    standing. `_DEVICE_SIG_DOMAIN`.
+  - **The localStorage copy is a HINT and the security argument is that it
+    can only ever name somebody already on the list.** It exists for the
+    one case a signed cookie cannot cover: with `SESSION_SECRET` unset, a
+    restart invalidates every signature this server ever made. All the
+    shell may do with it is ask `/api/whoami/pick` about one of the adults
+    the server itself just listed, and that route checks it again
+    regardless — so the worst a tampered value does is name an adult of
+    this household. Keyed per household; both touches wrapped (Safari in
+    private mode THROWS on localStorage rather than returning null).
+  - **It mirrors `picked_on_this_device`, NOT `member`, and that field is
+    new for exactly this reason.** A one-adult household resolves to its
+    one adult with nobody picked at all (`tools.current_member`), so
+    `member` alone cannot tell "this phone said so" from "there is only one
+    of them" — and a phone that was never asked must not answer for them
+    the day a second adult joins. An older server sends neither field and
+    the shell writes nothing.
+  - **A REAL GAP THE PRE-FLIGHT FOUND, and it is the half worth reading.**
+    `tests/test_push_notifications.py`'s tripwire slices shell.js from
+    `index("async function pickWho")` and the new `pickWhoSilently` is
+    defined earlier, so it sliced the wrong function — and underneath that
+    accident the silent re-apply was not calling `pushModule().resave()`.
+    `/api/push/devices` REFUSES a token while nobody is picked
+    (`_push_member_or_400`), and `loadPushModule()` fires while the boot is
+    still awaiting `ensureWhoPicked()`, so on a cold start the phone's APNs
+    token has always already been turned away by the time either pick
+    lands. `pickWho` ends on a resave for exactly that reason and said so
+    in its own comment. Without it a device whose signed cookie had gone
+    stale would re-pick silently and then get NO notifications at all until
+    somebody tapped "Not you? Switch". Both paths resave; the tripwire
+    names each function exactly and asserts it of both.
+  - **The Capacitor shell needed nothing, checked rather than assumed.**
+    `ios-app/capacitor.config.json` sets `server.url` to the live site, so
+    the WKWebView loads it first-party into its own cookie jar — which is
+    what makes the card's "home-screen app vs Safari, each asks at most
+    once" true by construction rather than by a change.
+  - **Said rather than measured:** Safari purges script-writable storage
+    after seven days without interaction, so the httpOnly server-set cookie
+    is the stronger of the two copies. Reasoned from the mechanism; this
+    entry does not claim what Safari does without measuring it, and neither
+    does the comment at `DEVICE_COOKIE_MAX_AGE`.
+  - `tests/test_device_remembers_member.py` (37). **31 red / 6 green
+    against main, and the number is decomposed in the file's own header
+    because it is worth much less than it looks: NINETEEN die on a name
+    main has not got, SEVEN are source markers, and only FIVE reach a real
+    behaviour.** So the evidence is **24 mutations, 22 biting**, every one
+    applied and reverted — the HMAC comparison skipped (3 red), the
+    household comparison dropped (2), `adult_exists` bypassed (4), the
+    signature domain removed (1), `_sets_session_cookie` dropped (1), the
+    id bounds relaxed (1), `/logout` clearing the device cookie (7), the
+    token minted from `issue_session` (11), `COOKIE_RENEW_AFTER` dropped
+    (2), the thirty-day test dropped (1), the renewal's try/except (1), its
+    `session_id=` (1), its member (1), its household (1), `/login` guessing
+    the first adult (17), a cookie-less read answering (1,1) (1), and seven
+    on shell.js at 1 each.
+  - **TWO MUTATIONS MEASURED ZERO and are recorded rather than quietly
+    re-run**: pinning `saved_ids[0]` in the onboarding device write, and
+    dropping that route's `current_member() is None` guard. TWO independent
+    facts hold that case up — `record_setup_adult` answers once per
+    household, and the route refuses to overwrite a pick already there — so
+    no single-line mutation reddens it and the two together give 1.
+  - **AND FOUR ISOLATION TESTS COULD NOT SEE WHICH LAYER WAS DOING THE
+    WORK, which is the correction that mattered most.** Bypassing
+    `adult_exists` originally reddened ONE test: the others passed because
+    `tools.current_member()` independently refuses a child or a foreign
+    member. Real defence in depth, and not evidence for the claim those
+    docstrings made. Each now asserts `device_member_for_login` directly,
+    and that mutation went **1 → 4 red** (the household one 1 → 2).
+  - Two tests were relabelled rather than left: one CATCH that passes on
+    main vacuously (nothing is remembered there to go stale), and one that
+    is a catch on a hazard the renewal CREATES and so is green on main.
+    Three red counts in docstrings were wrong and are corrected in place.
+  - **Numbers, read off the runs at `TZ=America/Toronto`.** A targeted
+    pre-flight of the 51 files naming anything this touches: **1310 passed,
+    0 failed** (1309/1 before the push fix). `tests/test_api_js.py`'s
+    `RAW_API_FETCH_CEILING` is untouched at 13; what moved is the
+    `Api.fetch(` count, 124 → 125, which is a new call made THROUGH Api.
+  - **Driven over real HTTP on a throwaway DB and in Chromium at 390×844 in
+    both schemes.** The pick survives sign-out and sign-in; a device that
+    never answered still asks; a household-1 cookie cannot pick a beta
+    household's adult and is not thrown away; a tampered one is a signature
+    failure; leaving the household clears both cookies; a five-day-old
+    session comes back renewed with its session id and member intact while
+    a fresh one is left alone and a thirty-one-day-old one is not revived;
+    and the silent re-pick never flashes the screen (polled 40× over four
+    seconds). Nothing visual changed and it was measured anyway: no
+    sideways scroll, nothing under 44px ("Never mind" is 44 exactly), one
+    apricot fill per screen, and the "Who's this?" screen's own sub-line —
+    "I'll remember on this device." — is finally true.
+
 - **2026-10-04 — Settings → Recipes: add from a link or a cookbook, and read
   a saved recipe. Branch `recipes-in-settings-2026-10-04`, NOT merged at the
   time of writing.** Emily 2026-10-04: "can you add back the function to add

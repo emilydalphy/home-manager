@@ -713,7 +713,25 @@ def test_a_key_that_cannot_be_read_falls_back_to_text(apns, monkeypatch):
 
 
 def test_picking_who_this_is_saves_the_phone_again():
-    pick = SHELL_JS[SHELL_JS.index("async function pickWho"):]
-    pick = pick[: pick.index("\n  }\n")]
-    assert "pushModule().resave()" in pick
+    """
+    /api/push/devices refuses a token while nobody is picked, so a pick is
+    the moment this phone's row becomes writable — and loadPushModule
+    fires while the boot is still awaiting the pick, so on a cold start
+    the token has always already been turned away.
+
+    BOTH pick paths, since 2026-10-05: the screen's `pickWho` and the
+    silent re-apply of a remembered device (`pickWhoSilently`). This
+    tripwire FIRED on that branch — `index("async function pickWho")`
+    found the new, earlier `pickWhoSilently` and sliced the wrong
+    function, and the real finding underneath was that the silent path
+    did not resave at all, so a device whose signed cookie had gone stale
+    would have gone quiet. The slicer names each function exactly now
+    (`pickWho(` cannot match `pickWhoSilently(`), and the claim is
+    asserted of both rather than of whichever one came first in the file.
+    """
+    for name in ("async function pickWho(", "async function pickWhoSilently("):
+        body = SHELL_JS[SHELL_JS.index(name):]
+        body = body[: body.index("\n  }\n")]
+        assert "pushModule().resave()" in body, name
+        assert "pushAfterLoad()" in body, name
     assert "resave:" in PUSH_JS

@@ -23388,10 +23388,13 @@
   // ---------- "Who's this?" (slice 1 of per-adult login, 2026-09-11) ----------
   //
   // The household passphrase opens the door; this says which adult is
-  // holding the phone. One screen, once per device, remembered in the
-  // signed session cookie (POST /api/whoami/pick — see app/main.py) so it
-  // survives reloads and redeploys and is forgotten only by signing out.
-  // Reachable again from Preferences' "You're {name}" row to switch.
+  // holding the phone. One screen, once per device: the answer goes into
+  // the signed session cookie AND into a long-lived device cookie
+  // (POST /api/whoami/pick — see app/main.py and security.DEVICE_COOKIE),
+  // so it survives reloads, redeploys, a restart, and signing out and
+  // back in. Preferences' "You're {name}" row is how the household
+  // changes it; the invite link and finishing setup pin it server-side
+  // (app/main.py's /api/join and /api/onboarding/household).
   //
   // What it changes today: the week's approver, who added a grocery item,
   // who dropped one at the pre-shop check and who started the week's
@@ -23400,15 +23403,57 @@
   // the "{name} approved the week" notification is no longer shown to the
   // adult who approved. Each adult having their own secret is a later
   // slice; this trusts the device.
-  var shellWho = { member: null, adults: [], chores_enabled: false, first_open: false, set_up_by: '', ai_consent: 'granted', loaded: false };
+  var shellWho = { household_id: null, member: null, adults: [], chores_enabled: false, first_open: false, set_up_by: '', ai_consent: 'granted', loaded: false };
   var whoScreenEl = null;
   var whoResolve = null;
+
+  // The second copy of the pick (Loop Board "This phone remembers who's
+  // using it, even after signing in again", 2026-10-05). The real one is
+  // a signed cookie the server re-applies at /login — see
+  // security.DEVICE_COOKIE. This is a hint for the one case that cookie
+  // cannot cover: SESSION_SECRET not being set means a restart
+  // invalidates every signature, the device cookie's included, and the
+  // phone would be back to being asked. localStorage has no signature to
+  // lose.
+  //
+  // It is a hint and nothing more. All it does is tap a name on a screen
+  // the household could tap themselves, through the same route, and the
+  // server checks that member against this household's adults exactly as
+  // it does for a real tap — so the worst a tampered-with value can do is
+  // name somebody who is already on the list.
+  //
+  // Keyed per household: a shared tablet signed into two of them must not
+  // answer one's question with the other's adult.
+  var WHO_DEVICE_PREFIX = 'pomona.deviceMember.h';
+
+  function whoDeviceKey(householdId) {
+    return WHO_DEVICE_PREFIX + (householdId == null ? 'x' : householdId);
+  }
+
+  // Wrapped, both ways: Safari in private mode throws on localStorage
+  // rather than returning null, and remembering a name must never be able
+  // to stop the app opening.
+  function readDeviceMember(householdId) {
+    try {
+      var raw = window.localStorage.getItem(whoDeviceKey(householdId));
+      var id = parseInt(raw, 10);
+      return isFinite(id) && id > 0 ? id : null;
+    } catch (err) { return null; }
+  }
+
+  function writeDeviceMember(householdId, memberId) {
+    try {
+      if (memberId) window.localStorage.setItem(whoDeviceKey(householdId), String(memberId));
+      else window.localStorage.removeItem(whoDeviceKey(householdId));
+    } catch (err) { /* see above: the cookie is still doing the real work */ }
+  }
 
   async function loadWhoami() {
     try {
       var res = await Api.fetch('/api/whoami');
       if (!res.ok) throw new Error('whoami failed');
       var data = await res.json();
+      shellWho.household_id = typeof data.household_id === 'number' ? data.household_id : null;
       shellWho.member = data.member || null;
       shellWho.adults = data.adults || [];
       // The household's Chores switch (see choresEnabled, top of file).
@@ -23421,6 +23466,19 @@
       // Sharing with Claude: '' / 'granted' / 'declined' (app/ai_consent.py).
       shellWho.ai_consent = typeof data.ai_consent === 'string' ? data.ai_consent : 'granted';
       shellWho.loaded = true;
+      // Keep the copy in step with whatever the server says this device is
+      // pinned to, however it got pinned — the pick below, an invite link,
+      // or finishing setup. A mirror rather than a second record is what
+      // stops the two drifting and the stale one later being re-applied.
+      //
+      // `picked_on_this_device`, NOT `member`: a one-adult household
+      // resolves to its one adult with nobody picked at all, and a phone
+      // that was never asked must not answer for them the day a second
+      // adult joins. An older server sends neither field and writes
+      // nothing, which is the behaviour this had before it existed.
+      if (data.picked_on_this_device && shellWho.member) {
+        writeDeviceMember(shellWho.household_id, shellWho.member.id);
+      }
       return data;
     } catch (err) {
       console.warn('Who am I lookup failed:', err);
@@ -23431,7 +23489,52 @@
   async function ensureWhoPicked() {
     var data = await loadWhoami();
     if (!data || !data.needs_pick) return;
+    // Asked, but this browser may already know the answer. Only a name
+    // that is STILL one of this household's adults — the list the server
+    // just sent — so a member who has left is asked about again rather
+    // than silently re-picked for ever.
+    var remembered = readDeviceMember(shellWho.household_id);
+    if (remembered && shellWho.adults.some(function (a) { return a.id === remembered; })) {
+      if (await pickWhoSilently(remembered)) return;
+    }
     await openWhoScreen(false);
+  }
+
+  // The pick without the screen. Same route, same checks on the server;
+  // false means it did not land, and the question is asked out loud.
+  async function pickWhoSilently(memberId) {
+    try {
+      var res = await Api.fetch('/api/whoami/pick', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: memberId })
+      });
+      if (!res.ok) {
+        // A 404 means that id is not one of this household's adults after
+        // all — the list we checked it against was stale. Forget it, so
+        // the next open does not spend a request on it again.
+        if (res.status === 404) writeDeviceMember(shellWho.household_id, null);
+        return false;
+      }
+      var data = await res.json();
+      shellWho.member = data.member || null;
+      shellWho.first_open = !!data.first_open;
+      shellWho.set_up_by = data.set_up_by || shellWho.set_up_by || '';
+      // The same two lines the screen's own pick ends on, and for the same
+      // reason: /api/push/devices refuses a token while nobody is picked
+      // (main._push_member_or_400), and loadPushModule fires while this
+      // boot is still awaiting — so on a cold start the phone's token has
+      // already been turned away by the time either pick lands. Found by
+      // tests/test_push_notifications.py's tripwire on `pickWho`, which
+      // this function's name shadowed; without it, a device whose signed
+      // cookie had gone stale would re-pick silently and then get no
+      // notifications at all until somebody tapped "Not you? Switch".
+      if (shellWho.member && pushModule()) { pushModule().resave(); pushAfterLoad(); }
+      return !!shellWho.member;
+    } catch (err) {
+      console.warn('Re-applying this device\u2019s person failed:', err);
+      return false;
+    }
   }
 
   function buildWhoScreen() {
@@ -23514,6 +23617,11 @@
       shellWho.member = data.member || null;
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || shellWho.set_up_by || '';
+      // Remember it here as well as in the cookie the response just set,
+      // and on every pick — so "Not you? Switch" moves BOTH copies and
+      // the device never ends up re-applying the person who handed the
+      // phone over.
+      writeDeviceMember(shellWho.household_id, shellWho.member && shellWho.member.id);
       closeWhoScreen(shellWho.member);
       // The feed is addressed now (the approver is not told they
       // approved), so it is re-read for whoever this is. The Preferences
