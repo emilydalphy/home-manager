@@ -152,6 +152,10 @@ def _grocery():
             for g in tools.list_grocery_list() + tools.list_grocery_list(status="spice")}
 
 
+def _id_at(plan_id, date, slot):
+    return next(r["id"] for r in _rows(plan_id) if r["date"] == date and r["slot"] == slot)
+
+
 def _chains(plan_id):
     return {cook: [(t["date"], t["slot"]) for t in s["targets"]]
             for cook, s in tools.plan_leftover_chains(plan_id)["sources"].items()}
@@ -351,6 +355,30 @@ def test_the_chat_tool_widens_too(home):
     assert out["said"].startswith("Swapped to Chana Masala for")
 
 
+def test_the_chat_change_cards_save_widens_too(home):
+    """CATCH. The door apply_pick's `group=None` DEFAULT exists for, and
+    the only one of the four that does not pass a group of its own:
+    proposals.apply_proposal (the chat change card's Save changes).
+
+    FOUND BY A MUTATION THAT DID NOT BITE, and recorded rather than
+    quietly fixed. "apply_pick not widening" — `group = [entry]` in place
+    of the fed_days read behind `group is None` — reddened NOTHING on the
+    first run, because the other three doors all pass `group` explicitly
+    and nothing in this file drove the one that doesn't. The default was
+    the fix's own fourth door and it was unpinned; this is the test that
+    pins it. Mutation now: 2 red.
+    """
+    cook = _chain(home)
+    card = tools.propose_plan_changes(home, [{"date": D1, "slot": "dinner",
+                                              "candidates": [_pick()]}])
+    out = tools.apply_proposal(card["proposal_id"])
+    assert out["status"] == "applied"
+    # Both meals, and the cook still feeding the lunch at batch size.
+    assert _meals(home) == {(D1, "dinner"): NEW, (D2, "lunch"): NEW}
+    assert _chains(home) == {_id_at(home, D1, "dinner"): [(D2, "lunch")]}
+    assert _grocery() == {"Chickpeas": "4 cans"}
+
+
 def test_the_chat_tool_leaves_a_slot_holding_two_snacks_alone(home):
     """GUARD. Deliberately narrow: the chat door widens only when the slot
     holds exactly ONE row, so it can never re-implement
@@ -470,7 +498,19 @@ def test_the_toast_says_what_it_put_there_instead(home):
 def test_a_refilled_lunch_buys_for_itself_and_the_cook_for_one_table(home):
     """CATCH. The arithmetic of the refill: the cook is no longer a batch,
     so it buys one table; the repeat is now on two lunches, so it buys
-    two. Mutation: batch serves taken from the whole group — 1 red."""
+    two.
+
+    WHAT PINS THIS IS THE BROKEN CHAIN, NOT `serves`, and the first
+    version of this docstring said otherwise ("Mutation: batch serves
+    taken from the whole group — 1 red"). Measured: that mutation, applied
+    to BOTH copies of the `keeping` line, reddens NOTHING — because
+    `serves` only ever reaches `_save_recipe_if_new`, whose line is
+    `default_servings=pick.get("default_servings") or serves or 4`, and
+    every pick in this file carries its own default_servings. So the
+    grocery figures here are the `chain: {}` on the refilled lunch doing
+    the work (the cook stops cooking double, the lunch buys for itself),
+    which the replace_dish_on_days mutation pins. `serves` is pinned by
+    the test below it instead."""
     tools.add_recipe("Egg Wraps", ingredients=[{"item": "Tortillas", "qty": "4", "category": "pantry"}],
                      food_groups=["protein", "carb", "vegetable"], default_servings=2,
                      prep_time_minutes=5, cook_time_minutes=10, instructions=["Roll it."])
@@ -479,6 +519,38 @@ def test_a_refilled_lunch_buys_for_itself_and_the_cook_for_one_table(home):
     tools.approve_weekly_plan(home, "Alex")
     _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
     assert _grocery() == {"Tortillas": "8", "Romaine": "1 head"}
+
+
+def test_the_new_recipe_is_saved_for_the_batch_that_keeps_it(home):
+    """GUARD. `serves` is what a NEW recipe is saved as — the number the
+    Cook card reads back as "Serves N" — and the batch it is written for
+    is the meals that KEEP the dish, so a fed meal that left the chain is
+    not counted into it.
+
+    Observable only for a pick that carries no default_servings of its
+    own, which is why it has a test to itself: `_save_recipe_if_new` is
+    `default_servings=pick.get("default_servings") or serves or 4`, so
+    every other pick in this file makes `serves` dead. Mutation: `keeping`
+    taken as the whole group, in BOTH copies of that line
+    (swap_in_place.apply_pick and swap_options.choose_swap_option) — 1
+    red, this test; it reddens nothing without this test."""
+    tools.add_recipe("Egg Wraps", ingredients=[{"item": "Tortillas", "qty": "4",
+                                                "category": "pantry"}],
+                     food_groups=["protein", "carb", "vegetable"], default_servings=2,
+                     prep_time_minutes=5, cook_time_minutes=10, instructions=["Roll it."])
+    cook = _chain(home, approve=False)
+    tools.plan_meal(D1, "Egg Wraps", slot="lunch", weekly_plan_id=home)
+    tools.approve_weekly_plan(home, "Alex")
+    pick = _pick("Caesar Salad", item="Romaine", qty="1 head")
+    pick.pop("default_servings")
+    _sheet_swap(home, cook, pick=pick)
+    conn = get_conn()
+    serves = conn.execute("SELECT default_servings FROM recipes WHERE name = ?",
+                          ("Caesar Salad",)).fetchone()["default_servings"]
+    conn.close()
+    # Two eat the dinner; the lunch that was eating its leftovers left the
+    # chain (Caesar Salad won't keep), so it is not part of this batch.
+    assert serves == 2
 
 
 def test_with_nothing_to_repeat_the_lunch_becomes_a_question(home):
@@ -507,14 +579,30 @@ def test_the_question_replaces_the_meal_rather_than_sitting_beside_it(home):
 
 
 def test_a_fed_dinner_is_left_as_a_question_rather_than_repeated(home):
-    """GUARD. meal_variety.NEVER_OPEN_SLOTS is breakfast and lunch: a
-    dinner genuinely is a decision, and quietly repeating one nobody asked
-    for is the opposite of what the household wants. Mutation: adding
-    "dinner" to the slots instead_of_the_leftovers will repeat into —
-    this test."""
-    cook = _chain(home, fed=((D2, "dinner"),))
+    """CATCH on the opening (nothing opens on the merge base, so it reads
+    'planned' there). Its OWN claim — that a fed DINNER is opened rather
+    than quietly refilled — is the GUARD half, pinned by the mutation
+    below: meal_variety.NEVER_OPEN_SLOTS is breakfast and lunch, because a
+    dinner genuinely is a decision and repeating one nobody asked for is
+    the opposite of what the household wants. Mutation: "dinner" added to
+    the slots instead_of_the_leftovers will repeat into — 1 red.
+
+    THE WEEK NEEDS A THIRD DINNER TO REPEAT, or that mutation is
+    neutralised by the seed and reddens nothing: with only the cook and
+    the night it feeds on the plan there is nothing for repeat_for_slot to
+    offer, so the slot opens whether "dinner" is in NEVER_OPEN_SLOTS or
+    not. Measured — the first version of this test seeded two dinners and
+    the mutation read 0 red."""
+    tools.add_recipe("Lentil Stew", ingredients=[{"item": "Lentils", "qty": "1 cup",
+                                                  "category": "pantry"}],
+                     food_groups=["protein", "carb", "vegetable"], default_servings=2,
+                     prep_time_minutes=5, cook_time_minutes=20, instructions=["Simmer it."])
+    cook = _chain(home, fed=((D2, "dinner"),), approve=False)
+    tools.plan_meal(D3, "Lentil Stew", slot="dinner", weekly_plan_id=home)
+    tools.approve_weekly_plan(home, "Alex")
     _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
-    assert _states(home)[(D2, "dinner")] == "open"
+    assert _states(home)[(D2, "dinner")] == "open", "a fed dinner is a question, never a repeat"
+    assert _meals(home)[(D2, "dinner")] is None, "and no dish was quietly put on it"
 
 
 # ---------- 6. undo ----------
