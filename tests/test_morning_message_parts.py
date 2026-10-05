@@ -279,6 +279,61 @@ def test_the_start_time_is_a_line_of_its_own_naming_only_the_clock(nolink):
     assert "Skewers" not in lines[0], "the start line must stand without the meals line"
 
 
+def test_a_cook_already_under_way_has_no_start_left_to_name(nolink):
+    """
+    CATCH. Once "Start cooking" has been tapped the move's own chip says
+    "Started 6:02" rather than "Start by 5:45", and a message naming a
+    start for a cook that began is a message saying a thing that isn't
+    true. (Reachable: the loop will still send a missed morning up to
+    LATE_WINDOW_HOURS later.) Written because the mutation that drops the
+    `started_at` guard bit nothing until a test seeded a started cook.
+    """
+    _adults()
+    _seed_day()
+    conn = get_conn()
+    entry = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE household_id = ? AND date = ? AND slot = 'dinner'",
+        (tools.household_id(), ISO_TODAY),
+    ).fetchone()["id"]
+    conn.close()
+    assert _lines(["start"]) == ["Start cooking at 5:55."], "the clock before the tap"
+    tools.start_cooking(entry)
+    assert _lines(["start"]) == []
+    assert _lines(["meals"]) == ["Tonight: Chicken Skewers."], "the meals line is untouched"
+
+
+def test_a_dinner_with_no_minutes_on_it_has_no_start_to_name(nolink):
+    """
+    CATCH. With no minutes there is nothing to count back from, which is
+    exactly when moves.py leaves its own "Start by" chip off — so the text
+    and Today agree about when there is a start at all rather than this
+    module deciding separately.
+    """
+    _adults()
+    tools.add_recipe("Cold Noodles", ingredients=[{"item": "Noodles", "qty": "1 pack"}])
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tools.plan_meal(ISO_TODAY, "Cold Noodles", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=False)
+    assert _lines(["meals"]) == ["Tonight: Cold Noodles."]
+    assert _lines(["start"]) == []
+
+
+def test_a_reheat_night_never_says_when_to_start_cooking(nolink):
+    """
+    CATCH. "A reheat is a line, never Tap to start" (Emily, 2026-09-08) —
+    nothing is cooked on a reheat night, so there is no start to name even
+    with the box ticked.
+    """
+    _adults()
+    plan_id = _seed_day(dinner=False)
+    yesterday = (TODAY - dt.timedelta(days=1)).isoformat()
+    tools.plan_meal(yesterday, "Chicken Skewers", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=False)
+    tools.plan_meal(ISO_TODAY, "Leftover skewers", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=False)
+    assert _lines(["start"]) == []
+
+
 def test_who_is_away_is_attendances_own_sentence_word_for_word(nolink):
     """
     CATCH. summary_line is where "Dinner for 1 — Vineeth’s out." lives, and
@@ -565,6 +620,23 @@ def test_all_three_ways_in_compose_in_one_order_and_never_need_a_refusal():
     assert tools.set_morning_text(
         parts=["meals", "freezer"], add_parts=["shop"], drop_parts=["meals"]
     )["parts"] == ["freezer", "shop"]
+
+
+def test_the_same_part_added_and_dropped_at_once_is_dropped():
+    """
+    CATCH on the ORDER the docstring claims, which is the only input the
+    order can be seen in — the stored answer is re-sorted into message
+    order, so nothing else can tell `(chosen + add) - drop` from
+    `(chosen - drop) + add`. Written because the mutation that swaps those
+    two bit nothing until this case existed.
+
+    Drop last, so the last thing said wins, which is how a sentence works.
+    Incoherent input either way; what matters is that it is answered the
+    same way twice rather than by whichever branch runs first.
+    """
+    _adults("Emily")
+    tools.set_morning_text_parts(["meals"])
+    assert tools.set_morning_text(add_parts=["shop"], drop_parts=["shop"])["parts"] == ["meals"]
 
 
 def test_the_chat_tool_offers_the_six_keys_and_nothing_else():
