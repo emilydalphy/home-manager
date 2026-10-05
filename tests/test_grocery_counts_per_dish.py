@@ -37,9 +37,21 @@ Two rules, both about the number that goes IN:
 
 After, on the same seeded week: Apples 5, Cucumbers 10, Tomatoes 16.
 
-Every CATCH below was measured red against origin/main (the number in its
-docstring is what main produced). Every GUARD names the mutation that was
-actually run to pin it; the red counts are in the branch's report.
+RED AGAINST MAIN IS 12 OF 32, AND THE NUMBER IS DECOMPOSED HERE RATHER
+THAN QUOTED, because it means less than it looks. Measured with the three
+new names stubbed to main's behaviour (count_scale_factor =
+servings_scale_factor, the two count rules inert) so every test reaches its
+own assertion rather than dying on an import: NINE fail on the claim they
+are named for, with the number main produced in each docstring; THREE are
+red only because the function they call is not there
+(..._never_hands_back_none_of_something, ..._note_rides_through...,
+..._reported_in_the_same_shape...), which is the only kind of red a test of
+a brand-new function can have, and each says so. Eleven of the twenty green
+call a new name directly, so for nine of those "green on main" is not
+measurable either and they are pinned by a mutation that was actually run;
+the two exceptions are the count_scale_factor ones, where the stub really
+is main's own arithmetic. The red counts for every mutation are in the
+branch's report.
 """
 from __future__ import annotations
 
@@ -355,12 +367,12 @@ def test_a_count_at_exactly_one_per_person_is_left_alone(week):
 
 def test_every_ceiling_allows_at_least_one_whole_thing_per_person():
     """
-    GUARD — green on main (the table is new, so this is a claim about the
-    table rather than a behaviour catch). The line the card draws and the
-    line this module's standing bias wants: this rule clamps a number DOWN,
-    and the bias is the other way (quantities._PACKAGE_UNITS — an extra
-    line beats a missing dinner). So nothing a plausible recipe writes is
-    overruled.
+    GUARD, pinned by mutation: the table is new, so this is a claim about
+    the table rather than a behaviour catch, and redness against main means
+    nothing. The line the card draws and the line this module's standing
+    bias wants: this rule clamps a number DOWN, and the bias is the other
+    way (quantities._PACKAGE_UNITS — an extra line beats a missing dinner).
+    So nothing a plausible recipe writes is overruled.
 
     Pinned by the mutation that sets any ceiling below 1.
     """
@@ -370,8 +382,11 @@ def test_every_ceiling_allows_at_least_one_whole_thing_per_person():
 
 def test_the_recompute_floors_so_it_can_never_be_flagged_again():
     """
-    GUARD — green on main. The one place this does not err generously and
-    has to not: the ceiling IS the maximum a plausible dish uses, so
+    GUARD, pinned by mutation and NOT by redness: this calls a function
+    main has not got, so "green on main" is not measurable for it (against a
+    stub that makes the rule inert it is green for the stub's sake, which is
+    not evidence). The claim is the one place this does not err generously
+    and has to not: the ceiling IS the maximum a plausible dish uses, so
     rounding past it would hand back a number this very function flags.
 
     Pinned by the mutation that rounds the recompute up (math.ceil), which
@@ -384,8 +399,10 @@ def test_the_recompute_floors_so_it_can_never_be_flagged_again():
 
 def test_the_recompute_never_hands_back_none_of_something():
     """
-    GUARD — green on main. A recipe that names a count wants some of it;
-    floored at one whole thing, however small the table.
+    GUARD, pinned by mutation. It is red against main, but only because
+    the function is not there — not for a behaviour difference — so read the
+    mutation and not the redness. A recipe that names a count wants some of
+    it; floored at one whole thing, however small the table.
 
     Pinned by the mutation that drops the `max(1.0, ...)` floor, which
     gives "0" for a table of one against a half-per-person ceiling.
@@ -422,8 +439,9 @@ def test_a_named_small_kind_is_never_second_guessed(week):
 
 def test_a_small_kind_said_in_the_amount_is_not_second_guessed():
     """
-    GUARD — green on main. "8 small" is the kind said in the amount rather
-    than in the name, which _SMALL_KIND_NOTES already reads for the kind
+    GUARD, pinned by mutation (the function is new, so redness against
+    main says nothing). "8 small" is the kind said in the amount rather than
+    in the name, which _SMALL_KIND_NOTES already reads for the kind
     question; this one reads it the same way rather than keeping a second
     opinion.
 
@@ -436,8 +454,9 @@ def test_a_small_kind_said_in_the_amount_is_not_second_guessed():
 
 def test_a_spice_rack_name_is_not_a_count_of_the_thing():
     """
-    GUARD — green on main. "2" of "Red pepper flakes" is not two peppers,
-    and the spice rack already owns that judgement (spices.is_spice).
+    GUARD, pinned by mutation (the function is new). "2" of "Red pepper
+    flakes" is not two peppers, and the spice rack already owns that
+    judgement (spices.is_spice).
 
     Pinned by the mutation that drops the is_spice guard, which flags this.
     """
@@ -514,10 +533,12 @@ def test_a_package_keeps_its_own_path(week):
 
 def test_a_freeform_amount_is_not_treated_as_a_count():
     """
-    GUARD — green on main. "A bunch", "to taste" and a blank name no
-    number, so there is nothing to hold to a ceiling and nothing to scale.
-    The unit of a bare count is None; an unparseable amount has no unit at
-    all, and the two must not be read as the same thing.
+    GUARD, pinned by mutation (the names are new). "A bunch", "to taste"
+    and a blank name no number, so there is nothing to hold to a ceiling and
+    nothing to scale. The unit of a bare count is None; an unparseable
+    amount has no unit at all, and the two must not be read as the same
+    thing — which is a one-character difference in a frozenset and the
+    reason it is asserted directly.
 
     Pinned by the mutation that puts "" into _PER_PERSON_COUNT_UNITS beside
     None, which makes every freeform line a count.
@@ -530,9 +551,11 @@ def test_a_freeform_amount_is_not_treated_as_a_count():
 
 def test_a_note_rides_through_the_recompute():
     """
-    GUARD — green on main. The amount and the note that rides with it come
-    apart and go back together the same way everywhere else on the list
-    ("1 bag (2 lb), frozen"), so a recomputed line keeps its note.
+    GUARD, pinned by mutation. Red against main for the missing function
+    rather than for a behaviour difference. The amount and the note that
+    rides with it come apart and go back together the same way everywhere
+    else on the list ("1 bag (2 lb), frozen"), so a recomputed line keeps
+    its note.
 
     Pinned by the mutation that returns the formatted amount without
     _with_note.
@@ -654,10 +677,13 @@ def test_the_pre_save_pass_writes_a_cook_qty_for_a_wild_count():
 
 def test_a_wild_count_is_reported_in_the_same_shape_as_a_wild_measure():
     """
-    GUARD — green on main for the measured half (the count half is new).
-    Both questions answer in implausible_quantity's shape, so
-    _implausible_lines has one reader rather than two and the morning
-    report needs no second message function.
+    HALF CATCH, half GUARD, and said that way because the halves differ.
+    _implausible_lines picking the line up at all is a real behaviour catch
+    (main's returns nothing for it). The SHAPE assertion is the guard, and
+    it is red against main only for the missing function. Both questions
+    answer in implausible_quantity's shape, so _implausible_lines has one
+    reader rather than two and the morning report needs no second message
+    function.
 
     Pinned by the mutation that drops `family` from the count problem,
     which breaks the shared message path.
@@ -673,9 +699,10 @@ def test_a_wild_count_is_reported_in_the_same_shape_as_a_wild_measure():
 
 def test_the_two_new_rules_are_on_the_tools_package():
     """
-    GUARD — green on main is not available (the names are new). app/tools
-    is a package whose __init__ is its public face: a function not
-    re-exported there is one agent.py and main.py cannot see.
+    GUARD, pinned by mutation; green on main is not available, because the
+    names are new. app/tools is a package whose __init__ is its public face:
+    a function not re-exported there is one agent.py and main.py cannot
+    see.
 
     Pinned by the mutation that removes either name from __init__.
     """
