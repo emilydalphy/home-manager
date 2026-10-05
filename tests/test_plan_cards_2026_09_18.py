@@ -52,6 +52,9 @@ _DAYNAME_STUB = (
 def _prelude() -> str:
     return (
         _extract("escapeHtml", SHELL_JS) + "\n"
+        + _extract_var("ASK_BOX_LABEL", SHELL_JS) + "\n"
+        + _extract_var("ASK_BOX_PLACEHOLDER", SHELL_JS) + "\n"
+        + _extract("askBoxHtml", SHELL_JS) + "\n"
         + "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
         + "var SLOT_LABELS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };\n"
         + "var READY_CHECK = '<svg></svg>';\n"
@@ -534,8 +537,8 @@ def test_the_swap_sheet_shows_the_eyebrow_the_title_three_picks_and_the_two_line
     assert "30 min · uses the sausages" in html and "25 min · same tortillas" in html and "15 min · no shopping" in html
     # Move left the Swap sheet on 2026-09-28: it is the row's own button.
     assert "wk-swap-move" not in html
-    assert 'id="wk-swap-tell">Ask for something else</button>' in html
-    assert html.index("wk-swap-picks") < html.index("wk-swap-tell")
+    assert 'id="wk-swap-ask-form"' in html
+    assert html.index("wk-swap-picks") < html.index("wk-swap-ask-form")
 
 
 @_needs_node
@@ -587,8 +590,11 @@ def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():
     assert "background: var(--surface)" in sheet
     assert "border-radius: var(--radius-hero) var(--radius-hero) 0 0" in sheet
     assert "box-shadow: var(--shadow-sheet)" in sheet
-    opened = _extract("openSwapSheet", SHELL_JS)
-    assert "'/swap-options'" in opened and "method: 'POST'" in opened and "avoid: []" in opened
+    # The ask itself moved into fetchSwapPicks (2026-10-05) so the sheet's
+    # first open and its "Not quite?" box share one call.
+    opened = _extract("fetchSwapPicks", SHELL_JS)
+    assert "'/swap-options'" in opened and "method: 'POST'" in opened and "avoid: ask.avoid || []" in opened
+    assert "fetchSwapPicks(thisOpen, {})" in _extract("openSwapSheet", SHELL_JS)
     picked = _extract("runSwapPick", SHELL_JS)
     assert "'/swap-choose'" in picked and "option: picked.index" in picked
     assert "/swap-pick'" not in SHELL_JS and "swap-options?entry_id" not in SHELL_JS, "the duplicate routes are gone"

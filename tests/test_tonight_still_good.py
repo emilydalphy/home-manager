@@ -366,13 +366,22 @@ def test_the_routes_need_a_signed_in_household(client):
 
 # ---------------------------------------------------------------- the copy
 
+def _card_source() -> str:
+    start = SHELL_JS.index("function renderTonightAsk(")
+    return SHELL_JS[start:SHELL_JS.index("function askAboutTonight(", start)]
+
+
 def test_the_card_asks_the_plain_question_with_yes_and_something_else():
     """DESIGN_SYSTEM §8 rule 7: the question first, the choice under it,
     buttons that commit. Named the way Emily wrote it."""
     assert "function renderTonightAsk(" in SHELL_JS
     assert "'Tonight: ' + " in SHELL_JS and "'. Still good?'" in SHELL_JS
     assert ">Yes</button>" in SHELL_JS
-    assert ">Something else</button>" in SHELL_JS
+    # The bare "Something else" button became a labelled box (2026-10-05):
+    # the question, Yes, then "Not quite? Tell me what you'd like" + a field.
+    assert ">Something else</button>" not in _card_source()
+    assert "askBoxHtml('tonight-ask'" in _card_source()
+    assert "Not quite? Tell me what you’d like" in SHELL_JS
     assert "'/api/today/tonight'" in SHELL_JS
     assert "'/api/today/tonight/keep'" in SHELL_JS
 
@@ -397,12 +406,10 @@ def test_the_sheet_offers_a_swap_not_a_delete_and_names_leftovers():
 
 def test_the_card_spends_no_second_apricot():
     """Rule 5: Now's one apricot is the dock. The card's Yes is spruce and
-    Something else an outline (the .ny-actions pair the needs-you band
-    already scopes that way)."""
-    assert 'class="ny-actions"' in SHELL_JS
-    start = SHELL_JS.index("function renderTonightAsk(")
-    block = SHELL_JS[start:start + 4000]
-    assert "btn-gold" in block and "btn-sand" in block
+    the box under it spruce too (.ask-box-send), never apricot."""
+    assert 'class="ny-actions is-single"' in SHELL_JS
+    block = _card_source()
+    assert "btn-gold" in block and "btn-sand" not in block
     assert "dock-primary" not in block
 
 

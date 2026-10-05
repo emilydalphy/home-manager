@@ -627,7 +627,7 @@ def test_the_routes_carry_whole_dish_through(signed_in, home, monkeypatch):
 def _sheet_harness(body: str) -> str:
     fns = ["escapeHtml", "dayName", "slotWord", "isSnackSlot", "joinList", "swapDaysLine",
            "swapPickHtml", "swapSheetBodyHtml", "moveDayRowHtml", "moveSheetBodyHtml", "swapSheetTitle", "dishShortName",
-           "swapWaitLine", "swapWaitHtml", "wkMenuRowHtml", "wkMiniHtml", "wkDaysPhrase", "wkMenuDaysPhrase", "wkMenuFact",
+           "swapWaitLine", "swapWaitHtml", "askBoxHtml", "wkMenuRowHtml", "wkMiniHtml", "wkDaysPhrase", "wkMenuDaysPhrase", "wkMenuFact",
            "wkRowMetaHtml", "wkRowMeta"]
     stubs = (
         "var WK_ICONS = { chev: '<svg></svg>', swap: '' };\n"
@@ -637,7 +637,8 @@ def _sheet_harness(body: str) -> str:
     )
     src = "\n".join(_extract(f, SHELL) for f in fns)
     consts = "\n".join(_extract_var(v, SHELL) for v in
-                       ("SWAP_WAIT_SECONDS", "SWAP_PLACEHOLDERS", "SWAP_WORKING", "SWAP_SLOT_PLURALS"))
+                       ("SWAP_WAIT_SECONDS", "SWAP_PLACEHOLDERS", "SWAP_WORKING", "SWAP_SLOT_PLURALS",
+                        "ASK_BOX_LABEL", "ASK_BOX_PLACEHOLDER"))
     return stubs + src + "\n" + consts + "\n" + body
 
 
@@ -684,7 +685,7 @@ def test_a_tapped_pick_shows_it_is_working_and_the_rest_wait():
 def test_the_rows_swap_asks_for_the_whole_dish_and_the_day_steps_does_not():
     row = _extract("wkMenuRowHtml", SHELL)
     assert "data-wk-swap-dish" in row
-    opener = _extract("openSwapSheet", SHELL)
+    opener = _extract("fetchSwapPicks", SHELL)  # the ask moved out of openSwapSheet, 2026-10-05
     assert "whole_dish" in opener
     pick = _extract("runSwapPick", SHELL)
     assert "whole_dish: !!st.wholeDish" in pick and "st.pending = index" in pick

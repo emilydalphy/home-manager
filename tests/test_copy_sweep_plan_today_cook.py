@@ -112,10 +112,10 @@ def test_20_travels_well_still_reaches_the_person_where_it_is_used():
 
 
 def test_21_one_wording_for_the_way_into_chat():
-    """Three spellings of one button — "Something else — tell me" on the
-    swap sheet, "Tell me what instead" on the card and on the dock."""
+    """Spellings of one button — "Tell me what instead" on the card and on
+    the dock. (The swap sheet's own is a labelled box since 2026-10-05:
+    tests/test_swap_ask_box.py.)"""
     for fragment in (
-        '\'<button type="button" class="wk-swap-else" id="wk-swap-tell"\' + wait + \'>Ask for something else</button>\'',
         '\'<button type="button" class="wk-swap-tell" data-wk-tell="\' + slot + \'">\' +\n      \'Ask for something else</button>\'',
         '\'<button type="button" class="dock-link wk-swap-tell" data-wk-tell="\' + slot + \'">Ask for something else</button>\'',
     ):

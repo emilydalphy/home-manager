@@ -425,6 +425,40 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — Swap sheet: "Ask for something else" becomes a labelled box
+  (branch `swap-ask-box-2026-10-05`, Loop Board card).** Root cause of the
+  tester's confusion (Gowthami, 10-04): the sheet's bare "Ask for something
+  else" button never took words — it closed the sheet and opened the CHAT
+  (shell.js `drawSwapSheet`'s old `#wk-swap-tell` handler), and
+  `POST /swap-options` accepted only `{entry_id, avoid, whole_dish}`
+  (`SwapOptionsRequest`, app/main.py), so there was nowhere for text to go.
+  Now: below the picks, label **Not quite? Tell me what you'd like**, a
+  two-line textarea (placeholder "e.g. something with paneer, under 30
+  minutes" — a textarea, not an input, because at 390px the example was cut
+  off mid-word), and a spruce Send (`askBoxHtml` / `wireAskBox`; Enter sends).
+  Words go out as `request` → `swap_options(..., request=)` → the slot JSON's
+  `household_request`, which `swap_options.INSTRUCTIONS` frames as data that
+  narrows the three dishes but never loosens `must_not_contain` /
+  `eating_style` / `avoid` (the allergy gate still runs on whatever comes
+  back). **Empty send** asks for different ones: the client sends every name
+  it has shown as `avoid`. **Cache trap fixed on the way:** `_OPTIONS_CACHE` is
+  keyed on the slot alone, so a request or an `avoid` list used to be answered
+  with the three picks just turned down; both now bypass the read (and write
+  the cache, because `/swap-choose` reads the picks from it). Consequence: a
+  plain re-open within the 30-minute TTL shows the last ask's picks. The
+  write-out context drops `household_request` (the swap's own instructions know
+  no such key). `fetchSwapPicks` is now the one /swap-options call for the
+  first open and the box. **Tonight card** (Now): the "Something else" button is
+  the same box; empty send opens the old sheet of nights to trade (and the
+  night off), words open the chat about tonight's dinner (`planned_meal`
+  context) and send "For tonight's dinner, I'd like …" — the Swap picks sheet
+  needs Plan's `weekState`, which Today doesn't have. Not changed: the Meal
+  dock's and Day card's quiet "Ask for something else" links still open chat.
+  Tests: `tests/test_swap_ask_box.py` (fail on bb137be, pass here); five older
+  tests that pinned the old button were re-pointed. Lesson: the tests extract
+  JS functions by brace-matching, so a dropped brace passed them all — a
+  whole-file parse test now sits in the new file.
+
 - **2026-10-05 — The phone remembers who's using it, and the session stops
   timing out under a phone in daily use. Branch
   `overnight/device-remembers-member`, NOT merged at the time of writing.**
