@@ -14,6 +14,7 @@ re-discovers at two in the morning.
 """
 import datetime
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -99,6 +100,36 @@ def test_a_weekday_name_resolves_to_the_next_one(frozen_today):
     assert (pinned - real_today).days < 7
 
 
+@pytest.mark.parametrize("name, weekday", [
+    ("Tuesday", 1), ("THURSDAY", 3), ("tuesday", 1), ("Sunday", 6),
+])
+def test_a_weekday_name_reads_in_any_case(frozen_today, name, weekday):
+    """
+    "Tuesday" and "Thursday" begin with a T, the ISO date/time separator; a
+    pin that split on it first read "Tuesday" as an empty name and a time.
+    """
+    pinned = frozen_today(name)
+    assert pinned.weekday() == weekday
+    now = datetime.datetime.now()
+    assert (now.hour, now.minute) == (9, 0), "a bare name still lands mid-morning"
+
+
+@pytest.mark.parametrize("pin", [
+    "sundayT23:30", "Sunday t23:30", "Sunday 23:30", "SUNDAYT23:30", "sunday T 23:30",
+])
+def test_every_written_form_of_a_weekday_with_a_time_lands_on_it(frozen_today, pin):
+    frozen_today(pin)
+    now = datetime.datetime.now()
+    assert now.weekday() == 6
+    assert (now.hour, now.minute) == (23, 30)
+
+
+@pytest.mark.parametrize("pin", ["Tuesday morning", "sundayish", "sunday T late"])
+def test_a_weekday_with_nonsense_after_it_is_still_a_usage_error(frozen_today, pin):
+    with pytest.raises(pytest.UsageError):
+        frozen_today(pin)
+
+
 def test_a_weekday_name_can_carry_a_time_of_day(frozen_today):
     """
     CI's `sunday-night` pin (2026-10-05): the last half hour of the
@@ -121,8 +152,16 @@ def test_ci_pins_the_sunday_night_changeover():
     goes red on a PR rather than on a Sunday night after a merge.
     """
     workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "tests.yml").read_text(encoding="utf-8")
-    clock = workflow[workflow.index("\n  clock:") : workflow.index("\n  straddle:")]
-    assert "pin: sundayT23:30" in clock
+    job = workflow[workflow.index("\n  clock:") : workflow.index("\n  straddle:")]
+    # The matrix's include list only: from `include:` to the job's own `env:`,
+    # with comments dropped, so the pin cannot be satisfied by a comment or by
+    # a step's env elsewhere in the job.
+    include = job[job.index("\n        include:") : job.index("\n    env:")]
+    lines = [ln for ln in include.splitlines()[1:] if ln.strip() and not ln.strip().startswith("#")]
+    entries = re.findall(r"^\s*- clock: (\S+)\n\s+pin: (\S+)$", "\n".join(lines), flags=re.M)
+    assert ("sunday-night", "sundayT23:30") in entries, entries
+    # ...and nothing else got lost making room for it.
+    assert {c for c, _ in entries} >= {"monday", "friday", "saturday", "sunday"}, entries
 
 
 def test_a_pin_nobody_can_read_is_a_usage_error(frozen_today):

@@ -425,16 +425,24 @@ def _parse_pin(raw):
     # and so re-creates this file's own hour-out bug inside a fall-back.
     if isinstance(raw, (_dt.datetime, freezegun.api.real_datetime)):
         return raw
-    raw = str(raw).strip().replace(" ", "T")
-    # A weekday name may carry a time, "sunday" or "sundayT23:30" — the second
-    # is CI's `sunday-night` pin (2026-10-05): the last half hour of the
-    # household's week, which a bare weekday's 09:00 never reaches.
-    head, sep, clock = raw.partition("T")
-    if head.lower() in _WEEKDAY_NAMES:
-        wanted = _WEEKDAY_NAMES.index(head.lower())
-        today = _dt.date.today()
-        day = today + _dt.timedelta(days=(wanted - today.weekday()) % 7)
-        raw = day.isoformat() + sep + clock
+    raw = str(raw).strip()
+    # A weekday name may carry a time, in any case and with either separator:
+    # "sunday", "Tuesday", "sundayT23:30", "Sunday 23:30", "Sunday t23:30".
+    # The time form is CI's `sunday-night` pin (2026-10-05): the last half
+    # hour of the household's week, which a bare weekday's 09:00 never
+    # reaches. Matched on the LOWERCASED name, never by splitting on "T" —
+    # "Tuesday" and "Thursday" start with one.
+    lowered = raw.lower()
+    for wanted, name in enumerate(_WEEKDAY_NAMES):
+        if lowered == name or lowered.startswith((name + "t", name + " ")):
+            clock = raw[len(name):].strip()
+            if clock[:1] in ("T", "t"):
+                clock = clock[1:].strip()
+            today = _dt.date.today()
+            day = today + _dt.timedelta(days=(wanted - today.weekday()) % 7)
+            raw = day.isoformat() + ("T" + clock if clock else "")
+            break
+    raw = raw.replace(" ", "T")
     if "T" not in raw:
         raw = raw + "T" + _DEFAULT_FREEZE_TIME
     try:
