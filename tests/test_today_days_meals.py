@@ -16,22 +16,36 @@ and pinned by a mutation that was actually run). The branch is stacked on
 `overnight/grocery-shop-day`, which is where the shop-day rhythm fact
 comes from.
 
-MUTATIONS RUN, with their real red counts over this file plus
-tests/test_today_shop_cook.py (the other file that renders these builders):
+FIFTEEN MUTATIONS RUN AND EVERY ONE BITES. Red counts read off the runs,
+over this file plus tests/test_today_shop_cook.py (the other file that
+renders these builders), against a clean 61 passed:
 
     1. sections in the wrong order (shop first, as before)        6 red
-    2. the meals card omitted entirely                            9 red
-    3. per-person lines collapsed to one                          3 red
-    4. prep left inside Cook (COOK_KINDS takes fridge+prep)       5 red
+    2. the meals card omitted entirely                           13 red
+    3. per-person lines collapsed to one                          2 red
+    4. prep left inside Cook (COOK_KINDS takes fridge+prep)       8 red
     5. the shop line rendered as a task (a tick on it)            1 red
-    6. the shop line rendered on shopping day too                 2 red
-    7. the snack row before Lunch (SLOT_ORDER)                    3 red
-    8. a count of done things put back on Cook                    2 red
-    9. a reheat offered as a cook (todayMealTarget ignores it)     2 red
-   10. the start time re-derived instead of read off `chips`       1 red
-   11. day_meals' own initials instead of display_initials         1 red
-   12. provenance_note's two implementations diverge again         3 red
+    6. the shop line's own is_shop_day guard removed              1 red
+   6b. the LINE drawn on shopping day instead of the Shop card    2 red
+    7. the snack row before Lunch (SLOT_ORDER)                    1 red
+    8. a count of done things put back on Cook                   2 red
+    9. a reheat offered as a cook (todayMealTarget ignores it)    1 red
+   10. the start time re-derived instead of read off `chips`      1 red
+   11. day_meals' own initials instead of display_initials        1 red
+   12. provenance_note's second implementation put back           1 red
+   13. today_moves stops handing its rhythm down                  1 red
+   14. the Reheat label reuses .day-node-eyebrow                  2 red
 
+MUTATION 6 BIT NOTHING ON ITS FIRST RUN, and that is recorded rather than
+re-aimed quietly, because the miss found a real hole in the tests. It
+removes `todayShopLineHtml`'s own `if (!shop || shop.is_shop_day) return
+''`, and `dayGroupsHtml`'s dispatch makes that guard unreachable for every
+state the other tests covered: a shopping day always HAD a shop move in
+them, so the Shop card won the dispatch and the line was never asked for.
+The one state that reaches the guard is a shopping day with nothing left
+to buy, which
+`test_on_shopping_day_with_nothing_to_buy_there_is_no_shop_section_at_all`
+now seeds; 6b pins the dispatch itself. Both bite.
 See the hand-back for how each was applied.
 """
 from __future__ import annotations
@@ -679,6 +693,26 @@ def test_a_household_with_no_shopping_day_is_offered_the_setting():
     assert 'data-shop-setting="1"' in html
     wiring = _fn("renderTodayMoves")
     assert "data-shop-setting" in wiring and "openKitchenSheet('memory', 'rhythm')" in wiring
+
+
+@_needs_node
+def test_on_shopping_day_with_nothing_to_buy_there_is_no_shop_section_at_all():
+    """CATCH (mutation 6, RE-AIMED — see the hand-back: the first version
+    mutated todayShopLineHtml's own guard, which dayGroupsHtml's dispatch
+    makes unreachable for the case the other tests cover, so it bit
+    nothing. THIS is the case that reaches it.)
+
+    On shopping day with no shop move — nothing on the list, or nothing to
+    cook against it — there is no card to draw and the LINE must not stand
+    in for it: "You shop on Saturday" on Saturday is the screen arguing
+    with itself (§8)."""
+    day = [m for m in _full_day() if m["kind"] != "shop"]
+    html = _render(day, None, _SHOP_ON, _MEAL_ROWS)
+    assert _groups(html) == ["meals", "group-cook", "group-prep"]
+    assert "day-shopline" not in html and "You shop on" not in html
+    # The guard is todayShopLineHtml's own, so it holds however it is called.
+    assert _node("console.log(JSON.stringify(todayShopLineHtml(%s)));"
+                 % json.dumps(_SHOP_ON)) == ""
 
 
 @_needs_node
