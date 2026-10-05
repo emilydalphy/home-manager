@@ -37,7 +37,7 @@ Two rules, both about the number that goes IN:
 
 After, on the same seeded week: Apples 5, Cucumbers 10, Tomatoes 16.
 
-RED AGAINST MAIN IS 12 OF 32, AND THE NUMBER IS DECOMPOSED HERE RATHER
+RED AGAINST MAIN IS 13 OF 33, AND THE NUMBER IS DECOMPOSED HERE RATHER
 THAN QUOTED, because it means less than it looks. Measured with the three
 new names stubbed to main's behaviour (count_scale_factor =
 servings_scale_factor, the two count rules inert) so every test reaches its
@@ -46,7 +46,13 @@ are named for, with the number main produced in each docstring; THREE are
 red only because the function they call is not there
 (..._never_hands_back_none_of_something, ..._note_rides_through...,
 ..._reported_in_the_same_shape...), which is the only kind of red a test of
-a brand-new function can have, and each says so. Eleven of the twenty green
+a brand-new function can have, and each says so; and the thirteenth,
+..._two_count_tables_are_independent_judgements, is red on a PRECONDITION
+of the stub rather than on its own claim — the stub's ceiling table holds
+two nouns where the real one holds thirty-six, so the "every noun the kind
+table judges is also judged here" assertion fails for a reason that is a
+property of the stub and of nothing else. It is pinned by mutation, like
+the other guards. Eleven of the twenty green
 call a new name directly, so for nine of those "green on main" is not
 measurable either and they are pinned by a mutation that was actually run;
 the two exceptions are the count_scale_factor ones, where the stub really
