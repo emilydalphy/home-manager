@@ -200,7 +200,7 @@ def household_people() -> dict:
     return {"names": names, "initials": dict(zip(names, display_initials(names)))}
 
 
-def _where_for(slot: str, name: str, weekday: str) -> str:
+def _where_for(slot: str, name: str, weekday: str, lunch: dict) -> str:
     """
     Where this person will be at this meal, in their own words, or ''.
 
@@ -208,20 +208,26 @@ def _where_for(slot: str, name: str, weekday: str) -> str:
     has, and it is about lunch by name. Saying nothing about breakfast and
     dinner is the honest answer rather than an omission — see the module
     docstring.
+
+    `lunch` is get_household_rhythm()'s own `lunch_location` map, read ONCE
+    for the whole day by the caller. Measured: going through
+    rhythm.effective_lunch_location here instead cost a whole
+    get_household_rhythm — one connection — PER PERSON PER LUNCH, which is
+    exactly the per-row read this repo keeps writing down. The override
+    rule is that function's, restated in one line rather than reimplemented:
+    the weekday's override if one has been learned, else the standing
+    answer, else nothing (never-asked and 'varies' both say nothing, which
+    is honest about today either way).
     """
     if slot != "lunch":
         return ""
-    try:
-        where = _rhythm.effective_lunch_location(name, weekday)
-    except Exception:
-        # A row that cannot be read is a line with no place on it, never a
-        # meals card that fails to draw.
-        logger.exception("Lunch location for %r could not be read", name)
-        return ""
+    entry = lunch.get((name or "").strip()) or {}
+    where = (entry.get("overrides") or {}).get(weekday) or entry.get("standing")
     return WHERE_WORDS.get((where or "").strip().lower(), "")
 
 
-def _lines_for(slot: str, dish: str, entry_id, att: dict, day: str, initials: dict) -> tuple[list[dict], bool]:
+def _lines_for(slot: str, dish: str, entry_id, att: dict, day: str, initials: dict,
+               lunch: dict) -> tuple[list[dict], bool]:
     """
     The row's lines, and whether they are a per-person breakdown.
 
@@ -236,7 +242,7 @@ def _lines_for(slot: str, dish: str, entry_id, att: dict, day: str, initials: di
     groups: list[dict] = []
     index: dict[tuple, dict] = {}
     for name in present:
-        key = (dish, _where_for(slot, name, weekday))
+        key = (dish, _where_for(slot, name, weekday, lunch))
         group = index.get(key)
         if group is None:
             group = {"dish": dish, "entry_id": entry_id, "where": key[1], "names": []}
@@ -271,7 +277,7 @@ def _row_note(meal: dict, day: str) -> str:
 
 
 def for_day(day: str | date, view: dict, attendance_by_slot: dict | None = None,
-            people: dict | None = None) -> list[dict]:
+            people: dict | None = None, rhythm: dict | None = None) -> list[dict]:
     """
     One row per planned meal on `day`, in SLOT_ORDER.
 
@@ -293,6 +299,12 @@ def for_day(day: str | date, view: dict, attendance_by_slot: dict | None = None,
     if people is None:
         people = household_people()
     initials = people.get("initials") or {}
+    # Read once for the whole day. today_moves already holds the household's
+    # rhythm for the Today payload and hands it in, so on the path the
+    # screen actually takes this costs nothing at all.
+    if rhythm is None:
+        rhythm = _rhythm.get_household_rhythm()
+    lunch = rhythm.get("lunch_location") or {}
 
     by_slot: dict[str, list[dict]] = {}
     for meal in view.get("meals") or []:
@@ -324,7 +336,7 @@ def for_day(day: str | date, view: dict, attendance_by_slot: dict | None = None,
         lead = meals[0]
         dishes = [m.get("meal") or SLOT_LABELS[slot] for m in meals]
         lines, per_person = _lines_for(
-            slot, dishes[0], lead.get("entry_id"), att, day_str, initials
+            slot, dishes[0], lead.get("entry_id"), att, day_str, initials, lunch
         )
         rows.append({
             "slot": slot,

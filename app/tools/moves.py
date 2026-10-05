@@ -1069,7 +1069,7 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
     # their own: who is in the household, and which of today's slots deviate
     # from everyone's-home — both once for the whole payload, never per meal.
     people = _day_meals.household_people()
-    day_meals = _day_meals.for_day(target, view, people=people)
+    day_meals = _day_meals.for_day(target, view, people=people, rhythm=rhythm)
 
     tomorrow = None
     if featured is None:

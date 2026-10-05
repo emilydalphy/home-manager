@@ -29,8 +29,15 @@ def test_next_up_is_not_the_hero_and_not_a_card_above_the_day():
     assert 'class="dinner-hero nextup-hero"' not in SHELL_JS
     assert 'id="today-next-up"' not in SHELL_JS
     assert ".nextup-card {" not in SHELL_CSS and ".today-area-nextup" not in SHELL_CSS
-    # The next-up move is the one tinted row of the Shop / Cook cards now.
-    assert "dayGroupsHtml(moves, featured)" in _fn("renderTodayMoves")
+    # The next-up move is the one tinted row of the day's own cards now.
+    # TRIPWIRE FIRED 2026-10-05, and narrowed rather than weakened:
+    # dayGroupsHtml took a third and fourth argument (the shop block and
+    # the day's meals) when Today became four sections — the meals card,
+    # Cook, Prep and Shop. The claim this line guards is unchanged and is
+    # the whole of it: `featured` is handed to the day's cards, so the
+    # next-up move is a row in its own place rather than a card lifted out
+    # above them.
+    assert "dayGroupsHtml(moves, featured" in _fn("renderTodayMoves")
     assert "return m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later');" in _fn("dayGroupsHtml")
 
 
