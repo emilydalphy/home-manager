@@ -46,41 +46,68 @@ Settings. A field whose whole job is not moving cannot be the one that
 moves. Two patterns answering two different questions is correct; one name
 serving both is not.
 
-NINE MUTATIONS RUN AND EVERY ONE BITES. Red counts read off the runs over
-this file plus the four flow-order files hazard 3 names (control: 124
-passed). Each is the thing the card asked to be sure of:
+FIFTEEN MUTATIONS RUN; FOURTEEN BITE. Red counts read off the runs, over
+this file plus the four flow-order files hazard 3 names (control: 179
+passed). The first nine are the ones the card asked to be sure of.
 
-  1. the primary not set from screen 1 (`record_primary_member` call
-     removed from the household route) -- 5 red
-  2. the pinned You row removable (the × rendered on it too) -- 2
-  3. the helpers step including the primary (`helperAdults` back to
-     `.slice(1)`) -- 3
+  1. the primary not set from screen 1 (the `record_primary_member` call
+     taken out of the household route) -- 5 red
+  2. the pinned You row removable (addMemberRow's x rendered on it
+     too) -- 1
+  3. the helpers step including the primary (`helperAdults` back to the
+     `.slice(1)` this card replaces) -- 1
   4. "Just me" leaving the other rows, so a one-person household saves
      two members -- 3
   5. screen 1 posting the name early (`your-name-next` calling
-     `saveHouseholdMembers`) -- 1
-  6. the primary stored as a NAME instead of an id -- 2
-  7. Settings not showing the main person (`is_primary` dropped from
-     /api/memory's members) -- 4
-  8. `primary_member_id()` not resolving for an existing household
-     (the lazy resolve removed, so it answers None) -- 4
+     `saveHouseholdMembers`) -- 3
+  6. `record_primary_member` overwriting a non-NULL column, so a second
+     pass through setup MOVES the main person -- 1
+  7. the lazy resolve re-POINTING the column instead of only filling
+     it -- 1
+  8. `is_primary` dropped from /api/memory's members -- 3
   9. the rename not pruning (`pruneMemberKeyedAnswers` off the name
      box), so one person's allergy transfers to another -- 1
 
-TWO OF THOSE FOUND REAL BUGS RATHER THAN CONFIRMING THE CODE:
+And six more, four of them on the module's own rules:
 
-  * Mutation 2 originally passed. The row IS built by a different
+ 10. the db.py backfill removed -- 0, see below
+ 11. the lazy resolve removed, so an existing household answers
+     None -- 9
+ 12. the route reading `saved_members[0]` instead of the name -- the
+     implicit convention this card replaces -- 1
+ 13. `set_primary_member` dropping its adult/eats-here check -- 2
+ 14. `set_primary_member` dropping its household filter -- 1
+ 15. `_EATS_HERE_SQL` neutered, so a helper who does not eat here can be
+     the main person -- 1
+
+FOUR OF THOSE FOUND REAL BUGS OR REAL GAPS RATHER THAN CONFIRMING THE
+CODE, which is the reason to run them rather than reason about them:
+
+  * Mutation 15 reddened NOTHING on the first run. The eats_here clause
+    is in all four of this module's statements and was pinned by none of
+    them, so a nanny could have been resolved into the job by being the
+    first adult on file. test_a_helper_who_does_not_eat_here_is_never_
+    the_main_person is that gap closed; it bites at 1, and takes
+    mutation 13 from 1 red to 2.
+  * Mutation 2 originally passed. The pinned row IS built by a different
     function from `addMemberRow`, so "no remove control" was true by
-    construction and nothing asserted it; a later hand that gave the
-    pinned row `addMemberRow`'s markup would not have been caught.
+    construction and nothing asserted it; a later hand giving that row
+    addMemberRow's markup would not have been caught.
     test_the_pinned_you_row_has_no_remove_control reads the row the page
     actually builds.
-  * Mutation 8's first form (deleting the db.py backfill alone) reddened
-    NOTHING, because `primary_member_id()` resolves lazily as well and
-    the two are in series. That is belt-and-braces rather than a weak
-    test, and both are worth keeping — the backfill answers for a
-    household nothing has read yet, the lazy resolve for one made between
-    two startups. The mutation that bites removes the lazy half.
+  * Mutation 6 was first written against the wrong one of two
+    near-identical UPDATEs (`replace(..., 1)` hit the lazy resolve's),
+    so it reddened a test about reading past a stale primary and left
+    the second-pass test green -- which looked like the second-pass test
+    being toothless and was the mutation missing its target. They are
+    two separate rules and are now two separate mutations, 6 and 7, each
+    reddening exactly the test named for it.
+  * Mutation 10 reddens nothing because `primary_member_id()` resolves
+    lazily as well and the two are in SERIES. That is belt-and-braces
+    rather than a weak test, and both halves are worth keeping -- the
+    backfill answers for a household nothing has read yet, the lazy
+    resolve for one made between two startups (create_household.py, or a
+    test). The mutation that bites is 11, which removes the lazy half.
 """
 from __future__ import annotations
 
@@ -738,6 +765,36 @@ def test_the_main_person_cannot_be_moved_to_a_child_or_a_stranger(signed_in):
     assert res.json()["detail"] == tools.PRIMARY_NOT_A_MEMBER
     # Nothing moved.
     assert tools.primary_member_id() == _row("SELECT id FROM members WHERE name = 'Emily'")["id"]
+
+
+def test_a_helper_who_does_not_eat_here_is_never_the_main_person(signed_in):
+    """
+    CATCH (mutation 15). Found by running the mutations, not by reading:
+    neutering _EATS_HERE_SQL reddened NOTHING, so the clause was in all
+    four statements and pinned by none of them.
+
+    "Someone not eating here" (setup's helpers question, 2026-09-30) is a
+    nanny or a parent who helps with dinners -- members.eats_here = 0, an
+    adult who can sign in and whom nobody plans a meal for. The main
+    person is the household's own, so a helper must not be resolved into
+    the job by being the first adult on file, and Settings must refuse
+    being pointed at one. Seeded through the invite route rather than by
+    hand, so eats_here is 0 for the reason the app sets it.
+    """
+    maria = signed_in.post("/api/household/invites",
+                           json={"name": "Maria", "eats_here": False}).json()["member"]["id"]
+    assert _row("SELECT eats_here FROM members WHERE id = ?", maria)["eats_here"] == 0, (
+        "the fixture is not a helper, so this test proves nothing"
+    )
+    _seed([("Emily", "adult")])
+    emily = _row("SELECT id FROM members WHERE name = 'Emily'")["id"]
+    assert maria < emily, "Maria must be the FIRST adult by id or the fallback is not exercised"
+
+    assert tools.primary_member_id() == emily, "a helper was resolved into the job"
+    res = signed_in.post("/api/memory/primary-member", json={"member_id": maria})
+    assert res.status_code == 400
+    assert res.json()["detail"] == tools.PRIMARY_NOT_AN_ADULT
+    assert _row("SELECT primary_member_id FROM households WHERE id = 1")[0] == emily
 
 
 def test_another_households_member_cannot_become_this_ones_main_person(signed_in):
