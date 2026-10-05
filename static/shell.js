@@ -10169,6 +10169,29 @@
     try { return await res.json(); } catch (err) { return null; }
   }
 
+  // wwkPost, plus a 400's own sentence as userMessage so wwkCommit's
+  // failure path shows it rather than the generic line (the shape uwPost
+  // already uses for /api/usual-week). Its own function rather than a
+  // change to wwkPost: every other caller of that one keeps the behaviour
+  // it has today.
+  async function wwkPostSaying(path, body) {
+    var res = await Api.fetch(path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    if (!res.ok) {
+      var err = new Error(path + ' ' + res.status);
+      if (res.status === 400) {
+        try {
+          var detail = (await res.json()).detail;
+          if (typeof detail === 'string' && detail) err.userMessage = detail;
+        } catch (e) { /* no body: the plain line */ }
+      }
+      throw err;
+    }
+    try { return await res.json(); } catch (err2) { return null; }
+  }
+
   function wwkAdoptMemory(result) {
     if (result && result.members) prefsState.memory = result;
   }
@@ -10266,8 +10289,28 @@
     var html = '';
     (mem.members || []).forEach(function (m) {
       var name = m.name;
+      // "Main person" (2026-10-05) — the household's own answer to "whose
+      // phone is this set up on", read straight off the payload's
+      // is_primary. A quiet .pill-neutral label rather than a chip: it is
+      // a fact about who this is, not something to do. Exactly one member
+      // carries it, and a household with nobody on record carries none.
+      var mainLabel = m.is_primary
+        ? ' <span class="pill pill-neutral wwk-person-main">Main person</span>'
+        : '';
+      // Moving it is offered to every OTHER adult. This list is already
+      // filtered to people who eat here (EATS_HERE_SQL), so every row in
+      // it qualifies on that count; the server refuses a child, a
+      // stranger and another household's member anyway, each in its own
+      // sentence, so the control only has to not offer what it can see is
+      // wrong. Not in the age group above it — "Make main person" is not
+      // an answer to "Emily is".
+      var moveMain = (!m.is_primary && String(m.age_group || '').toLowerCase() === 'adult')
+        ? '<div class="wwk-chips">' +
+            wwkChip('Make main person', 'data-wwk="primary" data-member-id="' + escapeHtml(String(m.id)) + '"', '') +
+          '</div>'
+        : '';
       html += '<div class="wwk-person">' +
-        '<p class="wwk-person-name">' + escapeHtml(name) + '</p>' +
+        '<p class="wwk-person-name">' + escapeHtml(name) + mainLabel + '</p>' +
         inviteRowHtml(inviteAdultNamed(name)) +
         '<div class="wwk-chips" role="group" aria-label="' + escapeHtml(name) + ' is">' +
           WWK_AGE_GROUPS.map(function (o) {
@@ -10286,6 +10329,7 @@
           }).join('') +
           wwkAddChip('data-wwk="add" data-kind="restriction" data-member="' + escapeHtml(name) + '"') +
         '</div>' +
+        moveMain +
       '</div>';
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
@@ -10517,6 +10561,24 @@
       (wwkMem().members || []).forEach(function (m) { if (m.name === name) m.age_group = key; });
     }, function () {
       return wwkPost('/api/memory/member/age-group', { name: name, age_group: key });
+    }, wwkAdoptMemory);
+  }
+
+  // Move the household's main person (2026-10-05). Addressed by member id,
+  // not by name — two people called Sam are indistinguishable to the rest
+  // of this app and this is the one write where that would move the wrong
+  // person. POST /api/memory/primary-member answers the whole memory
+  // payload like its two neighbours, so wwkAdoptMemory needs nothing new.
+  // A refusal is a 400 whose detail is a sentence written for a reader
+  // ("The main person needs to be one of the adults."), so it is shown as
+  // it stands; wwkCommit's own failure path reverts the optimistic flip.
+  function wwkSetPrimary(id) {
+    wwkCommit('people', function () {
+      (wwkMem().members || []).forEach(function (m) {
+        m.is_primary = String(m.id) === String(id);
+      });
+    }, function () {
+      return wwkPostSaying('/api/memory/primary-member', { member_id: parseInt(id, 10) });
     }, wwkAdoptMemory);
   }
 
@@ -11785,6 +11847,7 @@
       if (!wwkMem()) return;
       switch (what) {
         case 'age': return wwkSetAge(member, value);
+        case 'primary': return wwkSetPrimary(t.getAttribute('data-member-id'));
         case 'restriction-remove': return wwkRemoveRestriction(member, value);
         case 'dislike-remove': return wwkListRemove('wont-eat', 'dislikes', 'dislikes', value);
         case 'cuisine-remove': return wwkListRemove('taste', 'cuisine_preferences', 'cuisine_preferences', value);

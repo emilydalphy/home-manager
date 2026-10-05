@@ -6055,6 +6055,19 @@ button.cook-ready-row { cursor: pointer; }
   color: var(--ink);
   margin: 0;
 }
+/* "Main person" (2026-10-05): the design system's own .pill-neutral,
+   beside the name rather than under it. No new colours — celadon-tint
+   with --ink-on-celadon is the pairing that component already ships and
+   the one that measures (12.26:1 light / 11.84:1 dark; the --celadon fill
+   wants --on-accent-ink instead, Rule One). The name's own tight tracking
+   is undone here so a 12px label does not read as squeezed, and
+   vertical-align lifts the inline-flex pill onto the name's own line. */
+.wwk-person-main {
+  margin-left: 8px;
+  letter-spacing: 0;
+  font-weight: 700;
+  vertical-align: 1px;
+}
 /* Invite the other adult (2026-09-25): under an adult's name in Who's
    here. "Invite Vineeth" is an outline button — not apricot, nothing in
    this sheet is urgent — and once they've joined it's a quiet line with
