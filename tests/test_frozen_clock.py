@@ -14,6 +14,7 @@ re-discovers at two in the morning.
 """
 import datetime
 import os
+from pathlib import Path
 
 import pytest
 
@@ -96,6 +97,32 @@ def test_a_weekday_name_resolves_to_the_next_one(frozen_today):
     assert pinned.weekday() == 6
     assert pinned >= real_today, "on or after today, never behind it"
     assert (pinned - real_today).days < 7
+
+
+def test_a_weekday_name_can_carry_a_time_of_day(frozen_today):
+    """
+    CI's `sunday-night` pin (2026-10-05): the last half hour of the
+    household's week. A bare weekday name lands at 09:00 and never reaches
+    the Sunday-into-Monday changeover, which is where the clock-reading
+    tests had been going red.
+    """
+    real_today = datetime.date.today()
+    frozen_today("sundayT23:30")
+    now = datetime.datetime.now()
+    assert now.weekday() == 6
+    assert (now.hour, now.minute) == (23, 30)
+    assert 0 <= (now.date() - real_today).days < 7
+
+
+def test_ci_pins_the_sunday_night_changeover():
+    """
+    The guard the 2026-10-05 card asked for: the `clock` matrix keeps a
+    Sunday 23:30 entry, so a test that builds its week from the wrong clock
+    goes red on a PR rather than on a Sunday night after a merge.
+    """
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "tests.yml").read_text(encoding="utf-8")
+    clock = workflow[workflow.index("\n  clock:") : workflow.index("\n  straddle:")]
+    assert "pin: sundayT23:30" in clock
 
 
 def test_a_pin_nobody_can_read_is_a_usage_error(frozen_today):

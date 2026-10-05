@@ -42,7 +42,7 @@ from app.db import DB_PATH, get_conn
 from app.tools import grocery, holidays as hol, meal_plans, meal_variety as mv
 from app.tools import recipes, weekly_plan as wp
 
-from conftest import household_today
+from conftest import household_pin, household_today
 
 
 # ---------- fixtures ----------
@@ -92,7 +92,7 @@ def approved_five_dinners(family):
 
 
 @pytest.fixture
-def approved_holiday_with_a_thaw(family):
+def approved_holiday_with_a_thaw(family, frozen_today):
     """
     The shape the prep-row blocker needed, built through real doors only.
 
@@ -101,7 +101,15 @@ def approved_holiday_with_a_thaw(family):
     the period and the Cook tab draws a session for it), the week shopped
     (meat_items_for_plan stays silent while a line is still to buy), and
     then the freezer ask answered — which is what writes the prep row.
+
+    Pinned to a fixed household noon, 11 days before Thanksgiving 2026
+    (2026-10-05). On the live clock "the next Thanksgiving" drifted: from two
+    days before it the plan starting three days earlier began in the past and
+    the freezer ask had nothing left to offer (CI's saturday pin went red on
+    2026-10-04 with three setup errors), and from the day after it the next
+    one is a year out, beyond the chat defrost tool's 30-day window.
     """
+    frozen_today(household_pin(12, 0, on=date(2026, 10, 1)))
     tools.set_prep_days(["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"])
     tools.add_recipe("Roast Chicken", ingredients=[{"item": "Whole chicken", "qty": "1", "category": "meat"}],
                      prep_time_minutes=15, cook_time_minutes=60)

@@ -165,6 +165,20 @@ jobs:
             pin: saturday
           - clock: sunday
             pin: sunday
+          # The changeover itself (2026-10-05): the last half hour of the
+          # household's week. A bare weekday pin lands at 09:00 and never
+          # reaches it, and that is where a test building its week from the
+          # wrong clock goes red — on a Sunday night, after the merge. On
+          # this job's own TZ the process and household agree, so what it
+          # catches is a week computed from a fixed weekday, a stale "next
+          # week" or a date that rolls during the run; the two-clock version
+          # of the same night is `straddle`'s. The suite takes ~11 minutes
+          # and tick=True keeps the clock moving, so the run stays on Sunday;
+          # if the suite ever passes ~25 minutes, move this earlier.
+          # tests/test_frozen_clock.py::test_ci_pins_the_sunday_night_changeover
+          # keeps this entry here.
+          - clock: sunday-night
+            pin: sundayT23:30
     env:
       TZ: America/Toronto
     steps:
