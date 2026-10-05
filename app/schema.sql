@@ -173,6 +173,24 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- A real number of minutes, distinct from cooking_time_preference's
     -- freeform "quick"/"moderate". 0 means unset — no cap.
     weeknight_max_minutes INTEGER NOT NULL DEFAULT 0,
+    -- The longest a Monday-to-Friday lunch COOKED THAT DAY may take, in
+    -- prep+cook minutes (Loop Board "Time limits", Gowthami's household
+    -- 2026-10-04: "It doesn't give the option on time limits"). It was the
+    -- hard-coded time_caps.WEEKDAY_LUNCH_MAX_MINUTES until 2026-10-05.
+    -- 0 means no limit, exactly as weeknight_max_minutes above — one
+    -- convention for both, not two.
+    --
+    -- DELIBERATELY NO `..._set` FLAG, and the reason is worth reading
+    -- before adding one: meal_preferences.snacks_per_week_set exists
+    -- because a NOT NULL DEFAULT column cannot tell "they said 3" from
+    -- "nobody asked", and the snacks screen has to READ BACK whether the
+    -- household answered — so for snacks the default was a lie the app
+    -- repeated. Here 20 is simultaneously the default BEHAVIOUR (an
+    -- existing household keeps the 20 the constant gave them) and the
+    -- default ANSWER (the onboarding chip that opens lit), and nothing
+    -- anywhere needs to tell the two apart. So the column is the whole
+    -- answer.
+    weekday_lunch_max_minutes INTEGER NOT NULL DEFAULT 20,
     -- Whether everyone eats the same thing, or plates differ.
     table_style TEXT NOT NULL DEFAULT '', -- everyone_same | kids_differ | plate_your_own
     -- Onboarding step A, both free text and both skippable. Kept verbatim:

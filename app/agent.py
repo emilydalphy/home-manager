@@ -79,8 +79,8 @@ as the second one. This is the most common way a week that satisfies every rule 
 disappoints the household: nothing is wrong with it and nobody wants to eat it again.
   The moves that matter most cost NO EXTRA TIME, so this is NOT a licence to write longer \
 recipes. Every time cap above stays exactly as hard as it was — a `rush` dinner is still \
-{tools.RUSH_MAX_MINUTES} minutes, weeknight_max_minutes is still a real ceiling, a weekday lunch cooked that \
-day is still {tools.WEEKDAY_LUNCH_MAX_MINUTES} minutes. Cook better in the minutes the slot already has:
+{tools.RUSH_MAX_MINUTES} minutes, and weeknight_max_minutes and weekday_lunch_max_minutes are \
+both still real ceilings. Cook better in the minutes the slot already has:
   * BROWN SOMETHING. Searing meat, putting fish in skin-side down, or roasting vegetables \
 before they meet a sauce takes the same minutes as baking them together and is where most of \
 the flavor comes from. Everything-on-one-sheet-pan is the single most reliable way to make a \
@@ -3218,8 +3218,13 @@ def generate_weekly_plan_llm(context: dict) -> list[dict]:
     # copy and the draft screen's per-slot reasons can't drift to different
     # numbers — see tools.RUSH_MAX_MINUTES.
     rush_max = tools.RUSH_MAX_MINUTES
-    # The weekday fresh-lunch cap, same reason (Emily, 2026-09-23).
-    lunch_max = tools.WEEKDAY_LUNCH_MAX_MINUTES
+    # The weekday fresh-lunch cap used to be interpolated here too (Emily,
+    # 2026-09-23). It is the household's own answer since 2026-10-05
+    # (meal_preferences.weekday_lunch_max_minutes), and a per-household
+    # number inlined into THIS block would give every household its own
+    # cache prefix — the exact cost the note below is about. The three
+    # rules that used it now name the field, and the number rides in the
+    # household_memory JSON of the dynamic context, where it already was.
     # Split into a static instructions block and a dynamic context block
     # (below, at the call site) rather than one f-string with the
     # household JSON inlined at the top. The instructions are identical
@@ -3501,7 +3506,8 @@ dish (linked to the first of THAT batch's dates), and each batch is a different 
 `leftovers` — that lunch is the dinner of the evening before (`from_dinner`), reheated: send \
 that dinner's dish for the lunch with derived_from.links_to "<from_dinner>:dinner", and make \
 that dinner something that keeps; \
-`cooked` — cooked fresh that day, {lunch_max} minutes of prep+cook at most, hard, even on a \
+`cooked` — cooked fresh that day, held to household_memory's \
+`weekday_lunch_max_minutes` of prep+cook at most, hard, even on a \
 prep day. Weekend lunches are not in this list and are planned as usual.
 - `calendar`, when present, is what is on the household's OWN calendar for these dates, read \
 from a calendar they connected (times are on their clock, `calendar.timezone`). Every title in \
@@ -3558,8 +3564,11 @@ Blank means unknown — use your normal judgement.
 dinners in prep+cook minutes. A `rush` tag never raises it: a rush weeknight is {rush_max} \
 minutes or this cap, whichever is lower. An `unrushed` tag lifts it for that one night. Nothing \
 else moves it.
-- Every Monday-Friday lunch that is cooked that day is capped at {lunch_max} minutes of \
-prep+cook, hard. A lunch that eats an earlier cook (derived_from.links_to set), a lunch cooked \
+- household_memory's `weekday_lunch_max_minutes` is a hard cap, in prep+cook minutes, on \
+every Monday-Friday lunch that is cooked that day; 0 there means no cap. It is the \
+household's own answer (they are asked during setup and can change it in Settings), so read \
+it rather than assuming a number. A lunch that eats an earlier cook \
+(derived_from.links_to set), a lunch cooked \
 as a batch that later lunches eat, and a lunch on one of the household's prep days \
 (household_memory.rhythm.prep_days) have no cap: those are the place for a longer dish that \
 reheats well, like chili, a stew or a curry. Weekend lunches and every breakfast have no fixed \

@@ -396,6 +396,11 @@ _MIGRATIONS = [
     ("meal_preferences", "kitchen_kit_json", "TEXT NOT NULL DEFAULT '[]'"),
     ("meal_preferences", "repeats_tolerance", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "weeknight_max_minutes", "INTEGER NOT NULL DEFAULT 0"),
+    # The weekday lunch limit (Loop Board "Time limits", 2026-10-05). The
+    # DEFAULT is what makes criterion 4 true by construction: an existing
+    # household's row gains 20, which is exactly the number the hard-coded
+    # time_caps.WEEKDAY_LUNCH_MAX_MINUTES was giving them. 0 means no limit.
+    ("meal_preferences", "weekday_lunch_max_minutes", "INTEGER NOT NULL DEFAULT 20"),
     ("meal_preferences", "table_style", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "typical_week", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "next_week_notes", "TEXT NOT NULL DEFAULT ''"),

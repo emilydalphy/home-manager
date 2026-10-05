@@ -655,7 +655,7 @@ from .usage import (  # noqa: F401
     record_plan_quality,
     touch_household_active,
 )
-from .time_caps import minutes_cap, caps_for_slot  # noqa: F401
+from .time_caps import minutes_cap, caps_for_slot, weekday_lunch_cap  # noqa: F401
 from .cap_enforce import enforce_minutes_caps  # noqa: F401
 from .week_intake import (  # noqa: F401
     MOOD_GUIDANCE,

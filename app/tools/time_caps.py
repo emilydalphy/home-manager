@@ -22,16 +22,22 @@ The rules, per slot:
   lower on a Monday-Friday; `unrushed` lifts every cap; otherwise
   Monday-Friday gets the household's weeknight_max_minutes (0 means
   none) and the weekend none.
-- lunch: a Monday-Friday lunch cooked that day is WEEKDAY_LUNCH_MAX_MINUTES.
+- lunch: a Monday-Friday lunch cooked that day is the household's own
+  weekday_lunch_max_minutes (0 means none; absent means
+  WEEKDAY_LUNCH_MAX_MINUTES, which is the number this was hard-coded to
+  until 2026-10-05 — Loop Board "Time limits", Gowthami's household
+  2026-10-04: "It doesn't give the option on time limits").
   A lunch that is part of a leftovers chain (it reheats an earlier cook,
   or it is the batch cook that feeds later meals), or one on a household
   prep day, has no cap. Weekend lunches have none. Night tags don't
   touch lunch: "short on time" was asked about dinner.
   When the week's intake says how that lunch is made (step 3, "Weekday
   lunches", 2026-09-25 — `lunch_kind`), that answer decides: "cooked"
-  is WEEKDAY_LUNCH_MAX_MINUTES even on a prep weekday (the household
+  is the household's number even on a prep weekday (the household
   said this one is cooked on the day), "prepped" and "leftovers" have no
   cap. A reheat (`is_leftovers`) still has none: nothing is cooked on it.
+  Which NUMBER it is became a household answer on 2026-10-05; which
+  lunches it applies to did not change at all.
 - breakfast and snack: no cap.
 
 A dish's minutes are the recipe's prep + cook, as the model estimated
@@ -49,11 +55,19 @@ import datetime
 # always read it.
 RUSH_MAX_MINUTES = 30
 
-# Every Monday-Friday lunch that is cooked that day (Emily, 2026-09-23).
-# A lunch that reheats an earlier cook, the batch cook that feeds it, and
-# a lunch on a prep day have no cap: "if Im prepping chili for lunches,
-# that's a great meal to just reheat, but if Im cooking on the day, then
-# it needs to be 20 mins or less". Weekend lunches have no fixed cap.
+# The DEFAULT for every Monday-Friday lunch that is cooked that day
+# (Emily, 2026-09-23). A lunch that reheats an earlier cook, the batch cook
+# that feeds it, and a lunch on a prep day have no cap: "if Im prepping
+# chili for lunches, that's a great meal to just reheat, but if Im cooking
+# on the day, then it needs to be 20 mins or less". Weekend lunches have no
+# fixed cap.
+#
+# Since 2026-10-05 this is the DEFAULT rather than the rule: the household
+# is asked during setup and can change it in Settings
+# (meal_preferences.weekday_lunch_max_minutes), and weekday_lunch_cap below
+# is what reads their answer. The constant stays because it is still the
+# answer for a caller holding a memory dict that does not carry the column
+# — which is what keeps an existing household on the 20 they had.
 WEEKDAY_LUNCH_MAX_MINUTES = 20
 
 _WEEKDAY_NAMES = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
@@ -78,6 +92,43 @@ def prep_weekdays(memory: dict | None) -> set[str]:
     return out
 
 
+def weekday_lunch_cap(memory: dict | None) -> int | None:
+    """
+    The household's limit on a Monday-Friday lunch cooked that day, in
+    prep+cook minutes, or None for no limit
+    (meal_preferences.weekday_lunch_max_minutes).
+
+    Three readings, and the difference between the last two is the whole
+    point:
+
+    - a number is the number;
+    - 0 is the household saying "no limit", the same convention
+      weeknight_max_minutes already uses — one convention, not two;
+    - ABSENT is not 0. It means this caller is holding a memory dict that
+      predates the column (or built a partial one of its own), and the
+      honest answer there is the number the app gave that household
+      yesterday: WEEKDAY_LUNCH_MAX_MINUTES. Reading absent as 0 would
+      silently lift the cap for every such caller, which is the opposite
+      of the safe direction.
+
+    Anything unreadable falls back to the default rather than raising: a
+    cap is advice to a picker, and no reader of this module should be able
+    to 500 on a bad column.
+    """
+    if memory is None:
+        return WEEKDAY_LUNCH_MAX_MINUTES
+    raw = memory.get("weekday_lunch_max_minutes")
+    if raw is None:
+        return WEEKDAY_LUNCH_MAX_MINUTES
+    try:
+        minutes = int(raw)
+    except (TypeError, ValueError):
+        return WEEKDAY_LUNCH_MAX_MINUTES
+    if minutes < 0:
+        return WEEKDAY_LUNCH_MAX_MINUTES
+    return minutes or None
+
+
 def minutes_cap(
     meal_date: str,
     slot: str | None,
@@ -89,7 +140,8 @@ def minutes_cap(
     """
     The real cap on this meal's prep + cook, or None. See the module
     docstring for the rules. `tags` are that date's night tags; `memory`
-    is household memory (weeknight_max_minutes, rhythm.prep_days);
+    is household memory (weeknight_max_minutes,
+    weekday_lunch_max_minutes, rhythm.prep_days);
     `is_leftovers` is True for either end of a leftovers chain — the
     reheat, or the batch cook that feeds it. `lunch_kind` is the week's
     answer for this lunch ("prepped" / "leftovers" / "cooked"), or None.
@@ -118,10 +170,10 @@ def minutes_cap(
         if lunch_kind in ("prepped", "leftovers"):
             return None
         if lunch_kind == "cooked":
-            return WEEKDAY_LUNCH_MAX_MINUTES
+            return weekday_lunch_cap(memory)
         if _WEEKDAY_NAMES[weekday] in prep_weekdays(memory):
             return None
-        return WEEKDAY_LUNCH_MAX_MINUTES
+        return weekday_lunch_cap(memory)
     return None
 
 

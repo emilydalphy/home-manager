@@ -1536,6 +1536,14 @@ def get_meal_planning_preferences() -> dict:
         "kitchen_kit": json.loads(field("kitchen_kit_json", "[]")),
         "repeats_tolerance": field("repeats_tolerance", ""),
         "weeknight_max_minutes": field("weeknight_max_minutes", 0),
+        # Here for this function's own stated rule: "a preference the app is
+        # acting on but won't show is one the household can't correct". The
+        # planner acts on it (time_caps.minutes_cap), so it is shown. The
+        # fallback is the default rather than 0, because 0 is the answer
+        # "no limit" and a household with no row has not given it.
+        "weekday_lunch_max_minutes": field(
+            "weekday_lunch_max_minutes", _time_caps.WEEKDAY_LUNCH_MAX_MINUTES
+        ),
         "cooking_time_preference": field("cooking_time_preference", ""),
         "table_style": field("table_style", ""),
         "eating_style": field("eating_style", ""),
