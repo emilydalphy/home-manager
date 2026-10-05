@@ -5649,6 +5649,19 @@ button.shelf-tile:hover { background: var(--surface-raised); }
   line-height: 1.1;
   color: var(--ivory-ink);
 }
+/* The batch line on the spruce Tonight card — the same sentence as
+   .recipe-batch, a different pair. --celadon-label is a dark ink meant
+   for celadon tiles and is nearly invisible here; on spruce the
+   celadon-family ink that reads is --celadon itself.
+   Measured: 7.23:1 light / 5.94:1 dark. */
+.cook-tonight-batch {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--celadon);
+}
 .cook-tonight-note {
   margin: 0;
   font-family: var(--font-body);
@@ -6788,6 +6801,29 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 }
 /* "Cooking for · − · 4 · +" on one line. The buttons are 36px of box on a
    44px target (the ::after inset .cook-serves-btn already carries). */
+/* "Double batch: 3 tonight, 3 for lunch tomorrow." — the line directly
+   under the "Cooking for" stepper (Emily's card, 2026-10-05; Gowthami's
+   household: "It needs to call out that it's double the quantity because
+   its calling for leftovers").
+
+   A LINE, in --celadon-label as the card specifies — never a tile, never
+   a chip, never a second accent (rule 5: the recipe screen's one apricot
+   is "Start cooking" in the dock). The same sentence appears on Cook's
+   Tonight card and in cook mode's steps, and each of those lands on a
+   DIFFERENT background, so each has its own ink chosen for its own pair
+   rather than inheriting this one: see .cook-tonight-batch (on --spruce)
+   and .cook-step-batch (on --surface).
+
+   Contrast measured off computed styles in Chromium at 390x844:
+     5.44:1 light / 8.22:1 dark on the recipe body's ground. */
+.recipe-batch {
+  margin: -4px 0 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--celadon-label);
+}
 .recipe-serves { gap: 10px; }
 .recipe-serves .cook-serves-label { font-size: 15px; font-weight: 500; color: var(--ink-secondary); }
 .recipe-serves .cook-serves-btn {
@@ -6941,6 +6977,18 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
   overflow-wrap: anywhere;
 }
 /* What this step needs, as one quiet line: "3 cloves garlic · 1 cup orzo". */
+/* The batch, at the pot: the first step's fact and the last step's job
+   (leftovers.batch_first_step_note / batch_last_step_note). Same sentence
+   family as .recipe-batch, on the step card's --surface.
+   Measured: 5.76:1 light / 7.14:1 dark. */
+.cook-step-batch {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--celadon-label);
+}
 .cook-step-needs {
   margin: 0;
   font-family: var(--font-body);

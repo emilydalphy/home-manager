@@ -8985,6 +8985,16 @@
     return '<section class="cook-tonight' + (row.done ? ' is-done' : '') + (row.isReheat ? ' is-reheat' : '') + '" aria-label="Tonight">' +
       '<span class="cook-tonight-eyebrow">' + escapeHtml(cookTonightEyebrow(meal, todayIso, cookName)) + '</span>' +
       '<h2 class="cook-tonight-dish">' + escapeHtml(row.title) + '</h2>' +
+      // The batch, said on the card too (the card's title: "on the recipe
+      // and on Cook"). The SERVER's sentence, the same one the recipe
+      // screen's line and cook mode's steps read — never a second copy
+      // built here. Above the times and the note, because it is what the
+      // amounts are about; nothing on a plain dinner or a reheat. A done
+      // card drops it: "Double batch: 3 tonight, 3 for lunch tomorrow"
+      // over "Cooked." is a reminder about work already finished.
+      (!row.done && meal.batch_line
+        ? '<p class="cook-tonight-batch">' + escapeHtml(meal.batch_line) + '</p>'
+        : '') +
       (tiles.length
         ? '<div class="cook-tonight-times">' + tiles.map(function (t) {
             return '<div class="cook-tonight-tile">' +
@@ -15702,6 +15712,7 @@
         (line ? '<p class="recipe-line">' + escapeHtml(line) + '</p>' : '') +
         (typeof mealSourceLinkHtml === 'function' ? mealSourceLinkHtml(entry) : '') +
         (hasRecipe ? recipeServesHtml(cookMeal, 'wk') : '') +
+        recipeBatchLineHtml(cookMeal) +
         (typeof platePartsRowsHtml === 'function' ? platePartsRowsHtml(day, slot, entry) : '') +
         mealIngredientsHtml(day, slot, entry, info) +
         (hasRecipe ? recipeStepsHtml(cookMeal, false) : mealNoRecipeHtml(slot, info)) +
@@ -19953,6 +19964,28 @@
       '</div>';
   }
 
+  // "Double batch: 3 tonight, 3 for lunch tomorrow." — one line directly
+  // under the stepper on a night that cooks for more than its own table
+  // (Gowthami's household, 2026-10-04: "It needs to call out that it's
+  // double the quantity because its calling for leftovers").
+  //
+  // THE SENTENCE IS THE SERVER'S, WHOLE. leftovers.batch_line builds it
+  // from the chain — this night's table, each leftover night's, the day
+  // and meal of each, and any portions put by for the freezer — and
+  // Cook's Tonight card and cook mode's first and last steps read the
+  // same function's siblings. The client composes nothing, so no surface
+  // can disagree with another about a number or a day.
+  //
+  // A LINE, never a tile and never a chip (rule 5): the screen's one
+  // accent is the dock's "Start cooking". Nothing for a plain dinner, a
+  // reheat, or an unhonoured chain — the field is simply absent, so this
+  // is one falsy check and an older payload behaves exactly as before.
+  function recipeBatchLineHtml(meal) {
+    var said = meal && meal.batch_line;
+    if (!said) return '';
+    return '<p class="recipe-batch">' + escapeHtml(said) + '</p>';
+  }
+
   // Ingredients: one card, the eyebrow, one row per ingredient with a box
   // beside it. Live, the row is cook mode's tick (cookGetOutRowHtml — the
   // same store the steps are ticked in, per device, per plan); on the
@@ -19966,8 +19999,17 @@
     var rows = live
       ? ings.map(function (ing, i) { return cookGetOutRowHtml(ing, i, mealKey); }).join('')
       : ings.map(function (ing) { return recipeIngredientRowHtml(ing); }).join('');
+    // "Ingredients · 8 servings" on a batch night (Emily's card,
+    // 2026-10-05), so the heading answers the question the amounts under
+    // it raise. The number is cookServesShown — the count the amounts
+    // below are really written for, which on a batch card starts as the
+    // whole batch and follows the cook's own stepper taps. Reading
+    // meal.servings instead would leave the heading claiming the batch
+    // over a list the cook had just halved.
+    var count = meal.batch_line ? cookServesShown(meal) : null;
     return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
-      '<span class="cook-eyebrow recipe-eyebrow">Ingredients</span>' +
+      '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
+        (count ? ' &middot; ' + escapeHtml(String(count)) + ' servings' : '') + '</span>' +
       '<ul class="cook-getout">' + rows + '</ul>' +
       cookUnscaledHtml(meal, idx) +
     '</section>';
@@ -20055,6 +20097,7 @@
         recipeTitleHtml(meal) +
         cookRecipeLinesHtml(meal) +
         recipeServesHtml(meal, idx) +
+        recipeBatchLineHtml(meal) +
         (meal.has_full_recipe
           ? recipeIngredientsHtml(meal, idx, true) + recipeStepsHtml(meal, true)
           : '<p class="cook-norecipe recipe-norecipe">No saved recipe for this one — ask me for it in the chat.</p>') +
@@ -20134,7 +20177,20 @@
         cookProgressHtml(steps.length, pos) +
         '<div class="card cook-step-card">' +
           (isAhead ? '<span class="recipe-step-tag">Do ahead</span>' : '') +
+          // The batch, at the pot. The first step carries the fact
+          // ("Double batch: half goes in containers for lunch tomorrow")
+          // and the LAST one the job ("Pack 3 servings for lunch
+          // tomorrow") — Emily's card, 2026-10-05. Both are the server's
+          // sentences, built from the same chain read as the recipe
+          // screen's line, so the three cannot drift apart. A one-step
+          // recipe is first AND last and honestly gets both.
+          (pos === 0 && meal.batch_first_step
+            ? '<p class="cook-step-batch">' + escapeHtml(meal.batch_first_step) + '</p>'
+            : '') +
           '<p class="cook-bigstep">' + escapeHtml(steps[pos] || '') + '</p>' +
+          (pos === steps.length - 1 && meal.batch_last_step
+            ? '<p class="cook-step-batch cook-step-pack">' + escapeHtml(meal.batch_last_step) + '</p>'
+            : '') +
           (needs.length ? '<p class="cook-step-needs">' + escapeHtml(needs.join(' · ')) + '</p>' : '') +
         '</div>' +
         (next ? '<p class="cook-next">' + escapeHtml(next) + '</p>' : '') +

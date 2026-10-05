@@ -483,6 +483,12 @@ def _cook_screen(meal: dict, stage: str) -> str:
         + "".join(_extract(n) + "\n" for n in (
             "numberWord", "minutesInWords", "clockLabel", "mealTotalMinutes", "mealClockSides", "mealClockTotal",
             "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "cookStepNeeds",
+            # recipeBatchLineHtml — the batch line under the stepper
+            # (card 9, 2026-10-05). THE REAL FUNCTION, not a stub: it is
+            # five pure lines over escapeHtml, which this harness already
+            # has, and a stub returning '' would make a test about what
+            # the screen says pass whatever the screen said.
+            "recipeBatchLineHtml",
             "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
             "recipeStepsHtml", "cookRecipeLinesHtml", "cookDockHtml", "cookDockCookedHtml", "cookRecipeDockHtml",
             "cookRecipeHtml", "cookProgressHtml", "cookNextStepLine", "cookCookerDockHtml", "cookCookerHtml",

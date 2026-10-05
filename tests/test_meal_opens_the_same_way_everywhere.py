@@ -408,6 +408,12 @@ def _meal_screen(back: str, cookable: bool) -> str:
             "chipsRowHtml", "cookTimeChip", "planCookableNow", "cookMealForEntry",
             "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml",
             "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml",
+            # recipeBatchLineHtml — the batch line under the stepper
+            # (card 9, 2026-10-05). THE REAL FUNCTION, not a stub: it is
+            # five pure lines over escapeHtml, which this harness already
+            # has, and a stub returning '' would make a test about what
+            # the screen says pass whatever the screen said.
+            "recipeBatchLineHtml",
             "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
             "recipeStepsHtml", "mealIngredientsHtml", "swapStateFor", "swapLineHtml",
             "mealDockHtml", "mealStepHtml"))
