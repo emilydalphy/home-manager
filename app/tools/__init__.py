@@ -319,6 +319,15 @@ from .primary_member import (  # noqa: F401
 # person typed, and the one reader of it is a person at a terminal running
 # observability_report.py --recipe-changes (see recipe_change.py's own
 # docstring and feedback.py's, the precedent it follows).
+#
+# "Before you shop" (card 13, 2026-10-05) owns ONE fact: whether the pass
+# in front of sorting has been run for the week being shopped for. Its
+# steps' own work lives where it already did — staples.py, spices.py,
+# pre_shop.py — so this module has two functions and no opinions.
+from .before_shop import (  # noqa: F401
+    before_shop_state,
+    mark_before_shop_done,
+)
 from .recipe_change import (  # noqa: F401
     OUTCOME_FAILED,
     OUTCOME_REWRITTEN,

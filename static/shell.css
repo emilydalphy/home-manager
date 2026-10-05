@@ -4502,6 +4502,51 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    Cook's .kit-row shape; it was an apricot "3 TO SORT" badge in the head
    until the root band (2026-09-11), which carries no button. */
 .gro-sortrow { margin-bottom: 4px; }
+/* ---------- "Before you shop" — the pass in front of sorting ----------
+   Card 13, 2026-10-05. Gowthami's household: "Sorting option is hidden
+   and needs to be clearer that's the next step", and she didn't see
+   staples or understand the spices section either. So the dock carries
+   one apricot that names the next thing, and behind it a short pass of
+   one-question screens ending ON the sort.
+
+   Two rules, and only two: the progress bar is the app's OWN
+   (.cook-progress, Cook's step bar — same four lines, same apricot, same
+   ARIA, so the two screens can never disagree about what a step bar
+   looks like) and each step's content is its own to style. The step's
+   question and its line are what every step shares.
+
+   Contrast measured off computed styles in Chromium at 390x844, both
+   schemes, with a two-step probe registered in BEFORE_SHOP_STEPS (the
+   frame ships with none — see BEFORE_SHOP_STEPS):
+     .gro-bs-title          --ink on --ground          12.78:1 / 14.40:1
+     .gro-bs-line           --ink-secondary on ground   4.44:1 /  8.48:1
+     .cook-progress-seg.is-done vs the unlit segment
+                            --apricot vs --hairline-strong
+                                                        1.80:1 /  4.65:1
+   The line's 4.44 is the app's own supporting-copy value, 0.06 under AA
+   in light everywhere it is used (see .cr-ask-note, card 12, the same
+   evening) — raising it means moving --ink-secondary, which is Emily's.
+   The bar's lit-vs-unlit pair clears 1.4.11's 3:1 for a state indicator
+   in DARK and not in LIGHT, and that half is INHERITED rather than
+   introduced: it is Cook's bar unchanged. The position it carries is
+   also said in words by role="progressbar"'s own ARIA (measured
+   aria-valuenow=1 aria-valuemax=2 on step 1 of 2), so nothing on this
+   screen is only-in-colour. Worth her eyes; not a one-screen hex. */
+.gro-bs-title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.gro-bs-line {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+}
 /* ---------- The crumb: every deeper screen's one way back ----------
    Nav v2 rule 1 (Emily, 2026-09-09): a screen deeper than a tab root
    carries exactly ONE of these and it NAMES its parent — "‹ This week",

@@ -65,6 +65,18 @@ def grocery_block() -> str:
     return SHELL_JS[start:end]
 
 
+def cook_progress() -> str:
+    """The app's one progress bar — cookProgressHtml (static/shell.js), the
+    Cook region's, which "Before you shop" reuses rather than drawing a
+    second one (card 13, 2026-10-05). It lives outside grocery_block(), so
+    it is sliced in here: the alternative is a Grocery copy of the same
+    four lines, which is how two screens end up disagreeing about what
+    step you are on. Sliced, never retyped — same reason as toast_core."""
+    start = SHELL_JS.index("  function cookProgressHtml(")
+    end = SHELL_JS.index("\n  // \"Next: pour in the stock", start)
+    return SHELL_JS[start:end] + "\n"
+
+
 STUB = """
 function escapeHtml(s){return String(s == null ? '' : s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -151,7 +163,10 @@ function groScreenStep() {
   let step = groceryState.step;
   if (step === 'sortall' && !groUnsorted(data).length && !groceryState.sortAllDone) step = 'list';
   if (step === 'carry' && !groceryState.carried.length) step = 'list';
-  if (step !== 'carry' && step !== 'sortall') step = 'list';
+  // "Before you shop" (2026-10-05, card 13): the pass folds back the same
+  // way a step whose question was answered elsewhere does.
+  if (step === 'beforeshop' && !beforeShopSteps(data).length) step = 'list';
+  if (step !== 'carry' && step !== 'sortall' && step !== 'beforeshop') step = 'list';
   return step;
 }
 function screenHtml() {
@@ -159,6 +174,7 @@ function screenHtml() {
   if (!data) return '';
   const step = groScreenStep();
   const body = step === 'carry' ? groCarryHtml(data)
+    : step === 'beforeshop' ? beforeShopBodyHtml(data)
     : step === 'sortall' ? groSortAllHtml(data)
     : groListHtml(data);
   // The crumb belongs to no step renderer — it lives in the panel
@@ -289,6 +305,8 @@ function counts(html) {
 def run(body: str, timeout: int = 30):
     """Run `body` after the stub, the region, the click machinery and the
     fixture; return whatever the script printed as JSON."""
-    res = nodeharness.run_node(STUB + grocery_block() + CLICK + FIXTURE + body, timeout=timeout)
+    res = nodeharness.run_node(
+        STUB + cook_progress() + grocery_block() + CLICK + FIXTURE + body, timeout=timeout
+    )
     assert res.returncode == 0, f"node failed: {res.stderr}"
     return json.loads(res.stdout.strip())

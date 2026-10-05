@@ -5534,10 +5534,31 @@ def get_grocery_list_view(status: str = "needed"):
             result["shop_split"] = _stamp_shop_split(needed)
             _stamp_freezing_offers(needed)
             _stamp_pre_shop_flags(needed)
+            # "Before you shop" (2026-10-05): whether the pass in front of
+            # sorting has already been run for the week being shopped for.
+            # On the needed view only — it is the one the Shop tab opens
+            # on, and the other statuses are read by screens that have no
+            # pass to offer.
+            result["before_shop"] = tools.before_shop_state()
     except Exception as e:
         logger.exception("Grocery list lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+@app.post("/api/grocery-list/before-shop-done")
+def mark_before_shop_done():
+    """
+    The household has been through "Before you shop" for this week — the
+    pass is not offered again until the next plan. See
+    app/tools/before_shop.py on why that stamp is a column on the plan
+    rather than a date anything compares.
+
+    Never an error: the tool swallows its own failures and answers
+    done=False, because refusing to let somebody on to the sort screen
+    over a failed write is the worse answer.
+    """
+    return tools.mark_before_shop_done()
 
 
 @app.get("/api/grocery-list/by-store")
@@ -5548,6 +5569,11 @@ def get_grocery_list_by_store_view(status: str = "needed"):
     the main /api/grocery-list endpoint for status='needed', so a flagged
     item's own row carries the flag on the Shop tab's store cards and in
     "Sort them all" — see _stamp_pre_shop_flags.
+
+    This is the view the Shop tab actually opens on (groLoadAllData reads
+    by-store for the needed half and /api/grocery-list only for the bought
+    one), so everything the list screen needs is stamped here as well as
+    there — before_shop included.
     """
     try:
         result = tools.get_grocery_list_by_store(status=status)
@@ -5556,6 +5582,7 @@ def get_grocery_list_by_store_view(status: str = "needed"):
             result["shop_split"] = _stamp_shop_split(needed)
             _stamp_freezing_offers(needed)
             _stamp_pre_shop_flags(needed)
+            result["before_shop"] = tools.before_shop_state()
     except Exception as e:
         logger.exception("Grocery list by-store lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

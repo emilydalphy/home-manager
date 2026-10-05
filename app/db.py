@@ -608,6 +608,14 @@ _MIGRATIONS = [
     # link reopens the card without touching this column, exactly as the
     # freezer check's own re-ask does — this gates the AUTOMATIC card only.
     ("weekly_plans", "cook_ahead_asked_at", "TEXT"),
+    # Loop Board 'Shop: "Before you shop"' (2026-10-05). The pass in front
+    # of sorting is offered once per planning period, which is exactly what
+    # the two columns above do for their own asks, so it is the same shape
+    # rather than a new table: NULL means "never run or dismissed", set the
+    # moment the household finishes it or taps past the last step. A new
+    # week is a new plan row, so "once per week" falls out of that rather
+    # than being a date anybody has to compare.
+    ("weekly_plans", "before_shop_asked_at", "TEXT"),
     # Loop Board "Prep days" (Emily, 2026-09-04 / 2026-09-08): the standing
     # answer — which days the household preps ahead on — is a household
     # rhythm fact (tools/rhythm.py:set_prep_days). This is the ONE-OFF

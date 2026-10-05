@@ -266,8 +266,13 @@ def test_the_helper_mirrors_render_grocerys_own_dispatch():
     mirror, not quietly left unguarded. These are the lines the mirror is
     a copy of; if one of them moves, come and move the mirror with it."""
     render = _fn_code("renderGrocery")
+    # 2026-10-05, card 13: a FIFTH step renderer, 'beforeshop', and it was
+    # added to the mirror rather than quietly left unguarded — which is
+    # exactly what this test is for. The two fallback lines it touched are
+    # restated here in their new form.
     for line in (
         "if (step === 'carry') body.innerHTML = groCarryHtml(data);",
+        "else if (step === 'beforeshop') body.innerHTML = beforeShopBodyHtml(data);",
         "else if (step === 'sortall') groSortAllRender(body, data);",
         "else body.innerHTML = groListHtml(data);",
         "dock.innerHTML = groDockHtml(data, step);",
@@ -277,7 +282,8 @@ def test_the_helper_mirrors_render_grocerys_own_dispatch():
     for fallback in (
         "if (groceryState.step === 'sortall' && !groUnsorted(data).length && !groceryState.sortAllDone) {",
         "if (groceryState.step === 'carry' && !groceryState.carried.length) groceryState.step = 'list';",
-        "if (groceryState.step !== 'carry' && groceryState.step !== 'sortall') groceryState.step = 'list';",
+        "if (groceryState.step === 'beforeshop' && !beforeShopSteps(data).length) groceryState.step = 'list';",
+        "groceryState.step !== 'beforeshop') groceryState.step = 'list';",
     ):
         assert fallback in render, f"renderGrocery's step fallback moved: {fallback!r}"
     # The card-less path of the sortall renderer is the HTML the mirror uses.
