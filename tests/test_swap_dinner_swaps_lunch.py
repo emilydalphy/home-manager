@@ -1,0 +1,636 @@
+"""
+Swapping a dinner that feeds tomorrow's lunch swaps the lunch too.
+
+Gowthami's household, 2026-10-04: "If we change one recipe that should be
+for dinner, then lunch the next day, it's not changing the lunch the next
+day for the quantity and including it as well."
+
+MEASURED on an approved week before the fix, through the week row's own
+Swap (swap_options.choose_swap_option with no whole_dish — a one-night
+dinner row sends none):
+
+    before   Mon dinner Beef Chili (make_double_for Tue lunch)
+             Tue lunch  Beef Chili (links_to Mon dinner)
+             grocery    Beef 2 lbs, Kidney beans 2 cans
+    after    Mon dinner Chana Masala
+             Tue lunch  Beef Chili          <-- the bug
+             grocery    Beef 1 lb, Kidney beans 1 can   <-- the lunch
+                        Chickpeas 2 cans, Tomatoes 1 can    buying its own,
+                                                            the new dish for
+                                                            one table
+
+The fix is server-side and one group: swap_in_place.fed_days — the tapped
+meal and every meal still ahead that eats out of ITS cook, downstream
+only. apply_pick widens to it, so "Swap · I'll pick", the three-picks
+sheet and the chat change card are all covered by the one change;
+swap_options asks the three picks against it and gates every day; and the
+chat tool (weekly_plan.swap_meal_in_plan_for_chat) widens through
+replace_dish_on_days directly, because chat names a dish rather than a
+pick.
+
+NO MODEL IS CALLED in this file: every pick carries its steps, so
+choose_swap_option applies it as it is (swap_options.needs_write_out), and
+swap_meal_in_place takes an injected `picker`.
+
+Each test says CATCH (red against c40f452, this branch's merge base) or
+GUARD (green either way, pinned by a mutation named in the docstring and
+actually run). Measured red counts against the merge base's `app/` and
+`static/`, with this file's own two new names stubbed so every test
+reaches its own assertion (fed_days -> [entry], swapped_said -> ""):
+
+    24 failed, 11 passed
+
+and of the 24, every one fails on an assertion it is named for — there is
+no AttributeError and no KeyError in the list.
+
+MUTATIONS RUN, red counts read off the runs over this file:
+
+    the whole widening a no-op (apply_pick/swap_options/chat door) ...  24
+    fed_days walking both ways (chain_days' rule) ....................   2
+    apply_pick not widening (the screens' two doors only) ............   9
+    the chat door not widening .......................................   4
+    swapped_said naming days without their meal words ................   3
+    keeps_as_leftovers always True ...................................   6
+    keeps_as_leftovers ignoring the pick's own answer ................   1
+    the fed meal opened BESIDE the old row (plan_slot_open alone) ....   2
+    replace_dish_on_days ignoring a per-item `chain` .................   4
+    the undo not handing the recorded chain back .....................   1
+    batch serves taken from the whole group, refills included ........   1
+"""
+from __future__ import annotations
+
+import datetime
+import importlib
+import json
+import re
+from pathlib import Path
+
+import pytest
+
+from conftest import household_today
+from app import tools
+from app.db import get_conn
+from app.tools._shared import use_household
+
+sop = importlib.import_module("app.tools.swap_options")
+swap_in_place = importlib.import_module("app.tools.swap_in_place")
+
+TODAY = household_today()
+START = TODAY.isoformat()
+D1 = (TODAY + datetime.timedelta(days=1)).isoformat()
+D2 = (TODAY + datetime.timedelta(days=2)).isoformat()
+D3 = (TODAY + datetime.timedelta(days=3)).isoformat()
+CHILI = "Beef Chili"
+NEW = "Chana Masala"
+SHELL = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+
+
+def _pick(name=NEW, item="Chickpeas", qty="2 cans", minutes=15):
+    return {
+        "meal_name": name, "reason": "Lighter, and nothing to thaw.",
+        "ingredients": [{"item": item, "qty": qty, "category": "pantry"}],
+        "instructions": ["Simmer it."], "food_groups": ["protein", "carb", "vegetable"],
+        "main_protein": item, "prep_time_minutes": 5, "cook_time_minutes": minutes,
+        "default_servings": 2,
+    }
+
+
+def _asker(*picks):
+    return lambda context: [dict(p) for p in picks]
+
+
+@pytest.fixture
+def home():
+    for name in ("Alex", "Sam"):
+        tools.add_member(name)
+    tools.add_recipe(CHILI, ingredients=[{"item": "Beef", "qty": "1 lb", "category": "meat/seafood"},
+                                         {"item": "Kidney beans", "qty": "1 can", "category": "pantry"}],
+                     food_groups=["protein", "carb", "vegetable"], default_servings=2,
+                     prep_time_minutes=10, cook_time_minutes=20, instructions=["Brown it."])
+    sop._OPTIONS_CACHE.clear()
+    return tools.create_weekly_plan(START)["weekly_plan_id"]
+
+
+def _chain(plan_id, cook_slot="dinner", fed=((None, "lunch"),), approve=True):
+    """A confirmed chain: CHILI cooked on D1's `cook_slot`, reheated on
+    each (date, slot) in `fed` (None date means D2). Returns the cook's
+    entry id."""
+    cook = tools.plan_meal(D1, CHILI, slot=cook_slot, weekly_plan_id=plan_id,
+                           reasoning="hearty")["entry_id"]
+    for date, slot in fed:
+        tools.plan_meal(date or D2, CHILI, slot=slot, weekly_plan_id=plan_id,
+                        derived_from={"links_to": f"{D1}:{cook_slot}"})
+    tools.repair_leftover_chains(plan_id)
+    if approve:
+        tools.approve_weekly_plan(plan_id, "Alex")
+    return cook
+
+
+def _rows(plan_id):
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.open_reason, "
+        "COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.derived_from_json "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.weekly_plan_id = ? ORDER BY mpe.date, mpe.slot, mpe.id",
+        (plan_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r, derived=json.loads(r["derived_from_json"] or "{}")) for r in rows]
+
+
+def _meals(plan_id):
+    return {(r["date"], r["slot"]): r["meal"] for r in _rows(plan_id)}
+
+
+def _states(plan_id):
+    return {(r["date"], r["slot"]): r["slot_state"] for r in _rows(plan_id)}
+
+
+def _grocery():
+    return {g["item"]: g["quantity"]
+            for g in tools.list_grocery_list() + tools.list_grocery_list(status="spice")}
+
+
+def _chains(plan_id):
+    return {cook: [(t["date"], t["slot"]) for t in s["targets"]]
+            for cook, s in tools.plan_leftover_chains(plan_id)["sources"].items()}
+
+
+def _sheet_swap(plan_id, entry_id, pick=None, whole_dish=False):
+    """The three-picks sheet: open, then tap pick 0 — the door the card's
+    own test names (the week row's Swap on a one-night dinner)."""
+    sop._OPTIONS_CACHE.clear()
+    opened = tools.swap_options(plan_id, entry_id, asker=_asker(pick or _pick()),
+                                **({"whole_dish": True} if whole_dish else {}))
+    out = tools.choose_swap_option(plan_id, entry_id, 0,
+                                   **({"whole_dish": True} if whole_dish else {}))
+    return opened, out
+
+
+# ---------- 1. the reported bug, through the door it was reported on ----------
+
+
+def test_the_lunch_eating_the_leftovers_gets_the_new_dish_too(home):
+    """CATCH. The card's own acceptance test: approved week, dinner Mon
+    with leftover lunch Tue, swap Mon from the week row -> Tue lunch shows
+    the new dish."""
+    cook = _chain(home)
+    _opened, out = _sheet_swap(home, cook)
+    assert out["status"] == "swapped"
+    assert _meals(home) == {(D1, "dinner"): NEW, (D2, "lunch"): NEW}
+
+
+def test_the_grocery_list_holds_the_new_dish_at_batch_size_and_nothing_of_the_old(home):
+    """CATCH. "grocery quantities equal the new recipe at batch size, no
+    line for the old dish remains" — 2 cans of chickpeas a table, two
+    tables, one line of 4. Measured before: Beef 1 lb AND Kidney beans
+    1 can left standing beside Chickpeas 2 cans."""
+    cook = _chain(home)
+    _sheet_swap(home, cook)
+    assert _grocery() == {"Chickpeas": "4 cans"}
+
+
+def test_the_new_dinner_still_feeds_the_lunch(home):
+    """CATCH. "The new dinner is written for the whole batch" — the chain
+    is carried to the new dish rather than unlinked, so the Cook card still
+    reads one cook feeding two meals."""
+    cook = _chain(home)
+    _opened, out = _sheet_swap(home, cook)
+    assert _chains(home) == {out["entry_id"]: [(D2, "lunch")]}
+    fed = next(r for r in _rows(home) if r["slot"] == "lunch")
+    assert fed["derived"]["links_to"] == f"{D1}:dinner"
+
+
+def test_no_separate_line_set_is_left_for_the_lunch(home):
+    """CATCH. The ledger, not the printed list: before the fix the reheat
+    night held grocery links of its own (it had stopped being a reheat), so
+    "no separate line set for the lunch" is a question about
+    meal_plan_grocery_links rather than about the quantities."""
+    cook = _chain(home)
+    _sheet_swap(home, cook)
+    fed = next(r for r in _rows(home) if r["slot"] == "lunch")
+    conn = get_conn()
+    links = conn.execute("SELECT item FROM meal_plan_grocery_links WHERE meal_plan_entry_id = ?",
+                         (fed["id"],)).fetchall()
+    conn.close()
+    assert [r["item"] for r in links] == []
+
+
+def test_a_dish_with_no_leftovers_planned_is_the_one_day_swap_it_always_was(home):
+    """GUARD. Mutation: fed_days returning every planned meal — 11 red.
+    Nothing widens for an ordinary dinner."""
+    tools.plan_meal(D1, CHILI, slot="dinner", weekly_plan_id=home)
+    tools.plan_meal(D2, CHILI, slot="dinner", weekly_plan_id=home)
+    tools.approve_weekly_plan(home, "Alex")
+    cook = next(r["id"] for r in _rows(home) if r["date"] == D1)
+    _opened, out = _sheet_swap(home, cook)
+    assert _meals(home) == {(D1, "dinner"): NEW, (D2, "dinner"): CHILI}
+    assert "days" not in out and "said" not in out
+
+
+# ---------- 2. the group: downstream only ----------
+
+
+def test_fed_days_is_the_cook_and_the_meals_it_feeds(home):
+    """CATCH (the name does not exist on the merge base). In date order,
+    the tapped meal among them."""
+    cook = _chain(home, fed=((D2, "lunch"), (D3, "dinner")))
+    group = tools.fed_days(home, cook)
+    assert [(e["date"], e["slot"]) for e in group] == [(D1, "dinner"), (D2, "lunch"), (D3, "dinner")]
+
+
+def test_swapping_a_reheat_night_leaves_its_cook_alone(home):
+    """CATCH. The whole difference from chain_days, and the reason
+    fed_days is downstream only: "not Monday's chili again on Tuesday" is
+    an answer about that one meal. Mutation — fed_days walking both ways:
+    2 red."""
+    _chain(home)
+    fed = next(r["id"] for r in _rows(home) if r["slot"] == "lunch")
+    group = tools.fed_days(home, fed)
+    assert [(e["date"], e["slot"]) for e in group] == [(D2, "lunch")]
+    _sheet_swap(home, fed)
+    assert _meals(home) == {(D1, "dinner"): CHILI, (D2, "lunch"): NEW}
+
+
+def test_a_fed_meal_already_cooked_is_left_where_it_is(home):
+    """GUARD. dish_days' own filter, inherited: a day already cooked is
+    not a day to plan into. Mutation: dropping the `cooked` test from
+    _along_chains' `ahead` map — 1 red."""
+    cook = _chain(home)
+    fed = next(r["id"] for r in _rows(home) if r["slot"] == "lunch")
+    tools.check_off_meal(fed, "done")
+    assert [e["entry_id"] for e in tools.fed_days(home, cook)] == [cook]
+
+
+def test_another_households_chain_is_never_part_of_the_group(home):
+    """GUARD. Mutation: dropping household_id() from fed_days' read — it
+    goes through _entry and plan_leftover_chains, both household-scoped;
+    this pins the seam rather than the query."""
+    cook = _chain(home)
+    with use_household(2):
+        with pytest.raises(ValueError):
+            tools.fed_days(home, cook)
+
+
+# ---------- 3. every door ----------
+
+
+def test_swap_i_ll_pick_widens_too(home):
+    """CATCH. swap_meal_in_place — the Day and Meal steps' own Swap, one
+    model call, no sheet. Mutation: apply_pick not widening — 9 red."""
+    cook = _chain(home)
+    out = tools.swap_meal_in_place(home, cook, picker=lambda ctx: _pick())
+    assert out["status"] == "swapped"
+    assert _meals(home) == {(D1, "dinner"): NEW, (D2, "lunch"): NEW}
+
+
+def test_the_pick_is_asked_for_the_whole_batch_not_one_table(home):
+    """CATCH. Or the model chooses and sizes a dinner for two when four
+    meals' worth is being cooked. `cook_for` is the same sentence the
+    whole-dish Swap already asks under."""
+    cook = _chain(home)
+    seen = []
+    tools.swap_meal_in_place(home, cook, picker=lambda ctx: seen.append(ctx) or _pick())
+    assert seen[0]["table"]["serves"] == 2
+    assert "4 servings" in (seen[0].get("cook_for") or "")
+    assert seen[0]["dates"] == [D1, D2]
+
+
+def test_the_sheet_asks_its_three_picks_against_both_meals(home):
+    """CATCH. build_dish_swap_context, so a pick that lands on a dinner
+    and the lunch reheating it has had to fit both."""
+    cook = _chain(home)
+    seen = []
+    sop._OPTIONS_CACHE.clear()
+    tools.swap_options(home, cook, asker=lambda ctx: seen.append(ctx) or [_pick()])
+    assert seen[0]["dates"] == [D1, D2]
+    assert "4 servings" in (seen[0].get("cook_for") or "")
+
+
+def test_the_sheet_says_which_meals_it_is_swapping(home):
+    """CATCH. `dates` and `meals` on the open, so the sheet can name both
+    from the same list the write will use."""
+    cook = _chain(home)
+    opened, _out = _sheet_swap(home, cook)
+    assert opened["dates"] == [D1, D2]
+    assert opened["meals"] == [{"date": D1, "slot": "dinner"}, {"date": D2, "slot": "lunch"}]
+
+
+def test_a_veto_at_the_lunch_table_rules_the_pick_out(home):
+    """CATCH. Emily's standing rule: a suggestion fits every day of the
+    group. swap_meal_in_place used to gate the tapped night only."""
+    cook = _chain(home)
+    calls = []
+
+    def verdict(name, date, slot):
+        return {"verdict": "avoid", "vetoed_by": ["Sam"]} if (date, slot) == (D2, "lunch") else None
+
+    import app.tools.weekly_plan as wp
+    original = wp._taste_verdict_for_slot
+    wp._taste_verdict_for_slot = verdict
+    try:
+        out = tools.swap_meal_in_place(home, cook, picker=lambda ctx: calls.append(1) or _pick())
+    finally:
+        wp._taste_verdict_for_slot = original
+    assert out["status"] == "refused"
+    assert _meals(home) == {(D1, "dinner"): CHILI, (D2, "lunch"): CHILI}
+
+
+def test_the_chat_tool_widens_too(home):
+    """CATCH. The fourth door. Chat names a dish rather than a pick, so it
+    writes through replace_dish_on_days directly. Mutation: the chat door
+    not widening — 4 red."""
+    cook = _chain(home)
+    tools.add_recipe(NEW, ingredients=[{"item": "Chickpeas", "qty": "2 cans", "category": "pantry"}],
+                     food_groups=["protein", "carb", "vegetable"], default_servings=2,
+                     prep_time_minutes=5, cook_time_minutes=15, instructions=["Simmer it."])
+    out = tools.swap_meal_in_plan_for_chat(home, D1, NEW, slot="dinner")
+    assert _meals(home) == {(D1, "dinner"): NEW, (D2, "lunch"): NEW}
+    assert _grocery() == {"Chickpeas": "4 cans"}
+    assert out["said"].startswith("Swapped to Chana Masala for")
+
+
+def test_the_chat_tool_leaves_a_slot_holding_two_snacks_alone(home):
+    """GUARD. Deliberately narrow: the chat door widens only when the slot
+    holds exactly ONE row, so it can never re-implement
+    swap_meal_in_plan's own "which rows am I replacing" rule and disagree
+    with it. Mutation: dropping the len(rows) != 1 guard — this test."""
+    tools.add_recipe("Apple Slices", ingredients=[{"item": "Apples", "qty": "4", "category": "produce"}],
+                     food_groups=["carb"], default_servings=2)
+    tools.add_recipe("Oat Bars", ingredients=[{"item": "Oats", "qty": "1 bag", "category": "pantry"}],
+                     food_groups=["carb"], default_servings=2)
+    tools.plan_meal(D1, "Apple Slices", slot="snack", weekly_plan_id=home)
+    tools.plan_meal(D1, "Oat Bars", slot="snack", weekly_plan_id=home)
+    out = tools.swap_meal_in_plan_for_chat(home, D1, "Apple Slices", slot="snack",
+                                           old_meal="Oat Bars")
+    assert "said" not in out
+    assert sorted(r["meal"] for r in _rows(home) if r["slot"] == "snack") == \
+        ["Apple Slices", "Apple Slices"]
+
+
+# ---------- 4. the confirmation ----------
+
+
+def test_the_confirmation_names_both_meals(home):
+    """CATCH. The card's own wording: "Swapped to chana masala for Monday
+    dinner and Tuesday lunch." Mutation — swapped_said naming days without
+    their meal words: 3 red."""
+    cook = _chain(home)
+    _opened, out = _sheet_swap(home, cook)
+    mon, tue = [datetime.date.fromisoformat(d).strftime("%A") for d in (D1, D2)]
+    assert out["said"] == f"Swapped to {NEW} for {mon} dinner and {tue} lunch."
+
+
+def test_three_meals_read_as_a_list(home):
+    """GUARD. Mutation: joining with ", " throughout — this test."""
+    cook = _chain(home, fed=((D2, "lunch"), (D3, "dinner")))
+    _opened, out = _sheet_swap(home, cook)
+    days = [datetime.date.fromisoformat(d).strftime("%A") for d in (D1, D2, D3)]
+    assert out["said"] == (f"Swapped to {NEW} for {days[0]} dinner, "
+                           f"{days[1]} lunch and {days[2]} dinner.")
+
+
+def test_a_one_meal_swap_says_nothing_extra(home):
+    """GUARD. `said` is present only when more than one meal changed, so
+    the ordinary swap keeps the toast it always had ("X was swapped in").
+    Mutation: `said` written unconditionally — this test."""
+    tools.plan_meal(D1, CHILI, slot="dinner", weekly_plan_id=home)
+    cook = next(r["id"] for r in _rows(home) if r["date"] == D1)
+    _opened, out = _sheet_swap(home, cook)
+    assert "said" not in out
+
+
+def test_the_toast_prefers_the_servers_sentence(home):
+    """GUARD (source). shell.js's two swap toasts read `said` and fall back
+    to savedLine, so the sentence that counts meals is built once, beside
+    the rows. Mutation: either toast back to savedLine alone — this test."""
+    assert "out.said || savedLine(picked.meal, 'swapped in')" in SHELL
+    assert "data.said || savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in')" in SHELL
+    assert "(data.days || [data.day]).forEach(spliceSwappedDay)" in SHELL
+
+
+# ---------- 5. a dish that will not keep ----------
+
+
+@pytest.mark.parametrize("name,keeps", [
+    ("Chana Masala", True), ("Beef Chili", True), ("Lentil Soup", True),
+    ("Caesar Salad", False), ("Nachos Supreme", False), ("Grilled Cheese", False),
+    ("Avocado Toast", False), ("Pasta Salad", True), ("Tuna Salad", True),
+    ("Chicken Salad Wraps", True), ("Stir-Fried Noodles", True), ("", True),
+])
+def test_keeps_as_leftovers_reads_the_name(name, keeps):
+    """CATCH (the name does not exist on the merge base). Positive
+    evidence only: an unrecognised dish KEEPS, and the compound exceptions
+    are the mayo salads a household makes ahead on purpose."""
+    assert tools.keeps_as_leftovers({"meal_name": name}) is keeps
+
+
+def test_a_pick_that_says_it_does_not_keep_is_believed(home):
+    """CATCH. The model volunteering a problem with its own dish, for a
+    name no word list would catch. Mutation: ignoring the pick's own
+    answer — 1 red."""
+    assert tools.keeps_as_leftovers({"meal_name": "Chana Masala",
+                                     "keeps_as_leftovers": False}) is False
+    assert tools.keeps_as_leftovers({"meal_name": "Chana Masala"}) is True
+
+
+def test_a_dish_that_wont_keep_does_not_go_on_the_lunch(home):
+    """CATCH. Criterion 5: the lunch is NOT silently left as the old dish.
+    It leaves the chain and takes another of the week's own lunches.
+    Mutation: keeps_as_leftovers always True — 6 red."""
+    tools.add_recipe("Egg Wraps", ingredients=[{"item": "Tortillas", "qty": "4", "category": "pantry"}],
+                     food_groups=["protein", "carb", "vegetable"], default_servings=2,
+                     prep_time_minutes=5, cook_time_minutes=10, instructions=["Roll it."])
+    cook = _chain(home, approve=False)
+    tools.plan_meal(D1, "Egg Wraps", slot="lunch", weekly_plan_id=home)
+    tools.approve_weekly_plan(home, "Alex")
+    _opened, out = _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
+    assert _meals(home) == {(D1, "dinner"): "Caesar Salad", (D1, "lunch"): "Egg Wraps",
+                            (D2, "lunch"): "Egg Wraps"}
+    assert _chains(home) == {}
+    assert out["refilled"] == [{"date": D2, "slot": "lunch", "meal": "Egg Wraps"}]
+
+
+def test_the_toast_says_what_it_put_there_instead(home):
+    """CATCH. "and the toast says so" — naming what it PUT there, not only
+    what it took away."""
+    tools.add_recipe("Egg Wraps", ingredients=[{"item": "Tortillas", "qty": "4", "category": "pantry"}],
+                     food_groups=["protein", "carb", "vegetable"], default_servings=2,
+                     prep_time_minutes=5, cook_time_minutes=10, instructions=["Roll it."])
+    cook = _chain(home, approve=False)
+    tools.plan_meal(D1, "Egg Wraps", slot="lunch", weekly_plan_id=home)
+    tools.approve_weekly_plan(home, "Alex")
+    _opened, out = _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
+    mon, tue = [datetime.date.fromisoformat(d).strftime("%A") for d in (D1, D2)]
+    assert out["said"] == (f"Swapped to Caesar Salad for {mon} dinner. "
+                           f"Caesar Salad won’t keep, so I’ve put Egg Wraps on {tue} lunch.")
+
+
+def test_a_refilled_lunch_buys_for_itself_and_the_cook_for_one_table(home):
+    """CATCH. The arithmetic of the refill: the cook is no longer a batch,
+    so it buys one table; the repeat is now on two lunches, so it buys
+    two. Mutation: batch serves taken from the whole group — 1 red."""
+    tools.add_recipe("Egg Wraps", ingredients=[{"item": "Tortillas", "qty": "4", "category": "pantry"}],
+                     food_groups=["protein", "carb", "vegetable"], default_servings=2,
+                     prep_time_minutes=5, cook_time_minutes=10, instructions=["Roll it."])
+    cook = _chain(home, approve=False)
+    tools.plan_meal(D1, "Egg Wraps", slot="lunch", weekly_plan_id=home)
+    tools.approve_weekly_plan(home, "Alex")
+    _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
+    assert _grocery() == {"Tortillas": "8", "Romaine": "1 head"}
+
+
+def test_with_nothing_to_repeat_the_lunch_becomes_a_question(home):
+    """CATCH. The week has no other lunch to copy, so the slot is handed
+    back — and Pomona says which. Mutation: the open branch removed —
+    2 red."""
+    cook = _chain(home)
+    _opened, out = _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
+    assert _states(home) == {(D1, "dinner"): "planned", (D2, "lunch"): "open"}
+    tue = datetime.date.fromisoformat(D2).strftime("%A")
+    assert out["said"].endswith(f"Caesar Salad won’t keep, so {tue} lunch is yours to fill.")
+
+
+def test_the_question_replaces_the_meal_rather_than_sitting_beside_it(home):
+    """CATCH. Measured while building this: plan_slot_open INSERTS, so
+    without the delete the slot held the old dish AND a question — which
+    is audit_plan_slots' `duplicated`, and how a night nobody is eating
+    gets shopped for. Mutation: the open BESIDE the old row — 2 red."""
+    cook = _chain(home)
+    _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
+    lunches = [r for r in _rows(home) if (r["date"], r["slot"]) == (D2, "lunch")]
+    assert len(lunches) == 1 and lunches[0]["slot_state"] == "open"
+    audit = tools.audit_plan_slots(home)
+    assert audit["duplicated"] == []
+    assert _grocery() == {"Romaine": "1 head"}
+
+
+def test_a_fed_dinner_is_left_as_a_question_rather_than_repeated(home):
+    """GUARD. meal_variety.NEVER_OPEN_SLOTS is breakfast and lunch: a
+    dinner genuinely is a decision, and quietly repeating one nobody asked
+    for is the opposite of what the household wants. Mutation: adding
+    "dinner" to the slots instead_of_the_leftovers will repeat into —
+    this test."""
+    cook = _chain(home, fed=((D2, "dinner"),))
+    _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
+    assert _states(home)[(D2, "dinner")] == "open"
+
+
+# ---------- 6. undo ----------
+
+
+def test_undo_restores_the_dinner_the_lunch_and_the_groceries(home):
+    """CATCH. Criterion 6, all three together."""
+    cook = _chain(home)
+    before = _grocery()
+    _opened, out = _sheet_swap(home, cook)
+    back = tools.undo_meal_swap(home, out["entry_id"])
+    assert back["status"] == "restored"
+    assert _meals(home) == {(D1, "dinner"): CHILI, (D2, "lunch"): CHILI}
+    assert _grocery() == before == {"Beef": "2 lbs", "Kidney beans": "2 cans"}
+    assert _chains(home) == {back["entry_id"]: [(D2, "lunch")]}
+
+
+def test_undo_of_a_refilled_lunch_puts_the_chain_back_too(home):
+    """CATCH. The one chain that cannot be re-derived at undo time, since
+    the swap took it off the plan: recorded on the undo note and handed
+    back as replace_dish_on_days' per-item `chain`. Mutation: the undo not
+    handing it back — 1 red."""
+    tools.add_recipe("Egg Wraps", ingredients=[{"item": "Tortillas", "qty": "4", "category": "pantry"}],
+                     food_groups=["protein", "carb", "vegetable"], default_servings=2,
+                     prep_time_minutes=5, cook_time_minutes=10, instructions=["Roll it."])
+    cook = _chain(home, approve=False)
+    tools.plan_meal(D1, "Egg Wraps", slot="lunch", weekly_plan_id=home)
+    tools.approve_weekly_plan(home, "Alex")
+    before = _grocery()
+    _opened, out = _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
+    back = tools.undo_meal_swap(home, out["entry_id"])
+    assert _meals(home) == {(D1, "dinner"): CHILI, (D1, "lunch"): "Egg Wraps",
+                            (D2, "lunch"): CHILI}
+    assert _chains(home) == {back["entry_id"]: [(D2, "lunch")]}
+    assert _grocery() == before
+
+
+def test_undo_of_an_opened_lunch_puts_the_meal_back(home):
+    """CATCH. The opened row carries the same swap_group token as the rows
+    beside it, which is how _undo_dish_swap finds it."""
+    cook = _chain(home)
+    before = _grocery()
+    _opened, out = _sheet_swap(home, cook, pick=_pick("Caesar Salad", item="Romaine", qty="1 head"))
+    back = tools.undo_meal_swap(home, out["entry_id"])
+    assert _meals(home) == {(D1, "dinner"): CHILI, (D2, "lunch"): CHILI}
+    assert _states(home) == {(D1, "dinner"): "planned", (D2, "lunch"): "planned"}
+    assert _chains(home) == {back["entry_id"]: [(D2, "lunch")]}
+    assert _grocery() == before
+
+
+# ---------- 7. what else must not move ----------
+
+
+def test_a_draft_still_buys_nothing(home):
+    """GUARD. Nothing reaches the grocery list before approval, and a
+    widened swap is no exception. Mutation: replace_dish_on_days ingesting
+    for a draft — covered by that function's own tests; this pins the
+    seam."""
+    cook = _chain(home, approve=False)
+    _sheet_swap(home, cook)
+    assert _grocery() == {}
+    assert _meals(home) == {(D1, "dinner"): NEW, (D2, "lunch"): NEW}
+
+
+def test_a_failure_part_way_changes_no_meal(home):
+    """GUARD. ONE transaction, as the whole-dish Swap already was.
+    Mutation: replace_dish_on_days' rollback removed — that function's own
+    test; this pins it for the new door."""
+    import app.tools.meal_plans as meal_plans
+    cook = _chain(home)
+    before = _meals(home)
+    original = meal_plans.plan_meal
+    calls = []
+
+    def flaky(*a, **k):
+        calls.append(1)
+        if len(calls) == 2:
+            raise RuntimeError("no")
+        return original(*a, **k)
+
+    meal_plans.plan_meal = flaky
+    try:
+        with pytest.raises(RuntimeError):
+            _sheet_swap(home, cook)
+    finally:
+        meal_plans.plan_meal = original
+    assert _meals(home) == before
+    assert _grocery() == {"Beef": "2 lbs", "Kidney beans": "2 cans"}
+
+
+def test_the_repeat_rule_is_the_one_generation_uses(home):
+    """GUARD. meal_variety.repeat_for_slot is shared with
+    fill_gaps_with_a_repeat, so the swap's answer and generation's own are
+    the same answer. Mutation: a second copy of the "fewest nights, then
+    earliest, then name" rule in swap_in_place — this test."""
+    import app.tools.meal_variety as mv
+    assert re.search(r"def repeat_for_slot\(", mv.__doc__ or "") is None
+    assert callable(mv.repeat_for_slot)
+    source = Path(swap_in_place.__file__).read_text(encoding="utf-8")
+    assert "repeat_for_slot" in source
+    assert "nights" not in source.split("def instead_of_the_leftovers")[1].split("\ndef ")[0] \
+        .split('"""')[2]
+
+
+def test_no_module_level_name_is_defined_twice_in_what_this_touched():
+    """GUARD. The repo-wide shadowing rule, for the four modules this
+    branch adds module-level names to. Mutation: naming the new word list
+    after one already in the file — this test."""
+    import ast
+    for mod in ("leftovers", "swap_in_place", "swap_options", "weekly_plan", "meal_variety"):
+        path = Path(__file__).resolve().parent.parent / "app" / "tools" / f"{mod}.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        names = []
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                names.append(node.name)
+            elif isinstance(node, ast.Assign):
+                names += [t.id for t in node.targets if isinstance(t, ast.Name)]
+        assert len(names) == len(set(names)), f"{mod}.py defines a module-level name twice"
