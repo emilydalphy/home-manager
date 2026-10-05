@@ -193,15 +193,23 @@
   }
   /* The badge that says which row is yours. Celadon, not apricot: this
      screen's one accent belongs to its Next (rule 5), and a badge is a
-     label on a fact rather than something to do. --ink-on-celadon on
-     --celadon measures 10.65:1 light / 10.37:1 dark, the pair the app
-     already uses for text inside a celadon fill. */
+     label on a fact rather than something to do.
+     --on-accent-ink, which is RULE ONE and not a preference: --celadon is
+     a LIGHT fill in BOTH modes (#A9C4B0, shared), so dark ink on it is
+     the rule the Pomona rebrand wrote down after finding nine places
+     putting #fff on celadon. --ink-on-celadon is the wrong token despite
+     its name — in dark it is near-white ivory (#F3EBDD), because it is
+     paired with --celadon-TINT (#1C3B2C), the dark tile. Measured off
+     computed styles in a real Chromium at 390x844: 1.58:1 in dark with
+     --ink-on-celadon (badly failing at 11px/800), against 7.23:1 light
+     and 8.46:1 dark with this one. Dark is the HIGHER of the two because
+     --on-accent-ink darkens there (#14261D) while --celadon does not. */
   .member-you-badge {
     flex: 0 0 auto;
     padding: 4px 10px;
     border-radius: 999px;
     background: var(--celadon);
-    color: var(--ink-on-celadon);
+    color: var(--on-accent-ink);
     font-family: var(--font-body); font-size: 11px; font-weight: 800;
     letter-spacing: 0.06em; text-transform: uppercase;
   }
