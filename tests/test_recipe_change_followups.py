@@ -257,3 +257,43 @@ def test_a_rewrite_leaves_a_finished_approved_week_and_a_cooked_night_alone(sign
     assert _lines_of_plan(old) == old_lines
     assert res["entry_ids"] == [tue]
     assert "Dried chickpeas" in _needed()
+
+
+def _make_past(entry_id):
+    conn = get_conn()
+    try:
+        conn.execute("UPDATE meal_plan_entries SET date = ? WHERE id = ?", (household_date(-3), entry_id))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def test_changing_a_night_already_cooked_changes_the_recipe_and_leaves_the_list_alone(signed_in):
+    plan = _plan("approved", day_count=5)
+    _recipe("Chana Masala", [("Chickpeas", "2 cans"), ("Coconut milk", "1 can")])
+    new = _recipe("Rajma", [("Kidney beans", "2 cans")])
+    past = _entry(plan, MON, "Chana Masala", buy=True)
+    _entry(plan, TUE, "Chana Masala", buy=True)
+    _make_past(past)
+    before = _needed()
+
+    res = tools.change_meal_recipe(past, new)
+
+    assert res["status"] == "changed", res
+    assert _entry_recipe(past)["recipe_id"] == new
+    assert _needed() == before
+    assert res["lines_changed"] == 0
+
+
+def test_rewriting_a_night_already_cooked_leaves_the_list_alone(signed_in):
+    plan = _plan("approved", day_count=5)
+    _recipe("Chana Masala", [("Chickpeas", "2 cans"), ("Coconut milk", "1 can")])
+    past = _entry(plan, MON, "Chana Masala", buy=True)
+    _make_past(past)
+    before = _needed()
+
+    res = _rewrite(past)
+
+    assert res["status"] == "rewritten", res
+    assert _needed() == before
+    assert res["lines_changed"] == 0

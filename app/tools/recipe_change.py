@@ -501,15 +501,17 @@ def change_meal_recipe(entry_id: int, recipe_id: int) -> dict:
         plan_id = int(entry["weekly_plan_id"])
         approved = entry["plan_status"] == "approved"
         ids = _chain_entry_ids(conn, entry)
+        # Only nights still ahead have anything on the list to move; a
+        # past or cooked night changes recipe and leaves the list alone.
+        live_ids = _live_ids(conn, ids) if approved else []
         before = _needed_lines(conn) if approved else {}
-        if approved:
-            _unbuy(conn, ids)
+        _unbuy(conn, live_ids)
         conn.execute(
             "UPDATE meal_plan_entries SET recipe_id = ?, freeform_meal = NULL "
             f"WHERE id IN ({','.join('?' * len(ids))}) AND household_id = ?",
             [int(recipe_id)] + ids + [hid],
         )
-        after = _rebuy(conn, plan_id, ids) if approved else {}
+        after = _rebuy(conn, plan_id, live_ids) if live_ids else before
         conn.commit()
     except Exception:
         conn.rollback()
@@ -566,7 +568,7 @@ def _is_reheat(conn, entry) -> bool:
     return bool(_READS_AS_REHEAT.search(str(entry["freeform_meal"] or "")))
 
 
-def _approved_users_of(conn, recipe_id: int, always: list[int] | None = None) -> dict[int, list[int]]:
+def _approved_users_of(conn, recipe_id: int) -> dict[int, list[int]]:
     """
     {plan_id: [entry ids]} for every entry in an APPROVED plan of this
     household that cooks or reheats `recipe_id`.
@@ -584,23 +586,33 @@ def _approved_users_of(conn, recipe_id: int, always: list[int] | None = None) ->
     'planned' — the reading `grocery._live_plan_ids` uses for "not stale".
     A plan stays 'approved' after its week ends, and last month's Chili or
     the night already cooked this week must not be bought again onto the
-    live list. `always` is the entries the household actually opened (the
-    meal and its chain), kept whatever their date, so a rewrite of a past
-    day's recipe still redoes that day.
+    live list. That holds for the meal the household opened too: fixing
+    the recipe of a night already cooked changes the recipe and leaves the
+    list alone.
     """
     today = _grocery._household_today(conn=conn).isoformat()
-    keep = {int(i) for i in (always or [])}
     out: dict[int, list[int]] = {}
     for r in conn.execute(
         "SELECT mpe.id, mpe.weekly_plan_id FROM meal_plan_entries mpe "
         "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
         "WHERE mpe.recipe_id = ? AND mpe.household_id = ? AND wp.status = 'approved' "
-        "AND ((mpe.date >= ? AND mpe.slot_state = 'planned') OR mpe.id IN (%s)) "
-        "ORDER BY mpe.date ASC, mpe.id ASC" % ",".join("?" * len(keep) or ["?"]),
-        (int(recipe_id), household_id(), today, *(keep or {-1})),
+        "AND mpe.date >= ? AND mpe.slot_state = 'planned' "
+        "ORDER BY mpe.date ASC, mpe.id ASC",
+        (int(recipe_id), household_id(), today),
     ).fetchall():
         out.setdefault(int(r["weekly_plan_id"]), []).append(int(r["id"]))
     return out
+
+
+def _live_ids(conn, ids: list[int]) -> list[int]:
+    """The entries among `ids` that are still ahead and 'planned'."""
+    today = _grocery._household_today(conn=conn).isoformat()
+    marks = ",".join("?" * len(ids))
+    return [int(r["id"]) for r in conn.execute(
+        f"SELECT id FROM meal_plan_entries WHERE id IN ({marks}) AND household_id = ? "
+        "AND date >= ? AND slot_state = 'planned' ORDER BY date ASC, id ASC",
+        [*ids, household_id(), today],
+    ).fetchall()]
 
 
 def _unbuy_users(conn, users: dict[int, list[int]]) -> None:
@@ -771,7 +783,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
         ids = _chain_entry_ids(conn, entry)
         # Every approved night on this recipe row, not only this chain: the
         # row is edited in place, so they all change (_approved_users_of).
-        users = _approved_users_of(conn, spec["recipe_id"], ids)
+        users = _approved_users_of(conn, spec["recipe_id"])
         approved = approved or bool(users)
         before = _needed_lines(conn) if approved else {}
         snapshot = dict(conn.execute(
@@ -791,7 +803,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
              json.dumps(detail.get("advance_prep_step_indices") or []),
              int(spec["recipe_id"]), hid),
         )
-        after = _rebuy_users(conn, users) if users else {}
+        after = _rebuy_users(conn, users) if users else before
         conn.commit()
     except Exception:
         conn.rollback()
@@ -901,7 +913,7 @@ def undo_recipe_change(request_id: int) -> dict:
                     "said": (f"{who} can’t have {what}, and the old recipe has it in, "
                              "so I can’t put it back." if what else
                              f"{who} can’t eat the old recipe, so I can’t put it back.")}
-        users = _approved_users_of(conn, req["recipe_id"], _chain_entry_ids(conn, entry))
+        users = _approved_users_of(conn, req["recipe_id"])
         approved = bool(users)
         before = _needed_lines(conn) if approved else {}
         _unbuy_users(conn, users)
@@ -910,7 +922,7 @@ def undo_recipe_change(request_id: int) -> dict:
             " WHERE id = ? AND household_id = ?",
             [snapshot.get(c) for c in _SNAPSHOT_COLUMNS] + [int(req["recipe_id"]), hid],
         )
-        after = _rebuy_users(conn, users) if users else {}
+        after = _rebuy_users(conn, users) if users else before
         conn.execute(
             "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
             (OUTCOME_UNDONE, int(request_id), hid),

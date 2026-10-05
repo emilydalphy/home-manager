@@ -498,8 +498,10 @@ why*, not duplicating the diff.
     un-undone rewrite of the same recipe sits on top, or when the restored
     recipe now clashes with someone's allergy (names who and what).
     The every-night sweep only takes nights still ahead (dated on or after
-    the household's today, `slot_state = 'planned'`), plus the meal and chain
-    the household opened, so a finished approved week is never re-bought.
+    the household's today, `slot_state = 'planned'`), so a finished approved
+    week is never re-bought. That holds for the meal the household opened as
+    well: changing or rewriting a night already cooked changes the recipe and
+    leaves the list alone (the button still shows on a past night).
     Tests: `tests/test_recipe_change_followups.py`.
   - **Merge note:** the branch carries part of the 2026-10-05 batch through
     its own merge (the Settings main-person row); conflicts were only the
