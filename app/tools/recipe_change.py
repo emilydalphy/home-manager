@@ -292,6 +292,9 @@ REHEAT_NOT_CHANGEABLE = (
 )
 NO_SUCH_RECIPE = "I don’t have that recipe saved."
 SAME_RECIPE = "That’s the recipe it already uses."
+NO_INGREDIENTS_YET = (
+    "That recipe doesn’t have its ingredients yet. Open it in Recipes to finish it first."
+)
 
 
 def _entry_row(conn, entry_id: int):
@@ -456,7 +459,7 @@ def change_meal_recipe(entry_id: int, recipe_id: int) -> dict:
         if not entry:
             raise ValueError(f"No meal with id {int(entry_id)}.")
         recipe = conn.execute(
-            "SELECT id, name, ingredients_json, default_servings FROM recipes "
+            "SELECT id, name, ingredients_json, default_servings, details_pending FROM recipes "
             "WHERE id = ? AND household_id = ?",
             (int(recipe_id), hid),
         ).fetchone()
@@ -474,6 +477,13 @@ def change_meal_recipe(entry_id: int, recipe_id: int) -> dict:
             ingredients = json.loads(recipe["ingredients_json"] or "[]")
         except (TypeError, ValueError):
             ingredients = []
+        if entry["plan_status"] == "approved" and (
+                recipe["details_pending"] or not any(
+                    isinstance(i, dict) and str(i.get("item") or "").strip() for i in ingredients)):
+            # Nothing to buy for it: the old lines would come off the list
+            # and nothing would go on, and the household would shop for a
+            # dish with no ingredients.
+            return {"status": "refused", "said": NO_INGREDIENTS_YET}
         blocked = recipe_change_blocked(new_name, ingredients, _sides_of(entry))
         if blocked:
             return {"status": "blocked", "said": blocked["message"],
@@ -554,6 +564,43 @@ def _is_reheat(conn, entry) -> bool:
     if entry["recipe_id"]:
         return False
     return bool(_READS_AS_REHEAT.search(str(entry["freeform_meal"] or "")))
+
+
+def _approved_users_of(conn, recipe_id: int) -> dict[int, list[int]]:
+    """
+    {plan_id: [entry ids]} for every entry in an APPROVED plan of this
+    household that cooks or reheats `recipe_id`.
+
+    A rewrite or an undo edits the recipes row in place, so it changes the
+    food on EVERY night that points at that row — Tuesday's and the Friday
+    nobody opened, this week's and another approved week's. The chain is
+    not enough: two unchained nights on one recipe share the row, and the
+    shopping for the one left behind would still carry the old
+    ingredients. Only approved plans have bought anything; a draft's
+    shopping is written at approval from whatever the row says then.
+    """
+    out: dict[int, list[int]] = {}
+    for r in conn.execute(
+        "SELECT mpe.id, mpe.weekly_plan_id FROM meal_plan_entries mpe "
+        "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "WHERE mpe.recipe_id = ? AND mpe.household_id = ? AND wp.status = 'approved' "
+        "ORDER BY mpe.date ASC, mpe.id ASC",
+        (int(recipe_id), household_id()),
+    ).fetchall():
+        out.setdefault(int(r["weekly_plan_id"]), []).append(int(r["id"]))
+    return out
+
+
+def _unbuy_users(conn, users: dict[int, list[int]]) -> None:
+    for ids in users.values():
+        _unbuy(conn, ids)
+
+
+def _rebuy_users(conn, users: dict[int, list[int]]) -> dict:
+    after: dict = {}
+    for plan_id, ids in users.items():
+        after = _rebuy(conn, plan_id, ids)
+    return after
 
 
 def _unbuy(conn, entry_ids: list[int]) -> None:
@@ -710,13 +757,16 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
         plan_id = int(entry["weekly_plan_id"])
         approved = entry["plan_status"] == "approved"
         ids = _chain_entry_ids(conn, entry)
+        # Every approved night on this recipe row, not only this chain: the
+        # row is edited in place, so they all change (_approved_users_of).
+        users = _approved_users_of(conn, spec["recipe_id"])
+        approved = approved or bool(users)
         before = _needed_lines(conn) if approved else {}
         snapshot = dict(conn.execute(
             f"SELECT {', '.join(_SNAPSHOT_COLUMNS)} FROM recipes WHERE id = ? AND household_id = ?",
             (int(spec["recipe_id"]), hid),
         ).fetchone())
-        if approved:
-            _unbuy(conn, ids)
+        _unbuy_users(conn, users)
         conn.execute(
             "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
@@ -729,7 +779,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
              json.dumps(detail.get("advance_prep_step_indices") or []),
              int(spec["recipe_id"]), hid),
         )
-        after = _rebuy(conn, plan_id, ids) if approved else {}
+        after = _rebuy_users(conn, users) if users else {}
         conn.commit()
     except Exception:
         conn.rollback()
@@ -775,6 +825,8 @@ def _store_snapshot(request_id: int, snapshot: dict) -> None:
 
 UNDO_GONE = "That one’s already been put back."
 UNDO_NOTHING = "I don’t have the old recipe to put back."
+UNDO_MOVED_ON = "That meal has changed since, so I can’t put the old recipe back."
+UNDO_NEWER = "A newer change to that recipe is on top of this one. Put that one back first."
 
 
 def undo_recipe_change(request_id: int) -> dict:
@@ -810,18 +862,43 @@ def undo_recipe_change(request_id: int) -> dict:
             conn.rollback()
             return {"status": "refused", "said": UNDO_NOTHING}
         entry = _entry_row(conn, req["meal_plan_entry_id"]) if req["meal_plan_entry_id"] else None
-        plan_id = int(entry["weekly_plan_id"]) if entry else None
-        approved = bool(entry and entry["plan_status"] == "approved")
-        ids = _chain_entry_ids(conn, entry) if entry else []
+        if not entry or not entry["recipe_id"] or int(entry["recipe_id"]) != int(req["recipe_id"]):
+            # Swapped or picked away since: putting the old text back would
+            # edit a recipe the meal no longer uses, on other nights' food.
+            conn.rollback()
+            return {"status": "refused", "said": UNDO_MOVED_ON}
+        newer = conn.execute(
+            "SELECT 1 FROM recipe_change_requests WHERE household_id = ? AND recipe_id = ? "
+            "AND id > ? AND outcome = ? LIMIT 1",
+            (hid, int(req["recipe_id"]), int(request_id), OUTCOME_REWRITTEN),
+        ).fetchone()
+        if newer:
+            conn.rollback()
+            return {"status": "refused", "said": UNDO_NEWER}
+        try:
+            old_ings = json.loads(snapshot.get("ingredients_json") or "[]")
+        except (TypeError, ValueError):
+            old_ings = []
+        blocked = recipe_change_blocked(snapshot.get("name") or req["dish_name"] or "",
+                                        old_ings, _sides_of(entry))
+        if blocked:
+            who = blocked["member"] or "Someone here"
+            what = blocked["ingredient"]
+            conn.rollback()
+            return {"status": "refused",
+                    "said": (f"{who} can’t have {what}, and the old recipe has it in, "
+                             "so I can’t put it back." if what else
+                             f"{who} can’t eat the old recipe, so I can’t put it back.")}
+        users = _approved_users_of(conn, req["recipe_id"])
+        approved = bool(users)
         before = _needed_lines(conn) if approved else {}
-        if approved and ids:
-            _unbuy(conn, ids)
+        _unbuy_users(conn, users)
         conn.execute(
             "UPDATE recipes SET " + ", ".join(f"{c} = ?" for c in _SNAPSHOT_COLUMNS) +
             " WHERE id = ? AND household_id = ?",
             [snapshot.get(c) for c in _SNAPSHOT_COLUMNS] + [int(req["recipe_id"]), hid],
         )
-        after = _rebuy(conn, plan_id, ids) if (approved and ids) else {}
+        after = _rebuy_users(conn, users) if users else {}
         conn.execute(
             "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
             (OUTCOME_UNDONE, int(request_id), hid),
