@@ -7669,6 +7669,13 @@ def restore_leftover_chain(weekly_plan_id: int, cook_id: int, chain: dict) -> li
     and every re-linked meal are re-bought as a chain (the cook buys the
     batch, a reheat buys nothing), so the list lands where it was before
     the swap. One transaction. Returns the re-linked entry ids.
+
+    UNPINNED SINCE 2026-10-04: a swap of a cook with a fed meal still
+    ahead widens to the whole chain (swap_in_place.fed_days), so the chain
+    is carried rather than broken and this is not reached for it. What is
+    left is a cook whose fed meals are all already cooked — which the
+    "not cooked" rule above then declines. Nothing drives it; see the
+    branch's Decision log entry rather than reading its tests as coverage.
     """
     targets = (chain or {}).get("targets") or []
     if not targets:

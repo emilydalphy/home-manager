@@ -983,6 +983,15 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     sides = _plates.get_sides(entry["entry_id"]) if carry_sides else []
     # Read before the swap unlinks it: the chain this cook fed, so Undo
     # can put it back (undo_meal_swap -> weekly_plan.restore_leftover_chain).
+    #
+    # UNPINNED DEFENCE SINCE 2026-10-04, and said rather than deleted. A
+    # cook with a fed meal still ahead no longer reaches this line at all —
+    # it widened above — so the only shape left here is a cook whose fed
+    # meals are ALL already cooked, and restore_leftover_chain declines to
+    # re-link a cooked night by its own rule. So this records a chain
+    # nothing puts back. Kept because it costs one read on a path that has
+    # just made a model call, and because a future door that hands
+    # `group=[entry]` for a real chain would want it; no test drives it.
     chain = None if entry["derived_from"].get("swapped_from") else _chain_record(weekly_plan_id, entry)
     result = _weekly_plan.swap_meal_in_plan(
         weekly_plan_id, entry["date"], pick["meal_name"], slot=entry["slot"],

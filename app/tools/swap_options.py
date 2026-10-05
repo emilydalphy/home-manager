@@ -371,7 +371,10 @@ def swap_options(weekly_plan_id: int, entry_id: int, avoid: list[str] | None = N
     if len(group) < 2:
         group = [entry]
     out = _swap_options(weekly_plan_id, entry, avoid, asker, group)
-    if len(group) > 1:
+    # `whole_dish` says them whatever the group came to (a row with one day
+    # ahead answers `dates: [that day]` and always has — the sheet reads
+    # them), and a plain Swap says them when the chain widened it.
+    if whole_dish or len(group) > 1:
         out["dates"] = [e["date"] for e in group]
         # The slot of each, for a group that spans meal types — a dinner
         # and the lunch eating its leftovers (batch_days, fed_days).
