@@ -655,6 +655,11 @@ def servings_scale_factor(date_str: str, slot: str, default_servings: int | None
 
     `conn` rides through to get_slot_attendance for the same one caller and
     the same reason — see its docstring.
+
+    This is the factor for a PER-PORTION amount — a weight, a volume, an
+    amount of a substance. A bare count of a whole thing is a different
+    question and has its own sibling below (count_scale_factor), which is
+    this with the recipe anchor capped at 1.0.
     """
     base = grocery_scale_factor(date_str, slot, conn=conn)
     if not default_servings or default_servings <= 0:
@@ -663,6 +668,56 @@ def servings_scale_factor(date_str: str, slot: str, default_servings: int | None
     if att["household_size"] == 0 or att["nobody_home"]:
         return base
     return base * att["household_size"] / default_servings
+
+
+def count_scale_factor(date_str: str, slot: str, default_servings: int | None, conn=None) -> float:
+    """
+    servings_scale_factor for a BARE COUNT of a whole thing — three
+    tomatoes, two lemons, one apple — which is the same composition with
+    the RECIPE anchor capped at 1.0: it still divides a count written for
+    a bigger table, and never multiplies a count ABOVE what the recipe
+    wrote.
+
+    Why a count is its own question rather than the same one
+    (Gowthami's household, 2026-10-04: "it's assuming a whole 'apple' or
+    'tomato' for each one, when it's not a whole one per person per
+    recipe so it's way too many"). A per-portion amount really does scale
+    with the number of eaters: a recipe for two eaten by three needs half
+    again as much chicken, rice and beans, and servings_scale_factor is
+    right about all of it. A COUNT of a whole thing does not — one lemon
+    flavours a salad for two or for three, and a recipe for two that says
+    "1 lemon" is describing the dish. Multiplying it gives 1.5, which
+    _shopping_round then buys as 2, and five of those lunches buy eight
+    lemons for a week that needs five.
+
+    Measured on a throwaway week before this existed (2 adults + 1 child,
+    recipes written for one or two people): a snack recipe for ONE naming
+    "1 apple", planned five days, bought FIFTEEN apples; three dinners
+    each naming "1 tomato" bought nine, and twelve in a household of
+    four. Capped, each buys exactly what the recipes wrote — five apples
+    and three tomatoes.
+
+    The cap is on the RECIPE anchor only, and that split is the point.
+    default_servings is the least trustworthy field a recipe has (nothing
+    backfills it, add_recipe defaults it to four, an import or a chat add
+    can say anything), and multiplying by an unreliable denominator
+    amplifies its error in the one direction that hurts. ATTENDANCE is
+    the household's own word and still applies in both directions, so a
+    guest night still buys more: grocery_scale_factor's own answer is
+    untouched.
+
+    A no-op wherever default_servings is the real table, which is what
+    generation is told to write (agent.py's recipe instructions) — so on
+    the app's own well-formed recipes this changes nothing, and it bites
+    exactly where the number was least worth trusting.
+    """
+    base = grocery_scale_factor(date_str, slot, conn=conn)
+    if not default_servings or default_servings <= 0:
+        return base
+    att = get_slot_attendance(date_str, slot, conn=conn)
+    if att["household_size"] == 0 or att["nobody_home"]:
+        return base
+    return base * min(1.0, att["household_size"] / default_servings)
 
 
 def scale_ingredients(ingredients: list[dict], factor: float) -> list[dict]:
