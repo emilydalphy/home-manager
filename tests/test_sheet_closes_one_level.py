@@ -24,6 +24,21 @@ What this file pins, running shell.js's OWN sheet-stack functions under node
 Plus source-level guards over the whole audit, so a tenth sheet cannot be
 added with its x wired to a close that skips the pop, and so no open path
 goes back to closing its parent before opening its child.
+
+RED AGAINST MAIN IS NOT A MEANINGFUL NUMBER FOR THIS FILE, so it is not
+quoted: `_slice` reads the sheet-stack region by its own banner comment,
+which does not exist on main, so the file is a COLLECTION ERROR there
+(`ValueError: substring not found`, at module scope) and zero tests run.
+The evidence is mutation instead — 18 of them, every one named in the
+2026-10-05 Decision log entry and every one measured to bite. Four of the
+first twelve bit NOTHING and two of those were the harness lying rather
+than the code being safe: `El.innerHTML` was a plain property, so writing a
+scroller left `scrollTop` where it was (a browser always zeroes it), which
+made three scroll assertions unfailable; and the `stays` test used What we
+know as the parent, a level with neither a `close` nor an `open` hook, so a
+wrongful close AND a wrongful reopen were both no-ops. Both are fixed here;
+read a green scroll assertion in this file as resting on `El.innerHTML`
+being an accessor.
 """
 from __future__ import annotations
 
