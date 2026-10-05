@@ -8022,8 +8022,15 @@ span.cook-week-name { cursor: default; }
 /* Row 4 reads as a different KIND of answer — it changes the meal rather
    than the recipe — so it is set off the way the night-off row is set off
    from the swaps on the tonight sheet: its own card, a dashed edge. */
-.cr-rows-other .kit-row { border-style: dashed; }
-.cr-rows-other { border: none; }
+/* The "Different meal instead" card is dashed because it is a different
+   KIND of answer — it changes the night, not the recipe. The dash is on
+   the CARD, which is .kit-rows' own 1.5px --hairline border with its
+   style swapped; the first cut dashed the ROW instead, and .kit-row sets
+   `border: none`, so `border-style: dashed` brought all four sides back
+   at the initial `medium` width in currentColor — a 3px near-black box
+   round the quietest thing on the screen, louder than the three rows
+   above it. Caught by looking at it. */
+.cr-rows-other { border-style: dashed; }
 .cr-said {
   margin: 0;
   padding: 10px 12px;

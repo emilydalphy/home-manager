@@ -1072,7 +1072,10 @@ def test_the_button_is_the_plain_outline_control_and_not_a_second_apricot():
     """
     out = _changeable(_COOK)
     assert 'class="wk-ing-add recipe-change-btn"' in out
-    rule = _css()[_css().index(".recipe-change-btn"):]
+    # The RULE, not the first mention — the comment above the block names
+    # the class too, and slicing from there would read the comment's own
+    # "--apricot" as the button's.
+    rule = _css()[_css().index(".recipe-change-btn {"):]
     rule = rule[:rule.index("}")]
     assert "--apricot" not in rule, rule
 
