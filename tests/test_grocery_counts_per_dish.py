@@ -473,11 +473,19 @@ def test_a_small_kind_said_in_the_amount_is_not_second_guessed():
     question; this one reads it the same way rather than keeping a second
     opinion.
 
-    Pinned by the mutation that drops the note check from
-    per_person_count_problem.
+    Pinned by TWO mutations, because two different lists answer "was a kind
+    named": dropping the note check (which flags the "8 small" line), and
+    gutting _SMALL_KIND_WORDS (which flags the three NAMED small kinds
+    below). That second list is reachable ONLY for a noun the kind table
+    does not own — for its six, _per_person_count_ceiling returns before
+    the word list is consulted — so gutting it reddened nothing at all
+    until these three lines existed. Measured, not reasoned.
     """
     assert recipes.per_person_count_problem("Tomatoes", "8 small", 2) is None
     assert recipes.plausible_count_quantity("Tomatoes", "8 small", 2) == "8 small"
+    assert recipes.per_person_count_problem("Baby carrots", "40", 2) is None
+    assert recipes.per_person_count_problem("Baby zucchini", "20", 2) is None
+    assert recipes.per_person_count_problem("Mandarin oranges", "30", 2) is None
 
 
 def test_a_spice_rack_name_is_not_a_count_of_the_thing():
