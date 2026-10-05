@@ -8362,6 +8362,70 @@ span.cook-week-name { cursor: default; }
   border-color: var(--celadon-edge);
   color: var(--on-accent-ink); /* Rule 1 */
 }
+/* "What should it include? · for everyone" (2026-10-05): six boxes in one
+   card, each a whole-row button at 48px (Rule 6) with a square box that
+   fills celadon when ticked — the grocery tick's shape, its own class so
+   no Shop rule reaches it. Then the Preview: the message as it would read
+   today, on sand, quiet ink while there is nothing to send. */
+.morning-label-aside { font-weight: 500; }
+.morning-parts {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.morning-part {
+  appearance: none;
+  -webkit-appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px; /* Rule 6 */
+  padding: 0 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+  cursor: pointer;
+}
+.morning-part + .morning-part { border-top: 1.5px solid var(--hairline); }
+.morning-part-box {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  border-radius: var(--radius-badge-sm);
+  border: 1.5px solid var(--hairline-deep);
+  background: var(--ground);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.morning-part-box svg { display: block; width: 15px; height: 15px; }
+.morning-part[aria-checked="true"] .morning-part-box {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink); /* Rule 1 */
+}
+.morning-preview {
+  background: var(--sand);
+  border-radius: var(--radius-control);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.morning-preview.is-loading { opacity: 0.6; }
+.morning-preview-quiet { color: var(--ink-secondary); }
 
 /* ===========================================================================
    Meals — Week / Day / Meal (Emily's approved design, 2026-09-08)

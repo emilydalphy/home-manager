@@ -507,8 +507,19 @@ def _var(name: str) -> str:
     return SHELL_JS[start: SHELL_JS.index("];", start) + 2]
 
 
+def _var_str(name: str) -> str:
+    """A `var NAME = '...' + '...';` string constant, up to its closing `;`."""
+    start = SHELL_JS.index(f"var {name} = '")
+    return SHELL_JS[start: SHELL_JS.index("';", start) + 2]
+
+
 _HARNESS = "\n".join([
     _var("CLOCK_WORDS"), _extract("humanTime"), _extract("clockWord"), _extract("escapeHtml"),
+    # The "What should it include?" section (2026-10-05) is drawn by the
+    # renderer too, so its helpers and their state come along.
+    "var morningParts = null; var morningPreview = null;",
+    _var_str("MORNING_TICK_SVG"), _extract("morningPartsChosen"), _extract("morningPreviewInnerHtml"),
+    _extract("morningPartsHtml"),
     _extract("renderMorningSheet"),
     # A one-element DOM: the sheet's body is the only node the renderer touches.
     "var body = { innerHTML: '' };",

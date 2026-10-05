@@ -425,6 +425,51 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — The household chooses what the morning message says.
+  Branch `morning-message-settings-2026-10-05` (on top of
+  `overnight/morning-message-parts` af0d263, stacked on the 2026-10-05
+  batch), NOT merged at the time of writing.** Loop Board Feature, Phase 1,
+  Medium. Gowthami's household, 2026-10-04: "customize what kind of details
+  to include". Emily's change on the card overrides "per person": **ONE
+  setting per household**, `households.morning_text_parts`, a JSON list of
+  keys; everyone who gets the message gets the same parts.
+  - **Six parts, in this order, and the message is the ticked ones only:**
+    meals · freezer · prep · start · shop · away
+    (`digest.MORNING_PART_CHOICES`). A part with nothing today says nothing;
+    nothing in any ticked part is no message at all, as an empty day always
+    was. Defaults for a household nobody has asked (stored `''`): meals,
+    freezer, prep. `'[]'` is the real answer "none of the six" and never
+    reads back as the defaults.
+  - **The shop reminder goes quiet for every household that hasn't ticked
+    it.** It was in every morning text until now; the card switches it off
+    by default. `MORNING_PART_DEFAULTS` is the one lever if that's wrong.
+  - **`kitchen` (the attention item + use-it-up nudge) is always in and has
+    no box** (`MORNING_PARTS_ALWAYS`): the card names six boxes, and both
+    lines were already in the text. Cost: a household that unticks all six
+    still gets a text when the milk is going off. `morning_text_on` is the
+    off switch, not the boxes.
+  - **Every word about a part is in one block** (`MORNING_PART_WORDS` +
+    `MORNING_START_LINE` in `digest.py`), because Emily will review them;
+    the screen draws its labels off `part_choices` and holds no copy of
+    its own. The `says` line per part is sent but NOT drawn — the mockup
+    shows labels only, and the preview already says what each part does.
+  - **Settings → Morning text, under the people:** "What should it include?
+    · for everyone", six whole-row `role="checkbox"` buttons at 48px, then
+    **Preview**. A tick repaints the preview from
+    `GET /api/morning-text/preview?parts=…` — the sender's own composer, so
+    it can't drift — debounced 150ms, a sequence number dropping late
+    answers. It shows `push_text` (the lines without the link). Nothing to
+    send reads "Nothing to tell you today with these, so no message would
+    go out." A tick saves nothing: **Save** posts `/api/morning-text/parts`
+    (no member id) before the per-adult rows (§2b S10), and its answer
+    carries the fresh preview. Unsaved ticks are dropped on close. No
+    boxes when the house has no adults (nothing would save or send).
+  - Chat: `set_morning_text` takes `add_parts` / `drop_parts` / `parts`.
+    Tests: `tests/test_morning_message_parts.py` (backend, 52),
+    `tests/test_morning_message_settings.py` (the sheet, under node).
+    `tests/test_evening_nudge.py`'s harness now lifts the parts helpers too,
+    since `renderMorningSheet` draws them.
+
 - **2026-10-05 — The phone remembers who's using it, and the session stops
   timing out under a phone in daily use. Branch
   `overnight/device-remembers-member`, NOT merged at the time of writing.**
