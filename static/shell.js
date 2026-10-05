@@ -445,7 +445,22 @@
   // the back GESTURE can do exactly what the back control does).
   var sheetBackStack = [];
 
+  // One id per push, never reused. The popstate check below compares the
+  // id rather than the DEPTH, and that is load-bearing: a close never
+  // calls history.back() (see openOverSheet), so stale entries from
+  // earlier stacks are left behind at the same depth — and "is the state
+  // I am arriving at at least this deep" would read one of those as the
+  // entry we pushed and let the gesture fall through to the tab. Measured
+  // in Chromium before this was an id: Settings -> a section -> x, twice
+  // over, and the third visit's back gesture closed everything.
+  var sheetLevelSeq = 0;
+
   function sheetLevelDepth() { return sheetBackStack.length; }
+
+  function sheetLevelTopId() {
+    var top = sheetBackStack[sheetBackStack.length - 1];
+    return top ? top.id : 0;
+  }
 
   // Called by a child's open function, BEFORE it opens itself. `dismiss`
   // is the child's own way out, so popSheetLevel is never called twice
@@ -457,6 +472,7 @@
     var scroller = level.scroller && level.scroller();
     sheetBackStack.push({
       key: parentKey,
+      id: ++sheetLevelSeq,
       stays: stays,
       scrollTop: scroller ? scroller.scrollTop : 0,
       dismiss: typeof dismiss === 'function' ? dismiss : null
@@ -471,7 +487,7 @@
     // back-press later landing on the same path, the trade every
     // forward-only push in this file already makes.
     window.history.pushState(
-      { tab: currentTabKey(), sheetDepth: sheetBackStack.length },
+      { tab: currentTabKey(), sheetLevelId: sheetLevelSeq },
       '',
       window.location.pathname
     );
@@ -544,6 +560,21 @@
     sheetBackStack.length = 0;
   }
 
+  // Writes a sheet's body without losing the household's place in it.
+  // Settings re-renders on every late read it is waiting on (the
+  // calendar, the morning text, what the chat is holding), and each of
+  // those replaced the scroller's innerHTML and jumped the household back
+  // to the top — pre-existing, and the thing that made restoring a
+  // remembered scroll position on the way back from a section land a few
+  // pixels out (measured: 120 restored as 116, because a late read
+  // re-rendered after the restore).
+  function writeKeepingPlace(scroller, html) {
+    if (!scroller) return;
+    var at = scroller.scrollTop;
+    scroller.innerHTML = html;
+    if (at) scroller.scrollTop = at;
+  }
+
   var SHEET_BACK_ICON =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>';
 
@@ -560,7 +591,8 @@
   // control goes up one level by name. It is plain text, as drawn.
   function paintSheetLevelChrome(sheetEl, title) {
     if (!sheetEl) return;
-    var row = sheetEl.querySelector('.kit-sheet-titlerow');
+    // .snw-titlerow is the report form's own copy of the same row shape.
+    var row = sheetEl.querySelector('.kit-sheet-titlerow, .snw-titlerow');
     if (!row) return;
     var back = row.querySelector('.kit-sheet-back');
     if (!back) {
@@ -888,7 +920,7 @@
   // second implementation of it. Checked first: a sheet stack is always
   // the innermost thing on screen.
   window.addEventListener('popstate', function (e) {
-    if (sheetLevelDepth() && !(e && e.state && e.state.sheetDepth >= sheetLevelDepth())) {
+    if (sheetLevelDepth() && !(e && e.state && e.state.sheetLevelId === sheetLevelTopId())) {
       dismissTopSheet();
       return;
     }
@@ -24788,7 +24820,7 @@
     var rows = prefsSheetEl.querySelector('#prefs-rows');
     if (!rows) return;
     var mem = prefsState.memory;
-    rows.innerHTML =
+    writeKeepingPlace(rows,
       // Who this device is opened as, first — see whoPrefsRowHtml (empty
       // for a one-adult household).
       whoPrefsRowHtml() +
@@ -24851,7 +24883,7 @@
       // or leaving it. Quiet on purpose — see .prefs-leave-row.
       '<div class="prefs-leave-row">' +
         '<button type="button" class="prefs-leave-link" data-prefs="leave"><span>Delete your household</span></button>' +
-      '</div>';
+      '</div>');
   }
 
   // ---------- Appearance (2026-09-24) ----------
@@ -25822,7 +25854,7 @@
   function renderRecipesSheet() {
     if (!recipesSheetEl) return;
     var body = recipesSheetEl.querySelector('#recipes-body');
-    body.innerHTML = recipesState.view === 'detail' ? recipeViewHtml() : recipesListHtml();
+    writeKeepingPlace(body, recipesState.view === 'detail' ? recipeViewHtml() : recipesListHtml());
   }
 
   // opts.id opens straight on that recipe (after a save from here).
@@ -25890,6 +25922,11 @@
       recipesState.detail = null;
       recipesState.detailId = null;
       renderRecipesSheet();
+      // A step BETWEEN views starts at the top, the way the 'view' branch
+      // above already does. writeKeepingPlace would otherwise carry the
+      // recipe's own scroll position onto the list.
+      var listBody = recipesSheetEl.querySelector('#recipes-body');
+      if (listBody) listBody.scrollTop = 0;
       loadRecipes();
     } else if (what === 'link') {
       openRecipeLinkSheet({ parent: 'recipes', onDone: recipesAfterImport });
@@ -26142,11 +26179,11 @@
     // outside the tab panel's stacking and scroll context.
     document.body.appendChild(snwScrimEl);
     document.body.appendChild(snwSheetEl);
-    snwScrimEl.addEventListener('click', closeSnwSheet);
-    snwSheetEl.querySelector('#snw-handle').addEventListener('click', closeSnwSheet);
-    snwSheetEl.querySelector('#snw-close').addEventListener('click', closeSnwSheet);
+    snwScrimEl.addEventListener('click', dismissSnwSheet);
+    snwSheetEl.querySelector('#snw-handle').addEventListener('click', dismissSnwSheet);
+    snwSheetEl.querySelector('#snw-close').addEventListener('click', dismissSnwSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && snwSheetEl && !snwSheetEl.hidden) closeSnwSheet();
+      if (e.key === 'Escape' && snwSheetEl && !snwSheetEl.hidden) dismissSnwSheet();
     });
   }
 
@@ -26237,7 +26274,7 @@
       '<p class="snw-done">Got it — Emily reads every one of these. ' +
       'If it&rsquo;s blocking you, text her too.</p>' +
       '<button type="button" class="snw-send" id="snw-done-close">Close</button>';
-    body.querySelector('#snw-done-close').addEventListener('click', closeSnwSheet);
+    body.querySelector('#snw-done-close').addEventListener('click', dismissSnwSheet);
 
     try {
       Api.fetch('/api/feedback', {
