@@ -811,6 +811,172 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    (4.87:1 light, 5.92:1 dark; the tomorrow card's detail line already
    uses it). Contrast, measured 2026-09-13. */
 .day-node.is-now .day-node-meta, .day-node.is-now .day-node-tag { color: var(--celadon-label); }
+/* ---- A reheat says so where the row starts (2026-10-05). Its own class,
+   not .day-node-eyebrow: that one is the tinted row's word for itself and
+   is drawn in --celadon-label, which only reads on the tint. --ink-muted
+   is what .day-node-tag on the same row already uses (4.58:1 light /
+   7.36:1 dark on --surface, measured 2026-10-05). ---- */
+.day-node-kind {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  line-height: 12px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.day-node.is-done .day-node-kind { color: var(--ink-done); }
+
+/* =====================================================================
+   TODAY'S MEALS — the first card on Today (2026-10-05, Loop Board
+   "Today: the day's meals at the top, then Cook tonight, Prep and a
+   shopping-day line"; Gowthami's household asked for it directly).
+   One row per planned meal: the meal's name as a 10px caps label, the
+   dish under it, and one grey note ("everyone", "Gowthami + Ravi ·
+   leftovers from Sunday"). A meal where people are not all in the same
+   place gets the label above one line per person instead — a round
+   celadon-tint initial, the name and the place, the dish below.
+   Shares .day-group's card so it sits in the same rhythm as Cook, Prep
+   and Shop under it. NO apricot anywhere in it (Rule 5: Today's one
+   accent belongs to the dock), and no count of anything (Emily,
+   2026-09-24: nothing on Today is a score).
+   Contrast, measured in Chromium 2026-10-05 at 390x844, light / dark:
+   .day-meal-slot --ink-muted 4.58 / 7.36, .day-meal-dish --ink 12.78 /
+   14.40, .day-meal-note --ink-secondary 4.70 / 7.36 on --surface.
+   ===================================================================== */
+.day-meal, .day-meal-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: 52px;          /* Rule 6 — the row is the tap target */
+  padding: 8px 0 10px;
+  margin: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1.5px solid var(--hairline);
+  font: inherit;
+  color: inherit;
+}
+.day-group-head + .day-meal { border-top: 0; }
+.day-meal-open { cursor: pointer; }
+/* The per-person shape: the label once, then a line per person. The
+   lines carry the hairline; the block itself does not draw a second one. */
+.day-meal.is-people { padding-bottom: 0; }
+.day-meal.is-people .day-meal-line:first-of-type { border-top: 0; }
+.day-meal.is-people > .day-meal-note { padding: 0 0 10px; }
+.day-meal-slot {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.day-meal-dish {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.day-meal-note {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--ink-secondary);
+}
+.day-meal.is-none .day-meal-dish { color: var(--ink-secondary); }
+/* One person (or the people who share a dish and a place): the initial,
+   then the name and where they will be. */
+.day-meal-who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.day-meal-initial {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--celadon-tint);
+  color: var(--ink-on-celadon);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 22px;
+  text-align: center;
+}
+.day-meal-names {
+  min-width: 0;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =====================================================================
+   THE SHOPPING-DAY LINE — Today's fourth section on the six days in
+   seven the household does not shop (2026-10-05). "You shop on Saturday.
+   14 things on the list so far." A celadon LINE, not a task (the card's
+   own words): no tick, no count card, no apricot — celadon is this app's
+   "already true", and the same tile the tomorrow card and the tinted row
+   use. On shopping day this is not drawn and the Shop CARD takes its
+   place. Never answered reads "No shopping day set. Pick one" and is a
+   button into the rhythm setting.
+   Contrast, measured in Chromium 2026-10-05, light / dark:
+   --ink-on-celadon on --celadon-tint 10.65 / 10.37; the "Pick one" in
+   --celadon-label 4.87 / 5.92 (the pair .day-node.is-now already uses).
+   ===================================================================== */
+.day-shopline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 12px 14px;
+  margin: 0;
+  text-align: left;
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  font: inherit;
+  color: var(--ink-on-celadon);
+}
+.day-shopline.is-unset { cursor: pointer; }
+.day-shopline-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--celadon-label);
+}
+.day-shopline-icon svg { display: block; width: 18px; height: 18px; }
+.day-shopline-text {
+  min-width: 0;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-on-celadon);
+}
+.day-shopline-cta {
+  font-weight: 700;
+  color: var(--celadon-label);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Give the last row's bottom padding back to the tomorrow card. */
 .day-groups + .tomorrow-card { margin-top: -2px; }
 

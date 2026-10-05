@@ -1440,6 +1440,188 @@ why*, not duplicating the diff.
     that says so. Whoever merges both should read that seam. (4)
     `keeps_as_leftovers`' word list is a STARTING list; extend it when a
     real miss shows up.
+- **2026-10-05 — Today answers "what are we eating?" before it answers "what
+  are my jobs?": the day's meals at the top, then Cook, Prep and a
+  shopping-day LINE. Branch `overnight/today-days-meals`, NOT merged at the
+  time of writing.** Loop Board (High, Phase 1; Gowthami's household,
+  2026-10-04: "Today screen should show what the meals are for the day, and
+  have a prep section" / "Show the Cook for today vs a prep section; Shop: I
+  do grocery shopping on X day"). Mockup option A, approved and locked in.
+  **Measured before anything was touched**, on a throwaway DB through the
+  real tools: Today had TWO cards — Shop first, Cook second — with the day's
+  fridge and prep rows INSIDE Cook, and no breakfast/lunch/dinner summary
+  anywhere on the screen. So the one question somebody opening the app in the
+  morning actually has was answered by inference from a list of jobs.
+  - **`app/tools/day_meals.py` is the new module and it answers only that
+    one question.** It is deliberately NOT a second timeline: it reads the
+    same cooker view `moves.py` reads and says nothing about when to start,
+    because the start-by arithmetic is the move's and Today and Cook must
+    never disagree about a clock.
+  - **WHAT A PER-PERSON LINE CAN AND CANNOT SAY, measured rather than
+    assumed, and it is the whole shape of the module.** The card's examples
+    ("office, packed cold", "school, nut-free thermos") are richer than
+    anything this app records. `meal_plan_entries` carries **no member column
+    of any kind** and one (date, slot) holds one dish — so the app cannot
+    record two people eating different things at one meal, and the card's
+    "when people at a meal eat different things" branch has no data behind
+    it. `rhythm.lunch_location` is the whole vocabulary that does vary per
+    person, and it is `home` | `out` | `varies` with a per-weekday override:
+    there is no 'school' and no 'office'. `packed_lunch_days` and the
+    `weekday_lunches` kinds are keyed by DATE and household-wide, so neither
+    can say one person's lunch is packed and another's is not. A line reading
+    "Arjun · school · nut-free thermos" would therefore be invented (§8), so
+    the per-person SHAPE is built and fed by the one fact that really does
+    vary today: where each person is at lunch.
+  - **Lines are grouped by (dish, where), not by dish alone** — the
+    generalisation that reproduces the card's own example output (Arjun on
+    his own, "Gowthami + Ravi" together, all three on one dish) where
+    grouping by dish alone could not. Everyone on the same dish in the same
+    place reads "everyone". Verified in the browser: "G R Gowthami + Ravi ·
+    at home / Chana Masala" over "A Arjun · out / Chana Masala".
+  - **SNACKS SIT AFTER LUNCH AND BEFORE DINNER, and the card contradicts
+    itself about that.** Its summary line says "(Snacks last if planned)";
+    Emily's own later, more specific instruction on the mockup says a row
+    "after Lunch and before Dinner", and the card's own mutation list
+    corroborates it by naming "the snack row before Lunch" as a wrong state.
+    The later specific sentence wins. **ASSUMPTION, one line to reverse —
+    `day_meals.SLOT_ORDER`.** A day holds at most one breakfast/lunch/dinner
+    and may hold several snacks, so the snack row is ONE row naming every
+    snack dish.
+  - **Initials come from `_shared.display_initials` over the whole
+    household, never from this module's own first letter.** Two people whose
+    names start with the same letter is exactly what that helper exists for,
+    and a second implementation would disagree with every avatar elsewhere in
+    the app. Pinned by mutation 11.
+  - **`provenance_note` has ONE implementation now.** "leftovers from
+    Sunday" / "made ahead Sunday" / "from the freezer" / "prepped Sunday" was
+    computed inline in `moves._cook_and_reheat_moves`; the meals row needs
+    the same sentence, and two copies of one rule is this codebase's named
+    bug generator. Extracted, and `moves.py` now reads it. Behaviour-
+    identical, proved rather than asserted: a 136-file pre-flight over every
+    node-harness file and every file naming a touched symbol is 3486 passed,
+    0 failed. Pinned by mutation 12, which puts the second implementation
+    back.
+  - **A COST DEFECT IN THIS BRANCH'S OWN FIRST CUT, found by writing the
+    cost test rather than by reading the code.** `_where_for` went through
+    `rhythm.effective_lunch_location`, which reads the WHOLE household
+    rhythm — so a lunch cost one connection PER PERSON PER MEAL, measured at
+    6 for a household of three where the module should cost 3. The rhythm is
+    read once for the day now and threaded down, and on the path the screen
+    actually takes not even that: `today_moves` already holds the rhythm and
+    hands it in. **Measured at `sqlite3.connect`, which is the instrument
+    that matters here** — modules import `get_conn` by name, so a
+    module-level patch cannot see a function-local import. Whole Today
+    payload: **base 10, branch 13**, and **constant at both** as the
+    household grows from two people to five. The three are the members, the
+    day's attendance deviations and the rhythm. The cost test asserts a LOWER
+    bound as well as an upper one, because `<= 3` alone is green at zero,
+    which is a payload that says nothing.
+  - **The shop section is a LINE and not a task**, which is the card's own
+    point: "You shop on Saturday. 7 things on the list so far." in a celadon
+    card with no tick on it, because a standing rhythm fact is not work
+    waiting to be done. On the household's actual shopping day it becomes the
+    existing Shop card, unchanged. With no shop day on record it reads "No
+    shopping day set. Pick one" and the whole card is the button, opening
+    What we know → Your rhythm, which is where card 10 put `shop_day`.
+    Verified by tapping it in a real browser.
+  - **A reheat is a LABEL change and nothing more.** The Cook card draws
+    "REHEAT" on a reheat row, and the meals row for a reheat is a `div`
+    rather than a `button` — so a reheat is still never a way into a recipe,
+    which is the standing rule. Measured in the browser: on a reheat day only
+    the breakfast row is tappable.
+  - **Nothing on Today is a score or a count of done things** (Emily,
+    2026-09-24). Cook's head carries no fraction and neither does Prep;
+    measured in the browser after ticking a prep row, `/\d+ of \d+/` matches
+    nowhere in the panel. Pinned by mutation 8, which puts a count back.
+  - **Ticking a prep row is today's move tick, not a second mechanism** —
+    optimistic, and it survives a reload (measured: `is-later` → `is-done`
+    → still `is-done` after a full page reload).
+  - **The empty day reads "Nothing planned today" and the rest hides**, the
+    whole rest: no Cook, no Prep, no shop line, nothing tappable, one apricot
+    on the screen (the dock).
+  - **Two existing tests were NARROWED rather than weakened, each with a
+    dated comment saying what moved, and widening one of them exposed two
+    more that had been passing blind.** `test_now_recut`'s
+    `dayGroupsHtml(moves, featured)` became `dayGroupsHtml(moves, featured`
+    — the claim (the next-up move is the one tinted row of the day's cards,
+    not a hero) is untouched; only the arity moved.
+    `test_today_shop_cook`'s `_groups` regex could only see `shop|cook`, so
+    once Prep and Meals became sections of their own it was reading a
+    partial list and reporting it as the whole one. Widened to
+    `shop|cook|prep|meals` — and that **immediately failed two more tests in
+    the same file** which had been green only because the regex could not
+    see past the two groups it knew. Both were fixed with their claims
+    intact, and the "two groups, shop then cook" test is renamed for what it
+    now asserts, with its docstring recording the rename and that every
+    state assertion is kept.
+  - **FIFTEEN MUTATIONS RUN AND EVERY ONE BITES**, red counts read off the
+    runs against a clean 61 passed over the two files that render these
+    builders: sections in the wrong order (6), the meals card omitted (13),
+    per-person lines collapsed to one (2), prep left inside Cook (8), the
+    shop line rendered as a task (1), the shop line's own `is_shop_day`
+    guard removed (1), the LINE drawn on shopping day instead of the card
+    (2), the snack row before Lunch (1), a count of done things on Cook (2),
+    a reheat offered as a cook (1), the start time re-derived instead of read
+    off the move's chips (1), day_meals' own initials (1),
+    `provenance_note`'s second implementation put back (1), `today_moves`
+    not handing its rhythm down (1), the Reheat label reusing the tinted
+    row's eyebrow class (2).
+  - **MUTATION 6 BIT NOTHING ON ITS FIRST RUN, and it is recorded rather
+    than re-aimed quietly, because the miss found a real hole in the
+    tests.** It removes `todayShopLineHtml`'s own `is_shop_day` guard, and
+    `dayGroupsHtml`'s dispatch makes that guard unreachable for every state
+    the other tests seeded: a shopping day always HAD a shop move in them, so
+    the Shop card won the dispatch and the line was never asked for. The one
+    state that reaches it is a shopping day with **nothing left to buy**,
+    which now has its own test, and 6b aims a second mutation at the dispatch
+    itself. Both bite.
+  - **THE FIRST ROUND OF SCREENSHOTS WAS WORTHLESS AND IS WORTH A LINE,
+    because the next person will reach for the same tool.** Today is an
+    INNER scroll container, so Playwright's `full_page=True` captures the
+    viewport and nothing below it — four scenarios came back **byte-identical
+    (same md5)** while their measured digests were correctly different,
+    because everything that differs between them (Prep, the shop line) is
+    below the fold. An element screenshot of `#today-rest` clips at the dock
+    too. What works is scrolling the real scroll container to its end and
+    shooting again. The digests were the evidence throughout; the pictures
+    were not, and for four of them the picture said the opposite of the
+    truth.
+  - **Verified in a real Chromium at 390×844, light AND dark, on throwaway
+    databases**, across seven seeded scenarios: a full day with per-person
+    lunches, the same day with no prep, a shopping day, a day with no shop
+    day set, an empty day, a reheat dinner, and a double batch. Every one:
+    four sections in the order meals → cook → prep → shop, **no sideways
+    scroll** (scrollWidth 390 == clientWidth 390), **every tap target ≥44px**
+    (19 measured on the busiest day, none under), **console clean**, and the
+    screen's apricot fills unchanged from main's — the dock's primary plus
+    the pre-existing "now" dot, to which these four sections add none.
+    Contrast measured off computed styles and recorded in `shell.css`: the
+    slot eyebrow **4.58:1 light / 7.36:1 dark**, the dish **13.52 / 12.49**,
+    the grey note and the names **4.70 / 7.36**, the celadon initial
+    **10.65 / 10.37**, the shop line **12.59 / 12.49**, its "Pick one"
+    **5.76 / 7.14**, the Reheat label **4.58 / 7.36**. All AA.
+  - **ASSUMPTIONS, each one line to reverse and each named at the code.**
+    (1) Cook's title stays the app's existing "Cook" rather than the
+    mockup's "Cook tonight", because that card holds breakfast's cook too and
+    a title that says tonight over a 7:40 breakfast is a thing that isn't
+    true (§8). (2) The dock is untouched: it already keeps exactly one action
+    and already prefers the featured cook, and its label stays "Cook this",
+    the app's existing word. (3) `SLOT_ORDER`, above.
+  - **Found and NOT fixed, named so nobody reports it as new.** A person
+    out for lunch still shows the household's one dish beside "out", because
+    that is the only dish on record for that slot — correct by the
+    measurement above, and it will read oddly to anyone who expects the app
+    to know what Arjun actually took to school. Closing it means a member
+    column on `meal_plan_entries`, which is a schema change and its own card.
+  - `tests/test_today_days_meals.py` (44), plus the two files narrowed
+    above. **Red-against-base is not quoted for the new file and that is
+    deliberate**: it imports `app.tools.day_meals`, which the base has not
+    got, so against the base it is a collection error and zero tests run. The
+    mutations above are the evidence. The pre-flight that matters is the
+    hazard-5 one: **136 files — every node-harness file plus every file
+    naming a symbol this branch modified — 3486 passed, 0 failed**, at
+    `TZ=America/Toronto`.
+
 - **2026-10-05 — Move a meal: every day somebody is home can take it,
   including a day with nothing planned, and a greyed day says why. Branch
   `overnight/move-save-batch` (card 7), NOT merged at the time of
@@ -1751,6 +1933,7 @@ why*, not duplicating the diff.
     tab's day rows and the What we're eating list say nothing about the
     batch, which is where `plate_note` and the reheat label already carry
     that night's own story.
+
 - **2026-10-05 — The grocery shop day: an eighth household rhythm fact, and
   the plan-week nudge opens two days before it. Branch
   `overnight/grocery-shop-day`, NOT merged at the time of writing.** Tester

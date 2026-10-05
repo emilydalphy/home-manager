@@ -190,9 +190,16 @@ def _nodes(strip: str) -> list[tuple[str, str, str]]:
 
 
 def _groups(strip: str) -> list[tuple[str, str, str]]:
-    """(key, title, count) for every group card, top to bottom."""
+    """(key, title, count) for every group card, top to bottom.
+
+    WIDENED 2026-10-05: Today has FOUR sections now (the day's meals, Cook,
+    Prep, then Shop — tests/test_today_days_meals.py), so a regex that
+    could only see `shop` and `cook` would read a four-card screen as two
+    and quietly stop guarding the order. The meals card's own key is
+    `meals`; it carries no count, by Emily's 2026-09-24 no-score rule.
+    """
     return re.findall(
-        r'<div class="shell-card day-group day-group-(shop|cook)"><div class="day-group-head">'
+        r'<div class="shell-card day-group day-(?:group-)?(shop|cook|prep|meals)"><div class="day-group-head">'
         r'<span class="day-group-icon"><svg.*?</svg></span><span class="day-group-title">([^<]*)</span>'
         r'(?:<span class="day-group-count">([^<]*)</span>)?</div>',
         strip,
@@ -208,14 +215,32 @@ def _row(strip: str, move_id: str, nth: int = 0) -> str:
 # --------------------------------------------------------------------------
 
 @_needs_node
-def test_two_groups_shop_then_cook_and_the_states_read_off_done_and_featured():
+def test_the_sections_and_the_states_read_off_done_and_featured():
+    """RENAMED 2026-10-05, from
+    test_two_groups_shop_then_cook_and_the_states_read_off_done_and_featured.
+
+    The TRIPWIRE fired and the claim in the old name is the one this card
+    deliberately replaced: Today is four sections now — the day's meals,
+    Cook, Prep, then Shop (the fourth is the celadon LINE on a day the
+    household does not shop; this payload carries no `shop` block, so the
+    card is drawn, which is the backward-compatible default). What this
+    test still guards, and what it guarded before, is UNCHANGED and is
+    asserted in full below: the states read off `done` and `featured`,
+    exactly one row is tinted, and the rows run top to bottom down the day
+    inside each card. See tests/test_today_days_meals.py for the order
+    itself.
+    """
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13")) + ")));")
     strip = out["strip"]
     assert strip.startswith('<div class="day-groups">')
-    assert _groups(strip) == [("shop", "Shop", "1 stop"), ("cook", "Cook", "")]
+    assert _groups(strip) == [
+        ("meals", "Today’s meals", ""), ("cook", "Cook", ""),
+        ("prep", "Prep", ""), ("shop", "Shop", "1 stop"),
+    ]
     nodes = _nodes(strip)
-    assert [n[1] for n in nodes] == ["shop:2026-09-13", "reheat:11", "cook:12", "cook:13", "fridge:4"], (
-        "the shop in its card; then Cook top to bottom down the day: breakfast, lunch, dinner, the fridge move (by tonight)"
+    assert [n[1] for n in nodes] == ["reheat:11", "cook:12", "cook:13", "fridge:4", "shop:2026-09-13"], (
+        "Cook top to bottom down the day (breakfast, lunch, dinner); then the "
+        "fridge move in Prep, where it moved from Cook on 2026-10-05; then the shop"
     )
     states = dict((n[1], n[0]) for n in nodes)
     assert states == {
@@ -240,7 +265,10 @@ def test_the_shop_card_draws_one_row_per_store_stop_and_opens_the_list():
     ]
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13", moves)) + ")));")
     strip = out["strip"]
-    assert _groups(strip)[0] == ("shop", "Shop", "2 stops")
+    # The shop card is the LAST of Today's four sections since 2026-10-05
+    # (it was the first). Its own claim — one row per store stop, each
+    # opening the list — is untouched.
+    assert _groups(strip)[-1] == ("shop", "Shop", "2 stops")
     first = _row(strip, "shop:2026-09-13", 0)
     second = _row(strip, "shop:2026-09-13", 1)
     assert '<span class="day-node-title">Costco · 6 things</span><span class="day-node-meta">orzo, salmon, black beans…</span>' in first
@@ -255,12 +283,21 @@ def test_the_shop_card_draws_one_row_per_store_stop_and_opens_the_list():
 
 @_needs_node
 def test_a_group_with_nothing_in_it_is_not_drawn():
+    """UPDATED 2026-10-05 for Today's four sections. The claim is the same
+    one and is still measured both ways: a group with no moves in it is
+    absent from the markup, not an empty card. The MEALS card is the one
+    exception and is drawn always — on a day with nothing planned it reads
+    "Nothing planned today", which the card asked for in those words (see
+    tests/test_today_days_meals.py)."""
     moves = [m for m in _day() if m["kind"] != "shop"]
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13", moves)) + ")));")
-    assert _groups(out["strip"]) == [("cook", "Cook", "")]
+    keys = [g[0] for g in _groups(out["strip"])]
+    assert keys == ["meals", "cook", "prep"], "no shop moves, no shop card"
     only_shop = [m for m in _day() if m["kind"] == "shop"]
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload(None, only_shop)) + ")));")
-    assert _groups(out["strip"]) == [("shop", "Shop", "1 stop")]
+    assert _groups(out["strip"]) == [("meals", "Today’s meals", ""), ("shop", "Shop", "1 stop")], (
+        "nothing to cook and nothing to prep, so neither card is drawn"
+    )
 
 
 @_needs_node
@@ -283,7 +320,13 @@ def test_exactly_one_row_is_tinted_and_it_is_the_next_up_move():
     moves[0]["stops"].append({"store": "Loblaws", "count": 1, "items": ["milk"]})
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("shop:2026-09-13", moves)) + ")));")
     assert out["strip"].count('"day-node is-now"') == 1
-    assert [n[0] for n in _nodes(out["strip"])][:2] == ["now", "later"]
+    # Read off the SHOP card rather than off the top of the strip: Cook and
+    # Prep come above it since 2026-10-05, so the strip's first two rows are
+    # no longer the shop's first two. The claim — a featured shop tints its
+    # first stop and nothing else — is the same one, measured where it is
+    # actually made.
+    shop_card = out["strip"].split('day-group day-group-shop"', 1)[1]
+    assert [n[0] for n in _nodes(shop_card)][:2] == ["now", "later"]
 
 
 @_needs_node
@@ -374,7 +417,10 @@ def test_nothing_left_today_names_tomorrow_after_the_strip():
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload(None, moves, tomorrow=tomorrow)) + ")));")
     strip = out["strip"]
     assert "is-now" not in strip and strip.count('"day-node is-done"') == 4
-    assert _groups(strip) == [("cook", "Cook", "")]
+    # UPDATED 2026-10-05: four sections (the fridge move is Prep's now).
+    # This test's own claim — the tomorrow card sits AFTER them — is below
+    # and unchanged.
+    assert [g[0] for g in _groups(strip)] == ["meals", "cook", "prep"]
     assert strip.index("</div></div>") < strip.index('class="shell-card tomorrow-card"'), "the tomorrow card sits after the groups"
     assert 'data-move-dish="cook:20">Pancakes</button>' in strip
     assert out["dockHidden"] is True

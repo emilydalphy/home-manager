@@ -146,6 +146,13 @@ from .cooker import (  # noqa: F401
     get_prep_schedule,
     save_prep_tasks,
 )
+# Today's own "what are we eating?" row (day_meals.py, 2026-10-05). Not a
+# chat tool — the assistant answers that question from get_meal_plan — so
+# only the two the Today payload and its tests read are named here.
+from .day_meals import (  # noqa: F401
+    day_meals_for_day,
+    provenance_note,
+)
 from .defrost import (  # noqa: F401
     lead_hours_for_item,
     defrost_candidates_for_plan,
