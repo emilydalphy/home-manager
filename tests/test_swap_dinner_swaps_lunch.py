@@ -41,37 +41,38 @@ MERGE-BASE BEHAVIOUR so every test reaches the assertion it is named for
 instead_of_the_leftovers -> {}, repeat_for_slot -> None,
 keeps_as_leftovers -> True):
 
-    29 failed, 19 passed   (37 functions, 48 cases)
+    30 failed, 20 passed   (39 functions, 50 cases)
 
-NO AttributeError and NO KeyError-on-a-stub in that list. But read the 29
-for less than it looks, because four of them are not behaviour catches and
-each says so in its own docstring:
+No AttributeError anywhere in that list. But read the 30 for less than it
+looks, because five of them are not behaviour catches on their own claim
+and each says so in its own docstring:
 
-  * test_the_toast_prefers_the_servers_sentence and
-    test_the_repeat_rule_is_the_one_generation_uses are SOURCE markers,
-    red there because the line (or the name) does not exist on the merge
-    base — the only kind of red a marker on new code can have;
-  * test_a_failure_part_way_changes_no_meal is red on DID NOT RAISE: it
-    forces a failure inside replace_dish_on_days, which a one-day swap on
-    the merge base never reaches, so it never gets to the atomicity it
-    asserts;
-  * test_three_meals_read_as_a_list is red on the ABSENCE of `said`
-    rather than on the joining it is named for.
-
-So: 25 behaviour catches, and four reds that are honest about being
-something else.
+    25  behaviour catches, failing on the assertion they are named for
+     1  test_three_meals_read_as_a_list — red on the ABSENCE of `said`,
+        not on the joining it is about
+     1  test_a_failure_part_way_changes_no_meal — DID NOT RAISE: it
+        forces a failure inside replace_dish_on_days, which a one-day
+        swap on the merge base never reaches, so it never gets to the
+        atomicity it asserts
+     3  source/name markers (test_the_toast_prefers_the_servers_sentence,
+        test_both_swap_handlers_splice_every_day_the_swap_returned,
+        test_the_repeat_rule_is_the_one_generation_uses) — red because
+        the line or the name does not exist there, the only kind of red a
+        marker on new code can have
+    ---
+    30
 
 THE PREVIOUS VERSION OF THIS HEADER SAID "24 failed, 11 passed" AND THAT
 WAS A STALE NUMBER CARRIED FORWARD — it summed to 35 when the file held
 46 cases, which is how it was caught. Re-measured here rather than
-re-quoted.
+re-quoted, on the tree that ships.
 
 MUTATIONS RUN, red counts read off the runs over this file, in a
 `git archive` of the branch so nothing else was writing to the tree:
 
-    the whole widening a no-op (fed_days -> [entry]) ................. 21
-    keeps_as_leftovers always True ................................... 11
-    a second copy of the repeat rule in swap_in_place .................  7
+    the whole widening a no-op (fed_days -> [entry]) ................. 22
+    keeps_as_leftovers always True ................................... 12
+    a second copy of the repeat rule in swap_in_place .................  8
     swapped_said naming days without their meal words ................  3
     the undo restoring only the first row ............................  3
     the fed meal opened BESIDE the old row (plan_slot_open alone) .....  2
@@ -88,17 +89,18 @@ MUTATIONS RUN, red counts read off the runs over this file, in a
     the sheet never says which meals it is swapping ..................  1
     shell.js: runSwapPick's toast back to savedLine alone ............  1
     shell.js: runSwapInPlace's toast back to savedLine alone .........  1
+    shell.js: runSwapInPlace splicing one day, not every day returned   1
 
-FOUR OF THOSE REDDENED NOTHING ON THE FIRST RUN AND ALL FOUR ARE
-RECORDED RATHER THAN QUIETLY RE-RUN, because three were badly chosen and
-one found a real hole:
+Every one bites. FIVE REDDENED NOTHING ON A FIRST RUN AND ALL FIVE ARE
+RECORDED RATHER THAN QUIETLY RE-RUN, because three were badly chosen, one
+was neutralised by a seed, and one found a real hole:
 
   * "apply_pick not widening" — 0 red. The other three doors all pass
     `group` explicitly, so the `group is None` default is reached only by
     proposals.apply_proposal (the chat change card's Save changes), and
     NOTHING IN THIS FILE DROVE IT. That default is the fix's own fourth
     door and it was unpinned. test_the_chat_change_cards_save_widens_too
-    is the test that closes it; the mutation now reddens 1.
+    closes it; the mutation now reddens 1.
   * "NEVER_OPEN_SLOTS gains dinner" — 0 red, neutralised by its own
     seed: with only the cook and the night it feeds on the plan there is
     no other dinner for repeat_for_slot to offer, so the slot opened
@@ -108,12 +110,18 @@ one found a real hole:
     choose_swap_option) and only one was mutated; then, with both
     mutated, because `serves` only reaches
     `default_servings=pick.get("default_servings") or serves or 4` and
-    every pick in this file carries its own default_servings. It is
-    pinned by test_the_new_recipe_is_saved_for_the_batch_that_keeps_it
-    (a pick with none) rather than through the grocery list.
+    every pick in this file carries its own. It is pinned by
+    test_the_new_recipe_is_saved_for_the_batch_that_keeps_it (a pick with
+    none) rather than through the grocery list, and the docstring that
+    claimed the grocery test pinned it is corrected in place.
   * "_entry's read not scoped to the household" — 0 red as first
     written, which put a no-op `pass` ahead of the docstring. Aimed at
     the WHERE clause: 1 red.
+  * "runSwapInPlace splices one day" — 0 red, and the anchor appeared
+    twice in shell.js so the first attempt did not apply at all. Aimed
+    with surrounding context it still read 0, because nothing here drives
+    that handler's DOM splicing; the marker named above is what catches a
+    revert, and it says it is a marker.
 
 """
 from __future__ import annotations
@@ -527,6 +535,30 @@ def test_the_toast_prefers_the_servers_sentence(home):
     assert "out.said || savedLine(picked.meal, 'swapped in')" in SHELL
     assert "data.said || savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in')" in SHELL
     assert "(data.days || [data.day]).forEach(spliceSwappedDay)" in SHELL
+
+
+def test_both_swap_handlers_splice_every_day_the_swap_returned():
+    """CATCH (source marker) on runSwapInPlace, GUARD on runSwapPick.
+
+    A widened swap answers with `days` for every meal it changed, and the
+    screen has to put all of them back into the week it is holding or the
+    lunch goes on reading the old dish until the next load.
+    runSwapPick ALREADY looped (it was written for the whole-dish Swap);
+    runSwapInPlace spliced `data.day` alone, and that is the one line of
+    static/shell.js this needed besides the two toasts.
+
+    A MARKER, AND SAID TO BE ONE: the mutation that reverts
+    runSwapInPlace's loop to `spliceSwappedDay(data.day);` reddens NOTHING
+    behavioural in this file — nothing here drives that handler's DOM
+    splicing, which would want weekState, renderMealsStep and the panel
+    stubbed. So this catches a revert and does not prove the render. The
+    swap's own `days` payload is pinned properly, by
+    test_swap_i_ll_pick_widens_too."""
+    for fn in ("runSwapPick", "runSwapInPlace"):
+        i = SHELL.index("function " + fn + "(")
+        body = SHELL[i:i + 4000]
+        assert ".forEach(spliceSwappedDay)" in body, f"{fn} must splice every day it got back"
+        assert "spliceSwappedDay(data.day);" not in body, f"{fn} must not splice one day only"
 
 
 @_needs_node
