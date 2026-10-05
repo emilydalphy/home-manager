@@ -89,6 +89,7 @@ import re
 import shutil
 import sqlite3
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -206,7 +207,7 @@ def test_an_existing_household_keeps_dinner_as_set_and_lunch_at_twenty(tmp_path)
     conn.close()
 
     out = subprocess.run(
-        ["python", "-c",
+        [sys.executable, "-c",
          "from app.db import init_db; init_db()\n"
          "from app import tools\n"
          "from app.tools import time_caps\n"

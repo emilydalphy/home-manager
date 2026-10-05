@@ -66,13 +66,14 @@ CLAUDE_MD = (REPO / "CLAUDE.md").read_text(encoding="utf-8")
 ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 
 # --- the floors ----------------------------------------------------------
-# All three were taken on origin/main at ee741f8 (2026-09-27): 19030 lines,
-# 219 entries, newest entry 2026-09-26. Raise them together when the log has
+# All three were taken on the merge-batch-2026-10-05 tree (the twelve
+# overnight branches of 2026-10-05 merged): 24705 lines, 260 entries, newest
+# entry 2026-10-05. Earlier floors: ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
 # grown well past them; only lower one for a deletion you can point at.
 
-LINE_FLOOR = 18900
-ENTRY_FLOOR = 215
-NEWEST_ENTRY_ON_OR_AFTER = "2026-09-26"
+LINE_FLOOR = 24500
+ENTRY_FLOOR = 255
+NEWEST_ENTRY_ON_OR_AFTER = "2026-10-05"
 
 
 def _entry_dates() -> list[str]:
