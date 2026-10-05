@@ -431,6 +431,44 @@ def test_the_recompute_never_hands_back_none_of_something():
 
 # ---------- what is NOT a bare count ----------
 
+def test_the_two_count_tables_are_independent_judgements(week):
+    """
+    GUARD — green on main, pinned by the mutation that folds the two count
+    tables into one shared number.
+
+    _PRODUCE_COUNT_PER_SERVING (the 2026-09-13 "which KIND did you mean?"
+    flag) and _PER_PERSON_COUNT_CEILING (this card's "more than a dish
+    uses?" recompute) share all six of the older table's nouns and answer
+    two different questions about them, so neither is the other's ceiling
+    and they are free to disagree. They DO disagree about two of the six.
+
+    This asserts only that the disagreement is real, never which four
+    agree: the comment at the older table says in as many words that the
+    four agreeing today is a coincidence of two separate judgements rather
+    than a shared number, and a test freezing those four would be exactly
+    the thing that comment tells the next reader not to build. So what is
+    pinned is independence — fold them together, or make one read the
+    other, and this goes red.
+    """
+    kind = {row[0]: row[-1] for row in recipes._PRODUCE_COUNT_PER_SERVING}
+    ceiling = dict(recipes._PER_PERSON_COUNT_CEILING)
+
+    # Every noun the older table judges is also judged by the new one, or
+    # a count the kind rule passes would reach the list unexamined.
+    assert set(kind) <= set(ceiling)
+
+    differ = {n for n in kind if kind[n] != ceiling[n]}
+    assert differ, (
+        "the two count tables now agree about every noun they share. If "
+        "that is deliberate, say so at _PRODUCE_COUNT_PER_SERVING; if one "
+        "has been made to read the other, that is the fold its comment "
+        "warns against."
+    )
+    # The two the comment names, so the comment cannot drift from the code.
+    assert ("tomato", kind["tomato"], ceiling["tomato"]) == ("tomato", 2, 1)
+    assert ("apple", kind["apple"], ceiling["apple"]) == ("apple", 2, 1)
+
+
 def test_a_named_small_kind_is_never_second_guessed(week):
     """
     GUARD — green on main, and the 2026-09-13 decision kept intact: six

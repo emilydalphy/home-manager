@@ -1828,16 +1828,20 @@ def implausible_quantity_message(line: dict, servings: int | None) -> str:
 # anything a dish for the table uses, and six of its words are these six
 # nouns.
 #
-# THE TWO TABLES CARRY DIFFERENT NUMBERS FOR THOSE SIX NOUNS AND THAT IS
-# NOT A DRIFT TO BE TIDIED — they answer different questions, so neither
-# is the other's ceiling. This one asks "is this too many of the ORDINARY
-# kind?", and its answer has to be generous, because a high count is the
-# EVIDENCE that the small kind was meant. That one asks "is this more than
-# a dish for this table uses, whatever the kind?" — so tomato is 1 there
-# against 2 here, and apple 1 against 2. Both directions really happen: a
-# bare "8 tomatoes" for four is two each, which this table passes and that
-# one recomputes; "6 Persian cucumbers" is six each, which this table
-# passes (a kind was named) and that one leaves alone for the same reason
+# THE TWO TABLES DISAGREE ABOUT TWO OF THOSE SIX NOUNS AND THAT IS NOT A
+# DRIFT TO BE TIDIED — they answer different questions, so neither is the
+# other's ceiling. This one asks "is this too many of the ORDINARY kind?",
+# and its answer has to be generous, because a high count is the EVIDENCE
+# that the small kind was meant. That one asks "is this more than a dish
+# for this table uses, whatever the kind?" — so tomato is 1 there against
+# 2 here, and apple 1 against 2. The other four happen to agree today
+# (cucumber 1, potato 2, pepper 1.5, onion 1.5) and nothing holds them
+# together: agreeing is a coincidence of two separate judgements, not a
+# shared number, so do not read it as one and do not "fix" a future
+# divergence. Both directions really happen: a bare "8 tomatoes" for four
+# is two each, which this table passes and that one recomputes; "6 Persian
+# cucumbers" is six each, which this table passes (a kind was named) and
+# that one leaves alone for the same reason
 # (_per_person_count_ceiling asks _produce_class, so a name that says a
 # kind is never second-guessed by either). What the two share is only the
 # standing-down rule, never the number. An earlier draft of this comment
