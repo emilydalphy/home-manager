@@ -719,6 +719,33 @@ why*, not duplicating the diff.
     `simple_text_columns` and is unvalidated. It is also why mutation M10 hangs
     rather than failing fast. Not this card's to fix, and not made worse by it:
     both new fields are validated **above** the write, so neither can reach it.
+  - **THE FULL SUITE CAUGHT THIS FILE HANDING A SCRIPT TO `node -e`, AND THAT
+    IS THE ONE THING A TARGETED RUN COULD NOT HAVE TOLD ME.** `tests/
+    test_node_harness_size.py` is the repo's own guard: Linux caps a SINGLE
+    command-line argument at 128 KiB, `static/onboarding.html` is already
+    larger than that, so the `-e` form is rejected by the operating system
+    before node reads a character — the failure 44 tests were silently in on
+    2026-09-12. This file's `_node` goes through `nodeharness.run_node`
+    now, keeping its own returncode assertion and its own `json.loads`,
+    which is what that helper's docstring asks for.
+  - **AND THE SWITCH THEN BROKE THREE TESTS, WHICH FOUND A REAL GAP IN THE
+    SHARED HELPER RATHER THAN IN THIS FILE.** `nodeharness._api_prelude`
+    prepends the real `static/api.js` when a harness calls through `Api.`
+    and does not bring its own stub — and its test for "brings its own" was
+    the literal string **`var Api`**, a string standing in for a concept. This
+    file's stub is `const Api`, so api.js was prepended ON TOP of it and node
+    refused the whole file with "Identifier 'Api' has already been declared".
+    It is a `\b(?:var|let|const)\s+Api\b` regex now. **Widening it is
+    provably safe rather than argued safe, and the measurement is the
+    argument**: it can only ever prepend LESS, and a harness declaring
+    `const Api` today cannot parse at all — so the set of harnesses whose
+    behaviour this changes is exactly the set that is already broken. Measured
+    across `tests/`: three files use `var Api` and work, one used `const Api`
+    and could not run. Four tests pin it in `test_node_harness_size.py` (the
+    const case is the catch; the other three stop the widening having gone too
+    far), and **four mutations bite**: the literal rule put back, i.e. main's
+    behaviour (**5 red**); prepending nothing ever (2); the trailing word
+    boundary dropped (1); and this file back on `node -e` (1).
   - **NOT DONE, and it is criterion 3 — deliberately deferred by instruction,
     not forgotten.** Settings → Your rhythm still shows the weeknight limit
     alone, through `WWK_WEEKNIGHT` / `wwkWeeknightHtml` / `wwkSetWeeknight` in

@@ -99,6 +99,7 @@ from app import agent, tools
 from app.tools import plan_quality, time_caps
 from app.tools import swap_in_place as sip
 
+import nodeharness
 import tests.test_onboarding_go_back as _go_back  # noqa: E402  (the DOM stub)
 
 
@@ -584,7 +585,15 @@ function tap(id, label) {
 
 
 def _node(script: str) -> dict:
-    out = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=30)
+    # tests/nodeharness.py, never `node -e`: Linux caps a single command-line
+    # argument at 128 KiB, and these harnesses slice static/onboarding.html,
+    # which is already larger than that — so the `-e` form would be rejected
+    # by the operating system before node read a character. Added 2026-10-05
+    # after tests/test_node_harness_size.py caught exactly that here. Each
+    # file keeps its own returncode assertion and its own json.loads, which
+    # is what that helper's docstring asks for: the message names this
+    # harness, and that is what a failure reads as.
+    out = nodeharness.run_node(script, timeout=30)
     assert out.returncode == 0, out.stderr[-3000:]
     return json.loads(out.stdout.strip().splitlines()[-1])
 

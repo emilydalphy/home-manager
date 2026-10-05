@@ -33,6 +33,7 @@ site bringing the ceiling back.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import tempfile
 
@@ -108,11 +109,27 @@ def _clock_prelude() -> str:
 #
 # Only when the script mentions `Api.` and does not bring its own, so a
 # harness that never touches the server runs byte-for-byte as before.
+#
+# "Brings its own" is THREE spellings, not one (widened 2026-10-05). The
+# first version matched the literal `var Api`, which is a string standing in
+# for a concept: a harness declaring `const Api` or `let Api` got the real
+# api.js prepended on top of its own stub and node refused the file outright
+# with "Identifier 'Api' has already been declared" — before a single
+# assertion ran. Found by tests/test_time_limits.py, whose stub is `const`.
+#
+# Widening is provably safe rather than argued safe, and the measurement is
+# the argument: it can only ever prepend LESS, and a harness that declares
+# `const Api` today cannot parse at all, so the set of harnesses whose
+# behaviour this changes is exactly the set that is already broken.
+# Measured when this was widened: three files used `var Api` and worked, one
+# used `const Api` and could not run.
 _API_JS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "api.js")
+
+_BRINGS_ITS_OWN_API = re.compile(r"\b(?:var|let|const)\s+Api\b")
 
 
 def _api_prelude(script: str) -> str:
-    if "Api." not in script or "var Api" in script:
+    if "Api." not in script or _BRINGS_ITS_OWN_API.search(script):
         return ""
     with open(_API_JS, encoding="utf-8") as f:
         return f.read() + "\n"
