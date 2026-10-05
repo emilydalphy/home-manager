@@ -358,6 +358,292 @@
     setTimeout(finish, motionMs('--motion-base') + 50);
   }
 
+  // ---------- One level at a time: the sheet stack (2026-10-05) ----------
+  //
+  // Gowthami's household, 2026-10-04: "Everytime you click x on the top it
+  // exist the whole app - need an x that's for the screen so it's
+  // cleaner."
+  //
+  // Every sheet here already closed ITSELF. The bug was one level up:
+  // opening a Settings section ran closePrefsSheet() first — the "one
+  // sheet at a time" rule — so by the time the section's x was tapped,
+  // Settings was already gone and that x was the last thing between the
+  // household and the tab. Same for Recipes, Morning text, Helpful tips
+  // and Sharing with Claude.
+  //
+  // So a sheet opened FROM another sheet now records the one it came from
+  // (openOverSheet). Its x, its scrim, its handle, Escape and its new
+  // back chevron all pop ONE level: this sheet closes and the parent
+  // reopens, scrolled where it was. A sheet opened from a tab records
+  // nothing, so its x still lands on the tab exactly as before — which is
+  // what "every x closes one level" means at the bottom of the stack.
+  //
+  // WHY HIDE-AND-REOPEN rather than leaving the parent on screen under
+  // the child: these are full-height bottom sheets (max-height 88%)
+  // carrying aria-modal="true", so two open at once would put two modals
+  // in the accessibility tree and leave the parent's scroller in the tab
+  // order behind the child. The household cannot see the difference — the
+  // child covers the parent — and the already-shipped recipesAfterImport
+  // (2026-10-04) is this same pattern, written by hand for one pair. This
+  // is that, generalised. A child that genuinely DOES stack visually
+  // because it has a z-index of its own (the usual-week sheet over What
+  // we know, the photo viewer over the link sheet) passes
+  // `{ stays: true }` and its parent is left on screen — so `stays` is a
+  // property of the CHILD, which is why it is an argument to
+  // openOverSheet rather than a field of the parent's entry below. A
+  // parent that is only ever stayed-over needs no close/open at all.
+  //
+  // DELIBERATELY NOT in closePrefsSheet / closeKitchenSheet / the rest:
+  // those are what "one sheet at a time" calls to get a sheet out of the
+  // way, and openOverSheet itself calls one of them right after pushing.
+  // A pop inside them would undo the push it was pushed by. The pop lives
+  // in a dismiss* entry point per sheet — the shape dismissRecipeLinkSheet
+  // already had.
+  var SHEET_LEVELS = {
+    // The label is what the back control and the crumb NAME, so it has to
+    // be the title the parent sheet actually shows. The mockup calls this
+    // sheet "Settings"; the sheet itself says "Preferences", and a crumb
+    // that disagrees with the screen it lands on is a thing that isn't
+    // true (DESIGN_SYSTEM section 8). One line to change if the sheet is
+    // ever retitled.
+    prefs: {
+      label: 'Preferences',
+      close: function () { closePrefsSheet(); },
+      open: function () { openPrefsSheet(); },
+      scroller: function () { return document.getElementById('prefs-rows'); }
+    },
+    // Only ever stayed-over (#uw-sheet carries its own z-index above
+    // #kit-sheet), so there is nothing to close or reopen.
+    wwk: {
+      label: 'What we know',
+      scroller: function () { return document.getElementById('wwk-body'); }
+    },
+    recipes: {
+      label: 'Recipes',
+      close: function () { closeRecipesSheet(); },
+      open: function () { openRecipesSheet(); },
+      scroller: function () { return document.getElementById('recipes-body'); }
+    },
+    // The link/cookbook import sheet. Stayed-over by the photo viewer
+    // (#rph-sheet is one z-index step above it); reopened by nothing, so
+    // no close/open. The title is set per mode (rliSetTitle), so the
+    // label is the one word both modes share.
+    rli: {
+      label: 'the recipe',
+      scroller: function () { return document.getElementById('rli-body'); }
+    },
+    tips: {
+      label: 'Helpful tips',
+      close: function () { closeTipsSheet(); },
+      open: function () { openTipsSheet(); },
+      scroller: function () { return document.querySelector('#tips-sheet .tips-body'); }
+    }
+  };
+
+  // Outermost first. Each entry: which parent to come back to, where it
+  // was scrolled, and how to dismiss the child that is sitting on it (so
+  // the back GESTURE can do exactly what the back control does).
+  var sheetBackStack = [];
+
+  // One id per push, never reused. The popstate check below compares the
+  // id rather than the DEPTH, and that is load-bearing: a close never
+  // calls history.back() (see openOverSheet), so stale entries from
+  // earlier stacks are left behind at the same depth — and "is the state
+  // I am arriving at at least this deep" would read one of those as the
+  // entry we pushed and let the gesture fall through to the tab. Measured
+  // in Chromium before this was an id: Settings -> a section -> x, twice
+  // over, and the third visit's back gesture closed everything.
+  var sheetLevelSeq = 0;
+
+  function sheetLevelDepth() { return sheetBackStack.length; }
+
+  function sheetLevelTopId() {
+    var top = sheetBackStack[sheetBackStack.length - 1];
+    return top ? top.id : 0;
+  }
+
+  // Called by a child's open function, BEFORE it opens itself. `dismiss`
+  // is the child's own way out, so popSheetLevel is never called twice
+  // for one tap.
+  function openOverSheet(parentKey, dismiss, opts) {
+    var level = parentKey && SHEET_LEVELS[parentKey];
+    if (!level) return false;
+    var stays = !!(opts && opts.stays);
+    var scroller = level.scroller && level.scroller();
+    sheetBackStack.push({
+      key: parentKey,
+      id: ++sheetLevelSeq,
+      stays: stays,
+      scrollTop: scroller ? scroller.scrollTop : 0,
+      dismiss: typeof dismiss === 'function' ? dismiss : null
+    });
+    if (!stays && level.close) level.close();
+    // One history entry per level, at the same path, so the Android and
+    // browser back gesture pops the same level the chevron does. Written
+    // the way the ask sheet writes its own (askSheetHistoryPushed): a pop
+    // never calls history.back(), it just forgets the entry — an
+    // immediate unrelated pushState in the same tap would race a queued
+    // back-traversal unpredictably. The cost is one invisible extra
+    // back-press later landing on the same path, the trade every
+    // forward-only push in this file already makes.
+    window.history.pushState(
+      { tab: currentTabKey(), sheetLevelId: sheetLevelSeq },
+      '',
+      window.location.pathname
+    );
+    return true;
+  }
+
+  // One level up. Answers false when there was no parent — i.e. this x
+  // really does land on the tab, which is the correct bottom of the
+  // stack. `opts.forget` pops the level WITHOUT reopening the parent, for
+  // the one caller that lands the household somewhere else itself (a
+  // saved import opens the recipe it just saved).
+  function popSheetLevel(opts) {
+    var back = sheetBackStack.pop();
+    if (!back) return false;
+    var level = SHEET_LEVELS[back.key];
+    if (!level) return false;
+    if (opts && opts.forget) return true;
+    // A parent that was left on screen is already where it was: nothing
+    // to reopen, and nothing to scroll back, because it never moved.
+    if (back.stays) return true;
+    if (level.open) level.open();
+    var scroller = level.scroller && level.scroller();
+    if (scroller) scroller.scrollTop = back.scrollTop;
+    return true;
+  }
+
+  // Pop the level THIS sheet is the recorded way out of, and nothing else.
+  //
+  // A sheet's open function pushes a level only when it was opened from
+  // another sheet (openOverSheet answers false with no parent), and its x
+  // runs the same dismiss either way — so a bare popSheetLevel() in there
+  // is "pop whatever is on top", which is only safe as long as nothing can
+  // open that sheet from a tab while some other sheet's level is standing.
+  // Three of the nine already guard that by hand with an
+  // `else forgetSheetLevels()`, and the other six cannot: the pop's own
+  // reopen (SHEET_LEVELS[x].open) calls them with no parent too, and
+  // forgetting there would drop the level BELOW the sheet being reopened —
+  // prefs -> tips -> the report form, where tips reopening would take
+  // Settings off the stack and tips' own x would land on the tab.
+  //
+  // The level already records the child's own dismiss, so the two cases
+  // tell themselves apart: "am I the way out of the top level?" is reading
+  // that field for exactly what it means. Nothing reachable today opens one
+  // of these from a tab mid-stack (every tab change forgets the stack, and
+  // every sheet's scrim covers the tab under it), so this is the invariant
+  // made structural rather than a bug being fixed.
+  function popSheetLevelFor(dismiss, opts) {
+    var top = sheetBackStack[sheetBackStack.length - 1];
+    if (!top || top.dismiss !== dismiss) return false;
+    return popSheetLevel(opts);
+  }
+
+  // What the back control and the crumb name: the sheet one level up.
+  function sheetBackLabel() {
+    var back = sheetBackStack[sheetBackStack.length - 1];
+    var level = back && SHEET_LEVELS[back.key];
+    return level ? level.label : '';
+  }
+
+  // The back GESTURE, routed to the child's own dismiss so the gesture
+  // and the chevron are the same call rather than two implementations of
+  // one rule.
+  function dismissTopSheet() {
+    var back = sheetBackStack[sheetBackStack.length - 1];
+    if (!back) return false;
+    if (back.dismiss) { back.dismiss(); return true; }
+    return popSheetLevel();
+  }
+
+  // Which sheet a tapped control SITS INSIDE — so the "Something not
+  // working?" tile in Settings opens the form on Settings, while the same
+  // control in an error paragraph halfway down the Shop tab opens it on
+  // the tab. Read off the DOM rather than off whichever sheet happens to
+  // be open, so the answer is about the control that was tapped.
+  var SHEET_LEVEL_HOSTS = [
+    { sel: '#tips-sheet', key: 'tips' },
+    { sel: '#recipes-sheet', key: 'recipes' },
+    { sel: '#rli-sheet', key: 'rli' },
+    { sel: '#wwk-body', key: 'wwk' },
+    { sel: '#prefs-sheet', key: 'prefs' }
+  ];
+
+  function sheetLevelHost(el) {
+    if (!el || !el.closest) return null;
+    for (var i = 0; i < SHEET_LEVEL_HOSTS.length; i++) {
+      if (el.closest(SHEET_LEVEL_HOSTS[i].sel)) return SHEET_LEVEL_HOSTS[i].key;
+    }
+    return null;
+  }
+
+  // Leaving the stack behind entirely — a tab change, or a sheet opened
+  // from a tab while a stack is somehow still standing. The parents are
+  // not coming back, so nothing should reopen them later.
+  function forgetSheetLevels() {
+    if (!sheetBackStack.length) return;
+    sheetBackStack.length = 0;
+  }
+
+  // Writes a sheet's body without losing the household's place in it.
+  // Settings re-renders on every late read it is waiting on (the
+  // calendar, the morning text, what the chat is holding), and each of
+  // those replaced the scroller's innerHTML and jumped the household back
+  // to the top — pre-existing, and the thing that made restoring a
+  // remembered scroll position on the way back from a section land a few
+  // pixels out (measured: 120 restored as 116, because a late read
+  // re-rendered after the restore).
+  function writeKeepingPlace(scroller, html) {
+    if (!scroller) return;
+    var at = scroller.scrollTop;
+    scroller.innerHTML = html;
+    if (at) scroller.scrollTop = at;
+  }
+
+  var SHEET_BACK_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg>';
+
+  // The stacked header from the mockup (Gowthami feedback canvas, the
+  // third phone under "Save + close"): a back chevron before the title,
+  // and a crumb under the title row naming where this screen sits. Both
+  // are created on the sheet's first stacked open and then painted on
+  // every open, so nothing has to be threaded through eight innerHTML
+  // strings — and a sheet opened from a tab is left exactly as it was,
+  // with no chevron and no crumb.
+  //
+  // The chevron is the control; the crumb is what carries the NAME, which
+  // is how the mockup satisfies this repo's standing rule that a back
+  // control goes up one level by name. It is plain text, as drawn.
+  function paintSheetLevelChrome(sheetEl, title) {
+    if (!sheetEl) return;
+    // .snw-titlerow is the report form's own copy of the same row shape.
+    var row = sheetEl.querySelector('.kit-sheet-titlerow, .snw-titlerow');
+    if (!row) return;
+    var back = row.querySelector('.kit-sheet-back');
+    if (!back) {
+      back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'kit-sheet-back';
+      back.innerHTML = SHEET_BACK_ICON;
+      back.addEventListener('click', function () { dismissTopSheet(); });
+      row.insertBefore(back, row.firstChild);
+    }
+    var crumb = row.parentNode.querySelector('.kit-sheet-crumb');
+    if (!crumb) {
+      crumb = document.createElement('p');
+      crumb.className = 'kit-sheet-crumb';
+      row.parentNode.insertBefore(crumb, row.nextSibling);
+    }
+    var parent = sheetBackLabel();
+    back.hidden = !parent;
+    crumb.hidden = !parent;
+    if (parent) {
+      back.setAttribute('aria-label', 'Back to ' + parent);
+      crumb.textContent = parent + ' › ' + (title || '');
+    }
+  }
+
   // Tab panels crossfade with a small rise (activateTab, below): the
   // incoming panel starts faded/dropped and settles to rest over
   // --motion-fast. One-directional — the outgoing panel just hides via the
@@ -506,6 +792,10 @@
     // activate the tab first and open it after, so this does not fight
     // them.
     closeKitchenSheet();
+    // And a sheet stack belongs to the sheets that built it (2026-10-05):
+    // leaving for a tab is the household leaving the stack, so nothing
+    // reopens a parent later.
+    forgetSheetLevels();
 
     // The All set screen is shown once, in the page view that approved the
     // week (allSetStepHtml). Leaving Plan by any door — "Open the list", the
@@ -648,7 +938,18 @@
   // those), this is the back gesture asking to close the sheet, not to
   // change tabs or steps — closeAskSheet() handles it and nothing else
   // below runs, since the URL never actually changed.
+  //
+  // A sheet opened from another sheet (openOverSheet, above) pushes one
+  // entry per level the same way, so the back GESTURE pops the same level
+  // the back chevron does — which is the card's own criterion, and why
+  // the gesture is routed through the child's own dismiss rather than a
+  // second implementation of it. Checked first: a sheet stack is always
+  // the innermost thing on screen.
   window.addEventListener('popstate', function (e) {
+    if (sheetLevelDepth() && !(e && e.state && e.state.sheetLevelId === sheetLevelTopId())) {
+      dismissTopSheet();
+      return;
+    }
     if (askSheetHistoryPushed && !(e && e.state && e.state.askSheet)) {
       closeAskSheet();
       return;
@@ -9366,11 +9667,18 @@
   var kitSheetEl = document.getElementById('kit-sheet');
   var kitSheetOpen = null;
 
-  function openKitchenSheet(key, section) {
+  // `parent` (2026-10-05): the sheet this one was opened FROM, when it
+  // was. Settings' section rows pass 'prefs', so this sheet's x and its
+  // back chevron land back on Settings instead of on the tab. Every other
+  // caller — Cook's More sheet, a chat action's /memory href, Shop's
+  // store picker — passes nothing and is unchanged.
+  function openKitchenSheet(key, section, parent) {
     var meta = KITCHEN_SHEETS[key];
     if (!meta || !kitSheetEl) return;
     closeAskSheet();
     closeWeekSheet();
+    if (parent) openOverSheet(parent, dismissKitchenSheet);
+    else forgetSheetLevels();
     var frame = document.getElementById('kit-sheet-frame');
     var body = document.getElementById('wwk-body');
 
@@ -9398,7 +9706,17 @@
     }
     document.getElementById('kit-sheet-title').textContent = meta.title;
     kitSheetOpen = key;
+    paintSheetLevelChrome(kitSheetEl, meta.title);
     openSheet(kitSheetEl, kitSheetScrim);
+  }
+
+  // The household's own way out of this sheet: close it, then go up one
+  // level if it was opened from another sheet. Deliberately separate from
+  // closeKitchenSheet, which is what the "one sheet at a time" rule calls
+  // and which must never pop (see the sheet-stack comment at the top).
+  function dismissKitchenSheet() {
+    closeKitchenSheet();
+    popSheetLevelFor(dismissKitchenSheet);
   }
 
   function closeKitchenSheet() {
@@ -9422,11 +9740,11 @@
   }
 
   if (kitSheetScrim) {
-    kitSheetScrim.addEventListener('click', closeKitchenSheet);
-    document.getElementById('kit-sheet-handle').addEventListener('click', closeKitchenSheet);
-    document.getElementById('kit-sheet-close').addEventListener('click', closeKitchenSheet);
+    kitSheetScrim.addEventListener('click', dismissKitchenSheet);
+    document.getElementById('kit-sheet-handle').addEventListener('click', dismissKitchenSheet);
+    document.getElementById('kit-sheet-close').addEventListener('click', dismissKitchenSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && !kitSheetEl.hidden) closeKitchenSheet();
+      if (e.key === 'Escape' && !kitSheetEl.hidden) dismissKitchenSheet();
     });
   }
 
@@ -10580,13 +10898,13 @@
     uwSheetEl.innerHTML = '<div class="ask-sheet-handle" id="uw-sheet-handle"></div><div id="uw-sheet-body"></div>';
     document.body.appendChild(uwScrimEl);
     document.body.appendChild(uwSheetEl);
-    uwScrimEl.addEventListener('click', closeUwSheet);
-    document.getElementById('uw-sheet-handle').addEventListener('click', closeUwSheet);
+    uwScrimEl.addEventListener('click', dismissUwSheet);
+    document.getElementById('uw-sheet-handle').addEventListener('click', dismissUwSheet);
     uwSheetEl.addEventListener('click', uwSheetClick);
     // Escape closes this sheet, not What we know under it: caught on the
     // way down, before the Kitchen sheet's own listener on document.
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && uwSheetEl && !uwSheetEl.hidden) { e.stopPropagation(); closeUwSheet(); }
+      if (e.key === 'Escape' && uwSheetEl && !uwSheetEl.hidden) { e.stopPropagation(); dismissUwSheet(); }
     }, true);
   }
   function closeUwSheet() {
@@ -10594,10 +10912,21 @@
     uwState.sheet = null;
     closeSheet(uwSheetEl, uwScrimEl);
   }
+  // The household's own way out: closes this sheet and pops its level, so
+  // the back gesture and the chevron land on What we know like the x.
+  function dismissUwSheet() {
+    closeUwSheet();
+    popSheetLevelFor(dismissUwSheet);
+  }
   function openUwSheet(meal) {
     var data = uwState.data;
     if (!data || UW_MEALS.indexOf(meal) === -1) return;
     buildUwSheet();
+    // Opened from inside What we know, which keeps its own z-index under
+    // this one — so the level is recorded only to give this sheet the
+    // back chevron and the crumb (2026-10-05); What we know is left
+    // exactly where it is, which is what its x already landed on.
+    openOverSheet('wwk', dismissUwSheet, { stays: true });
     uwState.sheet = {
       meal: meal,
       cells: uwCells(data, meal),
@@ -10607,6 +10936,7 @@
       error: ''
     };
     renderUwSheet();
+    paintSheetLevelChrome(uwSheetEl, UW_MEAL_LABELS[meal]);
     openSheet(uwSheetEl, uwScrimEl);
   }
 
@@ -10701,7 +11031,7 @@
     var what = t.getAttribute('data-uw');
     var value = t.getAttribute('data-value');
     var members = (uwState.data && uwState.data.members) || [];
-    if (what === 'close') return closeUwSheet();
+    if (what === 'close') return dismissUwSheet();
     if (what === 'day') {
       var i = parseInt(value, 10);
       sheet.open = sheet.open === i ? -1 : i;
@@ -10741,7 +11071,13 @@
     try {
       var saved = await uwPost(uwSheetPayload(sheet));
       if (saved) uwState.data = saved;
-      closeUwSheet();
+      // Out the same way the x goes (2026-10-05). This was
+      // `closeUwSheet(); popSheetLevel();` — the same two steps, but with
+      // the bare pop that popSheetLevelFor exists to replace: a save would
+      // pop whatever level happened to be on top rather than this sheet's
+      // own. dismissUwSheet is the one way out, so the save and the x can
+      // never land in different places.
+      dismissUwSheet();
       wwkRenderSection('rhythm');
       wwkFlashSaved('rhythm');
       toastSaved(savedLine(UW_MEAL_LABELS[sheet.meal], 'saved'));
@@ -11630,6 +11966,13 @@
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
+    // opts.parent (2026-10-05): Settings -> Recipes passes 'recipes', so
+    // the x, the scrim, Escape and the new back chevron all land back on
+    // the recipe list. Cook -> More and the chat composer's camera pass
+    // nothing and close to the tab, as before. A SAVE lands the household
+    // on the recipe it just saved instead (rliOnDone), so that path forgets
+    // the level rather than reopening the list behind it.
+    rliParent(opts && opts.parent, dismissRecipeLinkSheet);
     rliOnDone = (opts && typeof opts.onDone === 'function') ? opts.onDone : null;
     rliDraft = null;
     rliPhotos = [];
@@ -11642,9 +11985,22 @@
     if (input) input.focus();
   }
 
+  // Both modes record their parent through here, so that reopening this
+  // sheet over a level it is already standing on ("Add another", which
+  // calls openRecipeLinkSheet with no parent at all, and anything that
+  // ever does pass one twice) cannot push the same list twice and leave
+  // it needing two closes.
+  function rliParent(parent, dismiss) {
+    if (!parent) return;
+    var top = sheetBackStack[sheetBackStack.length - 1];
+    if (top && top.key === parent) return;
+    openOverSheet(parent, dismiss);
+  }
+
   function rliSetTitle(text) {
     var title = rliSheetEl && rliSheetEl.querySelector('#rli-title');
     if (title) title.textContent = text;
+    paintSheetLevelChrome(rliSheetEl, text);
   }
 
   function closeRecipeLinkSheet() {
@@ -11660,7 +12016,13 @@
     var done = rliOnDone;
     rliOnDone = null;
     closeRecipeLinkSheet();
-    if (done) done(null);
+    // Whoever asked to be returned to gets to say where the household
+    // lands (recipesAfterImport reopens the list), so the level is
+    // forgotten rather than reopened — reopening it as well would draw
+    // the list twice. With no onDone this is an ordinary pop, and with no
+    // level at all it lands on the tab, as it always did.
+    if (done) { popSheetLevelFor(dismissRecipeLinkSheet, { forget: true }); done(null); return; }
+    popSheetLevelFor(dismissRecipeLinkSheet);
   }
 
   // The way out of every failure: say it in the ask bar instead. Prefilled
@@ -11848,6 +12210,9 @@
         var done = rliOnDone;
         rliOnDone = null;
         closeRecipeLinkSheet();
+        // Same reasoning as dismissRecipeLinkSheet: the callback decides
+        // where this lands, so the level goes without being reopened.
+        popSheetLevel({ forget: true });
         done(Object.assign({ name: payload.name }, saved));
         return;
       }
@@ -11881,6 +12246,9 @@
     else if (what === 'ask-instead') {
       rliOnDone = null;
       closeRecipeLinkSheet();
+      // Off to chat: the sheet underneath is not where this lands, so the
+      // level is dropped rather than reopened behind the ask sheet.
+      popSheetLevel({ forget: true });
       openAskSheet('Save this recipe for me: ');
     }
     else if (what === 'photo') rliPickPhoto();
@@ -11924,6 +12292,7 @@
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
+    rliParent(opts.parent, dismissRecipeLinkSheet);
     rliOnDone = typeof opts.onDone === 'function' ? opts.onDone : null;
     rliDraft = null;
     rliPhotos = [];
@@ -12130,7 +12499,21 @@
   // The kept page photo(s), full width, in a sheet over whatever is open.
   var rphSheetEl = null;
   var rphScrimEl = null;
-  function openRecipePhotoViewer(urls) {
+  // The one way out of the photo viewer — the x, the scrim, the handle,
+  // Escape and the back gesture all come through here (2026-10-05). It
+  // pops one level: the viewer is opened from the import review or from a
+  // saved recipe, and both keep their own z-index under it, so the pop
+  // only forgets the level the chevron and the crumb were drawn for.
+  function rphClose() {
+    if (!rphSheetEl) return;
+    rphScrimEl.hidden = true;
+    rphSheetEl.hidden = true;
+    popSheetLevelFor(rphClose);
+  }
+
+  // `parent` (2026-10-05): the sheet this was opened from, so the x and
+  // the new chevron land back on it rather than on the tab.
+  function openRecipePhotoViewer(urls, parent) {
     if (!rphSheetEl) {
       rphScrimEl = document.createElement('div');
       rphScrimEl.id = 'rph-scrim';
@@ -12140,15 +12523,15 @@
       rphSheetEl.setAttribute('aria-label', 'The page');
       document.body.appendChild(rphScrimEl);
       document.body.appendChild(rphSheetEl);
-      var close = function () { rphScrimEl.hidden = true; rphSheetEl.hidden = true; };
-      rphScrimEl.addEventListener('click', close);
+      rphScrimEl.addEventListener('click', rphClose);
       rphSheetEl.addEventListener('click', function (e) {
-        if (e.target.closest('[data-rph="close"], .ask-sheet-handle')) close();
+        if (e.target.closest('[data-rph="close"], .ask-sheet-handle')) rphClose();
       });
       document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && rphSheetEl && !rphSheetEl.hidden) close();
+        if (e.key === 'Escape' && rphSheetEl && !rphSheetEl.hidden) rphClose();
       });
     }
+    if (parent) openOverSheet(parent, rphClose, { stays: true });
     rphSheetEl.innerHTML =
       '<div class="ask-sheet-handle"></div>' +
       '<div class="kit-sheet-titlerow">' +
@@ -12161,6 +12544,7 @@
           return '<img class="rph-img" src="' + escapeHtml(u) + '" alt="' + (i ? 'The second page' : 'The page') + '">';
         }).join('') +
       '</div>';
+    paintSheetLevelChrome(rphSheetEl, 'The page');
     rphScrimEl.hidden = false;
     rphSheetEl.hidden = false;
   }
@@ -12168,7 +12552,13 @@
     var btn = e.target && e.target.closest && e.target.closest('[data-recipe-photos]');
     if (!btn) return;
     e.preventDefault();
-    openRecipePhotoViewer((btn.getAttribute('data-recipe-photos') || '').split(' ').filter(Boolean));
+    // Which sheet it was opened from decides where its close lands: the
+    // import review, or a saved recipe in Settings -> Recipes. Both stay
+    // on screen under it (#rph-sheet carries its own z-index).
+    openRecipePhotoViewer(
+      (btn.getAttribute('data-recipe-photos') || '').split(' ').filter(Boolean),
+      sheetLevelHost(btn)
+    );
   });
 
   // Where an action card or a notification says "View" and names an href
@@ -23596,6 +23986,11 @@
   function closeWhoScreen(answer) {
     if (!whoScreenEl) return;
     whoScreenEl.hidden = true;
+    // Back to Settings when it was opened from there (2026-10-05). Nothing
+    // to pop at boot, and nothing to pop when the leave dialog sends the
+    // household here to pick a name first — that level is the dialog's, not
+    // this screen's, which is what popSheetLevelFor checks.
+    popSheetLevelFor(closeWhoScreen);
     var resolve = whoResolve;
     whoResolve = null;
     if (resolve) resolve(answer);
@@ -23658,7 +24053,16 @@
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-who="switch"]');
     if (!target) return;
-    closePrefsSheet();
+    // Stacks on Settings (2026-10-05): this used to call closePrefsSheet()
+    // outright, so "Never mind" — and Escape — landed on the tab rather than
+    // back on the row that was tapped. The last Settings control still doing
+    // that; the audit in the sheet-stack comment at the top names it.
+    //
+    // No `stays`: #who-screen is inset:0 at z-index 60 over an opaque
+    // --ground, so Settings closing under it is invisible and keeps one
+    // modal in the accessibility tree rather than two. openOverSheet closes
+    // it for us, which is why closePrefsSheet is gone from here.
+    openOverSheet(sheetLevelHost(target), closeWhoScreen);
     // Switching to an adult who hasn't been through the welcome shows it
     // to them — it follows whoever the session is, not the device.
     openWhoScreen(true).then(function (picked) {
@@ -23782,6 +24186,9 @@
   function closeAiConsentScreen() {
     if (!aiConsentEl) return;
     aiConsentEl.hidden = true;
+    // Back to Settings when it was read back from there; nothing to pop
+    // on the first ask at boot.
+    popSheetLevelFor(closeAiConsentScreen);
     var resolve = aiConsentResolve;
     aiConsentResolve = null;
     if (resolve) resolve(shellWho.ai_consent);
@@ -23844,7 +24251,11 @@
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-aic-prefs="open"]');
     if (!target) return;
-    closePrefsSheet();
+    // Stacks on Settings (2026-10-05): this used to call
+    // closePrefsSheet(), so "Close" on it landed on the tab. The first
+    // ask at boot still opens it with no parent and is unchanged — there
+    // is nothing underneath it then.
+    openOverSheet(sheetLevelHost(target), closeAiConsentScreen);
     openAiConsentScreen();
   });
 
@@ -24562,7 +24973,7 @@
     var rows = prefsSheetEl.querySelector('#prefs-rows');
     if (!rows) return;
     var mem = prefsState.memory;
-    rows.innerHTML =
+    writeKeepingPlace(rows,
       // Who this device is opened as, first — see whoPrefsRowHtml (empty
       // for a one-adult household).
       whoPrefsRowHtml() +
@@ -24625,7 +25036,7 @@
       // or leaving it. Quiet on purpose — see .prefs-leave-row.
       '<div class="prefs-leave-row">' +
         '<button type="button" class="prefs-leave-link" data-prefs="leave"><span>Delete your household</span></button>' +
-      '</div>';
+      '</div>');
   }
 
   // ---------- Appearance (2026-09-24) ----------
@@ -24772,11 +25183,12 @@
     var what = target.getAttribute('data-prefs');
     if (what === 'open') return openPrefsSheet();
     if (what === 'section') {
-      closePrefsSheet();
       // What we know, opened with the section that owns this answer
       // expanded — the same Kitchen entry sheet the Inventory tile uses,
-      // rendered natively (openWhatWeKnow).
-      openKitchenSheet('memory', target.getAttribute('data-section'));
+      // rendered natively (openWhatWeKnow). It STACKS on Settings now
+      // (Gowthami, 2026-10-04): this used to call closePrefsSheet() first,
+      // which is what made the section's x land on the tab.
+      openKitchenSheet('memory', target.getAttribute('data-section'), 'prefs');
       return;
     }
     if (what === 'signout') {
@@ -24789,7 +25201,19 @@
       }
     }
     if (what === 'leave') {
-      closePrefsSheet();
+      // Stacks on Settings (2026-10-05): Cancel/Close used to leave the
+      // household on the tab rather than back where they tapped it.
+      //
+      // `stays` because this one genuinely DOES sit on top: #leave-dialog
+      // is z-index 51 and its scrim 50, both above #prefs-sheet's 41, so
+      // Settings is dimmed under it exactly as it has always been. Closing
+      // Settings here would be worse than the bug it fixes —
+      // openLeaveDialog awaits GET /api/household/leave before it draws
+      // anything, so the household would watch Settings slide away and the
+      // tab show through for the length of that request, and the pop on
+      // the way back would re-render and re-read Settings rather than
+      // leaving it exactly where it was.
+      openOverSheet('prefs', dismissLeaveDialog, { stays: true });
       openLeaveDialog();
     }
   });
@@ -24878,6 +25302,15 @@
     closeSheet(document.getElementById('leave-dialog'), document.getElementById('leave-scrim'));
   }
 
+  // The household's own way out: back to Settings when it was opened from
+  // there. Deliberately not closeLeaveDialog itself — the "pick an adult"
+  // branch closes this dialog and reopens it after the picker, and a pop
+  // in there would put Settings up in the middle of that.
+  function dismissLeaveDialog() {
+    closeLeaveDialog();
+    popSheetLevelFor(dismissLeaveDialog);
+  }
+
   function leaveWordTyped() {
     var input = document.getElementById('leave-confirm-input');
     return !!input && input.value.trim().toUpperCase() === 'DELETE';
@@ -24927,11 +25360,11 @@
 
   document.addEventListener('click', function (e) {
     var scrim = e.target && e.target.id === 'leave-scrim';
-    if (scrim) { if (!leaveState.busy) closeLeaveDialog(); return; }
+    if (scrim) { if (!leaveState.busy) dismissLeaveDialog(); return; }
     var btn = e.target && e.target.closest && e.target.closest('#leave-dialog [data-leave]');
     if (!btn) return;
     var what = btn.getAttribute('data-leave');
-    if (what === 'cancel') { if (!leaveState.busy) closeLeaveDialog(); return; }
+    if (what === 'cancel') { if (!leaveState.busy) dismissLeaveDialog(); return; }
     if (what === 'pick') {
       closeLeaveDialog();
       openWhoScreen(true).then(function (picked) { if (picked) openLeaveDialog(); });
@@ -24956,7 +25389,7 @@
   document.addEventListener('keydown', function (e) {
     var el = document.getElementById('leave-dialog');
     if (!el || el.hidden) return;
-    if (e.key === 'Escape' && !leaveState.busy) closeLeaveDialog();
+    if (e.key === 'Escape' && !leaveState.busy) dismissLeaveDialog();
     if (e.key === 'Enter' && e.target && e.target.id === 'leave-confirm-input' && leaveWordTyped()) {
       e.preventDefault();
       submitLeave('delete');
@@ -25211,11 +25644,11 @@
       '<div class="morning-body" id="morning-body"></div>';
     document.body.appendChild(morningScrimEl);
     document.body.appendChild(morningSheetEl);
-    morningScrimEl.addEventListener('click', closeMorningSheet);
-    morningSheetEl.querySelector('#morning-handle').addEventListener('click', closeMorningSheet);
-    morningSheetEl.querySelector('#morning-close').addEventListener('click', closeMorningSheet);
+    morningScrimEl.addEventListener('click', dismissMorningSheet);
+    morningSheetEl.querySelector('#morning-handle').addEventListener('click', dismissMorningSheet);
+    morningSheetEl.querySelector('#morning-close').addEventListener('click', dismissMorningSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && morningSheetEl && !morningSheetEl.hidden) closeMorningSheet();
+      if (e.key === 'Escape' && morningSheetEl && !morningSheetEl.hidden) dismissMorningSheet();
     });
     morningSheetEl.addEventListener('click', function (e) {
       var toggle = e.target && e.target.closest && e.target.closest('[data-morning-toggle], [data-evening-toggle]');
@@ -25339,14 +25772,19 @@
     }
   }
 
-  function openMorningSheet() {
+  // `parent` (2026-10-05): the sheet this was opened from. The
+  // Preferences row passes 'prefs', so the x and the back chevron land
+  // back on Settings rather than on the tab.
+  function openMorningSheet(parent) {
     buildMorningSheet();
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
-    closePrefsSheet();
+    if (parent) openOverSheet(parent, dismissMorningSheet);
+    else { forgetSheetLevels(); closePrefsSheet(); }
     closeSnwSheet();
     renderMorningSheet();
+    paintSheetLevelChrome(morningSheetEl, 'Morning text');
     morningScrimEl.hidden = false;
     morningSheetEl.hidden = false;
     loadPrefsMorningText();
@@ -25358,9 +25796,15 @@
     morningSheetEl.hidden = true;
   }
 
+  // The household's own way out: one level up when there is one.
+  function dismissMorningSheet() {
+    closeMorningSheet();
+    popSheetLevelFor(dismissMorningSheet);
+  }
+
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-morning="open"]');
-    if (target) openMorningSheet();
+    if (target) openMorningSheet(sheetLevelHost(target));
   });
 
   // ---------- "Recipes" (Settings, Emily 2026-10-04) ----------
@@ -25474,11 +25918,11 @@
     // Body level, like every other sheet here.
     document.body.appendChild(recipesScrimEl);
     document.body.appendChild(recipesSheetEl);
-    recipesScrimEl.addEventListener('click', closeRecipesSheet);
-    recipesSheetEl.querySelector('#recipes-handle').addEventListener('click', closeRecipesSheet);
-    recipesSheetEl.querySelector('#recipes-close').addEventListener('click', closeRecipesSheet);
+    recipesScrimEl.addEventListener('click', dismissRecipesSheet);
+    recipesSheetEl.querySelector('#recipes-handle').addEventListener('click', dismissRecipesSheet);
+    recipesSheetEl.querySelector('#recipes-close').addEventListener('click', dismissRecipesSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && recipesSheetEl && !recipesSheetEl.hidden) closeRecipesSheet();
+      if (e.key === 'Escape' && recipesSheetEl && !recipesSheetEl.hidden) dismissRecipesSheet();
     });
     recipesSheetEl.addEventListener('click', onRecipesClick);
   }
@@ -25573,10 +26017,15 @@
   function renderRecipesSheet() {
     if (!recipesSheetEl) return;
     var body = recipesSheetEl.querySelector('#recipes-body');
-    body.innerHTML = recipesState.view === 'detail' ? recipeViewHtml() : recipesListHtml();
+    writeKeepingPlace(body, recipesState.view === 'detail' ? recipeViewHtml() : recipesListHtml());
   }
 
   // opts.id opens straight on that recipe (after a save from here).
+  // opts.parent (2026-10-05): the sheet this was opened from. The
+  // Preferences row passes 'prefs', so the x and the back chevron land
+  // back on Settings. A reopen from the import sheet passes nothing: that
+  // level is already on the stack, and the import's own pop is what
+  // brought the household back here.
   function openRecipesSheet(opts) {
     opts = opts || {};
     buildRecipesSheet();
@@ -25584,8 +26033,10 @@
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
-    closePrefsSheet();
+    if (opts.parent) openOverSheet(opts.parent, dismissRecipesSheet);
+    else closePrefsSheet();
     closeSnwSheet();
+    paintSheetLevelChrome(recipesSheetEl, 'Recipes');
     recipesScrimEl.hidden = false;
     recipesSheetEl.hidden = false;
     if (opts.id) {
@@ -25602,6 +26053,12 @@
     if (!recipesSheetEl) return;
     recipesScrimEl.hidden = true;
     recipesSheetEl.hidden = true;
+  }
+
+  // The household's own way out: one level up when there is one.
+  function dismissRecipesSheet() {
+    closeRecipesSheet();
+    popSheetLevelFor(dismissRecipesSheet);
   }
 
   // Back from the link or cookbook sheet, saved or not.
@@ -25628,20 +26085,23 @@
       recipesState.detail = null;
       recipesState.detailId = null;
       renderRecipesSheet();
+      // A step BETWEEN views starts at the top, the way the 'view' branch
+      // above already does. writeKeepingPlace would otherwise carry the
+      // recipe's own scroll position onto the list.
+      var listBody = recipesSheetEl.querySelector('#recipes-body');
+      if (listBody) listBody.scrollTop = 0;
       loadRecipes();
     } else if (what === 'link') {
-      closeRecipesSheet();
-      openRecipeLinkSheet({ onDone: recipesAfterImport });
+      openRecipeLinkSheet({ parent: 'recipes', onDone: recipesAfterImport });
     } else if (what === 'photo') {
-      closeRecipesSheet();
-      openRecipePhotoSheet({ onDone: recipesAfterImport });
+      openRecipePhotoSheet({ parent: 'recipes', onDone: recipesAfterImport });
     }
   }
 
   // The Preferences row — delegated, like Morning text's.
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-recipes="open"]');
-    if (target) openRecipesSheet();
+    if (target) openRecipesSheet({ parent: sheetLevelHost(target) });
   });
 
   // ---------- "Helpful tips" ----------
@@ -25713,22 +26173,27 @@
     // outside the tab panel's stacking and scroll context.
     document.body.appendChild(tipsScrimEl);
     document.body.appendChild(tipsSheetEl);
-    tipsScrimEl.addEventListener('click', closeTipsSheet);
-    tipsSheetEl.querySelector('#tips-handle').addEventListener('click', closeTipsSheet);
-    tipsSheetEl.querySelector('#tips-close').addEventListener('click', closeTipsSheet);
+    tipsScrimEl.addEventListener('click', dismissTipsSheet);
+    tipsSheetEl.querySelector('#tips-handle').addEventListener('click', dismissTipsSheet);
+    tipsSheetEl.querySelector('#tips-close').addEventListener('click', dismissTipsSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && tipsSheetEl && !tipsSheetEl.hidden) closeTipsSheet();
+      if (e.key === 'Escape' && tipsSheetEl && !tipsSheetEl.hidden) dismissTipsSheet();
     });
   }
 
-  function openTipsSheet() {
+  // `parent` (2026-10-05): the sheet this was opened from. The
+  // Preferences row passes 'prefs'; the ask sheet's "?" passes nothing,
+  // so from there the x still lands where it always did.
+  function openTipsSheet(parent) {
     buildTipsSheet();
     // One sheet at a time, the rule every other sheet here follows.
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
-    closePrefsSheet();
+    if (parent) openOverSheet(parent, dismissTipsSheet);
+    else closePrefsSheet();
     closeSnwSheet();
+    paintSheetLevelChrome(tipsSheetEl, 'Helpful tips');
     tipsScrimEl.hidden = false;
     tipsSheetEl.hidden = false;
   }
@@ -25739,11 +26204,17 @@
     tipsSheetEl.hidden = true;
   }
 
+  // The household's own way out: one level up when there is one.
+  function dismissTipsSheet() {
+    closeTipsSheet();
+    popSheetLevelFor(dismissTipsSheet);
+  }
+
   // Delegated, so the Preferences row and the ask sheet's "?" button work
   // without anything wiring a listener.
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-tips]');
-    if (target) openTipsSheet();
+    if (target) openTipsSheet(sheetLevelHost(target));
   });
 
   // ---------- boot ----------
@@ -25871,11 +26342,11 @@
     // outside the tab panel's stacking and scroll context.
     document.body.appendChild(snwScrimEl);
     document.body.appendChild(snwSheetEl);
-    snwScrimEl.addEventListener('click', closeSnwSheet);
-    snwSheetEl.querySelector('#snw-handle').addEventListener('click', closeSnwSheet);
-    snwSheetEl.querySelector('#snw-close').addEventListener('click', closeSnwSheet);
+    snwScrimEl.addEventListener('click', dismissSnwSheet);
+    snwSheetEl.querySelector('#snw-handle').addEventListener('click', dismissSnwSheet);
+    snwSheetEl.querySelector('#snw-close').addEventListener('click', dismissSnwSheet);
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && snwSheetEl && !snwSheetEl.hidden) closeSnwSheet();
+      if (e.key === 'Escape' && snwSheetEl && !snwSheetEl.hidden) dismissSnwSheet();
     });
   }
 
@@ -25907,14 +26378,21 @@
       '<button type="button" class="snw-send" id="snw-send" disabled>Send</button>';
   }
 
-  function openSnwSheet(screenName) {
+  // `parent` (2026-10-05): the sheet this form was opened from — the
+  // Settings tile passes 'prefs', Helpful tips' own "Need help with
+  // something?" row passes 'tips'. The snwLink() in an error paragraph
+  // halfway down a tab passes nothing and closes to the tab as before.
+  function openSnwSheet(screenName, parent) {
     buildSnwSheet();
     // One sheet at a time, the same rule the Kitchen sheets follow.
     closeAskSheet();
     closeWeekSheet();
     closeKitchenSheet();
     // Helpful tips' "Need help with something?" opens this form; the tips
-    // sheet goes so it can't sit on top of the form.
+    // sheet goes so it can't sit on top of the form — and comes back when
+    // this one is dismissed, because it is on the stack.
+    if (parent) openOverSheet(parent, dismissSnwSheet);
+    else { forgetSheetLevels(); closePrefsSheet(); }
     closeTipsSheet();
     var screen = snwScreenName(screenName);
     var body = snwSheetEl.querySelector('#snw-body');
@@ -25927,6 +26405,7 @@
     send.addEventListener('click', function () {
       sendSnwReport(what.value, (body.querySelector('#snw-trying') || {}).value, screen);
     });
+    paintSheetLevelChrome(snwSheetEl, 'Something not working?');
     snwScrimEl.hidden = false;
     snwSheetEl.hidden = false;
     what.focus();
@@ -25936,6 +26415,12 @@
     if (!snwSheetEl) return;
     snwScrimEl.hidden = true;
     snwSheetEl.hidden = true;
+  }
+
+  // The household's own way out: one level up when there is one.
+  function dismissSnwSheet() {
+    closeSnwSheet();
+    popSheetLevelFor(dismissSnwSheet);
   }
 
   function sendSnwReport(whatHappened, tryingToDo, screen) {
@@ -25952,7 +26437,7 @@
       '<p class="snw-done">Got it — Emily reads every one of these. ' +
       'If it&rsquo;s blocking you, text her too.</p>' +
       '<button type="button" class="snw-send" id="snw-done-close">Close</button>';
-    body.querySelector('#snw-done-close').addEventListener('click', closeSnwSheet);
+    body.querySelector('#snw-done-close').addEventListener('click', dismissSnwSheet);
 
     try {
       Api.fetch('/api/feedback', {
@@ -25975,7 +26460,7 @@
   // re-bound when a panel re-renders under it.
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-snw]');
-    if (target) openSnwSheet(target.getAttribute('data-snw-screen') || '');
+    if (target) openSnwSheet(target.getAttribute('data-snw-screen') || '', sheetLevelHost(target));
   });
 
   // ---------- Service worker registration ----------

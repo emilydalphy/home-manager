@@ -372,7 +372,12 @@ def test_each_row_opens_the_section_of_what_we_know_that_owns_the_answer():
     for section in ("'people'", "'rhythm'", "'prep-days'", "'taste'", "'calendar'", "'stores'"):
         assert f"section: {section}" in rows, f"no Preferences row opens What we know's {section} section"
     assert "tab:" not in rows, "a Preferences row still names a memory.html tab"
-    _assert_in("openKitchenSheet('memory', target.getAttribute('data-section'))", SHELL_JS,
+    # NOTE 2026-10-05 (every x closes one level): the call gained a third
+    # argument, 'prefs' — which IS that card: the section now STACKS on
+    # Settings instead of closing it, so its x lands on Settings rather than
+    # on the tab. The claim here is unchanged (the row hands its own section
+    # to What we know); only the call grew.
+    _assert_in("openKitchenSheet('memory', target.getAttribute('data-section'), 'prefs')", SHELL_JS,
                "the row -> What we know handoff", "shell.js")
 
 

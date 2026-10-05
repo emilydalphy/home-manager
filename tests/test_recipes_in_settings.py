@@ -185,5 +185,9 @@ def test_the_row_sits_under_how_you_eat_and_the_imports_have_no_in_development_p
     assert "Add from a link" in sheet and "Add from a cookbook" in sheet
     assert "In development" not in sheet
     # The list reads the same API, and opening from here comes back here.
-    assert "openRecipeLinkSheet({ onDone: recipesAfterImport })" in _function("onRecipesClick")
-    assert "openRecipePhotoSheet({ onDone: recipesAfterImport })" in _function("onRecipesClick")
+    # NOTE 2026-10-05 (every x closes one level): both calls gained
+    # `parent: 'recipes'`, which is the other half of "comes back here" — the
+    # import sheet's own x and back chevron now land on this list rather than
+    # on the tab. Nothing this test asserts moved.
+    assert "openRecipeLinkSheet({ parent: 'recipes', onDone: recipesAfterImport })" in _function("onRecipesClick")
+    assert "openRecipePhotoSheet({ parent: 'recipes', onDone: recipesAfterImport })" in _function("onRecipesClick")
