@@ -425,6 +425,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — The cook card says "tonight" by the household's day, not the
+  server's. Branch `cook-card-household-day-2026-10-05`, NOT merged at the time
+  of writing.** Loop Board bug, Phase 0, High. `leftovers.covers_note` and
+  `leftovers._batch_parts` (behind `batch_line` and both step notes) defaulted
+  `today` to `date.today()`; the container is UTC, so from 8pm Toronto tonight's
+  cook card read "covers Monday" and tomorrow's "tonight". Both now default to
+  `leftovers._household_today_iso()` (cooker.household_today, imported at call
+  time because cooker imports leftovers). Pinned with `--today=2026-10-05T01:00`
+  under `TZ=UTC`: 3 of `test_double_batch_line` failed before, none after; new
+  `test_tonight_is_the_households_tonight_not_the_servers` freezes 01:00 UTC
+  Monday and fails if either default goes back. Same bug NOT fixed, listed:
+  `chores.get_chores_pending` (paused), `holidays.get_upcoming_holidays` and the
+  Now-card re-ask (`holidays.py` 447, 1016), `calendar_feed._coming_week_count`
+  and its siblings (827–1056), `main.py:1646` (plan-period default), `agent.py`
+  9996 (system-prompt date block).
+
 - **2026-10-05 — The phone remembers who's using it, and the session stops
   timing out under a phone in daily use. Branch
   `overnight/device-remembers-member`, NOT merged at the time of writing.**

@@ -425,6 +425,18 @@ def _slot_word(slot: str) -> str:
     return (slot or "dinner").strip().lower() or "dinner"
 
 
+def _household_today_iso() -> str:
+    """
+    Today where the HOUSEHOLD lives, as an ISO date — the default for every
+    "tonight"/"today" decision in this module. The server's date.today() is
+    already tomorrow from 8pm Toronto (container is UTC), which made
+    tonight's card say "covers Monday" and tomorrow's say "tonight".
+    Imported at call time: cooker imports this module.
+    """
+    from .cooker import household_today
+    return household_today().isoformat()
+
+
 def _when_phrase(cook_date: str, target_date: str, slot: str, today: str) -> str:
     """
     When a leftover gets eaten, said the way a person would say it
@@ -467,7 +479,7 @@ def _batch_parts(source: dict, batch: dict, today: str | None = None) -> dict | 
     silence an unhonoured chain gets for free, because
     plan_leftover_chains never hands one to a caller.
     """
-    today = today or date.today().isoformat()
+    today = today or _household_today_iso()
     servings = int(batch.get("servings") or 0)
     cook = int(batch.get("cook_eaters") or 0)
     extra = int(batch.get("freezer") or 0)
@@ -616,7 +628,7 @@ def covers_note(source: dict, servings: int, today: str | None = None) -> str:
     would say it). The leftover nights are always named — "and leftovers"
     on its own would leave the person counting.
     """
-    today = today or date.today().isoformat()
+    today = today or _household_today_iso()
     cook_label = "tonight" if source["date"] == today else _weekday(source["date"])
     # Portions for the freezer are said, not hidden inside the number: a
     # cook told "for 6" at a table of 3 with no reason given halves it.
