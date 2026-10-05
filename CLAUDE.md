@@ -497,6 +497,32 @@ why*, not duplicating the diff.
     `scaled_instructions` beside the list since 2026-10-02 ("a doubled
     lunch said 'add 1 cup rice' over a '2 cups Rice' chip"). Checked
     rather than assumed.
+  - **AND IT BROKE THAT VERY FUNCTION FIRST, by shadowing two names.** The
+    check's first cut called its pattern `_STEP_AMOUNT_RE` and its vessel
+    words `_STEP_VESSEL_WORDS` — both already `scale_steps`' own, three
+    hundred lines up the same file — and a module-level name defined twice
+    means the LATER one wins for the whole module. So the batch rewriter
+    read the check's: `IndexError: no such group` on every step it was
+    handed (35 red in `tests/test_batch_night_steps.py`), and, with nothing
+    raising at all, its vessel words swapped for the check's — 22 of the
+    packaging words whose number sizes a container it must not scale ("1
+    (14 oz) can") gone, 20 cookware words in, measured by diffing the sets.
+    The silent half is the worse one and only one test in the batch family
+    sees it. Fixed by giving the check its own `_CHECK_` namespace rather
+    than renaming the group back: `scale_steps`' pattern captures an amount
+    or a RANGE in named groups it substitutes into, the check's wants the
+    measuring word after the number, and the two vessel sets are packaging
+    words against cookware — two patterns for two questions is right, one
+    name for both is not. **The pre-flight missed it because it grepped the
+    symbols the diff ADDED, and `_STEP_AMOUNT_RE` read as one of those;
+    grepping it would not have helped either, since no test names it. The
+    question that catches this is "does this name already exist in the file
+    I am editing", so it is a test now** —
+    `test_no_module_in_app_defines_one_top_level_name_twice`, `ast` over
+    every module in `app/`, no allowlist because measured: all of `app/` is
+    clean of this today. Mutations: the regex collision put back 37 red,
+    the vessel collision 3, the check on the rewriter's pattern 16.
+    Pre-flight re-run on the names the diff MODIFIED: 51 files, 2121 tests.
   - **THE CALL-SITE TRIPWIRE FIRED and was updated the way its own message
     asks.** `test_usage.py::test_every_llm_call_site_passes_the_shared_
     model_constant` counts `_create_with_retry` sites in agent.py; the
@@ -535,7 +561,7 @@ why*, not duplicating the diff.
     `_STEP_NOT_AN_AMOUNT` is mostly belt and braces behind the stray rule
     for the same reason: emptied it reddens one test, and not the
     parametrized one written for it.
-  - `tests/test_recipe_amounts_add_up.py` (54 cases). **RED AGAINST MAIN IS
+  - `tests/test_recipe_amounts_add_up.py` (56 cases). **RED AGAINST MAIN IS
     54 OF 54 AND IS WORTH NOTHING** — every test passes the new `servings`
     argument, so against main every one is a `TypeError` before it reaches
     an assertion. (The file's own first header claimed "14 of 31"; neither
@@ -565,8 +591,8 @@ why*, not duplicating the diff.
     reproduce** — corrected in place with the measurement named, including
     a tolerance pair that had its two numbers the wrong way round.
   - **Pre-flight rather than the full suite** (the container is
-    memory-constrained): `grep -l` for every symbol the diff touches, 44
-    files, **1889 passed**. No dates in the new file, so the `clock` pins
+    memory-constrained): `grep -l` for every symbol the diff touches AND every shared name it
+    MODIFIES, 51 files, **2121 passed**. No dates in the new file, so the `clock` pins
     are untouched. Two pre-existing test files were updated honestly in the
     same change, each with a note saying what moved and no claim weakened —
     `test_recipe_quantities.py`'s two fill tests now see a third call,
