@@ -184,6 +184,19 @@ def _activate_tab_harness(step: str, leave_for: str) -> str:
         "var cookState = { focusOrigin: null };\n"
         "var scrollEl = null;\n"
         "function closeKitchenSheet() {} function stopCookVoice() {} function groLeaveScreen() {} function animateTabPanelIn() {}\n"
+        # NOTE 2026-10-05 (x-closes-one-level): activateTab gained a call to
+        # forgetSheetLevels — leaving for a tab is the household leaving the
+        # sheet stack. STUBBED rather than extracted, and the reason is that
+        # there is no stack here to clear: this harness has no sheets, no
+        # SHEET_LEVELS and no history shim, and every assertion below is
+        # about weekState.step folding and which panel was re-rendered. The
+        # real function would need all of that dragged in to do nothing
+        # observable. Nothing is lost — that activateTab forgets the stack is
+        # pinned behaviourally in test_sheet_closes_one_level.py
+        # (test_a_sheet_reopened_from_a_tab_forgets_the_parents) and by the
+        # forgetSheetLevels mutation there. A recorder rather than a bare
+        # no-op so a dropped call is visible to whoever debugs this next.
+        "var FORGOT = 0;\nfunction forgetSheetLevels() { FORGOT++; }\n"
         "function setAskHintForTab() {} function coachOnTabShown() {} function groSetScreen() {}\n"
         "function buildTodayPanel() {} function buildWeekPanel() {} function buildGroceryPanel() {} function buildKitchenPanel() {}\n"
         "function kitchenEnterCook() {} function currentTabKey() { return 'week'; }\n"
@@ -192,7 +205,7 @@ def _activate_tab_harness(step: str, leave_for: str) -> str:
         "function renderMealsStep(panel) { RENDERS.push(weekState.step); }\n"
         + _extract("activateTab", SHELL_JS)
         + f"\nactivateTab({json.dumps(leave_for)}, true);\n"
-        "console.log(JSON.stringify({ step: weekState.step, renders: RENDERS }));"
+        "console.log(JSON.stringify({ step: weekState.step, renders: RENDERS, forgot: FORGOT }));"
     )
 
 
@@ -205,7 +218,11 @@ def test_leaving_plan_from_a_finish_screen_by_any_door_folds_it_to_the_week(door
     finished-planning screen — re-rendered while hidden, so nothing moves
     under a thumb. The freezer step (2026-09-18) is a finish screen too."""
     out = _run(_activate_tab_harness(finish, door))
-    assert out == {"step": "week", "renders": ["week"]}
+    # `forgot`: 2026-10-05 — leaving for a tab forgets the sheet stack, so
+    # nothing reopens a parent sheet later. Asserted here rather than
+    # dropped from the payload, because this is the one harness that runs
+    # the REAL activateTab.
+    assert out == {"step": "week", "renders": ["week"], "forgot": 1}
 
 
 @_needs_node
@@ -214,9 +231,9 @@ def test_a_deeper_plan_step_is_left_alone_when_leaving_and_all_set_when_staying(
     across a trip to Shop and back (the refresh policy: nothing reloads on a
     tab switch), and re-activating Plan itself never folds anything."""
     out = _run(_activate_tab_harness("meal", "grocery"))
-    assert out == {"step": "meal", "renders": []}
+    assert out == {"step": "meal", "renders": [], "forgot": 1}
     out = _run(_activate_tab_harness("allset", "week"))
-    assert out == {"step": "allset", "renders": []}
+    assert out == {"step": "allset", "renders": [], "forgot": 1}
 
 
 # ---------- What went ----------

@@ -299,8 +299,20 @@ console.log(JSON.stringify([one, uwState.data.prep]));
 
 
 def _save_harness(status: int, body: dict, meal: str, choice) -> str:
+    # NOTE 2026-10-05 (x-closes-one-level): uwSaveSheet used to end on
+    # `closeUwSheet()`; a good save now leaves the same way the x does, via
+    # dismissUwSheet, so it lands back on What we know instead of popping
+    # whatever level is on top. STUBBED rather than extracted, and the stub
+    # is FAITHFUL rather than a no-op — it runs the stubbed closer (so
+    # `closed` still counts exactly what it counted) and records the pop, so
+    # the two steps the real function takes are both visible here. The real
+    # one would need SHEET_LEVELS, the sheet stack, a history shim and a
+    # #kit-sheet scroller to reopen, none of which this harness has. What a
+    # bare no-op WOULD have cost is covered: the save path's pop is pinned
+    # nowhere else (test_sheet_closes_one_level.py pins the dismiss paths,
+    # not uwSaveSheet), so `popped` is asserted below in both directions.
     return _settings_harness() + _lift("uwPost") + _lift("uwSaveSheet") + """
-var rendered = [], toasts = [], closed = 0, posted = [];
+var rendered = [], toasts = [], closed = 0, popped = 0, posted = [];
 var uwState = { data: %s, sheet: null, row: null };
 uwState.sheet = { meal: %s, cells: uwCells(uwState.data, %s), choice: %s, open: -1, busy: false, error: '' };
 var Api = { fetch: async function (path, init) {
@@ -309,13 +321,14 @@ var Api = { fetch: async function (path, init) {
 } };
 function renderUwSheet() { rendered.push(uwSheetBodyHtml(uwState.data, uwState.sheet)); }
 function closeUwSheet() { closed++; uwState.sheet = null; }
+function dismissUwSheet() { closeUwSheet(); popped++; }
 function wwkRenderSection() {}
 function wwkFlashSaved() {}
 function savedLine(t, v) { return t + ' was ' + v; }
 function toastSaved(t) { toasts.push(t); }
 function showToast(t) { toasts.push(t); }
 uwSaveSheet().then(function () {
-  console.log(JSON.stringify({ rendered: rendered, toasts: toasts, closed: closed, posted: posted, sheet: uwState.sheet }));
+  console.log(JSON.stringify({ rendered: rendered, toasts: toasts, closed: closed, popped: popped, posted: posted, sheet: uwState.sheet }));
 });
 """ % (json.dumps(_usual_week_json(True)), json.dumps(meal), json.dumps(meal), json.dumps(choice),
        "true" if status < 400 else "false", status, json.dumps(body))
@@ -326,6 +339,9 @@ def test_a_400_is_shown_plainly_in_the_sheet():
     message = "“Meal prep ahead” needs a prep day — pick the day you prep, or another lunch choice."
     out = _run(_save_harness(400, {"detail": message}, "lunch", "meal_prep_ahead"))
     assert out["closed"] == 0 and out["toasts"] == []
+    # A refusal leaves the answer where it is, so it must not pop the level
+    # out from under the sheet still showing the error (2026-10-05).
+    assert out["popped"] == 0
     assert f'<p class="uw-error" role="alert">{message}</p>' in out["rendered"][-1]
     assert out["sheet"]["busy"] is False and out["sheet"]["choice"] == "meal_prep_ahead"
     other = _run(_save_harness(500, {"detail": "Server error: boom"}, "lunch", "few_in_rotation"))
@@ -337,13 +353,21 @@ def test_a_400_is_shown_plainly_in_the_sheet():
 def test_a_good_save_closes_the_sheet_and_names_the_meal():
     out = _run(_save_harness(200, _usual_week_json(True), "dinner", "few_in_rotation"))
     assert out["closed"] == 1 and out["toasts"] == ["Dinner was saved"]
+    # ...and back to What we know, not to the tab: a good save pops its own
+    # level, exactly as the x does (2026-10-05).
+    assert out["popped"] == 1
     assert out["posted"][0][0] == "/api/usual-week"
     assert out["posted"][0][1]["variety"] == {"dinner": "few_in_rotation"}
 
 
 def test_escape_closes_the_meal_sheet_not_what_we_know_under_it():
+    # NOTE 2026-10-05 (x-closes-one-level): the call this names is
+    # dismissUwSheet, not closeUwSheet. The CLAIM is unchanged and strictly
+    # more true — dismissUwSheet closes this sheet AND pops its own level, so
+    # Escape lands on What we know rather than on the tab — and it is still
+    # caught on the way down, before the Kitchen sheet's own listener.
     build = _lift("buildUwSheet")
-    assert "if (e.key === 'Escape' && uwSheetEl && !uwSheetEl.hidden) { e.stopPropagation(); closeUwSheet(); }" in build
+    assert "if (e.key === 'Escape' && uwSheetEl && !uwSheetEl.hidden) { e.stopPropagation(); dismissUwSheet(); }" in build
     assert "}, true);" in build, "caught on the way down, before the Kitchen sheet's listener"
 
 

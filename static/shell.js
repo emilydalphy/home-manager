@@ -11071,8 +11071,13 @@
     try {
       var saved = await uwPost(uwSheetPayload(sheet));
       if (saved) uwState.data = saved;
-      closeUwSheet();
-      popSheetLevel();
+      // Out the same way the x goes (2026-10-05). This was
+      // `closeUwSheet(); popSheetLevel();` — the same two steps, but with
+      // the bare pop that popSheetLevelFor exists to replace: a save would
+      // pop whatever level happened to be on top rather than this sheet's
+      // own. dismissUwSheet is the one way out, so the save and the x can
+      // never land in different places.
+      dismissUwSheet();
       wwkRenderSection('rhythm');
       wwkFlashSaved('rhythm');
       toastSaved(savedLine(UW_MEAL_LABELS[sheet.meal], 'saved'));
