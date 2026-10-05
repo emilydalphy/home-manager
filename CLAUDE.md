@@ -587,6 +587,7 @@ why*, not duplicating the diff.
     its own merge (the Settings main-person row); conflicts were only the
     Decision log and the tripwire count (129 once the silent re-pick's +1 is
     added).
+
 - **2026-10-05 — The household chooses what the morning message says.
   Branch `morning-message-settings-2026-10-05` (on top of
   `overnight/morning-message-parts` af0d263, stacked on the 2026-10-05
@@ -641,6 +642,7 @@ why*, not duplicating the diff.
     `tests/test_morning_message_settings.py` (the sheet, under node).
     `tests/test_evening_nudge.py`'s harness now lifts the parts helpers too,
     since `renderMorningSheet` draws them.
+
 - **2026-10-05 — Holidays, calendar feed, first-plan window and the chat's
   date block read the household's day, not the server's. Branch
   `server-day-sweep-2026-10-05`.** The server is UTC, already tomorrow from
@@ -656,6 +658,7 @@ why*, not duplicating the diff.
   `today`). `household_today()` works outside a request (household 1 by
   default, falls back to the server date if the clock is unreadable).
   Tests: `tests/test_server_day_sweep.py`.
+
 - **2026-10-05 — The cook card says "tonight" by the household's day, not the
   server's. Branch `cook-card-household-day-2026-10-05`, NOT merged at the time
   of writing.** Loop Board bug, Phase 0, High. `leftovers.covers_note` and
@@ -671,6 +674,7 @@ why*, not duplicating the diff.
   Now-card re-ask (`holidays.py` 447, 1016), `calendar_feed._coming_week_count`
   and its siblings (827–1056), `main.py:1646` (plan-period default), `agent.py`
   9996 (system-prompt date block).
+
 - **2026-10-05 — The "Sunday night" CI failures were three test-clock bugs
   and one real (paused) app bug; tests fixed, CI pins the changeover. Branch
   `sunday-clock-tests-2026-10-05`, NOT merged at the time of writing.** Loop
@@ -699,6 +703,7 @@ why*, not duplicating the diff.
   real app bug, live on the Cook card from 20:00 Toronto every evening
   ("covers Monday" for tonight, "tonight" for tomorrow). Reported for its
   own card, not fixed here.
+
 - **2026-10-05 — Swap sheet: "Ask for something else" becomes a labelled box
   (branch `swap-ask-box-2026-10-05`, Loop Board card).** Root cause of the
   tester's confusion (Gowthami, 10-04): the sheet's bare "Ask for something
@@ -732,6 +737,7 @@ why*, not duplicating the diff.
   tests that pinned the old button were re-pointed. Lesson: the tests extract
   JS functions by brace-matching, so a dropped brace passed them all — a
   whole-file parse test now sits in the new file.
+
 - **2026-10-05 — Plan strip: the three dots under the dates are gone (branch
   `plan-no-dots-2026-10-05`).** A tester (2026-10-04): "The colour dots on the
   dates are confusing and not helpful - remove them." `weekTileHtml` no longer
