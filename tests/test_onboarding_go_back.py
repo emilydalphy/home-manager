@@ -71,9 +71,14 @@ INTRO_STEPS_AFTER_THE_FIRST = ["intro-help", "intro-talk", "intro-know"]
 # storyboard's — who's here, who helps, never on the plate; who's eating
 # when, cooking ahead, the three variety screens, dinner time; what you eat;
 # the kit. 'meals' and 'leftovers' left the flow.
+# UPDATED 2026-10-05 (grocery shop day): 'shop-day' asks when the weekly
+# shop is, straight after "When's dinner?" -- the two clock questions
+# together. Its own step, its own way back, like every other question. No
+# claim in this file changed; the flow gained a step.
 QUESTION_STEPS = [
     "household", "helpers", "restrictions", "meals-days", "prep",
     "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
+    "shop-day",
     "eating-style", "wont-eat", "excited-about", "kit-repeats",
 ]
 # UPDATED 2026-09-27 (App Store consent card): "Sharing with Claude" sits
@@ -322,6 +327,12 @@ function buildEatingStyleStep() { BUILT.push('eating-style'); }
 function buildWontEatStep() { BUILT.push('wont-eat'); }
 function buildExcitedStep() { BUILT.push('excited-about'); }
 function buildDinnerTimeStep() { BUILT.push('dinner-time'); }
+// The grocery shop-day step (2026-10-05). STEP_BUILDERS is lifted
+// wholesale, so a builder it names and this list does not is a
+// ReferenceError that takes every test in the file with it -- the
+// fixed-function-list hazard the 2026-09-21 draft-snag-flags entry
+// names. No assertion here changed.
+function buildShopDayStep() { BUILT.push('shop-day'); }
 function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
 """,
         _const("INTRO_STEPS"),
@@ -438,7 +449,11 @@ console.log(JSON.stringify(labels));
         "variety-lunch": "‹ Breakfast",
         "variety-dinner": "‹ Lunch",
         "dinner-time": "‹ Dinner",
-        "eating-style": "‹ Dinner time",
+        # UPDATED 2026-10-05 (grocery shop day): the shop-day question sits
+        # between "When's dinner?" and "How you eat", so it goes back to
+        # dinner time and "How you eat" now goes back to it.
+        "shop-day": "‹ Dinner time",
+        "eating-style": "‹ Shop day",
         "wont-eat": "‹ How you eat",
         "excited-about": "‹ Never recommend",
         "kit-repeats": "‹ Cuisines you like",
