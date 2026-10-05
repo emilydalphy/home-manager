@@ -25050,7 +25050,17 @@
     if (what === 'leave') {
       // Stacks on Settings (2026-10-05): Cancel/Close used to leave the
       // household on the tab rather than back where they tapped it.
-      openOverSheet('prefs', dismissLeaveDialog);
+      //
+      // `stays` because this one genuinely DOES sit on top: #leave-dialog
+      // is z-index 51 and its scrim 50, both above #prefs-sheet's 41, so
+      // Settings is dimmed under it exactly as it has always been. Closing
+      // Settings here would be worse than the bug it fixes —
+      // openLeaveDialog awaits GET /api/household/leave before it draws
+      // anything, so the household would watch Settings slide away and the
+      // tab show through for the length of that request, and the pop on
+      // the way back would re-render and re-read Settings rather than
+      // leaving it exactly where it was.
+      openOverSheet('prefs', dismissLeaveDialog, { stays: true });
       openLeaveDialog();
     }
   });
