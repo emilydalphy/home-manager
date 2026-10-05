@@ -7775,7 +7775,86 @@ def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
     if isinstance(new_meal, str):
         from . import allergen_gate as _allergen_gate
         _allergen_gate.refuse_if_clashing(new_meal, override=override)
+    widened = _chat_swap_along_the_chain(args, kwargs, new_meal)
+    if widened is not None:
+        return widened
     return swap_meal_in_plan(*args, **kwargs)
+
+
+def _chat_swap_along_the_chain(args: tuple, kwargs: dict, new_meal) -> dict | None:
+    """
+    A chat swap of a cook that feeds later meals, applied to all of them —
+    or None, which means "nothing to widen, swap it the ordinary way".
+
+    The fourth door of the 2026-10-04 fix (Gowthami's household), and the
+    only one that does not go through swap_in_place.apply_pick: chat names
+    a DISH, not a pick, so it writes through weekly_plan.
+    replace_dish_on_days directly — which is the same one transaction the
+    screens' whole-dish Swap uses, so the chain is carried to the new dish
+    and the cook is bought once for the whole batch.
+
+    DELIBERATELY NARROW, so it can never re-implement
+    swap_meal_in_plan's own "which rows am I replacing" rule and disagree
+    with it: it widens only when the slot holds exactly ONE row (so there
+    is nothing to disambiguate — a day's two snacks, or an old_meal naming
+    one of them, falls straight through) and that row really is a cook
+    with meals still ahead eating out of it. Anything else, including a
+    swap of a REHEAT night, is the ordinary swap it always was.
+
+    No undo note and no `swap_group`: a chat swap has never had an Undo
+    (swap_meal_in_plan writes no swapped_from), and inventing one here
+    would be a second undo mechanism rather than this card's business.
+    """
+    from . import swap_in_place as _swap
+
+    if not isinstance(new_meal, str) or not new_meal.strip():
+        return None
+    plan_id = kwargs.get("weekly_plan_id", args[0] if args else None)
+    meal_date = kwargs.get("meal_date", args[1] if len(args) >= 2 else None)
+    slot = kwargs.get("slot", args[3] if len(args) >= 4 else "dinner")
+    if not isinstance(plan_id, int) or not isinstance(meal_date, str) or slot not in DAY_SLOTS:
+        return None
+    if kwargs.get("old_meal") or kwargs.get("old_entry_id") or len(args) > 4:
+        return None
+    try:
+        conn = get_conn()
+        rows = conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = ? "
+            "AND household_id = ? AND component_category IS NULL",
+            (plan_id, meal_date, slot, household_id()),
+        ).fetchall()
+        conn.close()
+        if len(rows) != 1:
+            return None
+        group = _swap.fed_days(plan_id, rows[0]["id"])
+    except Exception:
+        logger.exception("Could not read the chain for a chat swap; swapping the one meal")
+        return None
+    if len(group) < 2:
+        return None
+    items = [{
+        "old_entry_id": member["entry_id"], "date": member["date"], "slot": member["slot"],
+        "new_meal": new_meal,
+        "food_groups": kwargs.get("food_groups") if member["entry_id"] == rows[0]["id"] else None,
+        "reasoning": kwargs.get("reasoning") or "" if member["entry_id"] == rows[0]["id"] else "",
+        "derived_from": member["derived_from"],
+    } for member in group]
+    result = replace_dish_on_days(plan_id, items)
+    out = {
+        "entry_id": result["entry_ids"][0],
+        "entry_ids": result["entry_ids"],
+        "date": meal_date,
+        "dates": [m["date"] for m in group],
+        "slot": slot,
+        "meals": [{"date": m["date"], "slot": m["slot"]} for m in group],
+        "said": _swap.swapped_said(new_meal, group),
+    }
+    if result.get("held_thawed"):
+        out["held_thawed"] = result["held_thawed"]
+    verdict = _taste_verdict_for_slot(new_meal, meal_date, slot)
+    if verdict:
+        out["taste_verdict"] = verdict
+    return out
 
 
 def describe_planned_meal(entry_id: int | None = None, meal_date: str | None = None,
