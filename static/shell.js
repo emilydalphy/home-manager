@@ -25829,7 +25829,7 @@
       prefsState.eveningNudge = null;
     }
     if (prefsState.open) renderPrefsRows();
-    if (morningSheetEl && !morningSheetEl.hidden) renderMorningSheet();
+    if (morningSheetEl && !morningSheetEl.hidden) { renderMorningSheet(); refreshMorningPreview(); }
   }
 
   async function loadPrefsCalendar() {
@@ -26345,8 +26345,119 @@
         toggle.textContent = on ? 'On' : 'Off';
         return;
       }
+      var part = e.target && e.target.closest && e.target.closest('[data-morning-part]');
+      if (part) { toggleMorningPart(part); return; }
       if (e.target && e.target.id === 'morning-save') saveMorningSheet();
     });
+  }
+
+  // ---------- "What should it include?" (Loop Board, 2026-10-05) ----------
+  //
+  // Gowthami's household, 2026-10-04: "customize what kind of details to
+  // include". Six boxes under the people, then a Preview of the message as
+  // it would read today, repainted as the boxes change. ONE answer for the
+  // whole household (Emily's change on the card, 2026-10-04: "to keep it
+  // simple"), so the section says "for everyone" and posts no member id.
+  //
+  // The screen holds no words of its own for the parts: the labels come off
+  // part_choices (digest.MORNING_PART_WORDS, the one block Emily reviews)
+  // and the preview is the server's own composer (/api/morning-text/preview
+  // with a `parts` override), so it cannot drift from what is sent. A tick
+  // only repaints the preview; Save is what keeps it (§2b S10).
+  //
+  // The preview shows push_text — the message's lines without the link the
+  // text channel adds — because the link is not what anybody is choosing.
+
+  var morningParts = null;      // the ticked keys on screen; null = read them off the settings
+  var morningPreview = null;    // { state: 'loading' | 'ready' | 'failed', data }
+  var morningPreviewSeq = 0;
+  var morningPreviewTimer = null;
+  var MORNING_PARTS_FAILED = 'Everything saved except what it should include. Try Save again.';
+  var MORNING_TICK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+
+  function morningPartsChosen(mt) {
+    if (morningParts) return morningParts;
+    return (mt && mt.parts) || [];
+  }
+
+  function morningPreviewInnerHtml() {
+    var p = morningPreview;
+    var quiet = function (s) { return '<span class="morning-preview-quiet">' + s + '</span>'; };
+    if (!p || (p.state === 'loading' && !p.data)) return quiet('Reading today’s plan…');
+    if (p.state === 'failed') return quiet('The preview didn’t load. Your choices still save.');
+    var d = p.data || {};
+    if (!d.would_send) return quiet('Nothing to tell you today with these, so no message would go out.');
+    return escapeHtml(d.push_text || (d.lines || []).join(' '));
+  }
+
+  function morningPartsHtml(mt) {
+    var choices = (mt && mt.part_choices) || [];
+    if (!choices.length) return '';
+    var chosen = morningPartsChosen(mt);
+    var loading = morningPreview && morningPreview.state === 'loading' && morningPreview.data;
+    return '<p class="snw-label morning-parts-label" id="morning-parts-label">What should it include?' +
+        ' <span class="morning-label-aside">· for everyone</span></p>' +
+      '<div class="morning-parts" role="group" aria-labelledby="morning-parts-label">' +
+        choices.map(function (c) {
+          var on = chosen.indexOf(c.key) !== -1;
+          return '<button type="button" class="morning-part" role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '" ' +
+              'data-morning-part="' + escapeHtml(c.key) + '">' +
+            '<span class="morning-part-box" aria-hidden="true">' + MORNING_TICK_SVG + '</span>' +
+            '<span class="morning-part-label">' + escapeHtml(c.label) + '</span>' +
+          '</button>';
+        }).join('') +
+      '</div>' +
+      '<p class="snw-label" id="morning-preview-label">Preview</p>' +
+      '<div class="morning-preview' + (loading ? ' is-loading' : '') + '" id="morning-preview" ' +
+        'aria-live="polite" aria-labelledby="morning-preview-label">' + morningPreviewInnerHtml() + '</div>';
+  }
+
+  function paintMorningPreview() {
+    var el = morningSheetEl && morningSheetEl.querySelector('#morning-preview');
+    if (!el) return;
+    el.innerHTML = morningPreviewInnerHtml();
+    el.classList.toggle('is-loading', !!(morningPreview && morningPreview.state === 'loading' && morningPreview.data));
+  }
+
+  // A short wait so three quick taps ask once; the sequence number drops
+  // an answer that arrives after a newer one was asked for.
+  function refreshMorningPreview(delay) {
+    if (morningPreviewTimer) clearTimeout(morningPreviewTimer);
+    morningPreviewTimer = setTimeout(loadMorningPreview, delay || 0);
+  }
+
+  async function loadMorningPreview() {
+    var mt = prefsState.morningText;
+    if (!mt || !mt.part_choices) return;
+    var seq = ++morningPreviewSeq;
+    var parts = morningPartsChosen(mt);
+    morningPreview = { state: 'loading', data: morningPreview && morningPreview.data };
+    paintMorningPreview();
+    var next;
+    try {
+      var res = await Api.fetch('/api/morning-text/preview?parts=' + encodeURIComponent(parts.join(',')));
+      next = res.ok ? { state: 'ready', data: await res.json() } : { state: 'failed' };
+    } catch (err) {
+      next = { state: 'failed' };
+    }
+    if (seq !== morningPreviewSeq) return;
+    morningPreview = next;
+    paintMorningPreview();
+  }
+
+  function toggleMorningPart(btn) {
+    var mt = prefsState.morningText;
+    if (!mt || !mt.part_choices) return;
+    var key = btn.getAttribute('data-morning-part');
+    var on = btn.getAttribute('aria-checked') !== 'true';
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    var chosen = morningPartsChosen(mt).filter(function (k) { return k !== key; });
+    if (on) chosen.push(key);
+    // Kept in the message's own order, which is the boxes' order.
+    morningParts = mt.part_choices.map(function (c) { return c.key; })
+      .filter(function (k) { return chosen.indexOf(k) !== -1; });
+    refreshMorningPreview(150);
   }
 
   function renderMorningSheet() {
@@ -26393,6 +26504,9 @@
           '</div>' : '') +
         '</div>';
       }).join('') : '<p class="snw-done">Add who’s in the house first — the text goes to the adults.</p>') +
+      // The boxes and the preview only once there is somebody to send to:
+      // with no adults, nothing would save them and nothing would go out.
+      (adults.length ? morningPartsHtml(mt) : '') +
       (adults.length ? '<button type="button" class="snw-send" id="morning-save">Save</button>' : '') +
       '<p class="snw-done" id="morning-note" hidden></p>';
   }
@@ -26406,7 +26520,25 @@
     var rows = Array.prototype.slice.call(body.querySelectorAll('.morning-adult'));
     if (save) save.disabled = true;
     var problem = null;
+    var partsFailed = false;
     var last = null;
+    // What it includes — the household's one answer, saved once, before
+    // the per-adult rows. Its answer carries the fresh preview too.
+    if (body.querySelector('[data-morning-part]')) {
+      try {
+        var partsRes = await Api.fetch('/api/morning-text/parts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parts: morningPartsChosen(prefsState.morningText) }) });
+        var partsData = await partsRes.json();
+        if (!partsRes.ok) partsFailed = true;
+        else {
+          if (partsData.settings) prefsState.morningText = partsData.settings;
+          morningParts = (partsData.parts || []).slice();
+          if (partsData.preview) { morningPreviewSeq++; morningPreview = { state: 'ready', data: partsData.preview }; paintMorningPreview(); }
+        }
+      } catch (err) {
+        partsFailed = true;
+      }
+    }
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i];
       var payload = {
@@ -26450,6 +26582,10 @@
       if (problem) {
         // Calm, and the way out in the same breath (DESIGN_SYSTEM §8).
         note.textContent = problem;
+      } else if (partsFailed) {
+        // The rows saved and the boxes didn't: say which, so nobody
+        // thinks the ticks took. The ticks stay as they are on screen.
+        note.textContent = MORNING_PARTS_FAILED;
       } else {
         var anyOn = (prefsState.morningText && prefsState.morningText.adults || []).some(function (a) { return a.on; });
         if (!anyOn) note.textContent = 'Saved. No texts until it’s switched on.';
@@ -26470,6 +26606,9 @@
     if (parent) openOverSheet(parent, dismissMorningSheet);
     else { forgetSheetLevels(); closePrefsSheet(); }
     closeSnwSheet();
+    // A fresh look each time: unsaved ticks from last time are not kept.
+    morningParts = null;
+    morningPreview = null;
     renderMorningSheet();
     paintSheetLevelChrome(morningSheetEl, 'Morning text');
     morningScrimEl.hidden = false;

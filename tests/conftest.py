@@ -202,9 +202,14 @@ def clean_state():
         # chores_enabled too: it is off by default for every household,
         # and a test that switches it on for household 1 must not hand the
         # next test a house that can see chores.
+        # morning_text_parts joins them for the same reason (2026-10-05):
+        # what the morning message includes is one setting on this row, and
+        # '' is "nobody asked", so a test that ticks the shop box must not
+        # hand the next test a household that already chose.
         conn.execute(
             "UPDATE households SET timezone = 'America/Toronto', morning_text_time = '07:00', "
-            "country = 'CA', province = 'ON', chores_enabled = 0 WHERE id = 1"
+            "country = 'CA', province = 'ON', chores_enabled = 0, morning_text_parts = '' "
+            "WHERE id = 1"
         )
         # Who set the household up (first-open welcome) is on the household
         # row too, and names a member the wipe above just deleted.

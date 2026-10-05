@@ -948,6 +948,17 @@ class MorningTextRequest(BaseModel):
     time: str | None = None
 
 
+class MorningPartsRequest(BaseModel):
+    """
+    The "What should it include?" boxes. ONE setting for the whole
+    household (Emily, 2026-10-04), so this carries no member_id — unlike
+    its two neighbours, which are each about one adult's own number and
+    switch. `parts` is the whole answer: an empty list is "none of
+    them", which is a real answer and is stored as one.
+    """
+    parts: list[str]
+
+
 class EveningNudgeRequest(BaseModel):
     """The same sheet's "Evening nudge" switch, one adult at a time. It has
     no number or hour of its own: the number is the morning text's and the
@@ -2321,6 +2332,49 @@ def morning_text_save(req: MorningTextRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {**result, "settings": tools.get_morning_text_settings()}
+
+
+@app.post("/api/morning-text/parts")
+def morning_text_parts_save(req: MorningPartsRequest):
+    """
+    Save what the morning message includes, for the whole household. No
+    member id: the setting is the household's, so a screen showing one row
+    per adult still has only one of these to post.
+
+    Answers with the fresh settings AND the fresh preview, so the boxes and
+    the message under them land in one round trip rather than the screen
+    having to ask twice and show a preview of the answer before last.
+    """
+    try:
+        parts = tools.set_morning_text_parts(req.parts)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {
+        "parts": parts,
+        "settings": tools.get_morning_text_settings(),
+        "preview": tools.morning_text_preview(),
+    }
+
+
+@app.get("/api/morning-text/preview")
+def morning_text_preview_route(parts: str | None = None):
+    """
+    The message as it would read today — what the sender would send, from
+    the sender's own composer, so the screen under the boxes cannot drift
+    from the thing it is previewing.
+
+    With no `parts`, this is exactly today's message for this household.
+    `parts` is a comma-separated override for "as it would read if you
+    ticked this", which is what lets the boxes repaint the preview before
+    anything is saved; an empty string is the real answer "none of them"
+    rather than "no override given", which is why the two cases are told
+    apart by the parameter being absent rather than by it being falsy. A
+    key this version does not know is dropped rather than refused — a
+    screen a deploy left holding a stale key should show a preview, not an
+    error.
+    """
+    chosen = None if parts is None else [p for p in parts.split(",") if p.strip()]
+    return tools.morning_text_preview(parts=chosen)
 
 
 @app.get("/api/evening-nudge")

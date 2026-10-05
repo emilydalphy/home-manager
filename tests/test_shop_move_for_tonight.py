@@ -472,6 +472,15 @@ def test_the_morning_text_still_reads_out_a_real_shop():
     tools.plan_meal(ISO_TODAY, "Sunday Roast", slot="dinner", weekly_plan_id=plan_id,
                     add_ingredients_to_grocery_list=True)
 
+    # TRIPWIRE, 2026-10-05: the shop reminder is one of the six parts the
+    # household chooses now (digest.MORNING_PART_CHOICES) and is NOT one of
+    # the three the card switches on by default, so "the half that must not
+    # go quiet with it" has to say it wants the line. The claim it guards —
+    # a real shop IS read out, where the standing list above is not — is
+    # exactly as strong with the part ticked, and it is still what makes
+    # the test above a catch rather than a tautology.
+    tools.set_morning_text_parts(["meals", "shop"])
+
     text = tools.build_morning_text(_at(7)) or ""
 
     assert "Shop for tonight — 1 item, by" in text

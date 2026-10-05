@@ -99,6 +99,177 @@ TWILIO_ENV = ("TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_FROM_NUMBER")
 _TIME_RE = re.compile(r"^\s*(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)?\s*$", re.I)
 
 
+# ---------- what the message includes (Loop Board, 2026-10-04) ----------
+#
+# "For the notifications, we want to have the notification customize what
+# kind of details to include" — Gowthami's household, 2026-10-04. Six parts
+# the household ticks; the message is those parts only, in this order.
+#
+# ONE setting for the whole household, not one per member (Emily,
+# 2026-10-04: one setting "to keep it simple"). Everyone who gets the
+# message gets the same parts, which is why it lives on `households` beside
+# the hour and the zone rather than on `members` beside the number.
+#
+# EVERY SENTENCE A PERSON READS ABOUT THIS IS IN THIS ONE BLOCK, because
+# the card asks for exactly that: "Each part's sentence is a placeholder:
+# keep the strings in one place so they're easy to change, because Emily
+# will review the wording." The checkbox labels, the line under each of
+# them and the one line this file composes itself (MORNING_START_LINE) are
+# all here. Every other part's sentence is the move's or the feed's own and
+# is still said where the fact is known, which is where it has always been
+# said — copying them here would be two wordings for one line.
+
+# The order of the message, which is the card's own order for the boxes.
+# `kitchen` ("Food to use up": the attention queue's one item and the
+# use-it-up nudge) was an always-on part with no box until Emily's call of
+# 2026-10-05 made it the seventh box, on by default. Nothing is always in
+# any more: unticking all seven means no message, ever.
+MORNING_PART_CHOICES = ("meals", "freezer", "prep", "start", "shop", "away", "kitchen")
+
+# Parts nobody is offered a box for, and which are therefore always in.
+# Empty since 2026-10-05 (see above); kept as the seam rather than deleted.
+MORNING_PARTS_ALWAYS: tuple = ()
+
+# Everything, in the order it is composed.
+MORNING_PARTS = MORNING_PART_CHOICES + MORNING_PARTS_ALWAYS
+
+# What a household that has never been asked gets. Emily, 2026-10-05:
+# Shopping and Food to use up are ON by default, so nobody on the defaults
+# loses a line the morning text already carried (the timed shop line, the
+# use-it-up nudge). Change this tuple and every unanswered household
+# changes with it.
+MORNING_PART_DEFAULTS = ("meals", "freezer", "prep", "shop", "kitchen")
+
+# The screen's words. `label` is the checkbox; `says` is the line under it
+# saying what that part puts in the message. PLACEHOLDERS, all of them.
+MORNING_PART_WORDS = {
+    "meals": {"label": "Today's meals", "says": "What you're eating today."},
+    "freezer": {"label": "What to take out of the freezer", "says": "Anything to move to the fridge."},
+    "prep": {"label": "Prep to do today", "says": "Anything to get ready ahead."},
+    "start": {"label": "When to start cooking dinner", "says": "The time tonight's cook has to begin."},
+    "shop": {"label": "Shopping", "says": "Your shopping day, or a shop tonight's cook is waiting on."},
+    "away": {"label": "Who's away tonight", "says": "Who's at the table and who isn't."},
+    "kitchen": {"label": "Food to use up", "says": "Anything to use before it goes off."},
+}
+
+# The sentences this module composes itself rather than reading off a
+# move or the feed. PLACEHOLDERS, like the rest of this block.
+#
+# The start line is a line of its own and never a clause on "Tonight:" —
+# they are two separate boxes, so each has to be able to stand without the
+# other, and "Start Chicken Skewers by 5:45" would name the dish the
+# household had just unticked.
+MORNING_START_LINE = "Start cooking at {clock}."
+
+# Shopping on the household's own shop day (rhythm `shop_day` /
+# `top_up_shop_day`, the same is_shop_day Today's Shop section reads). One
+# line even when a cook is also waiting on the shop: `{by}` is then
+# MORNING_SHOP_DAY_BY with that cook's deadline, else ''.
+MORNING_SHOP_DAY_LINE = "You shop today{by}. {things}"
+MORNING_SHOP_DAY_BY = ", {deadline}"
+MORNING_SHOP_THINGS_NONE = "Nothing on the list yet."
+MORNING_SHOP_THINGS_ONE = "1 thing on the list."
+MORNING_SHOP_THINGS_MANY = "{count} things on the list."
+
+
+def _read_parts(raw: str | None) -> list[str]:
+    """
+    The stored answer, read back as part keys in message order.
+
+    '' is "nobody has answered" and reads as MORNING_PART_DEFAULTS; '[]' is
+    "none of them", a real answer, and reads as none. A stored key this
+    version does not know is dropped rather than carried, so renaming a
+    part is a rename and not a migration. A blob nothing can read falls back
+    to the defaults and says so in the log — the stance _zone already takes
+    towards a timezone nobody can parse: a bad stored value must not cost
+    everybody their morning.
+    """
+    text = (raw or "").strip()
+    if not text:
+        return list(MORNING_PART_DEFAULTS)
+    try:
+        stored = json.loads(text)
+    except (TypeError, ValueError):
+        logger.warning("Morning text: %r is not a readable list of parts; using the defaults", text[:60])
+        return list(MORNING_PART_DEFAULTS)
+    if not isinstance(stored, list):
+        logger.warning("Morning text: the stored parts are not a list; using the defaults")
+        return list(MORNING_PART_DEFAULTS)
+    return _known_parts(stored)
+
+
+def _known_parts(parts) -> list[str]:
+    """The keys this version knows, in message order. Anything else is
+    dropped: a stored key from a renamed part, or a stale one a screen is
+    still holding, must not stop the message being built."""
+    chosen = {str(k).strip().lower() for k in (parts or [])}
+    return [k for k in MORNING_PART_CHOICES if k in chosen]
+
+
+def _checked_parts(parts) -> list[str]:
+    """Known keys, in message order, REFUSING anything else in a sentence —
+    the other side of _known_parts, which drops. A caller writing a key is
+    saying a word; a caller reading one may be holding a stale screen."""
+    chosen = {str(k).strip().lower() for k in (parts or [])}
+    unknown = chosen - set(MORNING_PART_CHOICES)
+    if unknown:
+        known = ", ".join(MORNING_PART_CHOICES)
+        raise ValueError(
+            f"I don't know what {sorted(unknown)[0]!r} is — the morning message's parts are {known}."
+        )
+    return [k for k in MORNING_PART_CHOICES if k in chosen]
+
+
+def _write_parts(parts) -> str:
+    """The answer as stored: known keys only, in message order, as JSON. An
+    empty list is stored as '[]' and never as '', or "none of them" would
+    read back next time as the three defaults."""
+    return json.dumps(_checked_parts(parts))
+
+
+def morning_text_parts() -> list[str]:
+    """
+    Which of the seven this household's morning message includes, in message
+    order. The always-on parts are NOT in here: this is the household's own
+    answer, which is what the screen ticks. What the message is actually
+    built from is _included_parts.
+    """
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT morning_text_parts FROM households WHERE id = ?", (household_id(),)
+        ).fetchone()
+    finally:
+        conn.close()
+    return _read_parts(row["morning_text_parts"] if row else "")
+
+
+def _included_parts(chosen) -> list[str]:
+    """What the message is built from: the chosen subset plus the parts
+    nobody is offered a choice about, in message order."""
+    keep = {str(k).strip().lower() for k in chosen} | set(MORNING_PARTS_ALWAYS)
+    return [k for k in MORNING_PARTS if k in keep]
+
+
+def set_morning_text_parts(parts) -> list[str]:
+    """
+    Replace the household's answer, and hand it back as read. An unknown key
+    is refused in a sentence rather than dropped quietly: a screen or a
+    model sending one has a bug, and storing fewer parts than were asked for
+    is how that bug survives being noticed.
+    """
+    stored = _write_parts(parts)
+    conn = get_conn()
+    try:
+        conn.execute(
+            "UPDATE households SET morning_text_parts = ? WHERE id = ?", (stored, household_id())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return _read_parts(stored)
+
+
 # ---------- settings: the clock, the hour, the numbers ----------
 
 def normalise_phone(raw: str | None) -> str:
@@ -152,11 +323,15 @@ def _zone(name: str | None) -> ZoneInfo:
 
 def _household_row(conn) -> dict:
     row = conn.execute(
-        "SELECT timezone, morning_text_time FROM households WHERE id = ?", (household_id(),)
+        "SELECT timezone, morning_text_time, morning_text_parts FROM households WHERE id = ?",
+        (household_id(),),
     ).fetchone()
     return {
         "timezone": (row["timezone"] if row else None) or DEFAULT_TIMEZONE,
         "time": (row["morning_text_time"] if row else None) or DEFAULT_SEND_TIME,
+        # Raw, not read: _read_parts tells '' (nobody asked) from '[]'
+        # (none of them), and a `or` here would turn one into the other.
+        "parts": (row["morning_text_parts"] if row else "") or "",
     }
 
 
@@ -176,15 +351,36 @@ def _adult_rows(conn) -> list:
 
 
 def get_morning_text_settings() -> dict:
-    """Who gets the morning text, at what hour, on which clock — the
-    Preferences row and its sheet read exactly this."""
+    """
+    Who gets the morning text, at what hour, on which clock, and what it
+    includes — the Preferences row and its sheet read exactly this.
+
+    `parts` is the household's own answer and `part_choices` is the seven
+    boxes to draw, each already carrying its label, its one-line
+    description and whether it is ticked. The screen renders the section
+    off part_choices rather than holding its own copy of the seven, so
+    adding or rewording one is a change to MORNING_PART_WORDS and nothing
+    else.
+    """
     conn = get_conn()
     hh = _household_row(conn)
     adults = _adult_rows(conn)
     conn.close()
+    chosen = _read_parts(hh["parts"])
     return {
         "time": hh["time"],
         "timezone": hh["timezone"],
+        "parts": chosen,
+        "part_choices": [
+            {
+                "key": key,
+                "label": MORNING_PART_WORDS[key]["label"],
+                "says": MORNING_PART_WORDS[key]["says"],
+                "on": key in chosen,
+                "default": key in MORNING_PART_DEFAULTS,
+            }
+            for key in MORNING_PART_CHOICES
+        ],
         "adults": [
             {
                 "member_id": r["id"],
@@ -222,23 +418,40 @@ def set_morning_text(
     on: bool | None = None,
     name: str | None = None,
     timezone: str | None = None,
+    parts=None,
+    add_parts=None,
+    drop_parts=None,
 ) -> dict:
     """
     Set up or change the morning text for one adult. Every argument is
     optional and only what's given changes: a number, the household's hour,
-    on/off, and (rarely) the household's time zone. `name` says whose
-    number it is; left out, it resolves to the only adult, or to the adult
-    already holding that number, and otherwise asks.
+    on/off, (rarely) the household's time zone, and what the message
+    includes. `name` says whose number it is; left out, it resolves to the
+    only adult, or to the adult already holding that number, and otherwise
+    asks.
 
     Turning it on with no number on record is refused rather than stored
     as a promise nothing can keep. Turning it off is always accepted, and
     a number that is off is never texted.
+
+    THE PARTS ARE THE HOUSEHOLD'S, not this adult's (Emily, 2026-10-04:
+    one setting "to keep it simple"), so they change for everybody who
+    gets the message however this is addressed — the same way the hour and
+    the zone always have. Three ways in, because a household says all
+    three: `parts` replaces the lot ("just tell me the meals"), `add_parts`
+    adds ("also tell me when to start cooking") and `drop_parts` removes
+    ("stop telling me about the shop"). A delta works in one turn, which
+    matters because nothing hands the model the current set to edit. All
+    three together compose in that order and never need a refusal.
     """
     conn = get_conn()
     new_phone = normalise_phone(phone) if phone is not None else None
     member_id = _resolve_member(conn, name, new_phone or "")
     conn.close()
-    return set_morning_text_for_member(member_id, phone=phone, time=time, on=on, timezone=timezone)
+    return set_morning_text_for_member(
+        member_id, phone=phone, time=time, on=on, timezone=timezone,
+        parts=parts, add_parts=add_parts, drop_parts=drop_parts,
+    )
 
 
 def set_morning_text_for_member(
@@ -247,12 +460,18 @@ def set_morning_text_for_member(
     time: str | None = None,
     on: bool | None = None,
     timezone: str | None = None,
+    parts=None,
+    add_parts=None,
+    drop_parts=None,
 ) -> dict:
     """
     The same change, addressed by member row — what the Preferences sheet
     posts. Not an agent tool (the model names people, it doesn't hold ids).
     The id must be an adult in THIS household; anything else is refused,
     so a foreign or child id can't be written to by accident.
+
+    `parts` / `add_parts` / `drop_parts` are the household's, not this
+    member's; see set_morning_text.
     """
     conn = get_conn()
     if not any(r["id"] == member_id for r in _adult_rows(conn)):
@@ -294,6 +513,25 @@ def set_morning_text_for_member(
             conn.close()
             raise ValueError(f"I don't know the time zone {timezone!r} — it wants a name like America/Toronto.")
         conn.execute("UPDATE households SET timezone = ? WHERE id = ?", (timezone.strip(), household_id()))
+    if parts is not None or add_parts is not None or drop_parts is not None:
+        # Composed off what is STORED rather than off the defaults, so a
+        # delta on a household that has never answered adds to the three
+        # the card switches on rather than replacing them with one part.
+        row = conn.execute(
+            "SELECT morning_text_parts FROM households WHERE id = ?", (household_id(),)
+        ).fetchone()
+        chosen = list(_read_parts(row["morning_text_parts"] if row else ""))
+        if parts is not None:
+            chosen = _checked_parts(parts)
+        chosen = [k for k in chosen + _checked_parts(add_parts) if k not in set(_checked_parts(drop_parts))]
+        try:
+            stored = _write_parts(chosen)
+        except ValueError:
+            conn.close()
+            raise
+        conn.execute(
+            "UPDATE households SET morning_text_parts = ? WHERE id = ?", (stored, household_id())
+        )
     conn.commit()
     conn.close()
     settings = get_morning_text_settings()
@@ -305,6 +543,7 @@ def set_morning_text_for_member(
         "on": bool(me and me["on"]),
         "time": settings["time"],
         "timezone": settings["timezone"],
+        "parts": settings["parts"],
         "configured": twilio_configured(),
     }
 
@@ -325,143 +564,286 @@ def _tidy(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").replace(" · ", ", ")).strip().rstrip(".?!")
 
 
-def _digest_lines(now_local: datetime) -> list[str]:
+def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
     """
-    Everything today asks of the house, most important first, each a
-    sentence a person would say. Read entirely off today_moves and the
-    live feed — nothing here that Today wouldn't also show.
+    Everything today asks of the house that the household asked to hear
+    about, each line tagged with the part it belongs to, in the order of
+    MORNING_PARTS. Read entirely off today_moves and the live feed —
+    nothing here that Today wouldn't also show.
+
+    `included` is the part keys to build, which is the chosen subset
+    plus the always-on ones (_included_parts). A part that is not in it is
+    not BUILT rather than built and filtered, so a household that doesn't
+    want to know who's away pays nothing for the attendance read — which is
+    also what makes "built from the chosen parts only" literally true of
+    this function rather than merely true of its caller.
     """
+    want = set(included)
     payload = _moves.today_moves(day=now_local.date(), now=now_local)
     moves = [m for m in payload["moves"] if not m["done"]]
     by_kind: dict[str, list[dict]] = {}
     for m in moves:
         by_kind.setdefault(m["kind"], []).append(m)
 
-    try:
-        feed = _notifications.get_active_notifications()
-    except Exception:
-        logger.exception("Morning text: the notification feed failed; texting without it")
-        feed = []
-    kinds = {n["type"]: n for n in feed}
+    kinds: dict[str, dict] = {}
+    if {"meals", "kitchen"} & want:
+        # One read for two parts, and only when one of them wants it. The
+        # meals part reads the dinner gap out of it; the kitchen part reads
+        # the use-it-up nudge.
+        try:
+            feed = _notifications.get_active_notifications()
+        except Exception:
+            logger.exception("Morning text: the notification feed failed; texting without it")
+            feed = []
+        kinds = {n["type"]: n for n in feed}
 
-    lines: list[str] = []
+    parts: list[tuple[str, str]] = []
 
-    # 1. Tonight. A cook, a reheat, or an honest gap — never all three.
+    # The dinner cook is read whatever was chosen: the meals part names the
+    # dish and the start part names its clock, and both have to be looking
+    # at the same move or the text could say when to start cooking something
+    # it never mentioned.
     dinner_cook = next((m for m in by_kind.get("cook", []) if m["slot"] == "dinner"), None)
-    dinner_reheat = next((m for m in by_kind.get("reheat", []) if m["slot"] == "dinner"), None)
-    if dinner_cook:
-        lines.append(f"Tonight: {_tidy(dinner_cook['title'])}.")
-    elif dinner_reheat:
-        provenance = _tidy(dinner_reheat["detail"]).split(",")[0]
-        lines.append(f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}.")
-    elif kinds.get("dinner_decision", {}).get("key") == f"dinner_gap:{now_local.date().isoformat()}":
-        # The feed's nudge covers tonight OR tomorrow; only tonight's gap
-        # belongs in today's text. Two shapes, two lines, because they are
-        # two different pieces of news: nothing is planned for tonight at
-        # all, against a night the app deliberately handed back with a
-        # reason. Saying "nothing's planned yet" about the second is
-        # saying a thing that isn't true, which §8 doesn't allow.
-        lines.append("Tonight's still open — nothing's planned yet.")
-    elif kinds.get("dinner_open", {}).get("key") == f"dinner_open:{now_local.date().isoformat()}":
-        # The card carries the app's own reason for opening the slot and
-        # the bell repeats it word for word; this line deliberately does
-        # not. A text is a line, not a page — and the numbers below are
-        # measured, because the first version of this comment overstated
-        # both of them in defence of a decision that did not need it:
-        #
-        #  - TWO of plan_slot_open's EIGHT call sites open on a weekday
-        #    name ("Thursday I'd rather ask than guess: …"), where it
-        #    argues with "Tonight" two words earlier: the leftovers repair
-        #    (weekly_plan.py) and the generation gap (agent.py). The other
-        #    five with fixed text do not, and the eighth is the model's own
-        #    sentence, so unknowable. Not "half". Two is still enough,
-        #    because this line cannot know which of them opened the night.
-        #
-        #  - LENGTH is the bigger half. Four of the seven fixed reasons run
-        #    past 120 characters and the leftovers repair runs 147 to 179
-        #    depending on the clause it interpolates. This is the FIRST
-        #    line, the one build_morning_text always keeps, so it spends the
-        #    budget before anything else can: measured at the production
-        #    shape (a 46-character link, budget 253), a 179-character first
-        #    line leaves room for ONE of the day's other three jobs where
-        #    the line below leaves room for all three. And the trimmer SKIPS
-        #    a line that doesn't fit and still keeps a later one that does,
-        #    so what goes is whatever is longest, not the tail — with no
-        #    link the same first line drops the shop and keeps the prep
-        #    after it. "Crowds the fridge move and the shop out" is not
-        #    what the algorithm does.
-        #
-        # A length test on the reason would be copy that reads differently
-        # depending on which day opened the night, which is worse than
-        # either. "your call" is the band's own words
-        # (get_needs_you_items' title, "Tonight's dinner needs your
-        # call"); the reason itself is one tap away on the card this text
-        # links to — which also keeps the one model-authored open_reason
-        # (agent.py's per-slot pass) off the SMS channel entirely, a
-        # standing property worth not undoing.
-        lines.append("Tonight's still open — it's your call.")
 
-    # 2. The freezer. "Move the chicken thighs to the fridge — for
+    # 1. TODAY'S MEALS. Tonight first — a cook, a reheat, or an honest gap,
+    # never all three — then the day's other cooks, then a lunch somebody
+    # made on an earlier day. One part, so one block: "Lunch: Chili" used to
+    # come after the shop and the prep and now sits under "Tonight:", which
+    # is where the rest of what you're eating today belongs.
+    if "meals" in want:
+        dinner_reheat = next((m for m in by_kind.get("reheat", []) if m["slot"] == "dinner"), None)
+        if dinner_cook:
+            parts.append(("meals", f"Tonight: {_tidy(dinner_cook['title'])}."))
+        elif dinner_reheat:
+            provenance = _tidy(dinner_reheat["detail"]).split(",")[0]
+            parts.append(("meals", f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}."))
+        elif kinds.get("dinner_decision", {}).get("key") == f"dinner_gap:{now_local.date().isoformat()}":
+            # The feed's nudge covers tonight OR tomorrow; only tonight's gap
+            # belongs in today's text. Two shapes, two lines, because they are
+            # two different pieces of news: nothing is planned for tonight at
+            # all, against a night the app deliberately handed back with a
+            # reason. Saying "nothing's planned yet" about the second is
+            # saying a thing that isn't true, which §8 doesn't allow.
+            parts.append(("meals", "Tonight's still open — nothing's planned yet."))
+        elif kinds.get("dinner_open", {}).get("key") == f"dinner_open:{now_local.date().isoformat()}":
+            # The card carries the app's own reason for opening the slot and
+            # the bell repeats it word for word; this line deliberately does
+            # not. A text is a line, not a page — and the numbers below are
+            # measured, because the first version of this comment overstated
+            # both of them in defence of a decision that did not need it:
+            #
+            #  - TWO of plan_slot_open's EIGHT call sites open on a weekday
+            #    name ("Thursday I'd rather ask than guess: …"), where it
+            #    argues with "Tonight" two words earlier: the leftovers repair
+            #    (weekly_plan.py) and the generation gap (agent.py). The other
+            #    five with fixed text do not, and the eighth is the model's own
+            #    sentence, so unknowable. Not "half". Two is still enough,
+            #    because this line cannot know which of them opened the night.
+            #
+            #  - LENGTH is the bigger half. Four of the seven fixed reasons run
+            #    past 120 characters and the leftovers repair runs 147 to 179
+            #    depending on the clause it interpolates. This is the FIRST
+            #    line, the one build_morning_text always keeps, so it spends the
+            #    budget before anything else can: measured at the production
+            #    shape (a 46-character link, budget 253), a 179-character first
+            #    line leaves room for ONE of the day's other three jobs where
+            #    the line below leaves room for all three. And the trimmer SKIPS
+            #    a line that doesn't fit and still keeps a later one that does,
+            #    so what goes is whatever is longest, not the tail — with no
+            #    link the same first line drops the shop and keeps the prep
+            #    after it. "Crowds the fridge move and the shop out" is not
+            #    what the algorithm does.
+            #
+            # A length test on the reason would be copy that reads differently
+            # depending on which day opened the night, which is worse than
+            # either. "your call" is the band's own words
+            # (get_needs_you_items' title, "Tonight's dinner needs your
+            # call"); the reason itself is one tap away on the card this text
+            # links to — which also keeps the one model-authored open_reason
+            # (agent.py's per-slot pass) off the SMS channel entirely, a
+            # standing property worth not undoing.
+            parts.append(("meals", "Tonight's still open — it's your call."))
+
+        # The other meals being cooked today, after tonight's.
+        for m in by_kind.get("cook", []):
+            if m is dinner_cook or m["slot"] == "dinner":
+                continue
+            parts.append(("meals", f"{(m['slot'] or 'Meal').capitalize()}: {_tidy(m['title'])}."))
+
+        # A lunch made on an earlier day: not a job, but worth one line —
+        # "Lunch: Chili — prepped Sunday." (Emily, 2026-09-30, option (a): the
+        # text says it's ready instead of "start by noon"). The words after the
+        # dish are the move's own meta, so the text and Today cannot differ.
+        for m in by_kind.get("reheat", []):
+            if m.get("prepped_ahead") and m["slot"] != "dinner":
+                parts.append(("meals", f"{(m['slot'] or 'Meal').capitalize()}: {_tidy(m['title'])} — {_tidy(m['meta'])}."))
+
+    # 2. THE FREEZER. "Move the chicken thighs to the fridge — for
     # Thursday's skewers." Today is implied: this is today's text.
-    for m in by_kind.get("fridge", []):
-        reason = _tidy(m.get("reason") or "")
-        lines.append(f"{_tidy(m['title'])} — {reason}." if reason else f"{_tidy(m['title'])} today.")
+    if "freezer" in want:
+        for m in by_kind.get("fridge", []):
+            reason = _tidy(m.get("reason") or "")
+            parts.append(("freezer", f"{_tidy(m['title'])} — {reason}." if reason else f"{_tidy(m['title'])} today."))
 
-    # 3. The shop, when there is a cook close enough for it to matter. A
+    # 3. THE PREP.
+    if "prep" in want:
+        for m in by_kind.get("prep", []):
+            parts.append(("prep", f"{_tidy(m['title'])} — {_tidy(m['time_label'])}."))
+
+    # 4. WHEN TO START COOKING DINNER (2026-10-04). The clock, on a line of
+    # its own — see MORNING_START_LINE for why it is never a clause on
+    # "Tonight:". Two gates, and both are moves.py's own rather than a second
+    # reading of the same question: it is the PLANNED start (a cook already
+    # under way has no start left to name, and moves' chip says "Started
+    # 6:02" there rather than "Start by"), and only when the recipe carries
+    # minutes (with none there is nothing to count back from, which is
+    # exactly when that chip is left off too). A reheat night never has one:
+    # a reheat is a line, never "Tap to start".
+    if "start" in want and dinner_cook and not dinner_cook.get("started_at"):
+        planned = dinner_cook.get("planned_start")
+        if planned and dinner_cook.get("duration_min"):
+            # moves._clock is the one implementation of "the time the way a
+            # person says it aloud" — "5:45", and "noon" rather than 12:00.
+            # Reached across the module deliberately: the alternative is
+            # either a second formatter (two spellings of one clock, which
+            # this repo keeps having to unpick) or parsing moves' own
+            # "Start by 5:45" chip back out of an English string.
+            clock = _moves._clock(datetime.fromisoformat(planned).time())
+            parts.append(("start", MORNING_START_LINE.format(clock=clock)))
+
+    # 5. THE SHOP, when there is a cook close enough for it to matter. A
     # shop move with no deadline is the standing list saying it is still
     # there (moves._standing_list_move) — true, and not one of today's
     # JOBS, which is all this text is for. (It is one of today's moves:
     # by_kind is built from today_moves, which is why this has to skip it.)
-    for m in by_kind.get("shop", []):
-        if not m.get("timed", True):
-            continue
-        lines.append(f"{_tidy(m['title'])} — {_tidy(m['detail'])}.")
+    #
+    # On the household's own shop day (Emily, 2026-10-05: the box is
+    # "Shopping" and covers both) it is the shop-day line instead, ONE line
+    # even when a cook is also waiting on the list: that cook's deadline
+    # rides on it as a clause ("You shop today, by 5:55. 14 things on the
+    # list."), never a second line saying the same errand twice. The
+    # deadline only rides when it is a clock today — "by tomorrow" on a shop
+    # day would argue with "today", and "still to do" is already what
+    # "You shop today" says.
+    if "shop" in want:
+        timed = [m for m in by_kind.get("shop", []) if m.get("timed", True)]
+        block = payload.get("shop") or {}
+        if block.get("is_shop_day"):
+            count = int(block.get("count") or 0)
+            things = (
+                MORNING_SHOP_THINGS_NONE if not count
+                else MORNING_SHOP_THINGS_ONE if count == 1
+                else MORNING_SHOP_THINGS_MANY.format(count=count)
+            )
+            when = str(timed[0].get("time_label") or "") if timed else ""
+            by = (
+                MORNING_SHOP_DAY_BY.format(deadline=when)
+                if when.startswith("by ") and when != "by tomorrow" else ""
+            )
+            parts.append(("shop", MORNING_SHOP_DAY_LINE.format(by=by, things=things)))
+        else:
+            for m in timed:
+                parts.append(("shop", f"{_tidy(m['title'])} — {_tidy(m['detail'])}."))
 
-    # 4. The prep.
-    for m in by_kind.get("prep", []):
-        lines.append(f"{_tidy(m['title'])} — {_tidy(m['time_label'])}.")
-
-    # 5. The other meals being cooked today, after tonight's.
-    for m in by_kind.get("cook", []):
-        if m is dinner_cook or m["slot"] == "dinner":
-            continue
-        lines.append(f"{(m['slot'] or 'Meal').capitalize()}: {_tidy(m['title'])}.")
-
-    # 5b. A lunch made on an earlier day: not a job, but worth one line —
-    # "Lunch: Chili — prepped Sunday." (Emily, 2026-09-30, option (a): the
-    # text says it's ready instead of "start by noon"). The words after the
-    # dish are the move's own meta, so the text and Today cannot differ.
-    for m in by_kind.get("reheat", []):
-        if m.get("prepped_ahead") and m["slot"] != "dinner":
-            lines.append(f"{(m['slot'] or 'Meal').capitalize()}: {_tidy(m['title'])} — {_tidy(m['meta'])}.")
-
-    # 6. One thing from the attention queue, and the use-it-up nudge.
-    try:
-        items = _attention.get_attention_items()
-    except Exception:
-        logger.exception("Morning text: the attention queue failed; texting without it")
-        items = []
-    if items:
-        summary = str(items[0].get("summary") or "").rstrip()
+    # 6. WHO'S AWAY TONIGHT (2026-10-04) — attendance's own sentence, word
+    # for word. summary_line is where "Dinner for 3 — Vineeth's out." lives
+    # and it is stamped on every attendance read; writing a second one here
+    # is the two-implementations trap, and that function's own docstring
+    # records the last time this sentence had two spellings on one screen.
+    # It is '' when everyone is home with no guests, so "a part with nothing
+    # today is left out" falls out rather than being coded. Guests are in it
+    # ("Dinner for 5 — with 2 guests."): the box asks who's at the table,
+    # and an away-only variant would be that second sentence again.
+    if "away" in want:
+        try:
+            att = _attendance.get_slot_attendance(now_local.date().isoformat(), "dinner")
+        except Exception:
+            logger.exception("Morning text: tonight's attendance could not be read; leaving it out")
+            att = {}
+        summary = str(att.get("summary") or "").strip()
         if summary:
-            lines.append(_tidy(summary) + ("?" if summary.endswith("?") else "."))
-    if "expiring_soon" in kinds:
-        lines.append(_tidy(kinds["expiring_soon"]["title"]) + ".")
+            parts.append(("away", summary))
 
-    return lines
+    # 7. FOOD TO USE UP ("kitchen"): one thing from the attention queue, and
+    # the use-it-up nudge. A box since 2026-10-05, on by default.
+    if "kitchen" in want:
+        try:
+            items = _attention.get_attention_items()
+        except Exception:
+            logger.exception("Morning text: the attention queue failed; texting without it")
+            items = []
+        if items:
+            summary = str(items[0].get("summary") or "").rstrip()
+            if summary:
+                parts.append(("kitchen", _tidy(summary) + ("?" if summary.endswith("?") else ".")))
+        if "expiring_soon" in kinds:
+            parts.append(("kitchen", _tidy(kinds["expiring_soon"]["title"]) + "."))
+
+    return parts
 
 
-def build_morning_text(now_local: datetime | None = None, link: bool = True) -> str | None:
+def _trim_to_budget(tagged: list[tuple[str, str]], budget: int) -> tuple[list[str], list[str], list[str]]:
     """
-    The text, or None when there is nothing worth a text. `now_local` is
-    the household's own clock, naive (today_moves compares naive
-    timestamps); the loop passes it, tests pass what they like, and
-    omitting it reads the household's clock rather than the server's.
+    The lines that fit, in order, the parts that said something, and the
+    parts that got none of theirs in.
 
-    Lines go in most-important-first and each one is kept only if the
-    whole thing still fits in MAX_TEXT_CHARS with the link. The first line
-    is always kept, trimmed if it must be — a text that says "Tonight:
-    chicken tacos" and nothing else is still the text.
+    ADMISSION IS BY PART, not by position: every part's FIRST line is
+    offered before any part's SECOND. That is the answer to what seven
+    switchable parts do to a character budget — before this, lines were
+    offered strictly in order, so three fridge moves could eat the room a
+    part the household had explicitly ticked was waiting for, and the part
+    that lost its only line was always the one furthest down. The lines
+    still come OUT in part order; only which ones get in changes, and on an
+    ordinary day (every line fits) the answer is identical either way.
+
+    The first line is still always kept, trimmed if it must be — a text
+    that says "Tonight: chicken tacos" and nothing else is still the text.
+    It is still line 0: the first line of the first part is also first in
+    the admission order, so nothing about that rule moved.
+
+    `dropped` is the parts with NOTHING kept, which is the one worth saying
+    on a screen ("the shop didn't fit today"). A part that got its first
+    line and lost its third is not in it — that is what the budget has
+    always done to a long day, and naming it would be a list of fridge
+    moves nobody can act on.
+    """
+    first: list[int] = []
+    rest: list[int] = []
+    seen: set[str] = set()
+    for i, (part, _line) in enumerate(tagged):
+        (rest if part in seen else first).append(i)
+        seen.add(part)
+
+    out = list(tagged)
+    kept: set[int] = set()
+    length = 0
+    for i in first + rest:
+        line = out[i][1]
+        extra = len(line) + (1 if kept else 0)
+        if length + extra <= budget:
+            kept.add(i)
+            length += extra
+        elif not kept:
+            out[i] = (out[i][0], line[: max(budget - 1, 1)].rstrip() + "…")
+            kept.add(i)
+            length = len(out[i][1])
+    order = sorted(kept)
+    lines = [out[i][1] for i in order]
+    spoke = {out[i][0] for i in order}
+    said = [p for p in MORNING_PARTS if p in spoke]
+    dropped = [p for p in MORNING_PARTS if p in seen and p not in spoke]
+    return lines, said, dropped
+
+
+def _compose_morning(now_local: datetime | None, link: bool, parts) -> dict:
+    """
+    One composer, two readers: build_morning_text takes `text` out of this
+    and morning_text_preview hands the whole thing to the screen. There is
+    deliberately no second builder beside _digest_parts — the preview's
+    whole promise is that it is the same text the sender would send, and
+    two composers is how that stops being true.
+
+    `parts` is the chosen subset; None reads the household's answer.
     """
     # The default is the HOUSEHOLD's clock, never the server's. The container
     # runs UTC and households default to America/Toronto, so from 8pm local
@@ -477,26 +859,63 @@ def build_morning_text(now_local: datetime | None = None, link: bool = True) -> 
     now_local = now_local if now_local is not None else _cooker.household_now()
     if now_local.tzinfo is not None:
         now_local = now_local.replace(tzinfo=None)
-    lines = _digest_lines(now_local)
-    if not lines:
-        return None
+    chosen = morning_text_parts() if parts is None else _known_parts(parts)
+    tagged = _digest_parts(now_local, _included_parts(chosen))
+    if not tagged:
+        return {"text": None, "lines": [], "parts": [], "chosen": chosen, "dropped": [], "would_send": False}
 
     # `link=False` is the push notification's body (app/push.py): the tap
     # on the notification is the way in, so the address would be noise.
-    link = _app_link() if link else ""
-    budget = MAX_TEXT_CHARS - (len(link) + 1 if link else 0)
-    kept: list[str] = []
-    length = 0
-    for line in lines:
-        extra = len(line) + (1 if kept else 0)
-        if length + extra <= budget:
-            kept.append(line)
-            length += extra
-        elif not kept:
-            kept.append(line[: max(budget - 1, 1)].rstrip() + "…")
-            length = len(kept[0])
-    text = " ".join(kept)
-    return f"{text} {link}" if link else text
+    url = _app_link() if link else ""
+    budget = MAX_TEXT_CHARS - (len(url) + 1 if url else 0)
+    lines, said, dropped = _trim_to_budget(tagged, budget)
+    body = " ".join(lines)
+    text = f"{body} {url}" if url else body
+    return {
+        "text": text,
+        "lines": lines,
+        "parts": said,
+        "chosen": chosen,
+        "dropped": dropped,
+        "would_send": True,
+    }
+
+
+def build_morning_text(now_local: datetime | None = None, link: bool = True, parts=None) -> str | None:
+    """
+    The text, or None when there is nothing worth a text. `now_local` is
+    the household's own clock, naive (today_moves compares naive
+    timestamps); the loop passes it, tests pass what they like, and
+    omitting it reads the household's clock rather than the server's.
+
+    `parts` is the chosen parts; omitted, it reads the household's answer
+    (MORNING_PART_CHOICES / morning_text_parts), which is what the sending
+    loop and push both take. Passing it is for the preview's "as it would
+    read if you ticked this" and for a test that wants one part at a time.
+    Nothing to say in the chosen parts is no text at all, exactly as an
+    empty day has always been.
+    """
+    return _compose_morning(now_local, link, parts)["text"]
+
+
+def morning_text_preview(now_local: datetime | None = None, parts=None) -> dict:
+    """
+    Exactly what the sender would send today, for the screen under the
+    boxes. `text` is the text channel's body, link and all — the same
+    string _run_household hands to `send`, from the same composer, so the
+    preview cannot drift from the message. `push_text` is the push body,
+    which is the same lines without the address (app/push.py).
+
+    Also, because the screen can say more than one sentence about a
+    message it is showing: `lines` (the kept lines, in order), `parts` (the
+    parts that actually contributed one), `chosen` (the answer as read, so
+    an override is visible), `dropped` (parts with something to say today
+    that the character budget cut) and `would_send` (false = nothing today,
+    so no message goes out at all).
+    """
+    out = _compose_morning(now_local, True, parts)
+    out["push_text"] = _compose_morning(now_local, False, parts)["text"]
+    return out
 
 
 # ---------- sending: the channel seam ----------
