@@ -2278,6 +2278,35 @@ why*, not duplicating the diff.
     full, including how an out-of-chip value stays readable and seven tests to
     write, and it is one file.
 
+- **2026-10-05 — Settings → Your rhythm shows and edits both time limits
+  (Loop Board "Time limits", criterion 3). Branch
+  `rhythm-lunch-limit-2026-10-05`, built on `overnight/time-limits`'s batch,
+  NOT merged at the time of writing.** Closes the "NOT DONE" bullet in the
+  entry above: a household can now correct the lunch limit from a screen.
+  - **Two rows, same chips as setup.** A readback line ("Weeknight dinner: 45
+    min or less", "Weekday lunch: 20 min or less", "...: no limit" for 0) and
+    the chips under it (dinner 20 · 30 · 45 min · 1 hour · No limit; lunch 10 ·
+    20 · 30 min · No limit), from one `WWK_TIME_LIMITS` table, one renderer
+    (`wwkTimeLimitHtml`) and one tap handler (`wwkSetTimeLimit`, `data-wwk=
+    "time-limit"`). The weeknight stepper (`WWK_WEEKNIGHT`, `wwkWeeknightHtml`,
+    `wwkSetWeeknight`) is gone: two limits on two different controls would be
+    two conventions. The lead reads "Time limits" now, not "On a weeknight".
+  - **Unset is not "no limit", again.** A missing lunch value reads 20 (the
+    column default, `time_caps`' three readings); a missing dinner value reads
+    0, which is that column's own default. An out-of-chip number (35) stays on
+    the line and lights no chip, as in setup. Tapping the lit chip saves
+    nothing.
+  - **Lunch always shows in Settings**, even where setup hid the question
+    because everyone takes lunch out: Settings is where you correct things.
+  - **No new route.** Saves go through `/api/memory/edit` ->
+    `edit_preference`, which already validates both fields (whole minutes,
+    never negative, 0 for none).
+  - Tests: `tests/test_rhythm_time_limits.py` (7). The two stepper tests in
+    `test_preferences_align.py` were replaced by it, and
+    `test_what_we_know_native.py`'s checklist/lead name the chips.
+    Checked in a real Chromium at 390 wide, light and dark: every chip 44px,
+    no sideways scroll, saves round-trip, 35 lights nothing.
+
 - **2026-10-05 — Onboarding asks for YOUR name first, and the household has
   a main person. Branch `overnight/onboarding-names`, NOT merged at the time
   of writing.** Loop Board, High, Phase 1 — Beta. The design was approved
