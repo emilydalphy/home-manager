@@ -2198,6 +2198,86 @@ def recipe_detail(recipe_id: int):
     }
 
 
+# ---------- "Change recipe" (2026-10-05) ----------
+#
+# Three routes, all addressed by the PLAN ENTRY, which is what identifies
+# "this meal on this day in this slot" — the recipe is what changes and the
+# meal is what stays, so a route keyed by recipe would be asking the wrong
+# question. Every one of them is household-scoped by the tool it calls
+# (recipe_change reads and writes through household_id()), so another
+# household's entry id takes the no-such-meal door rather than moving
+# anything.
+#
+# A refusal written for a reader is 200 with `status: 'refused'` and the
+# sentence — add_dish_day's shape and its reason: an app that did exactly
+# the right thing must not report itself broken. A bad id is a 400.
+
+class MealRecipeRequest(BaseModel):
+    """Point one meal at one of the household's own recipes."""
+    entry_id: int
+    recipe_id: int
+
+
+class MealRecipeRewriteRequest(BaseModel):
+    """
+    What the household would change about this meal's recipe, in their own
+    words. `text` is PROSE — stored verbatim (app/tools/recipe_change.py
+    explains the rule it follows and why) and handed to the recipe writer
+    inside a field the prompt tells it to read as a request about food, not
+    as an instruction.
+    """
+    entry_id: int
+    text: str
+
+
+class MealRecipeUndoRequest(BaseModel):
+    """Put back the recipe one rewrite replaced."""
+    request_id: int
+
+
+@app.post("/api/meal-recipe")
+def change_meal_recipe(req: MealRecipeRequest):
+    """Pick from my recipes, and Paste a link once it has saved."""
+    try:
+        return tools.change_meal_recipe(req.entry_id, req.recipe_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Changing a meal's recipe failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/meal-recipe/rewrite")
+def rewrite_meal_recipe(req: MealRecipeRewriteRequest):
+    """
+    Tell Pomona what to change. One recipe-writer call (two if the first
+    comes back with a must-avoid in it), then the save and the shopping, in
+    one transaction. The request is recorded whether or not it lands — see
+    agent.rewrite_meal_recipe.
+    """
+    try:
+        return agent.rewrite_meal_recipe(req.entry_id, req.text)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Rewriting a meal's recipe failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/meal-recipe/undo")
+def undo_meal_recipe(req: MealRecipeUndoRequest):
+    """Put the replaced recipe back, exactly, and record it as not kept."""
+    try:
+        return tools.undo_recipe_change(req.request_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Undoing a recipe rewrite failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 # ---------- the household's calendar (read-only, by subscribe link) ----------
 #
 # Loop Board "Meals: plan the week around what's actually on the household's
