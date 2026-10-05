@@ -49,7 +49,10 @@ def test_the_screens_run_in_the_storyboards_order():
         # together. The claim is unchanged; the flow gained a step.
         "shop-day",
         "eating-style", "wont-eat", "excited-about", "kit-repeats",
-        "ai-consent", "reveal",
+        # UPDATED 2026-10-05: "Anything else I should know?" is setup's
+        # last answer, after the consent card and before the reveal. The
+        # claim is unchanged; the flow gained a step at the end.
+        "ai-consent", "anything-else", "reveal",
     ]
 
 

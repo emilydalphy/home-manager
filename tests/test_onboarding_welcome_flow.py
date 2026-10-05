@@ -89,8 +89,12 @@ def test_the_four_intro_screens_come_before_the_household_step():
                          "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
                          "shop-day",
                          "eating-style", "wont-eat", "excited-about", "kit-repeats",
-                         # Sharing with Claude, before the first week (2026-09-27).
-                         "ai-consent", "reveal"]
+                         # Sharing with Claude, before the first week (2026-09-27),
+                         # then setup's last answer, "Anything else I should know?"
+                         # (2026-10-05) -- which is where the first week is asked
+                         # for, and which needs the consent above it because it
+                         # reads the note with a model call.
+                         "ai-consent", "anything-else", "reveal"]
 
 
 def test_each_intro_screen_is_in_the_markup_in_that_order():

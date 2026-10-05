@@ -85,7 +85,15 @@ QUESTION_STEPS = [
 # between the last question and the reveal — the first moment anything
 # would go to Anthropic. It has a way back ("‹ Your kit") like a question.
 CONSENT_STEP = "ai-consent"
-STEPS_AFTER_THE_FIRST = INTRO_STEPS_AFTER_THE_FIRST + QUESTION_STEPS + [CONSENT_STEP]
+# UPDATED 2026-10-05 ("Anything else I should know?"): setup's last answer
+# sits after the consent card and immediately before the reveal, and that
+# order is the point -- it is the step that reads the note with a model
+# call, so consent has to already have been given. Not one of
+# QUESTION_STEPS: that list is the questions asked BEFORE consent, and
+# tests/test_onboarding_setup_luxury.py parametrizes over it. No claim in
+# this file changed; the flow gained a step at the end.
+NOTE_STEP = "anything-else"
+STEPS_AFTER_THE_FIRST = INTRO_STEPS_AFTER_THE_FIRST + QUESTION_STEPS + [CONSENT_STEP, NOTE_STEP]
 ALL_STEPS = [FIRST_STEP] + STEPS_AFTER_THE_FIRST + ["reveal"]
 
 
@@ -334,6 +342,15 @@ function buildDinnerTimeStep() { BUILT.push('dinner-time'); }
 // names. No assertion here changed.
 function buildShopDayStep() { BUILT.push('shop-day'); }
 function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
+// Setup's last answer (2026-10-05), same fixed-function-list hazard as
+// the line above: STEP_BUILDERS names it, so this list has to. A STUB
+// rather than the page's own buildAnythingElseStep, deliberately -- that
+// one reads six elements out of the step (the box, the mic, the confirm
+// card, the two foot controls) which this file's DOM stub does not build,
+// and every test here is about where back GOES rather than about what a
+// step draws. The real one is driven by
+// tests/test_onboarding_anything_else.py instead.
+function buildAnythingElseStep() { BUILT.push('anything-else'); }
 """,
         _const("INTRO_STEPS"),
         _const("ALL_STEPS"),
@@ -458,6 +475,9 @@ console.log(JSON.stringify(labels));
         "excited-about": "‹ Never recommend",
         "kit-repeats": "‹ Cuisines you like",
         "ai-consent": "‹ Your kit",
+        # UPDATED 2026-10-05: setup's last answer goes back to the consent
+        # card it was reached through.
+        "anything-else": "‹ Sharing with Claude",
     }
 
 
@@ -980,6 +1000,14 @@ def test_the_guard_does_not_depend_on_a_button_being_passed_in():
     # UPDATED 2026-09-27: definition + the last question's hand-on
     # (afterLastQuestion, which both of its taps go through) + the consent
     # step's Allow and Not now.
+    # UPDATED 2026-10-05 ("Anything else I should know?"): still four, a
+    # DIFFERENT four. The last question and the consent step's Allow both
+    # hand on to setup's last answer now rather than finishing, and that
+    # step finishes from exactly two places -- "Looks right" on the confirm
+    # card, and the one path "Build my first week" and "Nothing else"
+    # share. The NUMBER is the claim rather than the names: a bounded,
+    # enumerated set of callers is what stops a new control starting a
+    # second concurrent run, which is what the three-state guard is for.
     assert ONBOARDING.count("finishSetupAndReveal(") == 4
 
 
