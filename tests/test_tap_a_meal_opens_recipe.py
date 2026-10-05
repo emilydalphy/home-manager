@@ -302,6 +302,10 @@ def _recipe_html(cook_meal, slot: str, plan_view: str = "undefined") -> str:
         _ESCAPE
         + "var GRO_ICONS = { chevRight: '<svg/>' };\n"
         + "var WK_ADD_ICON = '<svg/>';\n"
+        # 2026-10-05: mealIngredientsHtml gained a callee (the Change recipe
+        # button). The real builder, not a stub — a stub renders nothing and
+        # no error, so the assertions here would quietly stop seeing it.
+        + "var CHANGE_RECIPE_LABEL = 'Change recipe';\n"
         + "var RECIPE_ICONS = { minus: '<svg/>', plus: '<svg/>', chevLeft: '<svg/>' };\n"
         + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
         + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
@@ -313,7 +317,8 @@ def _recipe_html(cook_meal, slot: str, plan_view: str = "undefined") -> str:
         + _extract("isSnackSlot") + "\n"
         + "".join(_extract(n) + "\n" for n in (
             "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "recipeIngredientsHtml",
-            "recipeIngredientRowHtml", "recipeStepsHtml", "mealRecipeFor", "mealNoRecipeHtml", "mealIngredientsHtml"))
+            "recipeIngredientRowHtml", "recipeStepsHtml", "mealRecipeFor", "mealNoRecipeHtml",
+            "recipeIsChangeable", "recipeChangeBtnHtml", "mealIngredientsHtml"))
         + f"var meal = {json.dumps(cook_meal)};\n"
         + "var entry = meal ? { source: meal.is_leftovers ? 'leftovers' : 'plan', entry_id: meal.entry_id, state: 'planned', title: meal.meal } : null;\n"
         + f"var info = mealRecipeFor({json.dumps(slot)}, entry, meal);\n"

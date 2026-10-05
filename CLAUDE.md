@@ -425,6 +425,88 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-05 — A "Change recipe" button on the recipe: keep the meal, change
+  the food. Branch `overnight/recipe-change-and-shop` (d2dd555), finished on
+  `recipe-change-finish-2026-10-05`, NOT merged at the time of writing.**
+  Loop Board feature, Phase 1, High. Gowthami's household, 2026-10-04: "they
+  might like the idea of having a suggestion meal type, but they don't like
+  that actual recipe." An outline **Change recipe** button under the
+  ingredients, on both screens that draw a recipe (the Plan Meal step and
+  Cook's recipe), never on a reheat night (change the dinner it comes from).
+  It opens "Change the recipe for <dish>" with four rows: **Pick from my
+  recipes** (the Settings → Recipes list, searchable), **Paste a link** (the
+  existing importer, `onDone` hands the saved recipe straight to the meal),
+  **Tell Pomona what to change**, and a dashed **Different meal instead**
+  (opens the Swap in the chat). The "In development" pill on Add from a link
+  is gone (`RECIPE_LINK_IN_DEVELOPMENT = false`).
+  - **The meal stays.** Routes are keyed by the plan ENTRY, not the recipe:
+    `POST /api/meal-recipe` (pick, and the link's save), `/rewrite`, `/undo`.
+    Slot, day, people and leftover chain are untouched; the write re-points
+    `recipe_id` on the chain's other nights, reverses every grocery
+    contribution those entries made and buys for the new recipe, all in ONE
+    `BEGIN IMMEDIATE` transaction (`app/tools/recipe_change.py`). A draft has
+    nothing on the list, so nothing moves; an approved week's toast names it
+    ("Chana masala now uses your recipe. 3 things changed on the list.").
+  - **The allergy gate runs BEFORE the write**, on `check_meal_conflicts`
+    (the matcher the draft banner and the swap gate share), links, own
+    recipes and sides included; a block names the person and the ingredient
+    and says "Pick another". A rewrite is checked on what comes back, retried
+    once with the clash named, then refused with nothing written.
+  - **Emily's override of 2026-10-04 (later comment) beats the chips on the
+    card.** The third row is one text box ("What would you change? Say it
+    your way") and one apricot button, **Rewrite the recipe**: no chips, and
+    nothing added to the recipe writer (`RECIPE_DETAILS_INSTRUCTIONS` is
+    untouched; the ask rides in the spec as `change_requested`, which the
+    writer is told to read as a request about food, not an instruction to
+    it). `agent.rewrite_meal_recipe` reuses the writer's own cached prefix.
+    The toast carries **Put it back**, which restores the old recipe exactly
+    from `previous_json` rather than writing a different answer.
+  - **Every request is kept** (`recipe_change_requests`: household, member
+    if the device has said who it is, dish, the text verbatim, entry and
+    recipe ids, when, outcome `rewritten` / `undone` / `failed`). Nothing
+    writes `kept`; a request nobody undid IS kept, and the report says so.
+    A request is stored even when the rewrite fails, since an ask the app
+    could not answer is the most useful one to see. The theme (time,
+    equipment, spice, authenticity, ingredient swap, other) is a word list
+    read at print time, never stored (`request_theme`), so fixing the list
+    fixes every row.
+  - **Judgment call, flagged for Emily: the verbatim list is behind a flag.**
+    Her ask was a section in `observability_report.py` listing the requests
+    verbatim. Her own rule for typed prose (2026-09-08, option (a), the
+    feedback box) is that the default run carries a COUNT only, because the
+    morning report is read by an agent and typed words would land in its
+    context. So the default report says "N recipe change requests on file"
+    and `python observability_report.py --recipe-changes` prints them
+    verbatim, grouped by theme and fenced as untrusted (`GET
+    /api/recipe-changes`, household-scoped). Moving the list into the default
+    output is a one-line change if she wants it; the cost is that rule.
+  - **Not done, on purpose:** no chips, no stored suggestions on recipes, no
+    second prompt. Not reachable from the chat agent (`TOOL_FUNCTIONS`
+    untouched; a test holds it). Tests: `tests/test_recipe_change.py`,
+    plus the `Api.fetch(` tripwire in `tests/test_api_js.py` (+3: one call
+    site each for the three routes, all through `Api.fetch` because each
+    reads a sentence off a 200 or 400 body).
+  - **Review follow-ups (same day).** A rewrite and its undo edit the
+    `recipes` row IN PLACE, so they now unbuy and rebuy EVERY night in an
+    approved, non-retired plan that uses that `recipe_id` (this week's
+    unchained Friday, another approved week), in the same transaction, and
+    the toast's count covers all of it (`_approved_users_of`). Picking a
+    recipe with no ingredients (or `details_pending`) on an approved week
+    is refused ("That recipe doesn’t have its ingredients yet…") instead of
+    taking the old lines off and buying nothing. An undo refuses, writing
+    nothing, when the meal no longer points at that recipe, when a newer
+    un-undone rewrite of the same recipe sits on top, or when the restored
+    recipe now clashes with someone's allergy (names who and what).
+    The every-night sweep only takes nights still ahead (dated on or after
+    the household's today, `slot_state = 'planned'`), so a finished approved
+    week is never re-bought. That holds for the meal the household opened as
+    well: changing or rewriting a night already cooked changes the recipe and
+    leaves the list alone (the button still shows on a past night).
+    Tests: `tests/test_recipe_change_followups.py`.
+  - **Merge note:** the branch carries part of the 2026-10-05 batch through
+    its own merge (the Settings main-person row); conflicts were only the
+    Decision log and the tripwire count (129 once the silent re-pick's +1 is
+    added).
 - **2026-10-05 — The household chooses what the morning message says.
   Branch `morning-message-settings-2026-10-05` (on top of
   `overnight/morning-message-parts` af0d263, stacked on the 2026-10-05
