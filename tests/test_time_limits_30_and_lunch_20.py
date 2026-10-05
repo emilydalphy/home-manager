@@ -302,8 +302,28 @@ def test_the_rush_check_keeps_a_stricter_weeknight_cap():
 
 
 def test_the_prompt_says_the_lunch_rule_and_the_rush_number():
+    """
+    TRIPWIRE FIRED, 2026-10-05 (Loop Board "Time limits"): the lunch
+    sentence used to open "Every Monday-Friday lunch that is cooked that day
+    is capped at {lunch_max} minutes", and the number became a household
+    answer (meal_preferences.weekday_lunch_max_minutes). A per-household
+    number cannot stay in THIS block -- it is the cached one, and
+    interpolating one would give every household its own cache prefix, which
+    is the cost the long note at `rush_max` records measuring. So the rule
+    NAMES THE FIELD now, exactly as the weeknight rule four lines above it
+    always did.
+
+    The claim is unchanged and is still all four of these: the model is told
+    the weekday-lunch rule, told where the long dishes go, told the rush cap
+    is dinner only, and told the rush number. Only the first one's wording
+    moved -- and it is asserted harder than before, because it now pins that
+    the field is named rather than that any number is.
+    """
     shipped = prompt_literals(agent.generate_weekly_plan_llm)
-    assert "Every Monday-Friday lunch that is cooked that day is capped at " in shipped
+    assert "weekday_lunch_max_minutes` is a hard cap" in shipped
+    assert "every Monday-Friday lunch that is cooked that day" in shipped
+    # The number must not come back into the cached block.
+    assert "is cooked that day is capped at 20" not in shipped
     assert "reheats well, like chili, a stew or a curry" in shipped
     assert "Dinner only: it does not change" in shipped
     assert "30 minutes or less" in tools.NIGHT_TAGS["rush"]

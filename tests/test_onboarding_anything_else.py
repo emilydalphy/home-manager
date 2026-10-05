@@ -518,7 +518,22 @@ document.querySelector = function (sel) { return sel === '.ae-field' ? ELS['ae-f
         "var anythingElseReadFor = %s;" % (json.dumps(note) if reading != "null" else "''"),
         "var anythingElseBusy = false;",
         "var anythingElseConfirmed = false;",
-        "var noteCuisines = []; var noteWeeknightMaxMinutes = 0;",
+        "var noteCuisines = [];",
+        # TRIPWIRE FIRED, 2026-10-05 (Loop Board "Time limits"). The
+        # weeknight cap read out of the note used to live in a variable of
+        # the note step's OWN, `noteWeeknightMaxMinutes`, because the page
+        # had none to write into -- its own comment said exactly that.
+        # Setup ASKS for the cap now (the dinner-time step's chips), so the
+        # page HAS one and applyAnythingElseReading writes into THAT: two
+        # variables for one column would mean whichever write ran last
+        # silently won. Nothing this file claims changed, and no assertion
+        # below moved -- the two `minutes == 0` checks still mean "the note
+        # wrote nothing" and `minutes == 30` still means "the note's number
+        # reached the page's answer". Seeded at 0 rather than at the page's
+        # own default of 45 for the reason every other variable here is
+        # seeded empty: starting from empty is what makes "nothing was
+        # written yet" observable at all.
+        "var weeknightMaxMinutes = 0;",
         _fn("anythingElseConfirmLines"),
         _fn("applyAnythingElseReading"),
         _fn("buildAnythingElseStep"),
@@ -564,7 +579,7 @@ function state() {
     lunchTouched: lunchLocationTouched,
     prep: { answer: prepAnswer, days: prepDayKeys.slice() },
     kit: kitchenKit.slice(),
-    minutes: noteWeeknightMaxMinutes,
+    minutes: weeknightMaxMinutes,
     finished: FINISHED.length,
     fetched: FETCHED.slice(),
   };

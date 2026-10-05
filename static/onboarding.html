@@ -105,6 +105,10 @@
     margin: 0;
   }
   .q-group { display: flex; flex-direction: column; gap: 12px; }
+  /* display:flex beats the UA sheet's [hidden] rule — the same guard
+     .back-link and .reveal-days carry, and the reason the weekday-lunch
+     group can be hidden at all (2026-10-05). */
+  .q-group[hidden] { display: none; }
   .q-controls > * + .q-group { margin-top: 12px; }
   .q-group + .q-group { margin-top: 20px; }
   .q-group .q-line { margin: -4px 0 0; }
@@ -1512,6 +1516,15 @@
   </div>
 </div>
 
+<!-- Three questions, ONE step (Loop Board "Time limits", Gowthami's
+     household 2026-10-04: "It doesn't give the option on time limits for
+     the user to give"). The two time limits are on the dinner-time step
+     rather than on steps of their own: they are the same subject, and a
+     new step is the most expensive thing that can be done to this file
+     (STEP_BUILDERS is extracted under node against a hand-written
+     function list, and three test files hard-code the step ORDER). The
+     .q-group / .q-sub shape is the kit step's, which already asks two
+     things on one screen. Skip leaves all three defaults in place. -->
 <div id="step-dinner-time" style="display:none">
   <button class="back-link" type="button" data-step-back="dinner-time" hidden></button>
   <div class="q-body">
@@ -1520,6 +1533,21 @@
     <p class="q-line">So I can tell you when to start cooking.</p>
     <div class="q-controls">
       <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
+      <div class="q-group">
+        <p class="q-sub">How long can dinner take on a weeknight?</p>
+        <p class="q-line">Monday to Friday, start to finish.</p>
+        <div class="rhythm-chip-row" id="weeknight-max-chips"></div>
+        <p class="uw-sum" id="weeknight-max-other" hidden></p>
+      </div>
+      <!-- Only when anyone has lunch at home on a weekday (buildDinnerTimeStep
+           decides). A household where every single person takes lunch out has
+           no weekday lunch to put a limit on. -->
+      <div class="q-group" id="lunch-max-group" hidden>
+        <p class="q-sub">And a weekday lunch made that day?</p>
+        <p class="q-line">Only the ones you cook on the day &mdash; a lunch that reheats an earlier cook has no limit.</p>
+        <div class="rhythm-chip-row" id="lunch-max-chips"></div>
+        <p class="uw-sum" id="lunch-max-other" hidden></p>
+      </div>
     </div>
   </div>
   <div class="q-foot">
@@ -2140,8 +2168,84 @@ function renderDinnerWindowChips() {
     renderDinnerWindowChips();
   });
 }
+
+// ---------- Time limits (2026-10-05) ----------
+// Two more questions on the dinner-time step (Loop Board "Time limits").
+// Both are whole minutes and both store 0 for "no limit" — the convention
+// meal_preferences.weeknight_max_minutes already had, so there is one for
+// the pair rather than two (app/tools/time_caps.py).
+//
+// These DEFAULTS are the default ANSWER, not the column default: the
+// column keeps weeknight at 0 so an existing household's behaviour does
+// not change under them (criterion 4), while a household going through
+// setup gets the chip that opens lit. 45 and 20 are the card's numbers.
+const WEEKNIGHT_MAX_OPTIONS = [
+  { key: 20, label: '20 min' },
+  { key: 30, label: '30 min' },
+  { key: 45, label: '45 min' },
+  { key: 60, label: '1 hour' },
+  { key: 0, label: 'No limit' },
+];
+const LUNCH_MAX_OPTIONS = [
+  { key: 10, label: '10 min' },
+  { key: 20, label: '20 min' },
+  { key: 30, label: '30 min' },
+  { key: 0, label: 'No limit' },
+];
+let weeknightMaxMinutes = 45;
+let weekdayLunchMaxMinutes = 20;
+
+// A value none of the chips can express, said out loud rather than
+// snapped to the nearest one. Setup's last answer can read a number off a
+// sentence ("nothing over 35 minutes on a weeknight") and
+// applyAnythingElseReading keeps it, so coming back to this step is a
+// real way to be holding 35. Snapping would change the number the confirm
+// card displayed, which is the one thing anythingElseConfirmLines exists
+// to prevent. 0 is a chip ("No limit"), so it never reaches this.
+function timeLimitOtherLine(value, options) {
+  const mins = Number(value) || 0;
+  if (mins <= 0 || options.some(o => o.key === mins)) return '';
+  return mins + ' minutes at most';
+}
+
+// "When anyone has lunch at home on a weekday" (the card). Two halves:
+// lunch has to be ON some weekday in the usual week, and somebody has to
+// be eating it here. The second is the one worth stating — lunchLocation
+// is unset for anybody nobody has said anything about, and unset means AT
+// HOME (lunchLocationPayload's own rule), so the question is asked unless
+// every member is explicitly 'out', never only when somebody ticked home.
+function weekdayLunchAtHome() {
+  // Monday-Friday are the first five cells: UW_WEEKDAYS starts on Monday.
+  if (!(usualGrid.lunch || []).slice(0, 5).some(uwIsOn)) return false;
+  const members = currentMembers();
+  if (!members.length) return true;
+  return members.some(m => lunchLocation[m.name] !== 'out');
+}
+
+function renderTimeLimitChips(rowId, otherId, options, value, onSelect) {
+  buildSingleSelectChips(document.getElementById(rowId), options, value, onSelect);
+  const other = document.getElementById(otherId);
+  const line = timeLimitOtherLine(value, options);
+  other.textContent = line;
+  other.hidden = !line;
+}
+function renderWeeknightMaxChips() {
+  renderTimeLimitChips('weeknight-max-chips', 'weeknight-max-other', WEEKNIGHT_MAX_OPTIONS,
+    weeknightMaxMinutes, (key) => { weeknightMaxMinutes = key; renderWeeknightMaxChips(); });
+}
+function renderLunchMaxChips() {
+  // Hidden rather than absent, so going back and changing who eats lunch
+  // where brings the question back on the way forward — the whole point of
+  // redrawing on arrival (STEP_BUILDERS).
+  document.getElementById('lunch-max-group').hidden = !weekdayLunchAtHome();
+  renderTimeLimitChips('lunch-max-chips', 'lunch-max-other', LUNCH_MAX_OPTIONS,
+    weekdayLunchMaxMinutes, (key) => { weekdayLunchMaxMinutes = key; renderLunchMaxChips(); });
+}
+
 function buildDinnerTimeStep() {
   renderDinnerWindowChips();
+  renderWeeknightMaxChips();
+  renderLunchMaxChips();
 }
 
 // ---------- When do you usually do the grocery shop? (2026-10-04) ----------
@@ -3027,10 +3131,19 @@ async function savePlanTheWeekAnswers() {
   // The "normal week" box left setup (Build 6): a household says what a
   // week is like every week, on the intake's Anything else.
   if (kitchenKit.length) writes.push(['kitchen_kit', kitchenKit]);
-  // A Monday-to-Friday cap read out of setup's last answer and confirmed
-  // (2026-10-04). Nothing in setup ASKS for one; this is the only way it
-  // gets set during onboarding, and it is the same field Settings edits.
-  if (noteWeeknightMaxMinutes > 0) writes.push(['weeknight_max_minutes', noteWeeknightMaxMinutes]);
+  // The two time limits (Loop Board "Time limits", 2026-10-05). Setup ASKS
+  // for both now, on the dinner-time step, so they are always written —
+  // including after a Skip, which leaves the defaults in place rather than
+  // clearing them: 45 and 20 are the card's default ANSWERS, and a
+  // household that skipped still wants their first week to fit an evening.
+  // Setup's last answer can also set the weeknight one out of a sentence,
+  // and it writes into the SAME variable (applyAnythingElseReading) —
+  // which is why there is one write here and not two that race.
+  writes.push(['weeknight_max_minutes', weeknightMaxMinutes]);
+  // Only when the question was asked. The column default is already 20, so
+  // writing nothing for a household where everyone takes lunch out says
+  // nothing rather than answering for them.
+  if (weekdayLunchAtHome()) writes.push(['weekday_lunch_max_minutes', weekdayLunchMaxMinutes]);
   for (const [field, value] of writes) {
     try {
       await Api.fetch('/api/preferences/meal-planning', {
@@ -3075,7 +3188,11 @@ let anythingElseBusy = false;
 let anythingElseConfirmed = false;
 // What the reading added that the page had no variable for already.
 let noteCuisines = [];              // unioned into excited_about
-let noteWeeknightMaxMinutes = 0;    // 0 = the note gave no cap
+// The weeknight cap used to need one of these too. It does not since
+// 2026-10-05: the dinner-time step asks for it, so the page HAS a variable
+// for it (weeknightMaxMinutes) and the reading moves into that one like
+// every other answer here. Two variables for one column would have meant
+// whichever write ran last silently won.
 
 // One line per thing that WILL be saved, built from the fields rather than
 // from any sentence the model wrote. That is the safety rule, not a style
@@ -3162,8 +3279,13 @@ function applyAnythingElseReading(reading) {
     // confirmed and then quietly dropped.
     lunchLocationTouched = true;
   });
+  // Into the page's own answer, so it shows as the chosen chip (or as the
+  // out-of-chip line) if they go back to the dinner-time step, and so
+  // there is one write at the end rather than two. The note is the LATER
+  // and explicitly-confirmed answer — it is the last question in setup —
+  // so it wins over the chip, which is the honest precedence.
   const mins = Number(r.weeknight_max_minutes || 0);
-  if (mins > 0) noteWeeknightMaxMinutes = mins;
+  if (mins > 0) weeknightMaxMinutes = mins;
   const days = (r.prep_days || []).filter(d => UW_WEEKDAYS.indexOf(d) !== -1);
   if (days.length) {
     prepAnswer = 'yes';

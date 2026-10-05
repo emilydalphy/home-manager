@@ -379,9 +379,21 @@ def test_no_answer_plans_exactly_as_before(two_adults, seen_context):
 
 
 def test_the_prompt_says_what_each_kind_means():
+    """
+    TRIPWIRE FIRED, 2026-10-05 (Loop Board "Time limits"): `cooked`'s clause
+    used to interpolate `{lunch_max}`, the then-constant weekday lunch cap.
+    That number is a household answer now
+    (meal_preferences.weekday_lunch_max_minutes), and this is the CACHED
+    instructions block -- a per-household number in it would give every
+    household its own cache prefix. So the clause names the field.
+
+    The claim is unchanged: the model is told what each of the three lunch
+    kinds means, and that `cooked` is the one with a hard cap on it.
+    """
     assert "`intake.weekday_lunches.days`, when present, is how the household said each Monday-Friday lunch gets made" in AGENT
     for kind in ("`prepped` — made ahead on the prep day", "`leftovers` — that lunch is the dinner of the evening before",
-                 "`cooked` — cooked fresh that day, {lunch_max} minutes of prep+cook at most"):
+                 "`cooked` — cooked fresh that day, held to household_memory's",
+                 "`weekday_lunch_max_minutes` of prep+cook at most, hard, even on a"):
         assert kind in AGENT, kind
     assert '"weekday_lunches": intake.get("weekday_lunches") or {},' in AGENT
     finish = AGENT[AGENT.index("def _finish_week_slots("):AGENT.index("_complete_plates_pass(plan_id, household_memory, intake)")]
