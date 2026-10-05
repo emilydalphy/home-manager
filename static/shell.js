@@ -514,6 +514,32 @@
     return true;
   }
 
+  // Pop the level THIS sheet is the recorded way out of, and nothing else.
+  //
+  // A sheet's open function pushes a level only when it was opened from
+  // another sheet (openOverSheet answers false with no parent), and its x
+  // runs the same dismiss either way — so a bare popSheetLevel() in there
+  // is "pop whatever is on top", which is only safe as long as nothing can
+  // open that sheet from a tab while some other sheet's level is standing.
+  // Three of the nine already guard that by hand with an
+  // `else forgetSheetLevels()`, and the other six cannot: the pop's own
+  // reopen (SHEET_LEVELS[x].open) calls them with no parent too, and
+  // forgetting there would drop the level BELOW the sheet being reopened —
+  // prefs -> tips -> the report form, where tips reopening would take
+  // Settings off the stack and tips' own x would land on the tab.
+  //
+  // The level already records the child's own dismiss, so the two cases
+  // tell themselves apart: "am I the way out of the top level?" is reading
+  // that field for exactly what it means. Nothing reachable today opens one
+  // of these from a tab mid-stack (every tab change forgets the stack, and
+  // every sheet's scrim covers the tab under it), so this is the invariant
+  // made structural rather than a bug being fixed.
+  function popSheetLevelFor(dismiss, opts) {
+    var top = sheetBackStack[sheetBackStack.length - 1];
+    if (!top || top.dismiss !== dismiss) return false;
+    return popSheetLevel(opts);
+  }
+
   // What the back control and the crumb name: the sheet one level up.
   function sheetBackLabel() {
     var back = sheetBackStack[sheetBackStack.length - 1];
@@ -9690,7 +9716,7 @@
   // and which must never pop (see the sheet-stack comment at the top).
   function dismissKitchenSheet() {
     closeKitchenSheet();
-    popSheetLevel();
+    popSheetLevelFor(dismissKitchenSheet);
   }
 
   function closeKitchenSheet() {
@@ -10890,7 +10916,7 @@
   // the back gesture and the chevron land on What we know like the x.
   function dismissUwSheet() {
     closeUwSheet();
-    popSheetLevel();
+    popSheetLevelFor(dismissUwSheet);
   }
   function openUwSheet(meal) {
     var data = uwState.data;
@@ -11990,8 +12016,8 @@
     // forgotten rather than reopened — reopening it as well would draw
     // the list twice. With no onDone this is an ordinary pop, and with no
     // level at all it lands on the tab, as it always did.
-    if (done) { popSheetLevel({ forget: true }); done(null); return; }
-    popSheetLevel();
+    if (done) { popSheetLevelFor(dismissRecipeLinkSheet, { forget: true }); done(null); return; }
+    popSheetLevelFor(dismissRecipeLinkSheet);
   }
 
   // The way out of every failure: say it in the ask bar instead. Prefilled
@@ -12477,7 +12503,7 @@
     if (!rphSheetEl) return;
     rphScrimEl.hidden = true;
     rphSheetEl.hidden = true;
-    popSheetLevel();
+    popSheetLevelFor(rphClose);
   }
 
   // `parent` (2026-10-05): the sheet this was opened from, so the x and
@@ -23852,6 +23878,11 @@
   function closeWhoScreen(answer) {
     if (!whoScreenEl) return;
     whoScreenEl.hidden = true;
+    // Back to Settings when it was opened from there (2026-10-05). Nothing
+    // to pop at boot, and nothing to pop when the leave dialog sends the
+    // household here to pick a name first — that level is the dialog's, not
+    // this screen's, which is what popSheetLevelFor checks.
+    popSheetLevelFor(closeWhoScreen);
     var resolve = whoResolve;
     whoResolve = null;
     if (resolve) resolve(answer);
@@ -23909,7 +23940,16 @@
   document.addEventListener('click', function (e) {
     var target = e.target && e.target.closest && e.target.closest('[data-who="switch"]');
     if (!target) return;
-    closePrefsSheet();
+    // Stacks on Settings (2026-10-05): this used to call closePrefsSheet()
+    // outright, so "Never mind" — and Escape — landed on the tab rather than
+    // back on the row that was tapped. The last Settings control still doing
+    // that; the audit in the sheet-stack comment at the top names it.
+    //
+    // No `stays`: #who-screen is inset:0 at z-index 60 over an opaque
+    // --ground, so Settings closing under it is invisible and keeps one
+    // modal in the accessibility tree rather than two. openOverSheet closes
+    // it for us, which is why closePrefsSheet is gone from here.
+    openOverSheet(sheetLevelHost(target), closeWhoScreen);
     // Switching to an adult who hasn't been through the welcome shows it
     // to them — it follows whoever the session is, not the device.
     openWhoScreen(true).then(function (picked) {
@@ -24035,7 +24075,7 @@
     aiConsentEl.hidden = true;
     // Back to Settings when it was read back from there; nothing to pop
     // on the first ask at boot.
-    popSheetLevel();
+    popSheetLevelFor(closeAiConsentScreen);
     var resolve = aiConsentResolve;
     aiConsentResolve = null;
     if (resolve) resolve(shellWho.ai_consent);
@@ -25155,7 +25195,7 @@
   // in there would put Settings up in the middle of that.
   function dismissLeaveDialog() {
     closeLeaveDialog();
-    popSheetLevel();
+    popSheetLevelFor(dismissLeaveDialog);
   }
 
   function leaveWordTyped() {
@@ -25646,7 +25686,7 @@
   // The household's own way out: one level up when there is one.
   function dismissMorningSheet() {
     closeMorningSheet();
-    popSheetLevel();
+    popSheetLevelFor(dismissMorningSheet);
   }
 
   document.addEventListener('click', function (e) {
@@ -25905,7 +25945,7 @@
   // The household's own way out: one level up when there is one.
   function dismissRecipesSheet() {
     closeRecipesSheet();
-    popSheetLevel();
+    popSheetLevelFor(dismissRecipesSheet);
   }
 
   // Back from the link or cookbook sheet, saved or not.
@@ -26054,7 +26094,7 @@
   // The household's own way out: one level up when there is one.
   function dismissTipsSheet() {
     closeTipsSheet();
-    popSheetLevel();
+    popSheetLevelFor(dismissTipsSheet);
   }
 
   // Delegated, so the Preferences row and the ask sheet's "?" button work
@@ -26267,7 +26307,7 @@
   // The household's own way out: one level up when there is one.
   function dismissSnwSheet() {
     closeSnwSheet();
-    popSheetLevel();
+    popSheetLevelFor(dismissSnwSheet);
   }
 
   function sendSnwReport(whatHappened, tryingToDo, screen) {

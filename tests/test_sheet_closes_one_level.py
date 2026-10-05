@@ -188,6 +188,7 @@ function closeRecipesSheet() { open.recipes = false; log.push('close recipes'); 
 function openRecipesSheet() { open.recipes = true; log.push('open recipes'); RECIPES_BODY.innerHTML = '<p>Recipes</p>'; }
 function closeTipsSheet() { open.tips = false; log.push('close tips'); }
 function openTipsSheet() { open.tips = true; log.push('open tips'); TIPS_BODY.innerHTML = '<p>Tips</p>'; }
+function dismissTipsSheet() { closeTipsSheet(); popSheetLevelFor(dismissTipsSheet); }
 
 function closeKitchenSheet() { open.kit = false; }
 function dismissKitchenSheet() { closeKitchenSheet(); popSheetLevel(); }
@@ -216,6 +217,17 @@ function openPhotoViewer(parent) {
   if (parent) openOverSheet(parent, rphClose, { stays: true });
   photoUp = true;
   paintSheetLevelChrome(RECIPES, 'The page');
+}
+
+// "Who's this?" — a full-screen takeover (inset:0, z-index 60, opaque
+// --ground), opened from the Settings row that reads "You're Emily / Not
+// you? Switch". Its single exit is closeWhoScreen, whichever of the three
+// ways out ran ("Never mind", Escape, a successful pick).
+var whoUp = false;
+function closeWhoScreen() { whoUp = false; popSheetLevelFor(closeWhoScreen); }
+function openWho(parent) {
+  openOverSheet(parent, closeWhoScreen);
+  whoUp = true;
 }
 
 function closeUwSheet() { open.uw = false; }
@@ -642,6 +654,10 @@ def test_every_sheet_that_can_be_opened_from_another_has_a_dismiss_that_pops():
         "rphClose", "closeAiConsentScreen", "dismissLeaveDialog",
         "dismissMorningSheet", "dismissRecipesSheet", "dismissTipsSheet",
         "dismissSnwSheet",
+        # Full-screen takeovers rather than bottom sheets, so their own copy
+        # is the named way back and they get no chevron — but their close
+        # pops a level like every other.
+        "closeWhoScreen",
     }
     pushed = set(re.findall(r"openOverSheet\([^,]+,\s*([A-Za-z_$][\w$]*)", SHELL_JS))
     # Every dismiss named above exists and pops.
@@ -708,3 +724,108 @@ def test_the_back_control_and_the_crumb_are_styled_and_hidable():
     # 34px of ink in a 44px target (rule 6), the way .gro-icon-btn does it.
     assert ".kit-sheet-close, .kit-sheet-back { position: relative; }" in SHELL_CSS
     assert ".kit-sheet-close::after, .kit-sheet-back::after { content: ''; position: absolute; inset: -5px; }" in SHELL_CSS
+
+
+# --------------------------------------------------------------------------
+# A pop closes the level it is the way out of, and nothing else
+# --------------------------------------------------------------------------
+
+@_needs_node
+def test_who_is_this_opened_from_settings_comes_back_to_settings():
+    """The one Settings control still closing Settings outright when this
+    card's audit was run: "You're Emily / Not you? Switch"."""
+    out = _node(_script("""
+openPrefsSheet();
+PREFS_ROWS.scrollTop = 60;
+openWho('prefs');
+var up = { prefs: open.prefs, who: whoUp, depth: sheetLevelDepth() };
+closeWhoScreen();               // "Never mind"
+console.log(JSON.stringify({
+  up: up,
+  after: { prefs: open.prefs, who: whoUp, depth: sheetLevelDepth(), scroll: PREFS_ROWS.scrollTop }
+}));
+"""))
+    assert out["up"] == {"prefs": False, "who": True, "depth": 1}
+    assert out["after"] == {"prefs": True, "who": False, "depth": 0, "scroll": 60}
+
+
+@_needs_node
+def test_a_pop_never_closes_a_sheet_it_was_not_standing_on():
+    """The who screen is also reached from the leave dialog ("Who's asking?
+    Pick your name first"), which pushes no level of its own for it — the
+    level on the stack there is the DIALOG's. A bare pop would have closed
+    the dialog's level and left Settings on screen with the dialog gone and
+    nothing to come back to."""
+    out = _node(_script("""
+openPrefsSheet();
+// Settings -> Delete your household: stays, because the dialog sits on top.
+var leaveUp = false;
+function dismissLeaveDialog() { leaveUp = false; popSheetLevelFor(dismissLeaveDialog); }
+openOverSheet('prefs', dismissLeaveDialog, { stays: true });
+leaveUp = true;
+// "Pick my name first" — the dialog closes itself and sends the household
+// to the who screen without pushing a level for it.
+leaveUp = false;
+openWho(null);
+closeWhoScreen();
+var afterWho = { depth: sheetLevelDepth(), prefs: open.prefs, label: sheetBackLabel() };
+// The dialog's own level is still there, so Cancel still lands on Settings.
+leaveUp = true;
+dismissLeaveDialog();
+console.log(JSON.stringify({ afterWho: afterWho, afterCancel: { depth: sheetLevelDepth(), prefs: open.prefs } }));
+"""))
+    assert out["afterWho"]["depth"] == 1, (
+        "the who screen popped a level it was never standing on"
+    )
+    assert out["afterWho"]["label"] == "Preferences"
+    assert out["afterWho"]["prefs"] is True, "Settings stayed under the dialog, as it should"
+    assert out["afterCancel"]["depth"] == 0
+
+
+@_needs_node
+def test_a_sheet_opened_from_a_tab_mid_stack_pops_nothing():
+    """Belt and braces for the invariant rather than a bug being fixed: the
+    stack is forgotten on every tab change and every sheet's scrim covers
+    the tab under it, so nothing reachable today opens one of these from a
+    tab while a level is standing. If something ever does, its x has to
+    land on the tab — not on whichever sheet happened to be on the stack."""
+    out = _node(_script("""
+openPrefsSheet();
+openSection('Your rhythm', 'prefs');       // stack: [prefs -> the section]
+var before = sheetLevelDepth();
+openTipsSheet();                            // as if from a tab, no parent
+dismissTipsSheet();
+console.log(JSON.stringify({ before: before, after: sheetLevelDepth(), prefs: open.prefs }));
+"""))
+    assert out["before"] == 1
+    assert out["after"] == 1, (
+        "Helpful tips closed a level it never pushed — the section's own x "
+        "would then have nothing left to land on"
+    )
+    assert out["prefs"] is False
+
+
+def test_the_who_switch_row_no_longer_closes_settings_outright():
+    handler = _strip_js_comments(SHELL_JS)
+    handler = handler[handler.index("""closest('[data-who="switch"]')"""):]
+    handler = handler[:handler.index("openWhoScreen(true)")]
+    assert "closePrefsSheet()" not in handler, (
+        "the last Settings control that closed Settings before opening its "
+        "child — \"Never mind\" landed on the tab"
+    )
+    assert "openOverSheet(sheetLevelHost(target), closeWhoScreen)" in handler
+
+
+def test_every_childs_own_way_out_pops_only_its_own_level():
+    """popSheetLevel is "pop whatever is on top"; popSheetLevelFor is "pop
+    the level I am the recorded way out of". Every sheet's own dismiss uses
+    the second — the first is for the save paths, which land the household
+    somewhere themselves."""
+    for name in ("dismissKitchenSheet", "dismissUwSheet", "dismissRecipeLinkSheet",
+                 "rphClose", "closeAiConsentScreen", "dismissLeaveDialog",
+                 "dismissMorningSheet", "dismissRecipesSheet", "dismissTipsSheet",
+                 "dismissSnwSheet", "closeWhoScreen"):
+        body = _code(name)
+        assert "popSheetLevelFor(" + name in body, (
+            f"{name} pops whatever is on top rather than its own level"
+        )
