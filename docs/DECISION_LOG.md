@@ -20,8 +20,10 @@ why*, not duplicating the diff.
   digits), and the passphrase form exactly as it was (placeholders, field
   names, action unchanged) behind "Sign in with a household passphrase".
   The passphrase step shows first after a refused passphrase or when this
-  device last came in that way (`pomona-signin-method` in localStorage),
-  so current testers aren't sent round the email path. `static/api.js` is
+  device last SIGNED IN that way (`pomona-signin-method`; a submit is only
+  marked pending and promoted on the next load without a refusal), so
+  current testers aren't sent round the email path. Replacing an existing
+  email in Settings asks for both codes (new + current address). `static/api.js` is
   now PUBLIC (the sign-in page calls through it; it holds no household
   data) — `test_api_js` changed to say so; shell.js stays signed-in only.
   Settings gets a "Sign-in email" row + sheet (`openEmailSheet`, stacked
