@@ -65,8 +65,8 @@ def is_final() -> bool:
 
 def render(page: str) -> str:
     """The page's HTML with the version, date and (while a draft) the banner
-    filled in. KeyError-free: an unknown page is a ValueError for the caller
-    to turn into a 404 — only the three names above are ever read from disk."""
+    filled in. Only the three names above are ever read from disk; anything
+    else is a ValueError."""
     if page not in PAGES:
         raise ValueError(page)
     with open(os.path.join(_STATIC_DIR, f"{page}.html"), encoding="utf-8") as f:
