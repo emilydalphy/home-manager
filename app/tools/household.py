@@ -223,10 +223,13 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     return {"name": name, "dietary_restrictions": merged}
 
 
+LITTLE_ONE_WORDS = frozenset({"toddler", "little one", "baby", "infant"})
+
+
 def set_member_age_group(name: str, age_group: str) -> dict:
     """
-    Set a member's general age group (e.g. 'adult', 'teen', 'child',
-    'toddler', or anything freeform).
+    Set a member's general age group ('adult', 'teen', 'child', or
+    anything freeform; 'toddler' and its kin are stored as 'child').
 
     Defect hunt, 2026-09-13: a newly added adult's avatar color
     (members.color) used to stay blank until the next server restart's
@@ -244,6 +247,12 @@ def set_member_age_group(name: str, age_group: str) -> dict:
     design names two colors — so a third adult, or a household with two
     already colored, is left blank exactly as the backfill leaves it.
     """
+    # "Little one" left the age chips (Ages, 2026-10-05): a toddler or a
+    # baby is a Child with an age. The chat can still say "toddler"; it is
+    # stored as child, so Settings lights the Child chip and asks the age
+    # (a Child with no age is asked the next time Settings opens).
+    if (age_group or "").strip().lower() in LITTLE_ONE_WORDS:
+        age_group = "child"
     conn = get_conn()
     try:
         member_id = _get_or_create_member(conn, name)

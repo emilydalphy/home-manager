@@ -802,7 +802,7 @@ Household basics (check silently, fill gaps conversationally if missing):
 - get_household_setup_status includes members (with age_group), pets, and goals. A member \
 with eats_here false helps run the house but doesn't eat there — never plan a meal for them. If a \
 household has no members at all, ask who's in the household (names + general age group — \
-adult/teen/child/toddler, or whatever they say) via add_member + set_member_age_group, \
+adult/teen/child — a toddler or a baby is a child) via add_member + set_member_age_group, \
 whether they have any pets (name + type — pets affect chores like litter/walks and grocery \
 items like food/litter) via add_pet, and what they're hoping this app helps with, via \
 set_household_goals. Keep it brief and conversational — don't re-ask what's already saved.
@@ -1337,7 +1337,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_member_age_group",
-        "description": "Set a household member's general age group (e.g. 'adult', 'teen', 'child', 'toddler', or freeform).",
+        "description": "Set a household member's age group: 'adult', 'teen' or 'child'. A toddler or a baby is 'child' (there is no 'toddler' group any more) — Settings then asks the household how old they are.",
         "input_schema": {
             "type": "object",
             "properties": {"name": {"type": "string"}, "age_group": {"type": "string"}},

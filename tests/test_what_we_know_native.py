@@ -167,8 +167,11 @@ def test_chips_are_the_apps_own_selectable_chip():
 def test_a_selected_age_group_reads_as_selected_whatever_case_it_was_stored_in():
     """The audit's bug: on the old page no age group ever looked selected.
     Real households carry "Adult" as well as "adult"."""
+    # Through wwkAgeKey since 2026-10-06 (Ages), which also reads a stray
+    # 'toddler' as Child.
     people = _function("wwkPeopleHtml")
-    assert "String(m.age_group || '').toLowerCase() === o.key ? 'on' : ''" in people
+    assert "wwkAgeKey(m) === o.key ? 'on' : ''" in people
+    assert "String((m && m.age_group) || '').toLowerCase()" in _function("wwkAgeKey")
 
 
 def test_copy_is_kitchen_table_not_form_labels():
@@ -182,7 +185,10 @@ def test_copy_is_kitchen_table_not_form_labels():
     # row, and "Different dishes a week" is the usual week's variety (the
     # snack count kept its stepper as "Different snacks a week").
     for lead in ("Never on the plate", "Dinner time", "Plan ready by", "Who cooks",
-                 "Lunch, on a normal day", "Roughly how long",
+                 # 2026-10-06 (Onboarding, regrouped): the per-person
+                 # weekday lunches replaced "Lunch, on a normal day", and
+                 # "Roughly how long" left with Cook ahead's "How long?".
+                 "Weekday lunches", "Made fresh: how long can it take?", "How old is ",
                  "How meals lean", "Cuisines you like", "Rounding out meals", "Different snacks a week",
                  "In your kitchen", "Anything else", "Paste a whole list",
                  "Time limits", "At the table", "A normal week at yours"):
@@ -255,12 +261,15 @@ CHECKLIST = {
     # server writes into breakfasts/lunches/dinners_per_week — and snacks a
     # day is its Snacks row. The "Different dishes a week" steppers are gone.
     "dinners, breakfasts and lunches a week": ("data-wwk=\"uw-open\"", "uwPost(uwSheetPayload(sheet))"),
-    "snacks a day": ("data-wwk=\"uw-snacks\"", "uwPost({ snacks_per_day: n })"),
+    # Per person since 2026-10-06; the household's number follows the most.
+    "snacks a day": ("data-wwk=\"member-snacks\"", "uwPost({ snacks_per_day: most })"),
     "kitchen kit": ("data-wwk=\"kit\"", "wwkSavePreference('taste', 'kitchen_kit'"),
     "cuisine preset chip": ("data-wwk=\"cuisine\"", "function wwkToggleCuisine(name)"),
     "table style": ("data-wwk=\"table-style\"", "wwkSavePreference('taste', 'table_style'"),
     # Rhythm
-    "lunch location": ("data-wwk=\"lunch\"", "lunch_location: {}"),
+    # Weekday lunch needs (2026-10-06) write lunch_location on the server
+    # (member_needs' bridge).
+    "lunch location": ("data-wwk=\"lunch-need\"", "'/api/member-needs'"),
     # "meals together" left 2026-09-25 (§2b S4: nothing reads it); its
     # stored answer stays. See tests/test_preferences_align.py.
     "cooking role": ("data-field=\"cooking_role\"", "wwkState.pendingCookWho = true;"),
@@ -276,7 +285,8 @@ CHECKLIST = {
     # number of days can be on"); the save path is wwkTogglePrepDay's own
     # write, wwkSaveRhythm('prep-days', ...).
     "prep days": ("data-wwk=\"prep-day\"", "wwkSaveRhythm('prep-days'"),
-    "prep minutes": ("data-wwk=\"prep-minutes\"", "current === picked ? null : picked"),
+    # No "How long?" since 2026-10-06: every prep day is saved at 2 hours.
+    "prep minutes": ("minutes: WWK_PREP_MINUTES", "var WWK_PREP_MINUTES = 120;"),
     # Calendar
     "calendar check": ("data-wwk=\"cal-check\"", "/api/calendar/check"),
     "calendar connect": ("data-wwk=\"cal-save\"", "/api/calendar/connect"),

@@ -73,6 +73,10 @@ def _usual_week_constants() -> str:
 USUAL_WEEK_FNS = [
     "wwkUsualWeekHtml", "uwSetRowHtml", "uwFromServer", "uwCells", "uwDaysOn", "uwNames", "uwWho",
     "uwCellClass", "uwCellAria", "uwDayRowHtml", "uwVarietyLine", "uwPrepDaysLine", "uwSnacksLabel",
+    # Per-person weekday lunches and snacks a day (2026-10-06).
+    "wwkLunchNeedsHtml", "wwkLunchPeople", "wwkLunchEntry", "wwkNeedsFor", "wwkNeedsOnDay",
+    "wwkLunchIsByDay", "wwkOrderNeeds", "wwkSomeoneMadeFresh", "wwkLunchChipsHtml",
+    "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml",
 ]
 
 
@@ -84,7 +88,7 @@ def _harness(*extra: str) -> str:
         "wwkCuisineStored", "wwkIsPresetCuisine", *USUAL_WEEK_FNS, *extra,
     ]
     return (
-        "var wwkState = { facts: [], pendingCookWho: false, openSections: {} };\n"
+        "var wwkState = { facts: [], pendingCookWho: false, openSections: {}, needs: null, lunchByDay: {} };\n"
         "var prefsState = { memory: null };\n"
         + _constants() + "\n"
         + _usual_week_constants() + "\n"
@@ -251,11 +255,14 @@ def test_plan_ready_by_says_what_it_does():
     assert lead < note < html.index('data-field="planning_anchor"')
 
 
-def test_lunch_out_reads_on_the_go_and_keeps_its_stored_key():
+def test_the_home_on_the_go_lunch_chips_are_gone_for_the_lunch_needs():
+    # Onboarding, regrouped (2026-10-06): "Lunch, on a normal day" (Home /
+    # On the go / Varies) became Weekday lunches, per person, the same five
+    # needs onboarding asks (tests/test_settings_rhythm_regrouped.py). A
+    # need still writes lunch_location (member_needs' bridge).
     html = _render("wwkRhythmHtml", MEMORY)
-    assert '<p class="wwk-note">On-the-go days are pre-ticked for packed lunches each week.</p>' in html
-    assert re.search(r'is-on" aria-pressed="true" data-wwk="lunch" data-member="Emily" data-value="out">On the go<', html)
-    assert ">Out<" not in html
+    assert "Lunch, on a normal day" not in html and 'data-wwk="lunch"' not in html
+    assert ">On the go<" not in html and "WWK_LUNCH = " not in SHELL_JS
 
 
 # --- 5. What moved in from /meal-setup ----------------------------------------

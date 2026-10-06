@@ -73,7 +73,10 @@ def test_onboarding_household_post_saves_age_group_per_member(signed_in):
         "Robin": "adult",
         "Sam": "teen",
         "Wren": "child",
-        "Bug": "toddler",
+        # "Little one" left the age chips (Ages, 2026-10-05): a toddler is a
+        # Child with an age, so the word is stored as child
+        # (household.LITTLE_ONE_WORDS) and Settings asks the age.
+        "Bug": "child",
     }
 
 

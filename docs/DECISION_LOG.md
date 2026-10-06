@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Onboarding, regrouped, slice 3: Settings asks what setup asks
+  (branch `overnight/onboarding-settings`, from `overnight/onboarding-ages`).**
+  Who's here: Adult · Teen · Child (`wwkAgeKey` reads a stray 'toddler' as
+  Child), "How old is [name]?" under a Child, an infant's "Include in meals"
+  chip; new `POST /api/memory/member/age` onto `set_member_age`. Any Child
+  with no age (every former Little one) is asked in a card at the top of
+  Settings until answered (`prefsAgeAskWho`, its own box outside
+  `#prefs-rows` so a read landing can't wipe the typing). Your rhythm: the
+  Home / On the go / Varies chips became per-person Weekday lunches (five
+  needs, day by day) and Snacks is per person, both on `/api/member-needs`;
+  the household snacks a day follows the most anyone has, as onboarding.
+  Lunch limit moved under "Made fresh: how long can it take?" (20/30/45/none,
+  only with Made fresh). Prep days lost "Roughly how long"; every save is
+  120 min. `set_member_age_group` stores toddler/baby/infant/little one as
+  'child'; the agent tool no longer offers 'toddler'. Why: one set of
+  answers, two places to give them (Emily, card locked 2026-10-05).
+
 - **2026-10-06 — Ages/regrouped review fixes (branch `overnight/onboarding-ages`).**
   SAFETY: `EATS_HERE_SQL` is back to helpers-only; the infant rule is a new
   `_shared.IN_MEALS_SQL`, read ONLY by headcounts (attendance, usual week
