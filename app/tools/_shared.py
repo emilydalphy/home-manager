@@ -155,7 +155,12 @@ _ADULT_SQL = "LOWER(TRIM(age_group)) = 'adult'"
 # plan and the list, but is left out of everything that decides who eats:
 # the members the planner is given, attendance and servings, the usual
 # week's grid. Sign-in, invites and "Who's this?" still read every adult.
-EATS_HERE_SQL = "COALESCE(eats_here, 1) = 1"
+# ...and since 2026-10-06 (Ages, Onboarding regrouped) an infant the
+# parents left out of meals ("Include in meals?" off) is counted out the
+# same way: "not counted in meals or portions unless the parents want them
+# in". Parenthesised because it is dropped into WHERE clauses and one
+# SELECT list as a single expression.
+EATS_HERE_SQL = "(COALESCE(eats_here, 1) = 1 AND COALESCE(include_in_meals, 1) = 1)"
 
 
 def _fold_for_compare(name: str) -> str:

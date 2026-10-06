@@ -121,7 +121,7 @@
 
   /* Text boxes: 16px so a phone doesn't zoom the page on focus, 50px tall
      so a row of one reads as the same weight as the chips beside it. */
-  input[type=text], textarea {
+  input[type=text], input[type=number], textarea {
     padding: 12px 16px;
     border-radius: var(--radius-control);
     border: 1.5px solid var(--hairline-strong);
@@ -132,7 +132,7 @@
     color: var(--ink);
     min-height: 50px;
   }
-  input[type=text]:focus, textarea:focus { border-color: var(--ink-strong); outline: none; }
+  input[type=text]:focus, input[type=number]:focus, textarea:focus { border-color: var(--ink-strong); outline: none; }
   input::placeholder, textarea::placeholder { color: var(--ink-placeholder); }
   textarea { resize: vertical; min-height: 88px; line-height: 1.45; }
   .row { display: flex; gap: 10px; align-items: center; }
@@ -185,6 +185,22 @@
      honest, since a rename has exactly one door. No × either (the card:
      "not removable"). The age chips are the ordinary ones; the card asks
      for them to be editable and they are. */
+  /* Ages (2026-10-06): "How old is [name]?" and the infant's switch. */
+  .member-age-extra { display: flex; flex-direction: column; gap: 10px; }
+  .member-age-q { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 600; color: var(--ink); }
+  .member-age-q .member-age-input { width: 96px; flex: 0 0 auto; }
+  .member-include { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+  .member-include[hidden] { display: none; }
+  .member-include-label { font-size: 15px; font-weight: 600; color: var(--ink); }
+  .member-include-switch {
+    width: 52px; height: 32px; padding: 3px; border-radius: var(--radius-pill);
+    border: 1.5px solid var(--hairline-strong); background: var(--ground); cursor: pointer;
+    display: inline-flex; align-items: center; position: relative;
+  }
+  .member-include-switch::before { content: ''; position: absolute; inset: -6px; }
+  .member-include-switch span { width: 24px; height: 24px; border-radius: 50%; background: var(--ink-secondary); transition: transform .15s; }
+  .member-include-switch.is-on { background: var(--spruce); border-color: var(--spruce); }
+  .member-include-switch.is-on span { background: var(--ivory-ink); transform: translateX(18px); }
   .member-block.is-primary .member-you {
     display: flex; align-items: center; gap: 10px;
     min-height: 50px; flex: 1 1 auto; min-width: 0;
@@ -2016,12 +2032,79 @@ function getActiveChip(container) {
 // backend (and the What-we-know view) already use: 'adult' / 'teen' /
 // 'child' / 'toddler'. Bucket count is Emily's call to confirm; this is the
 // recommended default, not blocking on her answer.
+// UPDATED 2026-10-06 (Ages, Onboarding regrouped — Emily 2026-10-05):
+// Adult · Teen · Child. "Little one" is gone: tapping Child asks "How old
+// is [name]?" (years, under 1 allowed) and Pomona works out the rest from
+// the age — an infant (under 1) isn't counted in meals unless "Include in
+// meals?" is switched on; a toddler and a school-age child are Children
+// with an age. Existing 'toddler' members became Child (db migration 4).
 const AGE_GROUP_OPTIONS = [
   { key: 'adult', label: 'Adult' },
   { key: 'teen', label: 'Teen' },
   { key: 'child', label: 'Child' },
-  { key: 'toddler', label: 'Little one' },
 ];
+const INFANT_UNDER_YEARS = 1;
+// The age as typed, read as years — '' (not said) is null. "6 months" is
+// a person's way of saying it, so a typed 0.5 is fine; a negative or
+// silly number is not an age.
+function memberAgeYears(raw) {
+  const t = String(raw == null ? '' : raw).trim();
+  if (!t) return null;
+  const n = Number(t);
+  return isFinite(n) && n >= 0 && n <= 120 ? n : null;
+}
+function isInfant(m) {
+  return !!m && m.age_group === 'child' && m.age_years != null && m.age_years < INFANT_UNDER_YEARS;
+}
+// The age question and, for an infant, the switch — under the chips, only
+// for a Child. Drawn from the row's own dataset so a redraw keeps them.
+function renderMemberAgeExtras(block) {
+  let extra = block.querySelector('.member-age-extra');
+  if (block.dataset.ageGroup !== 'child') {
+    if (extra) extra.remove();
+    return;
+  }
+  if (!extra) {
+    extra = document.createElement('div');
+    extra.className = 'member-age-extra';
+    extra.innerHTML = `
+      <label class="member-age-q"><span class="member-age-label"></span>
+        <input type="number" class="member-age-input" inputmode="decimal" min="0" max="17" step="any" placeholder="Years">
+      </label>
+      <div class="member-include" hidden>
+        <span class="member-include-label">Include in meals?</span>
+        <button type="button" class="member-include-switch" role="switch" aria-checked="false"><span></span></button>
+      </div>`;
+    block.appendChild(extra);
+    const input = extra.querySelector('.member-age-input');
+    input.value = block.dataset.ageYears || '';
+    input.addEventListener('input', () => {
+      block.dataset.ageYears = input.value;
+      if (block.classList.contains('is-primary')) primaryAgeYears = input.value;
+      syncMemberInclude(block);
+    });
+    extra.querySelector('.member-include-switch').addEventListener('click', () => {
+      block.dataset.includeMeals = block.dataset.includeMeals === '1' ? '0' : '1';
+      if (block.classList.contains('is-primary')) primaryIncludeMeals = block.dataset.includeMeals;
+      syncMemberInclude(block);
+    });
+  }
+  const name = block.classList.contains('is-primary') ? primaryMemberName()
+    : ((block.querySelector('.member-name') || {}).value || '').trim();
+  extra.querySelector('.member-age-label').textContent = name ? 'How old is ' + name + '?' : 'How old are they?';
+  syncMemberInclude(block);
+}
+function syncMemberInclude(block) {
+  const extra = block.querySelector('.member-age-extra');
+  if (!extra) return;
+  const infant = isInfant({ age_group: block.dataset.ageGroup, age_years: memberAgeYears(block.dataset.ageYears) });
+  const row = extra.querySelector('.member-include');
+  row.hidden = !infant;
+  const on = block.dataset.includeMeals === '1';
+  const sw = extra.querySelector('.member-include-switch');
+  sw.setAttribute('aria-checked', on ? 'true' : 'false');
+  sw.classList.toggle('is-on', on);
+}
 const membersDiv = document.getElementById('members');
 // Reuses the same single-select chip renderer the rhythm steps use
 // (defined below — function declarations are hoisted, so the forward
@@ -2037,6 +2120,7 @@ function renderMemberAgeChips(block) {
     if (block.classList.contains('is-primary')) primaryAgeGroup = key;
     renderMemberAgeChips(block);
   });
+  renderMemberAgeExtras(block);
 }
 function addMemberRow(name, ageGroup) {
   const block = document.createElement('div');
@@ -2056,6 +2140,8 @@ function addMemberRow(name, ageGroup) {
   function syncEmpty() { row.classList.toggle('is-empty', !nameInput.value.trim()); }
   syncEmpty();
   nameInput.addEventListener('input', syncEmpty);
+  // "How old is [name]?" follows the name as it is typed.
+  nameInput.addEventListener('input', () => renderMemberAgeChips(block));
   // Every answer this app keys by a member NAME is pruned the moment the
   // household changes, not only when the step that owns it is next drawn.
   // The difference is a name being REUSED. Two people, Sam and Alex; Sam
@@ -2117,6 +2203,9 @@ function primaryMemberName() {
 // than on the row because the row is redrawn on every arrival; Adult
 // until they say otherwise, which is what the old first row defaulted to.
 let primaryAgeGroup = 'adult';
+// ...and, should they be a Child, their age and the infant switch.
+let primaryAgeYears = '';
+let primaryIncludeMeals = '0';
 
 // The pinned row, as the FIRST .member-block of #members — so it is first
 // in currentMembers() (which is what makes record_setup_adult's device pin
@@ -2147,6 +2236,8 @@ function buildHouseholdStep() {
     membersDiv.insertBefore(block, membersDiv.firstChild);
   }
   block.dataset.ageGroup = primaryAgeGroup;
+  block.dataset.ageYears = primaryAgeYears;
+  block.dataset.includeMeals = primaryIncludeMeals;
   // Drawn, never stored: currentMembers() reads the name from the box on
   // the screen before, so there is exactly one copy of it. See the note
   // in currentMembers for what a second copy cost.
@@ -2161,8 +2252,15 @@ function buildHouseholdStep() {
 addMemberRow('', 'adult');
 document.getElementById('add-member').onclick = () => addMemberRow('');
 
-function currentMembers() {
-  return [...membersDiv.querySelectorAll('.member-block')].map(block => {
+// `{ forMeals: true }` (2026-10-06, Ages): the people meals are planned
+// for — everyone but an infant left out of meals. The usual week's grid,
+// Weekday lunches and Snacks are drawn from that, never from the whole
+// household: the server leaves the same infant out of the same counts
+// (_shared.EATS_HERE_SQL), so a grid cell naming them would name somebody
+// the planner does not have. An option rather than a second function so
+// every node harness in tests/ that stubs currentMembers keeps working.
+function currentMembers(opts) {
+  const all = [...membersDiv.querySelectorAll('.member-block')].map(block => {
     return {
       // The pinned "You" row has no box of its own (2026-10-05): its name
       // was typed on the screen before, so it is read from THERE rather
@@ -2181,9 +2279,18 @@ function currentMembers() {
         ? primaryMemberName()
         : block.querySelector('.member-name').value).trim(),
       age_group: block.dataset.ageGroup || '',
+      // A Child's age (2026-10-06), and whether they're counted in meals —
+      // false only for an infant left out ("Include in meals?" off).
+      age_years: block.dataset.ageGroup === 'child' ? memberAgeYears(block.dataset.ageYears) : null,
+      include_in_meals: !isInfant({
+        age_group: block.dataset.ageGroup || '',
+        age_years: block.dataset.ageGroup === 'child' ? memberAgeYears(block.dataset.ageYears) : null,
+      }) || block.dataset.includeMeals === '1',
     };
   }).filter(m => m.name);
+  return opts && opts.forMeals ? all.filter(m => m.include_in_meals !== false) : all;
 }
+
 
 // ---------- Household rhythm ----------
 // Dinner time is the one rhythm question left with a screen of its own
@@ -2316,7 +2423,7 @@ let lunchDaysPicking = false; // "Different on some days?" opened
 // The people with a lunch to plan on some weekday: everyone on a cell
 // that's 'all', the names on a subset cell.
 function lunchPeople() {
-  const names = currentMembers().map(m => m.name);
+  const names = currentMembers({ forMeals: true }).map(m => m.name);
   const on = new Set();
   (usualGrid.lunch || []).slice(0, 5).forEach(cell => {
     const c = uwCleanCell(cell, names);
@@ -2440,6 +2547,8 @@ function lunchNeedsPayload() {
 const SNACK_OPTIONS = [0, 1, 2, 3];
 let memberSnacks = {};        // name -> 0..3, only once tapped
 function defaultSnacksFor(member) {
+  // An infant counted in meals still has no snack to plan (2026-10-06).
+  if (isInfant(member)) return 0;
   return (member && (member.age_group === 'child' || member.age_group === 'toddler')) ? 2 : 1;
 }
 function snacksFor(member) {
@@ -2447,17 +2556,17 @@ function snacksFor(member) {
 }
 // How many snack dishes a day the planner makes: the most anyone has.
 function householdSnacksPerDay() {
-  const members = currentMembers();
+  const members = currentMembers({ forMeals: true });
   if (!members.length) return 1;
   return Math.max.apply(null, members.map(snacksFor));
 }
 function memberSnacksPayload() {
   const out = {};
-  currentMembers().forEach(m => { out[m.name] = snacksFor(m); });
+  currentMembers({ forMeals: true }).forEach(m => { out[m.name] = snacksFor(m); });
   return Object.keys(out).length ? out : null;
 }
 function buildSnacksStep() {
-  document.getElementById('snacks-people').innerHTML = currentMembers().map(m => {
+  document.getElementById('snacks-people').innerHTML = currentMembers({ forMeals: true }).map(m => {
     const n = snacksFor(m);
     return `<div class="uw-card uw-card-row"><span class="uw-title">${escapeHtmlLocal(m.name)}</span><div class="uw-snacks" role="group" aria-label="${escapeHtmlLocal(m.name)}’s snacks a day">` +
       SNACK_OPTIONS.map(v => `<button type="button" class="uw-q${n === v ? ' is-on' : ''}" data-snacks-name="${escapeHtmlLocal(m.name)}" data-snacks="${v}" aria-pressed="${n === v ? 'true' : 'false'}">${v}</button>`).join('') +
@@ -2790,7 +2899,7 @@ function uwWeekdayLunchOn(grid) { return grid.lunch.slice(0, 5).some(uwIsOn); }
 // this and would replace it anyway.
 function lunchLocationPayload() {
   const out = {};
-  currentMembers().forEach(m => {
+  currentMembers({ forMeals: true }).forEach(m => {
     if (lunchLocation[m.name] === 'out' && !lunchNeedsAnswered(m.name)) out[m.name] = 'out';
   });
   return Object.keys(out).length ? out : null;
@@ -2819,7 +2928,7 @@ function uwMealCardHtml(meal, names) {
   return html + '</div>';
 }
 function renderMealsDays() {
-  const names = currentMembers().map(m => m.name);
+  const names = currentMembers({ forMeals: true }).map(m => m.name);
   UW_MEALS.forEach(meal => { usualGrid[meal] = usualGrid[meal].map(cell => uwCleanCell(cell, names)); });
   document.getElementById('uw-grid').innerHTML = UW_MEALS.map(meal => uwMealCardHtml(meal, names)).join('');
   document.getElementById('uw-sum').textContent = uwSummary(usualGrid);
@@ -2831,7 +2940,7 @@ function buildMealsDaysStep() {
   renderMealsDays();
 }
 document.getElementById('uw-grid').addEventListener('click', e => {
-  const names = currentMembers().map(m => m.name);
+  const names = currentMembers({ forMeals: true }).map(m => m.name);
   const day = e.target.closest('[data-uw-day]');
   if (day) {
     const meal = day.dataset.uwMeal, i = Number(day.dataset.uwDay);
@@ -3003,7 +3112,7 @@ UW_MEALS.forEach(meal => {
 // 'everyone' / 'off' / [names]; a variety choice for each meal that's on;
 // snacks a day; the prep answer ({days: []} is "we don't prep ahead").
 function usualWeekPayload() {
-  const names = currentMembers().map(m => m.name);
+  const names = currentMembers({ forMeals: true }).map(m => m.name);
   const grid = {};
   const variety = {};
   UW_MEALS.forEach(meal => {
@@ -5247,7 +5356,10 @@ window.addEventListener('popstate', function (e) {
 // put them in until the answer is final. See finishSetupAndReveal.
 async function saveHouseholdMembers() {
   const body = {
-    members: currentMembers().map(m => ({ name: m.name, age_group: m.age_group })),
+    members: currentMembers().map(m => ({
+      name: m.name, age_group: m.age_group,
+      age_years: m.age_years, include_in_meals: m.include_in_meals,
+    })),
     pets: [],
     goals: '',
     // Who the main person is (2026-10-05) — the name from "What's your

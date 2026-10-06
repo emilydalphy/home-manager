@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Onboarding, regrouped, slice 2: ages (branch
+  `overnight/onboarding-ages`, from `overnight/onboarding-regrouped`).**
+  Age chips Adult · Teen · Child ("Little one" gone; run-once migration 4
+  turns 'toddler' into 'child', age NULL). Child asks "How old is [name]?"
+  (years, under 1 allowed) -> `members.age_years`; under 1 shows "Include in
+  meals?" (off) -> `members.include_in_meals`. `_shared.EATS_HERE_SQL` now
+  also requires include_in_meals, so an infant left out is out of every
+  count (planner members, attendance, grid, needs) — the same door a helper
+  who doesn't eat here uses. Onboarding's grid / lunches / snacks read
+  `currentMembers({ forMeals: true })`. `household.age_stage` names
+  infant / toddler (<4) / child for the planning slice. NOT YET: toddler and
+  child portions in the planner; Settings asking the age of a former Little
+  one; an infant left out also drops off What we know's member list.
+
 - **2026-10-06 — Onboarding, regrouped, slice 1 (branch
   `overnight/onboarding-regrouped`).** Emily's locked flow (2026-10-05):
   household -> schedule -> breakfast -> lunch -> dinner -> snacks -> the

@@ -657,6 +657,10 @@ class ChatResponse(BaseModel):
 class MemberInput(BaseModel):
     name: str
     age_group: str = ""
+    # A Child's age in years (Ages, 2026-10-05) — under 1 allowed — and,
+    # for an infant only, whether they are counted in meals. None = not said.
+    age_years: float | None = None
+    include_in_meals: bool | None = None
 
 
 class PetInput(BaseModel):
@@ -1334,6 +1338,10 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     walk, and on the device since 2026-10-05, so setup finishing is an
     answer to the question for next time as well as for this sitting.
     """
+    # A bad age is a 400 before anyone is written (Ages, 2026-10-06).
+    for m in req.members:
+        if m.age_years is not None and not 0 <= m.age_years <= tools.household.MAX_AGE_YEARS:
+            raise HTTPException(status_code=400, detail=f"{m.name.strip() or 'That'}'s age must be 0 to 120 years.")
     try:
         saved_ids = []
         # (id, name) for each member this request saved, in the order they
@@ -1348,6 +1356,8 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
                 saved_members.append((added["member_id"], m.name.strip()))
             if m.age_group:
                 tools.set_member_age_group(m.name.strip(), m.age_group)
+            if m.age_years is not None or m.include_in_meals is not None:
+                tools.set_member_age(m.name.strip(), m.age_years, m.include_in_meals)
         # Setup is finishing (onboarding posts its people only at the end):
         # record who set the household up now, before any invite link can
         # exist — see tools/first_open.py, rule 2.

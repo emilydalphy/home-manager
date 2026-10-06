@@ -369,6 +369,8 @@ from .household import (  # noqa: F401
     list_pets,
     set_household_goals,
     set_member_age_group,
+    set_member_age,
+    age_stage,
     set_member_dietary_restrictions,
 )
 from .inventory import (  # noqa: F401

@@ -283,6 +283,7 @@ def _payload_harness(members) -> str:
         # is two hours (PREP_LENGTH).
         "var memberSnacks = {}; var prepAnswer = ''; var prepDayKeys = [];",
         _const("PREP_LENGTH"),
+        _const("INFANT_UNDER_YEARS"), _fn("isInfant"),
         _const("SNACK_OPTIONS"), _fn("defaultSnacksFor"), _fn("snacksFor"), _fn("householdSnacksPerDay"),
         "var varietyChoice = { breakfast: 'few_in_rotation', lunch: 'few_in_rotation', dinner: 'few_in_rotation' };",
         "var lunchLocation = {}; var lunchNeeds = {};",

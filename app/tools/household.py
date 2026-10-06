@@ -274,6 +274,68 @@ def set_member_age_group(name: str, age_group: str) -> dict:
     return {"name": name, "age_group": age_group}
 
 
+# Ages (Emily, 2026-10-05): "Pomona works out what it needs from the age".
+# Under 1 is an infant — not counted in meals unless the parents switch
+# "Include in meals?" on; 1 to under 4 a toddler; 4 and up a school-age
+# child. One place for the line, read by the snacks default and the
+# planner's portions.
+INFANT_UNDER_YEARS = 1
+TODDLER_UNDER_YEARS = 4
+MAX_AGE_YEARS = 120
+
+
+def age_stage(age_group: str | None, age_years) -> str:
+    """'infant' | 'toddler' | 'child' | 'teen' | 'adult' | '' — what the age
+    means for food. A Child with no age yet reads as 'child'."""
+    group = (age_group or "").strip().lower()
+    if group == "toddler":
+        return "toddler"
+    if group != "child":
+        return group if group in ("teen", "adult") else ""
+    try:
+        years = float(age_years)
+    except (TypeError, ValueError):
+        return "child"
+    if years < INFANT_UNDER_YEARS:
+        return "infant"
+    if years < TODDLER_UNDER_YEARS:
+        return "toddler"
+    return "child"
+
+
+def set_member_age(name: str, age_years=None, include_in_meals: bool | None = None) -> dict:
+    """
+    Set a child's age in years (under 1 allowed; None clears it) and/or
+    whether they are counted in meals. include_in_meals is only ever OFF
+    for an infant: anyone 1 or older is always counted (the switch is the
+    infant's alone), so an age raised past 1 turns it back on.
+    """
+    if age_years is not None:
+        try:
+            age_years = float(age_years)
+        except (TypeError, ValueError):
+            raise ValueError("age must be a number of years.")
+        if not 0 <= age_years <= MAX_AGE_YEARS:
+            raise ValueError(f"age must be 0 to {MAX_AGE_YEARS} years.")
+    conn = get_conn()
+    try:
+        member_id = _get_or_create_member(conn, name)
+        conn.execute(
+            "UPDATE members SET age_years = ? WHERE id = ? AND household_id = ?",
+            (age_years, member_id, household_id()),
+        )
+        infant = age_years is not None and age_years < INFANT_UNDER_YEARS
+        include = True if not infant else bool(include_in_meals)
+        conn.execute(
+            "UPDATE members SET include_in_meals = ? WHERE id = ? AND household_id = ?",
+            (1 if include else 0, member_id, household_id()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"name": name, "age_years": age_years, "include_in_meals": include}
+
+
 def set_household_goals(goals: str) -> dict:
     """Save freeform household goals for using this app (e.g. 'stay on top of chores, eat healthier, waste less food')."""
     conn = get_conn()

@@ -161,7 +161,7 @@ def test_snacks_defaults_children_two_adults_one_and_the_household_number_is_the
 let memberSnacks = {};
 let members = [{ name: 'Gowthami', age_group: 'adult' }, { name: 'Arjun', age_group: 'child' }];
 function currentMembers() { return members; }
-""" + _const("SNACK_OPTIONS") + "".join(_fn(n) for n in ("defaultSnacksFor", "snacksFor", "householdSnacksPerDay", "memberSnacksPayload")) + """
+""" + _const("SNACK_OPTIONS") + _const("INFANT_UNDER_YEARS") + "".join(_fn(n) for n in ("isInfant", "defaultSnacksFor", "snacksFor", "householdSnacksPerDay", "memberSnacksPayload")) + """
 const a = memberSnacksPayload(), ah = householdSnacksPerDay();
 memberSnacks.Arjun = 3; memberSnacks.Gowthami = 0;
 console.log(JSON.stringify([a, ah, memberSnacksPayload(), householdSnacksPerDay()]));
@@ -250,3 +250,71 @@ def test_the_run_once_migration_moves_one_hour_prep_to_two_and_ten_minute_lunche
     conn.execute("UPDATE meal_preferences SET weekday_lunch_max_minutes = 10 WHERE household_id = 7")
     _db._run_migrations(conn)
     assert conn.execute("SELECT weekday_lunch_max_minutes FROM meal_preferences WHERE household_id = 7").fetchone()[0] == 10
+
+
+# ---------- slice 2: ages (branch overnight/onboarding-ages) ----------
+
+
+def test_the_age_chips_are_adult_teen_child():
+    opts = _const("AGE_GROUP_OPTIONS")
+    assert [l for l in ("'Adult'", "'Teen'", "'Child'") if l in opts] == ["'Adult'", "'Teen'", "'Child'"]
+    assert "Little one" not in opts
+    assert "'How old is ' + name + '?'" in _fn("renderMemberAgeExtras")
+    assert "Include in meals?" in _fn("renderMemberAgeExtras")
+
+
+@_needs_node
+def test_an_infant_left_out_is_not_a_meal_member_and_has_no_snacks():
+    out = _run(_const("INFANT_UNDER_YEARS") + "".join(_fn(n) for n in ("memberAgeYears", "isInfant")) + """
+function block(name, group, age, inc) {
+  return { dataset: { ageGroup: group, ageYears: age, includeMeals: inc },
+           classList: { contains: function () { return false; } },
+           querySelector: function () { return { value: name }; } };
+}
+var membersDiv = { querySelectorAll: function () { return [
+  block('Gowthami', 'adult', '', '0'), block('Baby', 'child', '0.5', '0'),
+  block('Mira', 'child', '0.5', '1'), block('Arjun', 'child', '7', '0')]; } };
+function primaryMemberName() { return ''; }
+""" + _fn("currentMembers") + """
+var all = currentMembers(), meals = currentMembers({ forMeals: true });
+console.log(JSON.stringify({ all: all, meals: meals.map(m => m.name), ages: ['', '0', '0.5', '-1', 'x'].map(memberAgeYears) }));
+""")
+    assert [m["name"] for m in out["all"]] == ["Gowthami", "Baby", "Mira", "Arjun"]
+    assert out["meals"] == ["Gowthami", "Mira", "Arjun"], "an infant switched off is out of meals; one switched on is in"
+    baby = out["all"][1]
+    assert baby["age_years"] == 0.5 and baby["include_in_meals"] is False
+    assert out["all"][3]["include_in_meals"] is True, "a seven-year-old is always counted"
+    assert out["ages"] == [None, 0, 0.5, None, None]
+
+
+def test_an_infant_left_out_of_meals_is_out_of_every_count(signed_in):
+    from app import tools
+
+    res = signed_in.post("/api/onboarding/household", json={"members": [
+        {"name": "Gowthami", "age_group": "adult"},
+        {"name": "Baby", "age_group": "child", "age_years": 0.5, "include_in_meals": False},
+        {"name": "Mira", "age_group": "child", "age_years": 0.5, "include_in_meals": True},
+        {"name": "Arjun", "age_group": "child", "age_years": 7, "include_in_meals": False},
+    ], "pets": [], "goals": ""})
+    assert res.status_code == 200, res.text
+    names = {m["name"] for m in tools.list_members()}
+    assert {"Gowthami", "Mira", "Arjun"} <= names and "Baby" not in names
+    assert [tools.age_stage("child", a) for a in (0.5, 2, 7, None)] == ["infant", "toddler", "child", "child"]
+    bad = signed_in.post("/api/onboarding/household", json={"members": [{"name": "Zed", "age_group": "child", "age_years": -2}]})
+    assert bad.status_code == 400
+    assert "Zed" not in {m["name"] for m in tools.list_members()}
+
+
+def test_little_one_members_become_child_once(tmp_path):
+    from app import db as _db
+
+    conn = sqlite3.connect(tmp_path / "a.db")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(Path(_db.SCHEMA_PATH).read_text())
+    _db._run_migrations(conn)
+    conn.execute("INSERT INTO households (id, name) VALUES (9, 'h')")
+    conn.execute("INSERT INTO members (household_id, name, age_group) VALUES (9, 'Tot', 'toddler')")
+    conn.execute(f"PRAGMA user_version = {_db._DATA_VERSION_LITTLE_ONE_IS_CHILD - 1}")
+    _db._run_migrations(conn)
+    row = conn.execute("SELECT age_group, age_years, include_in_meals FROM members WHERE name = 'Tot'").fetchone()
+    assert (row["age_group"], row["age_years"], row["include_in_meals"]) == ("child", None, 1)

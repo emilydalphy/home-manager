@@ -64,7 +64,12 @@ CREATE TABLE IF NOT EXISTS members (
     -- default by age is app/tools/member_needs.py's). Added to existing
     -- databases by db._MIGRATIONS.
     lunch_needs_json TEXT NOT NULL DEFAULT '',
-    snacks_per_day INTEGER
+    snacks_per_day INTEGER,
+    -- A child's age in years (under 1 allowed; NULL = not asked), and
+    -- whether this person is counted in meals — 0 only for an infant the
+    -- parents left out ("Include in meals?"). _shared.EATS_HERE_SQL reads it.
+    age_years REAL,
+    include_in_meals INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS pets (

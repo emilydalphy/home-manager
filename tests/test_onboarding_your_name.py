@@ -166,10 +166,15 @@ function goForward() {}
         _const("HELPER_SOMEONE"),
         _const("HELPER_ME"),
         _fn("buildSingleSelectChips"),
+        # Ages (2026-10-06): currentMembers reads a Child's age and the
+        # infant switch, so the helpers it calls are lifted with it.
+        _const("INFANT_UNDER_YEARS"), _fn("memberAgeYears"), _fn("isInfant"),
+        _fn("renderMemberAgeExtras"), _fn("syncMemberInclude"),
         _fn("renderMemberAgeChips"),
         _fn("addMemberRow"),
         _fn("primaryMemberName"),
         "var primaryAgeGroup = 'adult';",
+        "var primaryAgeYears = ''; var primaryIncludeMeals = '0';",
         _fn("buildHouseholdStep"),
         _fn("currentMembers"),
         _fn("pruneRestrictionAnswers"),
@@ -255,8 +260,11 @@ def test_screen_two_keeps_the_same_rows_and_renames_the_add_control():
     assert "+ Add person" not in ONBOARDING, "the old add control's words came back"
     # The row itself is untouched: the same name box and the same four chips.
     assert 'class="member-name" placeholder="Name"' in ONBOARDING
-    for label in ("Adult", "Teen", "Child", "Little one"):
+    # UPDATED 2026-10-06 (Ages, Emily 2026-10-05): Adult · Teen · Child —
+    # "Little one" is gone; a Child is asked their age instead.
+    for label in ("Adult", "Teen", "Child"):
         assert f"label: '{label}'" in ONBOARDING
+    assert "label: 'Little one'" not in ONBOARDING
 
 
 def test_screen_two_has_one_blank_row_not_two():
@@ -317,7 +325,9 @@ console.log(JSON.stringify({
     assert out["count"] == 2, "the You row plus the one blank row"
     assert out["name"] == "Emily"
     assert out["badge"] is True
-    assert out["members"] == [{"name": "Emily", "age_group": "adult"}]
+    # A Child's age and the infant switch ride on every member since
+    # 2026-10-06 (Ages); an adult has no age and is always in meals.
+    assert out["members"] == [{"name": "Emily", "age_group": "adult", "age_years": None, "include_in_meals": True}]
 
 
 @_needs_node
@@ -360,7 +370,7 @@ buildHouseholdStep();   // arriving again
 const afterRedraw = currentMembers()[0].age_group;
 console.log(JSON.stringify({ labels: labels, afterTap: afterTap, afterRedraw: afterRedraw }));
 """)
-    assert out["labels"] == ["Adult", "Teen", "Child", "Little one"], (
+    assert out["labels"] == ["Adult", "Teen", "Child"], (
         "the You row doesn't carry the ordinary age chips"
     )
     assert out["afterTap"] == "teen", "the chip isn't editable"
@@ -860,7 +870,7 @@ console.log(JSON.stringify({
 }));
 """)
     assert out["before"] == ["Emily", "Vineeth", "Reid"]
-    assert out["after"] == [{"name": "Emily", "age_group": "adult"}], (
+    assert out["after"] == [{"name": "Emily", "age_group": "adult", "age_years": None, "include_in_meals": True}], (
         "'Just me' left somebody else on the list"
     )
     assert out["moved"] == ["household"], "'Just me' didn't go forward"

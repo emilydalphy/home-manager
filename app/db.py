@@ -724,6 +724,13 @@ _MIGRATIONS = [
     # app/tools/member_needs.py.
     ("members", "lunch_needs_json", "TEXT NOT NULL DEFAULT ''"),
     ("members", "snacks_per_day", "INTEGER"),
+    # Ages (Onboarding regrouped, slice 2 — Emily 2026-10-05): a child's age
+    # in years (under 1 allowed; NULL = not asked yet), and whether an
+    # infant is counted in meals ("Include in meals?", off by default for an
+    # infant; 1 for everyone else). _shared.EATS_HERE_SQL reads it, so an
+    # infant left out is out of every count the planner makes.
+    ("members", "age_years", "REAL"),
+    ("members", "include_in_meals", "INTEGER NOT NULL DEFAULT 1"),
     # Where the household is, for its holidays (app/tools/holidays.py).
     # Both are ASSUMPTIONS for every existing household, the same way the
     # timezone above is: the beta households are in Ontario. Canada is the
@@ -1222,6 +1229,7 @@ def _run_migrations(conn):
 _DATA_VERSION_COOK_COUNTERS = 1
 _DATA_VERSION_FIRST_OPEN = 2
 _DATA_VERSION_ONBOARDING_REGROUPED = 3
+_DATA_VERSION_LITTLE_ONE_IS_CHILD = 4
 
 
 def _run_once_data_migrations(conn):
@@ -1229,6 +1237,7 @@ def _run_once_data_migrations(conn):
         (_DATA_VERSION_COOK_COUNTERS, _backfill_recipe_cook_counters_from_ticks),
         (_DATA_VERSION_FIRST_OPEN, _mark_existing_members_first_open_seen),
         (_DATA_VERSION_ONBOARDING_REGROUPED, _migrate_prep_and_lunch_limits),
+        (_DATA_VERSION_LITTLE_ONE_IS_CHILD, _migrate_little_one_to_child),
     ]
     current = conn.execute("PRAGMA user_version").fetchone()[0]
     for version, step in steps:
@@ -1277,6 +1286,16 @@ def _migrate_prep_and_lunch_limits(conn):
         "UPDATE meal_preferences SET weekday_lunch_max_minutes = 20 "
         "WHERE weekday_lunch_max_minutes > 0 AND weekday_lunch_max_minutes < 20"
     )
+
+
+def _migrate_little_one_to_child(conn):
+    """
+    Ages (Emily, 2026-10-05): the age chips are Adult · Teen · Child, and
+    "Little one" (age_group 'toddler') is gone — a toddler is a Child with
+    an age. Their age is left NULL (not known), which is what has Settings
+    ask it next time it opens. Runs once.
+    """
+    conn.execute("UPDATE members SET age_group = 'child' WHERE LOWER(TRIM(age_group)) = 'toddler'")
 
 
 def _mark_existing_members_first_open_seen(conn):

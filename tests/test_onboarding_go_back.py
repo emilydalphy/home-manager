@@ -179,6 +179,11 @@ function makeEl(tag) {
     _classes: new Set(), _children: [], _parent: null,
     dataset: {}, style: {}, hidden: false, textContent: '', value: '',
     _listeners: {}, onclick: null,
+    // 2026-10-06 (Ages): the infant's "Include in meals?" switch says its
+    // state through aria-checked, as a browser element would take it.
+    _attrs: {},
+    setAttribute: function (k, v) { this._attrs[k] = String(v); },
+    getAttribute: function (k) { return k in this._attrs ? this._attrs[k] : null; },
     get className() { return [...this._classes].join(' '); },
     set className(v) { this._classes = new Set(String(v).split(/\s+/).filter(Boolean)); },
     get innerHTML() { return this._html || ''; },
@@ -1243,6 +1248,9 @@ function removeRow(block) { block.querySelector('.remove-btn').click(); }
         # is the one thing stubbed above (its markup is a template string and
         # its age chips are a different question) — the two handlers it wires
         # are copied onto the stub rows verbatim.
+        # Ages (2026-10-06): currentMembers reads a Child's age and the
+        # infant switch, so the helpers it calls are lifted with it.
+        _const("INFANT_UNDER_YEARS"), _fn("memberAgeYears"), _fn("isInfant"),
         _fn("currentMembers"),
         "function pruneHelperAnswers() {}",
         _fn("pruneMemberKeyedAnswers"),
