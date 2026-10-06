@@ -135,3 +135,55 @@ def test_snacks_everyone_has_still_say_everyone():
     _seed_snack_day(1, 2)
     row = [r for r in moves.today_moves()["day_meals"] if r["slot"] == "snack"][0]
     assert row["lines"][0]["who"] == "everyone"
+
+
+# --------------------------------------------------------------------------
+# Card 3 - the freezer step never sits on "One moment…"
+# --------------------------------------------------------------------------
+
+def _freezer_harness(body: str):
+    return _node(
+        _ESC
+        + "const WK_ICONS = { snow: '' };\n"
+        + "var weekState = { step: 'freezer' };\n"
+        + "var renders = 0; function renderMealsStep() { renders += 1; }\n"
+        + "function defrostAskChipHtml() { return ''; }\n"
+        + "function defrostMeaningHtml() { return ''; }\n"
+        + "function defrostAskItemsAlreadyAnswered() { return false; }\n"
+        + "var DEFROST_ASK_WAIT_MS = 50;\n"
+        + SHELL_JS[SHELL_JS.index("  var defrostAskState = {"):SHELL_JS.index("  function defrostAskChipHtml(")] + "\n"
+        + _function("freezerStepHtml") + "\n"
+        + _function("ensureDefrostAskItems") + "\n"
+        + "(async function () {\n" + body + "\n})();"
+    )
+
+
+@_needs_node
+def test_a_lookup_that_never_answers_ends_in_a_plain_sentence_and_a_way_out():
+    out = _freezer_harness("""
+      var Api = { fetch: function () { return new Promise(function () {}); } };
+      await ensureDefrostAskItems({}, { weekly_plan_id: 7, week_start_date: '2026-10-05' });
+      console.log(JSON.stringify({ html: freezerStepHtml({}), renders: renders, items: defrostAskState.items }));
+    """)
+    assert out["items"] == [] and out["renders"] == 1
+    assert "One moment" not in out["html"]
+    assert "I couldn’t get your freezer list" in out["html"]
+    assert 'id="wk-freezer-list"' in out["html"]  # Open grocery list
+
+
+@_needs_node
+def test_a_plan_with_no_id_does_not_wait_forever():
+    out = _freezer_harness("""
+      var Api = { fetch: function () { throw new Error('should not be asked'); } };
+      await ensureDefrostAskItems({}, { weekly_plan_id: null, week_start_date: '2026-10-05' });
+      console.log(JSON.stringify({ html: freezerStepHtml({}) }));
+    """)
+    assert "One moment" not in out["html"]
+
+
+@_needs_node
+def test_an_answered_question_leaves_the_freezer_step_before_the_slow_refetch():
+    # submitDefrostAsk must move the step off 'freezer' BEFORE it awaits
+    # loadWeekMenu, or the repaint draws the question again as "One moment…".
+    body = _function("submitDefrostAsk")
+    assert body.index("weekState.step = 'week'") < body.index("await loadWeekMenu(panel)")
