@@ -181,6 +181,8 @@ SIGN_IN_TEXT = [
      SPRUCE, "in .signin-bottom, straight on the page"),
     ("privacy / terms / help links at the foot", ".signin-legal a",
      SPRUCE, "in .signin-bottom, straight on the page"),
+    ("'By continuing you agree' line", ".signin-agree",
+     SPRUCE, "in .signin-bottom, straight on the page"),
 ]
 
 

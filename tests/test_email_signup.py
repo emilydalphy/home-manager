@@ -271,3 +271,23 @@ def test_households_module_is_untouched_by_email_sign_up(outbox):
     """No passphrase is made, read or reset by signing in with a code."""
     _sign_up("k@example.com", outbox=outbox)
     assert all(not h["has_credential"] for h in households.list_households() if h["id"] != 1)
+
+
+# ---------- The sign-in screen (slice 2) ----------
+
+
+def test_the_sign_in_screen_leads_with_email_and_keeps_the_passphrase():
+    html = TestClient(app).get("/login").text.replace("&rsquo;", "'")
+    assert "Start with your email" in html
+    assert "Sign in with a household passphrase" in html
+    assert 'By continuing you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>' in html
+    # The passphrase form is the one it always was.
+    assert '<form method="post" action="/login" id="passphrase-form">' in html
+    assert 'name="password"' in html and 'name="next" value="/"' in html
+
+
+def test_a_refused_passphrase_lands_on_the_passphrase_step():
+    res = TestClient(app).post("/login", data={"password": "nope", "next": "/"}, follow_redirects=False)
+    assert res.status_code == 401
+    step = res.text[res.text.index('id="step-passphrase"'):res.text.index('id="passphrase-form"')]
+    assert 'class="error"' in step

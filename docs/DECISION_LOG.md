@@ -13,6 +13,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Email sign-in screen + Settings → Sign-in email. Branch
+  `overnight/email-code-signup-screen` (from `overnight/email-code-signup`).**
+  `login.html` is three steps on one page: email ("Start with your email",
+  the "By continuing you agree" line), the 6-digit code (goes on six
+  digits), and the passphrase form exactly as it was (placeholders, field
+  names, action unchanged) behind "Sign in with a household passphrase".
+  The passphrase step shows first after a refused passphrase or when this
+  device last came in that way (`pomona-signin-method` in localStorage),
+  so current testers aren't sent round the email path. `static/api.js` is
+  now PUBLIC (the sign-in page calls through it; it holds no household
+  data) — `test_api_js` changed to say so; shell.js stays signed-in only.
+  Settings gets a "Sign-in email" row + sheet (`openEmailSheet`, stacked
+  over Settings, code to the NEW address). Sign out's line no longer says
+  "passphrase".
+
 - **2026-10-06 — Anyone can sign up: email + 6-digit code (server).
   Branch `overnight/email-code-signup` (from `overnight/legal-pages`).**
   `app/account_email.py` (outside `app/tools/`, like invites), public

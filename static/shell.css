@@ -8141,6 +8141,7 @@ span.cook-week-name { cursor: default; }
 #prefs-scrim,
 #tips-scrim,
 #morning-scrim,
+#email-scrim,
 #recipes-scrim,
 #cr-scrim {
   position: fixed;
@@ -8152,6 +8153,7 @@ span.cook-week-name { cursor: default; }
 #prefs-sheet,
 #tips-sheet,
 #morning-sheet,
+#email-sheet,
 #recipes-sheet,
 #cr-sheet {
   position: fixed;
@@ -8172,6 +8174,7 @@ span.cook-week-name { cursor: default; }
 #prefs-scrim[hidden], #prefs-sheet[hidden],
 #tips-scrim[hidden], #tips-sheet[hidden],
 #morning-scrim[hidden], #morning-sheet[hidden],
+#email-scrim[hidden], #email-sheet[hidden],
 #recipes-scrim[hidden], #recipes-sheet[hidden],
 #cr-scrim[hidden], #cr-sheet[hidden] { display: none; }
 .prefs-sub {
@@ -10837,7 +10840,7 @@ span.cook-week-name { cursor: default; }
    predates and is independent of this ticket). */
 @media (min-width: 768px) {
   #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet, #rli-sheet,
-  #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet, #recipes-sheet, #cr-sheet {
+  #prefs-sheet, #tips-sheet, #morning-sheet, #email-sheet, #snw-sheet, #recipes-sheet, #cr-sheet {
     left: 50%;
     right: auto;
     transform: translateX(-50%);

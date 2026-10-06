@@ -264,6 +264,49 @@
   }
   .signin-legal a:hover { color: var(--ivory-ink); text-decoration: underline; }
 
+  /* The email steps (2026-10-06). One section shows at a time. */
+  .signin-step { display: flex; flex-direction: column; gap: 12px; }
+  .signin-step[hidden] { display: none; }
+  #email-form, #code-form { display: flex; flex-direction: column; gap: 12px; margin: 0; }
+  .signin-sent {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.45;
+    text-align: center;
+    color: var(--ivory-ink);
+    overflow-wrap: anywhere;
+  }
+  .signin-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 18px; }
+  /* The quiet ways round: another way in, another code, another address.
+     Text buttons, each its own 44px row (DESIGN_SYSTEM.md §2 rule 6). */
+  .signin-switch {
+    align-self: center;
+    background: none;
+    border: none;
+    min-height: 44px;
+    padding: 0 6px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ivory-ink);
+    text-decoration: underline;
+    text-decoration-color: var(--apricot-rule);
+    text-underline-offset: 4px;
+    cursor: pointer;
+  }
+  .signin-switch[hidden] { display: none; }
+  .signin-agree {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.45;
+    text-align: center;
+    color: rgba(246, 238, 225, 0.60);
+  }
+  .signin-agree[hidden] { display: none; }
+  .signin-agree a { color: var(--ivory-ink); font-weight: 700; }
+  .error[hidden] { display: none; }
+
   /* Error banner — app/main.py injects exactly <p class="error">…</p>. */
   .error {
     margin: 0;
@@ -330,13 +373,52 @@
   </main>
 
   <div class="signin-bottom">
+    <!-- Step 1 (the front door since 2026-10-06): an email address. -->
+    <section class="signin-step" id="step-email" aria-labelledby="email-label">
+      <form id="email-form" novalidate>
+        <div class="signin-field">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"></rect><path d="M4.5 7.5l7.5 5.5 7.5-5.5"></path></svg>
+          <label class="sr-only" for="email" id="email-label">Your email</label>
+          <input id="email" name="email" type="email" inputmode="email" placeholder="Your email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="254" required />
+        </div>
+        <p class="error" id="email-msg" role="alert" hidden></p>
+        <button type="submit" class="btn-primary signin-btn" id="email-send">
+          <span>Start with your email</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg>
+        </button>
+      </form>
+    </section>
+
+    <!-- Step 2: the 6-digit code. -->
+    <section class="signin-step" id="step-code" aria-labelledby="code-label" hidden>
+      <p class="signin-sent" id="code-sent" aria-live="polite"></p>
+      <form id="code-form" novalidate>
+        <div class="signin-field">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"></rect><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"></path></svg>
+          <label class="sr-only" for="code" id="code-label">6-digit code</label>
+          <input id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="6-digit code" autocomplete="one-time-code" maxlength="6" required />
+        </div>
+        <p class="error" id="code-msg" role="alert" hidden></p>
+        <button type="submit" class="btn-primary signin-btn" id="code-go">
+          <span>Come in</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg>
+        </button>
+      </form>
+      <div class="signin-links">
+        <button type="button" class="signin-switch" id="code-resend">Send a new code</button>
+        <button type="button" class="signin-switch" data-show="email">Use a different email</button>
+      </div>
+    </section>
+
+    <!-- The household passphrase, as it always was (now the quiet way in). -->
+    <section class="signin-step" id="step-passphrase" hidden>
     <!--ERROR-->
-    <form method="post" action="/login">
+    <form method="post" action="/login" id="passphrase-form">
       <input type="hidden" name="next" value="__NEXT__" />
       <div class="signin-field">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="12" r="4"></circle><path d="M12.5 12h8"></path><path d="M17.5 12v3.4"></path><path d="M20.5 12v2.4"></path></svg>
         <label class="sr-only" for="password">Household passphrase</label>
-        <input id="password" name="password" type="password" placeholder="Passphrase" autocomplete="current-password" autofocus required />
+        <input id="password" name="password" type="password" placeholder="Passphrase" autocomplete="current-password" required />
       </div>
       <button type="submit" class="btn-primary signin-btn">
         <span>Come in</span>
@@ -344,11 +426,142 @@
       </button>
     </form>
     <p class="signin-helper">Don&rsquo;t have the passphrase? Ask whoever set up your household.</p>
+    </section>
+
+    <!-- Before the account is created (email steps only). -->
+    <p class="signin-agree" id="signin-agree">By continuing you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
+    <button type="button" class="signin-switch" id="switch-passphrase" data-show="passphrase">Sign in with a household passphrase</button>
+    <button type="button" class="signin-switch" id="switch-email" data-show="email" hidden>Start with your email instead</button>
+
     <nav class="signin-legal" aria-label="Pomona&rsquo;s policies">
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
       <a href="/support">Help</a>
     </nav>
   </div>
+<script src="/static/api.js"></script>
+<script>
+/*
+  Email + 6-digit code (Loop Board "App Store: anyone can sign up", Emily
+  2026-10-05). Three steps on one screen: the email, the code, and the
+  household passphrase as it always was. Talks to app/main.py's
+  /api/auth/email/start and /verify through static/api.js, which is public
+  for this page's sake.
+
+  Which step shows first: the passphrase when the server just refused one
+  (the error banner is inside that step), or when this device last came in
+  that way — so a beta tester who has always typed a passphrase is not
+  sent round the email path every time. Otherwise the email.
+*/
+(function () {
+  'use strict';
+  var STEPS = ['email', 'code', 'passphrase'];
+  var METHOD_KEY = 'pomona-signin-method';
+  var email = '';
+  var busy = false;
+
+  function $(id) { return document.getElementById(id); }
+  function remember(method) { try { window.localStorage.setItem(METHOD_KEY, method); } catch (e) { /* private mode */ } }
+  function recalled() { try { return window.localStorage.getItem(METHOD_KEY); } catch (e) { return null; } }
+
+  function show(step) {
+    STEPS.forEach(function (s) { $('step-' + s).hidden = s !== step; });
+    var onPassphrase = step === 'passphrase';
+    $('signin-agree').hidden = onPassphrase;
+    $('switch-passphrase').hidden = onPassphrase;
+    $('switch-email').hidden = !onPassphrase;
+    var focus = step === 'email' ? $('email') : step === 'code' ? $('code') : $('password');
+    try { focus.focus(); } catch (e) { /* not focusable yet */ }
+  }
+
+  function say(id, text) {
+    var el = $(id);
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+
+  function nextPath() {
+    var input = document.querySelector('#passphrase-form input[name="next"]');
+    return input ? input.value : '/';
+  }
+
+  async function post(path, body) {
+    var res = await Api.fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    var data = {};
+    try { data = await res.json(); } catch (e) { /* not JSON */ }
+    return { ok: res.ok, status: res.status, data: data };
+  }
+
+  function failureLine(r) {
+    if (r.status === 429) return 'That\u2019s a lot of tries. Wait a few minutes, then try again.';
+    if (r.data && typeof r.data.detail === 'string' && r.status < 500) return r.data.detail;
+    if (r.status === 503 && r.data && r.data.detail) return r.data.detail;
+    return 'That didn\u2019t go through. Try again in a moment.';
+  }
+
+  async function sendCode(fromResend) {
+    if (busy) return;
+    var value = ($('email').value || '').trim();
+    if (!fromResend) {
+      if (!value || value.indexOf('@') < 1) { say('email-msg', 'Type your email address first.'); return; }
+      email = value;
+    }
+    busy = true;
+    say('email-msg', ''); say('code-msg', '');
+    try {
+      var r = await post('/api/auth/email/start', { email: email });
+      if (!r.ok) {
+        if (fromResend) { say('code-msg', failureLine(r)); } else { say('email-msg', failureLine(r)); }
+        return;
+      }
+      $('code-sent').textContent = 'We\u2019ve sent a code to ' + email + ' if that email can be used. It works for 10 minutes.';
+      $('code').value = '';
+      show('code');
+      if (fromResend) say('code-msg', '');
+    } catch (e) {
+      say(fromResend ? 'code-msg' : 'email-msg', 'That didn\u2019t go through. Check your connection and try again.');
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function checkCode() {
+    if (busy) return;
+    var code = ($('code').value || '').replace(/\s+/g, '');
+    if (!/^\d{6}$/.test(code)) { say('code-msg', 'The code is 6 numbers.'); return; }
+    busy = true;
+    say('code-msg', '');
+    try {
+      var r = await post('/api/auth/email/verify', { email: email, code: code, agreed: true, next: nextPath() });
+      if (!r.ok) { say('code-msg', failureLine(r)); return; }
+      remember('email');
+      window.location.assign(r.data.next || '/');
+    } catch (e) {
+      say('code-msg', 'That didn\u2019t go through. Check your connection and try again.');
+    } finally {
+      busy = false;
+    }
+  }
+
+  $('email-form').addEventListener('submit', function (e) { e.preventDefault(); sendCode(false); });
+  $('code-form').addEventListener('submit', function (e) { e.preventDefault(); checkCode(); });
+  $('code-resend').addEventListener('click', function () { sendCode(true); });
+  // Six digits typed or pasted: go, without making them find the button.
+  $('code').addEventListener('input', function () {
+    if (/^\d{6}$/.test(($('code').value || '').replace(/\s+/g, ''))) checkCode();
+  });
+  $('passphrase-form').addEventListener('submit', function () { remember('passphrase'); });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-show]'), function (btn) {
+    btn.addEventListener('click', function () { show(btn.getAttribute('data-show')); });
+  });
+
+  var refused = !!document.querySelector('#step-passphrase .error');
+  show(refused || recalled() === 'passphrase' ? 'passphrase' : 'email');
+})();
+</script>
 </body>
 </html>

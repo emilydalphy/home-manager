@@ -25933,7 +25933,7 @@
   }
 
 
-  var prefsState = { memory: null, calendar: null, morningText: null, eveningNudge: null, open: false };
+  var prefsState = { memory: null, calendar: null, morningText: null, eveningNudge: null, accountEmail: null, open: false };
 
   function prefsInvalidate() {
     prefsState.memory = null;
@@ -26378,6 +26378,9 @@
       // Who this device is opened as, first — see whoPrefsRowHtml (empty
       // for a one-adult household).
       whoPrefsRowHtml() +
+      // The email this adult signs in with (2026-10-06) — see
+      // accountEmailRowHtml. Empty until an adult is known on this device.
+      accountEmailRowHtml() +
       PREFS_ROWS.map(function (row) {
         var line = mem ? row.line(mem) : 'Reading it back…';
         return '<button type="button" class="prefs-row" data-prefs="section" data-section="' + row.section + '">' +
@@ -26429,7 +26432,7 @@
           '<span class="snw-tile-icon">' + PREFS_SIGNOUT_ICON + '</span>' +
           '<span class="snw-tile-text">' +
             '<span class="snw-tile-title">Sign out</span>' +
-            '<span class="snw-tile-sub">You’ll need your passphrase to get back in</span>' +
+            '<span class="snw-tile-sub">You’ll need to sign in again to get back in</span>' +
           '</span>' +
         '</button>' +
       '</div>' +
@@ -26440,6 +26443,181 @@
       '</div>' +
       prefsAboutHtml());
   }
+
+  // ---------- Sign-in email (App Store, 2026-10-06) ----------
+  //
+  // Loop Board "App Store: anyone can sign up — email + 6-digit code".
+  // Settings shows the email this adult signs in with, and adds or changes
+  // it — always with a code sent to the NEW address, so nobody can point
+  // someone else's sign-in at an address they don't read
+  // (/api/account/email/start and /verify, app/account_email.py). Only for
+  // an adult this device knows: the address belongs to a person, and a
+  // device that hasn't said who it is has nobody to give it to.
+  var emailSheetEl = null;
+  var emailScrimEl = null;
+  var emailSheet = { step: 'enter', email: '', busy: false };
+
+  async function loadAccountEmail() {
+    try {
+      var res = await Api.fetch('/api/account/email');
+      prefsState.accountEmail = res.ok ? await res.json() : null;
+    } catch (err) {
+      prefsState.accountEmail = null;
+    }
+    if (prefsState.open) renderPrefsRows();
+  }
+
+  function accountEmailRowHtml() {
+    var st = prefsState.accountEmail;
+    if (!st || !st.can_change) return '';
+    return '<button type="button" class="prefs-row" data-account-email="open">' +
+      '<span class="prefs-row-text">' +
+        '<span class="prefs-row-title">Sign-in email</span>' +
+        '<span class="prefs-row-sub">' + escapeHtml(st.email || 'Add one to sign in with a code') + '</span>' +
+      '</span>' +
+      ICONS.arrow +
+    '</button>';
+  }
+
+  function buildEmailSheet() {
+    if (emailSheetEl) return;
+    emailScrimEl = document.createElement('div');
+    emailScrimEl.id = 'email-scrim';
+    emailScrimEl.hidden = true;
+    emailSheetEl = document.createElement('div');
+    emailSheetEl.id = 'email-sheet';
+    emailSheetEl.hidden = true;
+    emailSheetEl.setAttribute('role', 'dialog');
+    emailSheetEl.setAttribute('aria-modal', 'true');
+    emailSheetEl.setAttribute('aria-labelledby', 'email-sheet-title');
+    emailSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="email-sheet-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="email-sheet-title">Sign-in email</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="email-sheet-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="morning-body" id="email-sheet-body"></div>';
+    document.body.appendChild(emailScrimEl);
+    document.body.appendChild(emailSheetEl);
+    emailScrimEl.addEventListener('click', dismissEmailSheet);
+    emailSheetEl.querySelector('#email-sheet-handle').addEventListener('click', dismissEmailSheet);
+    emailSheetEl.querySelector('#email-sheet-close').addEventListener('click', dismissEmailSheet);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && emailSheetEl && !emailSheetEl.hidden) dismissEmailSheet();
+    });
+    emailSheetEl.addEventListener('click', function (e) {
+      var id = e.target && e.target.closest && e.target.closest('button') && e.target.closest('button').id;
+      if (id === 'email-send') sendEmailCode();
+      else if (id === 'email-check') checkEmailCode();
+      else if (id === 'email-again') { emailSheet.step = 'enter'; renderEmailSheet(); }
+    });
+    emailSheetEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' || !e.target || e.target.tagName !== 'INPUT') return;
+      e.preventDefault();
+      if (e.target.id === 'email-new') sendEmailCode();
+      else if (e.target.id === 'email-code') checkEmailCode();
+    });
+  }
+
+  function renderEmailSheet(note) {
+    if (!emailSheetEl) return;
+    var body = emailSheetEl.querySelector('#email-sheet-body');
+    var st = prefsState.accountEmail || {};
+    var noteHtml = '<p class="snw-done" id="email-note"' + (note ? '' : ' hidden') + '>' + escapeHtml(note || '') + '</p>';
+    if (emailSheet.step === 'code') {
+      body.innerHTML =
+        '<p class="snw-done">We’ve sent a code to ' + escapeHtml(emailSheet.email) + ' if that email can be used. It works for 10 minutes.</p>' +
+        '<label class="snw-label" for="email-code">The 6-digit code</label>' +
+        '<input type="text" id="email-code" class="snw-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">' +
+        '<button type="button" class="snw-send" id="email-check">Save</button>' +
+        '<button type="button" class="prefs-leave-link" id="email-again"><span>Use a different email</span></button>' +
+        noteHtml;
+      return;
+    }
+    body.innerHTML =
+      (st.email ? '<p class="snw-done">You sign in with ' + escapeHtml(st.email) + '.</p>' : '') +
+      '<label class="snw-label" for="email-new">' + (st.email ? 'Change it to' : 'Your email') + '</label>' +
+      '<input type="email" id="email-new" class="snw-input" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="254" placeholder="you@example.com" value="' + escapeHtml(emailSheet.email || '') + '">' +
+      '<button type="button" class="snw-send" id="email-send">Send me a code</button>' +
+      noteHtml;
+  }
+
+  function emailFailure(res, data) {
+    if (res && res.status === 429) return 'That’s a lot of tries. Wait a few minutes, then try again.';
+    if (data && typeof data.detail === 'string' && res.status < 500) return data.detail;
+    if (res && res.status === 503 && data && data.detail) return data.detail;
+    return 'That didn’t go through. Try again in a moment.';
+  }
+
+  async function sendEmailCode() {
+    if (emailSheet.busy || !emailSheetEl) return;
+    var input = emailSheetEl.querySelector('#email-new');
+    var value = (input && input.value || '').trim();
+    if (!value || value.indexOf('@') < 1) { renderEmailSheet('Type the email you want to sign in with.'); return; }
+    emailSheet.email = value;
+    emailSheet.busy = true;
+    try {
+      var r = await Api.fetch('/api/account/email/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: value }) });
+      var data = {};
+      try { data = await r.json(); } catch (e) { /* not JSON */ }
+      if (!r.ok) { renderEmailSheet(emailFailure(r, data)); return; }
+      emailSheet.step = 'code';
+      renderEmailSheet();
+      var code = emailSheetEl.querySelector('#email-code');
+      if (code) code.focus();
+    } catch (err) {
+      renderEmailSheet('That didn’t go through. Check your connection and try again.');
+    } finally {
+      emailSheet.busy = false;
+    }
+  }
+
+  async function checkEmailCode() {
+    if (emailSheet.busy || !emailSheetEl) return;
+    var input = emailSheetEl.querySelector('#email-code');
+    var code = (input && input.value || '').replace(/\s+/g, '');
+    if (!/^\d{6}$/.test(code)) { renderEmailSheet('The code is 6 numbers.'); return; }
+    emailSheet.busy = true;
+    try {
+      var r = await Api.fetch('/api/account/email/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: emailSheet.email, code: code }) });
+      var data = {};
+      try { data = await r.json(); } catch (e) { /* not JSON */ }
+      if (!r.ok) { renderEmailSheet(emailFailure(r, data)); return; }
+      prefsState.accountEmail = { email: data.email, can_change: true };
+      emailSheet.step = 'enter';
+      emailSheet.email = '';
+      renderEmailSheet('Saved. You can sign in with ' + data.email + ' now.');
+      if (prefsState.open) renderPrefsRows();
+    } catch (err) {
+      renderEmailSheet('That didn’t go through. Check your connection and try again.');
+    } finally {
+      emailSheet.busy = false;
+    }
+  }
+
+  function openEmailSheet(parent) {
+    buildEmailSheet();
+    if (parent) openOverSheet(parent, dismissEmailSheet);
+    else { forgetSheetLevels(); closePrefsSheet(); }
+    emailSheet = { step: 'enter', email: '', busy: false };
+    renderEmailSheet();
+    paintSheetLevelChrome(emailSheetEl, 'Sign-in email');
+    emailScrimEl.hidden = false;
+    emailSheetEl.hidden = false;
+  }
+
+  function dismissEmailSheet() {
+    if (!emailSheetEl) return;
+    emailScrimEl.hidden = true;
+    emailSheetEl.hidden = true;
+    popSheetLevelFor(dismissEmailSheet);
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-account-email="open"]');
+    if (target) openEmailSheet(sheetLevelHost(target));
+  });
 
   // ---------- About: privacy, terms, help (App Store, 2026-10-06) ----------
   //
@@ -26520,6 +26698,7 @@
     // sheet, which this cache would otherwise never hear about).
     loadPrefsCalendar();
     loadPrefsMorningText();
+    loadAccountEmail();
     loadPrefsHeld();
     loadPushSettings();
     loadRecipes();

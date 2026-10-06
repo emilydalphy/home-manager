@@ -668,7 +668,7 @@ def test_every_sheet_that_can_be_opened_from_another_has_a_dismiss_that_pops():
         "dismissKitchenSheet", "dismissUwSheet", "dismissRecipeLinkSheet",
         "rphClose", "closeAiConsentScreen", "dismissLeaveDialog",
         "dismissMorningSheet", "dismissRecipesSheet", "dismissTipsSheet",
-        "dismissSnwSheet",
+        "dismissSnwSheet", "dismissEmailSheet",
         # Full-screen takeovers rather than bottom sheets, so their own copy
         # is the named way back and they get no chevron — but their close
         # pops a level like every other.

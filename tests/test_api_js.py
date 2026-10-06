@@ -28,6 +28,9 @@ import shutil
 
 import nodeharness
 import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 STATIC = ROOT / "static"
@@ -125,20 +128,28 @@ def test_shell_js_makes_no_bare_fetch_at_all():
         if re.search(r"(?<![\w.$])fetch\(", line)
     ]
     assert bare == []
-    assert SHELL_JS.count("Api.fetch(") == 133  # +2 2026-10-05 Morning text "What should it include?" (GET /api/morning-text/preview, POST /api/morning-text/parts), +2 2026-10-05 "Before you shop" (GET /api/grocery-list/before-shop — groLoadBeforeShop; GET /api/staples for Settings → Regulars — wwkLoadRegulars), +1 2026-10-05 the silent re-pick (pickWhoSilently, POST /api/whoami/pick) from bb137be, +3 2026-10-05 Change recipe (POST /api/meal-recipe, /api/meal-recipe/rewrite, /api/meal-recipe/undo — one call site each, all three through Api.fetch because each reads a refusal sentence off a 200 or a 400 body rather than only a status), +1 2026-10-05 POST /api/memory/primary-member (wwkPostSaying — the tripwire fired on this line; wwkPost's own copy stays, so a 400's sentence is shown for the main person and nothing else changes), +2 2026-10-04 Settings → Recipes (GET /api/recipes, GET /api/recipes/{id}), +1 2026-09-30 POST /api/usual-week (uwPost, so a 400 is said in its words), +1 2026-09-30 GET /api/usual-week (Your rhythm), +1 2026-09-30 swap-picks prefetch, +1 chat warm-up (2026-09-30, /api/chat/warm); 114 at the first slice + 3 from the 2026-09-27 consent and delete-household branches + 1 net from Move (2026-09-28: move-options/move-meal/move-meal-undo in, swap-nights/-undo out of the Plan sheet)
+    assert SHELL_JS.count("Api.fetch(") == 136  # +3 2026-10-06 Settings → Sign-in email (GET /api/account/email, POST /api/account/email/start, /verify — each reads a refusal sentence off the body), +2 2026-10-05 Morning text "What should it include?" (GET /api/morning-text/preview, POST /api/morning-text/parts), +2 2026-10-05 "Before you shop" (GET /api/grocery-list/before-shop — groLoadBeforeShop; GET /api/staples for Settings → Regulars — wwkLoadRegulars), +1 2026-10-05 the silent re-pick (pickWhoSilently, POST /api/whoami/pick) from bb137be, +3 2026-10-05 Change recipe (POST /api/meal-recipe, /api/meal-recipe/rewrite, /api/meal-recipe/undo — one call site each, all three through Api.fetch because each reads a refusal sentence off a 200 or a 400 body rather than only a status), +1 2026-10-05 POST /api/memory/primary-member (wwkPostSaying — the tripwire fired on this line; wwkPost's own copy stays, so a 400's sentence is shown for the main person and nothing else changes), +2 2026-10-04 Settings → Recipes (GET /api/recipes, GET /api/recipes/{id}), +1 2026-09-30 POST /api/usual-week (uwPost, so a 400 is said in its words), +1 2026-09-30 GET /api/usual-week (Your rhythm), +1 2026-09-30 swap-picks prefetch, +1 chat warm-up (2026-09-30, /api/chat/warm); 114 at the first slice + 3 from the 2026-09-27 consent and delete-household branches + 1 net from Move (2026-09-28: move-options/move-meal/move-meal-undo in, swap-nights/-undo out of the Plan sheet)
 
 
 # ---------------------------------------------------------------------------
 # Served like shell.js
 # ---------------------------------------------------------------------------
 
-def test_api_js_is_signed_in_only(client):
-    """Same rule as shell.js: not in app/security.py's public list."""
-    anon = client.get("/static/api.js", follow_redirects=False)
-    assert anon.status_code != 200
-    assert client.get("/static/shell.js", follow_redirects=False).status_code == anon.status_code
-    client.post("/login", data={"password": "test-password", "next": "/"}, follow_redirects=False)
-    assert client.get("/static/api.js", follow_redirects=False).status_code == 200
+def test_api_js_is_public_for_the_sign_in_screen_and_shell_js_is_not(client):
+    """
+    Signed-in only until 2026-10-06, when the sign-in screen started asking
+    for email codes through it (a signed-out page). It carries no household
+    data — only how to reach the server. shell.js keeps the old rule.
+    """
+    remote = TestClient(app, client=("203.0.113.5", 1))
+    assert remote.get("/static/api.js", follow_redirects=False).status_code == 200
+    assert remote.get("/static/shell.js", follow_redirects=False).status_code != 200
+
+
+def test_the_sign_in_screen_loads_api_js_and_calls_through_it():
+    login = (ROOT / "static" / "login.html").read_text(encoding="utf-8")
+    assert '<script src="/static/api.js"></script>' in login
+    assert "Api.fetch('/api/auth/email/start'" in login or "post('/api/auth/email/start'" in login
 
 
 def test_shell_html_loads_api_js_after_the_reporter_and_before_every_page_script():
