@@ -302,7 +302,10 @@ REVIEW_INGS = ["Milk", "Ground beef", "Butter", "Lime wedges", "Bouillon cubes",
     ("Add 2 cups/500 ml milk.", "Add 4 cups/1000 ml milk."),
     # ...but a can's size is the can's.
     ("Add 1 can (14 oz) tomatoes.", "Add 2 cans (14 oz) tomatoes."),
-    ("Add 2 (15 oz) cans tomatoes.", "Add 2 (15 oz) cans tomatoes."),
+    # Count first (2026-10-06, slice 3 review): the COUNT doubles, exactly
+    # as "1 can (14 oz)" above does; the 15 oz is still the can's own size.
+    # It used to stay "2 (15 oz) cans", which left a doubled recipe short.
+    ("Add 2 (15 oz) cans tomatoes.", "Add 4 (15 oz) cans tomatoes."),
     # Counts of pieces and portions are not amounts of food.
     ("Cut each loaf into 8 slices.", "Cut each loaf into 8 slices."),
     ("Cut the lime into 8 wedges.", "Cut the lime into 8 wedges."),

@@ -33,3 +33,33 @@ def test_a_bracket_after_a_weight_halves_with_it():
 def test_a_cans_size_stays_the_size_of_one_can():
     out = _scaled("1 can (400 g)", 8, ["Tip in the 1 can (400 g) of chickpeas."])
     assert out["scaled_ingredients"][0]["qty"] == "2 cans (400 g)"
+
+
+# ---------- review round, 2026-10-06 ----------
+
+import pytest
+
+
+@pytest.mark.parametrize("qty,servings,expected", [
+    ("1 (14 oz) can", 8, "2 (14 oz) cans"),          # count first: the count scales, the size stays
+    ("2 (15 oz) cans", 2, "1 (15 oz) can"),
+    ("1 cup (about 240 ml)", 8, "2 cups (about 480 ml)"),
+    ("2 cups (16 fl oz)", 8, "4 cups (32 fl oz)"),
+    ("1 cup (2 sticks)", 8, "2 cups (4 sticks)"),
+    ("1 cup (240 ml), divided", 8, "2 cups (480 ml), divided"),
+    ("½ cup (120 ml)", 8, "1 cup (240 ml)"),
+    ("1-2 cups (240-480 ml)", 8, "2-4 cups (480-960 ml)"),
+])
+def test_the_list_scales_every_written_form_and_keeps_its_words(qty, servings, expected):
+    assert _scaled(qty, servings)["scaled_ingredients"][0]["qty"] == expected
+
+
+def test_the_list_and_the_steps_say_the_same_amount():
+    out = _scaled("1-2 cups (240-480 ml)", 8, ["Pour in 1-2 cups (240-480 ml) of water."])
+    assert out["scaled_ingredients"][0]["qty"] == "2-4 cups (480-960 ml)"
+    assert out["scaled_instructions"] == ["Pour in 2-4 cups (480-960 ml) of water."]
+
+
+def test_a_count_first_can_in_a_step_scales_too():
+    out = _scaled("1 (14 oz) can", 8, ["Tip in the 1 (14 oz) can of water."])
+    assert out["scaled_instructions"] == ["Tip in the 2 (14 oz) cans of water."]

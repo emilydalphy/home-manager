@@ -20,6 +20,15 @@ why*, not duplicating the diff.
   cups (960 ml)") and keeps one after a container ("2 cans (400 g)" — the
   size of one can). The steps already scaled brackets (`scale_steps`);
   `/api/recipes/scale` returns both, which the recipe page's stepper reads.
+  **Review round (same day):** the list now scales any quantity with a
+  bracket, a range, a ½-style fraction or a ", divided" note as TEXT through
+  `scale_steps`, so list and steps agree and no words are lost ("1 cup
+  (about 240 ml)", "2 cups (16 fl oz)", "1-2 cups (240-480 ml)", "…,
+  divided"). Count-first cans scale the count and keep the size ("1 (14 oz)
+  can" → "2 (14 oz) cans") in both; `fl oz` is a step unit now.
+  `test_batch_night_steps` had pinned "2 (15 oz) cans" unchanged at double;
+  it now doubles the count. Left: "1 stick (113 g)" halved reads "1 stick
+  (56 ½ g)" (a non-butter stick rounds whole).
 
 - **2026-10-06 — Recipes people trust, slice 2: research first, then write.
   Branch `overnight/recipe-research-first` (from b880ba1), NOT merged at the

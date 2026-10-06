@@ -785,24 +785,14 @@ def get_recipe_by_id(recipe_id: int) -> dict | None:
     return None
 
 
-# The amount in brackets after a MEASURE is the same amount said another
-# way — "2 cups (480 ml)" — and moves with it when the servings stepper
-# does (Loop Board "Recipes people trust", slice 3, 2026-10-06: "rescales
-# every ingredient amount, including the amounts in brackets"). After
-# anything else — "1 can (400 g)", "1 stick (113 g)", "1 head (2 lbs)" —
-# the bracket is the size of ONE of them, and two cans are still 400 g
-# each. _parse_quantity carries either as a "(size)" suffix on the unit.
-_MEASURE_UNITS = frozenset(
-    u for group in _quantities._UNIT_CONVERSION_GROUPS for u in group
-)
-
-
-def _scaled_qty_text(scaled: float, unit: str | None, ratio: float) -> str:
-    head, size = _quantities._split_package_size(unit)
-    if size and head in _MEASURE_UNITS:
-        restated = scale_steps([size.strip()], ratio)[0]
-        return _quantities._format_quantity(scaled, head) + " " + restated
-    return _quantities._format_quantity(scaled, unit)
+# A quantity scale_recipe scales as TEXT rather than through
+# _parse_quantity (slice 3 review, 2026-10-06): a bracket ("2 cups (480
+# ml)", "1 (14 oz) can", "1 cup (about 240 ml)"), a range ("1-2 cups"), a
+# ½-style fraction, or a note after a comma ("…, divided"). The parser
+# reads those as a package size, drops them, or gives up; scale_steps
+# scales every amount in them and keeps every word — a bracket after a
+# measure moves with it, the size of one can stays.
+_QTY_NEEDS_TEXT_SCALING = re.compile(r"[(),½⅓⅔¼¾⅛⅜⅝⅞]|\d\s*(?:-|–|to)\s*\d")
 
 
 def scale_recipe(recipe_name: str, target_servings: int) -> dict:
@@ -834,7 +824,17 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
         # into qty above; carrying it further would let a second pass scale
         # from the baseline again.
         ing.pop("cook_qty", None)
-        parsed = _quantities._parse_quantity(ing.get("qty", ""))
+        qty_text = ing.get("qty", "") or ""
+        if _QTY_NEEDS_TEXT_SCALING.search(qty_text):
+            # Brackets, ranges, ½-style fractions, a trailing ", divided" —
+            # scaled as TEXT, by the same rules as the steps (scale_steps),
+            # so the list and the steps agree and nothing written is lost.
+            rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
+            scaled_ingredients.append({**ing, "qty": rescaled})
+            if rescaled == qty_text and abs(ratio - 1) > 1e-9:
+                unscaled_items.append(ing["item"])
+            continue
+        parsed = _quantities._parse_quantity(qty_text)
         if parsed:
             amount, unit = parsed
             scaled = amount * ratio
@@ -848,7 +848,7 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
                 # Same rounding cooking_quantity applies, so the two agree
                 # about a thing that only comes whole.
                 scaled = max(1.0, round(scaled))
-            scaled_ingredients.append({**ing, "qty": _scaled_qty_text(scaled, unit, ratio)})
+            scaled_ingredients.append({**ing, "qty": _quantities._format_quantity(scaled, unit)})
         else:
             scaled_ingredients.append(dict(ing))
             if (ing.get("qty") or "").strip():
@@ -935,7 +935,7 @@ for _canon, _sing, _plur in (
 ):
     _STEP_UNIT_WORDS[_sing] = (_canon, _sing, _plur)
     _STEP_UNIT_WORDS[_plur] = (_canon, _sing, _plur)
-for _abbr in ("tbsp", "tsp", "oz", "g", "kg", "ml", "l"):
+for _abbr in ("tbsp", "tsp", "oz", "g", "kg", "ml", "l", "fl oz"):
     _STEP_UNIT_WORDS[_abbr] = (_abbr, _abbr, _abbr)
 
 # A measure followed by one of these sizes the container, not the food.
@@ -972,6 +972,21 @@ _STEP_NUM = (
 # only rewrites when a measuring word follows.
 _STEP_AMOUNT_RE = re.compile(
     r"(?<![\w.\-–])(?<!\d/)(?P<a>" + _STEP_NUM + r")(?:(?P<sep>\s*(?:-|–|to|\s+and\s+)\s*)(?P<b>" + _STEP_NUM + r"))?"
+)
+# "1 (14 oz) can", "2 (15 oz) cans" — the COUNT comes first and the
+# bracket is the size of one (slice 3 review, 2026-10-06). The count
+# scales; the size stays; the container word agrees with the new count.
+_STEP_CONTAINER_PLURAL = {
+    "can": "cans", "tin": "tins", "jar": "jars", "package": "packages", "bag": "bags",
+    "box": "boxes", "bottle": "bottles", "carton": "cartons", "container": "containers",
+    "tub": "tubs", "block": "blocks",
+}
+_STEP_CONTAINER_SINGULAR = {v: k for k, v in _STEP_CONTAINER_PLURAL.items()}
+_STEP_COUNT_FIRST_CONTAINER = re.compile(
+    r"(?<![\w.\-–/])(?P<n>" + _STEP_NUM + r")(?P<mid>\s*\([^)]*\)\s*)(?P<word>"
+    + "|".join(sorted(list(_STEP_CONTAINER_PLURAL) + list(_STEP_CONTAINER_PLURAL.values()), key=len, reverse=True))
+    + r")\b",
+    re.IGNORECASE,
 )
 _STEP_UNIT_RE = re.compile(
     r"(?P<sp>\s*)(?P<unit>" + "|".join(sorted(map(re.escape, _STEP_UNIT_WORDS), key=len, reverse=True)) + r")\b",
@@ -1091,7 +1106,20 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
         if forms else None
     )
 
+    def count_first(m) -> str:
+        n = _step_number(m.group("n"))
+        if n is None:
+            return m.group(0)
+        scaled = n * ratio
+        word = m.group("word")
+        sing = _STEP_CONTAINER_SINGULAR.get(word.lower(), word.lower())
+        new_word = _STEP_CONTAINER_PLURAL.get(sing, sing) if scaled > 1 else sing
+        if word[:1].isupper():
+            new_word = new_word[:1].upper() + new_word[1:]
+        return _step_amount_text(scaled) + m.group("mid") + new_word
+
     def rewrite(step: str) -> str:
+        step = _STEP_COUNT_FIRST_CONTAINER.sub(count_first, step)
         out, pos = [], 0
         for m in _STEP_AMOUNT_RE.finditer(step):
             if m.start() < pos:
