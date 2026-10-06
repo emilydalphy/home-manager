@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Privacy policy, terms and support pages (drafts for the
+  lawyer). Branch `overnight/legal-pages`.** `/privacy`, `/terms`,
+  `/support`: public (`security._PUBLIC_EXACT`, plus `/static/legal.css`),
+  words in `static/legal/*.html`, filled by `app/legal.py` (version, date,
+  and the "Draft for legal review, not yet final" banner unless
+  `LEGAL_PAGES_FINAL=1` — only an exact "1" drops it). Linked from sign-in's
+  foot and Preferences → About (`prefsAboutHtml`, version from
+  `/api/whoami.legal_version`). Drafted from the Legal card's data-flow
+  inventory, re-checked against main: since that inventory, fonts are
+  self-hosted (CSP `font-src 'self'`), AI sharing is gated by
+  `ai_consent`, deletion exists, and Twilio, Apple push and SMTP (feedback
+  emails) are also recipients — the policy names all of them. Facts nobody
+  can read off the repo (company name, address, contact emails, Anthropic
+  account retention terms, hosting region, price) are bracketed
+  placeholders, not guesses. `LEGAL_VERSION` is what sign-up records.
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop

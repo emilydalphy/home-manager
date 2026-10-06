@@ -1,0 +1,141 @@
+/*
+  The privacy policy, terms and support pages (app/legal.py). Public, like
+  goodbye.html and not-found.html, and drawn the same quiet way: ivory
+  ground, the Pomona mark, every colour through a token (DESIGN_SYSTEM.md
+  §2 rule 9). theme.css already sets body's background, colour and font;
+  this adds the reading column and the draft banner.
+
+  One file for the three pages rather than three copies of the same rules,
+  listed in app/security.py's public paths so it loads with no session.
+*/
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
+.legal-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 20px 56px;
+  box-sizing: border-box;
+}
+.legal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.legal-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+.legal-wrap .legal-mark { color: var(--ink); }
+.legal-mark svg { width: 26px; height: 26px; color: var(--apricot-label); }
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--apricot-label);
+  text-decoration: none;
+}
+.legal-back:hover { color: var(--apricot-label-hover); }
+
+/* The card's banner. Sand, not urgent: nothing is wrong, the words are
+   simply not final yet (rule 3 keeps --urgent for genuine trouble). */
+.legal-draft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  background: var(--sand);
+  border: 1.5px solid var(--hairline-strong);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.legal-draft-eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}
+
+.legal-wrap h1 {
+  font-family: var(--font-display);
+  font-size: 31px;
+  font-weight: 700;
+  letter-spacing: -0.038em;
+  line-height: 1.1;
+  margin: 0 0 6px;
+}
+.legal-version {
+  margin: 0 0 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+.legal-wrap h2 {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  margin: 32px 0 8px;
+}
+.legal-wrap h3 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 20px 0 6px;
+}
+.legal-wrap p,
+.legal-wrap li {
+  font-size: 16px;
+  line-height: 1.55;
+}
+.legal-wrap p { margin: 0 0 12px; }
+.legal-wrap ul { margin: 0 0 12px; padding-left: 22px; }
+.legal-wrap li { margin: 0 0 6px; }
+.legal-wrap a { color: var(--apricot-label); font-weight: 600; }
+.legal-wrap a:hover { color: var(--apricot-label-hover); }
+
+/* A placeholder the lawyer or Emily fills in — square brackets in the
+   words, and marked so nobody mistakes one for a finished line. */
+.legal-fill {
+  background: var(--sand);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-weight: 700;
+}
+
+/* The three pages, linked to each other at the foot. Each link is its own
+   44px row (rule 6). */
+.legal-foot {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1.5px solid var(--hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+.legal-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 15px;
+}

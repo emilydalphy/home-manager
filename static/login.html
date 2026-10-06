@@ -242,6 +242,28 @@
     color: rgba(246, 238, 225, 0.54);
   }
 
+  /* Privacy, terms and help (App Store, 2026-10-06 — app/legal.py). The
+     quietest thing on the screen: the helper line's ink, no underline
+     until hover. Each link is its own 44px row (DESIGN_SYSTEM.md §2
+     rule 6). */
+  .signin-legal {
+    display: flex;
+    justify-content: center;
+    gap: 0 18px;
+    margin: -6px 0 0;
+  }
+  .signin-legal a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: rgba(246, 238, 225, 0.60);
+    text-decoration: none;
+  }
+  .signin-legal a:hover { color: var(--ivory-ink); text-decoration: underline; }
+
   /* Error banner — app/main.py injects exactly <p class="error">…</p>. */
   .error {
     margin: 0;
@@ -322,6 +344,11 @@
       </button>
     </form>
     <p class="signin-helper">Don&rsquo;t have the passphrase? Ask whoever set up your household.</p>
+    <nav class="signin-legal" aria-label="Pomona&rsquo;s policies">
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/support">Help</a>
+    </nav>
   </div>
 </body>
 </html>

@@ -36,6 +36,7 @@ THEMED_PAGES = [
     "shell.html", "login.html", "onboarding.html", "plan-week.html",
     "chores-setup.html", "member-share.html",
     "not-found.html", "inventory.html", "join.html", "goodbye.html",
+    "legal/privacy.html", "legal/terms.html", "legal/support.html",
 ]
 # onboarding.html: its "Who's eating, and when?" grid's "some of you" cell (2026-09-30).
 DARK_FILES = ["theme.css", "shell.css", "login.html", "inventory.html", "onboarding.html"]
@@ -146,7 +147,7 @@ def test_the_head_script_is_on_every_themed_page(name):
 
 
 def test_every_page_that_loads_theme_css_is_covered():
-    pages = {p.name for p in STATIC.glob("*.html") if "/static/theme.css" in p.read_text(encoding="utf-8")}
+    pages = {p.relative_to(STATIC).as_posix() for p in [*STATIC.glob("*.html"), *STATIC.glob("legal/*.html")] if "/static/theme.css" in p.read_text(encoding="utf-8")}
     assert pages - {"share.html"} == set(THEMED_PAGES)
 
 

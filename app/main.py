@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, push, ratelimit, recipe_import, recipe_photos, security
+from . import agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -8230,6 +8230,9 @@ def whoami(request: Request):
         # shell shows the consent screen before anything else; 'granted' /
         # 'declined' = answered, and the Preferences row reads it back.
         "ai_consent": ai_consent.state(current)["status"],
+        # Preferences → About shows which version of the privacy policy
+        # and terms this is (app/legal.py).
+        "legal_version": legal.LEGAL_VERSION,
     }
 
 
@@ -8583,6 +8586,35 @@ def remove_me_from_household(request: Request):
 def goodbye_page():
     """After a delete or a leave — public, since the person is signed out by then."""
     return FileResponse(os.path.join(static_dir, "goodbye.html"))
+
+
+# ---------- Privacy, terms and support (Loop Board "App Store: privacy
+# policy, terms and support pages in the app (drafts for the lawyer)",
+# 2026-10-06) ----------
+#
+# Public (app/security.py lists all three): Apple opens them from the
+# listing with no account, and somebody signing up reads them before they
+# have one. The words are in static/legal/; app/legal.py fills in the
+# version and, until LEGAL_PAGES_FINAL=1, the draft banner.
+
+
+def _legal_page(page: str) -> HTMLResponse:
+    return HTMLResponse(legal.render(page))
+
+
+@app.get("/privacy")
+def privacy_page():
+    return _legal_page("privacy")
+
+
+@app.get("/terms")
+def terms_page():
+    return _legal_page("terms")
+
+
+@app.get("/support")
+def support_page():
+    return _legal_page("support")
 
 
 @app.get("/healthz")

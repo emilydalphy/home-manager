@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Terms of use &middot; Pomona</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preload" href="/static/fonts/figtree-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/fonts/fonts.css">
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="icon" href="/static/icons/icon-192.png" />
+<!-- Exact --spruce light/dark (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). -->
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
+<!-- Settings → Appearance: this device's Light / Dark / Auto, applied before first paint. Same script on every page that loads theme.css (not share.html); tests/test_appearance.py keeps the copies identical. -->
+<script>
+(function () {
+  var root = document.documentElement;
+  function apply(choice) {
+    var t = choice === 'light' || choice === 'dark' ? choice : null;
+    if (t) root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    var metas = document.querySelectorAll('meta[name="theme-color"][media]');
+    var forced = null, i, m;
+    for (i = 0; i < metas.length; i++) {
+      m = metas[i];
+      if (!m.hasAttribute('data-own')) m.setAttribute('data-own', m.getAttribute('content'));
+      if (t && m.getAttribute('media').indexOf(t) !== -1) forced = m.getAttribute('data-own');
+    }
+    for (i = 0; i < metas.length; i++) metas[i].setAttribute('content', forced || metas[i].getAttribute('data-own'));
+  }
+  var saved = null;
+  try { saved = window.localStorage.getItem('pomona-appearance'); } catch (e) { /* private mode */ }
+  apply(saved);
+  window.pomonaAppearance = apply;
+  // A choice made in another tab, or in the shell around an embedded page.
+  window.addEventListener('storage', function (e) { if (e.key === 'pomona-appearance') apply(e.newValue); });
+})();
+</script>
+<link rel="stylesheet" href="/static/legal.css">
+<!-- One of Pomona's three public policy pages (app/legal.py fills in the
+     version, its date and, until the lawyer signs off, the draft banner;
+     static/legal.css draws them). Every word is in this file. -->
+</head>
+<body>
+<main class="legal-wrap" data-legal-page="terms">
+  <div class="legal-top">
+    <!-- The Pomona mark — a logo, so it keeps its own 1.8 stroke (DESIGN_SYSTEM.md §2 rule 7). -->
+    <a class="legal-mark" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/><path d="M12 9V6.2"/><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/></svg><span>Pomona</span></a>
+    <a class="legal-back" href="/" id="legal-back">Back</a>
+  </div>
+  <!--LEGAL_BANNER-->
+  <h1>Terms of use</h1>
+  <p class="legal-version">Version __LEGAL_VERSION__ &middot; __LEGAL_DATE__</p>
+
+  <p>These terms are the agreement between you and <span class="legal-fill">[Company legal name]</span> (&ldquo;we&rdquo;, &ldquo;us&rdquo;) for using Pomona. By signing up or signing in, you agree to them. Our <a href="/privacy">privacy policy</a> explains what happens to your information.</p>
+
+  <h2>Using Pomona</h2>
+  <ul>
+    <li>Pomona is for adults who run a household. You need to be at least <span class="legal-fill">[18, or the age of majority where you live]</span> to set one up.</li>
+    <li>What you tell Pomona about your household should be true, and you should have the right to tell us. If you add other people, like a partner or your children, you&rsquo;re doing it to plan for them.</li>
+    <li>Use Pomona for your own household. Don&rsquo;t try to get into another household&rsquo;s information, break the service, overload it, or use it to break the law.</li>
+    <li>Keep your passphrase, sign-in codes and share links to yourselves. Anyone who has them can get in, or see what a link shows.</li>
+  </ul>
+
+  <h2>AI suggestions are not medical or dietary advice</h2>
+  <p>Pomona&rsquo;s meal plans, recipes and answers are written with the help of AI. They can be wrong. They are suggestions for everyday cooking, not medical, nutritional or dietary advice. For a health condition or a special diet, follow your doctor or dietitian.</p>
+  <p><strong>The allergy check is a best-effort aid, not a guarantee.</strong> Pomona tries to keep the allergens you&rsquo;ve told it about out of your plans, and to flag them when they turn up. It can miss one. Always read the labels and check the ingredients yourself, especially when cooking for someone with an allergy.</p>
+
+  <h2>Your household&rsquo;s account</h2>
+  <p>Your household&rsquo;s information stays yours. You let us store it and use it to run Pomona for you, as the privacy policy describes, and nothing more.</p>
+  <p>You can delete your household from inside the app at any time (Preferences, then Delete your household). An adult can also leave a household that has other adults in it. We may suspend or close a household that breaks these terms, or that puts the service or other households at risk. If we do, we&rsquo;ll tell you why unless the law stops us.</p>
+
+  <h2>Price and subscriptions</h2>
+  <p><span class="legal-fill">[Pricing and subscription terms go here once a price is set: what it costs, how billing works through Apple, cancelling, and refunds.]</span></p>
+
+  <h2>The service itself</h2>
+  <p>We&rsquo;re working to keep Pomona running well and your information safe, but we can&rsquo;t promise it will always be available or free of mistakes. We may change, add or remove features. Pomona is provided &ldquo;as is&rdquo;. <span class="legal-fill">[Lawyer: standard warranty disclaimer wording.]</span></p>
+
+  <h2>Limits on our liability</h2>
+  <p>To the extent the law allows, we aren&rsquo;t responsible for indirect or consequential losses from using Pomona, including what happens from following a meal plan, recipe or suggestion. Our total responsibility to you is limited to <span class="legal-fill">[amount, for example what you paid us in the last 12 months]</span>. Nothing here limits rights you have that the law says can&rsquo;t be limited. <span class="legal-fill">[Lawyer: confirm wording for Canada and the US.]</span></p>
+
+  <h2>Changes to these terms</h2>
+  <p>When these terms change, the version and date at the top change too. If the change is a big one, we&rsquo;ll tell you in the app before it takes effect, and keep using Pomona after that means you accept the new terms.</p>
+
+  <h2>The law that applies</h2>
+  <p><span class="legal-fill">[Lawyer: governing law and where disputes are heard.]</span></p>
+
+  <h2>Contact</h2>
+  <p><span class="legal-fill">[Company legal name]</span>, <span class="legal-fill">[registered address]</span>, <span class="legal-fill">[contact email]</span>.</p>
+
+  <nav class="legal-foot" aria-label="Pomona&rsquo;s policies">
+    <a href="/privacy">Privacy policy</a>
+    <a href="/terms">Terms of use</a>
+    <a href="/support">Help and support</a>
+  </nav>
+</main>
+<script>
+(function () {
+  // Opened from inside Pomona (Preferences, sign-in, sign-up) — Back goes
+  // back to where the person was, which matters most in the iPhone app's
+  // web view, where there is no browser back button. Opened from anywhere
+  // else (the App Store listing), Back is an ordinary link to Pomona.
+  var back = document.getElementById('legal-back');
+  var fromHere = false;
+  try { fromHere = document.referrer.indexOf(window.location.origin + '/') === 0; } catch (e) { /* no referrer */ }
+  if (back && fromHere && window.history.length > 1) {
+    back.addEventListener('click', function (e) { e.preventDefault(); window.history.back(); });
+  }
+})();
+</script>
+</body>
+</html>

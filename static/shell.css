@@ -8375,6 +8375,38 @@ span.cook-week-name { cursor: default; }
 .prefs-leave-link span { border-bottom: 1.5px solid var(--hairline-strong); padding-bottom: 2px; }
 .prefs-leave-link:hover { color: var(--ink); }
 .prefs-leave-link:hover span { border-bottom-color: var(--ink-secondary); }
+/* Preferences → About (2026-10-06): the privacy, terms and help pages,
+   the quietest block in the sheet. Each link is its own 44px row (Rule 6). */
+.prefs-about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1.5px solid var(--hairline);
+}
+.prefs-about-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.prefs-about-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 16px; }
+.prefs-about-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--apricot-label);
+}
+.prefs-about-links a:hover { color: var(--apricot-label-hover); }
+.prefs-about-version { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
 .leave-field { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
 .leave-field-label { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--ink); }
 .leave-field .snw-input { text-transform: uppercase; letter-spacing: .06em; }

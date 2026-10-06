@@ -25240,6 +25240,8 @@
       shellWho.set_up_by = data.set_up_by || '';
       // Sharing with Claude: '' / 'granted' / 'declined' (app/ai_consent.py).
       shellWho.ai_consent = typeof data.ai_consent === 'string' ? data.ai_consent : 'granted';
+      // Preferences → About's version line (app/legal.py).
+      shellWho.legal_version = typeof data.legal_version === 'string' ? data.legal_version : '';
       shellWho.loaded = true;
       // Keep the copy in step with whatever the server says this device is
       // pinned to, however it got pinned — the pick below, an invite link,
@@ -26435,7 +26437,27 @@
       // or leaving it. Quiet on purpose — see .prefs-leave-row.
       '<div class="prefs-leave-row">' +
         '<button type="button" class="prefs-leave-link" data-prefs="leave"><span>Delete your household</span></button>' +
-      '</div>');
+      '</div>' +
+      prefsAboutHtml());
+  }
+
+  // ---------- About: privacy, terms, help (App Store, 2026-10-06) ----------
+  //
+  // The three public pages (app/legal.py), under everything else in the
+  // sheet. Plain links that leave the shell: the pages carry their own
+  // Back, which returns here — the iPhone app's web view has no back
+  // button of its own. The version is the one the pages show.
+  function prefsAboutHtml() {
+    var version = shellWho && shellWho.legal_version ? shellWho.legal_version : '';
+    return '<nav class="prefs-about" aria-label="About Pomona">' +
+      '<span class="prefs-about-eyebrow">About</span>' +
+      '<span class="prefs-about-links">' +
+        '<a href="/privacy">Privacy policy</a>' +
+        '<a href="/terms">Terms of use</a>' +
+        '<a href="/support">Help and support</a>' +
+      '</span>' +
+      (version ? '<span class="prefs-about-version">Version ' + escapeHtml(version) + '</span>' : '') +
+    '</nav>';
   }
 
   // ---------- Appearance (2026-09-24) ----------

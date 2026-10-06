@@ -162,6 +162,14 @@ _PUBLIC_EXACT = frozenset({
     # Where a deleted household (or an adult who left one) lands — they are
     # signed out by then. A static page that reads nothing from anyone.
     "/goodbye",
+    # The privacy policy, terms and support pages (app/legal.py). Apple
+    # opens them from the App Store listing with no account, and a person
+    # signing up reads them before they have one. Static words, nothing
+    # read from any household.
+    "/privacy",
+    "/terms",
+    "/support",
+    "/static/legal.css",
     "/healthz",
     "/robots.txt",
     "/favicon.ico",
