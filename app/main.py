@@ -2245,7 +2245,7 @@ def recipe_detail(recipe_id: int):
         raise HTTPException(status_code=500, detail="Couldn't load that recipe just now.")
     if not recipe:
         raise HTTPException(status_code=404, detail="No recipe here.")
-    return {
+    out = {
         key: recipe.get(key)
         for key in (
             "id", "name", "ingredients", "instructions", "default_servings",
@@ -2254,6 +2254,16 @@ def recipe_detail(recipe_id: int):
             "citation", "photo_urls", "details_pending",
         )
     }
+    # The recipe page's Sources tab and "Changed for your household" row
+    # (research-first writing, 2026-10-06). Never the reason this route
+    # fails: a recipe with no research reads as research None.
+    try:
+        out["research"] = tools.recipe_research_for(recipe)
+        out["household_changes"] = tools.household_changes_for(recipe["id"])
+    except Exception:
+        logger.exception("Reading recipe research failed")
+        out["research"], out["household_changes"] = None, []
+    return out
 
 
 # ---------- "Change recipe" (2026-10-05) ----------

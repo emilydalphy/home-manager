@@ -340,6 +340,15 @@ from .before_shop import (  # noqa: F401
     mark_before_shop_done,
     undo_add_regulars,
 )
+# Research first, then write (Loop Board "Recipes people trust", slice 2,
+# 2026-10-06) — see recipe_research.py.
+from .recipe_research import (  # noqa: F401
+    children_eat_here,
+    household_changes_for,
+    recipe_research_for,
+    saved_research,
+    save_research,
+)
 from .recipe_change import (  # noqa: F401
     OUTCOME_FAILED,
     OUTCOME_REWRITTEN,

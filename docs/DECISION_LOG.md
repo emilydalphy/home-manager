@@ -153,6 +153,49 @@ why*, not duplicating the diff.
   can read off the repo (company name, address, contact emails, Anthropic
   account retention terms, hosting region, price) are bracketed
   placeholders, not guesses. `LEGAL_VERSION` is what sign-up records.
+- **2026-10-06 — Recipes people trust, slice 3 (server): the stepper moves
+  bracketed amounts. Branch `overnight/recipe-servings-steps` (from
+  `overnight/recipe-research-first`), NOT merged at the time of writing.**
+  `scale_recipe` scales a bracket after a measure ("2 cups (480 ml)" → "4
+  cups (960 ml)") and keeps one after a container ("2 cans (400 g)" — the
+  size of one can). The steps already scaled brackets (`scale_steps`);
+  `/api/recipes/scale` returns both, which the recipe page's stepper reads.
+  **Review round (same day):** the list now scales any quantity with a
+  bracket, a range, a ½-style fraction or a ", divided" note as TEXT through
+  `scale_steps`, so list and steps agree and no words are lost ("1 cup
+  (about 240 ml)", "2 cups (16 fl oz)", "1-2 cups (240-480 ml)", "…,
+  divided"). Count-first cans scale the count and keep the size ("1 (14 oz)
+  can" → "2 (14 oz) cans") in both; `fl oz` is a step unit now.
+  `test_batch_night_steps` had pinned "2 (15 oz) cans" unchanged at double;
+  it now doubles the count. Left: "1 stick (113 g)" halved reads "1 stick
+  (56 ½ g)" (a non-butter stick rounds whole).
+
+- **2026-10-06 — Recipes people trust, slice 2: research first, then write.
+  Branch `overnight/recipe-research-first` (from b880ba1), NOT merged at the
+  time of writing.** Before a new dish is written, `agent.research_dish` runs
+  one web search+fetch call (`research_dish_llm`, label in the report) and
+  the writer gets `spec.research` (lead, others, what they agree/differ on —
+  no URLs). Code decides, not the model: only URLs seen in a search/fetch
+  result and not refused are kept; lead = top rating, then most ratings,
+  20+ ratings to lead; nothing well rated → second search limited to
+  `recipe_research.TRUSTED_COOKS` for the cuisine. Saved per household in
+  `dish_research` + `recipe_sources` and reused (no repeat research). Writer
+  also returns `household_changes` (recipes.household_changes_json) and gets
+  `children_at_table`. `/api/recipes/{id}` serves `research` +
+  `household_changes` for the recipe page (slice 1, Builder B). Links
+  rechecked lazily (30 days); 404/410 hides one, 403 doesn't.
+  `RECIPE_RESEARCH=off` switches it off; conftest sets it off for the suite.
+  Amounts check and night-before step were already there and are reused.
+  **Review round (same day):** `RECIPE_RESEARCH=off` now also stops the
+  recipe page's link checks; `link_status` is SSRF-safe (http/https only,
+  every resolved address public, request pinned to it, redirects by hand ≤3,
+  HEAD/1 KB); sources show only through `recipes.research_id` (the research
+  a recipe was written from), never by name; web searches are recorded on
+  `api_calls` and priced ($10/1k); one per-dish budget (4 searches, 6
+  fetches) across rounds and fallback, ≤2 rounds per call, empty results
+  remembered 14 days; only a FETCHED page can lead; the Cook screen's live
+  fill never searches; a WARNING when sources come back but no result URL
+  was read (the first live run's check on the web-tool result shape).
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch

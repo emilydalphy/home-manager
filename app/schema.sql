@@ -370,6 +370,16 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- list from it until it has (approve_weekly_plan fills first).
     details_pending INTEGER NOT NULL DEFAULT 0,
     dish_note TEXT NOT NULL DEFAULT '',
+    -- "Changed for your household" (research-first writing, 2026-10-06):
+    -- the writer's own short lines for what it changed from the versions
+    -- it was based on — an allergen taken out and what replaced it, heat
+    -- moved to the table for a child. JSON list of strings; [] when none.
+    household_changes_json TEXT NOT NULL DEFAULT '[]',
+    -- The dish_research this recipe was WRITTEN from (research-first
+    -- writing, 2026-10-06). The recipe page shows sources only through
+    -- this, never by name: a household's own "Chana Masala" was not based
+    -- on anything Pomona read. NULL for every recipe written without it.
+    research_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -1906,6 +1916,12 @@ CREATE TABLE IF NOT EXISTS api_calls (
     cache_write_tokens INTEGER NOT NULL DEFAULT 0,
     output_tokens INTEGER NOT NULL DEFAULT 0,
     seconds REAL NOT NULL DEFAULT 0,
+    -- Server-side tool requests the call made (usage.server_tool_use),
+    -- billed per request on top of tokens — research-first writing's web
+    -- searches (2026-10-06). Fetches carry no fee beyond their tokens but
+    -- are counted so the per-dish budget is visible.
+    web_search_requests INTEGER NOT NULL DEFAULT 0,
+    web_fetch_requests INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_api_calls_household_created
@@ -2090,3 +2106,43 @@ CREATE TABLE IF NOT EXISTS held_things (
 INSERT INTO households (id, name)
 SELECT 1, 'My Household'
 WHERE NOT EXISTS (SELECT 1 FROM households WHERE id = 1);
+
+-- Research first, then write (Loop Board "Recipes people trust", slice 2,
+-- 2026-10-06). One row per dish this household has had researched, keyed
+-- by tools/recipe_research.dish_key(name), so a dish that comes back is
+-- written from the research already filed and never searched for twice.
+-- method_notes is the research call's own summary of where the versions
+-- agree and differ — handed to the writer, never shown in the app (Emily,
+-- 2026-10-05: no "what they agree on" list). fallback_used: the open
+-- search had nothing well rated and the trusted-cooks list was searched.
+CREATE TABLE IF NOT EXISTS dish_research (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    dish_key TEXT NOT NULL,
+    dish_name TEXT NOT NULL DEFAULT '',
+    method_notes TEXT NOT NULL DEFAULT '',
+    fallback_used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (household_id, dish_key)
+);
+
+-- The versions a dish's research read, lead first (position 1, is_lead 1).
+-- Only URLs the research call actually saw and could read are stored
+-- (recipe_research.clean_sources). link_ok goes to 0 when a later check
+-- finds the page gone (404/410), and the recipe page then hides it.
+CREATE TABLE IF NOT EXISTS recipe_sources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    research_id INTEGER NOT NULL REFERENCES dish_research(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 1,
+    name TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL DEFAULT '',
+    url TEXT NOT NULL,
+    rating REAL,
+    rating_count INTEGER,
+    is_lead INTEGER NOT NULL DEFAULT 0,
+    link_ok INTEGER NOT NULL DEFAULT 1,
+    link_checked_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_recipe_sources_research ON recipe_sources (household_id, research_id, position);
