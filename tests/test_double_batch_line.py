@@ -560,7 +560,9 @@ def test_a_plain_dinners_heading_still_says_just_ingredients():
 def test_both_recipe_surfaces_render_the_line_under_the_stepper():
     """Cook mode's recipe screen AND Plan's Meal step — one recipe, two
     doors, and the line must not be on only one of them."""
-    for call in ("recipeServesHtml(meal, idx) +\n        recipeBatchLineHtml(meal) +",
+    # UPDATED 2026-10-06 (the recipe page): cook mode's stepper and line
+    # are on the recipe's Overview tab (recipeOverviewHtml) now.
+    for call in ("recipeServesHtml(meal, idx) +\n      recipeBatchLineHtml(meal) +",
                  "recipeServesHtml(cookMeal, 'wk') : '') +\n        recipeBatchLineHtml(cookMeal) +"):
         assert call in SHELL_JS, call
 
