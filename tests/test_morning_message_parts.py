@@ -44,7 +44,7 @@ import pytest
 from app import households, tools
 from app.db import get_conn
 from app.tools import digest
-from conftest import household_today
+from conftest import household_pin, household_today
 
 # The HOUSEHOLD's today, never the process's: the message is built off
 # today_moves for the household's own local day.
@@ -868,17 +868,22 @@ def test_the_routes_read_the_boxes_save_them_and_preview_in_one_trip(signed_in):
     assert body["preview"]["lines"][0] == "Tonight: Chicken Skewers."
 
 
-def test_the_preview_route_with_no_parts_is_exactly_todays_message(signed_in):
+def test_the_preview_route_with_no_parts_is_exactly_todays_message(signed_in, frozen_today):
+    # The route reads the household's live clock, and the prep line's wording
+    # turns with the hour: "by tonight" in the morning, "still to do" late in
+    # the evening. Unpinned, this failed every night around 22:00. Pin the
+    # household to 07:00 — the hour the morning text goes out — on the day
+    # the module's TODAY seeds, so the lines below are the morning's.
+    frozen_today(household_pin(7, 0, on=TODAY))
     _adults("Emily")
     _everything()
     signed_in.post("/api/morning-text/parts", json={"parts": ["meals", "prep"]})
     pv = signed_in.get("/api/morning-text/preview").json()
     assert pv["chosen"] == ["meals", "prep"]
     # Not `a == b or would_send`, which the first cut wrote and which cannot
-    # fail. The route reads the household's own clock, so this compares the
-    # LINES rather than the whole text: the clock decides which day's moves
-    # are read, and a test that pinned a wall-clock instant here would be
-    # pinning the test's hour and not the route's answer.
+    # fail. This compares the LINES rather than the whole text: the household
+    # clock is pinned above (as the household's hour, via household_pin, not
+    # the process's), and the lines are the part a household reads.
     assert pv["would_send"] is True
     assert pv["lines"] == [
         "Tonight: Chicken Skewers.",
