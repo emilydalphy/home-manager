@@ -1199,7 +1199,15 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
             (household_id(), status),
         ).fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    # Said the way a person reads it (quantities.tidy_display_quantity):
+    # whole lemons, no eighths, one unit per item. Display only - nothing
+    # here is written back.
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["quantity"] = _quantities.tidy_display_quantity(d.get("item") or "", d.get("quantity") or "") or d.get("quantity")
+        out.append(d)
+    return out
 
 
 def entry_ids_awaiting_a_shop() -> set[int]:

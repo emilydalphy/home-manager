@@ -323,6 +323,10 @@ def test_the_shop_line_names_the_day_the_household_said():
     day = household_today()
     other = "saturday" if day.strftime("%A").lower() != "saturday" else "tuesday"
     rhythm.set_shop_days(shop_day=other)
+    # A SECOND week: a first plan that begins before the shop day shops
+    # right away (see the first-week tests below), so an earlier plan on
+    # the books makes this the ordinary case.
+    meal_plans.create_weekly_plan((day - datetime.timedelta(days=14)).isoformat(), day_count=1)
     shop = moves.today_moves()["shop"]
     assert shop["shop_day"] == other and shop["is_shop_day"] is False
     assert shop["line"].startswith("You shop on " + other.capitalize() + ".")
@@ -336,6 +340,59 @@ def test_on_shopping_day_the_line_stands_aside_for_the_shop_card():
     _seed_day({"dinner": "Pepper Chicken"})
     rhythm.set_shop_days(shop_day=household_today().strftime("%A").lower())
     assert moves.today_moves()["shop"]["is_shop_day"] is True
+
+
+def _a_shop_day_later_this_week():
+    """Today is the first plan day; the shop day is four days on (a Tuesday
+    plan and a Saturday shop day, in Emily's walkthrough). One needed line
+    on the list."""
+    from app.tools import grocery
+    later = (household_today() + datetime.timedelta(days=4)).strftime("%A").lower()
+    rhythm.set_shop_days(shop_day=later)
+    grocery.add_grocery_item("Chicken thighs", "1 lb", "meat")
+    return later
+
+
+def test_a_first_week_that_starts_before_shop_day_shops_today():
+    """CATCH (red on main, 2026-10-06 walkthrough). The household's first
+    plan began on a Tuesday night, the shop day was Saturday, and Today said
+    "You shop on Saturday. 34 things on the list" while tonight's dinner
+    needed those groceries. The first shop is TODAY; the usual shop day
+    applies from the second week on."""
+    _seed_day({"dinner": "Pepper Chicken"})
+    later = _a_shop_day_later_this_week()
+    shop = moves.today_moves()["shop"]
+    assert shop["shop_day"] == later
+    assert shop["is_shop_day"] is True
+
+
+def test_a_first_week_that_starts_on_shop_day_is_just_shop_day():
+    """GUARD. Nothing special: today IS the shop day."""
+    _seed_day({"dinner": "Pepper Chicken"})
+    rhythm.set_shop_days(shop_day=household_today().strftime("%A").lower())
+    assert moves.today_moves()["shop"]["is_shop_day"] is True
+
+
+def test_the_second_week_goes_back_to_the_usual_shop_day():
+    """CATCH. The early first shop is a first-week thing only: with an
+    earlier plan on the books, a shop day days away is still days away."""
+    _seed_day({"dinner": "Pepper Chicken"})
+    later = _a_shop_day_later_this_week()
+    meal_plans.create_weekly_plan(
+        (household_today() - datetime.timedelta(days=14)).isoformat(), day_count=1)
+    shop = moves.today_moves()["shop"]
+    assert shop["shop_day"] == later and shop["is_shop_day"] is False
+    assert shop["line"].startswith("You shop on ")
+
+
+def test_a_first_week_with_nothing_left_to_buy_keeps_the_line(monkeypatch):
+    """GUARD. Shopped already (or nothing to buy): the line, not an empty
+    Shop card."""
+    _seed_day({"dinner": "Pepper Chicken"})
+    rhythm.set_shop_days(shop_day=(household_today() + datetime.timedelta(days=4)).strftime("%A").lower())
+    monkeypatch.setattr(moves._grocery, "list_grocery_list", lambda status="needed": [])
+    shop = moves.today_moves()["shop"]
+    assert shop["count"] == 0 and shop["is_shop_day"] is False
 
 
 def test_a_top_up_shop_day_counts_as_a_shopping_day():

@@ -59,6 +59,21 @@ why*, not duplicating the diff.
   toast names the change. Chores' two bare toasts stay (Chores paused).
   Tests: `tests/test_copy_slips_2026_10_06.py`.
 
+- **A first week that starts before shop day shops today** (walkthrough,
+  2026-10-06; branch `shop-day-amounts-2026-10-06`). Today said "You shop on
+  Saturday" on the Tuesday the first plan began. `moves._shop_block` now sets
+  `is_shop_day` from the first plan's first day up to the first usual shop day
+  (`weekly_plan.first_plan_start`, only while something is on the list); the
+  usual day applies from the second week. Not built: Wed-Fri "already shopped"
+  state beyond the list being empty.
+- **Quantities and durations read the way a person says them** (same
+  walkthrough). `quantities.tidy_display_quantity` (applied in
+  `list_grocery_list`, display only, nothing written back): counts round up,
+  volumes land on quarters/thirds/halves (no eighths), "16 + 1.25 lbs" of
+  carrots becomes one count via a short per-item weight table (items not in
+  it are left as written). `quantities.format_duration`: 260 min reads "4 hr
+  20 min" in Today's moves and the week meta; shell.js's own minute strings
+  are Builder D's / not touched.
 - **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
   2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap
   build re-picked only a lunch answered "cooked that day" in step 3 and only

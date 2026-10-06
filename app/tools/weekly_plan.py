@@ -15,6 +15,7 @@ from . import meal_plans as _meal_plans
 from . import notifications as _notifications
 from . import plan_undo as _plan_undo
 from . import plates as _plates
+from .quantities import format_duration as _quantities_fmt_duration
 from . import plate_parts as _plate_parts_mod
 from . import recipes as _recipes
 from . import rhythm as _rhythm
@@ -325,6 +326,25 @@ def plan_period(plan) -> tuple[str, int]:
     if not raw_start and not raw_count:
         return plan["week_start_date"], 7
     return (raw_start or plan["week_start_date"]), max(0, raw_count)
+
+
+def first_plan_start() -> str | None:
+    """
+    The first day of the household's EARLIEST live plan (any status but
+    retired, with at least one day), or None when it has none. What "this is
+    the household's first week" is read from — Today's shop line uses it
+    (moves._shop_block): a first plan that starts before the household's
+    usual shop day makes the first shop today, not that Saturday.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        f"SELECT MIN({_SQL_PERIOD_START}) AS first_start FROM weekly_plans "
+        "WHERE household_id = ? AND status != 'retired' "
+        "AND NOT (content_start_date != '' AND day_count = 0)",
+        (household_id(),),
+    ).fetchone()
+    conn.close()
+    return (row["first_start"] or None) if row else None
 
 
 def period_end_date(start_date: str, day_count: int) -> str:
@@ -5680,7 +5700,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         prep = row["prep_time_minutes"] or 0
         cook = row["cook_time_minutes"] or 0
         total = prep + cook
-        meta = f"{total} min" if total else None
+        meta = _quantities_fmt_duration(total) if total else None
         return {"title": title, "meta": meta, "source": "plan", **common}
 
     # The one short fact a row carries beside its days ("Mexican, as

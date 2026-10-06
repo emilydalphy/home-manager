@@ -949,3 +949,112 @@ def _normalize_grocery_quantity(qty: str) -> str:
     if not parsed:
         return _strip_prep_descriptor(raw)
     return _with_note(_humanize_grocery_quantity(parsed[0], parsed[1]), note)
+
+
+# ---------- how a quantity READS (Loop Board, 2026-10-06 walkthrough) ----------
+#
+# Emily's first-week list read "1 ¼ Lemon", "4 ⅛ cups beef broth" and
+# "Carrots 16 + 1.25 lbs", and a recipe said "260 min". The write path
+# already rounds (_shopping_round), but rows written by older builds or by
+# a path that skips it (a scaled recipe's own amount, a per-meal share) still
+# carried the raw decimal, and the screen faithfully drew it. This is the
+# one place a quantity is tidied for DISPLAY, whatever wrote it. It never
+# changes what is stored, so the per-meal ledger's arithmetic is untouched.
+
+# Volume steps a cook measures with: quarters, thirds, halves. Never eighths.
+_VOLUME_STEPS = (0.0, 0.25, 1 / 3, 0.5, 2 / 3, 0.75, 1.0)
+_VOLUME_UNITS = {"cup", "tbsp", "tsp"}
+
+# About what one of each weighs, in pounds, so "16 + 1.25 lbs" of carrots can
+# be said as one thing. Deliberately short: only produce people buy by the
+# piece AND by the pound. An item not here is left as written rather than
+# guessed at.
+_POUNDS_EACH = {
+    "carrot": 0.25, "onion": 0.5, "potato": 0.5, "sweet potato": 0.75,
+    "tomato": 0.4, "lemon": 0.25, "lime": 0.15, "apple": 0.4, "banana": 0.4,
+    "bell pepper": 0.5, "pepper": 0.5, "zucchini": 0.6, "cucumber": 0.7,
+    "avocado": 0.4, "orange": 0.5, "pear": 0.4, "peach": 0.35,
+}
+
+
+def _volume_step(amount: float) -> float:
+    whole = math.floor(amount + 1e-9)
+    frac = amount - whole
+    best = min(_VOLUME_STEPS, key=lambda f: abs(f - frac))
+    out = whole + best
+    return out if out > 0 or amount <= 0 else 0.25
+
+
+def _pounds_each(item: str) -> float | None:
+    key = (item or "").strip().lower()
+    for cand in (key, key[:-1] if key.endswith("s") else key, key[:-2] if key.endswith("es") else key):
+        if cand in _POUNDS_EACH:
+            return _POUNDS_EACH[cand]
+    return None
+
+
+def _tidy_one(amount: float, unit: str | None) -> str:
+    if unit in _VOLUME_UNITS:
+        value = round(_volume_step(amount), 2)
+        return _format_quantity(value, unit)
+    if _pack_group(unit) or (unit and _split_package_size(unit)[1]):
+        return _format_quantity(amount, unit)  # packs are written as bought
+    if _measurable_unit(unit):
+        return _humanize_grocery_quantity(amount, unit)
+    # A count of anything (lemons, onions, a bare number): whole ones, up.
+    return _format_quantity(float(math.ceil(amount - 1e-9)) or 1.0, unit)
+
+
+def tidy_display_quantity(item: str, qty: str) -> str:
+    """
+    The quantity as a person should read it. Count things round UP to whole
+    ones; volumes land on quarters, thirds and halves; and one item never
+    shows two units — "16 + 1.25 lbs" of carrots becomes one count when the
+    item's weight is known. Anything this cannot read (freeform text, a
+    note, a unit it will not guess at) comes back exactly as it was.
+    """
+    raw = (qty or "").strip()
+    if not raw:
+        return raw
+    segments = [s.strip() for s in raw.split(" + ")]
+    parsed = [_parse_quantity(s) for s in segments]
+    if any(p is None for p in parsed) or any(_split_quantity_note(s)[1] for s in segments):
+        return raw
+    if len(segments) == 1:
+        amount, unit = parsed[0]
+        return _tidy_one(amount, unit)
+    each = _pounds_each(item)
+    count_unit = None
+    for _amount, unit in parsed:
+        if unit and not _measurable_unit(unit) and not _pack_group(unit):
+            count_unit = unit
+    if each is not None:
+        total_count = 0.0
+        for amount, unit in parsed:
+            if _measurable_unit(unit):
+                pounds = _convert_to_unit(amount, unit, "lb")
+                if pounds is None:
+                    return raw
+                total_count += pounds / each
+            elif unit is None or unit == count_unit:
+                total_count += amount
+            else:
+                return raw
+        return _tidy_one(total_count, count_unit)
+    # No weight on record: still one unit if they are all the same family.
+    units = {u for _a, u in parsed}
+    if len(units) == 1:
+        return _tidy_one(sum(a for a, _u in parsed), parsed[0][1])
+    return " + ".join(_tidy_one(a, u) for a, u in parsed)
+
+
+def format_duration(minutes) -> str:
+    """Minutes the way a person says them: "45 min", "1 hr", "4 hr 20 min"."""
+    try:
+        total = int(round(float(minutes)))
+    except (TypeError, ValueError):
+        return f"{minutes} min"
+    if total < 60:
+        return f"{total} min"
+    hours, rest = divmod(total, 60)
+    return f"{hours} hr {rest} min" if rest else f"{hours} hr"
