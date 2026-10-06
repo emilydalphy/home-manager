@@ -157,15 +157,33 @@ _PUBLIC_EXACT = frozenset({
     # and the POST body, never the path, so nothing logs it.
     "/join",
     "/api/join",
+    # Email sign-in (app/account_email.py): asking for a code and spending
+    # one. Somebody signing up has no session yet; the verified address is
+    # the credential, and it binds the household it names itself.
+    "/api/auth/email/start",
+    "/api/auth/email/verify",
     "/login",
     "/logout",
     # Where a deleted household (or an adult who left one) lands — they are
     # signed out by then. A static page that reads nothing from anyone.
     "/goodbye",
+    # The privacy policy, terms and support pages (app/legal.py). Apple
+    # opens them from the App Store listing with no account, and a person
+    # signing up reads them before they have one. Static words, nothing
+    # read from any household.
+    "/privacy",
+    "/terms",
+    "/support",
+    "/static/legal.css",
     "/healthz",
     "/robots.txt",
     "/favicon.ico",
     "/static/theme.css",
+    # The one door every screen talks to the server through. Public since
+    # the sign-in screen asks for email codes (2026-10-06): a signed-out
+    # page needs it too, and it holds no household data — only how to reach
+    # the server. shell.js and the app's own pages stay signed-in only.
+    "/static/api.js",
     "/static/manifest.json",
     "/static/service-worker.js",
 })

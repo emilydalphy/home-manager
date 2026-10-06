@@ -92,6 +92,67 @@ why*, not duplicating the diff.
   **"Pomona" alone is taken on the App Store** (a news app), so the store
   name needs a second part. No in-app purchase code exists, so a paid
   launch needs a StoreKit build first. Nothing submitted.
+- **2026-10-06 — Email sign-in screen + Settings → Sign-in email. Branch
+  `overnight/email-code-signup-screen` (from `overnight/email-code-signup`).**
+  `login.html` is three steps on one page: email ("Start with your email",
+  the "By continuing you agree" line), the 6-digit code (goes on six
+  digits), and the passphrase form exactly as it was (placeholders, field
+  names, action unchanged) behind "Sign in with a household passphrase".
+  The passphrase step shows first after a refused passphrase or when this
+  device last SIGNED IN that way (`pomona-signin-method`; a submit is only
+  marked pending and promoted on the next load without a refusal), so
+  current testers aren't sent round the email path. Replacing an existing
+  email in Settings asks for both codes (new + current address). `static/api.js` is
+  now PUBLIC (the sign-in page calls through it; it holds no household
+  data) — `test_api_js` changed to say so; shell.js stays signed-in only.
+  Settings gets a "Sign-in email" row + sheet (`openEmailSheet`, stacked
+  over Settings, code to the NEW address). Sign out's line no longer says
+  "passphrase".
+
+- **2026-10-06 — Anyone can sign up: email + 6-digit code (server).
+  Branch `overnight/email-code-signup` (from `overnight/legal-pages`).**
+  `app/account_email.py` (outside `app/tools/`, like invites), public
+  `POST /api/auth/email/start|verify`, signed-in `GET /api/account/email`,
+  `POST /api/account/email/start|verify`. New address → new household (no
+  passphrase) + `signup_emails` row + `legal_acceptances` row → onboarding;
+  onboarding's save moves the address to the main person (`member_emails`,
+  member_id NOT NULL so leaving the household deletes it) and pins the
+  device to them. Codes: HMAC'd under SESSION_SECRET (address HMAC'd too),
+  10 min, once, 5 tries counted BEFORE comparing (one guarded UPDATE per
+  live code). A new code retires only older ones asked for from the SAME
+  IP (`ip_key`), so a stranger can't cancel the code in your inbox; a guess
+  is checked against every live code and costs a try on each. Limits:
+  5/h per (address, IP) under a 20/h per-address ceiling (over either:
+  nothing sent, same 200 — a 429 would leak that the address was asked
+  about), 20/IP/h (429), checks 10/5min per IP. Changing an EXISTING
+  address needs a code to the current one too (`current_code`), and the
+  old address is told after: "Who's this?" is trusted per device, so
+  without it any session could pick another adult and take their sign-in
+  (independent review, 2026-10-06). A change to an address already in use
+  sends that address a notice instead of a code — same work, so timing
+  can't tell them apart. An address left on someone no longer an adult is
+  released (`_release_stale`) rather than 409ing for ever. `agreed` is required of everyone, before
+  the code is looked at, so it can't hint whether an address is known.
+  Delivery: SMTP_* (same as feedback emails) → email; else any sign of
+  production (HOME_MANAGER_PASSWORD or RAILWAY_*) → 503 "isn't switched on
+  yet", nothing generated; else (laptop, localhost request only) the code
+  goes to the log.
+
+- **2026-10-06 — Privacy policy, terms and support pages (drafts for the
+  lawyer). Branch `overnight/legal-pages`.** `/privacy`, `/terms`,
+  `/support`: public (`security._PUBLIC_EXACT`, plus `/static/legal.css`),
+  words in `static/legal/*.html`, filled by `app/legal.py` (version, date,
+  and the "Draft for legal review, not yet final" banner unless
+  `LEGAL_PAGES_FINAL=1` — only an exact "1" drops it). Linked from sign-in's
+  foot and Preferences → About (`prefsAboutHtml`, version from
+  `/api/whoami.legal_version`). Drafted from the Legal card's data-flow
+  inventory, re-checked against main: since that inventory, fonts are
+  self-hosted (CSP `font-src 'self'`), AI sharing is gated by
+  `ai_consent`, deletion exists, and Twilio, Apple push and SMTP (feedback
+  emails) are also recipients — the policy names all of them. Facts nobody
+  can read off the repo (company name, address, contact emails, Anthropic
+  account retention terms, hosting region, price) are bracketed
+  placeholders, not guesses. `LEGAL_VERSION` is what sign-up records.
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch

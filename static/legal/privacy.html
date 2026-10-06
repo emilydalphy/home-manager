@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Privacy policy &middot; Pomona</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preload" href="/static/fonts/figtree-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/fonts/fonts.css">
+<link rel="stylesheet" href="/static/theme.css">
+<link rel="icon" href="/static/icons/icon-192.png" />
+<!-- Exact --spruce light/dark (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). -->
+<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
+<!-- Settings → Appearance: this device's Light / Dark / Auto, applied before first paint. Same script on every page that loads theme.css (not share.html); tests/test_appearance.py keeps the copies identical. -->
+<script>
+(function () {
+  var root = document.documentElement;
+  function apply(choice) {
+    var t = choice === 'light' || choice === 'dark' ? choice : null;
+    if (t) root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+    var metas = document.querySelectorAll('meta[name="theme-color"][media]');
+    var forced = null, i, m;
+    for (i = 0; i < metas.length; i++) {
+      m = metas[i];
+      if (!m.hasAttribute('data-own')) m.setAttribute('data-own', m.getAttribute('content'));
+      if (t && m.getAttribute('media').indexOf(t) !== -1) forced = m.getAttribute('data-own');
+    }
+    for (i = 0; i < metas.length; i++) metas[i].setAttribute('content', forced || metas[i].getAttribute('data-own'));
+  }
+  var saved = null;
+  try { saved = window.localStorage.getItem('pomona-appearance'); } catch (e) { /* private mode */ }
+  apply(saved);
+  window.pomonaAppearance = apply;
+  // A choice made in another tab, or in the shell around an embedded page.
+  window.addEventListener('storage', function (e) { if (e.key === 'pomona-appearance') apply(e.newValue); });
+})();
+</script>
+<link rel="stylesheet" href="/static/legal.css">
+<!-- One of Pomona's three public policy pages (app/legal.py fills in the
+     version, its date and, until the lawyer signs off, the draft banner;
+     static/legal.css draws them). Every word is in this file. -->
+</head>
+<body>
+<main class="legal-wrap" data-legal-page="privacy">
+  <div class="legal-top">
+    <!-- The Pomona mark — a logo, so it keeps its own 1.8 stroke (DESIGN_SYSTEM.md §2 rule 7). -->
+    <a class="legal-mark" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/><path d="M12 9V6.2"/><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/></svg><span>Pomona</span></a>
+    <a class="legal-back" href="/" id="legal-back">Back</a>
+  </div>
+  <!--LEGAL_BANNER-->
+  <h1>Privacy policy</h1>
+  <p class="legal-version">Version __LEGAL_VERSION__ &middot; __LEGAL_DATE__</p>
+
+  <p>Pomona helps a household plan meals, keep the grocery list and know what&rsquo;s in the kitchen. To do that it has to know some things about the people who live there. This page says what it keeps, who else sees it, and how to get it deleted.</p>
+  <p>Pomona is run by <span class="legal-fill">[Company legal name]</span> (&ldquo;we&rdquo;, &ldquo;us&rdquo;), <span class="legal-fill">[registered address]</span>. Questions about your information go to <span class="legal-fill">[privacy contact email]</span>.</p>
+
+  <h2>The short version</h2>
+  <ul>
+    <li>We keep what your household tells Pomona, so it can plan for you.</li>
+    <li>To plan and chat, Pomona sends your household&rsquo;s details to Anthropic, the company that makes the Claude AI. It only does that after someone in your household taps Allow, and you can turn it off.</li>
+    <li>No ads. No analytics. No trackers. We don&rsquo;t sell your information, or share it for advertising.</li>
+    <li>You can delete your whole household from inside the app, any time.</li>
+  </ul>
+
+  <h2>What Pomona keeps</h2>
+  <h3>About the people in your household</h3>
+  <ul>
+    <li>Names, and whether each person is an adult or a child (and an age group, like &ldquo;toddler&rdquo;).</li>
+    <li>Allergies, dietary needs, and what each person likes and won&rsquo;t eat. Some of this is health information, and it can be about children. We treat it with care because of that.</li>
+    <li>Pets&rsquo; names and what kind of animal they are.</li>
+    <li>Notes you ask Pomona to remember about your household.</li>
+    <li>A phone number, if you turn on the morning text.</li>
+    <li>The email address each adult signs in with, if they use one.</li>
+  </ul>
+  <h3>About how your week runs</h3>
+  <ul>
+    <li>Who&rsquo;s home for which meals, on which days, and when people are away. Put plainly, this can show when your home is empty.</li>
+    <li>If you connect a calendar, its private link and the events Pomona reads from it.</li>
+  </ul>
+  <h3>About your food</h3>
+  <ul>
+    <li>Meal plans, recipes, grocery lists, what&rsquo;s in your kitchen, and shopping trips.</li>
+    <li>Photos of cookbook pages you add a recipe from. Other photos you scan (receipts, your fridge, your pantry, a written list) are read and not kept.</li>
+  </ul>
+  <h3>About using the app</h3>
+  <ul>
+    <li>Your household passphrase, stored only as a one-way hash. Nobody, including us, can read it back.</li>
+    <li>When you sign in with your email, the code we send you is stored only as a one-way hash, and it stops working after 10 minutes. We also note which version of these terms and this policy your household agreed to, and when.</li>
+    <li>Two cookies: one that keeps you signed in, and one that remembers which adult uses this device. Your Light or Dark choice is saved on your device only.</li>
+    <li>If your phone gets notifications from the iPhone app, the address Apple gives us to reach that phone.</li>
+    <li>Counts of how much the AI was used and what it cost, and the names of the actions a chat took. Never the words of your chat.</li>
+    <li>When something breaks: the kind of error and which screen it was on. Never the full web address, and never what you typed.</li>
+    <li>If you use &ldquo;Something not working?&rdquo;: what you wrote, which screen you were on, and your browser type.</li>
+  </ul>
+  <p>Your chat with Pomona is not saved to our database. The server holds the conversation in memory while you&rsquo;re using it, and it&rsquo;s gone when the server restarts.</p>
+
+  <h2>Who else sees it, and why</h2>
+  <h3>Anthropic (the AI)</h3>
+  <p>Pomona&rsquo;s planning and chat are done by Claude, an AI made by Anthropic. To plan your week or answer you, Pomona sends Anthropic what it needs, which is most of your household&rsquo;s details: names and ages, allergies and dietary needs, what everyone likes, who&rsquo;s home when, your calendar events, what&rsquo;s in your kitchen, recent meals, your recipes, what you type in chat, the photos you scan, and the text of recipe pages you bring in from a link.</p>
+  <p>Pomona asks first. Nothing goes to Anthropic until an adult in your household taps Allow. If you turn it off (Preferences, then Sharing with Claude), nothing more is sent. Planning and chat stop working while it&rsquo;s off, and nothing you&rsquo;ve saved is lost.</p>
+  <p><span class="legal-fill">[Lawyer / Emily: confirm the terms our Anthropic account runs under, including how long Anthropic keeps what it receives and whether it may be used for training, and state them here.]</span></p>
+  <h3>The companies that run parts of Pomona for us</h3>
+  <ul>
+    <li><strong>Railway</strong> hosts Pomona&rsquo;s servers and stores its database. <span class="legal-fill">[Confirm the hosting region.]</span></li>
+    <li><strong>Twilio</strong> sends the morning text and the evening dinner nudge, if you turn them on. It receives your phone number and the text.</li>
+    <li><strong>Apple</strong> delivers notifications to the iPhone app, if you allow them. It receives the notification&rsquo;s words.</li>
+    <li><strong>Our email provider</strong> sends your sign-in codes to your email address, and carries &ldquo;Something not working?&rdquo; reports to the person who looks after Pomona, with what you wrote. <span class="legal-fill">[Name the provider.]</span></li>
+  </ul>
+  <h3>Websites you point Pomona at</h3>
+  <p>When you bring in a recipe from a link, or connect a calendar, Pomona&rsquo;s server visits that address to read it. That website sees our server, not you.</p>
+  <h3>People you share with</h3>
+  <p>If you send someone a share link, they see what that link shows (for example, the week&rsquo;s meals), without signing in. Anyone holding the link can open it.</p>
+  <h3>Nobody else</h3>
+  <p>No advertising, no analytics, no tracking pixels. Pomona&rsquo;s fonts are served from its own server, so opening a page doesn&rsquo;t tell anyone else you visited. We don&rsquo;t sell or rent your information. We would only hand it over if the law required it. <span class="legal-fill">[Lawyer: add the standard legal-process and business-transfer wording.]</span></p>
+
+  <h2>How long we keep it</h2>
+  <p>As long as your household exists in Pomona. Error records and problem reports are trimmed as they pile up.</p>
+  <p>We take a copy of the database once a day in case something goes wrong, and keep each copy for 14 days. So after you delete your household, a copy can stay in those backups for up to 15 days, and then it&rsquo;s gone too.</p>
+
+  <h2>Deleting your household</h2>
+  <p>In Pomona, open Preferences (the gear at the top of the main screens) and choose <strong>Delete your household</strong> at the bottom. Everything goes straight away: every person, plan, list, recipe and photo, and the passphrase. There&rsquo;s no undo. If your household has more than one adult, one of you can leave instead, and your own details go while everyone else&rsquo;s stay.</p>
+
+  <h2>Your rights</h2>
+  <p>You can ask us what we hold about you, ask us to correct it, or ask us to delete it. Most of it you can see and change yourself in Preferences, and deletion is in the app. For anything else, write to <span class="legal-fill">[privacy contact email]</span>.</p>
+  <h3>In Canada</h3>
+  <p>We handle personal information under the Personal Information Protection and Electronic Documents Act (PIPEDA). You can ask to see and correct what we hold, withdraw your consent (for example, turning off Sharing with Claude), and complain to the Office of the Privacy Commissioner of Canada. <span class="legal-fill">[Lawyer: confirm, and add any provincial law that applies, such as Quebec&rsquo;s Law 25.]</span></p>
+  <h3>In the United States</h3>
+  <p>If you live in California or another state with a consumer privacy law, you have the right to know what we collect, to delete it, to correct it, and not to be treated differently for asking. We don&rsquo;t sell or share personal information as those laws define it. <span class="legal-fill">[Lawyer: confirm CCPA/CPRA and other state-law wording, and whether thresholds apply.]</span></p>
+  <p>Some of what you tell Pomona, like allergies and dietary needs, is health-related, and some may be treated as sensitive information under these laws. We use it only to plan your household&rsquo;s food. <span class="legal-fill">[Lawyer: confirm sensitive-data treatment.]</span></p>
+
+  <h2>Children</h2>
+  <p>Pomona is for the adults who run a household. Children don&rsquo;t sign in or use it themselves. An adult may tell Pomona about the children they live with, such as their name, age group, allergies and what they eat, so meals work for them. That information goes to Anthropic in the same way as everyone else&rsquo;s, once the household has said yes. A parent can change or delete it any time. <span class="legal-fill">[Lawyer: confirm COPPA and Canadian treatment of children&rsquo;s information entered by a parent.]</span></p>
+
+  <h2>Keeping it safe</h2>
+  <p>Pomona is only reached over an encrypted connection. Passphrases are stored as one-way hashes. Each household can only ever see its own information. If we learn of a breach that puts you at risk, we&rsquo;ll tell you and the regulators the law requires us to tell. <span class="legal-fill">[Lawyer: confirm breach-notice wording.]</span></p>
+
+  <h2>Changes to this policy</h2>
+  <p>When this policy changes, the version and date at the top change too. If the change is a big one, we&rsquo;ll tell you in the app before it takes effect.</p>
+
+  <h2>Contact</h2>
+  <p><span class="legal-fill">[Company legal name]</span>, <span class="legal-fill">[registered address]</span>, <span class="legal-fill">[privacy contact email]</span>.</p>
+
+  <nav class="legal-foot" aria-label="Pomona&rsquo;s policies">
+    <a href="/privacy">Privacy policy</a>
+    <a href="/terms">Terms of use</a>
+    <a href="/support">Help and support</a>
+  </nav>
+</main>
+<script>
+(function () {
+  // Opened from inside Pomona (Preferences, sign-in, sign-up) — Back goes
+  // back to where the person was, which matters most in the iPhone app's
+  // web view, where there is no browser back button. Opened from anywhere
+  // else (the App Store listing), Back is an ordinary link to Pomona.
+  var back = document.getElementById('legal-back');
+  var fromHere = false;
+  try { fromHere = document.referrer.indexOf(window.location.origin + '/') === 0; } catch (e) { /* no referrer */ }
+  if (back && fromHere && window.history.length > 1) {
+    back.addEventListener('click', function (e) { e.preventDefault(); window.history.back(); });
+  }
+})();
+</script>
+</body>
+</html>

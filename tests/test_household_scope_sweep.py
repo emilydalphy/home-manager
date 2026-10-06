@@ -218,6 +218,15 @@ _CROSS_HOUSEHOLD_ON_PURPOSE = {
         "would be silently refused. It scopes itself the honest way: the id "
         "is the invite's own primary key, resolved from a hashed secret, and "
         "the statements after it use row['household_id'], never household_id()",
+    ("app/account_email.py", "match_code"):
+        "email sign-in runs BEFORE any household is bound (a public route), and "
+        "a sign-in code belongs to an ADDRESS, not a household — its "
+        "household_id is NULL. The rows are found by the address's HMAC (and, "
+        "for a 'change' code, by household and member too), and the UPDATE "
+        "that follows touches only each found row by its own primary key",
+    ("app/account_email.py", "spend"):
+        "marks codes used by the primary keys match_code just found for this "
+        "address — same reason as match_code",
 }
 
 # NOT YET — the later tranches. Exact normalised SQL with a count, so that

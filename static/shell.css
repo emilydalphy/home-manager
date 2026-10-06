@@ -8141,6 +8141,7 @@ span.cook-week-name { cursor: default; }
 #prefs-scrim,
 #tips-scrim,
 #morning-scrim,
+#email-scrim,
 #recipes-scrim,
 #cr-scrim {
   position: fixed;
@@ -8152,6 +8153,7 @@ span.cook-week-name { cursor: default; }
 #prefs-sheet,
 #tips-sheet,
 #morning-sheet,
+#email-sheet,
 #recipes-sheet,
 #cr-sheet {
   position: fixed;
@@ -8172,6 +8174,7 @@ span.cook-week-name { cursor: default; }
 #prefs-scrim[hidden], #prefs-sheet[hidden],
 #tips-scrim[hidden], #tips-sheet[hidden],
 #morning-scrim[hidden], #morning-sheet[hidden],
+#email-scrim[hidden], #email-sheet[hidden],
 #recipes-scrim[hidden], #recipes-sheet[hidden],
 #cr-scrim[hidden], #cr-sheet[hidden] { display: none; }
 .prefs-sub {
@@ -8375,6 +8378,38 @@ span.cook-week-name { cursor: default; }
 .prefs-leave-link span { border-bottom: 1.5px solid var(--hairline-strong); padding-bottom: 2px; }
 .prefs-leave-link:hover { color: var(--ink); }
 .prefs-leave-link:hover span { border-bottom-color: var(--ink-secondary); }
+/* Preferences → About (2026-10-06): the privacy, terms and help pages,
+   the quietest block in the sheet. Each link is its own 44px row (Rule 6). */
+.prefs-about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1.5px solid var(--hairline);
+}
+.prefs-about-eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.prefs-about-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 16px; }
+.prefs-about-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--apricot-label);
+}
+.prefs-about-links a:hover { color: var(--apricot-label-hover); }
+.prefs-about-version { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
 .leave-field { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
 .leave-field-label { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--ink); }
 .leave-field .snw-input { text-transform: uppercase; letter-spacing: .06em; }
@@ -10809,7 +10844,7 @@ span.cook-week-name { cursor: default; }
    predates and is independent of this ticket). */
 @media (min-width: 768px) {
   #week-sheet, #kit-sheet, #meals-more-sheet, #cook-more-sheet, #gro-scan-sheet, #rli-sheet,
-  #prefs-sheet, #tips-sheet, #morning-sheet, #snw-sheet, #recipes-sheet, #cr-sheet {
+  #prefs-sheet, #tips-sheet, #morning-sheet, #email-sheet, #snw-sheet, #recipes-sheet, #cr-sheet {
     left: 50%;
     right: auto;
     transform: translateX(-50%);

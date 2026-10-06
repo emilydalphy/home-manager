@@ -34,7 +34,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, push, ratelimit, recipe_import, recipe_photos, security
+from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -1321,6 +1321,7 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     walk, and on the device since 2026-10-05, so setup finishing is an
     answer to the question for next time as well as for this sitting.
     """
+    email_owner = None
     try:
         saved_ids = []
         # (id, name) for each member this request saved, in the order they
@@ -1353,6 +1354,13 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
                 if mname.strip().lower() == wanted:
                     tools.record_primary_member(mid)
                     break
+        # A household started by email sign-up: the address that started
+        # it now belongs to the main person (app/account_email.py), so it
+        # signs them in as themselves from here on. A no-op for any other
+        # household, and for a second pass through onboarding.
+        email_owner = tools.primary_member_id()
+        if not account_email.claim_signup_email(tools.household_id(), email_owner):
+            email_owner = None
         for p in req.pets:
             if not p.name.strip():
                 continue
@@ -1391,6 +1399,24 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
         security.set_device_cookie(
             response, request, tools.household_id(), setup_adult_id
         )
+    elif email_owner is not None and tools.member_id() is None:
+        # Signed up by email: the address just became the main person's, so
+        # this device is theirs — said outright, the way an invite link
+        # says it, rather than left to a one-adult household resolving to
+        # its only adult until the day a second adult joins and the person
+        # who set it up is suddenly asked "Who's this?".
+        value = security.with_member(request.cookies.get(security.COOKIE_NAME), email_owner)
+        if value is not None:
+            response.set_cookie(
+                security.COOKIE_NAME,
+                value,
+                max_age=security.COOKIE_MAX_AGE,
+                httponly=True,
+                samesite="lax",
+                secure=_is_https(request),
+                path="/",
+            )
+        security.set_device_cookie(response, request, tools.household_id(), email_owner)
     return response
 
 
@@ -8230,6 +8256,12 @@ def whoami(request: Request):
         # shell shows the consent screen before anything else; 'granted' /
         # 'declined' = answered, and the Preferences row reads it back.
         "ai_consent": ai_consent.state(current)["status"],
+        # Preferences → About shows which version of the privacy policy
+        # and terms this is (app/legal.py).
+        "legal_version": legal.LEGAL_VERSION,
+        # ...and the version this household agreed to at email sign-up
+        # (None for a household that predates it).
+        "legal_accepted_version": account_email.accepted_legal_version(current),
     }
 
 
@@ -8453,6 +8485,243 @@ def join_household(req: JoinRequest, request: Request):
     return response
 
 
+# ---------- Sign in with your email and a 6-digit code (Loop Board "App
+# Store: anyone can sign up — email + 6-digit code creates a new
+# household", Emily 2026-10-05) ----------
+#
+# The codes, the safety rules and why it all lives outside app/tools/ are
+# in app/account_email.py. These routes are the only way in. The two
+# /api/auth/email/* routes are public (app/security.py) — somebody signing
+# up has no session — and bind no household: the only household they ever
+# touch is the one the verified ADDRESS names, and they hand back a signed
+# cookie for it exactly as /login and /api/join do. The /api/account/email
+# routes are ordinary signed-in routes: the household and adult come from
+# the cookie, never from the body.
+
+
+class EmailStartRequest(BaseModel):
+    email: str = Field("", max_length=account_email.MAX_EMAIL_LENGTH + 10)
+
+
+class EmailVerifyRequest(BaseModel):
+    email: str = Field("", max_length=account_email.MAX_EMAIL_LENGTH + 10)
+    code: str = Field("", max_length=20)
+    # "By continuing you agree to the Terms and Privacy Policy" — the
+    # screen sends true when the person continues past that line. Asked of
+    # everyone, new address or not, so the answer to a missing agreement
+    # can't tell anybody whether an address already has a household.
+    agreed: bool = False
+    next: str = Field("/", max_length=2048)
+
+
+def _email_delivery_mode(request: Request) -> str:
+    """account_email.delivery_mode, with 'log' (the code in the server log)
+    refused for any request that is not from this machine — belt and braces
+    on top of delivery_mode's own production check."""
+    mode = account_email.delivery_mode()
+    if mode == "log" and not security._is_local(request.client.host if request.client else None):
+        return "off"
+    return mode
+
+
+def _send_code_or_say_so(request: Request, email: str, purpose: str, **who) -> dict:
+    """
+    The shared half of both "send me a code" routes. The same answer for
+    every address — new, known, already in use, or over its hourly limit —
+    so asking can never tell anybody which addresses have a household.
+    """
+    mode = _email_delivery_mode(request)
+    if mode == "off":
+        raise HTTPException(status_code=503, detail=account_email.OFF_LINE)
+    if not account_email.valid(email):
+        raise HTTPException(status_code=400, detail="That doesn't look like an email address. Check it and try again.")
+    # Per IP: 20 an hour. Says nothing about any address, so a plain 429.
+    _enforce_rate_limit(request, "email_code_ip", record=False)
+    # Per address: 5 an hour from any one IP, under a ceiling of 20 from
+    # everywhere. Over either, nothing is sent and the answer is unchanged —
+    # a 429 here would tell a stranger the address had been asked about.
+    # Per (address, IP) rather than per address so a stranger asking for
+    # YOUR codes can't use up your five; and a stranger's request never
+    # cancels the code already in your inbox (account_email.issue_code).
+    caller = ratelimit.caller_id(request)
+    key = account_email.email_key(email)
+    if ratelimit.check("email_code_address_ip", f"{key}|{caller}") or ratelimit.check("email_code_address", key):
+        logger.warning("Email code limit reached for one address; nothing sent")
+        return {"sent": True, "detail": account_email.SENT_LINE}
+    if purpose == account_email.CHANGE and account_email.in_use(email):
+        # Somebody else's address: no code — but an email all the same, so
+        # this request takes as long as one that sent a code and the two
+        # can't be told apart by timing (review, 2026-10-06). It tells the
+        # address's owner, who is the one person it's any use to.
+        account_email.send_notice(
+            email,
+            "Someone signed in to Pomona tried to use this email address for their account.\n"
+            "It's already in use, so nothing changed. You don't need to do anything.\n",
+            mode=mode,
+        )
+        return {"sent": True, "detail": account_email.SENT_LINE}
+    account_email.issue_code(email, purpose, mode=mode, caller=caller, **who)
+    return {"sent": True, "detail": account_email.SENT_LINE}
+
+
+@app.post("/api/auth/email/start")
+def email_signin_start(req: EmailStartRequest, request: Request):
+    """Send a 6-digit code to this address. Public; binds nothing."""
+    return _send_code_or_say_so(request, req.email, account_email.SIGNIN)
+
+
+@app.post("/api/auth/email/verify")
+def email_signin_verify(req: EmailVerifyRequest, request: Request):
+    """
+    Spend a code: sign in to the household this address belongs to (as its
+    adult, when setup has named one), or — for an address Pomona has never
+    seen — make a new household and send them to onboarding.
+
+    Any failure with the code is one answer, whatever the reason (wrong,
+    expired, used, five tries gone, never sent).
+    """
+    _enforce_rate_limit(request, "email_code_check", record=False)
+    if not req.agreed:
+        raise HTTPException(status_code=400, detail="To carry on, agree to the Terms and Privacy Policy.")
+    if not account_email.valid(req.email) or not account_email.check_code(req.email, req.code):
+        logger.warning("Email sign-in code refused from %s", ratelimit.caller_id(request))
+        raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
+    found = account_email.lookup(req.email)
+    new_household = found is None
+    if new_household:
+        try:
+            household_id = account_email.create_household_for(req.email)
+        except account_email.EmailCodeError:
+            # Another tab won the race for this address a moment ago; it is
+            # theirs now, and this sign-in goes to the same place.
+            found = account_email.lookup(req.email)
+            if found is None:
+                raise HTTPException(status_code=409, detail="Something went wrong. Try again.")
+            new_household = False
+            household_id, member_id = found
+        else:
+            member_id = None
+    else:
+        household_id, member_id = found
+    logger.info("Email sign-in for household %s%s", household_id, " (new)" if new_household else "")
+    # Setup not finished (no adult named yet) carries on in onboarding; the
+    # shell would send them there anyway, this saves the hop.
+    target = "/onboarding" if member_id is None else security.sanitize_next(req.next)
+    response = JSONResponse({"signed_in": True, "new_household": new_household, "next": target})
+    response.set_cookie(
+        security.COOKIE_NAME,
+        security.issue_session(household_id, member_id),
+        max_age=security.COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=_is_https(request),
+        path="/",
+    )
+    if member_id is not None:
+        # The address said who this is, the same way an invite link does.
+        security.set_device_cookie(response, request, household_id, member_id)
+    return response
+
+
+@app.get("/api/account/email")
+def account_email_state():
+    """The signed-in adult's sign-in email, for Preferences."""
+    you = tools.current_member()
+    email = account_email.email_for_member(tools.household_id(), you["id"]) if you else None
+    return {"email": email, "can_change": you is not None}
+
+
+def _changing_from(household: int, member_id: int, new_email: str) -> str | None:
+    """The address this adult signs in with now, when the request would
+    replace it with a different one — else None (adding a first address)."""
+    current = account_email.email_for_member(household, member_id)
+    if current and current != account_email.normalize(new_email):
+        return current
+    return None
+
+
+@app.post("/api/account/email/start")
+def account_email_start(req: EmailStartRequest, request: Request):
+    """
+    Send a code to the address this adult wants to sign in with (new or
+    changed) — and, when it REPLACES an address they already have, a second
+    code to that current address too.
+
+    Why both (review, 2026-10-06): "Who's this?" is trusted per device, so
+    anyone signed in to the household can pick another adult. Without the
+    second code, picking someone and pointing their sign-in at your own
+    address took their account: their next email sign-in found nothing
+    and quietly made them a new, empty household. Only the person who reads
+    the current inbox can move the address now.
+    """
+    you = tools.current_member()
+    if you is None:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    household = tools.household_id()
+    answer = _send_code_or_say_so(
+        request, req.email, account_email.CHANGE, household_id=household, member_id=you["id"]
+    )
+    current = _changing_from(household, you["id"], req.email)
+    if current:
+        account_email.issue_code(
+            current, account_email.CHANGE, household_id=household, member_id=you["id"],
+            mode=_email_delivery_mode(request), caller=ratelimit.caller_id(request),
+        )
+    return {**answer, "confirm_current": bool(current)}
+
+
+class AccountEmailVerifyRequest(BaseModel):
+    email: str = Field("", max_length=account_email.MAX_EMAIL_LENGTH + 10)
+    code: str = Field("", max_length=20)
+    # The code sent to the address being replaced — required whenever there
+    # is one (see account_email_start).
+    current_code: str = Field("", max_length=20)
+
+
+@app.post("/api/account/email/verify")
+def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
+    """Spend the code sent to the new address, and make it this adult's."""
+    _enforce_rate_limit(request, "email_code_check", record=False)
+    you = tools.current_member()
+    if you is None:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    household = tools.household_id()
+    if not account_email.valid(req.email):
+        raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
+    current = _changing_from(household, you["id"], req.email)
+    # Both codes are checked (and both cost a try) whatever the first one
+    # says, so a wrong answer for one can't be told from a wrong answer for
+    # the other.
+    # Matched first and spent together: a wrong code for one address must
+    # not burn a right code for the other.
+    new_id = account_email.match_code(
+        req.email, req.code, account_email.CHANGE, household_id=household, member_id=you["id"]
+    )
+    current_id = None
+    if current is not None:
+        current_id = account_email.match_code(
+            current, req.current_code, account_email.CHANGE, household_id=household, member_id=you["id"]
+        )
+    ok = new_id is not None and (current is None or current_id is not None)
+    if not ok or not account_email.spend(*[i for i in (new_id, current_id) if i is not None]):
+        raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
+    try:
+        email = account_email.set_member_email(household, you["id"], req.email)
+    except account_email.EmailCodeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    logger.info("Household %s: member %s set their sign-in email", household, you["id"])
+    if current:
+        # The old address hears about it, whoever did it.
+        account_email.send_notice(
+            current,
+            f"The email you sign in to Pomona with was changed to {email}.\n"
+            "If that was you, there's nothing else to do. If it wasn't, tell "
+            "whoever set up your household.\n",
+            mode=_email_delivery_mode(request),
+        )
+    return {"email": email}
+
+
 # ---------- Delete the household, or leave it (Loop Board "App Store:
 # delete my household (and remove myself) from inside Pomona", Emily
 # 2026-09-27) ----------
@@ -8583,6 +8852,35 @@ def remove_me_from_household(request: Request):
 def goodbye_page():
     """After a delete or a leave — public, since the person is signed out by then."""
     return FileResponse(os.path.join(static_dir, "goodbye.html"))
+
+
+# ---------- Privacy, terms and support (Loop Board "App Store: privacy
+# policy, terms and support pages in the app (drafts for the lawyer)",
+# 2026-10-06) ----------
+#
+# Public (app/security.py lists all three): Apple opens them from the
+# listing with no account, and somebody signing up reads them before they
+# have one. The words are in static/legal/; app/legal.py fills in the
+# version and, until LEGAL_PAGES_FINAL=1, the draft banner.
+
+
+def _legal_page(page: str) -> HTMLResponse:
+    return HTMLResponse(legal.render(page))
+
+
+@app.get("/privacy")
+def privacy_page():
+    return _legal_page("privacy")
+
+
+@app.get("/terms")
+def terms_page():
+    return _legal_page("terms")
+
+
+@app.get("/support")
+def support_page():
+    return _legal_page("support")
 
 
 @app.get("/healthz")

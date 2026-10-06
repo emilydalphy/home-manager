@@ -586,8 +586,9 @@ def test_the_tips_sheet_reuses_the_preferences_sheets_own_rules():
     # text" sheet ("Reach me before the moment") shares the same frame, and
     # a fourth on 2026-10-04 — Settings → Recipes — and a fifth on
     # 2026-10-05 — "Change recipe".
-    assert "#prefs-scrim,\n#tips-scrim,\n#morning-scrim,\n#recipes-scrim,\n#cr-scrim {" in SHELL_CSS
-    assert "#prefs-sheet,\n#tips-sheet,\n#morning-sheet,\n#recipes-sheet,\n#cr-sheet {" in SHELL_CSS
+    # ...and a sixth on 2026-10-06 — Settings → Sign-in email.
+    assert "#prefs-scrim,\n#tips-scrim,\n#morning-scrim,\n#email-scrim,\n#recipes-scrim,\n#cr-scrim {" in SHELL_CSS
+    assert "#prefs-sheet,\n#tips-sheet,\n#morning-sheet,\n#email-sheet,\n#recipes-sheet,\n#cr-sheet {" in SHELL_CSS
 
 
 def test_opening_the_report_form_closes_the_tips_sheet():
