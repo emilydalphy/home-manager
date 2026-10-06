@@ -8537,16 +8537,30 @@ def _send_code_or_say_so(request: Request, email: str, purpose: str, **who) -> d
         raise HTTPException(status_code=400, detail="That doesn't look like an email address. Check it and try again.")
     # Per IP: 20 an hour. Says nothing about any address, so a plain 429.
     _enforce_rate_limit(request, "email_code_ip", record=False)
-    # Per address: 5 an hour. Over it, nothing is sent and the answer is
-    # unchanged — a 429 here would tell a stranger the address had been
-    # asked about.
-    if ratelimit.check("email_code_address", account_email.email_key(email)):
+    # Per address: 5 an hour from any one IP, under a ceiling of 20 from
+    # everywhere. Over either, nothing is sent and the answer is unchanged —
+    # a 429 here would tell a stranger the address had been asked about.
+    # Per (address, IP) rather than per address so a stranger asking for
+    # YOUR codes can't use up your five; and a stranger's request never
+    # cancels the code already in your inbox (account_email.issue_code).
+    caller = ratelimit.caller_id(request)
+    key = account_email.email_key(email)
+    if ratelimit.check("email_code_address_ip", f"{key}|{caller}") or ratelimit.check("email_code_address", key):
         logger.warning("Email code limit reached for one address; nothing sent")
         return {"sent": True, "detail": account_email.SENT_LINE}
     if purpose == account_email.CHANGE and account_email.in_use(email):
-        # Somebody else's address: no code, same answer.
+        # Somebody else's address: no code — but an email all the same, so
+        # this request takes as long as one that sent a code and the two
+        # can't be told apart by timing (review, 2026-10-06). It tells the
+        # address's owner, who is the one person it's any use to.
+        account_email.send_notice(
+            email,
+            "Someone signed in to Pomona tried to use this email address for their account.\n"
+            "It's already in use, so nothing changed. You don't need to do anything.\n",
+            mode=mode,
+        )
         return {"sent": True, "detail": account_email.SENT_LINE}
-    account_email.issue_code(email, purpose, mode=mode, **who)
+    account_email.issue_code(email, purpose, mode=mode, caller=caller, **who)
     return {"sent": True, "detail": account_email.SENT_LINE}
 
 
@@ -8617,20 +8631,51 @@ def account_email_state():
     return {"email": email, "can_change": you is not None}
 
 
+def _changing_from(household: int, member_id: int, new_email: str) -> str | None:
+    """The address this adult signs in with now, when the request would
+    replace it with a different one — else None (adding a first address)."""
+    current = account_email.email_for_member(household, member_id)
+    if current and current != account_email.normalize(new_email):
+        return current
+    return None
+
+
 @app.post("/api/account/email/start")
 def account_email_start(req: EmailStartRequest, request: Request):
-    """Send a code to the address this adult wants to sign in with (new or changed)."""
+    """
+    Send a code to the address this adult wants to sign in with (new or
+    changed) — and, when it REPLACES an address they already have, a second
+    code to that current address too.
+
+    Why both (review, 2026-10-06): "Who's this?" is trusted per device, so
+    anyone signed in to the household can pick another adult. Without the
+    second code, picking someone and pointing their sign-in at your own
+    address took their account: their next email sign-in found nothing
+    and quietly made them a new, empty household. Only the person who reads
+    the current inbox can move the address now.
+    """
     you = tools.current_member()
     if you is None:
         raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
-    return _send_code_or_say_so(
-        request, req.email, account_email.CHANGE, household_id=tools.household_id(), member_id=you["id"]
+    household = tools.household_id()
+    answer = _send_code_or_say_so(
+        request, req.email, account_email.CHANGE, household_id=household, member_id=you["id"]
     )
+    current = _changing_from(household, you["id"], req.email)
+    if current:
+        account_email.issue_code(
+            current, account_email.CHANGE, household_id=household, member_id=you["id"],
+            mode=_email_delivery_mode(request), caller=ratelimit.caller_id(request),
+        )
+    return {**answer, "confirm_current": bool(current)}
 
 
 class AccountEmailVerifyRequest(BaseModel):
     email: str = Field("", max_length=account_email.MAX_EMAIL_LENGTH + 10)
     code: str = Field("", max_length=20)
+    # The code sent to the address being replaced — required whenever there
+    # is one (see account_email_start).
+    current_code: str = Field("", max_length=20)
 
 
 @app.post("/api/account/email/verify")
@@ -8641,15 +8686,34 @@ def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
     if you is None:
         raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
     household = tools.household_id()
-    if not account_email.valid(req.email) or not account_email.check_code(
+    if not account_email.valid(req.email):
+        raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
+    current = _changing_from(household, you["id"], req.email)
+    # Both codes are checked (and both cost a try) whatever the first one
+    # says, so a wrong answer for one can't be told from a wrong answer for
+    # the other.
+    new_ok = account_email.check_code(
         req.email, req.code, account_email.CHANGE, household_id=household, member_id=you["id"]
-    ):
+    )
+    current_ok = current is None or account_email.check_code(
+        current, req.current_code, account_email.CHANGE, household_id=household, member_id=you["id"]
+    )
+    if not (new_ok and current_ok):
         raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
     try:
         email = account_email.set_member_email(household, you["id"], req.email)
     except account_email.EmailCodeError as e:
         raise HTTPException(status_code=409, detail=str(e))
     logger.info("Household %s: member %s set their sign-in email", household, you["id"])
+    if current:
+        # The old address hears about it, whoever did it.
+        account_email.send_notice(
+            current,
+            f"The email you sign in to Pomona with was changed to {email}.\n"
+            "If that was you, there's nothing else to do. If it wasn't, tell "
+            "whoever set up your household.\n",
+            mode=_email_delivery_mode(request),
+        )
     return {"email": email}
 
 

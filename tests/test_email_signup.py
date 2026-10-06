@@ -177,10 +177,33 @@ def test_the_dev_log_is_refused_for_a_request_from_elsewhere(monkeypatch):
 
 
 def test_codes_per_address_are_capped_without_saying_so(outbox):
-    for i in range(7):
-        res = _start(TestClient(app, client=(f"198.51.100.{i}", 1)), "g@example.com")
+    # Five an hour from any one place...
+    client = TestClient(app, client=("198.51.100.1", 1))
+    for _ in range(7):
+        res = _start(client, "g@example.com")
         assert res.status_code == 200 and res.json()["sent"] is True
     assert len(outbox) == 5
+    # ...under a ceiling for the address from everywhere.
+    for i in range(30):
+        assert _start(TestClient(app, client=(f"198.51.100.{i + 10}", 1)), "g@example.com").json()["sent"] is True
+    assert len(outbox) == 20
+
+
+def test_a_stranger_asking_for_codes_cannot_lock_the_owner_out(outbox):
+    """Review, 2026-10-06: five requests from a stranger's IP used to cancel
+    the owner's live code and use up the address's whole hour."""
+    owner = TestClient(app, client=("192.0.2.10", 1))
+    _start(owner, "own@example.com")
+    owner_code = _code_in(outbox[-1])
+    stranger = TestClient(app, client=("203.0.113.66", 1))
+    for _ in range(6):
+        assert _start(stranger, "own@example.com").json()["sent"] is True
+    # The code in the owner's inbox still works...
+    assert _verify(owner, "own@example.com", owner_code).status_code == 200
+    # ...and the owner can still ask for another this hour.
+    sent = len(outbox)
+    _start(TestClient(app, client=("192.0.2.10", 1)), "own@example.com")
+    assert len(outbox) == sent + 1
 
 
 def test_codes_per_ip_are_capped(outbox):
@@ -247,17 +270,78 @@ def test_an_adult_adds_or_changes_their_email_with_a_code_to_the_new_address(sig
     assert phone.get("/api/whoami").json()["member"]["id"] == mid
 
 
-def test_someone_else_s_address_gets_no_code_on_change(signed_in, outbox):
-    _sign_up("taken@example.com", outbox=outbox)
-    sent_before = len(outbox)
+def _adult(household=1, name="Emily"):
     conn = get_conn()
-    mid = conn.execute("INSERT INTO members (household_id, name, age_group) VALUES (1, 'Emily', 'adult')").lastrowid
+    mid = conn.execute(
+        "INSERT INTO members (household_id, name, age_group) VALUES (?, ?, 'adult')", (household, name)
+    ).lastrowid
     conn.commit()
     conn.close()
-    signed_in.post("/api/whoami/pick", json={"member_id": mid})
+    return mid
+
+
+def test_someone_else_s_address_gets_a_notice_not_a_code(signed_in, outbox):
+    _sign_up("taken@example.com", outbox=outbox)
+    sent_before = len(outbox)
+    signed_in.post("/api/whoami/pick", json={"member_id": _adult()})
     res = signed_in.post("/api/account/email/start", json={"email": "taken@example.com"})
     assert res.json()["detail"] == account_email.SENT_LINE
-    assert len(outbox) == sent_before
+    # Something was sent — the same work as a code, so the two take the
+    # same time — but it's a notice to the owner, with no code in it.
+    assert len(outbox) == sent_before + 1
+    notice = outbox[-1]
+    assert notice["To"] == "taken@example.com" and notice["Subject"] != "Your Pomona code"
+    assert not re.search(r"\b\d{6}\b", notice.get_content())
+
+
+def test_another_adult_cannot_move_someone_s_sign_in_email(signed_in, outbox):
+    """Review, 2026-10-06 (the hijack): pick the other adult, point their
+    sign-in at your address — their next sign-in used to make them a new,
+    empty household and yours opened theirs."""
+    victim = _adult(name="Vineeth")
+    _adult(name="Emily")
+    account_email.set_member_email(1, victim, "vineeth@example.com")
+    assert signed_in.post("/api/whoami/pick", json={"member_id": victim}).status_code == 200
+    res = signed_in.post("/api/account/email/start", json={"email": "attacker@example.com"})
+    assert res.json()["confirm_current"] is True
+    by_to = {m["To"]: _code_in(m) for m in outbox}
+    assert set(by_to) == {"attacker@example.com", "vineeth@example.com"}
+    # The attacker has only the new address's code: refused, nothing moved.
+    res = signed_in.post("/api/account/email/verify", json={"email": "attacker@example.com", "code": by_to["attacker@example.com"]})
+    assert res.status_code == 400
+    assert account_email.email_for_member(1, victim) == "vineeth@example.com"
+    assert account_email.lookup("vineeth@example.com") == (1, victim)
+
+
+def test_changing_an_email_needs_both_codes_and_tells_the_old_address(signed_in, outbox):
+    mid = _adult()
+    account_email.set_member_email(1, mid, "old@example.com")
+    signed_in.post("/api/whoami/pick", json={"member_id": mid})
+    signed_in.post("/api/account/email/start", json={"email": "new@example.com"})
+    by_to = {m["To"]: _code_in(m) for m in outbox}
+    res = signed_in.post("/api/account/email/verify", json={
+        "email": "new@example.com", "code": by_to["new@example.com"], "current_code": by_to["old@example.com"],
+    })
+    assert res.status_code == 200, res.text
+    assert account_email.email_for_member(1, mid) == "new@example.com"
+    notice = outbox[-1]
+    assert notice["To"] == "old@example.com" and "new@example.com" in notice.get_content()
+
+
+def test_an_address_left_on_someone_no_longer_an_adult_is_not_a_dead_end(outbox):
+    """Review, 2026-10-06: such an address burned a good code and then
+    answered 409 for ever. It is released and starts afresh."""
+    mid = _adult(name="Kit")
+    account_email.set_member_email(1, mid, "kit@example.com")
+    conn = get_conn()
+    conn.execute("UPDATE members SET age_group = 'teen' WHERE id = ?", (mid,))
+    conn.commit()
+    conn.close()
+    client = TestClient(app)
+    _start(client, "kit@example.com")
+    res = _verify(client, "kit@example.com", _code_in(outbox[-1]))
+    assert res.status_code == 200, res.text
+    assert res.json()["new_household"] is True
 
 
 def test_the_sign_in_routes_are_public_and_the_account_ones_are_not():

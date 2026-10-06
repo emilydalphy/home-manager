@@ -48,10 +48,13 @@ LIMITS = {
     # about the same bad evening.
     "feedback": [(5, 60), (40, 3600)],
     # Email sign-in codes (app/account_email.py). The card's numbers: at
-    # most 5 codes per ADDRESS an hour (the caller here is the address's
-    # HMAC, not an IP) and 20 per IP an hour. Checking a code is per IP,
-    # on top of each code's own five tries.
-    "email_code_address": [(5, 3600)],
+    # most 5 codes per address an hour — counted per (address, IP), so a
+    # stranger asking from their own IP can't use up YOUR five (review,
+    # 2026-10-06) — under an overall ceiling per address that a single
+    # stranger can't reach, and 20 per IP an hour. Checking a code is per
+    # IP, on top of each code's own five tries.
+    "email_code_address_ip": [(5, 3600)],
+    "email_code_address": [(20, 3600)],
     "email_code_ip": [(20, 3600)],
     "email_code_check": [(10, 300), (60, 3600)],
 }
