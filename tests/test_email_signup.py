@@ -328,6 +328,25 @@ def test_changing_an_email_needs_both_codes_and_tells_the_old_address(signed_in,
     assert notice["To"] == "old@example.com" and "new@example.com" in notice.get_content()
 
 
+def test_a_wrong_current_code_does_not_burn_the_new_one(signed_in, outbox):
+    """Found driving it: the new code used to be spent even when the
+    current one was wrong, so the retry with both right was refused."""
+    mid = _adult()
+    account_email.set_member_email(1, mid, "old@example.com")
+    signed_in.post("/api/whoami/pick", json={"member_id": mid})
+    signed_in.post("/api/account/email/start", json={"email": "new@example.com"})
+    by_to = {m["To"]: _code_in(m) for m in outbox}
+    wrong = "000000" if by_to["old@example.com"] != "000000" else "111111"
+    bad = signed_in.post("/api/account/email/verify", json={
+        "email": "new@example.com", "code": by_to["new@example.com"], "current_code": wrong,
+    })
+    assert bad.status_code == 400
+    good = signed_in.post("/api/account/email/verify", json={
+        "email": "new@example.com", "code": by_to["new@example.com"], "current_code": by_to["old@example.com"],
+    })
+    assert good.status_code == 200, good.text
+
+
 def test_an_address_left_on_someone_no_longer_an_adult_is_not_a_dead_end(outbox):
     """Review, 2026-10-06: such an address burned a good code and then
     answered 409 for ever. It is released and starts afresh."""
