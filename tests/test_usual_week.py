@@ -749,3 +749,39 @@ def test_no_test_can_reach_the_anthropic_api():
     import anthropic
     with pytest.raises(anthropic.AuthenticationError, match="never reach"):
         _agent._client().messages.create(model="x", max_tokens=1, messages=[])
+
+
+def test_a_first_week_dinner_pick_over_the_weeknight_limit_is_not_used(stub_model):
+    """Card "The draft breaks the household's own rules" (2026-10-06): a NEW
+    household's first week, weeknight limit 45. The first-week fill runs
+    after cap_enforce, so a 55-minute quick pick on a Tuesday used to land
+    untouched; it now goes to the repeat pass, which holds to the cap."""
+    tools.edit_preference("weeknight_max_minutes", 45)
+    dates = tools._week_dates(_monday())
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili"] * 7))
+    plan_id = agent.generate_weekly_plan(_monday())["weekly_plan_id"]
+    tuesday = dates[1]
+    tools.clear_plan_slot(plan_id, tuesday, "dinner")
+    tools.plan_slot_open(weekly_plan_id=plan_id, meal_date=tuesday, slot="dinner", open_reason="Still deciding",
+                         derived_from={"constraint": "generation_gap"})
+    slow = {"meal_name": "Slow tilapia rice bake", "ingredients": ["Tilapia", "Rice"], "dish_note": "Baked.",
+            "prep_time_minutes": 20, "cook_time_minutes": 35}
+    usual_week.fill_first_plan_gaps(plan_id, dates, picker=lambda ctx: dict(slow))
+    tue = [m for m in _meals(plan_id) if m["date"] == tuesday and m["slot"] == "dinner"]
+    assert "Slow tilapia rice bake" not in [m["meal"] for m in tue]
+
+
+def test_a_first_week_pick_inside_the_limit_is_still_used(stub_model):
+    tools.edit_preference("weeknight_max_minutes", 45)
+    dates = tools._week_dates(_monday())
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili"] * 7))
+    plan_id = agent.generate_weekly_plan(_monday())["weekly_plan_id"]
+    tuesday = dates[1]
+    tools.clear_plan_slot(plan_id, tuesday, "dinner")
+    tools.plan_slot_open(weekly_plan_id=plan_id, meal_date=tuesday, slot="dinner", open_reason="Still deciding",
+                         derived_from={"constraint": "generation_gap"})
+    quick = {"meal_name": "Quick tilapia tacos", "ingredients": ["Tilapia", "Tortillas"], "dish_note": "Fast.",
+             "prep_time_minutes": 10, "cook_time_minutes": 15}
+    usual_week.fill_first_plan_gaps(plan_id, dates, picker=lambda ctx: dict(quick))
+    tue = [m for m in _meals(plan_id) if m["date"] == tuesday and m["slot"] == "dinner"]
+    assert "Quick tilapia tacos" in [m["meal"] for m in tue]

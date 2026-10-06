@@ -43,6 +43,12 @@ why*, not duplicating the diff.
   rule. The chip guard does apply to dinners too: a dinner that is a chip's
   only answer is re-picked within the chip or stands over its cap.
 
+- **2026-10-06 — The first week's gap fill holds the household's time limits.** `usual_week.fill_first_plan_gaps`
+  runs after `cap_enforce` on a FIRST plan only, and never measured a quick pick against the cap and called both
+  repeat fills with no caps — so a new household's first draft could land a 55-min Tuesday against a 45 limit.
+  Now `_first_plan_caps` + `_over_cap` reject an over-limit pick and pass caps to the repeat fills. NOT fixed:
+  a chain-cook dinner (feeds a next-day lunch) is still untouchable by cap_enforce; within-week protein variety
+  and the child's cold-packed lunch are prompt-only, never enforced. Card "The draft breaks the household's own rules".
 - **2026-10-06 — Plan strip: day tiles only as tall as the day and date
   (branch `overnight/shorter-day-tiles`).** `.wk-tile` `min-height` 72px ->
   44px; padding unchanged. The 72px held the dots removed 2026-10-05 (~25px
