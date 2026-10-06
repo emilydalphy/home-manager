@@ -31,6 +31,14 @@ why*, not duplicating the diff.
   "That didn't save: …", which the chat loop hands the model as a tool error.
   Census in `test_connection_close_sweep.py` shrank by 14; the rest of that
   census (other files) is listed there, not fixed here. Tests: `tests/test_memory_edit_leaves_the_lock_free.py`.
+- **2026-10-06 — Shop: one-shop households get "Before you shop" too.
+  Branch `overnight/one-store-before-you-shop`, NOT merged at the time of
+  writing.** `beforeShopDockHtml` offered the pass only with something
+  unsorted, and a household with one shop or none (`groCanSort` false) never
+  has anything unsorted — so it never saw the inventory check. Now offered
+  whenever the pass has something to ask and isn't done this week; for them
+  the last step says Done and lands back on the list (`bsLastLabel`,
+  `bsAdvance`). Same done-stamp. Multi-shop unchanged.
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch

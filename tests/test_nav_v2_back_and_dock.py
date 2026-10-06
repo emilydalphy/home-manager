@@ -314,11 +314,18 @@ def test_a_screen_with_no_single_action_has_no_dock():
         "LIST's dock is the pass's one primary plus the add button"
     # Nothing to sort, nothing to say: the one primary stands down and the
     # add outline is the whole dock, exactly as it was before card 13.
+    #
+    # 2026-10-06 (one-shop households get the pass too): the stand-down is
+    # now two lines — never over the shops question, and nothing to sort AND
+    # no pass to offer means no action. A one-shop household's pass is the
+    # one new single action; behaviour is pinned in test_before_you_shop.py.
     pass_dock = _before_shop_dock_body()
-    assert "if (!unsorted || groStoresPromptShouldShow()) return '';" in pass_dock, \
-        "no sort to offer means no dock action"
+    assert "if (groStoresPromptShouldShow()) return '';" in pass_dock, \
+        "never over the shops question"
     assert "dock-primary" not in pass_dock.split("return '';", 1)[0], \
         "and the stand-down comes before any button is built"
+    assert "if (!unsorted) return '';" in pass_dock, \
+        "no sort to offer (and no pass) means no dock action"
     sortall = dock.split("if (step === 'sortall') {", 1)[1]
     assert "return '';" in sortall[:120], "SORT ALL with rows left renders no dock"
     assert ".gro-dock:empty { display: none; }" in SHELL_CSS

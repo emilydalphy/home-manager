@@ -5821,7 +5821,7 @@
   }
   function bsRegularsDockHtml(data, last) {
     var n = bsTickedRegulars().length;
-    var label = n ? 'Add ' + n + ' to the list' : (last ? 'Sort the list' : 'Next');
+    var label = n ? 'Add ' + n + ' to the list' : (last ? bsLastLabel(data) : 'Next');
     return '<button type="button" class="dock-primary" data-gro="bs-reg-go">' + escapeHtml(label) + '</button>' +
       '<button type="button" class="gro-bs-none" data-gro="bs-next">None this week</button>';
   }
@@ -5882,7 +5882,7 @@
   // what it does rather than "Skip".
   function bsHaveDockHtml(data, last) {
     return '<button type="button" class="dock-primary" data-gro="bs-have-go">' +
-      (last ? 'Sort the list' : 'Next') + '</button>' +
+      (last ? bsLastLabel(data) : 'Next') + '</button>' +
       '<div class="dock-links"><button type="button" class="dock-link" data-gro="bs-next">Keep them all on the list</button></div>';
   }
 
@@ -5906,7 +5906,9 @@
     if (at >= steps.length - 1) {
       beforeShopFinish();
       groceryState.bsSnap = null;
-      goGroceryStep('sortall');
+      // A one-shop (or no-shop) household has nothing to sort: the pass
+      // ends back on the list it was checking (2026-10-06).
+      goGroceryStep(groCanSort(groceryState.data) ? 'sortall' : 'list');
       return;
     }
     groceryState.beforeShopIndex = at + 1;
@@ -5928,15 +5930,31 @@
   // What LIST's one primary says and does. Three states, and the middle
   // one is the point: a pass worth running, a pass already run, and
   // nothing to sort at all.
+  //
+  // A household with one shop or none (groCanSort false) never has
+  // anything to sort, and used to never see the pass either — but the pass
+  // is also the inventory check (regulars, spices and oils, already have
+  // it), so it is offered to them whenever it has something to ask, and
+  // ends on Done rather than the sort (Emily, 2026-10-05; Loop Board
+  // "Shop: one-store households get Before you shop too"). Multi-shop
+  // households are unchanged: the pass rides in front of the sort.
   function beforeShopDockHtml(data) {
+    if (groStoresPromptShouldShow()) return '';
     var unsorted = groUnsorted(data).length;
-    if (!unsorted || groStoresPromptShouldShow()) return '';
-    if (beforeShopSteps(data).length && !beforeShopIsDone(data)) {
+    var passDue = beforeShopSteps(data).length && !beforeShopIsDone(data);
+    if (passDue && (unsorted || !groCanSort(data))) {
       return '<button type="button" class="dock-primary" data-gro="goto-beforeshop">' +
         escapeHtml(BEFORE_SHOP_LABEL) + '</button>';
     }
+    if (!unsorted) return '';
     return '<button type="button" class="dock-primary" data-gro="goto-sort">' +
       'Sort the list (' + unsorted + ')</button>';
+  }
+
+  // The last step's primary: the sort it was in front of, or — with
+  // nothing to sort — Done, back to the list.
+  function bsLastLabel(data) {
+    return groCanSort(data) ? 'Sort the list' : 'Done';
   }
 
   // Has this week's pass been run? The server's answer, or — for the beat
@@ -6022,7 +6040,7 @@
     // A step with no dock of its own (spices) has one button, and tapping
     // it without choosing anything IS the skip — the mockup's own shape.
     return '<button type="button" class="dock-primary" data-gro="bs-next">' +
-        (last ? 'Sort the list' : 'Next') + '</button>';
+        (last ? bsLastLabel(data) : 'Next') + '</button>';
   }
 
   function groSortRowHtml(data) {
@@ -7254,7 +7272,8 @@
       // is nothing to ask — the sort itself (beforeShopDockHtml, card 13).
       // It is the list's ONE apricot and can never coexist with "Go to
       // Plan" above (that branch needs an empty list; this one needs
-      // something unsorted) or with the shops question's own primary
+      // something unsorted, or a one-shop pass) or with the shops
+      // question's own primary
       // (its own guard). "Add something" stays the outline beside it.
       return beforeShopDockHtml(data) + groAddButtonHtml();
     }
