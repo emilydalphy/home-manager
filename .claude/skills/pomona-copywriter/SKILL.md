@@ -60,6 +60,22 @@ Four failures that shipped before Emily caught them, so check for them by name:
 14. **One exclamation mark or emoji per screen at most, in the app.** Most screens: none. Never in error copy. (Emily's own emails: see "Who's talking".)
 15. **"Passphrase", never "password." The app is Pomona**, in every user-facing line.
 
+## Recipe steps
+
+Emily chose this voice on 2026-10-05 from the route-3 recipe samples ("Definitely go with the warmer draft 2"). Recipe steps are the one place the copy talks someone through a job with their hands busy, so they get a little more warmth than a button. The rules above still hold. The warmth comes from cues and care, never from adjectives.
+
+- **What they'll see, hear or smell.** "In about 20 seconds the seeds will sizzle and smell toasty, and that's your cue." "You'll hear it sizzle."
+- **A half-sentence why, where it stops a mistake.** "The tamarind goes in now and not earlier, because it stops the dal from softening."
+- **A heads-up where a cook would wobble.** "Stand back, because they'll spatter." "Don't rush this step: the onions are where the flavor starts." "No peeking."
+- **Name the person.** "Serve Arjun's bowl first." "Put the last portion in the fridge for Ravi's lunch tomorrow."
+- **Amounts stay exact.** Every amount in the list appears in the steps, the same way it's written in the list. Warmth never replaces a number.
+- **Still cut:** "simply", "just", "delicious", exclamation marks, jokes. One cue per step is plenty.
+
+Before: "Heat 1 tbsp ghee. Add 1 tsp mustard seeds and wait until they pop. Add ½ tsp fenugreek, ¼ tsp hing and the 12 curry leaves, and cook 10 sec."
+After: "Now the tempering, which is where the aroma comes from. Heat 1 tbsp ghee in a small pan and add 1 tsp mustard seeds. When they pop, add ½ tsp fenugreek, ¼ tsp hing and the 12 curry leaves. Stand back, because they'll spatter. 10 seconds is enough."
+
+The app's recipe writer carries the same rule ("SAY IT LIKE A FRIEND AT THE STOVE" in `app/agent.py`).
+
 ## Words that never earn their place
 
 Cut on sight: seamlessly, effortlessly, empower, journey, unlock, elevate, supercharge, hassle-free, streamline, AI-powered, smart (as an adjective for the app), simply, just (as filler), truly, really, very, "Oops", "Whoops", "Yay", "Let's dive in", "Get started", "Welcome to".

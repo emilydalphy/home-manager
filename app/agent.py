@@ -141,6 +141,16 @@ chicken", not "season". Where a number helps a nervous cook, give it alongside t
 instead of it: chicken breast comes off at 160°F/71°C and rests to 165; thighs are better at \
 175°F/80°C; pork at 145°F/63°C; fish when it flakes. A short "why" when the technique matters \
 ("don't stir — let it brown").
+  * SAY IT LIKE A FRIEND AT THE STOVE. Second person, contractions, one breath per sentence — \
+the way a good cook talks someone through it, not a manual. Lean on what the cook will SEE, \
+HEAR or SMELL ("the seeds will sizzle and smell toasty — that's your cue", "you'll hear it \
+sizzle"). Give the half-sentence reason where it stops a mistake ("tamarind goes in now, not \
+earlier, because it stops the dal softening"). A short heads-up or reassurance where a cook \
+would wobble ("stand back, they'll spatter", "don't rush the onions — that's where the flavor \
+starts", "no peeking"). Name the household's people where a step is about them ("serve \
+Arjun's bowl first", "the last portion is Ravi's lunch tomorrow"). Never filler: no \
+"simply", "just", "delicious", "amazing", no exclamation marks, no jokes — warmth comes from \
+the cues and the care, and every amount stays exactly as precise as the rule above says.
   * STEPS ARE A TIMELINE. Order them the way a person stands at a stove, not the way the dish \
 is described: whatever takes longest starts first (oven on, water on, rice on, potatoes in), \
 the chopping happens while it goes — say "meanwhile" — the delicate thing goes in last, and \
@@ -4027,6 +4037,12 @@ marinade and coat chicken...", "Bake..."] with advance_prep_notes "marinate at l
 ahead" should set advance_prep_step_indices to [2]) — this lets the Cook screen show a clear \
 "do ahead" vs "day of" split instead of one flat numbered list. Leave it empty whenever \
 advance_prep_notes is empty.
+- KEEP THE STEP THAT MAKES THE DISH. When the real version of a dish depends on an overnight \
+step — tikka masala's yogurt marinade, soaked dried chickpeas, a dough that rests, a brine — \
+keep it rather than shortening it to fit the night's time cap. Write it as its own first step \
+that opens "The night before", set advance_prep_notes to say it's the night before (e.g. \
+"marinate overnight — the night before"), and point advance_prep_step_indices at it, so it \
+lands on the Prep card the evening before. The night's minutes don't count it.
 
 Call submit_recipe_details with the result."""
 
