@@ -15,6 +15,7 @@ from . import meal_plans as _meal_plans
 from . import notifications as _notifications
 from . import plan_undo as _plan_undo
 from . import plates as _plates
+from .quantities import format_duration as _quantities_fmt_duration
 from . import plate_parts as _plate_parts_mod
 from . import recipes as _recipes
 from . import rhythm as _rhythm
@@ -5699,7 +5700,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         prep = row["prep_time_minutes"] or 0
         cook = row["cook_time_minutes"] or 0
         total = prep + cook
-        meta = f"{total} min" if total else None
+        meta = _quantities_fmt_duration(total) if total else None
         return {"title": title, "meta": meta, "source": "plan", **common}
 
     # The one short fact a row carries beside its days ("Mexican, as

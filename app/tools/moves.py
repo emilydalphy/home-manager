@@ -79,6 +79,7 @@ from . import day_meals as _day_meals
 from . import defrost as _defrost
 from . import grocery as _grocery
 from . import move_owner as _move_owner
+from . import quantities as _quantities
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
 
@@ -402,11 +403,11 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
         table = (started + timedelta(minutes=duration)) if (started and duration) else at
         detail_bits = [slot]
         if duration:
-            detail_bits.append(f"{duration} min")
+            detail_bits.append(_quantities.format_duration(duration))
         detail_bits.append(_clock(table.time()))
         chips = []
         if duration:
-            chips.append(f"{duration} min")
+            chips.append(_quantities.format_duration(duration))
         if started:
             chips.append(f"Started {_clock(started.time())}")
         elif duration:
@@ -454,7 +455,7 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             "duration_min": duration,
             "time_label": _slot_time_label(slot, table),
             # "35 min", or the slot when the recipe has no minutes on it.
-            "meta": f"{duration} min" if duration else slot,
+            "meta": _quantities.format_duration(duration) if duration else slot,
             "chips": chips,
             # Both clocks, so a reader can say how far apart they are
             # ("Started 17 minutes late" on Cook's Tonight card) without
