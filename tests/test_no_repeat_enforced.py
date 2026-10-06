@@ -71,6 +71,11 @@ def _slot(date: str, slot: str, name: str, **extra) -> dict:
         "reasoning": f"{name} because", "food_groups": ["protein", "vegetable", "carb"],
         "prep_time_minutes": 10, "cook_time_minutes": 15,
     }
+    if slot == "lunch":
+        # A weekday lunch inside the household's 20-minute lunch cap, which
+        # applies whether or not step 3 was answered (Emily, 2026-10-03):
+        # this file measures its own rule, not cap_enforce's lunch re-pick.
+        d["prep_time_minutes"], d["cook_time_minutes"] = 5, 10
     d.update(extra)
     return d
 
@@ -121,7 +126,10 @@ def picker(monkeypatch):
             "ingredients": [{"item": f"{name} stuff", "qty": "1", "category": "pantry"}],
             "instructions": [f"Cook the {name.lower()} over medium heat.", "Serve."],
             "food_groups": ["protein", "vegetable", "carb"],
-            "prep_time_minutes": 10, "cook_time_minutes": 20,
+            # Inside a weekday lunch's 20 minutes (applies always since
+            # 2026-10-03), so a lunch replacement is not re-picked again
+            # by cap_enforce and the call counts here stay this pass's own.
+            "prep_time_minutes": 5, "cook_time_minutes": 10,
         }
 
     monkeypatch.setattr(sip, "_pick_replacement", pick)

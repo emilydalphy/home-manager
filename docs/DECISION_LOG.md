@@ -13,6 +13,36 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
+  2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap
+  build re-picked only a lunch answered "cooked that day" in step 3 and only
+  recorded an unanswered one. Now `cap_enforce` re-picks every weekday lunch
+  over `time_caps.minutes_cap`; the carve-outs (chain ends, prep day unless
+  answered "cooked", weekend, asked for by name, already cooked) are the
+  rule's and unchanged. The "24 red tests" from the first try were fixtures,
+  not guards: `test_no_repeat_enforced` / `test_bring_over` /
+  `test_cuisine_chips_honoured` (and `test_snack_no_repeat`, through the
+  no-repeat file's shared `_week`) drafted every
+  lunch at 25 minutes and the no-repeat picker at 30, so the cap pass
+  re-picked lunches those tests never meant to touch; their lunch fixtures
+  are now 15 minutes. **A lunch cap never reaches a dinner**: `_cook_cap`
+  ignores lunch caps when the dinner is being re-picked, and a lunch's whole
+  dish (`_whole_dish_nights`) spans lunches only. The budget hold
+  (`_held_for_later_passes`) is unchanged. Known cost, not fixed here:
+  `meal_variety.repick_recent_repeats` picks with no time cap, so a no-repeat
+  lunch replacement over 20 minutes is re-picked again by `cap_enforce`.
+  Review of the branch found three more and they are fixed: a lunch's whole
+  dish skips a lunch that reheats a DINNER (and stands if a lunch cooks for
+  one), so a dinner chain is never half-rewritten; a cuisine chip whose only
+  answer is the over-cap meal keeps its cuisine through the re-pick
+  (`must_be_cuisine`, else it stands); and a meal their own words name
+  (`count_asks`, `meal_variety.asked_for_by_name`) is kept even when the
+  model forgot to stamp `freeform` — LUNCH only: on a dinner,
+  asked_for_by_name's lean toward keeping ("less pasta") would leave a slow
+  dinner on a rush night unflagged (second review), so dinners keep main's
+  rule. The chip guard does apply to dinners too: a dinner that is a chip's
+  only answer is re-picked within the chip or stands over its cap.
+
 - **2026-10-06 — Plan strip: day tiles only as tall as the day and date
   (branch `overnight/shorter-day-tiles`).** `.wk-tile` `min-height` 72px ->
   44px; padding unchanged. The 72px held the dots removed 2026-10-05 (~25px

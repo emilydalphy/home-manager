@@ -229,8 +229,11 @@ def run(monkeypatch, picker):
         seen = {}
 
         def _wrapped(plan_id, intake, memory, **kwargs):
+            # Every argument generation passes (budget, dates, asks) goes
+            # through; only the picker is the stub's.
             seen["result"] = real(plan_id, intake, memory,
-                                  budget=kwargs.get("budget"), picker=pick or picker)
+                                  **{k: v for k, v in kwargs.items() if k != "picker"},
+                                  picker=pick or picker)
             seen["budget"] = kwargs.get("budget")
             return seen["result"]
 
@@ -1196,14 +1199,15 @@ def test_generations_own_fold_puts_a_repeated_over_cap_dinner_out_of_reach(
     assert len(_cap_warnings(plan_id, week)) == 2, "and plan_quality goes on warning"
 
 
-def test_an_unanswered_lunch_over_its_cap_is_still_only_warned_about(capped, stub_model, run):
+def test_an_unanswered_lunch_over_its_cap_is_repicked_never_traded(capped, stub_model, run):
     """
-    CHAR, narrowed 2026-10-02 (Loop Board: "A weekday lunch you said you'd
-    cook in 20 minutes is drafted at 35"). A weekday lunch the household
-    ANSWERED "cooked that day" is now re-picked inside its cap — see
-    tests/test_lunch_cap_enforced.py. One nobody answered for, as here, is
-    still only warned about and recorded in `left` (cap_enforce's "ONLY A
-    LUNCH THEY SAID IS COOKED", an assumption for Emily). Never traded.
+    CHAR, re-pinned 2026-10-03 (Emily: the lunch time limit applies always,
+    even when the cooked-that-day question was skipped). Five unanswered
+    weekday lunches at 60 minutes: they are re-picked inside 20 as far as
+    the shared budget goes, never traded, and whatever the budget cannot
+    reach stays as drafted with "nothing quicker came back" in `left` and
+    is still warned about. Before 2026-10-03 this pinned the opposite (all
+    five only warned) — the assumption Emily has now answered.
     """
     week = _monday()
     dates = tools._week_dates(week)
@@ -1222,11 +1226,15 @@ def test_an_unanswered_lunch_over_its_cap_is_still_only_warned_about(capped, stu
 
     plan_id, seen = run(week, None)
 
-    assert seen["result"]["repicked"] == [] and seen["result"]["moved"] == []
-    assert [(x["slot"], x["why"]) for x in seen["result"]["left"]] == \
-        [("lunch", "the household hasn't said this lunch is cooked that day")] * 5
+    result = seen["result"]
+    assert result["moved"] == [], "never traded"
+    assert result["repicked"], "the cap holds with step 3 unanswered"
+    assert {x["slot"] for x in result["repicked"]} == {"lunch"}
+    assert all(x["cap"] == 20 for x in result["repicked"])
+    assert [(x["slot"], x["why"]) for x in result["left"]] == \
+        [("lunch", "nothing quicker came back")] * (5 - len(result["repicked"]))
     lunch_warnings = [v for v in plan_quality.check_week(
         plan_quality._load_plan_entries(plan_id),
         {"prep_days": [], "lunch_kinds": {}},
     ) if v.rule == "weekday_lunch_cap_respected"]
-    assert len(lunch_warnings) == 5, "the five weekday lunches, warned about and not repaired"
+    assert len(lunch_warnings) == len(result["left"]), "only what the budget could not reach is warned"
