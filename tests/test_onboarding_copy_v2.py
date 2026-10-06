@@ -87,8 +87,11 @@ REWORDINGS = [
     # ahead?", with the days and the length inside the yes.
     ("Do you like to cook ahead?",
      "step-prep", "Which days do you want to do your meal prepping?"),
-    ("Anything I should never put on the plate?",
-     "step-restrictions", "Dietary preferences or restrictions"),
+    # UPDATED 2026-10-06 (Onboarding regrouped, Emily 2026-10-05): the
+    # title went BACK to "Dietary restrictions" on purpose; the line under
+    # it stays.
+    ("Dietary restrictions",
+     "step-restrictions", "Anything I should never put on the plate?"),
     ("Anything I should never recommend?",
      "step-wont-eat", "Anything the house just won't eat, no matter what?"),
     # UPDATED 2026-09-30: "Which meals should I plan?" became the meals x
@@ -195,10 +198,13 @@ def test_the_wizard_sends_counts_from_the_week_grid():
     old default (7 / 7 / 5, snacks per day 2), and the usual week itself
     rides along (its variety choice sets the real number, server-side)."""
     assert 'id="uw-grid"' in _step_markup("step-meals-days")
-    assert re.search(r"let snacksPerDay = 2;", ONBOARDING), "the default is no longer 2"
+    # UPDATED 2026-10-06 (Onboarding regrouped): snacks are asked per
+    # person on their own screen (children 2, adults 1); the household's
+    # snacks a day is the most anyone has.
+    assert "return (member && (member.age_group === 'child' || member.age_group === 'toddler')) ? 2 : 1;" in ONBOARDING
     body = _function_body("plannedMealCounts")
     assert "uwMealOn('breakfast') ? breakfastsPerWeek : 0" in body
-    assert "snacks_per_day: snacksPerDay" in body
+    assert "snacks_per_day: householdSnacksPerDay()" in body
     save = _function_body("saveOnboardingAnswers")
     assert "...plannedMealCounts()" in save
     assert "usual_week: usualWeekPayload()" in save

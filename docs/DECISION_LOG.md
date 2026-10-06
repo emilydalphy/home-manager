@@ -13,6 +13,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Onboarding, regrouped, slice 1 (branch
+  `overnight/onboarding-regrouped`).** Emily's locked flow (2026-10-05):
+  household -> schedule -> breakfast -> lunch -> dinner -> snacks -> the
+  rest; the eyebrow is the section NAME (seven sections, no "2 of 4").
+  New screens `lunch-needs` (five needs per person, day by day, "Made fresh:
+  how long" 20/30/45/none) and `snacks` (0-3 per person, child 2 / adult 1).
+  "Dietary restrictions" title + Allergy picker (nine + typed box, each
+  stored `allergy: x`). Cook ahead lost "How long?" (always 120). Dinner
+  timings = dinner time + weeknight limit. Who's eating lost the lunch line
+  and snacks row. Stored on `members.lunch_needs_json` / `snacks_per_day`
+  (`app/tools/member_needs.py`); the household's snacks a day is the most
+  anyone has. BRIDGE: a lunch need also writes `rhythm.lunch_location`
+  (packed/thermos/nut-free = out) so today's planner reads it unchanged.
+  Run-once migration (user_version 3): prep minutes <120 -> 120, lunch cap
+  <20 -> 20. Order tests updated deliberately (go_back, your_week,
+  welcome_flow, anything_else, chores_setup_split, copy tests).
+  NOT YET: ages (Adult/Teen/Child + age, infant switch), the planner reading
+  needs per person / nut-free snacks, Settings -> Your rhythm screens.
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop

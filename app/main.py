@@ -730,6 +730,19 @@ class OnboardingAnswersRequest(BaseModel):
     # number wins over the old count fields for that meal. Optional, so an
     # older client that sends only the counts is unaffected.
     usual_week: UsualWeekRequest | None = None
+    # Onboarding, regrouped (Emily, 2026-10-05): per person, by NAME —
+    # weekday lunch needs ({"needs": [...], "days": {...}}) and snacks a
+    # day (0-3). Saved after the names above (app/tools/member_needs.py).
+    # Optional, so an older client is unaffected.
+    lunch_needs: dict | None = None
+    member_snacks: dict | None = None
+
+
+class MemberNeedsRequest(BaseModel):
+    """Per-person lunch needs and/or snacks a day, by member name. Omitted
+    parts stay as they are (app/tools/member_needs.py)."""
+    lunch_needs: dict | None = None
+    snacks: dict | None = None
 
 
 class OnboardingRhythmRequest(BaseModel):
@@ -1418,6 +1431,10 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
     try:
+        tools.validate_member_needs(req.lunch_needs, req.member_snacks)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    try:
         memory = tools.save_onboarding_answers(
             member_names=req.member_names,
             household_restrictions=req.household_restrictions,
@@ -1446,7 +1463,32 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             logger.exception("Onboarding usual week save failed")
             raise HTTPException(status_code=500, detail=f"Server error: {e}")
         memory = dict(tools.get_household_memory(), usual_week=saved)
+    if req.lunch_needs is not None or req.member_snacks is not None:
+        try:
+            needs = tools.save_member_needs(req.lunch_needs, req.member_snacks, source="onboarding")
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.exception("Onboarding member needs save failed")
+            raise HTTPException(status_code=500, detail=f"Server error: {e}")
+        memory = dict(memory, member_needs=needs)
     return memory
+
+
+@app.get("/api/member-needs")
+def get_member_needs():
+    """Each person's weekday lunch needs and snacks a day (2026-10-05)."""
+    return {"members": tools.get_member_needs()}
+
+
+@app.post("/api/member-needs")
+def save_member_needs(req: MemberNeedsRequest):
+    """Save per-person lunch needs and/or snacks a day; 400 on anything
+    invalid, before anything is written."""
+    try:
+        return {"members": tools.save_member_needs(req.lunch_needs, req.snacks, source="settings")}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/api/usual-week")

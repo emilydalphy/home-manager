@@ -273,7 +273,9 @@ def test_the_dinner_time_line_sits_under_the_question_not_under_the_chips():
         "Everyone starts on every meal. Tap a day to pick who&rsquo;s eating it, or to tap off a meal you don&rsquo;t need planned.",
         "Everyone", "Some of you", "Not planned",
     ]),
-    ("step-restrictions", ["Anything I should never put on the plate?", "Allergies, must-avoids, the way someone eats."]),
+    # UPDATED 2026-10-06 (Onboarding regrouped): "Dietary restrictions"
+    # again, Emily 2026-10-05; the line stays.
+    ("step-restrictions", ["Dietary restrictions", "Allergies, must-avoids, the way someone eats."]),
     ("step-eating-style", ["Is there a certain way you'd like meals to lean?"]),
     ("step-wont-eat", ["Anything I should never recommend?"]),
     ("step-excited-about", ["What are you excited to eat more of lately?"]),
@@ -283,7 +285,9 @@ def test_the_dinner_time_line_sits_under_the_question_not_under_the_chips():
         "Do you like to cook ahead?",
         "A prep day is when you make things for later in the week: lunches, a big batch, sauces.",
         "No, I cook as I go", "Every meal is made the day you eat it.",
-        "Yes, I have a prep day", "Which day?", "How long?",
+        # "How long?" left 2026-10-06 (Onboarding regrouped): every prep
+        # day is planned for up to 2 hours.
+        "Yes, I have a prep day", "Which day?",
     ]),
     ("step-variety-breakfast", [
         "How many different breakfasts in a week?",

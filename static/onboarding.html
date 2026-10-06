@@ -464,13 +464,18 @@
   .uw-quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .uw-quick .uw-q { padding: 0 4px; }
   .uw-ct { flex-basis: 100%; margin: 0; font-size: 12px; font-weight: 800; color: var(--apricot-label); }
-  .uw-lunch { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-secondary); padding: 0 2px; }
   .uw-link {
     min-height: 44px; padding: 0 2px; background: none; border: 0; cursor: pointer;
     font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--apricot-label);
   }
-  .uw-lunch-edit { display: flex; flex-direction: column; gap: 6px; }
-  .uw-lunch-edit .uw-row span { min-width: 64px; font-size: 13px; font-weight: 700; color: var(--ink); }
+  /* The Allergy picker: the nine chips, then the typed box under them. */
+  .diet-allergy-row { flex-direction: column; gap: 10px; }
+  /* Weekday lunches (2026-10-06): a person's day-by-day rows. */
+  .ln-day { display: flex; flex-direction: column; gap: 6px; }
+  .ln-day + .ln-day { margin-top: 6px; }
+  .ln-days-pick { display: flex; flex-direction: column; gap: 8px; }
+  .ln-days-pick:empty { display: none; }
+  #snacks-people { display: flex; flex-direction: column; gap: 10px; }
   .uw-snacks { display: flex; gap: 5px; }
   .uw-snacks .uw-q { min-width: 44px; padding: 0 10px; }
   .uw-sum {
@@ -1390,12 +1395,14 @@
   </div>
 </div>
 
-<!-- Q3: hard restrictions, per person -->
+<!-- Q3: hard restrictions, per person. "Dietary restrictions" again
+     (Emily, 2026-10-05, Onboarding regrouped — it was "Anything I should
+     never put on the plate?"); the line under it stays. -->
 <div id="step-restrictions" style="display:none">
   <button class="back-link" type="button" data-step-back="restrictions" hidden></button>
   <div class="q-body">
     <p class="q-eyebrow"></p>
-    <h1 class="q-title">Anything I should never put on the plate?</h1>
+    <h1 class="q-title">Dietary restrictions</h1>
     <p class="q-line">Allergies, must-avoids, the way someone eats.</p>
     <div class="q-controls">
       <div id="diet-by-member"></div>
@@ -1430,10 +1437,11 @@
 </div>
 
 <!-- Do you like to cook ahead? (Emily, 2026-09-30 — replaces "Which days
-     do you want to do your meal prepping?"). No, or yes with the day(s) and
-     "About an hour" / "A longer stretch"; saved as usual_week.prep (the
-     rhythm fact prep_days, 60 / 120 minutes). The line under it reads the
-     answer back (prepReadback). -->
+     do you want to do your meal prepping?"). No, or yes with the day(s);
+     saved as usual_week.prep (the rhythm fact prep_days). "How long?" left
+     on 2026-10-05 (Onboarding regrouped): every prep day is planned for up
+     to 2 hours (120 minutes). The line under it reads the answer back
+     (prepReadback). -->
 <div id="step-prep" style="display:none">
   <button class="back-link" type="button" data-step-back="prep" hidden></button>
   <div class="q-body">
@@ -1447,8 +1455,6 @@
         <div class="q-opt-body" id="prep-yes-body" hidden>
           <p class="q-opt-label">Which day?</p>
           <div class="uw-days" id="prep-day-tiles"></div>
-          <p class="q-opt-label">How long?</p>
-          <div class="q-seg" id="prep-length"></div>
         </div>
       </div>
       <p class="uw-sum" id="prep-readback" hidden></p>
@@ -1481,6 +1487,33 @@
     <div class="q-pips" aria-hidden="true"></div>
     <p class="q-pips-caption" hidden></p>
     <button class="btn-primary q-next" id="variety-breakfast-next" type="button">Continue</button>
+  </div>
+</div>
+<!-- Weekday lunches (Onboarding regrouped, Emily 2026-10-05, from
+     Gowthami's household: a nut-free school, a cold office lunch, warm
+     leftovers at home). A row per person who eats lunch on a weekday, each
+     with Emily's five needs (any number). "Different on some days?" lets a
+     name be set day by day. "Made fresh: how long can it take?" only when
+     somebody has Made fresh. Shown only when lunch is on for any weekday
+     (stepFlow). Saved per person by app/tools/member_needs.py. -->
+<div id="step-lunch-needs" style="display:none">
+  <button class="back-link" type="button" data-step-back="lunch-needs" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">What does each person need for weekday lunches?</h1>
+    <p class="q-line">So I only plan lunches that work where they&rsquo;re eaten.</p>
+    <div class="q-controls">
+      <div id="lunch-needs-people"></div>
+      <div class="ln-days-pick" id="lunch-needs-days-pick"></div>
+      <div class="q-group" id="lunch-max-group" hidden>
+        <p class="q-sub">Made fresh: how long can it take?</p>
+        <div class="rhythm-chip-row" id="lunch-max-chips"></div>
+        <p class="uw-sum" id="lunch-max-other" hidden></p>
+      </div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <button class="btn-primary q-next" id="lunch-needs-next" type="button">Continue</button>
   </div>
 </div>
 <div id="step-variety-lunch" style="display:none">
@@ -1516,7 +1549,31 @@
   </div>
 </div>
 
-<!-- Three questions, ONE step (Loop Board "Time limits", Gowthami's
+<!-- Snacks a day (Onboarding regrouped, Emily 2026-10-05): 0-3 per
+     person, children 2 and adults 1 to start. Each person's snacks follow
+     their own restrictions and their lunch "Nut-free environment". Saved
+     per person by app/tools/member_needs.py; the household's snacks a day
+     (how many snack dishes a day to plan) is the most anyone has. -->
+<div id="step-snacks" style="display:none">
+  <button class="back-link" type="button" data-step-back="snacks" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">How many snacks a day?</h1>
+    <p class="q-line">For each person. I&rsquo;ll keep every snack to what they can eat.</p>
+    <div class="q-controls">
+      <div id="snacks-people"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <button class="btn-primary q-next" id="snacks-next" type="button">Continue</button>
+  </div>
+</div>
+
+<!-- Dinner timings (Onboarding regrouped, Emily 2026-10-05): dinner time
+     and the weeknight limit — the dinner half of what was this step. The
+     weekday lunch limit moved to "Weekday lunches" ("Made fresh: how long
+     can it take?"). History below.
+     Three questions, ONE step (Loop Board "Time limits", Gowthami's
      household 2026-10-04: "It doesn't give the option on time limits for
      the user to give"). The two time limits are on the dinner-time step
      rather than on steps of their own: they are the same subject, and a
@@ -1538,15 +1595,6 @@
         <p class="q-line">Monday to Friday, start to finish.</p>
         <div class="rhythm-chip-row" id="weeknight-max-chips"></div>
         <p class="uw-sum" id="weeknight-max-other" hidden></p>
-      </div>
-      <!-- Only when anyone has lunch at home on a weekday (buildDinnerTimeStep
-           decides). A household where every single person takes lunch out has
-           no weekday lunch to put a limit on. -->
-      <div class="q-group" id="lunch-max-group" hidden>
-        <p class="q-sub">And a weekday lunch made that day?</p>
-        <p class="q-line">Only the ones you cook on the day &mdash; a lunch that reheats an earlier cook has no limit.</p>
-        <div class="rhythm-chip-row" id="lunch-max-chips"></div>
-        <p class="uw-sum" id="lunch-max-other" hidden></p>
       </div>
     </div>
   </div>
@@ -2043,6 +2091,14 @@ function pruneMemberKeyedAnswers() {
   // household on every draw and in the payload (uwCleanCell).
   pruneRestrictionAnswers();
   pruneHelperAnswers();
+  // Weekday lunch needs, snacks a day and the note's "takes lunch with
+  // them" (2026-10-06) are keyed by name too.
+  // (typeof: the node harnesses in tests/ lift this function without them.)
+  if (typeof lunchNeeds === 'undefined') return;
+  const here = new Set(currentMembers().map(m => m.name));
+  [lunchNeeds, memberSnacks, lunchLocation].forEach(map => {
+    Object.keys(map).forEach(name => { if (!here.has(name)) delete map[name]; });
+  });
 }
 // ---------- The main person ----------
 // The name is typed in exactly ONE place, #your-name-input on the screen
@@ -2186,10 +2242,13 @@ const WEEKNIGHT_MAX_OPTIONS = [
   { key: 60, label: '1 hour' },
   { key: 0, label: 'No limit' },
 ];
+// "Made fresh: how long can it take?" (Onboarding regrouped, Emily
+// 2026-10-05): 10 minutes is gone — 20 is the floor, and saved 10s moved
+// to 20 (db._migrate_prep_and_lunch_limits).
 const LUNCH_MAX_OPTIONS = [
-  { key: 10, label: '10 min' },
   { key: 20, label: '20 min' },
   { key: 30, label: '30 min' },
+  { key: 45, label: '45 min' },
   { key: 0, label: 'No limit' },
 ];
 let weeknightMaxMinutes = 45;
@@ -2208,20 +2267,6 @@ function timeLimitOtherLine(value, options) {
   return mins + ' minutes at most';
 }
 
-// "When anyone has lunch at home on a weekday" (the card). Two halves:
-// lunch has to be ON some weekday in the usual week, and somebody has to
-// be eating it here. The second is the one worth stating — lunchLocation
-// is unset for anybody nobody has said anything about, and unset means AT
-// HOME (lunchLocationPayload's own rule), so the question is asked unless
-// every member is explicitly 'out', never only when somebody ticked home.
-function weekdayLunchAtHome() {
-  // Monday-Friday are the first five cells: UW_WEEKDAYS starts on Monday.
-  if (!(usualGrid.lunch || []).slice(0, 5).some(uwIsOn)) return false;
-  const members = currentMembers();
-  if (!members.length) return true;
-  return members.some(m => lunchLocation[m.name] !== 'out');
-}
-
 function renderTimeLimitChips(rowId, otherId, options, value, onSelect) {
   buildSingleSelectChips(document.getElementById(rowId), options, value, onSelect);
   const other = document.getElementById(otherId);
@@ -2234,10 +2279,9 @@ function renderWeeknightMaxChips() {
     weeknightMaxMinutes, (key) => { weeknightMaxMinutes = key; renderWeeknightMaxChips(); });
 }
 function renderLunchMaxChips() {
-  // Hidden rather than absent, so going back and changing who eats lunch
-  // where brings the question back on the way forward — the whole point of
-  // redrawing on arrival (STEP_BUILDERS).
-  document.getElementById('lunch-max-group').hidden = !weekdayLunchAtHome();
+  // Only when somebody has Made fresh, on any day (the card). Hidden
+  // rather than absent, so tapping Made fresh brings it straight in.
+  document.getElementById('lunch-max-group').hidden = !someoneHasMadeFresh();
   renderTimeLimitChips('lunch-max-chips', 'lunch-max-other', LUNCH_MAX_OPTIONS,
     weekdayLunchMaxMinutes, (key) => { weekdayLunchMaxMinutes = key; renderLunchMaxChips(); });
 }
@@ -2245,8 +2289,187 @@ function renderLunchMaxChips() {
 function buildDinnerTimeStep() {
   renderDinnerWindowChips();
   renderWeeknightMaxChips();
+}
+
+// ---------- Weekday lunches (Onboarding regrouped, 2026-10-06) ----------
+// Emily's locked screen (2026-10-05): "What does each person need for
+// weekday lunches?" A row per person who eats lunch on any weekday, each
+// with any of five needs. "Different on some days?" turns a name into five
+// day rows (Mon-Fri), each with the same five. Someone who buys lunch is
+// turned off on Who's eating, so they have no row here.
+//
+// Keyed by member NAME like every other answer before the finish, and
+// pruned with them (pruneMemberKeyedAnswers). Nothing is posted until
+// setup ends: saveOnboardingAnswers sends lunchNeedsPayload().
+const LUNCH_NEED_OPTIONS = [
+  { key: 'cold_packed', label: 'Cold packed' },
+  { key: 'thermos', label: 'Warm in a thermos' },
+  { key: 'reheat', label: 'Something to reheat' },
+  { key: 'made_fresh', label: 'Made fresh' },
+  { key: 'nut_free', label: 'Nut-free environment' },
+];
+// Monday-Friday — a literal, since UW_WEEKDAYS is declared further down.
+const LUNCH_NEED_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+let lunchNeeds = {};          // name -> { needs: [...], days: { monday: [...] } | null }
+let lunchDaysPicking = false; // "Different on some days?" opened
+
+// The people with a lunch to plan on some weekday: everyone on a cell
+// that's 'all', the names on a subset cell.
+function lunchPeople() {
+  const names = currentMembers().map(m => m.name);
+  const on = new Set();
+  (usualGrid.lunch || []).slice(0, 5).forEach(cell => {
+    const c = uwCleanCell(cell, names);
+    if (c === 'off') return;
+    (c === 'all' ? names : c).forEach(n => on.add(n));
+  });
+  return names.filter(n => on.has(n));
+}
+function lunchEntry(name) {
+  if (!lunchNeeds[name]) lunchNeeds[name] = { needs: [], days: null };
+  return lunchNeeds[name];
+}
+function lunchNeedsAnswered(name) {
+  const e = lunchNeeds[name];
+  if (!e) return false;
+  if (e.needs.length) return true;
+  return !!e.days && LUNCH_NEED_DAYS.some(d => (e.days[d] || []).length);
+}
+function toggleNeed(list, key) {
+  const out = list.indexOf(key) !== -1 ? list.filter(k => k !== key) : list.concat([key]);
+  return LUNCH_NEED_OPTIONS.map(o => o.key).filter(k => out.indexOf(k) !== -1);
+}
+function someoneHasMadeFresh() {
+  return lunchPeople().some(n => {
+    const e = lunchNeeds[n];
+    if (!e) return false;
+    if (e.days) return LUNCH_NEED_DAYS.some(d => (e.days[d] || []).indexOf('made_fresh') !== -1);
+    return e.needs.indexOf('made_fresh') !== -1;
+  });
+}
+function lunchChipsHtml(name, day, picked) {
+  return '<div class="chip-row ln-chips">' + LUNCH_NEED_OPTIONS.map(o => {
+    const on = picked.indexOf(o.key) !== -1;
+    return `<button type="button" class="chip${on ? ' active' : ''}" data-ln-name="${escapeHtmlLocal(name)}" data-ln-day="${day}" data-ln-need="${o.key}" aria-pressed="${on ? 'true' : 'false'}">${o.label}</button>`;
+  }).join('') + '</div>';
+}
+function lunchPersonHtml(name) {
+  const e = lunchEntry(name);
+  let html = `<div class="member-block"><p class="q-sub">${escapeHtmlLocal(name)}</p>`;
+  if (!e.days) {
+    html += lunchChipsHtml(name, '', e.needs);
+  } else {
+    html += LUNCH_NEED_DAYS.map(d =>
+      `<div class="ln-day"><p class="q-opt-label">${uwDayName(d)}</p>${lunchChipsHtml(name, d, e.days[d] || [])}</div>`
+    ).join('');
+    html += `<button type="button" class="uw-link" data-ln-same="${escapeHtmlLocal(name)}">Same every day</button>`;
+  }
+  return html + '</div>';
+}
+function buildLunchNeedsStep() {
+  const people = lunchPeople();
+  document.getElementById('lunch-needs-people').innerHTML = people.map(lunchPersonHtml).join('');
+  const pick = document.getElementById('lunch-needs-days-pick');
+  const standing = people.filter(n => !lunchEntry(n).days);
+  if (!standing.length) {
+    pick.innerHTML = '';
+  } else if (!lunchDaysPicking) {
+    pick.innerHTML = '<button type="button" class="uw-link" data-ln-days-open>Different on some days?</button>';
+  } else {
+    pick.innerHTML = '<p class="q-opt-label">Tap a name to set it day by day</p><div class="uw-row">' +
+      standing.map(n => `<button type="button" class="uw-q" data-ln-by-day="${escapeHtmlLocal(n)}">${escapeHtmlLocal(n)}</button>`).join('') +
+      '</div>';
+  }
   renderLunchMaxChips();
 }
+document.getElementById('step-lunch-needs').addEventListener('click', e => {
+  const chip = e.target.closest('[data-ln-need]');
+  if (chip) {
+    const entry = lunchEntry(chip.dataset.lnName);
+    const day = chip.dataset.lnDay;
+    if (day && entry.days) entry.days[day] = toggleNeed(entry.days[day] || [], chip.dataset.lnNeed);
+    else entry.needs = toggleNeed(entry.needs, chip.dataset.lnNeed);
+    buildLunchNeedsStep();
+    return;
+  }
+  if (e.target.closest('[data-ln-days-open]')) { lunchDaysPicking = true; buildLunchNeedsStep(); return; }
+  const byDay = e.target.closest('[data-ln-by-day]');
+  if (byDay) {
+    // Every day starts as the standing answer, so only the days that are
+    // really different need a tap.
+    const entry = lunchEntry(byDay.dataset.lnByDay);
+    entry.days = {};
+    LUNCH_NEED_DAYS.forEach(d => { entry.days[d] = entry.needs.slice(); });
+    lunchDaysPicking = false;
+    buildLunchNeedsStep();
+    return;
+  }
+  const same = e.target.closest('[data-ln-same]');
+  if (same) {
+    // Back to one answer for the week: Monday's, which is where they started.
+    const entry = lunchEntry(same.dataset.lnSame);
+    entry.needs = entry.days ? (entry.days.monday || []).slice() : entry.needs;
+    entry.days = null;
+    buildLunchNeedsStep();
+  }
+});
+// The payload: only people with something tapped (an empty row says
+// nothing, and must not overwrite what the note said — lunchLocationPayload)
+// and only people who still have a weekday lunch. A day-by-day person's
+// standing answer is Monday's; the server keeps only the days that differ.
+function lunchNeedsPayload() {
+  const out = {};
+  lunchPeople().forEach(n => {
+    if (!lunchNeedsAnswered(n)) return;
+    const e = lunchNeeds[n];
+    if (e.days) {
+      const days = {};
+      LUNCH_NEED_DAYS.forEach(d => { days[d] = (e.days[d] || []).slice(); });
+      out[n] = { needs: days.monday.slice(), days: days };
+    } else {
+      out[n] = { needs: e.needs.slice(), days: {} };
+    }
+  });
+  return Object.keys(out).length ? out : null;
+}
+
+// ---------- Snacks a day (Onboarding regrouped, 2026-10-06) ----------
+// 0-3 per person; children 2, adults 1 to start (Emily, 2026-10-05).
+// "Child" here is the age chip's Child or Little one. Held by NAME and
+// pruned with the others; a person never touched shows their default.
+const SNACK_OPTIONS = [0, 1, 2, 3];
+let memberSnacks = {};        // name -> 0..3, only once tapped
+function defaultSnacksFor(member) {
+  return (member && (member.age_group === 'child' || member.age_group === 'toddler')) ? 2 : 1;
+}
+function snacksFor(member) {
+  return Object.prototype.hasOwnProperty.call(memberSnacks, member.name) ? memberSnacks[member.name] : defaultSnacksFor(member);
+}
+// How many snack dishes a day the planner makes: the most anyone has.
+function householdSnacksPerDay() {
+  const members = currentMembers();
+  if (!members.length) return 1;
+  return Math.max.apply(null, members.map(snacksFor));
+}
+function memberSnacksPayload() {
+  const out = {};
+  currentMembers().forEach(m => { out[m.name] = snacksFor(m); });
+  return Object.keys(out).length ? out : null;
+}
+function buildSnacksStep() {
+  document.getElementById('snacks-people').innerHTML = currentMembers().map(m => {
+    const n = snacksFor(m);
+    return `<div class="uw-card uw-card-row"><span class="uw-title">${escapeHtmlLocal(m.name)}</span><div class="uw-snacks" role="group" aria-label="${escapeHtmlLocal(m.name)}’s snacks a day">` +
+      SNACK_OPTIONS.map(v => `<button type="button" class="uw-q${n === v ? ' is-on' : ''}" data-snacks-name="${escapeHtmlLocal(m.name)}" data-snacks="${v}" aria-pressed="${n === v ? 'true' : 'false'}">${v}</button>`).join('') +
+      '</div></div>';
+  }).join('');
+}
+document.getElementById('snacks-people').addEventListener('click', e => {
+  const btn = e.target.closest('[data-snacks]');
+  if (!btn) return;
+  memberSnacks[btn.dataset.snacksName] = Number(btn.dataset.snacks);
+  buildSnacksStep();
+});
 
 // ---------- When do you usually do the grocery shop? (2026-10-04) ----------
 // Two single-pick day rows and one escape chip. The main shop is what
@@ -2343,8 +2566,9 @@ async function saveRhythmAnswers() {
     dinner_window: rhythmDinnerWindow,
     leftovers_stance: leftoversStanceFromVariety(uwMealOn('dinner'), currentVarietyChoice('dinner')),
   };
-  // Only when the weekday-lunch line was changed: "at home" is what the
-  // planner assumes for anybody with nothing on file.
+  // Only what the note said, for people the Weekday lunches screen has no
+  // answer for: "at home" is what the planner assumes for anybody with
+  // nothing on file, and an answered person is written from their needs.
   const lunch = lunchLocationPayload();
   if (lunch) body.lunch_location = lunch;
   // Always sent, even empty: '' is the real "it changes week to week"
@@ -2486,17 +2710,15 @@ const UW_QUICK = [
   { label: 'Weekends', days: [5, 6] },
   { label: 'None', days: [] },
 ];
-const UW_SNACK_OPTIONS = [
-  { value: 0, label: 'None' }, { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3 a day' },
-];
 function uwAllRow() { return UW_WEEKDAYS.map(() => 'all'); }
 let usualGrid = { breakfast: uwAllRow(), lunch: uwAllRow(), dinner: uwAllRow() };
 let uwOpen = null;             // { meal, i } — the day whose picker is showing
-let uwLunchEditing = false;
-let lunchLocation = {};        // name -> 'home' | 'out'
-let lunchLocationTouched = false;
-// Snacks are asked PER DAY, default 2 (Julia, 2026-09-08); None/1/2/3 here.
-let snacksPerDay = 2;
+// Who takes lunch with them, as read out of setup's last answer ("Anything
+// else I should know?") — name -> 'out'. The weekday-lunch line that used
+// to set it on this screen left on 2026-10-06 (Onboarding regrouped): the
+// Weekday lunches screen asks it properly now, and wins for anybody it
+// was answered for (saveRhythmAnswers).
+let lunchLocation = {};
 
 function uwIsOn(cell) { return cell !== 'off'; }
 function uwDaysOn(row) { return (row || []).filter(uwIsOn).length; }
@@ -2554,23 +2776,23 @@ function uwApplyPick(cell, key, names) {
 function uwTotalMeals(grid) {
   return UW_MEALS.reduce((t, m) => t + uwDaysOn(grid[m]), 0);
 }
-function uwSummary(grid, snacks) {
+// Snacks are their own screen since 2026-10-06 (Onboarding regrouped), so
+// the line under the grid counts meals only.
+function uwSummary(grid) {
   const total = uwTotalMeals(grid);
   if (!total) return 'Nothing to plan yet. Tap a day to add it.';
-  const snackPart = snacks === 0 ? 'no snacks' : snacks + (snacks === 1 ? ' snack a day' : ' snacks a day');
-  return 'That’s ' + total + (total === 1 ? ' meal' : ' meals') + ' and ' + snackPart + '.';
-}
-// The weekday-lunch line: who's home for lunch and who packs it
-// (rhythm lunch_location 'home' / 'out' — 'out' is what pre-ticks a packed
-// lunch on the weekly questions).
-function uwLunchLine(names, loc) {
-  return 'Weekdays: ' + names.map(n => n + ((loc || {})[n] === 'out' ? ' packs it' : ' at home')).join(' · ');
+  return 'That’s ' + total + (total === 1 ? ' meal' : ' meals') + ' a week.';
 }
 function uwWeekdayLunchOn(grid) { return grid.lunch.slice(0, 5).some(uwIsOn); }
+// The note's "takes lunch with them", for the people the Weekday lunches
+// screen has nothing for — anybody it was answered for is written from
+// that answer instead (app/tools/member_needs.py), which is saved after
+// this and would replace it anyway.
 function lunchLocationPayload() {
-  if (!lunchLocationTouched) return null;
   const out = {};
-  currentMembers().forEach(m => { out[m.name] = lunchLocation[m.name] === 'out' ? 'out' : 'home'; });
+  currentMembers().forEach(m => {
+    if (lunchLocation[m.name] === 'out' && !lunchNeedsAnswered(m.name)) out[m.name] = 'out';
+  });
   return Object.keys(out).length ? out : null;
 }
 
@@ -2594,29 +2816,13 @@ function uwMealCardHtml(meal, names) {
       return `<button type="button" class="uw-q${on ? ' is-on' : ''}" data-uw-quick="${qi}" aria-pressed="${on ? 'true' : 'false'}">${q.label}</button>`;
     }).join('') + '</div>';
   }
-  if (meal === 'lunch' && names.length && uwWeekdayLunchOn(usualGrid)) {
-    html += `<div class="uw-lunch"><span>${escapeHtmlLocal(uwLunchLine(names, lunchLocation))}</span><button type="button" class="uw-link" data-uw-lunch-edit>${uwLunchEditing ? 'Done' : 'Change'}</button></div>`;
-    if (uwLunchEditing) {
-      html += '<div class="uw-lunch-edit">' + names.map(n => {
-        const out = lunchLocation[n] === 'out';
-        return `<div class="uw-row"><span>${escapeHtmlLocal(n)}</span>` +
-          `<button type="button" class="uw-q${out ? '' : ' is-on'}" data-uw-lunch="${escapeHtmlLocal(n)}" data-value="home" aria-pressed="${out ? 'false' : 'true'}">At home</button>` +
-          `<button type="button" class="uw-q${out ? ' is-on' : ''}" data-uw-lunch="${escapeHtmlLocal(n)}" data-value="out" aria-pressed="${out ? 'true' : 'false'}">Packs it</button></div>`;
-      }).join('') + '</div>';
-    }
-  }
   return html + '</div>';
-}
-function uwSnacksCardHtml() {
-  return '<div class="uw-card uw-card-row"><span class="uw-title">Snacks</span><div class="uw-snacks">' +
-    UW_SNACK_OPTIONS.map(o => `<button type="button" class="uw-q${snacksPerDay === o.value ? ' is-on' : ''}" data-uw-snacks="${o.value}" aria-pressed="${snacksPerDay === o.value ? 'true' : 'false'}">${o.label}</button>`).join('') +
-    '</div></div>';
 }
 function renderMealsDays() {
   const names = currentMembers().map(m => m.name);
   UW_MEALS.forEach(meal => { usualGrid[meal] = usualGrid[meal].map(cell => uwCleanCell(cell, names)); });
-  document.getElementById('uw-grid').innerHTML = UW_MEALS.map(meal => uwMealCardHtml(meal, names)).join('') + uwSnacksCardHtml();
-  document.getElementById('uw-sum').textContent = uwSummary(usualGrid, snacksPerDay);
+  document.getElementById('uw-grid').innerHTML = UW_MEALS.map(meal => uwMealCardHtml(meal, names)).join('');
+  document.getElementById('uw-sum').textContent = uwSummary(usualGrid);
   const next = document.getElementById('meals-days-next');
   if (next) next.disabled = uwTotalMeals(usualGrid) === 0;
 }
@@ -2650,37 +2856,18 @@ document.getElementById('uw-grid').addEventListener('click', e => {
     renderMealsDays();
     return;
   }
-  if (e.target.closest('[data-uw-lunch-edit]')) {
-    uwLunchEditing = !uwLunchEditing;
-    renderMealsDays();
-    return;
-  }
-  const lunch = e.target.closest('[data-uw-lunch]');
-  if (lunch) {
-    lunchLocation[lunch.dataset.uwLunch] = lunch.dataset.value;
-    lunchLocationTouched = true;
-    renderMealsDays();
-    return;
-  }
-  const snacks = e.target.closest('[data-uw-snacks]');
-  if (snacks) {
-    snacksPerDay = Number(snacks.dataset.uwSnacks);
-    renderMealsDays();
-  }
 });
 
 // ---------- Do you like to cook ahead? (2026-09-30) ----------
 // Replaces "Which days do you want to do your meal prepping?". No, or yes
-// with the day(s) and how long. Saved as usual_week.prep: the rhythm fact
-// prep_days, "About an hour" = 60 minutes, "A longer stretch" = 120
-// (app/tools/usual_week.py PREP_LENGTHS).
-const PREP_LENGTH_OPTIONS = [
-  { key: 'hour', label: 'About an hour' },
-  { key: 'longer', label: 'A longer stretch' },
-];
+// with the day(s). Saved as usual_week.prep: the rhythm fact prep_days.
+// "How long?" left on 2026-10-06 (Onboarding regrouped, Emily
+// 2026-10-05): every prep day is planned for up to 2 hours, so the length
+// is always 'longer' = 120 minutes (app/tools/usual_week.py PREP_LENGTHS),
+// and db._migrate_prep_and_lunch_limits moved the 1-hour households.
+const PREP_LENGTH = 'longer';
 let prepAnswer = '';           // '' (not answered — read as no) | 'no' | 'yes'
 let prepDayKeys = [];          // 'monday'... as tapped
-let prepLength = '';           // '' | 'hour' | 'longer'
 // In week order, whatever order the taps came in; none unless "Yes".
 function currentPrepDayKeys() {
   return prepAnswer === 'yes' ? UW_WEEKDAYS.filter(d => prepDayKeys.indexOf(d) !== -1) : [];
@@ -2689,15 +2876,13 @@ function hasPrepDay() { return currentPrepDayKeys().length > 0; }
 function uwDayName(key) { return UW_DAY_NAMES[UW_WEEKDAYS.indexOf(key)] || ''; }
 // The line under the answer (Emily's mockup: "Sunday, a longer stretch.
 // I'll put lunch prep and a big batch cook there, and keep weeknights
-// quick."). Lunch prep only when lunch is planned at all; a big batch
-// only for the longer stretch.
-function prepReadback(days, length, lunchOn) {
+// quick."). Lunch prep only when lunch is planned at all. Every prep day
+// is up to 2 hours since 2026-10-06, so the line says that instead of a
+// length somebody picked.
+function prepReadback(days, lunchOn) {
   if (!days.length) return '';
-  const when = revealJoinWords(days.map(uwDayName)) +
-    (length === 'longer' ? ', a longer stretch' : length === 'hour' ? ', about an hour' : '');
-  let what;
-  if (length === 'longer') what = lunchOn ? 'lunch prep and a big batch cook' : 'a big batch cook';
-  else what = lunchOn ? 'lunch prep' : 'the week’s prep';
+  const when = revealJoinWords(days.map(uwDayName)) + ', up to 2 hours';
+  const what = lunchOn ? 'lunch prep and a big batch cook' : 'a big batch cook';
   return when + '. I’ll put ' + what + ' there, and keep weeknights quick.';
 }
 function buildPrepStep() {
@@ -2713,10 +2898,7 @@ function buildPrepStep() {
     const on = prepDayKeys.indexOf(d) !== -1;
     return `<button type="button" class="uw-day${on ? ' is-all' : ''}" data-prep-day="${d}" aria-label="${UW_DAY_NAMES[i]}" aria-pressed="${on ? 'true' : 'false'}"><b>${UW_LETTERS[i]}</b></button>`;
   }).join('');
-  document.getElementById('prep-length').innerHTML = PREP_LENGTH_OPTIONS.map(o =>
-    `<button type="button" class="${prepLength === o.key ? 'is-on' : ''}" data-prep-length="${o.key}" aria-pressed="${prepLength === o.key ? 'true' : 'false'}">${o.label}</button>`
-  ).join('');
-  const line = prepReadback(currentPrepDayKeys(), prepLength, uwMealOn('lunch'));
+  const line = prepReadback(currentPrepDayKeys(), uwMealOn('lunch'));
   const readback = document.getElementById('prep-readback');
   readback.textContent = line;
   readback.hidden = !line;
@@ -2730,12 +2912,6 @@ document.getElementById('prep-day-tiles').addEventListener('click', e => {
   if (!btn) return;
   const d = btn.dataset.prepDay;
   prepDayKeys = prepDayKeys.indexOf(d) !== -1 ? prepDayKeys.filter(k => k !== d) : prepDayKeys.concat([d]);
-  buildPrepStep();
-});
-document.getElementById('prep-length').addEventListener('click', e => {
-  const btn = e.target.closest('[data-prep-length]');
-  if (!btn) return;
-  prepLength = btn.dataset.prepLength;
   buildPrepStep();
 });
 
@@ -2842,8 +3018,8 @@ function usualWeekPayload() {
   return {
     grid: grid,
     variety: variety,
-    snacks_per_day: snacksPerDay,
-    prep: days.length ? { days: days, length: prepLength || null } : { days: [] },
+    snacks_per_day: householdSnacksPerDay(),
+    prep: days.length ? { days: days, length: PREP_LENGTH } : { days: [] },
   };
 }
 
@@ -2867,7 +3043,12 @@ function usualWeekPayload() {
 // and kept in step with every future question, whereas "the answers are
 // whatever the people who are actually here have said" stays true on its
 // own.
-let restrictionAnswers = {};   // name -> { chips: [...], allergy: '', other: '' }
+let restrictionAnswers = {};   // name -> { chips: [...], allergens: [...], allergy: '', other: '' }
+// The Allergy picker (Emily, 2026-10-05, Onboarding regrouped): the nine
+// she named, then "Something else? Type it here". Each pick is stored as
+// "allergy: <it>" exactly like a typed one, so the clash checker reads a
+// tapped peanut and a typed peanut the same way.
+const ALLERGEN_OPTIONS = ['Nuts', 'Peanuts', 'Dairy', 'Eggs', 'Gluten', 'Sesame', 'Fish', 'Shellfish', 'Soy'];
 
 function buildRestrictionsStep() {
   const dietDiv = document.getElementById('diet-by-member');
@@ -2875,14 +3056,21 @@ function buildRestrictionsStep() {
   const members = currentMembers();
   pruneRestrictionAnswers();
   members.forEach(m => {
-    const saved = restrictionAnswers[m.name] || { chips: [], allergy: '', other: '' };
+    const saved = restrictionAnswers[m.name] || { chips: [], allergens: [], allergy: '', other: '' };
+    if (!saved.allergens) saved.allergens = [];
     restrictionAnswers[m.name] = saved;
     const block = document.createElement('div');
     block.className = 'member-block';
     block.innerHTML = `<p class="q-sub">${escapeHtmlLocal(m.name)}</p>
       <div class="chip-row diet-chips" data-member="${escapeHtmlLocal(m.name)}"></div>
-      <div class="row diet-allergy-row" style="display:none">
-        <input type="text" class="diet-allergy-input" placeholder="What are they allergic to?" aria-label="What are they allergic to?">
+      <div class="diet-allergy-row" style="display:none">
+        <div class="chip-row diet-allergen-chips">${ALLERGEN_OPTIONS.map(a => {
+          const on = saved.allergens.indexOf(a) !== -1;
+          return `<button type="button" class="chip${on ? ' active' : ''}" data-allergen="${a}" aria-pressed="${on ? 'true' : 'false'}">${a}</button>`;
+        }).join('')}</div>
+        <div class="row">
+          <input type="text" class="diet-allergy-input" placeholder="Something else? Type it here" aria-label="Something else? Type it here">
+        </div>
       </div>
       <div class="row diet-other-row" style="display:none">
         <input type="text" class="diet-other-input" placeholder="Anything else I should always follow?" aria-label="Anything else I should always follow?">
@@ -2906,6 +3094,15 @@ function buildRestrictionsStep() {
     allergyInput.value = saved.allergy;
     otherInput.value = saved.other;
     allergyInput.addEventListener('input', () => { saved.allergy = allergyInput.value; });
+    block.querySelector('.diet-allergen-chips').addEventListener('click', e => {
+      const btn = e.target.closest('[data-allergen]');
+      if (!btn) return;
+      const a = btn.dataset.allergen;
+      saved.allergens = saved.allergens.indexOf(a) !== -1 ? saved.allergens.filter(x => x !== a) : saved.allergens.concat([a]);
+      const on = saved.allergens.indexOf(a) !== -1;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
     otherInput.addEventListener('input', () => { saved.other = otherInput.value; });
     if (allergyChip) {
       allergyRow.style.display = allergyChip.classList.contains('active') ? 'flex' : 'none';
@@ -2938,6 +3135,11 @@ function currentRestrictions() {
     if (!saved) return;
     const items = saved.chips.filter(v => v !== 'None' && v !== 'Allergy' && v !== 'Other');
     if (saved.chips.indexOf('Allergy') !== -1) {
+      // The picker's taps first, in its order (lower-case, the way a
+      // person types them), then the typed box.
+      ALLERGEN_OPTIONS.filter(a => (saved.allergens || []).indexOf(a) !== -1).forEach(a => {
+        items.push('allergy: ' + a.toLowerCase());
+      });
       // Comma-separated -> one "allergy: x" entry each, lower-case prefix so
       // the clash checker's stopword filter recognises it as an allergy
       // rather than a food to search for literally.
@@ -3066,7 +3268,7 @@ function plannedMealCounts() {
     breakfasts_per_week: uwMealOn('breakfast') ? breakfastsPerWeek : 0,
     lunches_per_week: uwMealOn('lunch') ? lunchesPerWeek : 0,
     dinners_per_week: uwMealOn('dinner') ? dinnersPerWeek : 0,
-    snacks_per_day: snacksPerDay,
+    snacks_per_day: householdSnacksPerDay(),
   };
 }
 
@@ -3140,10 +3342,10 @@ async function savePlanTheWeekAnswers() {
   // and it writes into the SAME variable (applyAnythingElseReading) —
   // which is why there is one write here and not two that race.
   writes.push(['weeknight_max_minutes', weeknightMaxMinutes]);
-  // Only when the question was asked. The column default is already 20, so
-  // writing nothing for a household where everyone takes lunch out says
-  // nothing rather than answering for them.
-  if (weekdayLunchAtHome()) writes.push(['weekday_lunch_max_minutes', weekdayLunchMaxMinutes]);
+  // Only when the question was asked — somebody has Made fresh on the
+  // Weekday lunches screen (2026-10-06). The column default is already 20,
+  // so writing nothing otherwise says nothing rather than answering for them.
+  if (someoneHasMadeFresh()) writes.push(['weekday_lunch_max_minutes', weekdayLunchMaxMinutes]);
   for (const [field, value] of writes) {
     try {
       await Api.fetch('/api/preferences/meal-planning', {
@@ -3249,7 +3451,7 @@ function applyAnythingElseReading(reading) {
     // the same rule currentRestrictions() and pruneRestrictionAnswers
     // already follow — the payload can never name somebody who isn't here.
     if (!who || !what || !here.has(who)) return;
-    const saved = restrictionAnswers[who] || { chips: [], allergy: '', other: '' };
+    const saved = restrictionAnswers[who] || { chips: [], allergens: [], allergy: '', other: '' };
     restrictionAnswers[who] = saved;
     const field = item.allergy ? 'allergy' : 'other';
     const chip = item.allergy ? 'Allergy' : 'Other';
@@ -3274,10 +3476,6 @@ function applyAnythingElseReading(reading) {
     const name = (who || '').trim();
     if (!name || !here.has(name)) return;
     lunchLocation[name] = 'out';
-    // Without this the payload is never sent at all (lunchLocationPayload
-    // returns null until the line is touched), so the answer would be
-    // confirmed and then quietly dropped.
-    lunchLocationTouched = true;
   });
   // Into the page's own answer, so it shows as the chosen chip (or as the
   // out-of-chip line) if they go back to the dinner-time step, and so
@@ -3435,6 +3633,10 @@ async function saveOnboardingAnswers() {
     // The "How your week runs" answers (2026-09-30), saved after the
     // names above so the names in the grid resolve.
     usual_week: usualWeekPayload(),
+    // Onboarding regrouped (2026-10-06): per person, by name — saved after
+    // the names above (app/tools/member_needs.py).
+    lunch_needs: lunchNeedsPayload(),
+    member_snacks: memberSnacksPayload(),
   };
   const res = await Api.fetch('/api/onboarding/answers', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -4713,7 +4915,13 @@ const INTRO_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know'];
 // name?" then "Who else lives with you?" — so the main person is somebody
 // who said so rather than whichever row happened to be first. See
 // app/tools/primary_member.py.
-const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'your-name', 'household', 'helpers', 'restrictions', 'meals-days', 'prep', 'variety-breakfast', 'variety-lunch', 'variety-dinner', 'dinner-time', 'shop-day', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'anything-else', 'reveal'];
+// UPDATED 2026-10-06 (Loop Board "Onboarding, regrouped", Emily's locked
+// flow of 2026-10-05): household -> schedule -> breakfast -> lunch ->
+// dinner -> snacks -> the rest. Each meal's questions sit together, so
+// Cook ahead now comes before "Meal prep ahead" is offered, and two
+// screens are new: Weekday lunches and Snacks a day. The section each
+// step belongs to is QUESTION_SECTIONS, below.
+const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'your-name', 'household', 'helpers', 'restrictions', 'meals-days', 'shop-day', 'prep', 'variety-breakfast', 'lunch-needs', 'variety-lunch', 'dinner-time', 'variety-dinner', 'snacks', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'anything-else', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
@@ -4742,13 +4950,15 @@ const STEP_TITLES = {
   'your-name': 'Your name',
   'household': "Who's here",
   'helpers': 'Who helps',
-  'restrictions': 'Never on the plate',
+  'restrictions': 'Dietary restrictions',
   'meals-days': "Who's eating",
   'prep': 'Cook ahead',
   'variety-breakfast': 'Breakfast',
+  'lunch-needs': 'Weekday lunches',
   'variety-lunch': 'Lunch',
+  'dinner-time': 'Dinner timings',
   'variety-dinner': 'Dinner',
-  'dinner-time': 'Dinner time',
+  'snacks': 'Snacks',
   'shop-day': 'Shop day',
   'eating-style': 'How you eat',
   'wont-eat': 'Never recommend',
@@ -4778,6 +4988,8 @@ function stepFlow() {
     // A meal that's off every day of the week has nothing to vary
     // (2026-09-30): its "how many different" screen is skipped.
     if (VARIETY_STEPS.indexOf(k) !== -1) return uwMealOn(k.slice('variety-'.length));
+    // Weekday lunches only when lunch is on for any weekday (the card).
+    if (k === 'lunch-needs') return uwWeekdayLunchOn(usualGrid);
     return true;
   });
 }
@@ -4819,9 +5031,11 @@ const STEP_BUILDERS = {
   'meals-days': buildMealsDaysStep,
   'prep': buildPrepStep,
   'variety-breakfast': function () { buildVarietyStep('breakfast'); },
+  'lunch-needs': buildLunchNeedsStep,
   'variety-lunch': function () { buildVarietyStep('lunch'); },
-  'variety-dinner': function () { buildVarietyStep('dinner'); },
   'dinner-time': buildDinnerTimeStep,
+  'variety-dinner': function () { buildVarietyStep('dinner'); },
+  'snacks': buildSnacksStep,
   'shop-day': buildShopDayStep,
   'eating-style': buildEatingStyleStep,
   'wont-eat': buildWontEatStep,
@@ -4840,20 +5054,28 @@ const STEP_BUILDERS = {
 // have no entry — the intro carries its own four-dot pager, and the
 // reveal is where setup ends, not another thing to answer.
 //
-// The grouping is the storyboard's (2026-09-30), and since that day it is
-// also the ORDER the last welcome screen lists the stops in, so the number
-// only ever moves forward.
+// The grouping since 2026-10-06 is Emily's locked regrouped flow
+// (2026-10-05): seven sections, in this order, and the eyebrow is the
+// section's NAME ("the section name shows in the header") — there is no
+// "2 of 4" any more, because seven numbered stops is a count to read,
+// not a place to be. The number is still the order, so it only ever
+// moves forward.
 const QUESTION_SECTIONS = {
   'your-name': 1, 'household': 1, 'helpers': 1, 'restrictions': 1,
-  'meals-days': 2, 'prep': 2, 'variety-breakfast': 2, 'variety-lunch': 2, 'variety-dinner': 2, 'dinner-time': 2, 'shop-day': 2,
-  'eating-style': 3, 'wont-eat': 3, 'excited-about': 3, 'kit-repeats': 3,
-  'ai-consent': 4, 'anything-else': 4,
+  'meals-days': 2, 'shop-day': 2, 'prep': 2,
+  'variety-breakfast': 3,
+  'lunch-needs': 4, 'variety-lunch': 4,
+  'dinner-time': 5, 'variety-dinner': 5,
+  'snacks': 6,
+  'eating-style': 7, 'wont-eat': 7, 'excited-about': 7, 'kit-repeats': 7, 'ai-consent': 7, 'anything-else': 7,
 };
-const SECTION_NAMES = { 1: 'Who’s eating', 2: 'How your week runs', 3: 'What you eat', 4: 'Your first week' };
-const SECTION_COUNT = 4;
+const SECTION_NAMES = {
+  1: 'Your household', 2: 'Your schedule', 3: 'Breakfast', 4: 'Lunch', 5: 'Dinner', 6: 'Snacks', 7: 'The rest',
+};
+const SECTION_COUNT = 7;
 function stepEyebrow(key) {
   const section = QUESTION_SECTIONS[key];
-  return section ? section + ' of ' + SECTION_COUNT + ' · ' + SECTION_NAMES[section] : '';
+  return section ? SECTION_NAMES[section] : '';
 }
 function renderProgress() {
   const stepEl = document.getElementById('step-' + currentStep);
@@ -5120,6 +5342,8 @@ VARIETY_STEPS.forEach(key => {
   document.getElementById(key + '-next').onclick = () => { goForward(key); };
 });
 document.getElementById('dinner-time-next').onclick = () => { goForward('dinner-time'); };
+document.getElementById('lunch-needs-next').onclick = () => { goForward('lunch-needs'); };
+document.getElementById('snacks-next').onclick = () => { goForward('snacks'); };
 document.getElementById('dinner-time-skip').onclick = () => {
   rhythmDinnerWindow = '';
   goForward('dinner-time');

@@ -523,7 +523,7 @@ def _const(name: str) -> str:
 
 
 def _chips_harness(extra: str = "", members: str = "['Emily', 'Sam']",
-                   lunch_location: str = "{}", lunch_row: str = "null") -> str:
+                   lunch_needs: str = "{ Emily: { needs: ['made_fresh'], days: null } }", lunch_row: str = "null") -> str:
     """
     The dinner-time step's three chip rows, running for real against the
     go-back file's DOM stub.
@@ -551,7 +551,13 @@ ELS['lunch-max-group'] = makeEl('div'); ELS['lunch-max-group'].hidden = true;
         # The usual week and who eats lunch where, which the lunch
         # question's own condition reads.
         f"var usualGrid = {{ lunch: {lunch_row} || ['all','all','all','all','all','all','all'] }};",
-        f"var lunchLocation = {lunch_location};",
+        # UPDATED 2026-10-06 (Onboarding regrouped): the lunch limit is
+        # "Made fresh: how long can it take?" on the Weekday lunches screen,
+        # asked when somebody has Made fresh -- so the harness carries the
+        # page's lunch needs rather than who eats lunch where.
+        f"var lunchNeeds = {lunch_needs};",
+        _const("LUNCH_NEED_DAYS"),
+        _fn("uwCleanCell"), _fn("lunchPeople"), _fn("someoneHasMadeFresh"),
         f"const MEMBERS = {members}.map(function (n) {{ return {{ name: n, age_group: 'adult' }}; }});",
         "function currentMembers() { return MEMBERS; }",
         "function uwIsOn(cell) { return cell !== 'off'; }",
@@ -566,7 +572,6 @@ ELS['lunch-max-group'] = makeEl('div'); ELS['lunch-max-group'].hidden = true;
         ONBOARDING[ONBOARDING.index("let weeknightMaxMinutes ="):
                    ONBOARDING.index("\n", ONBOARDING.index("let weekdayLunchMaxMinutes ="))],
         _fn("timeLimitOtherLine"),
-        _fn("weekdayLunchAtHome"),
         _fn("renderTimeLimitChips"),
         _fn("renderWeeknightMaxChips"),
         _fn("renderLunchMaxChips"),
@@ -610,6 +615,7 @@ def test_setup_asks_both_questions_with_the_cards_chips_and_defaults():
     """
     got = _node(_chips_harness("""
 buildDinnerTimeStep();
+renderLunchMaxChips();
 console.log(JSON.stringify({
   weeknight: labels('weeknight-max-chips'),
   weeknight_lit: lit('weeknight-max-chips'),
@@ -621,7 +627,8 @@ console.log(JSON.stringify({
 
     assert got["weeknight"] == ["20 min", "30 min", "45 min", "1 hour", "No limit"]
     assert got["weeknight_lit"] == ["45 min"]
-    assert got["lunch"] == ["10 min", "20 min", "30 min", "No limit"]
+    # UPDATED 2026-10-06 (Onboarding regrouped): 10 min is gone, 45 added.
+    assert got["lunch"] == ["20 min", "30 min", "45 min", "No limit"]
     assert got["lunch_lit"] == ["20 min"]
     assert got["lunch_shown"] is True
 
@@ -632,6 +639,7 @@ def test_tapping_a_chip_moves_the_answer_and_only_that_one():
     one shared `active` would make answering one clear the other."""
     got = _node(_chips_harness("""
 buildDinnerTimeStep();
+renderLunchMaxChips();
 tap('weeknight-max-chips', '20 min');
 tap('lunch-max-chips', 'No limit');
 console.log(JSON.stringify({
@@ -647,35 +655,30 @@ console.log(JSON.stringify({
 
 
 @_needs_node
-def test_the_lunch_question_is_not_asked_when_everyone_takes_lunch_out():
+def test_the_lunch_question_is_not_asked_when_nobody_has_made_fresh():
     """
-    CATCH, pinned by mutation 5. The card's condition is "when anyone has
-    lunch at home on a weekday", and a household where every single person
-    is explicitly 'out' has no weekday lunch at home to put a limit on.
+    UPDATED 2026-10-06 (Onboarding regrouped): the condition is the card's
+    new one -- "shows only when someone has Made fresh". A packed, thermos
+    or reheat lunch is not cooked that day, so it has no limit to ask.
     """
     got = _node(_chips_harness("""
-buildDinnerTimeStep();
+renderLunchMaxChips();
 console.log(JSON.stringify({ shown: !ELS['lunch-max-group'].hidden }));
-""", lunch_location="{ 'Emily': 'out', 'Sam': 'out' }"))
+""", lunch_needs="{ Emily: { needs: ['cold_packed'], days: null }, Sam: { needs: ['reheat'], days: null } }"))
 
     assert got["shown"] is False
 
 
 @_needs_node
-def test_unset_means_at_home_so_the_question_is_still_asked():
-    """
-    CATCH, and the half the brief is explicit about: lunchLocation is unset
-    for anybody nobody has said anything about, and unset means AT HOME
-    (lunchLocationPayload's own rule). So the condition is "not EVERY member
-    is explicitly out", never "somebody ticked home" — which is true for
-    almost every household and is what stops the question being invisible.
-    """
+def test_made_fresh_on_one_day_is_enough_to_ask():
+    """UPDATED 2026-10-06: Made fresh on a single day ("Different on some
+    days?") is still a lunch cooked that day, so the question is asked."""
     got = _node(_chips_harness("""
-buildDinnerTimeStep();
-console.log(JSON.stringify({ one_out: !ELS['lunch-max-group'].hidden }));
-""", lunch_location="{ 'Emily': 'out' }"))
+renderLunchMaxChips();
+console.log(JSON.stringify({ shown: !ELS['lunch-max-group'].hidden }));
+""", lunch_needs="{ Emily: { needs: ['reheat'], days: { monday: ['reheat'], tuesday: ['made_fresh'] } } }"))
 
-    assert got["one_out"] is True, "one person out still leaves somebody eating here"
+    assert got["shown"] is True
 
 
 @_needs_node
@@ -686,7 +689,7 @@ def test_the_lunch_question_is_not_asked_when_lunch_is_off_all_week():
     not have. Same shape as the variety steps' own uwMealOn gate.
     """
     got = _node(_chips_harness("""
-buildDinnerTimeStep();
+renderLunchMaxChips();
 console.log(JSON.stringify({ shown: !ELS['lunch-max-group'].hidden }));
 """, lunch_row="['off','off','off','off','off','all','all']"))
 
@@ -745,11 +748,13 @@ console.log(JSON.stringify(out));
 # ======================================================================
 
 
-def _save_harness(extra: str, lunch_location: str = "{}") -> str:
+def _save_harness(extra: str, lunch_needs: str = "{ Emily: { needs: ['made_fresh'], days: null } }") -> str:
     """savePlanTheWeekAnswers, running for real against a recording Api."""
     return "\n".join([
         _go_back._DOM_STUB,
-        f"var lunchLocation = {lunch_location};",
+        f"var lunchNeeds = {lunch_needs};",
+        _const("LUNCH_NEED_DAYS"),
+        _fn("uwCleanCell"), _fn("lunchPeople"), _fn("someoneHasMadeFresh"),
         "var usualGrid = { lunch: ['all','all','all','all','all','all','all'] };",
         "const MEMBERS = [{ name: 'Emily', age_group: 'adult' }];",
         "function currentMembers() { return MEMBERS; }",
@@ -766,7 +771,6 @@ const Api = { fetch: async function (path, init) {
         _const("LUNCH_MAX_OPTIONS"),
         ONBOARDING[ONBOARDING.index("let weeknightMaxMinutes ="):
                    ONBOARDING.index("\n", ONBOARDING.index("let weekdayLunchMaxMinutes ="))],
-        _fn("weekdayLunchAtHome"),
         "async " + _fn("savePlanTheWeekAnswers"),
         extra,
     ])
@@ -821,15 +825,15 @@ savePlanTheWeekAnswers().then(function () {
 @_needs_node
 def test_the_lunch_limit_is_not_written_when_the_question_was_not_asked():
     """
-    CATCH, pinned by mutation 6. A household where everyone takes lunch out
-    was never shown the question, so setup says nothing about it rather than
-    answering for them — the column default is already 20.
+    CATCH, pinned by mutation 6. A household where nobody has Made fresh
+    (UPDATED 2026-10-06) was never shown the question, so setup says nothing
+    about it rather than answering for them — the column default is already 20.
     """
     got = _node(_save_harness("""
 savePlanTheWeekAnswers().then(function () {
   console.log(JSON.stringify(SENT.map(function (s) { return s[1].field; })));
 });
-""", lunch_location="{ 'Emily': 'out' }"))
+""", lunch_needs="{ Emily: { needs: ['cold_packed'], days: null } }"))
 
     assert "weeknight_max_minutes" in got
     assert "weekday_lunch_max_minutes" not in got
@@ -852,23 +856,22 @@ def test_setups_last_answer_writes_into_the_pages_own_variable():
     assert "if (mins > 0) weeknightMaxMinutes = mins;" in apply
 
 
-def test_the_two_questions_are_on_the_existing_step_not_a_new_one():
+def test_each_limit_is_on_its_meals_step():
     """
-    GUARD, and it is about this repo rather than about the household: adding
-    an onboarding STEP turned 28 tests red in four files on another card the
-    same night, because test_onboarding_go_back.py lifts STEP_BUILDERS
-    against a hand-written function list and three files hard-code the flow
-    ORDER. The card asks for "a second question" on the dinner-time step,
-    and keeping all three there costs none of that.
+    UPDATED 2026-10-06 (Onboarding regrouped, Emily's locked flow): the
+    weeknight limit stays on Dinner timings (the dinner-time step) and the
+    lunch limit moved to Weekday lunches as "Made fresh: how long can it
+    take?". The flow gained two steps on purpose (lunch-needs, snacks).
     """
-    step = ONBOARDING[ONBOARDING.index('<div id="step-dinner-time"'):]
-    step = step[: step.index("<!-- When do you usually do the grocery shop?")]
+    dinner = ONBOARDING[ONBOARDING.index('<div id="step-dinner-time"'):]
+    dinner = dinner[: dinner.index("<!-- When do you usually do the grocery shop?")]
+    lunch = ONBOARDING[ONBOARDING.index('<div id="step-lunch-needs"'):]
+    lunch = lunch[: lunch.index('<div id="step-variety-lunch"')]
 
-    assert 'id="weeknight-max-chips"' in step
-    assert 'id="lunch-max-chips"' in step
-    # And the flow is exactly as long as it was.
+    assert 'id="weeknight-max-chips"' in dinner and 'lunch-max' not in dinner
+    assert 'id="lunch-max-chips"' in lunch
     flow = _const("ALL_STEPS")
-    assert flow.count("'") == 2 * 22, "the flow gained or lost a step"
+    assert flow.count("'") == 2 * 24
 
 
 def test_the_hidden_group_has_the_display_guard_it_needs():
@@ -892,7 +895,8 @@ def test_the_chip_rows_are_the_screens_own_recipe_and_carry_no_apricot():
     step = ONBOARDING[ONBOARDING.index('<div id="step-dinner-time"'):]
     step = step[: step.index("<!-- When do you usually do the grocery shop?")]
 
-    assert step.count('class="rhythm-chip-row"') == 3
+    # Two since 2026-10-06: the lunch row moved to Weekday lunches.
+    assert step.count('class="rhythm-chip-row"') == 2
     assert "btn-primary" in step and step.count("btn-primary") == 1
     assert "#" not in step.replace("&mdash;", ""), "no literal hex in the step"
     # The recipe itself, so the test fails if the chip stops being 46px or
