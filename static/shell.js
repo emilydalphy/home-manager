@@ -9751,6 +9751,12 @@
     return 'Next: ' + when + ' — ' + next.meal + '.';
   }
 
+  // The row's state chip ("Cook", "Reheat", "cooked") reads as a button on a
+  // cook night, so it IS one: it opens the same recipe screen the dish name
+  // does (Loop Board 2026-10-06 — it was a plain span and a tap did nothing).
+  // .cook-badge-tag keeps it on one line ("Coo / k" at 375px). Built inside
+  // kitchenTodayRowHtml so the harness tests that slice that one function
+  // keep running the real thing.
   function kitchenTodayRowHtml(row) {
     var checkLabel = row.isReheat
       ? (row.done ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL)
@@ -9762,6 +9768,7 @@
       ? '<span class="cook-week-name">' + escapeHtml(row.title) + '</span>'
       : '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + row.idx + '">' +
           escapeHtml(row.title) + '</button>';
+    var badgeCls = 'cook-badge cook-badge-tag' + (row.done || row.isReheat ? '' : ' cook-badge-warm');
     return '<div class="cook-week-item' + (row.done ? ' is-done' : '') + '">' +
       '<div class="cook-week-row">' +
         '<button type="button" class="cook-box' + (row.done ? ' checked' : '') + '" ' +
@@ -9769,8 +9776,10 @@
           'data-name="' + escapeHtml(row.title) + '" ' +
           'aria-label="' + escapeHtml(checkLabel) + '">' + COOK_ICONS.check + '</button>' +
         name +
-        '<span class="cook-badge' + (row.done || row.isReheat ? '' : ' cook-badge-warm') + '">' +
-          escapeHtml(row.badge) + '</span>' +
+        (row.isReheat
+          ? '<span class="' + badgeCls + '">' + escapeHtml(row.badge) + '</span>'
+          : '<button type="button" class="' + badgeCls + ' cook-badge-tap" data-cook="focus" data-idx="' +
+              row.idx + '">' + escapeHtml(row.badge) + '</button>') +
       '</div>' +
       (row.line ? '<p class="cook-week-sub">' + escapeHtml(row.line) + '</p>' : '') +
     '</div>';
