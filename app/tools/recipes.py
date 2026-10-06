@@ -415,6 +415,7 @@ def fill_recipe_details(
     advance_prep_step_indices: list[int] | None = None,
     new_name: str | None = None,
     household_changes: list[str] | None = None,
+    research_id: int | None = None,
 ) -> dict:
     """
     The recipe pass's save: write a pending recipe out in full — the
@@ -463,13 +464,14 @@ def fill_recipe_details(
             "cook_time_minutes = COALESCE(?, cook_time_minutes), "
             "advance_prep_notes = ?, advance_prep_step_indices_json = ?, details_pending = 0, "
             # "Changed for your household" (research-first writing, 2026-10-06).
-            "household_changes_json = ? "
+            "household_changes_json = ?, research_id = ? "
             "WHERE id = ? AND household_id = ?",
             (
                 json.dumps(settled), json.dumps(instructions or []), int(default_servings or 4),
                 prep_time_minutes, cook_time_minutes, advance_prep_notes or "",
                 json.dumps(advance_prep_step_indices or []),
                 json.dumps([str(c) for c in (household_changes or []) if str(c).strip()]),
+                int(research_id) if research_id else None,
                 row["id"], household_id(),
             ),
         )

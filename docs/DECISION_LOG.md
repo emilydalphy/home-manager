@@ -29,6 +29,16 @@ why*, not duplicating the diff.
   rechecked lazily (30 days); 404/410 hides one, 403 doesn't.
   `RECIPE_RESEARCH=off` switches it off; conftest sets it off for the suite.
   Amounts check and night-before step were already there and are reused.
+  **Review round (same day):** `RECIPE_RESEARCH=off` now also stops the
+  recipe page's link checks; `link_status` is SSRF-safe (http/https only,
+  every resolved address public, request pinned to it, redirects by hand ≤3,
+  HEAD/1 KB); sources show only through `recipes.research_id` (the research
+  a recipe was written from), never by name; web searches are recorded on
+  `api_calls` and priced ($10/1k); one per-dish budget (4 searches, 6
+  fetches) across rounds and fallback, ≤2 rounds per call, empty results
+  remembered 14 days; only a FETCHED page can lead; the Cook screen's live
+  fill never searches; a WARNING when sources come back but no result URL
+  was read (the first live run's check on the web-tool result shape).
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch

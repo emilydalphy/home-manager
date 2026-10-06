@@ -375,6 +375,11 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- it was based on — an allergen taken out and what replaced it, heat
     -- moved to the table for a child. JSON list of strings; [] when none.
     household_changes_json TEXT NOT NULL DEFAULT '[]',
+    -- The dish_research this recipe was WRITTEN from (research-first
+    -- writing, 2026-10-06). The recipe page shows sources only through
+    -- this, never by name: a household's own "Chana Masala" was not based
+    -- on anything Pomona read. NULL for every recipe written without it.
+    research_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -1846,6 +1851,12 @@ CREATE TABLE IF NOT EXISTS api_calls (
     cache_write_tokens INTEGER NOT NULL DEFAULT 0,
     output_tokens INTEGER NOT NULL DEFAULT 0,
     seconds REAL NOT NULL DEFAULT 0,
+    -- Server-side tool requests the call made (usage.server_tool_use),
+    -- billed per request on top of tokens — research-first writing's web
+    -- searches (2026-10-06). Fetches carry no fee beyond their tokens but
+    -- are counted so the per-dish budget is visible.
+    web_search_requests INTEGER NOT NULL DEFAULT 0,
+    web_fetch_requests INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_api_calls_household_created

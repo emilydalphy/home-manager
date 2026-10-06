@@ -28,11 +28,14 @@ instructions) — both landed before this card and are reused as they are.
 """
 from __future__ import annotations
 
+import http.client
+import ipaddress
+import os
 import re
+import socket
+import ssl
 import threading
-import urllib.error
-import urllib.request
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from ..db import get_conn, write
 from ._shared import EATS_HERE_SQL, household_id
@@ -65,6 +68,18 @@ _CUISINE_WORDS = {
 # Changed a lot through Change recipe: this many kept rewrites and the
 # credit line reads "Originally based on …" (card, 2026-10-05).
 CHANGED_A_LOT_REWRITES = 2
+
+# A dish the research came back empty for (the calls ran, nothing usable)
+# is not searched again for this many days — a dish that keeps coming back
+# empty must not be paid for every time it is planned.
+EMPTY_RESEARCH_RETRY_DAYS = 14
+
+
+def research_enabled() -> bool:
+    """RECIPE_RESEARCH=off stops EVERY outbound call this feature makes —
+    the research itself and the link checks alike."""
+    return os.environ.get("RECIPE_RESEARCH", "on").strip().lower() not in ("off", "0", "false", "no")
+
 
 # Source links are checked now and then; one that has stopped working is
 # hidden rather than shown broken. "Now and then" = when the recipe page
@@ -103,15 +118,21 @@ def _num(value, kind):
     return out if out >= 0 else None
 
 
-def clean_sources(raw, *, seen_urls: set[str], blocked_urls: set[str]) -> list[dict]:
+def clean_sources(raw, *, seen_urls: set[str], blocked_urls: set[str],
+                  read_urls: set[str] | None = None) -> list[dict]:
     """
     The sources the research call reported, kept only where they are real:
     an http(s) URL the call actually saw (a search result or a successful
     fetch), not one whose fetch was refused, one per URL. A rating outside
     0-5 is dropped rather than trusted. Order is the call's own.
+
+    Each carries "read": whether the page was actually FETCHED and read.
+    Only a read page can lead (pick_lead) — a rating the model reports for
+    a page it only saw in a search snippet is not a rating anyone read.
     """
     seen = {_norm_url(u) for u in seen_urls}
     blocked = {_norm_url(u) for u in blocked_urls}
+    read = {_norm_url(u) for u in (read_urls or set())}
     out, urls = [], set()
     for s in raw or []:
         if not isinstance(s, dict):
@@ -131,6 +152,7 @@ def clean_sources(raw, *, seen_urls: set[str], blocked_urls: set[str]) -> list[d
             "url": url,
             "rating": rating,
             "rating_count": _num(s.get("rating_count"), int),
+            "read": key in read,
         })
         urls.add(key)
     return out
@@ -141,7 +163,8 @@ def _norm_url(url: str) -> str:
 
 
 def is_well_rated(source: dict) -> bool:
-    return (source.get("rating") is not None
+    """A read page whose stars rest on enough ratings to mean something."""
+    return (bool(source.get("read", True)) and source.get("rating") is not None
             and (source.get("rating_count") or 0) >= MIN_RATINGS_TO_LEAD)
 
 
@@ -154,19 +177,25 @@ def pick_lead(sources: list[dict], trusted: list[tuple[str, str]] | None = None)
     sites print stars) the most ratings. With no well-rated version and a
     trusted-cooks list, the first source from the earliest cook on that
     list leads; with neither, the first source the research named.
+
+    Only a page that was actually READ can lead (review, 2026-10-06): one
+    seen only in a search result, with a rating nobody fetched, stays an
+    "other" at most. No read page at all is no lead, and [] comes back —
+    research with nothing read behind it is not research.
     """
-    if not sources:
+    readable = [s for s in sources if s.get("read", True)]
+    if not readable:
         return []
-    rated = [s for s in sources if is_well_rated(s)]
+    rated = [s for s in readable if is_well_rated(s)]
     if rated:
         lead = max(rated, key=lambda s: (round(s["rating"], 1), s["rating_count"] or 0))
     else:
         lead = None
         for _, site in trusted or []:
-            lead = next((s for s in sources if _host(s["url"]).endswith(site)), None)
+            lead = next((s for s in readable if _host(s["url"]).endswith(site)), None)
             if lead:
                 break
-        lead = lead or sources[0]
+        lead = lead or readable[0]
     rest = [s for s in sources if s is not lead]
     return [{**lead, "lead": True}] + [{**s, "lead": False} for s in rest]
 
@@ -192,6 +221,20 @@ def children_eat_here() -> bool:
     return bool(row)
 
 
+def recipe_research_id(recipe_id) -> int | None:
+    if not recipe_id:
+        return None
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT research_id FROM recipes WHERE id = ? AND household_id = ?",
+            (int(recipe_id), household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    return row["research_id"] if row and row["research_id"] else None
+
+
 def household_changes_for(recipe_id: int) -> list[str]:
     """The recipe's "Changed for your household" lines; [] when none."""
     import json
@@ -214,13 +257,25 @@ def household_changes_for(recipe_id: int) -> list[str]:
 
 def saved_research(name: str) -> dict | None:
     """This household's research for a dish, or None — what makes a dish
-    that comes back cost no second search."""
+    that comes back cost no second search. A row with no sources is a
+    remembered EMPTY result (note_empty_research); callers check sources."""
+    return _research_where("dish_key = ?", dish_key(name))
+
+
+def research_by_id(research_id) -> dict | None:
+    if not research_id:
+        return None
+    return _research_where("id = ?", int(research_id))
+
+
+def _research_where(clause: str, value) -> dict | None:
     conn = get_conn()
     try:
         row = conn.execute(
-            "SELECT id, dish_name, method_notes, fallback_used, created_at FROM dish_research "
-            "WHERE household_id = ? AND dish_key = ?",
-            (household_id(), dish_key(name)),
+            "SELECT id, dish_name, method_notes, fallback_used, created_at, "
+            "julianday('now') - julianday(created_at) AS age_days FROM dish_research "
+            f"WHERE household_id = ? AND {clause}",
+            (household_id(), value),
         ).fetchone()
         if not row:
             return None
@@ -237,6 +292,7 @@ def saved_research(name: str) -> dict | None:
         "method_notes": row["method_notes"],
         "fallback_used": bool(row["fallback_used"]),
         "created_at": row["created_at"],
+        "age_days": row["age_days"] or 0,
         "sources": [
             {
                 "name": s["name"], "title": s["title"], "url": s["url"],
@@ -264,9 +320,16 @@ def save_research(name: str, sources: list[dict], method_notes: str, fallback_us
     with write() as conn:
         conn.execute("BEGIN IMMEDIATE")
         existing = conn.execute(
-            "SELECT id FROM dish_research WHERE household_id = ? AND dish_key = ?",
+            "SELECT id, (SELECT COUNT(*) FROM recipe_sources s WHERE s.research_id = d.id "
+            "AND s.household_id = d.household_id) AS n "
+            "FROM dish_research d WHERE household_id = ? AND dish_key = ?",
             (household_id(), key),
         ).fetchone()
+        if existing and not existing["n"]:
+            # A remembered empty result, now superseded by a real one.
+            conn.execute("DELETE FROM dish_research WHERE id = ? AND household_id = ?",
+                         (existing["id"], household_id()))
+            existing = None
         if not existing:
             rid = conn.execute(
                 "INSERT INTO dish_research (household_id, dish_key, dish_name, method_notes, fallback_used) "
@@ -282,6 +345,35 @@ def save_research(name: str, sources: list[dict], method_notes: str, fallback_us
                      s.get("rating"), s.get("rating_count"), 1 if s.get("lead") else 0),
                 )
     return saved_research(name)
+
+
+def note_empty_research(name: str) -> None:
+    """Remember that this dish's research ran and found nothing usable, so
+    it is not paid for again for EMPTY_RESEARCH_RETRY_DAYS (a dish_research
+    row with no sources). An existing empty row has its clock restarted."""
+    key = dish_key(name)
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        existing = conn.execute(
+            "SELECT id FROM dish_research WHERE household_id = ? AND dish_key = ?",
+            (household_id(), key),
+        ).fetchone()
+        if existing:
+            n = conn.execute("SELECT COUNT(*) AS n FROM recipe_sources WHERE research_id = ? AND household_id = ?",
+                             (existing["id"], household_id())).fetchone()["n"]
+            if not n:
+                conn.execute("UPDATE dish_research SET created_at = datetime('now') WHERE id = ? AND household_id = ?",
+                             (existing["id"], household_id()))
+            return
+        conn.execute(
+            "INSERT INTO dish_research (household_id, dish_key, dish_name) VALUES (?, ?, ?)",
+            (household_id(), key, str(name or "").strip()),
+        )
+
+
+def empty_recently(research: dict | None) -> bool:
+    return bool(research) and not research.get("sources") and \
+        (research.get("age_days") or 0) < EMPTY_RESEARCH_RETRY_DAYS
 
 
 def research_for_writer(research: dict | None) -> dict | None:
@@ -338,10 +430,13 @@ def recipe_research_for(recipe: dict, *, check_links: bool = True) -> dict | Non
     `check_links` kicks off a background recheck of links older than
     LINK_RECHECK_DAYS — never in the request's path.
     """
-    research = saved_research(recipe.get("name") or "")
+    # The research THIS recipe was written from (recipes.research_id), never
+    # a lookup by name: a household's own hand-written or imported "Chana
+    # Masala" was not based on anything Pomona read (review, 2026-10-06).
+    research = research_by_id(recipe_research_id(recipe.get("id")))
     if not research or not research["sources"]:
         return None
-    if check_links:
+    if check_links and research_enabled():
         start_link_check(research)
     lead = next((s for s in research["sources"] if s["lead"]), research["sources"][0])
     others = [s for s in research["sources"] if s is not lead]
@@ -369,28 +464,106 @@ _CHECKING: set[int] = set()
 _CHECKING_GUARD = threading.Lock()
 
 
-def link_status(url: str, timeout: float = 6.0) -> bool | None:
+_LINK_MAX_HOPS = 3
+_LINK_TIMEOUT = 5.0
+
+
+def _resolve(host: str) -> list[str]:
+    """Every address the host resolves to. A seam, so tests resolve without
+    the network; raises socket.gaierror for a name that doesn't exist."""
+    return sorted({info[4][0] for info in socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)})
+
+
+def _public_address(ip: str) -> bool:
+    try:
+        addr = ipaddress.ip_address(ip.split("%", 1)[0])
+    except ValueError:
+        return False
+    return not (addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved
+                or addr.is_multicast or addr.is_unspecified
+                or getattr(addr, "is_site_local", False))
+
+
+def _request(scheme: str, host: str, port: int, ip: str, method: str, path: str) -> tuple[int, str]:
+    """
+    One HTTP request to an address already checked as public, by IP — so
+    the name can't re-resolve somewhere else between the check and the
+    connect — with the real host in the Host header and in TLS (SNI and the
+    certificate check). Never follows a redirect; reads at most 1 KB.
+    Returns (status, Location header or '').
+    """
+    sock = socket.create_connection((ip, port), timeout=_LINK_TIMEOUT)
+    try:
+        if scheme == "https":
+            sock = ssl.create_default_context().wrap_socket(sock, server_hostname=host)
+        conn = http.client.HTTPConnection(host, port, timeout=_LINK_TIMEOUT)
+        conn.sock = sock
+        conn.request(method, path or "/", headers={
+            "Host": host, "User-Agent": "Mozilla/5.0 (Pomona link check)", "Accept": "text/html",
+        })
+        resp = conn.getresponse()
+        resp.read(1024)
+        return resp.status, resp.getheader("Location") or ""
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+
+
+def link_status(url: str) -> bool | None:
     """
     True when the page answers, False when it is GONE (404 / 410, or the
     site no longer resolves), None when we can't tell. A 403 or 429 is not
     broken: plenty of recipe sites refuse a bot and serve a person fine, and
     hiding a working link because it blocked us would be the wrong mistake.
+
+    Safe to point at any URL (review, 2026-10-06 — these URLs came off the
+    web): http/https only; every address the host resolves to must be
+    public (no private, loopback, link-local or reserved ranges); the
+    request goes to that checked address; redirects are followed by hand,
+    at most _LINK_MAX_HOPS, each hop checked the same way. HEAD, then a GET
+    reading 1 KB when HEAD isn't allowed. Anything refused is None.
     """
-    req = urllib.request.Request(url, method="GET", headers={"User-Agent": "Mozilla/5.0 (Pomona link check)"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return 200 <= resp.status < 400
-    except urllib.error.HTTPError as e:
-        if e.code in (404, 410):
+    current = url
+    for _ in range(_LINK_MAX_HOPS + 1):
+        try:
+            parts = urlparse(current)
+        except ValueError:
+            return None
+        if parts.scheme not in ("http", "https") or not parts.hostname:
+            return None
+        host = parts.hostname
+        try:
+            port = parts.port or (443 if parts.scheme == "https" else 80)
+        except ValueError:
+            return None
+        try:
+            addresses = _resolve(host)
+        except socket.gaierror:
+            return False  # the site no longer exists
+        except Exception:
+            return None
+        if not addresses or not all(_public_address(ip) for ip in addresses):
+            return None
+        path = parts.path or "/"
+        if parts.query:
+            path += "?" + parts.query
+        try:
+            status, location = _request(parts.scheme, host, port, addresses[0], "HEAD", path)
+            if status in (405, 501):
+                status, location = _request(parts.scheme, host, port, addresses[0], "GET", path)
+        except Exception:
+            return None
+        if status in (301, 302, 303, 307, 308) and location:
+            current = urljoin(current, location)
+            continue
+        if 200 <= status < 300:
+            return True
+        if status in (404, 410):
             return False
         return None
-    except urllib.error.URLError as e:
-        reason = str(getattr(e, "reason", "") or "")
-        if "Name or service not known" in reason or "nodename nor servname" in reason:
-            return False
-        return None
-    except Exception:
-        return None
+    return None  # too many redirects: can't tell
 
 
 def due_for_check(source: dict) -> bool:
@@ -437,6 +610,8 @@ def check_research_links(research: dict) -> int:
 def start_link_check(research: dict) -> bool:
     """Run check_research_links on a background thread when anything is
     due, once per dish at a time. Returns whether a check was started."""
+    if not research_enabled():
+        return False
     if not any(due_for_check(s) for s in research.get("sources") or []):
         return False
     rid = int(research["id"])

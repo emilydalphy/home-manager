@@ -40,6 +40,11 @@ _TURN_FIELDS = ("rounds", "input_tokens", "cache_read_tokens",
 
 _CALL_TOKEN_FIELDS = ("input_tokens", "cache_read_tokens",
                       "cache_write_tokens", "output_tokens")
+# Server-tool requests, counted per call (research-first writing,
+# 2026-10-06). Web search bills $10 per 1,000 searches on top of tokens;
+# web fetch has no per-request fee (its pages are billed as input tokens).
+_CALL_TOOL_FIELDS = ("web_search_requests", "web_fetch_requests")
+WEB_SEARCH_DOLLARS_PER_REQUEST = 10.00 / 1000
 
 
 # US dollars per million tokens, per model, from Anthropic's list prices.
@@ -253,10 +258,12 @@ def record_api_call(call_site: str, model: str, usage: dict | None = None,
         conn = get_conn()
         conn.execute(
             "INSERT INTO api_calls (household_id, call_site, model, input_tokens, "
-            "cache_read_tokens, cache_write_tokens, output_tokens, seconds) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "cache_read_tokens, cache_write_tokens, output_tokens, seconds, "
+            "web_search_requests, web_fetch_requests) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (household_id(), str(call_site), str(model),
-             *(int(values.get(f, 0)) for f in _CALL_TOKEN_FIELDS), float(seconds)),
+             *(int(values.get(f, 0) or 0) for f in _CALL_TOKEN_FIELDS), float(seconds),
+             *(int(values.get(f, 0) or 0) for f in _CALL_TOOL_FIELDS)),
         )
         conn.commit()
     except Exception:
@@ -332,7 +339,8 @@ def _cost_breakdown(conn, hid: int, since_sql: str) -> dict:
         "COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens, "
         "COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens, "
         "COALESCE(SUM(output_tokens), 0) AS output_tokens, "
-        "COALESCE(SUM(seconds), 0) AS seconds "
+        "COALESCE(SUM(seconds), 0) AS seconds, "
+        "COALESCE(SUM(web_search_requests), 0) AS web_search_requests "
         f"FROM api_calls WHERE household_id = ? AND created_at >= {since_sql} "
         "GROUP BY call_site, model",
         (hid,),
@@ -351,6 +359,11 @@ def _cost_breakdown(conn, hid: int, since_sql: str) -> dict:
             "cache_write": r["cache_write_tokens"], "output": r["output_tokens"],
         }
         cost = price_tokens(tokens, model=r["model"] or _PRICED_MODEL)
+        # Web searches are a fee per request, not tokens: folded into this
+        # row's total so the month-to-date line is the real bill.
+        searches = int(r["web_search_requests"] or 0)
+        search_cost = searches * WEB_SEARCH_DOLLARS_PER_REQUEST
+        cost["total"] = round(cost["total"] + search_cost, 6)
         entry = by_call_site.setdefault(r["call_site"], {
             "calls": 0, "seconds": 0.0,
             "tokens": {"input": 0, "cache_read": 0, "cache_write": 0, "output": 0},
@@ -358,6 +371,8 @@ def _cost_breakdown(conn, hid: int, since_sql: str) -> dict:
         })
         entry["calls"] += r["calls"]
         entry["seconds"] += r["seconds"]
+        if searches:
+            entry["web_search_requests"] = entry.get("web_search_requests", 0) + searches
         for f in ("input", "cache_read", "cache_write", "output"):
             entry["tokens"][f] += tokens[f]
         for k in total:

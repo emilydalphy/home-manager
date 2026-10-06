@@ -28,6 +28,7 @@ import types
 import pytest
 
 from app import agent, tools
+from app.db import get_conn
 from app.tools import recipe_research as rr
 
 
@@ -53,6 +54,23 @@ def _search(urls, tool_id="s1"):
         _ns(type="web_search_tool_result", tool_use_id=tool_id,
             content=[_ns(type="web_search_result", url=u, title=u) for u in urls]),
     ]
+
+
+def _fetched(urls, prefix="g"):
+    out = []
+    for i, u in enumerate(urls):
+        tid = f"{prefix}{i}"
+        out += [
+            _ns(type="server_tool_use", name="web_fetch", id=tid, input={"url": u}),
+            _ns(type="web_fetch_tool_result", tool_use_id=tid,
+                content=_ns(type="web_fetch_result", url=u, content=_ns(type="document"))),
+        ]
+    return out
+
+
+def _read(urls, tool_id="s1"):
+    """Searched AND read — the shape a page that can lead comes in."""
+    return _search(urls, tool_id) + _fetched(urls, prefix="g" + tool_id)
 
 
 def _fetch_refused(url, tool_id="f1"):
@@ -121,7 +139,7 @@ def test_a_version_with_few_ratings_cannot_lead_however_many_stars():
 
 def test_research_keeps_only_pages_it_saw_skips_a_refused_site_and_is_saved(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_search([A, B, C]) + _fetch_refused(B) + [_submit([
+        (_search([A, B, C]) + _fetched([A, C]) + _fetch_refused(B) + [_submit([
             {"name": "Cook A", "title": "Chana Masala", "url": A, "rating": 4.9, "rating_count": 1200},
             {"name": "Cook B", "title": "Chana", "url": B, "rating": 5.0, "rating_count": 5000},
             {"name": "Cook C", "title": "Chole", "url": C, "rating": 4.6, "rating_count": 80},
@@ -145,7 +163,7 @@ def test_research_keeps_only_pages_it_saw_skips_a_refused_site_and_is_saved(monk
 
 def test_a_dish_that_comes_back_is_not_researched_again(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_search([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
+        (_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
     ]))
     first = agent.research_dish("Chana Masala", "Indian", "")
     again = agent.research_dish("chana  masala!", "Indian", "")
@@ -155,7 +173,7 @@ def test_a_dish_that_comes_back_is_not_researched_again(monkeypatch):
 
 def test_research_is_per_household(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_search([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
+        (_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
     ]))
     agent.research_dish("Chana Masala", "Indian", "")
     with tools.use_household(2):
@@ -167,8 +185,8 @@ def test_nothing_well_rated_falls_back_to_the_trusted_cooks_for_the_cuisine(monk
     swasthi = "https://www.indianhealthyrecipes.com/chana-masala/"
     hebbar = "https://hebbarskitchen.com/chana-masala/"
     client = _use_client(monkeypatch, _FakeClient([
-        (_search([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 5.0, "rating_count": 2}])], "tool_use"),
-        (_search([hebbar, swasthi], tool_id="s2") + [_submit([
+        (_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 5.0, "rating_count": 2}])], "tool_use"),
+        (_read([hebbar, swasthi], tool_id="s2") + [_submit([
             {"name": "Hebbar's Kitchen", "url": hebbar, "rating": None, "rating_count": None},
             {"name": "Swasthi's Recipes", "url": swasthi, "rating": None, "rating_count": None},
         ])], "tool_use"),
@@ -188,7 +206,7 @@ def test_nothing_well_rated_falls_back_to_the_trusted_cooks_for_the_cuisine(monk
 
 def test_a_paused_search_turn_is_carried_on(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_search([A]), "pause_turn"),
+        (_read([A]), "pause_turn"),
         ([_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
     ]))
     research = agent.research_dish("Chana Masala", "Indian", "")
@@ -230,7 +248,7 @@ def _written(spec):
 
 def test_the_writer_gets_the_research_and_the_page_gets_the_sources(monkeypatch, signed_in):
     _use_client(monkeypatch, _FakeClient([
-        (_search([A, C]) + [_submit([
+        (_read([A, C]) + [_submit([
             {"name": "Cook A", "title": "Chana Masala", "url": A, "rating": 4.9, "rating_count": 1200},
             {"name": "Cook C", "title": "Chole", "url": C, "rating": 4.6, "rating_count": 80},
         ])], "tool_use"),
@@ -268,18 +286,28 @@ def test_a_recipe_written_without_research_reads_as_none(signed_in):
     assert body["household_changes"] == []
 
 
-def _filed(monkeypatch, name="Chana Masala"):
-    monkeypatch.setattr(rr, "start_link_check", lambda research: False)
+def _filed(monkeypatch=None, name="Chana Masala"):
+    if monkeypatch is not None:
+        monkeypatch.setattr(rr, "start_link_check", lambda research: False)
     return rr.save_research(name, rr.pick_lead([
         {"name": "Cook A", "title": "", "url": A, "rating": 4.9, "rating_count": 1200},
         {"name": "Cook C", "title": "", "url": C, "rating": 4.6, "rating_count": 80},
     ]), "notes", False)
 
 
+def _written_from(name, research):
+    """A recipe written from this research — the link the recipe pass sets."""
+    tools.add_recipe(name=name, ingredients=[{"item": "Chickpeas", "qty": "2 cans"}])
+    recipe = tools.get_recipe(name)
+    conn = get_conn()
+    conn.execute("UPDATE recipes SET research_id = ? WHERE id = ?", (research["id"], recipe["id"]))
+    conn.commit()
+    conn.close()
+    return recipe
+
+
 def test_changed_a_lot_through_change_recipe_reads_originally_based_on(monkeypatch):
-    _filed(monkeypatch)
-    tools.add_recipe(name="Chana Masala", ingredients=[{"item": "Chickpeas", "qty": "2 cans"}])
-    recipe = tools.get_recipe("Chana Masala")
+    recipe = _written_from("Chana Masala", _filed(monkeypatch))
     tools.record_recipe_change_request("Chana Masala", "Less spicy", recipe_id=recipe["id"])
     assert rr.recipe_research_for(recipe)["credit_prefix"] == "Based on"
     tools.record_recipe_change_request("Chana Masala", "No pressure cooker", recipe_id=recipe["id"])
@@ -291,13 +319,173 @@ def test_changed_a_lot_through_change_recipe_reads_originally_based_on(monkeypat
 def test_a_gone_link_is_hidden_and_a_bot_blocking_site_is_not(monkeypatch):
     research = _filed(monkeypatch)
     answers = {A: None, C: False}  # A refused the checker (403); C is gone (404)
-    monkeypatch.setattr(rr, "link_status", lambda url, timeout=6.0: answers[url])
+    monkeypatch.setattr(rr, "link_status", lambda url: answers[url])
     assert rr.check_research_links(research) == 1
 
-    tools.add_recipe(name="Chana Masala", ingredients=[{"item": "Chickpeas", "qty": "2 cans"}])
+    _written_from("Chana Masala", research)
     shown = rr.recipe_research_for(tools.get_recipe("Chana Masala"), check_links=False)
     assert [s["name"] for s in shown["sources"]] == ["Cook A"]
     # The credit still says what it was checked against; only the link goes.
     assert shown["credit"] == "Based on Cook A, checked against Cook C"
     # Checked just now, so nothing is due again for a month.
     assert not any(rr.due_for_check(s) for s in rr.saved_research("Chana Masala")["sources"])
+
+
+# ---------- review round, 2026-10-06 ----------
+
+def test_only_a_page_that_was_read_can_lead(monkeypatch):
+    """A rating reported for a page only SEEN in a search snippet (or one
+    injected into it) must not make it the lead: C was read, B was not."""
+    _use_client(monkeypatch, _FakeClient([
+        (_search([B, C]) + _fetched([C]) + [_submit([
+            {"name": "Snippet only", "url": B, "rating": 5.0, "rating_count": 99999},
+            {"name": "Read it", "url": C, "rating": 4.6, "rating_count": 300},
+        ])], "tool_use"),
+    ]))
+    research = agent.research_dish("Chole", "Indian", "")
+    assert research["sources"][0]["name"] == "Read it"
+    assert research["sources"][0]["lead"] is True
+    assert [s["lead"] for s in research["sources"][1:]] == [False]
+
+
+def test_nothing_read_is_no_research_and_the_empty_result_is_remembered(monkeypatch):
+    client = _use_client(monkeypatch, _FakeClient([
+        (_search([A]) + [_submit([{"name": "A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
+        (_search([B], tool_id="s2") + [_submit([{"name": "B", "url": B, "rating": None, "rating_count": None}])], "tool_use"),
+    ]))
+    assert agent.research_dish("Chana Masala", "Indian", "") is None
+    calls = len(client.calls)
+    # The dish comes back next week: nothing is paid for again.
+    assert agent.research_dish("Chana Masala", "Indian", "") is None
+    assert len(client.calls) == calls
+
+
+def test_the_per_dish_budget_holds_across_continuations_and_the_fallback(monkeypatch):
+    """Two searches and two fetches spent in the open pass (one paused round
+    and one more) leave the fallback only what the dish has left, and a
+    pass never runs more than _RESEARCH_MAX_ROUNDS rounds."""
+    two_fetches = _fetched([A, B], prefix="x")
+    client = _use_client(monkeypatch, _FakeClient([
+        (_search([A], "s1") + _search([B], "s2"), "pause_turn"),
+        (two_fetches, "pause_turn"),      # second and last round: never submits
+        (_read([C], "s3") + [_submit([{"name": "C", "url": C, "rating": None, "rating_count": None}])], "tool_use"),
+    ]))
+    agent.research_dish("Chana Masala", "Indian", "")
+    assert len(client.calls) == 3, "the open pass stops after its rounds; then one fallback call"
+    first_tools = {t["name"]: t for t in client.calls[0]["tools"] if "max_uses" in t}
+    assert first_tools["web_search"]["max_uses"] == agent._OPEN_SEARCH_SHARE["web_search"]
+    # After the open pass's first round spent both its searches, its second
+    # round is offered no search at all.
+    assert "web_search" not in {t.get("name") for t in client.calls[1]["tools"]}
+    fallback_tools = {t["name"]: t for t in client.calls[2]["tools"] if "max_uses" in t}
+    assert fallback_tools["web_search"]["max_uses"] == agent.DISH_RESEARCH_BUDGET["web_search"] - 2
+    assert fallback_tools["web_fetch"]["max_uses"] == agent.DISH_RESEARCH_BUDGET["web_fetch"] - 2
+
+
+def test_reported_sources_with_no_result_urls_are_logged_loudly(monkeypatch, caplog):
+    _use_client(monkeypatch, _FakeClient([
+        ([_submit([{"name": "A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
+        ([_submit([])], "tool_use"),
+    ]))
+    with caplog.at_level("WARNING", logger="home_manager"):
+        agent.research_dish("Chana Masala", "Indian", "")
+    assert any("no search/fetch result URL was read" in r.getMessage() for r in caplog.records)
+
+
+def test_web_searches_are_recorded_and_priced(monkeypatch):
+    usage = _usage()
+    usage.server_tool_use = _ns(web_search_requests=3, web_fetch_requests=2)
+    agent._record_api_call("research_dish_llm", agent.MODEL, _ns(usage=usage), 1.0)
+    conn = get_conn()
+    row = conn.execute("SELECT web_search_requests, web_fetch_requests FROM api_calls "
+                       "WHERE call_site = 'research_dish_llm'").fetchone()
+    conn.close()
+    assert (row["web_search_requests"], row["web_fetch_requests"]) == (3, 2)
+    cost = tools.get_month_to_date_cost()
+    assert cost["by_call_site"]["research_dish_llm"]["cost"]["total"] == pytest.approx(0.03)
+    assert cost["total_cost"]["total"] >= 0.03
+
+
+def test_a_households_own_recipe_of_the_same_name_shows_no_research(monkeypatch):
+    """Research is shown through the recipe it was written from, never by
+    name: a hand-written "Chana Masala" is not "Based on" anything."""
+    _filed(monkeypatch)
+    tools.add_recipe(name="Chana Masala", ingredients=[{"item": "Chickpeas", "qty": "2 cans"}])
+    assert rr.recipe_research_for(tools.get_recipe("Chana Masala")) is None
+
+
+def test_the_cook_screens_fill_never_waits_on_a_web_search(monkeypatch):
+    def _no_search(*a, **k):
+        raise AssertionError("the live fill must not research")
+
+    monkeypatch.setattr(agent, "research_dish_llm", _no_search)
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _written)
+    _pending("Rajma")
+    out = agent.fill_in_recipe("Rajma")
+    assert out["instructions"]
+
+
+def test_research_off_sends_no_link_check_from_the_recipe_page(monkeypatch, signed_in):
+    """RECIPE_RESEARCH=off stops every outbound call — the recipe page's
+    link checks too. start_link_check itself is NOT stubbed here."""
+    research = _filed()
+    recipe = _written_from("Chana Masala", research)
+    reached = []
+    monkeypatch.setattr(rr, "_resolve", lambda host: reached.append(host) or ["93.184.216.34"])
+    monkeypatch.setattr(rr, "_request", lambda *a: reached.append(a) or (200, ""))
+    monkeypatch.setenv("RECIPE_RESEARCH", "off")
+    body = signed_in.get(f"/api/recipes/{recipe['id']}").json()
+    import threading
+    for t in threading.enumerate():
+        if t.name.startswith("recipe-links-"):
+            t.join(5)
+    assert body["research"]["credit"].startswith("Based on Cook A")
+    assert reached == []
+
+
+# ---------- the link checker can't be pointed inside ----------
+
+def _checker(monkeypatch, addresses, answers):
+    asked = []
+
+    def _req(scheme, host, port, ip, method, path):
+        asked.append((host, ip, method, path))
+        return answers.pop(0)
+
+    monkeypatch.setattr(rr, "_resolve", lambda host: addresses[host])
+    monkeypatch.setattr(rr, "_request", _req)
+    return asked
+
+
+@pytest.mark.parametrize("ip", ["127.0.0.1", "10.0.0.5", "169.254.169.254", "::1", "192.168.1.1", "0.0.0.0"])
+def test_a_private_or_local_address_is_never_requested(monkeypatch, ip):
+    asked = _checker(monkeypatch, {"evil.example": [ip]}, [(200, "")])
+    assert rr.link_status("https://evil.example/x") is None
+    assert asked == []
+
+
+def test_a_redirect_into_a_private_address_is_refused(monkeypatch):
+    asked = _checker(monkeypatch, {"good.example": ["93.184.216.34"], "inside.example": ["10.1.2.3"]},
+                     [(302, "http://inside.example/admin")])
+    assert rr.link_status("https://good.example/recipe") is None
+    assert [a[0] for a in asked] == ["good.example"]
+
+
+def test_only_http_and_https_and_only_a_few_hops(monkeypatch):
+    asked = _checker(monkeypatch, {"good.example": ["93.184.216.34"]},
+                     [(301, "/a"), (301, "/b"), (301, "/c"), (301, "/d"), (301, "/e")])
+    assert rr.link_status("ftp://good.example/file") is None
+    assert rr.link_status("file:///etc/passwd") is None
+    assert asked == []
+    assert rr.link_status("https://good.example/start") is None
+    assert len(asked) == rr._LINK_MAX_HOPS + 1
+
+
+def test_gone_is_false_blocked_is_unknown_and_head_falls_back_to_get(monkeypatch):
+    asked = _checker(monkeypatch, {"good.example": ["93.184.216.34"]},
+                     [(404, ""), (403, ""), (405, ""), (200, "")])
+    assert rr.link_status("https://good.example/gone") is False
+    assert rr.link_status("https://good.example/bots-not-welcome") is None
+    assert rr.link_status("https://good.example/no-head") is True
+    assert [a[2] for a in asked][-2:] == ["HEAD", "GET"]
+    assert all(a[1] == "93.184.216.34" for a in asked), "requests go to the checked address"

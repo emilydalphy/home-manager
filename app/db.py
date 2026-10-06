@@ -403,6 +403,9 @@ _MIGRATIONS = [
     ("meal_preferences", "weekday_lunch_max_minutes", "INTEGER NOT NULL DEFAULT 20"),
     # "Changed for your household" lines (research-first writing, 2026-10-06).
     ("recipes", "household_changes_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("recipes", "research_id", "INTEGER"),
+    ("api_calls", "web_search_requests", "INTEGER NOT NULL DEFAULT 0"),
+    ("api_calls", "web_fetch_requests", "INTEGER NOT NULL DEFAULT 0"),
     ("meal_preferences", "table_style", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "typical_week", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "next_week_notes", "TEXT NOT NULL DEFAULT ''"),
