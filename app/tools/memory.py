@@ -155,43 +155,13 @@ def delete_fact(fact_id: int) -> dict:
 def get_household_memory_for_display() -> dict:
     """
     get_household_memory, for the screens that SHOW the household (What we
-    know / Preferences → Who's here) rather than plan for it.
-
-    Ages (2026-10-06): an infant the parents left out of meals ("Include in
-    meals?" off) is out of every meal count through _shared.EATS_HERE_SQL —
-    and get_household_memory's `members` is one of those counts (the
-    planner, the clash checker and the big-meal pass all read it). But the
-    baby still lives here, so the member list a person reads must still
-    show them. They are added back HERE, flagged `in_meals: false`, and
-    only here: every planning reader keeps calling get_household_memory and
-    never sees them. Everyone else carries `in_meals: true`.
+    know / Preferences → Who's here). Since the 2026-10-06 review it is the
+    same payload: `members` lists every resident — an infant left out of
+    meals included, flagged `in_meals: false` — because restrictions and
+    allergies must reach every reader. Kept as its own name so the
+    /api/memory* routes say what they are for.
     """
-    memory = dict(get_household_memory())
-    conn = get_conn()
-    try:
-        rows = conn.execute(
-            "SELECT id, name, age_group, age_years, dietary_restrictions_json FROM members "
-            "WHERE household_id = ? AND COALESCE(eats_here, 1) = 1 AND COALESCE(include_in_meals, 1) = 0 "
-            "ORDER BY id",
-            (household_id(),),
-        ).fetchall()
-    finally:
-        conn.close()
-    members = [dict(m, in_meals=True) for m in memory.get("members") or []]
-    for r in rows:
-        try:
-            restrictions = json.loads(r["dietary_restrictions_json"] or "[]")
-        except (TypeError, ValueError):
-            restrictions = []
-        members.append({
-            "id": r["id"], "name": r["name"], "age_group": r["age_group"],
-            "age_years": r["age_years"],
-            "dietary_restrictions": restrictions if isinstance(restrictions, list) else [],
-            "is_primary": False, "in_meals": False,
-        })
-    members.sort(key=lambda m: m.get("id") or 0)
-    memory["members"] = members
-    return memory
+    return get_household_memory()
 
 
 def get_household_memory() -> dict:
@@ -229,7 +199,13 @@ def get_household_memory() -> dict:
         # the main person, and moving it needs an id rather than a name —
         # a name is the only identity this app has for a person and two
         # people called Sam are indistinguishable to it.
-        f"SELECT id, name, age_group, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
+        # Every resident, an infant left out of meals included (2026-10-06):
+        # this list carries restrictions and allergies to the planner and
+        # the clash checker, and a baby's allergy binds every dish. The
+        # baby is flagged `in_meals: false` instead; headcounts come from
+        # attendance (IN_MEALS_SQL), not from this list.
+        f"SELECT id, name, age_group, age_years, COALESCE(include_in_meals, 1) AS include_in_meals, "
+        f"dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
         (household_id(),),
     ).fetchall()
     household = conn.execute("SELECT goals FROM households WHERE id = ?", (household_id(),)).fetchone()
@@ -297,6 +273,10 @@ def get_household_memory() -> dict:
             "name": m["name"], "age_group": m["age_group"],
             "dietary_restrictions": json.loads(m["dietary_restrictions_json"]),
             "is_primary": m["id"] == primary_id,
+            # Ages (2026-10-06): a Child's age, and false only for an infant
+            # the parents left out of meals.
+            "age_years": m["age_years"],
+            "in_meals": bool(m["include_in_meals"]),
         }
         for m in members
     ]

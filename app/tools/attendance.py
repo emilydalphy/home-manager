@@ -53,7 +53,7 @@ import math
 from datetime import date, timedelta
 
 from ..db import get_conn
-from ._shared import EATS_HERE_SQL, household_id
+from ._shared import IN_MEALS_SQL, household_id
 from . import weekly_plan as _weekly_plan
 from . import quantities as _quantities
 
@@ -87,7 +87,7 @@ def _validate_writable_slot(slot: str) -> None:
 
 def _member_rows(conn) -> list:
     return conn.execute(
-        f"SELECT id, name FROM members WHERE household_id = ? AND {EATS_HERE_SQL} ORDER BY id",
+        f"SELECT id, name FROM members WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id",
         (household_id(),),
     ).fetchall()
 

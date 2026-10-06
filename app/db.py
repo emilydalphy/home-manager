@@ -1254,9 +1254,11 @@ def _migrate_prep_and_lunch_limits(conn):
     """
     Onboarding, regrouped (Emily, 2026-10-05). Two answers lost an option:
     "How long?" left Cook ahead — every prep day is planned for up to two
-    hours, so a prep day saved as about an hour (60 minutes, or any length
-    under 120) moves to 120 — and 10 minutes left the made-fresh lunch
-    limit, so a household that picked it moves to 20, the new floor.
+    hours, so a prep day saved as "About an hour" (exactly 60 minutes)
+    moves to 120 — and 10 minutes left the made-fresh lunch limit, so a
+    household that picked it (exactly 10) moves to 20. Exactly those values
+    only (review, 2026-10-06): a 30 or 90 said in chat, or a 15-minute lunch
+    limit, is the household's own answer and is left alone.
     Runs ONCE (PRAGMA user_version): an answer given after this ships is
     the household's own and is never rewritten at a restart. A prep day
     with no minutes on it (never said) is left alone.
@@ -1274,7 +1276,7 @@ def _migrate_prep_and_lunch_limits(conn):
             continue
         changed = False
         for d in days:
-            if isinstance(d, dict) and isinstance(d.get("minutes"), int) and 0 < d["minutes"] < 120:
+            if isinstance(d, dict) and d.get("minutes") == 60:
                 d["minutes"] = 120
                 changed = True
         if changed:
@@ -1284,7 +1286,7 @@ def _migrate_prep_and_lunch_limits(conn):
         return
     conn.execute(
         "UPDATE meal_preferences SET weekday_lunch_max_minutes = 20 "
-        "WHERE weekday_lunch_max_minutes > 0 AND weekday_lunch_max_minutes < 20"
+        "WHERE weekday_lunch_max_minutes = 10"
     )
 
 

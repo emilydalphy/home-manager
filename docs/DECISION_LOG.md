@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Ages/regrouped review fixes (branch `overnight/onboarding-ages`).**
+  SAFETY: `EATS_HERE_SQL` is back to helpers-only; the infant rule is a new
+  `_shared.IN_MEALS_SQL`, read ONLY by headcounts (attendance, usual week
+  grid, lunch/snack rows, guest maths, day_meals). Restrictions, allergies,
+  `list_members`, the clash checker and memory `members` read every
+  resident, so a baby's allergy binds every dish (memory members carry
+  `in_meals`). Adult/Teen, or an age of 1+, turns "Include in meals?" back on;
+  `set_member_age` reconciles attendance. "Nut-free environment" now adds
+  hard avoidances (peanuts, nuts) for that person in `coordination._avoidances`
+  — over-safe, whole household. Migrations narrowed to exactly 60 -> 120 and
+  10 -> 20.
+
 - **2026-10-06 — Onboarding, regrouped, slice 2: ages (branch
   `overnight/onboarding-ages`, from `overnight/onboarding-regrouped`).**
   Age chips Adult · Teen · Child ("Little one" gone; run-once migration 4
@@ -25,9 +37,8 @@ why*, not duplicating the diff.
   `currentMembers({ forMeals: true })`. `household.age_stage` names
   infant / toddler (<4) / child for the planning slice. NOT YET: toddler and
   child portions in the planner; Settings asking the age of a former Little
-  one. The /api/memory* routes answer with `get_household_memory_for_display`,
-  which adds the left-out infant back (`in_meals: false`) so What we know
-  still lists them; planning readers keep `get_household_memory`.
+  one. (Superseded by the review-fix entry above: member lists keep the
+  infant, flagged `in_meals: false`.)
 
 - **2026-10-06 — Onboarding, regrouped, slice 1 (branch
   `overnight/onboarding-regrouped`).** Emily's locked flow (2026-10-05):

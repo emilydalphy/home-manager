@@ -154,7 +154,9 @@ def add_member(name: str) -> dict:
 def list_members() -> list[dict]:
     """List the household members meals are planned for, with any saved
     dietary restrictions. A helper who doesn't eat here (members.eats_here
-    = 0) is not one of them."""
+    = 0) is not one of them. An infant left out of meals (Ages,
+    2026-10-06) IS: this list is what the clash checker and every
+    restriction reader use, and a baby's allergy binds every dish."""
     conn = get_conn()
     rows = conn.execute(
         f"SELECT id, name, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
@@ -249,6 +251,15 @@ def set_member_age_group(name: str, age_group: str) -> dict:
             "UPDATE members SET age_group = ? WHERE id = ? AND household_id = ?",
             (age_group, member_id, household_id()),
         )
+        # "Include in meals?" is an infant's switch alone (Ages, 2026-10-06):
+        # anybody who is not a Child is always counted, so moving a person to
+        # Adult or Teen turns a switch left off back on — otherwise they
+        # could never be counted again.
+        if (age_group or "").strip().lower() != "child":
+            conn.execute(
+                "UPDATE members SET include_in_meals = 1 WHERE id = ? AND household_id = ?",
+                (member_id, household_id()),
+            )
         if (age_group or "").strip().lower() == "adult":
             row = conn.execute(
                 "SELECT color FROM members WHERE id = ? AND household_id = ?",
@@ -333,6 +344,10 @@ def set_member_age(name: str, age_years=None, include_in_meals: bool | None = No
         conn.commit()
     finally:
         conn.close()
+    # Who is counted at a meal just changed (an infant in or out), so the
+    # stored slots' away needs are re-derived, as add_member does.
+    from . import attendance as _attendance
+    _attendance.reconcile_membership()
     return {"name": name, "age_years": age_years, "include_in_meals": include}
 
 

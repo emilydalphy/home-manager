@@ -2069,11 +2069,11 @@ function renderMemberAgeExtras(block) {
     extra.className = 'member-age-extra';
     extra.innerHTML = `
       <label class="member-age-q"><span class="member-age-label"></span>
-        <input type="number" class="member-age-input" inputmode="decimal" min="0" max="17" step="any" placeholder="Years">
+        <input type="number" class="member-age-input" inputmode="decimal" min="0" max="120" step="any" placeholder="Years" aria-label="Age in years">
       </label>
       <div class="member-include" hidden>
         <span class="member-include-label">Include in meals?</span>
-        <button type="button" class="member-include-switch" role="switch" aria-checked="false"><span></span></button>
+        <button type="button" class="member-include-switch" role="switch" aria-checked="false" aria-label="Include in meals?"><span></span></button>
       </div>`;
     block.appendChild(extra);
     const input = extra.querySelector('.member-age-input');
@@ -2542,7 +2542,7 @@ function lunchNeedsPayload() {
 
 // ---------- Snacks a day (Onboarding regrouped, 2026-10-06) ----------
 // 0-3 per person; children 2, adults 1 to start (Emily, 2026-10-05).
-// "Child" here is the age chip's Child or Little one. Held by NAME and
+// "Child" here is the age chip's Child (any age; an infant has none). Held by NAME and
 // pruned with the others; a person never touched shows their default.
 const SNACK_OPTIONS = [0, 1, 2, 3];
 let memberSnacks = {};        // name -> 0..3, only once tapped

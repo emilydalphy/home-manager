@@ -241,11 +241,22 @@ def test_the_run_once_migration_moves_one_hour_prep_to_two_and_ten_minute_lunche
         (json.dumps([{"weekday": "sunday", "minutes": 60, "note": None}, {"weekday": "wednesday", "minutes": None, "note": None}]),),
     )
     conn.execute("INSERT INTO meal_preferences (household_id, weekday_lunch_max_minutes) VALUES (7, 10)")
+    conn.execute("INSERT INTO households (id, name) VALUES (8, 'h2')")
+    conn.execute(
+        "INSERT INTO household_rhythm (household_id, member_name, weekday, fact_type, value) VALUES (8, '', '', 'prep_days', ?)",
+        (json.dumps([{"weekday": "sunday", "minutes": 90, "note": None}, {"weekday": "monday", "minutes": 30, "note": None}]),),
+    )
+    conn.execute("INSERT INTO meal_preferences (household_id, weekday_lunch_max_minutes) VALUES (8, 15)")
     conn.execute(f"PRAGMA user_version = {_db._DATA_VERSION_ONBOARDING_REGROUPED - 1}")
     _db._run_migrations(conn)
     days = json.loads(conn.execute("SELECT value FROM household_rhythm WHERE household_id = 7").fetchone()[0])
     assert [d["minutes"] for d in days] == [120, None]
     assert conn.execute("SELECT weekday_lunch_max_minutes FROM meal_preferences WHERE household_id = 7").fetchone()[0] == 20
+    # Exactly 60 and exactly 10 only (review, 2026-10-06): their own 90, 30
+    # and 15 are left alone.
+    other = json.loads(conn.execute("SELECT value FROM household_rhythm WHERE household_id = 8").fetchone()[0])
+    assert [d["minutes"] for d in other] == [90, 30]
+    assert conn.execute("SELECT weekday_lunch_max_minutes FROM meal_preferences WHERE household_id = 8").fetchone()[0] == 15
     # Once only: a 60 saved after it ships is the household's own.
     conn.execute("UPDATE meal_preferences SET weekday_lunch_max_minutes = 10 WHERE household_id = 7")
     _db._run_migrations(conn)
@@ -297,8 +308,13 @@ def test_an_infant_left_out_of_meals_is_out_of_every_count(signed_in):
         {"name": "Arjun", "age_group": "child", "age_years": 7, "include_in_meals": False},
     ], "pets": [], "goals": ""})
     assert res.status_code == 200, res.text
-    names = {m["name"] for m in tools.list_members()}
-    assert {"Gowthami", "Mira", "Arjun"} <= names and "Baby" not in names
+    # UPDATED after review (2026-10-06): the baby is out of meal COUNTS
+    # (the people needs are planned for, the usual week's grid) but still on
+    # every member list, so their allergies bind.
+    counted = {m["name"] for m in tools.get_member_needs()}
+    assert {"Gowthami", "Mira", "Arjun"} <= counted and "Baby" not in counted
+    assert "Baby" not in {m["name"] for m in tools.get_usual_week()["members"]}
+    assert "Baby" in {m["name"] for m in tools.list_members()}
     assert [tools.age_stage("child", a) for a in (0.5, 2, 7, None)] == ["infant", "toddler", "child", "child"]
     bad = signed_in.post("/api/onboarding/household", json={"members": [{"name": "Zed", "age_group": "child", "age_years": -2}]})
     assert bad.status_code == 400
@@ -336,4 +352,63 @@ def test_a_baby_left_out_of_meals_still_shows_on_the_member_list(signed_in):
     edited = signed_in.post("/api/memory/member/restrictions", json={"name": "Baby", "restrictions": ["allergy: eggs"]})
     assert edited.status_code == 200, edited.text
     assert "Baby" in {m["name"] for m in edited.json()["members"]}
-    assert "Baby" not in {m["name"] for m in tools.get_household_memory()["members"]}
+    planner = {m["name"]: m for m in tools.get_household_memory()["members"]}
+    assert planner["Baby"]["in_meals"] is False
+
+
+
+# ---------- review fixes (2026-10-06) ----------
+
+
+def test_a_babys_allergy_still_binds_when_they_are_left_out_of_meals():
+    """SAFETY. The repro: Baby's peanut allergy was a hard avoidance until
+    "Include in meals?" went off, and then it was in no check at all."""
+    from app import tools
+    from app.tools import allergen_gate
+
+    tools.add_member("Baby")
+    tools.set_member_age_group("Baby", "child")
+    tools.set_member_dietary_restrictions("Baby", ["allergy: peanuts"], replace=True)
+    before = [a["label"] for a in allergen_gate.hard_avoidances()]
+    tools.set_member_age("Baby", 0.5, False)
+    after = [a["label"] for a in allergen_gate.hard_avoidances()]
+    assert "allergy: peanuts" in before
+    assert "allergy: peanuts" in after
+    assert "Baby" not in {m["name"] for m in tools.get_member_needs()}, "still out of the meal counts"
+
+
+def test_the_infant_switch_can_always_be_undone():
+    from app import tools
+
+    tools.add_member("Pip")
+    tools.set_member_age_group("Pip", "child")
+    tools.set_member_age("Pip", 0.5, False)
+    assert "Pip" not in {m["name"] for m in tools.get_member_needs()}
+    tools.set_member_age_group("Pip", "teen")
+    assert "Pip" in {m["name"] for m in tools.get_member_needs()}, "a Teen is always counted"
+    tools.set_member_age_group("Pip", "child")
+    tools.set_member_age("Pip", 0.5, False)
+    tools.set_member_age("Pip", 2)
+    assert "Pip" in {m["name"] for m in tools.get_member_needs()}, "turning 1 counts them again"
+
+
+def test_a_nut_free_lunch_is_a_hard_avoidance_for_the_household(signed_in):
+    from app.tools import allergen_gate
+
+    signed_in.post("/api/onboarding/answers", json={
+        "member_names": ["Arjun"], "lunch_needs": {"Arjun": {"needs": ["thermos"], "days": {"friday": ["nut_free"]}}},
+    })
+    hard = [a for a in allergen_gate.hard_avoidances() if a["member"] == "Arjun" and a["source"] == "lunch_need"]
+    labels = {a["label"] for a in hard}
+    assert {"allergy: peanuts (nut-free lunch)", "allergy: nuts (nut-free lunch)"} <= labels
+    assert all(a["terms"] for a in hard)
+
+
+def test_a_peanut_dish_is_held_back_for_a_nut_free_lunch(signed_in):
+    from app.tools import allergen_gate
+
+    signed_in.post("/api/onboarding/answers", json={"member_names": ["Arjun"], "lunch_needs": {"Arjun": {"needs": ["nut_free"]}}})
+    clashes = allergen_gate.hard_clashes("Peanut noodles", [{"item": "peanut butter", "qty": "2 tbsp"}])
+    assert any(c.get("member") == "Arjun" for c in clashes), clashes
+    assert not allergen_gate.hard_clashes("Plain rice", [{"item": "rice", "qty": "1 cup"}])
+

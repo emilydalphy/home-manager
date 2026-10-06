@@ -25,7 +25,7 @@ from __future__ import annotations
 import json
 
 from ..db import get_conn
-from ._shared import EATS_HERE_SQL, household_id
+from ._shared import EATS_HERE_SQL, IN_MEALS_SQL, household_id
 
 # Emily's five, in her order. The keys are what is stored; the words are
 # the screen's.
@@ -91,7 +91,7 @@ def _members_by_name(conn) -> dict[str, dict]:
     return {
         r["name"].strip().lower(): {"id": r["id"], "name": r["name"], "age_group": r["age_group"]}
         for r in conn.execute(
-            f"SELECT id, name, age_group FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
+            f"SELECT id, name, age_group FROM members WHERE household_id = ? AND {IN_MEALS_SQL}",
             (household_id(),),
         ).fetchall()
     }
@@ -202,7 +202,7 @@ def get_member_needs() -> list[dict]:
     try:
         rows = conn.execute(
             f"SELECT id, name, age_group, lunch_needs_json, snacks_per_day FROM members "
-            f"WHERE household_id = ? AND {EATS_HERE_SQL} ORDER BY id",
+            f"WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id",
             (household_id(),),
         ).fetchall()
     finally:
@@ -224,4 +224,39 @@ def get_member_needs() -> list[dict]:
             "snacks_per_day": r["snacks_per_day"] if r["snacks_per_day"] is not None else default_snacks(r["age_group"]),
             "snacks_set": r["snacks_per_day"] is not None,
         })
+    return out
+
+
+# "Nut-free environment" is a SAFETY answer, not only a place (review,
+# 2026-10-06): a school that is nut-free means no nuts in what that person
+# carries in. Until the planner packs lunches per person, the whole
+# household's planning treats it as these two allergies for that person —
+# over-safe on purpose: a dinner's leftovers can become the lunch.
+NUT_FREE_AVOIDANCES = ("allergy: peanuts", "allergy: nuts")
+
+
+def nut_free_member_names() -> list[str]:
+    """Everyone living here whose weekday lunch need, on any day, includes
+    "Nut-free environment"."""
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            f"SELECT name, lunch_needs_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL} ORDER BY id",
+            (household_id(),),
+        ).fetchall()
+    finally:
+        conn.close()
+    out = []
+    for r in rows:
+        try:
+            entry = json.loads(r["lunch_needs_json"] or "null")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(entry, dict):
+            continue
+        needs = list(entry.get("needs") or [])
+        for day in (entry.get("days") or {}).values():
+            needs.extend(day or [])
+        if "nut_free" in needs:
+            out.append(r["name"])
     return out
