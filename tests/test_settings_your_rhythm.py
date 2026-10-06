@@ -34,7 +34,10 @@ def _settings_harness() -> str:
            "uwDayRowHtml", "uwChoiceDishes", "uwVarietyLine", "uwPrepDaysLine", "uwSnacksLabel", "uwSetRowHtml",
            "wwkUsualWeekHtml", "uwPickerOptions", "uwApplyPick", "uwResultLine", "uwSheetBodyHtml", "uwSheetPayload",
            "uwPrepDayNames", "uwHasPrep", "uwQuickOn", "uwApplyQuick",
-           "escapeHtml", "wwkChip", "wwkNote"]
+           "escapeHtml", "wwkChip", "wwkNote",
+           # Snacks a day is per person since 2026-10-06 (/api/member-needs);
+           # with no needs read yet the row reads the household number.
+           "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml", "wwkSnacksFor", "wwkSnacksHousehold"]
 
     def lift(name):
         s = SHELL_JS.index(f"function {name}(")
@@ -52,7 +55,8 @@ def _settings_harness() -> str:
 
     dinner = SHELL_JS[SHELL_JS.index("  var WWK_DINNER_WINDOW = ["):]
     dinner = dinner[: dinner.index("];") + 2]
-    return SHELL_JS[start:end] + "\n" + dinner + "\n" + "\n".join(lift(n) for n in fns) + "\n"
+    needs = "var wwkState = (typeof wwkState !== 'undefined' && wwkState) || { needs: null, lunchByDay: {} };\n"
+    return SHELL_JS[start:end] + "\n" + dinner + "\n" + needs + "\n".join(lift(n) for n in fns) + "\n"
 
 
 def _usual_week_json(answered: bool) -> dict:
@@ -276,7 +280,9 @@ var a = wwkUsualWeekHtml({ rhythm: {} });
 uwState.data.prep = { days: ['sunday', 'wednesday'], length: 'hour' };
 console.log(JSON.stringify([a, wwkUsualWeekHtml({ rhythm: {} })]));
 """ % json.dumps(data))
-    assert "Sunday (a longer stretch) ›" in out[0]
+    # Every prep day is up to 2 hours since 2026-10-06 (Cook ahead lost
+    # "How long?"); an old 1-hour answer still reads as it stands.
+    assert "Sunday (up to 2 hours) ›" in out[0]
     assert "Sunday and Wednesday (about an hour) ›" in out[1]
 
 

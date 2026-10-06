@@ -6382,6 +6382,16 @@ button.cook-ready-row { cursor: pointer; }
    urgent). 44px tall (Rule 6). */
 .wwk-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .wwk-chips-named { gap: 6px; }
+/* A Child's age (Ages, 2026-10-06): a short number field, not a full row. */
+.wwk-age-input { max-width: 140px; }
+/* A quiet text control under a person's chips ("Different on some
+   days?" / "Same every day") — the Change link's recipe (.uw-set-change),
+   at a full 44px target (Rule 6). */
+.wwk-link {
+  align-self: flex-start;
+  min-height: 44px; padding: 0 2px; background: none; border: 0; cursor: pointer;
+  font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--apricot-label);
+}
 .wwk-chips-name {
   font-family: var(--font-body);
   font-size: 14px;
@@ -8389,6 +8399,24 @@ span.cook-week-name { cursor: default; }
   padding: 0 18px;
   flex: 0 0 auto;
 }
+/* "How old is [name]?" (Ages, 2026-10-06): asked at the top of Settings
+   for a Child with no age on record. A celadon-tint card — a question the
+   household can settle, not anything urgent — above the rows. */
+.prefs-age-ask {
+  margin: 10px 18px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--celadon-tint);
+  border: 1.5px solid var(--celadon-edge);
+  display: flex; flex-direction: column; gap: 8px;
+  flex: 0 0 auto;
+}
+.prefs-age-ask[hidden] { display: none; }
+#prefs-age-include[hidden] { display: none; }
+.prefs-age-ask .prefs-row-title, .prefs-age-ask .prefs-row-sub { margin: 0; color: var(--ink-on-celadon); white-space: normal; }
+.prefs-age-ask-row { display: flex; gap: 8px; align-items: stretch; }
+.prefs-age-ask-row .snw-input { flex: 1 1 auto; min-width: 0; min-height: 48px; }
+.prefs-age-save { flex: 0 0 auto; min-height: 48px; padding: 0 20px; }
 .prefs-rows {
   padding: 4px 18px 0;
   overflow-y: auto;

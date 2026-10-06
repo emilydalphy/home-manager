@@ -223,10 +223,13 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     return {"name": name, "dietary_restrictions": merged}
 
 
+LITTLE_ONE_WORDS = frozenset({"toddler", "little one", "baby", "infant"})
+
+
 def set_member_age_group(name: str, age_group: str) -> dict:
     """
-    Set a member's general age group (e.g. 'adult', 'teen', 'child',
-    'toddler', or anything freeform).
+    Set a member's general age group ('adult', 'teen', 'child', or
+    anything freeform; 'toddler' and its kin are stored as 'child').
 
     Defect hunt, 2026-09-13: a newly added adult's avatar color
     (members.color) used to stay blank until the next server restart's
@@ -244,6 +247,12 @@ def set_member_age_group(name: str, age_group: str) -> dict:
     design names two colors — so a third adult, or a household with two
     already colored, is left blank exactly as the backfill leaves it.
     """
+    # "Little one" left the age chips (Ages, 2026-10-05): a toddler or a
+    # baby is a Child with an age. The chat can still say "toddler"; it is
+    # stored as child, so Settings lights the Child chip and asks the age
+    # (a Child with no age is asked the next time Settings opens).
+    if (age_group or "").strip().lower() in LITTLE_ONE_WORDS:
+        age_group = "child"
     conn = get_conn()
     try:
         member_id = _get_or_create_member(conn, name)
@@ -339,13 +348,23 @@ def portion_weight(age_group: str | None, age_years) -> float:
     return PORTION_BY_STAGE.get(age_stage(age_group, age_years), 1.0)
 
 
-def set_member_age(name: str, age_years=None, include_in_meals: bool | None = None) -> dict:
+def set_member_age(name: str, age_years=None, include_in_meals: bool | None = None,
+                   must_exist: bool = False) -> dict:
     """
     Set a child's age in years (under 1 allowed; None clears it) and/or
     whether they are counted in meals. include_in_meals is only ever OFF
-    for an infant: anyone 1 or older is always counted (the switch is the
-    infant's alone), so an age raised past 1 turns it back on.
+    for an infant — a member whose age group is Child and whose age is
+    under 1: anyone else is always counted (the switch is the infant's
+    alone), so an age raised past 1, or an Adult, is counted whatever is
+    sent (review, 2026-10-06: an adult could be switched out of meals).
+
+    must_exist (Settings, review 2026-10-06): look the person up and never
+    create one — a typo or a blank name is LookupError / ValueError, not a
+    new member. Onboarding's finish leaves it False: it has just added them.
     """
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Say whose age this is.")
     if age_years is not None:
         try:
             age_years = float(age_years)
@@ -355,12 +374,25 @@ def set_member_age(name: str, age_years=None, include_in_meals: bool | None = No
             raise ValueError(f"age must be 0 to {MAX_AGE_YEARS} years.")
     conn = get_conn()
     try:
-        member_id = _get_or_create_member(conn, name)
+        if must_exist:
+            row = conn.execute(
+                "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+                (household_id(), name),
+            ).fetchone()
+            if not row:
+                raise LookupError(f"{name} isn't someone in this household.")
+            member_id = row["id"]
+        else:
+            member_id = _get_or_create_member(conn, name)
+        group = conn.execute(
+            "SELECT age_group FROM members WHERE id = ? AND household_id = ?", (member_id, household_id())
+        ).fetchone()["age_group"]
         conn.execute(
             "UPDATE members SET age_years = ? WHERE id = ? AND household_id = ?",
             (age_years, member_id, household_id()),
         )
-        infant = age_years is not None and age_years < INFANT_UNDER_YEARS
+        infant = ((group or "").strip().lower() == "child"
+                  and age_years is not None and age_years < INFANT_UNDER_YEARS)
         include = True if not infant else bool(include_in_meals)
         conn.execute(
             "UPDATE members SET include_in_meals = ? WHERE id = ? AND household_id = ?",

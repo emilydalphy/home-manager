@@ -245,6 +245,37 @@ why*, not duplicating the diff.
   accident). Nut-free KEPT household-wide (one cook = everyone's lunch), and
   now also told to the model in `must_not_contain` — the gate alone turned a
   nutty pick into an open slot.
+- **2026-10-06 — Slice 3 review fixes (branch `overnight/onboarding-settings`).**
+  Snacks: someone who never answered shows the household's own number, not
+  the age default (`wwkSnacksFor`; a 0-snack household read "Up to 2" and one
+  tap turned snacks on), and a save pins every unanswered person at it, so
+  editing one person never moves another. `POST /api/memory/member/age`
+  looks the person up (`set_member_age(..., must_exist=True)`): blank 400,
+  unknown 404, nobody created; the infant switch applies only to a Child
+  under 1, so an adult can't be left out of meals. An old lunch place
+  (out → Cold packed, home → Something to reheat, overrides as day by day)
+  shows as needs until the first tap saves it (`wwkLunchFromPlace`) — it
+  used to vanish. 120-minute prep reads "up to 2 hours", said once for all
+  days (`rhythm.prep_minutes_label` / `prep_days_summary`). A failed
+  follow-up after a saved need re-reads instead of restoring stale state; an
+  age that takes someone out of meals says so in a toast.
+
+- **2026-10-06 — Onboarding, regrouped, slice 3: Settings asks what setup asks
+  (branch `overnight/onboarding-settings`, from `overnight/onboarding-ages`).**
+  Who's here: Adult · Teen · Child (`wwkAgeKey` reads a stray 'toddler' as
+  Child), "How old is [name]?" under a Child, an infant's "Include in meals"
+  chip; new `POST /api/memory/member/age` onto `set_member_age`. Any Child
+  with no age (every former Little one) is asked in a card at the top of
+  Settings until answered (`prefsAgeAskWho`, its own box outside
+  `#prefs-rows` so a read landing can't wipe the typing). Your rhythm: the
+  Home / On the go / Varies chips became per-person Weekday lunches (five
+  needs, day by day) and Snacks is per person, both on `/api/member-needs`;
+  the household snacks a day follows the most anyone has, as onboarding.
+  Lunch limit moved under "Made fresh: how long can it take?" (20/30/45/none,
+  only with Made fresh). Prep days lost "Roughly how long"; every save is
+  120 min. `set_member_age_group` stores toddler/baby/infant/little one as
+  'child'; the agent tool no longer offers 'toddler'. Why: one set of
+  answers, two places to give them (Emily, card locked 2026-10-05).
 
 - **2026-10-06 — Ages/regrouped review fixes (branch `overnight/onboarding-ages`).**
   SAFETY: `EATS_HERE_SQL` is back to helpers-only; the infant rule is a new

@@ -233,7 +233,7 @@ def test_the_agent_can_set_prep_days():
     assert "set_prep_days" in agent.TOOL_FUNCTIONS
     agent.TOOL_FUNCTIONS["set_prep_days"](days=[{"weekday": "saturday", "minutes": 120}])
 
-    assert tools.get_household_rhythm()["prep_days_summary"] == "Preps on Saturday (a longer stretch)."
+    assert tools.get_household_rhythm()["prep_days_summary"] == "Preps on Saturday (up to 2 hours)."
 
 
 def test_the_agent_tool_is_declared_with_the_this_week_only_argument():

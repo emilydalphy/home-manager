@@ -66,6 +66,13 @@ def _people_block() -> str:
         + _function("wwkFactChip") + "\n"
         + _function("wwkAddChip") + "\n"
         + _function("wwkLead") + "\n"
+        + _function("wwkNote") + "\n"
+        # Ages (2026-10-06): the chips read wwkAgeKey, and a Child's row
+        # carries "How old is [name]?" (wwkAgeHtml).
+        + _function("wwkAgeKey") + "\n"
+        + "var WWK_INFANT_UNDER_YEARS = 1;\n"
+        + _function("wwkIsInfant") + "\n"
+        + _function("wwkAgeHtml") + "\n"
         + _function("prefsRestrictionWords") + "\n"
         + "function inviteRowHtml() { return ''; }\n"
         + "function inviteAdultNamed() { return null; }\n"

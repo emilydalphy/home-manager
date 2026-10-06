@@ -2,7 +2,9 @@
 "Time limits", criterion 3, 2026-10-05).
 
 "Weeknight dinner: 45 min or less" and "Weekday lunch: 20 min or less", each
-with the same chips setup asks. Unset lunch reads 20 (never "no limit"), 0
+with the same chips setup asks. Since 2026-10-06 (Onboarding, regrouped) the
+lunch one is "Made fresh: how long can it take?" under Weekday lunches, shown
+when somebody has Made fresh, with 20 / 30 / 45 / No limit (10 min is gone). Unset lunch reads 20 (never "no limit"), 0
 reads "no limit", and a number no chip holds (35) stays on the line and lights
 no chip. Saves go through /api/memory/edit -> edit_preference, which already
 validates both fields.
@@ -15,12 +17,20 @@ import re
 from tests.test_preferences_align import MEMORY, SHELL_JS, _function, _harness, _run
 
 DINNER = [20, 30, 45, 60, 0]
-LUNCH = [10, 20, 30, 0]
+LUNCH = [20, 30, 45, 0]
+
+
+# Emily eats lunch every weekday and has Made fresh — what brings the lunch
+# limit onto the screen (wwkLunchNeedsHtml).
+MADE_FRESH = """
+uwState.data = {members: [{id: 1, name: 'Emily'}], grid: {lunch: {}}, variety: {}, prep: {days: []}, snacks_per_day: 1};
+wwkState.needs = [{id: 1, name: 'Emily', lunch_needs: {needs: ['made_fresh'], days: {}}, snacks_per_day: 1, snacks_set: false}];
+"""
 
 
 def _html(**over) -> str:
     mem = {**MEMORY, **over}
-    return _run(_harness() + f"""
+    return _run(_harness() + MADE_FRESH + f"""
 prefsState.memory = {json.dumps(mem)};
 console.log(JSON.stringify(wwkRhythmHtml(prefsState.memory)));
 """)
@@ -39,7 +49,7 @@ def test_both_limits_read_back_in_the_card_words():
     html = _html(weeknight_max_minutes=45, weekday_lunch_max_minutes=20)
     assert "Weeknight dinner: 45 min or less" in html
     assert "Weekday lunch: 20 min or less" in html
-    assert html.index("Weeknight dinner:") < html.index("Weekday lunch:")
+    assert html.index("Weeknight dinner:") < html.index("Made fresh: how long can it take?") < html.index("Weekday lunch:")
 
 
 def test_each_row_carries_its_own_chips_with_the_current_one_lit():
@@ -48,8 +58,9 @@ def test_each_row_carries_its_own_chips_with_the_current_one_lit():
     l = _chips(html, "weekday_lunch_max_minutes")
     assert [k for k, _ in d] == DINNER and [k for k, on in d if on] == [60]
     assert [k for k, _ in l] == LUNCH and [k for k, on in l if on] == [30]
-    for label in ("20 min", "1 hour", "No limit", "10 min"):
+    for label in ("20 min", "45 min", "1 hour", "No limit"):
         assert f">{label}</button>" in html
+    assert ">10 min</button>" not in html
 
 
 def test_no_limit_reads_back_right_and_lights_its_chip():
@@ -62,7 +73,7 @@ def test_no_limit_reads_back_right_and_lights_its_chip():
 
 def test_a_missing_lunch_value_falls_back_to_20_not_no_limit():
     mem = {k: v for k, v in MEMORY.items()}
-    html = _run(_harness() + f"""
+    html = _run(_harness() + MADE_FRESH + f"""
 prefsState.memory = {json.dumps(mem)};
 console.log(JSON.stringify(wwkRhythmHtml(prefsState.memory)));
 """)
