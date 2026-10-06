@@ -455,7 +455,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
         "answer_holiday", "set_holiday_region"
     ],
     "app/tools/household.py": [
-        "_log_preference_event", "add_pet", "set_household_goals",
+        "add_pet", "set_household_goals",
         "set_member_dietary_restrictions"
     ],
     "app/tools/inventory.py": [
@@ -467,10 +467,6 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
     ],
     "app/tools/meal_variety.py": [
         "_write_batches", "enforce_snacks_per_day"
-    ],
-    "app/tools/memory.py": [
-        "add_fact", "delete_fact", "delete_preference", "edit_preference",
-        "update_fact"
     ],
     "app/tools/notifications.py": [
         "dismiss_notification"
@@ -484,12 +480,6 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
     "app/tools/pre_shop.py": [
         "drop_grocery_item_pre_shop", "keep_all_pre_shop_flags",
         "mark_grocery_item_already_have_reviewed", "undo_pre_shop_drop"
-    ],
-    "app/tools/preferences.py": [
-        "add_food_dislikes", "add_store_typical_items", "add_usual_stores",
-        "dismiss_stores_prompt", "remove_item_from_all_stores_typical_list",
-        "remove_store_typical_item", "save_onboarding_answers",
-        "set_household_meal_preferences"
     ],
     "app/tools/prep_sessions.py": [
         "add_prep_cut", "set_skip_prep_this_week"

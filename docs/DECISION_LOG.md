@@ -20,6 +20,17 @@ why*, not duplicating the diff.
   every tile 54px tall (content-height; today's 19px date sets the row),
   selection by tap still works, no sideways scroll. 44px keeps hard rule 6.
   `tests/test_plan_shorter_day_tiles.py`.
+- **2026-10-06 — A failed chat "remember that…" no longer locks saving for
+  everyone. Branch `overnight/chat-memory-lock-rollback`, NOT merged at the
+  time of writing.** `edit_preference("typical_week", None)` raised NOT NULL
+  from inside its write and leaked the connection holding SQLite's write lock
+  (next save: "database is locked" after 5s). Every writer in
+  `app/tools/memory.py` (5) and `app/tools/preferences.py` (8), plus
+  `household._log_preference_event` (every edit calls it), now runs under
+  `db.write()`; a free-text field sent as null is refused up front with
+  "That didn't save: …", which the chat loop hands the model as a tool error.
+  Census in `test_connection_close_sweep.py` shrank by 14; the rest of that
+  census (other files) is listed there, not fixed here. Tests: `tests/test_memory_edit_leaves_the_lock_free.py`.
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch

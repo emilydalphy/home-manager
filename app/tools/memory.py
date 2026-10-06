@@ -5,7 +5,7 @@ and editing or deleting a stored preference.
 from __future__ import annotations
 
 import json
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import EATS_HERE_SQL, household_id, require_household_row
 from . import household as _household
 from . import preferences as _preferences
@@ -112,43 +112,36 @@ def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> 
     text = (text or "").strip()
     if not text:
         return {"added": False}
-    conn = get_conn()
-    cur = conn.execute(
-        "INSERT INTO facts (household_id, category, text, hard, author) VALUES (?, ?, ?, ?, ?)",
-        (household_id(), category, text, 1 if hard else 0, author),
-    )
-    conn.commit()
-    fact_id = cur.lastrowid
-    conn.close()
+    with write() as conn:
+        cur = conn.execute(
+            "INSERT INTO facts (household_id, category, text, hard, author) VALUES (?, ?, ?, ?, ?)",
+            (household_id(), category, text, 1 if hard else 0, author),
+        )
+        fact_id = cur.lastrowid
     return {"added": True, "id": fact_id, "category": category, "text": text, "hard": hard}
 
 
 def update_fact(fact_id: int, text: str | None = None, hard: bool | None = None) -> dict:
     """Edit an existing fact's text and/or hard flag in place."""
-    conn = get_conn()
-    row = conn.execute("SELECT text, hard FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id())).fetchone()
-    if not row:
-        conn.close()
-        raise ValueError(f"No fact with id {fact_id}.")
-    new_text = text.strip() if text is not None else row["text"]
-    new_hard = (1 if hard else 0) if hard is not None else row["hard"]
-    conn.execute(
-        "UPDATE facts SET text = ?, hard = ?, updated_at = datetime('now') "
-        "WHERE id = ? AND household_id = ?",
-        (new_text, new_hard, fact_id, household_id()),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        row = conn.execute("SELECT text, hard FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id())).fetchone()
+        if not row:
+            raise ValueError(f"No fact with id {fact_id}.")
+        new_text = text.strip() if text is not None else row["text"]
+        new_hard = (1 if hard else 0) if hard is not None else row["hard"]
+        conn.execute(
+            "UPDATE facts SET text = ?, hard = ?, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (new_text, new_hard, fact_id, household_id()),
+        )
     return {"id": fact_id, "found": True, "text": new_text, "hard": bool(new_hard)}
 
 
 def delete_fact(fact_id: int) -> dict:
     """Delete one fact outright."""
-    conn = get_conn()
-    require_household_row(conn, "facts", fact_id, label="fact")
-    conn.execute("DELETE FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id()))
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        require_household_row(conn, "facts", fact_id, label="fact")
+        conn.execute("DELETE FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id()))
     return {"id": fact_id, "deleted": True}
 
 
@@ -620,6 +613,17 @@ def edit_preference(field: str, value) -> dict:
         if minutes < 0:
             raise ValueError(f"{field} can't be negative.")
         value = minutes
+    # A free-text answer that arrives as nothing at all (chat sending
+    # `null` for "remember that…") is refused here, in a sentence, rather
+    # than left to the column's NOT NULL — which raised from INSIDE the
+    # write and, before the db.write() below, leaked the connection holding
+    # the write lock (Loop Board 2026-10-06: the household's next save then
+    # failed after 5s with "database is locked"). An empty string is still
+    # a real answer: it is how a field gets cleared.
+    if field in simple_text_columns and field != "repeats_tolerance" and not isinstance(value, str):
+        raise ValueError(
+            f"That didn't save: {field} needs some words (an empty string clears it), not {value!r}."
+        )
     if field == "repeats_tolerance" and value not in ("", "cook_once_eat_twice", "one_a_week", "all_different"):
         raise ValueError("repeats_tolerance must be 'cook_once_eat_twice', 'one_a_week' or 'all_different'.")
     if field == "complete_plates":
@@ -665,80 +669,74 @@ def edit_preference(field: str, value) -> dict:
             **simple_text_columns,
         }[field]
         stored = json.dumps(value) if field == "kitchen_kit" else value
-        conn = get_conn()
-        conn.execute(
-            f"INSERT INTO meal_preferences (household_id, {column}, updated_at) "
-            f"VALUES (?, ?, datetime('now')) "
-            f"ON CONFLICT(household_id) DO UPDATE SET {column} = excluded.{column}, updated_at = datetime('now')",
-            (household_id(), stored),
-        )
-        conn.commit()
-        conn.close()
+        with write() as conn:
+            conn.execute(
+                f"INSERT INTO meal_preferences (household_id, {column}, updated_at) "
+                f"VALUES (?, ?, datetime('now')) "
+                f"ON CONFLICT(household_id) DO UPDATE SET {column} = excluded.{column}, updated_at = datetime('now')",
+                (household_id(), stored),
+            )
         # complete_plates is stored as 0/1 but is a yes/no everywhere else
         # (get_household_memory, the toggle, the pass) — hand it back as one
         # rather than making every caller remember which side of the column
         # boundary it is on.
         return {field: bool(value) if field == "complete_plates" else value}
     if field == "dislikes":
-        conn = get_conn()
-        conn.execute(
-            """
-            INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
-            VALUES (?, ?, datetime('now'))
-            ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
-            """,
-            (household_id(), json.dumps(value)),
-        )
-        conn.commit()
-        conn.close()
+        with write() as conn:
+            conn.execute(
+                """
+                INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
+                VALUES (?, ?, datetime('now'))
+                ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
+                """,
+                (household_id(), json.dumps(value)),
+            )
         return {"dislikes": value}
     if field == "usual_stores":
-        conn = get_conn()
-        before = conn.execute(
-            "SELECT usual_stores_json, store_typical_items_json FROM meal_preferences WHERE household_id = ?",
-            (household_id(),),
-        ).fetchone()
-        conn.execute(
-            """
-            INSERT INTO meal_preferences (household_id, usual_stores_json, updated_at)
-            VALUES (?, ?, datetime('now'))
-            ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, updated_at = datetime('now')
-            """,
-            (household_id(), json.dumps(value)),
-        )
-        # Un-picking a shop on the Grocery card arrives here, as a shorter
-        # whole list, rather than through delete_preference — so this is the
-        # other half of that function's pruning, for exactly the reason
-        # written down there: an orphaned typical-items entry would keep
-        # surfacing "usually get here" suggestions for a shop the household
-        # has stopped shopping at.
-        #
-        # Deliberately narrower than "keep only stores on the new list":
-        # only a store that WAS on usual_stores and no longer is gets
-        # pruned. add_store_typical_items says in its own docstring that it
-        # doesn't require the store to be a usual store first, so a list
-        # taught in chat for somewhere that was never picked here is not
-        # this write's to throw away.
-        kept = {str(s).strip().lower() for s in (value or [])}
-        # _as_str_list, not a raw json.loads: "before" can still be a
-        # legacy bad row (a bare string, written before edit_preference's
-        # own write-side coercion existed) — without this guard, iterating
-        # a string yields its CHARACTERS, and `was` ends up a set of single
-        # letters that never matches a real store name, so the pruning
-        # below silently no-ops instead of dropping the stale
-        # store_typical_items entry. Caught adversarially, 2026-09-13.
-        was = {str(s).strip().lower() for s in _as_str_list(json.loads(before["usual_stores_json"]))} if before else set()
-        dropped = was - kept
-        if dropped and before:
-            store_items = json.loads(before["store_typical_items_json"])
-            pruned = {k: v for k, v in store_items.items() if k.strip().lower() not in dropped}
-            if pruned != store_items:
-                conn.execute(
-                    "UPDATE meal_preferences SET store_typical_items_json = ? WHERE household_id = ?",
-                    (json.dumps(pruned), household_id()),
-                )
-        conn.commit()
-        conn.close()
+        with write() as conn:
+            before = conn.execute(
+                "SELECT usual_stores_json, store_typical_items_json FROM meal_preferences WHERE household_id = ?",
+                (household_id(),),
+            ).fetchone()
+            conn.execute(
+                """
+                INSERT INTO meal_preferences (household_id, usual_stores_json, updated_at)
+                VALUES (?, ?, datetime('now'))
+                ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, updated_at = datetime('now')
+                """,
+                (household_id(), json.dumps(value)),
+            )
+            # Un-picking a shop on the Grocery card arrives here, as a shorter
+            # whole list, rather than through delete_preference — so this is the
+            # other half of that function's pruning, for exactly the reason
+            # written down there: an orphaned typical-items entry would keep
+            # surfacing "usually get here" suggestions for a shop the household
+            # has stopped shopping at.
+            #
+            # Deliberately narrower than "keep only stores on the new list":
+            # only a store that WAS on usual_stores and no longer is gets
+            # pruned. add_store_typical_items says in its own docstring that it
+            # doesn't require the store to be a usual store first, so a list
+            # taught in chat for somewhere that was never picked here is not
+            # this write's to throw away.
+            kept = {str(s).strip().lower() for s in (value or [])}
+            # _as_str_list, not a raw json.loads: "before" can still be a
+            # legacy bad row (a bare string, written before edit_preference's
+            # own write-side coercion existed) — without this guard, iterating
+            # a string yields its CHARACTERS, and `was` ends up a set of single
+            # letters that never matches a real store name, so the pruning
+            # below silently no-ops instead of dropping the stale
+            # store_typical_items entry. Caught adversarially, 2026-09-13.
+            was = {str(s).strip().lower() for s in _as_str_list(json.loads(before["usual_stores_json"]))} if before else set()
+            dropped = was - kept
+            if dropped and before:
+                store_items = json.loads(before["store_typical_items_json"])
+                pruned = {k: v for k, v in store_items.items() if k.strip().lower() not in dropped}
+                if pruned != store_items:
+                    conn.execute(
+                        "UPDATE meal_preferences SET store_typical_items_json = ? WHERE household_id = ?",
+                        (json.dumps(pruned), household_id()),
+                    )
         return {"usual_stores": value}
     if field == "cuisine_preferences":
         return _preferences.set_household_meal_preferences(cuisine_preferences=value, mark_complete=False)
@@ -786,112 +784,108 @@ def delete_preference(field: str, item: str | None = None) -> dict:
     each reset to the default of 7; 'snacks_per_week' resets to its default
     of 3.
     """
-    conn = get_conn()
-    existing = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)).fetchone()
-    if not existing:
-        conn.close()
-        raise ValueError("No saved preferences yet.")
+    with write() as conn:
+        existing = conn.execute("SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)).fetchone()
+        if not existing:
+            raise ValueError("No saved preferences yet.")
 
-    if field == "dislikes":
-        # _as_str_list guards a row that was already bad before
-        # edit_preference's write-side coercion existed — same read-side
-        # guard as get_household_memory, and load-bearing here specifically:
-        # without it, a bare string iterates as CHARACTERS ('c','i','l',...)
-        # rather than throwing, so a bad row would silently get rewritten
-        # into character-list garbage the next time anything was removed.
-        updated = [d for d in _as_str_list(json.loads(existing["dislikes_json"])) if d.lower() != (item or "").lower()]
-        conn.execute(
-            "UPDATE meal_preferences SET dislikes_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(updated), household_id()),
-        )
-    elif field == "cuisine_preferences":
-        updated = [c for c in _as_str_list(json.loads(existing["cuisine_preferences_json"])) if c.lower() != (item or "").lower()]
-        conn.execute(
-            "UPDATE meal_preferences SET cuisine_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(updated), household_id()),
-        )
-    elif field == "usual_stores":
-        updated = [s for s in _as_str_list(json.loads(existing["usual_stores_json"])) if s.lower() != (item or "").lower()]
-        # Drop that store's typical-items list along with it — an orphaned
-        # entry would keep surfacing "usually get here" suggestions in the
-        # grocery list for a store the household no longer shops at.
-        store_items = json.loads(existing["store_typical_items_json"])
-        store_items = {k: v for k, v in store_items.items() if k.lower() != (item or "").lower()}
-        conn.execute(
-            "UPDATE meal_preferences SET usual_stores_json = ?, store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(updated), json.dumps(store_items), household_id()),
-        )
-    elif field == "protein_preferences":
-        # Same reasoning as the _as_str_list guards just above: a legacy
-        # row can hold a bare string here too (there was no write-side
-        # dict check at all before this same fix added one) — dict() on
-        # a string doesn't silently misbehave the way iterating one does,
-        # it throws ("dictionary update sequence element #0 has length 1;
-        # 2 is required"), which reached the household as a confusing 400
-        # on an ordinary "forget this protein" click. Caught adversarially,
-        # 2026-09-13, alongside the read-side get_household_memory guard
-        # for the same column.
-        raw_current = json.loads(existing["protein_preferences_json"])
-        current = dict(raw_current) if isinstance(raw_current, dict) else {}
-        current.pop(item, None)
-        conn.execute(
-            "UPDATE meal_preferences SET protein_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(current), household_id()),
-        )
-    elif field == "notes":
-        conn.execute(
-            "UPDATE meal_preferences SET notes = '', updated_at = datetime('now') WHERE household_id = ?", (household_id(),)
-        )
-    elif field == "cooking_time_preference":
-        conn.execute(
-            "UPDATE meal_preferences SET cooking_time_preference = '', updated_at = datetime('now') WHERE household_id = ?",
-            (household_id(),),
-        )
-    elif field == "eating_style":
-        conn.execute(
-            "UPDATE meal_preferences SET eating_style = '', updated_at = datetime('now') WHERE household_id = ?",
-            (household_id(),),
-        )
-    elif field == "dinners_per_week":
-        conn.execute(
-            "UPDATE meal_preferences SET dinners_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
-            (household_id(),),
-        )
-    elif field == "breakfasts_per_week":
-        conn.execute(
-            "UPDATE meal_preferences SET breakfasts_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
-            (household_id(),),
-        )
-    elif field == "lunches_per_week":
-        conn.execute(
-            "UPDATE meal_preferences SET lunches_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
-            (household_id(),),
-        )
-    elif field == "snacks_per_week":
-        # Back to the default AND back to "never answered" — forgetting the
-        # answer has to forget that there was one, or the sheet keeps
-        # reading 3 back as a fact.
-        conn.execute(
-            "UPDATE meal_preferences SET snacks_per_week = 3, snacks_per_day = 2, "
-            "snacks_per_week_set = 0, snacks_per_day_set = 0, "
-            "updated_at = datetime('now') WHERE household_id = ?",
-            (household_id(),),
-        )
-        _preferences.keep_snack_counts_consistent(conn, household_id())
-    elif field == "snacks_per_day":
-        # The same forget, reached from the other name for the same answer.
-        conn.execute(
-            "UPDATE meal_preferences SET snacks_per_week = 3, snacks_per_day = 2, "
-            "snacks_per_week_set = 0, snacks_per_day_set = 0, "
-            "updated_at = datetime('now') WHERE household_id = ?",
-            (household_id(),),
-        )
-        _preferences.keep_snack_counts_consistent(conn, household_id())
-    else:
-        conn.close()
-        raise ValueError(f"Unknown preference field '{field}'.")
-    conn.commit()
-    conn.close()
+        if field == "dislikes":
+            # _as_str_list guards a row that was already bad before
+            # edit_preference's write-side coercion existed — same read-side
+            # guard as get_household_memory, and load-bearing here specifically:
+            # without it, a bare string iterates as CHARACTERS ('c','i','l',...)
+            # rather than throwing, so a bad row would silently get rewritten
+            # into character-list garbage the next time anything was removed.
+            updated = [d for d in _as_str_list(json.loads(existing["dislikes_json"])) if d.lower() != (item or "").lower()]
+            conn.execute(
+                "UPDATE meal_preferences SET dislikes_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+                (json.dumps(updated), household_id()),
+            )
+        elif field == "cuisine_preferences":
+            updated = [c for c in _as_str_list(json.loads(existing["cuisine_preferences_json"])) if c.lower() != (item or "").lower()]
+            conn.execute(
+                "UPDATE meal_preferences SET cuisine_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+                (json.dumps(updated), household_id()),
+            )
+        elif field == "usual_stores":
+            updated = [s for s in _as_str_list(json.loads(existing["usual_stores_json"])) if s.lower() != (item or "").lower()]
+            # Drop that store's typical-items list along with it — an orphaned
+            # entry would keep surfacing "usually get here" suggestions in the
+            # grocery list for a store the household no longer shops at.
+            store_items = json.loads(existing["store_typical_items_json"])
+            store_items = {k: v for k, v in store_items.items() if k.lower() != (item or "").lower()}
+            conn.execute(
+                "UPDATE meal_preferences SET usual_stores_json = ?, store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+                (json.dumps(updated), json.dumps(store_items), household_id()),
+            )
+        elif field == "protein_preferences":
+            # Same reasoning as the _as_str_list guards just above: a legacy
+            # row can hold a bare string here too (there was no write-side
+            # dict check at all before this same fix added one) — dict() on
+            # a string doesn't silently misbehave the way iterating one does,
+            # it throws ("dictionary update sequence element #0 has length 1;
+            # 2 is required"), which reached the household as a confusing 400
+            # on an ordinary "forget this protein" click. Caught adversarially,
+            # 2026-09-13, alongside the read-side get_household_memory guard
+            # for the same column.
+            raw_current = json.loads(existing["protein_preferences_json"])
+            current = dict(raw_current) if isinstance(raw_current, dict) else {}
+            current.pop(item, None)
+            conn.execute(
+                "UPDATE meal_preferences SET protein_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+                (json.dumps(current), household_id()),
+            )
+        elif field == "notes":
+            conn.execute(
+                "UPDATE meal_preferences SET notes = '', updated_at = datetime('now') WHERE household_id = ?", (household_id(),)
+            )
+        elif field == "cooking_time_preference":
+            conn.execute(
+                "UPDATE meal_preferences SET cooking_time_preference = '', updated_at = datetime('now') WHERE household_id = ?",
+                (household_id(),),
+            )
+        elif field == "eating_style":
+            conn.execute(
+                "UPDATE meal_preferences SET eating_style = '', updated_at = datetime('now') WHERE household_id = ?",
+                (household_id(),),
+            )
+        elif field == "dinners_per_week":
+            conn.execute(
+                "UPDATE meal_preferences SET dinners_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
+                (household_id(),),
+            )
+        elif field == "breakfasts_per_week":
+            conn.execute(
+                "UPDATE meal_preferences SET breakfasts_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
+                (household_id(),),
+            )
+        elif field == "lunches_per_week":
+            conn.execute(
+                "UPDATE meal_preferences SET lunches_per_week = 7, updated_at = datetime('now') WHERE household_id = ?",
+                (household_id(),),
+            )
+        elif field == "snacks_per_week":
+            # Back to the default AND back to "never answered" — forgetting the
+            # answer has to forget that there was one, or the sheet keeps
+            # reading 3 back as a fact.
+            conn.execute(
+                "UPDATE meal_preferences SET snacks_per_week = 3, snacks_per_day = 2, "
+                "snacks_per_week_set = 0, snacks_per_day_set = 0, "
+                "updated_at = datetime('now') WHERE household_id = ?",
+                (household_id(),),
+            )
+            _preferences.keep_snack_counts_consistent(conn, household_id())
+        elif field == "snacks_per_day":
+            # The same forget, reached from the other name for the same answer.
+            conn.execute(
+                "UPDATE meal_preferences SET snacks_per_week = 3, snacks_per_day = 2, "
+                "snacks_per_week_set = 0, snacks_per_day_set = 0, "
+                "updated_at = datetime('now') WHERE household_id = ?",
+                (household_id(),),
+            )
+            _preferences.keep_snack_counts_consistent(conn, household_id())
+        else:
+            raise ValueError(f"Unknown preference field '{field}'.")
     if field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week"):
         # Back to 7: a meal the saved usual week had off all week is back on
         # (usual_week.meal_counts_changed_elsewhere — the number wins).
