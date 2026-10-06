@@ -294,6 +294,17 @@ def _log_llm_call_timing(label: str, seconds: float, response) -> None:
     )
 
 
+def _server_tool_count(usage, field: str) -> int:
+    stu = getattr(usage, "server_tool_use", None)
+    if stu is None:
+        return 0
+    value = stu.get(field) if isinstance(stu, dict) else getattr(stu, field, 0)
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _record_api_call(label: str, model: str, response, seconds: float) -> None:
     """
     Turn one successful API response into the row tools.record_api_call
@@ -316,6 +327,10 @@ def _record_api_call(label: str, model: str, response, seconds: float) -> None:
                 "cache_read_tokens": getattr(usage, "cache_read_input_tokens", 0) or 0,
                 "cache_write_tokens": getattr(usage, "cache_creation_input_tokens", 0) or 0,
                 "output_tokens": getattr(usage, "output_tokens", 0) or 0,
+                # Server-tool requests (web search is billed per request) —
+                # research-first writing, 2026-10-06.
+                "web_search_requests": _server_tool_count(usage, "web_search_requests"),
+                "web_fetch_requests": _server_tool_count(usage, "web_fetch_requests"),
             },
             seconds=seconds,
         )
@@ -4143,7 +4158,14 @@ _RESEARCH_TOOL = {
     },
 }
 
-_RESEARCH_MAX_ROUNDS = 4  # pause_turn continuations before giving up
+# The card's per-DISH cap, enforced in code across every round and the
+# fallback (review, 2026-10-06 — max_uses alone is per request, and with
+# pause_turn continuations and a second call a dish could run to dozens of
+# paid searches). The open search may spend at most _OPEN_SEARCH_SHARE of
+# it, so a fallback always has something left.
+DISH_RESEARCH_BUDGET = {"web_search": 4, "web_fetch": 6}
+_OPEN_SEARCH_SHARE = {"web_search": 2, "web_fetch": 4}
+_RESEARCH_MAX_ROUNDS = 2  # pause_turn continuations per call, at most
 
 
 def _research_prompt(name: str, cuisine: str, dish_note: str, trusted: list | None) -> str:
@@ -4173,57 +4195,83 @@ def _block_get(block, key, default=None):
     return getattr(block, key, default)
 
 
-def _research_seen_and_blocked(content) -> tuple[set, set]:
-    """Every URL this research call saw in a search result or a successful
-    fetch, and every URL whose fetch was refused — read off the server
-    tools' own result blocks, not off what the model says it read."""
-    seen, blocked, fetch_urls = set(), set(), {}
+def _research_evidence(content) -> dict:
+    """
+    What this research call really saw, read off the server tools' own
+    blocks rather than off what the model says it read:
+      seen    — every URL in a search result or a successful fetch;
+      read    — the URLs actually FETCHED (only these can lead);
+      blocked — URLs whose fetch was refused;
+      used    — how many searches and fetches were made (the budget).
+    """
+    seen, read, blocked, fetch_urls = set(), set(), set(), {}
+    used = {"web_search": 0, "web_fetch": 0}
+    results = 0
     for block in content or []:
         btype = _block_get(block, "type")
-        if btype == "server_tool_use" and _block_get(block, "name") == "web_fetch":
-            fetch_urls[_block_get(block, "id")] = str((_block_get(block, "input") or {}).get("url") or "")
+        if btype == "server_tool_use":
+            tool = _block_get(block, "name")
+            if tool in used:
+                used[tool] += 1
+            if tool == "web_fetch":
+                fetch_urls[_block_get(block, "id")] = str((_block_get(block, "input") or {}).get("url") or "")
         elif btype == "web_search_tool_result":
-            results = _block_get(block, "content")
-            if isinstance(results, list):
-                for r in results:
+            found = _block_get(block, "content")
+            if isinstance(found, list):
+                for r in found:
+                    results += 1
                     if _block_get(r, "url"):
                         seen.add(str(_block_get(r, "url")))
         elif btype == "web_fetch_tool_result":
             result = _block_get(block, "content")
             asked = fetch_urls.get(_block_get(block, "tool_use_id"), "")
             if _block_get(result, "type") == "web_fetch_result":
-                seen.add(str(_block_get(result, "url") or asked))
-                if asked:
-                    seen.add(asked)
+                results += 1
+                for u in {str(_block_get(result, "url") or ""), asked} - {""}:
+                    seen.add(u)
+                    read.add(u)
             elif asked:
                 blocked.add(asked)
-    return seen, blocked
+    return {"seen": seen, "read": read, "blocked": blocked, "used": used, "results": results}
 
 
 def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
-                      trusted: list | None = None) -> dict:
+                      trusted: list | None = None, budget: dict | None = None) -> dict:
     """
     One research call: web search + fetch, then submit_dish_research.
-    Returns {"sources": [...cleaned...], "method_notes": str} — sources
-    already filtered to URLs the call really saw and could open — or {}
-    when nothing usable came back. Raises only what _create_with_retry
-    raises; research_dish catches it.
+    Returns {"sources": [...cleaned...], "method_notes": str, "used": {...}}
+    — sources filtered to URLs the call really saw (and marked "read" when
+    fetched), never one that refused the reader — or {"used": {...}} when
+    nothing usable came back. `budget` is what this dish may still spend
+    ({"web_search": n, "web_fetch": n}); a tool with nothing left is not
+    offered, and a continuation stops once both are spent. Raises only
+    what _create_with_retry raises; research_dish catches it.
     """
+    left = dict(budget or DISH_RESEARCH_BUDGET)
+    spent = {"web_search": 0, "web_fetch": 0}
     client = _client()
-    # Bounded, because this is paid per search and per page read, once per
-    # new dish: three searches, five pages, and a page cut at 5,000 tokens
-    # (a recipe page's ingredients and method fit well inside that; its
-    # comments and ads are what the cut drops).
-    search = {"type": "web_search_20260209", "name": "web_search", "max_uses": 3}
-    fetch = {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": 5,
-             "max_content_tokens": 5000}
-    if trusted:
-        domains = [site for _, site in trusted]
-        search["allowed_domains"] = domains
-        fetch["allowed_domains"] = domains
     messages = [{"role": "user", "content": _research_prompt(name, cuisine, dish_note, trusted)}]
     all_content = []
     for _ in range(_RESEARCH_MAX_ROUNDS):
+        remaining = {k: left[k] - spent[k] for k in left}
+        tools_now = []
+        # Bounded, because this is paid per search and per page read: a
+        # tool with nothing left in the dish's budget isn't offered at all,
+        # and a page is cut at 5,000 tokens (a recipe page's ingredients and
+        # method fit; its comments and ads are what the cut drops).
+        if remaining["web_search"] > 0:
+            search = {"type": "web_search_20260209", "name": "web_search", "max_uses": remaining["web_search"]}
+            if trusted:
+                search["allowed_domains"] = [site for _, site in trusted]
+            tools_now.append(search)
+        if remaining["web_fetch"] > 0:
+            fetch = {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": remaining["web_fetch"],
+                     "max_content_tokens": 5000}
+            if trusted:
+                fetch["allowed_domains"] = [site for _, site in trusted]
+            tools_now.append(fetch)
+        if not tools_now:
+            break
         response = _create_with_retry(
             client,
             label="research_dish_llm",
@@ -4231,58 +4279,87 @@ def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
             max_tokens=8000,
             # Server tools run on Anthropic's side; the forced tool_choice
             # the writer uses would stop the searching, so this asks.
-            tools=[search, fetch, _RESEARCH_TOOL],
+            tools=tools_now + [_RESEARCH_TOOL],
             messages=messages,
             output_config=_effort_config("recipes"),
         )
-        all_content.extend(response.content or [])
+        content = list(response.content or [])
+        all_content.extend(content)
+        round_used = _research_evidence(content)["used"]
+        for k in spent:
+            spent[k] += round_used[k]
         submitted = next(
-            (b for b in response.content or []
+            (b for b in content
              if _block_get(b, "type") == "tool_use" and _block_get(b, "name") == "submit_dish_research"),
             None,
         )
         if submitted is not None:
-            seen, blocked = _research_seen_and_blocked(all_content)
+            evidence = _research_evidence(all_content)
             raw = _block_get(submitted, "input") or {}
-            sources = _recipe_research.clean_sources(raw.get("sources"), seen_urls=seen, blocked_urls=blocked)
+            reported = [r for r in (raw.get("sources") or []) if isinstance(r, dict)]
+            if reported and not evidence["seen"]:
+                # The first live run's tell (review, 2026-10-06): sources
+                # were reported but no result block was read as a URL, so
+                # every one is dropped. Either nothing was searched, or the
+                # web tools' result shape isn't the one this reads.
+                logger.warning(
+                    "Research for %r reported %d sources but no search/fetch result URL was read "
+                    "(%d result blocks) — check the web tool result shape", name, len(reported),
+                    evidence["results"],
+                )
+            sources = _recipe_research.clean_sources(
+                reported, seen_urls=evidence["seen"], blocked_urls=evidence["blocked"],
+                read_urls=evidence["read"],
+            )
             if not sources:
-                return {}
-            return {"sources": sources, "method_notes": str(raw.get("method_notes") or "")[:2000]}
+                return {"used": spent}
+            return {"sources": sources, "method_notes": str(raw.get("method_notes") or "")[:2000],
+                    "used": spent}
         if getattr(response, "stop_reason", None) != "pause_turn":
-            return {}
+            break
         # A long search turn paused: send it back as it is to carry on.
-        messages = messages + [{"role": "assistant", "content": response.content}]
-    return {}
+        messages = messages + [{"role": "assistant", "content": content}]
+    return {"used": spent}
 
 
-def research_dish(name: str, cuisine: str = "", dish_note: str = "") -> dict | None:
+def research_dish(name: str, cuisine: str = "", dish_note: str = "", *, search: bool = True) -> dict | None:
     """
     This household's research for a dish: the saved one when the dish has
-    been researched before (no repeat research), otherwise a fresh search
-    — the open web first, the trusted cooks for its cuisine when nothing
-    there is well rated — saved before it is returned. None when switched
-    off or when nothing usable was found; never raises, because a recipe
-    written without research is still dinner.
+    been researched before (no repeat research), otherwise — when `search`
+    — a fresh search: the open web first, the trusted cooks for its
+    cuisine when nothing read there is well rated, within one per-dish
+    budget (DISH_RESEARCH_BUDGET) across both. Saved before it is
+    returned; an empty result is remembered so the dish isn't paid for
+    again for EMPTY_RESEARCH_RETRY_DAYS. None when switched off, when
+    `search` is False and nothing is saved, or when nothing usable was
+    found; never raises, because a recipe written without research is
+    still dinner.
     """
-    if os.environ.get("RECIPE_RESEARCH", "on").strip().lower() in ("off", "0", "false", "no"):
+    if not _recipe_research.research_enabled():
         return None
     try:
         saved = _recipe_research.saved_research(name)
         if saved and saved["sources"]:
             return saved
-        found = research_dish_llm(name, cuisine, dish_note) or {}
+        if not search or _recipe_research.empty_recently(saved):
+            return None
+        first_budget = {k: min(DISH_RESEARCH_BUDGET[k], _OPEN_SEARCH_SHARE[k]) for k in DISH_RESEARCH_BUDGET}
+        found = research_dish_llm(name, cuisine, dish_note, budget=first_budget) or {}
+        used = found.get("used") or {"web_search": 0, "web_fetch": 0}
         sources = found.get("sources") or []
         fallback = False
+        trusted = _recipe_research.trusted_cooks_for(cuisine)
         if _recipe_research.needs_trusted_cooks(sources):
-            trusted = _recipe_research.trusted_cooks_for(cuisine)
-            from_cooks = research_dish_llm(name, cuisine, dish_note, trusted=trusted) or {}
-            if from_cooks.get("sources"):
-                found, sources, fallback = from_cooks, from_cooks["sources"], True
-        if not sources:
+            left = {k: DISH_RESEARCH_BUDGET[k] - used.get(k, 0) for k in DISH_RESEARCH_BUDGET}
+            if left["web_fetch"] > 0:
+                from_cooks = research_dish_llm(name, cuisine, dish_note, trusted=trusted, budget=left) or {}
+                if any(s.get("read") for s in from_cooks.get("sources") or []):
+                    found, sources, fallback = from_cooks, from_cooks["sources"], True
+        ordered = _recipe_research.pick_lead(sources, trusted if fallback else None)
+        if not ordered:
             logger.info("Research for %r found nothing usable; writing without it", name)
+            _recipe_research.note_empty_research(name)
             return None
-        ordered = _recipe_research.pick_lead(
-            sources, _recipe_research.trusted_cooks_for(cuisine) if fallback else None)
         return _recipe_research.save_research(name, ordered, found.get("method_notes") or "", fallback)
     except Exception:
         logger.exception("Researching %r failed; writing the recipe without research", name)
@@ -4359,7 +4436,8 @@ def rewrite_meal_recipe(entry_id: int, request_text: str) -> dict:
     # The research this dish was first written from, when there is some —
     # read, never searched again: a change request is about this
     # household's version, and the versions it was based on haven't moved.
-    writer_research = _recipe_research.research_for_writer(_recipe_research.saved_research(name))
+    writer_research = _recipe_research.research_for_writer(
+        _recipe_research.research_by_id(_recipe_research.recipe_research_id(spec_base["recipe_id"])))
     if writer_research:
         spec["research"] = writer_research
     for attempt in (1, 2):
@@ -4684,7 +4762,8 @@ def _shared_recipe_details_context() -> dict:
     return shared
 
 
-def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances: list[dict]) -> dict:
+def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances: list[dict],
+                              *, research: bool = True) -> dict:
     """
     Phase 2 for one recipe, start to finish: the model call, the allergen
     check on what came back (once more with the clash named if it fails —
@@ -4714,8 +4793,12 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     # Research first, then write (2026-10-06). Never in the way: no research
     # (switched off, failed, nothing usable found) writes the recipe the way
     # it was written before this existed.
-    research = research_dish(plain, recipe.get("cuisine") or "", recipe.get("dish_note") or "")
-    writer_research = _recipe_research.research_for_writer(research)
+    # `research=False` (the Cook screen's live "Fill in this recipe") never
+    # waits on a web search: it uses research already filed for the dish,
+    # if any, and otherwise writes as before (review, 2026-10-06).
+    found = research_dish(plain, recipe.get("cuisine") or "", recipe.get("dish_note") or "",
+                          search=research)
+    writer_research = _recipe_research.research_for_writer(found)
     if writer_research:
         spec["research"] = writer_research
     try:
@@ -4766,6 +4849,9 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 new_name=plain if plain != name else None,
                 household_changes=[str(c).strip() for c in (detail.get("household_changes") or [])
                                    if isinstance(c, str) and c.strip()],
+                # The research it was WRITTEN from — the recipe page shows
+                # sources only through this link, never by name.
+                research_id=(found or {}).get("id") if writer_research else None,
             )
             return {"name": plain, "ok": True, "clash": [], "was": name}
         return {"name": name, "ok": False, "clash": []}
@@ -8565,6 +8651,7 @@ def fill_in_recipe(recipe_name: str) -> dict:
         slot = _pending_slot_for(recipe_name)
         outcome = _write_one_pending_recipe(
             recipe, slot, _shared_recipe_details_context(), _allergen_gate.hard_avoidances(),
+            research=False,
         )
         if not outcome["ok"]:
             # A dish the table can't have — the writer kept putting the
