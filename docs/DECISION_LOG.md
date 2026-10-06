@@ -29,6 +29,11 @@ why*, not duplicating the diff.
   Builder A's slice 2 adds the keys) and degrade to nothing / the old
   citation when absent. Plan's Meal step is unchanged. Servings rescale of
   bracketed and in-step amounts is slice 3.
+  Review fixes: a credit with no linkable source lists the credit on Sources
+  (never "no outside recipe"); a source without a working link is shown
+  unlinked, Lead badge kept; the cache is emptied by refreshKitchenPanel
+  (Change recipe, Undo, chat) and never keeps a failed read; the ⋯ menu
+  closes on an outside tap or Escape.
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch

@@ -9522,6 +9522,10 @@
   }
 
   function refreshKitchenPanel() {
+    // A recipe's sources and household changes are re-read with the rest
+    // of Cook (2026-10-06): Change recipe, its Undo and a chat change all
+    // come through here, and a page-long cache would keep the old ones.
+    recipeExtras = {};
     if (kitchenIsBuilt()) loadKitchen();
   }
 
@@ -21600,7 +21604,9 @@
   var RECIPE_SOURCES_LINE = 'Opens the original recipe on their site. Pomona’s version is adapted for your household.';
 
   // recipe id -> { research, household_changes } once read, 'loading'
-  // while in flight, null when the read failed (said nothing, drawn as absent).
+  // while in flight. A failed read is NOT kept (drawn as absent, asked again
+  // next time), and refreshKitchenPanel empties the whole cache — after
+  // Change recipe, its Undo, or a chat turn that touched Cook.
   var recipeExtras = {};
 
   function recipeExtraFor(meal) {
@@ -21612,17 +21618,23 @@
       Api.fetch('/api/recipes/' + encodeURIComponent(id))
         .then(function (res) { return res.ok ? res.json() : null; })
         .then(function (body) {
-          recipeExtras[id] = body ? {
-            research: body.research || null,
-            household_changes: Array.isArray(body.household_changes) ? body.household_changes : []
-          } : null;
+          if (body) {
+            recipeExtras[id] = {
+              research: body.research || null,
+              household_changes: Array.isArray(body.household_changes) ? body.household_changes : []
+            };
+          } else {
+            delete recipeExtras[id];
+          }
         })
-        .catch(function () { recipeExtras[id] = null; })
+        .catch(function () { delete recipeExtras[id]; })
         .then(function () {
           // Only redraw if this recipe is still the one on screen.
           var on = cookState.screen === 'focus' && cookState.data &&
             (cookState.data.meals || [])[cookState.focusIdx];
-          if (on && on.recipe_id === id && cookState.focusStage === 'recipe') renderCook();
+          // Only on success: a failed read redraws nothing (so it cannot
+          // loop), and the next real render asks again.
+          if (recipeExtras[id] && on && on.recipe_id === id && cookState.focusStage === 'recipe') renderCook();
         });
       return null;
     }
@@ -21796,7 +21808,9 @@
       (src.title && src.title !== name ? '<span class="recipe-src-title">' + escapeHtml(src.title) + '</span>' : '') +
       (meta ? '<span class="recipe-src-meta">' + escapeHtml(meta) + '</span>' : '');
     var url = String(src.url || '');
-    if (!/^https?:\/\//i.test(url)) return '<li class="recipe-src">' + inner + '</li>';
+    // No working link (or none given): the same row, unlinked, Lead badge
+    // and all.
+    if (!/^https?:\/\//i.test(url)) return '<li class="recipe-src"><div class="recipe-src-link is-unlinked">' + inner + '</div></li>';
     return '<li class="recipe-src"><a class="recipe-src-link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' +
       inner + '<span class="recipe-src-go" aria-hidden="true">&nearr;</span></a></li>';
   }
@@ -21806,6 +21820,15 @@
     var sources = (research && research.sources) || [];
     if (!sources.length && research && (research.lead || (research.others || []).length)) {
       sources = (research.lead ? [research.lead] : []).concat(research.others || []);
+    }
+    // A credit with no source left to list (the server hides a source whose
+    // link stopped working, and keeps the credit by design): the credit IS
+    // the list. Never the "no outside recipe" line under a "Based on …".
+    if (!sources.length && research && research.credit) {
+      return '<section class="card recipe-card recipe-sources" aria-label="Sources">' +
+        '<p class="recipe-sources-credit">' + escapeHtml(research.credit) + '</p>' +
+      '</section>' +
+      '<p class="recipe-sources-line">The original links aren’t working just now. Pomona’s version is adapted for your household.</p>';
     }
     if (sources.length) {
       return '<section class="card recipe-card recipe-sources" aria-label="Sources">' +
@@ -21819,7 +21842,7 @@
     if (meal.recipe_id != null && recipeExtras[meal.recipe_id] === 'loading') {
       return '<p class="recipe-sources-line">Looking up where this one came from…</p>';
     }
-    return '<p class="recipe-sources-line">I wrote this one for you — there’s no outside recipe behind it.</p>';
+    return '<p class="recipe-sources-line">No outside recipe behind this one.</p>';
   }
 
   function recipeTabBodyHtml(data, meal, idx, tab, extra) {
@@ -21848,14 +21871,30 @@
             '<button type="button" role="menuitem" data-cook="recipe-add-list">Add to shopping list</button>' +
             (rating
               ? '<div class="recipe-rate">' +
-                  '<button type="button" class="cook-attn-fb" data-cook="recipe-rate" data-rating="liked">Liked it</button>' +
-                  '<button type="button" class="cook-attn-fb" data-cook="recipe-rate" data-rating="disliked">Not a hit</button>' +
+                  '<button type="button" role="menuitem" class="cook-attn-fb" data-cook="recipe-rate" data-rating="liked">Liked it</button>' +
+                  '<button type="button" role="menuitem" class="cook-attn-fb" data-cook="recipe-rate" data-rating="disliked">Not a hit</button>' +
                 '</div>'
               : '<button type="button" role="menuitem" data-cook="recipe-rate-open">Rate this recipe</button>') +
           '</div>'
         : '') +
     '</div>';
   }
+
+  // The ⋯ menu closes on a tap anywhere outside it, and on Escape.
+  function recipeCloseMenu() {
+    if (!cookState.recipeMenuOpen) return;
+    cookState.recipeMenuOpen = false;
+    cookState.recipeRateOpen = false;
+    renderCook();
+  }
+  document.addEventListener('click', function (e) {
+    if (!cookState.recipeMenuOpen) return;
+    if (e.target && e.target.closest && e.target.closest('.recipe-more')) return;
+    recipeCloseMenu();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') recipeCloseMenu();
+  });
 
   async function recipeRate(el, meal) {
     el.disabled = true;

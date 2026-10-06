@@ -82,7 +82,7 @@ def test_no_research_means_no_credit_no_changes_row_and_a_plain_sources_line():
     html = _page(extra=None)
     assert "recipe-credit" not in html and "Changed for your household" not in html
     src = _page("sources", extra={"research": None, "household_changes": []})
-    assert "there’s no outside recipe behind it" in src
+    assert "No outside recipe behind this one." in src
 
 
 @_needs_node
@@ -128,3 +128,39 @@ def test_the_cooker_view_carries_the_recipe_id_and_who_is_eating():
     src = inspect.getsource(cooker.get_cooker_view)
     assert '"recipe_id": recipe.get("id") if recipe else None' in src
     assert '"present_names": slot_att.get("present_names") or []' in src
+
+
+# ---------- review fixes (2026-10-06) ----------
+
+
+@_needs_node
+def test_a_credit_with_every_link_gone_still_names_the_cooks_never_no_outside_recipe():
+    research = dict(_RESEARCH, sources=[], lead=None, others=[])
+    html = _page("sources", extra={"research": research, "household_changes": []})
+    assert "Based on Swasthi" in html
+    assert "No outside recipe" not in html and "I wrote this one" not in html
+
+
+@_needs_node
+def test_a_lead_with_a_broken_link_is_shown_unlinked_with_its_badge():
+    lead = dict(_RESEARCH["sources"][0], url="")
+    research = dict(_RESEARCH, sources=[lead, _RESEARCH["sources"][1]])
+    html = _page("sources", extra={"research": research, "household_changes": []})
+    first = html[html.index('<li class="recipe-src">'):html.index("</li>")]
+    assert "Swasthi" in first and "recipe-src-lead" in first and "href=" not in first
+    assert 'href="https://example.com/b"' in html
+
+
+def test_the_cache_is_emptied_on_refresh_and_never_keeps_a_failure():
+    import re
+
+    js = _cj.SHELL_JS
+    refresh = js[js.index("function refreshKitchenPanel() {"):]
+    refresh = refresh[: refresh.index("\n  }\n")]
+    assert "recipeExtras = {};" in refresh
+    fetcher = js[js.index("function recipeExtraFor(meal) {"):]
+    fetcher = fetcher[: fetcher.index("\n  }\n")]
+    assert "recipeExtras[id] = null" not in fetcher
+    assert fetcher.count("delete recipeExtras[id]") == 2
+    assert re.search(r"keydown[\s\S]{0,80}Escape[\s\S]{0,40}recipeCloseMenu", js)
+    assert "closest('.recipe-more')" in js

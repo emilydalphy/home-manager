@@ -7494,7 +7494,7 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 }
 .recipe-src-list { list-style: none; margin: 0; padding: 0; }
 .recipe-src + .recipe-src { border-top: 1.5px solid var(--hairline); }
-.recipe-src-link, .recipe-src > .recipe-src-main {
+.recipe-src-link {
   min-height: 56px;
   padding: 10px 0;
   display: grid;
@@ -7517,7 +7517,8 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
   text-transform: uppercase;
 }
 .recipe-src-title, .recipe-src-meta { grid-column: 1; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
-.recipe-src-go { grid-column: 2; grid-row: 1 / span 3; font-size: 18px; color: var(--apricot-label); }
+.recipe-src-go { grid-column: 2; grid-row: 1; align-self: center; font-size: 18px; color: var(--apricot-label); }
+.recipe-sources-credit { margin: 0; padding: 14px 0; font-size: 15px; font-weight: 600; line-height: 1.4; color: var(--ink); }
 .recipe-sources-line { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink-secondary); }
 /* The ⋯ menu: a 44px tile beside the crumb, opening a small card. */
 .recipe-more { position: relative; }
