@@ -19,6 +19,26 @@ why*, not duplicating the diff.
   only the background pass searches; an approval tells it to stop and write;
   per-dish 60s wall clock, max 5 dishes a plan, 1 search + 2 reads, pages capped
   at 3,000 tokens; no snacks/breakfasts/simple assemblies (all `RECIPE_RESEARCH_*` env).
+- **Four shell fixes from the 2026-10-06 walkthrough** (branch
+  `shell-fixes-2026-10-06`; tests `tests/test_shell_fixes_2026_10_06.py`).
+  (1) Cook rows: the "Cook" chip was a plain `<span class="cook-badge">`
+  that could shrink (`flex 0 1`, `overflow-wrap: anywhere`) to "Coo / k" and
+  did nothing on a tap; it is now `.cook-badge-tag` (nowrap, no shrink) and,
+  on a cook night, a button that opens the recipe like the dish name (a
+  reheat stays a label). (2) Today's snack row said "everyone" because
+  `day_meals` never read `members.snacks_per_day`: `household_people()` now
+  carries the counts on its existing read and `_snack_eaters` narrows the
+  snack row to people with more than 0 ("Leo"); all-have-snacks stays
+  "everyone". (3) The freezer step sat on "One moment…" when
+  `ensureDefrostAskItems` returned early (no plan id) or its lookup hung
+  behind the recipe pass, and `submitDefrostAsk` emptied `items` while the
+  step was still 'freezer' before the slow `loadWeekMenu` repaint; it now
+  times out to a plain sentence plus Open grocery list
+  (`DEFROST_ASK_WAIT_MS`), and leaves the step before the refetch.
+  (4) Past days with no meals say "Before this plan" (`pastEmptyWord`), not
+  "Not planned". Not done: the "plan ends before the week does" line; the
+  servings stepper's "1/2 tsp" lives server-side (quantities.py), left to
+  the amounts card.
 
 - **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
   2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap

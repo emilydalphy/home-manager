@@ -9751,6 +9751,12 @@
     return 'Next: ' + when + ' — ' + next.meal + '.';
   }
 
+  // The row's state chip ("Cook", "Reheat", "cooked") reads as a button on a
+  // cook night, so it IS one: it opens the same recipe screen the dish name
+  // does (Loop Board 2026-10-06 — it was a plain span and a tap did nothing).
+  // .cook-badge-tag keeps it on one line ("Coo / k" at 375px). Built inside
+  // kitchenTodayRowHtml so the harness tests that slice that one function
+  // keep running the real thing.
   function kitchenTodayRowHtml(row) {
     var checkLabel = row.isReheat
       ? (row.done ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL)
@@ -9762,6 +9768,7 @@
       ? '<span class="cook-week-name">' + escapeHtml(row.title) + '</span>'
       : '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + row.idx + '">' +
           escapeHtml(row.title) + '</button>';
+    var badgeCls = 'cook-badge cook-badge-tag' + (row.done || row.isReheat ? '' : ' cook-badge-warm');
     return '<div class="cook-week-item' + (row.done ? ' is-done' : '') + '">' +
       '<div class="cook-week-row">' +
         '<button type="button" class="cook-box' + (row.done ? ' checked' : '') + '" ' +
@@ -9769,8 +9776,10 @@
           'data-name="' + escapeHtml(row.title) + '" ' +
           'aria-label="' + escapeHtml(checkLabel) + '">' + COOK_ICONS.check + '</button>' +
         name +
-        '<span class="cook-badge' + (row.done || row.isReheat ? '' : ' cook-badge-warm') + '">' +
-          escapeHtml(row.badge) + '</span>' +
+        (row.isReheat
+          ? '<span class="' + badgeCls + '">' + escapeHtml(row.badge) + '</span>'
+          : '<button type="button" class="' + badgeCls + ' cook-badge-tap" data-cook="focus" data-idx="' +
+              row.idx + '">' + escapeHtml(row.badge) + '</button>') +
       '</div>' +
       (row.line ? '<p class="cook-week-sub">' + escapeHtml(row.line) + '</p>' : '') +
     '</div>';
@@ -15312,6 +15321,18 @@
   // nothing either. A planned meal on a day already gone keeps Done (a
   // tick is a record of something that happened) and loses Swap (the
   // server refuses a swap into the past anyway).
+  // What an empty slot on a day that has already gone by says. "Not
+  // planned" read as a gap in the household's own plan on a Tuesday first
+  // plan, for the Saturday–Monday before it began (Loop Board, walkthrough
+  // 2026-10-06). A day before the plan began — flagged by the server, or a
+  // past day with nothing in ANY slot, which is the same fact on a plan
+  // that did not flag it — says so quietly; a past day that has other
+  // meals keeps "Not planned", because there it is true.
+  function pastEmptyWord(day) {
+    var nothingAtAll = !WEEK_SLOTS.some(function (s) { return !!day[s]; });
+    return (day.before_plan_start || nothingAtAll) ? 'Before this plan' : 'Not planned';
+  }
+
   function wkMealRowHtml(day, slot, opts) {
     opts = opts || {};
     var entry = daySlotEntry(day, slot);
@@ -15323,7 +15344,7 @@
     else if (entry && entry.state === 'planned_empty') {
       name = awayLineFor(entry) || entry.title || 'Nothing planned';
       quiet = ' is-quiet';
-    } else { name = day.isPast ? 'Not planned' : 'Nothing yet'; quiet = ' is-quiet'; }
+    } else { name = day.isPast ? pastEmptyWord(day) : 'Nothing yet'; quiet = ' is-quiet'; }
     var done = planned && !!entry.cooked;
     var meta = wkRowMetaLine(entry, wkRowMeta(entry));
 
@@ -17034,7 +17055,7 @@
     else if (entry && entry.state === 'planned_empty') {
       name = awayLineFor(entry) || entry.title || 'Nothing planned';
       quiet = ' is-quiet';
-    } else { name = day.isPast ? 'Not planned' : 'Nothing yet'; quiet = ' is-quiet'; }
+    } else { name = day.isPast ? pastEmptyWord(day) : 'Nothing yet'; quiet = ' is-quiet'; }
 
     // The plate's parts (plateRowHtml) — guarded with typeof for the tests
     // that run this renderer alone, like planCookableNow below.
@@ -19381,7 +19402,12 @@
   // (`frozen` — the chip starts on, so reopening the step shows the
   // answer as given and an un-tap takes it back). `selected` is which
   // chips are on, keyed by item name.
-  var defrostAskState = { planId: null, items: null, selected: {} };
+  var defrostAskState = { planId: null, items: null, selected: {}, failed: false };
+  // How long the freezer step may say "One moment…" before it says what it
+  // is waiting for instead (Loop Board 2026-10-06: it sat there for as long
+  // as the server was busy with the recipe pass, with Plan's only way out a
+  // back link). `var` so a test can shorten it.
+  var DEFROST_ASK_WAIT_MS = 6000;
 
   function defrostAskChipHtml(it) {
     var selected = !!defrostAskState.selected[it.item];
@@ -19449,7 +19475,9 @@
       body = '<div class="menu-loading">One moment…</div>';
       dock = '';
     } else if (!items.length) {
-      body = '<p class="wk-sub wk-freezer-none">Nothing in this week’s meals needs thawing.</p>';
+      body = '<p class="wk-sub wk-freezer-none">' + (defrostAskState.failed
+        ? 'I couldn’t get your freezer list just now. Your week is safe — you can open the grocery list.'
+        : 'Nothing in this week’s meals needs thawing.') + '</p>';
       dock = '<div class="dock wk-freezer-dock">' +
         '<button type="button" class="dock-primary" id="wk-freezer-list">Open grocery list</button>' +
       '</div>';
@@ -19487,12 +19515,31 @@
   // reloads"). Re-renders the step once the answer arrives, since it
   // painted "One moment…" while this was in flight.
   async function ensureDefrostAskItems(panel, data) {
-    if (!data.weekly_plan_id) return;
+    // No plan id yet is not a question to wait on: there is nothing to ask,
+    // and returning here left the step on "One moment…" for good.
+    if (!data.weekly_plan_id) {
+      defrostAskState.items = [];
+      defrostAskState.failed = true;
+      if (weekState.step === 'freezer' || weekState.step === 'allset') renderMealsStep(panel);
+      return;
+    }
     if (defrostAskState.planId === data.weekly_plan_id && defrostAskState.items !== null) return;
     defrostAskState.planId = data.weekly_plan_id;
     defrostAskState.items = null;
+    defrostAskState.failed = false;
     try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items');
+      // The server can be busy with the week's recipe pass; a lookup that
+      // has not answered in DEFROST_ASK_WAIT_MS gives the step a plain
+      // sentence and the way out instead of a spinner.
+      var waitTimer = null;
+      var waited = new Promise(function (_, reject) {
+        waitTimer = setTimeout(function () { reject(new Error('defrost items lookup timed out')); }, DEFROST_ASK_WAIT_MS);
+      });
+      var res;
+      try {
+        res = await Promise.race([
+          Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items'), waited]);
+      } finally { clearTimeout(waitTimer); }
       if (!res.ok) throw new Error('defrost items lookup failed');
       var body = await res.json();
       if (defrostAskState.planId !== data.weekly_plan_id) return; // a newer plan loaded while this was in flight
@@ -19504,7 +19551,10 @@
       defrostAskState.items.forEach(function (it) { if (it.frozen) defrostAskState.selected[it.item] = true; });
     } catch (err) {
       console.warn('Defrost item lookup failed:', err);
-      if (defrostAskState.planId === data.weekly_plan_id) defrostAskState.items = [];
+      if (defrostAskState.planId === data.weekly_plan_id) {
+        defrostAskState.items = [];
+        defrostAskState.failed = true;
+      }
     }
     if (weekState.step === 'freezer' || weekState.step === 'allset') renderMealsStep(panel);
   }
@@ -19564,6 +19614,11 @@
         // "Nothing's frozen" is a real answer with no thing to name.
         toastSaved();
       }
+      // Off the freezer step BEFORE the slow refetch: loadWeekMenu repaints
+      // the panel, and a repaint with the step still 'freezer' and the items
+      // just emptied drew the question again as "One moment…" (2026-10-06).
+      weekState.step = 'week';
+      replaceMealsStepHistory();
       await loadWeekMenu(panel); // refetches defrost_asked_at and the moves the root row reads
       // The answer moved lines off (or back onto) the list, so a Shop
       // panel already built this page view is re-read before it is shown
@@ -23308,7 +23363,7 @@
               return '<span class="' + cellClass + ' empty">Your call</span>';
             }
             if (entry) return '<span class="' + cellClass + '">' + escapeHtml(entry.title) + '</span>';
-            if (day.isPast) return '<span class="' + cellClass + ' blank">Not planned</span>';
+            if (day.isPast) return '<span class="' + cellClass + ' blank">' + pastEmptyWord(day) + '</span>';
             return '<span class="' + cellClass + ' empty">Open' + (slot === 'dinner' ? '' : '') + '</span>';
           }).join('') +
         '</button>'

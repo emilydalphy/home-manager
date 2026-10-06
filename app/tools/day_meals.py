@@ -71,6 +71,7 @@ from datetime import date
 
 from ..db import get_conn
 from . import attendance as _attendance
+from . import member_needs as _member_needs
 from . import rhythm as _rhythm
 from ._shared import IN_MEALS_SQL, display_initials, household_id
 
@@ -191,13 +192,21 @@ def household_people() -> dict:
     conn = get_conn()
     try:
         rows = conn.execute(
-            f"SELECT name FROM members WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id ASC",
+            f"SELECT name, age_group, snacks_per_day FROM members "
+            f"WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id ASC",
             (household_id(),),
         ).fetchall()
     finally:
         conn.close()
     names = [r["name"] for r in rows]
-    return {"names": names, "initials": dict(zip(names, display_initials(names)))}
+    # Snacks a day per person rides along on the SAME read (the day's read
+    # budget is pinned by a test): the snack row names who they are for.
+    snacks = {
+        r["name"]: (r["snacks_per_day"] if r["snacks_per_day"] is not None
+                    else _member_needs.default_snacks(r["age_group"]))
+        for r in rows
+    }
+    return {"names": names, "initials": dict(zip(names, display_initials(names))), "snacks": snacks}
 
 
 def _where_for(slot: str, name: str, weekday: str, lunch: dict) -> str:
@@ -329,6 +338,8 @@ def for_day(day: str | date, view: dict, attendance_by_slot: dict | None = None,
             # plan already writes that slot as planned_empty (slot_needs);
             # this is the belt for a row that reached here anyway.
             continue
+        if slot == "snack":
+            att = _snack_eaters(att, people.get("snacks") or {})
         # Snacks: ONE row naming every snack dish (the card, while snacks
         # are household-wide). The lines are built off the FIRST of them so
         # the per-person shape is the same shape as every other row's —
@@ -354,6 +365,30 @@ def for_day(day: str | date, view: dict, attendance_by_slot: dict | None = None,
             "is_leftovers": bool(lead.get("is_leftovers")),
         })
     return rows
+
+
+def _snack_eaters(att: dict, counts: dict) -> dict:
+    """
+    The snack row's attendance, narrowed to the people who have snacks.
+
+    Per-person snack counts (members.snacks_per_day, 2026-10-06) say who a
+    snack is FOR: a household whose adults said "no snacks" and whose child
+    said two must not read "everyone" on Today (Loop Board, walkthrough
+    2026-10-06). Present people with 0 snacks a day leave the line; if that
+    leaves everyone who is present, `att` is returned untouched and the row
+    still says "everyone". If nobody present has a count above 0, the plan
+    wrote a snack anyway — say nothing new rather than an empty "for".
+    """
+    present = att.get("present_names") or []
+    if not present:
+        return att
+    eaters = [n for n in present if counts.get(n, 1) > 0]
+    if not eaters or len(eaters) == len(present):
+        return att
+    narrowed = dict(att)
+    narrowed["present_names"] = eaters
+    narrowed["everyone_home"] = False
+    return narrowed
 
 
 def _everyone_home(people: dict) -> dict:
