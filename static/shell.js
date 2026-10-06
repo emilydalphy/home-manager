@@ -25242,6 +25242,8 @@
       shellWho.ai_consent = typeof data.ai_consent === 'string' ? data.ai_consent : 'granted';
       // Preferences → About's version line (app/legal.py).
       shellWho.legal_version = typeof data.legal_version === 'string' ? data.legal_version : '';
+      // ...and the one this household agreed to at email sign-up, if it did.
+      shellWho.legal_accepted_version = typeof data.legal_accepted_version === 'string' ? data.legal_accepted_version : '';
       shellWho.loaded = true;
       // Keep the copy in step with whatever the server says this device is
       // pinned to, however it got pinned — the pick below, an invite link,
@@ -26625,6 +26627,15 @@
   // sheet. Plain links that leave the shell: the pages carry their own
   // Back, which returns here — the iPhone app's web view has no back
   // button of its own. The version is the one the pages show.
+  // The version recorded when this household signed up by email (the
+  // sign-up card: "the version shown is the one recorded at sign-up").
+  // Said only when there is one; a different one says which.
+  function aboutAgreedHtml(current) {
+    var agreed = shellWho && shellWho.legal_accepted_version;
+    if (!agreed) return '';
+    return agreed === current ? ' · agreed at sign-up' : ' · you agreed to ' + escapeHtml(agreed);
+  }
+
   function prefsAboutHtml() {
     var version = shellWho && shellWho.legal_version ? shellWho.legal_version : '';
     return '<nav class="prefs-about" aria-label="About Pomona">' +
@@ -26634,7 +26645,7 @@
         '<a href="/terms">Terms of use</a>' +
         '<a href="/support">Help and support</a>' +
       '</span>' +
-      (version ? '<span class="prefs-about-version">Version ' + escapeHtml(version) + '</span>' : '') +
+      (version ? '<span class="prefs-about-version">Version ' + escapeHtml(version) + aboutAgreedHtml(version) + '</span>' : '') +
     '</nav>';
   }
 
