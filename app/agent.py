@@ -149,7 +149,9 @@ sizzle"). Give the half-sentence reason where it stops a mistake ("tamarind goes
 earlier, because it stops the dal softening"). A short heads-up or reassurance where a cook \
 would wobble ("stand back, they'll spatter", "don't rush the onions — that's where the flavor \
 starts", "no peeking"). Name the household's people where a step is about them ("serve \
-Arjun's bowl first", "the last portion is Ravi's lunch tomorrow"). Never filler: no \
+Arjun's bowl first", "the last portion is Ravi's lunch tomorrow"). When exactly one child is at \
+the table, use their name ("Leo's portion"), never "the kids' portions"; "the kids" is only for \
+two or more. Never filler: no \
 "simply", "just", "delicious", "amazing", no exclamation marks, no jokes — warmth comes from \
 the cues and the care, and every amount stays exactly as precise as the rule above says.
   * STEPS ARE A TIMELINE. Order them the way a person stands at a stove, not the way the dish \
@@ -918,7 +920,10 @@ new one when they clearly mean someone already on file. set_member_dietary_restr
 right tool here even when the mention is casual — do NOT file an allergy about a person as a \
 What-we-know fact instead (add_fact). add_fact is for everything a restriction field can't \
 hold: household context, tastes, routines, and a must-avoid that isn't tied to one person \
-("no shellfish in this house" — that one is add_fact with hard=true). If you've already saved \
+("no shellfish in this house" is NOT one of these — a household-wide "we don't eat X" goes to \
+add_food_dislikes, which is the Won't eat list in Settings; and if X is a protein chip there \
+(chicken, beef, pork, fish, shrimp, tofu, eggs, beans) also set protein_preferences X to 1 with \
+edit_preference so the chip shows skipped). If you've already saved \
 an allergy as a fact, also call set_member_dietary_restrictions so it's in both places.
 - The same goes for positive or negative feedback on a specific recipe they've actually made — \
 "we loved that chicken dish", "that pasta was too bland", "make that again sometime" — call \
@@ -1951,7 +1956,7 @@ TOOL_DEFINITIONS = [
                                     "type": "object",
                                     "properties": {
                                         "meal_name": {"type": "string"},
-                                        "reason": {"type": "string", "description": "One short line the household reads on the card: why this fits. Under ten words, no exclamation mark."},
+                                        "reason": {"type": "string", "description": "One short line the household reads on the card: why this fits. Under ten words, no exclamation mark. Plain words, never planner terms: the real minutes (\'Quicker than 45 minutes\'), not \'under the time cap\'; \'Not chicken again this week\', not \'no overlap with the week\'s chicken\'."},
                                         "ingredients": {
                                             "type": "array",
                                             "items": {
@@ -2254,7 +2259,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_fact",
-        "description": "Add one freeform fact to the What We Know screen. NOT for an allergy or dietary restriction about a specific person: \"Sam is allergic to peanuts\", \"Mia can't have gluten\", \"my partner doesn't eat shellfish\" go to set_member_dietary_restrictions, which is the field meal generation and the pre-approval safety check are built around — call that FIRST for anything allergy-shaped about a named (or clearly identifiable) person, even when it's said casually in passing rather than as a form answer. Use add_fact for everything else: 'people' for who's-who and household context (who works late, who cooks, a must-avoid that isn't tied to one person like \"no shellfish in this house\"); 'taste' for likes/dislikes/preferences phrased as a note; 'rhythm' for recurring patterns like weekly routines. Set hard=true for any must-avoid-type fact — a hard fact is treated as an absolute must-avoid by week generation and by the pre-approval conflict check, so use it for real safety limits and not for strong preferences. This is the tool to call whenever the user says something like \"remember that...\" / \"just so you know...\" / \"add to what you know about us\" about a person, taste, or routine — without it, nothing the user tells you in conversation ever shows up on the What We Know page.",
+        "description": "Add one freeform fact to the What We Know screen. NOT for an allergy or dietary restriction about a specific person, and NOT for a household-wide food rule (\"we don't eat pork\", \"no shellfish in this house\" go to add_food_dislikes, the Won't eat list): \"Sam is allergic to peanuts\", \"Mia can't have gluten\", \"my partner doesn't eat shellfish\" go to set_member_dietary_restrictions, which is the field meal generation and the pre-approval safety check are built around — call that FIRST for anything allergy-shaped about a named (or clearly identifiable) person, even when it's said casually in passing rather than as a form answer. Use add_fact for everything else: 'people' for who's-who and household context (who works late, who cooks, a note that isn't a food rule); 'taste' for likes/dislikes/preferences phrased as a note; 'rhythm' for recurring patterns like weekly routines. Set hard=true for any must-avoid-type fact — a hard fact is treated as an absolute must-avoid by week generation and by the pre-approval conflict check, so use it for real safety limits and not for strong preferences. This is the tool to call whenever the user says something like \"remember that...\" / \"just so you know...\" / \"add to what you know about us\" about a person, taste, or routine — without it, nothing the user tells you in conversation ever shows up on the What We Know page.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -3395,7 +3400,7 @@ plan.
 - The no-repeat rule against recent_history is about DINNER, LUNCH and SNACK — not \
 breakfast (except under "Something new", below). recent_history covers {_variety_window}, and a \
 dinner, lunch or snack (or a near-identical variant) that appears there is NOT drafted again \
-unless the household asked for it this week — a favourite named in intake.freeform, "again \
+unless the household asked for it this week — a favorite named in intake.freeform, "again \
 please", a dish in intake.cuisines' territory they clearly want back. Check recent_history's \
 `slot` field; a household that keeps seeing last week's food stops trusting the draft (Emily, \
 2026-09-20 on dinners; 2026-09-28 on snacks: "It keeps giving me the same snack suggestions as \
@@ -9619,7 +9624,7 @@ TOOL_FUNCTIONS = {
     "get_member_notes": tools.get_member_notes,
     "get_household_memory": tools.get_household_memory,
     "get_facts": tools.get_facts,
-    "add_fact": tools.add_fact,
+    "add_fact": tools.add_fact_from_chat,
     "update_fact": tools.update_fact,
     "delete_fact": tools.delete_fact,
     "edit_preference": tools.edit_preference,
@@ -10155,6 +10160,9 @@ def _build_week_context_block(context: dict) -> dict | None:
         "- Moving a dinner to another night is still swap_dinner_nights; approving is still "
         "approve_weekly_plan; a comment that changes nothing on the week is remembered and answered "
         "in one line (\"Noted — ... Nothing in this draft to change.\").\n"
+        "- If your line says how many options a row has, use each row's `options_shown` from the result, "
+        "not the number you meant to offer: dishes the household can't have are dropped before the card "
+        "is drawn, so one option can be all that shows. Never write 'three' unless three are there.\n"
         "- Reply with ONE short line that matches the card — the consequence if there is one "
         "(\"With Wednesday that's chicken twice, so Saturday stays on the pork chops.\"), otherwise "
         "what you offered. Never list the rows; the card shows them. Never say the change is made "

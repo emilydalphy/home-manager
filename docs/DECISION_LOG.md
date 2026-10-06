@@ -39,6 +39,25 @@ why*, not duplicating the diff.
   "Not planned". Not done: the "plan ends before the week does" line; the
   servings stepper's "1/2 tsp" lives server-side (quantities.py), left to
   the amounts card.
+- **Chat's household-wide "we don't eat X" goes to Won't eat; setup's note is
+  shown** (branch `copy-and-rules-2026-10-06`). The agent's `add_fact` is now
+  `memory.add_fact_from_chat`: a sentence starting we/nobody/none of us (or
+  "no X in this house") is saved with `add_food_dislikes` and a protein it names
+  gets its Settings chip set to skip (1), not saved as a free-text fact. The
+  Settings box keeps `add_fact` unrouted; person rules still go to
+  set_member_dietary_restrictions. Who's here shows `mem.notes` read-only
+  ("From setup: ..."). Won't eat is a dislike list, not the allergy gate.
+  Tests: `tests/test_chat_wont_eat_and_setup_note.py`.
+
+- **Copy slips from the 2026-10-06 walkthrough** (branch
+  `copy-and-rules-2026-10-06`). US spelling (favorite, traveling), the day
+  picker's "turn off a meal", Before-you-shop says "I've ticked..." only when
+  something was ticked at open (`groceryState.bsPreTicked`), swap reasons say
+  real minutes / "Not chicken or beef again" (prompt rule in swap_options and
+  swap_in_place), the change card returns `options_shown` per row so chat
+  counts truthfully, one child is named not "the kids", and the chat's save
+  toast names the change. Chores' two bare toasts stay (Chores paused).
+  Tests: `tests/test_copy_slips_2026_10_06.py`.
 
 - **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
   2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap

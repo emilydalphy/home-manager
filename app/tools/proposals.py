@@ -263,6 +263,8 @@ def public_view(proposal: dict) -> dict:
             "chosen": r["chosen"],
             "problem": r["problem"],
             "dropped": r.get("dropped") or [],
+            # What the card really shows, so the chat line can say the true number.
+            "options_shown": len(r["candidates"]),
         })
     return {
         "proposal_id": proposal["proposal_id"],

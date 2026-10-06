@@ -98,14 +98,13 @@ def test_the_helper_is_defined_once_and_every_site_goes_through_it():
 
 
 def test_almost_every_save_toast_names_what_it_saved():
-    """The point of the rewrite. Two callers pass nothing on purpose and
-    get the plain word: a chat turn (its action cards under the reply
-    already name what changed) and the freezer step answered "nothing's
-    frozen". Chores' two ticks are the third and fourth — Chores is
+    """The point of the rewrite. One caller passes nothing on purpose and
+    gets the plain word: the freezer step answered "nothing's frozen"
+    (the chat turn now names what changed, 2026-10-06). Chores' two ticks are the second and third — Chores is
     paused (Emily, 2026-09-18) and was left exactly as it was, so they
     fall through to the same plain word rather than being reworded."""
     bare = SHELL_JS.count("toastSaved();")
-    assert bare == 4, "a nameless save toast needs a reason — see this test"
+    assert bare == 3, "a nameless save toast needs a reason — see this test"
     assert SHELL_JS.count("toastSaved(savedLine(") >= 10
 
 
@@ -410,7 +409,7 @@ def test_a_chat_turn_that_changed_something_says_it_saved():
     tail = SHELL_JS[i:i + 1200]
     # ...and not when the turn came back with a change card — the week is
     # not saved yet, and the card's own Save says so (test_chat_change_card).
-    assert "if (data.actions && data.actions.length && !data.proposal) toastSaved();" in tail
+    assert "if (data.actions && data.actions.length && !data.proposal) toastSaved(" in tail
 
 
 # ---------- Plan the week ----------

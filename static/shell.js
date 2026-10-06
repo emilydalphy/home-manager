@@ -5718,7 +5718,7 @@
     {
       key: 'regulars',
       title: 'Need any of your regulars?',
-      line: 'I’ve ticked the ones you’re probably low on. Change anything that’s wrong.',
+      line: function () { return groceryState.bsPreTicked ? 'I’ve ticked the ones you’re probably low on. Change anything that’s wrong.' : 'Tap any you need this week.'; },
       has: function () { return bsPart('regulars').choices.length > 0; },
       body: bsRegularsHtml,
       dock: bsRegularsDockHtml
@@ -8445,6 +8445,7 @@
         groceryState.bsAddOpen = false;
         // The copy the steps draw from while the pass is open (bsView).
         groceryState.bsSnap = groceryState.bsData ? JSON.parse(JSON.stringify(groceryState.bsData)) : null;
+        groceryState.bsPreTicked = bsTickedRegulars().length;
         goGroceryStep('beforeshop');
         return;
 
@@ -11387,6 +11388,7 @@
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
     else html += inviteNewHtml();
     html += wwkFactsHtml('people', { household: true, lead: 'Anything else for the household' });
+    if (mem.notes && String(mem.notes).trim()) html += wwkNote('From setup: ' + String(mem.notes).trim());
     return html;
   }
 
@@ -12701,7 +12703,7 @@
     // it to the planner (meal_preferences.table_style, week_intake).
     html += wwkLead('At the table') + '<div class="wwk-chips">' +
       WWK_TABLE_STYLES.map(function (o) { return wwkChip(o.label, 'data-wwk="table-style" data-value="' + o.key + '"', mem.table_style === o.key ? 'on' : ''); }).join('') + '</div>';
-    html += wwkLead('Proteins', 'tap once for a favourite, twice to skip it') + '<div class="wwk-chips">' +
+    html += wwkLead('Proteins', 'tap once for a favorite, twice to skip it') + '<div class="wwk-chips">' +
       WWK_PROTEINS.map(function (label) {
         return wwkChip(label, 'data-wwk="protein" data-value="' + label.toLowerCase() + '"', wwkProteinState(mem, label.toLowerCase()).state);
       }).join('') + '</div>';
@@ -25349,7 +25351,7 @@
       // already say which screen changed and what changed on it, so
       // repeating it here would be the fourth anti-pattern (a line
       // restating the thing below it). Plain "Saved" (SAVED_PLAIN).
-      if (data.actions && data.actions.length && !data.proposal) toastSaved();
+      if (data.actions && data.actions.length && !data.proposal) toastSaved(data.actions.length === 1 && data.actions[0].change ? String(data.actions[0].change) : savedCount(data.actions.length, 'saved'));
     } catch (err) {
       loadingWraps.forEach(function (w) { w.remove(); });
       // Asking needs Claude, and Claude needs a connection. With no signal
