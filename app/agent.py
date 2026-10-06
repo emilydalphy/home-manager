@@ -920,7 +920,10 @@ new one when they clearly mean someone already on file. set_member_dietary_restr
 right tool here even when the mention is casual — do NOT file an allergy about a person as a \
 What-we-know fact instead (add_fact). add_fact is for everything a restriction field can't \
 hold: household context, tastes, routines, and a must-avoid that isn't tied to one person \
-("no shellfish in this house" — that one is add_fact with hard=true). If you've already saved \
+("no shellfish in this house" is NOT one of these — a household-wide "we don't eat X" goes to \
+add_food_dislikes, which is the Won't eat list in Settings; and if X is a protein chip there \
+(chicken, beef, pork, fish, shrimp, tofu, eggs, beans) also set protein_preferences X to 1 with \
+edit_preference so the chip shows skipped). If you've already saved \
 an allergy as a fact, also call set_member_dietary_restrictions so it's in both places.
 - The same goes for positive or negative feedback on a specific recipe they've actually made — \
 "we loved that chicken dish", "that pasta was too bland", "make that again sometime" — call \
@@ -2256,7 +2259,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_fact",
-        "description": "Add one freeform fact to the What We Know screen. NOT for an allergy or dietary restriction about a specific person: \"Sam is allergic to peanuts\", \"Mia can't have gluten\", \"my partner doesn't eat shellfish\" go to set_member_dietary_restrictions, which is the field meal generation and the pre-approval safety check are built around — call that FIRST for anything allergy-shaped about a named (or clearly identifiable) person, even when it's said casually in passing rather than as a form answer. Use add_fact for everything else: 'people' for who's-who and household context (who works late, who cooks, a must-avoid that isn't tied to one person like \"no shellfish in this house\"); 'taste' for likes/dislikes/preferences phrased as a note; 'rhythm' for recurring patterns like weekly routines. Set hard=true for any must-avoid-type fact — a hard fact is treated as an absolute must-avoid by week generation and by the pre-approval conflict check, so use it for real safety limits and not for strong preferences. This is the tool to call whenever the user says something like \"remember that...\" / \"just so you know...\" / \"add to what you know about us\" about a person, taste, or routine — without it, nothing the user tells you in conversation ever shows up on the What We Know page.",
+        "description": "Add one freeform fact to the What We Know screen. NOT for an allergy or dietary restriction about a specific person, and NOT for a household-wide food rule (\"we don't eat pork\", \"no shellfish in this house\" go to add_food_dislikes, the Won't eat list): \"Sam is allergic to peanuts\", \"Mia can't have gluten\", \"my partner doesn't eat shellfish\" go to set_member_dietary_restrictions, which is the field meal generation and the pre-approval safety check are built around — call that FIRST for anything allergy-shaped about a named (or clearly identifiable) person, even when it's said casually in passing rather than as a form answer. Use add_fact for everything else: 'people' for who's-who and household context (who works late, who cooks, a note that isn't a food rule); 'taste' for likes/dislikes/preferences phrased as a note; 'rhythm' for recurring patterns like weekly routines. Set hard=true for any must-avoid-type fact — a hard fact is treated as an absolute must-avoid by week generation and by the pre-approval conflict check, so use it for real safety limits and not for strong preferences. This is the tool to call whenever the user says something like \"remember that...\" / \"just so you know...\" / \"add to what you know about us\" about a person, taste, or routine — without it, nothing the user tells you in conversation ever shows up on the What We Know page.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -9463,7 +9466,7 @@ TOOL_FUNCTIONS = {
     "get_member_notes": tools.get_member_notes,
     "get_household_memory": tools.get_household_memory,
     "get_facts": tools.get_facts,
-    "add_fact": tools.add_fact,
+    "add_fact": tools.add_fact_from_chat,
     "update_fact": tools.update_fact,
     "delete_fact": tools.delete_fact,
     "edit_preference": tools.edit_preference,

@@ -11379,6 +11379,7 @@
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
     else html += inviteNewHtml();
     html += wwkFactsHtml('people', { household: true, lead: 'Anything else for the household' });
+    if (mem.notes && String(mem.notes).trim()) html += wwkNote('From setup: ' + String(mem.notes).trim());
     return html;
   }
 

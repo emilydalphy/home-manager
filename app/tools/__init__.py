@@ -436,6 +436,7 @@ from .memory import (  # noqa: F401
     _CONTEXT_SIGNALS,
     _build_context_completeness,
     add_fact,
+    add_fact_from_chat,
     delete_fact,
     delete_preference,
     edit_preference,

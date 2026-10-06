@@ -5,6 +5,7 @@ and editing or deleting a stored preference.
 from __future__ import annotations
 
 import json
+import re
 from ..db import get_conn, write
 from ._shared import EATS_HERE_SQL, household_id, require_household_row
 from . import household as _household
@@ -105,6 +106,53 @@ def get_facts(category: str | None = None) -> list[dict]:
         ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+# A household-wide food rule said as a sentence ("we don't eat pork", "no
+# shellfish in this house") belongs in Settings' "Won't eat" list, not in
+# the free-text "Anything else for the household" (walkthrough 2026-10-06).
+# Deliberately narrow: it must say "we"/"nobody"/"none of us" or "in this
+# house", so "my partner doesn't eat shellfish" (a person's restriction,
+# set_member_dietary_restrictions' job) is never caught.
+_WONT_EAT_WE = re.compile(
+    r"^(?:we|nobody|no one|none of us)(?:\s+here)?\s+(?:(?:do\s*n['’]?t|do not|never|won['’]?t|will not)\s+eat|eats)\s+(?:any\s+)?(?P<x>[^.!?]+?)\s*[.!]*$",
+    re.IGNORECASE,
+)
+_WONT_EAT_HOUSE = re.compile(
+    r"^no\s+(?P<x>[^.!?]+?)\s+in\s+(?:this|our)\s+(?:house|home|kitchen)\s*[.!]*$", re.IGNORECASE,
+)
+_PROTEIN_CHIPS = ("chicken", "beef", "pork", "fish", "shrimp", "tofu", "eggs", "beans")
+
+
+def household_wont_eat_items(category: str, text: str) -> list[str]:
+    """The foods a household-wide "we don't eat X" names, or [] when the
+    sentence is anything else (a person's rule, a routine, a taste note)."""
+    if (category or "").strip().lower() != "people":
+        return []
+    t = (text or "").strip()
+    m = _WONT_EAT_WE.match(t) or _WONT_EAT_HOUSE.match(t)
+    if not m:
+        return []
+    items = [i.strip(" ,") for i in re.split(r",|\s+or\s+|\s+and\s+", m.group("x")) if i.strip(" ,")]
+    return items[:6]
+
+
+def add_fact_from_chat(category: str, text: str, hard: bool = False, author: str = "") -> dict:
+    """add_fact as the chat agent calls it. A household-wide "we don't eat X"
+    is not a freeform fact: it is routed to the household's Won't eat list,
+    and a protein it names has its Settings chip put to "skip". Only the chat
+    routes: the Settings box's own "Something else" keeps what was typed."""
+    items = household_wont_eat_items(category, (text or "").strip())
+    if items:
+        saved = _preferences.add_food_dislikes(items)
+        skipped = [i.lower() for i in items if i.lower() in _PROTEIN_CHIPS]
+        if skipped:
+            _preferences.set_household_meal_preferences(
+                protein_preferences={k: 1 for k in skipped}, mark_complete=False,
+            )
+        return {"added": True, "routed_to": "Won't eat", "dislikes": saved["dislikes"],
+                "protein_chips_skipped": skipped, "category": category, "text": (text or "").strip(), "hard": hard}
+    return add_fact(category, text, hard=hard, author=author)
 
 
 def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> dict:

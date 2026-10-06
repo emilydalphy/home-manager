@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Chat's household-wide "we don't eat X" goes to Won't eat; setup's note is
+  shown** (branch `copy-and-rules-2026-10-06`). The agent's `add_fact` is now
+  `memory.add_fact_from_chat`: a sentence starting we/nobody/none of us (or
+  "no X in this house") is saved with `add_food_dislikes` and a protein it names
+  gets its Settings chip set to skip (1), not saved as a free-text fact. The
+  Settings box keeps `add_fact` unrouted; person rules still go to
+  set_member_dietary_restrictions. Who's here shows `mem.notes` read-only
+  ("From setup: ..."). Won't eat is a dislike list, not the allergy gate.
+  Tests: `tests/test_chat_wont_eat_and_setup_note.py`.
+
 - **Copy slips from the 2026-10-06 walkthrough** (branch
   `copy-and-rules-2026-10-06`). US spelling (favorite, traveling), the day
   picker's "turn off a meal", Before-you-shop says "I've ticked..." only when
