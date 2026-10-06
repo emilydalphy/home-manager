@@ -91,9 +91,9 @@ Words already in the name and subtitle are indexed anyway, so "meal" and
 
 | Field | Draft | Status |
 |---|---|---|
-| Support URL (required) | `https://home-manager-production-4949.up.railway.app/support` | Route being built tonight by Builder C (`overnight/legal-pages`); not on `origin` when this was written, so the path is assumed. Check it after merge. |
-| Privacy policy URL (required) | `https://home-manager-production-4949.up.railway.app/privacy` | Same: assumed path, Builder C's branch. |
-| Terms (EULA field, optional) | `https://home-manager-production-4949.up.railway.app/terms` | Same. Apple's standard EULA applies if left blank. |
+| Support URL (required) | `https://home-manager-production-4949.up.railway.app/support` | Confirmed: `overnight/legal-pages` (Builder C, 2026-10-06) adds `GET /support`. Live once that branch merges. |
+| Privacy policy URL (required) | `https://home-manager-production-4949.up.railway.app/privacy` | Confirmed on the same branch: `GET /privacy`. |
+| Terms (EULA field, optional) | `https://home-manager-production-4949.up.railway.app/terms` | Confirmed on the same branch: `GET /terms`. Apple's standard EULA applies if left blank. |
 | Marketing URL (optional) | leave blank | No marketing site yet. |
 
 If a custom domain comes first, all three change with it.
@@ -122,6 +122,16 @@ identity* (it's stored against the household) and *not used for tracking*:
 | User Content | Other User Content | Chat messages, the household's food, plans, lists, notes | App Functionality |
 | Usage Data | Product Interaction | Counts of chat turns and meals cooked, to see whether the app is used | Analytics |
 | Diagnostics | Other Diagnostic Data | The shape of a screen error (type, file, line — never the wording) | App Functionality |
+
+**One mismatch to settle before submitting.** The privacy page on
+`overnight/legal-pages` says "No analytics." The label above (and the
+privacy manifest) declares Usage Data → Product Interaction for
+Analytics, because the server counts chat turns and meals cooked per
+household (`app/tools/usage.py`) to see whether the app is used. There's
+no analytics SDK and nothing leaves the server, so either is defensible;
+pick one and make the other match. Simplest honest pair: keep the label as
+is, and have the privacy page say "No third-party analytics" plus one line
+that Pomona counts its own use (chats, meals cooked) to see what's working.
 
 **Not collected:** location, contacts, browsing/search history, financial
 info, purchases, advertising data, device ID (the push token is per-install,
