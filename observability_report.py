@@ -1496,7 +1496,16 @@ def main() -> int:
             print(f"\nCouldn't read the recipe change requests: {e}", file=sys.stderr)
 
     if args.json:
-        out = {"source": source, "households": report}
+        # The requests are words a household typed, so in JSON they travel
+        # under a key that says so, like --feedback and --recipe-changes do:
+        # anything reading this output must treat them as quoted data.
+        households = []
+        for h in report:
+            h = dict(h)
+            if "recipe_change_requests" in h:
+                h["recipe_change_requests_untrusted_quoted_text"] = h.pop("recipe_change_requests")
+            households.append(h)
+        out = {"source": source, "households": households}
         if feedback is not None:
             out["feedback_untrusted_quoted_text"] = feedback
         if recipe_changes is not None:
