@@ -15,9 +15,12 @@ why*, not duplicating the diff.
 
 - **2026-10-06 — Isolation attack harness in the suite. Branch
   `overnight/security-isolation-test`.** `tests/test_isolation_attack.py`:
-  household A seeded first (so ids 1-3 are A's in every table), household
-  B signed in drives every route in `app.routes` (bodies and params built
-  from each route's own declared models) with A's ids, then A's names; no
+  household A seeded, then A's real ids READ BACK per table (never assumed
+  1-3: clean_state doesn't reset sqlite_sequence, so in a full run they are
+  far higher, and the first cut aimed at 1-3 and missed a planted leak —
+  caught on review); household B signed in drives every route in
+  `app.routes` (bodies and params built from each route's own declared
+  models) with each of A's ids, then A's names; no
   response may carry A's private text, name or share tokens, and no row A
   owned may change. Self-ending routes (reset, remove-me, leave, delete)
   run last. Zero leaks, zero damage on main; all three mutations tried (an

@@ -11,12 +11,17 @@ and enumerates app.routes itself, so a route added next month is attacked
 the day it is added without anyone remembering to list it.
 
 How the attack is built, and why it is a fair one:
-  * A is seeded first on an empty database, so A's rows are ids 1, 2, 3 in
-    every table and B owns no row any id can reach. Any id-shaped value B
-    sends — in the path, the query or the JSON body — names something of A's.
-  * Every route is driven twice by id (1, then 2) and once by NAME (A's
-    member, recipe and grocery names), each field filled from the route's
-    own declared parameters and body model.
+  * A is seeded first, and then A's real ids are READ BACK from the
+    database (_a_ids). They are never assumed to be 1-3: clean_state empties
+    tables but not sqlite_sequence, so in a full run A's ids are wherever
+    the counters got to, and a harness aiming at 1-3 hit nothing and passed
+    a planted leak (caught on review, 2026-10-06). B owns no row yet, so
+    any of those ids B sends — path, query or JSON body — names A's.
+  * Every route is driven once per A id, then once per NAME (A's member,
+    recipe, grocery line, inventory item and staple), each field filled
+    from the route's own declared parameters and body model.
+  * Chores routes are only exercised up to their off-switch: Chores is
+    paused, so they answer 403 before any lookup.
   * READS: A's private text carries "Zqs", A's names carry "Zqn". No
     response to B may contain "Zqs", A's share-link tokens, or A's
     household name; the id rounds (which send no names) may not contain
@@ -58,6 +63,9 @@ B_PASSPHRASE = "isolation-attack-b-passphrase"
 A_MEMBERS = ("Zqnadam", "Zqnbelle")
 A_RECIPE = "Zqn Lentil Soup"
 A_GROCERY = "Zqn oat milk"
+A_INVENTORY = "Zqn yogurt"
+A_STAPLE = "Zqn coffee"
+A_NAMES = (A_MEMBERS[0], A_RECIPE, A_GROCERY, A_INVENTORY, A_STAPLE)
 
 # Run once, last, in this order: each ends or empties B's own account.
 B_SELF_DESTRUCT = [
@@ -125,11 +133,11 @@ def _seed_a() -> list[str]:
     tools.plan_meal(today, "Zqn Toast", slot="breakfast", weekly_plan_id=plan_id)
     tools.add_grocery_item(A_GROCERY, quantity="1")
     tools.add_grocery_item("Zqn paper towels")
-    tools.update_inventory("Zqn yogurt", "add", quantity="2", location="fridge")
+    tools.update_inventory(A_INVENTORY, "add", quantity="2", location="fridge")
     tools.update_inventory("Zqn rice", "add", quantity="1 bag", location="pantry")
     tools.add_fact("health", "Zqs peanut allergy", hard=True)
     tools.add_fact("routine", "Zqs swim on Tuesdays")
-    tools.add_staple("Zqn coffee", every_days=14)
+    tools.add_staple(A_STAPLE, every_days=14)
     tools.add_staple("Zqn dish soap", every_days=30)
     tools.add_attention_item("review", "Zqs check this")
     tools.add_attention_item("review", "Zqs and this")
@@ -139,6 +147,26 @@ def _seed_a() -> list[str]:
     for name in A_MEMBERS:
         tokens.append(tools.get_or_create_member_share_link(name)["token"])
     return tokens
+
+
+def _a_ids() -> list[int]:
+    """Every id A owns, read back from the database after seeding: the
+    `id` of each row under A's household_id, and of every row in a table
+    with no household column (only A has written to those yet). Read, not
+    assumed — see the round comment in the test."""
+    conn = get_conn()
+    ids = set()
+    tables = [r["name"] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")]
+    for table in tables:
+        cols = [c["name"] for c in conn.execute(f"PRAGMA table_info({table})")]
+        if "id" not in cols or table in ("households", "household_credentials"):
+            continue
+        where = " WHERE household_id = ?" if "household_id" in cols else ""
+        args = (A,) if where else ()
+        ids.update(r["id"] for r in conn.execute(f"SELECT id FROM {table}{where}", args))
+    conn.close()
+    return sorted(i for i in ids if isinstance(i, int))
 
 
 def _owned_state() -> dict:
@@ -269,12 +297,18 @@ def test_household_b_cannot_read_or_change_anything_of_household_as(a_household_
     assert client.get("/api/whoami").json()["household_id"] == b
 
     secrets_never_sent = ["Zqs", A_NAME, *tokens]
-    attacks = [
-        {"id": 1, "name": ""},
-        {"id": 2, "name": ""},
-        {"id": 1, "name": A_MEMBERS[0]},
-        {"id": 3, "name": A_RECIPE},
-        {"id": 1, "name": A_GROCERY},
+    ids = _a_ids()
+    conn = get_conn()
+    for table in ("grocery_items", "recipes", "inventory_items", "facts", "staples",
+                  "weekly_plans", "attention_items", "held_things", "members"):
+        owned = [r["id"] for r in conn.execute(f"SELECT id FROM {table} WHERE household_id = ?", (A,))]
+        assert owned and set(owned) <= set(ids), f"A's seed missed {table}, or its ids aren't attacked"
+    conn.close()
+    # One round per id A really owns (in a full run the tables have been
+    # emptied and refilled many times, so A's ids are wherever the counter
+    # got to — never assume 1-3), then one per name, each with an id too.
+    attacks = [{"id": i, "name": ""} for i in ids] + [
+        {"id": ids[0], "name": name} for name in A_NAMES
     ]
 
     routes = _routes()
