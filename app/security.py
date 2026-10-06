@@ -157,6 +157,11 @@ _PUBLIC_EXACT = frozenset({
     # and the POST body, never the path, so nothing logs it.
     "/join",
     "/api/join",
+    # Email sign-in (app/account_email.py): asking for a code and spending
+    # one. Somebody signing up has no session yet; the verified address is
+    # the credential, and it binds the household it names itself.
+    "/api/auth/email/start",
+    "/api/auth/email/verify",
     "/login",
     "/logout",
     # Where a deleted household (or an adult who left one) lands — they are

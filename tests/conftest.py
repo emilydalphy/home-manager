@@ -86,6 +86,9 @@ _TABLES = [
     "preference_events", "notification_dismissals", "item_store_preferences",
     # push_devices references members, so it goes before them.
     "push_devices",
+    # Email sign-in (2026-10-06) — all four reference households, and two
+    # reference members, so they go before both.
+    "member_emails", "signup_emails", "email_codes", "legal_acceptances",
     # recipe_change_requests references members too (2026-10-05). It is not
     # optional: _seed_every_table in test_household_deletion.py puts a row in
     # EVERY household-scoped table, so a table missing from this list leaks

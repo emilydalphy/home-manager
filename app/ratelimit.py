@@ -47,6 +47,13 @@ LIMITS = {
     # capping. Generous enough for someone sending two or three notes
     # about the same bad evening.
     "feedback": [(5, 60), (40, 3600)],
+    # Email sign-in codes (app/account_email.py). The card's numbers: at
+    # most 5 codes per ADDRESS an hour (the caller here is the address's
+    # HMAC, not an IP) and 20 per IP an hour. Checking a code is per IP,
+    # on top of each code's own five tries.
+    "email_code_address": [(5, 3600)],
+    "email_code_ip": [(20, 3600)],
+    "email_code_check": [(10, 300), (60, 3600)],
 }
 
 _lock = threading.Lock()

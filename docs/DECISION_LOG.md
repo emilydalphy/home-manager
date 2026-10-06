@@ -13,6 +13,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Anyone can sign up: email + 6-digit code (server).
+  Branch `overnight/email-code-signup` (from `overnight/legal-pages`).**
+  `app/account_email.py` (outside `app/tools/`, like invites), public
+  `POST /api/auth/email/start|verify`, signed-in `GET /api/account/email`,
+  `POST /api/account/email/start|verify`. New address → new household (no
+  passphrase) + `signup_emails` row + `legal_acceptances` row → onboarding;
+  onboarding's save moves the address to the main person (`member_emails`,
+  member_id NOT NULL so leaving the household deletes it) and pins the
+  device to them. Codes: HMAC'd under SESSION_SECRET (address HMAC'd too),
+  10 min, once, 5 tries counted BEFORE comparing (one guarded UPDATE), a
+  new code retires the old. Limits: 5/address/h (over it: nothing sent,
+  same 200 — a 429 would leak that the address was asked about), 20/IP/h
+  (429), checks 10/5min per IP. `agreed` is required of everyone, before
+  the code is looked at, so it can't hint whether an address is known.
+  Delivery: SMTP_* (same as feedback emails) → email; else any sign of
+  production (HOME_MANAGER_PASSWORD or RAILWAY_*) → 503 "isn't switched on
+  yet", nothing generated; else (laptop, localhost request only) the code
+  goes to the log.
+
 - **2026-10-06 — Privacy policy, terms and support pages (drafts for the
   lawyer). Branch `overnight/legal-pages`.** `/privacy`, `/terms`,
   `/support`: public (`security._PUBLIC_EXACT`, plus `/static/legal.css`),

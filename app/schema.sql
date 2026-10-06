@@ -1640,6 +1640,67 @@ CREATE TABLE IF NOT EXISTS household_invites (
     revoked_at TEXT
 );
 
+-- Sign in with your email and a 6-digit code (Loop Board "App Store: anyone
+-- can sign up — email + 6-digit code creates a new household", Emily
+-- 2026-10-05). app/account_email.py; outside app/tools/ like the invites
+-- above, so the chat agent can never reach any of it.
+--
+-- member_emails: the email an ADULT signs in with. One per adult, one adult
+-- per email. member_id is NOT NULL on purpose: when an adult leaves a
+-- household, household_deletion's member pass DELETES rows whose member
+-- column is NOT NULL (a nullable one is only set to NULL), and an email
+-- that kept signing into the household after its person had left would be
+-- exactly the wrong outcome.
+CREATE TABLE IF NOT EXISTS member_emails (
+    email TEXT PRIMARY KEY,                -- lower-cased, trimmed
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL UNIQUE REFERENCES members(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- signup_emails: the email that STARTED a household, before onboarding has
+-- named anybody (onboarding posts its people only at the end). Signing in
+-- with it opens that household with nobody picked, so setup carries on;
+-- onboarding's save moves it onto the main person (member_emails) and the
+-- row goes.
+CREATE TABLE IF NOT EXISTS signup_emails (
+    email TEXT PRIMARY KEY,
+    household_id INTEGER NOT NULL UNIQUE REFERENCES households(id),
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- email_codes: one row per code sent. The code itself is never stored —
+-- code_hash is an HMAC of it under SESSION_SECRET — and neither is the
+-- address: email_key is an HMAC of the address, so this table names nobody.
+-- A code works once (used_at), for ten minutes (expires_at, unix seconds),
+-- and for five tries (attempts); asking for a new one retires the old.
+-- purpose 'signin' (the sign-in screen) or 'change' (Settings, adding or
+-- changing an adult's email — household_id and member_id say whose).
+CREATE TABLE IF NOT EXISTS email_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email_key TEXT NOT NULL,
+    purpose TEXT NOT NULL,
+    household_id INTEGER REFERENCES households(id),
+    member_id INTEGER REFERENCES members(id),
+    code_hash TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_email_codes_key ON email_codes (email_key, purpose);
+
+-- Which version of the terms and privacy policy (app/legal.py
+-- LEGAL_VERSION) a household agreed to, and when. Written when sign-up
+-- creates the household; a row per acceptance so a later re-acceptance
+-- adds to the record rather than overwriting it.
+CREATE TABLE IF NOT EXISTS legal_acceptances (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    version TEXT NOT NULL,
+    accepted_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- One row per chat turn. Deliberately NO message content -- this exists to
 -- answer "is the household actually using the app, and what does a turn
 -- cost", not to keep a transcript. Chat history itself lives only in
