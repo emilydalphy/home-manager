@@ -452,17 +452,30 @@
   (the error banner is inside that step), or when this device last came in
   that way — so a beta tester who has always typed a passphrase is not
   sent round the email path every time. Otherwise the email.
+
+  "Last came in that way" means SUCCEEDED that way. A passphrase submit is
+  a plain form post that leaves this page, so it can only be marked
+  pending on the way out; the next time this page loads without a refusal
+  on it, the pending mark became a sign-in and is kept. A refusal drops it.
 */
 (function () {
   'use strict';
   var STEPS = ['email', 'code', 'passphrase'];
   var METHOD_KEY = 'pomona-signin-method';
+  var PENDING_KEY = 'pomona-signin-pending';
   var email = '';
   var busy = false;
 
   function $(id) { return document.getElementById(id); }
   function remember(method) { try { window.localStorage.setItem(METHOD_KEY, method); } catch (e) { /* private mode */ } }
   function recalled() { try { return window.localStorage.getItem(METHOD_KEY); } catch (e) { return null; } }
+  function pending(on) {
+    try {
+      if (on) window.localStorage.setItem(PENDING_KEY, '1');
+      else window.localStorage.removeItem(PENDING_KEY);
+    } catch (e) { /* private mode */ }
+  }
+  function wasPending() { try { return window.localStorage.getItem(PENDING_KEY) === '1'; } catch (e) { return false; } }
 
   function show(step) {
     STEPS.forEach(function (s) { $('step-' + s).hidden = s !== step; });
@@ -539,6 +552,7 @@
       var r = await post('/api/auth/email/verify', { email: email, code: code, agreed: true, next: nextPath() });
       if (!r.ok) { say('code-msg', failureLine(r)); return; }
       remember('email');
+      pending(false);
       window.location.assign(r.data.next || '/');
     } catch (e) {
       say('code-msg', 'That didn\u2019t go through. Check your connection and try again.');
@@ -554,12 +568,18 @@
   $('code').addEventListener('input', function () {
     if (/^\d{6}$/.test(($('code').value || '').replace(/\s+/g, ''))) checkCode();
   });
-  $('passphrase-form').addEventListener('submit', function () { remember('passphrase'); });
+  $('passphrase-form').addEventListener('submit', function () { pending(true); });
   Array.prototype.forEach.call(document.querySelectorAll('[data-show]'), function (btn) {
     btn.addEventListener('click', function () { show(btn.getAttribute('data-show')); });
   });
 
   var refused = !!document.querySelector('#step-passphrase .error');
+  if (wasPending()) {
+    // The last passphrase submit either came back refused (this page, with
+    // the banner) or let them in (any later visit without one).
+    if (!refused) remember('passphrase');
+    pending(false);
+  }
   show(refused || recalled() === 'passphrase' ? 'passphrase' : 'email');
 })();
 </script>

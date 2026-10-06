@@ -26457,7 +26457,10 @@
   // device that hasn't said who it is has nobody to give it to.
   var emailSheetEl = null;
   var emailScrimEl = null;
-  var emailSheet = { step: 'enter', email: '', busy: false };
+  // confirmCurrent: replacing an address this adult already has needs a
+  // second code, sent to THAT address (review, 2026-10-06 — otherwise any
+  // session could pick another adult and take their sign-in).
+  var emailSheet = { step: 'enter', email: '', confirmCurrent: false, busy: false };
 
   async function loadAccountEmail() {
     try {
@@ -26518,7 +26521,7 @@
       if (e.key !== 'Enter' || !e.target || e.target.tagName !== 'INPUT') return;
       e.preventDefault();
       if (e.target.id === 'email-new') sendEmailCode();
-      else if (e.target.id === 'email-code') checkEmailCode();
+      else if (e.target.id === 'email-code' || e.target.id === 'email-current-code') checkEmailCode();
     });
   }
 
@@ -26528,10 +26531,15 @@
     var st = prefsState.accountEmail || {};
     var noteHtml = '<p class="snw-done" id="email-note"' + (note ? '' : ' hidden') + '>' + escapeHtml(note || '') + '</p>';
     if (emailSheet.step === 'code') {
+      var both = emailSheet.confirmCurrent && st.email;
       body.innerHTML =
-        '<p class="snw-done">We’ve sent a code to ' + escapeHtml(emailSheet.email) + ' if that email can be used. It works for 10 minutes.</p>' +
-        '<label class="snw-label" for="email-code">The 6-digit code</label>' +
+        '<p class="snw-done">We’ve sent a code to ' + escapeHtml(emailSheet.email) + ' if that email can be used' +
+          (both ? ', and one to ' + escapeHtml(st.email) + ' to check it’s you' : '') + '. They work for 10 minutes.</p>' +
+        '<label class="snw-label" for="email-code">' + (both ? 'Code sent to ' + escapeHtml(emailSheet.email) : 'The 6-digit code') + '</label>' +
         '<input type="text" id="email-code" class="snw-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">' +
+        (both ?
+          '<label class="snw-label" for="email-current-code">Code sent to ' + escapeHtml(st.email) + '</label>' +
+          '<input type="text" id="email-current-code" class="snw-input" inputmode="numeric" maxlength="6" placeholder="123456">' : '') +
         '<button type="button" class="snw-send" id="email-check">Save</button>' +
         '<button type="button" class="prefs-leave-link" id="email-again"><span>Use a different email</span></button>' +
         noteHtml;
@@ -26543,6 +26551,15 @@
       '<input type="email" id="email-new" class="snw-input" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="254" placeholder="you@example.com" value="' + escapeHtml(emailSheet.email || '') + '">' +
       '<button type="button" class="snw-send" id="email-send">Send me a code</button>' +
       noteHtml;
+  }
+
+  // A line under the inputs, without redrawing them — so a mistyped code
+  // doesn't wipe the other one.
+  function setEmailNote(text) {
+    var note = emailSheetEl && emailSheetEl.querySelector('#email-note');
+    if (!note) return;
+    note.textContent = text;
+    note.hidden = !text;
   }
 
   function emailFailure(res, data) {
@@ -26565,6 +26582,7 @@
       try { data = await r.json(); } catch (e) { /* not JSON */ }
       if (!r.ok) { renderEmailSheet(emailFailure(r, data)); return; }
       emailSheet.step = 'code';
+      emailSheet.confirmCurrent = !!data.confirm_current;
       renderEmailSheet();
       var code = emailSheetEl.querySelector('#email-code');
       if (code) code.focus();
@@ -26579,13 +26597,18 @@
     if (emailSheet.busy || !emailSheetEl) return;
     var input = emailSheetEl.querySelector('#email-code');
     var code = (input && input.value || '').replace(/\s+/g, '');
-    if (!/^\d{6}$/.test(code)) { renderEmailSheet('The code is 6 numbers.'); return; }
+    var currentInput = emailSheetEl.querySelector('#email-current-code');
+    var currentCode = currentInput ? (currentInput.value || '').replace(/\s+/g, '') : '';
+    if (!/^\d{6}$/.test(code) || (currentInput && !/^\d{6}$/.test(currentCode))) {
+      setEmailNote('Each code is 6 numbers.');
+      return;
+    }
     emailSheet.busy = true;
     try {
-      var r = await Api.fetch('/api/account/email/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: emailSheet.email, code: code }) });
+      var r = await Api.fetch('/api/account/email/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: emailSheet.email, code: code, current_code: currentCode }) });
       var data = {};
       try { data = await r.json(); } catch (e) { /* not JSON */ }
-      if (!r.ok) { renderEmailSheet(emailFailure(r, data)); return; }
+      if (!r.ok) { setEmailNote(emailFailure(r, data)); return; }
       prefsState.accountEmail = { email: data.email, can_change: true };
       emailSheet.step = 'enter';
       emailSheet.email = '';
@@ -26602,7 +26625,7 @@
     buildEmailSheet();
     if (parent) openOverSheet(parent, dismissEmailSheet);
     else { forgetSheetLevels(); closePrefsSheet(); }
-    emailSheet = { step: 'enter', email: '', busy: false };
+    emailSheet = { step: 'enter', email: '', confirmCurrent: false, busy: false };
     renderEmailSheet();
     paintSheetLevelChrome(emailSheetEl, 'Sign-in email');
     emailScrimEl.hidden = false;
