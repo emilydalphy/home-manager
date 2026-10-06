@@ -635,3 +635,66 @@ def start_link_check(research: dict) -> bool:
 
     threading.Thread(target=_run, name=f"recipe-links-{rid}", daemon=True).start()
     return True
+
+
+# ---------- what is worth a web search (2026-10-06) ----------
+#
+# Loop Board "Approve must not wait on recipe web research": the first live
+# night researched "Apple Slices with Cheese" and "Hummus with Carrot and
+# Cucumber Sticks" at up to 558K input tokens each. Nobody needs a
+# well-rated source for those. Snacks, breakfasts and simple assemblies
+# (four ingredients or fewer, or nothing cooked) are written from the
+# model's own knowledge; research is for dinners and lunches that cook.
+
+_NEVER_RESEARCHED_SLOTS = ("snack", "breakfast")
+_SIMPLE_ASSEMBLY_MAX_INGREDIENTS = 4
+
+
+def worth_researching(recipe: dict) -> bool:
+    """True when this pending dish is one a web search could earn its cost
+    on: not a snack or breakfast (by slot or tag), and not a simple
+    assembly — known to have <= 4 ingredients, or a cook time of zero."""
+    slot = str(recipe.get("slot") or "").lower()
+    if any(s in slot for s in _NEVER_RESEARCHED_SLOTS):
+        return False
+    tags = {str(t).lower() for t in (recipe.get("tags") or [])}
+    if tags & {"snack", "breakfast", "no-cook", "no cook"}:
+        return False
+    ingredients = recipe.get("ingredients")
+    if ingredients and len(ingredients) <= _SIMPLE_ASSEMBLY_MAX_INGREDIENTS:
+        return False
+    if recipe.get("cook_time_minutes") == 0:
+        return False
+    return True
+
+
+def _env_number(name: str, default, kind=int):
+    try:
+        value = kind(os.environ.get(name, "").strip() or default)
+    except (TypeError, ValueError):
+        return default
+    return value if value >= 0 else default
+
+
+def dish_budget() -> dict:
+    """The per-dish web budget: 1 search + 2 page reads unless
+    RECIPE_RESEARCH_SEARCHES / RECIPE_RESEARCH_FETCHES say otherwise."""
+    return {"web_search": _env_number("RECIPE_RESEARCH_SEARCHES", 1),
+            "web_fetch": _env_number("RECIPE_RESEARCH_FETCHES", 2)}
+
+
+def fetch_tokens() -> int:
+    """Most of a fetched page the model is handed (RECIPE_RESEARCH_FETCH_TOKENS,
+    default 3,000 — a recipe's ingredients and method fit; comments don't)."""
+    return max(500, _env_number("RECIPE_RESEARCH_FETCH_TOKENS", 3000))
+
+
+def dish_seconds() -> float:
+    """Wall-clock cap on one dish's whole research step
+    (RECIPE_RESEARCH_DISH_SECONDS, default 60)."""
+    return _env_number("RECIPE_RESEARCH_DISH_SECONDS", 60.0, float)
+
+
+def max_dishes_per_plan() -> int:
+    """Most dishes one plan researches (RECIPE_RESEARCH_MAX_DISHES, default 5)."""
+    return _env_number("RECIPE_RESEARCH_MAX_DISHES", 5)

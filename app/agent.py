@@ -4179,7 +4179,15 @@ _RESEARCH_TOOL = {
 # pause_turn continuations and a second call a dish could run to dozens of
 # paid searches). The open search may spend at most _OPEN_SEARCH_SHARE of
 # it, so a fallback always has something left.
-DISH_RESEARCH_BUDGET = {"web_search": 4, "web_fetch": 6}
+# Since 2026-10-06 (Loop Board "Approve must not wait on recipe web
+# research": 120K-558K input tokens a dish, 12 lookups) the budget is 1
+# search + 2 page reads, env-tunable — _recipe_research.dish_budget(). The
+# open search may take all of it; the trusted-cooks fallback only runs on
+# what is left, so at the default it does not run.
+def _dish_research_budget() -> dict:
+    return _recipe_research.dish_budget()
+
+
 _OPEN_SEARCH_SHARE = {"web_search": 2, "web_fetch": 4}
 _RESEARCH_MAX_ROUNDS = 2  # pause_turn continuations per call, at most
 
@@ -4251,8 +4259,38 @@ def _research_evidence(content) -> dict:
     return {"seen": seen, "read": read, "blocked": blocked, "used": used, "results": results}
 
 
+def _trim_fetched_for_resend(content: list) -> list:
+    """A paused turn is sent back as it is — including every page it read,
+    which is what the 558K-token calls were made of. The fetch tool is
+    already told max_content_tokens; this is the belt to that: any fetched
+    document text over the cap (~4 characters a token) is cut before it is
+    sent back. Blocks that aren't a fetched page pass through untouched."""
+    limit = _recipe_research.fetch_tokens() * 4
+    out = []
+    for block in content or []:
+        if _block_get(block, "type") != "web_fetch_tool_result":
+            out.append(block)
+            continue
+        as_dict = block if isinstance(block, dict) else (
+            block.model_dump(exclude_none=True) if hasattr(block, "model_dump") else None)
+        try:
+            source = as_dict["content"]["content"]["source"]
+            data = source.get("data")
+        except (TypeError, KeyError):
+            out.append(block)
+            continue
+        if isinstance(data, str) and len(data) > limit:
+            as_dict = {**as_dict, "content": {**as_dict["content"], "content": {
+                **as_dict["content"]["content"], "source": {**source, "data": data[:limit]}}}}
+            out.append(as_dict)
+        else:
+            out.append(block)
+    return out
+
+
 def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
-                      trusted: list | None = None, budget: dict | None = None) -> dict:
+                      trusted: list | None = None, budget: dict | None = None,
+                      deadline: float | None = None) -> dict:
     """
     One research call: web search + fetch, then submit_dish_research.
     Returns {"sources": [...cleaned...], "method_notes": str, "used": {...}}
@@ -4263,12 +4301,22 @@ def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
     offered, and a continuation stops once both are spent. Raises only
     what _create_with_retry raises; research_dish catches it.
     """
-    left = dict(budget or DISH_RESEARCH_BUDGET)
+    left = dict(budget or _dish_research_budget())
     spent = {"web_search": 0, "web_fetch": 0}
     client = _client()
     messages = [{"role": "user", "content": _research_prompt(name, cuisine, dish_note, trusted)}]
     all_content = []
     for _ in range(_RESEARCH_MAX_ROUNDS):
+        # The dish's wall-clock cap (2026-10-06): no new round past it, and
+        # the call itself is cut at what is left, tried once — a retry
+        # after a timeout is the spend the cap exists to stop.
+        timing = {}
+        if deadline is not None:
+            seconds_left = deadline - time.monotonic()
+            if seconds_left <= 0:
+                logger.info("Research for %r: out of time before round %d", name, _ + 1)
+                break
+            timing = {"timeout": max(1.0, seconds_left), "max_attempts": 1}
         remaining = {k: left[k] - spent[k] for k in left}
         tools_now = []
         # Bounded, because this is paid per search and per page read: a
@@ -4282,7 +4330,7 @@ def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
             tools_now.append(search)
         if remaining["web_fetch"] > 0:
             fetch = {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": remaining["web_fetch"],
-                     "max_content_tokens": 5000}
+                     "max_content_tokens": _recipe_research.fetch_tokens()}
             if trusted:
                 fetch["allowed_domains"] = [site for _, site in trusted]
             tools_now.append(fetch)
@@ -4298,6 +4346,7 @@ def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
             tools=tools_now + [_RESEARCH_TOOL],
             messages=messages,
             output_config=_effort_config("recipes"),
+            **timing,
         )
         content = list(response.content or [])
         all_content.extend(content)
@@ -4334,11 +4383,12 @@ def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
         if getattr(response, "stop_reason", None) != "pause_turn":
             break
         # A long search turn paused: send it back as it is to carry on.
-        messages = messages + [{"role": "assistant", "content": content}]
+        messages = messages + [{"role": "assistant", "content": _trim_fetched_for_resend(content)}]
     return {"used": spent}
 
 
-def research_dish(name: str, cuisine: str = "", dish_note: str = "", *, search: bool = True) -> dict | None:
+def research_dish(name: str, cuisine: str = "", dish_note: str = "", *, search: bool = True,
+                  deadline: float | None = None) -> dict | None:
     """
     This household's research for a dish: the saved one when the dish has
     been researched before (no repeat research), otherwise — when `search`
@@ -4359,16 +4409,19 @@ def research_dish(name: str, cuisine: str = "", dish_note: str = "", *, search: 
             return saved
         if not search or _recipe_research.empty_recently(saved):
             return None
-        first_budget = {k: min(DISH_RESEARCH_BUDGET[k], _OPEN_SEARCH_SHARE[k]) for k in DISH_RESEARCH_BUDGET}
-        found = research_dish_llm(name, cuisine, dish_note, budget=first_budget) or {}
+        budget = _dish_research_budget()
+        first_budget = {k: min(budget[k], _OPEN_SEARCH_SHARE[k]) for k in budget}
+        found = research_dish_llm(name, cuisine, dish_note, budget=first_budget, deadline=deadline) or {}
         used = found.get("used") or {"web_search": 0, "web_fetch": 0}
         sources = found.get("sources") or []
         fallback = False
         trusted = _recipe_research.trusted_cooks_for(cuisine)
         if _recipe_research.needs_trusted_cooks(sources):
-            left = {k: DISH_RESEARCH_BUDGET[k] - used.get(k, 0) for k in DISH_RESEARCH_BUDGET}
-            if left["web_fetch"] > 0:
-                from_cooks = research_dish_llm(name, cuisine, dish_note, trusted=trusted, budget=left) or {}
+            left = {k: budget[k] - used.get(k, 0) for k in budget}
+            in_time = deadline is None or time.monotonic() < deadline
+            if left["web_fetch"] > 0 and in_time:
+                from_cooks = research_dish_llm(name, cuisine, dish_note, trusted=trusted, budget=left,
+                                               deadline=deadline) or {}
                 if any(s.get("read") for s in from_cooks.get("sources") or []):
                     found, sources, fallback = from_cooks, from_cooks["sources"], True
         ordered = _recipe_research.pick_lead(sources, trusted if fallback else None)
@@ -4778,8 +4831,90 @@ def _shared_recipe_details_context() -> dict:
     return shared
 
 
+# ---------- research never holds anyone up (2026-10-06) ----------
+#
+# Loop Board "Approve must not wait on recipe web research": an approval
+# sat on "Writing up the recipes…" for 37 minutes while the background pass
+# researched (56s-1544s a dish) and approval waited on its claims. Now:
+#   * research runs only on the background pass; approval's own writes use
+#     research already filed for the dish, never a new search;
+#   * a dish's research gets RECIPE_RESEARCH_DISH_SECONDS (60) of wall
+#     clock, then the dish is written from the model's own knowledge;
+#   * an approval waiting on the background pass tells it to stop
+#     researching NOW (_APPROVALS_WAITING), so the wait is a write, not a search;
+#   * a dish swapped off the plan mid-research stops being researched;
+#   * at most RECIPE_RESEARCH_MAX_DISHES (5) dishes per plan are researched,
+#     and never a snack, breakfast or simple assembly (worth_researching).
+_APPROVALS_WAITING: set[tuple] = set()
+_RESEARCHED_PER_PLAN: dict[tuple, int] = {}
+_RESEARCH_STATE_GUARD = threading.Lock()
+_RESEARCH_POLL_SECONDS = 0.25
+_RESEARCH_PLAN_CHECK_SECONDS = 5.0
+
+
+def _approval_waiting(weekly_plan_id) -> bool:
+    return bool(weekly_plan_id) and (tools.household_id(), int(weekly_plan_id)) in _APPROVALS_WAITING
+
+
+def _grant_research(weekly_plan_id, recipe: dict) -> bool:
+    """Whether this dish may run a NEW web search: worth researching, and
+    the plan has not used up its RECIPE_RESEARCH_MAX_DISHES."""
+    if not _recipe_research.research_enabled() or not _recipe_research.worth_researching(recipe):
+        return False
+    if not weekly_plan_id:
+        return True
+    key = (tools.household_id(), int(weekly_plan_id))
+    with _RESEARCH_STATE_GUARD:
+        used = _RESEARCHED_PER_PLAN.get(key, 0)
+        if used >= _recipe_research.max_dishes_per_plan():
+            return False
+        _RESEARCHED_PER_PLAN[key] = used + 1
+    return True
+
+
+def _research_capped(plain: str, recipe: dict, *, search: bool, weekly_plan_id=None) -> dict | None:
+    """research_dish, but never longer than the dish's wall-clock cap, never
+    while an approval of this plan is waiting, and never for a dish swapped
+    off the plan. The search runs on its own thread (its API calls carry the
+    same deadline, so it stops on its own soon after); when this gives up,
+    the dish is written without it — no retry — and anything the thread
+    still finds is filed for next time."""
+    cuisine, note = recipe.get("cuisine") or "", recipe.get("dish_note") or ""
+    if not search or _approval_waiting(weekly_plan_id):
+        return research_dish(plain, cuisine, note, search=False)
+    seconds = _recipe_research.dish_seconds()
+    deadline = time.monotonic() + seconds
+    box: dict = {}
+    done = threading.Event()
+
+    def _go():
+        try:
+            box["found"] = research_dish(plain, cuisine, note, deadline=deadline)
+        finally:
+            done.set()
+
+    ctx = contextvars.copy_context()
+    threading.Thread(target=lambda: ctx.run(_go), daemon=True, name=f"research-{recipe.get('id')}").start()
+    next_plan_check = time.monotonic() + _RESEARCH_PLAN_CHECK_SECONDS
+    while not done.wait(_RESEARCH_POLL_SECONDS):
+        now = time.monotonic()
+        if now >= deadline:
+            logger.warning("Research for %r passed %.0fs; writing it without research", plain, seconds)
+            return None
+        if _approval_waiting(weekly_plan_id):
+            logger.info("Research for %r stopped: an approval of plan %s is waiting", plain, weekly_plan_id)
+            return None
+        if weekly_plan_id and now >= next_plan_check:
+            next_plan_check = now + _RESEARCH_PLAN_CHECK_SECONDS
+            on_plan = {r["id"] for r in tools.pending_recipes_for_plan(weekly_plan_id)}
+            if recipe.get("id") not in on_plan:
+                logger.info("Research for %r stopped: it is no longer on plan %s", plain, weekly_plan_id)
+                return None
+    return box.get("found")
+
+
 def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances: list[dict],
-                              *, research: bool = True) -> dict:
+                              *, research: bool = True, weekly_plan_id=None) -> dict:
     """
     Phase 2 for one recipe, start to finish: the model call, the allergen
     check on what came back (once more with the clash named if it fails —
@@ -4812,8 +4947,7 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     # `research=False` (the Cook screen's live "Fill in this recipe") never
     # waits on a web search: it uses research already filed for the dish,
     # if any, and otherwise writes as before (review, 2026-10-06).
-    found = research_dish(plain, recipe.get("cuisine") or "", recipe.get("dish_note") or "",
-                          search=research)
+    found = _research_capped(plain, recipe, search=research, weekly_plan_id=weekly_plan_id)
     writer_research = _recipe_research.research_for_writer(found)
     if writer_research:
         spec["research"] = writer_research
@@ -4951,6 +5085,21 @@ def fill_pending_recipes_for_plan(weekly_plan_id: int, *, wait: bool = True) -> 
     _fill_claimed_recipes).
     """
     result = {"filled": [], "failed": [], "clashed": []}
+    # Approval (wait=True) tells any background pass on this plan to stop
+    # searching the web and write (2026-10-06); see _research_capped.
+    waiting_key = (tools.household_id(), int(weekly_plan_id)) if wait and weekly_plan_id else None
+    if waiting_key:
+        with _RESEARCH_STATE_GUARD:
+            _APPROVALS_WAITING.add(waiting_key)
+    try:
+        return _fill_pending_recipes(weekly_plan_id, wait, result)
+    finally:
+        if waiting_key:
+            with _RESEARCH_STATE_GUARD:
+                _APPROVALS_WAITING.discard(waiting_key)
+
+
+def _fill_pending_recipes(weekly_plan_id: int, wait: bool, result: dict) -> dict:
     deadline = time.monotonic() + _RECIPE_WAIT_SECONDS
     # Each recipe is attempted at most once by THIS call: a recipe this
     # call failed on stays pending (as it always has), rather than being
@@ -5006,8 +5155,17 @@ def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_cla
     avoidances = _allergen_gate.hard_avoidances()
     started = time.perf_counter()
 
+    # Only the background pass (sweep_clashes=False) searches the web, and
+    # only for the dishes _grant_research lets through; approval's own
+    # writes use research already filed (2026-10-06).
+    may_search = {
+        r["id"]: (not sweep_clashes) and _grant_research(weekly_plan_id, r) for r in pending
+    }
+
     def _write(recipe):
-        return _write_one_pending_recipe(recipe, recipe.get("slot") or "dinner", shared, avoidances)
+        return _write_one_pending_recipe(recipe, recipe.get("slot") or "dinner", shared, avoidances,
+                                         research=may_search.get(recipe["id"], False),
+                                         weekly_plan_id=weekly_plan_id)
 
     # Each worker runs inside a COPY of THIS thread's context, taken here
     # on the calling thread (one copy per recipe — a Context can't be

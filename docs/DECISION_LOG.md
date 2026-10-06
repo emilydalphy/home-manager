@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Approve never waits on recipe web research** (2026-10-06; branch
+  `research-off-approve-2026-10-06`). A live approval sat 37 min while the
+  background pass researched (up to 558K input tokens a dish, snacks too). Now
+  only the background pass searches; an approval tells it to stop and write;
+  per-dish 60s wall clock, max 5 dishes a plan, 1 search + 2 reads, pages capped
+  at 3,000 tokens; no snacks/breakfasts/simple assemblies (all `RECIPE_RESEARCH_*` env).
+
 - **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
   2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap
   build re-picked only a lunch answered "cooked that day" in step 3 and only

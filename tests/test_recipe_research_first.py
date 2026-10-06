@@ -106,6 +106,14 @@ def _use_client(monkeypatch, client):
     return client
 
 
+def _launch_budget(monkeypatch):
+    """The budget research launched with (4 searches, 6 reads). The default
+    is 1 + 2 since 2026-10-06, which leaves the trusted-cooks fallback
+    nothing; these tests pin the fallback, so they tune it back up."""
+    monkeypatch.setenv("RECIPE_RESEARCH_SEARCHES", "4")
+    monkeypatch.setenv("RECIPE_RESEARCH_FETCHES", "6")
+
+
 A = "https://www.example-a.com/chana-masala/"
 B = "https://example-b.com/chana"
 C = "https://example-c.com/chole"
@@ -182,6 +190,7 @@ def test_research_is_per_household(monkeypatch):
 
 
 def test_nothing_well_rated_falls_back_to_the_trusted_cooks_for_the_cuisine(monkeypatch):
+    _launch_budget(monkeypatch)
     swasthi = "https://www.indianhealthyrecipes.com/chana-masala/"
     hebbar = "https://hebbarskitchen.com/chana-masala/"
     client = _use_client(monkeypatch, _FakeClient([
@@ -364,6 +373,7 @@ def test_the_per_dish_budget_holds_across_continuations_and_the_fallback(monkeyp
     """Two searches and two fetches spent in the open pass (one paused round
     and one more) leave the fallback only what the dish has left, and a
     pass never runs more than _RESEARCH_MAX_ROUNDS rounds."""
+    _launch_budget(monkeypatch)
     two_fetches = _fetched([A, B], prefix="x")
     client = _use_client(monkeypatch, _FakeClient([
         (_search([A], "s1") + _search([B], "s2"), "pause_turn"),
@@ -378,8 +388,8 @@ def test_the_per_dish_budget_holds_across_continuations_and_the_fallback(monkeyp
     # round is offered no search at all.
     assert "web_search" not in {t.get("name") for t in client.calls[1]["tools"]}
     fallback_tools = {t["name"]: t for t in client.calls[2]["tools"] if "max_uses" in t}
-    assert fallback_tools["web_search"]["max_uses"] == agent.DISH_RESEARCH_BUDGET["web_search"] - 2
-    assert fallback_tools["web_fetch"]["max_uses"] == agent.DISH_RESEARCH_BUDGET["web_fetch"] - 2
+    assert fallback_tools["web_search"]["max_uses"] == agent._dish_research_budget()["web_search"] - 2
+    assert fallback_tools["web_fetch"]["max_uses"] == agent._dish_research_budget()["web_fetch"] - 2
 
 
 def test_reported_sources_with_no_result_urls_are_logged_loudly(monkeypatch, caplog):
