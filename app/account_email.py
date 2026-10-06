@@ -13,10 +13,15 @@ untouched — this module never reads, reveals or resets one.
 What makes a 6-digit code safe enough (the card's rules, each one here):
 
   * a code works once, for ten minutes (CODE_TTL_SECONDS);
-  * five tries and it is dead (MAX_ATTEMPTS) — asking for a new one also
-    retires the old, so tries cannot be stacked across codes. With five
-    codes an hour (the per-address limit in app/ratelimit.py) that is 25
-    guesses an hour at a 1-in-a-million code;
+  * five tries and it is dead (MAX_ATTEMPTS). Asking for a new one retires
+    the older ones asked for from the SAME place (`ip_key`) — never ones
+    asked for from elsewhere, or a stranger asking for codes for your
+    address would cancel the one in your inbox (review, 2026-10-06). So an
+    address can have a few live codes at once, and a guess is compared
+    against each and costs a try on each: the guesses an address can take
+    are bounded by codes x tries, and codes per address are capped at
+    EMAIL_CODES_PER_ADDRESS_HOUR in app/ratelimit.py (20 x 5 = 100 an hour
+    against a 1-in-a-million code);
   * the code is never stored: only an HMAC of it under SESSION_SECRET, and
     the address is stored as an HMAC too (`email_key`), so the codes table
     names nobody. The code is never logged in production (see
@@ -178,6 +183,44 @@ def _deliver(msg: EmailMessage) -> None:
 # ---------- Codes ----------
 
 
+def ip_key(caller: str) -> str:
+    """Where a code was asked for from, as the table stores it: an HMAC."""
+    return hmac.new(_secret(), b"ip." + (caller or "").encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def _send(to: str, msg: EmailMessage, mode: str, what: str) -> bool:
+    if mode == "log":
+        # Local development only — see delivery_mode. Never reached on a
+        # deployed server.
+        logger.warning("DEV ONLY (no SMTP): %s for %s:\n%s", what, to, msg.get_content())
+        return True
+    try:
+        _deliver(msg)
+        return True
+    except Exception as exc:  # a mail server being down is not a 500
+        logger.warning("Sending %s failed (%s)", what, type(exc).__name__)
+        return False
+
+
+def send_notice(email: str, body: str, mode: str | None = None) -> bool:
+    """
+    A plain email that is NOT a code: "your sign-in email was changed",
+    "someone tried to use this address". Sent through the same door as a
+    code, so a request that ends in a notice costs the same as one that
+    ends in a code and the two can't be told apart by how long they take.
+    """
+    mode = mode or delivery_mode()
+    if mode == "off":
+        return False
+    e = normalize(email)
+    msg = EmailMessage()
+    msg["Subject"] = "About your Pomona sign-in"
+    msg["From"] = _env("SMTP_FROM") or _env("SMTP_USER")
+    msg["To"] = e
+    msg.set_content(body)
+    return _send(e, msg, mode, "a sign-in notice")
+
+
 def _new_code() -> str:
     return f"{secrets.randbelow(10 ** CODE_DIGITS):0{CODE_DIGITS}d}"
 
@@ -189,9 +232,11 @@ def issue_code(
     household_id: int | None = None,
     member_id: int | None = None,
     mode: str | None = None,
+    caller: str = "",
 ) -> bool:
     """
-    Make a code for this address, retire any older one, and send it.
+    Make a code for this address, retire any older one asked for from the
+    same place (`caller`), and send it.
     True if a code went out (or, in 'log' mode, was written to the log).
 
     Never raises for a delivery failure: the caller says the same thing
@@ -202,6 +247,7 @@ def issue_code(
         return False
     e = normalize(email)
     key = email_key(e)
+    where = ip_key(caller)
     code = _new_code()
     salt = secrets.token_hex(8)
     now = int(time.time())
@@ -211,13 +257,13 @@ def issue_code(
         # rows of HMACs, but there is no reason to keep them.
         conn.execute("DELETE FROM email_codes WHERE expires_at < ?", (now - 24 * 3600,))
         conn.execute(
-            "UPDATE email_codes SET used_at = ? WHERE email_key = ? AND purpose = ? AND used_at IS NULL",
-            (now, key, purpose),
+            "UPDATE email_codes SET used_at = ? WHERE email_key = ? AND purpose = ? AND ip_key = ? AND used_at IS NULL",
+            (now, key, purpose, where),
         )
         conn.execute(
-            "INSERT INTO email_codes (email_key, purpose, household_id, member_id, code_hash, expires_at) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
-            (key, purpose, household_id, member_id, f"{salt}${_code_hash(salt, code)}", now + CODE_TTL_SECONDS),
+            "INSERT INTO email_codes (email_key, purpose, household_id, member_id, code_hash, ip_key, expires_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (key, purpose, household_id, member_id, f"{salt}${_code_hash(salt, code)}", where, now + CODE_TTL_SECONDS),
         )
         conn.commit()
     finally:
@@ -227,12 +273,7 @@ def issue_code(
         # deployed server.
         logger.warning("DEV ONLY (no SMTP): the Pomona code for %s is %s", e, code)
         return True
-    try:
-        _deliver(build_message(e, code))
-        return True
-    except Exception as exc:  # a mail server being down is not a 500
-        logger.warning("Sending a sign-in code failed (%s)", type(exc).__name__)
-        return False
+    return _send(e, build_message(e, code), mode, "a sign-in code")
 
 
 def check_code(
@@ -244,13 +285,15 @@ def check_code(
     member_id: int | None = None,
 ) -> bool:
     """
-    Spend a code. True exactly once, for the newest live code for this
-    address (and, for a 'change' code, this household and adult).
+    Spend a code. True exactly once, for a live code for this address (and,
+    for a 'change' code, this household and adult).
 
-    Every try is counted BEFORE the code is compared, in one UPDATE that
-    only succeeds while the code is live and has tries left — so two
-    guesses racing each other cannot both slip in under the limit, and a
-    right code on the sixth try is refused like a wrong one.
+    There can be more than one live code — one per place it was asked for
+    from (see issue_code) — so the guess is compared against each, and
+    costs a try on EACH before it is compared: one UPDATE per code that only
+    succeeds while that code is live and has tries left. Two guesses racing
+    cannot both slip in under the limit, and a right code on its sixth try
+    is refused like a wrong one.
     """
     code = re.sub(r"\s", "", code or "")
     if not re.fullmatch(rf"\d{{{CODE_DIGITS}}}", code):
@@ -269,25 +312,25 @@ def check_code(
         if purpose == CHANGE:
             sql += " AND household_id = ? AND member_id = ?"
             args += [int(household_id or 0), int(member_id or 0)]
-        row = conn.execute(sql + " ORDER BY id DESC LIMIT 1", args).fetchone()
-        if row is None:
-            return False
-        claimed = conn.execute(
-            "UPDATE email_codes SET attempts = attempts + 1 "
-            "WHERE id = ? AND used_at IS NULL AND expires_at > ? AND attempts < ?",
-            (row["id"], now, MAX_ATTEMPTS),
-        ).rowcount
-        conn.commit()
-        if not claimed:
-            return False
-        salt, _, stored = row["code_hash"].partition("$")
-        if not code or not hmac.compare_digest(stored, _code_hash(salt, code)):
-            return False
-        spent = conn.execute(
-            "UPDATE email_codes SET used_at = ? WHERE id = ? AND used_at IS NULL", (now, row["id"])
-        ).rowcount
-        conn.commit()
-        return spent == 1
+        rows = conn.execute(sql + " ORDER BY id DESC", args).fetchall()
+        for row in rows:
+            claimed = conn.execute(
+                "UPDATE email_codes SET attempts = attempts + 1 "
+                "WHERE id = ? AND used_at IS NULL AND expires_at > ? AND attempts < ?",
+                (row["id"], now, MAX_ATTEMPTS),
+            ).rowcount
+            conn.commit()
+            if not claimed:
+                continue
+            salt, _, stored = row["code_hash"].partition("$")
+            if not code or not hmac.compare_digest(stored, _code_hash(salt, code)):
+                continue
+            spent = conn.execute(
+                "UPDATE email_codes SET used_at = ? WHERE id = ? AND used_at IS NULL", (now, row["id"])
+            ).rowcount
+            conn.commit()
+            return spent == 1
+        return False
     finally:
         conn.close()
 
@@ -326,15 +369,20 @@ def lookup(email: str) -> tuple[int, int | None] | None:
 
 
 def in_use(email: str) -> bool:
-    e = normalize(email)
-    conn = get_conn()
-    try:
-        return bool(
-            conn.execute("SELECT 1 FROM member_emails WHERE email = ?", (e,)).fetchone()
-            or conn.execute("SELECT 1 FROM signup_emails WHERE email = ?", (e,)).fetchone()
-        )
-    finally:
-        conn.close()
+    """Does this address sign in somewhere? A row naming somebody who is no
+    longer an adult there does not count (lookup's own rule)."""
+    return lookup(email) is not None
+
+
+def _release_stale(conn, email: str) -> None:
+    """Forget this address where it names somebody who is no longer an adult
+    of that household — see create_household_for for why."""
+    conn.execute(
+        f"DELETE FROM member_emails WHERE email = ? AND NOT EXISTS ("
+        f"SELECT 1 FROM members WHERE members.id = member_emails.member_id "
+        f"AND members.household_id = member_emails.household_id AND {_ADULT_SQL})",
+        (email,),
+    )
 
 
 def create_household_for(email: str) -> int:
@@ -347,6 +395,13 @@ def create_household_for(email: str) -> int:
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
+        # An address still filed against somebody who is no longer an adult
+        # of that household (made a child, or the row outlived them) opens
+        # nothing — lookup() already says so — and left here it would make
+        # this address a dead end for ever: every verify would burn a good
+        # code and then refuse (review, 2026-10-06). It is released, and the
+        # address starts afresh like any new one.
+        _release_stale(conn, e)
         # Re-checked inside the write lock: two verifies racing for one new
         # address must not make two households.
         if conn.execute("SELECT 1 FROM signup_emails WHERE email = ?", (e,)).fetchone() or conn.execute(
@@ -421,6 +476,7 @@ def set_member_email(household_id: int, member_id: int, email: str) -> str:
         ).fetchone():
             conn.rollback()
             raise EmailCodeError("Only an adult in the household can sign in with an email.")
+        _release_stale(conn, e)
         taken = conn.execute("SELECT member_id FROM member_emails WHERE email = ?", (e,)).fetchone()
         if (taken and int(taken["member_id"]) != mid) or conn.execute(
             "SELECT 1 FROM signup_emails WHERE email = ? AND household_id != ?", (e, hid)

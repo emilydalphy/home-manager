@@ -37,10 +37,20 @@ why*, not duplicating the diff.
   onboarding's save moves the address to the main person (`member_emails`,
   member_id NOT NULL so leaving the household deletes it) and pins the
   device to them. Codes: HMAC'd under SESSION_SECRET (address HMAC'd too),
-  10 min, once, 5 tries counted BEFORE comparing (one guarded UPDATE), a
-  new code retires the old. Limits: 5/address/h (over it: nothing sent,
-  same 200 — a 429 would leak that the address was asked about), 20/IP/h
-  (429), checks 10/5min per IP. `agreed` is required of everyone, before
+  10 min, once, 5 tries counted BEFORE comparing (one guarded UPDATE per
+  live code). A new code retires only older ones asked for from the SAME
+  IP (`ip_key`), so a stranger can't cancel the code in your inbox; a guess
+  is checked against every live code and costs a try on each. Limits:
+  5/h per (address, IP) under a 20/h per-address ceiling (over either:
+  nothing sent, same 200 — a 429 would leak that the address was asked
+  about), 20/IP/h (429), checks 10/5min per IP. Changing an EXISTING
+  address needs a code to the current one too (`current_code`), and the
+  old address is told after: "Who's this?" is trusted per device, so
+  without it any session could pick another adult and take their sign-in
+  (independent review, 2026-10-06). A change to an address already in use
+  sends that address a notice instead of a code — same work, so timing
+  can't tell them apart. An address left on someone no longer an adult is
+  released (`_release_stale`) rather than 409ing for ever. `agreed` is required of everyone, before
   the code is looked at, so it can't hint whether an address is known.
   Delivery: SMTP_* (same as feedback emails) → email; else any sign of
   production (HOME_MANAGER_PASSWORD or RAILWAY_*) → 503 "isn't switched on

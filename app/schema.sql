@@ -1673,7 +1673,10 @@ CREATE TABLE IF NOT EXISTS signup_emails (
 -- code_hash is an HMAC of it under SESSION_SECRET — and neither is the
 -- address: email_key is an HMAC of the address, so this table names nobody.
 -- A code works once (used_at), for ten minutes (expires_at, unix seconds),
--- and for five tries (attempts); asking for a new one retires the old.
+-- and for five tries (attempts). Asking for a new one retires the old ones
+-- asked for FROM THE SAME PLACE only (ip_key, an HMAC of the caller's
+-- address): a stranger asking for codes for your email must not be able to
+-- cancel the one sitting in your inbox.
 -- purpose 'signin' (the sign-in screen) or 'change' (Settings, adding or
 -- changing an adult's email — household_id and member_id say whose).
 CREATE TABLE IF NOT EXISTS email_codes (
@@ -1683,6 +1686,7 @@ CREATE TABLE IF NOT EXISTS email_codes (
     household_id INTEGER REFERENCES households(id),
     member_id INTEGER REFERENCES members(id),
     code_hash TEXT NOT NULL,
+    ip_key TEXT NOT NULL DEFAULT '',
     attempts INTEGER NOT NULL DEFAULT 0,
     expires_at INTEGER NOT NULL,
     used_at INTEGER,
