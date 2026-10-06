@@ -8610,6 +8610,9 @@ def health_report(request: Request, days: int = 1):
 
     WHAT IT DELIBERATELY DOES NOT RETURN: anything a person typed.
     _collect_from_db returns a COUNT of waiting feedback, never its text.
+    The one exception is Emily's call (2026-10-05): the household's "Tell
+    Pomona what to change" requests, word for word, which the report prints
+    under its untrusted-text fence — see observability_report.py.
     That boundary is the same one observability_report.py's own docstring
     draws, and for the same reason — this output is read into an agent's
     context under an instruction to act on it, so free text from an

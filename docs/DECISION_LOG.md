@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — The default morning report lists every recipe change
+  request word for word. Branch `overnight/report-recipe-requests`, NOT
+  merged at the time of writing.** Emily, 2026-10-05: "A — show every request
+  word for word." `observability_report.py` ends with "Recipe change requests
+  (last N days)": one line each (household · person · dish · "text" · when ·
+  kept/undone), grouped by theme, under the untrusted-text fence; "No recipe
+  change requests." when empty. Her call overrides the 2026-09-08 count-only
+  rule for these requests only — `/api/health-report` now carries them
+  (feedback stays a count). `--recipe-changes` unchanged.
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop
