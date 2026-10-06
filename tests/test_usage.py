@@ -497,6 +497,11 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # reading first. See agent.read_setup_note_llm and
         # /api/onboarding/read-note.
         "read_setup_note_llm",
+        # Research first, then write (2026-10-06): one web-search call per
+        # dish this household has never had written, before it is written
+        # (twice when the open search finds nothing well rated and the
+        # trusted cooks are searched). See agent.research_dish_llm.
+        "research_dish_llm",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added

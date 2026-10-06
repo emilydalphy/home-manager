@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Recipes people trust, slice 2: research first, then write.
+  Branch `overnight/recipe-research-first` (from b880ba1), NOT merged at the
+  time of writing.** Before a new dish is written, `agent.research_dish` runs
+  one web search+fetch call (`research_dish_llm`, label in the report) and
+  the writer gets `spec.research` (lead, others, what they agree/differ on —
+  no URLs). Code decides, not the model: only URLs seen in a search/fetch
+  result and not refused are kept; lead = top rating, then most ratings,
+  20+ ratings to lead; nothing well rated → second search limited to
+  `recipe_research.TRUSTED_COOKS` for the cuisine. Saved per household in
+  `dish_research` + `recipe_sources` and reused (no repeat research). Writer
+  also returns `household_changes` (recipes.household_changes_json) and gets
+  `children_at_table`. `/api/recipes/{id}` serves `research` +
+  `household_changes` for the recipe page (slice 1, Builder B). Links
+  rechecked lazily (30 days); 404/410 hides one, 403 doesn't.
+  `RECIPE_RESEARCH=off` switches it off; conftest sets it off for the suite.
+  Amounts check and night-before step were already there and are reused.
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop

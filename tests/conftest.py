@@ -15,6 +15,11 @@ os.environ["DB_PATH"] = _TMP_DB
 os.environ["HOME_MANAGER_PASSWORD"] = "test-password"
 os.environ["SESSION_SECRET"] = "test-session-secret"
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key-not-used")
+# Research-first recipe writing (agent.research_dish, 2026-10-06) reaches
+# for the web before a new recipe is written. Off for the suite: thousands of
+# tests drive a fake client with a canned sequence of answers, and a research
+# call would quietly eat one. tests/test_recipe_research_first.py turns it on.
+os.environ.setdefault("RECIPE_RESEARCH", "off")
 # The daily backup loop is real behaviour, not test behaviour — tests that
 # want it exercise app.backup directly (see test_backup.py).
 os.environ["DISABLE_BACKUPS"] = "1"
@@ -93,6 +98,8 @@ _TABLES = [
     # the next PRAGMA foreign_key_check in the session fails — which is
     # exactly how this line came to be written.
     "recipe_change_requests",
+    # Research-first writing (2026-10-06): sources reference their research.
+    "recipe_sources", "dish_research",
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
     "chat_turns", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
     "calendar_feeds", "staple_events", "staples", "morning_text_sends",
