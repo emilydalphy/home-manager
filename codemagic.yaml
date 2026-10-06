@@ -1,0 +1,63 @@
+# Pomona's iPhone app, built in the cloud and sent to TestFlight.
+#
+# Codemagic reads this file from the repo. It holds NO secrets: Apple's
+# sign-in is the App Store Connect API key Emily adds once in Codemagic
+# (Team settings > Integrations > Developer Portal), referenced below by
+# its NAME only. Signing certificates and profiles are made and kept by
+# Codemagic from that key. See ios-app/README.md, "Day one with the Apple
+# account", for exactly what to click.
+#
+# Started by hand (Start new build) — never on every push: the iPhone app
+# only needs a new build when something in ios-app/ changes; a change to
+# the website reaches the app with no build at all.
+
+workflows:
+  ios-testflight:
+    name: iPhone app to TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      # The name Emily gives the API key in Codemagic. If she types a
+      # different name there, change this one line to match.
+      app_store_connect: Pomona App Store Connect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.pomona.app
+      node: 22
+      xcode: latest
+      vars:
+        APP_DIR: ios-app
+        XCODE_PROJECT: ios-app/ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+    scripts:
+      - name: Install the app's packages
+        working_directory: ios-app
+        script: npm ci
+      - name: Check the settings agree and copy the app into the iOS project
+        # scripts/prepare-www.mjs: the address, the version, push, and the
+        # privacy manifest. Stops the build with a plain message if not.
+        working_directory: ios-app
+        script: npm run sync
+      - name: Use the signing profiles Codemagic made
+        script: xcode-project use-profiles
+      - name: Build number
+        # The version people see (1.0.0) comes from ios-app/package.json and
+        # is already in the Xcode project — npm run sync checks they match.
+        # The build number has to go up on every upload to Apple, so it is
+        # Codemagic's own counter for this workflow.
+        script: |
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/" "$XCODE_PROJECT/project.pbxproj"
+          echo "Building $(node -p "require('./$APP_DIR/package.json').version") ($BUILD_NUMBER)"
+      - name: Build the app
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

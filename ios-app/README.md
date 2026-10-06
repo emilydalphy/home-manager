@@ -31,8 +31,9 @@ It uses Capacitor 8 (the tool that wraps a website in a real iOS app).
 
 ## How a build happens
 
-Emily's Mac has no Xcode, so builds happen in the cloud (see the Loop Board
-card "App Store: build + TestFlight"). The builder runs, from this folder:
+Emily's Mac has no Xcode, so builds happen in the cloud, on Codemagic
+(`codemagic.yaml`; see "Day one with the Apple account" below). The
+builder runs, from this folder:
 
 ```
 npm ci
@@ -42,6 +43,57 @@ npm run sync        # checks the settings, copies www/ into the iOS project
 
 `npm run sync` must run before every build: the iOS project's copy of the
 settings and of `www/` is generated, not stored in git.
+
+The cloud builder is **Codemagic**, set up by `codemagic.yaml` at the top
+of the repo. It is started by hand, so nothing builds until you ask.
+
+## Day one with the Apple account
+
+Everything below is signing in and pasting; nothing needs Xcode or a Mac.
+Two steps at a time, so you can stop between any pair.
+
+**1 and 2 — Apple.**
+1. Join the Apple Developer Program at developer.apple.com/programs
+   (US$99 a year; Apple can take a day or two to approve it).
+2. In developer.apple.com > Certificates, Identifiers & Profiles >
+   Identifiers, add an App ID: "Pomona", Bundle ID **explicit**
+   `com.pomona.app`, and tick **Push Notifications**. (If Apple says the id
+   is taken, pick another, e.g. `com.yourname.pomona`, and tell Claude: it
+   is written in `capacitor.config.json`, the Xcode project and
+   `codemagic.yaml`.)
+
+**3 and 4 — the app's page and the key.**
+3. In appstoreconnect.apple.com > Apps > **+** > New App: iOS, name
+   "Pomona", language English, Bundle ID `com.pomona.app`, SKU `pomona`.
+4. In App Store Connect > Users and Access > Integrations > App Store
+   Connect API, make a **Team key** with the **App Manager** role. Download
+   the `.p8` file (Apple lets you download it once) and copy the **Issuer
+   ID** and **Key ID** shown on that page.
+
+**5 and 6 — Codemagic.**
+5. Sign in at codemagic.io with GitHub and add this repository.
+6. In Codemagic > Team settings > Integrations > Developer Portal >
+   Connect: paste the Issuer ID and Key ID, upload the `.p8`, and name it
+   exactly **Pomona App Store Connect** (that name is what
+   `codemagic.yaml` looks for).
+
+**7 and 8 — the first build and testers.**
+7. In Codemagic, open the app, choose the workflow "iPhone app to
+   TestFlight", branch `main`, and Start new build. About 15-25 minutes.
+   Codemagic makes the signing certificate itself from the key.
+8. When it's green, App Store Connect > TestFlight shows the build
+   (Apple takes a few more minutes to "process" it). Add yourself under
+   Internal Testing, install the TestFlight app on your iPhone, and open
+   Pomona from it.
+
+**9 — push notifications.** In developer.apple.com > Keys, make a key with
+**Apple Push Notifications service (APNs)** ticked, download its `.p8`,
+and in Railway set `APNS_KEY_ID`, `APNS_TEAM_ID` (your Team ID, top right
+of the developer site), `APNS_KEY_P8` (the whole text of the file) and
+`APNS_TOPIC` = `com.pomona.app`. Until then the morning note goes by text.
+
+Keys and `.p8` files go into Codemagic and Railway only, never into the
+repo or a chat.
 
 ## Things worth knowing
 
