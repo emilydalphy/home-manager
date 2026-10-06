@@ -783,6 +783,26 @@ def get_recipe_by_id(recipe_id: int) -> dict | None:
     return None
 
 
+# The amount in brackets after a MEASURE is the same amount said another
+# way — "2 cups (480 ml)" — and moves with it when the servings stepper
+# does (Loop Board "Recipes people trust", slice 3, 2026-10-06: "rescales
+# every ingredient amount, including the amounts in brackets"). After
+# anything else — "1 can (400 g)", "1 stick (113 g)", "1 head (2 lbs)" —
+# the bracket is the size of ONE of them, and two cans are still 400 g
+# each. _parse_quantity carries either as a "(size)" suffix on the unit.
+_MEASURE_UNITS = frozenset(
+    u for group in _quantities._UNIT_CONVERSION_GROUPS for u in group
+)
+
+
+def _scaled_qty_text(scaled: float, unit: str | None, ratio: float) -> str:
+    head, size = _quantities._split_package_size(unit)
+    if size and head in _MEASURE_UNITS:
+        restated = scale_steps([size.strip()], ratio)[0]
+        return _quantities._format_quantity(scaled, head) + " " + restated
+    return _quantities._format_quantity(scaled, unit)
+
+
 def scale_recipe(recipe_name: str, target_servings: int) -> dict:
     """
     Scale a saved recipe's ingredient quantities from its default_servings
@@ -826,7 +846,7 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
                 # Same rounding cooking_quantity applies, so the two agree
                 # about a thing that only comes whole.
                 scaled = max(1.0, round(scaled))
-            scaled_ingredients.append({**ing, "qty": _quantities._format_quantity(scaled, unit)})
+            scaled_ingredients.append({**ing, "qty": _scaled_qty_text(scaled, unit, ratio)})
         else:
             scaled_ingredients.append(dict(ing))
             if (ing.get("qty") or "").strip():

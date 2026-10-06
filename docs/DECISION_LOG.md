@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Recipes people trust, slice 3 (server): the stepper moves
+  bracketed amounts. Branch `overnight/recipe-servings-steps` (from
+  `overnight/recipe-research-first`), NOT merged at the time of writing.**
+  `scale_recipe` scales a bracket after a measure ("2 cups (480 ml)" → "4
+  cups (960 ml)") and keeps one after a container ("2 cans (400 g)" — the
+  size of one can). The steps already scaled brackets (`scale_steps`);
+  `/api/recipes/scale` returns both, which the recipe page's stepper reads.
+
 - **2026-10-06 — Recipes people trust, slice 2: research first, then write.
   Branch `overnight/recipe-research-first` (from b880ba1), NOT merged at the
   time of writing.** Before a new dish is written, `agent.research_dish` runs
