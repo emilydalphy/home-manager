@@ -69,6 +69,20 @@ why*, not duplicating the diff.
   build number = Codemagic's `$BUILD_NUMBER`. Manual, not on push: a
   website change reaches the app with no build. README: "Day one with the
   Apple account". Untested against a real Mac build — first run is the test.
+- **2026-10-06 — Isolation attack harness in the suite. Branch
+  `overnight/security-isolation-test`.** `tests/test_isolation_attack.py`:
+  household A seeded, then A's real ids READ BACK per table (never assumed
+  1-3: clean_state doesn't reset sqlite_sequence, so in a full run they are
+  far higher, and the first cut aimed at 1-3 and missed a planted leak —
+  caught on review); household B signed in drives every route in
+  `app.routes` (bodies and params built from each route's own declared
+  models) with each of A's ids, then A's names; no
+  response may carry A's private text, name or share tokens, and no row A
+  owned may change. Self-ending routes (reset, remove-me, leave, delete)
+  run last. Zero leaks, zero damage on main; all three mutations tried (an
+  unscoped grocery delete, a recipe read and a grocery add pinned to
+  household 1) go red.
+  pip-audit on requirements.txt and requirements-dev.txt: clean.
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
