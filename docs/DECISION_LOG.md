@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — App Store listing drafts. Branch
+  `overnight/app-store-listing-drafts`.** `docs/APP_STORE_LISTING.md`:
+  name, subtitle, promo text, description, keywords, URLs, privacy-label
+  answers (matching the privacy manifest), age-rating answers, review
+  notes and a pricing decision page; screenshots at 6.9" and 6.7" in
+  `ios-app/store/screenshots/` from the demo household on a throwaway DB.
+  **"Pomona" alone is taken on the App Store** (a news app), so the store
+  name needs a second part. No in-app purchase code exists, so a paid
+  launch needs a StoreKit build first. Nothing submitted.
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop
