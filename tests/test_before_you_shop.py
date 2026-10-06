@@ -542,3 +542,67 @@ console.log(JSON.stringify({ spicesDock: spicesDock, first: stepTitle() }));
 """)
     assert "Sort the list" in out["spicesDock"]
     assert out["first"] == "Step zero"
+
+
+# ---------- one shop or none: the pass without the sort (2026-10-06) ----------
+#
+# Loop Board "Shop: one-store households get Before you shop too". The pass
+# is also the inventory check, so a household with one shop (or "One list is
+# fine") is offered it whenever it has something to ask, and it ends on Done
+# — back to the list — instead of the sort they never need.
+
+def _one_shop(shops: str) -> str:
+    return f"""
+function readyOneShop(payload) {{
+  const data = setUp(5, [], {shops});
+  data.beforeShop = {{ done: false, weekly_plan_id: 7 }};
+  groceryState.bsData = payload || bsPayload();
+  return data;
+}}
+"""
+
+
+@needs_node
+@pytest.mark.parametrize("shops", ["['Costco']", "[]"])
+def test_a_one_shop_household_with_something_to_ask_is_offered_the_pass(shops):
+    """CATCH — red on main, where the dock needed something unsorted."""
+    out = _screen(_one_shop(shops) + """
+readyOneShop();
+console.log(JSON.stringify({ dock: dockOf(), unsorted: groUnsorted(groceryState.data).length }));
+""")
+    assert out["unsorted"] == 0
+    assert 'data-gro="goto-beforeshop"' in out["dock"] and "Before you shop" in out["dock"]
+    assert "goto-sort" not in out["dock"]
+
+
+@needs_node
+def test_a_one_shop_household_with_nothing_to_ask_sees_no_button():
+    out = _screen(_one_shop("['Costco']") + """
+const p = bsPayload(); p.regulars.choices = []; p.spices.choices = []; p.have.rows = [];
+readyOneShop(p);
+const nothing = dockOf();
+groceryState.bsData = bsPayload();
+groceryState.data.beforeShop.done = true;
+console.log(JSON.stringify({ nothing: nothing, done: dockOf() }));
+""")
+    for dock in (out["nothing"], out["done"]):
+        assert "goto-beforeshop" not in dock and "goto-sort" not in dock
+
+
+@needs_node
+def test_for_one_shop_the_pass_ends_on_done_back_to_the_list_and_is_stamped():
+    out = _screen(_one_shop("['Costco']") + """
+readyOneShop();
+clickIfRendered({ gro: 'goto-beforeshop' });
+clickIfRendered({ gro: 'bs-next' });
+clickIfRendered({ gro: 'bs-next' });
+const lastDock = dockOf();
+clickIfRendered({ gro: 'bs-next' });
+settle(function () {
+  console.log(JSON.stringify({ lastDock: lastDock, step: groceryState.step,
+    urls: POSTS.map(function (p) { return p.url; }) }));
+});
+""")
+    assert ">Done<" in out["lastDock"] and "Sort the list" not in out["lastDock"]
+    assert out["step"] == "list"
+    assert out["urls"] == ["/api/grocery-list/before-shop-done"]
