@@ -69,6 +69,11 @@ def get_shared_weekly_plan(token: str) -> dict | None:
         return None
     with use_household(row["household_id"]):
         plan = _weekly_plan.get_weekly_plan()
+    # A lunch's packing lines name each person and their needs (a child's
+    # "nut-free", Onboarding regrouped slice 3) — household detail, not
+    # meal-plan data, so the public link never carries them.
+    for meal in plan.get("meals") or []:
+        meal.pop("packed_as", None)
     plan["household_name"] = household["name"] if household else ""
     return plan
 

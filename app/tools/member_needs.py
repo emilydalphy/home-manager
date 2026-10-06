@@ -380,55 +380,6 @@ def lunch_packing(dates: list[str]) -> dict[str, list[dict]]:
     return out
 
 
-def snack_table(conn=None) -> float | None:
-    """
-    How many full plates each of a day's snacks feeds, from each person's
-    snacks a day — None when nobody has said (the household's whole table,
-    as before).
-
-    The day's snacks are N dishes (the household's snacks a day, which
-    setup sets to the most anyone has). Someone with fewer than N doesn't
-    eat every one, so each snack feeds the AVERAGE snack table: the day's
-    snack plates (each person's portion × their count, capped at N) over N.
-    Two adults at one each and a six-year-old at two, N = 2: (1 + 1 +
-    0.75 × 2) / 2 = 1.75 plates a snack, where the whole table is 2.75. Per
-    day rather than per snack on purpose: which of a day's snacks is "the
-    second one" is an accident of row order, and a swap would reshuffle it.
-
-    `conn` is the grocery ingest's own connection (see attendance.
-    get_slot_attendance) — read on it, never closed.
-    """
-    from .household import portion_weight
-    from .preferences import resolve_snacks_per_day
-    own = conn is None
-    if own:
-        conn = get_conn()
-    try:
-        rows = conn.execute(
-            f"SELECT age_group, age_years, snacks_per_day FROM members WHERE household_id = ? AND {IN_MEALS_SQL}",
-            (household_id(),),
-        ).fetchall()
-        if not any(r["snacks_per_day"] is not None for r in rows):
-            return None
-        prefs = conn.execute(
-            "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
-        ).fetchone()
-    finally:
-        if own:
-            conn.close()
-    per_day = resolve_snacks_per_day(dict(prefs) if prefs else {})
-    if per_day <= 0:
-        return None
-    plates = 0.0
-    for r in rows:
-        n = r["snacks_per_day"] if r["snacks_per_day"] is not None else default_snacks(r["age_group"])
-        plates += portion_weight(r["age_group"], r["age_years"]) * min(int(n), per_day)
-    table = plates / per_day
-    # Everyone at 0 while the household still plans snacks (raised in chat
-    # since) would buy nothing for a snack that is on the plan — fall back.
-    return table if table > 0 else None
-
-
 def generation_context(dates: list[str]) -> dict:
     """
     What the week's generator is told about each person — only the keys

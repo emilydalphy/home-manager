@@ -316,10 +316,13 @@ def age_stage(age_group: str | None, age_years) -> str:
 
 # "A toddler gets toddler portions; a school-age child gets child portions"
 # (Onboarding regrouped, Emily 2026-10-05). How much of an adult's plate
-# each stage eats — what the shopping and the Cook screen's amounts are
-# sized by (attendance's `portions`). Teens and adults eat a full plate. An
-# infant only counts at all when the parents switched "Include in meals?"
-# on, and then for a taste of the table.
+# each stage eats. TOLD TO THE PLANNER ONLY (member_needs.generation_
+# context's `portions`) — the shopping and the Cook screen still count
+# heads (review, 2026-10-06): sizing the list by plates while cook mode,
+# leftover batches and freezer portions count heads made the Cook screen
+# ask for more than was bought. Sizing both by plates is a later slice.
+# Teens and adults eat a full plate; an infant only counts at all when the
+# parents switched "Include in meals?" on.
 PORTION_BY_STAGE = {"infant": 0.25, "toddler": 0.5, "child": 0.75}
 
 

@@ -127,58 +127,70 @@ def test_the_generator_is_told_each_person_s_needs(monkeypatch):
         "the model is told, not only checked afterwards"
 
 
-# ---------- portions from age ----------
+# ---------- the list and the Cook screen agree (review, 2026-10-06) ----------
 
 
-def _stew(week: int, servings: int = 3) -> None:
-    tools.add_recipe("Chicken stew", ingredients=[{"item": "Chicken thighs", "qty": "600 g", "category": "meat"}],
-                     default_servings=servings)
-    tools.plan_meal(_days()[0], "Chicken stew", slot="dinner", weekly_plan_id=week)
+def _cook_card(week: int, d: str, slot: str) -> dict:
+    return next(m for m in tools.get_cooker_view(week)["meals"] if m["date"] == d and m["slot"] == slot)
 
 
-def test_a_toddler_eats_a_toddler_portion(week):
+def test_a_toddler_s_shop_and_cook_screen_ask_for_the_same_amount(week):
+    """Review repro: 2 adults + a toddler (2) + a child (7), a recipe for 4
+    naming 800 g of chicken. Portions from age are told to the planner, but
+    the shop and the Cook screen both still count heads, so neither asks
+    for more than the other (it was 650 g bought, 800 g asked)."""
     tools.add_member("A")
     tools.add_member("B")
     _child("Mia", 2)
-    _stew(week)
+    _child("Arjun", 7)
+    tools.add_recipe("Chicken stew", ingredients=[{"item": "Chicken thighs", "qty": "800 g", "category": "meat"}],
+                     default_servings=4)
+    monday = _days()[0]
+    tools.plan_meal(monday, "Chicken stew", slot="dinner", weekly_plan_id=week)
     tools.approve_weekly_plan(week, approved_by="A")
-    assert _qty("Chicken thighs") == "500 g", "two adults and half a plate: 2.5 of the recipe's 3"
+
+    cook = _cook_card(week, monday, "dinner")
+    asked = next(i["qty"] for i in cook["ingredients"] if i["item"] == "Chicken thighs")
+    assert _qty("Chicken thighs") == "800 g"
+    assert asked.replace(" ", "") == "800g", asked
 
 
-def test_a_child_with_no_age_yet_is_still_a_full_plate(week):
-    tools.add_member("A")
-    tools.add_member("B")
-    _child("Mia", None)
-    _stew(week)
-    tools.approve_weekly_plan(week, approved_by="A")
-    assert _qty("Chicken thighs") == "600 g"
-
-
-# ---------- snacks per person ----------
-
-
-def _yogurt(week: int) -> None:
-    tools.add_recipe("Yogurt cup", ingredients=[{"item": "Greek yogurt", "qty": "100 g", "category": "dairy"}],
-                     default_servings=1)
-    tools.plan_meal(_days()[0], "Yogurt cup", slot="snack", weekly_plan_id=week)
-
-
-def test_each_snack_feeds_the_people_who_have_it(week):
-    """Two adults at one snack a day, a six-year-old at two, two snacks a
-    day: each snack feeds (1 + 1 + 0.75 x 2) / 2 = 1.75 plates, not 2.75."""
+def test_snacks_bought_are_the_snacks_the_cook_screen_makes(week):
     tools.add_member("A")
     tools.add_member("B")
     _child("Arjun", 6)
     tools.save_member_needs(snacks={"A": 1, "B": 1, "Arjun": 2})
-    _yogurt(week)
+    tools.add_recipe("Yogurt cup", ingredients=[{"item": "Greek yogurt", "qty": "100 g", "category": "dairy"}],
+                     default_servings=1)
+    monday = _days()[0]
+    tools.plan_meal(monday, "Yogurt cup", slot="snack", weekly_plan_id=week)
     tools.approve_weekly_plan(week, approved_by="A")
-    assert _qty("Greek yogurt") == "175 g"
+    asked = next(i["qty"] for i in _cook_card(week, monday, "snack")["ingredients"] if i["item"] == "Greek yogurt")
+    assert _qty("Greek yogurt").replace(" ", "") == asked.replace(" ", "") == "300g"
 
 
-def test_snacks_nobody_answered_still_feed_the_whole_table(week):
+# ---------- the household's snacks a day ----------
+
+
+def test_settings_snack_counts_move_the_household_number_to_the_most_anyone_has(signed_in):
     tools.add_member("A")
-    tools.add_member("B")
     _child("Arjun", 6)
-    _yogurt(week)
-    tools.approve_weekly_plan(week, approved_by="A")
-    assert _qty("Greek yogurt") == "275 g"
+    r = signed_in.post("/api/member-needs", json={"snacks": {"Arjun": 3}})
+    assert r.status_code == 200, r.text
+    assert tools.resolve_snacks_per_day() == 3
+    signed_in.post("/api/member-needs", json={"snacks": {"Arjun": 1, "A": 1}})
+    assert tools.resolve_snacks_per_day() == 1
+
+
+# ---------- the public share link ----------
+
+
+def test_the_share_link_carries_no_one_s_lunch_needs(week, client):
+    _gowthami_household()
+    tools.plan_meal(_days()[0], "Pasta salad", slot="lunch", weekly_plan_id=week)
+    assert any(m.get("packed_as") for m in tools.get_weekly_plan(week)["meals"])
+    token = tools.get_or_create_share_link()["token"]
+    assert token, "share link helper"
+    r = client.get(f"/api/share/{token}")
+    assert r.status_code == 200
+    assert "packed_as" not in r.text and "nut_free" not in r.text

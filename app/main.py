@@ -1496,9 +1496,15 @@ def save_member_needs(req: MemberNeedsRequest):
     """Save per-person lunch needs and/or snacks a day; 400 on anything
     invalid, before anything is written."""
     try:
-        return {"members": tools.save_member_needs(req.lunch_needs, req.snacks, source="settings")}
+        members = tools.save_member_needs(req.lunch_needs, req.snacks, source="settings")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # The household's snacks a day is the most anyone has (the card's rule,
+    # which onboarding's page applies itself): a changed count in Settings
+    # moves it too, or a child's new third snack would never be planned.
+    if req.snacks is not None and members:
+        tools.edit_preference("snacks_per_day", max(m["snacks_per_day"] for m in members))
+    return {"members": members}
 
 
 @app.get("/api/usual-week")

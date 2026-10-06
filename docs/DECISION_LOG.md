@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Slice 3 review fixes (branch `overnight/onboarding-planning`).**
+  SHOPPING BACK TO HEADS: sizing the list by plates (toddler 0.5, child 0.75)
+  and by per-person snack counts made the Cook screen ask for more than was
+  bought (cook view, leftover batches, freezer portions all count heads —
+  800 g asked vs 650 g bought). `attendance` is unchanged from the ages
+  branch and `snack_table` is gone; portions and snack counts are told to
+  the planner only. Plate-aware shop AND cook is a later slice. The public
+  share link strips `packed_as` (names + a child's needs). POST
+  /api/member-needs moves the household's snacks a day to the most anyone
+  has. The paragraph below is superseded where it says the list sizes by plates.
+
 - **2026-10-06 — Onboarding, regrouped, slice 3: planning reads the needs per
   person (branch `overnight/onboarding-planning`, from `overnight/onboarding-ages`).**
   Lunch stays ONE row per slot (one cook); each person's packing line
