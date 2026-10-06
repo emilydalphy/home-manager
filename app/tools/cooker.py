@@ -1751,6 +1751,12 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             "advance_prep_notes": recipe["advance_prep_notes"] if recipe else "",
             "advance_prep_step_indices": recipe["advance_prep_step_indices"] if recipe else [],
             "has_full_recipe": recipe is not None,
+            # The recipe's own id, so the recipe page can ask
+            # GET /api/recipes/{id} for what only the recipe knows — its
+            # sources and what was changed for this household (2026-10-06,
+            # "Recipes people trust", slice 1). None for a dish with no
+            # saved recipe.
+            "recipe_id": recipe.get("id") if recipe else None,
             # True while the menu pass's dish waits for the recipe pass (see
             # recipes.fill_recipe_details): a real recipe with nothing in it
             # yet, which the plan's copy of this screen says plainly and cook
@@ -1794,6 +1800,9 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
                     "present_count": len(slot_att["present_member_ids"]),
                     "guest_count": slot_att["guest_count"],
                     "absent_names": slot_att["absent_names"],
+                    # Who it's for, by name — the recipe page's band line
+                    # (2026-10-06): "Gowthami, Ravi and Arjun · serves 4".
+                    "present_names": slot_att.get("present_names") or [],
                     "everyone_home": slot_att["everyone_home"],
                 }
             except Exception:

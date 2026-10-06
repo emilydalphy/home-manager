@@ -196,6 +196,27 @@ why*, not duplicating the diff.
   remembered 14 days; only a FETCHED page can lead; the Cook screen's live
   fill never searches; a WARNING when sources come back but no result URL
   was read (the first live run's check on the web-tool result shape).
+- **2026-10-06 — The recipe page, slice 1 of "Recipes people trust" (branch
+  `overnight/recipe-page`, from b880ba1).** Cook's recipe screen
+  (`cookRecipeHtml`) is Emily's locked page: the dish, "who it's for · serves
+  N" (`recipeForLine`, from attendance `present_names`, now on the cooker
+  view), tabs Overview · Ingredients · Steps · Sources (`.wk-seg` reused),
+  credit line + See sources, "Changed for your household" folded to "N
+  changes ›", stepper, Time, night-before line; Ingredients a PLAIN list (no
+  tick — Emily: checking stays in Before you shop); Sources lead-first with
+  a Lead badge, stars · ratings, links open their site; dock Start cooking +
+  Change recipe (outline); ⋯ menu Save to my recipes (says where it is —
+  every recipe is already saved) · Add to shopping list (prefilled chat) ·
+  Rate this recipe (/api/recipe-feedback). `research` / `household_changes`
+  are read from GET /api/recipes/{id} (`recipe_id` now on each cooker meal;
+  Builder A's slice 2 adds the keys) and degrade to nothing / the old
+  citation when absent. Plan's Meal step is unchanged. Servings rescale of
+  bracketed and in-step amounts is slice 3.
+  Review fixes: a credit with no linkable source lists the credit on Sources
+  (never "no outside recipe"); a source without a working link is shown
+  unlinked, Lead badge kept; the cache is emptied by refreshKitchenPanel
+  (Change recipe, Undo, chat) and never keeps a failed read; the ⋯ menu
+  closes on an outside tap or Escape.
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
