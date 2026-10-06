@@ -43,6 +43,12 @@ why*, not duplicating the diff.
   rule. The chip guard does apply to dinners too: a dinner that is a chip's
   only answer is re-picked within the chip or stands over its cap.
 
+- **2026-10-06 — Cold packed lunches and protein variety are held on the draft.** New `tools/draft_rules.py`,
+  run after every lunch-writing pass in generation (agent.py, after the first-week fill). A weekday lunch for
+  someone who needs Cold packed (no warm container ticked) that reheats last night's dinner or reads as a hot
+  dish (`HOT_DISH_WORDS`, a short keyword list) is re-picked cold; one `main_protein` is cooked at most twice a
+  week across lunch + dinner (reheats not counted, asked-for-by-name and batch cooks never moved), reason "not X
+  again this week." Nut-free was already a hard avoidance (coordination.py:856). Batch-cook over the limit: Emily's.
 - **2026-10-06 — The first week's gap fill holds the household's time limits.** `usual_week.fill_first_plan_gaps`
   runs after `cap_enforce` on a FIRST plan only, and never measured a quick pick against the cap and called both
   repeat fills with no caps — so a new household's first draft could land a 55-min Tuesday against a 45 limit.
