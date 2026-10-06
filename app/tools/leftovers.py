@@ -458,6 +458,20 @@ def _when_phrase(cook_date: str, target_date: str, slot: str, today: str) -> str
     return f"{_weekday(target_date)}’s {meal}"
 
 
+# When the cook's OWN share is eaten, said by the meal it is — "3 tonight"
+# was wrong for a breakfast batch ("3 tonight, 3 for Thursday's breakfast",
+# walkthrough 2026-10-06): the line has to name when each half is eaten.
+# Only a cook night that is today gets a word of its own; any other day is
+# still named by its weekday, as before. Dinner stays "tonight".
+_COOK_TODAY_WORDS = {"breakfast": "this morning", "lunch": "at lunch"}
+
+
+def _cook_label(cook_date: str, slot: str | None, today: str) -> str:
+    if cook_date != today:
+        return _weekday(cook_date)
+    return _COOK_TODAY_WORDS.get(_slot_word(slot), "tonight")
+
+
 def _batch_parts(source: dict, batch: dict, today: str | None = None) -> dict | None:
     """
     The one read every batch sentence is built from, or None when there is
@@ -496,7 +510,8 @@ def _batch_parts(source: dict, batch: dict, today: str | None = None) -> dict | 
     return {
         "word": word,
         "cook_servings": cook,
-        "cook_label": "tonight" if cook_date == today else _weekday(cook_date),
+        "cook_label": _cook_label(cook_date, source.get("slot"), today),
+        "cook_today": cook_date == today,
         "targets": [
             {
                 "servings": int(t.get("eaters") or 0),
@@ -549,7 +564,7 @@ def batch_line(source: dict, batch: dict, today: str | None = None) -> str:
     # "3 tonight" reads as one clause; "3 Wednesday" does not, so a cook
     # night that is not today takes the same "for" the leftovers do. Found
     # by a test, not by reading it back.
-    first = (f"{parts['cook_servings']} tonight" if parts["cook_label"] == "tonight"
+    first = (f"{parts['cook_servings']} {parts['cook_label']}" if parts["cook_today"]
              else f"{parts['cook_servings']} for {parts['cook_label']}")
     clauses = [first] + [
         f"{t['servings']} for {t['when']}" for t in parts["targets"]

@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Double batch line names when the cook's own share is eaten** (walkthrough
+  2026-10-06; branch `list-recipes-batch-2026-10-06`). A breakfast batch said
+  "3 tonight, 3 for Thursday's breakfast". `leftovers._batch_parts` now takes
+  the cook's label from the cook entry's slot when it is cooked today: breakfast
+  "this morning", lunch "at lunch", dinner "tonight" (other days still by
+  weekday). Server-side only, no shell.js string. The freezer-only card shape
+  now carries its slot. Tests: `tests/test_double_batch_line.py`.
+
 - **Settings -> Recipes no longer counts dishes swapped out of the draft**
   (walkthrough 2026-10-06 "7 saved"; branch `list-recipes-batch-2026-10-06`).
   The draft generator writes a recipe row for every dish it picks, so ones
