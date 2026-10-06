@@ -5,7 +5,7 @@ food preferences, plus the onboarding answers that seed them.
 from __future__ import annotations
 
 import json
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import EATS_HERE_SQL, household_id
 from .grocery import _merge_key
 from . import household as _household
@@ -116,22 +116,21 @@ def add_food_dislikes(items: list[str]) -> dict:
     meal, even mid-conversation, so it's remembered going forward rather
     than just for the current chat. Merges with anything already saved.
     """
-    conn = get_conn()
-    existing = conn.execute(
-        "SELECT dislikes_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
-    ).fetchone()
-    current = json.loads(existing["dislikes_json"]) if existing else []
-    merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
-    conn.execute(
-        """
-        INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
-        VALUES (?, ?, datetime('now'))
-        ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
-        """,
-        (household_id(), json.dumps(merged)),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        existing = conn.execute(
+            "SELECT dislikes_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
+        current = json.loads(existing["dislikes_json"]) if existing else []
+        merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
+        conn.execute(
+            """
+            INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
+            """,
+            (household_id(), json.dumps(merged)),
+        )
+        conn.commit()
     _household._log_preference_event("dislikes", "write")
     return {"dislikes": merged}
 
@@ -144,22 +143,21 @@ def add_usual_stores(items: list[str]) -> dict:
     they usually shop, even mid-conversation. Merges with anything already
     saved rather than replacing it.
     """
-    conn = get_conn()
-    existing = conn.execute(
-        "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
-    ).fetchone()
-    current = json.loads(existing["usual_stores_json"]) if existing else []
-    merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
-    conn.execute(
-        """
-        INSERT INTO meal_preferences (household_id, usual_stores_json, updated_at)
-        VALUES (?, ?, datetime('now'))
-        ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, updated_at = datetime('now')
-        """,
-        (household_id(), json.dumps(merged)),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        existing = conn.execute(
+            "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
+        current = json.loads(existing["usual_stores_json"]) if existing else []
+        merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
+        conn.execute(
+            """
+            INSERT INTO meal_preferences (household_id, usual_stores_json, updated_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, updated_at = datetime('now')
+            """,
+            (household_id(), json.dumps(merged)),
+        )
+        conn.commit()
     _household._log_preference_event("usual_stores", "write")
     return {"usual_stores": merged}
 
@@ -173,17 +171,16 @@ def dismiss_stores_prompt() -> dict:
     Doesn't touch usual_stores itself, which stays empty; it only stops
     the card from asking again. See meal_preferences.stores_prompt_dismissed_at.
     """
-    conn = get_conn()
-    conn.execute(
-        """
-        INSERT INTO meal_preferences (household_id, stores_prompt_dismissed_at, updated_at)
-        VALUES (?, datetime('now'), datetime('now'))
-        ON CONFLICT(household_id) DO UPDATE SET stores_prompt_dismissed_at = excluded.stores_prompt_dismissed_at, updated_at = datetime('now')
-        """,
-        (household_id(),),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        conn.execute(
+            """
+            INSERT INTO meal_preferences (household_id, stores_prompt_dismissed_at, updated_at)
+            VALUES (?, datetime('now'), datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET stores_prompt_dismissed_at = excluded.stores_prompt_dismissed_at, updated_at = datetime('now')
+            """,
+            (household_id(),),
+        )
+        conn.commit()
     return {"dismissed": True}
 
 
@@ -220,31 +217,30 @@ def add_store_typical_items(
     sets it when it calls back in here, so a chat/grocery-triage write
     can't bounce back and forth with this function forever).
     """
-    conn = get_conn()
-    existing = conn.execute(
-        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
-    ).fetchone()
-    current = json.loads(existing["store_typical_items_json"]) if existing else {}
-    cleaned = [i.strip() for i in items if i.strip()]
-    store_items = list(dict.fromkeys(current.get(store, []) + cleaned))
-    current[store] = store_items
-    cleaned_keys = {_merge_key(i) for i in cleaned}
-    for other_store in list(current.keys()):
-        if other_store == store:
-            continue
-        filtered = [i for i in current[other_store] if _merge_key(i) not in cleaned_keys]
-        if filtered != current[other_store]:
-            current[other_store] = filtered
-    conn.execute(
-        """
-        INSERT INTO meal_preferences (household_id, store_typical_items_json, updated_at)
-        VALUES (?, ?, datetime('now'))
-        ON CONFLICT(household_id) DO UPDATE SET store_typical_items_json = excluded.store_typical_items_json, updated_at = datetime('now')
-        """,
-        (household_id(), json.dumps(current)),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        existing = conn.execute(
+            "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
+        current = json.loads(existing["store_typical_items_json"]) if existing else {}
+        cleaned = [i.strip() for i in items if i.strip()]
+        store_items = list(dict.fromkeys(current.get(store, []) + cleaned))
+        current[store] = store_items
+        cleaned_keys = {_merge_key(i) for i in cleaned}
+        for other_store in list(current.keys()):
+            if other_store == store:
+                continue
+            filtered = [i for i in current[other_store] if _merge_key(i) not in cleaned_keys]
+            if filtered != current[other_store]:
+                current[other_store] = filtered
+        conn.execute(
+            """
+            INSERT INTO meal_preferences (household_id, store_typical_items_json, updated_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET store_typical_items_json = excluded.store_typical_items_json, updated_at = datetime('now')
+            """,
+            (household_id(), json.dumps(current)),
+        )
+        conn.commit()
     if log_event:
         _household._log_preference_event("store_typical_items", "write")
     if sync_preference:
@@ -280,19 +276,18 @@ def remove_store_typical_item(store: str, item: str, log_event: bool = True) -> 
     filtered by exact text, on purpose — a chip always removes exactly the
     text the shopper tapped, never a same-family item they didn't touch.
     """
-    conn = get_conn()
-    existing = conn.execute(
-        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
-    ).fetchone()
-    current = json.loads(existing["store_typical_items_json"]) if existing else {}
-    store_items = [i for i in current.get(store, []) if i.lower() != (item or "").lower()]
-    current[store] = store_items
-    conn.execute(
-        "UPDATE meal_preferences SET store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-        (json.dumps(current), household_id()),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        existing = conn.execute(
+            "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
+        current = json.loads(existing["store_typical_items_json"]) if existing else {}
+        store_items = [i for i in current.get(store, []) if i.lower() != (item or "").lower()]
+        current[store] = store_items
+        conn.execute(
+            "UPDATE meal_preferences SET store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+            (json.dumps(current), household_id()),
+        )
+        conn.commit()
     if log_event:
         _household._log_preference_event("store_typical_items", "delete")
     from . import stores as _stores
@@ -317,28 +312,26 @@ def remove_item_from_all_stores_typical_list(item: str) -> None:
     different plural/singular than the cleared preference still gets
     caught (same identity fix as the other functions in this module).
     """
-    conn = get_conn()
-    existing = conn.execute(
-        "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
-    ).fetchone()
-    if not existing:
-        conn.close()
-        return
-    current = json.loads(existing["store_typical_items_json"])
-    item_key = _merge_key(item)
-    changed = False
-    for store_name in list(current.keys()):
-        filtered = [i for i in current[store_name] if _merge_key(i) != item_key]
-        if filtered != current[store_name]:
-            current[store_name] = filtered
-            changed = True
-    if changed:
-        conn.execute(
-            "UPDATE meal_preferences SET store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-            (json.dumps(current), household_id()),
-        )
-        conn.commit()
-    conn.close()
+    with write() as conn:
+        existing = conn.execute(
+            "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
+        if not existing:
+            return
+        current = json.loads(existing["store_typical_items_json"])
+        item_key = _merge_key(item)
+        changed = False
+        for store_name in list(current.keys()):
+            filtered = [i for i in current[store_name] if _merge_key(i) != item_key]
+            if filtered != current[store_name]:
+                current[store_name] = filtered
+                changed = True
+        if changed:
+            conn.execute(
+                "UPDATE meal_preferences SET store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+                (json.dumps(current), household_id()),
+            )
+            conn.commit()
 
 
 def set_household_meal_preferences(
@@ -378,104 +371,103 @@ def set_household_meal_preferences(
     pass mark_complete=False if you're saving a partial update
     mid-conversation.
     """
-    conn = get_conn()
-    existing = conn.execute(
-        "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
-    ).fetchone()
+    with write() as conn:
+        existing = conn.execute(
+            "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
 
-    merged_notes = notes if notes else (existing["notes"] if existing else "")
-    merged_proteins = dict(json.loads(existing["protein_preferences_json"])) if existing else {}
-    if protein_preferences:
-        merged_proteins.update(protein_preferences)
-    merged_cuisines = cuisine_preferences if cuisine_preferences is not None else (
-        json.loads(existing["cuisine_preferences_json"]) if existing else []
-    )
-    merged_cooking_time = cooking_time_preference or (existing["cooking_time_preference"] if existing else "")
-    merged_novelty = novelty_preference or (existing["novelty_preference"] if existing else "balanced")
-    merged_eating_style = eating_style if eating_style is not None else (existing["eating_style"] if existing else "")
-    merged_dinners_per_week = dinners_per_week if dinners_per_week is not None else (
-        existing["dinners_per_week"] if existing else 7
-    )
-    merged_breakfasts_per_week = breakfasts_per_week if breakfasts_per_week is not None else (
-        existing["breakfasts_per_week"] if existing else 7
-    )
-    merged_lunches_per_week = lunches_per_week if lunches_per_week is not None else (
-        existing["lunches_per_week"] if existing else 7
-    )
-    # Default 3, not 7 like the other three — see schema.sql's comment on
-    # meal_preferences.snacks_per_week for why (Emily's explicit call).
-    merged_snacks_per_week = snacks_per_week if snacks_per_week is not None else (
-        existing["snacks_per_week"] if existing else 3
-    )
-    # Only an EXPLICIT snacks_per_week is an answer. The merge above keeps
-    # the stored number (or the default 3) otherwise, and a default nobody
-    # was ever asked for must not read back as a fact — see schema.sql's
-    # comment on snacks_per_week_set and shell.js's prefsEatingLine.
-    merged_snacks_per_day = snacks_per_day if snacks_per_day is not None else (
-        existing["snacks_per_day"] if existing else 2
-    )
-    merged_snacks_per_week_set = 1 if snacks_per_week is not None else (
-        (1 if existing["snacks_per_week_set"] else 0) if existing else 0
-    )
-    # snacks_per_day is NOT NULL DEFAULT 2 and so has exactly the same
-    # problem snacks_per_week_set was invented for. Tracked separately from
-    # the per-week flag because the two numbers can be set separately.
-    merged_snacks_per_day_set = 1 if snacks_per_day is not None else (
-        (1 if existing["snacks_per_day_set"] else 0) if existing else 0
-    )
-    # The three per-week counts share one answered-flag (Emily, 2026-09-21):
-    # any of them arriving explicitly is the household saying what a week
-    # of theirs looks like. See schema.sql's comment on meal_counts_set.
-    counts_arrived = any(v is not None for v in (dinners_per_week, breakfasts_per_week, lunches_per_week))
-    merged_meal_counts_set = 1 if counts_arrived else (
-        (1 if existing["meal_counts_set"] else 0) if existing else 0
-    )
+        merged_notes = notes if notes else (existing["notes"] if existing else "")
+        merged_proteins = dict(json.loads(existing["protein_preferences_json"])) if existing else {}
+        if protein_preferences:
+            merged_proteins.update(protein_preferences)
+        merged_cuisines = cuisine_preferences if cuisine_preferences is not None else (
+            json.loads(existing["cuisine_preferences_json"]) if existing else []
+        )
+        merged_cooking_time = cooking_time_preference or (existing["cooking_time_preference"] if existing else "")
+        merged_novelty = novelty_preference or (existing["novelty_preference"] if existing else "balanced")
+        merged_eating_style = eating_style if eating_style is not None else (existing["eating_style"] if existing else "")
+        merged_dinners_per_week = dinners_per_week if dinners_per_week is not None else (
+            existing["dinners_per_week"] if existing else 7
+        )
+        merged_breakfasts_per_week = breakfasts_per_week if breakfasts_per_week is not None else (
+            existing["breakfasts_per_week"] if existing else 7
+        )
+        merged_lunches_per_week = lunches_per_week if lunches_per_week is not None else (
+            existing["lunches_per_week"] if existing else 7
+        )
+        # Default 3, not 7 like the other three — see schema.sql's comment on
+        # meal_preferences.snacks_per_week for why (Emily's explicit call).
+        merged_snacks_per_week = snacks_per_week if snacks_per_week is not None else (
+            existing["snacks_per_week"] if existing else 3
+        )
+        # Only an EXPLICIT snacks_per_week is an answer. The merge above keeps
+        # the stored number (or the default 3) otherwise, and a default nobody
+        # was ever asked for must not read back as a fact — see schema.sql's
+        # comment on snacks_per_week_set and shell.js's prefsEatingLine.
+        merged_snacks_per_day = snacks_per_day if snacks_per_day is not None else (
+            existing["snacks_per_day"] if existing else 2
+        )
+        merged_snacks_per_week_set = 1 if snacks_per_week is not None else (
+            (1 if existing["snacks_per_week_set"] else 0) if existing else 0
+        )
+        # snacks_per_day is NOT NULL DEFAULT 2 and so has exactly the same
+        # problem snacks_per_week_set was invented for. Tracked separately from
+        # the per-week flag because the two numbers can be set separately.
+        merged_snacks_per_day_set = 1 if snacks_per_day is not None else (
+            (1 if existing["snacks_per_day_set"] else 0) if existing else 0
+        )
+        # The three per-week counts share one answered-flag (Emily, 2026-09-21):
+        # any of them arriving explicitly is the household saying what a week
+        # of theirs looks like. See schema.sql's comment on meal_counts_set.
+        counts_arrived = any(v is not None for v in (dinners_per_week, breakfasts_per_week, lunches_per_week))
+        merged_meal_counts_set = 1 if counts_arrived else (
+            (1 if existing["meal_counts_set"] else 0) if existing else 0
+        )
 
-    conn.execute(
-        """
-        INSERT INTO meal_preferences
-            (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, snacks_per_week_set, snacks_per_day, snacks_per_day_set, meal_counts_set, onboarding_complete, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-        ON CONFLICT(household_id) DO UPDATE SET
-            notes = excluded.notes,
-            protein_preferences_json = excluded.protein_preferences_json,
-            cuisine_preferences_json = excluded.cuisine_preferences_json,
-            cooking_time_preference = excluded.cooking_time_preference,
-            novelty_preference = excluded.novelty_preference,
-            eating_style = excluded.eating_style,
-            dinners_per_week = excluded.dinners_per_week,
-            breakfasts_per_week = excluded.breakfasts_per_week,
-            lunches_per_week = excluded.lunches_per_week,
-            snacks_per_week = excluded.snacks_per_week,
-            snacks_per_week_set = excluded.snacks_per_week_set,
-            snacks_per_day = excluded.snacks_per_day,
-            snacks_per_day_set = excluded.snacks_per_day_set,
-            meal_counts_set = excluded.meal_counts_set,
-            onboarding_complete = excluded.onboarding_complete,
-            updated_at = datetime('now')
-        """,
-        (
-            household_id(),
-            merged_notes,
-            json.dumps(merged_proteins),
-            json.dumps(merged_cuisines),
-            merged_cooking_time,
-            merged_novelty,
-            merged_eating_style,
-            merged_dinners_per_week,
-            merged_breakfasts_per_week,
-            merged_lunches_per_week,
-            merged_snacks_per_week,
-            merged_snacks_per_week_set,
-            merged_snacks_per_day,
-            merged_snacks_per_day_set,
-            merged_meal_counts_set,
-            1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
-        ),
-    )
-    keep_snack_counts_consistent(conn, household_id())
-    conn.commit()
-    conn.close()
+        conn.execute(
+            """
+            INSERT INTO meal_preferences
+                (household_id, notes, protein_preferences_json, cuisine_preferences_json, cooking_time_preference, novelty_preference, eating_style, dinners_per_week, breakfasts_per_week, lunches_per_week, snacks_per_week, snacks_per_week_set, snacks_per_day, snacks_per_day_set, meal_counts_set, onboarding_complete, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET
+                notes = excluded.notes,
+                protein_preferences_json = excluded.protein_preferences_json,
+                cuisine_preferences_json = excluded.cuisine_preferences_json,
+                cooking_time_preference = excluded.cooking_time_preference,
+                novelty_preference = excluded.novelty_preference,
+                eating_style = excluded.eating_style,
+                dinners_per_week = excluded.dinners_per_week,
+                breakfasts_per_week = excluded.breakfasts_per_week,
+                lunches_per_week = excluded.lunches_per_week,
+                snacks_per_week = excluded.snacks_per_week,
+                snacks_per_week_set = excluded.snacks_per_week_set,
+                snacks_per_day = excluded.snacks_per_day,
+                snacks_per_day_set = excluded.snacks_per_day_set,
+                meal_counts_set = excluded.meal_counts_set,
+                onboarding_complete = excluded.onboarding_complete,
+                updated_at = datetime('now')
+            """,
+            (
+                household_id(),
+                merged_notes,
+                json.dumps(merged_proteins),
+                json.dumps(merged_cuisines),
+                merged_cooking_time,
+                merged_novelty,
+                merged_eating_style,
+                merged_dinners_per_week,
+                merged_breakfasts_per_week,
+                merged_lunches_per_week,
+                merged_snacks_per_week,
+                merged_snacks_per_week_set,
+                merged_snacks_per_day,
+                merged_snacks_per_day_set,
+                merged_meal_counts_set,
+                1 if mark_complete else (existing["onboarding_complete"] if existing else 0),
+            ),
+        )
+        keep_snack_counts_consistent(conn, household_id())
+        conn.commit()
     if counts_arrived:
         # A count set through this older door wins over a saved usual week
         # that has that meal off every day (usual_week.meal_counts_changed_
@@ -614,17 +606,16 @@ def save_onboarding_answers(
     if (notes or "").strip():
         _household._log_preference_event("onboarding_anything_else", "write")
 
-    conn = get_conn()
-    conn.execute(
-        """
-        INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
-        VALUES (?, ?, datetime('now'))
-        ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
-        """,
-        (household_id(), json.dumps(wont_eat)),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        conn.execute(
+            """
+            INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
+            """,
+            (household_id(), json.dumps(wont_eat)),
+        )
+        conn.commit()
     _household._log_preference_event("onboarding_wont_eat", "write")
 
     # Neither given means the snacks question was never put to this

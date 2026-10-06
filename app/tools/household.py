@@ -4,7 +4,7 @@ The household itself: onboarding status, the people in it, and pets.
 from __future__ import annotations
 
 import json
-from ..db import _ADULT_COLORS, get_conn
+from ..db import _ADULT_COLORS, get_conn, write
 from ._shared import EATS_HERE_SQL, current_member, household_id, household_initials
 
 
@@ -295,13 +295,12 @@ def _log_preference_event(field: str, action: str) -> None:
     onboarding calls in bulk) so getting through onboarding doesn't inflate
     "this month" on day one.
     """
-    conn = get_conn()
-    conn.execute(
-        "INSERT INTO preference_events (household_id, field, action) VALUES (?, ?, ?)",
-        (household_id(), field, action),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        conn.execute(
+            "INSERT INTO preference_events (household_id, field, action) VALUES (?, ?, ?)",
+            (household_id(), field, action),
+        )
+        conn.commit()
 
 
 def count_preference_events_this_month() -> int:
