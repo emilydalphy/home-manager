@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First look around — mockup</title>
+<!-- A static mockup for the Loop Board card "First look around" (2026-10-06).
+     Not wired to the app. Open it straight from the repo: it reads the real
+     tokens and fonts, so every colour here is a theme.css token (rule 9) and
+     it follows light/dark like the app. The phones are 390px wide. -->
+<link rel="stylesheet" href="../static/fonts/fonts.css">
+<link rel="stylesheet" href="../static/theme.css">
+<style>
+  body { background: var(--ground); color: var(--ink); font-family: var(--font-body); margin: 0; padding: 24px 16px 48px; }
+  .intro { max-width: 760px; margin: 0 auto 24px; }
+  .intro h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .intro p { margin: 0; color: var(--ink-secondary); line-height: 1.45; }
+  .row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+  figure { margin: 0; }
+  figcaption { max-width: 390px; margin-top: 10px; font-size: 14px; color: var(--ink-secondary); line-height: 1.4; }
+  figcaption b { color: var(--ink); }
+
+  /* ---------- a phone, drawn from the app's own pieces ---------- */
+  .phone { width: 390px; max-width: calc(100vw - 32px); height: 760px; position: relative; overflow: hidden;
+    border-radius: 34px; border: 1.5px solid var(--hairline); background: var(--ground); }
+  .band { background: var(--spruce); color: var(--ivory-ink); padding: 22px 20px 26px; border-radius: 0 0 var(--radius-hero) var(--radius-hero); }
+  .band-top { display: flex; justify-content: space-between; align-items: center; }
+  .brand { font-family: var(--font-display); font-weight: 700; color: var(--ivory-ink); font-size: 15px; }
+  .gear { width: 44px; height: 44px; border-radius: var(--radius-tile); background: var(--spruce-raised); display: grid; place-items: center; color: var(--ivory-ink); }
+  .gear svg, .tab svg, .fab svg { width: 22px; height: 22px; }
+  .band h2 { color: var(--ivory-ink); font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; font-size: 34px; margin: 10px 0 2px; }
+  .band .sub { color: var(--ivory-ink-muted); font-size: 15px; }
+  .cards { padding: 18px 20px; display: grid; gap: 12px; }
+  .card { background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 16px; }
+  .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); }
+  .card .t { font-family: var(--font-display); font-weight: 700; font-size: 18px; margin-top: 4px; }
+  .tabs { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; display: flex; border-top: 1.5px solid var(--hairline); background: var(--ground); }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--ink-inactive); }
+  .tab.on { color: var(--ink-strong); }
+  .fab { position: absolute; right: 16px; bottom: 88px; width: 54px; height: 54px; border-radius: var(--radius-ask); background: var(--spruce); color: var(--apricot-light); display: grid; place-items: center; }
+
+  /* ---------- the tour ---------- */
+  /* The offer: a bottom sheet, the same shape as the app's other sheets. */
+  .scrim { position: absolute; inset: 0; background: var(--scrim); }
+  .offer { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+    box-shadow: var(--shadow-sheet); padding: 12px 20px 28px; }
+  .grabber { width: 40px; height: 5px; border-radius: var(--radius-pill); background: var(--hairline-strong); margin: 0 auto 18px; }
+  .offer h3, .callout h3 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+  .offer h3 { font-size: 24px; }
+  .offer p { margin: 6px 0 20px; color: var(--ink-secondary); font-size: 16px; }
+  .btn-primary { width: 100%; box-shadow: var(--shadow-action); min-height: 44px; }
+  .quiet { display: block; width: 100%; min-height: 44px; margin-top: 6px; background: none; border: none; font: 700 15px var(--font-body); color: var(--ink-secondary); }
+
+  /* A stop: the screen dimmed, one hole cut round the real control, and a
+     callout card beside it. The hole is the anchor's own box plus 6px; the
+     dim is a box-shadow on the hole, so there is one scrim, not four. */
+  .hole { position: absolute; border-radius: var(--radius-tile); box-shadow: 0 0 0 2px var(--apricot), 0 0 0 9999px var(--scrim); }
+  .callout { position: absolute; left: 16px; right: 16px; background: var(--surface); border: 1.5px solid var(--hairline);
+    border-radius: var(--radius-card); box-shadow: var(--shadow-dialog); padding: 16px 16px 10px; }
+  .callout .count { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--apricot-label); }
+  .callout h3 { font-size: 20px; margin-top: 4px; }
+  .callout p { margin: 6px 0 12px; font-size: 15px; line-height: 1.45; color: var(--ink); }
+  .callout .acts { display: flex; align-items: center; justify-content: space-between; }
+  .callout .skip { min-height: 44px; min-width: 44px; background: none; border: none; font: 700 15px var(--font-body); color: var(--ink-secondary); padding: 0 4px; }
+  .callout .next { width: auto; padding: 11px 22px; font-size: 16px; }
+
+  /* Settings → the replay row, drawn like .prefs-row. */
+  .prefs { padding: 18px 20px; display: grid; gap: 10px; }
+  .prefs-row { display: flex; align-items: center; justify-content: space-between; min-height: 56px; background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 12px 16px; }
+  .prefs-row .tt { font-weight: 700; }
+  .prefs-row .ss { font-size: 14px; color: var(--ink-secondary); }
+  .prefs-row.new { box-shadow: 0 0 0 2px var(--apricot); }
+  @media (prefers-reduced-motion: no-preference) {
+    .hole, .callout { transition: all .2s ease; }
+  }
+</style>
+</head>
+<body>
+<div class="intro">
+  <h1>First look around</h1>
+  <p>Mockup for the card. Four moments: the offer on Today, a tab stop, the Ask stop, and the replay row in Settings. Real tokens, so try it in dark mode too. Copy is final-draft; Emily approves it.</p>
+</div>
+
+<div class="row">
+  <!-- 1. The offer -->
+  <figure>
+    <div class="phone">
+      <div class="band">
+        <div class="band-top"><span class="brand">Pomona</span><span class="gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span></div>
+        <h2>Today</h2><div class="sub">Tuesday, Oct 6</div>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="eyebrow">Dinner</div><div class="t">Tacos</div></div>
+        <div class="card"><div class="eyebrow">Cook</div><div class="t">Tacos · evening</div></div>
+      </div>
+      <div class="scrim"></div>
+      <div class="offer" role="dialog" aria-labelledby="o-t">
+        <div class="grabber"></div>
+        <h3 id="o-t">Want a quick look around?</h3>
+        <p>Where everything lives, in six stops.</p>
+        <button class="btn-primary">Show me</button>
+        <button class="quiet">Not now</button>
+      </div>
+    </div>
+    <figcaption><b>The offer.</b> Once, on the person's first Today after setup (or after the welcome, for someone who joined later). A sheet, never a takeover: "Not now" and a swipe down both close it.</figcaption>
+  </figure>
+
+  <!-- 2. A tab stop: Plan -->
+  <figure>
+    <div class="phone">
+      <div class="band"><div class="band-top"><span class="brand">Pomona</span><span class="gear"></span></div><h2>Today</h2><div class="sub">Tuesday, Oct 6</div></div>
+      <div class="cards"><div class="card"><div class="eyebrow">Dinner</div><div class="t">Tacos</div></div></div>
+      <div class="tabs">
+        <div class="tab">Today</div><div class="tab on" style="position:relative">Plan</div><div class="tab">Shop</div><div class="tab">Cook</div>
+      </div>
+      <div class="hole" style="left:103px; bottom:6px; width:86px; height:62px;"></div>
+      <div class="callout" style="bottom:92px" role="dialog" aria-labelledby="c2">
+        <div class="count">2 of 6</div>
+        <h3 id="c2">Plan</h3>
+        <p>The week's meals. Tap a day to swap, move or add something.</p>
+        <div class="acts"><button class="skip">Skip</button><button class="btn-primary next">Next</button></div>
+      </div>
+    </div>
+    <figcaption><b>A stop.</b> The screen dims, the real control stays lit with an apricot ring, and the card sits beside it. Next moves the ring; Skip ends the tour. Esc and swipe-down are Skip too.</figcaption>
+  </figure>
+
+  <!-- 3. The Ask stop -->
+  <figure>
+    <div class="phone">
+      <div class="band"><div class="band-top"><span class="brand">Pomona</span><span class="gear"></span></div><h2>Today</h2><div class="sub">Tuesday, Oct 6</div></div>
+      <div class="cards"><div class="card"><div class="eyebrow">Dinner</div><div class="t">Tacos</div></div></div>
+      <div class="tabs"><div class="tab on">Today</div><div class="tab">Plan</div><div class="tab">Shop</div><div class="tab">Cook</div></div>
+      <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/><path d="M12 9V6.2"/><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/></svg></div>
+      <div class="hole" style="right:10px; bottom:82px; width:66px; height:66px; border-radius: var(--radius-ask);"></div>
+      <div class="callout" style="bottom:164px" role="dialog" aria-labelledby="c5">
+        <div class="count">5 of 6</div>
+        <h3 id="c5">Ask</h3>
+        <p>Tell me anything. “We’re out of eggs.” “Theo’s away Friday.” I'll change the plan and the list to match.</p>
+        <div class="acts"><button class="skip">Skip</button><button class="btn-primary next">Next</button></div>
+      </div>
+    </div>
+    <figcaption><b>The Ask stop.</b> Same card, placed above the button. The last stop (Settings) points at the gear and its button reads <b>Done</b>.</figcaption>
+  </figure>
+
+  <!-- 4. Replay -->
+  <figure>
+    <div class="phone">
+      <div class="band"><div class="band-top"><span class="brand">Pomona</span></div><h2>Settings</h2></div>
+      <div class="prefs">
+        <div class="prefs-row"><div><div class="tt">How you eat</div><div class="ss">Balanced, nothing restrictive</div></div></div>
+        <div class="prefs-row"><div><div class="tt">Helpful tips</div><div class="ss">How to ask me for things</div></div></div>
+        <div class="prefs-row new"><div><div class="tt">Take the tour again</div><div class="ss">Where everything lives</div></div></div>
+        <div class="prefs-row"><div><div class="tt">Morning text</div><div class="ss">Off</div></div></div>
+      </div>
+    </div>
+    <figcaption><b>Replay.</b> A row under Helpful tips in the gear's sheet (ringed here only to point at it). It closes the sheet and starts at stop 1, on Today.</figcaption>
+  </figure>
+</div>
+</body>
+</html>

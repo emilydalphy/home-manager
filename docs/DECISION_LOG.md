@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — First look around: proposal + mockup only, not built.
+  Branch `overnight/first-look-tour-proposal`.** Design card: the proposal
+  (stops, copy, triggers, files, cost) is on the Loop Board card;
+  `mockups/first-look-tour.html` draws the offer sheet, a tab stop, the Ask
+  stop and the replay row from the real tokens (light + dark). Trigger is
+  the first Today after setup (not Shop's after-approve landing, which
+  already asks where you shop); remembered per member server-side, the
+  same way `members.first_open_seen_at` is. Waits on Emily.
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop
