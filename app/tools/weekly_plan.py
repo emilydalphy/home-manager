@@ -327,6 +327,25 @@ def plan_period(plan) -> tuple[str, int]:
     return (raw_start or plan["week_start_date"]), max(0, raw_count)
 
 
+def first_plan_start() -> str | None:
+    """
+    The first day of the household's EARLIEST live plan (any status but
+    retired, with at least one day), or None when it has none. What "this is
+    the household's first week" is read from — Today's shop line uses it
+    (moves._shop_block): a first plan that starts before the household's
+    usual shop day makes the first shop today, not that Saturday.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        f"SELECT MIN({_SQL_PERIOD_START}) AS first_start FROM weekly_plans "
+        "WHERE household_id = ? AND status != 'retired' "
+        "AND NOT (content_start_date != '' AND day_count = 0)",
+        (household_id(),),
+    ).fetchone()
+    conn.close()
+    return (row["first_start"] or None) if row else None
+
+
 def period_end_date(start_date: str, day_count: int) -> str:
     """
     The LAST day of a period, inclusive — the form every overlap test and

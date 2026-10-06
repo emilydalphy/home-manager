@@ -80,6 +80,7 @@ from . import defrost as _defrost
 from . import grocery as _grocery
 from . import move_owner as _move_owner
 from . import rhythm as _rhythm
+from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger(__name__)
 
@@ -817,6 +818,32 @@ def _shop_day_line(shop_day: str, count: int) -> str:
     return f"You shop on {shop_day.capitalize()}. {things}"
 
 
+def _first_shop_is_now(day: date, shop_day: str) -> bool:
+    """
+    A first week that starts BEFORE the household's usual shop day shops
+    right away (Emily's walkthrough, Tuesday 2026-10-06: the first plan began
+    that night, the shop day was Saturday, and Today said "You shop on
+    Saturday" while tonight's dinner needed those groceries). The usual shop
+    day applies from the second week on.
+
+    True from the first plan's first day up to (not including) the first
+    usual shop day on or after it — a household whose first plan began ON
+    its shop day was never in this case, and one whose plan began last month
+    is long past it. The caller only asks while something is on the list:
+    with nothing left to buy the line is the right thing to say.
+    """
+    try:
+        start_iso = _weekly_plan.first_plan_start()
+        wd = _rhythm.SHOP_DAY_WEEKDAYS.index(shop_day)
+    except Exception:
+        return False
+    if not start_iso:
+        return False
+    start = date.fromisoformat(start_iso)
+    first_usual = start + timedelta(days=(wd - start.weekday()) % 7)
+    return start <= day < first_usual
+
+
 def _shop_block(day: date, rhythm: dict) -> dict:
     """
     What Today's Shop section says, decided here rather than on the screen:
@@ -845,10 +872,13 @@ def _shop_block(day: date, rhythm: dict) -> dict:
         logger.exception("Today's shop line could not read the grocery list")
         count = 0
     weekday = day.strftime("%A").lower()
+    is_shop_day = bool(shop_day) and weekday in {shop_day, top_up} - {""}
+    if shop_day and not is_shop_day and count:
+        is_shop_day = _first_shop_is_now(day, shop_day)
     return {
         "shop_day": shop_day or None,
         "top_up_shop_day": top_up or None,
-        "is_shop_day": bool(shop_day) and weekday in {shop_day, top_up} - {""},
+        "is_shop_day": is_shop_day,
         "count": count,
         "line": _shop_day_line(shop_day, count),
         # The household's own sentence for the setting, for the row that
