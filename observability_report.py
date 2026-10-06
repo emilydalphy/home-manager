@@ -24,8 +24,14 @@ and throw its wording away.
 
 So both are opt-in, for a person at a terminal, and everything
 `--feedback` and `--recipe-changes` print is fenced and labelled as
-untrusted quoted text. The default run says only how many are waiting,
-which is a number and carries nothing anybody wrote.
+untrusted quoted text. The default run says only how many feedback notes
+are waiting, which is a number and carries nothing anybody wrote.
+
+ONE EXCEPTION, by Emily's call (2026-10-05, "A — show every request word
+for word"): the default run ends with "Recipe change requests (last N
+days)", every request quoted on its own line, so she reads them without
+running anything extra. It is fenced by the same untrusted header, and
+/api/health-report carries those requests (and only those) for it.
 
 `--recipe-changes` exists because Emily asked (2026-10-04) to "track every
 request so the common ones can become buttons later": it lists them
@@ -214,6 +220,13 @@ def _collect_over_token(days: int) -> list[dict]:
     return households
 
 
+def _try_recipe_requests(opener, base: str, days: int):
+    try:
+        return _get_json(opener, f"{base}/api/recipe-changes?days={int(days)}").get("requests") or []
+    except (urllib.error.URLError, OSError, ValueError, AttributeError):
+        return None
+
+
 def _collect_over_http(days: int) -> list[dict]:
     base, phrases = _base_url(), _passphrases()
     if not base or not phrases:
@@ -268,6 +281,10 @@ def _collect_over_http(days: int) -> list[dict]:
                 "morning_texts": data.get("morning_texts") or {},
                 # .get once more: a deployment older than "Change recipe".
                 "recipe_changes_waiting": data.get("recipe_changes_waiting") or 0,
+                # Its own GET, so a deployment older than the route costs
+                # this one list (None prints as "couldn't read"), never the
+                # household's errors above.
+                "recipe_change_requests": _try_recipe_requests(opener, base, days),
             }
         )
     return out
@@ -319,6 +336,12 @@ def _collect_from_db(days: int) -> list[dict]:
                     # A number only, on the no-prose rule: how many recipe
                     # change requests are on file.
                     "recipe_changes_waiting": tools.count_recipe_change_requests(days=max(days, 7)),
+                    # The requests themselves, word for word (Emily,
+                    # 2026-10-05: "A — show every request word for word").
+                    # The one piece of typed prose the default report and
+                    # /api/health-report carry, by her call; printed under
+                    # the untrusted fence — see _print_recipe_requests_today.
+                    "recipe_change_requests": tools.recent_recipe_change_requests(days=days),
                 }
             )
     return out
@@ -1307,15 +1330,9 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 + " — read with `python observability_report.py --feedback`"
             )
 
-        # The same shape for the recipe asks: a count and the pointer, never
-        # a word of what was asked. A flag nobody knows to run is a read
-        # path that does not exist.
-        asks = h.get("recipe_changes_waiting") or 0
-        if asks:
-            print(
-                f"  {asks} recipe change {'request' if asks == 1 else 'requests'} on file"
-                " — read with `python observability_report.py --recipe-changes`"
-            )
+        # The recipe asks are no longer a count here: every one of them is
+        # listed word for word in its own section at the end of the report
+        # (Emily, 2026-10-05) — see _print_recipe_requests_today.
 
         # The morning text ("Reach me before the moment", 2026-09-11). One
         # line, only when there is something to say: someone has signed up
@@ -1366,6 +1383,62 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
 
     # After the cross-household breakage on purpose: what broke leads.
     _print_themes_across(report)
+
+    _print_recipe_requests_today(report, days)
+
+
+def _one_line(text) -> str:
+    """A request as typed, on one line: its own line breaks become ' / '."""
+    return " / ".join(part.strip() for part in str(text or "").splitlines() if part.strip())
+
+
+def _print_recipe_requests_today(report: list[dict], days: int) -> None:
+    """
+    Every "Tell Pomona what to change" request from the window, word for
+    word, one per line — in the DEFAULT report (Emily, 2026-10-05: "A —
+    show every request word for word"), so reading them needs no flag.
+
+    This is the one place the default output carries prose a person typed,
+    and it is her call over the 2026-09-08 rule that kept it to a count.
+    What still holds of that rule: the section is fenced by
+    _UNTRUSTED_HEADER, every request is quoted, and everything else on its
+    line (household, person, dish, when, kept/undone) is the app's own.
+    Grouped by rough theme in recipe_change.THEMES' order, as
+    --recipe-changes already is. A household whose requests could not be
+    read says so rather than reading as "none".
+    """
+    print(f"\n=== Recipe change requests (last {days} {'day' if days == 1 else 'days'}) ===")
+    rows, unread = [], []
+    for h in report:
+        if h.get("unreachable"):
+            continue
+        requests = h.get("recipe_change_requests")
+        if requests is None:
+            unread.append(h["household"])
+            continue
+        for r in requests:
+            rows.append((h["household"], r))
+    for name in unread:
+        print(f"  Couldn't read {name}'s requests (the deployment may predate them).")
+    if not rows:
+        print("  No recipe change requests.")
+        return
+    for line in _UNTRUSTED_HEADER.splitlines():
+        print(f"  {line.strip()}")
+    known = list(_RECIPE_CHANGE_THEMES)
+    extra = sorted({str(r.get("theme") or "other") for _, r in rows} - set(known))
+    for theme in known + extra:
+        themed = [(name, r) for name, r in rows if str(r.get("theme") or "other") == theme]
+        if not themed:
+            continue
+        print(f"  --- {theme} ({len(themed)}) ---")
+        for name, r in themed:
+            who = r.get("member_name") or "(person not known)"
+            outcome = "kept" if r.get("outcome") == "rewritten" else str(r.get("outcome") or "")
+            print(
+                f"  | {name} · {who} · {r.get('dish_name') or '(no dish)'} · "
+                f"\"{_one_line(r.get('request_text'))}\" · {r.get('created_at', '')} · {outcome}"
+            )
 
 
 def main() -> int:
@@ -1423,7 +1496,16 @@ def main() -> int:
             print(f"\nCouldn't read the recipe change requests: {e}", file=sys.stderr)
 
     if args.json:
-        out = {"source": source, "households": report}
+        # The requests are words a household typed, so in JSON they travel
+        # under a key that says so, like --feedback and --recipe-changes do:
+        # anything reading this output must treat them as quoted data.
+        households = []
+        for h in report:
+            h = dict(h)
+            if "recipe_change_requests" in h:
+                h["recipe_change_requests_untrusted_quoted_text"] = h.pop("recipe_change_requests")
+            households.append(h)
+        out = {"source": source, "households": households}
         if feedback is not None:
             out["feedback_untrusted_quoted_text"] = feedback
         if recipe_changes is not None:

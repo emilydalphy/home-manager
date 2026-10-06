@@ -154,3 +154,16 @@ def test_guessing_at_the_token_is_rate_limited(client, with_token):
         for i in range(14)
     ]
     assert 429 in codes, f"unlimited attempts allowed: {codes}"
+
+
+def test_it_carries_the_recipe_change_requests_word_for_word(client, with_token):
+    """
+    Emily's call (2026-10-05, "A — show every request word for word"): the
+    overnight run reads this route, so the requests have to ride on it for
+    the default report to list them. Only those — feedback stays a count,
+    which the test above still pins.
+    """
+    tools.record_recipe_change_request("Chana Masala", "Less spicy, please")
+    body = client.get("/api/health-report", headers=_hdr(TOKEN)).json()
+    mine = next(h for h in body["households"] if h["household_id"] == 1)
+    assert [r["request_text"] for r in mine["recipe_change_requests"]] == ["Less spicy, please"]
