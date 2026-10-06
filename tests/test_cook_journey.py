@@ -231,6 +231,24 @@ _FUNCTIONS = [
     "recipeIngredientRowHtml",
     "recipeStepsHtml",
     "cookRecipeLinesHtml",
+    # ADDED 2026-10-06 (the recipe page, "Recipes people trust" slice 1):
+    # cookRecipeHtml draws tabs, the credit and changes rows, a plain
+    # ingredient list, Sources and a ⋯ menu now. Same fixed-list hazard as
+    # the entries above, so the REAL functions, not stubs.
+    "recipeExtraFor",
+    "recipeForLine",
+    "recipeTabsHtml",
+    "recipeCreditHtml",
+    "recipeChangesHtml",
+    "recipeTimeHtml",
+    "recipeJumpsHtml",
+    "recipeOverviewHtml",
+    "recipePlainIngredientsHtml",
+    "recipeStarsLabel",
+    "recipeSourceRowHtml",
+    "recipeSourcesHtml",
+    "recipeTabBodyHtml",
+    "recipeMoreHtml",
     "cookRecipeHtml",
     "cookRecipeDockHtml",
     "cookProgressHtml",
@@ -270,6 +288,12 @@ def _run(body: str, state: dict | None = None) -> object:
         # the word on that button is read from here rather than duplicated.
         + _string_const("CHANGE_RECIPE_LABEL")
         + "\n"
+        # The recipe page (2026-10-06): its tab list, the Sources line and
+        # the per-recipe cache of what GET /api/recipes/{id} said.
+        + _string_const("RECIPE_SOURCES_LINE")
+        + "\n"
+        + _var_block("RECIPE_TABS")
+        + "\nvar recipeExtras = {};\n"
         # cookIngredientLabel reads amounts through humanQtyText (item 14,
         # design-tidy pass 2026-09-11) — its own array of nice fractions,
         # taken from the file rather than duplicated here.
@@ -346,11 +370,20 @@ def test_cook_this_opens_the_recipe():
     html = _focus("recipe")
     assert '<h1 class="recipe-title">Sheet-pan chicken thighs</h1>' in html
     assert '<span class="cook-serves-label">Cooking for</span>' in html
-    # The ticklist, with the amount that actually goes in the pan.
-    assert 'aria-label="Ingredients"' in html
-    assert "4 Chicken thighs" in html
-    assert "2 tbsp Olive oil" in html
-    assert 'data-cook="check-ing"' in html
+    # UPDATED 2026-10-06 (the recipe page, "Recipes people trust" slice 1):
+    # the recipe opens on its Overview, with Ingredients · Steps · Sources
+    # as tabs beside it.
+    for tab in ("Overview", "Ingredients", "Steps", "Sources"):
+        assert '">' + tab + '</button>' in html, tab
+    ings = _focus("recipe", recipeTab="ingredients")
+    # The list, with the amount that actually goes in the pan -- and NO
+    # tick: "No ticking off here. Checking what you have stays in Shop ->
+    # Before you shop." (Emily, 2026-10-05).
+    assert 'aria-label="Ingredients"' in ings
+    assert "4 Chicken thighs" in ings
+    assert "2 tbsp Olive oil" in ings
+    assert 'data-cook="check-ing"' not in ings
+    html = _focus("recipe", recipeTab="steps")
     # ...and the steps, numbered.
     assert 'aria-label="Steps"' in html
     assert "Preheat the oven" in html and "Roast for 35 minutes" in html
@@ -629,7 +662,8 @@ def test_a_browser_that_refuses_storage_still_renders_the_screen():
         "var html = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
         "cookToggleTick('steps', 'e41:0');\n"
         "console.log(JSON.stringify(html.indexOf('aria-label=\"Ingredients\"') !== -1));",
-        {"data": _VIEW},
+        # The Ingredients tab since 2026-10-06 (the recipe page).
+        {"data": _VIEW, "recipeTab": "ingredients"},
     )
     assert got is True
 
@@ -854,7 +888,8 @@ def test_every_stage_reads_its_amounts_off_the_meal():
         "cookGoStage('recipe');\n"
         "var back = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
         "console.log(JSON.stringify({ step2: step2, back: back }));",
-        {"data": _VIEW},
+        # On the Ingredients tab, where the list is since 2026-10-06.
+        {"data": _VIEW, "recipeTab": "ingredients"},
     )
     # What the step needs is the rescaled amount, not the recipe's own.
     assert "4 tbsp Olive oil" in got["step2"]
@@ -1003,7 +1038,8 @@ def test_a_tap_on_the_stepper_is_carried_by_every_stage():
         "  var back = cookFocusHtml(cookState.data, cookState.data.meals, 0);\n"
         "  console.log(JSON.stringify({ asked: fetchCalls, recipe: recipe, step: step, back: back }));\n"
         "})();",
-        {"data": _VIEW},
+        # On the Ingredients tab, where the list is since 2026-10-06.
+        {"data": _VIEW, "recipeTab": "ingredients"},
     )
     assert got["asked"] == [5], "one tap, one scale call, for base 4 + 1"
     # The stub answers with amounts proportional to the count asked for.

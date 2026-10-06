@@ -481,6 +481,9 @@ def _cook_screen(meal: dict, stage: str) -> str:
         + "function cookMadeAheadLinesHtml() { return ''; }\n"
         + _var("NUMBER_WORDS") + "\n" + _var("TENS_WORDS") + "\n"
         + _var("CHANGE_RECIPE_LABEL") + "\n"
+        # The recipe page (2026-10-06): its tabs, Sources line and cache.
+        + _var("RECIPE_TABS") + "\n" + _var("RECIPE_SOURCES_LINE") + "\n"
+        + "var recipeExtras = {};\n"
         + "".join(_extract(n) + "\n" for n in (
             "numberWord", "minutesInWords", "clockLabel", "mealTotalMinutes", "mealClockSides", "mealClockTotal",
             "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "cookStepNeeds",
@@ -498,6 +501,11 @@ def _cook_screen(meal: dict, stage: str) -> str:
             # error, and the "no clock anywhere on the recipe" assertions
             # below would stop reading the screen that ships.
             "recipeIsChangeable", "recipeChangeBtnHtml",
+            # The recipe page (2026-10-06): cookRecipeHtml's new callees,
+            # the real ones, for the same reason as the pair above.
+            "recipeExtraFor", "recipeForLine", "recipeTabsHtml", "recipeCreditHtml", "recipeChangesHtml",
+            "recipeTimeHtml", "recipeJumpsHtml", "recipeOverviewHtml", "recipePlainIngredientsHtml",
+            "recipeStarsLabel", "recipeSourceRowHtml", "recipeSourcesHtml", "recipeTabBodyHtml", "recipeMoreHtml",
             "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
             "recipeStepsHtml", "cookRecipeLinesHtml", "cookDockHtml", "cookDockCookedHtml", "cookRecipeDockHtml",
             "cookRecipeHtml", "cookProgressHtml", "cookNextStepLine", "cookCookerDockHtml", "cookCookerHtml",

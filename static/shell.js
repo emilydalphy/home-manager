@@ -21037,6 +21037,11 @@
     // half-cooked dish resumes it.
     cookState.focusStage = 'recipe';
     cookState.stepIdx = 0;
+    // The recipe page opens on its Overview, folded (2026-10-06).
+    cookState.recipeTab = 'overview';
+    cookState.recipeChangesOpen = false;
+    cookState.recipeMenuOpen = false;
+    cookState.recipeRateOpen = false;
     // WHICH dish this focus is on, by identity rather than by its place in
     // the list — see the guard in renderCook.
     cookState.focusMealKey = cookMealKey(cookState.data.meals[idx]);
@@ -21569,31 +21574,323 @@
       (meal.advance_prep_notes ? '<p class="recipe-line">' + escapeHtml(meal.advance_prep_notes) + '</p>' : '');
   }
 
-  // Cook mode's recipe screen. Under the recipe, quietly, the two things
-  // the plan wrote for THIS meal that are ticked or chosen from here and
-  // nowhere else: its prep rows (cookFocusPrepHtml — the thaw the root's
-  // get-ready row opens this screen to tick) and the prep-cut offer for a
-  // prep day (cookPrepCutHtml). Both only when there is something in them.
+  // ---------- The recipe page (2026-10-06) ----------
+  // Loop Board "Recipes people trust", slice 1 — the page as Emily locked
+  // it on 2026-10-05: the dish, one line "who it's for · serves N", four
+  // tabs (Overview · Ingredients · Steps · Sources), Start cooking and
+  // Change recipe in the dock, and a ⋯ menu (Save to my recipes · Add to
+  // shopping list · Rate this recipe). Ingredients are a plain list: "No
+  // ticking off here. Checking what you have stays in Shop → Before you
+  // shop."
+  //
+  // Where a recipe came from and what was changed for this household are
+  // the RECIPE's facts, not the plan's, so they come from
+  // GET /api/recipes/{id} (`research`, `household_changes` — the server
+  // half is a sibling slice). Fetched once per recipe per page load and
+  // drawn when it lands; absent (an older server, a recipe written before
+  // research existed, a failed read) the credit line and the changes row
+  // are simply not there, and Sources falls back to the recipe's own
+  // citation or says there is none.
+  var RECIPE_TABS = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'ingredients', label: 'Ingredients' },
+    { key: 'steps', label: 'Steps' },
+    { key: 'sources', label: 'Sources' }
+  ];
+  var RECIPE_SOURCES_LINE = 'Opens the original recipe on their site. Pomona’s version is adapted for your household.';
+
+  // recipe id -> { research, household_changes } once read, 'loading'
+  // while in flight, null when the read failed (said nothing, drawn as absent).
+  var recipeExtras = {};
+
+  function recipeExtraFor(meal) {
+    var id = meal && meal.recipe_id;
+    if (id == null) return null;
+    var got = recipeExtras[id];
+    if (got === undefined) {
+      recipeExtras[id] = 'loading';
+      Api.fetch('/api/recipes/' + encodeURIComponent(id))
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .then(function (body) {
+          recipeExtras[id] = body ? {
+            research: body.research || null,
+            household_changes: Array.isArray(body.household_changes) ? body.household_changes : []
+          } : null;
+        })
+        .catch(function () { recipeExtras[id] = null; })
+        .then(function () {
+          // Only redraw if this recipe is still the one on screen.
+          var on = cookState.screen === 'focus' && cookState.data &&
+            (cookState.data.meals || [])[cookState.focusIdx];
+          if (on && on.recipe_id === id && cookState.focusStage === 'recipe') renderCook();
+        });
+      return null;
+    }
+    return got === 'loading' ? null : got;
+  }
+
+  // "Gowthami, Ravi and Arjun · serves 4" — who is at the table for this
+  // meal (the cooker view's attendance, a real day-based meal only) and the
+  // count the amounts are written for. Either half on its own when that is
+  // all there is; nothing at all when neither is known.
+  function recipeForLine(meal) {
+    var parts = [];
+    var names = (meal.attendance && meal.attendance.present_names) || [];
+    if (names.length) {
+      var who = names.length === 1 ? names[0]
+        : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+      var guests = (meal.attendance && meal.attendance.guest_count) || 0;
+      if (guests) who += ' + ' + guests + (guests === 1 ? ' guest' : ' guests');
+      parts.push(who);
+    }
+    var serves = meal.default_servings ? cookServesShown(meal) : null;
+    if (serves) parts.push('serves ' + serves);
+    if (!parts.length) return '';
+    return '<p class="recipe-for">' + escapeHtml(parts.join(' · ')) + '</p>';
+  }
+
+  function recipeTabsHtml(active) {
+    return '<div class="wk-seg recipe-tabs" role="tablist" aria-label="Recipe">' +
+      RECIPE_TABS.map(function (t) {
+        var on = t.key === active;
+        return '<button type="button" class="wk-seg-btn' + (on ? ' is-on' : '') + '" role="tab" ' +
+          'aria-selected="' + (on ? 'true' : 'false') + '" data-cook="recipe-tab" data-tab="' + t.key + '">' +
+          t.label + '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  // The credit line, the server's own sentence ("Based on Swasthi's
+  // Recipes, checked against Hebbar's Kitchen and Cook with Manali" — or
+  // "Originally based on …" once the household has changed it a lot), then
+  // "See sources". Nothing without research.
+  function recipeCreditHtml(extra) {
+    var credit = extra && extra.research && extra.research.credit;
+    if (!credit) return '';
+    return '<div class="recipe-credit">' +
+      '<p class="recipe-credit-line">' + escapeHtml(credit) + '</p>' +
+      '<button type="button" class="recipe-link" data-cook="recipe-tab" data-tab="sources">See sources</button>' +
+    '</div>';
+  }
+
+  // "Changed for your household" — ONE row by default ("3 changes ›"),
+  // opening on tap to the list (Emily, 2026-10-05: collapse the changes
+  // card). Nothing when nothing was changed.
+  function recipeChangesHtml(extra) {
+    var changes = (extra && extra.household_changes) || [];
+    if (!changes.length) return '';
+    var open = !!cookState.recipeChangesOpen;
+    var count = changes.length + (changes.length === 1 ? ' change' : ' changes');
+    return '<section class="card recipe-changes' + (open ? ' is-open' : '') + '">' +
+      '<button type="button" class="recipe-changes-row" data-cook="recipe-changes" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        '<span class="recipe-changes-title">Changed for your household</span>' +
+        '<span class="recipe-changes-count">' + escapeHtml(count) + ' ' + (open ? '&#8964;' : '&rsaquo;') + '</span>' +
+      '</button>' +
+      (open
+        ? '<ul class="recipe-changes-list">' + changes.map(function (c) {
+            return '<li>' + escapeHtml(String(c)) + '</li>';
+          }).join('') + '</ul>'
+        : '') +
+    '</section>';
+  }
+
+  // "Time · 45 min" with the split when both halves are known.
+  function recipeTimeHtml(meal) {
+    var prep = Number(meal.prep_time_minutes) || 0;
+    var cook = Number(meal.cook_time_minutes) || 0;
+    if (!prep && !cook) return '';
+    var split = prep && cook ? ' (' + prep + ' prep, ' + cook + ' cook)' : '';
+    return '<p class="recipe-fact"><span class="recipe-fact-label">Time</span>' +
+      escapeHtml((prep + cook) + ' min' + split) + '</p>';
+  }
+
+  // The two ways on from the overview, as rows: "Ingredients · 9 ›",
+  // "Steps · 6 ›".
+  function recipeJumpsHtml(meal) {
+    var ings = (meal.ingredients || []).length;
+    var steps = (meal.instructions || []).length;
+    var row = function (tab, label, n) {
+      return '<button type="button" class="recipe-jump" data-cook="recipe-tab" data-tab="' + tab + '">' +
+        '<span>' + label + '</span><span class="recipe-jump-n">' + n + ' &rsaquo;</span></button>';
+    };
+    return '<div class="card recipe-jumps">' +
+      (ings ? row('ingredients', 'Ingredients', ings) : '') +
+      (steps ? row('steps', 'Steps', steps) : '') +
+    '</div>';
+  }
+
+  function recipeOverviewHtml(data, meal, idx, extra) {
+    return recipeCreditHtml(extra) +
+      recipeChangesHtml(extra) +
+      recipeServesHtml(meal, idx) +
+      recipeBatchLineHtml(meal) +
+      recipeTimeHtml(meal) +
+      // The night-before line, and anything an earlier cook already made.
+      cookRecipeLinesHtml(meal) +
+      (meal.has_full_recipe ? recipeJumpsHtml(meal) : '') +
+      // A recipe with no steps yet says so here, where every way in lands,
+      // with "Fill in this recipe" (recipeStepsHtml's live empty state)
+      // rather than hiding that behind the Steps tab.
+      (meal.has_full_recipe && !(meal.instructions || []).length ? recipeStepsHtml(meal, true) : '') +
+      cookFocusPrepHtml(cookFocusPrepTasks(data, meal)) +
+      cookPrepCutHtml(data, meal);
+  }
+
+  // A plain list, grouped as the recipe groups it (an ingredient's `group`
+  // when the recipe carries one; otherwise one list). No box, no tick.
+  function recipePlainIngredientsHtml(meal, idx) {
+    var ings = (meal.ingredients || []).filter(function (ing) { return ing && ing.item; });
+    if (!ings.length) return '';
+    var groups = [];
+    var byName = {};
+    ings.forEach(function (ing) {
+      var g = String(ing.group || '').trim();
+      if (!byName[g]) { byName[g] = []; groups.push(g); }
+      byName[g].push(ing);
+    });
+    var count = meal.batch_line ? cookServesShown(meal) : null;
+    return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
+      '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
+        (count ? ' &middot; ' + escapeHtml(String(count)) + ' servings' : '') + '</span>' +
+      groups.map(function (g) {
+        return (g ? '<p class="recipe-ing-group">' + escapeHtml(g) + '</p>' : '') +
+          '<ul class="recipe-ing-list">' + byName[g].map(function (ing) {
+            var tags = [];
+            if (ing.added) tags.push('added');
+            if (ing.at_home) tags.push('at home');
+            if (ing.made_ahead) tags.push(ing.made_ahead);
+            if (ing.substitute) tags.push('using ' + ing.substitute + ' instead');
+            return '<li class="recipe-ing">' + escapeHtml(cookIngredientLabel(ing)) +
+              tags.map(function (t) { return ' <span class="wk-ing-tag">' + escapeHtml(t) + '</span>'; }).join('') +
+            '</li>';
+          }).join('') + '</ul>';
+      }).join('') +
+      cookUnscaledHtml(meal, idx) +
+    '</section>';
+  }
+
+  // Sources: lead first with a Lead badge, each a link to the original
+  // (their site, a new tab), stars · number of ratings when known, then the
+  // one line. Without research, the recipe's own citation (a link it was
+  // imported from, a cookbook page) is its one source; with neither, say so.
+  function recipeStarsLabel(src) {
+    var bits = [];
+    if (src.rating != null && src.rating !== '') {
+      var r = Number(src.rating);
+      if (!isNaN(r)) bits.push('★ ' + (Math.round(r * 10) / 10));
+    }
+    if (src.rating_count) {
+      var n = Number(src.rating_count);
+      if (!isNaN(n)) bits.push(n.toLocaleString('en-US') + (n === 1 ? ' rating' : ' ratings'));
+    }
+    return bits.join(' · ');
+  }
+
+  function recipeSourceRowHtml(src) {
+    var name = src.name || src.title || 'Source';
+    var meta = recipeStarsLabel(src);
+    var inner = '<span class="recipe-src-main">' +
+        '<span class="recipe-src-name">' + escapeHtml(name) + '</span>' +
+        (src.lead ? '<span class="recipe-src-lead">Lead</span>' : '') +
+      '</span>' +
+      (src.title && src.title !== name ? '<span class="recipe-src-title">' + escapeHtml(src.title) + '</span>' : '') +
+      (meta ? '<span class="recipe-src-meta">' + escapeHtml(meta) + '</span>' : '');
+    var url = String(src.url || '');
+    if (!/^https?:\/\//i.test(url)) return '<li class="recipe-src">' + inner + '</li>';
+    return '<li class="recipe-src"><a class="recipe-src-link" href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' +
+      inner + '<span class="recipe-src-go" aria-hidden="true">&nearr;</span></a></li>';
+  }
+
+  function recipeSourcesHtml(meal, extra) {
+    var research = extra && extra.research;
+    var sources = (research && research.sources) || [];
+    if (!sources.length && research && (research.lead || (research.others || []).length)) {
+      sources = (research.lead ? [research.lead] : []).concat(research.others || []);
+    }
+    if (sources.length) {
+      return '<section class="card recipe-card recipe-sources" aria-label="Sources">' +
+        '<ul class="recipe-src-list">' + sources.map(recipeSourceRowHtml).join('') + '</ul>' +
+      '</section>' +
+      '<p class="recipe-sources-line">' + RECIPE_SOURCES_LINE + '</p>';
+    }
+    if (meal.citation || (meal.photo_urls || []).length) {
+      return recipeCitationHtml(meal.citation, meal.photo_urls, 'cook-cite');
+    }
+    if (meal.recipe_id != null && recipeExtras[meal.recipe_id] === 'loading') {
+      return '<p class="recipe-sources-line">Looking up where this one came from…</p>';
+    }
+    return '<p class="recipe-sources-line">I wrote this one for you — there’s no outside recipe behind it.</p>';
+  }
+
+  function recipeTabBodyHtml(data, meal, idx, tab, extra) {
+    if (!meal.has_full_recipe) {
+      return '<p class="cook-norecipe recipe-norecipe">No saved recipe for this one — ask me for it in the chat.</p>';
+    }
+    // The stepper rides on the Ingredients tab too, beside the amounts it
+    // rewrites — the same control and the same number as the Overview's.
+    if (tab === 'ingredients') return recipeServesHtml(meal, idx) + recipePlainIngredientsHtml(meal, idx);
+    if (tab === 'steps') return recipeStepsHtml(meal, true);
+    if (tab === 'sources') return recipeSourcesHtml(meal, extra);
+    return recipeOverviewHtml(data, meal, idx, extra);
+  }
+
+  // The ⋯ menu: three quiet actions, never the screen's primary.
+  function recipeMoreHtml(meal) {
+    if (!meal.has_full_recipe) return '';
+    var open = !!cookState.recipeMenuOpen;
+    var rating = cookState.recipeRateOpen;
+    return '<div class="recipe-more">' +
+      '<button type="button" class="recipe-more-btn" data-cook="recipe-menu" aria-haspopup="true" aria-expanded="' +
+        (open ? 'true' : 'false') + '" aria-label="More">' + '&middot;&middot;&middot;' + '</button>' +
+      (open
+        ? '<div class="recipe-menu" role="menu">' +
+            '<button type="button" role="menuitem" data-cook="recipe-save">Save to my recipes</button>' +
+            '<button type="button" role="menuitem" data-cook="recipe-add-list">Add to shopping list</button>' +
+            (rating
+              ? '<div class="recipe-rate">' +
+                  '<button type="button" class="cook-attn-fb" data-cook="recipe-rate" data-rating="liked">Liked it</button>' +
+                  '<button type="button" class="cook-attn-fb" data-cook="recipe-rate" data-rating="disliked">Not a hit</button>' +
+                '</div>'
+              : '<button type="button" role="menuitem" data-cook="recipe-rate-open">Rate this recipe</button>') +
+          '</div>'
+        : '') +
+    '</div>';
+  }
+
+  async function recipeRate(el, meal) {
+    el.disabled = true;
+    try {
+      await cookPost('/api/recipe-feedback', { recipe_name: meal.meal, rating: el.getAttribute('data-rating'), notes: '' });
+      cookState.recipeMenuOpen = false;
+      cookState.recipeRateOpen = false;
+      renderCook();
+      showToast('Noted — that’ll steer next week.');
+    } catch (err) {
+      el.disabled = false;
+      showToast('Couldn’t save that rating — try again.');
+    }
+  }
+
+  // Cook mode's recipe screen — the recipe page (2026-10-06, see the
+  // section above): the crumb with the ⋯ menu beside it, the dish, "who
+  // it's for · serves N", the four tabs and the open tab's body, then the
+  // dock. The prep rows (cookFocusPrepHtml — the thaw the root's get-ready
+  // row opens this screen to tick) and the prep-cut offer (cookPrepCutHtml)
+  // ride on the Overview, where they always sat under the recipe.
   function cookRecipeHtml(data, meal, idx) {
+    var tab = cookState.recipeTab || 'overview';
+    var extra = recipeExtraFor(meal);
     return '<div class="cook-focus cook-recipe">' +
-      '<button type="button" class="crumb" data-cook="exit-focus">&lsaquo; ' +
-        escapeHtml(cookBackLabel()) + '</button>' +
+      '<div class="cook-recipe-head">' +
+        '<button type="button" class="crumb" data-cook="exit-focus">&lsaquo; ' +
+          escapeHtml(cookBackLabel()) + '</button>' +
+        recipeMoreHtml(meal) +
+      '</div>' +
       '<div class="cook-body recipe-body">' +
         recipeTitleHtml(meal) +
-        cookRecipeLinesHtml(meal) +
-        recipeServesHtml(meal, idx) +
-        recipeBatchLineHtml(meal) +
-        (meal.has_full_recipe
-          ? recipeIngredientsHtml(meal, idx, true) +
-            // Same button, same sheet, under the same card (card 12).
-            '<div class="wk-ing-acts cook-ing-acts">' + recipeChangeBtnHtml(meal) + '</div>' +
-            recipeStepsHtml(meal, true)
-          : '<p class="cook-norecipe recipe-norecipe">No saved recipe for this one — ask me for it in the chat.</p>') +
-        // Where the recipe came from, with the page photo a tap away
-        // (recipe photo import) — quiet, at the foot.
-        recipeCitationHtml(meal.citation, meal.photo_urls, 'cook-cite') +
-        cookFocusPrepHtml(cookFocusPrepTasks(data, meal)) +
-        cookPrepCutHtml(data, meal) +
+        recipeForLine(meal) +
+        (meal.has_full_recipe ? recipeTabsHtml(tab) : '') +
+        recipeTabBodyHtml(data, meal, idx, tab, extra) +
       '</div>' +
       cookRecipeDockHtml(meal) +
     '</div>';
@@ -21601,17 +21898,26 @@
 
   // The recipe's dock: "Start cooking" (the screen's one apricot, Rule 5),
   // or "Keep cooking" once a cook is under way — by its ticks, or by the
-  // real start being on record — and never a time on the button. A recipe
-  // with nothing to step through is not offered a step-through: its one
-  // action is the finish (cookDockCookedHtml), as before.
+  // real start being on record — and never a time on the button. Beside it,
+  // as an outline, "Change recipe" (the existing Change recipe sheet,
+  // 2026-10-06) where the meal can be changed. A recipe with nothing to
+  // step through is not offered a step-through: its one action is the
+  // finish (cookDockCookedHtml), as before.
   function cookRecipeDockHtml(meal) {
     var steps = meal.instructions || [];
     if (!steps.length) return cookDockHtml(cookDockCookedHtml(meal));
     var underway = meal.cooked_status !== 'done' &&
       (!!meal.cook_started_at || steps.some(function (st, i) { return cookTicked('steps', cookMealKey(meal) + ':' + i); }));
-    return cookDockHtml(
-      '<button type="button" class="cook-hero-action" data-cook="start-cooking">' +
-        '<span>' + (underway ? 'Keep cooking' : 'Start cooking') + '</span>' + ICONS.arrow + '</button>');
+    var change = recipeIsChangeable(meal)
+      ? '<button type="button" class="cook-dock-back recipe-dock-change" data-cr="open" ' +
+          'data-entry-id="' + escapeHtml(String(meal.entry_id)) + '" data-dish="' + escapeHtml(meal.meal || '') + '">' +
+          '<span>' + escapeHtml(CHANGE_RECIPE_LABEL) + '</span></button>'
+      : '';
+    var start = '<button type="button" class="cook-hero-action" data-cook="start-cooking">' +
+      '<span>' + (underway ? 'Keep cooking' : 'Start cooking') + '</span>' + ICONS.arrow + '</button>';
+    return change
+      ? '<div class="dock cook-dock"><div class="dock-row">' + change + start + '</div></div>'
+      : cookDockHtml(start);
   }
 
   // ---------- The cooker: one step at a time ----------
@@ -21864,6 +22170,41 @@
     if (what === 'attn-use') return cookLogUsage(el);
     if (what === 'feedback') return cookRateMeal(el);
     if (what === 'voice') return cookToggleVoice(el);
+    // The recipe page (2026-10-06): its tabs, the changes row, the ⋯ menu.
+    if (what === 'recipe-tab') {
+      cookState.recipeTab = el.getAttribute('data-tab') || 'overview';
+      cookState.recipeMenuOpen = false;
+      cookState.pendingScrollTop = true;
+      renderCook();
+      return;
+    }
+    if (what === 'recipe-changes') { cookState.recipeChangesOpen = !cookState.recipeChangesOpen; renderCook(); return; }
+    if (what === 'recipe-menu') {
+      cookState.recipeMenuOpen = !cookState.recipeMenuOpen;
+      cookState.recipeRateOpen = false;
+      renderCook();
+      return;
+    }
+    var recipeMeal = cookState.data && (cookState.data.meals || [])[cookState.focusIdx];
+    if (what === 'recipe-save') {
+      // Every recipe Pomona writes or imports is already the household's —
+      // it is on Preferences › Recipes from the moment it exists — so this
+      // says where it is rather than writing a second copy.
+      cookState.recipeMenuOpen = false;
+      renderCook();
+      showToast('It’s in your recipes.', { label: 'Open', onClick: function () { openRecipesSheet(); } });
+      return;
+    }
+    if (what === 'recipe-add-list') {
+      // Through the chat, which already adds a recipe's ingredients with
+      // the list's own merging — the person sees the ask and sends it.
+      cookState.recipeMenuOpen = false;
+      renderCook();
+      openAskSheet('Add the ingredients for ' + ((recipeMeal && recipeMeal.meal) || 'this recipe') + ' to the shopping list');
+      return;
+    }
+    if (what === 'recipe-rate-open') { cookState.recipeRateOpen = true; renderCook(); return; }
+    if (what === 'recipe-rate' && recipeMeal) return recipeRate(el, recipeMeal);
   }
 
   async function cookPost(url, body) {

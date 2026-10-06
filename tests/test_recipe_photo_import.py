@@ -814,7 +814,9 @@ def test_the_review_asks_for_the_credit_as_a_sentence_and_which_recipe_on_a_two_
 def test_the_credit_renders_through_one_path_on_the_meal_screen_the_day_card_and_cook_mode():
     assert "recipeCitationHtml(cookMeal.citation, cookMeal.photo_urls, 'wk-meal-cite')" in _fn("mealStepHtml")
     assert "entry.citation.text" in _fn("daySlotCardHtml")
-    assert "recipeCitationHtml(meal.citation, meal.photo_urls, 'cook-cite')" in _fn("cookRecipeHtml")
+    # UPDATED 2026-10-06 (the recipe page): cook mode's credit is on its
+    # Sources tab when there is no researched source to list.
+    assert "recipeCitationHtml(meal.citation, meal.photo_urls, 'cook-cite')" in _fn("recipeSourcesHtml")
     assert "Source:" not in SHELL_JS
     assert ".recipe-cite {" in SHELL_CSS and "button.recipe-cite {" in SHELL_CSS
     # No literal colours in the new CSS (rule 9).

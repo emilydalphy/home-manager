@@ -7366,6 +7366,208 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 /* The prep rows and the prep-cut offer sit under the recipe, quietly. */
 .recipe-body .cook-section { padding-top: 4px; }
 
+/* ---------- The recipe page (2026-10-06) ----------
+   Loop Board "Recipes people trust", slice 1 (Emily locked it 2026-10-05):
+   the dish, one line "who it's for · serves N", four tabs (the .wk-seg
+   control, reused — never a second segmented recipe), Start cooking and
+   Change recipe in the dock, a ⋯ menu beside the crumb. Ingredients are a
+   plain list: no box, no tick (that lives in Shop → Before you shop).
+   Every colour is a token already measured where it sits: --ink-secondary
+   on --ground for the line and the quiet facts, --apricot-label for links
+   (the token for links), the Lead badge --ink-on-celadon on
+   --celadon-tint (10.65 light / 10.37 dark, the pair the "Not us" pill
+   uses). */
+.cook-recipe-head { display: flex; align-items: center; justify-content: space-between; }
+/* A tab can be short (Sources, a two-line Overview), so the page fills the
+   panel and the dock keeps to its foot rather than floating up under the
+   content — the same flex chain the Cook root uses for its dock. */
+.kitchen-content > :has(> .cook-recipe) { display: flex; flex-direction: column; flex: 1 0 auto; }
+.cook-focus.cook-recipe { display: flex; flex-direction: column; flex: 1 0 auto; }
+.cook-focus.cook-recipe > .cook-dock { margin-top: auto; }
+.recipe-for {
+  margin: -6px 0 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+/* .wk-seg.recipe-tabs: the control sits in the body's own gutter, not the
+   root's 20px one (.wk-seg is defined further down, so this needs the pair). */
+.wk-seg.recipe-tabs { margin: 0; }
+.recipe-tabs .wk-seg-btn { font-size: 13px; padding: 0 2px; min-width: 0; }
+.recipe-credit { display: flex; flex-direction: column; gap: 0; }
+.recipe-credit-line {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+.recipe-link {
+  appearance: none;
+  -webkit-appearance: none;
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.recipe-changes { padding: 0 14px; }
+.recipe-changes-row {
+  width: 100%;
+  min-height: 48px;
+  padding: 0;
+  background: none;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: left;
+}
+.recipe-changes-title { font-size: 15px; font-weight: 700; color: var(--ink); }
+.recipe-changes-count { font-size: 14px; font-weight: 700; color: var(--apricot-label); white-space: nowrap; }
+.recipe-changes-list {
+  margin: 0;
+  padding: 0 0 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.recipe-fact { margin: 0; font-size: 15px; font-weight: 500; color: var(--ink); }
+.recipe-fact-label {
+  margin-right: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.recipe-jumps { padding: 0 14px; display: flex; flex-direction: column; }
+.recipe-jump {
+  min-height: 48px;
+  padding: 0;
+  background: none;
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  cursor: pointer;
+}
+.recipe-jump + .recipe-jump { border-top: 1.5px solid var(--hairline); }
+.recipe-jump-n { font-family: var(--font-body); font-size: 14px; color: var(--apricot-label); }
+/* The plain ingredient list — rows, a hairline above each, no box. */
+.recipe-ing-group {
+  margin: 8px 0 2px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.recipe-ing-list { list-style: none; margin: 0; padding: 0; }
+.recipe-ing {
+  padding: 11px 0;
+  border-top: 1.5px solid var(--hairline);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink);
+}
+.recipe-src-list { list-style: none; margin: 0; padding: 0; }
+.recipe-src + .recipe-src { border-top: 1.5px solid var(--hairline); }
+.recipe-src-link, .recipe-src > .recipe-src-main {
+  min-height: 56px;
+  padding: 10px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.recipe-src-main { display: flex; align-items: center; gap: 8px; grid-column: 1; }
+.recipe-src-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+.recipe-src-lead {
+  padding: 2px 8px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--celadon-tint);
+  color: var(--ink-on-celadon);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.recipe-src-title, .recipe-src-meta { grid-column: 1; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
+.recipe-src-go { grid-column: 2; grid-row: 1 / span 3; font-size: 18px; color: var(--apricot-label); }
+.recipe-sources-line { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink-secondary); }
+/* The ⋯ menu: a 44px tile beside the crumb, opening a small card. */
+.recipe-more { position: relative; }
+.recipe-more-btn {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: none;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  cursor: pointer;
+}
+.recipe-menu {
+  position: absolute;
+  right: 0;
+  top: 46px;
+  z-index: 5;
+  min-width: 220px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.recipe-menu > button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+.recipe-menu > button:hover { background: var(--surface-raised); }
+.recipe-rate { display: flex; gap: 6px; padding: 4px; }
+/* Change recipe in the dock: the outline beside Start cooking (rule 5 —
+   the dock's one apricot stays Start cooking). */
+.recipe-dock-change { font-size: 15px; padding: 0 14px; }
+.dock-row .recipe-dock-change + .cook-hero-action { flex: 1 1 auto; min-width: 0; }
+.dock-row .recipe-dock-change + .cook-hero-action span { white-space: nowrap; }
+
 /* ---------- The cooker: one step at a time ----------
    Board 14-cooking: "‹ Recipe", the dish and the step count as the
    eyebrow, the progress bar, the step in a card, the next step under it.
