@@ -187,3 +187,26 @@ def test_an_answered_question_leaves_the_freezer_step_before_the_slow_refetch():
     # loadWeekMenu, or the repaint draws the question again as "One moment…".
     body = _function("submitDefrostAsk")
     assert body.index("weekState.step = 'week'") < body.index("await loadWeekMenu(panel)")
+
+
+# --------------------------------------------------------------------------
+# Card 4 - days before the plan began do not read "Not planned"
+# --------------------------------------------------------------------------
+
+@_needs_node
+def test_a_day_before_the_plan_began_reads_quietly_not_as_a_gap():
+    out = _node(
+        "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
+        + _function("pastEmptyWord")
+        + "\nconsole.log(JSON.stringify(["
+        "pastEmptyWord({ before_plan_start: true, dinner: null }),"          # server-flagged
+        "pastEmptyWord({ before_plan_start: false, breakfast: null, lunch: null, dinner: null }),"  # unflagged, nothing at all
+        "pastEmptyWord({ before_plan_start: false, dinner: { state: 'planned' } })"  # a real gap in a planned day
+        "]));"
+    )
+    assert out == ["Before this plan", "Before this plan", "Not planned"]
+
+
+def test_every_past_empty_slot_goes_through_the_one_word():
+    assert SHELL_JS.count("pastEmptyWord(day)") == 4  # the definition and three uses
+    assert "day.isPast ? 'Not planned'" not in SHELL_JS

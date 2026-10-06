@@ -15321,6 +15321,18 @@
   // nothing either. A planned meal on a day already gone keeps Done (a
   // tick is a record of something that happened) and loses Swap (the
   // server refuses a swap into the past anyway).
+  // What an empty slot on a day that has already gone by says. "Not
+  // planned" read as a gap in the household's own plan on a Tuesday first
+  // plan, for the Saturday–Monday before it began (Loop Board, walkthrough
+  // 2026-10-06). A day before the plan began — flagged by the server, or a
+  // past day with nothing in ANY slot, which is the same fact on a plan
+  // that did not flag it — says so quietly; a past day that has other
+  // meals keeps "Not planned", because there it is true.
+  function pastEmptyWord(day) {
+    var nothingAtAll = !WEEK_SLOTS.some(function (s) { return !!day[s]; });
+    return (day.before_plan_start || nothingAtAll) ? 'Before this plan' : 'Not planned';
+  }
+
   function wkMealRowHtml(day, slot, opts) {
     opts = opts || {};
     var entry = daySlotEntry(day, slot);
@@ -15332,7 +15344,7 @@
     else if (entry && entry.state === 'planned_empty') {
       name = awayLineFor(entry) || entry.title || 'Nothing planned';
       quiet = ' is-quiet';
-    } else { name = day.isPast ? 'Not planned' : 'Nothing yet'; quiet = ' is-quiet'; }
+    } else { name = day.isPast ? pastEmptyWord(day) : 'Nothing yet'; quiet = ' is-quiet'; }
     var done = planned && !!entry.cooked;
     var meta = wkRowMetaLine(entry, wkRowMeta(entry));
 
@@ -17043,7 +17055,7 @@
     else if (entry && entry.state === 'planned_empty') {
       name = awayLineFor(entry) || entry.title || 'Nothing planned';
       quiet = ' is-quiet';
-    } else { name = day.isPast ? 'Not planned' : 'Nothing yet'; quiet = ' is-quiet'; }
+    } else { name = day.isPast ? pastEmptyWord(day) : 'Nothing yet'; quiet = ' is-quiet'; }
 
     // The plate's parts (plateRowHtml) — guarded with typeof for the tests
     // that run this renderer alone, like planCookableNow below.
@@ -23351,7 +23363,7 @@
               return '<span class="' + cellClass + ' empty">Your call</span>';
             }
             if (entry) return '<span class="' + cellClass + '">' + escapeHtml(entry.title) + '</span>';
-            if (day.isPast) return '<span class="' + cellClass + ' blank">Not planned</span>';
+            if (day.isPast) return '<span class="' + cellClass + ' blank">' + pastEmptyWord(day) + '</span>';
             return '<span class="' + cellClass + ' empty">Open' + (slot === 'dinner' ? '' : '') + '</span>';
           }).join('') +
         '</button>'
