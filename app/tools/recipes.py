@@ -63,6 +63,7 @@ def add_recipe(
     source_page: str = "",
     details_pending: bool = False,
     dish_note: str = "",
+    from_draft: bool = False,
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -156,15 +157,15 @@ def add_recipe(
         cur = conn.execute(
             "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
             "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
-            "source_url, source_book, source_author, source_page, details_pending, dish_note) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "source_url, source_book, source_author, source_page, details_pending, dish_note, from_draft) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
                 json.dumps(food_groups or []), cuisine, main_protein,
                 json.dumps(instructions or []), default_servings, prep_time_minutes, cook_time_minutes,
                 advance_prep_notes, json.dumps(advance_prep_step_indices or []), source_url or "",
                 (source_book or "").strip(), (source_author or "").strip(), (source_page or "").strip(),
-                1 if details_pending else 0, (dish_note or "").strip(),
+                1 if details_pending else 0, (dish_note or "").strip(), 1 if from_draft else 0,
             ),
         )
         conn.commit()
@@ -757,7 +758,36 @@ def recipe_shelf() -> list[dict]:
     (details_pending) has no ingredients and no steps, so there is nothing
     to open; it joins the list the moment approval writes it.
     """
-    rows = [r for r in list_recipes() if not r.get("details_pending")]
+    #
+    # And with a SECOND (Emily, 2026-10-06, "7 saved" on a household that had
+    # saved none): a dish the draft generator wrote (from_draft) that was
+    # swapped out before the week was approved is a cached recipe, not a saved
+    # one. Such a dish is listed once it is on an approved (or ad hoc) plan
+    # entry, or has been cooked or rated. The recipe stays cached either way.
+    conn = get_conn()
+    kept = {
+        r["recipe_id"] for r in conn.execute(
+            "SELECT DISTINCT mpe.recipe_id FROM meal_plan_entries mpe "
+            "LEFT JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+            "WHERE mpe.household_id = ? AND mpe.recipe_id IS NOT NULL "
+            "AND (mpe.weekly_plan_id IS NULL OR wp.status = 'approved')",
+            (household_id(),),
+        ).fetchall()
+    }
+    drafted = {
+        r["id"] for r in conn.execute(
+            "SELECT id FROM recipes WHERE household_id = ? AND from_draft = 1", (household_id(),),
+        ).fetchall()
+    }
+    conn.close()
+    rows = [
+        r for r in list_recipes()
+        if not r.get("details_pending")
+        and not (
+            r["id"] in drafted and r["id"] not in kept
+            and not r.get("times_cooked") and not r.get("rating")
+        )
+    ]
     rows.sort(key=lambda r: ((r.get("name") or "").strip().lower(), r["id"]))
     return [
         {

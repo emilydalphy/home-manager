@@ -6717,6 +6717,7 @@ def _generate_weekly_plan(
             pending = not item.get("ingredients")
             tools.add_recipe(
                 name=meal_name,
+                from_draft=True,
                 ingredients=item.get("ingredients", []),
                 tags=item.get("tags", []),
                 food_groups=item.get("food_groups", []),

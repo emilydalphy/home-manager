@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Settings -> Recipes no longer counts dishes swapped out of the draft**
+  (walkthrough 2026-10-06 "7 saved"; branch `list-recipes-batch-2026-10-06`).
+  The draft generator writes a recipe row for every dish it picks, so ones
+  swapped away before approval were listed and counted. New `recipes.from_draft`
+  (set by `agent._ensure_recipe_saved`); `recipe_shelf` hides a from_draft
+  dish unless it is on an approved/ad hoc plan entry or cooked/rated. The row
+  stays cached. The count is `len(recipe_shelf())`, so list and count agree.
+  Test: `tests/test_recipes_settings_skips_swapped_dishes.py`.
+
 - **A breakfast with no written recipe still shops for itself** (walkthrough
   2026-10-06; branch `list-recipes-batch-2026-10-06`). "Greek Yogurt with
   Berries and Granola" came back `is_new_recipe=false` with no saved row;

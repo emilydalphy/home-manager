@@ -404,6 +404,10 @@ _MIGRATIONS = [
     # "Changed for your household" lines (research-first writing, 2026-10-06).
     ("recipes", "household_changes_json", "TEXT NOT NULL DEFAULT '[]'"),
     ("recipes", "research_id", "INTEGER"),
+    # 1 for a dish the week-draft generator wrote (agent._ensure_recipe_saved);
+    # Settings -> Recipes lists one only once it has been on an approved week,
+    # cooked or rated (recipes.recipe_shelf). 0 for everything a person saved.
+    ("recipes", "from_draft", "INTEGER NOT NULL DEFAULT 0"),
     ("api_calls", "web_search_requests", "INTEGER NOT NULL DEFAULT 0"),
     ("api_calls", "web_fetch_requests", "INTEGER NOT NULL DEFAULT 0"),
     ("meal_preferences", "table_style", "TEXT NOT NULL DEFAULT ''"),
