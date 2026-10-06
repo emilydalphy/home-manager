@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — iPhone cloud build: `codemagic.yaml`, no secrets.
+  Branch `overnight/codemagic-config`.** One manual workflow, `ios-app` →
+  `npm ci` → `npm run sync` → `xcode-project build-ipa` (scheme App) →
+  TestFlight. Apple's key is the Codemagic integration "Pomona App Store
+  Connect", by name; signing is Codemagic's automatic `ios_signing`.
+  Version stays package.json's (sync already checks MARKETING_VERSION);
+  build number = Codemagic's `$BUILD_NUMBER`. Manual, not on push: a
+  website change reaches the app with no build. README: "Day one with the
+  Apple account". Untested against a real Mac build — first run is the test.
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop
