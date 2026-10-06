@@ -727,7 +727,7 @@ def set_away_stretch(
     }
 
 
-def _recommend_ready_made(date_str: str, slot: str) -> dict:
+def _recommend_ready_made(date_str: str, slot: str, conn=None) -> dict:
     """
     A first pass at what could cover a ready_made slot without fresh
     cooking — a freezer item to defrost, or an earlier dinner this week
@@ -746,15 +746,23 @@ def _recommend_ready_made(date_str: str, slot: str) -> dict:
     to recommend yet" answer, not an error; the reminder machinery that
     actually acts on a confirmed recommendation belongs to the separate
     defrost-flow ticket, which reads this rather than duplicating it.
+
+    `conn` lets a caller already inside a write transaction ask on its own
+    connection (weekly_plan._recheck_ready_made_after_redate, which has
+    just moved the recommended dinner and must see the week as moved, not
+    as a second connection would read it). Given one, it is not closed.
     """
-    conn = get_conn()
+    own_conn = conn is None
+    if own_conn:
+        conn = get_conn()
     freezer_item = conn.execute(
         "SELECT item FROM inventory_items WHERE household_id = ? AND location = 'freezer' "
         "AND TRIM(quantity) != '' ORDER BY updated_at DESC, id DESC LIMIT 1",
         (household_id(),),
     ).fetchone()
     if freezer_item:
-        conn.close()
+        if own_conn:
+            conn.close()
         return {"recommended_defrost_item": freezer_item["item"], "recommended_batch_from_entry_id": None}
 
     batch_from = conn.execute(
@@ -766,7 +774,8 @@ def _recommend_ready_made(date_str: str, slot: str) -> dict:
         """,
         (household_id(), date_str),
     ).fetchone()
-    conn.close()
+    if own_conn:
+        conn.close()
     if batch_from:
         return {"recommended_batch_from_entry_id": batch_from["id"], "recommended_defrost_item": None}
     return {"recommended_batch_from_entry_id": None, "recommended_defrost_item": None}

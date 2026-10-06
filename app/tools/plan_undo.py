@@ -278,6 +278,9 @@ def restore(conn, record: dict, holder_id: int) -> None:
                 tuple(e[c] for c in cols),
             )
     reinsert(conn, "prep_tasks", record.get("prep") or [])
+    # Rows put back on their old dates: a "first meal back" suggestion
+    # naming one of them must still name a dinner before that meal.
+    _weekly_plan._recheck_ready_made_after_redate(conn, sorted(snap_ids))
     _restore_lines(conn, record.get("grocery"))
     links = [
         l for l in record.get("links") or []
