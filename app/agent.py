@@ -6856,14 +6856,12 @@ def _generate_weekly_plan(
             # is_new_recipe=false with no saved row, landed freeform, said
             # "No saved recipe for this one" and never reached the list —
             # yogurt, berries, granola). A breakfast is never a leftovers
-            # night either. So is any dish that arrives carrying its OWN
-            # ingredient list and is not a reheat (no links_to): a list the
-            # planner wrote is a recipe, whatever flag it came with.
-            own_list = bool(item.get("ingredients")) and not (item.get("derived_from") or {}).get("links_to")
+            # night either. Other slots still trust the flag: widening this
+            # to "any dish with its own ingredient list" turned not-new
+            # dinners into saved rows (merge review, 2026-10-06).
             if (
                 not item.get("is_new_recipe")
                 and item.get("slot") not in ("snack", "breakfast")
-                and not own_list
             ):
                 return
             # Case-insensitively (tools.existing_recipe_named), which is

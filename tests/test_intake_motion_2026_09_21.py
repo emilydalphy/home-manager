@@ -161,7 +161,7 @@ class TestOneQuestionAScreen:
         q2 = _section("q2")
         assert '<span class="card-btn-title">Away for a few nights?</span>' in q2
         assert (
-            "Tell me when you&rsquo;re travelling or gone for a stretch &mdash; "
+            "Tell me when you&rsquo;re traveling or gone for a stretch &mdash; "
             "I&rsquo;ll skip those meals altogether." in q2
         )
         assert 'id="away-gate"' in q2

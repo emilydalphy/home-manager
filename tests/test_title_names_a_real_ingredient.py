@@ -959,7 +959,13 @@ def test_a_repeated_dish_keeps_its_recipe_on_every_morning(stub_week):
 
     plan = agent.generate_weekly_plan(week)
 
-    assert [r["name"] for r in tools.list_recipes()] == ["Egg White Bites"]
+    # Since 2026-10-06 a not-new BREAKFAST with no saved row is saved rather
+    # than left freeform (walkthrough: yogurt, berries and granola never
+    # reached the list), so this fixture's filler "Chili" breakfasts on days
+    # 4-7 now make a pending row too. The claim here is about the bites: one
+    # recipe, under the corrected name, and no stray sibling.
+    names = [r["name"] for r in tools.list_recipes()]
+    assert names.count("Egg White Bites") == 1 and not any("Bites with" in n for n in names), names
     rows = _breakfast_rows(plan["weekly_plan_id"])
     assert len({rid for rid, _ in rows}) == 1, "all three mornings are one recipe"
     assert all(rid and free is None for rid, free in rows), "none of them is freeform"
@@ -978,7 +984,13 @@ def test_a_repeated_dish_marked_new_every_time_still_makes_ONE_recipe(stub_week)
 
     plan = agent.generate_weekly_plan(week)
 
-    assert [r["name"] for r in tools.list_recipes()] == ["Egg White Bites"]
+    # Since 2026-10-06 a not-new BREAKFAST with no saved row is saved rather
+    # than left freeform (walkthrough: yogurt, berries and granola never
+    # reached the list), so this fixture's filler "Chili" breakfasts on days
+    # 4-7 now make a pending row too. The claim here is about the bites: one
+    # recipe, under the corrected name, and no stray sibling.
+    names = [r["name"] for r in tools.list_recipes()]
+    assert names.count("Egg White Bites") == 1 and not any("Bites with" in n for n in names), names
     assert len({rid for rid, _ in _breakfast_rows(plan["weekly_plan_id"])}) == 1
     assert repair_recipe_titles() == [], "nothing left for the repair to argue with"
 

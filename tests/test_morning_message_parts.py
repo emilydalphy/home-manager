@@ -317,6 +317,11 @@ def test_a_shop_day_with_a_cook_waiting_is_one_line_not_two(nolink):
 
 def test_not_the_shop_day_and_nothing_timed_says_nothing(nolink):
     _adults()
+    # An earlier plan on the books: a household's FIRST week shops right away
+    # when it starts before the shop day (2026-10-06), and this test is about
+    # an ordinary week, not that case.
+    from app.tools import meal_plans
+    meal_plans.create_weekly_plan((TODAY - dt.timedelta(days=14)).isoformat(), day_count=1)
     _seed_day(dinner=False)
     tools.add_grocery_item("Milk")
     tools.set_shop_days(shop_day=(MORNING + dt.timedelta(days=1)).strftime("%A").lower())

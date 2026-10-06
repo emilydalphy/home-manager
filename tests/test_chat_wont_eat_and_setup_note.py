@@ -57,3 +57,16 @@ def test_the_agent_calls_the_routing_version_and_the_screen_keeps_its_own():
 
 def test_setup_note_is_shown_in_whos_here():
     assert "wwkNote('From setup: ' + String(mem.notes).trim())" in SHELL_JS
+
+
+def test_a_routine_said_like_a_food_rule_is_not_a_food(nolink=None):
+    """Review catch, 2026-10-06: "we don't eat late" went to Won't eat as the
+    food 'late'. Time, place and meal words, or more than three words, mean
+    the sentence is a routine, and household_wont_eat_items says so with []."""
+    from app.tools import memory
+    for sentence in (
+        "We don't eat late", "We don't eat breakfast", "We don't eat dinner before 7",
+        "We don't eat out much", "We don't eat together on weekdays", "We don't eat at the table",
+    ):
+        assert memory.household_wont_eat_items("people", sentence) == [], sentence
+    assert memory.household_wont_eat_items("people", "We don't eat pork or shellfish") == ["pork", "shellfish"]

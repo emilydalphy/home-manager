@@ -122,6 +122,11 @@ _WONT_EAT_HOUSE = re.compile(
     r"^no\s+(?P<x>[^.!?]+?)\s+in\s+(?:this|our)\s+(?:house|home|kitchen)\s*[.!]*$", re.IGNORECASE,
 )
 _PROTEIN_CHIPS = ("chicken", "beef", "pork", "fish", "shrimp", "tofu", "eggs", "beans")
+_NOT_A_FOOD = frozenset("""
+late early out together alone much often anymore again before after until till at on in by
+breakfast lunch dinner supper brunch snacks meals dessert table home weekdays weekends weeknights
+tonight today tomorrow mornings evenings nights
+""".split())
 
 
 def household_wont_eat_items(category: str, text: str) -> list[str]:
@@ -134,6 +139,14 @@ def household_wont_eat_items(category: str, text: str) -> list[str]:
     if not m:
         return []
     items = [i.strip(" ,") for i in re.split(r",|\s+or\s+|\s+and\s+", m.group("x")) if i.strip(" ,")]
+    # "We don't eat late / out much / breakfast / together on weekdays / at
+    # the table" are routines, not foods (review, 2026-10-06): one word of
+    # time, place or meal-name in any item, or an item longer than three
+    # words, and the whole sentence stays a plain fact.
+    for item in items:
+        words = item.lower().split()
+        if len(words) > 3 or any(w in _NOT_A_FOOD for w in words):
+            return []
     return items[:6]
 
 
