@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — iPhone app: privacy manifest. Branch
+  `overnight/privacy-manifest`.** `ios-app/ios/App/App/PrivacyInfo.xcprivacy`
+  in the App target's Resources: no tracking; collects Name, Email, Phone,
+  Health (allergies/diets), Photos (cookbook pages kept with a recipe),
+  Other User Content, Customer Support, Product Interaction (Analytics) and
+  Other Diagnostic Data (client-error shapes), all linked, none tracking.
+  **Required-reason APIs: none** — read in the sources of @capacitor/ios
+  8.5.2 (its KeyValueStore is files, not UserDefaults; its own manifest
+  declares none) and the three plugins; CA92.1 would have been a guess.
+  `npm run sync` now fails plainly if the manifest is missing, not in
+  Resources, or a plugin in node_modules calls an undeclared API. APNs
+  push tokens are not declared as Device ID (per-install, not device-level).
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop

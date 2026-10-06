@@ -54,6 +54,15 @@ settings and of `www/` is generated, not stored in git.
   by text, as before. The Push Notifications capability is in
   `ios/App/App/App.entitlements`; `npm run sync` checks it's switched on.
 
+- **Privacy manifest** (`ios/App/App/PrivacyInfo.xcprivacy`): Apple's
+  required list of what the app collects, whether it tracks anyone (no),
+  and which "required reason" phone APIs its native code calls (none, as of
+  Capacitor 8.5.2 and the three plugins). Apple refuses an upload without
+  it, and the App Store privacy label has to agree with it. Update it when
+  the server starts keeping a new kind of personal data (and change the
+  privacy page and the label the same day), or when a plugin is added or
+  upgraded: `npm run sync` scans the plugins and stops, naming the file,
+  if one calls an API the manifest doesn't declare.
 - **Changing the address** (a custom domain later): change `server.url` in
   `capacitor.config.json` **and** the first entry under `WKAppBoundDomains`
   in `ios/App/App/Info.plist`. `npm run sync` refuses to run if they disagree.
