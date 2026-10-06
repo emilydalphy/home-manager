@@ -8692,13 +8692,18 @@ def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
     # Both codes are checked (and both cost a try) whatever the first one
     # says, so a wrong answer for one can't be told from a wrong answer for
     # the other.
-    new_ok = account_email.check_code(
+    # Matched first and spent together: a wrong code for one address must
+    # not burn a right code for the other.
+    new_id = account_email.match_code(
         req.email, req.code, account_email.CHANGE, household_id=household, member_id=you["id"]
     )
-    current_ok = current is None or account_email.check_code(
-        current, req.current_code, account_email.CHANGE, household_id=household, member_id=you["id"]
-    )
-    if not (new_ok and current_ok):
+    current_id = None
+    if current is not None:
+        current_id = account_email.match_code(
+            current, req.current_code, account_email.CHANGE, household_id=household, member_id=you["id"]
+        )
+    ok = new_id is not None and (current is None or current_id is not None)
+    if not ok or not account_email.spend(*[i for i in (new_id, current_id) if i is not None]):
         raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
     try:
         email = account_email.set_member_email(household, you["id"], req.email)

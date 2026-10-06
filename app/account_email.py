@@ -276,17 +276,20 @@ def issue_code(
     return _send(e, build_message(e, code), mode, "a sign-in code")
 
 
-def check_code(
+def match_code(
     email: str,
     code: str,
     purpose: str = SIGNIN,
     *,
     household_id: int | None = None,
     member_id: int | None = None,
-) -> bool:
+) -> int | None:
     """
-    Spend a code. True exactly once, for a live code for this address (and,
-    for a 'change' code, this household and adult).
+    The id of the live code this guess matches, WITHOUT spending it — or
+    None. For a step that needs two codes right at once (changing an
+    address: one to the new, one to the current): both are matched, then
+    both spent together by `spend`, so a wrong second code doesn't burn a
+    right first one.
 
     There can be more than one live code — one per place it was asked for
     from (see issue_code) — so the guess is compared against each, and
@@ -325,14 +328,47 @@ def check_code(
             salt, _, stored = row["code_hash"].partition("$")
             if not code or not hmac.compare_digest(stored, _code_hash(salt, code)):
                 continue
-            spent = conn.execute(
-                "UPDATE email_codes SET used_at = ? WHERE id = ? AND used_at IS NULL", (now, row["id"])
-            ).rowcount
-            conn.commit()
-            return spent == 1
-        return False
+            return int(row["id"])
+        return None
     finally:
         conn.close()
+
+
+def spend(*code_ids: int) -> bool:
+    """Mark matched codes used — all of them or none. True if every one was
+    still unused (so a code works once even when two requests race)."""
+    ids = [int(i) for i in code_ids]
+    if not ids:
+        return False
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        marks = ",".join("?" * len(ids))
+        n = conn.execute(
+            f"UPDATE email_codes SET used_at = ? WHERE id IN ({marks}) AND used_at IS NULL",
+            (int(time.time()), *ids),
+        ).rowcount
+        if n != len(ids):
+            conn.rollback()
+            return False
+        conn.commit()
+        return True
+    finally:
+        conn.close()
+
+
+def check_code(
+    email: str,
+    code: str,
+    purpose: str = SIGNIN,
+    *,
+    household_id: int | None = None,
+    member_id: int | None = None,
+) -> bool:
+    """Spend a code: True exactly once, for a live code for this address
+    (and, for a 'change' code, this household and adult)."""
+    found = match_code(email, code, purpose, household_id=household_id, member_id=member_id)
+    return found is not None and spend(found)
 
 
 # ---------- Who an address belongs to ----------
