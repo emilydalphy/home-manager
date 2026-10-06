@@ -8786,7 +8786,11 @@ span.cook-week-name { cursor: default; }
 .wk-tile {
   flex: 1 1 0;
   min-width: 0;
-  min-height: 72px;
+  /* 72px held the three dots under the date; they went on 2026-10-05, so
+     the tile is now only as tall as its day and date (Emily, 2026-10-05:
+     "Yes make them shorter"). 44px is the floor hard rule 6 asks of a tap
+     target — the content (10 + 4 + 16/19 + padding) already clears it. */
+  min-height: 44px;
   box-sizing: border-box;
   padding: 10px 2px 9px;
   border-radius: var(--radius-tile);

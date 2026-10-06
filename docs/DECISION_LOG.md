@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Plan strip: day tiles only as tall as the day and date
+  (branch `overnight/shorter-day-tiles`).** `.wk-tile` `min-height` 72px ->
+  44px; padding unchanged. The 72px held the dots removed 2026-10-05 (~25px
+  sat empty; Emily: "Yes make them shorter"). Measured at 375px light+dark:
+  every tile 54px tall (content-height; today's 19px date sets the row),
+  selection by tap still works, no sideways scroll. 44px keeps hard rule 6.
+  `tests/test_plan_shorter_day_tiles.py`.
+
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch
   `before-you-shop-2026-10-05`, NOT merged at the time of writing.** Loop
