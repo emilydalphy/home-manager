@@ -721,6 +721,21 @@ _MIGRATIONS = [
     # 0 = a helper who signs in but doesn't eat here (onboarding's "Someone
     # not eating here", 2026-09-30). Every existing member eats here.
     ("members", "eats_here", "INTEGER NOT NULL DEFAULT 1"),
+    # Onboarding, regrouped (Emily, 2026-10-05): what each person needs for
+    # a weekday lunch (Cold packed / Warm in a thermos / Something to
+    # reheat / Made fresh / Nut-free environment, and optionally day by
+    # day) and how many snacks a day they have. '' / NULL = never said —
+    # the truth for everyone set up before the screens existed. See
+    # app/tools/member_needs.py.
+    ("members", "lunch_needs_json", "TEXT NOT NULL DEFAULT ''"),
+    ("members", "snacks_per_day", "INTEGER"),
+    # Ages (Onboarding regrouped, slice 2 — Emily 2026-10-05): a child's age
+    # in years (under 1 allowed; NULL = not asked yet), and whether an
+    # infant is counted in meals ("Include in meals?", off by default for an
+    # infant; 1 for everyone else). _shared.EATS_HERE_SQL reads it, so an
+    # infant left out is out of every count the planner makes.
+    ("members", "age_years", "REAL"),
+    ("members", "include_in_meals", "INTEGER NOT NULL DEFAULT 1"),
     # Where the household is, for its holidays (app/tools/holidays.py).
     # Both are ASSUMPTIONS for every existing household, the same way the
     # timezone above is: the beta households are in Ontario. Canada is the
@@ -1218,12 +1233,16 @@ def _run_migrations(conn):
 # in order, and is stamped with the last one it ran. Add to the END.
 _DATA_VERSION_COOK_COUNTERS = 1
 _DATA_VERSION_FIRST_OPEN = 2
+_DATA_VERSION_ONBOARDING_REGROUPED = 3
+_DATA_VERSION_LITTLE_ONE_IS_CHILD = 4
 
 
 def _run_once_data_migrations(conn):
     steps = [
         (_DATA_VERSION_COOK_COUNTERS, _backfill_recipe_cook_counters_from_ticks),
         (_DATA_VERSION_FIRST_OPEN, _mark_existing_members_first_open_seen),
+        (_DATA_VERSION_ONBOARDING_REGROUPED, _migrate_prep_and_lunch_limits),
+        (_DATA_VERSION_LITTLE_ONE_IS_CHILD, _migrate_little_one_to_child),
     ]
     current = conn.execute("PRAGMA user_version").fetchone()[0]
     for version, step in steps:
@@ -1234,6 +1253,56 @@ def _run_once_data_migrations(conn):
         # placeholders. `version` is one of the module constants above.
         conn.execute(f"PRAGMA user_version = {int(version)}")
         current = version
+
+
+def _migrate_prep_and_lunch_limits(conn):
+    """
+    Onboarding, regrouped (Emily, 2026-10-05). Two answers lost an option:
+    "How long?" left Cook ahead — every prep day is planned for up to two
+    hours, so a prep day saved as "About an hour" (exactly 60 minutes)
+    moves to 120 — and 10 minutes left the made-fresh lunch limit, so a
+    household that picked it (exactly 10) moves to 20. Exactly those values
+    only (review, 2026-10-06): a 30 or 90 said in chat, or a 15-minute lunch
+    limit, is the household's own answer and is left alone.
+    Runs ONCE (PRAGMA user_version): an answer given after this ships is
+    the household's own and is never rewritten at a restart. A prep day
+    with no minutes on it (never said) is left alone.
+    """
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    rows = conn.execute(
+        "SELECT id, household_id, value FROM household_rhythm WHERE fact_type = 'prep_days'"
+    ).fetchall() if "household_rhythm" in tables else []
+    for row in rows:
+        try:
+            days = json.loads(row["value"] or "[]")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(days, list):
+            continue
+        changed = False
+        for d in days:
+            if isinstance(d, dict) and d.get("minutes") == 60:
+                d["minutes"] = 120
+                changed = True
+        if changed:
+            conn.execute("UPDATE household_rhythm SET value = ? WHERE id = ? AND household_id = ?",
+                         (json.dumps(days), row["id"], row["household_id"]))
+    if "meal_preferences" not in tables:
+        return
+    conn.execute(
+        "UPDATE meal_preferences SET weekday_lunch_max_minutes = 20 "
+        "WHERE weekday_lunch_max_minutes = 10"
+    )
+
+
+def _migrate_little_one_to_child(conn):
+    """
+    Ages (Emily, 2026-10-05): the age chips are Adult · Teen · Child, and
+    "Little one" (age_group 'toddler') is gone — a toddler is a Child with
+    an age. Their age is left NULL (not known), which is what has Settings
+    ask it next time it opens. Runs once.
+    """
+    conn.execute("UPDATE members SET age_group = 'child' WHERE LOWER(TRIM(age_group)) = 'toddler'")
 
 
 def _mark_existing_members_first_open_seen(conn):

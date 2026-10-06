@@ -91,9 +91,12 @@ def test_the_four_intro_screens_come_before_the_household_step():
     # The questions after them, since 2026-09-30 (the "How your week runs"
     # storyboard): who helps and never on the plate finish "Who's eating";
     # the week's shape comes before what you eat.
-    assert steps[5:] == ["household", "helpers", "restrictions", "meals-days", "prep",
-                         "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
-                         "shop-day",
+    # UPDATED 2026-10-06 (Onboarding regrouped, Emily's locked flow):
+    # household -> schedule -> breakfast -> lunch -> dinner -> snacks -> the rest.
+    assert steps[5:] == ["household", "helpers", "restrictions",
+                         "meals-days", "shop-day", "prep",
+                         "variety-breakfast", "lunch-needs", "variety-lunch",
+                         "dinner-time", "variety-dinner", "snacks",
                          "eating-style", "wont-eat", "excited-about", "kit-repeats",
                          # Sharing with Claude, before the first week (2026-09-27),
                          # then setup's last answer, "Anything else I should know?"
@@ -258,11 +261,13 @@ console.log(JSON.stringify(seen));
         assert out[k] == "", f"a question eyebrow was drawn during {k}"
     # UPDATED 2026-10-05: both halves of the split household step are in
     # the first stop, so both draw its eyebrow. The claim is unchanged.
-    assert out["your-name"] == "1 of 4 · Who’s eating"
-    assert out["household"] == "1 of 4 · Who’s eating"
-    assert out["meals-days"] == "2 of 4 · How your week runs"
-    assert out["eating-style"] == "3 of 4 · What you eat"
-    assert out["ai-consent"] == "4 of 4 · Your first week"
+    # UPDATED 2026-10-06 (Onboarding regrouped): the eyebrow is the
+    # section's name.
+    assert out["your-name"] == "Your household"
+    assert out["household"] == "Your household"
+    assert out["meals-days"] == "Your schedule"
+    assert out["eating-style"] == "The rest"
+    assert out["ai-consent"] == "The rest"
 
 
 @_needs_node

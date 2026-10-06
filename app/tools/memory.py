@@ -145,6 +145,18 @@ def delete_fact(fact_id: int) -> dict:
     return {"id": fact_id, "deleted": True}
 
 
+def get_household_memory_for_display() -> dict:
+    """
+    get_household_memory, for the screens that SHOW the household (What we
+    know / Preferences → Who's here). Since the 2026-10-06 review it is the
+    same payload: `members` lists every resident — an infant left out of
+    meals included, flagged `in_meals: false` — because restrictions and
+    allergies must reach every reader. Kept as its own name so the
+    /api/memory* routes say what they are for.
+    """
+    return get_household_memory()
+
+
 def get_household_memory() -> dict:
     """
     Return a plain summary of everything the app has learned/saved about
@@ -180,7 +192,13 @@ def get_household_memory() -> dict:
         # the main person, and moving it needs an id rather than a name —
         # a name is the only identity this app has for a person and two
         # people called Sam are indistinguishable to it.
-        f"SELECT id, name, age_group, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
+        # Every resident, an infant left out of meals included (2026-10-06):
+        # this list carries restrictions and allergies to the planner and
+        # the clash checker, and a baby's allergy binds every dish. The
+        # baby is flagged `in_meals: false` instead; headcounts come from
+        # attendance (IN_MEALS_SQL), not from this list.
+        f"SELECT id, name, age_group, age_years, COALESCE(include_in_meals, 1) AS include_in_meals, "
+        f"dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
         (household_id(),),
     ).fetchall()
     household = conn.execute("SELECT goals FROM households WHERE id = ?", (household_id(),)).fetchone()
@@ -248,6 +266,10 @@ def get_household_memory() -> dict:
             "name": m["name"], "age_group": m["age_group"],
             "dietary_restrictions": json.loads(m["dietary_restrictions_json"]),
             "is_primary": m["id"] == primary_id,
+            # Ages (2026-10-06): a Child's age, and false only for an infant
+            # the parents left out of meals.
+            "age_years": m["age_years"],
+            "in_meals": bool(m["include_in_meals"]),
         }
         for m in members
     ]

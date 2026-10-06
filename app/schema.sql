@@ -57,7 +57,19 @@ CREATE TABLE IF NOT EXISTS members (
     -- 0 = a helper who signs in but doesn't eat here ("Someone not eating
     -- here" at setup, 2026-09-30): never planned for, never counted in
     -- attendance or servings. See _shared.EATS_HERE_SQL.
-    eats_here INTEGER NOT NULL DEFAULT 1
+    eats_here INTEGER NOT NULL DEFAULT 1,
+    -- Onboarding, regrouped (2026-10-05): what this person needs for a
+    -- weekday lunch, as JSON {"needs": [...], "days": {"monday": [...]}}
+    -- ('' = never said), and how many snacks a day (NULL = never said; the
+    -- default by age is app/tools/member_needs.py's). Added to existing
+    -- databases by db._MIGRATIONS.
+    lunch_needs_json TEXT NOT NULL DEFAULT '',
+    snacks_per_day INTEGER,
+    -- A child's age in years (under 1 allowed; NULL = not asked), and
+    -- whether this person is counted in meals — 0 only for an infant the
+    -- parents left out ("Include in meals?"). _shared.EATS_HERE_SQL reads it.
+    age_years REAL,
+    include_in_meals INTEGER NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS pets (

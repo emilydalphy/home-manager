@@ -154,7 +154,9 @@ def add_member(name: str) -> dict:
 def list_members() -> list[dict]:
     """List the household members meals are planned for, with any saved
     dietary restrictions. A helper who doesn't eat here (members.eats_here
-    = 0) is not one of them."""
+    = 0) is not one of them. An infant left out of meals (Ages,
+    2026-10-06) IS: this list is what the clash checker and every
+    restriction reader use, and a baby's allergy binds every dish."""
     conn = get_conn()
     rows = conn.execute(
         f"SELECT id, name, dietary_restrictions_json FROM members WHERE household_id = ? AND {EATS_HERE_SQL}",
@@ -249,6 +251,15 @@ def set_member_age_group(name: str, age_group: str) -> dict:
             "UPDATE members SET age_group = ? WHERE id = ? AND household_id = ?",
             (age_group, member_id, household_id()),
         )
+        # "Include in meals?" is an infant's switch alone (Ages, 2026-10-06):
+        # anybody who is not a Child is always counted, so moving a person to
+        # Adult or Teen turns a switch left off back on — otherwise they
+        # could never be counted again.
+        if (age_group or "").strip().lower() != "child":
+            conn.execute(
+                "UPDATE members SET include_in_meals = 1 WHERE id = ? AND household_id = ?",
+                (member_id, household_id()),
+            )
         if (age_group or "").strip().lower() == "adult":
             row = conn.execute(
                 "SELECT color FROM members WHERE id = ? AND household_id = ?",
@@ -272,6 +283,97 @@ def set_member_age_group(name: str, age_group: str) -> dict:
     finally:
         conn.close()
     return {"name": name, "age_group": age_group}
+
+
+# Ages (Emily, 2026-10-05): "Pomona works out what it needs from the age".
+# Under 1 is an infant — not counted in meals unless the parents switch
+# "Include in meals?" on; 1 to under 4 a toddler; 4 and up a school-age
+# child. One place for the line, read by the snacks default and the
+# planner's portions.
+INFANT_UNDER_YEARS = 1
+TODDLER_UNDER_YEARS = 4
+MAX_AGE_YEARS = 120
+
+
+def age_stage(age_group: str | None, age_years) -> str:
+    """'infant' | 'toddler' | 'child' | 'teen' | 'adult' | '' — what the age
+    means for food. A Child with no age yet reads as 'child'."""
+    group = (age_group or "").strip().lower()
+    if group == "toddler":
+        return "toddler"
+    if group != "child":
+        return group if group in ("teen", "adult") else ""
+    try:
+        years = float(age_years)
+    except (TypeError, ValueError):
+        return "child"
+    if years < INFANT_UNDER_YEARS:
+        return "infant"
+    if years < TODDLER_UNDER_YEARS:
+        return "toddler"
+    return "child"
+
+
+# "A toddler gets toddler portions; a school-age child gets child portions"
+# (Onboarding regrouped, Emily 2026-10-05). How much of an adult's plate
+# each stage eats. TOLD TO THE PLANNER ONLY (member_needs.generation_
+# context's `portions`) — the shopping and the Cook screen still count
+# heads (review, 2026-10-06): sizing the list by plates while cook mode,
+# leftover batches and freezer portions count heads made the Cook screen
+# ask for more than was bought. Sizing both by plates is a later slice.
+# Teens and adults eat a full plate; an infant only counts at all when the
+# parents switched "Include in meals?" on.
+PORTION_BY_STAGE = {"infant": 0.25, "toddler": 0.5, "child": 0.75}
+
+
+def portion_weight(age_group: str | None, age_years) -> float:
+    """
+    One person's share of a full plate, from their age. A Child whose age
+    has not been asked yet (every former "Little one", every child set up
+    before ages existed) eats a FULL plate: there is nothing to work the
+    portion out from, and guessing low is the direction that leaves a
+    family short at the table.
+    """
+    if (age_group or "").strip().lower() == "child" and age_years is None:
+        return 1.0
+    return PORTION_BY_STAGE.get(age_stage(age_group, age_years), 1.0)
+
+
+def set_member_age(name: str, age_years=None, include_in_meals: bool | None = None) -> dict:
+    """
+    Set a child's age in years (under 1 allowed; None clears it) and/or
+    whether they are counted in meals. include_in_meals is only ever OFF
+    for an infant: anyone 1 or older is always counted (the switch is the
+    infant's alone), so an age raised past 1 turns it back on.
+    """
+    if age_years is not None:
+        try:
+            age_years = float(age_years)
+        except (TypeError, ValueError):
+            raise ValueError("age must be a number of years.")
+        if not 0 <= age_years <= MAX_AGE_YEARS:
+            raise ValueError(f"age must be 0 to {MAX_AGE_YEARS} years.")
+    conn = get_conn()
+    try:
+        member_id = _get_or_create_member(conn, name)
+        conn.execute(
+            "UPDATE members SET age_years = ? WHERE id = ? AND household_id = ?",
+            (age_years, member_id, household_id()),
+        )
+        infant = age_years is not None and age_years < INFANT_UNDER_YEARS
+        include = True if not infant else bool(include_in_meals)
+        conn.execute(
+            "UPDATE members SET include_in_meals = ? WHERE id = ? AND household_id = ?",
+            (1 if include else 0, member_id, household_id()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    # Who is counted at a meal just changed (an infant in or out), so the
+    # stored slots' away needs are re-derived, as add_member does.
+    from . import attendance as _attendance
+    _attendance.reconcile_membership()
+    return {"name": name, "age_years": age_years, "include_in_meals": include}
 
 
 def set_household_goals(goals: str) -> dict:

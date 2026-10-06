@@ -51,10 +51,13 @@ def test_the_screens_run_in_the_storyboards_order():
         # gained a step.
         "your-name",
         "household", "helpers", "restrictions",
-        "meals-days", "prep", "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
-        # UPDATED 2026-10-05 (grocery shop day): the two clock questions
-        # together. The claim is unchanged; the flow gained a step.
-        "shop-day",
+        # UPDATED 2026-10-06 (Onboarding regrouped, Emily's locked flow of
+        # 2026-10-05): your schedule (who's eating, shop day, cook ahead),
+        # then meal by meal -- breakfast; weekday lunches + lunch variety;
+        # dinner timings + dinner variety; snacks -- then the rest.
+        # TRIPWIRE FIRED deliberately: the order is the card's.
+        "meals-days", "shop-day", "prep", "variety-breakfast",
+        "lunch-needs", "variety-lunch", "dinner-time", "variety-dinner", "snacks",
         "eating-style", "wont-eat", "excited-about", "kit-repeats",
         # UPDATED 2026-10-05: "Anything else I should know?" is setup's
         # last answer, after the consent card and before the reveal. The
@@ -76,14 +79,14 @@ def test_each_question_names_its_step_in_the_eyebrow():
 console.log(JSON.stringify(%s.map(function (k) { return stepEyebrow(k); })));
 """ % json.dumps(["your-name", "household", "helpers", "restrictions", "meals-days", "prep", "variety-lunch",
                   "dinner-time", "eating-style", "kit-repeats", "ai-consent", "reveal"]))
+    # UPDATED 2026-10-06 (Onboarding regrouped): seven sections, and the
+    # eyebrow is the section's NAME ("the section name shows in the
+    # header") rather than "2 of 4 · ...".
     assert out == [
-        # UPDATED 2026-10-05: both halves of the split household step are
-        # in the first stop, so both name it. The claim is unchanged.
-        "1 of 4 · Who’s eating",
-        "1 of 4 · Who’s eating", "1 of 4 · Who’s eating", "1 of 4 · Who’s eating",
-        "2 of 4 · How your week runs", "2 of 4 · How your week runs", "2 of 4 · How your week runs",
-        "2 of 4 · How your week runs", "3 of 4 · What you eat", "3 of 4 · What you eat",
-        "4 of 4 · Your first week", "",
+        "Your household", "Your household", "Your household", "Your household",
+        "Your schedule", "Your schedule", "Lunch",
+        "Dinner", "The rest", "The rest",
+        "The rest", "",
     ]
 
 
@@ -101,9 +104,13 @@ tapBack('variety-dinner');
 console.log(JSON.stringify({ flow: flow, label: label, landed: currentStep, asked: showStep('variety-lunch') || currentStep }));
 """)
     assert "variety-lunch" not in out["flow"]
-    assert out["flow"].index("variety-breakfast") + 1 == out["flow"].index("variety-dinner")
-    assert out["label"] == "‹ Breakfast"
-    assert out["landed"] == "variety-breakfast"
+    # UPDATED 2026-10-06 (Onboarding regrouped): Dinner timings sits
+    # between the breakfast and dinner variety screens now, and lunch off
+    # all week takes "Weekday lunches" with it.
+    assert "lunch-needs" not in out["flow"]
+    assert out["flow"].index("variety-breakfast") + 1 == out["flow"].index("dinner-time")
+    assert out["label"] == "‹ Dinner timings"
+    assert out["landed"] == "dinner-time"
     # Asked for by name (history, a stale entry): the nearest step before it.
     assert out["asked"] == "variety-breakfast"
 
@@ -177,7 +184,7 @@ def _grid_harness() -> str:
         _const("UW_MEALS"), _const("UW_WEEKDAYS"), _const("UW_DAY_NAMES"), _const("UW_UNITS"), _const("UW_QUICK"),
         _fn("uwAllRow"), _fn("uwIsOn"), _fn("uwDaysOn"), _fn("uwCleanCell"), _fn("uwWho"), _fn("uwCountLabel"),
         _fn("uwSetMany"), _fn("uwQuickOn"), _fn("uwPickerOptions"), _fn("uwApplyPick"), _fn("uwTotalMeals"),
-        _fn("uwSummary"), _fn("uwLunchLine"),
+        _fn("uwSummary"),
     ])
 
 
@@ -213,29 +220,29 @@ grid.dinner[4] = 'off';
 console.log(JSON.stringify({
   weekdays: weekdays,
   count: [uwCountLabel('breakfast', 7), uwCountLabel('lunch', 5), uwCountLabel('dinner', 1), uwCountLabel('dinner', 0)],
-  sum: uwSummary(grid, 2), one: uwSummary(grid, 1), none: uwSummary(grid, 0),
-  nothing: uwSummary({ breakfast: uwSetMany(row, []), lunch: uwSetMany(row, []), dinner: uwSetMany(row, []) }, 2),
+  sum: uwSummary(grid),
+  nothing: uwSummary({ breakfast: uwSetMany(row, []), lunch: uwSetMany(row, []), dinner: uwSetMany(row, []) }),
   who: [uwWho('all', ['Emily', 'Greg']), uwWho(['Greg'], ['Emily', 'Greg']), uwWho('off', ['Emily']),
         uwWho('all', ['A', 'B', 'C', 'D'])],
-  lunch: uwLunchLine(['Emily', 'Greg'], { Greg: 'out' }),
 }));
 """)
     assert out["weekdays"] == [False, True, False, False]
     assert out["count"] == ["7 mornings", "5 days", "1 night", "Not planned"]
-    assert out["sum"] == "That’s 18 meals and 2 snacks a day."
-    assert out["one"] == "That’s 18 meals and 1 snack a day."
-    assert out["none"] == "That’s 18 meals and no snacks."
+    # UPDATED 2026-10-06 (Onboarding regrouped): snacks are their own
+    # screen, and the weekday-lunch line left this one.
+    assert out["sum"] == "That’s 18 meals a week."
     assert out["nothing"] == "Nothing to plan yet. Tap a day to add it."
     assert out["who"] == ["E G", "G", "–", "All"]
-    assert out["lunch"] == "Weekdays: Emily at home · Greg packs it"
 
 
-def test_the_grid_screen_carries_the_legend_the_snacks_and_the_line():
+def test_the_grid_screen_carries_the_legend_and_the_line():
     markup = _step_markup("step-meals-days")
     for words in ("Everyone", "Some of you", "Not planned"):
         assert words in markup
     script = _script()
-    assert "{ value: 0, label: 'None' }, { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3 a day' }" in script
+    # UPDATED 2026-10-06: the household Snacks row left this screen
+    # (Onboarding regrouped -- snacks are per person on their own screen).
+    assert "UW_SNACK_OPTIONS" not in script
     assert "'Every day'" in script and "'Weekdays'" in script and "'Weekends'" in script and "'None'" in script
     assert "· who’s eating?" in script
 
@@ -249,15 +256,17 @@ def test_the_prep_read_back_line():
         _fn("revealJoinWords"), _const("UW_WEEKDAYS"), _const("UW_DAY_NAMES"), _fn("uwDayName"), _fn("prepReadback"),
     ]) + """
 console.log(JSON.stringify([
-  prepReadback(['sunday'], 'longer', true),
-  prepReadback(['sunday', 'wednesday'], 'hour', true),
-  prepReadback(['sunday'], 'longer', false),
-  prepReadback([], 'hour', true),
+  prepReadback(['sunday'], true),
+  prepReadback(['sunday', 'wednesday'], true),
+  prepReadback(['sunday'], false),
+  prepReadback([], true),
 ]));
 """)
-    assert out[0] == "Sunday, a longer stretch. I’ll put lunch prep and a big batch cook there, and keep weeknights quick."
-    assert out[1] == "Sunday and Wednesday, about an hour. I’ll put lunch prep there, and keep weeknights quick."
-    assert out[2] == "Sunday, a longer stretch. I’ll put a big batch cook there, and keep weeknights quick."
+    # UPDATED 2026-10-06 (Onboarding regrouped): "How long?" is gone and
+    # every prep day is up to 2 hours, so the line says so.
+    assert out[0] == "Sunday, up to 2 hours. I’ll put lunch prep and a big batch cook there, and keep weeknights quick."
+    assert out[1] == "Sunday and Wednesday, up to 2 hours. I’ll put lunch prep and a big batch cook there, and keep weeknights quick."
+    assert out[2] == "Sunday, up to 2 hours. I’ll put a big batch cook there, and keep weeknights quick."
     assert out[3] == ""
 
 
@@ -269,9 +278,16 @@ def _payload_harness(members) -> str:
         _grid_harness(), _const("VARIETY_OPTIONS"), _const("VARIETY_DEFAULT"),
         "var MEMBERS = %s; function currentMembers() { return MEMBERS; }" % json.dumps(members),
         "var usualGrid = { breakfast: uwAllRow(), lunch: uwAllRow(), dinner: uwAllRow() };",
-        "var snacksPerDay = 2; var prepAnswer = ''; var prepDayKeys = []; var prepLength = '';",
+        # UPDATED 2026-10-06 (Onboarding regrouped): snacks are per person
+        # (householdSnacksPerDay is the most anyone has) and every prep day
+        # is two hours (PREP_LENGTH).
+        "var memberSnacks = {}; var prepAnswer = ''; var prepDayKeys = [];",
+        _const("PREP_LENGTH"),
+        _const("INFANT_UNDER_YEARS"), _fn("isInfant"),
+        _const("SNACK_OPTIONS"), _fn("defaultSnacksFor"), _fn("snacksFor"), _fn("householdSnacksPerDay"),
         "var varietyChoice = { breakfast: 'few_in_rotation', lunch: 'few_in_rotation', dinner: 'few_in_rotation' };",
-        "var lunchLocation = {}; var lunchLocationTouched = false;",
+        "var lunchLocation = {}; var lunchNeeds = {};",
+        _const("LUNCH_NEED_DAYS"), _fn("lunchNeedsAnswered"),
         "var breakfastsPerWeek = 7, lunchesPerWeek = 7, dinnersPerWeek = 5;",
         _fn("uwMealOn"), _fn("currentPrepDayKeys"), _fn("hasPrepDay"), _fn("varietyOptionsFor"),
         _fn("currentVarietyChoice"), _fn("usualWeekPayload"), _fn("plannedMealCounts"), _fn("lunchLocationPayload"),
@@ -286,11 +302,11 @@ usualGrid.breakfast = uwSetMany(usualGrid.breakfast, []);        // no breakfast
 usualGrid.dinner[4] = 'off';                                      // no Friday dinner
 usualGrid.dinner[3] = ['Greg'];                                   // Thursday: just Greg
 usualGrid.lunch[0] = ['Emily', 'Greg'];                           // both named = everyone
-prepAnswer = 'yes'; prepDayKeys = ['wednesday', 'sunday']; prepLength = 'longer';
+prepAnswer = 'yes'; prepDayKeys = ['wednesday', 'sunday'];
 varietyChoice.breakfast = 'go_to_or_two';                         // off: not sent
 varietyChoice.lunch = 'meal_prep_ahead';
 varietyChoice.dinner = 'cook_big_eat_twice';
-snacksPerDay = 1;
+memberSnacks = { Emily: 1, Greg: 0 };
 console.log(JSON.stringify({ usual: usualWeekPayload(), counts: plannedMealCounts(),
   stance: leftoversStanceFromVariety(uwMealOn('dinner'), currentVarietyChoice('dinner')),
   lunch: lunchLocationPayload() }));
@@ -306,7 +322,7 @@ console.log(JSON.stringify({ usual: usualWeekPayload(), counts: plannedMealCount
     assert usual["prep"] == {"days": ["wednesday", "sunday"], "length": "longer"}
     assert out["counts"] == {"breakfasts_per_week": 0, "lunches_per_week": 7, "dinners_per_week": 5, "snacks_per_day": 1}
     assert out["stance"] == "love_them", "Cook big, eat twice is a household that loves leftovers"
-    assert out["lunch"] is None, "an untouched weekday-lunch line sends nothing"
+    assert out["lunch"] is None, "nobody said anybody takes lunch with them, so nothing is sent"
 
 
 @_needs_node

@@ -84,10 +84,18 @@ INTRO_STEPS_AFTER_THE_FIRST = ["intro-help", "intro-talk", "intro-know"]
 # No claim changed; the flow gained a step, and it gained it at the front
 # of the questions rather than at the end, which is why the two reload
 # tests and the empty-household pair below moved with it.
+# UPDATED 2026-10-06 (Onboarding, regrouped -- Emily's locked flow of
+# 2026-10-05): household -> schedule -> breakfast -> lunch -> dinner ->
+# snacks -> the rest. TRIPWIRE FIRED, deliberately: the order moved and two
+# steps were added ('lunch-needs', 'snacks'). No claim in this file
+# changed; the labels below follow the new order.
 QUESTION_STEPS = [
-    "your-name", "household", "helpers", "restrictions", "meals-days", "prep",
-    "variety-breakfast", "variety-lunch", "variety-dinner", "dinner-time",
-    "shop-day",
+    "your-name", "household", "helpers", "restrictions",
+    "meals-days", "shop-day", "prep",
+    "variety-breakfast",
+    "lunch-needs", "variety-lunch",
+    "dinner-time", "variety-dinner",
+    "snacks",
     "eating-style", "wont-eat", "excited-about", "kit-repeats",
 ]
 # UPDATED 2026-09-27 (App Store consent card): "Sharing with Claude" sits
@@ -171,6 +179,11 @@ function makeEl(tag) {
     _classes: new Set(), _children: [], _parent: null,
     dataset: {}, style: {}, hidden: false, textContent: '', value: '',
     _listeners: {}, onclick: null,
+    // 2026-10-06 (Ages): the infant's "Include in meals?" switch says its
+    // state through aria-checked, as a browser element would take it.
+    _attrs: {},
+    setAttribute: function (k, v) { this._attrs[k] = String(v); },
+    getAttribute: function (k) { return k in this._attrs ? this._attrs[k] : null; },
     get className() { return [...this._classes].join(' '); },
     set className(v) { this._classes = new Set(String(v).split(/\s+/).filter(Boolean)); },
     get innerHTML() { return this._html || ''; },
@@ -401,6 +414,13 @@ function buildAnythingElseStep() { BUILT.push('anything-else'); }
 // asserts on what the household step draws, so the stub costs no
 // assertion; the real one is driven by tests/test_onboarding_your_name.py.
 function buildHouseholdStep() { BUILT.push('household'); }
+// Onboarding regrouped (2026-10-06): the two new screens, same
+// fixed-function-list hazard; and "Weekday lunches" is asked only when
+// lunch is on for a weekday, which here is "lunch is on".
+function buildLunchNeedsStep() { BUILT.push('lunch-needs'); }
+function buildSnacksStep() { BUILT.push('snacks'); }
+var usualGrid = {};
+function uwWeekdayLunchOn() { return uwMealOn('lunch'); }
 """,
         _const("INTRO_STEPS"),
         _const("ALL_STEPS"),
@@ -521,17 +541,18 @@ console.log(JSON.stringify(labels));
         "household": "‹ Your name",
         "helpers": "‹ Who's here",
         "restrictions": "‹ Who helps",
-        "meals-days": "‹ Never on the plate",
-        "prep": "‹ Who's eating",
+        # UPDATED 2026-10-06 (Onboarding regrouped): the new order, and
+        # "Dietary restrictions" / "Dinner timings" are those steps' names.
+        "meals-days": "‹ Dietary restrictions",
+        "shop-day": "‹ Who's eating",
+        "prep": "‹ Shop day",
         "variety-breakfast": "‹ Cook ahead",
-        "variety-lunch": "‹ Breakfast",
-        "variety-dinner": "‹ Lunch",
-        "dinner-time": "‹ Dinner",
-        # UPDATED 2026-10-05 (grocery shop day): the shop-day question sits
-        # between "When's dinner?" and "How you eat", so it goes back to
-        # dinner time and "How you eat" now goes back to it.
-        "shop-day": "‹ Dinner time",
-        "eating-style": "‹ Shop day",
+        "lunch-needs": "‹ Breakfast",
+        "variety-lunch": "‹ Weekday lunches",
+        "dinner-time": "‹ Lunch",
+        "variety-dinner": "‹ Dinner timings",
+        "snacks": "‹ Dinner",
+        "eating-style": "‹ Snacks",
         "wont-eat": "‹ How you eat",
         "excited-about": "‹ Never recommend",
         "kit-repeats": "‹ Cuisines you like",
@@ -1108,6 +1129,8 @@ var MEMBERS = [];
 function currentMembers() { return MEMBERS; }
 """,
         _const("DIET_OPTIONS"),
+        # The Allergy picker's nine (Onboarding regrouped, 2026-10-06).
+        _const("ALLERGEN_OPTIONS"),
         _fn("escapeHtmlLocal"),
         _fn("chipWithCustom"),
         _fn("getActiveChips"),
@@ -1225,6 +1248,9 @@ function removeRow(block) { block.querySelector('.remove-btn').click(); }
         # is the one thing stubbed above (its markup is a template string and
         # its age chips are a different question) — the two handlers it wires
         # are copied onto the stub rows verbatim.
+        # Ages (2026-10-06): currentMembers reads a Child's age and the
+        # infant switch, so the helpers it calls are lifted with it.
+        _const("INFANT_UNDER_YEARS"), _fn("memberAgeYears"), _fn("isInfant"),
         _fn("currentMembers"),
         "function pruneHelperAnswers() {}",
         _fn("pruneMemberKeyedAnswers"),

@@ -156,6 +156,17 @@ _ADULT_SQL = "LOWER(TRIM(age_group)) = 'adult'"
 # the members the planner is given, attendance and servings, the usual
 # week's grid. Sign-in, invites and "Who's this?" still read every adult.
 EATS_HERE_SQL = "COALESCE(eats_here, 1) = 1"
+# The people MEALS ARE COUNTED FOR (Ages, 2026-10-06): everyone who eats
+# here except an infant the parents left out of meals ("Include in meals?"
+# off — "not counted in meals or portions unless the parents want them
+# in"). For HEADCOUNTS only: attendance, the usual week's grid, lunch and
+# snack rows, the guest maths. Anything about what a person must never be
+# given — restrictions, allergies, the clash checker, the member lists —
+# reads EATS_HERE_SQL above, so a baby's peanut allergy still binds every
+# dish the household cooks (review, 2026-10-06: it was briefly read through
+# this one and dropped out of every allergy check). Parenthesised because
+# it is dropped into WHERE clauses as one expression.
+IN_MEALS_SQL = "(COALESCE(eats_here, 1) = 1 AND COALESCE(include_in_meals, 1) = 1)"
 
 
 def _fold_for_compare(name: str) -> str:

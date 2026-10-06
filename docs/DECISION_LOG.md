@@ -217,6 +217,80 @@ why*, not duplicating the diff.
   unlinked, Lead badge kept; the cache is emptied by refreshKitchenPanel
   (Change recipe, Undo, chat) and never keeps a failed read; the ⋯ menu
   closes on an outside tap or Escape.
+- **2026-10-06 — Slice 3 review fixes (branch `overnight/onboarding-planning`).**
+  SHOPPING BACK TO HEADS: sizing the list by plates (toddler 0.5, child 0.75)
+  and by per-person snack counts made the Cook screen ask for more than was
+  bought (cook view, leftover batches, freezer portions all count heads —
+  800 g asked vs 650 g bought). `attendance` is unchanged from the ages
+  branch and `snack_table` is gone; portions and snack counts are told to
+  the planner only. Plate-aware shop AND cook is a later slice. The public
+  share link strips `packed_as` (names + a child's needs). POST
+  /api/member-needs moves the household's snacks a day to the most anyone
+  has. The paragraph below is superseded where it says the list sizes by plates.
+
+- **2026-10-06 — Onboarding, regrouped, slice 3: planning reads the needs per
+  person (branch `overnight/onboarding-planning`, from `overnight/onboarding-ages`).**
+  Lunch stays ONE row per slot (one cook); each person's packing line
+  ("Arjun: nut-free, warm in a thermos") is computed in code from their
+  needs that weekday + who is at that lunch (`member_needs.lunch_packing`),
+  never stored, and rides `get_weekly_plan`/`get_week_menu` as `packed_as`
+  (no screen draws it yet — shell.js is the Settings builder's). Generator
+  gets `per_person` (lunch_needs / snacks_by_person / portions) + a prompt
+  bullet. Portions from age: `household.portion_weight` (toddler 0.5,
+  child-with-age 0.75, included infant 0.25; a Child with NO age = 1.0, never
+  guess low); `attendance` carries `portions`/`household_portions` and the
+  three scale factors use plates, so an adults-only house is unchanged.
+  Snacks: once anyone set a count, each snack feeds the average snack table
+  (`member_needs.snack_table`, per day not per snack — row order is an
+  accident). Nut-free KEPT household-wide (one cook = everyone's lunch), and
+  now also told to the model in `must_not_contain` — the gate alone turned a
+  nutty pick into an open slot.
+
+- **2026-10-06 — Ages/regrouped review fixes (branch `overnight/onboarding-ages`).**
+  SAFETY: `EATS_HERE_SQL` is back to helpers-only; the infant rule is a new
+  `_shared.IN_MEALS_SQL`, read ONLY by headcounts (attendance, usual week
+  grid, lunch/snack rows, guest maths, day_meals). Restrictions, allergies,
+  `list_members`, the clash checker and memory `members` read every
+  resident, so a baby's allergy binds every dish (memory members carry
+  `in_meals`). Adult/Teen, or an age of 1+, turns "Include in meals?" back on;
+  `set_member_age` reconciles attendance. "Nut-free environment" now adds
+  hard avoidances (peanuts, nuts) for that person in `coordination._avoidances`
+  — over-safe, whole household. Migrations narrowed to exactly 60 -> 120 and
+  10 -> 20.
+
+- **2026-10-06 — Onboarding, regrouped, slice 2: ages (branch
+  `overnight/onboarding-ages`, from `overnight/onboarding-regrouped`).**
+  Age chips Adult · Teen · Child ("Little one" gone; run-once migration 4
+  turns 'toddler' into 'child', age NULL). Child asks "How old is [name]?"
+  (years, under 1 allowed) -> `members.age_years`; under 1 shows "Include in
+  meals?" (off) -> `members.include_in_meals`. `_shared.EATS_HERE_SQL` now
+  also requires include_in_meals, so an infant left out is out of every
+  count (planner members, attendance, grid, needs) — the same door a helper
+  who doesn't eat here uses. Onboarding's grid / lunches / snacks read
+  `currentMembers({ forMeals: true })`. `household.age_stage` names
+  infant / toddler (<4) / child for the planning slice. NOT YET: toddler and
+  child portions in the planner; Settings asking the age of a former Little
+  one. (Superseded by the review-fix entry above: member lists keep the
+  infant, flagged `in_meals: false`.)
+
+- **2026-10-06 — Onboarding, regrouped, slice 1 (branch
+  `overnight/onboarding-regrouped`).** Emily's locked flow (2026-10-05):
+  household -> schedule -> breakfast -> lunch -> dinner -> snacks -> the
+  rest; the eyebrow is the section NAME (seven sections, no "2 of 4").
+  New screens `lunch-needs` (five needs per person, day by day, "Made fresh:
+  how long" 20/30/45/none) and `snacks` (0-3 per person, child 2 / adult 1).
+  "Dietary restrictions" title + Allergy picker (nine + typed box, each
+  stored `allergy: x`). Cook ahead lost "How long?" (always 120). Dinner
+  timings = dinner time + weeknight limit. Who's eating lost the lunch line
+  and snacks row. Stored on `members.lunch_needs_json` / `snacks_per_day`
+  (`app/tools/member_needs.py`); the household's snacks a day is the most
+  anyone has. BRIDGE: a lunch need also writes `rhythm.lunch_location`
+  (packed/thermos/nut-free = out) so today's planner reads it unchanged.
+  Run-once migration (user_version 3): prep minutes <120 -> 120, lunch cap
+  <20 -> 20. Order tests updated deliberately (go_back, your_week,
+  welcome_flow, anything_else, chores_setup_split, copy tests).
+  NOT YET: ages (Adult/Teen/Child + age, infant switch), the planner reading
+  needs per person / nut-free snacks, Settings -> Your rhythm screens.
 
 - **2026-10-05 — Shop: "Before you shop" — regulars, then spices and oils,
   then already-have-it, ending on Sort the list. Branch

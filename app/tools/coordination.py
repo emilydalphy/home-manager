@@ -847,6 +847,21 @@ def _avoidances() -> list[dict]:
                 "terms": terms,
             })
 
+    # "Nut-free environment" on someone's weekday lunch (Onboarding
+    # regrouped, review 2026-10-06): a safety answer, so it is a hard
+    # avoidance for that person — peanuts and nuts — exactly as if it had
+    # been ticked on Dietary restrictions. Over-safe for now: it binds every
+    # dish the household plans, not only the packed lunch.
+    from . import member_needs as _member_needs
+    for name in _member_needs.nut_free_member_names():
+        for label in _member_needs.NUT_FREE_AVOIDANCES:
+            terms = _match_terms(_conflict_phrases(label, drop=_name_words(name)))
+            if terms:
+                out.append({
+                    "member": name, "label": label + " (nut-free lunch)", "source": "lunch_need",
+                    "severity": "hard", "terms": terms,
+                })
+
     # Hard facts — the What-we-know notes flagged as must-avoid. The person
     # is parsed out of the sentence when one of them is named in it
     # ("Emily is allergic to pineapple"); otherwise the fact stands for the

@@ -240,8 +240,10 @@ def test_progress_dots_still_match_the_question_step_count():
     )
     numbers = [int(sections[k]) for k in question_steps]
     assert numbers == sorted(numbers), "the long dot would move backwards"
-    assert numbers[0] == 1 and numbers[-1] == 4 and set(numbers) == {1, 2, 3, 4}
-    assert "const SECTION_COUNT = 4;" in ONBOARDING
+    # UPDATED 2026-10-06 (Onboarding regrouped): seven sections --
+    # household, schedule, breakfast, lunch, dinner, snacks, the rest.
+    assert numbers[0] == 1 and numbers[-1] == 7 and set(numbers) == set(range(1, 8))
+    assert "const SECTION_COUNT = 7;" in ONBOARDING
 
 
 def test_chores_setup_page_reuses_the_same_save_route():

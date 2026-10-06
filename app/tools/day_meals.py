@@ -72,7 +72,7 @@ from datetime import date
 from ..db import get_conn
 from . import attendance as _attendance
 from . import rhythm as _rhythm
-from ._shared import EATS_HERE_SQL, display_initials, household_id
+from ._shared import IN_MEALS_SQL, display_initials, household_id
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +191,7 @@ def household_people() -> dict:
     conn = get_conn()
     try:
         rows = conn.execute(
-            f"SELECT name FROM members WHERE household_id = ? AND {EATS_HERE_SQL} ORDER BY id ASC",
+            f"SELECT name FROM members WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id ASC",
             (household_id(),),
         ).fetchall()
     finally:

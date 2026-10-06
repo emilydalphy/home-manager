@@ -657,6 +657,10 @@ class ChatResponse(BaseModel):
 class MemberInput(BaseModel):
     name: str
     age_group: str = ""
+    # A Child's age in years (Ages, 2026-10-05) — under 1 allowed — and,
+    # for an infant only, whether they are counted in meals. None = not said.
+    age_years: float | None = None
+    include_in_meals: bool | None = None
 
 
 class PetInput(BaseModel):
@@ -730,6 +734,19 @@ class OnboardingAnswersRequest(BaseModel):
     # number wins over the old count fields for that meal. Optional, so an
     # older client that sends only the counts is unaffected.
     usual_week: UsualWeekRequest | None = None
+    # Onboarding, regrouped (Emily, 2026-10-05): per person, by NAME —
+    # weekday lunch needs ({"needs": [...], "days": {...}}) and snacks a
+    # day (0-3). Saved after the names above (app/tools/member_needs.py).
+    # Optional, so an older client is unaffected.
+    lunch_needs: dict | None = None
+    member_snacks: dict | None = None
+
+
+class MemberNeedsRequest(BaseModel):
+    """Per-person lunch needs and/or snacks a day, by member name. Omitted
+    parts stay as they are (app/tools/member_needs.py)."""
+    lunch_needs: dict | None = None
+    snacks: dict | None = None
 
 
 class OnboardingRhythmRequest(BaseModel):
@@ -1322,6 +1339,10 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     answer to the question for next time as well as for this sitting.
     """
     email_owner = None
+    # A bad age is a 400 before anyone is written (Ages, 2026-10-06).
+    for m in req.members:
+        if m.age_years is not None and not 0 <= m.age_years <= tools.household.MAX_AGE_YEARS:
+            raise HTTPException(status_code=400, detail=f"{m.name.strip() or 'That'}'s age must be 0 to 120 years.")
     try:
         saved_ids = []
         # (id, name) for each member this request saved, in the order they
@@ -1336,6 +1357,8 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
                 saved_members.append((added["member_id"], m.name.strip()))
             if m.age_group:
                 tools.set_member_age_group(m.name.strip(), m.age_group)
+            if m.age_years is not None or m.include_in_meals is not None:
+                tools.set_member_age(m.name.strip(), m.age_years, m.include_in_meals)
         # Setup is finishing (onboarding posts its people only at the end):
         # record who set the household up now, before any invite link can
         # exist — see tools/first_open.py, rule 2.
@@ -1444,6 +1467,10 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
     try:
+        tools.validate_member_needs(req.lunch_needs, req.member_snacks)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    try:
         memory = tools.save_onboarding_answers(
             member_names=req.member_names,
             household_restrictions=req.household_restrictions,
@@ -1472,7 +1499,38 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             logger.exception("Onboarding usual week save failed")
             raise HTTPException(status_code=500, detail=f"Server error: {e}")
         memory = dict(tools.get_household_memory(), usual_week=saved)
+    if req.lunch_needs is not None or req.member_snacks is not None:
+        try:
+            needs = tools.save_member_needs(req.lunch_needs, req.member_snacks, source="onboarding")
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.exception("Onboarding member needs save failed")
+            raise HTTPException(status_code=500, detail=f"Server error: {e}")
+        memory = dict(memory, member_needs=needs)
     return memory
+
+
+@app.get("/api/member-needs")
+def get_member_needs():
+    """Each person's weekday lunch needs and snacks a day (2026-10-05)."""
+    return {"members": tools.get_member_needs()}
+
+
+@app.post("/api/member-needs")
+def save_member_needs(req: MemberNeedsRequest):
+    """Save per-person lunch needs and/or snacks a day; 400 on anything
+    invalid, before anything is written."""
+    try:
+        members = tools.save_member_needs(req.lunch_needs, req.snacks, source="settings")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    # The household's snacks a day is the most anyone has (the card's rule,
+    # which onboarding's page applies itself): a changed count in Settings
+    # moves it too, or a child's new third snack would never be planned.
+    if req.snacks is not None and members:
+        tools.edit_preference("snacks_per_day", max(m["snacks_per_day"] for m in members))
+    return {"members": members}
 
 
 @app.get("/api/usual-week")
@@ -1951,8 +2009,11 @@ def coaching_state():
 @app.get("/api/memory")
 def get_memory():
     """Everything the app has saved about this household's meal preferences — powers the 'what we know' view."""
+    # Every /api/memory* route answers with the DISPLAY copy (2026-10-06):
+    # the What we know screen lists everyone who lives here, including an
+    # infant left out of meals, who the planning reads never see.
     try:
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Fetching household memory failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1967,7 +2028,7 @@ def edit_memory(req: MemoryEditRequest):
             tools.set_household_goals(str(req.value))
         else:
             tools.edit_preference(req.field, req.value)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -1981,7 +2042,7 @@ def delete_memory(req: MemoryDeleteRequest):
     """Remove/clear a preference field or a single list item, used by the 'what we know' view's remove controls."""
     try:
         tools.delete_preference(req.field, req.item)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -1995,7 +2056,7 @@ def add_memory_store_item(req: StoreTypicalItemAddRequest):
     """Add one typical item for a usual store, used by the 'what we know' view's per-store item lists."""
     try:
         tools.add_store_typical_items(req.store, [req.item])
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Adding store typical item failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2007,7 +2068,7 @@ def remove_memory_store_item(req: StoreTypicalItemRemoveRequest):
     """Remove one typical item from a usual store's list, used by the 'what we know' view's per-store item lists."""
     try:
         tools.remove_store_typical_item(req.store, req.item)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Removing store typical item failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2019,7 +2080,7 @@ def dismiss_stores_prompt_view():
     """Quietly persist a decline of the Grocery tab's 'Where do you usually shop?' first-visit card — see tools.dismiss_stores_prompt."""
     try:
         tools.dismiss_stores_prompt()
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Dismissing stores prompt failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2032,7 +2093,7 @@ def set_memory_member_age_group(req: MemberAgeGroupRequest):
     set_member_age_group existed before this (see MemberAgeGroupRequest)."""
     try:
         tools.set_member_age_group(req.name, req.age_group)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Setting member age group failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2046,7 +2107,7 @@ def set_memory_member_restrictions(req: MemberRestrictionsRequest):
     replace semantics (see MemberRestrictionsRequest)."""
     try:
         tools.set_member_dietary_restrictions(req.name, req.restrictions, replace=req.replace)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Setting member dietary restrictions failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2075,7 +2136,7 @@ def set_memory_primary_member(req: PrimaryMemberRequest):
         logger.exception("Setting the main person failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     try:
-        return tools.get_household_memory()
+        return tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Memory lookup after setting the main person failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

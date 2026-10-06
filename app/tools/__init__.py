@@ -378,6 +378,8 @@ from .household import (  # noqa: F401
     list_pets,
     set_household_goals,
     set_member_age_group,
+    set_member_age,
+    age_stage,
     set_member_dietary_restrictions,
 )
 from .inventory import (  # noqa: F401
@@ -420,6 +422,8 @@ from .meal_variety import enforce_distinct_count as enforce_distinct_meal_count 
 # The household's usual week — meals × days × who's eating, prep, variety
 # (2026-09-30). The API's read and write; generation calls the module.
 from .usual_week import get_usual_week, save_usual_week, validate_usual_week  # noqa: F401
+from .member_needs import get_member_needs, save_member_needs, validate_member_needs  # noqa: F401
+from .member_needs import generation_context as member_needs_generation_context, lunch_packing  # noqa: F401
 from .meal_plans import (  # noqa: F401
     create_weekly_plan,
     discard_failed_plan,
@@ -437,6 +441,7 @@ from .memory import (  # noqa: F401
     edit_preference,
     get_facts,
     get_household_memory,
+    get_household_memory_for_display,
     update_fact,
 )
 # Today's one timeline of "what's next for us?" (see moves.py). Not agent

@@ -206,7 +206,8 @@ def test_migration_marks_every_existing_member_seen_and_names_the_setter_up(tmp_
     stamps = {r["name"]: r["first_open_seen_at"] for r in conn.execute("SELECT name, first_open_seen_at FROM members")}
     assert stamps == {"Emily": "before-first-open", "Vineeth": "before-first-open", "Kid": "before-first-open"}
     assert conn.execute("SELECT set_up_by_member_id FROM households WHERE id = 1").fetchone()[0] == vineeth
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == _db._DATA_VERSION_FIRST_OPEN
+    # >= since 2026-10-06: later run-once steps (onboarding regrouped) stamp past it.
+    assert conn.execute("PRAGMA user_version").fetchone()[0] >= _db._DATA_VERSION_FIRST_OPEN
 
     # A member added after the migration hasn't seen it, and a second
     # startup doesn't stamp them.

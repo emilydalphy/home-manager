@@ -9,7 +9,7 @@ import re
 import sqlite3  # for IntegrityError -- see save_week_intake's retry loop
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import EATS_HERE_SQL, acting_name, household_id
+from ._shared import IN_MEALS_SQL, acting_name, household_id
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
 from . import holidays as _holidays
@@ -402,7 +402,7 @@ def _household_composition() -> dict:
     """
     conn = get_conn()
     rows = conn.execute(
-        f"SELECT age_group FROM members WHERE household_id = ? AND {EATS_HERE_SQL}", (household_id(),)
+        f"SELECT age_group FROM members WHERE household_id = ? AND {IN_MEALS_SQL}", (household_id(),)
     ).fetchall()
     conn.close()
     adults = children = 0

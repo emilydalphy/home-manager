@@ -188,7 +188,9 @@ def test_it_is_the_last_step_before_the_first_week_and_it_follows_consent():
     assert steps[-2:] == [STEP, "reveal"], steps[-3:]
     assert steps[steps.index(STEP) - 1] == "ai-consent"
     sections = _const("QUESTION_SECTIONS")
-    assert f"'{STEP}': 4" in sections, "no eyebrow — see renderProgress"
+    # UPDATED 2026-10-06 (Onboarding regrouped): seven sections; it is in
+    # the last, "The rest".
+    assert f"'{STEP}': 7" in sections, "no eyebrow — see renderProgress"
 
 
 def test_it_is_a_catch_all_and_the_three_small_boxes_inside_the_taste_steps_stay():
@@ -506,10 +508,16 @@ document.querySelector = function (sel) { return sel === '.ae-field' ? ELS['ae-f
         "function currentMembers() { return HOUSEHOLD.map(function (n) { return { name: n }; }); }",
         "var restrictionAnswers = {};",
         "var wontEatItems = [];",
-        "var lunchLocation = {}; var lunchLocationTouched = false;",
+        # UPDATED 2026-10-06 (Onboarding regrouped): there is no "touched"
+        # flag any more -- the note's "takes lunch with them" is SENT by
+        # lunchLocationPayload for anybody the Weekday lunches screen has
+        # no answer for, so "would it be sent" is what is asserted.
+        "var lunchLocation = {}; var lunchNeeds = {};",
+        _const("LUNCH_NEED_DAYS"), _fn("lunchNeedsAnswered"), _fn("lunchLocationPayload"),
         "var prepAnswer = ''; var prepDayKeys = []; var prepLength = '';",
         "var kitchenKit = [];",
         _fn("pruneRestrictionAnswers"),
+        _const("ALLERGEN_OPTIONS"),
         _fn("currentRestrictions"),
         # The step itself.
         "var anythingElseNote = %s;" % json.dumps(note),
@@ -576,7 +584,7 @@ function state() {
     wontEat: wontEatItems.slice(),
     cuisines: noteCuisines.slice(),
     lunch: Object.assign({}, lunchLocation),
-    lunchTouched: lunchLocationTouched,
+    lunchTouched: !!lunchLocationPayload(),
     prep: { answer: prepAnswer, days: prepDayKeys.slice() },
     kit: kitchenKit.slice(),
     minutes: weeknightMaxMinutes,
