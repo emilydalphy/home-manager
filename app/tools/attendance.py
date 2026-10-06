@@ -87,9 +87,22 @@ def _validate_writable_slot(slot: str) -> None:
 
 def _member_rows(conn) -> list:
     return conn.execute(
-        f"SELECT id, name FROM members WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id",
+        f"SELECT id, name, age_group, age_years FROM members WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id",
         (household_id(),),
     ).fetchall()
+
+
+def _portions_for(rows, ids) -> float:
+    """
+    How many FULL plates these people eat: a toddler half of one, a
+    school-age child three quarters (household.portion_weight — "a toddler
+    gets toddler portions", Emily 2026-10-05). A household of adults is
+    exactly its headcount, so this changes nothing for anyone without a
+    child whose age is known.
+    """
+    from .household import portion_weight
+    wanted = set(ids)
+    return sum(portion_weight(r["age_group"], r["age_years"]) for r in rows if r["id"] in wanted)
 
 
 def _names_for(rows, ids: list[int]) -> list[str]:
@@ -175,6 +188,10 @@ def _attendance_dict(rows, row, date_str: str, slot: str) -> dict:
         "guest_count": guests,
         "headcount": headcount,
         "household_size": len(all_ids),
+        # Plates rather than people (see _portions_for): what the shop and
+        # the amounts are sized by. A guest eats a full plate.
+        "portions": _portions_for(rows, present) + guests,
+        "household_portions": _portions_for(rows, all_ids),
         "everyone_home": not absent and guests == 0,
         "nobody_home": headcount == 0,
         "explicit": explicit,
@@ -619,7 +636,27 @@ def grocery_scale_factor(date_str: str, slot: str, conn=None) -> float:
     att = get_slot_attendance(date_str, slot, conn=conn)
     if not att["explicit"] or att["household_size"] == 0 or att["nobody_home"]:
         return 1.0
+    # In plates, not heads (Onboarding regrouped, 2026-10-06): the toddler
+    # being the one away takes half a plate off, not a whole one. For a
+    # household of adults the two ratios are the same number.
+    if att["household_portions"] > 0:
+        return att["portions"] / att["household_portions"]
     return att["headcount"] / att["household_size"]
+
+
+def _table_plates(att: dict, slot: str, conn=None) -> float:
+    """
+    The ordinary table in full plates — what a recipe's default_servings is
+    measured against. For a snack, the household's SNACK table when anyone
+    has said how many snacks they have (member_needs.snack_table: Arjun's
+    two and the adults' one each), since a snack is not everybody's.
+    """
+    if slot == "snack":
+        from . import member_needs as _member_needs
+        table = _member_needs.snack_table(conn=conn)
+        if table:
+            return table
+    return att["household_portions"] or att["household_size"]
 
 
 def servings_scale_factor(date_str: str, slot: str, default_servings: int | None, conn=None) -> float:
@@ -667,7 +704,9 @@ def servings_scale_factor(date_str: str, slot: str, default_servings: int | None
     att = get_slot_attendance(date_str, slot, conn=conn)
     if att["household_size"] == 0 or att["nobody_home"]:
         return base
-    return base * att["household_size"] / default_servings
+    # The household's plates rather than its heads (2026-10-06): a recipe
+    # for 3 at a table of two adults and a toddler buys for 2.5.
+    return base * _table_plates(att, slot, conn=conn) / default_servings
 
 
 def count_scale_factor(date_str: str, slot: str, default_servings: int | None, conn=None) -> float:
@@ -717,7 +756,7 @@ def count_scale_factor(date_str: str, slot: str, default_servings: int | None, c
     att = get_slot_attendance(date_str, slot, conn=conn)
     if att["household_size"] == 0 or att["nobody_home"]:
         return base
-    return base * min(1.0, att["household_size"] / default_servings)
+    return base * min(1.0, _table_plates(att, slot, conn=conn) / default_servings)
 
 
 def scale_ingredients(ingredients: list[dict], factor: float) -> list[dict]:

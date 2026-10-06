@@ -200,6 +200,14 @@ def _hard_exclusions() -> list[str]:
             restriction = (restriction or "").strip()
             if restriction:
                 out.append(f"{member['name']}: {restriction}")
+    # "Nut-free environment" on a weekday lunch is a hard avoidance for the
+    # whole household (member_needs.NUT_FREE_AVOIDANCES) — and the gate only
+    # catches a nutty dish AFTER it was picked, turning it into an open
+    # question. Said here too, so the model never picks one (Onboarding
+    # regrouped slice 3, 2026-10-06: it was enforced but never told).
+    from . import member_needs as _member_needs
+    for name in _member_needs.nut_free_member_names():
+        out.append(f"{name}: no nuts or peanuts (nut-free lunch) — in any dish, since leftovers and snacks reach the lunchbox")
     for fact in _memory.get_facts():
         if fact.get("hard") and (fact.get("text") or "").strip():
             out.append(fact["text"].strip())

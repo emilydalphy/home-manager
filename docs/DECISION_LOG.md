@@ -13,6 +13,24 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-06 — Onboarding, regrouped, slice 3: planning reads the needs per
+  person (branch `overnight/onboarding-planning`, from `overnight/onboarding-ages`).**
+  Lunch stays ONE row per slot (one cook); each person's packing line
+  ("Arjun: nut-free, warm in a thermos") is computed in code from their
+  needs that weekday + who is at that lunch (`member_needs.lunch_packing`),
+  never stored, and rides `get_weekly_plan`/`get_week_menu` as `packed_as`
+  (no screen draws it yet — shell.js is the Settings builder's). Generator
+  gets `per_person` (lunch_needs / snacks_by_person / portions) + a prompt
+  bullet. Portions from age: `household.portion_weight` (toddler 0.5,
+  child-with-age 0.75, included infant 0.25; a Child with NO age = 1.0, never
+  guess low); `attendance` carries `portions`/`household_portions` and the
+  three scale factors use plates, so an adults-only house is unchanged.
+  Snacks: once anyone set a count, each snack feeds the average snack table
+  (`member_needs.snack_table`, per day not per snack — row order is an
+  accident). Nut-free KEPT household-wide (one cook = everyone's lunch), and
+  now also told to the model in `must_not_contain` — the gate alone turned a
+  nutty pick into an open slot.
+
 - **2026-10-06 — Ages/regrouped review fixes (branch `overnight/onboarding-ages`).**
   SAFETY: `EATS_HERE_SQL` is back to helpers-only; the infant rule is a new
   `_shared.IN_MEALS_SQL`, read ONLY by headcounts (attendance, usual week

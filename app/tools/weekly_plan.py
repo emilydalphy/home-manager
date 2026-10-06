@@ -4477,6 +4477,19 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     for _d in meal_dicts:
         if _d["slot_state"] == "planned_empty" and _d["slot"] in _switched_off:
             _d["meal_off"] = True
+    # One cook, packed several ways (Onboarding regrouped, 2026-10-05): a
+    # planned weekday lunch carries how each person at it takes theirs —
+    # "Arjun: nut-free, warm in a thermos". Worked out from their own
+    # answers and who is at that lunch (member_needs.lunch_packing), never
+    # stored, so it follows a changed answer. Only on a PLANNED lunch: an
+    # empty or open slot has nothing to pack. Absent for a household that
+    # never answered the Weekday lunches screen.
+    from . import member_needs as _member_needs_mod
+    _lunch_dates = [d["date"] for d in meal_dicts if d["slot"] == "lunch" and d["slot_state"] == "planned"]
+    _packing = _member_needs_mod.lunch_packing(_lunch_dates) if _lunch_dates else {}
+    for _d in meal_dicts:
+        if _d["slot"] == "lunch" and _d["slot_state"] == "planned" and _d["date"] in _packing:
+            _d["packed_as"] = _packing[_d["date"]]
 
     # The plan's real first day of content, as opposed to week_start_date
     # (always that week's Monday — the filing key every screen looks this
@@ -5644,6 +5657,16 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # dinner, in the very evening they would reach for them. `today_str`
     # is the one this function resolved at the top; the component branch
     # above gates its own Pick rows on the same value.
+    # Each person's way with the day's lunch (get_weekly_plan's packed_as —
+    # one cook, packed several ways), carried onto the Meals screen's row.
+    _packed_by_entry = {
+        m["entry_id"]: m["packed_as"] for m in (plan.get("meals") or []) if m.get("packed_as")
+    }
+    for day in days:
+        lunch = day.get("lunch")
+        if lunch and lunch.get("state") == "planned" and lunch.get("entry_id") in _packed_by_entry:
+            lunch["packed_as"] = _packed_by_entry[lunch["entry_id"]]
+
     suggestions = None
     for day in days:
         if day["dinner"] is None and day["date"] >= today_str:

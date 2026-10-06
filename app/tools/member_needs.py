@@ -260,3 +260,215 @@ def nut_free_member_names() -> list[str]:
         if "nut_free" in needs:
             out.append(r["name"])
     return out
+
+
+# ---------------------------------------------------------------------------
+# Planning reads the needs per person (Onboarding regrouped, slice 3 —
+# Emily 2026-10-05: "Lunches are planned per person from their needs (one
+# cook, packed several ways) … Gowthami reheated, Ravi a cold wrap, Arjun a
+# nut-free thermos, all from one double batch").
+#
+# ONE COOK. A weekday lunch stays ONE meal_plan_entries row for everyone at
+# it — the slot invariant (audit_plan_slots), the shopping and the leftover
+# chains all stand on that. What is per person is how each portion leaves
+# the kitchen, and that is worked out HERE, in code, from the people at the
+# lunch and what each said they need that weekday — never from the model's
+# say-so (lunch_packing). So it can't name someone who is away, can't drop
+# someone who is home, and follows a changed answer without a regenerate.
+#
+# NUT-FREE stays the household-wide hard avoidance above
+# (NUT_FREE_AVOIDANCES), on purpose: with one cook, the nut-free thermos IS
+# everybody's lunch, a dinner's leftovers can become it, and a snack has no
+# per-person attendance — so "nut-free for that person's lunches and
+# snacks" is enforced by the allergen gate on every dish. Narrowing it to
+# exactly those dishes would be weaker on safety for no gain the household
+# would see.
+# ---------------------------------------------------------------------------
+
+# How each need reads on a packing line, after the person's name. Nut-free
+# leads, because it is the one that is a rule rather than a container.
+_HOW_WORDS = {
+    "cold_packed": "cold, packed",
+    "thermos": "warm in a thermos",
+    "reheat": "reheated",
+    "made_fresh": "made fresh",
+}
+
+
+def _load_entry(raw) -> dict | None:
+    try:
+        entry = json.loads(raw or "null")
+    except (TypeError, ValueError):
+        return None
+    if entry is None:
+        return None
+    try:
+        return _clean_entry(entry, "")
+    except ValueError:
+        return None
+
+
+def needs_on(entry: dict | None, iso_date: str) -> list[str]:
+    """This person's lunch needs on one date: the day-by-day answer when
+    that weekday has one, else the standing answer. Weekend lunches carry
+    none — the screen asks about Monday to Friday."""
+    if not entry:
+        return []
+    from datetime import date as _date
+    weekday = _date.fromisoformat(iso_date).strftime("%A").lower()
+    if weekday not in LUNCH_WEEKDAYS:
+        return []
+    if weekday in (entry.get("days") or {}):
+        return list(entry["days"][weekday])
+    return list(entry.get("needs") or [])
+
+
+def how_line(needs: list[str]) -> str:
+    """'nut-free, warm in a thermos' — the words after a name on the
+    lunch's packing line. Several containers ticked means any of them
+    works for that person, so they read as choices."""
+    hows = [_HOW_WORDS[k] for k in LUNCH_NEEDS if k in needs and k in _HOW_WORDS]
+    words = " or ".join(hows)
+    if "nut_free" in needs:
+        return f"nut-free, {words}" if words else "nut-free"
+    return words
+
+
+def _needs_by_member(conn) -> dict[str, dict]:
+    """{name: cleaned lunch entry} for the people meals are counted for who
+    have answered the Weekday lunches screen."""
+    out = {}
+    for r in conn.execute(
+        f"SELECT name, lunch_needs_json FROM members WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id",
+        (household_id(),),
+    ).fetchall():
+        entry = _load_entry(r["lunch_needs_json"])
+        if entry and (entry["needs"] or entry["days"]):
+            out[r["name"]] = entry
+    return out
+
+
+def lunch_packing(dates: list[str]) -> dict[str, list[dict]]:
+    """
+    {date: [{"name", "needs", "how"}, ...]} for each weekday date whose
+    lunch has at least one person at it with a lunch need, in household
+    order. Only the people actually at that lunch (attendance), so a
+    Tuesday Ravi is away packs nothing for him. {} for a household nobody
+    has answered the screen for — every older household reads exactly as
+    before.
+    """
+    from . import attendance as _attendance
+    conn = get_conn()
+    try:
+        by_name = _needs_by_member(conn)
+    finally:
+        conn.close()
+    if not by_name:
+        return {}
+    out: dict[str, list[dict]] = {}
+    for d in sorted(set(dates)):
+        if not any(needs_on(e, d) for e in by_name.values()):
+            continue
+        att = _attendance.get_slot_attendance(d, "lunch")
+        rows = []
+        for name in att["present_names"]:
+            needs = needs_on(by_name.get(name), d)
+            if needs:
+                rows.append({"name": name, "needs": needs, "how": how_line(needs)})
+        if rows:
+            out[d] = rows
+    return out
+
+
+def snack_table(conn=None) -> float | None:
+    """
+    How many full plates each of a day's snacks feeds, from each person's
+    snacks a day — None when nobody has said (the household's whole table,
+    as before).
+
+    The day's snacks are N dishes (the household's snacks a day, which
+    setup sets to the most anyone has). Someone with fewer than N doesn't
+    eat every one, so each snack feeds the AVERAGE snack table: the day's
+    snack plates (each person's portion × their count, capped at N) over N.
+    Two adults at one each and a six-year-old at two, N = 2: (1 + 1 +
+    0.75 × 2) / 2 = 1.75 plates a snack, where the whole table is 2.75. Per
+    day rather than per snack on purpose: which of a day's snacks is "the
+    second one" is an accident of row order, and a swap would reshuffle it.
+
+    `conn` is the grocery ingest's own connection (see attendance.
+    get_slot_attendance) — read on it, never closed.
+    """
+    from .household import portion_weight
+    from .preferences import resolve_snacks_per_day
+    own = conn is None
+    if own:
+        conn = get_conn()
+    try:
+        rows = conn.execute(
+            f"SELECT age_group, age_years, snacks_per_day FROM members WHERE household_id = ? AND {IN_MEALS_SQL}",
+            (household_id(),),
+        ).fetchall()
+        if not any(r["snacks_per_day"] is not None for r in rows):
+            return None
+        prefs = conn.execute(
+            "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
+        ).fetchone()
+    finally:
+        if own:
+            conn.close()
+    per_day = resolve_snacks_per_day(dict(prefs) if prefs else {})
+    if per_day <= 0:
+        return None
+    plates = 0.0
+    for r in rows:
+        n = r["snacks_per_day"] if r["snacks_per_day"] is not None else default_snacks(r["age_group"])
+        plates += portion_weight(r["age_group"], r["age_years"]) * min(int(n), per_day)
+    table = plates / per_day
+    # Everyone at 0 while the household still plans snacks (raised in chat
+    # since) would buy nothing for a snack that is on the plan — fall back.
+    return table if table > 0 else None
+
+
+def generation_context(dates: list[str]) -> dict:
+    """
+    What the week's generator is told about each person — only the keys
+    that have something in them, so a household that never answered these
+    screens sends exactly what it sent before.
+
+      lunch_needs: [{date, people: [{name, how}]}] — each weekday lunch's
+        people and how theirs travels; ONE dish must suit all of them.
+      snacks_by_person: {name: n} once anyone has set a number.
+      portions: [{name, stage, plate}] for anyone eating less than a full
+        plate (a toddler, a school-age child with a known age).
+    """
+    from .household import age_stage, portion_weight
+    out: dict = {}
+    packing = lunch_packing([d for d in dates])
+    if packing:
+        out["lunch_needs"] = [
+            {"date": d, "people": [{"name": p["name"], "how": p["how"]} for p in rows]}
+            for d, rows in sorted(packing.items())
+        ]
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            f"SELECT name, age_group, age_years, snacks_per_day FROM members "
+            f"WHERE household_id = ? AND {IN_MEALS_SQL} ORDER BY id",
+            (household_id(),),
+        ).fetchall()
+    finally:
+        conn.close()
+    if any(r["snacks_per_day"] is not None for r in rows):
+        out["snacks_by_person"] = {
+            r["name"]: (r["snacks_per_day"] if r["snacks_per_day"] is not None else default_snacks(r["age_group"]))
+            for r in rows
+        }
+    portions = [
+        {"name": r["name"], "stage": age_stage(r["age_group"], r["age_years"]),
+         "plate": portion_weight(r["age_group"], r["age_years"])}
+        for r in rows
+        if portion_weight(r["age_group"], r["age_years"]) < 1.0
+    ]
+    if portions:
+        out["portions"] = portions
+    return out

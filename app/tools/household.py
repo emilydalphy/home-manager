@@ -314,6 +314,28 @@ def age_stage(age_group: str | None, age_years) -> str:
     return "child"
 
 
+# "A toddler gets toddler portions; a school-age child gets child portions"
+# (Onboarding regrouped, Emily 2026-10-05). How much of an adult's plate
+# each stage eats — what the shopping and the Cook screen's amounts are
+# sized by (attendance's `portions`). Teens and adults eat a full plate. An
+# infant only counts at all when the parents switched "Include in meals?"
+# on, and then for a taste of the table.
+PORTION_BY_STAGE = {"infant": 0.25, "toddler": 0.5, "child": 0.75}
+
+
+def portion_weight(age_group: str | None, age_years) -> float:
+    """
+    One person's share of a full plate, from their age. A Child whose age
+    has not been asked yet (every former "Little one", every child set up
+    before ages existed) eats a FULL plate: there is nothing to work the
+    portion out from, and guessing low is the direction that leaves a
+    family short at the table.
+    """
+    if (age_group or "").strip().lower() == "child" and age_years is None:
+        return 1.0
+    return PORTION_BY_STAGE.get(age_stage(age_group, age_years), 1.0)
+
+
 def set_member_age(name: str, age_years=None, include_in_meals: bool | None = None) -> dict:
     """
     Set a child's age in years (under 1 allowed; None clears it) and/or
