@@ -270,7 +270,7 @@ def test_the_dinner_time_line_sits_under_the_question_not_under_the_chips():
     ]),
     ("step-meals-days", [
         "Who&rsquo;s eating, and when?",
-        "Everyone starts on every meal. Tap a day to pick who&rsquo;s eating it, or to tap off a meal you don&rsquo;t need planned.",
+        "Everyone starts on every meal. Tap a day to pick who&rsquo;s eating it, or to turn off a meal you don&rsquo;t need planned.",
         "Everyone", "Some of you", "Not planned",
     ]),
     # UPDATED 2026-10-06 (Onboarding regrouped): "Dietary restrictions"

@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Copy slips from the 2026-10-06 walkthrough** (branch
+  `copy-and-rules-2026-10-06`). US spelling (favorite, traveling), the day
+  picker's "turn off a meal", Before-you-shop says "I've ticked..." only when
+  something was ticked at open (`groceryState.bsPreTicked`), swap reasons say
+  real minutes / "Not chicken or beef again" (prompt rule in swap_options and
+  swap_in_place), the change card returns `options_shown` per row so chat
+  counts truthfully, one child is named not "the kids", and the chat's save
+  toast names the change. Chores' two bare toasts stay (Chores paused).
+  Tests: `tests/test_copy_slips_2026_10_06.py`.
+
 - **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
   2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap
   build re-picked only a lunch answered "cooked that day" in step 3 and only

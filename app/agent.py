@@ -149,7 +149,9 @@ sizzle"). Give the half-sentence reason where it stops a mistake ("tamarind goes
 earlier, because it stops the dal softening"). A short heads-up or reassurance where a cook \
 would wobble ("stand back, they'll spatter", "don't rush the onions — that's where the flavor \
 starts", "no peeking"). Name the household's people where a step is about them ("serve \
-Arjun's bowl first", "the last portion is Ravi's lunch tomorrow"). Never filler: no \
+Arjun's bowl first", "the last portion is Ravi's lunch tomorrow"). When exactly one child is at \
+the table, use their name ("Leo's portion"), never "the kids' portions"; "the kids" is only for \
+two or more. Never filler: no \
 "simply", "just", "delicious", "amazing", no exclamation marks, no jokes — warmth comes from \
 the cues and the care, and every amount stays exactly as precise as the rule above says.
   * STEPS ARE A TIMELINE. Order them the way a person stands at a stove, not the way the dish \
@@ -1951,7 +1953,7 @@ TOOL_DEFINITIONS = [
                                     "type": "object",
                                     "properties": {
                                         "meal_name": {"type": "string"},
-                                        "reason": {"type": "string", "description": "One short line the household reads on the card: why this fits. Under ten words, no exclamation mark."},
+                                        "reason": {"type": "string", "description": "One short line the household reads on the card: why this fits. Under ten words, no exclamation mark. Plain words, never planner terms: the real minutes (\'Quicker than 45 minutes\'), not \'under the time cap\'; \'Not chicken again this week\', not \'no overlap with the week\'s chicken\'."},
                                         "ingredients": {
                                             "type": "array",
                                             "items": {
@@ -3395,7 +3397,7 @@ plan.
 - The no-repeat rule against recent_history is about DINNER, LUNCH and SNACK — not \
 breakfast (except under "Something new", below). recent_history covers {_variety_window}, and a \
 dinner, lunch or snack (or a near-identical variant) that appears there is NOT drafted again \
-unless the household asked for it this week — a favourite named in intake.freeform, "again \
+unless the household asked for it this week — a favorite named in intake.freeform, "again \
 please", a dish in intake.cuisines' territory they clearly want back. Check recent_history's \
 `slot` field; a household that keeps seeing last week's food stops trusting the draft (Emily, \
 2026-09-20 on dinners; 2026-09-28 on snacks: "It keeps giving me the same snack suggestions as \
@@ -9997,6 +9999,9 @@ def _build_week_context_block(context: dict) -> dict | None:
         "- Moving a dinner to another night is still swap_dinner_nights; approving is still "
         "approve_weekly_plan; a comment that changes nothing on the week is remembered and answered "
         "in one line (\"Noted — ... Nothing in this draft to change.\").\n"
+        "- If your line says how many options a row has, use each row's `options_shown` from the result, "
+        "not the number you meant to offer: dishes the household can't have are dropped before the card "
+        "is drawn, so one option can be all that shows. Never write 'three' unless three are there.\n"
         "- Reply with ONE short line that matches the card — the consequence if there is one "
         "(\"With Wednesday that's chicken twice, so Saturday stays on the pork chops.\"), otherwise "
         "what you offered. Never list the rows; the card shows them. Never say the change is made "

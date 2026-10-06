@@ -177,7 +177,7 @@ unknown, so don't constrain on it.
 quantities and no staples — it is how the household's allergies are checked against the dish, so \
 name what is actually in it.
 - `reason` is the one line shown under the dish on the card. Warm, plain, specific to the swap, \
-under about ten words, no exclamation mark: "Lighter than the chops, and nothing to thaw."
+under about ten words, no exclamation mark: "Lighter than the chops, and nothing to thaw." Say it the way a person would, never in the planner's terms: if time is the reason, give the real minutes (\"Quicker than 45 minutes\", from `max_minutes`), never \"under the time cap\"; if it is a different protein, say \"Not chicken or beef again this week\", never \"no overlap with the week's chicken or beef\".
 
 Call submit_swap_options with the three dishes."""
 

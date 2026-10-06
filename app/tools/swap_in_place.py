@@ -435,7 +435,7 @@ unknown, so don't constrain on it.
 the item as the plain grocery name ("Baby spinach"), never with a prep descriptor. Leave staples \
 they certainly have — salt, pepper, oil — out of the list entirely.
 - `reason` is the one line shown under the new dish on the card. Warm, plain, specific to the \
-swap, under about ten words, no exclamation mark: "Lighter than the chops, and nothing to thaw."
+swap, under about ten words, no exclamation mark: "Lighter than the chops, and nothing to thaw." Say it the way a person would, never in the planner's terms: if time is the reason, give the real minutes (\"Quicker than 45 minutes\", from `max_minutes`), never \"under the time cap\"; if it is a different protein, say \"Not chicken or beef again this week\", never \"no overlap with the week's chicken or beef\".
 
 Call submit_swap with the one dish."""
 
