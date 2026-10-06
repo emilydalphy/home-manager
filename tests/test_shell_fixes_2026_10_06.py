@@ -95,3 +95,43 @@ def test_the_one_word_chip_never_wraps_or_shrinks():
     assert "max-width: none" in rule
     # A 44px hit area around the 24px chip (DESIGN_SYSTEM hard rule 6).
     assert re.search(r"button\.cook-badge-tap::after\s*\{[^}]*inset:\s*-10px", SHELL_CSS)
+
+
+# --------------------------------------------------------------------------
+# Card 2 - Today's snack row names who the snacks are for
+# --------------------------------------------------------------------------
+
+def _seed_snack_day(adult_snacks, child_snacks):
+    import datetime  # noqa: F401
+    from conftest import household_today
+    from app.tools import day_meals, meal_plans, member_needs, recipes, weekly_plan
+    from app.tools import household as household_tools
+
+    day = household_today()
+    for name, age in (("Dana", "adult"), ("Sam", "adult"), ("Leo", "child")):
+        household_tools.add_member(name)
+        household_tools.set_member_age_group(name, age)
+    recipes.add_recipe("Apple Slices", ingredients=[{"item": "apple", "qty": "1", "category": "produce"}],
+                       instructions=["Slice"], prep_time_minutes=5, cook_time_minutes=0, default_servings=4)
+    pid = meal_plans.create_weekly_plan(day.isoformat(), day_count=1)["weekly_plan_id"]
+    meal_plans.plan_meal(day.isoformat(), "Apple Slices", "snack", weekly_plan_id=pid)
+    weekly_plan.approve_weekly_plan(pid)
+    member_needs.save_member_needs(None, {"Dana": adult_snacks, "Sam": adult_snacks, "Leo": child_snacks})
+    return day_meals
+
+
+def test_snacks_only_the_child_has_are_labelled_with_the_child_not_everyone():
+    from app.tools import moves
+    _seed_snack_day(0, 2)
+    row = [r for r in moves.today_moves()["day_meals"] if r["slot"] == "snack"][0]
+    line = row["lines"][0]
+    assert line["who"] == "Leo"
+    assert line["initials"] == ["L"]
+    assert "everyone" not in json.dumps(row)
+
+
+def test_snacks_everyone_has_still_say_everyone():
+    from app.tools import moves
+    _seed_snack_day(1, 2)
+    row = [r for r in moves.today_moves()["day_meals"] if r["slot"] == "snack"][0]
+    assert row["lines"][0]["who"] == "everyone"
