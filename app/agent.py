@@ -31,6 +31,7 @@ from .tools import weekday_lunches as _weekday_lunches
 from .tools import bring_over as _bring_over
 from .tools import freezer_portions as _freezer_portions
 from .tools import cap_enforce as _cap_enforce
+from .tools import draft_rules as _draft_rules
 from .tools import dinner_gaps as _dinner_gaps
 from .tools import today_meals as _today_meals
 from .tools import voice as _voice
@@ -7026,6 +7027,12 @@ def _generate_weekly_plan(
             # before the reveal's done event.
             if first_plan:
                 _usual_week.fill_first_plan_gaps(plan_id, usual_period)
+            # The household's own lunch needs and a week's protein variety,
+            # held on the draft rather than only asked for — AFTER every pass
+            # that can write a lunch (leftover copies, the first-week fill).
+            # See tools/draft_rules.py; neither raises.
+            _draft_rules.enforce_cold_packed_lunches(plan_id, usual_period)
+            _draft_rules.enforce_protein_variety(plan_id)
 
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])

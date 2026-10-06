@@ -855,6 +855,45 @@ def _deal(gaps: list[dict], groups: int) -> list[list[dict]]:
     return [g for g in out if g]
 
 
+def _first_plan_caps(plan_id: int, dates: list[str]) -> dict:
+    """{(date, slot): minutes or None} for the first week's fills — the
+    household's weeknight and weekday-lunch limits plus the week's night
+    tags, read through time_caps.minutes_cap like every other reader.
+    Lunch is asked as a cook on the day (no lunch_kind, not leftovers):
+    whatever this pass writes into an empty slot is cooked that day."""
+    from . import memory as _memory
+    from . import swap_in_place as _swap
+    from . import time_caps as _time_caps
+    from . import week_intake as _week_intake
+
+    memory = _memory.get_household_memory()
+    tags_by_date = {}
+    try:
+        week_start = _swap._week_start_of(plan_id)
+        intake = _week_intake.get_week_intake(week_start) if week_start else None
+        tags_by_date = (intake or {}).get("night_tags") or {}
+    except Exception:
+        logger.exception("Reading the first week's night tags failed; caps use the household limits alone")
+    return {
+        (d, meal): _time_caps.minutes_cap(d, meal, (tags_by_date.get(d) or []) if meal == "dinner" else [], memory)
+        for d in dates for meal in MEALS
+    }
+
+
+def _over_cap(pick: dict, caps: list) -> bool:
+    """A pick whose own prep + cook estimate is over the tightest cap of the
+    slots it would fill. Unknown minutes are let through, as everywhere."""
+    known = [c for c in caps if c]
+    prep, cook = pick.get("prep_time_minutes"), pick.get("cook_time_minutes")
+    if not known or (prep is None and cook is None):
+        return False
+    try:
+        total = int(prep or 0) + int(cook or 0)
+    except (TypeError, ValueError):
+        return False
+    return bool(total) and total > min(known)
+
+
 def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
     """
     The household's FIRST week never arrives with a meal left open (the
@@ -897,6 +936,15 @@ def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
             return out
         pick_one = picker or _allergen_gate.quick_pick
         avoidances = _allergen_gate.hard_avoidances()
+        # The household's own time limits, held here too (card "The draft
+        # breaks the household's own rules", 2026-10-06). This pass runs
+        # AFTER cap_enforce, so nothing downstream checks what it writes:
+        # before this a quick pick was never measured against the cap, and
+        # both repeat fills were called with no caps at all — a first-plan-
+        # only bypass. Every fill here is a cook on the day, so lunches get
+        # the plain weekday cap (no prepped / leftovers lift), as
+        # agent._finish_week_slots' own fill_caps do.
+        caps = _first_plan_caps(plan_id, dates)
         conn = get_conn()
         try:
             counts = _counts(_prefs_row(conn))
@@ -948,6 +996,10 @@ def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
             if not pick:
                 continue
             meal = context["slot"]
+            if _over_cap(pick, [caps.get((g["date"], meal)) for g in group]):
+                # Left to the repeat pass below, which holds to the same caps.
+                logger.info("First-week pick %r is over the %s time limit; not used", pick.get("meal_name"), meal)
+                continue
             try:
                 serves = _swap._table_for(group[0]["date"], meal)["serves"]
                 pick["meal_name"] = _swap.honest_meal_name(pick)
@@ -978,8 +1030,9 @@ def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
 
         # 2. A repeat of a safe dish already on the week, before a question.
         if _open_gaps(plan_id, dates):
-            _meal_variety.fill_gaps_with_a_repeat(plan_id, dates)
-            _dinner_gaps.fill_open_dinners(plan_id, dates, budget=_allergen_gate.CallBudget(0), reserve=0)
+            _meal_variety.fill_gaps_with_a_repeat(plan_id, dates, caps=caps)
+            _dinner_gaps.fill_open_dinners(plan_id, dates, caps=caps, budget=_allergen_gate.CallBudget(0),
+                                           reserve=0)
         out["left"] = [{"date": g["date"], "slot": g["slot"]} for g in _open_gaps(plan_id, dates)]
         settled = {(f["date"], f["slot"]) for f in out["filled"]} | {(g["date"], g["slot"]) for g in out["left"]}
         out["repeated"] = [{"date": g["date"], "slot": g["slot"]} for g in gaps
