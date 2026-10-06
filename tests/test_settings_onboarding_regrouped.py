@@ -152,7 +152,7 @@ uwState.data = {members: [], grid: {}, variety: {}, prep: {days: []}, snacks_per
 uwState.row = 'snacks';
 wwkState.needs = %s;
 console.log(JSON.stringify(wwkUsualWeekHtml({rhythm: {}})));
-""" % json.dumps(NEEDS))
+""" % json.dumps([dict(n, snacks_set=True) for n in NEEDS]))
     assert "Ravi 1 · Arjun 2" in html
     assert 'is-on" aria-pressed="true" data-wwk="member-snacks" data-member="Arjun" data-value="2">2<' in html
     assert "uwPost({ snacks_per_day: most })" in _function("wwkSaveMemberSnacks")
@@ -169,3 +169,86 @@ console.log(JSON.stringify([
     assert "Roughly how long" not in html[0] and "About an hour" not in SHELL_JS
     assert "up to 2 hours" in html[0]
     assert html[1] == [{"weekday": "sunday", "minutes": 120}, {"weekday": "monday", "minutes": 120}]
+
+
+# --- review fixes (2026-10-06) ---------------------------------------------------
+
+def _snacks(house: int, script: str) -> list:
+    return _run(_harness("wwkSaveMemberSnacks") + """
+uwState.data = {members: [], grid: {}, variety: {}, prep: {days: []}, snacks_per_day: %d};
+uwState.row = 'snacks';
+wwkState.needs = %s;
+var posted = [], uw = [];
+function wwkSaveNeeds(body, apply, said, then) { posted.push(JSON.parse(JSON.stringify(body))); apply(); return then(); }
+function uwPost(body) { uw.push(body); return Object.assign({}, uwState.data, body); }
+function wwkMem() { return null; }
+%s
+""" % (house, json.dumps(NEEDS), script))
+
+
+def test_a_household_on_no_snacks_stays_on_none_until_someone_says_otherwise():
+    # Nobody answered; the household is on 0. Everyone shows 0, not the age
+    # defaults (Ravi 1, Arjun 2), and setting Arjun to 0 turns nothing on.
+    out = _snacks(0, """
+var line = wwkSnacksValue(uwState.data);
+var html = wwkMemberSnacksHtml();
+wwkSaveMemberSnacks('Arjun', 0);
+console.log(JSON.stringify([line, html, posted, uw]));
+""")
+    line, html, posted, uw = out
+    assert line == "Ravi 0 · Arjun 0"
+    assert 'is-on" aria-pressed="true" data-wwk="member-snacks" data-member="Arjun" data-value="0"' in html
+    assert posted == [{"snacks": {"Ravi": 0, "Arjun": 0}}] and uw == []
+
+
+def test_editing_one_person_pins_the_others_at_the_household_number():
+    out = _snacks(2, """
+wwkSaveMemberSnacks('Arjun', 3);
+console.log(JSON.stringify([posted, uw, wwkSnacksValue(uwState.data)]));
+""")
+    posted, uw, line = out
+    # Ravi never answered: saved at the household's 2, so the household
+    # moving to 3 (the most anyone has) doesn't move him.
+    assert posted == [{"snacks": {"Ravi": 2, "Arjun": 3}}]
+    assert uw == [{"snacks_per_day": 3}]
+    assert line == "Ravi 2 · Arjun 3"
+
+
+def test_the_age_route_never_creates_a_member_or_takes_an_adult_out_of_meals(signed_in):
+    tools.add_member("Emily")
+    tools.set_member_age_group("Emily", "adult")
+    before = len(tools.get_household_memory_for_display()["members"])
+    assert signed_in.post("/api/memory/member/age", json={"name": "   ", "age_years": 3}).status_code == 400
+    assert signed_in.post("/api/memory/member/age", json={"name": "", "age_years": 3}).status_code == 400
+    assert signed_in.post("/api/memory/member/age", json={"name": "Nobody", "age_years": 3}).status_code == 404
+    assert len(tools.get_household_memory_for_display()["members"]) == before
+    res = signed_in.post("/api/memory/member/age", json={"name": "Emily", "age_years": 0.5, "include_in_meals": False})
+    emily = [m for m in res.json()["members"] if m["name"] == "Emily"][0]
+    assert emily["in_meals"] is True
+
+
+def test_an_old_lunch_place_shows_as_needs_until_the_household_taps():
+    out = _run(_harness("wwkToggleLunchNeed", "wwkSameNeeds") + """
+uwState.data = {members: [{id: 1, name: 'Ravi'}], grid: {lunch: {}}, variety: {}, prep: {days: []}, snacks_per_day: 1};
+wwkState.needs = [{id: 1, name: 'Ravi', lunch_needs: null, snacks_per_day: 1, snacks_set: false}];
+prefsState.memory = %s;
+prefsState.memory.rhythm.lunch_location = {Ravi: {standing: 'out', overrides: {Tuesday: 'home'}}};
+var html = wwkRhythmHtml(prefsState.memory);
+var sent = [];
+function wwkSaveLunchEntry(name, entry) { sent.push(entry); }
+wwkToggleLunchNeed('Ravi', 'friday', 'nut_free');
+console.log(JSON.stringify([html, sent]));
+""" % json.dumps(MEMORY))
+    html, sent = out
+    assert "From what you told me before." in html and "Same every day" in html
+    assert 'is-on" aria-pressed="true" data-wwk="lunch-need" data-member="Ravi" data-day="monday" data-value="cold_packed"' in html
+    assert 'is-on" aria-pressed="true" data-wwk="lunch-need" data-member="Ravi" data-day="tuesday" data-value="reheat"' in html
+    # The first tap keeps the old answer and adds the new one.
+    assert sent == [{"needs": ["cold_packed"], "days": {
+        "monday": ["cold_packed"], "tuesday": ["reheat"], "wednesday": ["cold_packed"],
+        "thursday": ["cold_packed"], "friday": ["cold_packed", "nut_free"]}}]
+
+
+def test_two_hour_prep_days_read_up_to_2_hours_once():
+    tools.set_prep_days([{"weekday": "sunday", "minutes": 120}, {"weekday": "wednesday", "minutes": 120}])
+    assert tools.prep_days_summary() == "Preps on Sunday and Wednesday (up to 2 hours)."

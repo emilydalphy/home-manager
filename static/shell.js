@@ -10657,6 +10657,9 @@
   ];
   var WWK_LUNCH_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
   var WWK_SNACKS_A_DAY = [0, 1, 2, 3];
+  // An old lunch PLACE read as needs until the household taps
+  // (wwkLunchFromPlace): out = packed, home = eaten in the kitchen.
+  var WWK_LUNCH_FROM_PLACE = { out: ['cold_packed'], home: ['reheat'] };
   // "Meals eaten together" left Your rhythm on 2026-09-25 (Emily, §2b S4:
   // nothing in the planner reads meals_together). The stored answer and
   // /api/onboarding/rhythm's field stay, for households that gave one.
@@ -11418,12 +11421,21 @@
     if (isNaN(years)) { showToast('Type an age in years, 0 to 120.'); return; }
     if (m.age_years === years) return;
     var body = wwkAgeBody(m, years);
+    var droppedOut = body.include_in_meals === false && m.in_meals !== false;
     wwkCommit('people', function () {
       m.age_years = years;
       m.in_meals = body.include_in_meals === null ? true : body.include_in_meals;
     }, function () {
       return wwkPostSaying('/api/memory/member/age', body);
-    }, function (result) { wwkAdoptMemory(result); wwkAfterAgeChange(); });
+    }, function (result) { wwkAdoptMemory(result); wwkAfterAgeChange(); }).then(function (ok) {
+      if (ok && droppedOut) showToast(wwkLeftOutLine(name), null, 6000);
+    });
+  }
+
+  // Said when an age takes somebody out of the meal counts, so a
+  // corrected age never drops a person silently (review, 2026-10-06).
+  function wwkLeftOutLine(name) {
+    return name + '’s under 1, so I’ve left them out of meal counts. Turn on Include in meals to change that.';
   }
 
   function wwkToggleIncludeMeals(name) {
@@ -11845,7 +11857,7 @@
     var names = days.map(function (d) { return UW_DAY_NAMES[UW_WEEKDAYS.indexOf(d)] || d; });
     return names.length <= 2 ? names.join(' and ') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
   }
-  // The Prep day row: "Sunday (a longer stretch)".
+  // The Prep day row: "Sunday (up to 2 hours)".
   function uwPrepDaysLine(data) {
     var prep = (data && data.prep) || {};
     if (!(prep.days || []).length) return 'None';
@@ -12296,8 +12308,35 @@
   function wwkNeedsFor(name) {
     return (wwkState.needs || []).filter(function (m) { return m.name === name; })[0] || null;
   }
+  // A household that answered before 2026-10-06 has a lunch PLACE
+  // (rhythm lunch_location: out / home / varies, plus per-weekday
+  // overrides) and no needs. Until they tap, the needs are read from it
+  // (review, 2026-10-06: the old answer used to vanish and the first tap
+  // overwrote it): out is a packed lunch (Cold packed), home is a lunch
+  // eaten in the kitchen (Something to reheat — member_needs' bridge maps
+  // both back to the same place), varies says nothing. A per-weekday
+  // override shows as day by day. The first tap saves all of it.
+  function wwkLunchFromPlace(name) {
+    var loc = ((((wwkMem() || {}).rhythm) || {}).lunch_location || {})[name];
+    if (!loc) return null;
+    var place = function (key) { return (WWK_LUNCH_FROM_PLACE[key] || []).slice(); };
+    var needs = place(loc.standing);
+    var days = {};
+    Object.keys(loc.overrides || {}).forEach(function (day) {
+      var d = String(day).toLowerCase();
+      if (WWK_LUNCH_DAYS.indexOf(d) === -1) return;
+      var on = place(loc.overrides[day]);
+      if (on.join() !== needs.join()) days[d] = on;
+    });
+    if (!needs.length && !Object.keys(days).length) return null;
+    return { needs: needs, days: days, fromPlace: true };
+  }
   function wwkLunchEntry(name) {
     var n = wwkNeedsFor(name);
+    if (n && !n.lunch_needs) {
+      var old = wwkLunchFromPlace(name);
+      if (old) return old;
+    }
     var l = (n && n.lunch_needs) || {};
     var days = {};
     Object.keys(l.days || {}).forEach(function (d) { days[d] = (l.days[d] || []).slice(); });
@@ -12351,6 +12390,7 @@
       var e = wwkLunchEntry(n);
       var who = escapeHtml(n);
       html += '<div class="wwk-person"><p class="wwk-person-name">' + who + '</p>';
+      if (e.fromPlace) html += wwkNote('From what you told me before. Tap to change it.');
       if (!wwkLunchIsByDay(n)) {
         html += wwkLunchChipsHtml(n, '', e.needs) +
           '<button type="button" class="wwk-link" data-wwk="lunch-by-day" data-member="' + who + '">Different on some days?</button>';
@@ -12375,10 +12415,11 @@
   // redraw (snacks follow it with the household's number).
   async function wwkSaveNeeds(body, apply, said, then) {
     var snapshot = JSON.stringify(wwkState.needs);
+    var saved = null;
     apply();
     wwkRenderSection('rhythm');
     try {
-      var saved = await wwkPostSaying('/api/member-needs', body);
+      saved = await wwkPostSaying('/api/member-needs', body);
       if (saved && saved.members) wwkState.needs = saved.members;
       if (then) await then();
       wwkRenderSection('rhythm');
@@ -12386,7 +12427,14 @@
       toastSaved(said);
     } catch (err) {
       console.warn('Member needs save failed:', err);
-      wwkState.needs = JSON.parse(snapshot);
+      if (saved) {
+        // The answer saved and only the follow-up didn't (review,
+        // 2026-10-06): the snapshot is stale now, so read both back
+        // rather than put the old answer on screen.
+        await Promise.all([wwkLoadNeeds(), loadUsualWeek()]);
+      } else {
+        wwkState.needs = JSON.parse(snapshot);
+      }
       wwkRenderSection('rhythm');
       showToast((err && err.userMessage) || 'That didn’t save. Try it again.');
     }
@@ -12438,10 +12486,23 @@
   // Snacks a day, 0-3 per person (children 2, adults 1 until said). The
   // household's snacks a day — how many snack dishes a day the planner
   // makes — is the most anyone has, as onboarding's householdSnacksPerDay.
+  // Someone who never answered has the household's own number, not the
+  // age default (review, 2026-10-06: a household on 0 snacks read "Up to 2"
+  // and one tap turned snacks on) — the same fallback the planner's snack
+  // table uses for them.
+  function wwkSnacksHousehold() {
+    var n = uwState.data && uwState.data.snacks_per_day;
+    return typeof n === 'number' ? n : null;
+  }
+  function wwkSnacksFor(p) {
+    var house = wwkSnacksHousehold();
+    if (p.snacks_set || house === null) return p.snacks_per_day || 0;
+    return house;
+  }
   function wwkSnacksMost() {
     var people = wwkState.needs || [];
     if (!people.length) return null;
-    return Math.max.apply(null, people.map(function (p) { return p.snacks_per_day || 0; }));
+    return Math.max.apply(null, people.map(wwkSnacksFor));
   }
   function wwkSnacksValue(data) {
     var people = wwkState.needs;
@@ -12450,7 +12511,7 @@
       var most = wwkSnacksMost();
       return most ? 'Up to ' + most + ' a day' : 'None';
     }
-    return people.map(function (p) { return p.name + ' ' + (p.snacks_per_day || 0); }).join(' · ');
+    return people.map(function (p) { return p.name + ' ' + wwkSnacksFor(p); }).join(' · ');
   }
   function wwkMemberSnacksHtml() {
     var people = wwkState.needs;
@@ -12459,18 +12520,27 @@
       var who = escapeHtml(p.name);
       return '<div class="wwk-chips wwk-chips-named" role="group" aria-label="' + who + '’s snacks a day"><span class="wwk-chips-name">' + who + '</span>' +
         WWK_SNACKS_A_DAY.map(function (v) {
-          return wwkChip(String(v), 'data-wwk="member-snacks" data-member="' + who + '" data-value="' + v + '"', p.snacks_per_day === v ? 'on' : '');
+          return wwkChip(String(v), 'data-wwk="member-snacks" data-member="' + who + '" data-value="' + v + '"', wwkSnacksFor(p) === v ? 'on' : '');
         }).join('') + '</div>';
     }).join('');
   }
+  // Everyone who hasn't answered is saved at what they show — the
+  // household's number — in the same request, so the next change to the
+  // household's number (it follows the most anyone has) can't move them:
+  // editing one person never changes another.
   function wwkSaveMemberSnacks(name, n) {
     var p = wwkNeedsFor(name);
-    if (!p || isNaN(n) || (p.snacks_per_day === n && p.snacks_set)) return;
+    if (!p || isNaN(n) || (wwkSnacksFor(p) === n && p.snacks_set)) return;
     var body = { snacks: {} };
+    (wwkState.needs || []).forEach(function (o) {
+      if (o !== p && !o.snacks_set) body.snacks[o.name] = wwkSnacksFor(o);
+    });
     body.snacks[name] = n;
     wwkSaveNeeds(body, function () {
-      p.snacks_per_day = n;
-      p.snacks_set = true;
+      (wwkState.needs || []).forEach(function (o) {
+        o.snacks_per_day = body.snacks.hasOwnProperty(o.name) ? body.snacks[o.name] : o.snacks_per_day;
+        if (body.snacks.hasOwnProperty(o.name)) o.snacks_set = true;
+      });
     }, name + '’s snacks were saved', async function () {
       var most = wwkSnacksMost();
       if (most === null || !uwState.data || uwState.data.snacks_per_day === most) return;
@@ -12571,7 +12641,9 @@
     if (!days.length) return '';
     var names = days.map(function (d) { return d.weekday.charAt(0).toUpperCase() + d.weekday.slice(1); });
     var minutes = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes;
-    var length = minutes === 30 ? ' (about 30 minutes)' : minutes === 60 ? ' (about an hour)' : minutes ? ' (a couple of hours)' : '';
+    // rhythm.prep_minutes_label's words; 120 is "up to 2 hours" since
+    // 2026-10-06, as onboarding and the Prep day row say it.
+    var length = !minutes ? '' : minutes <= 40 ? ' (about half an hour)' : minutes <= 75 ? ' (about an hour)' : ' (up to 2 hours)';
     return 'Preps on ' + names.join(' and ') + length + '.';
   }
 
@@ -26709,7 +26781,8 @@
         name: name, age_years: years, include_in_meals: infant ? prefsAgeAskInclude : null
       });
       if (memory && memory.members) prefsState.memory = memory;
-      toastSaved(savedLine(name + '’s age', 'saved'));
+      if (infant && !prefsAgeAskInclude) showToast(wwkLeftOutLine(name), null, 6000);
+      else toastSaved(savedLine(name + '’s age', 'saved'));
       renderPrefsRows();
       if (wwkState.open) { wwkRenderSection('people'); wwkAfterAgeChange(); }
     } catch (err) {

@@ -551,7 +551,10 @@ def prep_minutes_label(minutes: int | None) -> str:
         return "about half an hour"
     if minutes <= 75:
         return "about an hour"
-    return "a longer stretch"
+    # Every prep day is planned for up to 2 hours since 2026-10-06
+    # (Onboarding, regrouped: Cook ahead lost "How long?") — the words
+    # onboarding's read-back and Settings use.
+    return "up to 2 hours"
 
 
 def _join_weekdays(labels: list[str]) -> str:
@@ -576,10 +579,15 @@ def prep_days_summary(days: list[dict] | None = None) -> str:
         days = get_household_rhythm()["prep_days"]
     if not days:
         return ""
+    lengths = [prep_minutes_label(day.get("minutes")) for day in days]
+    # One length for every day (the usual case now every prep day is 2
+    # hours) is said once: "Sunday and Wednesday (up to 2 hours)".
+    if len(days) > 1 and lengths[0] and len(set(lengths)) == 1:
+        names = _join_weekdays([day["weekday"].capitalize() for day in days])
+        return f"Preps on {names} ({lengths[0]})."
     parts = []
-    for day in days:
+    for day, minutes in zip(days, lengths):
         label = day["weekday"].capitalize()
-        minutes = prep_minutes_label(day.get("minutes"))
         parts.append(f"{label} ({minutes})" if minutes else label)
     return f"Preps on {_join_weekdays(parts)}."
 

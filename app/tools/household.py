@@ -323,13 +323,23 @@ def age_stage(age_group: str | None, age_years) -> str:
     return "child"
 
 
-def set_member_age(name: str, age_years=None, include_in_meals: bool | None = None) -> dict:
+def set_member_age(name: str, age_years=None, include_in_meals: bool | None = None,
+                   must_exist: bool = False) -> dict:
     """
     Set a child's age in years (under 1 allowed; None clears it) and/or
     whether they are counted in meals. include_in_meals is only ever OFF
-    for an infant: anyone 1 or older is always counted (the switch is the
-    infant's alone), so an age raised past 1 turns it back on.
+    for an infant — a member whose age group is Child and whose age is
+    under 1: anyone else is always counted (the switch is the infant's
+    alone), so an age raised past 1, or an Adult, is counted whatever is
+    sent (review, 2026-10-06: an adult could be switched out of meals).
+
+    must_exist (Settings, review 2026-10-06): look the person up and never
+    create one — a typo or a blank name is LookupError / ValueError, not a
+    new member. Onboarding's finish leaves it False: it has just added them.
     """
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Say whose age this is.")
     if age_years is not None:
         try:
             age_years = float(age_years)
@@ -339,12 +349,25 @@ def set_member_age(name: str, age_years=None, include_in_meals: bool | None = No
             raise ValueError(f"age must be 0 to {MAX_AGE_YEARS} years.")
     conn = get_conn()
     try:
-        member_id = _get_or_create_member(conn, name)
+        if must_exist:
+            row = conn.execute(
+                "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+                (household_id(), name),
+            ).fetchone()
+            if not row:
+                raise LookupError(f"{name} isn't someone in this household.")
+            member_id = row["id"]
+        else:
+            member_id = _get_or_create_member(conn, name)
+        group = conn.execute(
+            "SELECT age_group FROM members WHERE id = ? AND household_id = ?", (member_id, household_id())
+        ).fetchone()["age_group"]
         conn.execute(
             "UPDATE members SET age_years = ? WHERE id = ? AND household_id = ?",
             (age_years, member_id, household_id()),
         )
-        infant = age_years is not None and age_years < INFANT_UNDER_YEARS
+        infant = ((group or "").strip().lower() == "child"
+                  and age_years is not None and age_years < INFANT_UNDER_YEARS)
         include = True if not infant else bool(include_in_meals)
         conn.execute(
             "UPDATE members SET include_in_meals = ? WHERE id = ? AND household_id = ?",

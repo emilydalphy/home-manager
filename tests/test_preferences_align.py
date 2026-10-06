@@ -76,7 +76,8 @@ USUAL_WEEK_FNS = [
     # Per-person weekday lunches and snacks a day (2026-10-06).
     "wwkLunchNeedsHtml", "wwkLunchPeople", "wwkLunchEntry", "wwkNeedsFor", "wwkNeedsOnDay",
     "wwkLunchIsByDay", "wwkOrderNeeds", "wwkSomeoneMadeFresh", "wwkLunchChipsHtml",
-    "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml",
+    "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml", "wwkSnacksFor", "wwkSnacksHousehold",
+    "wwkLunchFromPlace",
 ]
 
 

@@ -339,7 +339,7 @@ def test_meal_prep_ahead_needs_a_prep_day_and_preps_on_it(stub_model, picker):
 def test_the_prep_answer_reads_back_as_an_hour():
     tools.save_usual_week(prep={"days": ["sunday", "wednesday"], "length": "hour"})
     assert tools.get_usual_week()["prep"] == {"days": ["sunday", "wednesday"], "length": "hour"}
-    assert tools.prep_days_summary() == "Preps on Sunday (about an hour) and Wednesday (about an hour)."
+    assert tools.prep_days_summary() == "Preps on Sunday and Wednesday (about an hour)."  # one length, said once (2026-10-06)
     tools.save_usual_week(prep={"days": []})
     assert tools.get_usual_week()["prep"] == {"days": [], "length": None}
 

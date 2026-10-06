@@ -2069,11 +2069,17 @@ def set_memory_member_age(req: MemberAgeRequest):
     """Set one Child's age (and an infant's "Include in meals?") from
     Settings; answers the whole memory like its neighbours. A bad age is a
     400 in words for the household."""
+    # Looked up, never created (review, 2026-10-06): a blank or unknown
+    # name is refused rather than becoming a new member.
+    if not (req.name or "").strip():
+        raise HTTPException(status_code=400, detail="Say whose age this is.")
     try:
-        tools.set_member_age(req.name, req.age_years, req.include_in_meals)
+        tools.set_member_age(req.name, req.age_years, req.include_in_meals, must_exist=True)
         memory = tools.get_household_memory_for_display()
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=f"{req.name.strip() or 'That'}'s age must be 0 to 120 years.")
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"{req.name.strip()}'s age must be 0 to 120 years.")
     except Exception as e:
         logger.exception("Setting member age failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

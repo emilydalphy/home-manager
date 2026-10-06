@@ -37,7 +37,7 @@ def _settings_harness() -> str:
            "escapeHtml", "wwkChip", "wwkNote",
            # Snacks a day is per person since 2026-10-06 (/api/member-needs);
            # with no needs read yet the row reads the household number.
-           "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml"]
+           "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml", "wwkSnacksFor", "wwkSnacksHousehold"]
 
     def lift(name):
         s = SHELL_JS.index(f"function {name}(")
