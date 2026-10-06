@@ -179,6 +179,8 @@ SIGN_IN_TEXT = [
      SPRUCE_RAISED, "the input is transparent, so this sits on the field's fill"),
     ("helper line under the field", ".signin-helper",
      SPRUCE, "in .signin-bottom, straight on the page"),
+    ("privacy / terms / help links at the foot", ".signin-legal a",
+     SPRUCE, "in .signin-bottom, straight on the page"),
 ]
 
 
