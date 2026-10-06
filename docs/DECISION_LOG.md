@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A breakfast with no written recipe still shops for itself** (walkthrough
+  2026-10-06; branch `list-recipes-batch-2026-10-06`). "Greek Yogurt with
+  Berries and Granola" came back `is_new_recipe=false` with no saved row;
+  `_ensure_recipe_saved` trusted the flag (snacks were the only exception),
+  `plan_meal` wrote it freeform, and a freeform entry is never written up or
+  shopped for. Breakfasts are now saved like snacks, and so is any non-reheat
+  dish arriving with its own ingredient list. Leftovers nights stay freeform.
+  Test: `tests/test_breakfast_without_recipe_reaches_the_list.py`.
+
 - **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
   2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap
   build re-picked only a lunch answered "cooked that day" in step 3 and only
