@@ -74,6 +74,32 @@ why*, not duplicating the diff.
   it are left as written). `quantities.format_duration`: 260 min reads "4 hr
   20 min" in Today's moves and the week meta; shell.js's own minute strings
   are Builder D's / not touched.
+- **Double batch line names when the cook's own share is eaten** (walkthrough
+  2026-10-06; branch `list-recipes-batch-2026-10-06`). A breakfast batch said
+  "3 tonight, 3 for Thursday's breakfast". `leftovers._batch_parts` now takes
+  the cook's label from the cook entry's slot when it is cooked today: breakfast
+  "this morning", lunch "at lunch", dinner "tonight" (other days still by
+  weekday). Server-side only, no shell.js string. The freezer-only card shape
+  now carries its slot. Tests: `tests/test_double_batch_line.py`.
+
+- **Settings -> Recipes no longer counts dishes swapped out of the draft**
+  (walkthrough 2026-10-06 "7 saved"; branch `list-recipes-batch-2026-10-06`).
+  The draft generator writes a recipe row for every dish it picks, so ones
+  swapped away before approval were listed and counted. New `recipes.from_draft`
+  (set by `agent._ensure_recipe_saved`); `recipe_shelf` hides a from_draft
+  dish unless it is on an approved/ad hoc plan entry or cooked/rated. The row
+  stays cached. The count is `len(recipe_shelf())`, so list and count agree.
+  Test: `tests/test_recipes_settings_skips_swapped_dishes.py`.
+
+- **A breakfast with no written recipe still shops for itself** (walkthrough
+  2026-10-06; branch `list-recipes-batch-2026-10-06`). "Greek Yogurt with
+  Berries and Granola" came back `is_new_recipe=false` with no saved row;
+  `_ensure_recipe_saved` trusted the flag (snacks were the only exception),
+  `plan_meal` wrote it freeform, and a freeform entry is never written up or
+  shopped for. Breakfasts are now saved like snacks, and so is any non-reheat
+  dish arriving with its own ingredient list. Leftovers nights stay freeform.
+  Test: `tests/test_breakfast_without_recipe_reaches_the_list.py`.
+
 - **The weekday lunch cap applies ALWAYS, answered or not** (Emily,
   2026-10-03; branch `lunch-cap-always-2026-10-03`). The 2026-10-02 lunch-cap
   build re-picked only a lunch answered "cooked that day" in step 3 and only

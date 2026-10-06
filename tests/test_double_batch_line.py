@@ -223,7 +223,7 @@ def test_a_lunch_cooked_big_for_that_evening_does_not_say_tomorrow():
     """_eaten_order allows a lunch to feed that night's dinner. "tomorrow"
     there would be plainly wrong."""
     said = lo.batch_line(_src(slot="lunch"), _batch(3, [(D0, "dinner", 3)]), today=D0)
-    assert said == "Double batch: 3 tonight, 3 for dinner later today."
+    assert said == "Double batch: 3 at lunch, 3 for dinner later today."
     # read from another day, the same night is "the same day"
     other = lo.batch_line(_src(date=D2, slot="lunch"), _batch(3, [(D2, "dinner", 3)]), today=D0)
     assert "for dinner the same day" in other
@@ -622,3 +622,20 @@ def test_the_line_is_never_a_tile_or_a_chip():
         block = SHELL_CSS[i:SHELL_CSS.index("}", i)]
         for banned in ("background", "border", "apricot"):
             assert banned not in block, (sel, banned)
+
+
+def test_the_cooks_own_share_is_named_by_the_meal_it_is_eaten_at():
+    """Walkthrough 2026-10-06: a breakfast batch said "3 tonight, 3 for
+    Thursday's breakfast". Each half says when it is eaten: this morning for
+    a breakfast, at lunch for a lunch, tonight for a dinner."""
+    def say(slot):
+        src = {**_src(), "slot": slot}
+        return lo.batch_line(src, _batch(3, [(D3, "breakfast", 3)]), today=D0)
+
+    assert say("breakfast") == f"Double batch: 3 this morning, 3 for {lo._weekday(D3)}’s breakfast."
+    assert say("lunch") == f"Double batch: 3 at lunch, 3 for {lo._weekday(D3)}’s breakfast."
+    assert say("dinner") == f"Double batch: 3 tonight, 3 for {lo._weekday(D3)}’s breakfast."
+    # A cook night that is not today is still named by its day.
+    other = {**_src(), "slot": "breakfast"}
+    assert lo.batch_line(other, _batch(3, [(D3, "breakfast", 3)]), today=D1).startswith(
+        f"Double batch: 3 for {lo._weekday(D0)},")

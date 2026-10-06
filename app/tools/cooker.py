@@ -1323,7 +1323,7 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
             continue
         card["covers"] = []
         _scale_card_to_batch(card, batch["servings"])
-        shape = {"date": card["date"], "targets": [], "freezer_servings": batch["freezer"]}
+        shape = {"date": card["date"], "slot": card.get("slot"), "targets": [], "freezer_servings": batch["freezer"]}
         card["covers_note"] = _leftovers.covers_note(shape, batch["servings"], today)
         _set_batch_sentences(card, shape, batch, today)
 

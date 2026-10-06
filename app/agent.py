@@ -6849,7 +6849,21 @@ def _generate_weekly_plan(
             # OTHER slot keeps trusting the flag on purpose: a leftovers
             # night is sent as "a leftovers entry naming what it's eating"
             # and must buy nothing of its own.
-            if not item.get("is_new_recipe") and item.get("slot") != "snack":
+            #
+            # A BREAKFAST is saved the same way (walkthrough 2026-10-06:
+            # "Greek Yogurt with Berries and Granola" came back
+            # is_new_recipe=false with no saved row, landed freeform, said
+            # "No saved recipe for this one" and never reached the list —
+            # yogurt, berries, granola). A breakfast is never a leftovers
+            # night either. So is any dish that arrives carrying its OWN
+            # ingredient list and is not a reheat (no links_to): a list the
+            # planner wrote is a recipe, whatever flag it came with.
+            own_list = bool(item.get("ingredients")) and not (item.get("derived_from") or {}).get("links_to")
+            if (
+                not item.get("is_new_recipe")
+                and item.get("slot") not in ("snack", "breakfast")
+                and not own_list
+            ):
                 return
             # Case-insensitively (tools.existing_recipe_named), which is
             # the one rule now. Comparing names exactly let the model's
@@ -6866,6 +6880,7 @@ def _generate_weekly_plan(
             pending = not item.get("ingredients")
             tools.add_recipe(
                 name=meal_name,
+                from_draft=True,
                 ingredients=item.get("ingredients", []),
                 tags=item.get("tags", []),
                 food_groups=item.get("food_groups", []),
