@@ -431,6 +431,7 @@ from .memory import (  # noqa: F401
     edit_preference,
     get_facts,
     get_household_memory,
+    get_household_memory_for_display,
     update_fact,
 )
 # Today's one timeline of "what's next for us?" (see moves.py). Not agent

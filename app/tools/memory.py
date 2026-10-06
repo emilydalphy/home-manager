@@ -152,6 +152,48 @@ def delete_fact(fact_id: int) -> dict:
     return {"id": fact_id, "deleted": True}
 
 
+def get_household_memory_for_display() -> dict:
+    """
+    get_household_memory, for the screens that SHOW the household (What we
+    know / Preferences → Who's here) rather than plan for it.
+
+    Ages (2026-10-06): an infant the parents left out of meals ("Include in
+    meals?" off) is out of every meal count through _shared.EATS_HERE_SQL —
+    and get_household_memory's `members` is one of those counts (the
+    planner, the clash checker and the big-meal pass all read it). But the
+    baby still lives here, so the member list a person reads must still
+    show them. They are added back HERE, flagged `in_meals: false`, and
+    only here: every planning reader keeps calling get_household_memory and
+    never sees them. Everyone else carries `in_meals: true`.
+    """
+    memory = dict(get_household_memory())
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, name, age_group, age_years, dietary_restrictions_json FROM members "
+            "WHERE household_id = ? AND COALESCE(eats_here, 1) = 1 AND COALESCE(include_in_meals, 1) = 0 "
+            "ORDER BY id",
+            (household_id(),),
+        ).fetchall()
+    finally:
+        conn.close()
+    members = [dict(m, in_meals=True) for m in memory.get("members") or []]
+    for r in rows:
+        try:
+            restrictions = json.loads(r["dietary_restrictions_json"] or "[]")
+        except (TypeError, ValueError):
+            restrictions = []
+        members.append({
+            "id": r["id"], "name": r["name"], "age_group": r["age_group"],
+            "age_years": r["age_years"],
+            "dietary_restrictions": restrictions if isinstance(restrictions, list) else [],
+            "is_primary": False, "in_meals": False,
+        })
+    members.sort(key=lambda m: m.get("id") or 0)
+    memory["members"] = members
+    return memory
+
+
 def get_household_memory() -> dict:
     """
     Return a plain summary of everything the app has learned/saved about

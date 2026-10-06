@@ -318,3 +318,22 @@ def test_little_one_members_become_child_once(tmp_path):
     _db._run_migrations(conn)
     row = conn.execute("SELECT age_group, age_years, include_in_meals FROM members WHERE name = 'Tot'").fetchone()
     assert (row["age_group"], row["age_years"], row["include_in_meals"]) == ("child", None, 1)
+
+
+def test_a_baby_left_out_of_meals_still_shows_on_the_member_list(signed_in):
+    """Review fix (2026-10-06): only MEAL counts leave the baby out. What we
+    know's member list (/api/memory, and every /api/memory* answer) still
+    shows them, flagged in_meals false; the planner's memory does not."""
+    from app import tools
+
+    signed_in.post("/api/onboarding/household", json={"members": [
+        {"name": "Gowthami", "age_group": "adult"},
+        {"name": "Baby", "age_group": "child", "age_years": 0.5, "include_in_meals": False},
+    ], "pets": [], "goals": ""})
+    shown = {m["name"]: m for m in signed_in.get("/api/memory").json()["members"]}
+    assert shown["Baby"]["in_meals"] is False and shown["Baby"]["age_years"] == 0.5
+    assert shown["Gowthami"]["in_meals"] is True
+    edited = signed_in.post("/api/memory/member/restrictions", json={"name": "Baby", "restrictions": ["allergy: eggs"]})
+    assert edited.status_code == 200, edited.text
+    assert "Baby" in {m["name"] for m in edited.json()["members"]}
+    assert "Baby" not in {m["name"] for m in tools.get_household_memory()["members"]}

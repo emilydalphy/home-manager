@@ -25,7 +25,9 @@ why*, not duplicating the diff.
   `currentMembers({ forMeals: true })`. `household.age_stage` names
   infant / toddler (<4) / child for the planning slice. NOT YET: toddler and
   child portions in the planner; Settings asking the age of a former Little
-  one; an infant left out also drops off What we know's member list.
+  one. The /api/memory* routes answer with `get_household_memory_for_display`,
+  which adds the left-out infant back (`in_meals: false`) so What we know
+  still lists them; planning readers keep `get_household_memory`.
 
 - **2026-10-06 — Onboarding, regrouped, slice 1 (branch
   `overnight/onboarding-regrouped`).** Emily's locked flow (2026-10-05):

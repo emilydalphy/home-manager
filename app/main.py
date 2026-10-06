@@ -1977,8 +1977,11 @@ def coaching_state():
 @app.get("/api/memory")
 def get_memory():
     """Everything the app has saved about this household's meal preferences — powers the 'what we know' view."""
+    # Every /api/memory* route answers with the DISPLAY copy (2026-10-06):
+    # the What we know screen lists everyone who lives here, including an
+    # infant left out of meals, who the planning reads never see.
     try:
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Fetching household memory failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -1993,7 +1996,7 @@ def edit_memory(req: MemoryEditRequest):
             tools.set_household_goals(str(req.value))
         else:
             tools.edit_preference(req.field, req.value)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -2007,7 +2010,7 @@ def delete_memory(req: MemoryDeleteRequest):
     """Remove/clear a preference field or a single list item, used by the 'what we know' view's remove controls."""
     try:
         tools.delete_preference(req.field, req.item)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -2021,7 +2024,7 @@ def add_memory_store_item(req: StoreTypicalItemAddRequest):
     """Add one typical item for a usual store, used by the 'what we know' view's per-store item lists."""
     try:
         tools.add_store_typical_items(req.store, [req.item])
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Adding store typical item failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2033,7 +2036,7 @@ def remove_memory_store_item(req: StoreTypicalItemRemoveRequest):
     """Remove one typical item from a usual store's list, used by the 'what we know' view's per-store item lists."""
     try:
         tools.remove_store_typical_item(req.store, req.item)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Removing store typical item failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2045,7 +2048,7 @@ def dismiss_stores_prompt_view():
     """Quietly persist a decline of the Grocery tab's 'Where do you usually shop?' first-visit card — see tools.dismiss_stores_prompt."""
     try:
         tools.dismiss_stores_prompt()
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Dismissing stores prompt failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2058,7 +2061,7 @@ def set_memory_member_age_group(req: MemberAgeGroupRequest):
     set_member_age_group existed before this (see MemberAgeGroupRequest)."""
     try:
         tools.set_member_age_group(req.name, req.age_group)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Setting member age group failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2072,7 +2075,7 @@ def set_memory_member_restrictions(req: MemberRestrictionsRequest):
     replace semantics (see MemberRestrictionsRequest)."""
     try:
         tools.set_member_dietary_restrictions(req.name, req.restrictions, replace=req.replace)
-        memory = tools.get_household_memory()
+        memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Setting member dietary restrictions failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2101,7 +2104,7 @@ def set_memory_primary_member(req: PrimaryMemberRequest):
         logger.exception("Setting the main person failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     try:
-        return tools.get_household_memory()
+        return tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Memory lookup after setting the main person failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
