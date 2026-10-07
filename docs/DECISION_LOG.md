@@ -19,13 +19,15 @@ why*, not duplicating the diff.
   Each person's row on `lunch-needs` leads with the three chips; one tap
   writes that person's Mon-Fri lunch cells on the Who's eating grid (Out
   takes them off, At home / Packed put them back on every planned weekday
-  lunch and on the days Out took — never invents a lunch day), and Packed IS
+  lunch and on the days Out took that the grid still holds as Out left them —
+  a day set "Don't plan" since stays off), and Packed IS
   the Cold packed need (one answer, two doors). Out hides the needs; the row
   stays, and `stepFlow` keeps the screen while Out is why lunch is off.
   Day card: out for some meals and home for others reads "Sam · lunch out" +
   "Dinner for 3, lunch for 2" (`.wk-card-heads`, nested in `wkDayCardHtml`
   so the eight test harnesses that lift it need no change); out for every
-  meal keeps "Sam out". A slot with no `away_names` is everyone home
+  meal keeps "Sam out" (a meal not planned that day isn't counted). A slot
+  with no `away_names` is everyone home
   (`get_week_attendance` only sends slots that differ). Why: a tester made
   ten grid taps to say it, then read "SAM OUT" as gone all day.
 - **Approve never waits on recipe web research** (2026-10-06; branch

@@ -2427,7 +2427,7 @@ let lunchDaysPicking = false; // "Different on some days?" opened
 // is the Cold packed need, so neither chip keeps a second copy of anything
 // except these two small facts the grid cannot hold:
 let lunchHome = {};           // name -> true once "At home" is tapped (nothing else says it)
-let lunchOutDays = {};        // name -> weekday indexes "Out" took them off, so At home can put them back
+let lunchOutDays = {};        // name -> { weekday index: the cell as Out left it }, so At home can put them back
 
 // The people with a lunch to plan on some weekday: everyone on a cell
 // that's 'all', the names on a subset cell.
@@ -2448,13 +2448,22 @@ function lunchPeople() {
 function lunchStepPeople() {
   return currentMembers({ forMeals: true }).map(m => m.name);
 }
-// Somebody this screen said Out for, still in the household. Keeps the
-// screen in the flow when Out has emptied every weekday lunch (stepFlow) —
-// otherwise Continue would look itself up in a flow it is no longer in.
+// The days Out took this person off that the grid still holds as Out left
+// them. A day changed on the grid since — "Don't plan" for everyone, say —
+// is the household's later answer, and is not Out's to give back.
+function lunchOutDaysStill(name, names) {
+  const took = lunchOutDays[name] || {};
+  return Object.keys(took).map(Number).filter(i =>
+    JSON.stringify(uwCleanCell(usualGrid.lunch[i], names)) === JSON.stringify(took[i]));
+}
+// Somebody this screen said Out for, on a day the grid still has as Out
+// left it. Keeps the screen in the flow when Out has emptied every weekday
+// lunch (stepFlow) — otherwise Continue would look itself up in a flow it
+// is no longer in — but not once the grid itself has turned lunch off.
 function lunchOutHere() {
   if (typeof lunchOutDays === 'undefined') return false;
   const names = currentMembers({ forMeals: true }).map(m => m.name);
-  return Object.keys(lunchOutDays).some(n => names.indexOf(n) !== -1);
+  return Object.keys(lunchOutDays).some(n => names.indexOf(n) !== -1 && lunchOutDaysStill(n, names).length > 0);
 }
 // Which of the three chips is lit, read from the answers themselves: off
 // every weekday lunch on the grid is Out (however it got there), Cold
@@ -2469,25 +2478,27 @@ function lunchWhere(name) {
 }
 // One tap: write the grid's Monday-Friday lunch cells for this person, and
 // the Cold packed need for Packed. Out remembers which days it took them
-// off; At home / Packed put them back on those and on every weekday lunch
-// that is planned for anyone — never on a day the household plans no lunch.
+// off; At home / Packed put them back on those still as Out left them, and
+// on every weekday lunch planned for anyone — never on a day the household
+// plans no lunch.
 function lunchSetWhere(name, where) {
   const names = currentMembers({ forMeals: true }).map(m => m.name);
   const row = usualGrid.lunch;
   if (where === 'out') {
-    const took = [];
+    // Earlier Out days the grid has changed since are dropped, not kept.
+    const kept = {};
+    lunchOutDaysStill(name, names).forEach(i => { kept[i] = lunchOutDays[name][i]; });
     for (let i = 0; i < 5; i++) {
       const c = uwCleanCell(row[i], names);
       if (c === 'off' || (c !== 'all' && c.indexOf(name) === -1)) continue;
-      took.push(i);
       row[i] = uwApplyPick(c, 'toggle:' + name, names);
+      kept[i] = uwCleanCell(row[i], names);
     }
-    const before = lunchOutDays[name] || [];
-    lunchOutDays[name] = before.concat(took.filter(i => before.indexOf(i) === -1));
+    lunchOutDays[name] = kept;
     delete lunchHome[name];
     return;
   }
-  const back = lunchOutDays[name] || [];
+  const back = lunchOutDaysStill(name, names);
   for (let i = 0; i < 5; i++) {
     const c = uwCleanCell(row[i], names);
     if (c === 'all' || (c !== 'off' && c.indexOf(name) !== -1)) continue;

@@ -35,7 +35,7 @@ function currentMembers() { return %s.map(n => ({ name: n, age_group: 'adult' })
 """ % (json.dumps(grid_lunch), json.dumps(list(members))) + _const("LUNCH_NEED_OPTIONS") + _const("LUNCH_NEED_DAYS") \
         + _const("LUNCH_WHERE_OPTIONS") + "".join(_fn(n) for n in (
             "uwCleanCell", "uwApplyPick", "uwIsOn", "uwWeekdayLunchOn", "lunchPeople", "lunchEntry",
-            "lunchNeedsAnswered", "toggleNeed", "lunchNeedsPayload", "lunchStepPeople", "lunchOutHere",
+            "lunchNeedsAnswered", "toggleNeed", "lunchNeedsPayload", "lunchStepPeople", "lunchOutDaysStill", "lunchOutHere",
             "lunchWhere", "lunchSetWhere"))
 
 
@@ -112,6 +112,41 @@ console.log(JSON.stringify({ off: off, back: usualGrid.lunch.slice() }));
     assert out["off"]["grid"] == ["off"] * 7
     assert out["off"]["on"] is False and out["off"]["here"] is True
     assert out["back"] == grid
+
+
+@_needs_node
+def test_at_home_never_brings_back_a_lunch_the_household_turned_off_since():
+    # Review repro (2026-10-07): Sam Out on a household of one, then Tuesday
+    # set to "Don't plan" on the grid... in a household of one Out already
+    # left Tuesday off, so use two people where Out leaves Dana on it.
+    out = _run(_harness(["all"] * 7, members=("Dana", "Sam")) + """
+lunchSetWhere('Sam', 'out');
+usualGrid.lunch[1] = 'off';             // Tuesday: Don't plan, for everyone
+lunchSetWhere('Sam', 'home');
+console.log(JSON.stringify({ grid: usualGrid.lunch.slice(), left: lunchOutDays }));
+""")
+    assert out["grid"] == ["all", "off", "all", "all", "all", "all", "all"]
+    assert out["left"] == {}
+
+
+@_needs_node
+def test_the_screen_leaves_the_flow_once_the_grid_turns_weekday_lunch_off():
+    out = _run(_harness(["all"] * 7, members=("Dana", "Sam")) + """
+lunchSetWhere('Sam', 'out');
+const before = lunchOutHere();
+for (let i = 0; i < 5; i++) usualGrid.lunch[i] = 'off';
+console.log(JSON.stringify({ before: before, after: uwWeekdayLunchOn(usualGrid) || lunchOutHere() }));
+""")
+    assert out == {"before": True, "after": False}
+
+
+@_needs_node
+def test_a_meal_the_usual_week_has_off_is_not_a_meal_out_of_the_day():
+    day = {"date": _TUE, "isToday": False, "isPast": False,
+           "breakfast": {"title": "Not planned", "state": "planned_empty", "source": "empty"},
+           "lunch": _e("Wraps", entry_id=2, away_names=["Sam"], present_names=["Dana", "Leo"]),
+           "dinner": _e("Bowls", entry_id=3, away_names=["Sam"], present_names=["Dana", "Leo"])}
+    assert _card(day)["tags"] == ["Sam out"]
 
 
 def test_step_flow_keeps_the_lunch_screen_while_out_is_why_lunch_is_off():

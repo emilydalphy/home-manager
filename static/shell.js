@@ -15237,10 +15237,14 @@
       // lunch out" (Emily, 2026-10-06: "SAM OUT" on a day Sam only ate
       // lunch at work read as gone all day). A slot with no away_names is
       // everyone home (get_week_attendance sends only the slots that
-      // differ), and a meal the household has none of is not a meal here.
+      // differ), and a meal not planned that day (the usual week has it
+      // off, the day was left out, it had gone by) is not a meal here — an
+      // empty slot only counts when it is empty because people are out.
       var meals = WEEK_SLOTS.filter(function (slot) {
         var e = day[slot];
-        return e && !(e.state === 'planned_empty' && e.meal_off);
+        if (!e) return false;
+        if (e.state !== 'planned_empty') return true;
+        return e.need === 'away' || (e.away_names || []).length > 0;
       });
       var outFor = {};
       var order = [];
