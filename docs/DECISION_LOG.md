@@ -160,6 +160,16 @@ why*, not duplicating the diff.
   the line ends "— not the build running now (a1b2c3d4e5f6)" or "— the build
   running now". Unknown (local file, older deployment, off Railway): build
   alone, never a guess. Compared over the shorter length, min 7 chars.
+- **A rescale's excluded entry is reversed, not just skipped** (2026-10-07;
+  branch `overnight/rescale-refuses-stale-ledger`; tests
+  `tests/test_rescale_excluded_entry_ledger.py`). `_rescale_leftover_source_grocery`
+  left `unlinked_entry_id`'s ledger rows standing, so the recompute counted
+  them under the group's new total: "12 oz + 1.5 lbs" for "1.5 lbs", "Onion 3"
+  for 2, until the caller's own reversal caught up. Refusing (the card's
+  preferred fix) would break the callers that call it BEFORE reversing the
+  entry (clear_plan_slot via `_unlink_leftover_target`, `_replace_slot_entries`,
+  the chain swap; the others reverse first and are unaffected), so the helper now reverses that entry first and the
+  caller's reversal is a no-op. Never pass an entry you mean to keep buying for.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

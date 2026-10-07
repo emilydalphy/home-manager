@@ -3162,7 +3162,12 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
     would otherwise look like an ordinary same-recipe cook and get folded
     into this rounding, only for the caller's own reversal a moment later
     to subtract a share back out of a line that was never rounded
-    without it — the same drift, one step removed.
+    without it — the same drift, one step removed. Excluding it also
+    REVERSES it (its ledger rows go, its share comes off its lines) before
+    the group is recomputed: left on file, those rows were counted under
+    the group's new total and the line read "12 oz + 1.5 lbs" until the
+    caller's reversal caught up. A caller must therefore never pass an
+    entry it means to keep buying for.
 
     A no-op for a freeform source: nothing structured to rescale, and a
     freeform meal never reaches the grocery list to begin with (see
@@ -3214,6 +3219,19 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
         return
 
     shared = None if own_conn else conn
+    if unlinked_entry_id:
+        # Excluded means OFF the ledger, not just out of the re-ingest. Its
+        # rows left standing are counted by every recompute below, and the
+        # group's fresh rounded total then lands on top of them: "12 oz +
+        # 1.5 lbs" where the line should read "1.5 lbs", "Onion 3" for 2.
+        # clear_plan_slot, _replace_slot_entries and the chain swap call
+        # BEFORE reversing this entry, and their reversal right after is
+        # what used to put the line right — so it can't be refused here.
+        # (drop_dish_from_day, open_slot_instead_of and the cook move have
+        # already reversed and deleted it; for them this finds nothing.)
+        # Reversing it first makes the line right on return, and the
+        # caller's own reversal a no-op: its ledger rows are already gone.
+        _grocery._reverse_meal_grocery_contributions(unlinked_entry_id, conn=shared)
     for entry in entries:
         _grocery._reverse_meal_grocery_contributions(entry["id"], conn=shared)
     buffer = _recipes.WeekGroceryBuffer(source["weekly_plan_id"], conn=shared)
