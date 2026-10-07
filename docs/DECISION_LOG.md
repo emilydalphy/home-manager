@@ -13,16 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
-- **Same-family units add up on the list** (2026-10-07, defect hunt; branch
-  `overnight/same-family-units-add-up`). A swap to Lentil Soup with lentils
-  on the list read "1.5 cups + 8 tbsp": `_try_consolidate_quantity` summed
-  only identical unit words. Now two units of one measurable family
-  (cup/tbsp/tsp, lb/oz, g/kg, ml/l — `quantities._UNIT_CONVERSION_GROUPS`)
-  are summed in the family's smallest unit and humanised once ("2 cups"),
-  the same arithmetic the ledger recompute uses; `_refold_quantity_segments`
-  inherits it. Mass vs volume, counts and counted packs still stay two
-  parts. Ledger untouched (unrounded shares). Tests
-  `tests/test_same_family_units_add_up.py` (swap and swap back; standing want).
+- **Same-family units add up on a plan's line** (2026-10-07, defect hunt;
+  branch `overnight/same-family-units-add-up`). A swap to Lentil Soup with
+  lentils on the list read "1.5 cups + 8 tbsp". Fixed on the PLAN-owned line
+  only: `WeekGroceryBuffer.flush` re-reads a line from its ledger
+  (`_recompute_plan_line_from_ledger`, as for counted packs) when a measured
+  share in another unit of the same family lands on it — one family summed,
+  rounded once ("2 cups"); swap back gives "1.5 cups". `_try_consolidate_quantity`
+  is unchanged: the first cut changed it, and the review's sweep showed a
+  standing want then rounding once per add and ratcheting under
+  `_restate_standing_want` (13 of 74 cases drifting vs 1 on main; "1 cup" +
+  "2 tbsp" read "1 cup"). Standing wants keep main's two lines. Tests
+  `tests/test_same_family_units_add_up.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
