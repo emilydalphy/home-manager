@@ -24,7 +24,11 @@ why*, not duplicating the diff.
   Merge posts `/api/grocery-list/merge` → `consolidate_grocery_list(only_ids=)`,
   which now also moves a folded line's `meal_plan_grocery_links` to the line
   that stays (the cascade used to drop them). Lines carry
-  `source_weekly_plan_id`. Tests `tests/test_shop_merge_keeps_both_weeks.py`.
+  `source_weekly_plan_id`. Review fixes: a line that takes a household's own
+  line becomes standing (`source_weekly_plan_id` NULL, as add_grocery_item's
+  keep_standing) so dropping the meals can't delete their amount; it takes an
+  absorbed staple's `staple_id`; and a standing line never gathers two
+  different weeks into one group. Tests `tests/test_shop_merge_keeps_both_weeks.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

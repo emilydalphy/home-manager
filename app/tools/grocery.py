@@ -1354,7 +1354,11 @@ def _consolidation_plan(rows) -> list[dict]:
             plan = entry["source_weekly_plan_id"]
             target = None
             for k in keepers:
-                if k["source_weekly_plan_id"] is not None and plan is not None and k["source_weekly_plan_id"] != plan:
+                # The plans already in this keeper's group, not just its own:
+                # a household's line (no plan) that took this week's eggs
+                # must not then take next week's too — two weeks folded
+                # through a third line is still two weeks folded.
+                if plan is not None and any(p is not None and p != plan for p in k["plans"]):
                     continue
                 # Two lines the list keeps apart on purpose — a person's "1"
                 # beside a plan's "2 cups" (see _merge_target) — stay apart
@@ -1365,7 +1369,9 @@ def _consolidation_plan(rows) -> list[dict]:
                     target = (k, candidate)
                     break
             if target is None:
-                keepers.append(dict(entry, merged_qty=entry["quantity"] or "", keep_name=entry["item"], absorbed_ids=[]))
+                keepers.append(dict(entry, merged_qty=entry["quantity"] or "", keep_name=entry["item"],
+                                    absorbed_ids=[], plans={plan}, standing=plan is None,
+                                    staple=entry.get("staple_id")))
                 continue
             k, candidate = target
             k["merged_qty"] = candidate
@@ -1374,6 +1380,16 @@ def _consolidation_plan(rows) -> list[dict]:
             if k["source_weekly_plan_id"] is not None:
                 k["keep_name"] = _more_specific_name(k["keep_name"], entry["item"])
             k["absorbed_ids"].append(entry["id"])
+            k["plans"].add(plan)
+            # A household's own amount inside the line makes the whole line
+            # theirs, as add_grocery_item's keep_standing does: a plan-owned
+            # line is deleted when its meals go, and would take their
+            # "2 bunches" with it. Standing, the restate path takes only the
+            # meals' share back off (_restate_standing_want).
+            if plan is None:
+                k["standing"] = True
+            if not k["staple"] and entry.get("staple_id"):
+                k["staple"] = entry["staple_id"]
         out.extend(keepers)
     return out
 
@@ -1385,7 +1401,7 @@ def _consolidation_rows(conn, status: str, only_ids=None):
     # visible line disappear and parked its quantity somewhere nobody can
     # see. They are left out of consolidation entirely instead.
     rows = conn.execute(
-        "SELECT id, item, quantity, category, source_weekly_plan_id FROM grocery_items "
+        "SELECT id, item, quantity, category, source_weekly_plan_id, staple_id FROM grocery_items "
         "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY id",
         (household_id(), status),
     ).fetchall()
@@ -1452,8 +1468,14 @@ def consolidate_grocery_list(status: str = "needed", only_ids: list[int] | None 
             )
             merged_count += 1
         conn.execute(
-            "UPDATE grocery_items SET item = ?, quantity = ? WHERE id = ? AND household_id = ?",
-            (k["keep_name"], k["merged_qty"], k["id"], household_id()),
+            # The staple's link goes with its amount, or Shop's Remove on
+            # the merged line can't say "not this trip" and the next read
+            # puts the staple straight back (staples.note_line_removed).
+            "UPDATE grocery_items SET item = ?, quantity = ?, "
+            "source_weekly_plan_id = CASE WHEN ? THEN NULL ELSE source_weekly_plan_id END, "
+            "staple_id = COALESCE(staple_id, ?) WHERE id = ? AND household_id = ?",
+            (k["keep_name"], k["merged_qty"], 1 if k["standing"] else 0, k["staple"],
+             k["id"], household_id()),
         )
     conn.commit()
     conn.close()

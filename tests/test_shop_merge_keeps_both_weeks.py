@@ -162,3 +162,83 @@ def test_the_shop_tab_reads_the_servers_groups_and_merges_on_the_server():
     assert "'/api/grocery-list/merge'" in handler
     assert "/remove" not in handler
     assert "duplicates: byStore.duplicates || []" in SHELL_JS
+
+
+# ---------- review, 2026-10-07: what the line that stays owns ----------
+
+def _row(line_id: int) -> dict | None:
+    conn = get_conn()
+    r = conn.execute("SELECT * FROM grocery_items WHERE id = ?", (line_id,)).fetchone()
+    conn.close()
+    return dict(r) if r else None
+
+
+def test_a_plan_line_that_takes_a_households_line_becomes_theirs(omelette, signed_in):
+    """CATCH. The plan's chives (older id) absorbed the household's own
+    "2 bunches" and stayed plan-owned, so dropping the meal deleted the
+    line and the household's 2 bunches with it. Now the merged line is a
+    standing want and only the meal's share comes off."""
+    today = _today()
+    plan = _plan(today - datetime.timedelta(days=1), days=4)
+    entry = tools.plan_meal(today.isoformat(), "Omelette", slot="dinner", weekly_plan_id=plan)["entry_id"]
+    tools.approve_weekly_plan(plan, approved_by="Emily")
+    chives = next(i for i, it in _lines(_by_store(signed_in)).items() if it["item"] == "Chives")
+    mine = _insert("chives", "2 bunches", None)
+    assert _by_store(signed_in)["duplicates"] == [[chives, mine]]
+    signed_in.post("/api/grocery-list/merge", json={"ids": [chives, mine]})
+    merged = _row(chives)
+    assert merged["quantity"] == "3 bunches" and merged["source_weekly_plan_id"] is None
+    _grocery._reverse_meal_grocery_contributions(entry)
+    left = _row(chives)
+    assert left is not None and left["status"] == "needed", "the household's own chives stay"
+    assert left["quantity"] == "2 bunches"
+
+
+def test_a_merged_staple_line_keeps_its_staple(signed_in):
+    """CATCH. The household's oat milk (older id) took the staple's line
+    and dropped its staple link, so Remove couldn't say "not this trip" and
+    the next read put the staple straight back."""
+    mine = _insert("oat milk", "1 carton", None)
+    tools.add_staple("Oat milk", every_days=7, quantity="1 carton")
+    conn = get_conn()
+    staple = {"staple_id": conn.execute("SELECT id FROM staples WHERE item = 'Oat milk'").fetchone()["id"]}
+    staple_line = conn.execute(
+        "SELECT id FROM grocery_items WHERE staple_id IS NOT NULL AND status = 'needed'").fetchone()
+    if staple_line is None:
+        cur = conn.execute(
+            "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, staple_id, status) "
+            "VALUES (1, 'Oat milk', '1 carton', 'dairy', 'Pomona', ?, 'needed')", (staple["staple_id"],))
+        staple_line_id = cur.lastrowid
+        conn.commit()
+    else:
+        staple_line_id = staple_line["id"]
+    conn.close()
+    signed_in.post("/api/grocery-list/merge", json={"ids": [mine, staple_line_id]})
+    merged = _row(mine)
+    assert merged["quantity"] == "2 cartons"
+    assert merged["staple_id"] == staple["staple_id"]
+    tools.remove_grocery_item(mine)
+    assert _row(mine)["status"] == "removed", "Remove is the staple's 'not this trip'"
+
+
+def test_a_households_line_never_joins_two_weeks_together(omelette, signed_in):
+    """CATCH (review nit). The household's own eggs, lowest id, could take
+    this week's line and then next week's — "Three rows of eggs" across two
+    weeks. It takes one week at most."""
+    this_week, nxt, _ = _two_weeks()
+    # The household's own line, older than both weeks' (lowest id), as the
+    # ordering of older data leaves it.
+    conn = get_conn()
+    conn.execute("INSERT INTO grocery_items (id, household_id, item, quantity, category, added_by, status) "
+                 "VALUES (0, 1, 'eggs', '1 dozen', 'dairy', 'Emily', 'needed')")
+    conn.commit()
+    conn.close()
+    view = _by_store(signed_in)
+    plans = {i: it["source_weekly_plan_id"] for i, it in _lines(view).items()}
+    assert view["duplicates"], "the household's line may still join one week"
+    for g in view["duplicates"]:
+        assert len({plans[i] for i in g} - {None}) <= 1, view["duplicates"]
+    signed_in.post("/api/grocery-list/merge", json={"ids": [i for g in view["duplicates"] for i in g]})
+    left = _needed("Eggs") + _needed("eggs")
+    assert len(left) == 2, "two weeks stay two lines"
+    assert any(p == nxt for _, p in left), "next week's line is still its own"
