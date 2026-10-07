@@ -793,7 +793,7 @@ def _shrink_chain_into_freezer(conn, source_id: int, gone_ref: str, servings: in
     from . import leftovers as _leftovers
 
     row = conn.execute(
-        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        "SELECT slot, derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
         (source_id, household_id()),
     ).fetchone()
     derived = json.loads(row["derived_from_json"] or "{}")
@@ -803,7 +803,7 @@ def _shrink_chain_into_freezer(conn, source_id: int, gone_ref: str, servings: in
     fed = [t for t in fed if str(t).strip() != gone_ref]
     if fed:
         derived["make_double_for"] = fed
-        derived["make_double_note"] = _weekly_plan._make_double_note_text(fed)
+        derived["make_double_note"] = _weekly_plan._make_double_note_text(fed, row["slot"])
     else:
         derived.pop("make_double_for", None)
         derived.pop("make_double_note", None)

@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A lunch batch no longer "covers tonight"** (2026-10-07; branch
+  `overnight/lunch-batch-not-tonight`; tests
+  `tests/test_lunch_batch_not_tonight.py`). Today read "Turkey Wraps · Start
+  by noon · Cooking for 4 — covers tonight and leftovers on Friday":
+  `leftovers.covers_note` hard-coded "tonight" for any cook dated today. Now
+  only dinner says "tonight"; other meals say "lunch today" / "breakfast
+  today" (`_covers_label`; `_cook_label`'s "at lunch" doesn't read after
+  "covers"). The saved `make_double_note` had the same word and is the Cook
+  card / Today fallback when a batch can't be counted, so
+  `weekly_plan._make_double_note_text` takes the cook's slot ("double batch
+  at lunch"); a caller passing none keeps the dinner wording. Morning text
+  and evening nudge never use either sentence — checked, unchanged.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
