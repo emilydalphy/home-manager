@@ -13,6 +13,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Setup's Weekday lunches asks At home / Packed / Out; the day card says
+  "Sam · lunch out"** (2026-10-07; branch `overnight/lunch-out-weekdays`;
+  Emily's decisions of 2026-10-06, mockup "Pomona Decisions Oct 6" §3).
+  Each person's row on `lunch-needs` leads with the three chips; one tap
+  writes that person's Mon-Fri lunch cells on the Who's eating grid (Out
+  takes them off, At home / Packed put them back on every planned weekday
+  lunch and on the days Out took — never invents a lunch day), and Packed IS
+  the Cold packed need (one answer, two doors). Out hides the needs; the row
+  stays, and `stepFlow` keeps the screen while Out is why lunch is off.
+  Day card: out for some meals and home for others reads "Sam · lunch out" +
+  "Dinner for 3, lunch for 2" (`.wk-card-heads`, nested in `wkDayCardHtml`
+  so the eight test harnesses that lift it need no change); out for every
+  meal keeps "Sam out". A slot with no `away_names` is everyone home
+  (`get_week_attendance` only sends slots that differ). Why: a tester made
+  ten grid taps to say it, then read "SAM OUT" as gone all day.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

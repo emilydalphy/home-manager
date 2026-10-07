@@ -15232,13 +15232,38 @@
     var present = entry.present_names || [];
     if (entry.need === 'away' || (away.length && !present.length)) tags.push('Away');
     else {
-      var out = [];
-      WEEK_SLOTS.forEach(function (slot) {
-        ((day[slot] || {}).away_names || []).forEach(function (name) {
-          if (out.indexOf(name) === -1) out.push(name);
+      // Out for EVERY meal the day has is gone for the day: "Sam out".
+      // Out for some and home for others names the meal instead — "Sam ·
+      // lunch out" (Emily, 2026-10-06: "SAM OUT" on a day Sam only ate
+      // lunch at work read as gone all day). A slot with no away_names is
+      // everyone home (get_week_attendance sends only the slots that
+      // differ), and a meal the household has none of is not a meal here.
+      var meals = WEEK_SLOTS.filter(function (slot) {
+        var e = day[slot];
+        return e && !(e.state === 'planned_empty' && e.meal_off);
+      });
+      var outFor = {};
+      var order = [];
+      meals.forEach(function (slot) {
+        (day[slot].away_names || []).forEach(function (name) {
+          if (!outFor[name]) { outFor[name] = []; order.push(name); }
+          outFor[name].push(slot);
         });
       });
-      if (out.length) tags.push(joinList(out) + ' out');
+      var allDay = order.filter(function (n) { return outFor[n].length === meals.length; });
+      if (allDay.length) tags.push(joinList(allDay) + ' out');
+      // People out for the same meals share one tag: "Sam and Leo · lunch out".
+      var byMeals = {};
+      var mealKeys = [];
+      order.forEach(function (n) {
+        if (allDay.indexOf(n) !== -1) return;
+        var k = outFor[n].join(',');
+        if (!byMeals[k]) { byMeals[k] = []; mealKeys.push(k); }
+        byMeals[k].push(n);
+      });
+      mealKeys.forEach(function (k) {
+        tags.push(joinList(byMeals[k]) + ' · ' + joinList(k.split(',').map(slotWord)) + ' out');
+      });
     }
     WEEK_SLOTS.forEach(function (slot) {
       var e = day[slot] || {};
@@ -15436,10 +15461,39 @@
   }
 
   function wkDayCardHtml(day, i, opts) {
+    // "Dinner for 3, lunch for 2" (Emily, 2026-10-06): how many each meal
+    // is for, from who is actually home for it, when that differs across
+    // the day's planned meals — which, with no guests, is exactly somebody
+    // out for one meal and home for another (the "Sam · lunch out" tag).
+    // Guests say themselves already ("5 for dinner"), so a day with any
+    // keeps to its tags. Dinner leads; then each meal whose number differs.
+    // Nested so every harness in tests/ that lifts this card gets it too.
+    function headcountLine() {
+      var planned = WEEK_SLOTS.filter(function (s) { return day[s] && day[s].state === 'planned'; });
+      if (planned.length < 2) return '';
+      if (WEEK_SLOTS.some(function (s) { return day[s] && day[s].guest_count; })) return '';
+      // The household is whoever any slot names, home or out; a slot with
+      // no attendance on it is all of them.
+      var everyone = [];
+      WEEK_SLOTS.forEach(function (s) {
+        var e = day[s] || {};
+        (e.present_names || []).concat(e.away_names || []).forEach(function (n) {
+          if (everyone.indexOf(n) === -1) everyone.push(n);
+        });
+      });
+      if (!everyone.length) return '';
+      var count = function (s) { return day[s].present_names ? day[s].present_names.length : everyone.length; };
+      var lead = planned.indexOf('dinner') !== -1 ? 'dinner' : planned[0];
+      var rest = planned.filter(function (s) { return s !== lead && count(s) !== count(lead); });
+      if (!rest.length) return '';
+      var line = [lead].concat(rest).map(function (s) { return slotWord(s) + ' for ' + count(s); }).join(', ');
+      return line.charAt(0).toUpperCase() + line.slice(1);
+    }
     var closed = reviewDayIsClosed(day);
     var build = wkDayCanBuild(day, opts);
     var n = wkDayMealCount(day);
     var tags = reviewTileTags(day);
+    var heads = closed ? '' : headcountLine();
     // A day that can be built says "0 meals" in its head, like any other
     // day's count — its "Not planned" line would only say again what the
     // body's sentence says.
@@ -15455,6 +15509,7 @@
             return '<span class="wk-card-tag">' + escapeHtml(t) + '</span>';
           }).join('') + '</div>'
         : '') +
+      (heads ? '<p class="wk-card-heads">' + escapeHtml(heads) + '</p>' : '') +
       (build
         ? '<div class="wk-card-blank">' +
             '<p>Nothing planned yet! Want to get a plan built?</p>' +
