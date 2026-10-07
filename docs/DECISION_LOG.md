@@ -182,6 +182,20 @@ why*, not duplicating the diff.
   `_restate_standing_want` (13 of 74 cases drifting vs 1 on main; "1 cup" +
   "2 tbsp" read "1 cup"). Standing wants keep main's two lines. Tests
   `tests/test_same_family_units_add_up.py`.
+- **A drafted next week is one tap from Plan** (2026-10-07, defect hunt;
+  branch `overnight/see-next-weeks-draft`). Only /plan-week's `?drafted=`
+  ever pinned a draft on screen, so after a reload the dock offered only
+  "Re-plan next week" (questions again, a new draft over the old).
+  `next_period_after` now names a DRAFT holding the next stretch's first day
+  (`draft_plan_id`, `draft_week_start`); `planNextLabel` reads "See next
+  week's draft" and `planNextWeek` pins `weekState.showWeekStart` to it and
+  reloads — Approve and the Re-plan pill are inside. Today's planning nudge
+  is unchanged (still quiet once a plan covers next week). Review fix: the
+  tap pins by plan id (`weekState.showPlanId` → `/api/week-menu?weekly_plan_id=`),
+  not by date — a date resolves to the plan COVERING it, which after a
+  takeover or custom range is the week already on screen (dead button);
+  the pin lets go after the load that shows that plan approved. Tests
+  `tests/test_see_next_weeks_draft.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

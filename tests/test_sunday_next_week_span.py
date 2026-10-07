@@ -314,7 +314,7 @@ class TestThePlanTabReadsTheServersAnswer:
         # One shared tap for the approved dock and the draft's band
         # (planNextWeek, 2026-09-27), built from nextPeriodFor.
         assert "planNextWeek()" in handler
-        shared = SHELL_JS[SHELL_JS.index("function planNextWeek()"):][:400]
+        shared = SHELL_JS[SHELL_JS.index("function planNextWeek()"):][:900]
         assert "nextPeriodFor(data, data.days)" in shared
         assert "startPlanningWeek(period.start_date, period.day_count)" in shared
 
