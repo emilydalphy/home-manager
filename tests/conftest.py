@@ -91,6 +91,8 @@ _TABLES = [
     "preference_events", "notification_dismissals", "item_store_preferences",
     # push_devices references members, so it goes before them.
     "push_devices",
+    # So does a per-move owner (2026-10-07, move-owner slice 2).
+    "move_owner_overrides",
     # Email sign-in (2026-10-06) — all four reference households, and two
     # reference members, so they go before both.
     "member_emails", "signup_emails", "email_codes", "legal_acceptances",

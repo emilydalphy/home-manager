@@ -784,6 +784,27 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   white-space: nowrap;
 }
 
+/* ---- "Who's on it?" (Every move has an owner, slice 2, 2026-10-07): a 44x44 door
+   (Rule 6) beside the tag, a person drawn in the meta line's own ink —
+   never a fill, a badge or a second accent (Rule 5). The name itself is
+   still in the meta line; this is only how to change it. ---- */
+.day-node-who {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  margin: 4px -6px 0 -4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.day-node-who svg { display: block; width: 18px; height: 18px; }
+.day-node.is-now .day-node-who { color: var(--celadon-label); }
+
 /* ---- The one tinted row: celadon-tint, its own edge, the word for it.
    It runs the move's action on tap (the same thing the dock's button
    does). ---- */
@@ -4225,6 +4246,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    shared dialog scrim/panel styling defined with the reset dialog below. */
 .approve-who-options { display: flex; flex-direction: column; gap: 9px; margin-top: 2px; }
 .approve-who-options .approve-who-option { width: 100%; min-height: 44px; font-size: 16px; }
+/* Who is on it now, in "Who's on it?" — the dialog's note says it in words
+   (S6); the tint is the celadon "chosen" of the change card's options. */
+.approve-who-options .approve-who-option[aria-current="true"] {
+  background: var(--celadon-tint);
+  border-color: var(--celadon-edge);
+  color: var(--ink-on-celadon);
+}
 
 /* ---------- "Start over" row + confirm dialog (self-service reset) ----------
    The row is a sibling of #week-mobile and #week-grid inside .week-content,

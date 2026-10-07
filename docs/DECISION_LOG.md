@@ -13,6 +13,26 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Every move has an owner, slice 2: "Who's on it?" — one tap or one
+  sentence changes whose ONE cook / prep / shop it is** (2026-10-07; branch
+  `overnight/move-owner-slice-2`, not merged at the time of writing; tests
+  `tests/test_move_owner_change.py`). Storage is `move_owner_overrides`
+  (household, move id, the day it sat on, member id — NULL = "Nobody yet"
+  said on purpose), read once per `move_owner.resolve` so Today, Cook, the
+  morning text and the evening nudge all see it; the `cooking_role` answer
+  stays the default and is never rewritten (not a standing rule). A cook's
+  word carries to the fridge/prep behind it; keyed by date so a dish swapped
+  to another night does not drag the name along. A reheat takes none. A shop
+  CAN carry one now, but only one a person said. Today: a 44px person-icon
+  door beside the time tag (the row body is already a button) opening the
+  approve step's "which of us?" dialog, generalised as `askWhoDialog` —
+  adults + "Nobody yet", current one tinted; the pick saves at once
+  (the card said no confirm step — a deliberate exception to S10's Save,
+  kept honest by the toast "Vineeth's on Chicken Skewers · Undo"). Chat:
+  `change_move_owner(who, what, day, meal)` ("me" = the session's adult),
+  tagged `kitchen` so both Today and Cook refresh. Cook's card no longer
+  falls back to the standing cook when the move says nobody. Costs one more
+  connection per Today payload (the override read).
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

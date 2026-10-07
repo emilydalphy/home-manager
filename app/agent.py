@@ -2016,6 +2016,20 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "change_move_owner",
+        "description": "\"Vineeth's cooking tonight\" / \"actually I've got tonight\" / \"I'll do the shop\" / \"nobody's on Thursday's dinner yet\" — change who is on ONE cook or ONE shop, for that day only. Not a standing rule: the next cook goes back to whoever the household's usual answer says, so never describe it as changing who cooks from now on. A fridge move or prep for that cook follows it on its own. `who` is an adult's name as they said it, \"me\" for whoever is talking, or \"nobody\". `what` is 'cook' (default) or 'shop'. `day` is YYYY-MM-DD, or omit for today/tonight. `meal` (breakfast/lunch/dinner) only when the day has more than one cook and they named one — tonight means dinner. Say the result's `said` back in one short line. An error means nothing changed and its message is the question to ask (a name that isn't one of the adults, or two cooks that day) — ask it, don't guess.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "who": {"type": "string", "description": "An adult's name, \"me\", or \"nobody\"."},
+                "what": {"type": "string", "enum": ["cook", "shop"], "description": "Defaults to cook."},
+                "day": {"type": "string", "description": "YYYY-MM-DD. Omit for today."},
+                "meal": {"type": "string", "enum": ["breakfast", "lunch", "dinner"], "description": "Only when the day has more than one cook and they named which."},
+            },
+            "required": ["who"],
+        },
+    },
+    {
         "name": "unbatch",
         "description": "\"Don't batch the rice\" / \"cook the chili fresh on Thursday\" / \"no batch cooking this week\" \u2014 take apart a batch the app made on its own. Pomona batches automatically when the household preps ahead: a dish on two days is cooked once on the first (a second time if the later days run past three days of leftovers), and a component two dishes both make (the eggs a breakfast and a salad both boil) is made once. This is the way back out. `what` names the dish or the thing being cooked as they said it (\"the rice\", \"the chili\", \"the eggs\"); leave it out entirely for \"no batch cooking this week\". `day` (YYYY-MM-DD) is for \"cook it fresh on Thursday\" \u2014 it frees that one day and leaves the rest of the batch alone. Say the result's `said` back as the whole reply, one line, no list of what changed. A status of 'ambiguous' means more than one batch answers to those words and `said` is the question to ask \u2014 ask it and stop. 'nothing' means there is no such batch, and `said` says so; don't retry with different words. 'refused' means nothing changed and `said` is why. The choice is remembered for this plan, so approving the week again will not put it back \u2014 don't promise otherwise. Not for changing WHAT is eaten (swap_meal_in_plan) or for moving a dinner to another night (swap_dinner_nights).",
         "input_schema": {
@@ -9618,6 +9632,7 @@ TOOL_FUNCTIONS = {
     "swap_component_in_plan": tools.swap_component_in_plan,
     "swap_dinner_nights": tools.swap_dinner_nights,
     "take_the_night_off": tools.tonight_night_off,
+    "change_move_owner": tools.change_move_owner,
     "unbatch": tools.unbatch,
     "approve_weekly_plan": tools.approve_weekly_plan,
     "discard_draft_plan": tools.discard_draft_plan,

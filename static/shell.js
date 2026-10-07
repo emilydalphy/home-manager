@@ -2084,25 +2084,48 @@
     if (resolve) resolve(answer);
   }
 
-  function askWhoIsApproving(people) {
-    // No dialog in the document (an older cached shell.html) — approve
-    // without a name rather than blocking the action on a missing picker.
-    // The receipt drops the name; it never invents one.
-    if (!approveWhoDialog) return Promise.resolve('');
+  // The same dialog, asked any "which of us?" question (2026-10-07: "Who's
+  // on it?" on a Today row borrows it rather than growing a second picker).
+  // Each option is {value, label, current}; resolves to the picked value,
+  // or null if they backed out. Title, note and the way out are set on
+  // every open, so the approve words are put back each time it asks that.
+  function askWhoDialog(opts) {
+    if (!approveWhoDialog) return Promise.resolve(null);
     closeAskSheet();
     closeWeekSheet();
+    var titleEl = document.getElementById('approve-who-title');
+    var noteEl = document.getElementById('approve-who-note');
+    var cancelEl = document.getElementById('approve-who-cancel');
+    if (titleEl && opts.title) titleEl.textContent = opts.title;
+    if (noteEl) { noteEl.textContent = opts.note || ''; noteEl.hidden = !opts.note; }
+    if (cancelEl && opts.cancel) cancelEl.textContent = opts.cancel;
     var optionsEl = document.getElementById('approve-who-options');
-    optionsEl.innerHTML = people.map(function (name) {
-      return '<button type="button" class="btn-outline-plum approve-who-option" data-name="' +
-        escapeHtml(name) + '">' + escapeHtml(name) + '</button>';
+    optionsEl.innerHTML = opts.options.map(function (o, i) {
+      return '<button type="button" class="btn-outline-plum approve-who-option" data-who-index="' + i + '"' +
+        (o.current ? ' aria-current="true"' : '') + '>' + escapeHtml(o.label) + '</button>';
     }).join('');
     optionsEl.querySelectorAll('.approve-who-option').forEach(function (btn) {
-      btn.addEventListener('click', function () { closeApproveWho(btn.dataset.name); });
+      btn.addEventListener('click', function () {
+        closeApproveWho(opts.options[Number(btn.getAttribute('data-who-index'))].value);
+      });
     });
     openSheet(approveWhoDialog, approveWhoScrim);
     var first = optionsEl.querySelector('.approve-who-option');
     if (first) first.focus();
     return new Promise(function (resolve) { approveWhoResolve = resolve; });
+  }
+
+  function askWhoIsApproving(people) {
+    // No dialog in the document (an older cached shell.html) — approve
+    // without a name rather than blocking the action on a missing picker.
+    // The receipt drops the name; it never invents one.
+    if (!approveWhoDialog) return Promise.resolve('');
+    return askWhoDialog({
+      title: 'Who’s approving?',
+      note: 'I’ll put your name on the week, so it’s on record who settled it.',
+      cancel: 'Not just yet',
+      options: people.map(function (name) { return { value: name, label: name }; })
+    });
   }
 
   if (approveWhoScrim) {
@@ -2443,6 +2466,36 @@
     return line ? whose + ' · ' + line : whose;
   }
 
+  // "WHO'S ON IT?" — one tap to change whose move it is (Loop Board "Every
+  // move has an owner", slice 2, 2026-10-07: "actually I've got tonight").
+  //
+  // Its own small button at the row's right, beside the time tag, because
+  // the row's body is already a button (it runs the move) and a button
+  // cannot sit inside a button. The NAME stays where slice 1 put it, in
+  // the meta line — this is only the door, drawn as a person in the meta
+  // line's own ink, never an accent or a badge (rule 5). The label says
+  // who is on it now, for a screen reader, so the glyph never has to.
+  //
+  // Only where there is something to change: a move still to do (a done
+  // one is whose it WAS), of a kind a person can be on (a reheat is not —
+  // app/tools/move_owner.py OWNABLE_KINDS), in a household with an adult
+  // on record to pick. The picker itself is askWhoDialog.
+  var WHO_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20.5a7.2 7.2 0 0 1 14.4 0"/></svg>';
+  var WHO_KINDS = { cook: 1, fridge: 1, prep: 1, shop: 1 };
+
+  function moveCanChangeWho(move) {
+    if (!move || move.done || !WHO_KINDS[move.kind]) return false;
+    var adults = (typeof shellWho !== 'undefined' && shellWho && shellWho.adults) || [];
+    return adults.length > 0;
+  }
+
+  function moveWhoButtonHtml(move) {
+    if (!moveCanChangeWho(move)) return '';
+    var now = move.owner_name ? String(move.owner_name) : 'Nobody yet';
+    return '<button type="button" class="day-node-who" data-move-who="' + escapeHtml(move.id) + '" ' +
+      'aria-label="' + escapeHtml('Who’s on it? ' + now) + '">' + WHO_ICON + '</button>';
+  }
+
   // One row. `state` is 'done', 'now' (the next-up move — exactly one row
   // ever, across both groups, §2b S3) or 'later'. The row's body is the tap
   // target for "open this move" (52px+, Rule 6): a pending row runs the
@@ -2519,6 +2572,9 @@
     return '<div class="day-node is-' + state + '" data-move-id="' + id + '">' +
       moveTickHtml(move) +
       body +
+      // A shop's second and later store rows are the same move: one door
+      // to it, on the first (todayShopRowsHtml).
+      ((text && text.noWho) ? '' : moveWhoButtonHtml(move)) +
       '<span class="day-node-tag">' + escapeHtml(moveTimeOfDay(move)) + '</span>' +
     '</div>';
   }
@@ -2535,9 +2591,14 @@
       var n = stop.count || (stop.items || []).length;
       var name = stop.store || 'Any store';
       var items = (stop.items || []).join(', ');
+      var meta = items + (n > (stop.items || []).length ? '…' : '');
+      // Whose the shop is, when somebody said (slice 2), leads the first
+      // stop's line the way it leads every other row's — once per move.
+      var whose = i ? '' : moveOwnerClause(move);
       return dayStripNodeHtml(move, (state === 'now' && i) ? 'later' : state, {
         title: name + ' · ' + n + (n === 1 ? ' thing' : ' things'),
-        meta: items + (n > (stop.items || []).length ? '…' : '')
+        meta: whose ? (meta ? whose + ' · ' + meta : whose) : meta,
+        noWho: i > 0
       });
     }).join('');
   }
@@ -2842,6 +2903,11 @@
     panel.querySelectorAll('[data-move-action]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         runTodayMoveAction(panel, btn.getAttribute('data-move-action'));
+      });
+    });
+    panel.querySelectorAll('[data-move-who]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        openTodayMoveWho(panel, btn.getAttribute('data-move-who'));
       });
     });
     // The dish name itself, wherever Today prints one — a done node,
@@ -3634,6 +3700,80 @@
   // stale silently").
   function refreshTodayMoves() {
     if (panels.today && panels.today.dataset.built) loadTodayMoves(panels.today);
+  }
+
+  // "Who's on it?" — the household's adults and "Nobody yet", in the
+  // dialog the approve step already asks "which of us?" in. One tap is the
+  // whole change: no Save, no form (the card: "no confirm step"). The pop-
+  // up names what changed and carries Undo (§2b S10).
+  async function openTodayMoveWho(panel, moveId) {
+    var move = todayMoveById(panel, moveId);
+    if (!move || !moveCanChangeWho(move)) return;
+    var options = (shellWho.adults || []).map(function (a) {
+      return { value: a.id, label: a.name, current: move.owner === a.id };
+    });
+    options.push({ value: 'nobody', label: 'Nobody yet', current: !move.owner_name });
+    var picked = await askWhoDialog({
+      title: 'Who’s on it?',
+      // What it is and who is on it now — the words for the tinted option.
+      note: [move.title, move.owner_name ? move.owner_name + '’s on it' : 'Nobody’s on it yet']
+        .filter(Boolean).join(' · '),
+      cancel: 'Leave it',
+      options: options
+    });
+    if (picked === null || picked === undefined) return;
+    var memberId = picked === 'nobody' ? null : picked;
+    // The same answer again changes nothing — no write, no pop-up.
+    if (memberId === null ? !move.owner_name : move.owner === memberId) return;
+    setTodayMoveOwner(panel, move, { member_id: memberId }, true);
+  }
+
+  // One write for the tap and its Undo. Optimistic, like a tick (§6, "the
+  // common case never waits"): the row says the new name before the server
+  // answers, and the server's timeline then replaces it — which is also
+  // what carries the change onto the fridge move and prep behind a cook.
+  async function setTodayMoveOwner(panel, move, body, offerUndo) {
+    var data = panel._moves;
+    var was = { owner: move.owner, owner_name: move.owner_name };
+    if (!body.clear) {
+      var adult = (shellWho.adults || []).filter(function (a) { return a.id === body.member_id; })[0];
+      move.owner = body.member_id;
+      move.owner_name = adult ? adult.name : null;
+      renderTodayMoves(panel, data);
+    }
+    var out;
+    try {
+      out = await Api.json('/api/today/moves/' + encodeURIComponent(move.id) + '/owner', {
+        method: 'POST',
+        body: { member_id: body.member_id === undefined ? null : body.member_id,
+                clear: !!body.clear, date: move.date || null },
+        errorMessage: 'Couldn’t change who’s on it — try again.'
+      });
+    } catch (err) {
+      console.warn('Changing whose move it is failed:', err);
+      move.owner = was.owner;
+      move.owner_name = was.owner_name;
+      if (panel._moves === data) renderTodayMoves(panel, data);
+      return;
+    }
+    if (data && out && out.date === data.date && out.moves) renderTodayMoves(panel, out);
+    else loadTodayMoves(panel);
+    // Cook's card and rows read the same move's owner.
+    if (typeof refreshKitchenPanel === 'function') refreshKitchenPanel();
+    var change = (out && out.change) || {};
+    if (!offerUndo) return;
+    var prev = change.previous || {};
+    showToast(change.said || savedLine(move.title, 'changed'), {
+      label: 'Undo',
+      onClick: function () {
+        var current = todayMoveById(panel, move.id) || move;
+        // Put back EXACTLY what was there: the household's earlier word if
+        // there was one, else no word at all, so the default shows again.
+        return setTodayMoveOwner(panel, current, prev.had_override
+          ? { member_id: prev.override_member_id }
+          : { clear: true }, false);
+      }
+    }, 6000);
   }
 
   async function toggleTodayMove(panel, moveId, done) {
@@ -10109,7 +10249,12 @@
     // differ when the household takes turns, where cook_name is null by
     // design and only the night knows whose it is. A card with no move
     // behind it still names the standing cook, as it always did.
-    var cookName = (row.move && row.move.owner_name) || (data && data.cook_name);
+    // A move that carries the key has the last word, even when it says
+    // nobody: "Nobody yet" said on Today (slice 2) must not be painted over
+    // by the household's standing cook here.
+    var cookName = (row.move && ('owner_name' in row.move))
+      ? row.move.owner_name
+      : (data && data.cook_name);
     var tiles = row.done ? [] : cookTonightTimes(row, meal);
     var note = row.done
       ? (row.isReheat ? 'Eaten.' : 'Cooked.')

@@ -918,7 +918,13 @@ def _stamp_owners(moves: list[dict], owners) -> list[dict]:
     """
     for move in moves:
         kind = move.get("kind")
-        if kind == "cook":
+        # What somebody SAID about this one move today beats every default
+        # below (slice 2, move_owner.set_move_owner). Never on a reheat:
+        # nothing is cooked on one, and the setter refuses it too.
+        said = owners.override(move.get("id"), move.get("date")) if kind != "reheat" else None
+        if said is not None:
+            member_id, name = said
+        elif kind == "cook":
             member_id, name = owners.for_meal({"date": move.get("date"), "is_leftovers": False})
         elif kind in ("fridge", "prep"):
             # _prep_moves copies prep_tasks.meal_plan_entry_id onto the
