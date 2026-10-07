@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Same-family units add up on the list** (2026-10-07, defect hunt; branch
+  `overnight/same-family-units-add-up`). A swap to Lentil Soup with lentils
+  on the list read "1.5 cups + 8 tbsp": `_try_consolidate_quantity` summed
+  only identical unit words. Now two units of one measurable family
+  (cup/tbsp/tsp, lb/oz, g/kg, ml/l — `quantities._UNIT_CONVERSION_GROUPS`)
+  are summed in the family's smallest unit and humanised once ("2 cups"),
+  the same arithmetic the ledger recompute uses; `_refold_quantity_segments`
+  inherits it. Mass vs volume, counts and counted packs still stay two
+  parts. Ledger untouched (unrounded shares). Tests
+  `tests/test_same_family_units_add_up.py` (swap and swap back; standing want).
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

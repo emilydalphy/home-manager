@@ -386,7 +386,30 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
         return _quantities._with_note(
             _quantities._humanize_grocery_quantity(existing_parsed[0] + new_parsed[0], shared_unit), note
         ), True
+    # Two units of ONE measurable family (cup/tbsp/tsp, lb/oz, g/kg, ml/l)
+    # are one amount: "1.5 cups" + "8 tbsp" is 2 cups, not "1.5 cups +
+    # 8 tbsp" (defect hunt 2026-10-07 — a swap to Lentil Soup with lentils
+    # already on the list). Summed in the family's smallest unit and
+    # humanised once, which rolls it back up — the same arithmetic the
+    # ledger recompute uses (quantities._ledger_buckets), so a later
+    # reversal lands on the same words. Mass against volume, or a count,
+    # still falls through to two parts: no conversion is guessed.
+    family = _shared_measure_family(existing_parsed, new_parsed)
+    if family:
+        base = min(family, key=family.get)
+        total = existing_parsed[0] * family[existing_parsed[1]] + new_parsed[0] * family[new_parsed[1]]
+        return _quantities._with_note(_quantities._humanize_grocery_quantity(total, base), note), True
     return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=True)
+
+
+def _shared_measure_family(existing_parsed, new_parsed) -> dict | None:
+    """The measurable unit family both parsed amounts belong to, or None."""
+    if not existing_parsed or not new_parsed:
+        return None
+    for group in _quantities._UNIT_CONVERSION_GROUPS:
+        if existing_parsed[1] in group and new_parsed[1] in group:
+            return group
+    return None
 
 
 def _shared_package_unit(existing_parsed, new_parsed) -> str | None:
