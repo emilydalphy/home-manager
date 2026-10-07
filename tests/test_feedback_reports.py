@@ -386,7 +386,7 @@ def test_the_error_states_offer_the_same_sheet():
     nowhere to say so.
     """
     source = _shell_js()
-    assert "Something not working? Tell Emily" in source
+    assert "Something not working? Tell us" in source
     # `kit-hero-error` was the Kitchen "what we know" hero's error line; the
     # hero left the tab on 2026-09-08 and the Kitchen root's own failure
     # state is a `cook-error` paragraph, already in this list.
@@ -397,5 +397,7 @@ def test_the_error_states_offer_the_same_sheet():
 
 def test_the_confirmation_is_in_voice():
     source = _shell_js()
-    assert "Emily reads every one of these" in source
-    assert "blocking you, text her too" in source
+    assert "we read every one of these" in source
+    # "If it's blocking you, text her too" went with Emily's name
+    # (2026-10-07): a household that has never met her can't text her.
+    assert "text her too" not in source

@@ -72,7 +72,7 @@ def test_the_not_working_form_is_the_shells_own_plus_the_screen_line():
     assert "I’ll include which screen you were on: Week 1." in html
     assert 'class="help-primary" id="help-snw-send" data-help="send" disabled>Send<' in html
     assert 'class="help-quiet" data-help="close">Never mind<' in html
-    assert _api("h.SNW_SENT") == "Sent — thanks, Emily reads every one."
+    assert _api("h.SNW_SENT") == "Sent — thanks, we read every one."
     # A screen with no name says nothing about one rather than "on: ."
     assert "which screen" not in _api("h.snwFormHtml('')")
 

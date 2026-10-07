@@ -234,7 +234,7 @@ console.log(JSON.stringify(ROWS.innerHTML));
     assert "Every meal on one page, with a link you can send." in out
     assert "Opens your household settings: meal counts, cooking time, kitchen." in out
     assert "Clears the meal plan, the grocery list or this week’s answers. You pick, and confirm first." in out
-    assert "Tips for changing the week, and a way to send Emily a note." in out
+    assert "Tips for changing the week, and a way to send us a note." in out
 
 
 @_needs_node

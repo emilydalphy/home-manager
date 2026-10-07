@@ -19205,7 +19205,7 @@
         mealsMoreRowHtml('wk-more-reset', WK_ICONS.resetArrow, 'Start over',
           'Clears the meal plan, the grocery list or this week’s answers. You pick, and confirm first.') +
         mealsMoreRowHtml('wk-more-help', WK_ICONS.help, 'Need a hand?',
-          'Tips for changing the week, and a way to send Emily a note.'));
+          'Tips for changing the week, and a way to send us a note.'));
 
     var panel = panels['week'];
     function on(id, fn) {
@@ -29194,7 +29194,7 @@
           '<span class="tips-help-icon">' + TIPS_HELP_ICON + '</span>' +
           '<span class="tips-help-text">' +
             '<span class="tips-help-title">Need help with something?</span>' +
-            '<span class="tips-help-sub">Send Emily a note</span>' +
+            '<span class="tips-help-sub">Send us a note</span>' +
           '</span>' +
           '<span class="tips-help-chev">' + ICONS.arrow + '</span>' +
         '</button>' +
@@ -29333,7 +29333,7 @@
       '<span class="snw-tile-icon">' + SNW_ICON + '</span>' +
       '<span class="snw-tile-text">' +
         '<span class="snw-tile-title">Something not working?</span>' +
-        '<span class="snw-tile-sub">Tell Emily what happened</span>' +
+        '<span class="snw-tile-sub">Tell us what happened</span>' +
       '</span>' +
     '</button>';
   }
@@ -29343,7 +29343,7 @@
   // colour has to lift off a dark ground instead of a light one.
   function snwLink(onSpruce) {
     return ' <button type="button" class="snw-link' + (onSpruce ? ' snw-link-hero' : '') +
-      '" data-snw="open">Something not working? Tell Emily</button>';
+      '" data-snw="open">Something not working? Tell us</button>';
   }
 
   var snwSheetEl = null;
@@ -29464,8 +29464,9 @@
     // /api/feedback answers 204 whatever happens to the row.
     var body = snwSheetEl.querySelector('#snw-body');
     body.innerHTML =
-      '<p class="snw-done">Got it — Emily reads every one of these. ' +
-      'If it&rsquo;s blocking you, text her too.</p>' +
+      // Every household sees this, not only the ones who know Emily
+      // (defect hunt 2026-10-07) — so no name, and no asking them to text her.
+      '<p class="snw-done">Got it — we read every one of these.</p>' +
       '<button type="button" class="snw-send" id="snw-done-close">Close</button>';
     body.querySelector('#snw-done-close').addEventListener('click', dismissSnwSheet);
 
