@@ -459,6 +459,7 @@ from .moves import (  # noqa: F401
 # change_move_owner IS an agent tool ("Vineeth's cooking tonight");
 # set_move_owner is the write both it and the Today tap make.
 from .move_owner import (  # noqa: F401
+    MoveOwnerRefused,
     change_move_owner,
     set_move_owner,
 )

@@ -21,8 +21,15 @@ why*, not duplicating the diff.
   said on purpose), read once per `move_owner.resolve` so Today, Cook, the
   morning text and the evening nudge all see it; the `cooking_role` answer
   stays the default and is never rewritten (not a standing rule). A cook's
-  word carries to the fridge/prep behind it; keyed by date so a dish swapped
-  to another night does not drag the name along. A reheat takes none. A shop
+  word carries to the fridge/prep behind it. **Keyed by the move id AND the
+  day, and Emily's to decide:** a word is DROPPED, not carried, whenever the
+  move changes under it — swap two nights and the dish leaves the day it was
+  claimed on, so neither night keeps the name; swap the dish on the SAME
+  night and the entry is replaced (new move id), so that night loses it too
+  and shows the default again. The orphaned row just sits unread.
+  Designed answers ("I don't have a Priya here", two cooks that day) raise
+  `MoveOwnerRefused`, the third member of `agent.REFUSALS_OWED_TO_A_PERSON`,
+  so a misheard name never reads as a broken tool. A reheat takes none. A shop
   CAN carry one now, but only one a person said. Today: a 44px person-icon
   door beside the time tag (the row body is already a button) opening the
   approve step's "which of us?" dialog, generalised as `askWhoDialog` —

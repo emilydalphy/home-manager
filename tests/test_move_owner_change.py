@@ -281,3 +281,57 @@ def test_cook_does_not_paint_the_standing_cook_over_nobody_yet():
                  chips=["35 min", "Start by 5:55"], time_label="6:30 tonight")
     html = _cook_card(meals, [move], {"cook_name": "Emily"})
     assert "EMILY" not in html
+
+
+# ---------- review fixes: a refusal is an answer, and it reads like one ----------
+
+def test_a_misheard_name_in_chat_is_an_answer_not_a_broken_tool(monkeypatch):
+    """CATCH. Through the real agent loop: the refusal goes back to the
+    model as its sentence and no error_events row is written — the morning
+    report would otherwise call every misheard name a breakage."""
+    from test_a_refusal_is_not_a_breakage import _error_rows, _handed_back, _one_tool_turn
+
+    _two_adults_one_cook()
+    _one_tool_turn(monkeypatch, "change_move_owner", {"who": "Priya"})
+    _, conversation = agent.run_agent_turn([], "Priya's cooking tonight")
+
+    assert _error_rows() == []
+    handed = _handed_back(conversation)
+    assert handed["is_error"] is True
+    assert "Priya" in json.loads(handed["content"])["error"]
+    assert issubclass(tools.MoveOwnerRefused, ValueError)
+
+
+def test_refusals_name_the_day_not_an_iso_date():
+    _adults("Emily", "Vineeth")
+    with pytest.raises(tools.MoveOwnerRefused) as e:
+        tools.change_move_owner("Emily")
+    assert str(e.value) == "There’s no cook today."
+    assert not re.search(r"\d{4}-\d{2}-\d{2}", str(e.value))
+
+
+def test_two_shops_are_asked_about_as_shops(monkeypatch):
+    _two_adults_one_cook()
+    two = [_move("shop", "shop:x", "Shop for tonight"),
+           _move("shop", "prep:9", "Shop for Thanksgiving")]
+    monkeypatch.setattr(_moves, "moves_for_day", lambda *a, **k: two)
+    with pytest.raises(tools.MoveOwnerRefused) as e:
+        tools.change_move_owner("Emily", what="shop")
+    msg = str(e.value)
+    assert msg.startswith("There’s more than one shop today")
+    assert "None" not in msg and "cook" not in msg
+
+
+def test_one_letter_matches_nobody_and_a_shared_name_is_a_question():
+    _two_adults_one_cook()
+    with pytest.raises(tools.MoveOwnerRefused):
+        tools.change_move_owner("V")
+    assert tools.change_move_owner("Vin")["owner_name"] == "Vineeth"
+    conn = get_conn()
+    conn.execute("UPDATE members SET name = 'Sam' WHERE household_id = ? AND name IN ('Emily', 'Vineeth')",
+                 (tools.household_id(),))
+    conn.commit()
+    conn.close()
+    with pytest.raises(tools.MoveOwnerRefused) as e:
+        tools.change_move_owner("Sam")
+    assert "which one" in str(e.value)

@@ -292,14 +292,15 @@ def test_every_refusing_chat_tool_is_an_answer(monkeypatch, name, tool_input, ma
     }
 
 
-def test_the_marker_set_is_the_two_refusal_types_and_nothing_else():
+def test_the_marker_set_is_the_three_refusal_types_and_nothing_else():
     """
     GUARD on the set itself. Both are the app's own markers for "a
     sentence written for a person"; widening this to any ValueError would
     swallow require_household_row's deliberately opaque "No chore instance
     with id 7.", which is not for reading and IS worth seeing.
     """
-    assert agent.REFUSALS_OWED_TO_A_PERSON == (tools.SlotRefused, tools.ChoreRefused)
+    assert agent.REFUSALS_OWED_TO_A_PERSON == (
+        tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused)
     for marker in agent.REFUSALS_OWED_TO_A_PERSON:
         assert issubclass(marker, ValueError)
 

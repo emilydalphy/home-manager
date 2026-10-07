@@ -373,6 +373,17 @@ def one_person_cook_name(rhythm: dict | None = None) -> str | None:
 
 # ---------- slice 2: changing whose one move is ----------
 
+class MoveOwnerRefused(ValueError):
+    """
+    "Who's on it?" answered no, in a sentence written for the household —
+    a name that isn't one of the adults, two cooks that day, nothing to
+    cook. The same marker weekly_plan.SlotRefused is: an answer, not a
+    breakage, so the chat dispatch (agent.REFUSALS_OWED_TO_A_PERSON) hands
+    it back without recording an error, and the route still reads it as
+    the ValueError it is.
+    """
+
+
 # The kinds a person can put a name on. A reheat is out for the reason the
 # module docstring gives: nobody cooks it, so "Vineeth's" over it would be
 # inventing a job.
@@ -390,6 +401,23 @@ def _day_iso(day) -> str:
     if day == "tomorrow":
         return (_moves._household_now().date() + _timedelta(days=1)).isoformat()
     return _moves._as_date(day).isoformat()
+
+
+def _day_words(on_date: str) -> str:
+    """"today", "tomorrow", or the weekday — how the rest of the app names
+    a day to a person, never the ISO date."""
+    today = _moves._household_now().date()
+    try:
+        d = _moves._as_date(on_date)
+    except (TypeError, ValueError):
+        return "that day"
+    if d == today:
+        return "today"
+    if d == today + _timedelta(days=1):
+        return "tomorrow"
+    if d == today - _timedelta(days=1):
+        return "yesterday"
+    return f"on {d.strftime('%A')}"
 
 
 def _title(move: dict) -> str:
@@ -420,15 +448,15 @@ def set_move_owner(move_id: str, member_id: int | None = None, day: str | None =
     move_id = (move_id or "").strip()
     move = next((m for m in _moves.moves_for_day(on_date) if m.get("id") == move_id), None)
     if move is None:
-        raise ValueError("That isn’t on the day any more.")
+        raise MoveOwnerRefused("That isn’t on the day any more.")
     if move.get("kind") not in OWNABLE_KINDS:
-        raise ValueError("Nobody cooks a reheat, so there’s nobody to put on it.")
+        raise MoveOwnerRefused("Nobody cooks a reheat, so there’s nobody to put on it.")
 
     name = None
     if not clear and member_id is not None:
         adult = next((a for a in _shared.household_adults() if a["id"] == int(member_id)), None)
         if adult is None:
-            raise ValueError("That’s not one of the adults here.")
+            raise MoveOwnerRefused("That’s not one of the adults here.")
         member_id, name = adult["id"], (adult.get("name") or "").strip()
 
     conn = get_conn()
@@ -482,19 +510,27 @@ def set_move_owner(move_id: str, member_id: int | None = None, day: str | None =
 def _find_adult(who: str) -> dict | None:
     """
     `who` as one of this household's adults: an exact name first, then a
-    single adult whose name starts with it ("Vin" -> Vineeth). Two matches
-    is no match — picking one would be a guess.
+    first name, then — for two letters or more — a single adult whose name
+    starts with it ("Vin" -> Vineeth). One letter is too little to go on,
+    and two adults answering to the same words is a question, never a pick.
     """
     want = (who or "").strip().casefold()
     adults = _shared.household_adults()
-    exact = [a for a in adults if (a.get("name") or "").strip().casefold() == want]
-    if exact:
-        return exact[0]
-    first = [a for a in adults if ((a.get("name") or "").strip().casefold().split() or [""])[0] == want]
-    if len(first) == 1:
-        return first[0]
-    starts = [a for a in adults if (a.get("name") or "").strip().casefold().startswith(want)]
-    return starts[0] if len(starts) == 1 else None
+
+    def _one(found: list[dict]) -> dict | None:
+        if len(found) > 1:
+            raise MoveOwnerRefused(
+                f"There\u2019s more than one {who.strip()} here \u2014 which one?")
+        return found[0] if found else None
+
+    name = lambda a: (a.get("name") or "").strip().casefold()
+    hit = _one([a for a in adults if name(a) == want])
+    if hit:
+        return hit
+    hit = _one([a for a in adults if (name(a).split() or [""])[0] == want])
+    if hit or len(want) < 2:
+        return hit
+    return _one([a for a in adults if name(a).startswith(want)])
 
 
 def change_move_owner(who: str, what: str = "cook", day: str | None = None,
@@ -513,7 +549,7 @@ def change_move_owner(who: str, what: str = "cook", day: str | None = None,
     on_date = _day_iso(day)
     kind = (what or "cook").strip().lower()
     if kind not in ("cook", "shop"):
-        raise ValueError("I can change who's cooking or who's shopping. Which did you mean?")
+        raise MoveOwnerRefused("I can change who\u2019s cooking or who\u2019s shopping. Which did you mean?")
 
     words = (who or "").strip().casefold()
     if words in _NOBODY_WORDS:
@@ -522,13 +558,13 @@ def change_move_owner(who: str, what: str = "cook", day: str | None = None,
         member = _shared.current_member()
         if member is None:
             names = [a["name"] for a in _shared.household_adults()]
-            raise ValueError(f"Which of you is that? ({', '.join(names)})" if names
+            raise MoveOwnerRefused(f"Which of you is that? ({', '.join(names)})" if names
                              else "There’s nobody on record to put on it yet.")
     else:
         member = _find_adult(who)
         if member is None:
             names = [a["name"] for a in _shared.household_adults()]
-            raise ValueError(
+            raise MoveOwnerRefused(
                 f"I don’t have a {who.strip()} among the adults here"
                 + (f" — did you mean {' or '.join(names)}?" if names else ".")
             )
@@ -539,11 +575,23 @@ def change_move_owner(who: str, what: str = "cook", day: str | None = None,
     elif kind == "cook" and len(moves) > 1:
         dinner = [m for m in moves if (m.get("slot") or "") == "dinner"]
         moves = dinner or moves
+    when = _day_words(on_date)
     if not moves:
-        noun = "shop" if kind == "shop" else (f"{meal.strip().lower()} to cook" if meal else "cook")
-        raise ValueError(f"There’s no {noun} on {on_date}.")
+        if kind == "shop":
+            noun = "shop"
+        elif meal:
+            noun = f"{meal.strip().lower()} to cook"
+        else:
+            noun = "cook"
+        raise MoveOwnerRefused(f"There\u2019s no {noun} {when}.")
     if len(moves) > 1:
-        raise ValueError("There’s more than one cook that day: "
-                         + ", ".join(f"{m.get('slot')} ({_title(m)})" for m in moves)
-                         + ". Which one?")
+        if kind == "shop":
+            # A holiday's own shop beside the week's (big_meal.SHOP_MARK).
+            raise MoveOwnerRefused(
+                f"There\u2019s more than one shop {when}: "
+                + ", ".join(_title(m) for m in moves) + ". Which one?")
+        raise MoveOwnerRefused(
+            f"There\u2019s more than one cook {when}: "
+            + ", ".join(f"{m.get('slot') or 'a meal'} ({_title(m)})" for m in moves)
+            + ". Which one?")
     return set_move_owner(moves[0]["id"], (member or {}).get("id"), on_date)

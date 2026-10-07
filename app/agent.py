@@ -9492,7 +9492,7 @@ CHORES_TOOLS = frozenset({
 # Those mean a caller sent a word its own tool schema forbids, which is a
 # model mistake rather than a household being told no — worth seeing in
 # the report, and rare enough that CLAUDE.md twice accepted the row.
-# These two mean the app answered a person correctly.
+# These mean the app answered a person correctly.
 #
 # ChoreRefused cannot fire today — Chores is off for every household, so
 # CHORES_TOOLS declines above before any of its tools run. It is in here
@@ -9500,7 +9500,11 @@ CHORES_TOOLS = frozenset({
 # switch is turned on, and because handling one of two markers whose own
 # docstrings call them the same thing is the half-converted shape this
 # codebase keeps getting bitten by.
-REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused)
+#
+# MoveOwnerRefused (2026-10-07, move-owner slice 2) is the third: "I don't
+# have a Priya among the adults here" is the chat asking back, and every
+# misheard name would otherwise read as a broken tool in the morning report.
+REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused)
 
 
 def _chores_off_result() -> dict:
