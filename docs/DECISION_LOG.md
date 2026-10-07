@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Freezing it?" asks about the next night still ahead, not the first night**
+  (2026-10-07; branch `overnight/freezing-asks-for-next-night`). Chicken for
+  Monday + Saturday ticked on Wednesday asked nothing and a yes 400'd "too
+  late": `defrost._grocery_line_first_meal` took the earliest ledger night,
+  gone. Now it takes the earliest night whose move is still ahead on the
+  household's clock (skipping cooked / skipped / `planned_empty` nights);
+  all-gone falls back to the earliest so the refusal stands. Offer, yes and
+  put-back all read it. Tests in `tests/test_shop_freezing_it.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
