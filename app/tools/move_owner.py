@@ -68,13 +68,36 @@ one_person, 72 turns.
 It is resolved ONCE per moves_for_day call and handed to the stamping pass,
 never per move: a per-move read would be a connection per row, which is the
 mistake CLAUDE.md's clock entries record being made twice already.
+
+SLICE 2 (2026-10-07): "actually I've got tonight". A household can change
+whose ONE move is, by a tap on Today or by saying so in chat, and the
+answer above becomes the DEFAULT rather than the last word. The change
+lives in `move_owner_overrides` (schema.sql), one row per move per day,
+read in the same `resolve` pass every reader already goes through — so
+Today, Cook, the morning text and the evening nudge cannot disagree about
+it. It is never a standing rule: tomorrow's cook is still whoever
+cooking_role says. Two rules about what a row reaches:
+
+- A COOK's row reaches the fridge move and prep behind that cook, exactly
+  the way the default does: "Vineeth's got Thursday" makes Thursday's
+  thaw his too, unless that thaw has a row of its own.
+- A row is keyed by the day the move sat on when it was claimed. A dish
+  later swapped onto another night leaves its row behind, rather than
+  carrying "Vineeth's got it" onto a night he never said.
+
+A SHOP can carry an owner now, but only one somebody SAID. The no-"who
+shops"-answer reasoning above still holds for the default; a person
+tapping "Me" on the shop is not a guess.
 """
 from __future__ import annotations
 
 import logging
+from datetime import timedelta as _timedelta
 
 from ..db import get_conn
+from . import _shared
 from ._shared import household_id
+from . import moves as _moves
 from . import rhythm as _rhythm
 
 logger = logging.getLogger(__name__)
@@ -107,6 +130,40 @@ def _adults() -> list[dict]:
     return [{"id": r["id"], "name": (r["name"] or "").strip()} for r in rows]
 
 
+def _overrides() -> dict[tuple[str, str], tuple[int | None, str | None]]:
+    """
+    Every per-move owner the household has said, as
+    {(move_id, on_date): (member id, name)} — (None, None) being "Nobody
+    yet", said on purpose. ONE read per resolve, never per move.
+
+    The JOIN is what keeps a name honest: a row whose adult has since been
+    re-marked a child, or is somehow not this household's, is dropped and
+    the move falls back to its default rather than naming them.
+    """
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            f"""
+            SELECT o.move_id, o.on_date, o.member_id, m.name
+            FROM move_owner_overrides o
+            LEFT JOIN members m
+              ON m.id = o.member_id AND m.household_id = o.household_id
+             AND {_shared._ADULT_SQL}
+            WHERE o.household_id = ?
+            """,
+            (household_id(),),
+        ).fetchall()
+    finally:
+        conn.close()
+    out: dict[tuple[str, str], tuple[int | None, str | None]] = {}
+    for r in rows:
+        if r["member_id"] is None:
+            out[(r["move_id"], r["on_date"])] = (None, None)
+        elif r["name"] and r["name"].strip():
+            out[(r["move_id"], r["on_date"])] = (r["member_id"], r["name"].strip())
+    return out
+
+
 def _is_a_cook(meal: dict) -> bool:
     """
     Exactly what becomes a cook move in moves._cook_and_reheat_moves: a
@@ -125,10 +182,18 @@ class MoveOwners:
     it costs nothing.
     """
 
-    def __init__(self, role: dict | None, adults: list[dict], view: dict | None):
+    def __init__(self, role: dict | None, adults: list[dict], view: dict | None,
+                 overrides: dict | None = None):
         self.value = (role or {}).get("value") or ""
         self.who = ((role or {}).get("who") or "").strip()
         self.adults = adults
+        # Slice 2: what the household SAID about one move on one day. See
+        # override() below and the module docstring.
+        self._overrides = overrides or {}
+        # entry_id -> the cook move's own id, so a fridge or prep task can
+        # find its cook's override. Not always "cook:<entry_id>": a merged
+        # component card is ONE move named after its first entry.
+        self._cook_move_by_entry: dict[int, str] = {}
         # entry_id -> the date its cook sits on, so a prep task can find
         # the night it is for. Both keys, because a component plan's merged
         # card carries `entry_ids` and every other carries `entry_id` —
@@ -143,6 +208,8 @@ class MoveOwners:
             for entry_id in (meal.get("entry_ids") or [meal.get("entry_id")]):
                 if entry_id is not None:
                     self._cook_date_by_entry[entry_id] = day
+                    if meal.get("entry_id") is not None:
+                        self._cook_move_by_entry[entry_id] = f"cook:{meal['entry_id']}"
             # A cook day from BEFORE the plan's period is a leftover of an
             # earlier week (get_cooker_view folds loose meals in beside the
             # plan's own); counting it would move the rotation's anchor
@@ -224,11 +291,22 @@ class MoveOwners:
             return ((adult or {}).get("id"), (adult or {}).get("name"))
         return (None, None)
 
+    def override(self, move_id: str | None, day: str | None) -> tuple[int | None, str | None] | None:
+        """
+        What the household said about this one move on this day, or None
+        when they said nothing (the default applies). (None, None) is a
+        real answer — "Nobody yet" — and is returned as such.
+        """
+        if not move_id or not day:
+            return None
+        return self._overrides.get((move_id, day))
+
     def for_task(self, task: dict) -> tuple[int | None, str | None]:
         """
         (member id, name) for a fridge move or a prep task: whoever cooks
-        the meal it is for. Nobody when it names no meal, or names one that
-        is not a cook.
+        the meal it is for — including a cook somebody has taken over for
+        that night (slice 2). Nobody when it names no meal, or names one
+        that is not a cook.
         """
         entry_id = task.get("meal_plan_entry_id")
         if entry_id is None:
@@ -236,6 +314,9 @@ class MoveOwners:
         day = self._cook_date_by_entry.get(entry_id)
         if not day:
             return (None, None)
+        said = self.override(self._cook_move_by_entry.get(entry_id), day)
+        if said is not None:
+            return said
         return self.for_meal({"date": day, "is_leftovers": False})
 
 
@@ -259,7 +340,14 @@ def resolve(view: dict | None = None, rhythm: dict | None = None) -> MoveOwners:
         # household claim nobody, so they spend no query at all beyond the
         # rhythm read the caller already made.
         adults = _adults() if role.get("value") in ("turns", "one_person") else []
-        return MoveOwners(role, adults, view)
+        try:
+            said = _overrides()
+        except Exception:
+            # The defaults still stand on their own; one unreadable table
+            # must not take the rhythm's answer down with it.
+            logger.exception("Couldn't read the per-move owners; using the defaults")
+            said = {}
+        return MoveOwners(role, adults, view, said)
     except Exception:
         logger.exception("Couldn't work out whose moves these are; leaving them unowned")
         return MoveOwners(None, [], None)
@@ -281,3 +369,229 @@ def one_person_cook_name(rhythm: dict | None = None) -> str | None:
     if role.get("value") != "one_person":
         return None
     return (role.get("who") or "").strip() or None
+
+
+# ---------- slice 2: changing whose one move is ----------
+
+class MoveOwnerRefused(ValueError):
+    """
+    "Who's on it?" answered no, in a sentence written for the household —
+    a name that isn't one of the adults, two cooks that day, nothing to
+    cook. The same marker weekly_plan.SlotRefused is: an answer, not a
+    breakage, so the chat dispatch (agent.REFUSALS_OWED_TO_A_PERSON) hands
+    it back without recording an error, and the route still reads it as
+    the ValueError it is.
+    """
+
+
+# The kinds a person can put a name on. A reheat is out for the reason the
+# module docstring gives: nobody cooks it, so "Vineeth's" over it would be
+# inventing a job.
+OWNABLE_KINDS = ("cook", "fridge", "prep", "shop")
+
+_NOBODY_WORDS = {"", "nobody", "no one", "noone", "nobody yet", "none", "no-one"}
+_ME_WORDS = {"me", "i", "myself", "i'll", "ill", "i've", "ive"}
+
+
+def _day_iso(day) -> str:
+    """The household's own today when `day` is omitted — never the
+    server's (moves._household_now says why that matters at 8pm)."""
+    if day in (None, "", "today", "tonight"):
+        return _moves._household_now().date().isoformat()
+    if day == "tomorrow":
+        return (_moves._household_now().date() + _timedelta(days=1)).isoformat()
+    return _moves._as_date(day).isoformat()
+
+
+def _day_words(on_date: str) -> str:
+    """"today", "tomorrow", or the weekday — how the rest of the app names
+    a day to a person, never the ISO date."""
+    today = _moves._household_now().date()
+    try:
+        d = _moves._as_date(on_date)
+    except (TypeError, ValueError):
+        return "that day"
+    if d == today:
+        return "today"
+    if d == today + _timedelta(days=1):
+        return "tomorrow"
+    if d == today - _timedelta(days=1):
+        return "yesterday"
+    return f"on {d.strftime('%A')}"
+
+
+def _title(move: dict) -> str:
+    return (move.get("title") or "").strip() or "that"
+
+
+def _said_line(title: str, name: str | None) -> str:
+    """The pop-up's words (S10: name the thing). Plain, one clause."""
+    if name:
+        return f"{name}’s on {title}"
+    return f"Nobody’s on {title} yet"
+
+
+def set_move_owner(move_id: str, member_id: int | None = None, day: str | None = None,
+                   clear: bool = False) -> dict:
+    """
+    Put one adult — or "Nobody yet" (member_id None) — on ONE move on ONE
+    day. Not a standing rule: the next move like it still takes the
+    household's default. `clear=True` takes the household's word back
+    off the move entirely, so the default shows again — what Undo uses
+    when there was no word before.
+
+    Raises ValueError, in words a person can read, for a move that isn't on
+    that day, a reheat, or somebody who isn't one of this household's
+    adults.
+    """
+    on_date = _day_iso(day)
+    move_id = (move_id or "").strip()
+    move = next((m for m in _moves.moves_for_day(on_date) if m.get("id") == move_id), None)
+    if move is None:
+        raise MoveOwnerRefused("That isn’t on the day any more.")
+    if move.get("kind") not in OWNABLE_KINDS:
+        raise MoveOwnerRefused("Nobody cooks a reheat, so there’s nobody to put on it.")
+
+    name = None
+    if not clear and member_id is not None:
+        adult = next((a for a in _shared.household_adults() if a["id"] == int(member_id)), None)
+        if adult is None:
+            raise MoveOwnerRefused("That’s not one of the adults here.")
+        member_id, name = adult["id"], (adult.get("name") or "").strip()
+
+    conn = get_conn()
+    try:
+        prior = conn.execute(
+            "SELECT member_id FROM move_owner_overrides "
+            "WHERE household_id = ? AND move_id = ? AND on_date = ?",
+            (household_id(), move_id, on_date),
+        ).fetchone()
+        if clear:
+            conn.execute(
+                "DELETE FROM move_owner_overrides "
+                "WHERE household_id = ? AND move_id = ? AND on_date = ?",
+                (household_id(), move_id, on_date),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO move_owner_overrides (household_id, move_id, on_date, member_id, set_by) "
+                "VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT (household_id, move_id, on_date) DO UPDATE SET "
+                "member_id = excluded.member_id, set_by = excluded.set_by, set_at = datetime('now')",
+                (household_id(), move_id, on_date, member_id, _shared.member_id()),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+    # Read back rather than assume: after a clear, the default is what
+    # shows, and only the real resolver knows what that is.
+    after = next((m for m in _moves.moves_for_day(on_date) if m.get("id") == move_id), move)
+    return {
+        "status": "cleared" if clear else "set",
+        "move_id": move_id,
+        "date": on_date,
+        "kind": move.get("kind"),
+        "title": _title(move),
+        "owner": after.get("owner"),
+        "owner_name": after.get("owner_name"),
+        # Enough for Undo to put things back EXACTLY: whether the household
+        # had said anything before this, and what.
+        "previous": {
+            "owner": move.get("owner"),
+            "owner_name": move.get("owner_name"),
+            "had_override": prior is not None,
+            "override_member_id": prior["member_id"] if prior is not None else None,
+        },
+        "said": _said_line(_title(move), after.get("owner_name")),
+    }
+
+
+def _find_adult(who: str) -> dict | None:
+    """
+    `who` as one of this household's adults: an exact name first, then a
+    first name, then — for two letters or more — a single adult whose name
+    starts with it ("Vin" -> Vineeth). One letter is too little to go on,
+    and two adults answering to the same words is a question, never a pick.
+    """
+    want = (who or "").strip().casefold()
+    adults = _shared.household_adults()
+
+    def _one(found: list[dict]) -> dict | None:
+        if len(found) > 1:
+            raise MoveOwnerRefused(
+                f"There\u2019s more than one {who.strip()} here \u2014 which one?")
+        return found[0] if found else None
+
+    name = lambda a: (a.get("name") or "").strip().casefold()
+    hit = _one([a for a in adults if name(a) == want])
+    if hit:
+        return hit
+    hit = _one([a for a in adults if (name(a).split() or [""])[0] == want])
+    if hit or len(want) < 2:
+        return hit
+    return _one([a for a in adults if name(a).startswith(want)])
+
+
+def change_move_owner(who: str, what: str = "cook", day: str | None = None,
+                      meal: str | None = None) -> dict:
+    """
+    The chat's way in: "Vineeth's cooking tonight", "I'll do the shop",
+    "nobody's on Thursday's dinner yet". Finds the one move meant and hands
+    it to set_move_owner — the same write the tap makes, so the two can't
+    differ.
+
+    `what` is 'cook' (the default) or 'shop'; a fridge move or prep follows
+    its cook on its own. `meal` narrows a cook to breakfast / lunch /
+    dinner; without it, a day's dinner is the one meant when it has one —
+    "tonight" is what people say. `who` is a name, "me", or "nobody".
+    """
+    on_date = _day_iso(day)
+    kind = (what or "cook").strip().lower()
+    if kind not in ("cook", "shop"):
+        raise MoveOwnerRefused("I can change who\u2019s cooking or who\u2019s shopping. Which did you mean?")
+
+    words = (who or "").strip().casefold()
+    if words in _NOBODY_WORDS:
+        member = None
+    elif words in _ME_WORDS:
+        member = _shared.current_member()
+        if member is None:
+            names = [a["name"] for a in _shared.household_adults()]
+            raise MoveOwnerRefused(f"Which of you is that? ({', '.join(names)})" if names
+                             else "There’s nobody on record to put on it yet.")
+    else:
+        member = _find_adult(who)
+        if member is None:
+            names = [a["name"] for a in _shared.household_adults()]
+            raise MoveOwnerRefused(
+                f"I don’t have a {who.strip()} among the adults here"
+                + (f" — did you mean {' or '.join(names)}?" if names else ".")
+            )
+
+    moves = [m for m in _moves.moves_for_day(on_date) if m.get("kind") == kind]
+    if kind == "cook" and meal:
+        moves = [m for m in moves if (m.get("slot") or "").lower() == meal.strip().lower()]
+    elif kind == "cook" and len(moves) > 1:
+        dinner = [m for m in moves if (m.get("slot") or "") == "dinner"]
+        moves = dinner or moves
+    when = _day_words(on_date)
+    if not moves:
+        if kind == "shop":
+            noun = "shop"
+        elif meal:
+            noun = f"{meal.strip().lower()} to cook"
+        else:
+            noun = "cook"
+        raise MoveOwnerRefused(f"There\u2019s no {noun} {when}.")
+    if len(moves) > 1:
+        if kind == "shop":
+            # A holiday's own shop beside the week's (big_meal.SHOP_MARK).
+            raise MoveOwnerRefused(
+                f"There\u2019s more than one shop {when}: "
+                + ", ".join(_title(m) for m in moves) + ". Which one?")
+        raise MoveOwnerRefused(
+            f"There\u2019s more than one cook {when}: "
+            + ", ".join(f"{m.get('slot') or 'a meal'} ({_title(m)})" for m in moves)
+            + ". Which one?")
+    return set_move_owner(moves[0]["id"], (member or {}).get("id"), on_date)

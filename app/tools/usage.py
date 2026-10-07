@@ -139,6 +139,7 @@ TOOLS_WITH_A_TAP = {
     "discard_draft_plan",       # Plan -> More -> Drop this draft
     "take_the_night_off",       # Today -> Tonight still good? -> Not tonight
     "set_member_attendance",    # Plan the week -> Is anyone out?
+    "change_move_owner",        # Today -> a row's "Who's on it?"
 }
 # Checked against agent.TOOL_FUNCTIONS by a test, and that test earned its
 # keep immediately: the first draft of this list named resolve_open_slot

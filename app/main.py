@@ -948,6 +948,16 @@ class MoveDoneRequest(BaseModel):
     date: str | None = None
 
 
+class MoveOwnerRequest(BaseModel):
+    # One adult's id, or None for "Nobody yet" (said on purpose).
+    member_id: int | None = None
+    # True takes the household's word off the move, so its default shows
+    # again — what Undo sends when nothing had been said before.
+    clear: bool = False
+    # The day the move sits on; omitted is the household's today.
+    date: str | None = None
+
+
 class FillRecipeRequest(BaseModel):
     recipe_name: str
 
@@ -3191,6 +3201,26 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
         logger.exception("Today's-move check-off failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return payload
+
+
+@app.post("/api/today/moves/{move_id}/owner")
+def today_move_owner(move_id: str, req: MoveOwnerRequest):
+    """
+    "Actually I've got tonight" — put one adult (or nobody) on ONE move on
+    ONE day (move_owner.set_move_owner; not a standing rule). Returns the
+    change under `change` — with what it was before, for Undo — beside the
+    refreshed timeline, so the row and the prep that follows its cook
+    re-render from one answer.
+    """
+    try:
+        change = tools.set_move_owner(move_id, req.member_id, req.date, clear=req.clear)
+        payload = tools.today_moves(req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Changing whose move it is failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {**payload, "change": change}
 
 
 @app.get("/api/today/yesterday")
@@ -6606,6 +6636,9 @@ _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
     "resolve_attention_item", "update_inventory", "update_inventory_items", "remove_inventory_item",
+    # Whose cook/shop it is: Today's rows and Cook's card both read it, and
+    # the `kitchen` branch of refreshStaleTabsFromActions re-reads both.
+    "change_move_owner",
 }
 _GROCERY_TOOLS = {
     "add_grocery_item", "add_grocery_items", "consolidate_grocery_list", "repair_grocery_quantities", "clear_stale_grocery_items",

@@ -2158,3 +2158,25 @@ CREATE TABLE IF NOT EXISTS recipe_sources (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_recipe_sources_research ON recipe_sources (household_id, research_id, position);
+
+-- "Every move has an owner (slice 2)", 2026-10-07: "actually I've got
+-- tonight", one tap or one sentence. A row here says who is on ONE move on
+-- ONE day, and nothing else — it is not a standing rule (that would be the
+-- cooking_role rhythm answer, which move_owner.py still reads for every
+-- move without a row). `move_id` is the move's own id from moves.py
+-- (cook:<entry>, prep:<task>, fridge:<task>, shop:<date>), and `on_date`
+-- is the day the move sat on when it was claimed: a dish later swapped to
+-- another night leaves its row behind rather than dragging "Vineeth's got
+-- it" onto a night he never said. member_id NULL is "Nobody yet", said on
+-- purpose, which is different from no row (the household's default).
+-- A removed adult takes their rows with them, so the move falls back to
+-- the default rather than naming somebody who isn't here.
+CREATE TABLE IF NOT EXISTS move_owner_overrides (
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    move_id TEXT NOT NULL,
+    on_date TEXT NOT NULL,
+    member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
+    set_by INTEGER,
+    set_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (household_id, move_id, on_date)
+);
