@@ -42,6 +42,15 @@ why*, not duplicating the diff.
   (Keep on a carried line). Staples sync and before-shop regulars still
   treat an excluded line as "already on the list" — deliberate, unchanged.
   Tests `tests/test_grocery_excluded_line_no_merge.py`.
+- **No screen copy names Emily** (2026-10-07, defect hunt; branch
+  `overnight/feedback-not-emily`). Every household saw "Tell Emily what
+  happened", "Send Emily a note", "Emily reads every one" and "text her
+  too". Now "Tell us what happened", "Something not working? Tell us",
+  "Send us a note", "Got it — we read every one of these.", and the help
+  sheet's "I'll pass it straight to the team." / "Sent — thanks, we read
+  every one." `tests/test_no_screen_copy_names_emily.py` strips comments
+  and fails on "Emily" in any static/ string or markup; `static/legal/` is
+  skipped (its `[Lawyer / Emily: …]` fill is Emily's to settle).
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

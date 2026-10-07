@@ -532,7 +532,7 @@ def test_the_tips_sheet_ends_with_the_help_card_not_an_email_address():
     address (Emily: in-app submission only)."""
     assert 'class="tips-help-row" data-snw="open" data-snw-screen="Helpful tips"' in SHELL_JS
     assert "Need help with something?" in SHELL_JS
-    assert "Send Emily a note" in SHELL_JS
+    assert "Send us a note" in SHELL_JS
     tips_sheet = SHELL_JS[SHELL_JS.index("function buildTipsSheet"):SHELL_JS.index("function openTipsSheet")]
     assert "@" not in tips_sheet
 

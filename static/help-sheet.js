@@ -36,9 +36,9 @@
 
   var HELP_TITLE = 'Need a hand?';
   var SNW_TITLE = 'Something not working?';
-  var SNW_LINE = 'Tell me what happened and I’ll pass it straight to Emily.';
+  var SNW_LINE = 'Tell me what happened and I’ll pass it straight to the team.';
   var SNW_PLACEHOLDER = 'Even half a sentence helps';
-  var SNW_SENT = 'Sent — thanks, Emily reads every one.';
+  var SNW_SENT = 'Sent — thanks, we read every one.';
   var SNW_CLOSE_AFTER_MS = 1600;
 
   // The Swap row's icon is the Swap button's own (onboarding.html's
