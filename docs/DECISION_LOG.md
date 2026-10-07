@@ -196,6 +196,22 @@ why*, not duplicating the diff.
   takeover or custom range is the week already on screen (dead button);
   the pin lets go after the load that shows that plan approved. Tests
   `tests/test_see_next_weeks_draft.py`.
+- **Shop's "Two rows of X · Merge" is the server's answer, and Merge adds**
+  (2026-10-07, defect hunt; branch `overnight/shop-merge-keeps-both-weeks`).
+  With next week approved early, Shop grouped needed lines by lowercased name
+  (18-27 prompts, each week's line kept apart on purpose — 2026-10-02) and
+  Merge kept the first line and removed the rest (next week's 2 dozen eggs
+  gone, with its ledger). Now `/api/grocery-list/by-store` stamps
+  `duplicates` from `tools.mergeable_duplicate_groups()` (consolidate's own
+  rule, dry-run: never two plans, never amounts that can't be added) and
+  Merge posts `/api/grocery-list/merge` → `consolidate_grocery_list(only_ids=)`,
+  which now also moves a folded line's `meal_plan_grocery_links` to the line
+  that stays (the cascade used to drop them). Lines carry
+  `source_weekly_plan_id`. Review fixes: a line that takes a household's own
+  line becomes standing (`source_weekly_plan_id` NULL, as add_grocery_item's
+  keep_standing) so dropping the meals can't delete their amount; it takes an
+  absorbed staple's `staple_id`; and a standing line never gathers two
+  different weeks into one group. Tests `tests/test_shop_merge_keeps_both_weeks.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

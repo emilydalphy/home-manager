@@ -209,7 +209,10 @@ def test_a_list_row_keeps_its_quiet_row_action():
 
 def test_two_rows_of_the_same_thing_get_one_quiet_line():
     _in("function groDuplicateGroups(", SHELL_JS, "the duplicate detection", "shell.js")
-    _in("(it.item || '').trim().toLowerCase()", SHELL_JS, "its grouping key", "shell.js")
+    # The grouping is the server's since 2026-10-07 (mergeable_duplicate_groups;
+    # tests/test_shop_merge_keeps_both_weeks.py) — a same-name key put
+    # this week's and next week's eggs in one "Two rows of".
+    _in("(data.duplicates || [])", SHELL_JS, "its grouping, read off the server", "shell.js")
     _in("return g.length > 1;", SHELL_JS, "what counts as a duplicate", "shell.js")
     _in("function groDuplicatesHtml(", SHELL_JS, "the line", "shell.js")
     _in("' rows of '", SHELL_JS, "its copy — \"Two rows of spinach\"", "shell.js")

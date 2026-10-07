@@ -1181,7 +1181,7 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     if status == "bought":
         since = list_built_at()
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id, source_weekly_plan_id FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 0 AND (status = 'in_cart' "
             "OR (status = 'purchased' AND inventory_added_at IS NOT NULL AND inventory_added_at >= ?)) "
             "ORDER BY category, item",
@@ -1189,19 +1189,19 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
         ).fetchall()
     elif status == "excluded":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id, source_weekly_plan_id FROM grocery_items "
             "WHERE household_id = ? AND excluded_from_list = 1 ORDER BY category, item",
             (household_id(),),
         ).fetchall()
     elif status == "all":
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id, source_weekly_plan_id FROM grocery_items "
             "WHERE household_id = ? ORDER BY category, item",
             (household_id(),),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, store_decided, excluded_from_list, already_have_reviewed, added_by, staple_id, source_weekly_plan_id FROM grocery_items "
             "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY category, item",
             (household_id(), status),
         ).fetchall()
@@ -1334,7 +1334,109 @@ def get_grocery_list_by_section(status: str = "needed") -> dict:
     return {"sections": [{"section": s, "items": sections[s]} for s in _quantities._GROCERY_SECTION_ORDER if sections[s]]}
 
 
-def consolidate_grocery_list(status: str = "needed") -> dict:
+def _consolidation_plan(rows) -> list[dict]:
+    """
+    Which lines on the list would fold into which, by consolidate's rule —
+    worked out without writing anything, so the Shop tab's "Two rows of
+    eggs · Merge" can offer exactly the merges that would happen and no
+    others (consolidate_grocery_list below, and mergeable_duplicate_groups).
+
+    Returns one keeper per surviving line: the row plus `merged_qty`,
+    `keep_name` and `absorbed_ids` (the lines it would take in).
+    """
+    groups: dict[str, list[dict]] = {}
+    for r in rows:
+        groups.setdefault(_merge_key(r["item"]), []).append(dict(r))
+
+    out: list[dict] = []
+    for entries in groups.values():
+        # Each line folds into the first earlier line it may join, by the
+        # same rule add_grocery_item's merge follows (_merge_target): two
+        # DIFFERENT plans' amount lines never fold together (QA walk
+        # 2026-10-02 — with next week approved while this week still runs,
+        # both weeks' turkey is on the list on purpose, and folding them
+        # put next week's amount on tonight's line and deleted next week's
+        # line with its ledger). A person's line may still take a plan's.
+        keepers: list[dict] = []
+        for entry in entries:
+            plan = entry["source_weekly_plan_id"]
+            target = None
+            for k in keepers:
+                # The plans already in this keeper's group, not just its own:
+                # a household's line (no plan) that took this week's eggs
+                # must not then take next week's too — two weeks folded
+                # through a third line is still two weeks folded.
+                if plan is not None and any(p is not None and p != plan for p in k["plans"]):
+                    continue
+                # Two lines the list keeps apart on purpose — a person's "1"
+                # beside a plan's "2 cups" (see _merge_target) — stay apart
+                # here too, rather than being glued into the "1 + 2 cups"
+                # nothing can take back apart.
+                candidate, reconciled = _try_consolidate_quantity(k["merged_qty"], entry["quantity"] or "")
+                if reconciled:
+                    target = (k, candidate)
+                    break
+            if target is None:
+                keepers.append(dict(entry, merged_qty=entry["quantity"] or "", keep_name=entry["item"],
+                                    absorbed_ids=[], plans={plan}, standing=plan is None,
+                                    staple=entry.get("staple_id")))
+                continue
+            k, candidate = target
+            k["merged_qty"] = candidate
+            # The variety's name on a plan's line; a person's typed line
+            # keeps its wording, as it does in add_grocery_item.
+            if k["source_weekly_plan_id"] is not None:
+                k["keep_name"] = _more_specific_name(k["keep_name"], entry["item"])
+            k["absorbed_ids"].append(entry["id"])
+            k["plans"].add(plan)
+            # A household's own amount inside the line makes the whole line
+            # theirs, as add_grocery_item's keep_standing does: a plan-owned
+            # line is deleted when its meals go, and would take their
+            # "2 bunches" with it. Standing, the restate path takes only the
+            # meals' share back off (_restate_standing_want).
+            if plan is None:
+                k["standing"] = True
+            if not k["staple"] and entry.get("staple_id"):
+                k["staple"] = entry["staple_id"]
+        out.extend(keepers)
+    return out
+
+
+def _consolidation_rows(conn, status: str, only_ids=None):
+    # excluded_from_list rows are hidden from the list on purpose ("we get
+    # those at the market"). Folding a visible line into a hidden one --
+    # which happened whenever the hidden row had the lower id -- made the
+    # visible line disappear and parked its quantity somewhere nobody can
+    # see. They are left out of consolidation entirely instead.
+    rows = conn.execute(
+        "SELECT id, item, quantity, category, source_weekly_plan_id, staple_id FROM grocery_items "
+        "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY id",
+        (household_id(), status),
+    ).fetchall()
+    if only_ids is not None:
+        wanted = {int(i) for i in only_ids}
+        rows = [r for r in rows if r["id"] in wanted]
+    return rows
+
+
+def mergeable_duplicate_groups() -> list[list[int]]:
+    """
+    The Shop tab's "Two rows of X · Merge" groups: each is a line and the
+    lines consolidate would fold into it, keeper first. Lines from two
+    different weeks' plans are never a group (they are kept apart on
+    purpose — see _merge_target), and neither are two lines whose amounts
+    can't be added ("1" beside "2 cups"): a Merge there could only keep one
+    amount and lose the other, which is the bug this replaced (Loop Board,
+    defect hunt 2026-10-07 — Merge on this week's 1 dozen eggs and next
+    week's 2 dozen left "1 dozen").
+    """
+    conn = get_conn()
+    rows = _consolidation_rows(conn, "needed")
+    conn.close()
+    return [[k["id"]] + k["absorbed_ids"] for k in _consolidation_plan(rows) if k["absorbed_ids"]]
+
+
+def consolidate_grocery_list(status: str = "needed", only_ids: list[int] | None = None) -> dict:
     """
     Merge any duplicate lines already on the list (the same item name
     ignoring case and singular/plural) into one line each, combining
@@ -1348,70 +1450,41 @@ def consolidate_grocery_list(status: str = "needed") -> dict:
     consolidation shipped shouldn't duplicate going forward, but this
     cleans up anything added before that, or any way it happens to slip
     through.
+
+    only_ids limits it to those lines (the Shop tab's Merge on one "Two
+    rows of" group). A line folded away hands its meal ledger rows to the
+    line that took its amount, so dropping or swapping one of those meals
+    later still takes its share back off the list.
     """
     conn = get_conn()
-    # excluded_from_list rows are hidden from the list on purpose ("we get
-    # those at the market"). Folding a visible line into a hidden one --
-    # which happened whenever the hidden row had the lower id -- made the
-    # visible line disappear and parked its quantity somewhere nobody can
-    # see. They are left out of consolidation entirely instead.
-    rows = conn.execute(
-        "SELECT id, item, quantity, category, source_weekly_plan_id FROM grocery_items "
-        "WHERE household_id = ? AND status = ? AND excluded_from_list = 0 ORDER BY id",
-        (household_id(), status),
-    ).fetchall()
-
-    groups: dict[str, list[dict]] = {}
-    for r in rows:
-        groups.setdefault(_merge_key(r["item"]), []).append(dict(r))
-
+    rows = _consolidation_rows(conn, status, only_ids)
     merged_count = 0
-    for entries in groups.values():
-        if len(entries) < 2:
+    for k in _consolidation_plan(rows):
+        if not k["absorbed_ids"]:
             continue
-        # Each line folds into the first earlier line it may join, by the
-        # same rule add_grocery_item's merge follows (_merge_target): two
-        # DIFFERENT plans' amount lines never fold together (QA walk
-        # 2026-10-02 — with next week approved while this week still runs,
-        # both weeks' turkey is on the list on purpose, and folding them
-        # put next week's amount on tonight's line and deleted next week's
-        # line with its ledger). A person's line may still take a plan's.
-        keepers: list[dict] = []
-        for entry in entries:
-            plan = entry["source_weekly_plan_id"]
-            target = None
-            for k in keepers:
-                if k["source_weekly_plan_id"] is not None and plan is not None and k["source_weekly_plan_id"] != plan:
-                    continue
-                # Two lines the list keeps apart on purpose — a person's "1"
-                # beside a plan's "2 cups" (see _merge_target) — stay apart
-                # here too, rather than being glued into the "1 + 2 cups"
-                # nothing can take back apart.
-                candidate, reconciled = _try_consolidate_quantity(k["merged_qty"], entry["quantity"] or "")
-                if reconciled:
-                    target = (k, candidate)
-                    break
-            if target is None:
-                keepers.append(dict(entry, merged_qty=entry["quantity"] or "", keep_name=entry["item"], absorbed=0))
-                continue
-            k, candidate = target
-            k["merged_qty"] = candidate
-            # The variety's name on a plan's line; a person's typed line
-            # keeps its wording, as it does in add_grocery_item.
-            if k["source_weekly_plan_id"] is not None:
-                k["keep_name"] = _more_specific_name(k["keep_name"], entry["item"])
+        for gone in k["absorbed_ids"]:
+            # Before the delete, whose ON DELETE CASCADE would otherwise
+            # drop the meal's share with the line (schema.sql).
+            conn.execute(
+                "UPDATE meal_plan_grocery_links SET grocery_item_id = ? "
+                "WHERE grocery_item_id = ? AND household_id = ?",
+                (k["id"], gone, household_id()),
+            )
             conn.execute(
                 "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
-                (entry["id"], household_id()),
+                (gone, household_id()),
             )
-            k["absorbed"] += 1
             merged_count += 1
-        for k in keepers:
-            if k["absorbed"]:
-                conn.execute(
-                    "UPDATE grocery_items SET item = ?, quantity = ? WHERE id = ? AND household_id = ?",
-                    (k["keep_name"], k["merged_qty"], k["id"], household_id()),
-                )
+        conn.execute(
+            # The staple's link goes with its amount, or Shop's Remove on
+            # the merged line can't say "not this trip" and the next read
+            # puts the staple straight back (staples.note_line_removed).
+            "UPDATE grocery_items SET item = ?, quantity = ?, "
+            "source_weekly_plan_id = CASE WHEN ? THEN NULL ELSE source_weekly_plan_id END, "
+            "staple_id = COALESCE(staple_id, ?) WHERE id = ? AND household_id = ?",
+            (k["keep_name"], k["merged_qty"], 1 if k["standing"] else 0, k["staple"],
+             k["id"], household_id()),
+        )
     conn.commit()
     conn.close()
     return {"lines_merged_away": merged_count}
