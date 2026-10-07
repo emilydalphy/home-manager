@@ -861,7 +861,7 @@ def _write_cook_sides(plan_id: int, targets: dict, frozen: list, out: dict) -> N
                 have = [have]
             merged = sorted(set(have) | set(keys), key=lambda t: t.split(":")[0])
             derived["make_double_for"] = merged
-            derived["make_double_note"] = _weekly_plan._make_double_note_text(merged)
+            derived["make_double_note"] = _weekly_plan._make_double_note_text(merged, row["slot"])
             conn.execute(
                 "UPDATE meal_plan_entries SET derived_from_json = ? "
                 "WHERE id = ? AND household_id = ?",

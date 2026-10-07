@@ -632,19 +632,35 @@ def batch_last_step_note(source: dict, batch: dict, today: str | None = None) ->
     return f"Pack {_servings_words(share)} {where}."
 
 
+def _covers_label(cook_date: str, slot: str | None, today: str) -> str:
+    """
+    What "covers ___" names for the cook itself. "tonight" was hard-coded
+    for any cook dated today, so a lunch batch read "Cooking for 4 — covers
+    tonight and leftovers on Friday" on Today (defect hunt, 2026-10-07).
+    Only dinner says "tonight"; any other cook today is named by its
+    meal ("covers lunch today") — _cook_label's "at lunch" doesn't read
+    after "covers". Any other day is still the weekday, as before.
+    """
+    if cook_date != today:
+        return _weekday(cook_date)
+    meal = _slot_word(slot)
+    return "tonight" if meal == "dinner" else f"{meal} today"
+
+
 def covers_note(source: dict, servings: int, today: str | None = None) -> str:
     """
     The little note that goes under the "for 6" chip on the one night this
     is cooked: "Cooking for 6 — covers tonight and leftovers on Thursday."
 
-    Names the cook night as "tonight" only when it really is today, and as
+    Names the cook night as "tonight" only when it really is today's
+    dinner ("lunch today" / "breakfast today" for those), and as
     the weekday otherwise, so the same card is honest read on Sunday and
     read on the night itself (DESIGN_SYSTEM.md §8: time the way a person
     would say it). The leftover nights are always named — "and leftovers"
     on its own would leave the person counting.
     """
     today = today or _household_today_iso()
-    cook_label = "tonight" if source["date"] == today else _weekday(source["date"])
+    cook_label = _covers_label(source["date"], source.get("slot"), today)
     # Portions for the freezer are said, not hidden inside the number: a
     # cook told "for 6" at a table of 3 with no reason given halves it.
     extra = int(source.get("freezer_servings") or 0)

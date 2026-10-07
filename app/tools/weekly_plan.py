@@ -2901,10 +2901,7 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
                 targets.append(target)
             targets.sort(key=lambda t: t.split(":")[0])
             day_names = [date.fromisoformat(t.split(":")[0]).strftime("%A") for t in targets]
-            source_derived["make_double_note"] = (
-                f"I’ll set aside a double batch tonight — {_join_with_and(day_names)} "
-                f"{'eats' if len(day_names) == 1 else 'eat'} the leftovers."
-            )
+            source_derived["make_double_note"] = _make_double_note_text(targets, source["slot"])
             source_derived["make_double_for"] = targets
             conn.execute(
                 "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
@@ -3006,22 +3003,30 @@ def _freeze_instead(row, source, derived: dict, links_to: str) -> None:
         conn.close()
 
 
-def _make_double_note_text(targets: list[str]) -> str:
+def _make_double_note_text(targets: list[str], slot: str | None = None) -> str:
     """
-    The same "I'll set aside a double batch..." sentence
-    repair_leftover_chains writes the first time a source is confirmed —
-    rebuilt here for a source that's losing a target (a swapped or cleared
-    reheat night) rather than gaining one. Reuses _join_with_and, the one
-    piece of that construction worth not copying a second time; the rest
-    is intentionally identical wording so a source note never reads
-    differently depending on which direction last touched it.
+    The "I'll set aside a double batch..." sentence a chain source carries —
+    written by repair_leftover_chains the first time a source is confirmed,
+    and rebuilt here by every path that changes its targets, so a source
+    note never reads differently depending on which direction last
+    touched it.
+
+    `slot` is the COOK's slot. The note used to say "tonight" for every
+    cook, so a lunch batch's note read "I'll set aside a double batch
+    tonight" (defect hunt, 2026-10-07) — and this note is what the Cook
+    card and Today show when the batch can't be counted
+    (cooker._apply_leftover_chains' fallback). Only dinner says "tonight";
+    unknown (None) keeps the dinner wording, which is what every caller
+    meant before it passed one.
     """
+    meal = (slot or "dinner").strip().lower() or "dinner"
+    when = "tonight" if meal == "dinner" else f"at {meal}"
     day_names = [
         date.fromisoformat(t.split(":")[0]).strftime("%A")
         for t in sorted(targets, key=lambda t: t.split(":")[0])
     ]
     return (
-        f"I’ll set aside a double batch tonight — {_join_with_and(day_names)} "
+        f"I’ll set aside a double batch {when} — {_join_with_and(day_names)} "
         f"{'eats' if len(day_names) == 1 else 'eat'} the leftovers."
     )
 
@@ -3099,7 +3104,7 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
         targets = [t for t in targets if t != target]
         if targets:
             source_derived["make_double_for"] = targets
-            source_derived["make_double_note"] = _make_double_note_text(targets)
+            source_derived["make_double_note"] = _make_double_note_text(targets, source["slot"])
         else:
             # No target left at all — plan_leftover_chains stops treating this
             # entry as a source the moment make_double_for is gone, which is
@@ -7832,7 +7837,7 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
                 kept = [f"{t['date']}:{t['slot']}" for t in source["targets"] if t["entry_id"] in chain_group]
                 if kept:
                     fields["make_double_for"] = kept
-                    fields["make_double_note"] = _make_double_note_text(kept)
+                    fields["make_double_note"] = _make_double_note_text(kept, source.get("slot"))
             reheat = chains["leftovers"].get(old_id)
             if old_id in chain_group and reheat and reheat["source"]["entry_id"] in chain_group:
                 fields["links_to"] = f"{reheat['source']['date']}:{reheat['source']['slot']}"
@@ -8006,7 +8011,7 @@ def restore_leftover_chain(weekly_plan_id: int, cook_id: int, chain: dict) -> li
         cook_derived["make_double_for"] = keys
         cook_derived["make_double_note"] = (
             (chain.get("make_double_note") or "") if len(relinked) == len(targets) else ""
-        ) or _make_double_note_text(keys)
+        ) or _make_double_note_text(keys, cook["slot"])
         conn.execute(
             "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
             (json.dumps(cook_derived), cook_id, household_id()),
