@@ -1544,16 +1544,17 @@ def mark_defrost_asked(weekly_plan_id: int) -> None:
 # its arithmetic (lead_hours_for_item, _move_date, _describe) and nothing
 # else.
 
-def _grocery_line_first_meal(conn, item_id: int) -> dict | None:
+def _grocery_line_meals(conn, item_id: int) -> list[dict]:
     """
-    The first cook night a grocery line feeds, read off the ledger:
-    {entry_id, weekly_plan_id, date, meal, item} or None when no meal
-    recorded the line. A component-based plan's entries carry a
-    placeholder date (see schema.sql on meal_plan_entries.component_category)
-    and are left out; so is an entry with no plan, which the defrost row
-    could not be filed under.
+    Every cook night a grocery line feeds, read off the ledger, earliest
+    first: [{entry_id, weekly_plan_id, date, meal, item}]. A
+    component-based plan's entries carry a placeholder date (see
+    schema.sql on meal_plan_entries.component_category) and are left out;
+    so is an entry with no plan, which the defrost row could not be filed
+    under. So is a night that will not be cooked from this pack any more:
+    already cooked, skipped, or a deliberately empty slot.
     """
-    row = conn.execute(
+    rows = conn.execute(
         "SELECT l.item AS link_item, e.id AS entry_id, e.weekly_plan_id, e.date, "
         "COALESCE(r.name, e.freeform_meal) AS meal "
         "FROM meal_plan_grocery_links l "
@@ -1562,15 +1563,38 @@ def _grocery_line_first_meal(conn, item_id: int) -> dict | None:
         "WHERE l.household_id = ? AND l.grocery_item_id = ? "
         "AND e.household_id = ? AND e.weekly_plan_id IS NOT NULL "
         "AND e.component_category IS NULL "
-        "ORDER BY e.date ASC, e.id ASC LIMIT 1",
+        "AND COALESCE(e.cooked_status, 'pending') != 'done' AND e.skipped_at IS NULL "
+        "AND COALESCE(e.slot_state, 'planned') != 'planned_empty' "
+        "AND e.date IS NOT NULL AND e.date != '' "
+        "ORDER BY e.date ASC, e.id ASC",
         (household_id(), item_id, household_id()),
-    ).fetchone()
-    if row is None or not row["date"]:
-        return None
-    return {
+    ).fetchall()
+    return [{
         "entry_id": row["entry_id"], "weekly_plan_id": row["weekly_plan_id"],
         "date": row["date"], "meal": row["meal"] or "dinner", "item": (row["link_item"] or "").strip(),
-    }
+    } for row in rows]
+
+
+def _grocery_line_first_meal(conn, item_id: int, line_item: str, today: date,
+                             dinner_window: str | None) -> dict | None:
+    """
+    The cook night a grocery line's freezer question is about: the
+    earliest night it feeds whose move to the fridge is still ahead on the
+    household's clock, or — when every night's move has gone by — the
+    earliest night, so the caller's too-late refusal still says so. None
+    when no meal recorded the line.
+
+    Why not simply the earliest night (what this was until 2026-10-07): a
+    pack bought for Monday and Saturday, ticked on Wednesday, was asked
+    about Monday — gone — so the question never showed and a yes was
+    refused "too late", though Saturday's thaw was days ahead.
+    """
+    meals = _grocery_line_meals(conn, item_id)
+    for meal in meals:
+        lead_hours, _tier = lead_hours_for_item(meal["item"] or line_item)
+        if date.fromisoformat(_move_date(meal["date"], lead_hours, dinner_window)) >= today:
+            return meal
+    return meals[0] if meals else None
 
 
 def _settled_move_for_entry(conn, entry_id: int, names: set[str]):
@@ -1625,7 +1649,8 @@ def freezing_offer_for_grocery_line(line: dict, *, conn=None, today: date | None
         dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
     c = get_conn() if own_conn else conn
     try:
-        meal = _grocery_line_first_meal(c, int(line["id"]))
+        meal = _grocery_line_first_meal(c, int(line["id"]), (line.get("item") or "").strip(),
+                                        today, dinner_window)
         if meal is None:
             return None
         item_name = meal["item"] or (line.get("item") or "").strip()
@@ -1732,7 +1757,7 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
         ).fetchone()
         line = dict(line)
         if not freezing:
-            meal = _grocery_line_first_meal(conn, item_id)
+            meal = _grocery_line_first_meal(conn, item_id, line["item"].strip(), today, dinner_window)
             removed = None
             if meal is not None:
                 row = _settled_move_for_entry(conn, meal["entry_id"], {meal["item"], line["item"]})
@@ -1744,7 +1769,7 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
 
         if not _is_meat_ingredient(line):
             raise FreezingNotOffered("That's not something to thaw.")
-        meal = _grocery_line_first_meal(conn, item_id)
+        meal = _grocery_line_first_meal(conn, item_id, line["item"].strip(), today, dinner_window)
         if meal is None:
             raise FreezingNotOffered("No meal on the plan is waiting on that.")
         item_name = meal["item"] or line["item"].strip()

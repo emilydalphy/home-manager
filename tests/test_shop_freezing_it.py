@@ -308,3 +308,70 @@ def test_todays_cook_group_shows_the_booked_move_exactly_as_any_other(signed_in)
     assert move["reason"] == "for Thursday's Chicken Skewers"
     assert move["id"] == f"fridge:{booked['prep_task_id']}" and move["tickable"] is True
     assert move["action"] == {"label": "Done", "target": {"kind": "check_prep", "taskId": booked["prep_task_id"]}}
+
+
+# ---------- a line that also fed a night already gone (2026-10-07) ----------
+#
+# Chicken bought for Monday and Saturday, ticked on Wednesday: the question
+# used to be about Monday — gone — so it never showed and a yes was refused
+# "too late", though Saturday's thaw was days ahead. The night asked about
+# is the first one whose move is still ahead on the household's clock.
+
+def _plan_around_today(offsets):
+    """One plan starting yesterday (so it contains every night named), one
+    Chicken Skewers dinner per day offset from TODAY, all on one list line."""
+    _recipe("Chicken Skewers", "Chicken thighs")
+    start = TODAY - datetime.timedelta(days=1)
+    plan_id = tools.create_weekly_plan(start.isoformat())["weekly_plan_id"]
+    for off in offsets:
+        tools.plan_meal((TODAY + datetime.timedelta(days=off)).isoformat(), "Chicken Skewers", slot="dinner",
+                        weekly_plan_id=plan_id, add_ingredients_to_grocery_list=True)
+    return plan_id
+
+
+def test_a_line_that_also_fed_a_gone_night_is_asked_about_the_next_one(signed_in):
+    _plan_around_today([-1, 5])
+    later = TODAY + datetime.timedelta(days=5)
+    move = later - datetime.timedelta(days=2)  # the 48h everyday-cut lead
+    line = _line(signed_in, "Chicken thighs")
+
+    offer = line["freezing"]
+    assert offer["cook_date"] == later.isoformat(), "the night still ahead, not yesterday's"
+    assert offer["move_date"] == move.isoformat()
+    assert offer["move_label"] == f"{move.strftime('%A')} night"
+
+    signed_in.post(f"/api/grocery-list/{line['id']}/status", json={"status": "purchased"})
+    res = signed_in.post(f"/api/grocery-list/{line['id']}/freezing", json={"answer": "freezer"})
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["task_date"] == move.isoformat() and body["date"] == later.isoformat()
+    assert body["move_label"] == f"{move.strftime('%A')} night"
+    rows = _defrost_rows()
+    assert len(rows) == 1 and rows[0]["task_date"] == move.isoformat()
+    assert rows[0]["description"].endswith(f"for {later.strftime('%A')}'s Chicken Skewers.")
+
+    # Put back finds the same night's move.
+    back = signed_in.post(f"/api/grocery-list/{line['id']}/freezing", json={"answer": "fridge"}).json()
+    assert back["removed_prep_task_id"] == body["prep_task_id"] and _defrost_rows() == []
+
+
+def test_a_line_whose_only_nights_are_gone_is_still_refused(signed_in):
+    _plan_around_today([-1, 1])  # yesterday, and tomorrow (its 48h move was yesterday)
+    line = _line(signed_in, "Chicken thighs")
+    assert "freezing" not in line
+    res = signed_in.post(f"/api/grocery-list/{line['id']}/freezing", json={"answer": "freezer"})
+    assert res.status_code == 400 and defrost.TOO_LATE_TO_THAW_NOTE in res.text
+    assert _defrost_rows() == []
+
+
+def test_a_night_already_cooked_is_not_the_one_asked_about(signed_in):
+    """The first night still ahead but already cooked (made early) is not
+    what this pack is for any more: the next night is."""
+    plan_id = _plan_around_today([3, 5])
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET cooked_status = 'done' WHERE weekly_plan_id = ? AND date = ?",
+                 (plan_id, (TODAY + datetime.timedelta(days=3)).isoformat()))
+    conn.commit()
+    conn.close()
+    offer = _line(signed_in, "Chicken thighs")["freezing"]
+    assert offer["cook_date"] == (TODAY + datetime.timedelta(days=5)).isoformat()
