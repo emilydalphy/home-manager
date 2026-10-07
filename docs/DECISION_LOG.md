@@ -151,6 +151,15 @@ why*, not duplicating the diff.
   /plan-week too (review): `/api/week/planning-period` carries the household's
   `today`, and its `todayIso()` (Today tile, day tiles, clampStart) reads it.
   Tests `tests/test_one_clock_for_today.py` (node with TZ ≠ household zone).
+- **The morning report says whether an error is from the build running now**
+  (2026-10-07; branch `overnight/report-names-current-build`). The "on:" line
+  printed "build 88371c1871a7" with nothing to compare it to. `/api/health-report`
+  now returns top-level `app_version` (the same `_app_version()` that stamps
+  every client error, so like is compared with like, no second request);
+  `_collect_over_token` copies it onto each household as `current_build`, and
+  the line ends "— not the build running now (a1b2c3d4e5f6)" or "— the build
+  running now". Unknown (local file, older deployment, off Railway): build
+  alone, never a guess. Compared over the shorter length, min 7 chars.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
