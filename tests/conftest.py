@@ -79,6 +79,8 @@ _TABLES = [
     # before both of those.
     # slot_attendance references away_stretches and members, so it is wiped
     # before both.
+    # move_credits references members, so it goes before them (2026-10-07).
+    "move_credits",
     "slot_attendance", "slot_needs", "away_stretches", "household_rhythm",
     "meal_plan_grocery_links", "prep_tasks", "meal_plan_entries", "weekly_plans", "week_intake",
     # pre_shop_decisions deliberately outlives the grocery line it is
