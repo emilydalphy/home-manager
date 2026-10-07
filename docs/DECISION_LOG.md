@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **One clock for "today" on every screen** (2026-10-07, defect hunt; branch
+  `overnight/one-clock-for-today`). Today's band, Cook's eyebrow/tonight/
+  "Tomorrow" labels and the needs-you band read the PHONE's date while Plan
+  read the payload's household date, so a phone west of Toronto showed
+  Tuesday beside Plan's Wednesday every evening. `/api/whoami` now sends
+  `timezone` (and `today`); `todayLocalStr()` reads the household zone
+  through Intl (no stored date, so it still rolls over at the household's
+  midnight), `householdHourNow()` gives cookTonightIndex its hour, and
+  bandDateLabel/tomorrowLocalStr/thisWeekStartLocal derive from it. The
+  phone's clock is only the fallback (no zone yet, unknown zone). Each
+  helper is self-contained because harnesses lift single functions.
+  Tests `tests/test_one_clock_for_today.py` (node with TZ ≠ household zone).
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

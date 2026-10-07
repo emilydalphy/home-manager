@@ -755,6 +755,7 @@ def test_the_kitchen_root_renders_the_net_in_its_get_ready_rows():
 
 _TOMORROW_JS = (
     "var COOK_SLOT_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];\n"
+    + _function("todayLocalStr") + "\n"
     + _function("tomorrowLocalStr") + "\n"
     + _function("cookSlotRank") + "\n"
     + _function("cookTomorrowHasPrepOrDefrost") + "\n"

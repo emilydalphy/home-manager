@@ -8338,9 +8338,18 @@ def whoami(request: Request):
         # Only on a pick: the overnight report reads this route with none,
         # and must not mark a lone adult as having joined on its say-so.
         invites.mark_joined(current, member["id"])
+    # The household's clock (cooker.household_zone / household_today): the
+    # shell reads "today" off the zone rather than the phone's own date, so
+    # Today, Cook and Plan name the same day wherever the phone is
+    # (defect hunt 2026-10-07 — a phone west of Toronto showed Tuesday on
+    # Today and Cook while Plan, and the server, were on Wednesday).
+    from app.tools import cooker as _cooker
+    zone = _cooker.household_zone()
     return {
         "household_id": current,
         "household_name": row["name"] if row else "",
+        "timezone": getattr(zone, "key", "") or "",
+        "today": _cooker.household_today().isoformat(),
         "member": member,
         "adults": adults,
         "needs_pick": member is None and len(adults) > 1,
