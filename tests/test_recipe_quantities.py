@@ -565,3 +565,45 @@ def test_a_recipe_with_no_saved_steps_is_not_flagged():
     }]
 
     assert [v for v in plan_quality.check_week(entries, {}) if v.rule == "steps_match_ingredients"] == []
+
+
+# ---------- a stated can count is kept (defect hunt, 2026-10-07) ----------
+
+def _tacos():
+    tools.add_recipe(
+        "Black Bean Tacos",
+        ingredients=[
+            {"item": "black beans", "qty": "2 cans"},
+            {"item": "chickpeas", "qty": "2 cans"},
+            {"item": "diced tomatoes", "qty": "1 can"},
+        ],
+        default_servings=4,
+    )
+
+
+def test_two_cans_of_beans_stay_two_cans_at_the_recipes_own_size():
+    """'2 cans black beans' lacks only a size; the table's per-4 '1 can'
+    used to replace the count and halve the beans."""
+    _tacos()
+    own = {i["item"]: i for i in tools.scale_recipe("Black Bean Tacos", 4)["scaled_ingredients"]}
+    assert own["black beans"]["qty"] == "2 cans (15 oz)"
+    assert own["chickpeas"]["qty"] == "2 cans (15 oz)"
+    assert own["black beans"]["shopping_qty"] == "2 cans"
+    # One can stays one can, sized from the table as before.
+    assert own["diced tomatoes"]["qty"] == "1 can (14 oz)"
+
+
+def test_half_the_table_opens_half_the_cans_and_double_opens_twice_as_many():
+    _tacos()
+    half = {i["item"]: i["qty"] for i in tools.scale_recipe("Black Bean Tacos", 2)["scaled_ingredients"]}
+    assert half["black beans"] == "1 can (15 oz)" and half["chickpeas"] == "1 can (15 oz)"
+    double = {i["item"]: i["qty"] for i in tools.scale_recipe("Black Bean Tacos", 8)["scaled_ingredients"]}
+    assert double["black beans"] == "4 cans (15 oz)"
+
+
+def test_a_sized_or_non_can_amount_is_not_touched_by_the_count_rule():
+    assert tools.recipes.cooking_quantity("black beans", 4, "2 cans (19 oz)") == "1 can (15 oz)"
+    assert tools.recipes.cooking_quantity("black beans", 4, "") == "1 can (15 oz)"
+    assert tools.recipes.cooking_quantity("olive oil", 4, "2 cans") == "2 tbsp"
+    # A fractional can is not a count anyone opens: the table's whole can stands.
+    assert tools.recipes.cooking_quantity("black beans", 4, "0.5 can") == "1 can (15 oz)"

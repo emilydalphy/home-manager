@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
+  `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
+  showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
+  for the table's per-4 default, count and all. Now `_stated_can_count` keeps
+  the recipe's count and borrows only the size ("2 cans (15 oz)"); the can
+  table itself is unchanged. Tests in `tests/test_recipe_quantities.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

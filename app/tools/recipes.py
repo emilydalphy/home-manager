@@ -2233,6 +2233,31 @@ def plausible_count_quantity(item: str, qty: str, servings: int | None = None) -
     return _quantities._with_note(_quantities._format_quantity(fixed, unit), note)
 
 
+def _stated_can_count(base: str, shopping_qty: str) -> str | None:
+    """
+    "2 cans (15 oz)" when the recipe says "2 cans" and the table's answer
+    is a sized can — the recipe's own count, with only the size borrowed
+    from the table. None otherwise.
+
+    The count a recipe states is already written for the recipe's own
+    table; the only thing wrong with "2 cans black beans" is the missing
+    size. Replacing it with the table's per-4 "1 can (15 oz)" halved the
+    beans at the recipe's own serving size (defect hunt, 2026-10-07).
+    """
+    parsed_base = _quantities._parse_quantity(base)
+    stated = _quantities._parse_quantity((shopping_qty or "").strip())
+    if not parsed_base or not parsed_base[1] or not stated or not stated[1]:
+        return None
+    if stated[0] < 1 or abs(stated[0] - round(stated[0])) > 1e-9:
+        return None   # "0.5 can" is a package word wearing a fraction — the table's whole can stands
+    if parsed_base[1].partition(" (")[0] not in _CANNED_UNITS:
+        return None
+    head, size = _quantities._split_package_size(stated[1])
+    if size or head.rpartition(" ")[2] not in _CANNED_UNITS:
+        return None
+    return _quantities._format_quantity(stated[0], parsed_base[1])
+
+
 def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str = "") -> str | None:
     """
     What actually goes in the pan for `item`, for `servings` people —
@@ -2259,6 +2284,9 @@ def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str =
             base = _PACKAGE_WORD_DEFAULTS.get(head.rpartition(" ")[2])
     if base is None:
         return None
+    stated = _stated_can_count(base, shopping_qty)
+    if stated:
+        return stated
     if not servings or servings == COOKING_BASE_SERVINGS:
         return base
     parsed = _quantities._parse_quantity(base)
