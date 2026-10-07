@@ -3219,12 +3219,13 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
         # rows left standing are counted by every recompute below, and the
         # group's fresh rounded total then lands on top of them: "12 oz +
         # 1.5 lbs" where the line should read "1.5 lbs", "Onion 3" for 2.
-        # Every caller reverses this entry right after we return, and that
-        # reversal is what used to put the line right — so it can't be
-        # refused here (clear_plan_slot, _replace_slot_entries and the
-        # chain swap all call BEFORE reversing). Reversing it first instead
-        # makes the line right on return, and the caller's own reversal a
-        # no-op: the ledger rows it would have read are already gone.
+        # clear_plan_slot, _replace_slot_entries and the chain swap call
+        # BEFORE reversing this entry, and their reversal right after is
+        # what used to put the line right — so it can't be refused here.
+        # (drop_dish_from_day, open_slot_instead_of and the cook move have
+        # already reversed and deleted it; for them this finds nothing.)
+        # Reversing it first makes the line right on return, and the
+        # caller's own reversal a no-op: its ledger rows are already gone.
         _grocery._reverse_meal_grocery_contributions(unlinked_entry_id, conn=shared)
     for entry in entries:
         _grocery._reverse_meal_grocery_contributions(entry["id"], conn=shared)
