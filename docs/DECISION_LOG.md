@@ -130,6 +130,16 @@ why*, not duplicating the diff.
   rule. The chip guard does apply to dinners too: a dinner that is a chip's
   only answer is re-picked within the chip or stands over its cap.
 
+- **2026-10-07 — Undo on a "−" that moved a cook puts the household's own amount back.** `plan_undo.restore`
+  re-inserted the snapshot's grocery links BESIDE the ones the post-"−" rescale (`_rescale_after_a_chain_moved`)
+  had written for the same cook, so the Undo's rescale took the old batch's share off a line that no longer held
+  it — invisible on a plan line (recomputes from its ledger), but a standing want subtracts: hand-added Onion 2
+  under Beef Ragu read 4 -> 2 after drop+undo (5 -> 3 over three nights; 4 -> 3 chained after approval). Now a
+  snapshot link comes back only for an entry that holds no links now. Night off unaffected (its entries' links
+  are the snapshot's own rows). Card B ("chain swap drops the standing want", `replace_dish_on_days`) did NOT
+  reproduce: chained after approval the 8 oz stays on its own line beside the plan's 12 oz (oz onto lbs never
+  merged at approval) — a list read as {item: qty} hides one; pinned both orders in the same test file
+  (`tests/test_undo_keeps_standing_want.py`). Branch `overnight/undo-keeps-standing-want`.
 - **2026-10-06 — Cold packed lunches and protein variety are held on the draft.** New `tools/draft_rules.py`,
   run after every lunch-writing pass in generation (agent.py, after the first-week fill). A weekday lunch for
   someone who needs Cold packed (no warm container ticked) that reheats last night's dinner or reads as a hot
