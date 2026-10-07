@@ -26,16 +26,18 @@ would drift from the screen the first time one of them changed. Costs a
 cooker view per tick; a tick is a tap, not a page load.
 
 EMPTY IS RECORDED AS EMPTY. A move with no owner (most households, every
-reheat, every shop — move_owner's docstring says why there is no "who
-shops" answer to read) is still credited, with member_id NULL. Nothing
-fills it in later.
+reheat, and every shop nobody picked "Who's on it?" for — move_owner's
+docstring says why there is no standing "who shops" answer) is still
+credited, with member_id NULL. Nothing fills it in later. A per-day
+"Who's on it?" pick (move_owner_overrides) IS an owner and is credited.
 
 WHAT HAS NO TICK, said rather than invented: the week's ordinary shop
 move. moves.set_move_done returns without writing for `shop:<date>`
 because shopping is done when the list says so, and Today renders that
 move with no tick at all. There is nothing to credit and nothing here
 pretends otherwise. The holiday's own shop row IS a tick (a prep_tasks
-row) and is credited — as kind 'shop', with no owner.
+row) and is credited as kind 'shop': to whoever "Who's on it?" named
+for that day, or with no owner when nobody was named.
 
 NOTHING HERE IS SHOWN TO THE HOUSEHOLD. No count, no score, no streak —
 `credits` is the shape a fairness view will need, and nothing calls it yet.

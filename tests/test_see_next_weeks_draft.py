@@ -137,6 +137,7 @@ def test_the_pin_is_dropped_after_the_load_that_shows_it_approved():
     """The approved draft's "All set" still shows; the next load is this week."""
     out = _run(
         "var weekState = { showPlanId: 9, showWeekStart: null, cookView: null };\n"
+        "var weekMenuSeq = 0;  // loadWeekMenu's newest-reply-wins counter (ticks-refresh-plan)\n"
         "var URLS = []; var REPLY = { weekly_plan_id: 9, status: 'draft' };\n"
         "var Api = { fetch: async function (u) { URLS.push(u); return { ok: true, json: async function () { return REPLY; } }; } };\n"
         "async function loadPlanningPeriodDefault() {}\n"
