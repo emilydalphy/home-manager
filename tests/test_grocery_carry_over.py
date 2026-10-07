@@ -547,3 +547,19 @@ console.log(JSON.stringify({ step: groceryState.step, row: groListHtml(grocerySt
 """)
     assert out["step"] == "list", "the list, with its things to sort on it (until 2026-09-15 this was the sort queue)"
     assert out["row"] == -1
+
+
+def test_keep_never_lands_on_a_line_set_aside_as_somewhere_else(curry):
+    """Loop Board, 2026-10-07: this week's thighs marked "somewhere else",
+    then last week's thighs kept — the kept amount comes back as a visible
+    line of its own, not merged onto the hidden one."""
+    _approve_week(0)
+    _approve_week(1)
+    this_week = next(i for i in tools.list_grocery_list() if i["item"] == "Chicken thighs")
+    tools.exclude_grocery_item(this_week["id"])
+    row = _carried("Chicken thighs")
+    result = tools.keep_carried_over_item(row["item_id"])
+    assert result["merged_into"] is None
+    assert _needed("Chicken thighs") == "2 lbs"
+    hidden = next(i for i in tools.list_grocery_list("excluded") if i["id"] == this_week["id"])
+    assert hidden["quantity"] == "2 lbs"

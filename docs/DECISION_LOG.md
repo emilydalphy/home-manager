@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A "somewhere else" line never takes a new amount** (2026-10-07; branch
+  `overnight/excluded-line-no-merge`). `add_grocery_item`'s merge candidates
+  ignored `excluded_from_list`, so a second turkey dinner (or a hand add)
+  summed onto the hidden turkey line and was never bought. Now the new
+  amount lands on a visible line of its own, its ledger links point there,
+  and the set-aside line is untouched. Same guard on `_this_weeks_line`
+  (Keep on a carried line). Staples sync and before-shop regulars still
+  treat an excluded line as "already on the list" — deliberate, unchanged.
+  Tests `tests/test_grocery_excluded_line_no_merge.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

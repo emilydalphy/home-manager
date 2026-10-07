@@ -1004,9 +1004,16 @@ def add_grocery_item(
     # "Spices this week" section, still unticked (see spices.py). A second
     # recipe's cumin joins that line rather than starting another, and a
     # person asking for cumin ticks it — below.
+    # Never a line set aside as "getting it somewhere else"
+    # (excluded_from_list): that line is hidden from the list, so a new
+    # amount merged onto it was hidden too and never bought (Loop Board,
+    # 2026-10-07: a second turkey dinner added to the week vanished into
+    # the turkey marked "somewhere else"). The new amount gets a visible
+    # line of its own and the set-aside line stays exactly as it was —
+    # the same rule consolidate_grocery_list keeps.
     candidates = conn.execute(
         "SELECT id, item, quantity, source_weekly_plan_id, status FROM grocery_items "
-        "WHERE household_id = ? AND status IN ('needed', 'spice') ORDER BY id",
+        "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall()
     wanted = _merge_key(item)
@@ -1270,10 +1277,11 @@ def exclude_grocery_item(item_id: int) -> dict:
     Hide an item from the normal shown/shopped grocery list without
     deleting it — for something the Shopper will get elsewhere (a butcher,
     a farmers market) rather than on the regular trip. It stays tracked:
-    still in grocery_items with its status unchanged, so a future
-    add_grocery_item call for the same item still consolidates into this
-    same line instead of creating a duplicate — only its visibility in the
-    default 'needed'/'in_cart'/'purchased' views changes. See
+    still in grocery_items with its status unchanged — only its visibility
+    in the default 'needed'/'in_cart'/'purchased' views changes. A later
+    add_grocery_item for the same item does NOT merge onto it (that hid
+    the new amount too, 2026-10-07): it lands on a visible line of its
+    own, and this line stays as it was. See
     include_grocery_item to undo, and list_grocery_list(status='excluded')
     to see what's currently hidden this way.
     """
@@ -1709,9 +1717,11 @@ def _this_weeks_line(conn, item: str, quantity: str):
     own instead.
     """
     wanted = _merge_key(item)
+    # Not a line set aside as "somewhere else": Keep would park the kept
+    # amount on a hidden line — the hole add_grocery_item closes too.
     for r in conn.execute(
         "SELECT id, item, quantity, status FROM grocery_items WHERE household_id = ? "
-        "AND status IN ('needed', 'spice') ORDER BY id",
+        "AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall():
         if _merge_key(r["item"]) == wanted and _try_consolidate_quantity(r["quantity"] or "", quantity)[1]:
