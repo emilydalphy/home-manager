@@ -1002,10 +1002,12 @@
 
   // "Sunday, Sep 13" — the date the band folds into its sub-line under
   // 'wordmark' (Now's eyebrow has always been this; Shop and Cook adopt it
-  // there, see groBandEyebrow / buildKitchenPanel). Local, not UTC, same
-  // as dayName.
+  // there, see groBandEyebrow / buildKitchenPanel). With no date given it
+  // is the HOUSEHOLD's today (todayLocalStr, on households.timezone), not
+  // the phone's.
   function bandDateLabel(iso) {
-    var d = iso ? new Date(iso + 'T00:00:00') : new Date();
+    // No date given: the household's today (todayLocalStr), not the phone's.
+    var d = new Date((iso || todayLocalStr()) + 'T00:00:00');
     return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   }
 
@@ -14469,14 +14471,50 @@
     return d.toLocaleDateString('en-US', opts);
   }
 
+  // The household's clock, not the phone's (defect hunt 2026-10-07). The
+  // server runs every screen on households.timezone (CLAUDE.md, "A dated
+  // test seeds off the HOUSEHOLD's clock"); a phone west of that zone is a
+  // day behind it every evening, and Today and Cook — reading the phone —
+  // showed Tuesday's band and Tuesday's dinner beside Plan's Wednesday.
+  // The zone arrives on /api/whoami (shellWho.timezone) before any tab
+  // renders; read through Intl rather than kept as a date, so a page left
+  // open past the household's midnight still rolls over. The phone's own
+  // clock is only the fallback: no zone yet, or one Intl doesn't know.
+  //
+  // Each of the two is whole on its own (no shared helper) because the
+  // test harnesses lift single functions out of this file under node.
   function todayLocalStr() {
-    // Build today's date from local fields, not toISOString() (which is UTC) —
-    // otherwise "today" is wrong for anyone whose local date has already rolled
-    // over past midnight while UTC's date hasn't yet.
-    var d = new Date();
-    var m = String(d.getMonth() + 1).padStart(2, '0');
-    var day = String(d.getDate()).padStart(2, '0');
-    return d.getFullYear() + '-' + m + '-' + day;
+    var now = new Date();
+    var zone = typeof shellWho !== 'undefined' && shellWho ? shellWho.timezone : '';
+    if (zone) {
+      try {
+        var p = {};
+        new Intl.DateTimeFormat('en-US', {
+          timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(now).forEach(function (x) { p[x.type] = x.value; });
+        if (p.year && p.month && p.day) return p.year + '-' + p.month + '-' + p.day;
+      } catch (err) { /* an unknown zone: the phone's clock, below */ }
+    }
+    // Local fields, not toISOString() (which is UTC and gets the day wrong
+    // either side of midnight).
+    var m = String(now.getMonth() + 1).padStart(2, '0');
+    var day = String(now.getDate()).padStart(2, '0');
+    return now.getFullYear() + '-' + m + '-' + day;
+  }
+
+  // The hour on the household's clock, for "which meal is now".
+  function householdHourNow() {
+    var now = new Date();
+    var zone = typeof shellWho !== 'undefined' && shellWho ? shellWho.timezone : '';
+    if (zone) {
+      try {
+        var h = Number(new Intl.DateTimeFormat('en-US', {
+          timeZone: zone, hour: '2-digit', hourCycle: 'h23'
+        }).format(now));
+        if (!isNaN(h)) return h % 24;
+      } catch (err) { /* the phone's clock, below */ }
+    }
+    return now.getHours();
   }
 
   function classifyDay(day, todayStr) {
@@ -20430,7 +20468,7 @@
   }
 
   function thisWeekStartLocal() {
-    var d = new Date();
+    var d = new Date(todayLocalStr() + 'T00:00:00');
     var daysSinceMonday = (d.getDay() + 6) % 7;   // JS weeks start on Sunday
     d.setDate(d.getDate() - daysSinceMonday);
     var m = String(d.getMonth() + 1).padStart(2, '0');
@@ -21175,7 +21213,7 @@
 
   function cookTonightIndex(meals, nowHour) {
     var iso = todayLocalStr();
-    var hour = typeof nowHour === 'number' ? nowHour : new Date().getHours();
+    var hour = typeof nowHour === 'number' ? nowHour : householdHourNow();
     var from = cookCurrentSlotIndex(hour);
     var todays = (meals || [])
       .map(function (m, i) { return { m: m, i: i }; })
@@ -23244,11 +23282,11 @@
     }
   }
 
-  // Tomorrow's date, local — same construction as todayLocalStr, one day
+  // Tomorrow's date on the household's clock — todayLocalStr, one day
   // on. Used only to decide whether the post-rating toast below has
   // somewhere useful to send "Show me tomorrow".
   function tomorrowLocalStr() {
-    var d = new Date();
+    var d = new Date(todayLocalStr() + 'T00:00:00');
     d.setDate(d.getDate() + 1);
     var m = String(d.getMonth() + 1).padStart(2, '0');
     var day = String(d.getDate()).padStart(2, '0');
@@ -26182,7 +26220,7 @@
   // the "{name} approved the week" notification is no longer shown to the
   // adult who approved. Each adult having their own secret is a later
   // slice; this trusts the device.
-  var shellWho = { household_id: null, member: null, adults: [], chores_enabled: false, first_open: false, set_up_by: '', ai_consent: 'granted', loaded: false };
+  var shellWho = { household_id: null, member: null, adults: [], chores_enabled: false, first_open: false, set_up_by: '', ai_consent: 'granted', loaded: false, timezone: '' };
   var whoScreenEl = null;
   var whoResolve = null;
 
@@ -26239,6 +26277,9 @@
       // Missing on an older server reads as off — the safe side for a
       // beta that is meals-only by default.
       shellWho.chores_enabled = !!data.chores_enabled;
+      // The household's zone — every "today" on screen reads it
+      // (todayLocalStr, householdHourNow). Missing on an older server: the phone's.
+      shellWho.timezone = typeof data.timezone === 'string' ? data.timezone : '';
       // The other adult's first open (openFirstOpen, below).
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || '';

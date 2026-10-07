@@ -680,7 +680,8 @@ def _band_identity_js() -> str:
     band's identity lead (2026-09-13), which rootBandHtml reads."""
     start = SHELL_JS.index("  var BAND_IDENTITY = ")
     end = SHELL_JS.index("  function rootBandHtml(", start)
-    return SHELL_JS[start:end]
+    # bandDateLabel's default day is the household's (todayLocalStr, 2026-10-07).
+    return SHELL_JS[start:end] + _function("todayLocalStr")
 
 
 def _panel_js():

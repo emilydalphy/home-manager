@@ -3574,7 +3574,13 @@ def week_planning_period():
     would otherwise be swallowed as a {week_start} that isn't a date.
     """
     try:
-        return tools.suggest_planning_period()
+        period = dict(tools.suggest_planning_period())
+        # The household's today, for /plan-week's "Today" tile and its
+        # never-start-before-today clamp — the phone's date is a day off
+        # either side of the household's zone (defect hunt 2026-10-07).
+        from app.tools import cooker as _cooker
+        period["today"] = _cooker.household_today().isoformat()
+        return period
     except Exception as e:
         logger.exception("Planning period suggestion failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -8371,9 +8377,17 @@ def whoami(request: Request):
         # Only on a pick: the overnight report reads this route with none,
         # and must not mark a lone adult as having joined on its say-so.
         invites.mark_joined(current, member["id"])
+    # The household's clock (cooker.household_zone / household_today): the
+    # shell reads "today" off the zone rather than the phone's own date, so
+    # Today, Cook and Plan name the same day wherever the phone is
+    # (defect hunt 2026-10-07 — a phone west of Toronto showed Tuesday on
+    # Today and Cook while Plan, and the server, were on Wednesday).
+    from app.tools import cooker as _cooker
+    zone = _cooker.household_zone()
     return {
         "household_id": current,
         "household_name": row["name"] if row else "",
+        "timezone": getattr(zone, "key", "") or "",
         "member": member,
         "adults": adults,
         "needs_pick": member is None and len(adults) > 1,

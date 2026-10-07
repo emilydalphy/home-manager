@@ -137,6 +137,20 @@ why*, not duplicating the diff.
   Cost: one cooker view per tick that becomes done. Mutation: making the
   OR IGNORE an OR REPLACE bit nothing — the repeat-tick guard in the callers
   is what keeps the first credit; the write's IGNORE is belt and braces.
+- **One clock for "today" on every screen** (2026-10-07, defect hunt; branch
+  `overnight/one-clock-for-today`). Today's band, Cook's eyebrow/tonight/
+  "Tomorrow" labels and the needs-you band read the PHONE's date while Plan
+  read the payload's household date, so a phone west of Toronto showed
+  Tuesday beside Plan's Wednesday every evening. `/api/whoami` now sends
+  `timezone`; `todayLocalStr()` reads the household zone
+  through Intl (no stored date, so it still rolls over at the household's
+  midnight), `householdHourNow()` gives cookTonightIndex its hour, and
+  bandDateLabel/tomorrowLocalStr/thisWeekStartLocal derive from it. The
+  phone's clock is only the fallback (no zone yet, unknown zone). Each
+  helper is self-contained because harnesses lift single functions.
+  /plan-week too (review): `/api/week/planning-period` carries the household's
+  `today`, and its `todayIso()` (Today tile, day tiles, clampStart) reads it.
+  Tests `tests/test_one_clock_for_today.py` (node with TZ ≠ household zone).
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
