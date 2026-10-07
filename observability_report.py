@@ -217,6 +217,17 @@ def _collect_over_token(days: int) -> list[dict]:
         raise NoData(f"{base} answered /api/health-report without a households list.")
     # Same shape _collect_from_db produces, because the server builds it
     # with exactly that function — so the printer below needs nothing new.
+    #
+    # Plus the build the live app is running, carried on each household so
+    # the printer can say an error came from a build that is gone. Only
+    # this path sets it: a local database file has no "running now", and a
+    # deployment older than the field answers without it — both print the
+    # build alone, as before, rather than a guess.
+    current = data.get("app_version")
+    if isinstance(current, str) and current.strip():
+        for h in households:
+            if isinstance(h, dict):
+                h["current_build"] = current.strip()
     return households
 
 
@@ -882,7 +893,8 @@ def _when_line(row: dict | None,
     return f"last seen {_ago(last, now)} — {stamp}"
 
 
-def _print_shape(key: tuple, n: int, latest: dict | None = None) -> None:
+def _print_shape(key: tuple, n: int, latest: dict | None = None,
+                 current_build: str = "") -> None:
     """
     One error, printed as what it is and where it is.
 
@@ -928,7 +940,7 @@ def _print_shape(key: tuple, n: int, latest: dict | None = None) -> None:
         trail = latest.get("trail") or ""
         if trail:
             print(f"                 trail: {trail}")
-        seen_on = _seen_on(latest)
+        seen_on = _seen_on(latest, current_build)
         if seen_on:
             print(f"                 on: {seen_on}")
 
@@ -937,21 +949,59 @@ def _print_shape(key: tuple, n: int, latest: dict | None = None) -> None:
 _DISPLAY_WORDS = {"app": "home-screen app", "tab": "browser tab"}
 
 
-def _seen_on(row: dict) -> str:
+def _seen_on(row: dict, current_build: str = "") -> str:
     """
     "iPhone · Safari · home-screen app · fr · build 7983d7f1a2b3" — where
     a browser error was last seen (2026-09-25), or "" for a row from before
     these columns. Every part is from a closed list or a server-side value:
     the device bucket is built from the User-Agent header by
     main._device_bucket and the raw header is never stored.
+
+    `current_build` is the build the live app runs now (from
+    /api/health-report). With it, the build part says whether this error is
+    from that build or one since replaced — which decides whether it is a
+    bug to chase or one a deploy may already have fixed. Without it (a
+    local file, an older deployment) the build prints alone, never a guess.
     """
+    build = row.get("app_version") or ""
+    if build:
+        build = f"build {build}" + _build_note(row["app_version"], current_build)
     parts = [
         row.get("device") or "",
         _DISPLAY_WORDS.get(row.get("display_mode") or "", ""),
         row.get("lang") or "",
-        f"build {row['app_version']}" if row.get("app_version") else "",
+        build,
     ]
     return " · ".join(p for p in parts if p)
+
+
+def _same_build(a: str, b: str) -> bool:
+    """
+    Two builds are one when they agree over the shorter one's length.
+
+    Both sides come from main._app_version() today (12 characters of
+    RAILWAY_GIT_COMMIT_SHA), but a row written by a deployment that kept
+    more or fewer characters must not read as "a different build" for that
+    reason alone. Seven is git's own short-sha floor: under it, a prefix
+    match is too weak to call the same build, so it falls to plain equality.
+    """
+    a, b = a.strip().lower(), b.strip().lower()
+    n = min(len(a), len(b))
+    if n < 7:
+        return a == b
+    return a[:n] == b[:n]
+
+
+def _build_note(build: str, current_build: str) -> str:
+    """
+    What follows "build X": that it is the build running now, that it is
+    not (and which one is), or nothing when either side is unknown.
+    """
+    if not build or not current_build:
+        return ""
+    if _same_build(build, current_build):
+        return " — the build running now"
+    return f" — not the build running now ({current_build})"
 
 
 # What a tool is FOR, in the words somebody would use about their own
@@ -1194,7 +1244,7 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
             print(f"  BROKEN — {errors['total']} in the last {days}d: {kinds}")
             latest = _latest_rows(errors)
             for key, n in sorted(_error_shapes(errors).items(), key=lambda kv: -kv[1])[:8]:
-                _print_shape(key, n, latest.get(key))
+                _print_shape(key, n, latest.get(key), h.get("current_build") or "")
         else:
             print("  Nothing broke.")
 

@@ -9040,7 +9040,16 @@ def health_report(request: Request, days: int = 1):
     try:
         from observability_report import _collect_from_db
 
-        return {"days": days, "households": _collect_from_db(days)}
+        # app_version: the build answering this request, from the same
+        # _app_version() that stamped every client error's app_version — so
+        # the report can say "not the build running now" by comparing like
+        # with like, on the request it already makes. Empty off Railway,
+        # and the report then says nothing rather than guess.
+        return {
+            "days": days,
+            "app_version": _app_version(),
+            "households": _collect_from_db(days),
+        }
     except Exception as e:
         logger.exception("Health report failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
