@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Ticks on Today/Cook refresh Plan; a saved rhythm refreshes Today**
+  (2026-10-07, defect hunt; branch `overnight/ticks-refresh-plan`). Plan's
+  "Done" reads the same rows, but `toggleTodayMove` told only Cook and
+  `refreshPlanSurfacesAfterCook` only Today and Cook. New
+  `refreshWeekPanel(opts)` (no-op until Plan is built) is called from both,
+  with `{ kitchenFresh: true }` so `loadWeekMenu` skips its own full Cook
+  reload under a cook mid-recipe. `wwkSaveRhythm` now re-reads Today on a
+  successful save, so picking a shop day from Today's "Pick one" clears it.
+  Tests `tests/test_ticks_refresh_plan.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
