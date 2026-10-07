@@ -90,3 +90,66 @@ async function wwkCommit() { return OK; }
 })();
 """)
     assert out == {"a": True, "b": False, "calls": [["today"]]}
+
+
+# ---------- review, 2026-10-07: a background refresh never breaks Plan ----------
+
+_LOAD_PRELUDE = """
+var weekState = { showWeekStart: null, cookView: null };
+var PAINTED = [];
+async function loadPlanningPeriodDefault() {}
+function todayLocalStr() { return '2026-10-07'; }
+function renderWeekMenu(p, d) { PAINTED.push(d.n); }
+function refreshKitchenPanel() {}
+async function planIdForWeek() { return null; }
+var planningPeriodDefault = null, planningPeriodFetchedOn = '';
+var steps = { innerHTML: 'the week' };
+var panel = { querySelector: function () { return steps; } };
+"""
+
+
+def _load_week_menu() -> str:
+    return "var weekMenuSeq = 0;\nasync " + _extract("loadWeekMenu", SHELL_JS) + "\n"
+
+
+@_needs_node
+def test_a_quiet_refresh_that_fails_keeps_the_week_on_screen():
+    """CATCH. A tick's background refresh failing used to paint "Couldn't
+    load your week right now." over a Plan nobody was reloading."""
+    out = _run(_LOAD_PRELUDE + _load_week_menu() + """
+var Api = { fetch: async function () { return { ok: false }; } };
+(async function () {
+  await loadWeekMenu(panel, { quiet: true, kitchenFresh: true });
+  var quiet = steps.innerHTML;
+  await loadWeekMenu(panel);
+  console.log(JSON.stringify({ quiet: quiet, loud: steps.innerHTML }));
+})();
+""")
+    assert out["quiet"] == "the week"
+    assert "Couldn't load your week" in out["loud"], "a load someone asked for still says so"
+
+
+def test_refresh_week_panel_is_quiet():
+    assert "loadWeekMenu(panels.week, Object.assign({ quiet: true }, opts));" in _extract("refreshWeekPanel", SHELL_JS)
+
+
+@_needs_node
+def test_an_older_reply_never_paints_over_a_newer_one():
+    """CATCH. The first load's reply arrives last; only the second paints."""
+    out = _run(_LOAD_PRELUDE + _load_week_menu() + """
+var resolvers = [];
+var Api = { fetch: function () { return new Promise(function (r) { resolvers.push(r); }); } };
+function reply(n) { return { ok: true, json: async function () { return { n: n }; } }; }
+(async function () {
+  var first = loadWeekMenu(panel, { quiet: true });
+  await new Promise(function (r) { setTimeout(r, 0); });
+  var second = loadWeekMenu(panel);
+  await new Promise(function (r) { setTimeout(r, 0); });
+  resolvers[1](reply(2));
+  await second;
+  resolvers[0](reply(1));
+  await first;
+  console.log(JSON.stringify(PAINTED));
+})();
+""")
+    assert out == [2]

@@ -3634,7 +3634,9 @@
   // loadWeekMenu's: { kitchenFresh: true } when the caller re-reads Cook
   // itself. A no-op until Plan has been built.
   function refreshWeekPanel(opts) {
-    if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week, opts);
+    if (panels.week && panels.week.dataset.built) {
+      loadWeekMenu(panels.week, Object.assign({ quiet: true }, opts));
+    }
   }
 
   // Every other surface that changes something Today shows calls this —
@@ -14277,7 +14279,13 @@
     return planningPeriodDefault;
   }
 
+  // Which loadWeekMenu call is the newest. A background refresh (a tick
+  // on Today or Cook) can overlap a swap's own reload, and the replies can
+  // land in either order; only the newest one paints.
+  var weekMenuSeq = 0;
+
   async function loadWeekMenu(panel, opts) {
+    var seq = ++weekMenuSeq;
     try {
       // Awaited before the render below so the "Plan this week" button is
       // right the first time it is painted, rather than saying Monday and
@@ -14295,6 +14303,7 @@
       var res = await Api.fetch(url);
       if (!res.ok) throw new Error('week-menu lookup failed');
       var data = await res.json();
+      if (seq !== weekMenuSeq) return;
       // With no plan to show, the server says which week this screen
       // should name instead — the same suggest_planning_period answer the
       // Now nudge is built from, so Plan and Now can't name two weeks.
@@ -14320,6 +14329,11 @@
       if (!(opts && opts.kitchenFresh)) refreshKitchenPanel();
     } catch (err) {
       console.warn('Week menu lookup failed:', err);
+      if (seq !== weekMenuSeq) return;
+      // `quiet`: a refresh nobody on Plan asked for (refreshWeekPanel). The
+      // week already on screen is a better answer than an error in its
+      // place; the next real load tries again.
+      if (opts && opts.quiet) return;
       panel.querySelector('#week-steps').innerHTML = '<div class="menu-loading">Couldn\'t load your week right now.</div>';
     }
   }

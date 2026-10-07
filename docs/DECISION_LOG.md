@@ -21,6 +21,9 @@ why*, not duplicating the diff.
   with `{ kitchenFresh: true }` so `loadWeekMenu` skips its own full Cook
   reload under a cook mid-recipe. `wwkSaveRhythm` now re-reads Today on a
   successful save, so picking a shop day from Today's "Pick one" clears it.
+  Review follow-up: the background refresh is `quiet` (a failure keeps the
+  Plan on screen instead of painting "Couldn't load your week"), and a
+  sequence guard (`weekMenuSeq`) stops an older reply painting over a newer.
   Tests `tests/test_ticks_refresh_plan.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
