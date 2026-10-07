@@ -1327,7 +1327,14 @@
     var day = String(d.getDate()).padStart(2, '0');
     return d.getFullYear() + '-' + m + '-' + day;
   }
-  function todayIso() { return isoLocal(new Date()); }
+  // The HOUSEHOLD's today, from /api/week/planning-period (loadHorizon),
+  // not the phone's: a phone in another zone called a gone day "Today"
+  // and offered it, or clamped a real today away (defect hunt 2026-10-07).
+  // The phone's date only until that answer lands, or if it never does.
+  var householdToday = null;
+  function todayIso() {
+    return (typeof householdToday !== 'undefined' && householdToday) || isoLocal(new Date());
+  }
   function addDaysIso(iso, n) {
     var d = new Date(iso + 'T00:00:00');
     d.setDate(d.getDate() + n);
@@ -1509,6 +1516,7 @@
       var res = await Api.fetch('/api/week/planning-period');
       if (!res.ok) throw new Error('planning period lookup failed');
       var period = await res.json();
+      if (period && /^\d{4}-\d{2}-\d{2}$/.test(period.today || '')) householdToday = period.today;
       if (!period || !period.start_date) throw new Error('planning period missing a start date');
       horizon = (period.day_count && period.day_count > 0) ? Math.min(period.day_count, PERIOD_MAX_DAYS) : 7;
       return period;

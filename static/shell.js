@@ -1002,8 +1002,9 @@
 
   // "Sunday, Sep 13" — the date the band folds into its sub-line under
   // 'wordmark' (Now's eyebrow has always been this; Shop and Cook adopt it
-  // there, see groBandEyebrow / buildKitchenPanel). Local, not UTC, same
-  // as dayName.
+  // there, see groBandEyebrow / buildKitchenPanel). With no date given it
+  // is the HOUSEHOLD's today (todayLocalStr, on households.timezone), not
+  // the phone's.
   function bandDateLabel(iso) {
     // No date given: the household's today (todayLocalStr), not the phone's.
     var d = new Date((iso || todayLocalStr()) + 'T00:00:00');

@@ -94,4 +94,39 @@ def test_whoami_carries_the_households_zone_and_day(signed_in):
     conn.close()
     who = signed_in.get("/api/whoami").json()
     assert who["timezone"] == "America/Vancouver"
-    assert who["today"] == _cooker.household_today().isoformat()
+
+
+# ---------- review, 2026-10-07: /plan-week's "Today" is the household's too ----------
+
+from pathlib import Path  # noqa: E402
+
+from test_intake_fixes_2026_09_21b import _extract as _page_fn  # noqa: E402
+
+PLAN_WEEK = (Path(__file__).resolve().parent.parent / "static" / "plan-week.html").read_text(encoding="utf-8")
+
+
+def test_the_planning_period_carries_the_households_today(signed_in):
+    period = signed_in.get("/api/week/planning-period").json()
+    assert period["today"] == _cooker.household_today().isoformat()
+    assert period["start_date"], "the period itself is unchanged"
+
+
+@_needs_node
+def test_plan_week_counts_today_by_the_household_not_the_phone(monkeypatch):
+    """CATCH. Household in Honolulu (still Tue 6), phone in Tokyo (Wed 7):
+    ?week=2026-10-06 was clamped to the 7th and Tuesday never offered.
+    The other way round, a phone behind the household called a gone day
+    "Today" and let it be picked."""
+    monkeypatch.setenv("TZ", "Asia/Tokyo")
+    out = _run(_PIN + """
+var PERIOD_MAX_DAYS = 14; var horizon = 7; var householdToday = null;
+var Api = { fetch: async function () { return { ok: true, json: async function () {
+  return { start_date: '2026-10-06', day_count: 7, today: '2026-10-06' }; } }; } };
+""" + "\n".join(_page_fn(n, PLAN_WEEK) for n in ("isoLocal", "todayIso", "clampStart", "loadHorizon")) + """
+(async function () {
+  var before = todayIso();
+  await loadHorizon();
+  console.log(JSON.stringify({ before: before, after: todayIso(), start: clampStart('2026-10-06', todayIso()) }));
+})();
+""")
+    assert out == {"before": "2026-10-07", "after": "2026-10-06", "start": "2026-10-06"}
