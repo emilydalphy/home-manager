@@ -4847,7 +4847,8 @@
     return {
       stores: stores,
       shopSplit: byStore.shop_split || null,
-      beforeShop: byStore.before_shop || null
+      beforeShop: byStore.before_shop || null,
+      duplicates: byStore.duplicates || []
     };
   }
 
@@ -6216,23 +6217,24 @@
   }
 
   // ---------- Two rows of the same thing ----------
-  // Moved here whole from the Review segment's "Possible duplicate" flag
-  // card (groReviewHtml on the old root), grouping on exactly the key it
-  // grouped on: the trimmed, lowercased name. add_grocery_item consolidates
-  // by its own merge key when a person adds something, so a surviving pair
-  // is two spellings of one thing that arrived by two routes — worth
-  // showing, never worth the app merging on its own.
+  // Moved here from the Review segment's "Possible duplicate" flag card.
+  // Which rows count is the SERVER's answer (data.duplicates, stamped by
+  // /api/grocery-list/by-store from tools.mergeable_duplicate_groups):
+  // the lines consolidate would really fold together. It used to be every
+  // pair with the same lowercased name, which with next week approved
+  // early put "Two rows of eggs" on 18-27 things — this week's eggs and
+  // next week's, kept apart on purpose — and Merge then deleted next
+  // week's amount (defect hunt 2026-10-07). Two weeks' lines, and two
+  // amounts that can't be added, are never offered.
   function groAllNeeded(data) {
     return groAllLines(data).filter(function (it) { return !groIsBought(it); });
   }
   function groDuplicateGroups(data) {
-    var groups = {};
-    groAllNeeded(data).forEach(function (it) {
-      var key = (it.item || '').trim().toLowerCase();
-      (groups[key] = groups[key] || []).push(it);
-    });
-    return Object.keys(groups).map(function (k) { return groups[k]; })
-      .filter(function (g) { return g.length > 1; });
+    var byId = {};
+    groAllNeeded(data).forEach(function (it) { byId[it.id] = it; });
+    return (data.duplicates || []).map(function (ids) {
+      return ids.map(function (i) { return byId[i]; }).filter(Boolean);
+    }).filter(function (g) { return g.length > 1; });
   }
 
   var GRO_NUMBER_WORDS = ['no', 'one', 'Two', 'Three', 'Four', 'Five', 'Six',
@@ -8795,17 +8797,17 @@
       }
 
       // Two rows of the same thing, from the quiet line at the top of LIST.
-      // The old Review handler, unchanged: keep the first line, remove the
-      // rest. The confirm stays because this one is not undoable.
+      // The server folds them (POST /api/grocery-list/merge, consolidate's
+      // own rule): amounts added together, each meal's share moved to the
+      // line that's left. It used to keep the first line and remove the
+      // rest, which dropped whatever the other lines said. The confirm
+      // stays because this one is not undoable.
       case 'merge': {
-        var mergeIds = el.dataset.ids.split(',');
-        if (!window.confirm('Merge these into one line? The extra lines will be removed.')) return;
+        var mergeIds = el.dataset.ids.split(',').map(Number);
+        if (!window.confirm('Merge these into one line? The amounts will be added together.')) return;
         el.disabled = true;
         groDo(function () {
-          var rest = mergeIds.slice(1);
-          return Promise.all(rest.map(function (rid) {
-            return groPostEmpty('/api/grocery-list/' + rid + '/remove');
-          }));
+          return groPost('/api/grocery-list/merge', { ids: mergeIds });
         }, "Couldn't merge those — try again.");
         return;
       }

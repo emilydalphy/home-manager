@@ -235,6 +235,7 @@ from .grocery import (  # noqa: F401
     clear_grocery_list,
     clear_stale_grocery_items,
     consolidate_grocery_list,
+    mergeable_duplicate_groups,
     drop_carried_over_item,
     entry_ids_awaiting_a_shop,
     exclude_grocery_item,

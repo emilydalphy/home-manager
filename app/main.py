@@ -5834,6 +5834,10 @@ def get_grocery_list_by_store_view(status: str = "needed"):
             _stamp_freezing_offers(needed)
             _stamp_pre_shop_flags(needed)
             result["before_shop"] = tools.before_shop_state()
+            # "Two rows of eggs · Merge": which lines would really fold
+            # together, by consolidate's own rule — never two weeks' lines,
+            # never two amounts that can't be added (mergeable_duplicate_groups).
+            result["duplicates"] = tools.mergeable_duplicate_groups()
     except Exception as e:
         logger.exception("Grocery list by-store lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -6292,6 +6296,27 @@ def set_grocery_list_item_freezing(item_id: int, req: GroceryFreezingRequest):
     except Exception as e:
         logger.exception("Grocery freezing answer failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class GroceryMergeRequest(BaseModel):
+    ids: list[int]
+
+
+@app.post("/api/grocery-list/merge")
+def merge_grocery_list_lines(req: GroceryMergeRequest):
+    """
+    The Shop tab's Merge on one "Two rows of X" group: fold those lines
+    together the way consolidate_grocery_list does — amounts added, meal
+    ledger kept — and nothing else. A group the rule won't fold (two weeks'
+    lines, amounts that don't add) is left exactly as it was; the old
+    Merge removed every line but the first and lost their amounts.
+    """
+    try:
+        result = tools.consolidate_grocery_list(only_ids=req.ids)
+    except Exception as e:
+        logger.exception("Grocery list merge failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
 
 
 @app.post("/api/grocery-list/{item_id}/remove")
