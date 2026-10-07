@@ -15018,14 +15018,31 @@
   // so both say and open the same stretch (the server's next_period).
   // When next week already has a plan the label reads "Re-plan next week"
   // (planEntryLabel), and the tap opens its intake like any Re-plan.
+  // A stretch whose plan is still a DRAFT (next.draft_plan_id, from
+  // weekly_plan.next_period_after) is the household's own unfinished work:
+  // the button opens it, with its Approve, rather than re-asking the
+  // questions and drafting over it (defect hunt 2026-10-07 — after leaving
+  // the screen, "Re-plan next week" was the only way back to a draft).
+  // Re-plan is still the pill inside the draft.
   function planNextLabel(next) {
     next = next || {};
+    if (next.draft_plan_id) {
+      if ((next.day_count || 7) !== 7) return 'See the draft';
+      return next.is_current_period ? 'See this week’s draft' : 'See next week’s draft';
+    }
     return planEntryLabel(next.day_count || 7, next.is_current_period ? 'current' : 'next', next.is_planned);
   }
 
   function planNextWeek() {
     var data = weekState.data || {};
     var period = nextPeriodFor(data, data.days);
+    if (period.draft_plan_id && period.draft_week_start && panels.week) {
+      // The same pin /plan-week's ?drafted= hand-back uses, so the draft
+      // stays on screen through its own swaps and its approval.
+      weekState.showWeekStart = period.draft_week_start;
+      loadWeekMenu(panels.week);
+      return;
+    }
     startPlanningWeek(period.start_date, period.day_count);
   }
 

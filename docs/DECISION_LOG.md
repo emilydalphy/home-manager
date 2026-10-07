@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A drafted next week is one tap from Plan** (2026-10-07, defect hunt;
+  branch `overnight/see-next-weeks-draft`). Only /plan-week's `?drafted=`
+  ever pinned a draft on screen, so after a reload the dock offered only
+  "Re-plan next week" (questions again, a new draft over the old).
+  `next_period_after` now names a DRAFT holding the next stretch's first day
+  (`draft_plan_id`, `draft_week_start`); `planNextLabel` reads "See next
+  week's draft" and `planNextWeek` pins `weekState.showWeekStart` to it and
+  reloads — Approve and the Re-plan pill are inside. Today's planning nudge
+  is unchanged (still quiet once a plan covers next week). Tests
+  `tests/test_see_next_weeks_draft.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

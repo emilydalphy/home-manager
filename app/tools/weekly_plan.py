@@ -2176,12 +2176,24 @@ def next_period_after(plan: dict, today: str = "") -> dict:
 
     held = find_overlapping_plans(start.isoformat(), day_count, exclude_plan_id=plan_id)
     is_planned = any(p["overlap_dates"][0] == start.isoformat() for p in held)
+    # A DRAFT already holding that first day is the household's own
+    # unfinished work, not something to re-plan over (defect hunt
+    # 2026-10-07: draft next week, leave the screen, and the only way back
+    # was "Re-plan next week" — the questions again, and a new draft over
+    # the one just made). The link says "See next week's draft" and opens
+    # it; Re-plan is the pill inside it.
+    draft = next(
+        (p for p in held if p["overlap_dates"][0] == start.isoformat() and p["status"] == "draft"),
+        None,
+    )
     return {
         "start_date": start.isoformat(),
         "day_count": day_count,
         "label": _format_period_range(start.isoformat(), day_count),
         "is_current_period": is_current,
         "is_planned": is_planned,
+        "draft_plan_id": draft["weekly_plan_id"] if draft else None,
+        "draft_week_start": draft["week_start_date"] if draft else None,
     }
 
 
