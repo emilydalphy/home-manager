@@ -147,16 +147,23 @@ def record(conn, credit: dict | None) -> None:
     the tick and its credit land together or not at all. INSERT OR IGNORE:
     a second 'done' for a move already credited keeps the FIRST credit —
     the owner at the moment it was actually done.
+
+    Guarded like the lookups above: a credit must never cost the household
+    its tick, so a failed write is logged and the tick commits without it
+    (SQLite rolls back only the failed statement, not the transaction).
     """
     if not credit:
         return
-    conn.execute(
-        "INSERT OR IGNORE INTO move_credits "
-        "(household_id, meal_plan_entry_id, prep_task_id, kind, move_date, member_id) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (household_id(), credit.get("entry_id"), credit.get("task_id"),
-         credit["kind"], credit["move_date"], credit.get("member_id")),
-    )
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO move_credits "
+            "(household_id, meal_plan_entry_id, prep_task_id, kind, move_date, member_id) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (household_id(), credit.get("entry_id"), credit.get("task_id"),
+             credit["kind"], credit["move_date"], credit.get("member_id")),
+        )
+    except Exception:
+        logger.exception("Couldn't record whose tick this was; the tick stands, uncredited")
 
 
 def clear_meals(conn, entry_ids: list[int]) -> None:
