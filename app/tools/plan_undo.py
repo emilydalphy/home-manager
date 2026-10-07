@@ -246,7 +246,8 @@ def restore(conn, record: dict, holder_id: int) -> None:
     nobody has touched it since). Nothing else on the list is touched. A
     link then comes back only if its line is there — the list is the
     household's, and a line they have deleted since stays deleted rather
-    than being linked into a meal again.
+    than being linked into a meal again — and only for an entry holding no
+    links now (see below: a rescale after the answer already re-wrote them).
     """
     from . import weekly_plan as _weekly_plan
 
@@ -282,8 +283,31 @@ def restore(conn, record: dict, holder_id: int) -> None:
     # naming one of them must still name a dinner before that meal.
     _weekly_plan._recheck_ready_made_after_redate(conn, sorted(snap_ids))
     _restore_lines(conn, record.get("grocery"))
+    # A snapshot link comes back only for an entry that holds NO links now.
+    # An entry still holding links is either untouched (they ARE the
+    # snapshot's rows, and INSERT OR IGNORE would skip them anyway) or was
+    # re-ingested after the answer committed — the "−" rescales an approved
+    # week's batch (weekly_plan._rescale_after_a_chain_moved), which clears
+    # the entry's old rows and writes new ones for what it put on the list.
+    # Those new rows are the ledger for what the lines carry now; the
+    # snapshot's would sit beside them as a share no line holds any more,
+    # and the undo's own rescale would take both off. On a plan line that
+    # is invisible (it recomputes from the ledger), but on a standing want
+    # it comes out of the household's own amount: "Onion 2" under two
+    # nights of Beef Ragu read 4, and 2 after a "−" and its Undo
+    # (2026-10-07).
+    holding = set()
+    if snap_ids:
+        holding = {
+            r["meal_plan_entry_id"] for r in conn.execute(
+                "SELECT DISTINCT meal_plan_entry_id FROM meal_plan_grocery_links "
+                f"WHERE household_id = ? AND meal_plan_entry_id IN ({marks})",
+                (hh, *sorted(snap_ids)),
+            ).fetchall()
+        }
     links = [
         l for l in record.get("links") or []
-        if conn.execute("SELECT 1 FROM grocery_items WHERE id = ?", (l["grocery_item_id"],)).fetchone()
+        if l.get("meal_plan_entry_id") not in holding
+        and conn.execute("SELECT 1 FROM grocery_items WHERE id = ?", (l["grocery_item_id"],)).fetchone()
     ]
     reinsert(conn, "meal_plan_grocery_links", links, ignore=True)
