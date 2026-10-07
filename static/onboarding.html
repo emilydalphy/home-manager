@@ -2182,7 +2182,7 @@ function pruneMemberKeyedAnswers() {
   // (typeof: the node harnesses in tests/ lift this function without them.)
   if (typeof lunchNeeds === 'undefined') return;
   const here = new Set(currentMembers().map(m => m.name));
-  [lunchNeeds, memberSnacks, lunchLocation].forEach(map => {
+  [lunchNeeds, memberSnacks, lunchLocation, lunchHome, lunchOutDays].forEach(map => {
     Object.keys(map).forEach(name => { if (!here.has(name)) delete map[name]; });
   });
 }
@@ -2403,7 +2403,8 @@ function buildDinnerTimeStep() {
 // weekday lunches?" A row per person who eats lunch on any weekday, each
 // with any of five needs. "Different on some days?" turns a name into five
 // day rows (Mon-Fri), each with the same five. Someone who buys lunch is
-// turned off on Who's eating, so they have no row here.
+// off Who's eating on weekdays — said here with Out (2026-10-06), which
+// writes the grid, and shown as Out whichever screen said it.
 //
 // Keyed by member NAME like every other answer before the finish, and
 // pruned with them (pruneMemberKeyedAnswers). Nothing is posted until
@@ -2419,6 +2420,14 @@ const LUNCH_NEED_OPTIONS = [
 const LUNCH_NEED_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
 let lunchNeeds = {};          // name -> { needs: [...], days: { monday: [...] } | null }
 let lunchDaysPicking = false; // "Different on some days?" opened
+// At home / Packed / Out (Emily, 2026-10-06, Loop Board "Setup has no 'eats
+// lunch out on weekdays' answer"): one tap per person instead of ten on the
+// Who's eating grid. The GRID is the answer — Out takes the person off
+// Monday-Friday lunch there, At home and Packed put them back — and Packed
+// is the Cold packed need, so neither chip keeps a second copy of anything
+// except these two small facts the grid cannot hold:
+let lunchHome = {};           // name -> true once "At home" is tapped (nothing else says it)
+let lunchOutDays = {};        // name -> { weekday index: the cell as Out left it }, so At home can put them back
 
 // The people with a lunch to plan on some weekday: everyone on a cell
 // that's 'all', the names on a subset cell.
@@ -2432,6 +2441,85 @@ function lunchPeople() {
   });
   return names.filter(n => on.has(n));
 }
+// The rows on the screen: everyone meals are planned for, not only
+// lunchPeople() — somebody Out is still a row, so the answer stays on
+// screen to be changed back instead of the row vanishing under the finger,
+// and the ten grid taps a tester used to say it read back as one chip.
+function lunchStepPeople() {
+  return currentMembers({ forMeals: true }).map(m => m.name);
+}
+// The days Out took this person off that the grid still holds as Out left
+// them. A day changed on the grid since — "Don't plan" for everyone, say —
+// is the household's later answer, and is not Out's to give back.
+function lunchOutDaysStill(name, names) {
+  const took = lunchOutDays[name] || {};
+  return Object.keys(took).map(Number).filter(i =>
+    JSON.stringify(uwCleanCell(usualGrid.lunch[i], names)) === JSON.stringify(took[i]));
+}
+// Somebody this screen said Out for, on a day the grid still has as Out
+// left it. Keeps the screen in the flow when Out has emptied every weekday
+// lunch (stepFlow) — otherwise Continue would look itself up in a flow it
+// is no longer in — but not once the grid itself has turned lunch off.
+function lunchOutHere() {
+  if (typeof lunchOutDays === 'undefined') return false;
+  const names = currentMembers({ forMeals: true }).map(m => m.name);
+  return Object.keys(lunchOutDays).some(n => names.indexOf(n) !== -1 && lunchOutDaysStill(n, names).length > 0);
+}
+// Which of the three chips is lit, read from the answers themselves: off
+// every weekday lunch on the grid is Out (however it got there), Cold
+// packed on any day is Packed, and At home only once tapped.
+function lunchWhere(name) {
+  if (lunchPeople().indexOf(name) === -1) return 'out';
+  const e = lunchNeeds[name];
+  const packed = e && (e.needs.indexOf('cold_packed') !== -1 ||
+    (!!e.days && LUNCH_NEED_DAYS.some(d => (e.days[d] || []).indexOf('cold_packed') !== -1)));
+  if (packed) return 'packed';
+  return lunchHome[name] ? 'home' : '';
+}
+// One tap: write the grid's Monday-Friday lunch cells for this person, and
+// the Cold packed need for Packed. Out remembers which days it took them
+// off; At home / Packed put them back on those still as Out left them, and
+// on every weekday lunch planned for anyone — never on a day the household
+// plans no lunch.
+function lunchSetWhere(name, where) {
+  const names = currentMembers({ forMeals: true }).map(m => m.name);
+  const row = usualGrid.lunch;
+  if (where === 'out') {
+    // Earlier Out days the grid has changed since are dropped, not kept.
+    const kept = {};
+    lunchOutDaysStill(name, names).forEach(i => { kept[i] = lunchOutDays[name][i]; });
+    for (let i = 0; i < 5; i++) {
+      const c = uwCleanCell(row[i], names);
+      if (c === 'off' || (c !== 'all' && c.indexOf(name) === -1)) continue;
+      row[i] = uwApplyPick(c, 'toggle:' + name, names);
+      kept[i] = uwCleanCell(row[i], names);
+    }
+    lunchOutDays[name] = kept;
+    delete lunchHome[name];
+    return;
+  }
+  const back = lunchOutDaysStill(name, names);
+  for (let i = 0; i < 5; i++) {
+    const c = uwCleanCell(row[i], names);
+    if (c === 'all' || (c !== 'off' && c.indexOf(name) !== -1)) continue;
+    if (c === 'off' && back.indexOf(i) === -1) continue;
+    row[i] = c === 'off' ? uwCleanCell([name], names) : uwCleanCell(c.concat([name]), names);
+  }
+  delete lunchOutDays[name];
+  const e = lunchEntry(name);
+  const setPacked = list => {
+    const has = list.indexOf('cold_packed') !== -1;
+    return (where === 'packed') === has ? list : toggleNeed(list, 'cold_packed');
+  };
+  e.needs = setPacked(e.needs);
+  if (e.days) LUNCH_NEED_DAYS.forEach(d => { e.days[d] = setPacked(e.days[d] || []); });
+  if (where === 'home') lunchHome[name] = true; else delete lunchHome[name];
+}
+const LUNCH_WHERE_OPTIONS = [
+  { key: 'home', label: 'At home' },
+  { key: 'packed', label: 'Packed' },
+  { key: 'out', label: 'Out' },
+];
 function lunchEntry(name) {
   if (!lunchNeeds[name]) lunchNeeds[name] = { needs: [], days: null };
   return lunchNeeds[name];
@@ -2462,7 +2550,13 @@ function lunchChipsHtml(name, day, picked) {
 }
 function lunchPersonHtml(name) {
   const e = lunchEntry(name);
-  let html = `<div class="member-block"><p class="q-sub">${escapeHtmlLocal(name)}</p>`;
+  const where = lunchWhere(name);
+  let html = `<div class="member-block"><p class="q-sub">${escapeHtmlLocal(name)}</p>` +
+    '<div class="uw-row ln-where">' + LUNCH_WHERE_OPTIONS.map(o =>
+      `<button type="button" class="uw-q${where === o.key ? ' is-on' : ''}" data-ln-where="${o.key}" data-ln-name="${escapeHtmlLocal(name)}" aria-pressed="${where === o.key ? 'true' : 'false'}">${o.label}</button>`
+    ).join('') + '</div>';
+  // Out is no lunch to plan, so there is nothing to need.
+  if (where === 'out') return html + '</div>';
   if (!e.days) {
     html += lunchChipsHtml(name, '', e.needs);
   } else {
@@ -2475,7 +2569,7 @@ function lunchPersonHtml(name) {
 }
 function buildLunchNeedsStep() {
   const people = lunchPeople();
-  document.getElementById('lunch-needs-people').innerHTML = people.map(lunchPersonHtml).join('');
+  document.getElementById('lunch-needs-people').innerHTML = lunchStepPeople().map(lunchPersonHtml).join('');
   const pick = document.getElementById('lunch-needs-days-pick');
   const standing = people.filter(n => !lunchEntry(n).days);
   if (!standing.length) {
@@ -2490,6 +2584,12 @@ function buildLunchNeedsStep() {
   renderLunchMaxChips();
 }
 document.getElementById('step-lunch-needs').addEventListener('click', e => {
+  const where = e.target.closest('[data-ln-where]');
+  if (where) {
+    lunchSetWhere(where.dataset.lnName, where.dataset.lnWhere);
+    buildLunchNeedsStep();
+    return;
+  }
   const chip = e.target.closest('[data-ln-need]');
   if (chip) {
     const entry = lunchEntry(chip.dataset.lnName);
@@ -5098,7 +5198,8 @@ function stepFlow() {
     // (2026-09-30): its "how many different" screen is skipped.
     if (VARIETY_STEPS.indexOf(k) !== -1) return uwMealOn(k.slice('variety-'.length));
     // Weekday lunches only when lunch is on for any weekday (the card).
-    if (k === 'lunch-needs') return uwWeekdayLunchOn(usualGrid);
+    // ...or while somebody's Out from that screen is what turned it off.
+    if (k === 'lunch-needs') return uwWeekdayLunchOn(usualGrid) || (typeof lunchOutHere === 'function' && lunchOutHere());
     return true;
   });
 }

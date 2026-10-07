@@ -360,7 +360,10 @@ def test_a_day_thats_different_carries_a_quiet_mark_on_which_days():
                lunch=_entry("Salad", entry_id=2, away_names=["Vic"], present_names=["Emily"]),
                dinner=_entry("Chili", entry_id=3, away_names=["Vic"], present_names=["Emily"]))
     out = _run(_prelude() + f"console.log(JSON.stringify(reviewTileTags({json.dumps(day)})));")
-    assert out == ["Vic out", "4 for breakfast"]
+    # Vic is home for breakfast (no away_names on it), so the tag names the
+    # meals he's out for rather than "Vic out" (Emily, 2026-10-06: a
+    # part-day absence must not read as gone all day).
+    assert out == ["Vic · lunch and dinner out", "4 for breakfast"]
 
 
 def test_the_words_pass_the_seven_rules():
