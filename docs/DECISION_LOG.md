@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A rescale's excluded entry is reversed, not just skipped** (2026-10-07;
+  branch `overnight/rescale-refuses-stale-ledger`; tests
+  `tests/test_rescale_excluded_entry_ledger.py`). `_rescale_leftover_source_grocery`
+  left `unlinked_entry_id`'s ledger rows standing, so the recompute counted
+  them under the group's new total: "12 oz + 1.5 lbs" for "1.5 lbs", "Onion 3"
+  for 2, until the caller's own reversal caught up. Refusing (the card's
+  preferred fix) would break four callers that call it BEFORE reversing the
+  entry (clear_plan_slot, `_unlink_leftover_target`, `_replace_slot_entries`,
+  the chain swap), so the helper now reverses that entry first and the
+  caller's reversal is a no-op. Never pass an entry you mean to keep buying for.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
