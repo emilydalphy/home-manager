@@ -170,6 +170,18 @@ why*, not duplicating the diff.
   entry (clear_plan_slot via `_unlink_leftover_target`, `_replace_slot_entries`,
   the chain swap; the others reverse first and are unaffected), so the helper now reverses that entry first and the
   caller's reversal is a no-op. Never pass an entry you mean to keep buying for.
+- **Same-family units add up on a plan's line** (2026-10-07, defect hunt;
+  branch `overnight/same-family-units-add-up`). A swap to Lentil Soup with
+  lentils on the list read "1.5 cups + 8 tbsp". Fixed on the PLAN-owned line
+  only: `WeekGroceryBuffer.flush` re-reads a line from its ledger
+  (`_recompute_plan_line_from_ledger`, as for counted packs) when a measured
+  share in another unit of the same family lands on it — one family summed,
+  rounded once ("2 cups"); swap back gives "1.5 cups". `_try_consolidate_quantity`
+  is unchanged: the first cut changed it, and the review's sweep showed a
+  standing want then rounding once per add and ratcheting under
+  `_restate_standing_want` (13 of 74 cases drifting vs 1 on main; "1 cup" +
+  "2 tbsp" read "1 cup"). Standing wants keep main's two lines. Tests
+  `tests/test_same_family_units_add_up.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

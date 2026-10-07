@@ -3684,7 +3684,17 @@ class WeekGroceryBuffer:
             # A counted pack that landed on a line the plan already had is
             # re-read from the whole ledger, so two passes' cartons don't
             # add as cartons — see grocery._recompute_plan_line_from_ledger.
-            if add_result["merged"] and _quantities._pack_group(unit):
+            # So is a measured amount whose unit didn't match the line's
+            # ("8 tbsp" of lentils onto "1.5 cups" after a swap read
+            # "1.5 cups + 8 tbsp", defect hunt 2026-10-07): the ledger sums
+            # one unit family and rounds once on the whole line. Only a
+            # PLAN-owned line is re-read; a household's standing want never
+            # takes a different-unit plan share in the first place
+            # (_merge_target), so its own amount is never re-rounded.
+            if add_result["merged"] and (
+                _quantities._pack_group(unit)
+                or (_quantities._measurable_unit(unit) and not add_result.get("units_reconciled", True))
+            ):
                 _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
         self._lines.clear()
 
