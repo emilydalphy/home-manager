@@ -3696,6 +3696,17 @@
     }
   }
 
+  // A meal ticked on Today or Cook is the same row Plan's "Done" reads, so
+  // Plan is told too (defect hunt 2026-10-07: tick tonight's dinner on
+  // Today, go to Plan, and it still offered "Done"). `opts` is
+  // loadWeekMenu's: { kitchenFresh: true } when the caller re-reads Cook
+  // itself. A no-op until Plan has been built.
+  function refreshWeekPanel(opts) {
+    if (panels.week && panels.week.dataset.built) {
+      loadWeekMenu(panels.week, Object.assign({ quiet: true }, opts));
+    }
+  }
+
   // Every other surface that changes something Today shows calls this —
   // see refreshStaleTabsFromActions and DESIGN_SYSTEM.md §6's refresh
   // policy ("a panel that's built once and never told to refresh goes
@@ -3812,9 +3823,10 @@
         if (done) showToast(savedLine(moveName, 'ticked off'));
         else showToast(moveName ? moveName + ' is back on the list' : 'Back on the list');
       }
-      // The same rows are the Cook screen's check-offs — keep the two from
-      // showing different answers to the same question.
+      // The same rows are the Cook screen's check-offs and Plan's "Done" —
+      // keep the three from showing different answers to the same question.
       refreshKitchenPanel();
+      refreshWeekPanel({ kitchenFresh: true });
     } catch (err) {
       console.warn('Could not save that tick:', err);
       move.done = was;
@@ -11409,10 +11421,17 @@
 
   // /api/onboarding/rhythm takes a partial body — only the fields present
   // are written — which is what makes it safe for one fact at a time.
+  // Today reads the rhythm too — its shop line ("You shop on Saturday")
+  // and the "No shopping day set. Pick one" that opens this section — so
+  // a saved rhythm re-reads Today (defect hunt 2026-10-07: pick Saturday
+  // from Today's prompt, close the sheet, and the prompt was still up).
   function wwkSaveRhythm(sectionKey, body, apply) {
     return wwkCommit(sectionKey, apply, function () {
       return wwkPost('/api/onboarding/rhythm', body);
-    }, wwkAdoptRhythm);
+    }, wwkAdoptRhythm).then(function (ok) {
+      if (ok) refreshTodayMoves();
+      return ok;
+    });
   }
 
   // ---------- shared pieces ----------
@@ -14412,7 +14431,13 @@
     return planningPeriodDefault;
   }
 
-  async function loadWeekMenu(panel) {
+  // Which loadWeekMenu call is the newest. A background refresh (a tick
+  // on Today or Cook) can overlap a swap's own reload, and the replies can
+  // land in either order; only the newest one paints.
+  var weekMenuSeq = 0;
+
+  async function loadWeekMenu(panel, opts) {
+    var seq = ++weekMenuSeq;
     try {
       // Awaited before the render below so the "Plan this week" button is
       // right the first time it is painted, rather than saying Monday and
@@ -14432,6 +14457,7 @@
       var res = await Api.fetch(url);
       if (!res.ok) throw new Error('week-menu lookup failed');
       var data = await res.json();
+      if (seq !== weekMenuSeq) return;
       // With no plan to show, the server says which week this screen
       // should name instead — the same suggest_planning_period answer the
       // Now nudge is built from, so Plan and Now can't name two weeks.
@@ -14457,9 +14483,17 @@
       // later gets the behaviour for free instead of being the next thing
       // that goes stale. It is a no-op until someone has actually opened
       // Kitchen, so this costs nothing for a household that never does.
-      refreshKitchenPanel();
+      // `kitchenFresh`: the caller is a tick made on Today or Cook that has
+      // already re-read Cook its own way (refreshWeekPanel) — a full Cook
+      // reload under a cook in the middle of a recipe is not wanted.
+      if (!(opts && opts.kitchenFresh)) refreshKitchenPanel();
     } catch (err) {
       console.warn('Week menu lookup failed:', err);
+      if (seq !== weekMenuSeq) return;
+      // `quiet`: a refresh nobody on Plan asked for (refreshWeekPanel). The
+      // week already on screen is a better answer than an error in its
+      // place; the next real load tries again.
+      if (opts && opts.quiet) return;
       panel.querySelector('#week-steps').innerHTML = '<div class="menu-loading">Couldn\'t load your week right now.</div>';
     }
   }
@@ -23072,6 +23106,7 @@
   function refreshPlanSurfacesAfterCook() {
     refreshTodayMoves();
     refreshKitchenMoves();
+    refreshWeekPanel({ kitchenFresh: true });
   }
 
   // The Kitchen root's start-by lines and its done state are read off
