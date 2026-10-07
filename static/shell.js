@@ -14132,7 +14132,10 @@
     // The draft's toggle: 'menu' (What we're eating) or 'days' (Which
     // days), remembered for this page session and reset for a new draft
     // (draftView; draftViewPlanId is the plan it was last set for).
-    draftView: 'menu', draftViewPlanId: null
+    draftView: 'menu', draftViewPlanId: null,
+    // A pin by PLAN, not by date: "See next week's draft" (planNextWeek).
+    // Wins over showWeekStart, and lets go once that plan is approved.
+    showPlanId: null
   };
 
   async function buildWeekPanel(panel) {
@@ -14271,7 +14274,9 @@
       // it just drafted. It survives reloads of the panel (a swap, an
       // approval) so the household stays on the week they're working on.
       var url = '/api/week-menu';
-      if (weekState.showWeekStart) {
+      if (weekState.showPlanId) {
+        url += '?weekly_plan_id=' + encodeURIComponent(weekState.showPlanId);
+      } else if (weekState.showWeekStart) {
         var planId = await planIdForWeek(weekState.showWeekStart);
         if (planId) url += '?weekly_plan_id=' + encodeURIComponent(planId);
       }
@@ -14290,6 +14295,12 @@
       // drawn — see ensureCookDataForMeals.
       if (weekState.cookView) weekState.cookView.stale = true;
       renderWeekMenu(panel, data);
+      // The pinned draft is approved: this load shows its "All set", and
+      // the next one goes back to the week that holds today — otherwise
+      // Plan stayed on next week for the rest of the session.
+      if (weekState.showPlanId && data.weekly_plan_id === weekState.showPlanId && data.status === 'approved') {
+        weekState.showPlanId = null;
+      }
       // Meals and Kitchen are two readings of one week, so anything that
       // reloads the plan reloads the cook's tab with it — a swap, an
       // approval, a chat turn, a reset. Doing it here rather than at each
@@ -15036,10 +15047,14 @@
   function planNextWeek() {
     var data = weekState.data || {};
     var period = nextPeriodFor(data, data.days);
-    if (period.draft_plan_id && period.draft_week_start && panels.week) {
-      // The same pin /plan-week's ?drafted= hand-back uses, so the draft
+    if (period.draft_plan_id && panels.week) {
+      // Pinned by the plan's id, not a date: a date resolves to whichever
+      // plan COVERS it (week_intake._plan_for_period), and after a
+      // takeover or a custom range that is not this draft — the tap
+      // reloaded the week already on screen (review, 2026-10-07). It
       // stays on screen through its own swaps and its approval.
-      weekState.showWeekStart = period.draft_week_start;
+      weekState.showPlanId = period.draft_plan_id;
+      weekState.showWeekStart = null;
       loadWeekMenu(panels.week);
       return;
     }
@@ -17570,6 +17585,7 @@
   async function openSourceMeal(panel, date, slot, back) {
     var index = wkDayIndexOf(date);
     if (index === -1) {
+      weekState.showPlanId = null;
       weekState.showWeekStart = date;
       await loadWeekMenu(panel);
       index = wkDayIndexOf(date);
@@ -19889,6 +19905,7 @@
       // the tab fall back to "whichever plan covers today", which is the
       // approved week underneath or the plan-a-week state.
       weekState.showWeekStart = null;
+      weekState.showPlanId = null;
       await loadWeekMenu(panel);
       showToast(out.approved_week_label
         ? out.approved_week_label + ' is still your week.'

@@ -21,7 +21,11 @@ why*, not duplicating the diff.
   (`draft_plan_id`, `draft_week_start`); `planNextLabel` reads "See next
   week's draft" and `planNextWeek` pins `weekState.showWeekStart` to it and
   reloads — Approve and the Re-plan pill are inside. Today's planning nudge
-  is unchanged (still quiet once a plan covers next week). Tests
+  is unchanged (still quiet once a plan covers next week). Review fix: the
+  tap pins by plan id (`weekState.showPlanId` → `/api/week-menu?weekly_plan_id=`),
+  not by date — a date resolves to the plan COVERING it, which after a
+  takeover or custom range is the week already on screen (dead button);
+  the pin lets go after the load that shows that plan approved. Tests
   `tests/test_see_next_weeks_draft.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the

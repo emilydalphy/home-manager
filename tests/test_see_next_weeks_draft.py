@@ -73,7 +73,7 @@ def test_the_dock_reads_see_next_weeks_draft_and_opens_it():
                + _extract("weekDecideHtml", SHELL_JS) + "\n"
                + "function wkDockMoreHtml() { return ''; }\n"
                + "var panels = { week: {} };\n"
-               + "function loadWeekMenu(p) { CALLS.push(['load', weekState.showWeekStart]); }\n"
+               + "function loadWeekMenu(p) { CALLS.push(['load', weekState.showPlanId, weekState.showWeekStart]); }\n"
                + f"""
 var data = {json.dumps(dict(_approved(days), next_period=_DRAFT_NEXT))};
 weekState.data = data;
@@ -82,7 +82,7 @@ planNextWeek();
 console.log(JSON.stringify({{ html: html, calls: CALLS,
   plain: planNextLabel({json.dumps(dict(_DRAFT_NEXT, draft_plan_id=None))}) }}));""")
     assert "See next week’s draft" in out["html"]
-    assert out["calls"] == [["load", "2026-09-28"]], "opens the draft, never the questions"
+    assert out["calls"] == [["load", 9, None]], "opens the draft BY ITS ID, never the questions"
     assert out["plain"] == "Re-plan next week", "an approved next week still re-plans"
 
 
@@ -96,3 +96,66 @@ weekState.data = {json.dumps(dict(_approved(days), next_period=nxt))};
 planNextWeek();
 console.log(JSON.stringify(CALLS));""")
     assert out == [["2026-09-28", 7]]
+
+
+# ---------- review, 2026-10-07: pin by plan, not by date ----------
+
+def test_a_draft_filed_under_another_weeks_date_is_still_the_one_opened(signed_in):
+    """CATCH. After a takeover (or a custom range) a draft's week_start_date
+    is not its first day, and that date resolves to the plan COVERING it —
+    the week already on screen. The dock's tap reloaded it: a dead button.
+    The draft's id reaches it whatever its date says."""
+    # The reviewer's repro: this week approved, next week drafted, then
+    # this week re-planned from today — the takeover trims next week's
+    # draft to start a few days later and leaves its week_start_date.
+    today = _weekly_plan._household_today()
+    this_week = tools.create_weekly_plan((today - datetime.timedelta(days=2)).isoformat(), day_count=7)["weekly_plan_id"]
+    tools.approve_weekly_plan(this_week, approved_by="Emily")
+    nxt = tools.create_weekly_plan((today + datetime.timedelta(days=5)).isoformat(), day_count=7)["weekly_plan_id"]
+    replan = tools.create_weekly_plan(today.isoformat(), day_count=7)["weekly_plan_id"]
+    _weekly_plan.retire_overlapping_plans(replan, today.isoformat(), 7)
+    this_week = replan
+
+    menu = signed_in.get(f"/api/week-menu?weekly_plan_id={this_week}").json()
+    np = menu["next_period"]
+    assert np["draft_plan_id"] == nxt and np["draft_week_start"] != np["start_date"]
+    by_date = signed_in.get(f"/api/week/{np['draft_week_start']}/intake").json().get("plan_id")
+    assert by_date != nxt, "the date resolves to the week on screen — why the pin is by id"
+    shown = signed_in.get(f"/api/week-menu?weekly_plan_id={np['draft_plan_id']}").json()
+    assert shown["weekly_plan_id"] == nxt and shown["status"] == "draft"
+
+
+def test_loadweekmenu_pins_by_id_and_lets_go_once_approved():
+    body = _extract("loadWeekMenu", SHELL_JS)
+    assert "if (weekState.showPlanId) {" in body
+    assert "'?weekly_plan_id=' + encodeURIComponent(weekState.showPlanId)" in body
+    assert "data.status === 'approved'" in body and "weekState.showPlanId = null;" in body
+
+
+@_needs_node
+def test_the_pin_is_dropped_after_the_load_that_shows_it_approved():
+    """The approved draft's "All set" still shows; the next load is this week."""
+    out = _run(
+        "var weekState = { showPlanId: 9, showWeekStart: null, cookView: null };\n"
+        "var URLS = []; var REPLY = { weekly_plan_id: 9, status: 'draft' };\n"
+        "var Api = { fetch: async function (u) { URLS.push(u); return { ok: true, json: async function () { return REPLY; } }; } };\n"
+        "async function loadPlanningPeriodDefault() {}\n"
+        "function todayLocalStr() { return '2026-10-07'; }\n"
+        "function renderWeekMenu() {}\nfunction refreshKitchenPanel() {}\n"
+        "async function planIdForWeek() { URLS.push('intake'); return null; }\n"
+        "var planningPeriodDefault = null, planningPeriodFetchedOn = '';\n"
+        + "async " + _extract("loadWeekMenu", SHELL_JS) + "\n"
+        + """
+(async function () {
+  var p = { querySelector: function () { return {}; } };
+  await loadWeekMenu(p);
+  var a = weekState.showPlanId;
+  REPLY = { weekly_plan_id: 9, status: 'approved' };
+  await loadWeekMenu(p);
+  var b = weekState.showPlanId;
+  await loadWeekMenu(p);
+  console.log(JSON.stringify({ urls: URLS, a: a, b: b }));
+})();
+""")
+    assert out["a"] == 9 and out["b"] is None
+    assert out["urls"] == ["/api/week-menu?weekly_plan_id=9", "/api/week-menu?weekly_plan_id=9", "/api/week-menu"]
