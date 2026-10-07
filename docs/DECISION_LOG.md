@@ -13,6 +13,28 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Ticking a move credits whoever OWNED it — new `move_credits` table**
+  (2026-10-07; branch `overnight/move-owner-slice-3`; Loop Board "Every move
+  has an owner (slice 3)"; `app/tools/move_credits.py`,
+  `tests/test_move_credits.py`). The two tick functions
+  (`cooker.check_off_meal`, `check_off_prep_step` — every tick path, Today,
+  Cook, chat, "Did you have it?", reaches one of them) write one row per move
+  as it becomes done and delete it on un-tick or 'skipped'. The owner and the
+  kind are read off the move as `moves.moves_for_day` draws it at that moment
+  — the owner slice 1 put on Today, not the signed-in adult — so there is no
+  second copy of "which reheat is a reheat" or "a holiday shop row is a
+  shop". Empty owner (whoever_free, every reheat, every shop, a one_person
+  name nobody on record has) is a row with `member_id` NULL, never filled in.
+  A table rather than columns on the two completion rows: the kind has to be
+  kept as it was at the tick, a component batch is ONE cook across several
+  entries, and "no row" has to mean "no record" for ticks made before this.
+  It is not a second "is it done?": `credits()` joins back and counts a
+  credit only while its row still reads done (a swapped-away night drops
+  out). The week's ordinary shop move has NO tick (`set_move_done` writes
+  nothing for `shop:<date>`), so it has nothing to credit. Nothing is shown.
+  Cost: one cooker view per tick that becomes done. Mutation: making the
+  OR IGNORE an OR REPLACE bit nothing — the repeat-tick guard in the callers
+  is what keeps the first credit; the write's IGNORE is belt and braces.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

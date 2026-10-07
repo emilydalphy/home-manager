@@ -20,6 +20,7 @@ from . import freezer_portions as _freezer_portions
 from . import grocery as _grocery
 from . import inventory as _inventory
 from . import leftovers as _leftovers
+from . import move_credits as _move_credits
 from . import move_owner as _move_owner
 from . import plates as _plates
 from . import prep_sessions as _prep_sessions
@@ -453,6 +454,13 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
             result["inventory_queued_for_review"] = []
         return result
 
+    # Whose cook this was, read off the move as Today draws it BEFORE the
+    # write (move_credits.py). Once per batch, like the cook count below:
+    # a batch already counted was credited when it was.
+    credit = (
+        _move_credits.meal_credit(linked_ids, row["weekly_plan_id"])
+        if status == "done" and not was_done else None
+    )
     cooked_at = "datetime('now')" if status == "done" else "NULL"
     # "Mark not cooked" also forgets when the cook began (cook_started_at,
     # 2026-09-13): a night put back to not-cooked is a night still to
@@ -476,8 +484,10 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     # off once. `was_done` is exactly "had this batch been counted?".
     if status == "done" and not was_done:
         _move_recipe_cook_counters(conn, linked_ids, cooked=True)
+        _move_credits.record(conn, credit)
     elif status == "pending" and was_done:
         _move_recipe_cook_counters(conn, linked_ids, cooked=False)
+        _move_credits.clear_meals(conn, linked_ids)
     conn.commit()
     conn.close()
     if status == "done":
@@ -1036,10 +1046,26 @@ def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
         raise ValueError(f"status must be one of pending/done/skipped, not {status!r}.")
     conn = get_conn()
     require_household_row(conn, "prep_tasks", prep_task_id, label="prep task")
+    task = conn.execute(
+        "SELECT status, task_date, weekly_plan_id FROM prep_tasks WHERE id = ? AND household_id = ?",
+        (prep_task_id, household_id()),
+    ).fetchone()
+    # Whose move this was, as Today drew it, read before the write — only
+    # when it is BECOMING done, so a repeat tick keeps the first credit.
+    # 'skipped' is a resolution but not work done, so it credits nobody and
+    # clears a credit like an un-tick does. See move_credits.py.
+    credit = (
+        _move_credits.task_credit(prep_task_id, task["task_date"], task["weekly_plan_id"])
+        if status == "done" and task["status"] != "done" else None
+    )
     conn.execute(
         "UPDATE prep_tasks SET status = ? WHERE id = ? AND household_id = ?",
         (status, prep_task_id, household_id()),
     )
+    if status == "done":
+        _move_credits.record(conn, credit)
+    else:
+        _move_credits.clear_task(conn, prep_task_id)
     conn.commit()
     conn.close()
     return {"prep_task_id": prep_task_id, "status": status}

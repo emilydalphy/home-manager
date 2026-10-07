@@ -2158,3 +2158,34 @@ CREATE TABLE IF NOT EXISTS recipe_sources (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_recipe_sources_research ON recipe_sources (household_id, research_id, position);
+
+-- Who a move counted for (Loop Board "Every move has an owner", slice 3,
+-- 2026-10-07): one row per TICKED cook, reheat, fridge move, prep or
+-- holiday shop, written by the tick itself (cooker.check_off_meal /
+-- check_off_prep_step) and deleted by the un-tick. `member_id` is the
+-- move's OWNER at the moment of the tick (move_owner.py's answer, exactly
+-- as Today drew it) — not whoever was signed in — and NULL when the move
+-- had no owner, which is never filled in later by a guess.
+--
+-- Not a second "is it done?": the completion stays on the row it always
+-- lived on (meal_plan_entries.cooked_status, prep_tasks.status), and
+-- move_credits.credits() only counts a credit whose row still reads done.
+-- No REFERENCES to those rows on purpose: a swap deletes a night outright,
+-- and a foreign key would make that delete fail; the read's join is what
+-- drops a credit for a night that no longer exists. Exactly one of
+-- meal_plan_entry_id / prep_task_id is set. See app/tools/move_credits.py.
+CREATE TABLE IF NOT EXISTS move_credits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    meal_plan_entry_id INTEGER,               -- a cook or reheat tick
+    prep_task_id INTEGER,                     -- a fridge, prep or holiday-shop tick
+    kind TEXT NOT NULL,                       -- cook | reheat | fridge | prep | shop — the move's own kind (moves.py)
+    move_date TEXT NOT NULL,                  -- the move's ISO date (the night it was for), not the tick's
+    member_id INTEGER REFERENCES members(id), -- the owner at tick time; NULL = nobody owned it
+    credited_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_move_credits_meal
+    ON move_credits (household_id, meal_plan_entry_id) WHERE meal_plan_entry_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_move_credits_task
+    ON move_credits (household_id, prep_task_id) WHERE prep_task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_move_credits_week ON move_credits (household_id, move_date);
