@@ -397,7 +397,9 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     because the plan was re-saved. A candidate with no existing match is
     inserted as pending; an existing row with no matching candidate any
     more (the meal was swapped away, the item left the freezer) is deleted
-    — it would otherwise linger as a reminder for something no longer true.
+    — it would otherwise linger as a reminder for something no longer true —
+    unless it was ticked done and its freezer row is gone (the food was
+    eaten), which is a record, not a reminder (see the comment at the sweep).
 
     Also scoped to `inventory_item_id IS NOT NULL` — every candidate this
     function ever produces has one (see _candidates_from_plan: a candidate
@@ -435,9 +437,11 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
         own = [c for c in candidates if c.get("kind") == OWN_PORTION_KIND]
         candidates = [c for c in candidates if c.get("kind") != OWN_PORTION_KIND]
         existing = conn.execute(
-            "SELECT id, inventory_item_id, meal_plan_entry_id, task_date FROM prep_tasks "
-            "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
-            "AND meal_plan_entry_id IS NOT NULL AND inventory_item_id IS NOT NULL",
+            "SELECT t.id, t.inventory_item_id, t.meal_plan_entry_id, t.task_date, t.status, "
+            "EXISTS (SELECT 1 FROM inventory_items i WHERE i.id = t.inventory_item_id) AS item_exists "
+            "FROM prep_tasks t "
+            "WHERE t.weekly_plan_id = ? AND t.household_id = ? AND t.task_type = 'defrost' "
+            "AND t.meal_plan_entry_id IS NOT NULL AND t.inventory_item_id IS NOT NULL",
             (weekly_plan_id, household_id()),
         ).fetchall()
         existing_by_key = {
@@ -472,7 +476,24 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
                 kept_ids.add(cur.lastrowid)
                 inserted += 1
 
-        stale_ids = [r["id"] for r in existing if r["id"] not in kept_ids]
+        # A move already ticked DONE whose freezer row is GONE is a record,
+        # not a stale reminder. The food being eaten is what removes that row
+        # (check_off_meal depletes it), the candidate keyed on it goes too,
+        # and this sweep used to take Saturday's ticked "move the chicken to
+        # the fridge" with it — the record that somebody did the work, gone
+        # by Monday. Same class as the 2026-09-22 ticked-move-held entry.
+        # Narrow on purpose: a done row whose item still EXISTS lost its
+        # candidate some other way (the night's dish changed in place, the
+        # item was re-filed out of the freezer) and is still swept, because
+        # get_week_menu would otherwise pin its thaw note on a night it no
+        # longer describes — the own-portion sweep below keeps the same rule
+        # (test_a_resync_keeps_done_and_sweeps_a_lunch_that_is_no_longer_frozen).
+        # Harmless to keep: every reader counts 'done' as handled
+        # (moves._prep_moves, the pending-only counts, the texts), and
+        # get_prep_schedule still drops a row whose meal has gone. A pending or
+        # skipped row for eaten food is swept exactly as before.
+        stale_ids = [r["id"] for r in existing if r["id"] not in kept_ids
+                     and not (r["status"] == "done" and not r["item_exists"])]
 
         # The moves for portions this week's own cook froze
         # (own_portion_candidates): the same keep-status / insert / sweep, keyed

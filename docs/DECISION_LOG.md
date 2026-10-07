@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A ticked fridge move survives the food being eaten** (2026-10-07; branch
+  `overnight/done-fridge-move-kept`; tests
+  `tests/test_done_fridge_move_kept.py`). `defrost.sync_defrost_tasks`' sweep
+  is keyed on `inventory_item_id`; cooking depletes the freezer row, so a
+  move already ticked `done` lost its candidate and was deleted — the record
+  that somebody moved the chicken, gone by Monday. The sweep now spares a
+  `done` row whose `inventory_items` row no longer exists; `pending` and
+  `skipped` rows for eaten food are still swept, and so is a `done` row whose
+  item still exists (dish changed in place, item re-filed) — otherwise
+  `get_week_menu` pins a thaw note on a night it no longer describes; the
+  own-portion sweep keeps that rule unchanged. Safe to keep: every reader
+  treats `done` as handled or reads `pending` only, and `get_prep_schedule`
+  still drops a row whose meal has gone. Same class as the 2026-09-22
+  ticked-move-held entry.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
