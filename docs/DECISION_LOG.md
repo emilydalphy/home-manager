@@ -256,6 +256,21 @@ why*, not duplicating the diff.
   that wiping "chicken sausage: 1"; a comma is a cut ("pork, ground"), not an
   alternative. Covers the chip, chat's edit_preference and "we don't eat X". Tests:
   `tests/test_protein_rating_replaces_old_key.py`.
+- **Un-batching keeps the freezer answer** (2026-10-08; branch
+  `overnight/unbatch-keeps-freezer-answer`). Prep-day week batches Friday's
+  salmon for Saturday; freezer step says "in the freezer" (one move, Friday;
+  line set aside); chat "cook it fresh Saturday" then left no move for
+  Saturday and put the salmon back on the list (the rescale re-ingests and
+  cannot merge into a removed line). `defrost.restate_frozen_after_batch_change`
+  runs after unbatch/rebatch on the batch's nights only: books the cook
+  nights, drops a pending move on a night that reheats again, and re-sets-aside
+  a fresh line only where the freezer step had set one aside (Shop's "Yes,
+  freezing it" is being bought, so its line is left). Review fix: only a
+  line THIS plan wrote is set aside, never a standing want or a staples line
+  (lost the household's own amount; logged a "plenty" nobody tapped). Not done: re-approval's
+  `apply_prep_day_batches` after a freezer answer; a defrost row's `quantity`
+  scales the recipe's raw amount by batch/eaters, ignoring default_servings
+  (8 fillets for a 4-serving batch) — stored, shown nowhere today.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

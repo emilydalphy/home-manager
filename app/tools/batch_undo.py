@@ -77,6 +77,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import batch_components as _batch_components
 from . import cook_ahead as _cook_ahead
+from . import defrost as _defrost
 from . import leftovers as _leftovers
 from . import weekly_plan as _weekly_plan
 
@@ -522,6 +523,13 @@ def unbatch(what: str = "", day: str = "") -> dict:
                 # stands. Nothing is excluded — the freed day is back in the
                 # group and buys its own portion again. See the module note.
                 _weekly_plan._rescale_leftover_source_grocery(batch["source_entry_id"], 0)
+            # A freed day cooks for itself now, so a "yes, it's in the
+            # freezer" for the batch is a yes for that day's own move too —
+            # and the rescale above must not put that food back on the list.
+            # After the rescale, which is what wrote the fresh line.
+            _defrost.restate_frozen_after_batch_change(
+                plan_id, [batch["source_entry_id"], *(c["entry_id"] for c in batch["covered"])],
+            )
             results.append({"said": _dish_said(batch, freed, whole), "whole": whole})
         else:
             source_id = batch_source_id(batch)
@@ -590,6 +598,9 @@ def rebatch(undo: dict) -> dict:
         if isinstance(result, str):
             return {"status": "refused", "said": result}
         forget_no_batch(covered)
+        # The other direction: a day that reheats again must not keep the
+        # fridge move unbatch booked for it (see restate_frozen_after_batch_change).
+        _defrost.restate_frozen_after_batch_change(plan_id, [source_id, *covered])
     for comp in undo.get("components") or []:
         key = comp.get("key") or ""
         entry_ids = [e for e in (comp.get("entry_ids") or []) if isinstance(e, int)]
