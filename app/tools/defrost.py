@@ -41,7 +41,7 @@ import math
 import re
 from datetime import date, datetime, time, timedelta
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 # cooker is this module's clock as well as its name matcher (see the note
@@ -1142,7 +1142,7 @@ def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
     conn = get_conn()
     live = ",".join("?" * len(_LIVE_PLAN_STATUSES))
     rows = conn.execute(
-        "SELECT g.id, g.item, g.status, g.removed_by, g.source_weekly_plan_id, "
+        "SELECT g.id, g.item, g.status, g.removed_by, g.source_weekly_plan_id, g.staple_id, "
         "  (SELECT GROUP_CONCAT(DISTINCT e.weekly_plan_id) FROM meal_plan_grocery_links l "
         "   JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
         "   JOIN weekly_plans wp ON wp.id = e.weekly_plan_id "
@@ -1478,7 +1478,8 @@ def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
     that now reheats is dropped (a DONE one is food in the fridge, and
     stays); every cook night among them is booked the way the step books
     it, amounts included; and where the freezer step had set that item's
-    line aside, a fresh still-to-buy line for it comes off the list again.
+    line aside, a fresh line THIS plan wrote for it comes off the list again (never a
+    standing want or a staples line).
     An item booked from Shop's "Yes, freezing it" is being BOUGHT and
     frozen, so its line is never touched here. Nothing outside the batch's
     nights is booked — a batch change is not a new answer about the rest
@@ -1507,27 +1508,19 @@ def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
     reheats = set(_leftovers.plan_leftover_chains(weekly_plan_id)["leftovers"])
     doomed = [(r["id"],) for r in rows if r["status"] == "pending" and r["meal_plan_entry_id"] in reheats]
     if doomed:
-        conn = get_conn()
-        try:
+        with write() as conn:
             conn.executemany(
                 "DELETE FROM prep_tasks WHERE id = ? AND household_id = ?",
                 [(i, household_id()) for (i,) in doomed],
             )
-            conn.commit()
-        finally:
-            conn.close()
 
     today = _cooker.household_today()
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
     plan_meats = list(_iter_plan_meat_ingredients(weekly_plan_id))
-    conn = get_conn()
-    try:
+    with write() as conn:
         created, _notes = _book_frozen_moves(
             conn, weekly_plan_id, plan_meats, items, today, dinner_window, entry_ids=set(ids),
         )
-        conn.commit()
-    finally:
-        conn.close()
 
     names = {}
     for _m, _ing, ing_name, _factor in plan_meats:
@@ -1537,7 +1530,17 @@ def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
     set_aside: list[int] = []
     for key, rows_for_item in lines.items():
         if any(r["status"] == "removed" and r["removed_by"] == FREEZER_REMOVED_BY for r in rows_for_item):
-            set_aside += _set_aside_own_lines(rows_for_item)
+            # Only the line THIS plan's ingest wrote. A standing want (a
+            # hand/chat add, source plan NULL) or a staples line may hold
+            # the household's own amount with the freed night merged in;
+            # setting it aside would lose their amount, and a staples line
+            # would log a "plenty" nobody tapped. Left needed, as before —
+            # buying the freed night again beats losing what they asked for.
+            plan_owned = [
+                r for r in rows_for_item
+                if r["source_weekly_plan_id"] == weekly_plan_id and r.get("staple_id") is None
+            ]
+            set_aside += _set_aside_own_lines(plan_owned)
     return {"created": created, "cancelled": len(doomed), "set_aside": set_aside}
 
 

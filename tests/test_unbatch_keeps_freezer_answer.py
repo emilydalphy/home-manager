@@ -98,3 +98,44 @@ def test_putting_the_batch_back_drops_the_reheat_nights_move(client):
 
     assert _moves(plan_id) == {wed: (_day(1), "pending")}
     assert _salmon_to_buy() == []
+
+
+def _needed_lines():
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT quantity, source_weekly_plan_id, staple_id FROM grocery_items "
+        "WHERE item = 'Salmon fillets' AND status IN ('needed', 'in_cart')"
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def test_a_hand_added_line_is_never_set_aside(client):
+    """Review repro A: the household's own "2 salmon fillets", added after
+    the freezer answer, takes the freed night's amount in the rescale. It
+    stays on the list — their 2 must not vanish with the plan's share."""
+    plan_id, wed, thu = _week()
+    tools.add_grocery_item("Salmon fillets", quantity="2", category="meat/seafood")
+
+    tools.unbatch("the salmon")
+
+    lines = _needed_lines()
+    assert len(lines) == 1 and lines[0]["source_weekly_plan_id"] is None
+    assert thu in _moves(plan_id), "the move half still lands"
+
+
+def test_a_staples_line_is_never_set_aside_and_logs_no_plenty(client):
+    """Review repro B: a salmon staple's line is the staple's, not the
+    plan's — setting it aside would also log a "plenty" nobody tapped."""
+    plan_id, wed, thu = _week()
+    tools.add_staple("Salmon fillets", quantity="2", category="meat/seafood", running_low=True)
+    tools.sync_due_staples()
+    assert any(r["staple_id"] for r in _needed_lines()), "precondition: the staple is on the list"
+
+    tools.unbatch("the salmon")
+
+    assert any(r["staple_id"] for r in _needed_lines())
+    conn = get_conn()
+    plenty = conn.execute("SELECT COUNT(*) FROM staple_events WHERE kind = 'plenty'").fetchone()[0]
+    conn.close()
+    assert plenty == 0

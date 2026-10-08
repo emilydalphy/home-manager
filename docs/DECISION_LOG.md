@@ -22,7 +22,9 @@ why*, not duplicating the diff.
   runs after unbatch/rebatch on the batch's nights only: books the cook
   nights, drops a pending move on a night that reheats again, and re-sets-aside
   a fresh line only where the freezer step had set one aside (Shop's "Yes,
-  freezing it" is being bought, so its line is left). Not done: re-approval's
+  freezing it" is being bought, so its line is left). Review fix: only a
+  line THIS plan wrote is set aside, never a standing want or a staples line
+  (lost the household's own amount; logged a "plenty" nobody tapped). Not done: re-approval's
   `apply_prep_day_batches` after a freezer answer; a defrost row's `quantity`
   scales the recipe's raw amount by batch/eaters, ignoring default_servings
   (8 fillets for a 4-serving batch) — stored, shown nowhere today.
