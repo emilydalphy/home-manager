@@ -304,6 +304,14 @@ why*, not duplicating the diff.
   `confirm_slot_recommendation` fell to the /memory catch-all, though "away
   Monday" empties the dinner and reverses its groceries — Meals and Shop
   stayed stale. Now in `_WEEK_TOOLS` (own line), like `take_the_night_off`.
+- **Today's tomorrow card crosses into the next plan** (2026-10-08; branch
+  `overnight/tomorrow-is-next-weeks`). On a plan's last evening, with next
+  week approved, Today said "That's everything for today." — the tomorrow
+  card read the one cooker view, today's plan, which has no tomorrow.
+  `moves._view_for_day` reads the live plan covering tomorrow
+  (`weekly_plan._live_plan_covering`) only when today's view ends first.
+  Not fixed, same root: the shop move's 36-hour horizon still sees only
+  today's plan, so "Shop before tomorrow" can't name next week's first meals.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

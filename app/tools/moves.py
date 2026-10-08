@@ -70,10 +70,13 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime, time, timedelta
 
-# Every read below goes through another tool module, so this never touches
-# the DB directly and never needs household_id() itself — the scoping comes
-# from get_cooker_view / list_grocery_list / get_household_rhythm, each of
-# which is already request-scoped (see _shared.household_id).
+# Every read below goes through another tool module, so this never needs
+# household_id() itself — the scoping comes from get_cooker_view /
+# list_grocery_list / get_household_rhythm, each of which is already
+# request-scoped (see _shared.household_id). The one connection opened here
+# (_view_for_day) only hands it to weekly_plan._live_plan_covering, which
+# scopes its own query.
+from ..db import get_conn
 from . import cooker as _cooker
 from . import day_meals as _day_meals
 from . import defrost as _defrost
@@ -1110,8 +1113,11 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
 
     tomorrow = None
     if featured is None:
-        ahead = moves_for_day(target + timedelta(days=1), now=now, view=view,
-                              owners=owners, rhythm=rhythm)
+        next_day = target + timedelta(days=1)
+        ahead_view = _view_for_day(view, next_day)
+        ahead_owners = owners if ahead_view is view else _move_owner.resolve(ahead_view, rhythm)
+        ahead = moves_for_day(next_day, now=now, view=ahead_view,
+                              owners=ahead_owners, rhythm=rhythm)
         undone = [m for m in ahead if not m["done"]]
         tomorrow = undone[0] if undone else None
 
@@ -1137,6 +1143,41 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         # and answer, or None on an ordinary day (see holidays.py).
         "holiday": _today_holiday(target),
     }
+
+
+def _view_for_day(view: dict, day: date) -> dict:
+    """
+    The cooker view that holds `day`'s meals — `view` itself unless its plan
+    ends before `day` and another live plan starts on it.
+
+    The view is ONE plan, the one covering today, so on the last evening of
+    a week "tomorrow" was asked of a plan that had no tomorrow: with next
+    week approved and starting in the morning, Today said "That's everything
+    for today." over a Monday that had a dinner on it — on the Sunday night
+    a household most wants to know how the week starts. Same resolver, same
+    approved-before-draft order as the current plan itself
+    (weekly_plan._live_plan_covering), so the card names what Today will
+    show when tomorrow comes. Costs a read only on a plan's last day, and
+    only when nothing today is featured. Unreadable is the old answer.
+    """
+    start = view.get("period_start_date")
+    if view.get("weekly_plan_id") and start:
+        first = date.fromisoformat(start)
+        last = first + timedelta(days=max(1, view.get("day_count") or 1) - 1)
+        if first <= day <= last:
+            return view
+    try:
+        conn = get_conn()
+        try:
+            row = _weekly_plan._live_plan_covering(conn, day.isoformat())
+        finally:
+            conn.close()
+        if row is None or row["id"] == view.get("weekly_plan_id"):
+            return view
+        return _cooker.get_cooker_view(row["id"])
+    except Exception:
+        logger.exception("Couldn't read the plan that covers tomorrow")
+        return view
 
 
 def _today_holiday(target: date) -> dict | None:
