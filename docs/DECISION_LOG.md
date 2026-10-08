@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A protein's new rating replaces its old one under any spelling**
+  (2026-10-08; branch `overnight/protein-chip-one-answer`). Tapping Chicken
+  to skip with `{"Chicken": 5}` stored (chat's spelling; old setup wrote
+  `"Fish / seafood": "more"`) left both keys — the chip read skipped, the
+  planner still got "Chicken: 5". `set_household_meal_preferences` now drops
+  any stored key the chip would read as the same protein (same key in any
+  case, or first word = a one-word protein) before merging. Covers the chip,
+  chat's edit_preference and "we don't eat X". Tests:
+  `tests/test_protein_rating_replaces_old_key.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

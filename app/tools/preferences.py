@@ -5,6 +5,7 @@ food preferences, plus the onboarding answers that seed them.
 from __future__ import annotations
 
 import json
+import re
 from ..db import get_conn, write
 from ._shared import EATS_HERE_SQL, household_id
 from .grocery import _merge_key
@@ -334,6 +335,18 @@ def remove_item_from_all_stores_typical_list(item: str) -> None:
             conn.commit()
 
 
+def _same_protein(stored_key: str, new_key: str) -> bool:
+    """Does `stored_key` hold the answer for the protein `new_key` names?
+    "Chicken" and "Fish / seafood" both do for "chicken" / "fish"."""
+    new = str(new_key).strip().lower()
+    old = str(stored_key).strip().lower()
+    if not new:
+        return False
+    if old == new:
+        return True
+    return " " not in new and re.split(r"[\s/,]+", old)[0] == new
+
+
 def set_household_meal_preferences(
     notes: str = "",
     protein_preferences: dict[str, int | str] | None = None,
@@ -379,6 +392,18 @@ def set_household_meal_preferences(
         merged_notes = notes if notes else (existing["notes"] if existing else "")
         merged_proteins = dict(json.loads(existing["protein_preferences_json"])) if existing else {}
         if protein_preferences:
+            # A new rating REPLACES the old answer for that protein, whatever
+            # it was filed under — not just the identical key. Chat writes
+            # "Chicken", old setup wrote "Fish / seafood": "more", and the
+            # Settings chip writes "chicken". A plain update kept both, so
+            # tapping Chicken to skip left {"Chicken": 5, "chicken": 1} — the
+            # chip showed skipped while the planner was still told chicken
+            # is a favourite. Same reading as the chip (shell.js
+            # wwkProteinState): same key in any case, or a stored key whose
+            # first word is this one-word protein.
+            for new_key in protein_preferences:
+                for old_key in [k for k in merged_proteins if k != new_key and _same_protein(k, new_key)]:
+                    merged_proteins.pop(old_key)
             merged_proteins.update(protein_preferences)
         merged_cuisines = cuisine_preferences if cuisine_preferences is not None else (
             json.loads(existing["cuisine_preferences_json"]) if existing else []
