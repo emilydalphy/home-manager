@@ -238,6 +238,14 @@ why*, not duplicating the diff.
   out Monday plus dinner out Friday read "Away Mon–Fri" over four planned days.
   Now a day counts only when an away stretch covers it or all three meals are
   away, and separate runs are listed ("Away Wed, Sat–Sun").
+- **A dinner named "Leftover chili" is a reheat on Cook, Today and the
+  nudge** (2026-10-08; branch `overnight/named-leftovers-not-a-cook`). A
+  freeform leftovers night with no chain (chat's plan_meal) was a cook
+  everywhere but Plan: "Start cooking", `cook:<id>` on Today, and the evening
+  nudge texted "Tonight: Leftover chili. Tap to start." `cooker._apply_leftover_chains`
+  now marks a recipe-less meal matching Plan's `leftovers?` word as a reheat
+  (`leftovers_named`; provenance "leftovers", not "from the freezer"). A saved
+  recipe called "Leftover Turkey Soup" stays a cook. Day-based plans only.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
