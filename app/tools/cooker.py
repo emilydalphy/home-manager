@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -1279,6 +1280,11 @@ def _set_batch_sentences(card: dict, source: dict, batch: dict, today: str | Non
             card[key] = said
 
 
+# A meal NAMED as leftovers ("Leftover chili", "Leftovers") — the Plan
+# tab's own test (weekly_plan.build_slot), so the two screens agree.
+_NAMED_LEFTOVERS_RE = re.compile(r"\bleftovers?\b", re.IGNORECASE)
+
+
 def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_name: dict) -> None:
     """
     The day-based half of batch cooking (Emily, 2026-09-04): one night
@@ -1354,6 +1360,31 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
         # A reheat is not a cook — the same emptying the chain pass does
         # below, for the same reason: no screen may render this night as a
         # second cook of the dish by reading a field it happens to find.
+        card["ingredients"] = []
+        card["instructions"] = []
+        card["advance_prep_notes"] = ""
+        card["advance_prep_step_indices"] = []
+        card["has_full_recipe"] = False
+        card["default_servings"] = None
+
+    # A night written as leftovers by NAME — "Leftover chili" planned from
+    # the chat, no chain behind it and no recipe to cook. The Plan tab has
+    # always read these as a reheat (weekly_plan's build_slot, the same
+    # regex on the freeform name), but nothing here did, so Cook offered
+    # "Start cooking", Today listed it as a cook and the evening nudge (which
+    # reads Today's moves) texted "Tonight: Leftover chili. Tap to start."
+    # Only a meal with no saved recipe: "Leftover Turkey Soup" the recipe is
+    # a real cook. The name stays the headline; there is no source night to
+    # point at, which `leftovers_named` tells day_meals.provenance_note.
+    for card in meals:
+        if card.get("is_leftovers") or card["entry_id"] in chains["leftovers"] or card.get("recipe_id"):
+            continue
+        if not _NAMED_LEFTOVERS_RE.search(card.get("meal") or ""):
+            continue
+        card["is_leftovers"] = True
+        card["leftovers_named"] = True
+        card["leftovers_headline"] = card.get("meal") or "Leftovers"
+        card["servings"] = _leftovers.eaters_at(card["date"], card.get("slot")) or None
         card["ingredients"] = []
         card["instructions"] = []
         card["advance_prep_notes"] = ""

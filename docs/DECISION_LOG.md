@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A dinner named "Leftover chili" is a reheat on Cook, Today and the
+  nudge** (2026-10-08; branch `overnight/named-leftovers-not-a-cook`). A
+  freeform leftovers night with no chain (chat's plan_meal) was a cook
+  everywhere but Plan: "Start cooking", `cook:<id>` on Today, and the evening
+  nudge texted "Tonight: Leftover chili. Tap to start." `cooker._apply_leftover_chains`
+  now marks a recipe-less meal matching Plan's `leftovers?` word as a reheat
+  (`leftovers_named`; provenance "leftovers", not "from the freezer"). A saved
+  recipe called "Leftover Turkey Soup" stays a cook. Day-based plans only.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

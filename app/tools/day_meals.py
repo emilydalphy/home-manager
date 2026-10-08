@@ -125,6 +125,10 @@ def provenance_note(meal: dict) -> str:
     "leftovers from" dangling.
     """
     if meal.get("is_leftovers"):
+        # Leftovers by name only ("Leftover chili" from the chat): no
+        # source night on the plan, and it is not from the freezer either.
+        if meal.get("leftovers_named"):
+            return "leftovers"
         headline = meal.get("leftovers_headline") or ""
         made_ahead = headline.startswith("Made ahead")
         lead = "made ahead" if made_ahead else "leftovers from"
