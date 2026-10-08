@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Test gaps closed: revoked member links, and change-code purpose/binding**
+  (2026-10-08; branch `overnight/test-gaps-signin-share`). No test ever
+  revoked a member self-service link; each of the three `revoked = 0` guards in
+  `tools/sharing.py` could go with the suite green (`test_member_share_revoke.py`).
+  The email "change code can't be replayed at sign-in" check used an already-spent
+  code, so deleting `match_code`'s purpose filter or its (household, adult) binding
+  passed too. Tests only, no bug.
+
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
