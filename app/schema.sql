@@ -1251,6 +1251,8 @@ CREATE TABLE IF NOT EXISTS staple_events (
     -- source such as a future receipt scan, bought the same thing the same
     -- day) or on no line at all — then no untick removes it. NULL on every
     -- row from before this column; those are never removed either.
+    -- For an 'added' row: the line "Before you shop" step 1 made the staple
+    -- for, so that add's Undo takes the staple back too (2026-10-08).
     grocery_item_id INTEGER,
     -- ...and what the staple's rhythm fields read on either side of that
     -- tick (cadence_days, cadence_source, last_bought_at, next_due_at,
