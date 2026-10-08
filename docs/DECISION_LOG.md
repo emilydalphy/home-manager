@@ -284,6 +284,14 @@ why*, not duplicating the diff.
   cooked cook or cooked landing night (main's behaviour), and generation's
   own away pass (`apply_slot_needs_to_plan`). Coming home again reopens the
   night as a question; the cook stays where it moved.
+- **Test gaps closed: revoked member links, and change-code purpose/binding**
+  (2026-10-08; branch `overnight/test-gaps-signin-share`). No test ever
+  revoked a member self-service link; each of the three `revoked = 0` guards in
+  `tools/sharing.py` could go with the suite green (`test_member_share_revoke.py`).
+  The email "change code can't be replayed at sign-in" check used an already-spent
+  code, so deleting `match_code`'s purpose filter or its (household, adult) binding
+  passed too. Tests only, no bug.
+
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

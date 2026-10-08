@@ -270,6 +270,46 @@ def test_an_adult_adds_or_changes_their_email_with_a_code_to_the_new_address(sig
     assert phone.get("/api/whoami").json()["member"]["id"] == mid
 
 
+def test_a_live_change_code_does_not_open_the_sign_in_door(signed_in, outbox):
+    """The replay check above uses a code the change had already SPENT, so
+    it passed with the purpose filter in match_code deleted (measured,
+    2026-10-08). This one is still live when it is tried at sign-in: it
+    must be refused there, make no household, and still finish the change."""
+    mid = _adult()
+    signed_in.post("/api/whoami/pick", json={"member_id": mid})
+    signed_in.post("/api/account/email/start", json={"email": "emily@example.com"})
+    code = _code_in(outbox[-1])
+    conn = get_conn()
+    households_before = conn.execute("SELECT COUNT(*) FROM households").fetchone()[0]
+    conn.close()
+
+    door = TestClient(app)
+    assert _verify(door, "emily@example.com", code).status_code == 400
+    assert security.COOKIE_NAME not in door.cookies
+    conn = get_conn()
+    assert conn.execute("SELECT COUNT(*) FROM households").fetchone()[0] == households_before
+    conn.close()
+
+    res = signed_in.post("/api/account/email/verify", json={"email": "emily@example.com", "code": code})
+    assert res.status_code == 200, res.text
+    assert account_email.lookup("emily@example.com") == (1, mid)
+
+
+def test_a_change_code_belongs_to_the_adult_who_asked_for_it(signed_in, outbox):
+    """match_code binds a change code to (household, adult). Nothing pinned
+    that: with the binding deleted every test here still passed. Without it,
+    a code Emily asked for to add HER address could be spent after the
+    device is switched to Vineeth, and her address would sign in as him."""
+    emily, vineeth = _adult(name="Emily"), _adult(name="Vineeth")
+    signed_in.post("/api/whoami/pick", json={"member_id": emily})
+    signed_in.post("/api/account/email/start", json={"email": "emily@example.com"})
+    code = _code_in(outbox[-1])
+    signed_in.post("/api/whoami/pick", json={"member_id": vineeth})
+    res = signed_in.post("/api/account/email/verify", json={"email": "emily@example.com", "code": code})
+    assert res.status_code == 400
+    assert account_email.lookup("emily@example.com") is None
+
+
 def _adult(household=1, name="Emily"):
     conn = get_conn()
     mid = conn.execute(
