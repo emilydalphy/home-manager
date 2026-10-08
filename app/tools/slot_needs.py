@@ -299,6 +299,7 @@ def set_slot_need(
         )
         plan_id = _plan_id_for_date(conn, date_str, slot) if need == "away" else None
         if plan_id is not None:
+            _cook_on_the_fed_night(conn, plan_id, date_str, slot)
             _settle_slot_empty(
                 plan_id, date_str, slot, resolved_reason,
                 derived_from={"need": "away", "away_stretch_id": away_stretch_id},
@@ -324,6 +325,53 @@ def set_slot_need(
         "converted_existing_plan_slot": converted,
         "for_member_ids": sorted(for_member_ids or []),
     }
+
+
+def _cook_on_the_fed_night(conn, plan_id: int, date_str: str, slot: str) -> bool:
+    """
+    Before an away empties a night that was cooking double for later ones,
+    move the cook onto the first night it was feeding — the rule the night
+    off and the Review "−" already follow (Emily's option A, 2026-09-22),
+    through the same two functions so the three cannot pick different
+    nights. Returns whether it moved anything.
+
+    Without this, "we're out Tuesday" deleted Tuesday's cook and reversed
+    its whole doubled batch off the list, and Thursday — still planned as
+    the dish, still linked to a night now marked nobody home — showed as an
+    ordinary cook with not one ingredient bought for it. Measured through
+    the attendance route: beef and lettuce gone from the list, Bulgogi
+    Wraps still on Thursday.
+
+    The batch comes down to the nights still eating it, as the "−" does:
+    nobody is eating the away night, so there is no share to freeze. A fed
+    night already ticked cooked is left alone (moving onto it would delete
+    the tick), and so is a cook already ticked — that is main's behaviour
+    for both. On the caller's transaction; commits nothing.
+    """
+    from . import leftovers as _leftovers
+
+    row = conn.execute(
+        "SELECT id, cooked_status FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+        "AND date = ? AND slot = ? AND slot_state = 'planned' AND component_category IS NULL",
+        (plan_id, household_id(), date_str, slot),
+    ).fetchone()
+    if row is None or (row["cooked_status"] or "") == "done":
+        return False
+    source = _leftovers.plan_leftover_chains(plan_id, conn=conn)["sources"].get(row["id"])
+    fed = _weekly_plan.fed_nights_in_eating_order(source, date_str)
+    if not fed or _weekly_plan.fed_night_is_cooked(conn, fed[0]):
+        return False
+    target = fed[0]
+    # The landing night stops being one the batch feeds; read while its
+    # row (and its links_to) still exists — the "−"'s order exactly.
+    source_id = _weekly_plan._unlink_leftover_target(plan_id, target["entry_id"], conn=conn) or row["id"]
+    _weekly_plan.move_cook_onto_fed_night(conn, plan_id, row["id"], date_str, slot, target)
+    status = conn.execute(
+        "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?", (plan_id, household_id()),
+    ).fetchone()
+    if status is not None and status["status"] == "approved":
+        _weekly_plan._rescale_leftover_source_grocery(source_id, target["entry_id"], conn=conn)
+    return True
 
 
 def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
