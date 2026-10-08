@@ -5,7 +5,6 @@ food preferences, plus the onboarding answers that seed them.
 from __future__ import annotations
 
 import json
-import re
 from ..db import get_conn, write
 from ._shared import EATS_HERE_SQL, household_id
 from .grocery import _merge_key
@@ -337,14 +336,18 @@ def remove_item_from_all_stores_typical_list(item: str) -> None:
 
 def _same_protein(stored_key: str, new_key: str) -> bool:
     """Does `stored_key` hold the answer for the protein `new_key` names?
-    "Chicken" and "Fish / seafood" both do for "chicken" / "fish"."""
+    "Chicken" does for "chicken", and "Fish / seafood" for "fish" — a
+    slash names alternatives, so either one is the same answer. Nothing
+    looser: "chicken sausage", "chicken thighs" and "fish tacos" are a
+    household's own, more specific answers (review, 2026-10-08: a first-
+    word rule wiped "chicken sausage: 1", an explicit avoid, when chicken
+    was rated 5). A comma is NOT an alternative: "pork, ground" is ground
+    pork, a cut, so rating pork leaves it alone."""
     new = str(new_key).strip().lower()
     old = str(stored_key).strip().lower()
     if not new:
         return False
-    if old == new:
-        return True
-    return " " not in new and re.split(r"[\s/,]+", old)[0] == new
+    return old == new or new in [part.strip() for part in old.split("/")]
 
 
 def set_household_meal_preferences(
@@ -398,9 +401,9 @@ def set_household_meal_preferences(
             # Settings chip writes "chicken". A plain update kept both, so
             # tapping Chicken to skip left {"Chicken": 5, "chicken": 1} — the
             # chip showed skipped while the planner was still told chicken
-            # is a favourite. Same reading as the chip (shell.js
-            # wwkProteinState): same key in any case, or a stored key whose
-            # first word is this one-word protein.
+            # is a favourite. Same key in any case, or one alternative of a
+            # slashed key ("Fish / seafood") — see _same_protein for why
+            # nothing looser.
             for new_key in protein_preferences:
                 for old_key in [k for k in merged_proteins if k != new_key and _same_protein(k, new_key)]:
                     merged_proteins.pop(old_key)

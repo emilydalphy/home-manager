@@ -28,9 +28,16 @@ def test_a_new_rating_replaces_the_old_answer_whatever_it_was_filed_under(signed
     assert _proteins() == {"beef": 3, "chicken": 1, "fish": 1}
 
 
-def test_a_different_protein_that_merely_starts_alike_is_left_alone():
-    tools.edit_preference("protein_preferences", {"tofurky": 4, "fish": 2, "Chicken": 5})
-    tools.edit_preference("protein_preferences", {"tofu": 1, "white fish": 5})
+def test_a_more_specific_answer_survives_a_rating_of_the_protein():
+    """Review, 2026-10-08: a first-word rule wiped "chicken sausage: 1" — an
+    explicit avoid — the moment chicken was rated 5."""
+    tools.edit_preference("protein_preferences", {
+        "chicken sausage": 1, "chicken thighs": 5, "fish tacos": 5, "pork, ground": 2, "tofurky": 4,
+    })
+    for rating in ({"chicken": 5}, {"fish": 3}, {"pork": 5}, {"tofu": 1}):
+        tools.edit_preference("protein_preferences", rating)
 
-    # "tofurky" is not tofu; a two-word rating never claims "fish".
-    assert _proteins() == {"tofurky": 4, "fish": 2, "Chicken": 5, "tofu": 1, "white fish": 5}
+    assert _proteins() == {
+        "chicken sausage": 1, "chicken thighs": 5, "fish tacos": 5, "pork, ground": 2, "tofurky": 4,
+        "chicken": 5, "fish": 3, "pork": 5, "tofu": 1,
+    }

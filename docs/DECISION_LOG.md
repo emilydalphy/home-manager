@@ -18,9 +18,10 @@ why*, not duplicating the diff.
   to skip with `{"Chicken": 5}` stored (chat's spelling; old setup wrote
   `"Fish / seafood": "more"`) left both keys — the chip read skipped, the
   planner still got "Chicken: 5". `set_household_meal_preferences` now drops
-  any stored key the chip would read as the same protein (same key in any
-  case, or first word = a one-word protein) before merging. Covers the chip,
-  chat's edit_preference and "we don't eat X". Tests:
+  a stored key for the same protein before merging: same key in any case, or
+  one "/" alternative ("Fish / seafood"). Not by first word — review caught
+  that wiping "chicken sausage: 1"; a comma is a cut ("pork, ground"), not an
+  alternative. Covers the chip, chat's edit_preference and "we don't eat X". Tests:
   `tests/test_protein_rating_replaces_old_key.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
