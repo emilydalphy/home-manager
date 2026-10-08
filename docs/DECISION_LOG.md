@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Out on a cook night: the cook moves onto the night it fed** (2026-10-08;
+  branch `overnight/away-moves-the-cook`; `tests/test_away_on_a_cook_night.py`).
+  Everyone out for an approved dinner that was cooking double (attendance,
+  day sheet or trip) emptied it and reversed the whole doubled batch, while
+  the reheat night stayed planned as the dish with nothing bought — measured:
+  beef and lettuce gone, Bulgogi Wraps still on Thursday. `set_slot_need`
+  now does what the night off and the "−" do (`fed_nights_in_eating_order` +
+  `move_cook_onto_fed_night`): the cook lands on the first fed night, later
+  fed nights reheat from it, and the batch shrinks to the nights still
+  eating it (no freezer share: nobody ate the away night). Untouched: a
+  cooked cook or cooked landing night (main's behaviour), and generation's
+  own away pass (`apply_slot_needs_to_plan`). Coming home again reopens the
+  night as a question; the cook stays where it moved.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
