@@ -305,6 +305,29 @@ def test_regulars_ticked_in_step_1_go_on_the_list_once_and_undo_takes_them_off()
     assert [i["item"] for i in tools.list_grocery_list(status="needed")] == ["Milk"]
 
 
+def test_undo_takes_back_the_staple_a_starter_became():
+    """CATCH (2026-10-08). A starter ticked and undone used to stay a staple:
+    step 1 then offered it alone in place of the starter set, and three weeks
+    on it came back on the list by itself as "probably running low"."""
+    out = tools.add_regulars(["Milk"])
+    tools.undo_add_regulars([a["item_id"] for a in out["added"]])
+    assert tools.list_staples() == []
+    assert tools.list_grocery_list(status="needed") == []
+    steps = tools.before_shop_steps()
+    assert steps["regulars"]["starter"] is True
+    assert [c["name"] for c in steps["regulars"]["choices"]] == tools.before_shop.STARTER_REGULARS
+
+
+def test_undo_leaves_a_regular_the_household_already_had():
+    """GUARD. Only a staple the same tap made goes — one made before (here by
+    "+ Add a regular", ticked in the same pass) keeps its rhythm."""
+    tools.add_staple("Kombucha")
+    out = tools.add_regulars(["Kombucha", "Eggs"])
+    tools.undo_add_regulars([a["item_id"] for a in out["added"]])
+    assert [s["item"] for s in tools.list_staples()] == ["Kombucha"]
+    assert tools.list_grocery_list(status="needed") == []
+
+
 def test_a_spice_tapped_in_step_2_becomes_a_needed_line():
     """CATCH — the card's own test. Step 2's chip is the existing spice
     tick, so the line it makes is an ordinary needed one, and on the next

@@ -457,6 +457,11 @@ def add_regulars(names: list[str]) -> dict:
         name = " ".join(str(raw or "").strip().split())
         if name and _grocery._merge_key(name) not in {_grocery._merge_key(w) for w in wanted}:
             wanted.append(name)
+    # The staples THIS tap made, so its Undo can take them back too: a
+    # starter ticked by mistake and undone must not stay a regular — it
+    # would replace the starter set on step 1 and come back on the list by
+    # itself in a few weeks as "probably running low".
+    made: set[int] = set()
     for name in wanted:
         conn = get_conn()
         try:
@@ -464,7 +469,7 @@ def add_regulars(names: list[str]) -> dict:
         finally:
             conn.close()
         if exists is None:
-            _staples.add_staple(name)
+            made.add(_staples.add_staple(name)["id"])
     added = []
     conn = get_conn()
     try:
@@ -490,6 +495,15 @@ def add_regulars(names: list[str]) -> dict:
                 "UPDATE grocery_items SET added_by = ? WHERE id = ? AND household_id = ?",
                 (acting_name(""), put["item_id"], household_id()),
             )
+            if staple["id"] in made:
+                # The new staple's 'added' row names the line it was made
+                # for — how undo_add_regulars tells a staple this tap made
+                # from one the household already had.
+                conn.execute(
+                    "UPDATE staple_events SET grocery_item_id = ? "
+                    "WHERE household_id = ? AND staple_id = ? AND kind = 'added'",
+                    (put["item_id"], household_id(), staple["id"]),
+                )
             live_keys.add(key)
             added.append({"item_id": put["item_id"], "item": put["item"]})
         conn.commit()
@@ -500,17 +514,47 @@ def add_regulars(names: list[str]) -> dict:
 
 def undo_add_regulars(item_ids: list[int]) -> dict:
     """Undo for step 1's add: the lines it just made come off again. Only a
-    still-needed line linked to a staple — never something bought."""
+    still-needed line linked to a staple — never something bought.
+
+    A starter the same add turned into a staple stops being one again (its
+    'added' row names the line — see add_regulars), unless something has
+    happened to it since beyond its seeded history. A regular that was
+    already a staple before the tap stays exactly as it was."""
     ids = [int(i) for i in (item_ids or []) if str(i).isdigit() or isinstance(i, int)]
     if not ids:
         return {"removed": 0}
+    marks = ",".join("?" * len(ids))
     conn = get_conn()
     try:
+        lines = conn.execute(
+            f"SELECT id, staple_id FROM grocery_items WHERE household_id = ? AND status = 'needed' "
+            f"AND staple_id IS NOT NULL AND id IN ({marks})",
+            (household_id(), *ids),
+        ).fetchall()
         cur = conn.execute(
             f"DELETE FROM grocery_items WHERE household_id = ? AND status = 'needed' AND staple_id IS NOT NULL "
-            f"AND id IN ({','.join('?' * len(ids))})",
+            f"AND id IN ({marks})",
             (household_id(), *ids),
         )
+        for line in lines:
+            made_here = conn.execute(
+                "SELECT 1 FROM staple_events WHERE household_id = ? AND staple_id = ? "
+                "AND kind = 'added' AND grocery_item_id = ?",
+                (household_id(), line["staple_id"], line["id"]),
+            ).fetchone()
+            touched_since = conn.execute(
+                "SELECT 1 FROM staple_events WHERE household_id = ? AND staple_id = ? "
+                "AND kind != 'added' AND NOT (kind = 'bought' AND source = 'seed')",
+                (household_id(), line["staple_id"]),
+            ).fetchone()
+            if made_here and not touched_since:
+                # The same three deletes as staples.remove_staple, by id.
+                for sql in (
+                    "UPDATE grocery_items SET staple_id = NULL WHERE household_id = ? AND staple_id = ?",
+                    "DELETE FROM staple_events WHERE household_id = ? AND staple_id = ?",
+                    "DELETE FROM staples WHERE household_id = ? AND id = ?",
+                ):
+                    conn.execute(sql, (household_id(), line["staple_id"]))
         conn.commit()
         return {"removed": cur.rowcount}
     finally:

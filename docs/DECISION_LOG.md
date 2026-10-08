@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Before you shop" step 1's Undo takes back a staple the same tap made**
+  (2026-10-08; branch `overnight/regulars-undo-forgets-staple`). Ticking a
+  starter ("Milk") made it a staple, and Undo removed only the line: the
+  staple stayed, step 1 then offered it alone instead of the starter set, and
+  ~3 weeks on it came back on the list by itself. The new staple's `added`
+  event now carries the line's id (`staple_events.grocery_item_id`); Undo
+  deletes a staple whose `added` row names an undone line and that has no
+  history since but its seed. A regular that existed before the tap is kept.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
