@@ -194,6 +194,33 @@ def test_marking_an_already_planned_slot_away_converts_it_and_reverses_groceries
     assert "beans" not in [i["item"] for i in tools.list_grocery_list()]
 
 
+def test_away_from_chat_cards_as_the_week_so_meals_and_shop_refresh(recipe):
+    """"We're away Monday" in chat empties the dinner and takes its beans
+    off the list. The card used to be the /memory catch-all, so a built
+    Meals and Shop went on showing both. `week` is the tab whose branch in
+    refreshStaleTabsFromActions re-reads Meals and Shop together."""
+    import json
+    from app.main import summarize_chat_actions
+
+    week = _week_start()
+    dates = tools._week_dates(week)
+    plan = tools.create_weekly_plan(week)
+    tools.plan_meal(dates[0], "Chili", slot="dinner", weekly_plan_id=plan["weekly_plan_id"], add_ingredients_to_grocery_list=True)
+    args = {"date_str": dates[0], "slot": "dinner", "need": "away"}
+    result = tools.set_slot_need(**args)
+    assert result["converted_existing_plan_slot"] is True
+    turn = [
+        {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "set_slot_need", "input": args}]},
+        {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": json.dumps(result, default=str)}]},
+    ]
+    (card,) = summarize_chat_actions([], turn)
+    assert (card.tab, card.href) == ("week", None)
+    for name in ("set_away_stretch", "set_member_attendance", "set_guest_count", "confirm_slot_recommendation"):
+        turn[0]["content"][0]["name"] = name
+        (card,) = summarize_chat_actions([], turn)
+        assert card.tab == "week", name
+
+
 def test_marking_away_before_any_plan_exists_just_records_the_need():
     week = _week_start()
     d = tools._week_dates(week)[0]

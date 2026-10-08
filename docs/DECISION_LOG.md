@@ -298,6 +298,12 @@ why*, not duplicating the diff.
   catch-all gave them `href: '/memory'`: "we've got plenty of coffee" took
   the line off the list and a built Shop kept showing it. Now in
   `_GROCERY_TOOLS`; Regulars re-reads on every Preferences open, so nothing lost.
+- **Away/attendance from chat cards as the week** (2026-10-08; branch
+  `overnight/away-from-chat-refreshes-plan`). `set_slot_need`,
+  `set_away_stretch`, `set_member_attendance`, `set_guest_count`,
+  `confirm_slot_recommendation` fell to the /memory catch-all, though "away
+  Monday" empties the dinner and reverses its groceries — Meals and Shop
+  stayed stale. Now in `_WEEK_TOOLS` (own line), like `take_the_night_off`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

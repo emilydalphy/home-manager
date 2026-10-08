@@ -6663,6 +6663,15 @@ _CHORE_TOOLS = {
 # into it) and the big-meal tools change the dishes on it, so Plan is the
 # screen that goes stale. One line, by test_week_seven_tiles's source check.
 _WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "take_the_night_off", "unbatch", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
+# Who's home is the week's too. "Emily's out Tuesday" (set_member_attendance
+# taking the last person out), "we're away Saturday" (set_slot_need,
+# set_away_stretch) empty a planned dinner and take its groceries off the
+# list; a guest count moves the portions; a confirmed ready-made makes a
+# fridge move. They fell to the catch-all — "Household info updated", href
+# /memory — so Meals still showed the dinner and Shop still listed the
+# beans. Tagged like take_the_night_off: the `week` branch re-reads Meals,
+# tonight and Shop. Their own line, so the one above stays one line.
+_WEEK_TOOLS |= {"set_slot_need", "set_away_stretch", "set_member_attendance", "set_guest_count", "confirm_slot_recommendation"}
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
