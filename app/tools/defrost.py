@@ -1345,6 +1345,60 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
         plan_names.setdefault(ing_name.lower(), ing_name)
 
     conn = get_conn()
+    created, notes = _book_frozen_moves(conn, weekly_plan_id, plan_meats, selected_lower, today, dinner_window)
+    conn.commit()
+    conn.close()
+
+    # The list half, after the write above has closed: both pre_shop writes
+    # open connections of their own.
+    from . import pre_shop as _pre_shop
+
+    lines = _grocery_lines_by_item(plan_names, weekly_plan_id)
+    set_aside: list[int] = []
+    put_back: list[int] = []
+    cancelled = 0
+    for key, name in plan_names.items():
+        if _matches_selected_item(key, selected_lower):
+            # A line another live plan's meal is counted into stays: this
+            # week's yes is not next week's, and the move alone is booked.
+            set_aside += _set_aside_own_lines(lines[key])
+        else:
+            for row in lines[key]:
+                if row["status"] == "removed":
+                    # Takes the move with it (undo_pre_shop_drop reads the
+                    # mark), so a deselect is one write path — the same
+                    # one Shop's "Put back on the list" runs.
+                    put_back.append(row["id"])
+                    cancelled += _pre_shop.undo_pre_shop_drop(row["id"]).get("moves_cancelled", 0)
+            # And the move alone where there was no line to put back
+            # (covered at home, never on the list) — a no-op otherwise.
+            cancelled += _release_frozen_item(name, weekly_plan_id)
+    return {"created": created, "notes": notes, "set_aside": set_aside,
+            "put_back": put_back, "cancelled": cancelled}
+
+
+def _set_aside_own_lines(lines: list[dict]) -> list[int]:
+    """Take this plan's own still-to-buy lines for one frozen item off the
+    list, the freezer step's way (FREEZER_REMOVED_BY). Returns their ids."""
+    from . import pre_shop as _pre_shop
+
+    out = []
+    for row in _own_lines(lines):
+        if row["status"] != "removed":
+            _pre_shop.drop_grocery_item_pre_shop(row["id"], author=FREEZER_REMOVED_BY)
+            out.append(row["id"])
+    return out
+
+
+def _book_frozen_moves(conn, weekly_plan_id, plan_meats, selected_lower, today, dinner_window, entry_ids=None):
+    """
+    The move half of confirm_frozen_items: one prep_tasks row per (selected
+    item, cook night), updated in place when it is already booked. Returns
+    (created, notes). `entry_ids` narrows it to those nights — what
+    restate_frozen_after_batch_change needs, since a batch change is an
+    answer about one dish and must not book nights nobody asked about.
+    Writes on the caller's connection; the caller commits and closes.
+    """
     created: list[dict] = []
     notes: list[dict] = []
     seen_keys: set[tuple] = set()  # (ingredient name, entry_id) -- the same ingredient listed twice on one recipe shouldn't double-book
@@ -1352,6 +1406,8 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
         if not _matches_selected_item(ing_name, selected_lower):
             continue
         entry_id = m.get("entry_id")
+        if entry_ids is not None and entry_id not in entry_ids:
+            continue
         key = (ing_name.lower(), entry_id)
         if key in seen_keys:
             continue
@@ -1394,38 +1450,95 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
             "prep_task_id": task_id, "item": ing_name, "task_date": move_date_str,
             "related_meal": m["meal"], "date": m["date"], "lead_hours": lead_hours, "lead_tier": tier,
         })
-    conn.commit()
-    conn.close()
+    return created, notes
 
-    # The list half, after the write above has closed: both pre_shop writes
-    # open connections of their own.
-    from . import pre_shop as _pre_shop
 
-    lines = _grocery_lines_by_item(plan_names, weekly_plan_id)
+def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
+    """
+    Carry the household's freezer answer across a batch being taken apart
+    or put back (batch_undo.unbatch / rebatch) — `entry_ids` are the
+    batch's nights, the cook and the days it fed.
+
+    The freezer step books a move per COOK night, and a batch's fed days
+    are not cook nights, so "Salmon fillets: in the freezer" on a week
+    batching Friday's salmon for Saturday books ONE move, for Friday.
+    Measured on a throwaway DB before this existed, un-batching ("cook the
+    salmon fresh on Saturday") then left: no move for Saturday at all,
+    so nothing on Today or Cook said to take the second lot out — and the
+    salmon BACK on the shopping list, because the grocery rescale
+    re-ingests the recipe-week and a set-aside line is not one it merges
+    into, so it writes a fresh line. The app said "Your list has changed to
+    match" about fish the household had just told it was in the freezer.
+    Putting the batch back left the opposite: a pending move for a night
+    that now reheats.
+
+    So, for the items that already have a move booked by hand on one of
+    these nights (the household's own yes; never anything off tracked
+    inventory, which sync_defrost_tasks owns): a pending move on a night
+    that now reheats is dropped (a DONE one is food in the fridge, and
+    stays); every cook night among them is booked the way the step books
+    it, amounts included; and where the freezer step had set that item's
+    line aside, a fresh still-to-buy line for it comes off the list again.
+    An item booked from Shop's "Yes, freezing it" is being BOUGHT and
+    frozen, so its line is never touched here. Nothing outside the batch's
+    nights is booked — a batch change is not a new answer about the rest
+    of the week. Runs after the caller's own writes have closed.
+    """
+    ids = [int(i) for i in (entry_ids or []) if i]
+    if not weekly_plan_id or not ids:
+        return {"created": [], "cancelled": 0, "set_aside": []}
+    marks = ",".join("?" * len(ids))
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, description, status, meal_plan_entry_id FROM prep_tasks "
+            "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
+            "AND inventory_item_id IS NULL AND status IN ('pending', 'done') "
+            f"AND meal_plan_entry_id IN ({marks}) "
+            "AND COALESCE(json_extract(detail_json, '$.kind'), '') != ?",
+            (household_id(), weekly_plan_id, *ids, OWN_PORTION_KIND),
+        ).fetchall()
+    finally:
+        conn.close()
+    items = {thawed_item(r["description"]).lower() for r in rows} - {""}
+    if not items:
+        return {"created": [], "cancelled": 0, "set_aside": []}
+
+    reheats = set(_leftovers.plan_leftover_chains(weekly_plan_id)["leftovers"])
+    doomed = [(r["id"],) for r in rows if r["status"] == "pending" and r["meal_plan_entry_id"] in reheats]
+    if doomed:
+        conn = get_conn()
+        try:
+            conn.executemany(
+                "DELETE FROM prep_tasks WHERE id = ? AND household_id = ?",
+                [(i, household_id()) for (i,) in doomed],
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    today = _cooker.household_today()
+    dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
+    plan_meats = list(_iter_plan_meat_ingredients(weekly_plan_id))
+    conn = get_conn()
+    try:
+        created, _notes = _book_frozen_moves(
+            conn, weekly_plan_id, plan_meats, items, today, dinner_window, entry_ids=set(ids),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    names = {}
+    for _m, _ing, ing_name, _factor in plan_meats:
+        if _matches_selected_item(ing_name, items):
+            names.setdefault(ing_name.lower(), ing_name)
+    lines = _grocery_lines_by_item(names, weekly_plan_id)
     set_aside: list[int] = []
-    put_back: list[int] = []
-    cancelled = 0
-    for key, name in plan_names.items():
-        if _matches_selected_item(key, selected_lower):
-            # A line another live plan's meal is counted into stays: this
-            # week's yes is not next week's, and the move alone is booked.
-            for row in _own_lines(lines[key]):
-                if row["status"] != "removed":
-                    _pre_shop.drop_grocery_item_pre_shop(row["id"], author=FREEZER_REMOVED_BY)
-                    set_aside.append(row["id"])
-        else:
-            for row in lines[key]:
-                if row["status"] == "removed":
-                    # Takes the move with it (undo_pre_shop_drop reads the
-                    # mark), so a deselect is one write path — the same
-                    # one Shop's "Put back on the list" runs.
-                    put_back.append(row["id"])
-                    cancelled += _pre_shop.undo_pre_shop_drop(row["id"]).get("moves_cancelled", 0)
-            # And the move alone where there was no line to put back
-            # (covered at home, never on the list) — a no-op otherwise.
-            cancelled += _release_frozen_item(name, weekly_plan_id)
-    return {"created": created, "notes": notes, "set_aside": set_aside,
-            "put_back": put_back, "cancelled": cancelled}
+    for key, rows_for_item in lines.items():
+        if any(r["status"] == "removed" and r["removed_by"] == FREEZER_REMOVED_BY for r in rows_for_item):
+            set_aside += _set_aside_own_lines(rows_for_item)
+    return {"created": created, "cancelled": len(doomed), "set_aside": set_aside}
 
 
 def _release_frozen_item(item_name: str, weekly_plan_id: int | None = None) -> int:
