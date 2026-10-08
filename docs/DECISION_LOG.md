@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The Plan band's "Away …" names trips, not dinners out** (2026-10-08;
+  branch `overnight/trip-label-only-trips`). `_decorate_with_needs` counted a
+  day away on ANY `away` need and joined first-to-last, so Thanksgiving dinner
+  out Monday plus dinner out Friday read "Away Mon–Fri" over four planned days.
+  Now a day counts only when an away stretch covers it or all three meals are
+  away, and separate runs are listed ("Away Wed, Sat–Sun").
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now
