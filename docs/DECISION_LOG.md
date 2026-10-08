@@ -292,6 +292,12 @@ why*, not duplicating the diff.
   code, so deleting `match_code`'s purpose filter or its (household, adult) binding
   passed too. Tests only, no bug.
 
+- **Staple chat writes card as Grocery, not Household info** (2026-10-08;
+  branch `overnight/staple-chat-refreshes-shop`). `add_staple`,
+  `mark_staple_plenty` and `remove_staple` were in no tool set, so the
+  catch-all gave them `href: '/memory'`: "we've got plenty of coffee" took
+  the line off the list and a built Shop kept showing it. Now in
+  `_GROCERY_TOOLS`; Regulars re-reads on every Preferences open, so nothing lost.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

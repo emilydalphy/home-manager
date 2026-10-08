@@ -296,6 +296,29 @@ def test_plenty_by_name_from_chat():
     assert needed_names() == []
 
 
+def test_a_staple_write_from_chat_cards_and_refreshes_shop_not_memory():
+    """"We've got plenty of oat milk" in chat takes the line off the list.
+    The card used to read "Household info updated" with href /memory — the
+    catch-all — so an already-built Shop went on showing the line. The
+    card's tab is what refreshStaleTabsFromActions re-reads from."""
+    import json
+    from app.main import summarize_chat_actions
+
+    _due_line(every_days=14)
+    out = tools.mark_staple_plenty("Oat Milk")
+    assert out["removed_line"]
+    turn = [
+        {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "mark_staple_plenty", "input": {"item": "Oat Milk"}}]},
+        {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": json.dumps(out)}]},
+    ]
+    (card,) = summarize_chat_actions([], turn)
+    assert (card.tab, card.href, card.kicker) == ("grocery", None, "Grocery updated")
+    for name in ("add_staple", "remove_staple"):
+        turn[0]["content"][0]["name"] = name
+        (card,) = summarize_chat_actions([], turn)
+        assert card.tab == "grocery", name
+
+
 # ---------------------------------------------------------- buying ----
 
 

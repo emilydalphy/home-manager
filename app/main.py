@@ -6675,6 +6675,16 @@ _GROCERY_TOOLS = {
     "add_grocery_item", "add_grocery_items", "consolidate_grocery_list", "repair_grocery_quantities", "clear_stale_grocery_items",
     "clear_grocery_list", "mark_grocery_item", "update_grocery_item", "remove_grocery_item",
     "exclude_grocery_item", "include_grocery_item", "mark_grocery_item_already_have_reviewed", "set_item_store",
+    # The staple writes move the list, so they are Shop's. "We've got plenty
+    # of coffee" (mark_staple_plenty) takes Pomona's coffee line OFF the
+    # list, and "we're out of cumin" (add_staple running_low) puts one ON —
+    # but they fell to the catch-all, so the card read "Household info
+    # updated", pointed at /memory, and an already-built Shop went on
+    # showing the line the reply had just said was gone. Shop's re-read
+    # also re-reads /api/staples ("Before you shop" step 1); the
+    # Preferences Regulars row re-reads them on every open, so nothing is
+    # lost by these no longer invalidating the prefs cache.
+    "add_staple", "mark_staple_plenty", "remove_staple",
 }
 # Household/member/preferences/setup — no shell tab shows this yet (Kitchen's
 # "What we know" absorbs it in a later step), so these point at the real
