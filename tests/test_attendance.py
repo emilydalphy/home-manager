@@ -862,6 +862,41 @@ def test_the_week_menu_carries_the_derived_states(couple, recipe, stub_model):
     assert menu["trip_summary"] == "Away Sat–Sun"
 
 
+def test_a_dinner_out_is_not_a_trip(couple, recipe, stub_model):
+    """
+    Overnight hunt, 2026-10-08: out for Thanksgiving dinner on Monday and
+    for dinner on Friday read "Away Mon–Fri" on the Plan band — over four
+    days with every meal planned. One meal out says so on its own card; the
+    week's label is for days nobody is home.
+    """
+    week = _week_start()
+    dates = tools._week_dates(week)
+    stub_model(_full_week(week))
+    agent.generate_weekly_plan(week)
+    tools.set_slot_attendance(dates[0], "dinner", present_member_ids=[])
+    tools.set_slot_attendance(dates[4], "dinner", present_member_ids=[])
+    assert tools.get_slot_need(dates[4], "dinner")["need"] == "away"
+
+    assert tools.get_week_menu()["trip_summary"] == ""
+
+    # A real trip that weekend is still named — and only the weekend.
+    tools.set_away_stretch(dates[5], "lunch", dates[6], "lunch")
+    assert tools.get_week_menu()["trip_summary"] == "Away Sat–Sun"
+
+
+def test_separate_away_days_are_not_joined_into_one_span(couple, recipe, stub_model):
+    """A whole day nobody's home and a weekend trip are two spans, not "Away Wed–Sun"."""
+    week = _week_start()
+    dates = tools._week_dates(week)
+    stub_model(_full_week(week))
+    agent.generate_weekly_plan(week)
+    for slot in ("breakfast", "lunch", "dinner"):
+        tools.set_slot_attendance(dates[2], slot, present_member_ids=[])
+    tools.set_away_stretch(dates[5], "lunch", dates[6], "lunch")
+
+    assert tools.get_week_menu()["trip_summary"] == "Away Wed, Sat–Sun"
+
+
 def test_an_ordinary_week_carries_no_trip_chrome(couple, recipe, stub_model):
     """Progressive disclosure (Emily's decision): the per-meal states appear only when something creates the need."""
     week = _week_start()

@@ -6044,7 +6044,16 @@ def _decorate_with_needs(days: list[dict], week_start: str) -> str:
         d = day["date"]
         day_needs = needs.get(d) or {}
         day_attendance = attendance.get(d) or {}
-        if any(info["need"] == "away" for info in day_needs.values()):
+        # A day is "away" when a trip covers it, or when nobody is home for
+        # any of its three meals — NOT when one meal is out. Any single
+        # 'away' used to count, so going to someone's for Thanksgiving
+        # dinner put "Away Mon" over a Monday with breakfast and lunch
+        # planned, and a second dinner out on Friday made it "Away Mon–Fri"
+        # across four days fully cooked for (overnight hunt, 2026-10-08).
+        day_away = [info for info in day_needs.values() if info["need"] == "away"]
+        if any(info.get("away_stretch_id") for info in day_away) or all(
+            (day_needs.get(s) or {}).get("need") == "away" for s in ("breakfast", "lunch", "dinner")
+        ):
             away_dates.append(d)
         for slot in ("breakfast", "lunch", "dinner"):
             entry = day.get(slot)
@@ -6073,12 +6082,21 @@ def _decorate_with_needs(days: list[dict], week_start: str) -> str:
 
     if not away_dates:
         return ""
-    first, last = away_dates[0], away_dates[-1]
+    # Back-to-back days read as one span, separate ones are listed: first
+    # to last would say "Away Mon–Sun" for a Monday off and a weekend trip.
+    runs: list[list[str]] = []
+    for d in away_dates:
+        if runs and date.fromisoformat(d) - date.fromisoformat(runs[-1][-1]) == timedelta(days=1):
+            runs[-1].append(d)
+        else:
+            runs.append([d])
     fmt = "%a"
-    start_label = date.fromisoformat(first).strftime(fmt)
-    if first == last:
-        return f"Away {start_label}"
-    return f"Away {start_label}–{date.fromisoformat(last).strftime(fmt)}"
+    labels = [
+        date.fromisoformat(r[0]).strftime(fmt) if len(r) == 1
+        else f"{date.fromisoformat(r[0]).strftime(fmt)}–{date.fromisoformat(r[-1]).strftime(fmt)}"
+        for r in runs
+    ]
+    return "Away " + ", ".join(labels)
 
 
 def _suggest_quick_dinners(limit: int = 2) -> list[dict]:
