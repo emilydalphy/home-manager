@@ -246,6 +246,16 @@ why*, not duplicating the diff.
   now marks a recipe-less meal matching Plan's `leftovers?` word as a reheat
   (`leftovers_named`; provenance "leftovers", not "from the freezer"). A saved
   recipe called "Leftover Turkey Soup" stays a cook. Day-based plans only.
+- **A protein's new rating replaces its old one under any spelling**
+  (2026-10-08; branch `overnight/protein-chip-one-answer`). Tapping Chicken
+  to skip with `{"Chicken": 5}` stored (chat's spelling; old setup wrote
+  `"Fish / seafood": "more"`) left both keys — the chip read skipped, the
+  planner still got "Chicken: 5". `set_household_meal_preferences` now drops
+  a stored key for the same protein before merging: same key in any case, or
+  one "/" alternative ("Fish / seafood"). Not by first word — review caught
+  that wiping "chicken sausage: 1"; a comma is a cut ("pork, ground"), not an
+  alternative. Covers the chip, chat's edit_preference and "we don't eat X". Tests:
+  `tests/test_protein_rating_replaces_old_key.py`.
 - **Approve never waits on recipe web research** (2026-10-06; branch
   `research-off-approve-2026-10-06`). A live approval sat 37 min while the
   background pass researched (up to 558K input tokens a dish, snacks too). Now

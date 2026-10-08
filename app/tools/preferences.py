@@ -334,6 +334,22 @@ def remove_item_from_all_stores_typical_list(item: str) -> None:
             conn.commit()
 
 
+def _same_protein(stored_key: str, new_key: str) -> bool:
+    """Does `stored_key` hold the answer for the protein `new_key` names?
+    "Chicken" does for "chicken", and "Fish / seafood" for "fish" — a
+    slash names alternatives, so either one is the same answer. Nothing
+    looser: "chicken sausage", "chicken thighs" and "fish tacos" are a
+    household's own, more specific answers (review, 2026-10-08: a first-
+    word rule wiped "chicken sausage: 1", an explicit avoid, when chicken
+    was rated 5). A comma is NOT an alternative: "pork, ground" is ground
+    pork, a cut, so rating pork leaves it alone."""
+    new = str(new_key).strip().lower()
+    old = str(stored_key).strip().lower()
+    if not new:
+        return False
+    return old == new or new in [part.strip() for part in old.split("/")]
+
+
 def set_household_meal_preferences(
     notes: str = "",
     protein_preferences: dict[str, int | str] | None = None,
@@ -379,6 +395,18 @@ def set_household_meal_preferences(
         merged_notes = notes if notes else (existing["notes"] if existing else "")
         merged_proteins = dict(json.loads(existing["protein_preferences_json"])) if existing else {}
         if protein_preferences:
+            # A new rating REPLACES the old answer for that protein, whatever
+            # it was filed under — not just the identical key. Chat writes
+            # "Chicken", old setup wrote "Fish / seafood": "more", and the
+            # Settings chip writes "chicken". A plain update kept both, so
+            # tapping Chicken to skip left {"Chicken": 5, "chicken": 1} — the
+            # chip showed skipped while the planner was still told chicken
+            # is a favourite. Same key in any case, or one alternative of a
+            # slashed key ("Fish / seafood") — see _same_protein for why
+            # nothing looser.
+            for new_key in protein_preferences:
+                for old_key in [k for k in merged_proteins if k != new_key and _same_protein(k, new_key)]:
+                    merged_proteins.pop(old_key)
             merged_proteins.update(protein_preferences)
         merged_cuisines = cuisine_preferences if cuisine_preferences is not None else (
             json.loads(existing["cuisine_preferences_json"]) if existing else []
