@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Add from a link reads a TikTok's caption** (2026-10-09; branch
+  `overnight/tiktok-caption-recipe`; tests
+  `tests/test_recipe_import_tiktok.py`). A TikTok page is JavaScript with no
+  recipe markup, so `recipe_import` always said `MSG_NO_RECIPE`. A TikTok
+  link now skips the page: `import_recipe_from_tiktok` follows a vt./vm.
+  short link through `fetch_text` (new `stop_at` stops at the first redirect
+  onto `www.tiktok.com/@user/video/<id>` without fetching that page; every
+  earlier hop is SSRF-checked as before), asks TikTok's public oEmbed for the
+  caption, and hands it to the same `read_recipe_from_page_llm`. Credit is
+  the canonical video URL (tracking query dropped) → "From tiktok.com".
+  No recipe in the caption → `MSG_NO_RECIPE_VIDEO` ("…it may only be said in
+  the video."), which the sheet already pairs with "Tell me the recipe
+  instead". Out of scope: spoken-only recipes (needs a transcript), and
+  Instagram (same oEmbed shape, but Meta requires an app token). The "In
+  development" pill was already off (`RECIPE_LINK_IN_DEVELOPMENT = false`
+  since 2026-10-05); a test now pins it. Live oEmbed not reachable from the
+  build sandbox — unverified against real TikTok.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
