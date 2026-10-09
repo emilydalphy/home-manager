@@ -1764,6 +1764,12 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_household_touched
     ON chat_sessions(household_id, touched_at);
+-- The TTL sweep is "touched_at < ?" across EVERY household, under the
+-- write lock; the index above leads with household_id and cannot serve it,
+-- so without this one the sweep walks every row's history overflow pages
+-- (measured in review: 38 ms on a 90 MB table, ~0.1 ms with the index).
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_touched
+    ON chat_sessions(touched_at);
 
 -- One row per chat turn. Deliberately NO message content -- this exists to
 -- answer "is the household actually using the app, and what does a turn

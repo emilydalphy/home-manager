@@ -539,6 +539,22 @@ def _save_chat_session(session_key: str, history: list) -> None:
         logger.exception("Saving the chat conversation failed; the next turn starts fresh")
 
 
+def _prune_chat_sessions_now() -> None:
+    """
+    The same TTL and cap as a save holds, run when nobody is chatting: at
+    startup and once a day beside the backup. Without it, "deleted a week
+    after its last message" (the privacy policy's words) only held on a
+    deploy where SOMEBODY kept chatting, because the sweep ran only inside
+    a save. Failure-tolerant like the save: logged, never raised, so it
+    cannot stop the app starting or the backup loop's next day.
+    """
+    try:
+        with db.write() as conn:
+            _prune_sessions(conn)
+    except Exception:
+        logger.exception("Sweeping expired chat conversations failed; the next save or day retries")
+
+
 def _prune_sessions(conn) -> None:
     """
     The week's TTL across every household, then the cap within each one,
@@ -1312,6 +1328,7 @@ class ResetRequest(BaseModel):
 @app.on_event("startup")
 def startup():
     init_db()
+    _prune_chat_sessions_now()
     # Says in the logs, on day one, whether this database will survive a
     # redeploy — rather than leaving that discoverable only by losing it.
     backup.warn_if_database_is_ephemeral()
@@ -1349,6 +1366,10 @@ async def start_backup_loop():
                 # that dies quietly would leave the household uncovered
                 # with nothing to show for it.
                 logger.exception("Backup maintenance failed; will try again tomorrow")
+            # A long-running quiet deploy restarts rarely, so startup alone
+            # would not hold the week. Its own try inside the helper: a
+            # failed sweep must not cost the backup, or the backup the sweep.
+            await run_in_threadpool(_prune_chat_sessions_now)
             await asyncio.sleep(24 * 60 * 60)
 
     asyncio.create_task(_loop())

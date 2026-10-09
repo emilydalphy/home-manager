@@ -246,3 +246,38 @@ def test_a_failed_save_never_costs_the_reply(monkeypatch):
     ])
     assert result["reply"] == "hello"
     assert _rows() == {}
+
+
+def test_a_stale_conversation_is_swept_at_startup_with_nobody_chatting():
+    """
+    CATCH. "Deleted a week after its last message" has to hold on a quiet
+    deploy too: before this the sweep ran only inside a save, so a deploy
+    nobody chatted on kept every row for ever. Starting the app sweeps.
+
+    Pinned by the mutation that drops _prune_chat_sessions_now from startup().
+    """
+    from fastapi.testclient import TestClient
+
+    with db.write() as conn:
+        conn.execute(
+            "INSERT INTO chat_sessions (session_key, household_id, history_json, touched_at) "
+            "VALUES ('h1:stale', 1, '[]', ?), ('h1:live', 1, '[]', ?)",
+            (time.time() - main._SESSION_TTL - 60, time.time() - 60),
+        )
+    with TestClient(main.app):
+        pass
+    assert set(_rows()) == {"h1:live"}
+
+
+def test_the_week_sweep_has_an_index_to_use():
+    """GUARD. The TTL delete runs under the write lock across every household."""
+    conn = get_conn()
+    try:
+        plan = " ".join(
+            r[-1] for r in conn.execute(
+                "EXPLAIN QUERY PLAN DELETE FROM chat_sessions WHERE touched_at < ?", (0,)
+            )
+        )
+    finally:
+        conn.close()
+    assert "idx_chat_sessions_touched" in plan, plan

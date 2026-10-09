@@ -37,6 +37,11 @@ why*, not duplicating the diff.
   no behaviour change (nothing older is ever read back). Tests that poked
   the dicts (`test_fresh_sitting_less_history`, the two in
   `test_multi_household`, one in `test_household_deletion`) now seed the table.
+  Review follow-ups: an index on `touched_at` for the cross-household TTL
+  sweep (38 ms → ~0.1 ms on 90 MB); the sweep also runs at startup and daily
+  beside the backup (`_prune_chat_sessions_now`), so the week holds on a
+  quiet deploy; the policy says an adult who leaves keeps their chats up to
+  a week (no member column, by choice).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
