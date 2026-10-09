@@ -1000,6 +1000,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 
 /* Give the last row's bottom padding back to the tomorrow card. */
 .day-groups + .tomorrow-card { margin-top: -2px; }
+/* In the empty moment's slot it sits under the body's last card (Today's
+   meals) with nothing between them — the body's 12px gap does not reach
+   past its own children. */
+.today-area-empty > .tomorrow-card { margin-top: 12px; }
 
 /* Nothing left today: name tomorrow's first move rather than showing a
    blank screen. Celadon-tint — the settled, non-urgent tile. */

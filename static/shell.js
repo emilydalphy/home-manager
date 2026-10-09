@@ -3035,8 +3035,20 @@
   // Is there a period waiting to be planned? The nudge names it whether
   // it is showing or was dismissed for the week (both carry week_start);
   // with the week covered there is nothing to offer.
+  //
+  // "The week covered" means TODAY covered, read off the moves' own
+  // week_state, not off the nudge: from Friday the nudge names NEXT week
+  // while this one is set, and a set day can still be empty — a night
+  // off, a night nobody is home. That day used to read "Week set" over
+  // "Quiet day. Want me to sort dinner…" and "Just tonight", offering to
+  // sort the dinner just called off, with tomorrow's card hidden behind it
+  // (defect hunt, 2026-10-09; PRODUCT_FLOWS.md's "two screens, two
+  // stories", 2026-09-15). A covered day falls through to the tomorrow
+  // card, and next week's offer stays its own card with its own dock.
   function todayNeedsPlan(panel) {
     var nudge = panel._nudge;
+    var state = panel._moves && panel._moves.week_state;
+    if (state === 'set' || state === 'draft') return false;
     return !!(nudge && nudge.week_start);
   }
 
