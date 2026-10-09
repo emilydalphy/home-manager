@@ -21702,7 +21702,14 @@
   // ingredients) and then the thing.
   function cookIngredientLabel(ing) {
     var qty = ing && ing.qty ? humanQtyText(ing.qty) : '';
-    var label = ((qty ? qty + ' ' : '') + ((ing && ing.item) || '')).trim();
+    var item = (ing && ing.item) || '';
+    // An amount reads before the thing ("½ lb Flank steak"); a phrase that
+    // only says how much to use, with no number in it, reads after it, the
+    // way a recipe is written — "Salt, to taste", never "to taste salt"
+    // (defect hunt, 2026-10-09). "a pinch" / "a handful" read as amounts.
+    var trails = qty && !/\d/.test(qty) && /^(to|for|as|optional)\b/i.test(qty);
+    var label = (trails ? item + ', ' + qty
+      : (qty ? qty + ' ' : '') + item).trim();
     // "I'll use something else instead", said while sorting the week's
     // list (Shop) — the recipe still asks for fresh oregano, and this is
     // where the cook hears that dry is what's going in.
