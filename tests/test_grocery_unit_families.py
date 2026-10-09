@@ -31,7 +31,7 @@ import pytest
 from app import tools
 from app.db import get_conn
 from app.tools import grocery as _grocery
-from tests.conftest import _TABLES
+from conftest import _TABLES
 
 
 def _monday(offset_weeks: int = 0) -> datetime.date:

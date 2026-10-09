@@ -846,5 +846,5 @@ def test_the_morning_toggle_is_a_44px_button_in_tokens_only():
 
 
 def test_the_sends_table_is_wiped_between_tests():
-    from tests.conftest import _TABLES
+    from conftest import _TABLES
     assert "morning_text_sends" in _TABLES
