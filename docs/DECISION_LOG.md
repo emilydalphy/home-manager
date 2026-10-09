@@ -21,7 +21,11 @@ why*, not duplicating the diff.
   recipes, and the first week saves every dish, so breakfasts and snacks
   always won. Recipes have no meal type, so a recipe whose every plan row is
   a breakfast or snack is left out; any lunch/dinner row, or no plan row at
-  all, keeps it in. Also feeds Plan's empty-dinner suggestions.
+  all, keeps it in — except a recipe the draft wrote (`from_draft`), which
+  needs a lunch/dinner row of its own, since a swap replaces the row that
+  said it was a breakfast (review). Component rows are read by
+  `component_category` (slot is unused there). Also feeds Plan's
+  empty-dinner suggestions.
 
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe

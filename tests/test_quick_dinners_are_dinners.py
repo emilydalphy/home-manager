@@ -96,3 +96,43 @@ def test_another_households_plan_does_not_decide_what_a_dish_is_for():
     tools.plan_meal(_d(-1), "Frittata", slot="dinner")
 
     assert _offered() == ["Frittata"]
+
+
+def _week_start() -> str:
+    today = household_today()
+    return (today - datetime.timedelta(days=today.weekday())).isoformat()
+
+
+def test_a_draft_breakfast_swapped_out_of_the_week_does_not_come_back():
+    # Review, 2026-10-09: swapping a breakfast replaces its plan row, so the
+    # only evidence it was a breakfast went with it and it counted as "never
+    # planned". A recipe the week's draft wrote needs a lunch or dinner row
+    # of its own to be offered; never-planned only exempts imports and
+    # typed-in recipes.
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    tools.add_recipe("Overnight oats", ingredients=[{"item": "oats", "qty": "1 cup"}],
+                     prep_time_minutes=5, cook_time_minutes=0, from_draft=True)
+    tools.add_recipe("Yogurt bowl", ingredients=[{"item": "yogurt", "qty": "1 cup"}],
+                     prep_time_minutes=4, cook_time_minutes=0, from_draft=True)
+    tools.add_recipe("Tacos", ingredients=[{"item": "tortillas", "qty": "8"}],
+                     prep_time_minutes=10, cook_time_minutes=20, from_draft=True)
+    day = _week_start()
+    tools.plan_meal(day, "Overnight oats", slot="breakfast", weekly_plan_id=plan_id)
+    tools.plan_meal(day, "Tacos", slot="dinner", weekly_plan_id=plan_id)
+    tools.swap_meal_in_plan(plan_id, day, "Yogurt bowl", slot="breakfast")
+
+    assert _offered() == ["Tacos"]
+
+
+def test_a_component_breakfast_is_not_offered_as_dinner():
+    # Review, 2026-10-09: a component-based plan's rows carry their kind in
+    # component_category; slot is unused (plan_meal stores its 'dinner'
+    # default). Granola as a breakfast component is a breakfast; a protein
+    # component is a meal.
+    plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
+    _recipe("Granola", 2)
+    _recipe("Turkey chili", 30)
+    tools.plan_meal(_week_start(), "Granola", weekly_plan_id=plan_id, component_category="breakfast")
+    tools.plan_meal(_week_start(), "Turkey chili", weekly_plan_id=plan_id, component_category="protein")
+
+    assert _offered() == ["Turkey chili"]
