@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Setup's lunch and breakfast variety choices fit the days the meal is on**
+  (2026-10-09; branch `overnight/lunch-choices-fit-the-days`; tests
+  `tests/test_variety_fits_the_days.py`). Lunch on weekends only was offered
+  "3–4 lunches": `varietyOptionsFor` filtered by prep day only. Breakfast and
+  lunch options now carry `most` (the top of their own range) and aren't
+  offered on fewer days than that; a pick that no longer fits falls back to
+  the default, or to `new_every_day` when the default doesn't fit either (the
+  same count the server's clamp gave). One day on: the screen is skipped
+  (`stepFlow`) and one a day is sent. Dinner untouched — its answer also sets
+  the leftovers stance. Settings' own variety picker (shell.js) not changed.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
