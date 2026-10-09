@@ -120,3 +120,33 @@ console.log(JSON.stringify([
         "Tonight’s off. Lemon Pasta is off the week.",
     ]
     assert tools.weekly_plan._join_with_and(["Thursday", "Friday", "Sunday"]) in said[1]
+
+
+def test_a_night_called_off_ahead_still_sees_the_dish_on_a_night_between():
+    """Review, 2026-10-09: "we're out Thursday", said on Monday, with the
+    dish also on Tuesday. Tuesday is still to come — the cutoff is the
+    household's real date, not the night being called off."""
+    _week((TUE, THU))
+    monday_morning = datetime.datetime.fromisoformat(f"{MON}T10:00:00")
+    out = _tonight.tonight_night_off(day=THU, now=monday_morning)
+    assert out["kind"] == "drop"
+    assert out["still_on"] == ["Tuesday"]
+    assert "off the week" not in out["said"]
+
+
+def test_a_later_night_cooked_and_then_called_off_is_not_still_on():
+    """Review, 2026-10-09: Sunday was cooked ahead and then called off, so
+    its dinner went in the freezer. Its row stays planned as a record, but
+    the dish is not on Sunday any more."""
+    _week((TONIGHT, SUN))
+    from app.db import get_conn
+    with get_conn() as conn:
+        sun_id = conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE date = ? AND slot = 'dinner'",
+            (SUN,)).fetchone()[0]
+    tools.check_off_meal(sun_id, "done")
+    monday = datetime.datetime.fromisoformat(f"{MON}T10:00:00")
+    assert _tonight.tonight_night_off(day=SUN, now=monday)["kind"] == "freeze_cooked"
+    out = _tonight.tonight_night_off(now=AFTERNOON)
+    assert out["still_on"] == []
+    assert out["said"] == f"Tonight’s off. {PASTA} is off the week."

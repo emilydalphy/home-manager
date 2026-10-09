@@ -651,7 +651,8 @@ def _fed_label(target: dict) -> str:
     return _weekly_plan.fed_night_label(target)
 
 
-def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
+def _night_off_plan(conn, plan, rows, tonight_row, today: str,
+                    household_today: str | None = None) -> dict:
     """
     What "Not tonight — we're going out" will do with tonight, decided once
     and read twice (tonight_check's sub-line, tonight_night_off's write).
@@ -728,7 +729,7 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
     # untrue — the household reads it and goes looking for a Sunday dinner
     # that isn't missing (Loop Board, 2026-10-09). Only LATER nights count:
     # a Monday already eaten is not where the dish still is.
-    still_on = _still_on_later(rows, tonight_row, today)
+    still_on = _still_on_later(rows, tonight_row, household_today or today)
     if still_on:
         return {"kind": "drop", "dish": dish, "still_on": still_on,
                 "line": f"{dish} is still on {_weekly_plan._join_with_and(still_on)}."}
@@ -736,14 +737,22 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
 
 
 def _still_on_later(rows, tonight_row, today: str) -> list[str]:
-    """The weekdays after tonight whose planned dinner is tonight's dish, by
+    """The weekdays still ahead whose planned dinner is tonight's dish, by
     name — the name being what the sentence says, so it is what decides
-    whether the sentence is true."""
+    whether the sentence is true.
+
+    `today` is the household's REAL date, not the night being called off:
+    "we're out Thursday", said on Monday, leaves Tuesday's Lemon Pasta
+    still to come. A night that was cooked and then called off itself
+    (_cooked_night_off) stays `planned` as a record but its dinner went in
+    the freezer, so the dish is not "still on" it (review, 2026-10-09)."""
     dish = _dish_name(tonight_row).casefold()
     return [
         _weekly_plan._weekday_of(r["date"]) for r in rows
-        if r["date"] > today and r["id"] != tonight_row["id"]
+        if r["date"] > today and r["date"] != tonight_row["date"]
+        and r["id"] != tonight_row["id"]
         and (r["slot_state"] or "planned") == "planned"
+        and not _cooked_night_off(r)
         and _dish_name(r).casefold() == dish
     ]
 
@@ -1002,7 +1011,8 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             out["said"] = "Tonight’s already off." if is_off else "Nobody’s home tonight anyway."
             return out
 
-        step = _night_off_plan(conn, plan, rows, tonight_row, today)
+        step = _night_off_plan(conn, plan, rows, tonight_row, today,
+                               household_today=now.date().isoformat())
         kind = step["kind"]
         dish = step["dish"]
         out["kind"] = kind
