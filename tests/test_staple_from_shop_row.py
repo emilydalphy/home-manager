@@ -158,3 +158,58 @@ def test_the_row_menu_sends_the_row_it_was_tapped_on():
     start = js.index("case 'row-staple':")
     case = js[start:js.index("return;", start)]
     assert "grocery_item_id" in case
+
+
+# ---- review follow-ups (2026-10-09) ----
+
+
+def test_a_line_another_staple_already_owns_makes_nothing_due():
+    """A Bread staple's line substituted to "Sourdough loaf" keeps Bread's
+    staple_id. Making a staple from it must not mint a due-today staple
+    with no line (sync would then add a fresh one after the purchase) —
+    it answers with the staple that owns the line, and writes nothing."""
+    bread = tools.add_staple("Bread", category="pantry", running_low=True)
+    tools.get_grocery_list_by_section(status="needed")
+    (line,) = _lines_named("Bread")
+    tools.substitute_grocery_item(line["id"], "Sourdough loaf")
+    assert _line(line["id"])["staple_id"] == bread["id"]
+
+    s = tools.add_staple("Sourdough loaf", category="pantry", grocery_item_id=line["id"])
+
+    assert s["id"] == bread["id"] and s["created"] is False
+    assert [x["item"] for x in tools.list_staples()] == ["Bread"]
+    assert _line(line["id"])["staple_id"] == bread["id"]
+
+
+def test_pausing_a_staple_leaves_the_persons_own_line_alone():
+    line_id = tools.add_grocery_item("Coffee", quantity="1 bag", category="pantry")["item_id"]
+    s = tools.add_staple("Coffee", quantity="1 bag", category="pantry", grocery_item_id=line_id)
+
+    tools.pause_staple(s["id"], paused=True)
+    tools.mark_staple_plenty("Coffee")
+
+    conn = get_conn()
+    row = conn.execute("SELECT status, quantity FROM grocery_items WHERE id = ?", (line_id,)).fetchone()
+    conn.close()
+    assert (row["status"], row["quantity"]) == ("needed", "1 bag")
+
+
+def test_a_plan_line_is_not_taken_over_by_the_staple():
+    """A line the week's meals put there stays the plan's (carry-over
+    reads staple_id IS NULL) — the staple is made, not linked."""
+    conn = get_conn()
+    plan_id = conn.execute(
+        "INSERT INTO weekly_plans (household_id, week_start_date, status, content_start_date, day_count) "
+        "VALUES (1, ?, 'approved', ?, 7)",
+        (TODAY.isoformat(), TODAY.isoformat()),
+    ).lastrowid
+    conn.commit()
+    conn.close()
+    line_id = tools.add_grocery_item("Butter", category="dairy", source_weekly_plan_id=plan_id)["item_id"]
+
+    s = tools.add_staple("Butter", category="dairy", grocery_item_id=line_id)
+
+    assert _line(line_id)["staple_id"] is None
+    assert s["last_bought_at"] is None  # still no invented purchase
+    tools.get_grocery_list_by_section(status="needed")
+    assert [r["id"] for r in _lines_named("Butter")] == [line_id]

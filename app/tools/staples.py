@@ -625,12 +625,24 @@ def add_staple(
     line = None
     if grocery_item_id is not None:
         line = conn.execute(
-            "SELECT id, item, status, staple_id FROM grocery_items WHERE id = ? AND household_id = ?",
+            "SELECT id, item, status, staple_id, source_weekly_plan_id FROM grocery_items "
+            "WHERE id = ? AND household_id = ?",
             (int(grocery_item_id), household_id()),
         ).fetchone()
         if line is None or line["status"] not in ("needed", "in_cart", "purchased"):
             conn.close()
             raise ValueError("That isn't on your list any more.")
+        owner = _row(conn, line["staple_id"]) if line["staple_id"] else None
+        if owner is not None:
+            # Already some staple's line — e.g. a Bread line substituted to
+            # "Sourdough loaf" keeps Bread's staple_id. That staple is the
+            # answer; minting a second one here would be due today with no
+            # line of its own, and the list would grow a fresh line for it
+            # right after this one was bought. Nothing is written.
+            out = _shape(owner, today_date)
+            conn.close()
+            out["created"] = False
+            return out
         # The line's own name, not whatever the caller typed: it is this
         # line the staple is made from.
         name = " ".join((line["item"] or "").strip().split()) or name
@@ -689,10 +701,14 @@ def add_staple(
                     (today, staple_id, household_id()),
                 )
         created = True
-    if line is not None and line["staple_id"] is None:
+    if line is not None and line["staple_id"] is None and line["source_weekly_plan_id"] is None:
         # The tapped line becomes the staple's line, so buying it teaches
         # this staple and sync_due_staples sees it covered by id. A line
-        # some other staple already owns keeps its owner.
+        # the week's meals put there stays the plan's: carry-over
+        # (grocery.set_aside_carried_over_items) only moves lines with no
+        # staple_id, and the meals need it whatever the staple decides. Its
+        # name on the list still covers the staple in sync, and buying it
+        # still teaches the staple by name.
         conn.execute(
             "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ? AND staple_id IS NULL",
             (staple_id, line["id"], household_id()),
@@ -874,20 +890,23 @@ def _drop_suggestion_lines(conn, staple_id: int) -> dict | None:
     staple off the list — softly, the way a pre-shop "Drop it" does (status
     'removed', removed_at stamped), so an Undo puts back the very same row
     with its store and quantity intact, and so sync_due_staples can see
-    that this trip already has an answer. A line a person added (no
-    staple_id) is never touched here.
+    that this trip already has an answer. A line a person added is never
+    touched here — and since a Shop row made into a staple, or a regular
+    ticked on "Before you shop", carries staple_id too, that is decided by
+    added_by, the same rule as the row's "Probably running low" (shell.js
+    groLineHtml): only Pomona's own line is Pomona's to take back.
     """
     rows = conn.execute(
         "SELECT id, item, quantity, category, store FROM grocery_items "
-        "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
-        (household_id(), staple_id),
+        "WHERE household_id = ? AND staple_id = ? AND status = 'needed' AND added_by = ?",
+        (household_id(), staple_id, ADDED_BY_STAPLE),
     ).fetchall()
     if not rows:
         return None
     conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
-        "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
-        (ADDED_BY_STAPLE, household_id(), staple_id),
+        "WHERE household_id = ? AND staple_id = ? AND status = 'needed' AND added_by = ?",
+        (ADDED_BY_STAPLE, household_id(), staple_id, ADDED_BY_STAPLE),
     )
     first = rows[0]
     return {"item": first["item"], "quantity": first["quantity"] or "", "category": first["category"], "store": first["store"] or ""}

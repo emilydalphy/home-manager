@@ -23,7 +23,12 @@ why*, not duplicating the diff.
   double the amount), and while it is still to buy the staple has no
   `last_bought_at` and is due today. A bought row keeps the by-name reading.
   By name (chat, regulars) unchanged. The linked line is now the staple's:
-  ⋯ → Remove on it counts as "not this trip". Tests
+  ⋯ → Remove on it counts as "not this trip". Review fixes: a line another
+  staple already owns (a substituted Bread line) answers with that staple
+  and writes nothing (button hidden too); a plan's line is never linked
+  (carry-over only moves `staple_id IS NULL`); and `_drop_suggestion_lines`
+  (Pause, plenty, not this trip) now takes back only `added_by = 'staple'`
+  lines — it used to remove a person's linked line, regulars included. Tests
   `tests/test_staple_from_shop_row.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe

@@ -6820,7 +6820,9 @@
         // A tap on a thing you buy is how a staple gets made without a
         // form (the other way is telling the assistant). Hidden once it
         // is one — the Staples card below the list is where it lives then.
-        (groIsStapleName(it.item)
+        // A line a staple already owns (a substitute keeps its staple_id)
+        // counts as one even under another name.
+        (it.staple_id || groIsStapleName(it.item)
           ? '<span class="gro-rowmenu-note">One of your staples</span>'
           : '<button type="button" class="gro-rowmenu-staple" data-gro="row-staple" data-id="' + id + '" ' +
               'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
