@@ -2122,10 +2122,14 @@ function renderMemberAgeChips(block) {
   });
   renderMemberAgeExtras(block);
 }
-function addMemberRow(name, ageGroup) {
+function addMemberRow(name, ageGroup, ageYears, includeMeals) {
   const block = document.createElement('div');
   block.className = 'member-block';
   block.dataset.ageGroup = ageGroup || '';
+  // A resumed draft (2026-10-09) puts a Child's age and the infant switch
+  // back; set before the first draw, which is what fills the age box.
+  if (ageYears) block.dataset.ageYears = ageYears;
+  if (includeMeals) block.dataset.includeMeals = includeMeals;
   block.innerHTML = `
     <div class="row">
       <input type="text" class="member-name" placeholder="Name" aria-label="Name" value="${escapeHtmlLocal(name || '')}">
@@ -5436,7 +5440,12 @@ window.addEventListener('popstate', function (e) {
   // Collapse it onto the first step, which after a reload is the only one
   // whose answers are still true, and take the entry over so the same
   // gesture again goes further back rather than round in a circle.
-  if (state.onboardingLoad !== PAGE_LOAD) {
+  // UNLESS a draft was resumed (2026-10-09): then the answers those
+  // entries were written against are back, and the entry is as true as
+  // one of this load's own. (typeof: the node harnesses in tests/ lift
+  // this handler without the draft code.)
+  const resumed = typeof onboardingDraftResumed !== 'undefined' && onboardingDraftResumed;
+  if (state.onboardingLoad !== PAGE_LOAD && !resumed) {
     showStep(firstQuestionStep(), { replace: true });
     return;
   }
@@ -5655,6 +5664,9 @@ async function finishSetupAndReveal(opts) {
     const answers = await saveOnboardingAnswers();
     await savePlanTheWeekAnswers();
     setupRun = 'done';
+    // Saved, so the draft is done with: a finished household never sees
+    // it again (and /onboarding sends them to Preferences anyway).
+    if (typeof clearOnboardingDraft === 'function') clearOnboardingDraft();
     if (!plan) return true;
     showStep('reveal');
     await generateFirstPlanAndReveal(answers);
@@ -5912,6 +5924,313 @@ document.getElementById('reveal-help-btn').onclick = () => {
 wireRevealCarousel();
 wireRevealSwapSheet();
 
+// ---------- A reload keeps your place (2026-10-09) ----------
+// Loop Board, Bug: "Reloading mid-onboarding loses every answer". On a
+// phone a reload isn't a choice — the browser throws a backgrounded tab
+// away and reloads it when you come back — and every answer here lives
+// only in this page's memory until the one write at the end (see the
+// 2026-09-09 note above saveHouseholdMembers: nothing posts on the way
+// past, because add_member is get-or-create by name). So the answers and
+// the step are kept in the browser as they change, and put back on load.
+//
+// localStorage rather than sessionStorage: an installed iPhone app that
+// is closed and reopened is a new session, and that is the reload this
+// card is about. KEYED BY HOUSEHOLD (/api/whoami), so a phone signed in
+// to a second household never reads the first one's draft — nothing is
+// read or written until whoami has answered. REMOVED when setup is saved
+// (the finish calls clearOnboardingDraft), and nothing is written once
+// the finish has started. Every storage call is in a try: a private
+// window, or a full or blocked store, only means a reload starts over —
+// which is where this page was before.
+const ONBOARDING_DRAFT_PREFIX = 'pomona-onboarding-draft:';
+// Bumped when the shape changes; a draft from another version is dropped
+// rather than half-read.
+const ONBOARDING_DRAFT_VERSION = 1;
+// How long a resume waits on whoami before starting fresh. A blank page
+// is what shows while it waits.
+const ONBOARDING_DRAFT_WAIT_MS = 4000;
+let draftHouseholdId = null;
+let draftHouseholdWait = null;
+// whoami was too slow for a resume to wait on: this load then neither
+// reads nor writes, so a late answer can't overwrite the draft it skipped
+// with a fresh set of blanks.
+let draftLeftAlone = false;
+// True once a draft was put back — the popstate handler reads it.
+var onboardingDraftResumed = false;
+
+function learnDraftHousehold() {
+  if (!draftHouseholdWait) {
+    draftHouseholdWait = (async () => {
+      let id = null;
+      try {
+        const res = await Api.fetch('/api/whoami', { cache: 'no-store' });
+        if (res.ok) {
+          const body = await res.json();
+          const raw = body && body.household_id;
+          if ((typeof raw === 'number' || typeof raw === 'string') && String(raw)) id = String(raw);
+          // A household that already has its adults finished setup (here
+          // or on another phone): its draft is stale, so it is removed and
+          // nothing is kept for it again. /onboarding redirects such a
+          // household, but a page served from the service worker's cache
+          // doesn't ask the server.
+          if (id && Array.isArray(body.adults) && body.adults.length) {
+            try { localStorage.removeItem(ONBOARDING_DRAFT_PREFIX + id); } catch (err) { /* nothing kept */ }
+            id = null;
+          }
+        }
+      } catch (err) { /* offline: no draft this load */ }
+      if (!draftLeftAlone) draftHouseholdId = id;
+      return id;
+    })();
+  }
+  return draftHouseholdWait;
+}
+learnDraftHousehold();
+
+function onboardingDraftOnDevice() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(ONBOARDING_DRAFT_PREFIX) === 0) return true;
+    }
+  } catch (err) { /* private window */ }
+  return false;
+}
+
+// Everything the finish sends, plus the step. The other people's rows,
+// the chip rows that are built once and the typed boxes hold their own
+// answers on the page, so they are read off it.
+function onboardingDraftSnapshot() {
+  const val = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const chips = id => { const el = document.getElementById(id); return el ? getActiveChips(el) : []; };
+  return {
+    v: ONBOARDING_DRAFT_VERSION,
+    step: currentStep,
+    name: val('your-name-input'),
+    primary: { age_group: primaryAgeGroup, age_years: primaryAgeYears, include_meals: primaryIncludeMeals },
+    others: [...membersDiv.querySelectorAll('.member-block')]
+      .filter(b => !b.classList.contains('is-primary'))
+      .map(b => ({
+        name: (b.querySelector('.member-name') || {}).value || '',
+        age_group: b.dataset.ageGroup || '',
+        age_years: b.dataset.ageYears || '',
+        include_meals: b.dataset.includeMeals || '',
+      })),
+    restrictions: restrictionAnswers,
+    helpers: { picks: helperPicks, contacts: helperContacts, someone: helperSomeoneName },
+    grid: usualGrid,
+    lunch: { location: lunchLocation, needs: lunchNeeds, home: lunchHome, outDays: lunchOutDays },
+    snacks: memberSnacks,
+    shop: { day: shopDay, topUp: shopTopUpDay },
+    prep: { answer: prepAnswer, days: prepDayKeys },
+    variety: varietyChoice,
+    dinner: { window: rhythmDinnerWindow, weeknightMax: weeknightMaxMinutes, lunchMax: weekdayLunchMaxMinutes },
+    eatingStyle: { chips: chips('eating-style-chips'), text: val('eating-style') },
+    wontEat: { presets: chips('wont-eat-presets'), items: wontEatItems.slice(), typing: val('wont-eat-input') },
+    excited: { chips: chips('excited-chips'), typing: val('excited-custom') },
+    kit: kitchenKit,
+    firstPlanStart: firstPlanStart,
+    note: {
+      text: anythingElseNote, stage: anythingElseStage, reading: anythingElseReading,
+      readFor: anythingElseReadFor, confirmed: anythingElseConfirmed, cuisines: noteCuisines,
+      typing: val('anything-else-note'),
+    },
+  };
+}
+
+function saveOnboardingDraft() {
+  // Only a question step is a place to come back to; and once the finish
+  // has started (or the reveal is up) there is nothing left to keep.
+  if (!draftHouseholdId || setupRun !== 'idle' || revealReached || !QUESTION_SECTIONS[currentStep]) return;
+  try {
+    localStorage.setItem(ONBOARDING_DRAFT_PREFIX + draftHouseholdId, JSON.stringify(onboardingDraftSnapshot()));
+  } catch (err) { /* private window or full: a reload starts over */ }
+}
+
+function clearOnboardingDraft() {
+  if (!draftHouseholdId) return;
+  try { localStorage.removeItem(ONBOARDING_DRAFT_PREFIX + draftHouseholdId); } catch (err) { /* nothing kept */ }
+}
+
+// Read a stored draft into checked values BEFORE any of it is applied: a
+// draft this code can't read is dropped whole (this throws), never half
+// put back. Only the shapes are checked — the values are the household's
+// own answers, and every one is still pruned and checked by the same
+// functions as a typed one before the finish sends it.
+function readOnboardingDraft(raw) {
+  const d = raw && typeof raw === 'object' ? raw : null;
+  if (!d || d.v !== ONBOARDING_DRAFT_VERSION) throw new Error('not a draft this page reads');
+  const str = (v, dflt) => typeof v === 'string' ? v : dflt;
+  const num = (v, dflt) => typeof v === 'number' && isFinite(v) ? v : dflt;
+  const obj = v => v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  const strs = v => Array.isArray(v) ? v.filter(x => typeof x === 'string') : [];
+  const cell = c => c === 'all' || c === 'off' ? c : strs(c);
+  const byName = (v, fn) => {
+    const out = {};
+    Object.keys(obj(v)).forEach(k => { out[k] = fn(v[k]); });
+    return out;
+  };
+  const grid = obj(d.grid);
+  const lunch = obj(d.lunch);
+  const helpers = obj(d.helpers);
+  const dinner = obj(d.dinner);
+  const note = obj(d.note);
+  return {
+    step: QUESTION_SECTIONS[d.step] ? d.step : firstQuestionStep(),
+    name: str(d.name, ''),
+    primary: {
+      age_group: str(obj(d.primary).age_group, 'adult') || 'adult',
+      age_years: str(obj(d.primary).age_years, ''),
+      include_meals: str(obj(d.primary).include_meals, '0'),
+    },
+    others: (Array.isArray(d.others) ? d.others : []).map(o => ({
+      name: str(obj(o).name, ''), age_group: str(obj(o).age_group, ''),
+      age_years: str(obj(o).age_years, ''), include_meals: str(obj(o).include_meals, ''),
+    })),
+    restrictions: byName(d.restrictions, r => ({
+      chips: strs(obj(r).chips), allergens: strs(obj(r).allergens),
+      allergy: str(obj(r).allergy, ''), other: str(obj(r).other, ''),
+    })),
+    helpers: {
+      picks: strs(helpers.picks), contacts: byName(helpers.contacts, v => str(v, '')),
+      someone: str(helpers.someone, ''),
+    },
+    grid: UW_MEALS.every(m => Array.isArray(grid[m]) && grid[m].length === UW_WEEKDAYS.length)
+      ? { breakfast: grid.breakfast.map(cell), lunch: grid.lunch.map(cell), dinner: grid.dinner.map(cell) }
+      : { breakfast: uwAllRow(), lunch: uwAllRow(), dinner: uwAllRow() },
+    lunch: {
+      location: byName(lunch.location, v => str(v, '')),
+      needs: byName(lunch.needs, e => {
+        const days = obj(e).days && typeof e.days === 'object' ? e.days : null;
+        return { needs: strs(obj(e).needs), days: days ? byName(days, strs) : null };
+      }),
+      home: byName(lunch.home, v => !!v),
+      outDays: byName(lunch.outDays, v => byName(v, cell)),
+    },
+    snacks: byName(d.snacks, v => num(v, 1)),
+    shop: { day: str(obj(d.shop).day, ''), topUp: str(obj(d.shop).topUp, '') },
+    prep: { answer: str(obj(d.prep).answer, ''), days: strs(obj(d.prep).days) },
+    variety: {
+      breakfast: str(obj(d.variety).breakfast, VARIETY_DEFAULT),
+      lunch: str(obj(d.variety).lunch, VARIETY_DEFAULT),
+      dinner: str(obj(d.variety).dinner, VARIETY_DEFAULT),
+    },
+    dinner: {
+      window: str(dinner.window, ''),
+      weeknightMax: num(dinner.weeknightMax, weeknightMaxMinutes),
+      lunchMax: num(dinner.lunchMax, weekdayLunchMaxMinutes),
+    },
+    eatingStyle: { chips: strs(obj(d.eatingStyle).chips), text: str(obj(d.eatingStyle).text, '') },
+    wontEat: {
+      presets: strs(obj(d.wontEat).presets), items: strs(obj(d.wontEat).items),
+      typing: str(obj(d.wontEat).typing, ''),
+    },
+    excited: { chips: strs(obj(d.excited).chips), typing: str(obj(d.excited).typing, '') },
+    kit: strs(d.kit),
+    firstPlanStart: str(d.firstPlanStart, 'this_week'),
+    note: {
+      text: str(note.text, ''), stage: note.stage === 'confirm' ? 'confirm' : 'ask',
+      reading: note.reading && typeof note.reading === 'object' ? note.reading : null,
+      readFor: str(note.readFor, ''), confirmed: note.confirmed === true,
+      cuisines: strs(note.cuisines), typing: str(note.typing, ''),
+    },
+  };
+}
+
+// Put a checked draft back. The people first — every other answer is
+// keyed by their names, and the pinned "You" row is drawn here rather
+// than waiting for the household step, so currentMembers() has the main
+// person whichever step this lands on.
+function applyOnboardingDraft(d) {
+  document.getElementById('your-name-input').value = d.name;
+  primaryAgeGroup = d.primary.age_group;
+  primaryAgeYears = d.primary.age_years;
+  primaryIncludeMeals = d.primary.include_meals;
+  [...membersDiv.querySelectorAll('.member-block')].forEach(b => b.remove());
+  d.others.forEach(o => addMemberRow(o.name, o.age_group, o.age_years, o.include_meals));
+  buildHouseholdStep();
+  restrictionAnswers = d.restrictions;
+  helperPicks = d.helpers.picks;
+  helperContacts = d.helpers.contacts;
+  helperSomeoneName = d.helpers.someone;
+  usualGrid = d.grid;
+  lunchLocation = d.lunch.location;
+  lunchNeeds = d.lunch.needs;
+  lunchHome = d.lunch.home;
+  lunchOutDays = d.lunch.outDays;
+  memberSnacks = d.snacks;
+  shopDay = d.shop.day;
+  shopTopUpDay = d.shop.topUp;
+  prepAnswer = d.prep.answer;
+  prepDayKeys = d.prep.days;
+  varietyChoice = d.variety;
+  rhythmDinnerWindow = d.dinner.window;
+  weeknightMaxMinutes = d.dinner.weeknightMax;
+  weekdayLunchMaxMinutes = d.dinner.lunchMax;
+  // The chip rows built once: build them now and light what was lit.
+  // addCustomChip selects a chip that is already there, and adds one
+  // that was typed.
+  buildEatingStyleStep();
+  d.eatingStyle.chips.forEach(v => addCustomChip(document.getElementById('eating-style-chips'), v, true));
+  document.getElementById('eating-style').value = d.eatingStyle.text;
+  buildWontEatStep();
+  d.wontEat.presets.forEach(v => addCustomChip(document.getElementById('wont-eat-presets'), v, true));
+  wontEatItems.splice(0, wontEatItems.length, ...d.wontEat.items);
+  renderWontEatChips();
+  document.getElementById('wont-eat-input').value = d.wontEat.typing;
+  buildExcitedStep();
+  d.excited.chips.forEach(v => addCustomChip(document.getElementById('excited-chips'), v, true));
+  document.getElementById('excited-custom').value = d.excited.typing;
+  kitchenKit = d.kit;
+  firstPlanStart = d.firstPlanStart;
+  anythingElseNote = d.note.text;
+  anythingElseStage = d.note.stage;
+  anythingElseReading = d.note.reading;
+  anythingElseReadFor = d.note.readFor;
+  anythingElseConfirmed = d.note.confirmed;
+  noteCuisines = d.note.cuisines;
+  pruneMemberKeyedAnswers();
+}
+
+// startOnboarding hands over to this when a draft is on the device.
+// Nothing is on screen until whoami answers (every step starts hidden);
+// a draft that isn't this household's, or can't be read, starts fresh.
+async function resumeOnboardingDraft() {
+  const id = await Promise.race([
+    learnDraftHousehold(),
+    new Promise(resolve => setTimeout(() => resolve(undefined), ONBOARDING_DRAFT_WAIT_MS)),
+  ]);
+  if (id === undefined) draftLeftAlone = true;
+  let draft = null;
+  if (id) {
+    try {
+      const raw = localStorage.getItem(ONBOARDING_DRAFT_PREFIX + id);
+      if (raw) draft = readOnboardingDraft(JSON.parse(raw));
+    } catch (err) {
+      // Unreadable: dropped, so it can't trip every load after this one.
+      console.warn('Setup draft dropped:', err);
+      clearOnboardingDraft();
+    }
+  }
+  if (!draft) { startOnboarding({ fresh: true }); return; }
+  applyOnboardingDraft(draft);
+  onboardingDraftResumed = true;
+  showStep(draft.step, { replace: true });
+  // The note box re-seeds from the sent note on arrival; words typed but
+  // not yet sent are put back after.
+  if (currentStep === 'anything-else') document.getElementById('anything-else-note').value = draft.note.typing;
+}
+
+// Written as answers change: every tap and keystroke bubbles here after
+// the page's own handler has updated its answer, and leaving the page
+// (pagehide, or the tab going to the background) writes once more.
+['input', 'change', 'click', 'keyup'].forEach(type => document.addEventListener(type, saveOnboardingDraft));
+window.addEventListener('popstate', saveOnboardingDraft);
+window.addEventListener('pagehide', saveOnboardingDraft);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveOnboardingDraft();
+});
+
 // The first step, and the history entry the back gesture unwinds onto.
 // Normally this REPLACES the entry the browser is already on, so nothing is
 // added to the stack for a screen nobody navigated to.
@@ -5927,7 +6246,15 @@ wireRevealSwapSheet();
 // A reload also SKIPS the intro: whoever reloaded has already been
 // introduced, and landing them back on "Hi, I'm Pomona" with their answers
 // gone would be adding insult to the loss.
-function startOnboarding() {
+function startOnboarding(opts) {
+  // A draft on this device is resumed instead (2026-10-09) — see
+  // resumeOnboardingDraft, which comes back here with `fresh` when the
+  // draft isn't this household's or can't be read. (typeof: the node
+  // harnesses in tests/ lift this function without the draft code.)
+  if (!(opts && opts.fresh) && typeof onboardingDraftOnDevice === 'function' && onboardingDraftOnDevice()) {
+    resumeOnboardingDraft();
+    return;
+  }
   const reloadedMidSetup = !!(window.history && window.history.state
     && window.history.state.onboardingStep);
   // The first question since the split (2026-10-05), and it has to be

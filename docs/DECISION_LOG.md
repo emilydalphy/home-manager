@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A reload mid-setup keeps your answers and your step** (2026-10-09; branch
+  `overnight/onboarding-survives-reload`; tests
+  `tests/test_onboarding_survives_reload.py`). Every answer lived only in the
+  page's memory until the one write at the end, so a phone reloading a
+  backgrounded tab sent you back to an empty "What's your name?".
+  `static/onboarding.html` now keeps a draft in localStorage
+  (`pomona-onboarding-draft:<household id from /api/whoami>`), written on
+  every tap/keystroke/pagehide while setup is idle, put back on load
+  (`resumeOnboardingDraft`, which `startOnboarding` defers to), and removed
+  when the finish reaches `done`, or when whoami already lists adults (set up
+  elsewhere). localStorage, not sessionStorage: a closed and reopened
+  home-screen app is a new session. Every storage call is in a try. After a
+  resume an earlier load's history entry is honoured, not collapsed onto the
+  first question (`onboardingDraftResumed`). No schema or server change. The
+  test runs the page's whole script under node, a fresh vm context per
+  "load", over a DOM parsed from its own markup.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
