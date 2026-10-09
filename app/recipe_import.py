@@ -1010,7 +1010,9 @@ def import_recipe_from_tiktok(
     )
     try:
         data = json.loads(body)
-    except ValueError:
+    except (ValueError, RecursionError):
+        # RecursionError: a pathologically nested body is not ValueError, and
+        # would otherwise reach the route's catch-all as a 500.
         data = None
     if not isinstance(data, dict):
         # A bot wall or an error page in place of the JSON: TikTok didn't
