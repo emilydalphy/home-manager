@@ -1110,6 +1110,8 @@ class StapleAddRequest(BaseModel):
     category: str = "other"
     every_days: int | None = None
     running_low: bool = False
+    # The Shop row it was made from, when it was — see tools.add_staple.
+    grocery_item_id: int | None = None
 
 
 class GroceryAddRequest(BaseModel):
@@ -5942,7 +5944,8 @@ def add_staple_view(req: StapleAddRequest):
     """Make something a staple — from a tap on a bought line, or a typed name."""
     try:
         return tools.add_staple(
-            req.item, every_days=req.every_days, quantity=req.quantity, category=req.category, running_low=req.running_low
+            req.item, every_days=req.every_days, quantity=req.quantity, category=req.category,
+            running_low=req.running_low, grocery_item_id=req.grocery_item_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

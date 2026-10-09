@@ -590,6 +590,7 @@ def add_staple(
     quantity: str = "",
     category: str = "other",
     running_low: bool = False,
+    grocery_item_id: int | None = None,
 ) -> dict:
     """
     Remember something the household buys on a rhythm — "we always get
@@ -602,6 +603,15 @@ def add_staple(
     they say they're out or nearly out now — it goes on the list today.
     Never creates or reads inventory. If the staple already exists, this
     updates it rather than making a second one.
+
+    grocery_item_id is the list line the staple is being made FROM (Shop's
+    row ⋯ → "Make it a staple"; not offered to the chat). That line becomes
+    the staple's own line (staple_id) and no second one is added; while it
+    is still to buy, the staple is due now and has no last-bought date —
+    a line on the list is the opposite of "we just bought some", which is
+    what a staple made by name assumes (2026-10-09: the row made "last
+    bought today, due in 3 weeks" and stayed unlinked). A line that isn't
+    this household's, or was taken off, is refused.
     """
     name = " ".join((item or "").strip().split())
     if not name:
@@ -612,6 +622,23 @@ def add_staple(
     # two different days across midnight, and each costs a connection.
     today_date = _today()
     conn = get_conn()
+    line = None
+    if grocery_item_id is not None:
+        line = conn.execute(
+            "SELECT id, item, status, staple_id FROM grocery_items WHERE id = ? AND household_id = ?",
+            (int(grocery_item_id), household_id()),
+        ).fetchone()
+        if line is None or line["status"] not in ("needed", "in_cart", "purchased"):
+            conn.close()
+            raise ValueError("That isn't on your list any more.")
+        # The line's own name, not whatever the caller typed: it is this
+        # line the staple is made from.
+        name = " ".join((line["item"] or "").strip().split()) or name
+    # Still to buy: the line IS the "it's due" — the same as running low,
+    # except the line already exists (see the spice branch below). A bought
+    # line keeps the by-name reading: it really was just bought.
+    on_list = line is not None and line["status"] in ("needed", "in_cart")
+    due_now = running_low or on_list
     existing = _find_by_name(conn, name)
     today = _iso(today_date)
     if existing:
@@ -626,7 +653,7 @@ def add_staple(
         if category and category != "other":
             fields.append("category = ?")
             params.append(cat)
-        if running_low:
+        if due_now:
             fields.append("next_due_at = ?")
             params.append(today)
         fields += ["paused = 0", "skip_streak = 0", "updated_at = datetime('now')"]
@@ -640,11 +667,13 @@ def add_staple(
         source = "told" if every_days else "default"
         # Adding a staple you're not out of means you have some now, so
         # the first due date is a cadence away. Running low means today.
-        next_due = today if running_low else _iso(today_date + timedelta(days=cadence))
+        # A line on the list counts as running low — and invents no
+        # purchase, so no last_bought_at either.
+        next_due = today if due_now else _iso(today_date + timedelta(days=cadence))
         cur = conn.execute(
             "INSERT INTO staples (household_id, item, category, quantity, cadence_days, cadence_source, "
             "last_bought_at, next_due_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (household_id(), name, cat, quantity or "", cadence, source, None if running_low else today, next_due),
+            (household_id(), name, cat, quantity or "", cadence, source, None if due_now else today, next_due),
         )
         staple_id = cur.lastrowid
         _event(conn, staple_id, "added", "chat")
@@ -654,15 +683,24 @@ def add_staple(
             # the real last-bought date set next_due, unless they said
             # they're low right now.
             _relearn(conn, staple_id)
-            if running_low:
+            if due_now:
                 conn.execute(
                     "UPDATE staples SET next_due_at = ? WHERE id = ? AND household_id = ?",
                     (today, staple_id, household_id()),
                 )
         created = True
-    if running_low and section_for(name, cat) == SECTION_SPICES:
+    if line is not None and line["staple_id"] is None:
+        # The tapped line becomes the staple's line, so buying it teaches
+        # this staple and sync_due_staples sees it covered by id. A line
+        # some other staple already owns keeps its owner.
+        conn.execute(
+            "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ? AND staple_id IS NULL",
+            (staple_id, line["id"], household_id()),
+        )
+    if running_low and not on_list and section_for(name, cat) == SECTION_SPICES:
         # sync_due_staples never lists a spice on its own (see the module
-        # note), so "we're out of cumin" puts the line on today, here.
+        # note), so "we're out of cumin" puts the line on today, here —
+        # unless it was made from a line already there.
         _put_on_list(conn, _row(conn, staple_id))
     conn.commit()
     out = _shape(_row(conn, staple_id))
