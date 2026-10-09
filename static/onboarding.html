@@ -5947,14 +5947,11 @@ const ONBOARDING_DRAFT_PREFIX = 'pomona-onboarding-draft:';
 // rather than half-read.
 const ONBOARDING_DRAFT_VERSION = 1;
 // How long a resume waits on whoami before starting fresh. A blank page
-// is what shows while it waits.
+// is what shows while it waits. A whoami that answers later still turns
+// saving on: what is typed from then on is the newer answer set.
 const ONBOARDING_DRAFT_WAIT_MS = 4000;
 let draftHouseholdId = null;
 let draftHouseholdWait = null;
-// whoami was too slow for a resume to wait on: this load then neither
-// reads nor writes, so a late answer can't overwrite the draft it skipped
-// with a fresh set of blanks.
-let draftLeftAlone = false;
 // True once a draft was put back — the popstate handler reads it.
 var onboardingDraftResumed = false;
 
@@ -5973,19 +5970,37 @@ function learnDraftHousehold() {
           // nothing is kept for it again. /onboarding redirects such a
           // household, but a page served from the service worker's cache
           // doesn't ask the server.
-          if (id && Array.isArray(body.adults) && body.adults.length) {
-            try { localStorage.removeItem(ONBOARDING_DRAFT_PREFIX + id); } catch (err) { /* nothing kept */ }
-            id = null;
-          }
+          const setUp = !!id && Array.isArray(body.adults) && body.adults.length > 0;
+          // Every OTHER household's draft goes too (review, 2026-10-09):
+          // a draft holds allergies, ages and helpers' phone numbers, and
+          // a phone now in this household has no business keeping
+          // another's. It also spares the next load the wait on whoami
+          // that a leftover key costs.
+          if (id) forgetOnboardingDrafts(setUp ? '' : ONBOARDING_DRAFT_PREFIX + id);
+          if (setUp) id = null;
         }
       } catch (err) { /* offline: no draft this load */ }
-      if (!draftLeftAlone) draftHouseholdId = id;
+      draftHouseholdId = id;
       return id;
     })();
   }
   return draftHouseholdWait;
 }
 learnDraftHousehold();
+
+// Remove every draft on this device except `keep` (a whole key, or '').
+// The same few lines are in login.html (after sign-out) and goodbye.html
+// (after a delete or a leave).
+function forgetOnboardingDrafts(keep) {
+  try {
+    const gone = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(ONBOARDING_DRAFT_PREFIX) === 0 && k !== keep) gone.push(k);
+    }
+    gone.forEach(k => localStorage.removeItem(k));
+  } catch (err) { /* private window: nothing kept */ }
+}
 
 function onboardingDraftOnDevice() {
   try {
@@ -6200,7 +6215,6 @@ async function resumeOnboardingDraft() {
     learnDraftHousehold(),
     new Promise(resolve => setTimeout(() => resolve(undefined), ONBOARDING_DRAFT_WAIT_MS)),
   ]);
-  if (id === undefined) draftLeftAlone = true;
   let draft = null;
   if (id) {
     try {

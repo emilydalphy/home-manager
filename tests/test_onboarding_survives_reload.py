@@ -424,7 +424,9 @@ def test_a_draft_is_keyed_by_household_and_never_read_by_another():
     assert out["keys"] == ["pomona-onboarding-draft:7"], out["keys"]
     assert out["other"]["name"] == "" and out["other"]["members"] == []
     assert out["other"]["step"] in ("intro-hello", "your-name")
-    assert out["keysAfter"] == ["pomona-onboarding-draft:7"], "another household's draft was touched"
+    # UPDATED (review, 2026-10-09): never READ by another household, and
+    # since the review not KEPT either -- see the test below.
+    assert out["keysAfter"] == []
 
 
 def test_finishing_setup_removes_the_draft_and_saves_once():
@@ -514,3 +516,73 @@ def test_a_household_set_up_elsewhere_never_sees_its_draft():
     assert out["keysBefore"] == ["pomona-onboarding-draft:7"]
     assert out["after"]["name"] == "" and out["after"]["helperPicks"] == []
     assert out["keysAfter"] == []
+
+
+def test_another_households_draft_is_removed_once_whoami_answers():
+    """
+    The draft carries allergies, ages and a helper's phone or email. A
+    device now in household 8 has no business keeping household 7's: it
+    is removed as soon as whoami says whose page this is, and the page
+    after that doesn't wait on it.
+    """
+    out = _run(r"""async function (out) {
+  let L = load(7);
+  await settle();
+  """ + _WALK_TO_HELPERS + r"""
+  tap(L, '#household-next');
+  STORE.set('unrelated-key', 'kept');
+  L = load(8);
+  await settle();
+  out.keys = draftKeys();
+  out.unrelated = STORE.get('unrelated-key');
+  out.step = ev(L, 'currentStep');
+}""")
+    assert out["keys"] == [], "household 7's answers were left on a device signed in to household 8"
+    assert out["unrelated"] == "kept"
+    assert out["step"] in ("intro-hello", "your-name")
+
+
+# ---------- signing out and deleting the household forget every draft ----------
+
+_LOGIN = (Path(__file__).resolve().parent.parent / "static" / "login.html").read_text()
+_GOODBYE = (Path(__file__).resolve().parent.parent / "static" / "goodbye.html").read_text()
+
+
+def _forget_fn(page: str) -> str:
+    start = page.index("function forgetOnboardingDrafts(")
+    depth, j = 0, page.index("{", start)
+    while True:
+        depth += {"{": 1, "}": -1}.get(page[j], 0)
+        if depth == 0:
+            break
+        j += 1
+    return page[start:j + 1]
+
+
+@pytest.mark.parametrize("page", [_LOGIN, _GOODBYE], ids=["login", "goodbye"])
+def test_the_signed_out_pages_remove_every_draft(page):
+    script = _forget_fn(page) + r"""
+const STORE = new Map([['pomona-onboarding-draft:7', '{}'], ['pomona-onboarding-draft:8', '{}'], ['pomona-appearance', 'dark']]);
+const window = { localStorage: {
+  get length() { return STORE.size; }, key(i) { return [...STORE.keys()][i] || null; },
+  removeItem(k) { STORE.delete(k); }, getItem(k) { return STORE.get(k) || null; } } };
+forgetOnboardingDrafts();
+const left = [...STORE.keys()];
+window.localStorage = { get length() { throw new Error('SecurityError'); } };
+forgetOnboardingDrafts();   // a private window: no throw
+console.log(JSON.stringify(left));
+"""
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    assert json.loads(res.stdout) == ["pomona-appearance"]
+
+
+def test_sign_out_lands_on_a_page_that_forgets_the_drafts(client):
+    res = client.get("/logout", follow_redirects=False)
+    assert res.status_code == 303
+    assert res.headers["location"] == "/login?signed_out=1"
+    # The login page only forgets on that landing, not on every visit: a
+    # session that ran out mid-setup signs back in to its draft.
+    assert re.search(r"signed_out=1[\s\S]{0,200}forgetOnboardingDrafts\(\)", _LOGIN)
+    # Goodbye is only ever reached after a delete or a leave.
+    assert "forgetOnboardingDrafts();" in _GOODBYE

@@ -26,9 +26,15 @@ why*, not duplicating the diff.
   elsewhere). localStorage, not sessionStorage: a closed and reopened
   home-screen app is a new session. Every storage call is in a try. After a
   resume an earlier load's history entry is honoured, not collapsed onto the
-  first question (`onboardingDraftResumed`). No schema or server change. The
-  test runs the page's whole script under node, a fresh vm context per
-  "load", over a DOM parsed from its own markup.
+  first question (`onboardingDraftResumed`). No schema change. The test runs
+  the page's whole script under node, a fresh vm context per "load", over a
+  DOM parsed from its own markup. Review follow-up (the draft holds allergies,
+  ages, helpers' contacts): once whoami answers, every OTHER household's
+  draft is removed (`forgetOnboardingDrafts`); `/logout` now lands on
+  `/login?signed_out=1`, where login.html removes every draft (only on that
+  landing — an expired session mid-setup keeps its draft); goodbye.html
+  (after delete/leave) removes every draft; a whoami slower than the 4s
+  resume wait still turns saving on.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

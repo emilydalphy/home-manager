@@ -7564,7 +7564,11 @@ def login_submit(request: Request, password: str = Form(""), next: str = Form("/
 
 @app.get("/logout")
 def logout(request: Request):
-    response = RedirectResponse(url="/login", status_code=303)
+    # ?signed_out=1 is the login page's cue to remove this device's
+    # onboarding drafts (static/login.html) -- they hold a household's
+    # allergies and helpers' contacts. Not on every login visit: a session
+    # that ran out mid-setup signs back in to its draft.
+    response = RedirectResponse(url="/login?signed_out=1", status_code=303)
     response.delete_cookie(security.COOKIE_NAME, path="/")
     _forget_this_phone(request, response)
     return response

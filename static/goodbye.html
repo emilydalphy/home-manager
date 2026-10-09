@@ -84,6 +84,21 @@
   </div>
 </main>
 <script>
+// Every onboarding draft on this device goes (static/onboarding.html keeps
+// one per household while setup is unfinished, with allergies, ages and
+// helpers' phone numbers in it). Wrapped: a private window has no storage.
+function forgetOnboardingDrafts() {
+  try {
+    var store = window.localStorage, gone = [], i, k;
+    for (i = 0; i < store.length; i++) {
+      k = store.key(i);
+      if (k && k.indexOf('pomona-onboarding-draft:') === 0) gone.push(k);
+    }
+    for (i = 0; i < gone.length; i++) store.removeItem(gone[i]);
+  } catch (e) { /* private mode */ }
+}
+// Only reached after a delete or a leave (2026-10-09).
+forgetOnboardingDrafts();
 (function () {
   var left = /(?:^|[?&])left=1(?:&|$)/.test(window.location.search || '');
   document.getElementById('gb-deleted').hidden = left;
