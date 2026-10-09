@@ -56,6 +56,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import leftovers as _leftovers
 from . import weekly_plan as _weekly_plan
+from . import tonight as _tonight
 
 logger = logging.getLogger("home_manager")
 
@@ -227,7 +228,8 @@ def _nobody_home_row(row: dict) -> bool:
     """
     derived = _derived(row)
     constraint = derived.get("constraint")
-    return constraint not in ("already_past", _weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT)
+    return constraint not in ("already_past", _weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT,
+                              _tonight.NIGHT_OFF_CONSTRAINT)
 
 
 def _empty_reason(row: dict, slot: str) -> str:
@@ -244,6 +246,11 @@ def _empty_reason(row: dict, slot: str) -> str:
         return "Already gone by"
     if constraint == _weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT:
         return f"No {slot} planned that day"
+    # A night called off from Today (tonight.tonight_night_off) — the
+    # household is home, just not cooking. It fell through to "Nobody’s
+    # home" while Today said "Night off — enjoy." (defect hunt, 2026-10-09).
+    if constraint == _tonight.NIGHT_OFF_CONSTRAINT:
+        return "Night off"
     return f"Nobody’s home for {slot}"
 
 

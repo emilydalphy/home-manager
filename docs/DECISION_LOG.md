@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The Move sheet calls a night off a night off** (2026-10-09, defect hunt;
+  branch `overnight/move-sheet-says-night-off`; tests
+  `tests/test_move_sheet_says_night_off.py`). After Today's "Night off", Plan →
+  another dinner → Move listed that night as "Not planned · Nobody’s home for
+  dinner" beside Today's "Night off — enjoy.". `meal_move._empty_reason` and
+  `_nobody_home_row` now read `tonight.NIGHT_OFF_CONSTRAINT` (reason "Night
+  off" under the row's "Not planned"); still refused, as every planned_empty
+  slot is. Not changed:
+  `usual_week_off` falls through to "Nobody’s home" the same way.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
