@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A night off no longer says a dish is "off the week" when it's still on
+  a later night** (2026-10-09; branch `overnight/night-off-says-where-the-dish-is`;
+  tests `tests/test_night_off_dish_still_on.py`). Lemon Pasta planned Wed and
+  Sun as two cooks, no free night: kind `drop` takes Wednesday's row only, but
+  the sub-line and toast said "comes off / is off the week". `_night_off_plan`'s
+  drop now carries `still_on` (later weekdays with the same dish by name,
+  planned) and says "Lemon Pasta is still on Sunday." (toast: "Tonight's off.
+  Lemon Pasta is still on Sunday."); the payload carries `still_on` and
+  shell.js's fallback sentence reads it. Earlier nights don't count — a Monday
+  already eaten isn't where the dish is. Chat tool text says the same.
+
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
