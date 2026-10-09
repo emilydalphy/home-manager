@@ -13,6 +13,30 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Chat sessions live in the database, not in server memory** (2026-10-09;
+  branch `overnight/chat-sessions-in-db`; Loop Board, Phase 3, Low). The
+  `SESSIONS`/`SESSION_TOUCHED` dicts in `app/main.py` are gone; the trimmed
+  history and last-touched time are the `chat_sessions` table (key
+  `h<household>:<session id>`, plus `household_id`, which every read also
+  filters on), read on EVERY turn and cached nowhere — so a redeploy no
+  longer drops a conversation mid-sitting and a second worker can't split
+  one. The 4-hour `_NEW_SITTING_GAP`, 7-day TTL and per-household cap of 50
+  are unchanged, now held in SQL inside one `db.write()` with the upsert. A
+  failed read or save is logged and costs the next turn its context, never
+  this turn's reply. **The history holds SDK block OBJECTS**
+  (`response.content`), so `main._history_for_storage` dumps them with the
+  SDK's own wire call (`mode="json", by_alias, exclude_unset,
+  __api_exclude__`) — `tests/test_chat_sessions_in_db.py` captures the next
+  request on a mock transport from the objects and from the reloaded dicts
+  and asserts they are identical (thinking signature included);
+  `exclude_none` instead reddens it. Household delete/reset take the rows
+  through the `household_id` column, so `forget_in_memory` lost its chat
+  branch. **This stores what people type**, so the privacy policy's "not
+  saved to our database" paragraph is rewritten and `LEGAL_VERSION` bumped
+  to 2026-10-09 — Emily's to approve, and a 4-hour TTL would hold less with
+  no behaviour change (nothing older is ever read back). Tests that poked
+  the dicts (`test_fresh_sitting_less_history`, the two in
+  `test_multi_household`, one in `test_household_deletion`) now seed the table.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

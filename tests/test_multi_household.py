@@ -714,7 +714,7 @@ def test_the_agent_tools_run_in_the_callers_household(client, beta_household, mo
         assert tools.list_grocery_list() == []
 
 
-def test_one_household_chatting_a_lot_cannot_evict_anothers_conversation():
+def test_one_household_chatting_a_lot_cannot_evict_anothers_conversation(beta_household):
     """
     The session cap is per household, not global.
 
@@ -728,52 +728,55 @@ def test_one_household_chatting_a_lot_cannot_evict_anothers_conversation():
     the cap, then check the *other* household's session is untouched.
     Reverting the split fails this.
     """
+    import json
     import time
 
-    from app import main
-
-    main.SESSIONS.clear()
-    main.SESSION_TOUCHED.clear()
+    from app import db, main
 
     # Everything here is recent enough to survive the 7-day TTL — this test
     # is about the cap, not expiry, and stale rows would be dropped for the
     # wrong reason.
     now = time.time()
 
-    # The quiet household's one conversation, and it is the oldest thing
-    # here — under a shared cap it is exactly what gets evicted first.
-    main.SESSIONS["h2:beta-session"] = [{"role": "user", "content": "hi"}]
-    main.SESSION_TOUCHED["h2:beta-session"] = now - 3600
+    # In the chat_sessions table since 2026-10-09 (it was two dicts); the
+    # property asserted is unchanged.
+    def put(conn, key, household, message, touched):
+        conn.execute(
+            "INSERT INTO chat_sessions (session_key, household_id, history_json, touched_at) "
+            "VALUES (?, ?, ?, ?)",
+            (key, household, json.dumps([{"role": "user", "content": message}]), touched),
+        )
 
-    # The busy household, well past the cap on its own.
-    for i in range(main._MAX_SESSIONS_PER_HOUSEHOLD + 25):
-        key = f"h1:emily-{i}"
-        main.SESSIONS[key] = [{"role": "user", "content": f"message {i}"}]
-        main.SESSION_TOUCHED[key] = now - 600 + i
+    beta_key = f"h{beta_household}:beta-session"
+    with db.write() as conn:
+        # The quiet household's one conversation, and it is the oldest thing
+        # here — under a shared cap it is exactly what gets evicted first.
+        put(conn, beta_key, beta_household, "hi", now - 3600)
+        # The busy household, well past the cap on its own.
+        for i in range(main._MAX_SESSIONS_PER_HOUSEHOLD + 25):
+            put(conn, f"h1:emily-{i}", DEFAULT_HOUSEHOLD_ID, f"message {i}", now - 600 + i)
 
-    main._prune_sessions()
+    with db.write() as conn:
+        main._prune_sessions(conn)
 
-    assert "h2:beta-session" in main.SESSIONS, (
+    conn = get_conn()
+    try:
+        rows = {r["session_key"]: r for r in conn.execute("SELECT * FROM chat_sessions")}
+    finally:
+        conn.close()
+
+    assert beta_key in rows, (
         "the other household's conversation was evicted by a household it "
         "shares nothing with"
     )
-    assert main.SESSIONS["h2:beta-session"] == [{"role": "user", "content": "hi"}]
+    assert json.loads(rows[beta_key]["history_json"]) == [{"role": "user", "content": "hi"}]
 
     # The busy household is still capped — per-household, not unbounded.
-    emily = [k for k in main.SESSIONS if k.startswith("h1:")]
+    emily = [k for k in rows if k.startswith("h1:")]
     assert len(emily) == main._MAX_SESSIONS_PER_HOUSEHOLD
     # ...and it kept its most recent conversations, dropping its oldest.
-    assert "h1:emily-0" not in main.SESSIONS
-    assert f"h1:emily-{main._MAX_SESSIONS_PER_HOUSEHOLD + 24}" in main.SESSIONS
-
-    # Both dicts have to shrink together. Dropping a conversation but
-    # keeping its "last seen" row leaks one entry per eviction forever,
-    # which is invisible from the outside and is exactly the kind of slow
-    # growth a cap exists to prevent.
-    assert set(main.SESSION_TOUCHED) == set(main.SESSIONS)
-
-    main.SESSIONS.clear()
-    main.SESSION_TOUCHED.clear()
+    assert "h1:emily-0" not in rows
+    assert f"h1:emily-{main._MAX_SESSIONS_PER_HOUSEHOLD + 24}" in rows
 
 
 def test_chat_history_is_not_shared_between_households(client, beta_household, monkeypatch):
@@ -795,9 +798,6 @@ def test_chat_history_is_not_shared_between_households(client, beta_household, m
 
     monkeypatch.setattr(main, "run_agent_turn", fake_turn)
 
-    main.SESSIONS.clear()
-    main.SESSION_TOUCHED.clear()
-
     _sign_in(client, "test-password")
     assert client.post("/api/chat", json={"message": "emily's secret"}).status_code == 200
     _sign_in(client, BETA_PASSPHRASE)
@@ -807,10 +807,18 @@ def test_chat_history_is_not_shared_between_households(client, beta_household, m
     assert seen[1] == [], "the other household must not inherit a conversation"
     assert not any("emily's secret" in str(turn) for turn in seen[1:])
 
-    keys = list(main.SESSIONS)
-    assert len(keys) == 2
-    assert any(k.startswith(f"h{DEFAULT_HOUSEHOLD_ID}:") for k in keys)
-    assert any(k.startswith(f"h{beta_household}:") for k in keys)
+    conn = get_conn()
+    try:
+        rows = conn.execute("SELECT session_key, household_id FROM chat_sessions").fetchall()
+    finally:
+        conn.close()
+    assert len(rows) == 2
+    # Each conversation is stored under its own household — by the key AND
+    # by the column every read filters on.
+    assert {(r["session_key"].split(":")[0], r["household_id"]) for r in rows} == {
+        (f"h{DEFAULT_HOUSEHOLD_ID}", DEFAULT_HOUSEHOLD_ID),
+        (f"h{beta_household}", beta_household),
+    }
 
 
 # ---------- admin surface ----------

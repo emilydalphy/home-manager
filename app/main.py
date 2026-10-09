@@ -35,6 +35,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
 from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
+from . import db
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -359,17 +360,25 @@ async def security_headers(request: Request, call_next):
     return response
 
 
-# In-memory chat history: session_id -> conversation.
+# Chat history: session key -> conversation, in the chat_sessions table.
 #
 # The session id is minted server-side and carried in the signed login
 # cookie (see security.issue_session). It used to come straight off the
 # request body with a default of "default", which meant any caller could
-# both read and append to the household's conversation, and could grow this
-# dict without bound by inventing new ids. Neither is possible now, but the
+# both read and append to the household's conversation, and could grow the
+# store without bound by inventing new ids. Neither is possible now, but the
 # TTL and cap below stay as a second line of defence — and they also stop a
 # long-lived deploy accumulating history for browsers that never come back.
-SESSIONS: dict[str, list[dict]] = {}
-SESSION_TOUCHED: dict[str, float] = {}
+#
+# IN THE DATABASE, NOT IN THIS PROCESS (2026-10-09). This was two dicts,
+# SESSIONS and SESSION_TOUCHED, so every redeploy — every merge to main —
+# dropped a household's conversation mid-sitting while the messages they
+# had just exchanged stayed on screen, and Pomona answered the next one as
+# if it had never seen them. A second uvicorn worker would have been
+# worse and quieter: each process its own half of one conversation. Read
+# from the table on every turn and never cached here, for that second
+# reason — a cache in one worker is exactly the stale copy the move exists
+# to get rid of. See schema.sql on chat_sessions for retention.
 _SESSION_TTL = 7 * 24 * 60 * 60  # a week without a message and it's dropped
 # Per household, deliberately — not across all of them. A single shared cap
 # meant one household's busy evening evicted another household's live
@@ -425,50 +434,133 @@ def _chat_session_state(request) -> tuple[str, list, bool]:
     the clock rather than two, so they can never disagree about it.
     """
     session_id = _chat_session_id(request)
-    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
-    history = [] if is_new_sitting else SESSIONS.get(session_id, [])
+    stored, touched = _load_chat_session(session_id)
+    is_new_sitting = time.time() - touched > _NEW_SITTING_GAP
+    history = [] if is_new_sitting else stored
     return session_id, history, is_new_sitting
 
 
-def _session_household(session_key: str) -> str:
+def _load_chat_session(session_key: str) -> tuple[list, float]:
     """
-    The household part of a chat session key.
+    The stored conversation for this key and when it was last touched, or
+    ([], 0.0) — which reads as a new sitting — when there is none.
 
-    Keys are built by _chat_session_id below as "h<household>:<session id>",
-    so the household is everything before the first colon. A key in any
-    other shape falls back to itself, which puts it in a bucket of its own
-    rather than silently sharing one household's allowance with another —
-    the failure mode this split exists to prevent.
+    Filtered on household_id as well as the key: the key already carries
+    the household, but a read that ALSO says household_id = ? cannot hand
+    one household another's conversation even if a key were ever built
+    wrong. Belt and braces, on the one piece of data that holds what
+    somebody typed.
+
+    A failed read starts the turn fresh rather than 500ing it: the
+    household loses the thread of one conversation, which is exactly what
+    a restart used to cost them on every deploy, and the reply still comes.
+    Logged, so it is not silent.
     """
-    prefix, sep, _ = session_key.partition(":")
-    return prefix if sep else session_key
+    try:
+        conn = get_conn()
+        try:
+            row = conn.execute(
+                "SELECT history_json, touched_at FROM chat_sessions "
+                "WHERE session_key = ? AND household_id = ?",
+                (session_key, tools.household_id()),
+            ).fetchone()
+        finally:
+            conn.close()
+        if row is None:
+            return [], 0.0
+        return json.loads(row["history_json"]), float(row["touched_at"])
+    except Exception:
+        logger.exception("Reading the stored chat conversation failed; starting this turn fresh")
+        return [], 0.0
 
 
-def _prune_sessions() -> None:
-    now = time.time()
-    # Both sweeps below walk a snapshot (list(...)) rather than the live
-    # dict. /api/chat is a `def` route, so Starlette runs it in a
-    # threadpool and two households chatting at once really do mutate
-    # these dicts underneath a walk — which raises "dictionary changed
-    # size during iteration" and 500s somebody's message.
-    stale = [sid for sid, seen in list(SESSION_TOUCHED.items()) if now - seen > _SESSION_TTL]
-    for sid in stale:
-        SESSIONS.pop(sid, None)
-        SESSION_TOUCHED.pop(sid, None)
+def _history_for_storage(history: list) -> list:
+    """
+    The conversation as plain JSON, exactly as the Anthropic SDK would put
+    it on the wire.
+
+    run_agent_turn appends `response.content` as it came back — SDK block
+    OBJECTS (TextBlock, ToolUseBlock, thinking, server-tool results), not
+    dicts — next to plain dicts it builds itself (the person's words, every
+    tool_result). The dict store held the objects and the SDK serialised
+    them on the next request; a table cannot. So each object is dumped here
+    with the SAME call the SDK makes when it sends one
+    (anthropic._utils._transform: mode="json", by_alias, exclude_unset,
+    and the model's own __api_exclude__), which means the next turn sends
+    Claude the bytes it would have sent from memory — a signed thinking
+    block included, where a hand-picked set of fields would break the
+    signature. Everything reading the stored history back (trim_conversation,
+    _trim_fetched_for_resend, the turn summaries) already reads a block by
+    key or through agent._block_get, so a dict is what they expect anyway.
+    """
+    def plain(block):
+        if hasattr(block, "model_dump"):
+            return block.model_dump(
+                mode="json", by_alias=True, exclude_unset=True,
+                exclude=getattr(block, "__api_exclude__", None),
+            )
+        return block
+
+    out = []
+    for message in history:
+        content = message.get("content") if isinstance(message, dict) else None
+        if isinstance(content, list):
+            message = {**message, "content": [plain(b) for b in content]}
+        out.append(message)
+    return out
+
+
+def _save_chat_session(session_key: str, history: list) -> None:
+    """
+    Store this turn's trimmed conversation, then hold the TTL and the
+    per-household cap — in one db.write() block, so a failure part way
+    can't leave the connection holding the write lock (db.write's own
+    docstring has the measured cost of that).
+
+    It cannot break the turn it stores. The reply is already paid for and
+    in hand; a failed save costs the next turn its context, which is what a
+    restart used to cost, and is logged rather than turned into a 500.
+    """
+    try:
+        payload = json.dumps(_history_for_storage(history))
+        with db.write() as conn:
+            conn.execute(
+                "INSERT INTO chat_sessions (session_key, household_id, history_json, touched_at) "
+                "VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(session_key) DO UPDATE SET history_json = excluded.history_json, "
+                "touched_at = excluded.touched_at "
+                # The key names its household, so this never moves a row
+                # between households; the WHERE says so rather than trusting it.
+                "WHERE chat_sessions.household_id = excluded.household_id",
+                (session_key, tools.household_id(), payload, time.time()),
+            )
+            _prune_sessions(conn)
+    except Exception:
+        logger.exception("Saving the chat conversation failed; the next turn starts fresh")
+
+
+def _prune_sessions(conn) -> None:
+    """
+    The week's TTL across every household, then the cap within each one,
+    on the caller's write connection.
+
+    Bucketing the cap by household is the whole point — see
+    _MAX_SESSIONS_PER_HOUSEHOLD above. It is by the household_id COLUMN
+    now rather than the key's prefix, which is the same bucket for every
+    key _chat_session_id builds.
+    """
+    conn.execute("DELETE FROM chat_sessions WHERE touched_at < ?", (time.time() - _SESSION_TTL,))
     # Still over the cap (many devices, all active): drop least-recent
-    # first, within each household separately. Bucketing by household is
-    # the whole point — see _MAX_SESSIONS_PER_HOUSEHOLD above.
-    by_household: dict[str, list[str]] = {}
-    for sid in list(SESSIONS):
-        by_household.setdefault(_session_household(sid), []).append(sid)
-    for keys in by_household.values():
-        over = len(keys) - _MAX_SESSIONS_PER_HOUSEHOLD
-        if over <= 0:
-            continue
-        keys.sort(key=lambda sid: SESSION_TOUCHED.get(sid, 0.0))
-        for sid in keys[:over]:
-            SESSIONS.pop(sid, None)
-            SESSION_TOUCHED.pop(sid, None)
+    # first. rowid breaks a tie in touched_at the way insertion order did.
+    conn.execute(
+        "DELETE FROM chat_sessions WHERE rowid IN ("
+        " SELECT rowid FROM ("
+        "  SELECT rowid, ROW_NUMBER() OVER ("
+        "   PARTITION BY household_id ORDER BY touched_at DESC, rowid DESC) AS n"
+        "  FROM chat_sessions)"
+        " WHERE n > ?)",
+        (_MAX_SESSIONS_PER_HOUSEHOLD,),
+    )
 
 
 def _chat_session_id(request: Request) -> str:
@@ -7096,14 +7188,12 @@ def _finish_chat_turn(session_id: str, history: list, reply: str, updated_histor
     # session id) can't grow this — and the full payload re-sent to Claude
     # every turn — without bound. See trim_conversation for why this is
     # safe to cut mid-list without breaking tool_use/tool_result pairing.
-    SESSIONS[session_id] = trim_conversation(updated_history)
-    SESSION_TOUCHED[session_id] = time.time()
-    _prune_sessions()
-    # The only durable record that this turn ever happened. SESSIONS above
-    # is memory-only and dies with the process, so without this line a
-    # restart erases every trace of how much the app was used — and unlike
+    _save_chat_session(session_id, trim_conversation(updated_history))
+    # The durable record that this turn happened. The conversation above is
+    # overwritten every turn and swept after a week, so without this line
+    # there would be no trace of how much the app was used — and unlike
     # most gaps, it can't be backfilled later. No message content is
-    # stored; see schema.sql on chat_turns.
+    # stored here; see schema.sql on chat_turns.
     #
     # Passed as one dict rather than **unpacked: unpacking happens at the
     # call site, *before* record_chat_turn's own error handling can catch

@@ -1729,12 +1729,49 @@ CREATE TABLE IF NOT EXISTS legal_acceptances (
     accepted_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- The conversation a signed-in device is in the middle of: the trimmed
+-- message list run_agent_turn is handed next turn, and when it was last
+-- touched. One row per session key, overwritten every turn.
+--
+-- WHY IT IS IN THE DATABASE (2026-10-09): it used to be a dict in
+-- app/main.py, so every Railway redeploy -- every merge to main -- dropped
+-- a household's conversation mid-sitting while their messages stayed on
+-- screen, and a second uvicorn worker would have split one conversation
+-- between two processes without anyone seeing it. Read from here on EVERY
+-- turn, never cached in a process, so no worker can serve a stale one.
+--
+-- session_key is _chat_session_id's "h<household>:<session id>", and
+-- household_id is stored as well and filtered on every read: the key
+-- alone already names the household, but a read that also says
+-- household_id = ? cannot return another household's conversation even if
+-- a key were ever built wrong. The column is also what makes household
+-- deletion and reset_household.py take these rows with no list to update.
+--
+-- history_json is the Anthropic Messages list as the SDK itself would
+-- send it (see main._history_for_storage). It holds what the person
+-- typed, so the retention is real and is stated in the privacy policy:
+-- only the current sitting is ever read back (_NEW_SITTING_GAP), a row is
+-- deleted a week after its last message (_SESSION_TTL), each household
+-- keeps at most _MAX_SESSIONS_PER_HOUSEHOLD, and a household delete takes
+-- them all at once.
+CREATE TABLE IF NOT EXISTS chat_sessions (
+    session_key TEXT PRIMARY KEY,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    history_json TEXT NOT NULL DEFAULT '[]',
+    -- time.time() seconds, not a datetime string: the 4-hour and 7-day
+    -- rules are arithmetic on it, exactly as they were on the dict.
+    touched_at REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_household_touched
+    ON chat_sessions(household_id, touched_at);
+
 -- One row per chat turn. Deliberately NO message content -- this exists to
 -- answer "is the household actually using the app, and what does a turn
--- cost", not to keep a transcript. Chat history itself lives only in
--- memory (app/main.py SESSIONS) and is wiped on every restart, so before
--- this table there was no way to answer either question, and no way to
--- answer them retroactively either: an unrecorded turn is gone.
+-- cost", not to keep a transcript. The live conversation is chat_sessions
+-- below, which is overwritten every turn and swept after a week, so it
+-- cannot answer either question either; before this table there was no
+-- way to answer them, and no way to answer them retroactively: an
+-- unrecorded turn is gone.
 --
 -- rounds is the number the cost work never had -- a cheaper call that
 -- needs more rounds to finish the job is not actually cheaper, so cost per

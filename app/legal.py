@@ -31,9 +31,9 @@ import os
 
 # The version every page shows, and the one sign-up records. A date, so a
 # person reading "Version 2026-10-06" knows how old the words are.
-LEGAL_VERSION = "2026-10-06"
+LEGAL_VERSION = "2026-10-09"
 # Said the way a person would read it, for the line under each title.
-LEGAL_DATE_LABEL = "October 6, 2026"
+LEGAL_DATE_LABEL = "October 9, 2026"
 
 PAGES = ("privacy", "terms", "support")
 

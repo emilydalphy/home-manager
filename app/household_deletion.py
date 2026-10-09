@@ -11,11 +11,11 @@ deletion actually does. So this is written to be stated plainly:
   household's id goes, then the `households` row itself. That includes the
   stored passphrase (`household_credentials`), invite links
   (`household_invites`), share links (`share_links`, `member_share_links`),
-  everyone's details (`members`, with their phone numbers) and the chat's
-  usage rows. Recipe page photos on disk go with the folder that holds
-  them. What the server holds in memory for the household (chat history,
-  open proposals, cached swap options, the week-generation records) is
-  dropped too. Immediate: no undo window (Emily's default, 2026-09-27).
+  everyone's details (`members`, with their phone numbers), the chat's
+  usage rows and the household's stored conversations (`chat_sessions`).
+  Recipe page photos on disk go with the folder that holds them. What the
+  server holds in memory for the household (open proposals, cached swap
+  options, the week-generation records) is dropped too. Immediate: no undo window (Emily's default, 2026-09-27).
 - **Remove myself.** One adult leaves a household that still has another
   adult in it. Their member row goes, and so does everything keyed to them
   alone (their ratings, notes, share link, invite links, morning-text log).
@@ -198,16 +198,9 @@ def _remove_files(hid: int) -> None:
 
 def forget_in_memory(hid: int) -> None:
     """Drop what this process holds for the household outside the database."""
-    try:
-        from . import main as _main
-
-        prefix = f"h{hid}:"
-        for key in [k for k in list(_main.SESSIONS) if k.startswith(prefix)]:
-            _main.SESSIONS.pop(key, None)
-        for key in [k for k in list(_main.SESSION_TOUCHED) if k.startswith(prefix)]:
-            _main.SESSION_TOUCHED.pop(key, None)
-    except Exception:
-        logger.exception("Forgetting household %s's chat sessions failed", hid)
+    # Chat history is not here any more: it is the chat_sessions table
+    # (2026-10-09), which has a household_id column and so goes in the
+    # delete's own transaction with every other household table.
     try:
         from .tools import proposals
 
