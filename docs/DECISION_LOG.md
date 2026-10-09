@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Plan offers no Done on a day still ahead** (2026-10-09; branch
+  `overnight/no-done-on-days-ahead`; tests
+  `tests/test_no_done_on_days_ahead.py`). `wkMealRowHtml` gated Done only on
+  `opts.done`, so tomorrow's dinner offered a tick for a meal not yet cooked.
+  Now Done shows on today and past days (household clock: `isToday`/`isPast`
+  from `get_week_menu`), mirroring `leftoversEatenNow`'s rule for "Mark
+  eaten". Exception, a judgment call: a day-ahead row ALREADY ticked (chat —
+  `check_off_meal` has no date guard) keeps its pressed button so Plan can
+  put it back. Cook-ahead checked first and not affected: the source day
+  cooks, covered nights are reheats. Two Done fixtures that drew the approved
+  root on an unflagged ("ahead") day now draw it as today.
+
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

@@ -15634,7 +15634,17 @@
     if (planned) {
       var swap = day.isPast ? '' : wkMiniHtml('data-wk-swap-sheet="' + slot + '"', 'wk-mini-swap', WK_ICONS.swap,
         opts.swapLabel || 'Swap', (opts.swapLabel || 'Swap') + ' — ' + name);
-      var tick = opts.done
+      // A day still ahead (on the household's clock — isToday / isPast come
+      // from get_week_menu) gets no Done: nothing on it has been cooked yet,
+      // and a tick is a record of something that happened — the same rule
+      // leftoversEatenNow keeps for a reheat's "Mark eaten" (Loop Board bug,
+      // 2026-10-09: Saturday's dinner offered Done on the Friday). A row
+      // there that is already ticked (chat can — check_off_meal has no date
+      // guard) keeps its pressed button, so Plan can still put it back.
+      // Cook-ahead is not this: it is cooked on the source day, and the
+      // nights it covers are reheat nights, whose action is Mark eaten.
+      var ahead = !day.isToday && !day.isPast;
+      var tick = opts.done && (!ahead || done)
         ? wkMiniHtml('data-wk-done="' + slot + '" aria-pressed="' + (done ? 'true' : 'false') + '"',
             'wk-mini-done' + (done ? ' is-done' : ''), WK_ICONS.tick, 'Done',
             // Only ever heard, never seen — and still the same euphemism

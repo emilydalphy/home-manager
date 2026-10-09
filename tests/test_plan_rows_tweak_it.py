@@ -117,7 +117,8 @@ def test_tweak_it_is_not_offered_where_the_plate_cant_change():
 
 @_needs_node
 def test_the_approved_roots_rows_keep_done_and_swap_on_the_new_line_and_no_tweak_it():
-    day = _day(_TUE, dinner=_plated("Black bean tacos", meta="25 min"))
+    # Today: a day still ahead offers no Done (test_no_done_on_days_ahead.py).
+    day = _day(_TUE, iso_today=True, dinner=_plated("Black bean tacos", meta="25 min"))
     html = _run(_plate_prelude() + f"weekState.days = [{json.dumps(day)}];\n"
                 f"console.log(JSON.stringify(wkDayCardHtml({json.dumps(day)}, 0, {{ done: true, swapLabel: 'Swap' }})));")
     foot = _row(html, "dinner")
