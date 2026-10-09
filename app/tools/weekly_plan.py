@@ -6220,6 +6220,16 @@ def get_needs_you_items() -> list[dict]:
         (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchall()
     dinner_by_date = {r["date"]: r for r in dinner_rows}
+    # The usual week's dinners off tonight and tomorrow: the nights it has
+    # off, and every night when dinner is off all week (off_slots_on leaves
+    # that case to the counts, so it is asked for separately). Empty for a
+    # household that never answered the usual week.
+    from . import usual_week as _usual_week
+    _window = [(today + timedelta(days=o)).isoformat() for o in (0, 1)]
+    if "dinner" in _usual_week.switched_off_meals():
+        usual_week_off_dinners = set(_window)
+    else:
+        usual_week_off_dinners = {d for (d, s) in _usual_week.off_slots_on(_window) if s == "dinner"}
     for offset in (0, 1):
         candidate = (today + timedelta(days=offset)).isoformat()
         when = "Tonight" if offset == 0 else "Tomorrow"
@@ -6256,6 +6266,15 @@ def get_needs_you_items() -> list[dict]:
 
         if row is not None:
             continue  # planned, or deliberately away — already handled
+
+        # No row, on a night the usual week has off (2026-10-09). Inside a
+        # plan that night is a planned_empty row and is handled above; a
+        # night no plan covers (before the first week, between weeks) has
+        # no row at all, so a household that said "Don't plan" Friday
+        # dinner was asked "Tonight needs a dinner" that Friday — the day
+        # it set the week up. Their answer is the same answer here.
+        if candidate in usual_week_off_dinners:
+            continue
 
         options = _suggest_quick_dinners()
         if not options:

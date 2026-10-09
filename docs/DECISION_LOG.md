@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Tonight needs a dinner" is not asked on a night the usual week has off**
+  (2026-10-09; branch `overnight/usual-week-night-off-not-asked`; tests
+  `tests/test_needs_you_usual_week_off.py`). Found walking a new sign-up on a
+  Friday: Friday dinner set to "Don't plan", the reveal said "no Friday
+  dinner", and Today that Friday led with an urgent "Tonight needs a
+  dinner". `get_needs_you_items` asked about any night with no dinner row;
+  inside a plan an off night is a `planned_empty` row, but before the first
+  week and between weeks there is no row, and the usual week was never read.
+  Now a night `usual_week.off_slots_on` has off — or every night, when dinner
+  is off all week (`switched_off_meals`) — is handled like `planned_empty`,
+  and the band moves on to tomorrow.
+
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
