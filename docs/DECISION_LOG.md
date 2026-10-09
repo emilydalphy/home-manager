@@ -20,8 +20,9 @@ why*, not duplicating the diff.
   dinner" beside Today's "Night off — enjoy.". `meal_move._empty_reason` and
   `_nobody_home_row` now read `tonight.NIGHT_OFF_CONSTRAINT` (reason "Night
   off" under the row's "Not planned"); still refused, as every planned_empty
-  slot is. Not changed:
-  `usual_week_off` falls through to "Nobody’s home" the same way.
+  slot is. Same commit pair: a meal the usual week has off
+  (`usual_week_off`) and "no dinners at all" (`dinners_per_week:0`) now read
+  "No dinner planned that day" too (`_meal_not_asked_for`) — people are home.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

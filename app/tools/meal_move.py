@@ -57,6 +57,7 @@ from ._shared import household_id
 from . import leftovers as _leftovers
 from . import weekly_plan as _weekly_plan
 from . import tonight as _tonight
+from . import usual_week as _usual_week
 
 logger = logging.getLogger("home_manager")
 
@@ -228,8 +229,20 @@ def _nobody_home_row(row: dict) -> bool:
     """
     derived = _derived(row)
     constraint = derived.get("constraint")
-    return constraint not in ("already_past", _weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT,
-                              _tonight.NIGHT_OFF_CONSTRAINT)
+    return not (constraint == "already_past" or constraint == _tonight.NIGHT_OFF_CONSTRAINT
+                or _meal_not_asked_for(constraint))
+
+
+def _meal_not_asked_for(constraint) -> bool:
+    """The household is home but asked for no plan here: a day skipped in
+    the week's answers, a meal their usual week has off, or a meal they
+    asked for none of all week ("dinners_per_week:0", agent._finish_week_slots).
+    All three fell through to "Nobody’s home" — people ARE home, so saying
+    otherwise contradicts the day they can see (review of the night-off
+    fix, 2026-10-09)."""
+    return (constraint in (_weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT,
+                           _usual_week.OFF_CONSTRAINT)
+            or (isinstance(constraint, str) and constraint.endswith("s_per_week:0")))
 
 
 def _empty_reason(row: dict, slot: str) -> str:
@@ -244,7 +257,7 @@ def _empty_reason(row: dict, slot: str) -> str:
     constraint = derived.get("constraint")
     if constraint == "already_past":
         return "Already gone by"
-    if constraint == _weekly_plan._week_intake.SKIPPED_DAY_CONSTRAINT:
+    if _meal_not_asked_for(constraint):
         return f"No {slot} planned that day"
     # A night called off from Today (tonight.tonight_night_off) — the
     # household is home, just not cooking. It fell through to "Nobody’s

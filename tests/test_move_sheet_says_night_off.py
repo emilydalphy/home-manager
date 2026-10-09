@@ -80,3 +80,20 @@ def test_a_nobody_home_night_still_says_nobody_is_home():
     assert friday["ok"] is False
     assert friday["meal"] == "Not planned"
     assert friday["reason"] == "Nobody’s home for dinner"
+
+
+def _empty_row(constraint):
+    import json
+    return {"derived_from_json": json.dumps({"constraint": constraint})}
+
+
+def test_a_meal_the_household_asked_not_to_plan_never_says_nobody_is_home():
+    # The review of this branch found two more empty slots where people are
+    # home but asked for no plan: the usual week's day off, and "no dinners
+    # at all" (agent._finish_week_slots). Both said "Nobody’s home".
+    for constraint in ("usual_week_off", "dinners_per_week:0"):
+        assert meal_move._empty_reason(_empty_row(constraint), "dinner") == "No dinner planned that day"
+        assert meal_move._nobody_home_row(_empty_row(constraint)) is False
+    # The genuine one is untouched.
+    assert meal_move._empty_reason(_empty_row("nobody_home"), "dinner") == "Nobody’s home for dinner"
+    assert meal_move._nobody_home_row(_empty_row("nobody_home")) is True
