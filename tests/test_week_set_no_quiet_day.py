@@ -60,6 +60,7 @@ _PRELUDE = (
     "var planningPeriodDefault = null;\n"
     + _function("todayIsEmpty")
     + _function("todayNeedsPlan")
+    + _function("tonightIsOff")
     + _function("renderTodayEmpty")
     + _function("renderTodayDock")
     + """

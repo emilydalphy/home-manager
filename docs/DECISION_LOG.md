@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A usual-week night off is not a "Quiet day" either** (2026-10-09, Loop
+  Board bug; branch `overnight/quiet-day-respects-usual-week`, STACKED on
+  `overnight/week-set-no-quiet-day` — merge that first; tests
+  `tests/test_quiet_day_usual_week_off.py`). Usual week with tonight's dinner
+  "Don't plan", no plan covering today: Today offered "Quiet day. Want me to
+  sort dinner…" + "Just tonight". The client had no way to know; the moves
+  payload now carries `usual_week_dinner_off` (moves.`_usual_week_dinner_off`:
+  `switched_off_meals` + `off_slots_on`, the same reads as the needs-you fix
+  on `usual-week-night-off-not-asked`; only asked when no plan covers the
+  day). Such a day reads "Night off tonight. Want me to plan the week?" (new
+  words) with "Let's plan the week" alone in the dock.
 - **A set week's empty day is not a "Quiet day"** (2026-10-09, defect hunt;
   branch `overnight/week-set-no-quiet-day`; tests
   `tests/test_week_set_no_quiet_day.py`). Approved week, Friday, "Night off"

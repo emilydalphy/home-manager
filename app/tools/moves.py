@@ -84,6 +84,7 @@ from . import grocery as _grocery
 from . import move_owner as _move_owner
 from . import quantities as _quantities
 from . import rhythm as _rhythm
+from . import usual_week as _usual_week
 from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger(__name__)
@@ -1121,6 +1122,8 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         undone = [m for m in ahead if not m["done"]]
         tomorrow = undone[0] if undone else None
 
+    week_state = _week_state(view, target)
+
     return {
         "date": target.isoformat(),
         "moves": moves,
@@ -1129,7 +1132,16 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         "total": len(moves),
         # The badge is about the day this payload is about — the household's
         # today unless a caller named one — never the plan's own status alone.
-        "week_state": _week_state(view, target),
+        "week_state": week_state,
+        # Is this day's dinner one the usual week has off — that night "Don't
+        # plan", or dinner off all week? Only asked when no plan covers the
+        # day: inside a plan the night is already a planned_empty row and the
+        # plan is the answer. Today's empty moment reads it so a night off
+        # isn't offered "Want me to sort dinner…" / "Just tonight" (Loop
+        # Board, 2026-10-09) — the rule stays here, beside the needs-you
+        # band's, rather than copied into shell.js.
+        "usual_week_dinner_off": (week_state not in ("set", "draft")
+                                  and _usual_week_dinner_off(target)),
         # One row per planned meal, in eating order with snacks between
         # lunch and dinner (day_meals.SLOT_ORDER). [] on a day with nothing
         # planned, which is what Today reads as "Nothing planned today".
@@ -1143,6 +1155,22 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         # and answer, or None on an ordinary day (see holidays.py).
         "holiday": _today_holiday(target),
     }
+
+
+def _usual_week_dinner_off(day: date) -> bool:
+    """
+    True when the saved usual week has dinner off on `day`: that night's
+    cell is "Don't plan", or dinner is off every night (off_slots_on leaves
+    a meal off all week to the counts, so switched_off_meals is the other
+    half). A household that never saved a usual week is off only when its
+    counts have no dinners at all (switched_off_meals derives the grid from
+    them). The same two reads get_needs_you_items makes for "Tonight needs
+    a dinner" on the usual-week-night-off-not-asked branch.
+    """
+    if "dinner" in _usual_week.switched_off_meals():
+        return True
+    iso = day.isoformat()
+    return (iso, "dinner") in _usual_week.off_slots_on([iso])
 
 
 def _view_for_day(view: dict, day: date) -> dict:

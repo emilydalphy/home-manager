@@ -2977,9 +2977,12 @@
       // with none on offer it opens the chat on tonight instead. The
       // offer stays after "Not now" here, because on a day with nothing
       // else on it the offer IS the screen; only the card is silenced.
+      // On a night the usual week has off there is no tonight to sort —
+      // the week is the only ask (see tonightIsOff).
       html = '<div class="dock-row">' +
         '<button type="button" class="dock-primary" id="plan-nudge-go">Let’s plan the week</button>' +
-        '<button type="button" class="dock-link" id="today-just-tonight">Just tonight</button>' +
+        (tonightIsOff(panel) ? '' :
+          '<button type="button" class="dock-link" id="today-just-tonight">Just tonight</button>') +
       '</div>';
     } else if (nudge && nudge.show && !panel._nudgeDismissed) {
       // One row, the same shape as the empty moment's: the apricot on the
@@ -3052,6 +3055,17 @@
     return !!(nudge && nudge.week_start);
   }
 
+  // Tonight's dinner is one the usual week has off ("Don't plan" that
+  // night, or dinner off all week) and no plan covers today. The server
+  // decides (moves.usual_week_dinner_off, the same reads as the needs-you
+  // band's) so the rule lives in one place. Such a night used to be offered
+  // "Quiet day. Want me to sort dinner…" and "Just tonight" — sorting the
+  // dinner the household had just said not to plan (Loop Board,
+  // 2026-10-09). Planning the week is still a fair ask; tonight is not.
+  function tonightIsOff(panel) {
+    return !!(panel._moves && panel._moves.usual_week_dinner_off);
+  }
+
   // The empty moment on Now (Emily's copy, 2026-09-11). Three cases for a
   // day with no moves: a period needs planning ("Quiet day…", with the
   // plan and tonight's dinner as the dock's two moves — the offer card and
@@ -3076,7 +3090,9 @@
     var data = panel._moves || {};
     var html;
     if (needsPlan) {
-      html = panel._justTonight ? '' : emptyMomentHtml('sunrise', 'Quiet day. Want me to sort dinner, or the whole week?');
+      html = panel._justTonight ? '' : emptyMomentHtml('sunrise', tonightIsOff(panel)
+        ? 'Night off tonight. Want me to plan the week?'
+        : 'Quiet day. Want me to sort dinner, or the whole week?');
     } else if (data.tomorrow) {
       html = tomorrowCardHtml(data.tomorrow);
     } else {
