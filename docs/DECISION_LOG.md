@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
+  list, not a loss** (2026-10-09; branch
+  `overnight/standing-want-survives-two-moves`; tests
+  `tests/test_standing_want_survives_two_moves.py`). After the second cook
+  move the list holds TWO "Ground beef" rows — the household's own "1 lb"
+  (restated correctly by `_restate_standing_want`) and the plan's "12 oz" on
+  its own plan line, because a plan share in another unit never joins a
+  standing want (`_merge_target`; see "Same-family units add up"). Read as
+  `{item: quantity}` the second row hides the first. Shop shows both (seen in
+  a real browser). No code change; the tests read rows and pin it, through
+  the "−", its undo, and "away" twice. Open: two beef rows with no Merge offer.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
