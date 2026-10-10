@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Settings' age-group and restriction writes never add a person**
+  (2026-10-10; branch `overnight/settings-never-adds-a-person`; tests
+  `tests/test_settings_people_never_creates.py`). Both routes passed the name
+  to get-or-create tools, so an adult who left the household came back
+  (counted in meals, in "Who's this?") when a Settings sheet opened before
+  they left tapped their age chip or added a restriction, and a blank name
+  made a nameless member who could become the main person. Now
+  `_require_member_here` in `app/main.py`: 400 blank, 404 stranger, nothing
+  written — the rule `/api/memory/member/age` has had since 2026-10-06. Chat
+  keeps get-or-create; it is right there.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

@@ -2128,10 +2128,44 @@ def set_memory_member_age(req: MemberAgeRequest):
     return memory
 
 
+def _require_member_here(name: str | None) -> None:
+    """
+    Settings' people writes (age group, restrictions) are about somebody
+    already here: looked up, never created — the rule the age route next
+    door has had since 2026-10-06.
+
+    The tools underneath (set_member_age_group, set_member_dietary_restrictions)
+    get-or-create by name, which is right for chat ("my partner doesn't eat
+    shellfish" about someone not yet saved) and wrong for a screen that only
+    ever sends a name it is showing. Found 2026-10-10: an adult who left the
+    household (household_deletion.remove_member) came straight back as a
+    member — counted in meals, offered in "Who's this?" — the moment the
+    other adult's Settings, opened before they left, tapped their age chip
+    or added a restriction; and a blank name made a nameless person who
+    could become the main one. 400 for a blank name, 404 for a stranger,
+    nothing written either way.
+    """
+    # Blank is refused trimmed; the lookup is the tools' own (case-blind,
+    # untrimmed), so a name this check finds is the row the write lands on.
+    if not (name or "").strip():
+        raise HTTPException(status_code=400, detail="Say who this is about.")
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            (tools.household_id(), name),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"{name.strip()} isn't someone in this household.")
+
+
 @app.post("/api/memory/member/age-group")
 def set_memory_member_age_group(req: MemberAgeGroupRequest):
     """Set one member's age group — What We Know's People tab. No route onto
     set_member_age_group existed before this (see MemberAgeGroupRequest)."""
+    _require_member_here(req.name)
     try:
         tools.set_member_age_group(req.name, req.age_group)
         memory = tools.get_household_memory_for_display()
@@ -2146,6 +2180,7 @@ def set_memory_member_restrictions(req: MemberRestrictionsRequest):
     """Add or replace one member's dietary restrictions — What We Know's
     People tab. Thin wrapper over set_member_dietary_restrictions, same
     replace semantics (see MemberRestrictionsRequest)."""
+    _require_member_here(req.name)
     try:
         tools.set_member_dietary_restrictions(req.name, req.restrictions, replace=req.replace)
         memory = tools.get_household_memory_for_display()
