@@ -1555,6 +1555,31 @@ def _is_canned_good(item: str) -> bool:
     return not any(_item_matches(_clean_item(item), w) for w in _NEVER_CANNED_WORDS)
 
 
+# "1 ½ cups", "¾ cup", "2½ tbsp" (defect hunt, 2026-10-10). The fraction
+# glyphs are how this app WRITES a scaled amount (scale_steps, which
+# scale_recipe uses for any line with a bracket, a range or a fraction in
+# it), and how plenty of recipes off the web are written. _parse_quantity
+# reads "1 1/2" but not "1 ½", so every judgement below called those
+# amounts "unmeasured" and cooking_ingredients REPLACED them with the
+# table's guess: the cook view for six said "6 cups" of broth for a recipe's
+# "1 ½ cups", "1 can" of chickpeas for "1 ½ cans (15 oz)", and the recipe
+# page's servings stepper and the cook view gave two answers for one count.
+# Read here, for the cooking judgements only — the line keeps its own words.
+_GLYPH_FRACTIONS = {
+    "½": "1/2", "⅓": "1/3", "⅔": "2/3", "¼": "1/4", "¾": "3/4",
+    "⅛": "1/8", "⅜": "3/8", "⅝": "5/8", "⅞": "7/8",
+}
+_GLYPH_FRACTION_RE = re.compile(r"(\d)?\s*([" + "".join(_GLYPH_FRACTIONS) + r"])")
+
+
+def _parse_cook_qty(text: str):
+    """_quantities._parse_quantity, reading ½-style fractions as 1/2."""
+    ascii_text = _GLYPH_FRACTION_RE.sub(
+        lambda m: (m.group(1) + " " if m.group(1) else "") + _GLYPH_FRACTIONS[m.group(2)], text or ""
+    )
+    return _quantities._parse_quantity(ascii_text)
+
+
 def _quantity_problem(item: str, qty: str) -> str | None:
     """
     Why this quantity can't be cooked from, or None if it can. The single
@@ -1566,7 +1591,7 @@ def _quantity_problem(item: str, qty: str) -> str | None:
         return "missing"
     if text.lower() in _FREEFORM_COOKING_OK:
         return None
-    parsed = _quantities._parse_quantity(text)
+    parsed = _parse_cook_qty(text)
     if not parsed:
         return "unmeasured"
     _amount, unit = parsed
@@ -1756,7 +1781,7 @@ def implausible_quantity(item: str, qty: str, servings: int | None = None) -> di
     if not klass:
         return None
     name, ranges = klass
-    parsed = _quantities._parse_quantity((qty or "").strip())
+    parsed = _parse_cook_qty((qty or "").strip())
     if not parsed:
         return None
     amount, unit = parsed
@@ -1790,7 +1815,7 @@ def plausible_cooking_quantity(item: str, qty: str, servings: int | None = None,
     table = cooking_quantity(item, servings=_servings_or_base(servings), shopping_qty=shopping_qty)
     if table and not implausible_quantity(item, table, servings):
         return table
-    amount, unit = _quantities._parse_quantity(qty.strip())
+    amount, unit = _parse_cook_qty(qty.strip())
     family, factor = _check_family(unit, problem["class"])
     bound = problem["high"] if problem["per_serving"] > problem["high"] else problem["low"]
     total = bound * _servings_or_base(servings)
@@ -2026,7 +2051,7 @@ def produce_count_problem(item: str, qty: str, servings: int | None = None) -> d
     core, note = _quantities._split_quantity_note((qty or "").strip())
     if any(word in note.lower().split() for word in _SMALL_KIND_NOTES):
         return None
-    parsed = _quantities._parse_quantity(core)
+    parsed = _parse_cook_qty(core)
     if not parsed or (parsed[1] is not None and parsed[1] not in _COUNT_UNITS):
         return None
     count = parsed[0] * _COUNT_UNITS.get(parsed[1] or "", 1)
@@ -2177,7 +2202,7 @@ def per_person_count_problem(item: str, qty: str, servings: int | None = None) -
     core, note = _quantities._split_quantity_note((qty or "").strip())
     if any(w in note.lower().split() for w in _SMALL_KIND_NOTES):
         return None   # "6 small" is the kind said in the amount
-    parsed = _quantities._parse_quantity(core)
+    parsed = _parse_cook_qty(core)
     if not parsed or parsed[1] not in _PER_PERSON_COUNT_UNITS:
         return None
     per_serving = parsed[0] / _servings_or_base(servings)
@@ -2228,7 +2253,7 @@ def plausible_count_quantity(item: str, qty: str, servings: int | None = None) -
     if not problem:
         return qty
     core, note = _quantities._split_quantity_note((qty or "").strip())
-    unit = (_quantities._parse_quantity(core) or (0, None))[1]
+    unit = (_parse_cook_qty(core) or (0, None))[1]
     fixed = max(1.0, float(int(problem["high"] * _servings_or_base(servings) + 1e-9)))
     return _quantities._with_note(_quantities._format_quantity(fixed, unit), note)
 

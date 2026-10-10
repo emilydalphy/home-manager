@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"1 ½ cups" is a measurement in the cook view** (2026-10-10; branch
+  `overnight/half-a-cup-is-measured`). `_quantities._parse_quantity` reads
+  "1 1/2" but not "1 ½", so `_quantity_problem` called every glyph amount
+  "unmeasured" and `cooking_ingredients` replaced it with the table's guess.
+  The glyphs come from `scale_steps`, which `scale_recipe` uses for any line
+  with a bracket, so a cook for six read "1 can (15 oz)" for "1 ½ cans" and
+  "6 cups" of broth for "1 ½ cups". It also made the recipe page's stepper
+  and the cook view give two amounts for one count ("1 can" on arrival, "½
+  can" after − then +). `recipes._parse_cook_qty` reads the glyphs for the
+  cooking judgements only (problem, plausibility, per-person counts); the
+  line keeps its own words and grocery parsing is untouched. Tests at the
+  foot of `tests/test_recipe_quantities.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
