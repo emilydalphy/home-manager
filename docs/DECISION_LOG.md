@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The "quick" meal before a trip is still ahead and actually eaten** (2026-10-10;
+  branch `overnight/quick-meal-not-in-the-past`; tests
+  `tests/test_quick_meal_not_in_the_past.py`). Recorded Saturday morning, a trip
+  from Saturday breakfast tagged Friday's (eaten) dinner "Last one before you
+  head out". `set_away_stretch` now drops a quick edge whose slot time has
+  passed on the household clock (moves' slot clock) or that the plan holds
+  planned_empty (`slot_needs._edge_slot_open`); no plan yet still lands it.
+  Not walked back to an earlier meal — that is Emily's call. plan-week's
+  "X will be quick." just leaves the clause off.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

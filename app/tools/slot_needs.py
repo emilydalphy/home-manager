@@ -734,6 +734,16 @@ def set_away_stretch(
         )
         return True
 
+    # The last meal before heading out has to be one still AHEAD and one the
+    # household is actually eating. Recorded on Saturday morning, a trip
+    # from Saturday breakfast tagged FRIDAY's dinner "Last one before you
+    # head out — keeping it quick" (review, 2026-10-10): a meal already
+    # eaten. And a slot the plan holds planned_empty (none of that meal
+    # asked for, nobody home, a night off) is never offered as anything —
+    # CLAUDE.md's slot_state rule. Either way there is no quick meal, and
+    # the edge is left off rather than walked further back: which earlier
+    # meal would count instead is a product call nobody has made.
+    quick_edges = {k: v for k, v in quick_edges.items() if _edge_slot_open(*k)}
     for slot_key, edge_travelers in quick_edges.items():
         _apply_edge(slot_key, edge_travelers, "quick")
 
@@ -773,6 +783,36 @@ def set_away_stretch(
         "ready_made_slots": [{"date": d, "slot": s} for d, s in sorted(ready_edges)],
         "ready_made_recommendation": ready_made_result,
     }
+
+
+def _edge_slot_open(date_str: str, slot: str) -> bool:
+    """
+    Whether a derived trip edge may land on this meal: not already gone by
+    on the household's clock (the slot's own time — moves' clock, so "gone
+    by" means what Today means by it), and not a slot the plan holds
+    planned_empty. A slot no plan has written yet is open: the need is
+    what the generator reads when it gets there.
+    """
+    from . import cooker as _cooker  # local: cooker imports weekly_plan, which this module imports
+    from . import moves as _moves
+
+    when = _moves._slot_dt(date.fromisoformat(date_str), slot, _moves._dinner_clock())
+    if when <= _cooker.household_now():
+        return False
+    conn = get_conn()
+    try:
+        states = {
+            r["slot_state"] for r in conn.execute(
+                "SELECT mpe.slot_state FROM meal_plan_entries mpe "
+                "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+                "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.slot = ? "
+                "AND mpe.component_category IS NULL AND wp.status != 'retired'",
+                (household_id(), date_str, slot),
+            ).fetchall()
+        }
+    finally:
+        conn.close()
+    return not (states and states <= {"planned_empty"})
 
 
 def _recommend_ready_made(date_str: str, slot: str, conn=None) -> dict:
