@@ -781,7 +781,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
     trimmed_items = []
     for link in links:
         grocery_row = conn.execute(
-            "SELECT id, item, quantity, status, source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
+            "SELECT id, item, quantity, status, removed_by, source_weekly_plan_id FROM grocery_items "
+            "WHERE id = ? AND household_id = ?",
             (link["grocery_item_id"], household_id()),
         ).fetchone()
         # A pending spice ('spice', see spices.py) is a needed line the
@@ -794,9 +795,15 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
         # package keeps its one jar, an edited amount is only re-read when a
         # meal really goes — except it is never deleted here: it is off the
         # list already, and its Put back must still find the row.
+        # NOT a carried-over row (carried_kept / carried_dropped): its amount
+        # was folded onto this week's line or answered for good, and
+        # undo_carried_over_decision takes that recorded amount back off —
+        # recounting it here made the undo take off too little (review,
+        # 2026-10-10: 10 oz left for one 5 oz dinner).
         set_aside = (
             bool(grocery_row) and grocery_row["status"] == "removed"
             and grocery_row["source_weekly_plan_id"] is not None
+            and grocery_row["removed_by"] not in ("carried_kept", "carried_dropped")
         )
         live = live or set_aside
         if live and _quantities.package_unit(link["quantity"] or ""):

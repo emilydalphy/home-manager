@@ -20,7 +20,7 @@ why*, not duplicating the diff.
   Review round: the recount moved from Put back into the meal reversal
   (`_reverse_meal_grocery_contributions` treats a set-aside plan line like a
   live one, never deleting it), so a jar stays one jar and an edited amount is
-  only re-read when a meal really goes. Not done: a plan line whose meals ALL
+  only re-read when a meal really goes; carried_kept/dropped rows are excluded. Not done: a plan line whose meals ALL
   went while off still comes back as it was.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe

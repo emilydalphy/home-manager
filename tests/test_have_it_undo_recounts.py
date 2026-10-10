@@ -109,3 +109,43 @@ def test_with_every_meal_gone_while_set_aside_the_row_is_still_there_to_put_back
     for e in entries:
         tools.drop_dish_from_day(plan_id, e)
     assert signed_in.post(f"/api/grocery-list/{line_id}/pre-shop-undo").status_code == 200
+    # Not deleted while it was off. The first night's going recounted it to
+    # one frittata's 5 oz; the last one's leaves it there (the known gap in
+    # the decision log: no meal left, nothing to recount from).
+    conn = get_conn()
+    row = conn.execute("SELECT quantity, status FROM grocery_items WHERE id = ?", (line_id,)).fetchone()
+    conn.close()
+    assert (row["status"], row["quantity"]) == ("needed", "5 oz")
+
+
+def test_a_kept_carry_over_is_not_recounted_so_its_undo_takes_off_what_it_added():
+    """Review, 2026-10-10: last week's two curries' "4 lbs" kept onto this
+    week's "2 lbs" (-> 6 lbs; the carried row is removed/'carried_kept' at
+    4 lbs). Clearing last week must not recount that row, or the undo takes
+    off too little and leaves this week's one curry at 4 lbs."""
+    from unittest import mock
+    from app.tools import grocery as _grocery
+
+    today = household_today()
+    this_monday = today - timedelta(days=today.weekday())
+    next_monday = this_monday + timedelta(days=7)
+    tools.add_recipe("Curry", ingredients=[{"item": "Chicken thighs", "qty": "2 lb"}])
+    week_a = tools.create_weekly_plan(this_monday.isoformat())["weekly_plan_id"]
+    for d in (0, 1):
+        tools.plan_meal((this_monday + timedelta(days=d)).isoformat(), "Curry", weekly_plan_id=week_a)
+    tools.approve_weekly_plan(week_a, approved_by="Emily")
+    week_b = tools.create_weekly_plan(next_monday.isoformat())["weekly_plan_id"]
+    tools.plan_meal((next_monday + timedelta(days=2)).isoformat(), "Curry", weekly_plan_id=week_b)
+    with mock.patch.object(_grocery, "_household_today", lambda conn=None: next_monday):
+        tools.approve_weekly_plan(week_b, approved_by="Emily")
+
+    def needed() -> list[str]:
+        return [i["quantity"] for i in tools.list_grocery_list() if i["item"] == "Chicken thighs"]
+
+    [carried] = [c for c in tools.list_carried_over_items() if c["item"] == "Chicken thighs"]
+    assert carried["quantity"] == "4 lbs" and needed() == ["2 lbs"]
+    tools.keep_carried_over_item(carried["item_id"])
+    assert needed() == ["6 lbs"]
+    tools.clear_weekly_plan(week_a)
+    tools.undo_carried_over_decision(carried["item_id"])
+    assert needed() == ["2 lbs"]
