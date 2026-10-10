@@ -174,6 +174,26 @@ def test_a_seeded_day_is_one_short_message_in_plain_words(monkeypatch):
     assert "Action required" not in text and "Task" not in text
 
 
+def test_a_shop_for_tomorrow_says_tomorrow_once():
+    """Night off tonight, the cook the list is for is tomorrow: the line
+    read "Shop before tomorrow — 1 item, by tomorrow." (2026-10-10)."""
+    _adults()
+    tools.add_recipe(
+        "Chicken Skewers",
+        ingredients=[{"item": "Chicken Thighs", "qty": "1 lb"}],
+        prep_time_minutes=10, cook_time_minutes=25, default_servings=3,
+    )
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tools.plan_meal((TODAY + dt.timedelta(days=1)).isoformat(), "Chicken Skewers", slot="dinner",
+                    weekly_plan_id=plan_id, add_ingredients_to_grocery_list=True)
+    tools.set_morning_text_parts(["meals", "freezer", "prep", "shop"])
+
+    text = tools.build_morning_text(datetime.combine(TODAY, dt.time(7, 0)), link=False)
+
+    assert "Shop before tomorrow — 1 item." in text
+    assert text.count("tomorrow") == 1
+
+
 def test_no_link_when_no_url_is_configured(monkeypatch):
     monkeypatch.delenv("HOME_MANAGER_URL", raising=False)
     monkeypatch.setattr(digest, "PUBLIC_BASE_URL", "")

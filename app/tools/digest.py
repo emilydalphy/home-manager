@@ -743,7 +743,15 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
             parts.append(("shop", MORNING_SHOP_DAY_LINE.format(by=by, things=things)))
         else:
             for m in timed:
-                parts.append(("shop", f"{_tidy(m['title'])} — {_tidy(m['detail'])}."))
+                detail = m["detail"]
+                # "Shop before tomorrow — 1 item, by tomorrow." said it twice
+                # (2026-10-10). The title already carries the day when the
+                # cook is tomorrow, so the deadline clause goes — the same
+                # call the shop-day line above makes about "by tomorrow".
+                when = str(m.get("time_label") or "")
+                if when == "by tomorrow" and "tomorrow" in str(m.get("title") or "").lower():
+                    detail = detail.rsplit(" · ", 1)[0] if detail.endswith(" · " + when) else detail
+                parts.append(("shop", f"{_tidy(m['title'])} — {_tidy(detail)}."))
 
     # 6. WHO'S AWAY TONIGHT (2026-10-04) — attendance's own sentence, word
     # for word. summary_line is where "Dinner for 3 — Vineeth's out." lives

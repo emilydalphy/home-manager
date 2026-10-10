@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The morning text says "tomorrow" once** (2026-10-10; branch
+  `overnight/shop-line-says-tomorrow-once`). With no cook tonight and the
+  list's cook tomorrow, the shop line read "Shop before tomorrow — 1 item,
+  by tomorrow.": the move's title already names the day and its detail ends
+  "· by tomorrow". `digest._digest_parts` now drops that clause when the
+  title says tomorrow, as the shop-day line already does. Moves/Today are
+  unchanged. Test in `tests/test_morning_text.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
