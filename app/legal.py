@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import os
 
+from . import backup
+
 # The version every page shows, and the one sign-up records. A date, so a
 # person reading "Version 2026-10-06" knows how old the words are.
 LEGAL_VERSION = "2026-10-06"
@@ -54,6 +56,14 @@ _BANNER_HTML = (
 _BANNER_SLOT = "<!--LEGAL_BANNER-->"
 _VERSION_SLOT = "__LEGAL_VERSION__"
 _DATE_SLOT = "__LEGAL_DATE__"
+# How long the daily backups keep a deleted household (app/backup.py), so
+# the privacy policy and the support page can't drift from the code that
+# prunes them. Two numbers on purpose: each copy is kept RETENTION_DAYS, and
+# a copy taken on the day a household is deleted is pruned on the morning
+# RETENTION_DAYS + 1 days later (prune_backups keeps a copy dated exactly
+# at the cutoff) — "up to 15 days" is that second number, not a typo.
+_BACKUP_KEEP_SLOT = "__BACKUP_KEEP_DAYS__"
+_BACKUP_GONE_SLOT = "__BACKUP_GONE_WITHIN_DAYS__"
 
 
 def is_final() -> bool:
@@ -74,4 +84,6 @@ def render(page: str) -> str:
     html = html.replace(_BANNER_SLOT, "" if is_final() else _BANNER_HTML)
     html = html.replace(_VERSION_SLOT, LEGAL_VERSION)
     html = html.replace(_DATE_SLOT, LEGAL_DATE_LABEL)
+    html = html.replace(_BACKUP_KEEP_SLOT, str(backup.RETENTION_DAYS))
+    html = html.replace(_BACKUP_GONE_SLOT, str(backup.RETENTION_DAYS + 1))
     return html
