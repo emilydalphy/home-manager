@@ -19,9 +19,10 @@ why*, not duplicating the diff.
   takes `skipped` (chat's "not this one"); Today's moves count it handled,
   but `prep_sessions._task_items` read `done` as `status == 'done'`, so the
   session kept the row unticked and "N of M done" one short all week. Now
-  `done` covers both, and the item carries `skipped`. Not changed: the cook
-  screen's own "For this meal" count in `shell.js` still reads only `done`
-  (another builder's file).
+  `done` covers both, and the item carries `skipped`. Review caught the meal's
+  own "For this meal" count (`cookFocusPrepHtml`) still reading only `done`,
+  so the two Kitchen screens disagreed; it and chat's `get_plan_progress`
+  `prep_done` now count skipped as handled too.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

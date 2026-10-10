@@ -66,3 +66,19 @@ def test_unskipping_puts_it_back_to_do():
     session, items = _items(plan_id)
     assert items["Soak the beans"]["done"] is False
     assert session["items_done"] == 0
+
+
+def test_the_meal_screen_and_chat_count_a_skipped_step_as_handled():
+    """CATCH. The session card ticks a skipped step, so the meal's own
+    "For this meal" counter and chat's plan progress must agree with it —
+    before, the meal said "0 of 1 done" beside a ticked session card."""
+    import pathlib, re
+    plan_id, tasks = _session_today()
+    tools.check_off_prep_step(tasks["Soak the beans"], "skipped")
+    assert tools.get_plan_progress(plan_id)["prep_done"] == 1
+
+    src = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()
+    body = src[src.index("function cookFocusPrepHtml("):]
+    body = body[:body.index("\n  function ", 1)]
+    assert re.search(r"var done = tasks\.filter\([^;]*'skipped'", body)
+    assert re.search(r"var isDone = [^;]*'skipped'", body)

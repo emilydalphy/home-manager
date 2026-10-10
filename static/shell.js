@@ -21906,7 +21906,10 @@
   // someone is standing at the counter with.
   function cookFocusPrepHtml(tasks) {
     if (!tasks.length) return '';
-    var done = tasks.filter(function (t) { return t.status === 'done'; }).length;
+    // A skipped step is handled, the same as on the prep session card and
+    // Today's moves — counting only 'done' left this meal saying "0 of 1"
+    // beside a session that showed the step ticked (2026-10-10).
+    var done = tasks.filter(function (t) { return t.status === 'done' || t.status === 'skipped'; }).length;
     var allDone = done === tasks.length;
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
@@ -21929,7 +21932,7 @@
       '</div>' +
       '<div class="cook-prep-grid">' +
         tasks.map(function (t) {
-          var isDone = t.status === 'done';
+          var isDone = t.status === 'done' || t.status === 'skipped';
           return '<div class="cook-prep-card' + (isDone ? ' is-done' : '') + '">' +
             '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
               'data-cook="check-prep" data-prep-id="' + t.id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
