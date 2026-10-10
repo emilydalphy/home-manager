@@ -860,7 +860,7 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # scaled as TEXT, by the same rules as the steps (scale_steps),
             # so the list and the steps agree and nothing written is lost.
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
-            scaled_ingredients.append({**ing, "qty": rescaled})
+            scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 unscaled_items.append(ing["item"])
             continue
@@ -878,7 +878,7 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
                 # Same rounding cooking_quantity applies, so the two agree
                 # about a thing that only comes whole.
                 scaled = max(1.0, round(scaled))
-            scaled_ingredients.append({**ing, "qty": _quantities._format_quantity(scaled, unit)})
+            scaled_ingredients.append(_with_item_label({**ing, "qty": _quantities._format_quantity(scaled, unit)}))
         else:
             scaled_ingredients.append(dict(ing))
             if (ing.get("qty") or "").strip():
@@ -1115,6 +1115,29 @@ def _pluralize_noun(phrase: str, many: bool) -> str:
         else:
             last = last[:-2] if lower.endswith(("oes", "ches", "shes", "xes")) else last[:-1]
     return f"{head}{sep}{last}"
+
+
+def _with_item_label(ing: dict) -> dict:
+    """
+    An ingredient row plus `item_label`: the thing as it reads after its
+    amount when the amount is a bare count of more than one — "2" +
+    "onion" says "2 onions", not "2 onion" (the recipe page at 8 servings,
+    2026-10-10). `item` itself is never rewritten: ticks, matching and the
+    grocery list all key on it. Only the noun before a prep descriptor is
+    pluralised ("onion, diced" -> "onions, diced"), by _pluralize_noun, the
+    rule the scaled steps already use. Anything with a unit ("2 cloves
+    garlic") or of one or fewer is left alone, and so is the key.
+    """
+    out = dict(ing)
+    out.pop("item_label", None)
+    item = (out.get("item") or "").strip()
+    parsed = _quantities._parse_quantity((out.get("qty") or "").strip())
+    if item and parsed and parsed[1] is None and parsed[0] > 1 + 1e-9:
+        head, comma, rest = item.partition(",")
+        label = _pluralize_noun(head.rstrip(), True) + (comma + rest if comma else "")
+        if label != item:
+            out["item_label"] = label
+    return out
 
 
 def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = None) -> list:
@@ -2402,7 +2425,9 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
             continue
         suggested = cooking_quantity(item, servings=servings, shopping_qty=qty)
         out.append({**ing, "qty": suggested, "shopping_qty": qty} if suggested else dict(ing))
-    return out
+    # Every row says its thing in the number its amount is ("2 onions") —
+    # see _with_item_label; `item` stays exactly as stored.
+    return [_with_item_label(r) if isinstance(r, dict) else r for r in out]
 
 
 def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -> dict:

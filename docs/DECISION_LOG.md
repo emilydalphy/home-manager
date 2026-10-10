@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The recipe page says "2 onions"** (2026-10-10; branch
+  `overnight/recipe-page-plurals`; `tests/test_recipe_page_plurals.py`). At 8
+  servings `/api/recipes/scale` answered qty "2", item "onion" and
+  `cookIngredientLabel` joined them as "2 onion". `cooking_ingredients` and
+  `scale_recipe` now add `item_label` for a bare count over one, through
+  `recipes._pluralize_noun` (the scaled steps' rule; the noun before a comma
+  only); the row reads it. `item` is never rewritten. Seen, not fixed: a bare
+  count scales unrounded ("21.3333" eggs at 8 servings of a 3-serving recipe).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

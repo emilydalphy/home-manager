@@ -21702,7 +21702,9 @@
   // ingredients) and then the thing.
   function cookIngredientLabel(ing) {
     var qty = ing && ing.qty ? humanQtyText(ing.qty) : '';
-    var label = ((qty ? qty + ' ' : '') + ((ing && ing.item) || '')).trim();
+    // item_label is the server's "onions" for "2" + "onion" (recipes.
+    // _with_item_label) — the one plural rule, not a second one here.
+    var label = ((qty ? qty + ' ' : '') + ((ing && (ing.item_label || ing.item)) || '')).trim();
     // "I'll use something else instead", said while sorting the week's
     // list (Shop) — the recipe still asks for fresh oregano, and this is
     // where the cook hears that dry is what's going in.
