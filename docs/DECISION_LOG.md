@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A skipped prep task reads as handled in its prep-day session**
+  (2026-10-10; branch `overnight/skipped-prep-is-handled`; tests
+  `tests/test_prep_session_skipped_is_handled.py`). `check_off_prep_step`
+  takes `skipped` (chat's "not this one"); Today's moves count it handled,
+  but `prep_sessions._task_items` read `done` as `status == 'done'`, so the
+  session kept the row unticked and "N of M done" one short all week. Now
+  `done` covers both, and the item carries `skipped`. Not changed: the cook
+  screen's own "For this meal" count in `shell.js` still reads only `done`
+  (another builder's file).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
