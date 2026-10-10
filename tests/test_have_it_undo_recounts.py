@@ -71,3 +71,41 @@ def test_a_households_own_line_is_put_back_as_it_was(signed_in):
     signed_in.post(f"/api/grocery-list/{item_id}/pre-shop", json={"decision": "drop"})
     signed_in.post(f"/api/grocery-list/{item_id}/pre-shop-undo")
     assert _spinach() == [{"id": item_id, "quantity": "3 oz", "status": "needed"}]
+
+
+# --- review round: what Put back must NOT change ---
+
+
+def test_a_package_line_put_back_is_still_one_jar(signed_in):
+    for name in ("Alex", "Sam", "Rae"):
+        tools.add_member(name)
+    tools.add_recipe("Pasta", ingredients=[{"item": "marinara", "qty": "1 jar"}], default_servings=3)
+    plan_id = tools.create_weekly_plan(_next_week(0))["weekly_plan_id"]
+    for d in (1, 3):
+        tools.plan_meal(_next_week(d), "Pasta", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Alex")
+    conn = get_conn()
+    line = dict(conn.execute("SELECT id, quantity FROM grocery_items WHERE item = 'marinara'").fetchone())
+    conn.close()
+    signed_in.post(f"/api/grocery-list/{line['id']}/pre-shop", json={"decision": "drop"})
+    signed_in.post(f"/api/grocery-list/{line['id']}/pre-shop-undo")
+    conn = get_conn()
+    after = conn.execute("SELECT quantity, status FROM grocery_items WHERE id = ?", (line["id"],)).fetchone()
+    conn.close()
+    assert (after["quantity"], after["status"]) == (line["quantity"], "needed")
+
+
+def test_an_edited_amount_put_back_with_nothing_changed_is_kept(signed_in):
+    line_id, _, _ = _two_frittatas()
+    tools.update_grocery_item(line_id, quantity="1 bag")
+    signed_in.post(f"/api/grocery-list/{line_id}/pre-shop", json={"decision": "drop"})
+    signed_in.post(f"/api/grocery-list/{line_id}/pre-shop-undo")
+    assert _spinach() == [{"id": line_id, "quantity": "1 bag", "status": "needed"}]
+
+
+def test_with_every_meal_gone_while_set_aside_the_row_is_still_there_to_put_back(signed_in):
+    line_id, plan_id, entries = _two_frittatas()
+    signed_in.post(f"/api/grocery-list/{line_id}/pre-shop", json={"decision": "drop"})
+    for e in entries:
+        tools.drop_dish_from_day(plan_id, e)
+    assert signed_in.post(f"/api/grocery-list/{line_id}/pre-shop-undo").status_code == 200

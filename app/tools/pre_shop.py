@@ -450,14 +450,6 @@ def undo_pre_shop_drop(item_id: int) -> dict:
         "removed_at = NULL, already_have_inventory_id = NULL WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     )
-    # A plan's line is re-read from its meals on the way back. While it was
-    # off the list the meal reversal skipped it (a removed row is not
-    # live), so a night dropped or swapped in between still sat in the
-    # amount: "Have it" on 10 oz of spinach, one of the two frittatas
-    # dropped, Put back -> "10 oz" for a 5 oz week (2026-10-10). The ledger
-    # rows still on it are exactly the meals left. A no-op for a
-    # household's own line (no week): the ledger doesn't describe that.
-    _grocery._recompute_plan_line_from_ledger(item_id, conn=conn)
     # A drop the household took back is a flag that was WRONG, and the one
     # kind of wrong this app can actually observe — so it is counted, in
     # its own bucket rather than left inside 'dropped'. `only_when` keeps

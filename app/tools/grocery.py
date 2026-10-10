@@ -787,13 +787,25 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
         # A pending spice ('spice', see spices.py) is a needed line the
         # shopper hasn't ticked; it recomputes and clears like one.
         live = bool(grocery_row) and grocery_row["status"] in ("needed", "spice")
+        # A plan's line set aside for now ("Have it", the freezer step) is
+        # kept in step with its meals too, so Put back returns what the
+        # meals left need: skipping it put back "10 oz" of spinach for one
+        # 5 oz frittata (2026-10-10). The same rules as a live line — a
+        # package keeps its one jar, an edited amount is only re-read when a
+        # meal really goes — except it is never deleted here: it is off the
+        # list already, and its Put back must still find the row.
+        set_aside = (
+            bool(grocery_row) and grocery_row["status"] == "removed"
+            and grocery_row["source_weekly_plan_id"] is not None
+        )
+        live = live or set_aside
         if live and _quantities.package_unit(link["quantity"] or ""):
             still_wanted = conn.execute(
                 "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
                 f"WHERE household_id = ? AND grocery_item_id = ? AND id NOT IN {not_reversing}",
                 (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchone()["n"]
-            if not still_wanted and grocery_row["source_weekly_plan_id"] is not None:
+            if not still_wanted and grocery_row["source_weekly_plan_id"] is not None and not set_aside:
                 conn.execute(
                     "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
                     (grocery_row["id"], household_id()),
@@ -851,7 +863,7 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                             (new_qty, grocery_row["id"], household_id()),
                         )
                         trimmed_items.append(grocery_row["item"])
-                else:
+                elif not set_aside:
                     conn.execute(
                         "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
                         (grocery_row["id"], household_id()),
@@ -862,7 +874,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                     "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
                     (new_qty, grocery_row["id"], household_id()),
                 )
-                trimmed_items.append(grocery_row["item"])
+                if not set_aside:  # not on the list: nothing to tell anyone
+                    trimmed_items.append(grocery_row["item"])
     if not narrowed:
         conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
     elif reversing_ids:
