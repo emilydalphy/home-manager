@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A night too late to thaw keeps its food on the list, and the note names
+  that night** (2026-10-10; branch `overnight/too-late-night-keeps-its-line`;
+  tests `tests/test_too_late_night_keeps_its_line.py`). A yes on the freezer
+  step set the item's whole merged line aside, so a week approved Sunday with
+  chicken Monday (48-hour thaw, already too late) and Thursday lost Monday's
+  chicken from the list as well as the thaw; and every gone-by move got
+  "Too late to thaw safely for tonight", so a mid-week re-answer toasted it
+  about a dinner eaten days ago, and Monday's read "tonight". Now
+  `confirm_frozen_items` leaves the line on (move alone booked — the
+  ON_LIST_SHARED precedent; the step says `on_list` False, `ON_LIST_TOO_LATE`)
+  when a still-ahead, uncooked, unbooked night is too late, and notes only
+  those nights, by name (`too_late_to_thaw_note`). Cost: Thursday's share is
+  bought again; a partial cut needs grocery-side work (Emily's call).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
