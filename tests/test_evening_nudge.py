@@ -194,6 +194,62 @@ def test_a_prep_step_still_to_do_comes_first_too(link):
     assert tools.build_evening_nudge(_at(17, 0)) == f"Marinate the chicken first — then Chicken Skewers. {LINK}/kitchen"
 
 
+def _later_dinner(plan_id: int, name: str = "Bean Chili") -> int:
+    """A dinner two nights out on the same plan. Returns its entry id."""
+    tools.add_recipe(name, ingredients=[{"item": "Ground beef", "qty": "1 lb"}], default_servings=3)
+    later = (TODAY + dt.timedelta(days=2)).isoformat()
+    return tools.plan_meal(later, name, slot="dinner", weekly_plan_id=plan_id,
+                           add_ingredients_to_grocery_list=False)["entry_id"]
+
+
+def _thaw_for(plan_id: int, entry_id: int, description: str, related_meal: str) -> None:
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal, "
+        "status, task_type, meal_plan_entry_id) VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', ?)",
+        (tools.household_id(), plan_id, ISO_TODAY, description, related_meal, entry_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_a_fridge_move_for_a_later_dinner_does_not_come_first(link):
+    """Overnight hunt, 2026-10-10: Monday's beef to move on Saturday read
+    "Move the Ground beef to the fridge first — then Roast Chicken." The
+    roast doesn't wait on the beef; the nudge is tonight's cook."""
+    _adults()
+    plan_id = _seed_dinner()
+    chili = _later_dinner(plan_id)
+    _thaw_for(plan_id, chili, "Move the Ground beef to the fridge — for Monday’s Bean Chili.", "Bean Chili")
+    assert tools.build_evening_nudge(_at(17, 0)) == f"Tonight: Chicken Skewers — 35 min. Tap to start. {LINK}/kitchen"
+    assert tools.tonight_for_nudge(_at(17, 0))["first"] is None
+
+
+def test_a_fridge_move_for_tonights_own_dinner_still_comes_first(link):
+    """GUARD — green on both sides. The same move, written for tonight's entry."""
+    _adults()
+    plan_id = _seed_dinner()
+    _later_dinner(plan_id)
+    _thaw_for(plan_id, _entry_id(), "Move the chicken thighs to the fridge — for tonight’s skewers.", "Chicken Skewers")
+    assert tools.build_evening_nudge(_at(17, 0)) == f"Move the chicken thighs to the fridge first — then Chicken Skewers. {LINK}/kitchen"
+
+
+def test_a_step_with_no_meal_row_is_matched_on_its_dish(link):
+    """A task with no entry id (older rows) is for tonight only when its
+    related_meal is tonight's dish."""
+    _adults()
+    plan_id = _seed_dinner()
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal, "
+        "status, task_type) VALUES (?, ?, ?, 'Soak the beans', 'Bean Chili', 'pending', 'prep')",
+        (tools.household_id(), plan_id, ISO_TODAY),
+    )
+    conn.commit()
+    conn.close()
+    assert tools.build_evening_nudge(_at(17, 0)).startswith("Tonight: Chicken Skewers — 35 min.")
+
+
 def test_a_fridge_move_already_done_does_not_come_first(link):
     _adults()
     plan_id = _seed_dinner()

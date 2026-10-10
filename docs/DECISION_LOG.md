@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The evening nudge's "first — then" is only tonight's own step** (2026-10-10;
+  branch `overnight/nudge-first-is-tonights`; tests in
+  `tests/test_evening_nudge.py`). `tonight_for_nudge` took any undone fridge
+  move or prep on today's timeline, and a thaw is dated a day or more before
+  its meal, so Monday's beef on Saturday read "Move the Ground beef to the
+  fridge first — then Roast Chicken." in place of "Tap to start". Now
+  `digest._for_dinner`: the move's entry id is tonight's, or (no entry id)
+  its `related_meal` is tonight's dish. Other steps stay on Today and in the
+  morning text. Emily may prefer a second clause for them — not built.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
