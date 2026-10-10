@@ -6617,11 +6617,36 @@ def get_member_share(token: str):
     return view
 
 
+# What one public, token-holding writer may leave (2026-10-10). These two
+# routes are unauthenticated writes, and a note reaches the chat agent
+# through get_member_notes — so it had no floor (a blank note saved as an
+# empty bubble) and no ceiling (a pasted megabyte went into the table and,
+# from there, into a prompt). The note's cap is the app's existing one for
+# free text a person types to us, feedback.MAX_WHAT_HAPPENED (2000); a
+# restriction is a short phrase, capped like an invited adult's name (200).
+# Refused with a sentence rather than cut short: a cut note says something
+# the person did not write. Rate limiting is app/ratelimit.py's, not here.
+MEMBER_SHARE_NOTE_MAX = 2000
+MEMBER_SHARE_RESTRICTION_MAX = 200
+
+
+def _member_share_text(value: str | None, limit: int, what: str) -> str:
+    text = (value or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail=f"Write the {what} first.")
+    if len(text) > limit:
+        raise HTTPException(
+            status_code=400, detail=f"That {what} is too long — keep it under {limit} characters."
+        )
+    return text
+
+
 @app.post("/api/member-share/{token}/restriction")
 def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
     """Public: add a dietary restriction as the member behind this token — merges with their existing list."""
+    restriction = _member_share_text(req.restriction, MEMBER_SHARE_RESTRICTION_MAX, "restriction")
     try:
-        tools.eater_add_dietary_restriction(token, [req.restriction])
+        tools.eater_add_dietary_restriction(token, [restriction])
         view = tools.resolve_member_share_link(token)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -6634,8 +6659,9 @@ def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
 @app.post("/api/member-share/{token}/note")
 def add_member_share_note(token: str, req: MemberNoteRequest):
     """Public: leave a freeform preference/feedback note as the member behind this token."""
+    note = _member_share_text(req.note, MEMBER_SHARE_NOTE_MAX, "note")
     try:
-        tools.eater_add_note(token, req.note)
+        tools.eater_add_note(token, note)
         view = tools.resolve_member_share_link(token)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

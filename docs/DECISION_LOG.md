@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The member self-service link's note and restriction have a floor and a
+  ceiling** (2026-10-10; branch `overnight/member-share-note-limits`; tests
+  `tests/test_member_share_note_limits.py`). `/api/member-share/{token}/note`
+  and `/restriction` are public token-holder writes, and notes reach chat via
+  `get_member_notes`; a blank note was saved and any size was stored whole.
+  Now trimmed, blank is a 400, and over the cap is a 400 with nothing written:
+  note 2000 (feedback's `MAX_WHAT_HAPPENED`, the app's one existing cap on
+  typed free text), restriction 200. Refused, not cut short. No rate limit
+  (`app/ratelimit.py`); `member-share.html` still shows its generic alert.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
