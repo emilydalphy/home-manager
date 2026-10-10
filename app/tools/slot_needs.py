@@ -606,6 +606,9 @@ def set_away_stretch(
     the day before and its ready_made edge on the day after, crossing into
     the adjacent week rather than being omitted. That's correct: the last
     real meal before an 8-day trip really is the day before it starts.
+    The one exception is the quick edge on a slot already gone by on the
+    household clock, or held planned_empty: no quick tag at all then
+    (see _edge_slot_open).
 
     `member_names` scopes the trip to specific travelers (names or ids);
     None or empty means the whole household, which is both the common case

@@ -126,8 +126,12 @@ def test_away_stretch_spanning_a_whole_week_still_derives_both_edges_across_week
     from — both edges land on the adjacent weeks' dates instead, which is
     the correct behaviour (the last real meal before an 8-day trip really
     is the Sunday before it), not a missing edge.
+
+    Two weeks out, not one: next week's Sunday-before is TODAY on a Sunday,
+    and after its dinner time the quick edge rightly isn't put on a meal
+    already gone by — which made this fail every Sunday evening.
     """
-    week = _week_start()
+    week = _week_start(2)
     dates = tools._week_dates(week)
     monday, sunday = dates[0], dates[6]
     day_before = (datetime.date.fromisoformat(monday) - datetime.timedelta(days=1)).isoformat()
