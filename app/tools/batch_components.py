@@ -317,7 +317,11 @@ def _combined_quantity(uses: list[dict]) -> str:
         eaters = _leftovers.eaters_at(use["date"], use["slot"]) or None
         for ing in _recipes.cooking_ingredients(use["ingredients"], servings=eaters):
             if isinstance(ing, dict) and _ingredient_key(ing.get("item") or "") == use["ingredient_key"]:
-                qty = _quantities._strip_prep_descriptor((ing.get("qty") or "").strip())
+                # The Cook card keeps "2 ½ cups" as written; the ledger sum
+                # only reads "2 1/2", so spell it that way before adding.
+                qty = _quantities._strip_prep_descriptor(
+                    _recipes._ascii_fractions((ing.get("qty") or "").strip())
+                )
                 if qty:
                     amounts.append(qty)
                 break

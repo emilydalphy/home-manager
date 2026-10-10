@@ -1572,12 +1572,16 @@ _GLYPH_FRACTIONS = {
 _GLYPH_FRACTION_RE = re.compile(r"(\d)?\s*([" + "".join(_GLYPH_FRACTIONS) + r"])")
 
 
-def _parse_cook_qty(text: str):
-    """_quantities._parse_quantity, reading ½-style fractions as 1/2."""
-    ascii_text = _GLYPH_FRACTION_RE.sub(
+def _ascii_fractions(text: str) -> str:
+    """"1 ½ cups" → "1 1/2 cups": the spelling quantities' parsers read."""
+    return _GLYPH_FRACTION_RE.sub(
         lambda m: (m.group(1) + " " if m.group(1) else "") + _GLYPH_FRACTIONS[m.group(2)], text or ""
     )
-    return _quantities._parse_quantity(ascii_text)
+
+
+def _parse_cook_qty(text: str):
+    """_quantities._parse_quantity, reading ½-style fractions as 1/2."""
+    return _quantities._parse_quantity(_ascii_fractions(text))
 
 
 def _quantity_problem(item: str, qty: str) -> str | None:

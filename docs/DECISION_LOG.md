@@ -24,7 +24,10 @@ why*, not duplicating the diff.
   can" after − then +). `recipes._parse_cook_qty` reads the glyphs for the
   cooking judgements only (problem, plausibility, per-person counts); the
   line keeps its own words and grocery parsing is untouched. Tests at the
-  foot of `tests/test_recipe_quantities.py`.
+  foot of `tests/test_recipe_quantities.py`. Review caught one knock-on:
+  `batch_components._combined_quantity` sums Cook-card amounts through the
+  ASCII-only ledger sum, so a kept "2 ½ cups" blanked the batch ask's "N in
+  all"; it now spells glyphs as "2 1/2" first (`recipes._ascii_fractions`).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

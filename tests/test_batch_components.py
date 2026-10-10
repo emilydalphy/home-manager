@@ -522,3 +522,16 @@ def test_another_household_sees_nothing(client):
 # The approval-time ask block went on 2026-09-18 (batch cooking is assumed
 # from prep days); the component batch itself is still the Cook view's.
 
+
+
+def test_a_half_written_as_a_glyph_still_adds_up_in_all(monkeypatch):
+    # The Cook card now keeps "2 ½ cups" as written instead of guessing over
+    # it, so the "N in all" sum has to read the glyph too — otherwise the
+    # batch ask quietly loses its total whenever a recipe writes ½.
+    monkeypatch.setattr(bc._leftovers, "eaters_at", lambda d, s: 4)
+    def use(qty):
+        return {"date": "2026-10-12", "slot": "dinner", "ingredient_key": bc._ingredient_key("rice"),
+                "ingredients": [{"item": "rice", "qty": qty}]}
+    assert bc._combined_quantity([use("2 ½ cups"), use("1 cup")]) == bc._combined_quantity(
+        [use("2 1/2 cups"), use("1 cup")]
+    ) != ""
