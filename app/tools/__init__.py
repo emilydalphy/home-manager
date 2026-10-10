@@ -248,6 +248,7 @@ from .grocery import (  # noqa: F401
     mark_grocery_item,
     move_grocery_item_to_inventory,
     remove_grocery_item,
+    undo_remove_grocery_item,
     repair_grocery_quantities,
     set_aside_carried_over_items,
     substitute_grocery_item,

@@ -568,7 +568,9 @@ def get_already_have_decisions() -> list[dict]:
         # step has its own undo, and a kept line was merged onto this
         # week's, so "put it back" here would list it twice.
         "WHERE household_id = ? AND status = 'removed' AND removed_by != '' AND removed_by != 'staple' "
-        "AND removed_by NOT IN ('carried_kept', 'carried_dropped') "
+        # Nor Remove on the list's own row (grocery.REMOVED_BY_LIST): the
+        # person took it off, they did not say it was at home.
+        "AND removed_by NOT IN ('carried_kept', 'carried_dropped', 'list') "
         "AND removed_at IS NOT NULL AND removed_at >= ? ORDER BY removed_at DESC",
         (household_id(), cutoff),
     ).fetchall()

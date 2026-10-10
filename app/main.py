@@ -6368,6 +6368,20 @@ def remove_grocery_list_item(item_id: int):
     return result
 
 
+@app.post("/api/grocery-list/{item_id}/remove-undo")
+def undo_remove_grocery_list_item(item_id: int):
+    """Remove's Undo for a line /remove answered `restorable` on: the same
+    row back, links to its meals and all (tools.undo_remove_grocery_item).
+    `restored` False when its meals have all gone since."""
+    try:
+        return tools.undo_remove_grocery_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Grocery list remove undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/grocery-list/already-have-summary")
 def get_grocery_already_have_summary_view():
     """

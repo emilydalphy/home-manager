@@ -8767,6 +8767,7 @@
               groDo(function () {
                 if (offKind === 'spice') return groPost('/api/grocery-list/' + offRow.item_id + '/spice', { ticked: true });
                 if (stapleId) return groPostEmpty('/api/staples/' + stapleId + '/undo');
+                if (r && r.restorable) return groPostEmpty('/api/grocery-list/' + offRow.item_id + '/remove-undo');
                 return groPost('/api/grocery-list/add', {
                   item: offRow.name, quantity: offRow.quantity || '', category: offRow.category || 'other'
                 });
@@ -8915,9 +8916,13 @@
         el.disabled = true;
         groceryState.openRowId = null;
         var goneStapleId = null;
+        var goneRestorable = false;
         groDo(function () {
           return groPostEmpty('/api/grocery-list/' + id + '/remove')
-            .then(function (r) { goneStapleId = r && r.staple_id ? r.staple_id : null; });
+            .then(function (r) {
+              goneStapleId = r && r.staple_id ? r.staple_id : null;
+              goneRestorable = !!(r && r.restorable);
+            });
         }, "Couldn't remove that — try again.").then(function (ok) {
           if (!ok) return;
           showToast(goneName + ' off the list', {
@@ -8932,7 +8937,24 @@
                 }, "Couldn't put that back — try again.");
                 return;
               }
-              // /remove is a hard delete (remove_grocery_item), so the undo
+              // A line with meals behind it was soft-removed: the same row
+              // comes back, still tied to those meals (grocery.
+              // undo_remove_grocery_item). Re-adding the name instead made
+              // it a hand-typed line that never cleared with the week.
+              if (goneRestorable) {
+                var goneBack = null;
+                groDo(function () {
+                  return groPostEmpty('/api/grocery-list/' + id + '/remove-undo')
+                    .then(function (r) { goneBack = r; });
+                }, "Couldn't put that back — try again.").then(function (ok) {
+                  // Every meal it was for has come off the plan since.
+                  if (ok && goneBack && goneBack.restored === false) {
+                    showToast(goneName + ' isn\u2019t needed now — those meals are off the plan');
+                  }
+                });
+                return;
+              }
+              // Otherwise /remove was a hard delete (remove_grocery_item), so the undo
               // puts the LINE back rather than the row: same name, same
               // quantity, same section, then its store again if it had one.
               // A new id, the same list — which is what the person meant.

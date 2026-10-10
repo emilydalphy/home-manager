@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Remove's Undo puts back the same line, still tied to its meals**
+  (2026-10-10; branch `overnight/remove-undo-keeps-the-meals`;
+  `tests/test_remove_undo_keeps_the_meals.py`). `/remove` hard-deleted, the
+  ledger cascaded away, and Undo re-added the name: a hand line with no week.
+  Measured: "spinach · 10 oz" stayed 10 oz with both frittatas dropped, and as
+  a standing want it would never clear. A still-needed line with ledger rows is
+  now soft-removed (`removed_by = 'list'`, kept out of "Already had on hand")
+  and `/remove-undo` restores the row, re-read from its ledger; with every meal
+  gone since it stays off and the toast says so. Hand lines keep the hard
+  delete. Side effect: the kept links stop a re-approval re-adding a line the
+  household removed (the pre-shop drop's rule).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
