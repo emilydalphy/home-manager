@@ -685,7 +685,41 @@ def _recheck_ready_made_after_redate(conn, entry_ids) -> int:
             (rec["recommended_batch_from_entry_id"], rec["recommended_defrost_item"] or "",
              need["id"], household_id()),
         )
-    return len(stale)
+
+    # The other direction. A first meal back with NOTHING to suggest — the
+    # recompute above found no dinner still to cook before it (a suggestion
+    # names only those since 2026-10-10, slot_needs._batch_candidate) — can
+    # gain one when a dinner lands before it: the Undo of the night off that
+    # emptied it puts Wednesday's chili back in front of Thursday breakfast.
+    # Only needs that come after one of the meals that moved, so a move
+    # elsewhere in the week does not start offering things nobody lost.
+    moved_dates = [
+        r["date"] for r in conn.execute(
+            f"SELECT date FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks}) "
+            f"AND slot = 'dinner'",
+            (household_id(), *ids),
+        ).fetchall()
+    ]
+    refilled = 0
+    if moved_dates:
+        empty = conn.execute(
+            "SELECT id, date, slot FROM slot_needs WHERE household_id = ? AND need = 'ready_made' "
+            "AND recommended_batch_from_entry_id IS NULL AND TRIM(COALESCE(recommended_defrost_item, '')) = '' "
+            "AND date > ?",
+            (household_id(), min(moved_dates)),
+        ).fetchall()
+        for need in empty:
+            rec = _slot_needs._recommend_ready_made(need["date"], need["slot"], conn=conn)
+            if not (rec["recommended_batch_from_entry_id"] or rec["recommended_defrost_item"]):
+                continue
+            conn.execute(
+                "UPDATE slot_needs SET recommended_batch_from_entry_id = ?, recommended_defrost_item = ?, "
+                "recommendation_confirmed = 0, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+                (rec["recommended_batch_from_entry_id"], rec["recommended_defrost_item"] or "",
+                 need["id"], household_id()),
+            )
+            refilled += 1
+    return len(stale) + refilled
 
 
 def plan_slot_empty(

@@ -787,9 +787,10 @@ def _recommend_ready_made(date_str: str, slot: str, conn=None) -> dict:
     accepts.
 
     A freezer item wins when one exists — a defrost is normally less
-    effort than a double batch. Falls back to the most recent real dinner
-    planned before this date in the household's current plan (if any) as
-    a "you cooked extra of this — save it for then" candidate. Neither may
+    effort than a double batch. Falls back to the most recent dinner
+    before this date that is still to be cooked (_batch_candidate — not
+    one already gone by, not a reheat) as a "cook extra of this — save it
+    for then" candidate. Neither may
     exist yet (nothing frozen, no plan generated) — that's a real "nothing
     to recommend yet" answer, not an error; the reminder machinery that
     actually acts on a confirmed recommendation belongs to the separate
@@ -813,20 +814,56 @@ def _recommend_ready_made(date_str: str, slot: str, conn=None) -> dict:
             conn.close()
         return {"recommended_defrost_item": freezer_item["item"], "recommended_batch_from_entry_id": None}
 
-    batch_from = conn.execute(
-        """
-        SELECT id FROM meal_plan_entries
-        WHERE household_id = ? AND slot = 'dinner' AND slot_state = 'planned'
-          AND date < ? AND component_category IS NULL
-        ORDER BY date DESC, id DESC LIMIT 1
-        """,
-        (household_id(), date_str),
-    ).fetchone()
+    batch_from = _batch_candidate(conn, date_str)
     if own_conn:
         conn.close()
     if batch_from:
-        return {"recommended_batch_from_entry_id": batch_from["id"], "recommended_defrost_item": None}
+        return {"recommended_batch_from_entry_id": batch_from, "recommended_defrost_item": None}
     return {"recommended_batch_from_entry_id": None, "recommended_defrost_item": None}
+
+
+def _batch_candidate(conn, date_str: str) -> int | None:
+    """
+    The dinner a "set aside a double batch of …" suggestion may name for a
+    meal on `date_str`: the latest one before it that is still a cook the
+    household can make double.
+
+    "Still" is the half the first version of this query left out — it
+    took the latest planned dinner before the meal, full stop (overnight
+    hunt, 2026-10-10). Two things that sentence cannot be about:
+
+    - a dinner that has ALREADY GONE BY, or been ticked cooked. Away for
+      Saturday breakfast and lunch, opened on Saturday: the first meal back
+      asked "I'll set aside a double batch of Friday's tacos — sound good?"
+      about tacos eaten the night before. Read on the household's clock
+      (cooker.household_today), not the server's, which is tomorrow from
+      8pm Eastern. Tonight's dinner, not yet cooked, still counts.
+    - a night that isn't a cook: a reheat (links_to), a freezer portion, a
+      dish carried to someone else's table — weekly_plan._cooks_that_night,
+      the test a swap already applies before moving a suggestion. Away for
+      Monday after a Saturday roast whose leftovers are Sunday's dinner
+      offered "a double batch of Sunday's roast chicken": Sunday is the
+      double batch.
+
+    Walked newest-first in SQL order rather than filtered in SQL, because
+    "is a cook" lives in derived_from_json and has one reader. `conn` is
+    the caller's (_recommend_ready_made may be inside a write
+    transaction); nothing here commits or closes.
+    """
+    from . import cooker as _cooker  # local: cooker imports weekly_plan, which this module imports
+
+    today = _cooker.household_today(conn=conn).isoformat()
+    rows = conn.execute(
+        """
+        SELECT id, derived_from_json FROM meal_plan_entries
+        WHERE household_id = ? AND slot = 'dinner' AND slot_state = 'planned'
+          AND date < ? AND date >= ? AND COALESCE(cooked_status, '') != 'done'
+          AND component_category IS NULL
+        ORDER BY date DESC, id DESC
+        """,
+        (household_id(), date_str, today),
+    ).fetchall()
+    return next((r["id"] for r in rows if _weekly_plan._cooks_that_night(r["derived_from_json"])), None)
 
 
 def _weekday_name(date_str: str) -> str:
@@ -924,18 +961,12 @@ def _fallback_freezer_item() -> str | None:
 
 
 def _fallback_batch_candidate(date_str: str) -> int | None:
+    """The "or:" line's batch — the same rule as the primary's (_batch_candidate)."""
     conn = get_conn()
-    row = conn.execute(
-        """
-        SELECT id FROM meal_plan_entries
-        WHERE household_id = ? AND slot = 'dinner' AND slot_state = 'planned'
-          AND date < ? AND component_category IS NULL
-        ORDER BY date DESC, id DESC LIMIT 1
-        """,
-        (household_id(), date_str),
-    ).fetchone()
-    conn.close()
-    return row["id"] if row else None
+    try:
+        return _batch_candidate(conn, date_str)
+    finally:
+        conn.close()
 
 
 def set_slot_recommendation(

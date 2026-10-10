@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"First one back" only offers to double a dinner still to cook** (2026-10-10;
+  branch `overnight/ready-made-names-a-cook-ahead`; tests
+  `tests/test_ready_made_names_a_cook_ahead.py`). `_recommend_ready_made`
+  took the latest planned dinner before the meal, full stop: away Saturday
+  breakfast–lunch, read Saturday, asked to "set aside a double batch of
+  Friday's tacos"; away Monday after a Saturday roast, named Sunday's
+  leftovers night. Now `slot_needs._batch_candidate` (primary and "or:"
+  line) wants today-or-later on the household clock, not ticked cooked, and
+  `_cooks_that_night`. `_recheck_ready_made_after_redate` also refills an
+  empty suggestion behind a moved dinner, so a night off's Undo offers the
+  chili again. Four `test_batch_suggestion_follows_swap` tests pinned to
+  their Wednesday; one now expects no suggestion instead of Monday's pasta.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

@@ -18,6 +18,8 @@ from __future__ import annotations
 
 import datetime
 
+import pytest
+
 from conftest import household_today
 
 from app import tools
@@ -177,6 +179,10 @@ MON, TUE, WED, THU, FRI, SAT, SUN = tools._week_dates(WEEK)
 AFTERNOON = datetime.datetime.fromisoformat(f"{WED}T15:50:00")
 
 
+# Every test built on _night_off_week is pinned to WEDNESDAY, the day its
+# night off is called (AFTERNOON). The suggestion only names a dinner still
+# to cook (slot_needs._batch_candidate, 2026-10-10), so read on a Saturday
+# the whole week is gone by and there is nothing for it to name.
 def _night_off_week(edge_day: str) -> tuple[int, int, int]:
     """Pasta Monday, chili Wednesday (tonight), Thursday free. A ready-made
     breakfast on `edge_day` suggesting a double of the chili, confirmed.
@@ -197,7 +203,16 @@ def _night_off_week(edge_day: str) -> tuple[int, int, int]:
     return plan_id, pasta, chili
 
 
+@pytest.mark.today(WED)
 def test_a_night_off_that_moves_the_dinner_too_late_recomputes_the_suggestion():
+    """
+    Pinned to Wednesday, the day the night off is called. This used to
+    assert the recompute landed on MONDAY's pasta — "the latest dinner
+    before it" — which is a double batch of a dinner eaten two days ago
+    (overnight/ready-made-names-a-cook-ahead, 2026-10-10). With the chili
+    gone to Thursday and Wednesday off, nothing still to cook comes before
+    Thursday breakfast, so the honest recompute is no suggestion.
+    """
     _plan, pasta, chili = _night_off_week(THU)
 
     out = _tonight.tonight_night_off(now=AFTERNOON)
@@ -206,10 +221,12 @@ def test_a_night_off_that_moves_the_dinner_too_late_recomputes_the_suggestion():
     need = slot_needs.get_slot_need(THU, "breakfast")
     assert need["need"] == "ready_made"
     assert need["recommended_batch_from_entry_id"] != chili, "Thursday's chili can't cover Thursday breakfast"
-    assert need["recommended_batch_from_entry_id"] == pasta, "recomputed: the latest dinner before it"
+    assert need["recommended_batch_from_entry_id"] != pasta, "Monday's pasta is already gone by on Wednesday"
+    assert need["recommended_batch_from_entry_id"] is None, "recomputed: nothing still to cook comes before it"
     assert not need["recommendation_confirmed"], "a new suggestion is a new thing to confirm"
 
 
+@pytest.mark.today(WED)
 def test_a_night_off_that_moves_the_dinner_but_still_in_time_keeps_it():
     """GUARD — green on both sides. Chili moves Wed -> Thu, still before Saturday breakfast."""
     _plan, _pasta, chili = _night_off_week(SAT)
@@ -221,6 +238,7 @@ def test_a_night_off_that_moves_the_dinner_but_still_in_time_keeps_it():
     assert need["recommendation_confirmed"]
 
 
+@pytest.mark.today(WED)
 def test_undoing_the_night_off_leaves_a_suggestion_valid_for_the_restored_dates():
     """GUARD — green on both sides (main never re-pointed it, so the chili is valid again)."""
     _plan, _pasta, chili = _night_off_week(THU)
@@ -239,6 +257,7 @@ def test_undoing_the_night_off_leaves_a_suggestion_valid_for_the_restored_dates(
     assert row is not None and row["slot"] == "dinner" and row["date"] < THU
 
 
+@pytest.mark.today(WED)
 def test_moving_the_dinner_with_the_nights_swap_recomputes_too():
     """The same rule from Plan's nights swap, the other door into the re-dating write."""
     plan_id, pasta, chili = _night_off_week(THU)
