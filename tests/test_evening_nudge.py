@@ -165,6 +165,33 @@ def test_a_plain_night_is_the_dish_the_minutes_and_a_tap_into_cook(link):
     assert "\n" not in text and "!" not in text
 
 
+def _seed_long_dinner(prep: int, cook: int) -> None:
+    tools.add_recipe(
+        "Roast Chicken", ingredients=[{"item": "Whole chicken", "qty": "1"}],
+        prep_time_minutes=prep, cook_time_minutes=cook, default_servings=3,
+    )
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tools.plan_meal(ISO_TODAY, "Roast Chicken", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=False)
+
+
+def test_an_hour_and_more_reads_the_way_today_says_it(link):
+    """Overnight hunt, 2026-10-10: a 110-minute roast texted "110 min" while
+    Today's chip, one tap away, said "1 hr 50 min". One spelling."""
+    _adults()
+    _seed_long_dinner(20, 90)
+    text = tools.build_evening_nudge(_at(17, 0))
+    assert text == f"Tonight: Roast Chicken — 1 hr 50 min. Tap to start. {LINK}/kitchen"
+    cook = next(m for m in tools.today_moves(day=TODAY, now=_at(17, 0))["moves"] if m["kind"] == "cook")
+    assert "1 hr 50 min" in cook["chips"], "the nudge and Today's chip say the same thing"
+
+
+def test_exactly_an_hour_reads_one_hour(link):
+    _adults()
+    _seed_long_dinner(15, 45)
+    assert tools.build_evening_nudge(_at(17, 0)) == f"Tonight: Roast Chicken — 1 hr. Tap to start. {LINK}/kitchen"
+
+
 def test_a_recipe_with_no_minutes_leaves_the_minutes_out(link):
     _adults()
     _seed_dinner(minutes=False)

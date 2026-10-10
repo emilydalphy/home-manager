@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The evening nudge spells a cook's time the way Today does** (2026-10-10;
+  branch `overnight/nudge-says-1-hr-50`; tests in `tests/test_evening_nudge.py`).
+  `build_evening_nudge` wrote `{minutes} min`, so a roast texted "110 min"
+  while Today's chip and Cook's card said "1 hr 50 min". Now
+  `quantities.format_duration`, the spelling the 2026-10-06 durations entry
+  chose. Under an hour nothing changes ("35 min").
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
