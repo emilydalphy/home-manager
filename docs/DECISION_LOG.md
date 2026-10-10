@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A sign-up nobody finished stops holding its address** (2026-10-10;
+  branch `overnight/unfinished-signup-frees-email`). Typing your address on
+  the sign-in screen and stopping at onboarding left a `signup_emails` row
+  that kept the address for ever: joining the real household by invite and
+  adding that address in Preferences got "It's already in use" and no code,
+  and the empty household can't be deleted from onboarding. Now
+  `account_email.in_use_for_a_change` ignores a sign-up whose household has
+  no members (a code goes; only the inbox can spend it) and
+  `set_member_email` releases that row inside its write lock, only while the
+  household is still empty. The empty household itself is left, never
+  deleted from here. Tests in `tests/test_email_signup.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

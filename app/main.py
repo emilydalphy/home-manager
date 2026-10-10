@@ -8741,7 +8741,7 @@ def _send_code_or_say_so(request: Request, email: str, purpose: str, **who) -> d
     if ratelimit.check("email_code_address_ip", f"{key}|{caller}") or ratelimit.check("email_code_address", key):
         logger.warning("Email code limit reached for one address; nothing sent")
         return {"sent": True, "detail": account_email.SENT_LINE}
-    if purpose == account_email.CHANGE and account_email.in_use(email):
+    if purpose == account_email.CHANGE and account_email.in_use_for_a_change(email):
         # Somebody else's address: no code — but an email all the same, so
         # this request takes as long as one that sent a code and the two
         # can't be told apart by timing (review, 2026-10-06). It tells the

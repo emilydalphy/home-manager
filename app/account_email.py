@@ -410,6 +410,48 @@ def in_use(email: str) -> bool:
     return lookup(email) is not None
 
 
+# A sign-up nobody finished: the address started a household that still has
+# nobody in it (onboarding posts its people only at the end, so "no members"
+# is exactly "setup never got that far"). Written against signup_emails.
+_UNFINISHED_SIGNUP_SQL = (
+    "NOT EXISTS (SELECT 1 FROM members WHERE members.household_id = signup_emails.household_id)"
+)
+
+
+def in_use_for_a_change(email: str) -> bool:
+    """
+    Is this address somebody else's, for "add my sign-in email" in
+    Preferences? `in_use`, except that a sign-up nobody finished does not
+    count (defect hunt, 2026-10-10).
+
+    The case it is for: a partner downloads the app, types their own
+    address, lands in an empty onboarding, and stops there — they wanted
+    the household their partner already runs, and joined it by invite
+    link. That abandoned sign-up held their address for ever. Adding it
+    in Preferences sent them "It's already in use, so nothing changed. You
+    don't need to do anything." and no code, and the abandoned household
+    can't be deleted from inside onboarding. Letting a code go is safe:
+    only whoever reads that inbox can spend it, and set_member_email is
+    what actually moves the address.
+    """
+    e = normalize(email)
+    if not in_use(e):
+        return False
+    conn = get_conn()
+    try:
+        held_elsewhere = conn.execute(
+            f"SELECT 1 FROM member_emails me "
+            f"JOIN members ON members.id = me.member_id AND members.household_id = me.household_id "
+            f"WHERE me.email = ? AND {_ADULT_SQL}",
+            (e,),
+        ).fetchone() or conn.execute(
+            f"SELECT 1 FROM signup_emails WHERE email = ? AND NOT {_UNFINISHED_SIGNUP_SQL}", (e,)
+        ).fetchone()
+        return held_elsewhere is not None
+    finally:
+        conn.close()
+
+
 def _release_stale(conn, email: str) -> None:
     """Forget this address where it names somebody who is no longer an adult
     of that household — see create_household_for for why."""
@@ -513,6 +555,16 @@ def set_member_email(household_id: int, member_id: int, email: str) -> str:
             conn.rollback()
             raise EmailCodeError("Only an adult in the household can sign in with an email.")
         _release_stale(conn, e)
+        # A sign-up somewhere else that nobody finished lets go of the
+        # address (in_use_for_a_change says why). Inside this write lock and
+        # conditional on the household STILL having nobody in it, so a setup
+        # finishing at this same moment keeps its address. The empty
+        # household it started is left as it is — never deleted from here —
+        # and with its address gone nobody signs in to it again.
+        conn.execute(
+            f"DELETE FROM signup_emails WHERE email = ? AND household_id != ? AND {_UNFINISHED_SIGNUP_SQL}",
+            (e, hid),
+        )
         taken = conn.execute("SELECT member_id FROM member_emails WHERE email = ?", (e,)).fetchone()
         if (taken and int(taken["member_id"]) != mid) or conn.execute(
             "SELECT 1 FROM signup_emails WHERE email = ? AND household_id != ?", (e, hid)
