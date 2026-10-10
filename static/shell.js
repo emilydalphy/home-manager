@@ -8986,12 +8986,21 @@
         }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok || !stResult) return;
           var line;
+          // A line this week's meals had added to stays, cut back to what
+          // they need (staples._trim_to_the_weeks_part) — "off the list"
+          // would be untrue with the row still there.
+          var stTrim = stResult.removed_line && stResult.removed_line.trimmed;
+          var stKept = !stTrim ? '' : stTrim.quantity
+            ? stName + ' down to ' + stTrim.quantity + ' for this week\u2019s meals'
+            : stName + ' kept for this week\u2019s meals';
           if (stDecision === 'plenty') {
-            line = stName + ' off the list — I\u2019ll ask again in ' + groCadenceSpan(stResult.cadence_days);
+            line = stKept
+              ? stKept + ' — I\u2019ll ask again in ' + groCadenceSpan(stResult.cadence_days)
+              : stName + ' off the list — I\u2019ll ask again in ' + groCadenceSpan(stResult.cadence_days);
           } else if (stResult.just_paused) {
             line = stName + ' was paused — three trips skipped';
           } else {
-            line = stName + ' off the list — I\u2019ll ask again next week';
+            line = (stKept || stName + ' off the list') + ' — I\u2019ll ask again next week';
           }
           showToast(line, {
             label: 'Undo',

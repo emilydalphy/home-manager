@@ -803,8 +803,9 @@ def _plenty(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
         "WHERE id = ? AND household_id = ?",
         (next_due, staple_id, household_id()),
     )
-    _event(conn, staple_id, "plenty", source)
+    event_id = _event(conn, staple_id, "plenty", source)
     removed = _drop_suggestion_lines(conn, staple_id) if drop_lines else None
+    _note_trim(conn, event_id, removed)
     out = _shape(_row(conn, staple_id))
     out["removed_line"] = removed
     return out
@@ -820,14 +821,28 @@ def _skip(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
         "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
         (next_due, streak, paused, staple_id, household_id()),
     )
-    _event(conn, staple_id, "skipped", source)
+    event_id = _event(conn, staple_id, "skipped", source)
     if paused:
         _event(conn, staple_id, "paused", "auto")
     removed = _drop_suggestion_lines(conn, staple_id) if drop_lines else None
+    _note_trim(conn, event_id, removed)
     out = _shape(_row(conn, staple_id))
     out["removed_line"] = removed
     out["just_paused"] = bool(paused)
     return out
+
+
+def _note_trim(conn, event_id: int, removed: dict | None) -> None:
+    """The answer's event remembers a line it cut back rather than took off
+    (_trim_to_the_weeks_part), so undo_staple_decision can put that row
+    back as it was — there is no removed row for it to find."""
+    trimmed = (removed or {}).get("trimmed")
+    if not trimmed:
+        return
+    conn.execute(
+        "UPDATE staple_events SET grocery_item_id = ?, receipt_json = ? WHERE id = ? AND household_id = ?",
+        (trimmed["item_id"], json.dumps({"trimmed": trimmed}), event_id, household_id()),
+    )
 
 
 def _drop_suggestion_lines(conn, staple_id: int) -> dict | None:
@@ -840,19 +855,78 @@ def _drop_suggestion_lines(conn, staple_id: int) -> dict | None:
     staple_id) is never touched here.
     """
     rows = conn.execute(
-        "SELECT id, item, quantity, category, store FROM grocery_items "
+        "SELECT id, item, quantity, category, store, added_by, source_weekly_plan_id FROM grocery_items "
         "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
         (household_id(), staple_id),
     ).fetchall()
     if not rows:
         return None
-    conn.execute(
-        "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
-        "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
-        (ADDED_BY_STAPLE, household_id(), staple_id),
-    )
+    trimmed = None
+    for row in rows:
+        kept = _trim_to_the_weeks_part(conn, row)
+        if kept is not None:
+            trimmed = trimmed or kept
+            continue
+        conn.execute(
+            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (ADDED_BY_STAPLE, row["id"], household_id()),
+        )
     first = rows[0]
-    return {"item": first["item"], "quantity": first["quantity"] or "", "category": first["category"], "store": first["store"] or ""}
+    out = {"item": first["item"], "quantity": first["quantity"] or "", "category": first["category"], "store": first["store"] or ""}
+    if trimmed is not None:
+        out["trimmed"] = trimmed
+    return out
+
+
+def _trim_to_the_weeks_part(conn, row) -> dict | None:
+    """
+    A staple's line that a week's meals have since added to is two wants on
+    one row — "Eggs · 1 dozen" put there because they're probably running
+    low, then two frittatas' 16 eggs merged in by the approval. "We have
+    plenty" / "Not this trip" answer the FIRST of those. They used to take
+    the whole row off, and the list was left with no eggs at all for two
+    dinners that still need them (measured 2026-10-10, both buttons).
+
+    So a line with meals on its ledger (meal_plan_grocery_links) is cut back
+    to what those meals add up to — the same recompute a dropped night uses
+    (_sum_ledger_quantities) — and stops being the staple's: no staple_id,
+    so the "Probably running low" note goes and the next list read doesn't
+    count it as this staple's line. With every meal behind it in one week
+    it becomes that week's line (source_weekly_plan_id), so a later dropped
+    night recomputes it like any other plan line, not as a standing want.
+
+    Returns what the Undo needs to put the row back exactly — or None when
+    nothing of a week's is on it, and the plain soft remove applies. A
+    ledger that can't be added up (a freeform "a bunch") keeps the row's
+    amount whole: an extra dozen costs a dozen, a missing one costs the
+    dinner.
+    """
+    links = conn.execute(
+        "SELECT l.quantity, e.weekly_plan_id FROM meal_plan_grocery_links l "
+        "LEFT JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+        "WHERE l.grocery_item_id = ? AND l.household_id = ?",
+        (row["id"], household_id()),
+    ).fetchall()
+    if not links:
+        return None
+    weeks_part = _quantities._sum_ledger_quantities([r["quantity"] for r in links])
+    if weeks_part is None:
+        weeks_part = row["quantity"] or ""
+    plans = {r["weekly_plan_id"] for r in links}
+    plan_id = next(iter(plans)) if len(plans) == 1 else None
+    conn.execute(
+        "UPDATE grocery_items SET quantity = ?, staple_id = NULL, added_by = 'ai', "
+        "source_weekly_plan_id = ? WHERE id = ? AND household_id = ?",
+        (weeks_part, plan_id, row["id"], household_id()),
+    )
+    return {
+        "item_id": row["id"],
+        "quantity": weeks_part,
+        "quantity_before": row["quantity"] or "",
+        "added_by_before": row["added_by"] or "",
+        "source_before": row["source_weekly_plan_id"],
+    }
 
 
 def note_line_removed(conn, line_row, how: str) -> None:
@@ -918,12 +992,31 @@ def undo_staple_decision(staple_id: int) -> dict:
     if r is None:
         conn.close()
         raise ValueError(f"No staple with id {staple_id}.")
+    # Read before reverse_last_answer deletes it: an answer that cut a
+    # shared line back to the week's part (_trim_to_the_weeks_part) left no
+    # removed row behind, so its receipt is the only record of the row.
+    last = conn.execute(
+        "SELECT receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? "
+        "AND kind IN ('plenty', 'skipped') ORDER BY id DESC LIMIT 1",
+        (household_id(), staple_id),
+    ).fetchone()
     if not reverse_last_answer(conn, staple_id):
         # Nothing to undo: say so, change nothing. (A raw call used to
         # force the staple due — the 2026-09-11 verifier's case g.)
         out = _shape(r)
         conn.close()
         out["undone"] = False
+        return out
+    trimmed = None
+    try:
+        trimmed = json.loads((last and last["receipt_json"]) or "{}").get("trimmed")
+    except (TypeError, ValueError, AttributeError):
+        trimmed = None
+    if trimmed and _untrim(conn, staple_id, trimmed):
+        conn.commit()
+        out = _shape(_row(conn, staple_id))
+        conn.close()
+        out["undone"] = True
         return out
     # Put back the very row that was taken off — store, quantity and all —
     # rather than letting the next list read make a new, blank one.
@@ -947,6 +1040,34 @@ def undo_staple_decision(staple_id: int) -> dict:
     conn.close()
     out["undone"] = True
     return out
+
+
+def _untrim(conn, staple_id: int, trimmed: dict) -> bool:
+    """
+    Undo for an answer that cut a shared line back to the week's part: the
+    row gets its staple back — link, "Probably running low", and the amount
+    it had — when it still reads what the answer left it at. If a night has
+    been dropped or swapped since, the line was re-derived from its meals
+    and the old amount would put that change back too; then only the link
+    returns and the amount stays what the meals now need (the staple's own
+    part is not recoverable from a re-rounded line). False when the row is
+    no longer on the list to buy, so the caller's ordinary path applies.
+    """
+    row = conn.execute(
+        "SELECT id, quantity FROM grocery_items WHERE id = ? AND household_id = ? "
+        "AND status = 'needed' AND staple_id IS NULL",
+        (trimmed.get("item_id"), household_id()),
+    ).fetchone()
+    if row is None:
+        return False
+    unchanged = (row["quantity"] or "") == (trimmed.get("quantity") or "")
+    conn.execute(
+        "UPDATE grocery_items SET staple_id = ?, added_by = ?, source_weekly_plan_id = ?, "
+        "quantity = CASE WHEN ? THEN ? ELSE quantity END WHERE id = ? AND household_id = ?",
+        (staple_id, trimmed.get("added_by_before") or ADDED_BY_STAPLE, trimmed.get("source_before"),
+         1 if unchanged else 0, trimmed.get("quantity_before") or "", row["id"], household_id()),
+    )
+    return True
 
 
 def reverse_last_answer(conn, staple_id: int) -> bool:
