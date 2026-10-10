@@ -24,6 +24,8 @@ why*, not duplicating the diff.
   the event's `receipt_json` lets Undo restore the row exactly. Toast says
   "Eggs down to 2 dozen for this week's meals". Not covered: a hand-typed
   amount merged into a staple line (no ledger) still goes with the answer.
+  Review round: two weeks on one line take the latest week (never no week);
+  Undo after a night changed merges the staple's own amount back; result has `kept_on_list`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

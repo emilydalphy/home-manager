@@ -808,6 +808,7 @@ def _plenty(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
     _note_trim(conn, event_id, removed)
     out = _shape(_row(conn, staple_id))
     out["removed_line"] = removed
+    out["kept_on_list"] = _kept_on_list(removed)
     return out
 
 
@@ -828,8 +829,18 @@ def _skip(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
     _note_trim(conn, event_id, removed)
     out = _shape(_row(conn, staple_id))
     out["removed_line"] = removed
+    out["kept_on_list"] = _kept_on_list(removed)
     out["just_paused"] = bool(paused)
     return out
+
+
+def _kept_on_list(removed: dict | None) -> str | None:
+    """What is still on the list after a plenty/skip — the week's meals'
+    amount when the line was cut back rather than taken off, else None.
+    A key of its own so a chat reply cannot read removed_line's "3 dozen"
+    and say that much came off."""
+    trimmed = (removed or {}).get("trimmed")
+    return (trimmed.get("quantity") or "") if trimmed else None
 
 
 def _note_trim(conn, event_id: int, removed: dict | None) -> None:
@@ -854,10 +865,15 @@ def _drop_suggestion_lines(conn, staple_id: int) -> dict | None:
     that this trip already has an answer. A line a person added (no
     staple_id) is never touched here.
     """
+    # Only Pomona's own suggestion (added_by 'staple'): a line a person has
+    # made theirs — a regular they ticked, or their typed amount merged on —
+    # keeps its staple_id so buying it teaches the rhythm, but an answer to
+    # "probably running low" is not them taking it off. (The same filter as
+    # overnight/typed-add-owns-staple-line, so the two merge as one.)
     rows = conn.execute(
         "SELECT id, item, quantity, category, store, added_by, source_weekly_plan_id FROM grocery_items "
-        "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
-        (household_id(), staple_id),
+        "WHERE household_id = ? AND staple_id = ? AND status = 'needed' AND added_by = ?",
+        (household_id(), staple_id, ADDED_BY_STAPLE),
     ).fetchall()
     if not rows:
         return None
@@ -913,8 +929,17 @@ def _trim_to_the_weeks_part(conn, row) -> dict | None:
     weeks_part = _quantities._sum_ledger_quantities([r["quantity"] for r in links])
     if weeks_part is None:
         weeks_part = row["quantity"] or ""
-    plans = {r["weekly_plan_id"] for r in links}
-    plan_id = next(iter(plans)) if len(plans) == 1 else None
+    # The week the line now belongs to. Two weeks' meals on one staple line
+    # (both merged into the standing row) used to leave it with no week at
+    # all: an 'ai' line nobody owns, which the reversal treats as a
+    # household's want and so never deletes — every night dropped, and
+    # "Eggs" sat on the list with no amount for ever. The LATEST week is
+    # the one that keeps it longest: clear_stale_grocery_items drops a line
+    # once its week has gone by, and the earlier week going must not take
+    # the later week's eggs with it. The ledger still recomputes it from
+    # every meal on it, whichever week is named here.
+    plans = {r["weekly_plan_id"] for r in links if r["weekly_plan_id"] is not None}
+    plan_id = max(plans) if plans else None
     conn.execute(
         "UPDATE grocery_items SET quantity = ?, staple_id = NULL, added_by = 'ai', "
         "source_weekly_plan_id = ? WHERE id = ? AND household_id = ?",
@@ -1060,12 +1085,22 @@ def _untrim(conn, staple_id: int, trimmed: dict) -> bool:
     ).fetchone()
     if row is None:
         return False
-    unchanged = (row["quantity"] or "") == (trimmed.get("quantity") or "")
+    if (row["quantity"] or "") == (trimmed.get("quantity") or ""):
+        quantity = trimmed.get("quantity_before") or ""
+    else:
+        # A night dropped or swapped while the toast was up: the line was
+        # re-read from its meals, so the old total would bring that night
+        # back. The meals' amount as it stands now, with the staple's own
+        # amount merged back on top the way any add joins a line.
+        own = (_row(conn, staple_id)["quantity"] or "").strip()
+        quantity = row["quantity"] or ""
+        if own:
+            quantity = _grocery._try_consolidate_quantity(quantity, own)[0]
     conn.execute(
-        "UPDATE grocery_items SET staple_id = ?, added_by = ?, source_weekly_plan_id = ?, "
-        "quantity = CASE WHEN ? THEN ? ELSE quantity END WHERE id = ? AND household_id = ?",
+        "UPDATE grocery_items SET staple_id = ?, added_by = ?, source_weekly_plan_id = ?, quantity = ? "
+        "WHERE id = ? AND household_id = ?",
         (staple_id, trimmed.get("added_by_before") or ADDED_BY_STAPLE, trimmed.get("source_before"),
-         1 if unchanged else 0, trimmed.get("quantity_before") or "", row["id"], household_id()),
+         quantity, row["id"], household_id()),
     )
     return True
 

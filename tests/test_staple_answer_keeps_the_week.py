@@ -189,3 +189,46 @@ def test_the_toast_says_the_line_stayed_when_it_was_cut_back():
     assert _toast(trimmed, "skip") == "Eggs down to 2 dozen for this week’s meals — I’ll ask again next week"
     whole = {"id": 4, "cadence_days": 21, "removed_line": {"item": "Eggs", "quantity": "1 dozen"}}
     assert _toast(whole, "skip") == "Eggs off the list — I’ll ask again next week"
+
+
+# --- review round ---
+
+
+def test_two_weeks_on_one_staple_line_still_clear_when_every_night_goes():
+    """Both weeks merge into the one standing Eggs line. The cut-back line
+    must belong to a week, or dropping every night left "Eggs" on the list
+    with no amount for ever (nobody's line, never cleared)."""
+    line_id, plan_a, entries_a = _eggs_line_with_two_frittatas()
+    week_after = lambda d: (household_today() - timedelta(days=household_today().weekday())
+                            + timedelta(days=14 + d)).isoformat()
+    plan_b = tools.create_weekly_plan(week_after(0))["weekly_plan_id"]
+    entry_b = tools.plan_meal(week_after(2), "Frittata", slot="dinner", weekly_plan_id=plan_b)["entry_id"]
+    tools.approve_weekly_plan(plan_b, "Alex")
+    assert [r["id"] for r in _live("Eggs")] == [line_id]
+
+    st.decide_staple_line(line_id, "plenty")
+    assert _line(line_id)["source_weekly_plan_id"] == plan_b
+    for e in entries_a:
+        tools.drop_dish_from_day(plan_a, e)
+    assert _live("Eggs") and _live("Eggs")[0]["quantity"] == "1 dozen"
+    tools.drop_dish_from_day(plan_b, entry_b)
+    assert _live("Eggs") == []
+
+
+def test_undo_after_a_night_dropped_keeps_the_staples_own_dozen(signed_in):
+    line_id, plan_id, entries = _eggs_line_with_two_frittatas()
+    staple_id = _line(line_id)["staple_id"]
+    res = signed_in.post(f"/api/grocery-list/{line_id}/staple", json={"decision": "plenty"}).json()
+    assert res["kept_on_list"] == "2 dozen"
+    tools.drop_dish_from_day(plan_id, entries[1])  # 8 eggs left: "1 dozen"
+    assert signed_in.post(f"/api/staples/{staple_id}/undo").json()["undone"] is True
+    row = _line(line_id)
+    # One frittata's 8 eggs plus the staple's own dozen.
+    assert (row["quantity"], row["staple_id"], row["added_by"]) == ("2 dozen", staple_id, "staple")
+
+
+def test_a_plain_answer_says_nothing_was_kept():
+    st.add_staple("Coffee", running_low=True, quantity="1 bag")
+    tools.get_grocery_list_by_store(status="needed")
+    [line] = _live("Coffee")
+    assert st.decide_staple_line(line["id"], "skip")["kept_on_list"] is None

@@ -2366,7 +2366,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "mark_staple_plenty",
-        "description": "'We've got plenty of coffee' / 'we're fine for dish soap' — Pomona suggested a staple too early. Pushes its next due date a whole cadence out and takes any suggestion line for it off the grocery list. Doesn't change the learned rhythm.",
+        "description": "'We've got plenty of coffee' / 'we're fine for dish soap' — Pomona suggested a staple too early. Pushes its next due date a whole cadence out and takes its suggestion line off the grocery list — unless this week's meals need some too, in which case the line stays, cut back to what they need (the result's kept_on_list says how much; say that, not that it came off). Doesn't change the learned rhythm.",
         "input_schema": {"type": "object", "properties": {"item": {"type": "string"}}, "required": ["item"]},
     },
     {
