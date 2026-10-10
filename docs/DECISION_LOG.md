@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Have it" then Put back re-reads the line from its meals** (2026-10-10;
+  branch `overnight/have-it-undo-recounts`; `tests/test_have_it_undo_recounts.py`).
+  The meal reversal skips a line that is off the list, so spinach dropped as
+  "Have it", one of two frittatas dropped, Put back -> "10 oz" for 5 oz of week.
+  `pre_shop.undo_pre_shop_drop` now runs `_recompute_plan_line_from_ledger`
+  (plan-owned lines only; a household's own line comes back as it was). Not
+  done: a plan line whose meals ALL went while off still comes back as it was.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
