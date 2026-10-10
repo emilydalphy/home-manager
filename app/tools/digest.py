@@ -1213,9 +1213,8 @@ def tonight_for_nudge(now_local: datetime) -> dict:
     a leftovers-only night), 'away' (nobody home for dinner — the
     attendance answer or an 'away' need, whichever said so), 'done'
     (tonight's dinner already ticked) or 'started' (the cook is under way).
-    `first` is an undone fridge move or prep step on today's timeline that
-    is for tonight's dinner (_for_dinner), when there is one — the thing to
-    do before the dish.
+    `first` is an undone fridge move or prep step on today's timeline, when
+    there is one — the thing to do before the dish.
 
     Read entirely off today_moves and the day's own tags, so this never
     says anything Today wouldn't also show.
@@ -1242,44 +1241,9 @@ def tonight_for_nudge(now_local: datetime) -> dict:
         return {"dinner": dinner, "first": None, "reason": "done"}
     if dinner.get("started_at"):
         return {"dinner": dinner, "first": None, "reason": "started"}
-    steps = [m for m in moves if m["kind"] in ("fridge", "prep") and not m["done"] and _for_dinner(m, dinner)]
-    first = next((m for m in steps if m["kind"] == "fridge"), None) \
-        or next((m for m in steps if m["kind"] == "prep"), None)
+    first = next((m for m in moves if m["kind"] == "fridge" and not m["done"]), None) \
+        or next((m for m in moves if m["kind"] == "prep" and not m["done"]), None)
     return {"dinner": dinner, "first": first, "reason": ""}
-
-
-def _for_dinner(step: dict, dinner: dict) -> bool:
-    """
-    Whether a fridge move or prep step on today's timeline is one of
-    tonight's DINNER's own — the only kind "first — then <dish>" may name.
-
-    Most of a day's fridge moves are not: a thaw is dated a full day or
-    more before the meal it is for (defrost._move_date), so the move on
-    today's timeline is usually for a later night. Reproduced (overnight
-    hunt, 2026-10-10): with Monday's ground beef to move on Saturday, the
-    nudge read "Move the Ground beef to the fridge first — then Roast
-    Chicken." — an order the roast does not have, in place of the "Tap to
-    start" the nudge exists to send. A step for another meal stays on
-    Today and in the morning text, which say what it is for.
-
-    The move's entry_id is the task's meal_plan_entry_id. A task with none
-    (older rows, hand-made ones) is matched on its related_meal, the dish
-    name it was written for — which is what it was before entry ids.
-    """
-    if step.get("entry_id") is not None:
-        return step["entry_id"] == dinner.get("entry_id")
-    if step.get("task_id") is None:
-        return False
-    conn = get_conn()
-    try:
-        row = conn.execute(
-            "SELECT related_meal FROM prep_tasks WHERE id = ? AND household_id = ?",
-            (step["task_id"], household_id()),
-        ).fetchone()
-    finally:
-        conn.close()
-    related = ((row["related_meal"] if row else "") or "").strip().casefold()
-    return bool(related) and related == (dinner.get("title") or "").strip().casefold()
 
 
 def build_evening_nudge(now_local: datetime | None = None, link: bool = True) -> str | None:
