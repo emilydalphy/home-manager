@@ -781,12 +781,25 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
     trimmed_items = []
     for link in links:
         grocery_row = conn.execute(
-            "SELECT id, item, quantity, status, source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
+            "SELECT id, item, quantity, status, removed_by, source_weekly_plan_id FROM grocery_items "
+            "WHERE id = ? AND household_id = ?",
             (link["grocery_item_id"], household_id()),
         ).fetchone()
         # A pending spice ('spice', see spices.py) is a needed line the
         # shopper hasn't ticked; it recomputes and clears like one.
         live = bool(grocery_row) and grocery_row["status"] in ("needed", "spice")
+        # So does a household's own line taken off with Remove
+        # (REMOVED_BY_LIST): its Undo puts the row back as it stands, and
+        # its own amount is in there with no ledger row to re-read it from
+        # — so the plan's part comes off now, while it can still be
+        # measured, or Undo returns the dropped nights' share too. A
+        # removed PLAN line needs none of this: its Undo re-reads the
+        # ledger (undo_remove_grocery_item). Never deleted here either way —
+        # a standing want is never deleted by a reversal.
+        if (grocery_row is not None and grocery_row["status"] == "removed"
+                and grocery_row["removed_by"] == REMOVED_BY_LIST
+                and grocery_row["source_weekly_plan_id"] is None):
+            live = True
         if live and _quantities.package_unit(link["quantity"] or ""):
             still_wanted = conn.execute(
                 "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
@@ -2400,7 +2413,8 @@ def remove_grocery_item(item_id: int) -> dict:
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     row = conn.execute(
-        "SELECT id, staple_id, status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        "SELECT id, staple_id, status, removed_by FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
     ).fetchone()
     if row is not None and row["staple_id"] and row["status"] == "needed":
         # Removing a staple's suggestion is "not this trip" — otherwise the
@@ -2416,6 +2430,12 @@ def remove_grocery_item(item_id: int) -> dict:
         conn.commit()
         conn.close()
         return {"item_id": item_id, "deleted": True, "staple_id": row["staple_id"]}
+    if row is not None and row["status"] == "removed" and row["removed_by"] == REMOVED_BY_LIST:
+        # Already off by an earlier Remove (a double tap, a second screen):
+        # a no-op. Falling through to the hard delete took the row and its
+        # meal links with it, and the first toast's Undo had nothing left.
+        conn.close()
+        return {"item_id": item_id, "deleted": True, "restorable": True}
     if row is not None and row["status"] == "needed" and conn.execute(
         "SELECT 1 FROM meal_plan_grocery_links WHERE grocery_item_id = ? AND household_id = ? LIMIT 1",
         (item_id, household_id()),

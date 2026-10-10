@@ -177,3 +177,55 @@ def test_undo_says_so_when_there_is_nothing_left_to_buy_for():
 def test_a_hard_deleted_line_still_comes_back_by_name():
     out = _tap_remove_then_undo({"item_id": 3, "deleted": True})
     assert out["urls"][-1] == "/api/grocery-list/add"
+
+
+# --- review round (2026-10-10): a household's own line, and a second Remove ---
+
+
+def _kale_standing_with_two_frittatas() -> tuple[int, int, list[int]]:
+    """'kale · 4 oz' typed by hand, then a week of two kale frittatas
+    (5 oz each) merged onto it: the household's own line, meals on it."""
+    for name in ("Alex", "Sam", "Rae"):
+        tools.add_member(name)
+    line_id = tools.add_grocery_item("kale", quantity="4 oz")["item_id"]
+    tools.add_recipe(
+        "Kale Frittata",
+        ingredients=[{"item": "eggs", "qty": "8"}, {"item": "kale", "qty": "5 oz"}],
+        default_servings=3,
+    )
+    plan_id = tools.create_weekly_plan(_next_week(0))["weekly_plan_id"]
+    entries = [
+        tools.plan_meal(_next_week(d), "Kale Frittata", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+        for d in (1, 3)
+    ]
+    tools.approve_weekly_plan(plan_id, "Alex")
+    assert _row(line_id)["quantity"] == "14 oz" and _row(line_id)["source_weekly_plan_id"] is None
+    return line_id, plan_id, entries
+
+
+def test_a_households_own_line_comes_back_without_the_nights_dropped_while_off(signed_in):
+    line_id, plan_id, entries = _kale_standing_with_two_frittatas()
+    assert signed_in.post(f"/api/grocery-list/{line_id}/remove").json()["restorable"] is True
+    tools.drop_dish_from_day(plan_id, entries[1])
+    assert signed_in.post(f"/api/grocery-list/{line_id}/remove-undo").json()["restored"] is True
+    assert _row(line_id)["quantity"] == "9 oz"
+
+
+def test_with_both_nights_gone_it_comes_back_as_just_the_households_own(signed_in):
+    line_id, plan_id, entries = _kale_standing_with_two_frittatas()
+    signed_in.post(f"/api/grocery-list/{line_id}/remove")
+    for e in entries:
+        tools.drop_dish_from_day(plan_id, e)
+    assert signed_in.post(f"/api/grocery-list/{line_id}/remove-undo").json()["restored"] is True
+    row = _row(line_id)
+    assert (row["status"], row["quantity"]) == ("needed", "4 oz")
+
+
+def test_a_second_remove_is_a_no_op_and_the_first_undo_still_works(signed_in):
+    line_id, plan_id, _ = _two_frittatas()
+    signed_in.post(f"/api/grocery-list/{line_id}/remove")
+    again = signed_in.post(f"/api/grocery-list/{line_id}/remove")
+    assert again.status_code == 200 and again.json()["restorable"] is True
+    assert _row(line_id)["status"] == "removed"
+    assert signed_in.post(f"/api/grocery-list/{line_id}/remove-undo").json()["restored"] is True
+    assert _live("spinach") == [{"id": line_id, "quantity": "10 oz", "source_weekly_plan_id": plan_id}]

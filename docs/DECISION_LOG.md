@@ -23,7 +23,9 @@ why*, not duplicating the diff.
   and `/remove-undo` restores the row, re-read from its ledger; with every meal
   gone since it stays off and the toast says so. Hand lines keep the hard
   delete. Side effect: the kept links stop a re-approval re-adding a line the
-  household removed (the pre-shop drop's rule).
+  household removed (the pre-shop drop's rule). Review round: a removed
+  standing line is restated as nights drop (kale 4 oz own + 10 oz meals undoes to 4 oz),
+  and a second Remove on a 'list' row is a no-op instead of a hard delete.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
