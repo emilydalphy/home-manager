@@ -42,7 +42,8 @@ def test_eight_servings_of_a_one_onion_recipe_says_onions(signed_in):
     rows = _rows("Onion Soup", 8, signed_in)
     assert (rows["onion"]["qty"], rows["onion"]["item_label"]) == ("2", "onions")
     assert rows["potato, diced"]["item_label"] == "potatoes, diced"
-    assert rows["bay leaf"]["item_label"] == "bay leaves"
+    # Not on the countable list: left as written rather than guessed at.
+    assert "item_label" not in rows["bay leaf"]
     # A unit carries its own plural; the item is left alone.
     assert "item_label" not in rows["garlic"]
     # At four, one onion: no label, and the label never sticks around from
@@ -73,3 +74,17 @@ def _label(ing: dict) -> str:
 def test_the_ingredient_row_reads_the_label():
     assert _label({"item": "onion", "qty": "2", "item_label": "onions"}) == "2 onions"
     assert _label({"item": "onion", "qty": "1"}) == "1 onion"
+
+
+def test_what_is_not_plainly_countable_stays_as_written():
+    """The review round's regressions: a general plural rule got all of
+    these wrong at the recipe's own serving size."""
+    for item in (
+        "garlic", "celery", "fish", "shrimp", "rice", "spinach", "ginger", "basil",
+        "lemon juice", "avocado", "jalapeño", "cilantro", "chicken breast (boneless)",
+        "black pepper",
+    ):
+        out = recipes.cooking_ingredients([{"item": item, "qty": "3"}], servings=4)[0]
+        assert "item_label" not in out, item
+    roma = recipes.cooking_ingredients([{"item": "tomato (Roma)", "qty": "2"}], servings=4)[0]
+    assert roma["item_label"] == "tomatoes (Roma)"
