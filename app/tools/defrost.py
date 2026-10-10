@@ -1324,6 +1324,23 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
     finally:
         conn.close()
 
+    # A night still ahead that is too late to thaw for keeps the line on
+    # the list whatever the answer (confirm_frozen_items), so the chip must
+    # not promise "off the shopping list" (2026-10-10). Collected across
+    # EVERY item first and matched plural-tolerantly, the way the write
+    # matches it: "Chicken Thigh" late tomorrow and "Chicken Thighs" on
+    # Friday are one line, and the Friday chip must not promise it away.
+    too_late_keys: set[str] = set()
+    for key, entry in by_item.items():
+        lead_hours, _tier = lead_hours_for_item(entry["item"])
+        for n in entry["nights"]:
+            move = _move_date(n["date"], lead_hours, dinner_window)
+            if date.fromisoformat(move) < today and _needs_food_the_freezer_cannot_reach(
+                dict(n, cooked_status="done" if (n["date"], n["meal"]) in entry["cooked"] else "pending"),
+                _describe(entry["item"], n["meal"], n["date"]), booked, today,
+            ):
+                too_late_keys.add(key)
+
     out: list[dict] = []
     for key, entry in by_item.items():
         if key in covered:
@@ -1333,21 +1350,13 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
         # a name-matched grocery line: a line another plan's step set
         # aside says nothing about this week's freezer.
         frozen = False
-        # A night still ahead that is too late to thaw for keeps the line
-        # on the list whatever the answer (confirm_frozen_items), so the
-        # chip must not promise "off the shopping list" (2026-10-10).
-        short_of_time = False
+        short_of_time = _matches_selected_item(key, too_late_keys)
         nights = []
         for n in entry["nights"]:
             description = _describe(entry["item"], n["meal"], n["date"])
-            move = _move_date(n["date"], lead_hours, dinner_window)
-            if date.fromisoformat(move) < today and _needs_food_the_freezer_cannot_reach(
-                dict(n, cooked_status="done" if (n["date"], n["meal"]) in entry["cooked"] else "pending"),
-                description, booked, today,
-            ):
-                short_of_time = True
             if description in settled:
                 continue
+            move = _move_date(n["date"], lead_hours, dinner_window)
             nights.append(dict(n, move_date=move, move_weekday=_weekday_name(move)))
             if description in frozen_nights:
                 frozen = True
@@ -2010,7 +2019,8 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
         lead_hours, tier = lead_hours_for_item(item_name)
         move_date_str = _move_date(meal["date"], lead_hours, dinner_window)
         if date.fromisoformat(move_date_str) < today:
-            raise FreezingNotOffered(TOO_LATE_TO_THAW_NOTE)
+            # The night it is about, not always "tonight" (2026-10-10).
+            raise FreezingNotOffered(too_late_to_thaw_note(meal["date"], "dinner", today))
     finally:
         conn.close()
 

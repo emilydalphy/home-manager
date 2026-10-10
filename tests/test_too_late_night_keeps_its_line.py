@@ -157,6 +157,11 @@ def test_a_plural_spelling_on_another_recipe_still_keeps_the_line():
     plan_id = _seed(tomorrow, [later])
     tools.plan_meal(tomorrow.isoformat(), "Thigh Tacos", slot="dinner", weekly_plan_id=plan_id)
 
+    # The read side agrees with the write (coordinator review): neither
+    # spelling's chip promises the shared line comes off.
+    step = defrost.meat_items_for_plan(plan_id)
+    assert step and all(i["on_list"] is False for i in step), step
+
     result = defrost.confirm_frozen_items(plan_id, ["Chicken Thigh", ITEM])
 
     assert [n["date"] for n in result["notes"]] == [tomorrow.isoformat()]

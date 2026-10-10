@@ -25,7 +25,10 @@ why*, not duplicating the diff.
   ON_LIST_SHARED precedent; the step says `on_list` False, `ON_LIST_TOO_LATE`)
   when a still-ahead, uncooked, unbooked night is too late, and notes only
   those nights, by name (`too_late_to_thaw_note`). Cost: Thursday's share is
-  bought again; a partial cut needs grocery-side work (Emily's call).
+  bought again; a partial cut needs grocery-side work (Emily's call). Review
+  round: the step's `on_list` and the write both match the late item
+  plural-tolerantly ("Chicken Thigh" / "Chicken Thighs" share one line), and
+  Shop's "Freezing it?" refusal names its night too.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
