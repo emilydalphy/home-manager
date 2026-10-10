@@ -1012,7 +1012,7 @@ def add_grocery_item(
     # line of its own and the set-aside line stays exactly as it was —
     # the same rule consolidate_grocery_list keeps.
     candidates = conn.execute(
-        "SELECT id, item, quantity, source_weekly_plan_id, status FROM grocery_items "
+        "SELECT id, item, quantity, source_weekly_plan_id, status, added_by FROM grocery_items "
         "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall()
@@ -1072,6 +1072,18 @@ def add_grocery_item(
             conn.execute(
                 "UPDATE grocery_items SET status = 'needed' WHERE id = ? AND household_id = ?",
                 (existing["id"], household_id()),
+            )
+        # A person's own amount joining a line a staple put there makes the
+        # line theirs — add_regulars' rule. Left as the staple's, it kept
+        # "Probably running low" and both buttons, and "We have plenty" took
+        # the typed amount off with the staple's (2026-10-10: Coffee
+        # "1 bag" + a typed "2 bags" read "3 bags", one tap left none).
+        # staple_id stays, so buying it still teaches the rhythm.
+        if (existing["added_by"] == "staple" and source_weekly_plan_id is None
+                and (added_by or "") != "staple"):
+            conn.execute(
+                "UPDATE grocery_items SET added_by = ? WHERE id = ? AND household_id = ?",
+                (acting_name(added_by) or "user", existing["id"], household_id()),
             )
         item_id = existing["id"]
         # The name on the line now, not the one just asked for: saying

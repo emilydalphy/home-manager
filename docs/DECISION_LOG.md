@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A typed amount on a staple's line makes the line the person's**
+  (2026-10-10; branch `overnight/typed-add-owns-staple-line`;
+  `tests/test_typed_add_owns_staple_line.py`). Running-low "Coffee · 1 bag"
+  plus a typed "2 bags" merged to "3 bags" still drawn as the staple's
+  "Probably running low"; "We have plenty" then took the typed bags off too.
+  `add_grocery_item`'s merge now sets `added_by` to the person when a
+  non-plan, non-staple add joins a staple's line (add_regulars' rule);
+  `staple_id` stays so buying still teaches the rhythm. Known gap: the add
+  sheet's Undo restores the amount, not the "running low" note.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
