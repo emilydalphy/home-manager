@@ -57,3 +57,26 @@ def test_the_staples_own_line_and_a_weeks_ingest_leave_it_the_staples():
     tools.add_grocery_item("coffee", quantity="1 bag", added_by="staple")
     tools.add_grocery_item("coffee", quantity="1 bag", added_by="ai", source_weekly_plan_id=99)
     assert _coffee()["added_by"] == "staple"
+
+
+# --- review round: the other two doors onto the staple's line ---
+
+
+def test_pausing_the_staple_leaves_the_persons_line(signed_in):
+    line = _running_low_coffee()
+    tools.add_grocery_item("coffee", quantity="2 bags")
+    res = signed_in.post(f"/api/staples/{line['staple_id']}/pause")
+    assert res.status_code == 200 and res.json()["paused"] is True
+    after = _coffee()
+    assert (after["status"], after["quantity"]) == ("needed", "3 bags")
+
+
+def test_plenty_from_chat_leaves_the_persons_line():
+    _running_low_coffee()
+    # The chat's own add door credits the merge the same way.
+    st.add_grocery_item_for_chat("coffee", quantity="2 bags")
+    assert _coffee()["added_by"] not in ("staple", "")
+    out = st.mark_staple_plenty("coffee")
+    assert out["found"] is True and out["removed_line"] is None
+    after = _coffee()
+    assert (after["status"], after["quantity"]) == ("needed", "3 bags")

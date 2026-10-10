@@ -22,6 +22,7 @@ why*, not duplicating the diff.
   non-plan, non-staple add joins a staple's line (add_regulars' rule);
   `staple_id` stays so buying still teaches the rhythm. Known gap: the add
   sheet's Undo restores the amount, not the "running low" note.
+  Review round: `staples._drop_suggestion_lines` (pause, chat plenty) only drops `added_by='staple'` rows now.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

@@ -839,17 +839,22 @@ def _drop_suggestion_lines(conn, staple_id: int) -> dict | None:
     that this trip already has an answer. A line a person added (no
     staple_id) is never touched here.
     """
+    # Only Pomona's own suggestion (added_by 'staple'): a line a person has
+    # made theirs — a regular they ticked, or their typed amount merged on
+    # (grocery.add_grocery_item) — keeps its staple_id so buying it teaches
+    # the rhythm, but a pause or a chat "we have plenty" is not them taking
+    # it off.
     rows = conn.execute(
         "SELECT id, item, quantity, category, store FROM grocery_items "
-        "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
-        (household_id(), staple_id),
+        "WHERE household_id = ? AND staple_id = ? AND status = 'needed' AND added_by = ?",
+        (household_id(), staple_id, ADDED_BY_STAPLE),
     ).fetchall()
     if not rows:
         return None
     conn.execute(
         "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
-        "WHERE household_id = ? AND staple_id = ? AND status = 'needed'",
-        (ADDED_BY_STAPLE, household_id(), staple_id),
+        "WHERE household_id = ? AND staple_id = ? AND status = 'needed' AND added_by = ?",
+        (ADDED_BY_STAPLE, household_id(), staple_id, ADDED_BY_STAPLE),
     )
     first = rows[0]
     return {"item": first["item"], "quantity": first["quantity"] or "", "category": first["category"], "store": first["store"] or ""}
