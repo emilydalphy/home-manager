@@ -255,6 +255,7 @@ def test_undoing_the_night_off_leaves_a_suggestion_valid_for_the_restored_dates(
     conn.close()
     assert chili_date == WED, "the undo put the chili back"
     assert row is not None and row["slot"] == "dinner" and row["date"] < THU
+    assert need["recommended_batch_from_entry_id"] == chili, "the chili is offered again"
 
 
 @pytest.mark.today(WED)

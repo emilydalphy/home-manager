@@ -822,7 +822,7 @@ def _recommend_ready_made(date_str: str, slot: str, conn=None) -> dict:
     return {"recommended_batch_from_entry_id": None, "recommended_defrost_item": None}
 
 
-def _batch_candidate(conn, date_str: str) -> int | None:
+def _batch_candidate(conn, date_str: str, only: int | None = None) -> int | None:
     """
     The dinner a "set aside a double batch of …" suggestion may name for a
     meal on `date_str`: the latest one before it that is still a cook the
@@ -845,25 +845,37 @@ def _batch_candidate(conn, date_str: str) -> int | None:
       offered "a double batch of Sunday's roast chicken": Sunday is the
       double batch.
 
+    - a written-in meal that says it isn't one: "Takeout pizza",
+      "Leftovers" with no recipe behind it — the Plan screen's own wording
+      check (weekly_plan.written_in_not_a_cook), not a second list.
+
     Walked newest-first in SQL order rather than filtered in SQL, because
-    "is a cook" lives in derived_from_json and has one reader. `conn` is
-    the caller's (_recommend_ready_made may be inside a write
-    transaction); nothing here commits or closes.
+    "is a cook" lives in derived_from_json and has one reader. `only`
+    asks the same question of one stored suggestion (describe_ready_made):
+    its id back when it still qualifies, else None. `conn` is the caller's
+    (_recommend_ready_made may be inside a write transaction); nothing here
+    commits or closes.
     """
     from . import cooker as _cooker  # local: cooker imports weekly_plan, which this module imports
 
     today = _cooker.household_today(conn=conn).isoformat()
     rows = conn.execute(
         """
-        SELECT id, derived_from_json FROM meal_plan_entries
+        SELECT id, recipe_id, freeform_meal, derived_from_json FROM meal_plan_entries
         WHERE household_id = ? AND slot = 'dinner' AND slot_state = 'planned'
           AND date < ? AND date >= ? AND COALESCE(cooked_status, '') != 'done'
-          AND component_category IS NULL
+          AND component_category IS NULL AND (? IS NULL OR id = ?)
         ORDER BY date DESC, id DESC
         """,
-        (household_id(), date_str, today),
+        (household_id(), date_str, today, only, only),
     ).fetchall()
-    return next((r["id"] for r in rows if _weekly_plan._cooks_that_night(r["derived_from_json"])), None)
+    return next((r["id"] for r in rows if _is_a_cook(r)), None)
+
+
+def _is_a_cook(row) -> bool:
+    if not _weekly_plan._cooks_that_night(row["derived_from_json"]):
+        return False
+    return bool(row["recipe_id"]) or not _weekly_plan.written_in_not_a_cook(row["freeform_meal"])
 
 
 def _weekday_name(date_str: str) -> str:
@@ -896,7 +908,24 @@ def describe_ready_made(date_str: str, slot: str) -> dict | None:
             "sentence": f"I’ll defrost the {need['recommended_defrost_item']} — sound good?",
         }
     elif need["recommended_batch_from_entry_id"]:
-        label = _batch_label(need["recommended_batch_from_entry_id"])
+        batch_id = need["recommended_batch_from_entry_id"]
+        if not need["recommendation_confirmed"]:
+            # A suggestion is stored when the trip is entered and read days
+            # later: set on Thursday, Saturday's card still asked to double
+            # Friday's tacos, eaten the night before. Unconfirmed, it is
+            # checked on read against the rule that picks it
+            # (_batch_candidate, also the "or:" line's rule, so the two
+            # lines agree) and is no suggestion once it fails. NOT re-picked
+            # here: Confirm (confirm_slot_recommendation) confirms the STORED
+            # id, so a card naming a different dinner would have the tap
+            # agree to something it never said. Nothing is written — this
+            # is a read. A CONFIRMED one is the household's word and stays.
+            conn = get_conn()
+            try:
+                batch_id = _batch_candidate(conn, date_str, only=batch_id)
+            finally:
+                conn.close()
+        label = _batch_label(batch_id) if batch_id else None
         if label:
             primary = {
                 "kind": "batch",

@@ -129,3 +129,47 @@ def test_late_on_saturday_tonight_is_still_saturday(frozen_today):
     slot_needs.set_away_stretch(NEXT_MON, "breakfast", NEXT_MON, "lunch")
 
     assert slot_needs.get_slot_need(NEXT_MON, "dinner")["recommended_batch_from_entry_id"] == ids[SAT]
+
+
+def test_a_suggestion_stored_on_thursday_is_not_asked_on_saturday(frozen_today):
+    """Review, 2026-10-10. The trip is entered on Thursday, when Friday's
+    tacos are rightly the suggestion; on Saturday they are eaten. Unconfirmed,
+    the card asks nothing rather than repeating the reported sentence."""
+    ids = _week()
+    _on(frozen_today, DAYS[3])
+    slot_needs.set_away_stretch(SAT, "breakfast", SAT, "lunch")
+    assert slot_needs.get_slot_need(SAT, "dinner")["recommended_batch_from_entry_id"] == ids[FRI]
+
+    _on(frozen_today, SAT)
+
+    assert slot_needs.describe_ready_made(SAT, "dinner") is None
+
+
+def test_a_confirmed_suggestion_is_kept_after_its_night(frozen_today):
+    """GUARD — green on both sides. Confirmed on Thursday, so Friday was
+    cooked double on purpose: Saturday still says it is settled."""
+    _week()
+    _on(frozen_today, DAYS[3])
+    slot_needs.set_away_stretch(SAT, "breakfast", SAT, "lunch")
+    slot_needs.confirm_slot_recommendation(SAT, "dinner")
+
+    _on(frozen_today, SAT)
+
+    described = slot_needs.describe_ready_made(SAT, "dinner")
+    assert described["confirmed"] and described["label"] == "Friday’s tacos"
+
+
+def test_written_in_takeout_is_not_a_cook_to_double(frozen_today):
+    """Friday is "Takeout pizza", no recipe: the suggestion skips it for
+    Thursday's pasta, the Plan screen's own takeout check."""
+    _on(frozen_today, DAYS[2])
+    ids = _week()
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET recipe_id = NULL, freeform_meal = 'Takeout pizza' WHERE id = ?",
+                 (ids[FRI],))
+    conn.commit()
+    conn.close()
+
+    slot_needs.set_away_stretch(SAT, "breakfast", SAT, "lunch")
+
+    assert slot_needs.get_slot_need(SAT, "dinner")["recommended_batch_from_entry_id"] == ids[DAYS[3]]

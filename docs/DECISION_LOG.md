@@ -25,6 +25,7 @@ why*, not duplicating the diff.
   empty suggestion behind a moved dinner, so a night off's Undo offers the
   chili again. Four `test_batch_suggestion_follows_swap` tests pinned to
   their Wednesday; one now expects no suggestion instead of Monday's pasta.
+  Review: an UNCONFIRMED stored suggestion that has since gone stale reads as none (`describe_ready_made`), and written-in takeout/leftovers is skipped (`weekly_plan.written_in_not_a_cook`, lifted from Plan's check).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

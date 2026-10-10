@@ -609,6 +609,22 @@ def _follow_swap_with_recommendations(conn, held: list[dict], new_for_old: dict[
     return moved
 
 
+def written_in_not_a_cook(freeform_meal: str | None) -> str | None:
+    """
+    'leftovers' or 'takeout' when a written-in meal (no recipe) says it is
+    one — "Leftovers", "Takeout pizza", "order in" — else None. The Plan
+    screen's own wording check (get_week_menu's build_slot), lifted out so
+    slot_needs._batch_candidate asks the same question rather than keeping
+    a second list: neither is a cook anybody could make double.
+    """
+    text = (freeform_meal or "").lower()
+    if re.search(r"leftovers?\b", text):
+        return "leftovers"
+    if re.search(r"take[\s-]?out|delivery|order in", text):
+        return "takeout"
+    return None
+
+
 def _cooks_that_night(derived_from_json) -> bool:
     """
     Whether a dinner row is a real cook — something a household could make
@@ -5762,9 +5778,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # Neither a reheat nor takeout is a plate this app assembled, so
         # neither gets a plate note — "one-pot, nothing extra" over a night
         # that reheats an earlier batch would be describing the wrong meal.
-        if re.search(r"leftovers?\b", text):
+        written = written_in_not_a_cook(text)
+        if written == "leftovers":
             return {"title": title, "meta": "reheat", "source": "leftovers", **common, "plate_note": ""}
-        if re.search(r"take[\s-]?out|delivery|order in", text):
+        if written == "takeout":
             return {"title": title, "meta": "takeout", "source": "takeout", **common, "plate_note": ""}
         prep = row["prep_time_minutes"] or 0
         cook = row["cook_time_minutes"] or 0
