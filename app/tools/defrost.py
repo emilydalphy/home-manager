@@ -1476,7 +1476,10 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
             # thaw, already too late) and Thursday, a yes for Thursday, and
             # Monday was neither thawed nor bought. Buying Thursday's share
             # again costs a trip; losing Monday's costs the dinner.
-            if key in short_of_time:
+            # Plural-tolerant, like every name match here: "Chicken Thigh"
+            # on the late night and "Chicken Thighs" on a later one share
+            # one line, and either spelling must keep it.
+            if _matches_selected_item(key, short_of_time):
                 continue
             set_aside += _set_aside_own_lines(lines[key])
         else:

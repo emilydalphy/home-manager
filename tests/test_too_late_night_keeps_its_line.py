@@ -140,3 +140,25 @@ def test_the_note_names_the_night():
     assert "for tomorrow night —" in note("2026-10-11", "dinner", today)
     assert "for Tuesday's dinner —" in note("2026-10-13", None, today)
     assert "for tomorrow's lunch —" in note("2026-10-11", "lunch", today)
+
+
+def test_a_plural_spelling_on_another_recipe_still_keeps_the_line():
+    """CATCH (review). "Chicken Thigh" on the too-late night, "Chicken
+    Thighs" on the later one: one line on the list, two spellings in the
+    plan. The too-late night's spelling must keep the line however the
+    other spelling is walked."""
+    today = household_today()
+    tomorrow, later = today + datetime.timedelta(days=1), today + datetime.timedelta(days=4)
+    tools.add_recipe(
+        "Thigh Tacos",
+        ingredients=[{"item": "Chicken Thigh", "qty": "2 lb", "category": "meat/seafood"}],
+        prep_time_minutes=15, cook_time_minutes=20, default_servings=4,
+    )
+    plan_id = _seed(tomorrow, [later])
+    tools.plan_meal(tomorrow.isoformat(), "Thigh Tacos", slot="dinner", weekly_plan_id=plan_id)
+
+    result = defrost.confirm_frozen_items(plan_id, ["Chicken Thigh", ITEM])
+
+    assert [n["date"] for n in result["notes"]] == [tomorrow.isoformat()]
+    assert result["set_aside"] == []
+    assert "needed" in [s for _q, s, _r in _chicken_lines()]
