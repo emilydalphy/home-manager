@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"1 cup (120g) flour" imports as flour, not "(120g) flour"** (2026-10-11;
+  branch `overnight/recipe-link-grams-stay-off-the-name`). A second measure
+  after the unit — US sites' bracketed grams, UK sites' "400 g / 14 oz" —
+  landed on the ITEM, so the grocery list showed "(120g) all-purpose flour"
+  and never merged it with flour. `recipe_import._without_second_measure`
+  keeps the first measure (as `normalise_amount` already does for the model
+  path); a bracket with no number ("(optional)") and a package size before the
+  unit ("1 (14 oz) can") are untouched. Tests
+  `tests/test_recipe_import_second_measure.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

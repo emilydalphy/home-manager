@@ -610,6 +610,50 @@ def normalise_amount(qty: str) -> str:
     return text
 
 
+_MEASURE_TOKEN_RE = re.compile(r"^(?:\d[\d./]*)?(?P<unit>[a-z]*)\.?,?$", re.I)
+
+
+def _without_second_measure(words: list[str]) -> list[str]:
+    """
+    The same amount said a second way, right after the unit: "1 cup (120g)
+    flour", "1/2 cup (1 stick / 113g) butter", "400 g / 14 oz spaghetti".
+    US baking sites print the grams in brackets on nearly every line and
+    UK ones print the ounces after a slash, and both landed on the ITEM —
+    "(120g) all-purpose flour" on the grocery list, a line that never
+    merges with "all-purpose flour" (defect hunt, 2026-10-11). The first
+    measure is the one kept, as normalise_amount already does for a
+    model-read "400 g / 14 oz". A bracket with no number in it ("(optional)")
+    is not a measure and stays for the household to see.
+    """
+    if not words:
+        return words
+    joined = " ".join(words)
+    if joined.startswith("("):
+        close = joined.find(")")
+        if 0 < close <= 40 and re.search(r"\d", joined[1:close]):
+            return joined[close + 1:].split()
+        return words
+    if not words[0].startswith("/"):
+        return words
+    rest = list(words)
+    rest[0] = rest[0][1:]
+    if not rest[0]:
+        rest.pop(0)
+    taken = 0
+    while rest:
+        m = _MEASURE_TOKEN_RE.match(rest[0])
+        unit = (m.group("unit") or "").lower() if m else ""
+        # "14oz", "oz" or a bare "2" (of "1 lb 2 oz") is part of the measure.
+        if m and (unit in _UNIT_WORDS if unit else rest[0][:1].isdigit()):
+            rest.pop(0)
+            taken += 1
+            continue
+        break
+    # Only a slash followed by a real measure is a second measure; "1 cup
+    # / or more" is something else, and is left as it was written.
+    return rest if taken else words
+
+
 def split_ingredient_line(line: str) -> dict:
     """
     "2 cups all-purpose flour, sifted" -> {"item": "all-purpose flour, sifted", "qty": "2 cups"}
@@ -647,12 +691,20 @@ def split_ingredient_line(line: str) -> dict:
     words = rest.split(" ")
     while words:
         word = words[0].lower().strip(".,")
+        # "400g/14oz" and "1 cup/240ml": the unit glued to the other
+        # measure by a slash. The unit is the part before it.
+        head, slash, tail = word.partition("/")
+        if slash and head in _UNIT_WORDS:
+            words[0:1] = [words[0][:len(head)], "/" + words[0][len(head) + 1:]]
+            word = head
         if word in _SIZE_WORDS or word in _UNIT_WORDS:
             qty_words.append(words.pop(0).strip(".,"))
             if word in _UNIT_WORDS:
                 break
             continue
         break
+    if qty_words and qty_words[-1].lower() in _UNIT_WORDS:
+        words = _without_second_measure(words)
     if words and words[0].lower() == "of":
         words.pop(0)
     item = " ".join(words).strip(" ,")
