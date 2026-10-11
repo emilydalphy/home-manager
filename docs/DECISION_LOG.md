@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A cancelled week of a recurring event frees that evening** (2026-10-11;
+  branch `overnight/cancelled-practice-frees-the-evening`). A feed cancels one
+  occurrence by repeating it with its RECURRENCE-ID and STATUS:CANCELLED;
+  `calendar_feed.parse_ics` dropped the cancelled copy BEFORE recording the
+  RECURRENCE-ID, so the series' own occurrence came back and the planner was
+  told a free Tuesday was busy. The id is recorded first now (also when the
+  cancelled copy has no DTSTART). Tests at the foot of
+  `tests/test_calendar_feed.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

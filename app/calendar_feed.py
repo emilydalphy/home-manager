@@ -597,14 +597,23 @@ def parse_ics(text: str, window_start: date, window_end: date) -> dict:
                 parsed = _parse_dt(value, params)
                 if parsed:
                     ev["recurrence_id"] = parsed
+        # An instance with a RECURRENCE-ID replaces that occurrence of its
+        # series — and that is just as true when the replacement is
+        # STATUS:CANCELLED, which is how a feed says "not this Tuesday" for
+        # one week of a weekly practice. So the id is recorded BEFORE the
+        # cancelled skip: recorded after it (as it was until 2026-10-11),
+        # the cancelled instance vanished and the series' own occurrence
+        # came back in its place, and the planner read a free evening as a
+        # busy one. It comes before the DTSTART check too: a cancelled
+        # instance needs no start of its own to say which one it removes.
+        if ev["recurrence_id"] and ev["uid"]:
+            wall, _is_date, zone = ev["recurrence_id"]
+            recurrence_ids.setdefault(ev["uid"], set()).add(_wall_key(wall, zone, ev.get("zone", zone)))
+        if ev["status"] == "CANCELLED":
+            continue
         if bad or "start" not in ev:
             skipped += 1
             continue
-        if ev["status"] == "CANCELLED":
-            continue
-        if ev["recurrence_id"] and ev["uid"]:
-            wall, _is_date, zone = ev["recurrence_id"]
-            recurrence_ids.setdefault(ev["uid"], set()).add(_wall_key(wall, zone, ev["zone"]))
         parsed_events.append(ev)
 
     display_tz, tz_source = resolve_display_zone(
