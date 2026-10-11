@@ -65,10 +65,14 @@
   .jn-open { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; text-decoration: none; }
   /* The way out for a signed-out device (defect hunt, 2026-10-11). In the
      iPhone app — no address bar, no back gesture — "This link has run out"
-     was a dead end until the app was force-quit. Same 44px link as
-     goodbye.html's way back (§2 rule 6). Hidden again when this browser
-     turns out to be signed in: then "Open Pomona" is the way forward. */
-  .jn-signin { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 4px; font-weight: 700; font-size: 0.95rem; }
+     was a dead end until the app was force-quit — and so was "That didn't
+     go through." (a 500, a 429 that says "give it a few minutes", a lost
+     connection), whose only button was Try again. The same 44px link as
+     overnight/goodbye-has-a-way-back adds (§2 rule 6), under both. Hidden
+     again when this browser turns out to be signed in: there "Open Pomona"
+     or Try again is the way forward. */
+  /* Its own line, centred: beside Try again it read as a second button. */
+  .jn-signin { display: flex; width: fit-content; margin: 8px auto 0; align-items: center; justify-content: center; min-height: 44px; padding: 0 4px; font-weight: 700; font-size: 0.95rem; }
   .jn-signin[hidden] { display: none; }
 </style>
 </head>
@@ -97,6 +101,7 @@
     <h1 class="jn-line">That didn&rsquo;t go through.</h1>
     <p class="jn-sub" id="jn-trouble-sub">Check your connection and try again.</p>
     <button type="button" class="btn-primary jn-open" id="jn-retry">Try again</button>
+    <a class="jn-signin" id="jn-trouble-signin" href="/login">Back to the start</a>
   </div>
 </main>
 <script>
@@ -115,22 +120,28 @@
     });
   }
 
-  function trouble(line) {
+  // Already signed in on this browser? Then "Back to the start" is not the
+  // way forward. Signed out or offline, the link stays.
+  async function signedIn() {
+    try {
+      var res = await fetch('/api/whoami', { credentials: 'same-origin' });
+      return res.ok;
+    } catch (e) { return false; }
+  }
+
+  async function trouble(line) {
     document.getElementById('jn-trouble-sub').textContent = line;
     show('jn-trouble');
+    if (await signedIn()) document.getElementById('jn-trouble-signin').hidden = true;
   }
 
   async function runOut() {
     show('jn-gone');
-    // Already signed in on this browser? Then the way forward is the app
-    // itself, not another link.
-    try {
-      var res = await fetch('/api/whoami', { credentials: 'same-origin' });
-      if (res.ok) {
-        document.getElementById('jn-open').hidden = false;
-        document.getElementById('jn-signin').hidden = true;
-      }
-    } catch (e) { /* signed out or offline: the message stands on its own */ }
+    // Signed in: the way forward is the app itself, not another link.
+    if (await signedIn()) {
+      document.getElementById('jn-open').hidden = false;
+      document.getElementById('jn-signin').hidden = true;
+    }
   }
 
   async function join() {
