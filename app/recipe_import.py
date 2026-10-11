@@ -28,6 +28,7 @@ scans use.
 """
 from __future__ import annotations
 
+import html as _html  # aliased: several functions here take a page as `html`
 import http.client
 import ipaddress
 import json
@@ -499,7 +500,15 @@ def _text_of(value) -> str:
 
 
 def _clean_text(text: str) -> str:
-    text = re.sub(r"<[^>]+>", " ", text or "")
+    # Entities first, then tags. A JSON-LD block is a <script> body, which an
+    # HTML parser hands over raw, and WordPress and plenty of other sites
+    # write it with the page's escaping still on: "Mac &amp; Cheese",
+    # "Nana&#39;s", "1&nbsp;cup". Undecoded, those were saved verbatim onto
+    # the recipe's name, its steps and the grocery list (defect hunt,
+    # 2026-10-11). Decoding before the tag strip means a tag written escaped
+    # ("&lt;p&gt;") is stripped like any other.
+    text = _html.unescape(text or "")
+    text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return re.sub(r"\s+([.,;:!?])", r"\1", text)
 
