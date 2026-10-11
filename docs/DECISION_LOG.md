@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The public share link carries the menu and nothing else** (2026-10-11;
+  branch `overnight/share-link-shows-the-menu-only`; tests
+  `tests/test_share_link_shows_the_menu_only.py`). /api/share/<token> (no
+  sign-in) returned all of get_weekly_plan minus `packed_as`: who approved,
+  the week's constraints_notes ("out Thu/Fri" = when the house is empty),
+  each meal's reasoning, open-slot sentences, ingredients. Now an allowlist
+  in `sharing.py` of exactly what share.html draws — fails closed for any
+  field added later.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
