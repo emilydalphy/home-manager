@@ -499,6 +499,9 @@ def _text_of(value) -> str:
     return ""
 
 
+_ENTITY_RE = re.compile(r"&(?:#\d+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);")
+
+
 def _clean_text(text: str) -> str:
     # Entities first, then tags. A JSON-LD block is a <script> body, which an
     # HTML parser hands over raw, and WordPress and plenty of other sites
@@ -506,9 +509,14 @@ def _clean_text(text: str) -> str:
     # "Nana&#39;s", "1&nbsp;cup". Undecoded, those were saved verbatim onto
     # the recipe's name, its steps and the grocery list (defect hunt,
     # 2026-10-11). Decoding before the tag strip means a tag written escaped
-    # ("&lt;p&gt;") is stripped like any other.
-    text = _html.unescape(text or "")
-    text = re.sub(r"<[^>]+>", " ", text)
+    # ("&lt;p&gt;") is stripped like any other — which is why the strip only
+    # takes what looks like a real tag (a letter, or "/" and a letter, right
+    # after the "<"): "cook &lt; 5 min, then &gt; 2 min" decodes to a "<"
+    # and a ">" with words between them, and those words are the recipe.
+    # Only an entity WITH its semicolon is decoded: html.unescape alone also
+    # reads legacy names without one, and "&notes" would become "¬es".
+    text = _ENTITY_RE.sub(lambda m: _html.unescape(m.group(0)), text or "")
+    text = re.sub(r"</?[A-Za-z][^<>]*>", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return re.sub(r"\s+([.,;:!?])", r"\1", text)
 

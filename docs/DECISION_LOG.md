@@ -19,7 +19,8 @@ why*, not duplicating the diff.
   `<script>` body reaches the parser raw, so "Nana&#39;s Mac &amp; Cheese",
   "Salt &amp; pepper" and "1&nbsp;cup" were saved verbatim onto the name, the
   steps and the grocery list. `recipe_import._clean_text` now
-  `html.unescape`s before stripping tags. Tests
+  decodes entities (only those ending in ";") before stripping tags, and
+  strips only real-looking tags, since a decoded "&lt; 5 min … &gt;" is text. Tests
   `tests/test_recipe_import_entities.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe

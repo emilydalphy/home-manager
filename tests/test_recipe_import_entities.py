@@ -61,3 +61,18 @@ def test_a_plain_ampersand_and_a_markup_tag_still_read_as_before():
     # written escaped inside a step is stripped like any other tag.
     assert ri.split_ingredient_line("1 cup salt & vinegar crisps") == {"item": "salt & vinegar crisps", "qty": "1 cup"}
     assert ri.parse_instructions(["&lt;p&gt;Whisk the eggs.&lt;/p&gt;"]) == ["Whisk the eggs."]
+
+
+def test_an_escaped_less_than_and_greater_than_keep_the_words_between_them():
+    # Decoded, "&lt; 5 min ... &gt;" is a "<" and a ">" — not a tag, and the
+    # words between them are the step.
+    assert ri._clean_text("cook &lt; 5 min, then &gt; 2 min") == "cook < 5 min, then > 2 min"
+    assert ri.parse_instructions(["Simmer for &lt; 5 min; serve when it's &gt; warm."]) == [
+        "Simmer for < 5 min; serve when it's > warm."
+    ]
+    # A real tag, escaped or not, still goes.
+    assert ri.parse_instructions(["<b>Whisk</b> the eggs.", "&lt;/p&gt;Fold."]) == ["Whisk the eggs.", "Fold."]
+
+
+def test_only_an_entity_with_its_semicolon_is_decoded():
+    assert ri._clean_text("Mac &amp; cheese &#39;n&#x27; &notes &copy") == "Mac & cheese 'n' &notes &copy"
