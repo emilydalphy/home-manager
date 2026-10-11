@@ -19,8 +19,9 @@ why*, not duplicating the diff.
   `instructions` and no `advance_prep_step_indices` kept the old positions, so
   "Do ahead" landed on whatever step now sat there (or, past the end, on a side
   dish's appended steps). Now an old marker follows its step's exact text to its
-  new position and is dropped if that step is gone; explicit markers are kept
-  to positions that exist.
+  new position; not found word for word, it stays in place when the step count
+  is unchanged (a reworded step) and is dropped otherwise; explicit markers are
+  kept to positions that exist.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

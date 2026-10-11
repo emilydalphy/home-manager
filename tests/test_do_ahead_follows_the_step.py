@@ -112,3 +112,22 @@ def test_a_repeated_step_keeps_the_marker_on_the_one_that_was_marked():
     )
     tools.update_recipe_details("Risotto", instructions=["Stir.", "Add stock.", "Stir.", "Serve."])
     assert tools.get_recipe("Risotto")["advance_prep_step_indices"] == [3]
+
+
+def test_a_reworded_marked_step_keeps_its_do_ahead():
+    """Review catch: same number of steps, the marked one reworded — the
+    marker stays where it was rather than vanishing beside a live note."""
+    tools.add_recipe(
+        "G",
+        ingredients=[{"item": "Chicken thighs", "qty": "1 lb", "category": "meat"}],
+        instructions=["Marinate the chicken overnight.", "Grill.", "Serve."],
+        default_servings=4,
+        advance_prep_notes="Marinate overnight.",
+        advance_prep_step_indices=[1],
+    )
+    tools.update_recipe_details(
+        "G", instructions=["Marinate the chicken at least 4 hours or overnight.", "Grill.", "Serve."],
+    )
+    recipe = tools.get_recipe("G")
+    assert recipe["advance_prep_step_indices"] == [1]
+    assert recipe["advance_prep_notes"] == "Marinate overnight."

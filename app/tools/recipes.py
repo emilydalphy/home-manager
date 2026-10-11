@@ -399,6 +399,15 @@ def update_recipe_details(
                 if steps[new_pos - 1] == text and new_pos not in advance_prep_step_indices:
                     advance_prep_step_indices.append(new_pos)
                     break
+            else:
+                # Not found word for word. With the same number of steps
+                # the list was reworded, not reshaped ("Marinate overnight"
+                # -> "Marinate at least 4 hours or overnight"), so the step
+                # in the same place is still the marked one — which is what
+                # main did, and dropping it left the do-ahead note pointing
+                # at no step. A list that grew or shrank has no such claim.
+                if len(steps) == len(old_steps) and pos not in advance_prep_step_indices:
+                    advance_prep_step_indices.append(pos)
     if advance_prep_step_indices is not None:
         advance_prep_step_indices = [
             pos for pos in advance_prep_step_indices
