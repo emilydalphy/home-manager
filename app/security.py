@@ -604,11 +604,18 @@ async def auth_middleware(request, call_next):
     # activity write is), so a blocking SQLite call here would stall the
     # loop thread — and every concurrent request with it — on every single
     # request rather than once per 15 minutes.
+    #
+    # The same holds for the PERSON a cookie names: an adult who removed
+    # themselves is gone from members, and every other device they were
+    # signed in on is signed out here too, rather than staying in the
+    # household they left as whichever adult it resolves to
+    # (households.session_still_holds says why). One query either way.
     stale_cookie = False
-    if session and not await run_in_threadpool(households.household_exists, session[1]):
+    if session and not await run_in_threadpool(households.session_still_holds, session[1], session[3]):
         logger.warning(
-            "Session cookie named household %s, which no longer exists — signing out.",
+            "Session cookie named household %s member %s, which no longer exists — signing out.",
             session[1],
+            session[3],
         )
         session = None
         stale_cookie = True
