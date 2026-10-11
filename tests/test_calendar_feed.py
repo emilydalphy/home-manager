@@ -891,3 +891,19 @@ def test_a_cancelled_week_written_without_its_own_start_still_cancels_it():
     result = cf.parse_ics(_weekly_practice_with_a_cancelled_week(), MON, MON + timedelta(days=20))
     assert cancelled.isoformat() not in [e["date"] for e in result["events"]]
     assert result["skipped"] == 0
+
+
+def test_a_cancellation_naming_its_week_in_utc_still_cancels_a_local_series():
+    # Toronto series at 17:30; the cancelled week named in UTC (EDT is UTC-4).
+    cancelled = TUE + timedelta(days=7)
+    first = MON - timedelta(days=13)
+    ics = _google(
+        _vevent(f"DTSTART;TZID=America/Toronto:{_d(first)}T173000", f"DTEND;TZID=America/Toronto:{_d(first)}T190000",
+                "RRULE:FREQ=WEEKLY;BYDAY=TU", "UID:practice@google.com", "SUMMARY:Soccer practice")
+        + _vevent("UID:practice@google.com", f"RECURRENCE-ID:{_d(cancelled)}T213000Z",
+                  f"DTSTART:{_d(cancelled)}T213000Z", f"DTEND:{_d(cancelled)}T230000Z",
+                  "STATUS:CANCELLED", "SUMMARY:Soccer practice")
+    )
+    dates = [e["date"] for e in cf.parse_ics(ics, MON, MON + timedelta(days=20))["events"]]
+    assert cancelled.isoformat() not in dates
+    assert TUE.isoformat() in dates and (TUE + timedelta(days=14)).isoformat() in dates

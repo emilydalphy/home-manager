@@ -19,7 +19,8 @@ why*, not duplicating the diff.
   `calendar_feed.parse_ics` dropped the cancelled copy BEFORE recording the
   RECURRENCE-ID, so the series' own occurrence came back and the planner was
   told a free Tuesday was busy. The id is recorded first now (also when the
-  cancelled copy has no DTSTART). Tests at the foot of
+  cancelled copy has no DTSTART), and matched in the SERIES' zone, so a
+  cancellation written in UTC under a Toronto series lines up. Tests at the foot of
   `tests/test_calendar_feed.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
