@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A rhythm answer changed in chat re-reads Now and Cook** (2026-10-11; branch
+  `overnight/chat-rhythm-refreshes-today`; tests
+  `tests/test_chat_rhythm_refreshes_today.py`). `set_dinner_window` /
+  `set_prep_days` / `set_cooking_role` carry the `/memory` card, whose branch in
+  `refreshStaleTabsFromActions` only dropped the Preferences cache — "we eat
+  later now" left Now saying "Start by 4:55" until a reload (driven in a
+  browser). That branch now also calls `refreshTodayMoves` and
+  `refreshKitchenPanel`, as Preferences' own rhythm save already re-reads Now.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

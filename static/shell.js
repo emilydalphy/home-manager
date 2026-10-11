@@ -25477,6 +25477,17 @@
         // change on this side of the wire, where the surface that went
         // stale lives.
         prefsInvalidate();
+        // The rhythm answers ride this same card, and they are not only
+        // Preferences' rows: dinner_window is the clock Now's "Start by"
+        // and Cook's tonight are timed against, prep days are Cook's prep
+        // sessions, cooking_role names tonight's cook. "We eat later now,
+        // around 7:30" from chat left Now saying "Start by 4:55" until a
+        // reload (driven 2026-10-11) — while the same answer saved in
+        // Preferences re-reads Now (wwkSaveRhythm). Keen rather than per
+        // tool, like the week branch: the card carries no tool name, and
+        // both calls are no-ops on a screen that was never built.
+        refreshTodayMoves();
+        refreshKitchenPanel();
       } else if (action.tab === 'grocery') {
         refreshGroceryOnce();
         // The list changing also changes Today's shop move, which is a

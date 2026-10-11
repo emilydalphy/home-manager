@@ -47,7 +47,12 @@ def _refresh_stale_tabs_body() -> str:
 def test_a_kitchen_tagged_chat_action_refreshes_the_cook_panel_once():
     """The catch: two calls in a row meant six requests where three would do."""
     body = _refresh_stale_tabs_body()
-    assert body.count("refreshKitchenPanel();") == 1, (
+    # The kitchen branch only: the /memory branch has its own single call
+    # since 2026-10-11 (a rhythm answer from chat re-reads Cook), and one
+    # action takes one branch, so that is no second refresh.
+    kitchen = body[body.index("action.tab === 'kitchen'"):]
+    kitchen = kitchen[:kitchen.index("else if")]
+    assert kitchen.count("refreshKitchenPanel();") == 1, (
         "refreshStaleTabsFromActions should ask the Cook panel to refresh "
         "exactly once per kitchen-tagged action"
     )
