@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The goodbye page has a way back** (2026-10-11; branch
+  `overnight/goodbye-has-a-way-back`; tests
+  `tests/test_goodbye_has_a_way_back.py`). After Delete your household /
+  Remove me the shell lands on /goodbye with `location.replace` and the
+  cookie gone; in the iPhone app (no address bar, no back gesture) it was a
+  dead end until the app was force-quit — including for an App Store
+  reviewer, whose notes tell them to delete the demo. One 44px "Back to the
+  start" link to /login, outside both endings so both show it.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
