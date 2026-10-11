@@ -127,10 +127,12 @@ def test_attribute_recipe_feedback_overwrites_its_own_previous_attribution(coupl
     assert taste["disliked_recipes"] == [recipe]
 
 
-def test_attribute_recipe_feedback_creates_an_unknown_member(couple, recipe):
-    """Matches the get-or-create convention set_member_dietary_restrictions already follows."""
-    tools.attribute_recipe_feedback(recipe, "Grandma Rose", rating="liked")
-    assert "Grandma Rose" in {m["name"] for m in tools.list_members()}
+def test_attribute_recipe_feedback_never_adds_an_unknown_member(couple, recipe):
+    """It used to get-or-create, which put a visiting grandma into every
+    meal's headcount (2026-10-11, tests/test_a_guests_rating_adds_no_one.py)."""
+    with pytest.raises(ValueError, match="isn't someone in this household"):
+        tools.attribute_recipe_feedback(recipe, "Grandma Rose", rating="liked")
+    assert "Grandma Rose" not in {m["name"] for m in tools.list_members()}
 
 
 def test_get_member_taste_unknown_member_is_an_error(couple):

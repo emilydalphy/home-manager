@@ -3137,7 +3137,29 @@ def attribute_recipe_feedback(
                 f"Use one of: {', '.join(RECIPE_RATINGS)}."
             )
 
-        member_id = _household._get_or_create_member(conn, member_name)
+        # Looked up, never created. This used to get-or-create, so "Grandma
+        # loved the skewers" from a visiting grandma — or a nickname, or a
+        # typo — added a PERSON to the household: counted in every meal's
+        # headcount and portions from then on, offered in "Who's this?",
+        # for want of a taste row. A rating is about someone already here;
+        # adding someone is add_member's job, asked for in so many words.
+        # The refusal names who IS here so the model can retry with the
+        # right name, or keep a guest's opinion as a note on the recipe.
+        member = conn.execute(
+            "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            (household_id(), (member_name or "").strip()),
+        ).fetchone()
+        if not member:
+            names = [r["name"] for r in conn.execute(
+                "SELECT name FROM members WHERE household_id = ? ORDER BY id", (household_id(),),
+            )]
+            raise ValueError(
+                f"{member_name!r} isn't someone in this household"
+                + (f" (that's {', '.join(names)})" if names else "")
+                + ". Use one of those names, or, for a guest, keep it as a note "
+                "with mark_recipe_feedback instead — this never adds a person."
+            )
+        member_id = member["id"]
         conn.execute(
             """
             INSERT INTO member_recipe_feedback (household_id, recipe_id, member_id, rating, source, notes)
