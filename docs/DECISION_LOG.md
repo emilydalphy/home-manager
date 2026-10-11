@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Away this week" marks the right days east of Greenwich** (2026-10-11;
+  branch `overnight/away-range-right-days`; tests
+  `tests/test_away_range_right_days.py`). plan-week.html's `addDays` read
+  the date back through toISOString() (UTC); on a phone in London/Europe/
+  Sydney local midnight is the day before in UTC, so "away Mon after dinner,
+  back Wed breakfast" read "Covers 100 meals — Monday breakfast through
+  Monday breakfast" and saved MONDAY away instead of Tuesday. The two call
+  sites now use the page's own local `addDaysIso`; `addDays` is gone.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
