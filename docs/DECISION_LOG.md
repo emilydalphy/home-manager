@@ -19,8 +19,10 @@ why*, not duplicating the diff.
   landed on the ITEM, so the grocery list showed "(120g) all-purpose flour"
   and never merged it with flour. `recipe_import._without_second_measure`
   keeps the first measure (as `normalise_amount` already does for the model
-  path); a bracket with no number ("(optional)") and a package size before the
-  unit ("1 (14 oz) can") are untouched. Tests
+  path) — but only a bracket holding a measuring unit is dropped. After a
+  container the bracket is the package size and moves to the qty ("1 can
+  (15 oz)", like "1 (14 oz) can"); "(2%)", "(85% lean)", "(optional)" and
+  "(or 2 cups …)" stay on the item. Tests
   `tests/test_recipe_import_second_measure.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe

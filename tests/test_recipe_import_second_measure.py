@@ -57,3 +57,31 @@ def test_a_bracketed_gram_weight_reaches_the_grocery_list_as_plain_flour(signed_
     flour = next(i for i in tools.get_recipe("Banana Bread")["ingredients"] if "flour" in i["item"])
     assert flour["item"] == "all-purpose flour"
     assert tools._parse_quantity(flour["qty"]) == (2.0, "cup")
+
+
+# ---------- what a bracket after the unit is NOT (review, 2026-10-11) ----------
+
+@pytest.mark.parametrize("line, item, qty", [
+    # After a container the bracket is the SIZE of what is bought: it goes
+    # on the qty, the way "1 (14 oz) can" already reads.
+    ("1 can (15 oz) black beans, drained", "black beans, drained", "1 can (15 oz)"),
+    ("2 cans (14.5 oz) diced tomatoes", "diced tomatoes", "2 cans (14.5 oz)"),
+    ("1 jar (24 oz) marinara", "marinara", "1 jar (24 oz)"),
+    ("2 packages (8 oz each) cream cheese", "cream cheese", "2 packages (8 oz each)"),
+    ("1 box (16 oz) penne", "penne", "1 box (16 oz)"),
+    ("1 bag (12 oz) chocolate chips", "chocolate chips", "1 bag (12 oz)"),
+    ("1 can (optional) corn", "(optional) corn", "1 can"),
+    # A percentage describes the item, it doesn't re-measure it.
+    ("1 cup (2%) milk", "(2%) milk", "1 cup"),
+    ("1 lb (85% lean) ground beef", "(85% lean) ground beef", "1 lb"),
+    ("1 cup (60% cacao) chocolate chips", "(60% cacao) chocolate chips", "1 cup"),
+    # An alternative amount is not the same amount said twice.
+    ("1 cup (or 2 cups for extra) cheese", "(or 2 cups for extra) cheese", "1 cup"),
+])
+def test_a_bracket_that_sizes_or_describes_keeps_what_it_says(line, item, qty):
+    assert ri.split_ingredient_line(line) == {"item": item, "qty": qty}
+
+
+def test_a_can_size_after_the_word_reaches_the_grocery_layer():
+    qty = ri.split_ingredient_line("1 can (15 oz) black beans, drained")["qty"]
+    assert tools._parse_quantity(qty) == (1.0, "can (15 oz)")
