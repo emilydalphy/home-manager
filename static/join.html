@@ -63,6 +63,13 @@
   .jn-sub { color: var(--ink-secondary); font-size: 15px; line-height: 1.45; margin: 0 0 20px; }
   .jn-state[hidden], .jn-open[hidden] { display: none; }
   .jn-open { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; text-decoration: none; }
+  /* The way out for a signed-out device (defect hunt, 2026-10-11). In the
+     iPhone app — no address bar, no back gesture — "This link has run out"
+     was a dead end until the app was force-quit. Same 44px link as
+     goodbye.html's way back (§2 rule 6). Hidden again when this browser
+     turns out to be signed in: then "Open Pomona" is the way forward. */
+  .jn-signin { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 4px; font-weight: 700; font-size: 0.95rem; }
+  .jn-signin[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -84,6 +91,7 @@
     <!-- Only when this browser is already signed in (a second tap on a
          link already used on this phone): the way into the app. -->
     <a class="btn-primary jn-open" id="jn-open" href="/" hidden>Open Pomona</a>
+    <a class="jn-signin" id="jn-signin" href="/login">Back to the start</a>
   </div>
   <div class="jn-state" id="jn-trouble" hidden>
     <h1 class="jn-line">That didn&rsquo;t go through.</h1>
@@ -118,7 +126,10 @@
     // itself, not another link.
     try {
       var res = await fetch('/api/whoami', { credentials: 'same-origin' });
-      if (res.ok) document.getElementById('jn-open').hidden = false;
+      if (res.ok) {
+        document.getElementById('jn-open').hidden = false;
+        document.getElementById('jn-signin').hidden = true;
+      }
     } catch (e) { /* signed out or offline: the message stands on its own */ }
   }
 

@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A run-out invite link has a way back** (2026-10-11; branch
+  `overnight/join-has-a-way-in`; tests `tests/test_join_has_a_way_in.py`).
+  /join's "This link has run out." had no link at all for a signed-out
+  phone — in the iPhone app (no address bar, no back gesture) a dead end.
+  One 44px "Back to the start" link to /login, same words as goodbye.html's;
+  it hides when whoami says the browser is signed in ("Open Pomona" shows).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
