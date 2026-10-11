@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A recipe's "Do ahead" markers follow their step when chat rewrites the steps**
+  (2026-10-11; branch `overnight/do-ahead-follows-the-step`; tests
+  `tests/test_do_ahead_follows_the_step.py`). `update_recipe_details` with new
+  `instructions` and no `advance_prep_step_indices` kept the old positions, so
+  "Do ahead" landed on whatever step now sat there (or, past the end, on a side
+  dish's appended steps). Now an old marker follows its step's exact text to its
+  new position and is dropped if that step is gone; explicit markers are kept
+  to positions that exist.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

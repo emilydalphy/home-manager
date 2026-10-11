@@ -367,12 +367,43 @@ def update_recipe_details(
     """
     conn = get_conn()
     existing = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        "SELECT id, instructions_json, advance_prep_step_indices_json FROM recipes "
+        "WHERE household_id = ? AND LOWER(name) = LOWER(?)",
         (household_id(), recipe_name),
     ).fetchone()
     if not existing:
         conn.close()
         raise ValueError(f"No saved recipe named '{recipe_name}'.")
+
+    # The "Do ahead" markers are POSITIONS into the steps, so they belong to
+    # one particular list of steps. New steps with no markers given used to
+    # keep the old positions, which then pointed at whatever step now sat
+    # there — "Do ahead" beside "Serve", the real marinade step unmarked —
+    # and a position past the end landed on the side dish's steps, which
+    # cook mode appends after the recipe's own. So a marked step follows its
+    # TEXT to wherever it now sits, and one that is gone stops being marked.
+    # Explicit markers are kept to positions that exist.
+    old_steps = json.loads(existing["instructions_json"] or "[]")
+    steps = instructions if instructions is not None else old_steps
+    if instructions is not None and advance_prep_step_indices is None:
+        old_marked = json.loads(existing["advance_prep_step_indices_json"] or "[]")
+        advance_prep_step_indices = []
+        for pos in old_marked:
+            if not isinstance(pos, int) or not 1 <= pos <= len(old_steps):
+                continue
+            text = old_steps[pos - 1]
+            # Its own position first, so a recipe that repeats a step's
+            # words ("Stir.") keeps the marker on the one that was marked.
+            candidates = ([pos] if pos <= len(steps) else []) + list(range(1, len(steps) + 1))
+            for new_pos in candidates:
+                if steps[new_pos - 1] == text and new_pos not in advance_prep_step_indices:
+                    advance_prep_step_indices.append(new_pos)
+                    break
+    if advance_prep_step_indices is not None:
+        advance_prep_step_indices = [
+            pos for pos in advance_prep_step_indices
+            if isinstance(pos, int) and 1 <= pos <= len(steps)
+        ]
 
     fields, params = [], []
     if instructions is not None:
