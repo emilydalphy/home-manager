@@ -69,13 +69,33 @@ def get_shared_weekly_plan(token: str) -> dict | None:
         return None
     with use_household(row["household_id"]):
         plan = _weekly_plan.get_weekly_plan()
-    # A lunch's packing lines name each person and their needs (a child's
-    # "nut-free", Onboarding regrouped slice 3) — household detail, not
-    # meal-plan data, so the public link never carries them.
-    for meal in plan.get("meals") or []:
-        meal.pop("packed_as", None)
-    plan["household_name"] = household["name"] if household else ""
-    return plan
+    shared = {key: plan[key] for key in _SHARED_PLAN_KEYS if key in plan}
+    shared["meals"] = [
+        {key: meal.get(key) for key in _SHARED_MEAL_KEYS} for meal in plan.get("meals") or []
+    ]
+    shared["menu"] = [
+        {key: day.get(key) for key in _SHARED_MENU_DAY_KEYS} for day in plan.get("menu") or []
+    ]
+    shared["household_name"] = household["name"] if household else ""
+    return shared
+
+
+# What the public link carries: exactly what share.html draws, and nothing
+# else (defect hunt, 2026-10-11). This used to be the whole of
+# get_weekly_plan with one field popped, so every field anyone added for a
+# signed-in screen went public with it — who approved the week
+# (`approved_by`, an adult's name), the week's own freeform asks
+# (`constraints_notes`: "out Thu/Fri" says when the house is empty), the
+# planner's reason for each meal ("nut-free for Maya"), an open slot's
+# sentence, every ingredient. A lunch's packing lines (`packed_as`, a
+# child's needs) were the one field stripped. An allowlist fails closed: a
+# new field is private until someone adds it here on purpose.
+_SHARED_PLAN_KEYS = (
+    "weekly_plan_id", "week_start_date", "planning_mode", "is_first_plan",
+    "new_recipe_count", "menu_is_suggested", "components",
+)
+_SHARED_MEAL_KEYS = ("date", "slot", "meal")
+_SHARED_MENU_DAY_KEYS = ("date", "breakfast", "lunch", "dinner", "snack")
 
 
 # A personal, tokenized, limited-write link tied to one members row, so a
