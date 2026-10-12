@@ -73,6 +73,23 @@ why*, not duplicating the diff.
   cooks, covered nights are reheats. Two Done fixtures that drew the approved
   root on an unflagged ("ahead") day now draw it as today.
 
+- **"Make it a staple" on a Shop row makes THAT line the staple's line**
+  (2026-10-09, defect hunt; branch `overnight/staple-from-shop-row`). The
+  row menu posted `/api/staples/add` with the name only, so the staple read
+  "last bought today, due in 3 weeks" (a purchase nobody made) and the
+  tapped line kept no `staple_id`. Now the client sends `grocery_item_id`;
+  `add_staple` links that line (this household's only — anything else is a
+  400), adds no second line (a running-low spice used to merge into it and
+  double the amount), and while it is still to buy the staple has no
+  `last_bought_at` and is due today. A bought row keeps the by-name reading.
+  By name (chat, regulars) unchanged. The linked line is now the staple's:
+  ⋯ → Remove on it counts as "not this trip". Review fixes: a line another
+  staple already owns (a substituted Bread line) answers with that staple
+  and writes nothing (button hidden too); a plan's line is never linked
+  (carry-over only moves `staple_id IS NULL`); and `_drop_suggestion_lines`
+  (Pause, plenty, not this trip) now takes back only `added_by = 'staple'`
+  lines — it used to remove a person's linked line, regulars included. Tests
+  `tests/test_staple_from_shop_row.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

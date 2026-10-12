@@ -6829,7 +6829,9 @@
         // A tap on a thing you buy is how a staple gets made without a
         // form (the other way is telling the assistant). Hidden once it
         // is one — the Staples card below the list is where it lives then.
-        (groIsStapleName(it.item)
+        // A line a staple already owns (a substitute keeps its staple_id)
+        // counts as one even under another name.
+        (it.staple_id || groIsStapleName(it.item)
           ? '<span class="gro-rowmenu-note">One of your staples</span>'
           : '<button type="button" class="gro-rowmenu-staple" data-gro="row-staple" data-id="' + id + '" ' +
               'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
@@ -9021,7 +9023,12 @@
         el.disabled = true;
         groceryState.openRowId = null;
         groDo(function () {
-          return groPost('/api/staples/add', { item: mkName, quantity: mkQty, category: mkCat });
+          // The row itself, not just its name: the server makes THIS line
+          // the staple's line and records no purchase that didn't happen
+          // (tools.add_staple's grocery_item_id — 2026-10-09).
+          return groPost('/api/staples/add', {
+            item: mkName, quantity: mkQty, category: mkCat, grocery_item_id: Number(el.dataset.id)
+          });
         }, "Couldn't save that — try again.").then(function (ok) {
           if (ok) showToast(mkName + ' is a staple now — I\u2019ll put it on the list before you run out');
         });
