@@ -550,6 +550,19 @@ why*, not duplicating the diff.
   own dinners; ticked rows are a guessed shelf defrost never reads, so only
   a named fridge row is affected). A past meal nobody ticked reserves
   nothing (eaten or not is unknown).
+- **A staple's "We have plenty" / "Not this trip" keeps the week's part of
+  its line** (2026-10-10; branch `overnight/staple-plenty-keeps-the-week`;
+  `tests/test_staple_answer_keeps_the_week.py`). A running-low Eggs line
+  ("1 dozen") that an approved week merged two frittatas into read "3 dozen"
+  and still drew both staple buttons; either one soft-removed the whole row,
+  leaving no eggs for two dinners. `staples._drop_suggestion_lines` now cuts a
+  line with ledger rows back to `_sum_ledger_quantities` of them, unlinks the
+  staple and hands it to the week (`source_weekly_plan_id` when one plan);
+  the event's `receipt_json` lets Undo restore the row exactly. Toast says
+  "Eggs down to 2 dozen for this week's meals". Not covered: a hand-typed
+  amount merged into a staple line (no ledger) still goes with the answer.
+  Review round: two weeks on one line take the latest week (never no week);
+  Undo after a night changed merges the staple's own amount back; result has `kept_on_list`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
