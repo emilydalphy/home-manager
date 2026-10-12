@@ -21,9 +21,12 @@ why*, not duplicating the diff.
   beef or tortillas, and pre-shop flagged a second pound "maybe already
   home". `reserve_bought_for_meals_ahead` now claims each still-to-cook
   meal's ledger share of a ticked line first (entry pending, not depleted,
-  dated today on, plan not retired), in the approval/plan_meal ingest and in
-  pre-shop; defrost's narrower question is untouched. A past meal nobody
-  ticked reserves nothing (eaten or not is unknown).
+  dated today on, plan not retired) in every grocery ingest that uses
+  `WeekGroceryBuffer` (approval, swaps), in pre-shop, and in defrost's thaw
+  question for OTHER plans' meals (a plan's own bought food still covers its
+  own dinners; ticked rows are a guessed shelf defrost never reads, so only
+  a named fridge row is affected). A past meal nobody ticked reserves
+  nothing (eaten or not is unknown).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

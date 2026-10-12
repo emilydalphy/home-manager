@@ -3491,7 +3491,7 @@ class _KitchenStock:
             else:
                 self._on_hand.setdefault(key, []).append(parsed)
 
-    def reserve_bought_for_meals_ahead(self, conn) -> None:
+    def reserve_bought_for_meals_ahead(self, conn, exclude_plan_id: int | None = None) -> None:
         """
         Claim, before anything else asks, the stock that was BOUGHT for a
         meal still to be cooked — so it is not offered a second time.
@@ -3512,6 +3512,9 @@ class _KitchenStock:
         on a retired plan and dated today or later. A past meal nobody
         ticked is left out on purpose: whether it was eaten is unknown, and
         guessing "not yet" would put a line on every week's list forever.
+        `exclude_plan_id` leaves one plan's own meals out: a caller asking
+        about THAT plan (defrost's thaw question) must not have the food
+        bought for its own dinners hidden from it.
         A share in a unit that will not convert makes the claim unreadable,
         and covers() then buys — the safe direction, as everywhere here.
         """
@@ -3524,8 +3527,8 @@ class _KitchenStock:
             "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id AND w.household_id = e.household_id "
             "WHERE l.household_id = ? AND g.status = 'purchased' AND g.inventory_added_at IS NOT NULL "
             "AND e.cooked_status = 'pending' AND e.inventory_depleted_at IS NULL AND e.date >= ? "
-            "AND COALESCE(w.status, '') != 'retired'",
-            (household_id(), today),
+            "AND COALESCE(w.status, '') != 'retired' AND COALESCE(e.weekly_plan_id, -1) != ?",
+            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id),
         ).fetchall()
         for row in rows:
             key = (row["item"] or "").strip().lower()

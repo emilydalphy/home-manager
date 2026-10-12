@@ -1035,7 +1035,7 @@ def _plan_need_by_item(weekly_plan_id: int) -> tuple[dict[str, dict], dict[str, 
     return {k: {"item": names[k], "nights": v} for k, v in nights.items()}, need
 
 
-def _covered_at_home(need: dict[str, tuple[float, str | None] | None]) -> set[str]:
+def _covered_at_home(need: dict[str, tuple[float, str | None] | None], weekly_plan_id: int | None = None) -> set[str]:
     """
     The names this household's own fridge demonstrably covers — the one
     reason the app can be sure a thing is not frozen without anybody
@@ -1055,6 +1055,12 @@ def _covered_at_home(need: dict[str, tuple[float, str | None] | None]) -> set[st
         stock = _recipes._KitchenStock(
             conn, locations={"fridge"}, exclude_sources=set(_INFERRED_LOCATION_SOURCES),
         )
+        # Fridge food bought for ANOTHER plan's dinner still to come is that
+        # dinner's, not this week's (2026-10-12): without this, next week's
+        # thaw ask read this week's beef as "already in the fridge" and
+        # stayed quiet while the ingest bought it. This plan's own bought
+        # food stays visible — it IS what covers these dinners.
+        stock.reserve_bought_for_meals_ahead(conn, exclude_plan_id=weekly_plan_id)
     finally:
         conn.close()
     return {key for key, want in need.items() if stock.covers(key, want)}
@@ -1245,7 +1251,7 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
     source night alone.
     """
     by_item, need = _plan_need_by_item(weekly_plan_id)
-    covered = _covered_at_home(need)
+    covered = _covered_at_home(need, weekly_plan_id)
     settled, frozen_nights = _settled_nights(weekly_plan_id, by_item)
     lines = _grocery_lines_by_item(by_item, weekly_plan_id)
     # Each night also says WHEN it would move to the fridge — the same

@@ -130,3 +130,32 @@ def test_reservation_is_per_meal_share_not_the_whole_line(tacos):
     # Shelf still says 2 lb (the cook above did not deplete): one is spare.
     res = _approve_next_week_with_tacos()
     assert "Ground beef" in res["already_have_skipped"]
+
+
+# ---------- the thaw question (defrost.meat_items_for_plan) ----------
+# A ticked line's own inventory row is a GUESSED shelf and defrost never
+# reads it (inventory.GUESSED_LOCATION_SOURCES), so the case that matters
+# is beef somebody has put on the fridge shelf by name.
+
+def _fridge_beef() -> None:
+    # The household tells the kitchen where the pound the shop bought is:
+    # the guessed row goes and a named fridge row takes its place.
+    tools.update_inventory("Ground beef", "remove")
+    tools.update_inventory("Ground beef", "add", quantity="1 lb", category="meat/seafood", location="fridge")
+
+
+def test_catch_next_weeks_thaw_ask_does_not_spend_this_weeks_fridge_beef(tacos):
+    from app.tools import defrost as _defrost
+    _this_week_with_tacos(household_today() + datetime.timedelta(days=2))
+    _shop_everything()
+    _fridge_beef()
+    res = _approve_next_week_with_tacos()
+    assert "Ground beef" in [i["item"] for i in _defrost.meat_items_for_plan(res["plan"])]
+
+
+def test_guard_this_weeks_own_fridge_beef_still_covers_this_week(tacos):
+    from app.tools import defrost as _defrost
+    plan, _entry = _this_week_with_tacos(household_today() + datetime.timedelta(days=2))
+    _shop_everything()
+    _fridge_beef()
+    assert "Ground beef" not in [i["item"] for i in _defrost.meat_items_for_plan(plan)]
