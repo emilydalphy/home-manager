@@ -609,6 +609,22 @@ def _follow_swap_with_recommendations(conn, held: list[dict], new_for_old: dict[
     return moved
 
 
+def written_in_not_a_cook(freeform_meal: str | None) -> str | None:
+    """
+    'leftovers' or 'takeout' when a written-in meal (no recipe) says it is
+    one — "Leftovers", "Takeout pizza", "order in" — else None. The Plan
+    screen's own wording check (get_week_menu's build_slot), lifted out so
+    slot_needs._batch_candidate asks the same question rather than keeping
+    a second list: neither is a cook anybody could make double.
+    """
+    text = (freeform_meal or "").lower()
+    if re.search(r"leftovers?\b", text):
+        return "leftovers"
+    if re.search(r"take[\s-]?out|delivery|order in", text):
+        return "takeout"
+    return None
+
+
 def _cooks_that_night(derived_from_json) -> bool:
     """
     Whether a dinner row is a real cook — something a household could make
@@ -685,7 +701,41 @@ def _recheck_ready_made_after_redate(conn, entry_ids) -> int:
             (rec["recommended_batch_from_entry_id"], rec["recommended_defrost_item"] or "",
              need["id"], household_id()),
         )
-    return len(stale)
+
+    # The other direction. A first meal back with NOTHING to suggest — the
+    # recompute above found no dinner still to cook before it (a suggestion
+    # names only those since 2026-10-10, slot_needs._batch_candidate) — can
+    # gain one when a dinner lands before it: the Undo of the night off that
+    # emptied it puts Wednesday's chili back in front of Thursday breakfast.
+    # Only needs that come after one of the meals that moved, so a move
+    # elsewhere in the week does not start offering things nobody lost.
+    moved_dates = [
+        r["date"] for r in conn.execute(
+            f"SELECT date FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks}) "
+            f"AND slot = 'dinner'",
+            (household_id(), *ids),
+        ).fetchall()
+    ]
+    refilled = 0
+    if moved_dates:
+        empty = conn.execute(
+            "SELECT id, date, slot FROM slot_needs WHERE household_id = ? AND need = 'ready_made' "
+            "AND recommended_batch_from_entry_id IS NULL AND TRIM(COALESCE(recommended_defrost_item, '')) = '' "
+            "AND date > ?",
+            (household_id(), min(moved_dates)),
+        ).fetchall()
+        for need in empty:
+            rec = _slot_needs._recommend_ready_made(need["date"], need["slot"], conn=conn)
+            if not (rec["recommended_batch_from_entry_id"] or rec["recommended_defrost_item"]):
+                continue
+            conn.execute(
+                "UPDATE slot_needs SET recommended_batch_from_entry_id = ?, recommended_defrost_item = ?, "
+                "recommendation_confirmed = 0, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+                (rec["recommended_batch_from_entry_id"], rec["recommended_defrost_item"] or "",
+                 need["id"], household_id()),
+            )
+            refilled += 1
+    return len(stale) + refilled
 
 
 def plan_slot_empty(
@@ -5728,9 +5778,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # Neither a reheat nor takeout is a plate this app assembled, so
         # neither gets a plate note — "one-pot, nothing extra" over a night
         # that reheats an earlier batch would be describing the wrong meal.
-        if re.search(r"leftovers?\b", text):
+        written = written_in_not_a_cook(text)
+        if written == "leftovers":
             return {"title": title, "meta": "reheat", "source": "leftovers", **common, "plate_note": ""}
-        if re.search(r"take[\s-]?out|delivery|order in", text):
+        if written == "takeout":
             return {"title": title, "meta": "takeout", "source": "takeout", **common, "plate_note": ""}
         prep = row["prep_time_minutes"] or 0
         cook = row["cook_time_minutes"] or 0
