@@ -41,6 +41,16 @@ why*, not duplicating the diff.
   development" pill was already off (`RECIPE_LINK_IN_DEVELOPMENT = false`
   since 2026-10-05); a test now pins it. Live oEmbed not reachable from the
   build sandbox — unverified against real TikTok.
+- **The Move sheet calls a night off a night off** (2026-10-09, defect hunt;
+  branch `overnight/move-sheet-says-night-off`; tests
+  `tests/test_move_sheet_says_night_off.py`). After Today's "Night off", Plan →
+  another dinner → Move listed that night as "Not planned · Nobody’s home for
+  dinner" beside Today's "Night off — enjoy.". `meal_move._empty_reason` and
+  `_nobody_home_row` now read `tonight.NIGHT_OFF_CONSTRAINT` (reason "Night
+  off" under the row's "Not planned"); still refused, as every planned_empty
+  slot is. Same commit pair: a meal the usual week has off
+  (`usual_week_off`) and "no dinners at all" (`dinners_per_week:0`) now read
+  "No dinner planned that day" too (`_meal_not_asked_for`) — people are home.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
