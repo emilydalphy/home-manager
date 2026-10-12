@@ -642,6 +642,85 @@ def normalise_amount(qty: str) -> str:
     return text
 
 
+_MEASURE_TOKEN_RE = re.compile(r"^(?:\d[\d./]*)?(?P<unit>[a-z]*)\.?,?$", re.I)
+
+
+# A container a bracket after it SIZES ("1 can (15 oz)") rather than
+# re-measures; and the units that make a bracket a second measure of the
+# same amount ("(120g)", "(1 stick / 113g)").
+_CONTAINER_WORDS = {
+    "can", "cans", "tin", "tins", "jar", "jars", "package", "packages", "pkg", "packet", "packets",
+    "bag", "bags", "box", "boxes", "bottle", "bottles", "container", "containers", "tub", "tubs",
+}
+_SECOND_MEASURE_UNITS = (_UNIT_WORDS - _CONTAINER_WORDS) - {
+    "clove", "cloves", "slice", "slices", "bunch", "bunches", "head", "heads", "stalk", "stalks",
+    "sprig", "sprigs", "handful", "handfuls", "piece", "pieces", "fillet", "fillets", "dozen",
+    "ear", "ears", "leaf", "leaves", "sheet", "sheets", "strip", "strips", "cube", "cubes",
+}
+_BRACKET_TOKEN_RE = re.compile(r"\d*(?:[./]\d+)?\s*([a-z]+)", re.I)
+
+
+def _holds_a_measure(inside: str) -> bool:
+    """True for "120g", "180 ml", "1 stick / 113g" — a number with a
+    measuring unit. Not "2%", "85% lean", "optional", "about 3 medium", and
+    not "or 2 cups for extra", which is an alternative, not the same amount."""
+    text = inside.strip().lower()
+    if not re.search(r"\d", text) or "%" in text or text.startswith("or "):
+        return False
+    return any(m.group(1) in _SECOND_MEASURE_UNITS for m in _BRACKET_TOKEN_RE.finditer(text))
+
+
+def _without_second_measure(words: list[str], unit: str = "") -> tuple[list[str], str]:
+    """
+    The same amount said a second way, right after the unit: "1 cup (120g)
+    flour", "1/2 cup (1 stick / 113g) butter", "400 g / 14 oz spaghetti".
+    US baking sites print the grams in brackets on nearly every line and
+    UK ones print the ounces after a slash, and both landed on the ITEM —
+    "(120g) all-purpose flour" on the grocery list, a line that never
+    merges with "all-purpose flour" (defect hunt, 2026-10-11). The first
+    measure is the one kept, as normalise_amount already does for a
+    model-read "400 g / 14 oz".
+
+    Returns (the item's words, a package size). After a CONTAINER the
+    bracket is not a second measure but the size of the thing bought —
+    "1 can (15 oz) black beans" — so it is handed back to go on the qty,
+    "1 can (15 oz)", the way "1 (14 oz) can" already reads. A bracket that
+    holds no measuring unit ("(optional)", "(2%)", "(85% lean)") is
+    information about the item and stays where the page put it.
+    """
+    if not words:
+        return words, ""
+    joined = " ".join(words)
+    if joined.startswith("("):
+        close = joined.find(")")
+        if 0 < close <= 40:
+            inside = joined[1:close]
+            if unit.lower() in _CONTAINER_WORDS and re.search(r"\d", inside) and "%" not in inside:
+                return joined[close + 1:].split(), inside.strip()
+            if _holds_a_measure(inside):
+                return joined[close + 1:].split(), ""
+        return words, ""
+    if not words[0].startswith("/"):
+        return words, ""
+    rest = list(words)
+    rest[0] = rest[0][1:]
+    if not rest[0]:
+        rest.pop(0)
+    taken = 0
+    while rest:
+        m = _MEASURE_TOKEN_RE.match(rest[0])
+        unit = (m.group("unit") or "").lower() if m else ""
+        # "14oz", "oz" or a bare "2" (of "1 lb 2 oz") is part of the measure.
+        if m and (unit in _UNIT_WORDS if unit else rest[0][:1].isdigit()):
+            rest.pop(0)
+            taken += 1
+            continue
+        break
+    # Only a slash followed by a real measure is a second measure; "1 cup
+    # / or more" is something else, and is left as it was written.
+    return (rest if taken else words), ""
+
+
 def split_ingredient_line(line: str) -> dict:
     """
     "2 cups all-purpose flour, sifted" -> {"item": "all-purpose flour, sifted", "qty": "2 cups"}
@@ -679,12 +758,22 @@ def split_ingredient_line(line: str) -> dict:
     words = rest.split(" ")
     while words:
         word = words[0].lower().strip(".,")
+        # "400g/14oz" and "1 cup/240ml": the unit glued to the other
+        # measure by a slash. The unit is the part before it.
+        head, slash, tail = word.partition("/")
+        if slash and head in _UNIT_WORDS:
+            words[0:1] = [words[0][:len(head)], "/" + words[0][len(head) + 1:]]
+            word = head
         if word in _SIZE_WORDS or word in _UNIT_WORDS:
             qty_words.append(words.pop(0).strip(".,"))
             if word in _UNIT_WORDS:
                 break
             continue
         break
+    if qty_words and qty_words[-1].lower() in _UNIT_WORDS:
+        words, package_size = _without_second_measure(words, qty_words[-1])
+        if package_size and not size:
+            size = package_size
     if words and words[0].lower() == "of":
         words.pop(0)
     item = " ".join(words).strip(" ,")
