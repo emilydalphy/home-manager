@@ -1757,7 +1757,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "attribute_recipe_feedback",
-        "description": "Record which SPECIFIC household member a recipe's feedback belongs to — additive on top of mark_recipe_feedback's household-level rating, which stays as the fallback default for anyone without their own row here. Call the moment a rating comes with a name attached: either a fresh opinion ('Vineeth loved the skewers' — pass rating) or a correction to an existing household rating ('that was just my rating' — omit rating to reuse the recipe's current one). Powers per-person taste for solo-night suggestions and 'what does X like?' read-back (get_member_taste).",
+        "description": "Record which SPECIFIC household member a recipe's feedback belongs to — additive on top of mark_recipe_feedback's household-level rating, which stays as the fallback default for anyone without their own row here. Call the moment a rating comes with a name attached: either a fresh opinion ('Vineeth loved the skewers' — pass rating) or a correction to an existing household rating ('that was just my rating' — omit rating to reuse the recipe's current one). Powers per-person taste for solo-night suggestions and 'what does X like?' read-back (get_member_taste). member_name must be someone already in the household — it never adds a person; a guest's opinion goes in mark_recipe_feedback's notes.",
         "input_schema": {
             "type": "object",
             "properties": {

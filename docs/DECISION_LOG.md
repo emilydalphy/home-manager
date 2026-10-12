@@ -406,6 +406,14 @@ why*, not duplicating the diff.
   cancelled copy has no DTSTART), and matched in the SERIES' zone, so a
   cancellation written in UTC under a Toronto series lines up. Tests at the foot of
   `tests/test_calendar_feed.py`.
+- **A rating from someone not in the household adds no one to it** (2026-10-11;
+  branch `overnight/a-guests-rating-adds-no-one`; tests
+  `tests/test_a_guests_rating_adds_no_one.py`). `attribute_recipe_feedback`
+  ("Grandma loved the skewers") get-or-created the member, so a guest, nickname
+  or typo became a person counted in every meal's headcount. It now looks the
+  person up and refuses a stranger, naming who is here; the old test that
+  pinned get-or-create (`test_per_person_taste.py`) is flipped. Adding a person
+  stays `add_member`'s job.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
