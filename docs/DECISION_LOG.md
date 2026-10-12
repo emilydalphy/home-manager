@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A batch takes its reheat night's fridge move with it** (2026-10-12; branch
+  `overnight/cook-ahead-moves-the-thaw`; tests
+  `tests/test_cook_ahead_moves_the_thaw.py`). Freezer step answered, then a
+  night batched onto an earlier cook (re-approval's prep-day batching, or
+  `/api/cooker/cook-ahead`): the reheat night kept its pending "Move the
+  salmon to the fridge — for Saturday's…", and letting a batch go left a cook
+  night with none. `cook_ahead.set_cook_ahead` now runs
+  `defrost.restate_frozen_after_batch_change` itself — before, only
+  `batch_undo.rebatch` did.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
