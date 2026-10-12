@@ -70,6 +70,7 @@ from . import attention as _attention
 from . import cooker as _cooker
 from . import moves as _moves
 from . import notifications as _notifications
+from . import quantities as _quantities
 from . import rhythm as _rhythm
 from . import slot_needs as _slot_needs
 
@@ -1271,7 +1272,14 @@ def build_evening_nudge(now_local: datetime | None = None, link: bool = True) ->
         text = f"{_tidy(first['title'])} first — then {dish}."
     else:
         minutes = int(dinner.get("duration_min") or 0)
-        text = f"Tonight: {dish} — {minutes} min. Tap to start." if minutes else f"Tonight: {dish}. Tap to start."
+        # Spelled by quantities.format_duration, the one spelling Today's
+        # chip and Cook's card use: a roast read "110 min" here and "1 hr 50
+        # min" on the screen this text opens (overnight hunt, 2026-10-10).
+        # Under an hour the two agree ("35 min"), which is why it hid.
+        text = (
+            f"Tonight: {dish} — {_quantities.format_duration(minutes)}. Tap to start."
+            if minutes else f"Tonight: {dish}. Tap to start."
+        )
     # No address in a push notification (link=False): tapping it opens Cook.
     url = _app_link("kitchen") if link else ""
     return f"{text} {url}" if url else text
