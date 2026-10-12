@@ -586,6 +586,22 @@ why*, not duplicating the diff.
   standing line is restated as nights drop (kale 4 oz own + 10 oz meals undoes to 4 oz),
   and a second Remove on a 'list' row is a no-op instead of a hard delete.
   Second round: no recount on Undo (a jar stayed 2 jars, an edit was lost); the reversal keeps 'list' rows in step instead.
+- **"Keep" on last week's leftover survives this week's meal changing**
+  (2026-10-12; branch `overnight/kept-leftover-survives-a-swap`; tests
+  `tests/test_kept_leftover_survives_a_swap.py`). Keep merged the old 2 lbs
+  onto this week's PLAN-owned chicken line, which is recomputed from its
+  meals' ledger — swap or drop the stir fry and the line (kept 2 lbs too)
+  was deleted. The kept amount is now recorded on the line
+  (`grocery_items.kept_amount`) and the reversal / pack recompute count it
+  beside the ledger and never delete while it is set. The line stays
+  PLAN-owned so it is set aside and asked about again after its week (a
+  first cut made it a standing want; review found an unbought line then
+  climbed 2 → 4 → 6 lbs a week). Undo works on the exact row kept onto
+  (`kept_into_item_id`), never a same-named line found later; a sealed
+  package keeps main's subtract-or-"too late" undo. Not covered: Merge of
+  two same-plan lines drops an absorbed line's kept_amount (both lines would
+  have to be one plan's AND add up, which ingest already merges — should
+  not arise).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

@@ -1042,6 +1042,15 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- NULL for every line that was never carried over. See
     -- tools/grocery.py set_aside_carried_over_items.
     carried_from_plan_id INTEGER,
+    -- "Keep" on a carried line (keep_carried_over_item, 2026-10-12). On
+    -- THIS week's line: the amounts kept onto it, which no meal's ledger
+    -- row describes — a reversal recomputes the line as its ledger plus
+    -- this, and never deletes it while this is non-blank. The line stays
+    -- plan-owned, so it is still set aside as a leftover after its week.
+    kept_amount TEXT NOT NULL DEFAULT '',
+    -- On the CARRIED row that was kept: the line its amount went onto, so
+    -- the keep's undo takes it back off exactly that row.
+    kept_into_item_id INTEGER,
     -- "Something you run out of, mentioned in chat, is offered as a staple"
     -- (Loop Board, 2026-09-15): set the moment the CHAT add tool
     -- (app/tools/staples.py offer_for_chat_grocery_add, called only from
