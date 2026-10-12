@@ -397,6 +397,42 @@ def test_the_nudge_switch_and_the_morning_switch_both_gate_it():
     assert len(sender.calls) == 1
 
 
+def test_the_adult_out_tonight_is_not_told_to_start_cooking(link):
+    """Defect hunt 2026-10-12: "Dinner for 1 — Vineeth's out" on Today, and
+    Vineeth still got "Tap to start" at 5:30. He is skipped and NOT marked,
+    so an absence taken back inside the window still reaches him."""
+    _adults()
+    _seed_dinner()
+    _opt_in()
+    tools.set_slot_attendance(ISO_TODAY, "dinner", present_member_ids=["Emily"])
+    sender = _Sender()
+
+    results = tools.run_evening_nudges_once(now_utc=_local(17, 31), send=sender)
+
+    assert [m["name"] for m, _ in sender.calls] == ["Emily"]
+    assert [r["member_id"] for r in results] == [_member_id("Emily")]
+    assert _sent_on("Vineeth") == ""
+
+    # Plans change: he's home after all, and the next pass nudges him.
+    tools.set_slot_attendance(ISO_TODAY, "dinner", present_member_ids=["Emily", "Vineeth"])
+    tools.run_evening_nudges_once(now_utc=_local(17, 36), send=sender)
+    assert [m["name"] for m, _ in sender.calls] == ["Emily", "Vineeth"]
+    assert _sent_on("Vineeth") == ISO_TODAY
+
+
+def test_out_for_lunch_or_a_guest_at_dinner_still_gets_the_nudge(link):
+    """Only tonight's DINNER absence counts — lunch out is not dinner out,
+    and a guest at the table takes nobody off the list."""
+    _adults()
+    _seed_dinner()
+    _opt_in()
+    tools.set_slot_attendance(ISO_TODAY, "lunch", present_member_ids=["Emily"])
+    tools.set_slot_attendance(ISO_TODAY, "dinner", guest_count=2)
+    sender = _Sender()
+    tools.run_evening_nudges_once(now_utc=_local(17, 31), send=sender)
+    assert sorted(m["name"] for m, _ in sender.calls) == ["Emily", "Vineeth"]
+
+
 def test_a_failed_send_is_marked_and_not_retried_every_five_minutes(caplog):
     _adults("Emily")
     _seed_dinner()

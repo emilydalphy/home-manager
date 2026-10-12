@@ -1387,9 +1387,21 @@ def _run_household_evening(now_utc: datetime, send: Callable[[dict, str], dict])
         return []
     sent_on = local_now.date().isoformat()
 
+    # Somebody marked out for tonight's dinner is not texted "Tap to start"
+    # (defect hunt 2026-10-12: with "Dinner for 1 — Vineeth's out" on Today,
+    # Vineeth still got the nudge at 5:30, wherever he was). The morning
+    # text still reaches him — it is the household's day, and its "away"
+    # part is how he hears he's not needed. Not stamped, so an absence
+    # undone inside the window still gets him tonight's nudge.
+    try:
+        out_tonight = set(_attendance.get_slot_attendance(sent_on, "dinner").get("absent_member_ids") or [])
+    except Exception:
+        logger.exception("Evening nudge: tonight's attendance could not be read; nudging everyone")
+        out_tonight = set()
     waiting = [
         r for r in _adult_rows(conn)
         if r["evening_nudge_on"] and r["evening_nudge_sent_on"] != sent_on
+        and r["id"] not in out_tonight
         and (_texts_on(r) or _push_ready(r["id"]))
     ]
     if not waiting:

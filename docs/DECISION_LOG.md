@@ -468,6 +468,15 @@ why*, not duplicating the diff.
   never "Yogurt, plain". The merge key heals a split line; this stops the
   split at the source. Tests at the foot of
   `tests/test_grocery_one_line_for_one_thing.py`.
+- **The evening nudge skips whoever is out for dinner tonight** (2026-10-12;
+  branch `overnight/nudge-skips-whos-out`; tests in
+  `tests/test_evening_nudge.py`). With "Dinner for 1 — Vineeth's out" on
+  Today, Vineeth still got "Tap to start" at 5:30: `_run_household_evening`
+  sent to every opted-in adult. Now an adult in tonight's dinner
+  `absent_member_ids` is skipped and not stamped, so an absence undone inside
+  the window still reaches them. The morning text is unchanged (its "away"
+  part is how they hear it). Whether the nudge should go only to the cook's
+  owner (`move_owner`) is Emily's call — not done here.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
