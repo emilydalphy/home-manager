@@ -377,6 +377,15 @@ why*, not duplicating the diff.
   `reset_household.py` (admin) wipes every member, so after it a session
   with a pick signs in again. Two tests in `test_adult_login.py` pinned the
   old "a removed pick reads as nobody, asked again" and now pin sign-out.
+- **A recipe read off a link keeps its "&" and its apostrophes** (2026-10-11;
+  branch `overnight/recipe-link-reads-ampersands`). Plenty of sites (WordPress
+  among them) write the schema.org JSON-LD with HTML escaping still on, and a
+  `<script>` body reaches the parser raw, so "Nana&#39;s Mac &amp; Cheese",
+  "Salt &amp; pepper" and "1&nbsp;cup" were saved verbatim onto the name, the
+  steps and the grocery list. `recipe_import._clean_text` now
+  decodes entities (only those ending in ";") before stripping tags, and
+  strips only real-looking tags, since a decoded "&lt; 5 min … &gt;" is text. Tests
+  `tests/test_recipe_import_entities.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
