@@ -6110,18 +6110,52 @@ def _suggest_quick_dinners(limit: int = 2) -> list[dict]:
     saved yet — the needs-you card skips the suggestion rows rather than
     inventing options in that case.
     """
+    # Not a breakfast or a snack (2026-10-09). The first generated week
+    # saves every dish as a recipe, its breakfasts and snacks with them,
+    # and those are always the quickest — so after one week this offered
+    # "Tonight needs a dinner: Apple slices · 3 min, Overnight oats · 5 min".
+    # Recipes carry no meal type; the plan is the only evidence of what a
+    # dish is for. So a recipe whose every plan row is a breakfast or a
+    # snack is left out, one that has been a lunch or a dinner even once
+    # stays in, and one never planned (an import, a typed-in recipe) stays
+    # in — nothing says it isn't a dinner. One grouped pass over the
+    # household's plan rows rather than a lookup per recipe: the table has
+    # no index and holds every household's weeks.
+    #
+    # Two holes in that, closed the same day (review). A swap REPLACES the
+    # plan row, so a draft breakfast swapped out of the week lost its only
+    # evidence and came back as "never planned": a recipe the week's draft
+    # wrote (from_draft) needs a lunch or dinner row of its own, and the
+    # never-planned pass is for imports and typed-in recipes only — the line
+    # list_saved_recipes draws too. And a component-based plan's rows carry
+    # their kind in component_category, with slot unused (plan_meal stores
+    # its 'dinner' default): a breakfast/snack/treat/dip component is a small
+    # one, a protein/vegetable/carb component a meal.
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT name, prep_time_minutes, cook_time_minutes
-        FROM recipes
-        WHERE household_id = ? AND rating != 'disliked' AND temporarily_excluded = 0
+        SELECT r.name, r.prep_time_minutes, r.cook_time_minutes
+        FROM recipes r
+        LEFT JOIN (
+            SELECT recipe_id,
+                   MAX(CASE WHEN component_category IS NULL THEN slot IN ('lunch', 'dinner')
+                            ELSE component_category IN ('protein', 'vegetable', 'carb') END) AS as_a_meal,
+                   MAX(CASE WHEN component_category IS NULL THEN slot IN ('breakfast', 'snack')
+                            ELSE component_category IN ('breakfast', 'snack', 'treat', 'dip') END) AS as_a_small_one
+            FROM meal_plan_entries
+            WHERE household_id = ? AND recipe_id IS NOT NULL
+            GROUP BY recipe_id
+        ) used ON used.recipe_id = r.id
+        WHERE r.household_id = ? AND r.rating != 'disliked' AND r.temporarily_excluded = 0
+          AND NOT (COALESCE(used.as_a_small_one, 0) = 1 AND COALESCE(used.as_a_meal, 0) = 0)
+          AND NOT (r.from_draft = 1 AND COALESCE(used.as_a_meal, 0) = 0)
         ORDER BY
-            (prep_time_minutes IS NULL AND cook_time_minutes IS NULL) ASC,
-            (COALESCE(prep_time_minutes, 0) + COALESCE(cook_time_minutes, 0)) ASC
+            (r.prep_time_minutes IS NULL AND r.cook_time_minutes IS NULL) ASC,
+            (COALESCE(r.prep_time_minutes, 0) + COALESCE(r.cook_time_minutes, 0)) ASC,
+            r.id ASC
         LIMIT ?
         """,
-        (household_id(), limit),
+        (household_id(), household_id(), limit),
     ).fetchall()
     conn.close()
     out = []

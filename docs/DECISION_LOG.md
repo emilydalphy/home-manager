@@ -148,6 +148,20 @@ why*, not duplicating the diff.
   "optional") read backwards in cook mode and on the meal screen. Those now
   trail the item; amounts, including "a pinch", stay in front. Tests in
   `tests/test_human_qty_and_time_formatting.py`.
+- **"Tonight needs a dinner" no longer offers the week's breakfasts and
+  snacks** (2026-10-09; branch `overnight/quick-dinners-not-breakfast`; tests
+  `tests/test_quick_dinners_are_dinners.py`). Found walking a new email
+  sign-up to its first week: Today's card offered "Apple slices · 3 min,
+  Overnight oats · 5 min". `_suggest_quick_dinners` took the quickest saved
+  recipes, and the first week saves every dish, so breakfasts and snacks
+  always won. Recipes have no meal type, so a recipe whose every plan row is
+  a breakfast or snack is left out; any lunch/dinner row, or no plan row at
+  all, keeps it in — except a recipe the draft wrote (`from_draft`), which
+  needs a lunch/dinner row of its own, since a swap replaces the row that
+  said it was a breakfast (review). Component rows are read by
+  `component_category` (slot is unused there). Also feeds Plan's
+  empty-dinner suggestions.
+
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
