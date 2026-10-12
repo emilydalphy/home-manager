@@ -494,6 +494,21 @@ why*, not duplicating the diff.
   True`. Now matches by `preferences._same_protein` (any case, one
   alternative of a slashed key — never "chicken sausage"), and the result
   names what went (`removed`, `deleted: false` when nothing did).
+- **Taking a night off a batch keeps frozen food off the list** (2026-10-12;
+  branch `overnight/frozen-stays-off-after-a-step-down`; tests
+  `tests/test_step_down_keeps_freezer_answer.py`). Freezer step answered on a
+  batched dish, then "−" on either night, its Undo, or a Swap of the reheat
+  night: the grocery rescale wrote a fresh needed line beside the set-aside
+  one ("Salmon fillets 8 oz", Undo "1 lb"). Those doors now run
+  `defrost.restate_frozen_after_batch_change` after the rescale
+  (`weekly_plan._keep_freezer_answer_after_rescale`), as unbatch already did,
+  and the superseded set-aside line is retired so un-tapping the chip puts
+  back one line, not every generation of it. Review round: a fresh line is
+  set aside only when every meal counted into it is one of the batch's nights
+  — a reheat night swapped to Salmon Tacos merged the tacos' pound into it,
+  and nothing books that night a move. Still open, same class: away
+  night / night off on a batch (rescale inside another transaction), and a
+  Swap of the COOK night.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

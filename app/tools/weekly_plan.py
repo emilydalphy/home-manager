@@ -1167,6 +1167,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
                 "handed back and its line may be over-bought by one night's share",
                 rescale_source_id, entry_id,
             )
+        _keep_freezer_answer_after_rescale(weekly_plan_id, rescale_source_id, entry_id)
     return {
         "status": "dropped",
         "date": meal_date,
@@ -1322,6 +1323,49 @@ def _rescale_after_a_chain_moved(weekly_plan_id: int, source_entry_id: int, unli
         logger.exception(
             "Rescaling leftover source %s after moving its cook failed; the week is "
             "planned and its line may be a night's share out", source_entry_id,
+        )
+    _keep_freezer_answer_after_rescale(weekly_plan_id, source_entry_id, unlinked_entry_id)
+
+
+def _keep_freezer_answer_after_rescale(weekly_plan_id: int, source_entry_id: int, *also: int) -> None:
+    """
+    After a batch's line is re-derived, put back what the freezer step said
+    about it: the rescale re-ingests the recipe-week, and a line the step
+    set aside ("Salmon fillets: in the freezer") is not one the ingest
+    merges into, so it writes a FRESH needed line beside it. Measured on a
+    throwaway DB, main as of 2026-10-12: Wednesday's salmon batched for
+    Friday, the freezer step answered, then the Review stepper's "−" on
+    either night put "Salmon fillets 8 oz" on the shopping list — and the
+    toast's Undo put back a whole "1 lb" — for fish the household had just
+    said was in the freezer, under a fridge move telling them to thaw it.
+    Swapping the reheat night away did the same.
+
+    defrost.restate_frozen_after_batch_change is the pass unbatch already
+    runs after its own rescale for exactly this; the batch's nights are
+    the cook, every night it still feeds, and `also` (the night just
+    dropped, put back or swapped away). AFTER the caller's commit — it
+    opens its own connections. Never raises: the change is written, and a
+    reminder pass that failed must not say otherwise.
+
+    NOT covered, and the same class: the rescales that run inside another
+    write's transaction with no tail to hang this on (an away night on a
+    batch, a night off on a reheat night, generation's own tidying), and a
+    swap of the COOK night, whose former reheat nights re-ingest as
+    ordinary cooks that never had a move for restate to read the answer
+    off.
+    """
+    if not source_entry_id:
+        return
+    from . import defrost as _defrost  # lazy: defrost imports this module
+    from . import leftovers as _leftovers
+    try:
+        chain = _leftovers.plan_leftover_chains(weekly_plan_id)["sources"].get(source_entry_id) or {}
+        nights = [source_entry_id, *also, *(t["entry_id"] for t in chain.get("targets") or [])]
+        _defrost.restate_frozen_after_batch_change(weekly_plan_id, nights)
+    except Exception:
+        logger.exception(
+            "Keeping the freezer answer after rescaling leftover source %s failed; the "
+            "list may ask for something the household said is in the freezer", source_entry_id,
         )
 
 
@@ -3188,6 +3232,7 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
         return source["id"]
     if _weekly_plan_is_approved(weekly_plan_id):
         _rescale_leftover_source_grocery(source["id"], entry_id)
+        _keep_freezer_answer_after_rescale(weekly_plan_id, source["id"], entry_id)
     return None
 
 
@@ -7586,6 +7631,7 @@ def _replace_slot_entries(
         # or a "date:slot" one would quietly name the NEW dish on that slot
         # and an "entry_id:" one a row that no longer exists.
         orphaned_reheats: list[int] = []
+        rescaled: list[tuple[int, int]] = []  # (source, outgoing reheat) — see the tail
         for old_id in old_entry_ids:
             for target in (sources.get(old_id) or {}).get("targets") or []:
                 if target["entry_id"] not in old_entry_ids:
@@ -7604,6 +7650,7 @@ def _replace_slot_entries(
             rescale_source_id = _unlink_leftover_target(weekly_plan_id, old_id, conn=conn)
             if rescale_source_id is not None and approved:
                 _rescale_leftover_source_grocery(rescale_source_id, old_id, conn=conn)
+                rescaled.append((rescale_source_id, old_id))
             _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
         # Before the entries go, and on this connection — the order
         # clear_plan_slot uses, and the only way the pair is atomic. Five
@@ -7686,6 +7733,10 @@ def _replace_slot_entries(
     said = _defrost_resync(weekly_plan_id, [result.get("entry_id"), *orphaned_reheats])
     if said:
         result["thaw_now"] = said
+    # Swapping a reheat night away rescaled its cook's line above; keep the
+    # freezer step's answer on it (see _keep_freezer_answer_after_rescale).
+    for source_id, old_id in rescaled:
+        _keep_freezer_answer_after_rescale(weekly_plan_id, source_id, old_id)
     return result
 
 
@@ -8008,6 +8059,7 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
         for orphan_id in orphaned:
             _clear_leftover_link(conn, orphan_id)
 
+        rescaled: list[tuple[int, int]] = []  # (source, outgoing reheat) — see the tail
         for old_id in old_ids:
             reheat = chains["leftovers"].get(old_id)
             if reheat and reheat["source"]["entry_id"] in group:
@@ -8017,6 +8069,7 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
             rescale_source_id = _unlink_leftover_target(weekly_plan_id, old_id, conn=conn)
             if rescale_source_id is not None and approved:
                 _rescale_leftover_source_grocery(rescale_source_id, old_id, conn=conn)
+                rescaled.append((rescale_source_id, old_id))
         for old_id in old_ids:
             _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
         held_thawed = _release_prep_rows(conn, old_ids)
@@ -8074,6 +8127,8 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
     said = _defrost_resync(weekly_plan_id, [*new_ids, *orphaned])
     if said:
         out["thaw_now"] = said
+    for source_id, old_id in rescaled:
+        _keep_freezer_answer_after_rescale(weekly_plan_id, source_id, old_id)
     return out
 
 
