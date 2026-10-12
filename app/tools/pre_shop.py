@@ -130,7 +130,11 @@ def _kitchen_stock() -> "_recipes._KitchenStock":
     """
     conn = get_conn()
     try:
-        return _recipes._KitchenStock(conn)
+        stock = _recipes._KitchenStock(conn)
+        # The same reservation the approval makes: food bought for a dinner
+        # still to come is not "already home" for a different line.
+        stock.reserve_bought_for_meals_ahead(conn)
+        return stock
     finally:
         conn.close()
 
