@@ -269,6 +269,14 @@ why*, not duplicating the diff.
   chili again. Four `test_batch_suggestion_follows_swap` tests pinned to
   their Wednesday; one now expects no suggestion instead of Monday's pasta.
   Review: an UNCONFIRMED stored suggestion that has since gone stale reads as none (`describe_ready_made`), and written-in takeout/leftovers is skipped (`weekly_plan.written_in_not_a_cook`, lifted from Plan's check).
+- **The legal pages' backup days come from `backup.RETENTION_DAYS`**
+  (2026-10-10; branch `overnight/support-page-backup-days`). privacy.html and
+  support.html had 14 and 15 typed in; `legal.render` now fills
+  `__BACKUP_KEEP_DAYS__` (RETENTION_DAYS) and `__BACKUP_GONE_WITHIN_DAYS__`
+  (+1). "Up to 15 days" was TRUE, not a typo (an overnight report called it
+  one): `prune_backups` keeps a copy dated at the cutoff, so a copy taken on
+  the deletion day goes on day 15. The test pins both the words and that
+  pruning. Tests in `tests/test_legal_pages.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
