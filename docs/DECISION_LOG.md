@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Forgetting a protein rating works under any spelling it was saved under**
+  (2026-10-12; branch `overnight/protein-forget-any-spelling`; tests
+  `tests/test_protein_forget_any_spelling.py`). The Settings chip saves
+  "chicken"; chat's `delete_preference("protein_preferences", "Chicken")`
+  popped the exact key only, kept the rating and still answered `deleted:
+  True`. Now matches by `preferences._same_protein` (any case, one
+  alternative of a slashed key — never "chicken sausage"), and the result
+  names what went (`removed`, `deleted: false` when nothing did).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

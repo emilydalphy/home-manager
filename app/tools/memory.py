@@ -913,7 +913,16 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             # for the same column.
             raw_current = json.loads(existing["protein_preferences_json"])
             current = dict(raw_current) if isinstance(raw_current, dict) else {}
-            current.pop(item, None)
+            # Forgotten under any spelling it was SAVED under, by the same
+            # rule a new rating replaces an old one (_same_protein): any
+            # case, or one alternative of a slashed key. The Settings chip
+            # writes "chicken" and chat says "Chicken" — an exact pop meant
+            # "forget the chicken thing" answered deleted: True and kept the
+            # rating (defect hunt 2026-10-12). Nothing looser, so forgetting
+            # "chicken" never takes "chicken sausage: 1" with it.
+            removed_proteins = [k for k in current if _preferences._same_protein(k, item or "")]
+            for k in removed_proteins:
+                current.pop(k)
             conn.execute(
                 "UPDATE meal_preferences SET protein_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
                 (json.dumps(current), household_id()),
@@ -976,4 +985,8 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         _usual_week.meal_counts_changed_elsewhere(
             {meal: 7 for meal, column in _usual_week.COUNT_COLUMNS.items() if column == field})
     _household._log_preference_event(field, "delete")
+    if field == "protein_preferences":
+        # Said back, so chat can't tell the household it forgot a rating
+        # that was never there: `removed` names what actually went.
+        return {"field": field, "item": item, "deleted": bool(removed_proteins), "removed": removed_proteins}
     return {"field": field, "item": item, "deleted": True}
