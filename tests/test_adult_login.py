@@ -239,23 +239,32 @@ def test_an_out_of_range_member_id_in_a_signed_cookie_is_no_pick_not_a_500(clien
     assert client.get("/api/whoami").status_code == 401
 
 
-def test_a_signed_cookie_naming_a_foreign_member_reads_as_nobody(client, two_adults):
+def test_a_signed_cookie_naming_a_foreign_member_is_signed_out(client, two_adults):
     """
     A validly signed cookie whose member belongs to another household — the
     server never mints one, but `issue_session` will for any int, so the
-    read side is checked on its own: nobody, not them, and not a 500.
+    read side is checked on its own: never them, and not a 500.
+
+    It read as "nobody picked" until 2026-10-11; since then a cookie whose
+    member is not a member of its household is signed out, like a cookie
+    whose household is gone (households.session_still_holds — the case that
+    matters is an adult who removed themselves, below).
     """
     beta = households.create_household("The Beta Testers", BETA_PASSPHRASE)
     julia = _adult("Julia", beta)
     _adult("Marco", beta)
     client.cookies.set(security.COOKIE_NAME, security.issue_session(1, julia))
-    body = client.get("/api/whoami").json()
-    assert body["household_id"] == 1
-    assert body["member"] is None
-    assert body["needs_pick"] is True
+    assert client.get("/api/whoami").status_code == 401
 
 
-def test_a_member_removed_after_being_picked_means_asked_again(client, two_adults):
+def test_a_member_removed_after_being_picked_is_signed_out(client, two_adults):
+    """
+    Was "asked again" until 2026-10-11. A member row only goes when that
+    adult removes themselves (household_deletion.remove_member), and a
+    device still carrying their pick then stayed in the household they had
+    left — resolved, with one adult left, to that adult. Now it is signed
+    out (tests/test_leaving_signs_out_other_devices.py has the whole case).
+    """
     _sign_in(client)
     client.post("/api/whoami/pick", json={"member_id": two_adults["Vineeth"]})
     conn = get_conn()
@@ -263,12 +272,9 @@ def test_a_member_removed_after_being_picked_means_asked_again(client, two_adult
     conn.execute("DELETE FROM members WHERE id = ?", (two_adults["Vineeth"],))
     conn.commit()
     conn.close()
-    _adult("Priya")  # still two adults, so there is still a question
+    _adult("Priya")
 
-    res = client.get("/api/whoami")
-    assert res.status_code == 200
-    assert res.json()["member"] is None
-    assert res.json()["needs_pick"] is True
+    assert client.get("/api/whoami").status_code == 401
 
 
 def test_a_member_marked_a_child_after_being_picked_means_asked_again(client, two_adults):

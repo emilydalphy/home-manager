@@ -364,6 +364,19 @@ why*, not duplicating the diff.
   dead end until the app was force-quit — including for an App Store
   reviewer, whose notes tell them to delete the demo. One 44px "Back to the
   start" link to /login, outside both endings so both show it.
+- **Removing yourself signs out your other devices too** (2026-10-11;
+  branch `overnight/leaving-signs-out-other-devices`; tests
+  `tests/test_leaving_signs_out_other_devices.py`). "Remove me" deleted the
+  member row and signed out only the device it was tapped on; the adult's
+  other phone kept a cookie naming a member that no longer exists, stayed in
+  the household, and with one adult left was resolved to HER (whoami:
+  member Carol, picked_on_this_device true). auth_middleware now asks
+  `households.session_still_holds` — household there AND the cookie's member
+  row there — in the one query it already made. A member re-marked a child
+  still has a row and is not signed out; a session with no pick is untouched.
+  `reset_household.py` (admin) wipes every member, so after it a session
+  with a pick signs in again. Two tests in `test_adult_login.py` pinned the
+  old "a removed pick reads as nobody, asked again" and now pin sign-out.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
