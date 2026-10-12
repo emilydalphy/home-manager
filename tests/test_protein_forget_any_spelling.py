@@ -27,7 +27,7 @@ def test_chat_forgets_a_chip_rating_whatever_the_case():
 
 
 def test_one_alternative_of_a_slashed_key_forgets_it():
-    tools.edit_preference("protein_preferences", {"Fish / seafood": "more"})
+    tools.edit_preference("protein_preferences", {"Fish / seafood": 5})
     tools.delete_preference("protein_preferences", "fish")
     assert _proteins() == {}
 
