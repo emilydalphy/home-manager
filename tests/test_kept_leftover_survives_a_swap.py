@@ -128,3 +128,26 @@ def test_undo_after_the_meal_went_leaves_no_blank_line(weeks):
     tools.undo_carried_over_decision(weeks["carried_id"])
     assert _chicken() == []
     assert [c["item"] for c in tools.list_carried_over_items()] == ["Chicken thighs"], "asked again"
+
+
+def test_catch_a_kept_bag_is_counted_once_through_swap_undo_and_keep_again():
+    # Sealed packages (re-review, 2026-10-12): the line is one bag for the
+    # week however many meals name it, and the kept bag rides beside it.
+    tools.add_recipe("Granola bowl", ingredients=[{"item": "Granola", "qty": "1 bag", "category": "pantry"}])
+    tools.add_recipe("Pasta", ingredients=[{"item": "Spaghetti", "qty": "1 lb", "category": "pantry"}])
+    today = household_today()
+    _approve(today - datetime.timedelta(days=8), meal="Granola bowl", night_offset=3)
+    this = _approve(today, meal="Granola bowl")
+    carried_id = this["carried"][0]["item_id"]
+
+    def granola() -> list[str]:
+        return [r["quantity"] for r in tools.list_grocery_list("needed") if r["item"] == "Granola"]
+
+    tools.keep_carried_over_item(carried_id)
+    assert granola() == ["2 bags"]
+    tools.swap_meal_in_plan(this["plan"], this["night"], "Pasta", slot="dinner")
+    assert granola() == ["1 bag"], "the meal's bag goes; the kept bag stays"
+    tools.undo_carried_over_decision(carried_id)
+    assert granola() == [], "no orphan bag nobody wants"
+    tools.keep_carried_over_item(carried_id)
+    assert granola() == ["1 bag"], "exactly the one bag that was kept"

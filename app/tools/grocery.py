@@ -805,6 +805,17 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                     (grocery_row["id"], household_id()),
                 )
                 removed_items.append(grocery_row["item"])
+            elif not still_wanted and kept and grocery_row["source_weekly_plan_id"] is not None:
+                # The last meal that wanted the bag has gone; what is left
+                # to buy is exactly the kept amount — not the merged "2 bags".
+                note = _quantities._quantity_note(grocery_row["quantity"] or "")
+                new_qty = _quantities._with_note(kept, note)
+                if new_qty != (grocery_row["quantity"] or ""):
+                    conn.execute(
+                        "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                        (new_qty, grocery_row["id"], household_id()),
+                    )
+                    trimmed_items.append(grocery_row["item"])
         elif live:
             is_standing_want = grocery_row["source_weekly_plan_id"] is None
             other_rows = conn.execute(
@@ -2012,6 +2023,18 @@ def undo_carried_over_decision(item_id: int) -> dict:
                          target["id"], household_id()),
                     )
                     rebuilt = True
+        if not rebuilt and kept_left == "" and _quantities.package_unit(target["quantity"] or ""):
+            # A sealed package whose meals have all gone was holding only the
+            # kept bag (the reversal set it to that): taking it back leaves
+            # nothing to buy, so the line goes — as on the path above —
+            # rather than staying as an orphan "1 bag" nobody wants.
+            if not conn.execute(
+                "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
+                (household_id(), target["id"]),
+            ).fetchone():
+                conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
+                             (target["id"], household_id()))
+                rebuilt = True
         if not rebuilt:
             new_qty, fully_removed = _subtract_quantity(target["quantity"] or "", row["quantity"] or "")
             if not fully_removed and new_qty == (target["quantity"] or ""):
