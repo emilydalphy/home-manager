@@ -455,6 +455,9 @@ def _move_prelude() -> str:
 @_needs_node
 def test_move_sits_on_lunch_and_dinner_rows_of_the_schedule_and_the_approved_root():
     days = _week()
+    # The root's card is drawn as today: Done is not offered on a day
+    # still ahead (test_no_done_on_days_ahead.py), and Monday is unflagged.
+    days[0]["isToday"] = True
     html = _run(_move_prelude() + f"weekState.days = {json.dumps(days)};\n"
                 "console.log(JSON.stringify([wkDayCardHtml(weekState.days[0], 0, { done: false }),"
                 " wkDayCardHtml(weekState.days[0], 0, { done: true }),"
