@@ -422,6 +422,12 @@ why*, not duplicating the diff.
   back Wed breakfast" read "Covers 100 meals — Monday breakfast through
   Monday breakfast" and saved MONDAY away instead of Tuesday. The two call
   sites now use the page's own local `addDaysIso`; `addDays` is gone.
+- **The share page's "Today's Table" is today after 8pm** (2026-10-11;
+  branch `overnight/share-today-is-today`; tests
+  `tests/test_share_today_is_today.py`). share.html's todayIsoDate used
+  toISOString() (UTC): from 8pm in Toronto (7pm in winter) it opened on
+  tomorrow's meals labelled "Today's Table", and on Sunday evening fell back
+  to Monday. Now local date fields, like plan-week's isoLocal.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

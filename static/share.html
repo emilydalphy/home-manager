@@ -269,9 +269,15 @@ const STANDOUT_SLOT = 'dinner';
 let currentMenu = [];
 let selectedIdx = null; // null until the first load picks a sensible default
 
+// The phone's own date, from local fields — never toISOString(), which is
+// UTC (defect hunt, 2026-10-11). From 8pm in Toronto (7pm in winter) UTC is
+// already tomorrow, so this page opened on tomorrow's meals and called
+// them "Today's Table", and on a Sunday evening — tomorrow being past the
+// week — fell back to Monday. Same rule as plan-week.html's isoLocal and
+// shell.js's todayLocalStr.
 function todayIsoDate() {
   const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function renderSidebar() {
