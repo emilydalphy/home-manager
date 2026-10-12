@@ -183,7 +183,14 @@ def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> 
 
 
 def update_fact(fact_id: int, text: str | None = None, hard: bool | None = None) -> dict:
-    """Edit an existing fact's text and/or hard flag in place."""
+    """Edit an existing fact's text and/or hard flag in place. Blank text is
+    refused, as add_fact refuses it — to remove a fact, use delete_fact."""
+    # add_fact will not store a blank fact, and this used to: chat's
+    # update_fact(id, text="") left an empty line on What we know that
+    # nothing could add (2026-10-12). Refused before the write opens; the
+    # screen already treats a blanked edit as abandoned and never sends it.
+    if text is not None and not text.strip():
+        raise ValueError("A fact can't be blank — to remove it, delete it instead.")
     with write() as conn:
         row = conn.execute("SELECT text, hard FROM facts WHERE id = ? AND household_id = ?", (fact_id, household_id())).fetchone()
         if not row:
@@ -707,6 +714,13 @@ def edit_preference(field: str, value) -> dict:
         raise ValueError(
             f"That didn't save: {field} needs some words (an empty string clears it), not {value!r}."
         )
+    # The same refusal for the three free-text answers that go through
+    # set_household_meal_preferences: a list there reached the column
+    # binding and came back as a 500 (2026-10-12, ["keto"] for eating_style).
+    if field in ("notes", "cooking_time_preference", "eating_style") and not isinstance(value, str):
+        raise ValueError(
+            f"That didn't save: {field} needs some words (an empty string clears it), not {value!r}."
+        )
     if field == "repeats_tolerance" and value not in ("", "cook_once_eat_twice", "one_a_week", "all_different"):
         raise ValueError("repeats_tolerance must be 'cook_once_eat_twice', 'one_a_week' or 'all_different'.")
     if field == "complete_plates":
@@ -825,6 +839,21 @@ def edit_preference(field: str, value) -> dict:
         return _preferences.set_household_meal_preferences(cuisine_preferences=value, mark_complete=False)
     if field == "protein_preferences":
         return _preferences.set_household_meal_preferences(protein_preferences=value, mark_complete=False)
+    # An empty string CLEARS notes and the cooking-time answer, as it does
+    # every other text field here (eating_style, typical_week, …) — "how a
+    # field gets cleared", above. set_household_meal_preferences reads an
+    # empty one as "not this call's business" and kept the old words, so
+    # edit_preference("notes", "") reported success and changed nothing
+    # (2026-10-12). delete_preference's own clear is the same UPDATE.
+    if field in ("notes", "cooking_time_preference") and value == "":
+        with write() as conn:
+            conn.execute(
+                f"INSERT INTO meal_preferences (household_id, {field}, updated_at) "
+                f"VALUES (?, '', datetime('now')) "
+                f"ON CONFLICT(household_id) DO UPDATE SET {field} = '', updated_at = datetime('now')",
+                (household_id(),),
+            )
+        return {field: ""}
     if field == "notes":
         return _preferences.set_household_meal_preferences(notes=value, mark_complete=False)
     if field == "novelty_preference":

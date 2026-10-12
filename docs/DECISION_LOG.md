@@ -518,6 +518,24 @@ why*, not duplicating the diff.
   member row's spelling when one matches in any case (`_member_spelling`); an
   unknown name is still kept as given (setup can answer before the row
   exists). Old split rows are not migrated.
+- **What we know's writers refuse bad input** (2026-10-12; branch
+  `overnight/preferences-refuse-bad-input`; tests
+  `tests/test_preferences_refuse_bad_input.py`). Each reproduced first:
+  `eating_style` as a list was a 500 (now a 400, as are `notes` /
+  `cooking_time_preference` given a non-string); `novelty_preference` took
+  any word (now only `preferences.NOVELTY_PREFERENCES`, the chat enum); a
+  protein rating of 99 was stored (now refused off 1-5 — refused, not
+  clamped; a whole-number string like "5" is read as 5, legacy "more"/"less"
+  words are refused on new writes); `update_fact` could blank a fact
+  (refused like `add_fact`; the route answers 400, a missing fact still 404).
+  The novelty and rating checks live in `set_household_meal_preferences`, so
+  chat's tool of that name is covered too. `edit_preference("notes", "")`
+  and the cooking-time answer now CLEAR, as `""` already cleared every other
+  text field there; `set_household_meal_preferences` itself still reads `""`
+  as "leave it", which onboarding relies on.
+  `test_protein_rating_replaces_old_key.py` now seeds its legacy "more" row
+  straight into the table instead of through the writer.
+
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

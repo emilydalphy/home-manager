@@ -5790,7 +5790,9 @@ def update_fact_view(fact_id: int, req: FactUpdateRequest):
     try:
         result = tools.update_fact(fact_id, text=req.text, hard=req.hard)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        # Two refusals share ValueError: a fact that isn't this household's
+        # is a 404, blank text (2026-10-12) is the caller's input — a 400.
+        raise HTTPException(status_code=404 if str(e).startswith("No fact") else 400, detail=str(e))
     except Exception as e:
         logger.exception("Fact update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
