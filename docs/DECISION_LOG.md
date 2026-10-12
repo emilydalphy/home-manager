@@ -509,6 +509,15 @@ why*, not duplicating the diff.
   and nothing books that night a move. Still open, same class: away
   night / night off on a batch (rescale inside another transaction), and a
   Swap of the COOK night.
+- **A lunch answer said in chat lands under the member's own spelling**
+  (2026-10-12; branch `overnight/lunch-answer-finds-the-person`; tests
+  `tests/test_lunch_location_member_spelling.py`). Lunch facts are keyed by
+  name; "Vineeth's in the office Fridays" about a member typed in as
+  "vineeth" made a second, unread key, so Friday still planned him lunch at
+  home. `set_lunch_location` / `clear_lunch_location_override` now use the
+  member row's spelling when one matches in any case (`_member_spelling`); an
+  unknown name is still kept as given (setup can answer before the row
+  exists). Old split rows are not migrated.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
