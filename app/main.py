@@ -29,6 +29,8 @@ import queue
 import re
 import threading
 import time
+# Aliased: _render_login's local is called `html`.
+from html import escape as html_escape
 
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -7657,7 +7659,11 @@ def _render_login(next_path: str, error: str = "") -> HTMLResponse:
     # Python, so the page stays editable as a normal static file.
     banner = f'<p class="error">{error}</p>' if error else ""
     html = html.replace("<!--ERROR-->", banner)
-    html = html.replace("__NEXT__", security.sanitize_next(next_path))
+    # Escaped, because it lands inside value="…" and comes straight from
+    # ?next= (defect hunt, 2026-10-11): a same-site path can still carry a
+    # quote, and /login?next=/"><script>… ran its script on the sign-in
+    # page, where the passphrase and the email code are typed.
+    html = html.replace("__NEXT__", html_escape(security.sanitize_next(next_path), quote=True))
     return HTMLResponse(html, status_code=401 if error else 200)
 
 

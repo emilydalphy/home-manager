@@ -347,6 +347,15 @@ why*, not duplicating the diff.
   note 2000 (feedback's `MAX_WHAT_HAPPENED`, the app's one existing cap on
   typed free text), restriction 200. Refused, not cut short. No rate limit
   (`app/ratelimit.py`); `member-share.html` still shows its generic alert.
+- **The sign-in page's ?next= can't run a script or leave the site**
+  (2026-10-11; branch `overnight/sign-in-next-is-safe`; tests
+  `tests/test_sign_in_next_is_safe.py`). Two holes, both run in Chromium:
+  `_render_login` put ?next= into `value="…"` unescaped, so
+  `/login?next=/"><script>…` ran on the page where the passphrase and email
+  code are typed; and `_safe_next` let `/\example.org` through, which the
+  email sign-in returned as `next` and `location.assign` took off-site (a
+  browser reads `\` as `/` and drops tabs/newlines). Now escaped on render,
+  and a backslash or control character in next means "/".
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

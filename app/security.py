@@ -740,6 +740,15 @@ def _safe_next(path: str) -> str:
     """
     if not path.startswith("/") or path.startswith("//"):
         return "/"
+    # A backslash or any control character is refused too (defect hunt,
+    # 2026-10-11). Browsers read a backslash as "/" and silently drop tabs
+    # and newlines, so "/\evil.example" and "/<TAB>/evil.example" both mean
+    # "//evil.example" — off-site — by the time window.location.assign
+    # resolves them. The email sign-in hands this value to exactly that
+    # (static/login.html), and it was measured landing on another site.
+    # No path this app serves contains either.
+    if "\\" in path or any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in path):
+        return "/"
     return path
 
 
