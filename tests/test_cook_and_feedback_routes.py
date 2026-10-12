@@ -588,7 +588,7 @@ import datetime, json, os, sqlite3, sys, gc
 from fastapi.testclient import TestClient
 from app.main import app
 from app import tools
-from app.db import get_conn, init_db
+from app.db import DB_PATH, get_conn, init_db
 
 init_db()
 conn = get_conn()
@@ -638,7 +638,7 @@ out["open_transactions_before"] = open_transactions()
 # Asked with no patience at all (timeout=0), so the answer is about the lock
 # rather than about how long anyone is willing to wait for it.
 def write_lock_free():
-    probe = sqlite3.connect(os.environ["DB_PATH"], timeout=0)
+    probe = sqlite3.connect(DB_PATH, timeout=0)
     try:
         probe.execute("BEGIN IMMEDIATE")
         probe.rollback()

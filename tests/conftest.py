@@ -10,7 +10,22 @@ import os
 import tempfile
 import time
 
-_TMP_DB = os.path.join(tempfile.mkdtemp(prefix="home-manager-tests-"), "test.db")
+# Chosen ONCE per process, however many times this file is imported. pytest
+# loads it as `conftest`; `from tests.conftest import ...` is another module
+# name for the same file and runs this top level again. Before this guard
+# that second run made a new temp dir and repointed os.environ["DB_PATH"] at
+# an empty file, while app.db.DB_PATH stayed on the first — so every lock
+# probe that opened os.environ["DB_PATH"], and every subprocess, looked at
+# nothing and passed. The marker carries the pid so a child process that
+# inherits the environment still gets a database of its own.
+# tests/test_conftest_loads_once.py is the tripwire.
+_TEST_DB_MARKER = "HOME_MANAGER_TEST_DB"
+_pid, _, _marked_db = os.environ.get(_TEST_DB_MARKER, "").partition(":")
+if _pid == str(os.getpid()) and _marked_db:
+    _TMP_DB = _marked_db
+else:
+    _TMP_DB = os.path.join(tempfile.mkdtemp(prefix="home-manager-tests-"), "test.db")
+    os.environ[_TEST_DB_MARKER] = f"{os.getpid()}:{_TMP_DB}"
 os.environ["DB_PATH"] = _TMP_DB
 os.environ["HOME_MANAGER_PASSWORD"] = "test-password"
 os.environ["SESSION_SECRET"] = "test-session-secret"
@@ -605,7 +620,14 @@ freezegun.configure(default_ignore_list=[])
 #
 # A no-op when nothing is frozen (`_time_to_freeze()` is None), so this is
 # scoped to pins however they arrive — --today, the marker, frozen_today.
-_fg_unpatched_now = freezegun.api.FakeDatetime.now.__func__
+#
+# Remembered on the class, not just here: a second import of this file (see
+# _TEST_DB_MARKER) would otherwise read OUR patch back as "unpatched" and wrap
+# it in itself.
+_fg_unpatched_now = getattr(
+    freezegun.api.FakeDatetime, "_hm_unpatched_now", None
+) or freezegun.api.FakeDatetime.now.__func__
+freezegun.api.FakeDatetime._hm_unpatched_now = _fg_unpatched_now
 
 
 def _fg_aware_now(cls, tz=None):

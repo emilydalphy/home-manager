@@ -473,7 +473,7 @@ def test_the_migration_is_present_and_members_are_wiped_between_tests():
     cols = {(t, c): typ for t, c, typ in app_db._MIGRATIONS}
     assert cols[("members", "evening_nudge_on")] == "INTEGER NOT NULL DEFAULT 1"
     assert cols[("members", "evening_nudge_sent_on")] == "TEXT NOT NULL DEFAULT ''"
-    from tests.conftest import _TABLES
+    from conftest import _TABLES
     assert "members" in _TABLES
     _adults("Emily")
     assert tools.get_evening_nudge_settings()["adults"][0]["on"] is True

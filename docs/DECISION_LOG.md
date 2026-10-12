@@ -119,6 +119,17 @@ why*, not duplicating the diff.
   beside the backup (`_prune_chat_sessions_now`), so the week holds on a
   quiet deploy; the policy says an adult who leaves keeps their chats up to
   a week (no member column, by choice).
+- **The suite's test database is chosen once per run** (2026-10-09; branch
+  `overnight/conftest-loads-once`). Three files did `from tests.conftest
+  import ...`; with `. tests` on pythonpath that is a second module name for
+  `conftest.py`, so its top level ran again — new mkdtemp, `os.environ
+  ["DB_PATH"]` repointed at an empty file while `app.db.DB_PATH` stayed put.
+  Every lock probe that opened `os.environ["DB_PATH"]` (five in
+  `test_thaw_follows_the_meal.py`) was probing nothing in a full run:
+  moving `_replace_slot_entries`' `_defrost_resync` inside the transaction
+  passed on main and fails now. Imports are `from conftest`, conftest reuses
+  a pid-keyed `HOME_MANAGER_TEST_DB` marker, probes read `app_db.DB_PATH`;
+  tripwire `tests/test_conftest_loads_once.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

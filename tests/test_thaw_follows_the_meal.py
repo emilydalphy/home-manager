@@ -85,13 +85,13 @@ from __future__ import annotations
 
 import datetime
 import json
-import os
 import sqlite3
 
 import pytest
 from freezegun import freeze_time
 
 from app import households, tools
+from app import db as app_db
 from app.db import get_conn
 from app.tools import (
     cooker as ck,
@@ -984,7 +984,7 @@ def test_the_pass_runs_after_the_commit_and_not_inside_the_transaction(frozen_ki
     real = df.sync_defrost_tasks
 
     def probing(pid):
-        probe = sqlite3.connect(os.environ["DB_PATH"], timeout=0.2)
+        probe = sqlite3.connect(app_db.DB_PATH, timeout=0.2)
         try:
             probe.execute("BEGIN IMMEDIATE")
             probe.rollback()
@@ -1080,7 +1080,7 @@ def test_the_rollback_reports_only_what_the_commit_actually_landed(frozen_kitche
     def refusing_conn():
         conn = real()
         conn.close()
-        out = sqlite3.connect(os.environ["DB_PATH"], factory=Refusing)
+        out = sqlite3.connect(app_db.DB_PATH, factory=Refusing)
         out.row_factory = sqlite3.Row
         out.execute("PRAGMA foreign_keys = ON")
         return out
@@ -1210,7 +1210,7 @@ def test_the_night_off_door_runs_its_pass_outside_the_transaction_too(frozen_kit
     real = df.resync_plan_thaws
 
     def probing(*args, **kwargs):
-        probe = sqlite3.connect(os.environ["DB_PATH"], timeout=0.2)
+        probe = sqlite3.connect(app_db.DB_PATH, timeout=0.2)
         try:
             probe.execute("BEGIN IMMEDIATE")
             probe.rollback()
@@ -1273,7 +1273,7 @@ def test_a_failure_part_way_through_the_sync_leaves_the_write_lock_free(frozen_k
             raise RuntimeError("forced, after the writes")
 
     def refusing_conn():
-        conn = sqlite3.connect(os.environ["DB_PATH"], factory=Refusing, timeout=0.2)
+        conn = sqlite3.connect(app_db.DB_PATH, factory=Refusing, timeout=0.2)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
         return conn
@@ -1282,7 +1282,7 @@ def test_a_failure_part_way_through_the_sync_leaves_the_write_lock_free(frozen_k
     assert df.resync_plan_thaws(plan_id, [_entry(plan_id, _d(5))["id"]]) == []
     monkeypatch.undo()
 
-    probe = sqlite3.connect(os.environ["DB_PATH"], timeout=0.2)
+    probe = sqlite3.connect(app_db.DB_PATH, timeout=0.2)
     try:
         probe.execute("BEGIN IMMEDIATE")
         probe.rollback()
