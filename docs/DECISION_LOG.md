@@ -142,6 +142,12 @@ why*, not duplicating the diff.
   is off all week (`switched_off_meals`) — is handled like `planned_empty`,
   and the band moves on to tomorrow.
 
+- **"Salt, to taste", not "to taste salt"** (2026-10-09, defect hunt; branch
+  `overnight/to-taste-after-the-item`). `cookIngredientLabel` put every qty
+  first, so a phrase with no number ("to taste", "for garnish", "as needed",
+  "optional") read backwards in cook mode and on the meal screen. Those now
+  trail the item; amounts, including "a pinch", stay in front. Tests in
+  `tests/test_human_qty_and_time_formatting.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
