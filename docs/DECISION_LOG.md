@@ -563,6 +563,15 @@ why*, not duplicating the diff.
   amount merged into a staple line (no ledger) still goes with the answer.
   Review round: two weeks on one line take the latest week (never no week);
   Undo after a night changed merges the staple's own amount back; result has `kept_on_list`.
+- **The recipe page says "2 onions"** (2026-10-10; branch
+  `overnight/recipe-page-plurals`; `tests/test_recipe_page_plurals.py`). At 8
+  servings `/api/recipes/scale` answered qty "2", item "onion" and
+  `cookIngredientLabel` joined them as "2 onion". `cooking_ingredients` and
+  `scale_recipe` now add `item_label` for a bare count over one; the row
+  reads it. `item` is never rewritten. Seen, not fixed: a bare
+  count scales unrounded ("21.3333" eggs at 8 servings of a 3-serving recipe).
+  Review round: a general plural got garlic/celery/rice/"tomato (Roma)s" wrong, so only a
+  short countable list (`_COUNTABLE_PLURALS`) is pluralised, the noun before "("/"," only.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

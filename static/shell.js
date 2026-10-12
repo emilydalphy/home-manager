@@ -21765,7 +21765,9 @@
   // ingredients) and then the thing.
   function cookIngredientLabel(ing) {
     var qty = ing && ing.qty ? humanQtyText(ing.qty) : '';
-    var item = (ing && ing.item) || '';
+    // item_label is the server's "onions" for "2" + "onion" (recipes.
+    // _with_item_label) — the one plural rule, not a second one here.
+    var item = (ing && (ing.item_label || ing.item)) || '';
     // An amount reads before the thing ("½ lb Flank steak"); a phrase that
     // only says how much to use, with no number in it, reads after it, the
     // way a recipe is written — "Salt, to taste", never "to taste salt"

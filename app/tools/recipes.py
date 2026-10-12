@@ -900,7 +900,7 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # scaled as TEXT, by the same rules as the steps (scale_steps),
             # so the list and the steps agree and nothing written is lost.
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
-            scaled_ingredients.append({**ing, "qty": rescaled})
+            scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 unscaled_items.append(ing["item"])
             continue
@@ -918,7 +918,7 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
                 # Same rounding cooking_quantity applies, so the two agree
                 # about a thing that only comes whole.
                 scaled = max(1.0, round(scaled))
-            scaled_ingredients.append({**ing, "qty": _quantities._format_quantity(scaled, unit)})
+            scaled_ingredients.append(_with_item_label({**ing, "qty": _quantities._format_quantity(scaled, unit)}))
         else:
             scaled_ingredients.append(dict(ing))
             if (ing.get("qty") or "").strip():
@@ -1155,6 +1155,59 @@ def _pluralize_noun(phrase: str, many: bool) -> str:
         else:
             last = last[:-2] if lower.endswith(("oes", "ches", "shes", "xes")) else last[:-1]
     return f"{head}{sep}{last}"
+
+
+# The few things that are plainly counted whole, singular -> plural, picked
+# from what the repo's own recipes write with a bare count. Deliberately a
+# short list and not a rule: a general plural turned "3 garlic" into "3
+# garlics", "2 celery" into "2 celeries" and "2 tomato (Roma)" into "2 tomato
+# (Roma)s" (review, 2026-10-10). A missing plural reads a little stiff; a
+# wrong one reads broken.
+_COUNTABLE_PLURALS = {
+    "onion": "onions", "egg": "eggs", "carrot": "carrots", "lemon": "lemons",
+    "lime": "limes", "apple": "apples", "potato": "potatoes", "tomato": "tomatoes",
+    "cucumber": "cucumbers", "shallot": "shallots", "tortilla": "tortillas",
+    "banana": "bananas", "bun": "buns",
+}
+# "pepper" only as the vegetable — never "2 black pepper".
+_PEPPER_KINDS = {"bell", "red", "green", "yellow", "orange", "sweet", "poblano"}
+
+
+def _with_item_label(ing: dict) -> dict:
+    """
+    An ingredient row plus `item_label`: the thing as it reads after its
+    amount when the amount is a bare count of more than one and the thing
+    is plainly countable — "2" + "onion" says "2 onions", not "2 onion"
+    (the recipe page at 8 servings, 2026-10-10). `item` itself is never
+    rewritten: ticks, matching and the grocery list all key on it.
+
+    Only the last word of the name before any "(" or "," changes, and only
+    when it is in _COUNTABLE_PLURALS ("red onion, diced" -> "red onions,
+    diced"; "tomato (Roma)" -> "tomatoes (Roma)"). Everything else — an
+    amount with a unit, one or fewer, garlic, celery, rice — has no label.
+    """
+    out = dict(ing)
+    out.pop("item_label", None)
+    item = (out.get("item") or "").strip()
+    parsed = _quantities._parse_quantity((out.get("qty") or "").strip())
+    if not (item and parsed and parsed[1] is None and parsed[0] > 1 + 1e-9):
+        return out
+    cut = min((i for i in (item.find("("), item.find(",")) if i >= 0), default=len(item))
+    head, tail = item[:cut].rstrip(), item[cut:]
+    words = head.split()
+    if not words:
+        return out
+    last = words[-1].lower()
+    plural = _COUNTABLE_PLURALS.get(last)
+    if last == "pepper" and len(words) > 1 and words[-2].lower() in _PEPPER_KINDS:
+        plural = "peppers"
+    if not plural:
+        return out
+    if words[-1][:1].isupper():
+        plural = plural[:1].upper() + plural[1:]
+    words[-1] = plural
+    out["item_label"] = " ".join(words) + (" " + tail.lstrip() if tail.startswith("(") else tail)
+    return out
 
 
 def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = None) -> list:
@@ -2471,7 +2524,9 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
             continue
         suggested = cooking_quantity(item, servings=servings, shopping_qty=qty)
         out.append({**ing, "qty": suggested, "shopping_qty": qty} if suggested else dict(ing))
-    return out
+    # Every row says its thing in the number its amount is ("2 onions") —
+    # see _with_item_label; `item` stays exactly as stored.
+    return [_with_item_label(r) if isinstance(r, dict) else r for r in out]
 
 
 def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -> dict:
