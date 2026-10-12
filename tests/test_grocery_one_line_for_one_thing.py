@@ -268,3 +268,36 @@ def test_the_filler_list_stays_short():
     assert "fresh" not in joined
     assert "low-fat" not in joined and "low fat" not in joined
     assert "organic" not in joined
+
+
+# ---------------------------------------------------------------------------
+# Normalise at the source too (the card's third criterion, owed since
+# 2026-10-05 because app/agent.py was held by another builder that night).
+# The merge key above heals a split line; this asks the recipe writers not
+# to split it in the first place. Pinned on every prompt that writes an
+# ingredient name for the grocery list: the per-dish recipe pass, the
+# pool planner, and the side writer's tool schema.
+
+def test_recipe_writer_is_told_the_plain_shopping_form():
+    from app import agent
+    prompt = agent.RECIPE_DETAILS_INSTRUCTIONS
+    assert "plain shopping form" in prompt
+    assert '"Plain yogurt"' in prompt and 'never "Yogurt, plain"' in prompt
+
+
+def test_pool_planner_is_told_the_plain_shopping_form():
+    import inspect
+    from app import agent
+    src = inspect.getsource(agent)
+    # The pool planner's prompt is an f-string local to its function, so it
+    # is read off the source: the clause sits beside its prep-descriptor rule.
+    assert ('never "Baby spinach, chopped") and in its plain \\\n'
+            'shopping form ("Plain yogurt", never "Yogurt, plain")') in src
+
+
+def test_side_writer_schema_asks_for_the_plain_shopping_form():
+    from app import agent
+    item = (agent._GENERATE_SIDES_TOOL["input_schema"]["properties"]["sides"]
+            ["items"]["properties"]["ingredients"]["items"]["properties"]["item"])
+    assert "plain shopping form" in item["description"]
+    assert "'Plain yogurt', never 'Yogurt, plain'" in item["description"]

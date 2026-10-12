@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The recipe writers are told the plain shopping name** (2026-10-12; branch
+  `overnight/recipe-writer-plain-names`). The owed third criterion of "One
+  line for one thing": `RECIPE_DETAILS_INSTRUCTIONS`, the pool planner's
+  prompt and the side writer's `item` schema now ask for "Plain yogurt",
+  never "Yogurt, plain". The merge key heals a split line; this stops the
+  split at the source. Tests at the foot of
+  `tests/test_grocery_one_line_for_one_thing.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
