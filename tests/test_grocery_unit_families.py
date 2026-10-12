@@ -224,11 +224,7 @@ def test_the_plans_line_is_set_aside_as_a_leftover_and_keep_joins_this_weeks_pla
     assert carried["this_week_quantity"] == "4 cups", "the plan's line, not the person's"
     result = tools.keep_carried_over_item(carried["item_id"])
     assert result["merged_into"] is not None
-    # The kept 4 cups make the joined line the household's own (2026-10-12,
-    # tests/test_kept_leftover_survives_a_swap.py) — plan-owned, a swap of
-    # this week's Egg Bake would recompute it from the ledger and lose them.
-    # The undo below hands it back to week_b.
-    assert _lines("Eggs") == [{"quantity": "1", "plan": None}, {"quantity": "8 cups", "plan": None}]
+    assert _lines("Eggs") == [{"quantity": "1", "plan": None}, {"quantity": "8 cups", "plan": week_b}]
     tools.undo_carried_over_decision(carried["item_id"])
     assert _lines("Eggs") == [{"quantity": "1", "plan": None}, {"quantity": "4 cups", "plan": week_b}]
     assert _lines("Eggs", "carried") == [{"quantity": "4 cups", "plan": week_a}]
