@@ -785,6 +785,10 @@ def save_rhythm_answers(
     conn = get_conn()
     try:
         for member_name, location in lunch_writes:
+            # The same keying as set_lunch_location: the bulk path is the
+            # one onboarding and Settings use, so it lands on the member's
+            # own spelling too (review of this branch, 2026-10-12).
+            member_name = _member_spelling(conn, member_name)
             _upsert(conn, member_name, "", "lunch_location", location, "", source)
             logged.append(f"rhythm:lunch_location:{member_name}")
         if meals_together:

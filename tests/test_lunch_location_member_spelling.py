@@ -38,3 +38,11 @@ def test_a_name_with_no_member_yet_is_kept_as_given():
     """Setup can say where someone eats lunch before their row exists."""
     tools.set_lunch_location("Priya", "out")
     assert tools.get_household_rhythm()["lunch_location"] == {"Priya": {"standing": "out", "overrides": {}}}
+
+
+def test_the_bulk_save_lands_on_the_member_it_names_too():
+    """save_rhythm_answers (onboarding / Settings) keys the same way."""
+    _adult("vineeth")
+    tools.save_rhythm_answers(lunch_location={"Vineeth": "out"})
+    assert list(tools.get_household_rhythm()["lunch_location"]) == ["vineeth"]
+    assert tools.effective_lunch_location("vineeth", "Monday") == "out"
