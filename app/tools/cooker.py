@@ -1185,7 +1185,7 @@ def get_plan_progress(weekly_plan_id: int | None = None) -> dict:
         "meals_done": sum(1 for m in meal_rows if m["cooked_status"] == "done"),
         "meals_total": len(meal_rows),
         "prep_tasks": prep_tasks,
-        "prep_done": sum(1 for t in prep_tasks if t["status"] == "done"),
+        "prep_done": sum(1 for t in prep_tasks if t["status"] in ("done", "skipped")),
         "prep_total": len(prep_tasks),
     }
 
@@ -2077,7 +2077,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         "meals_done": sum(1 for m in meals if m["cooked_status"] == "done"),
         "meals_total": len(meals),
         "prep_tasks": prep_tasks,
-        "prep_done": sum(1 for t in prep_tasks if t["status"] == "done"),
+        "prep_done": sum(1 for t in prep_tasks if t["status"] in ("done", "skipped")),
         "prep_total": len(prep_tasks),
         # The prep days themselves, gathered into sessions (Loop Board
         # "Prep days", Emily 2026-09-04/09-08). Carried on THIS payload
