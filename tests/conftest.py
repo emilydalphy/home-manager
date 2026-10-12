@@ -108,7 +108,7 @@ _TABLES = [
     # Research-first writing (2026-10-06): sources reference their research.
     "recipe_sources", "dish_research",
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
-    "chat_turns", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
+    "chat_turns", "chat_sessions", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
     "calendar_feeds", "staple_events", "staples", "morning_text_sends",
     "holiday_answers", "held_things",
 ]

@@ -385,9 +385,12 @@ def test_delete_clears_photos_and_what_the_server_holds_in_memory(client, beta_h
     keep = recipe_photos._household_dir(DEFAULT_HOUSEHOLD_ID)
     os.makedirs(keep, exist_ok=True)
     Path(keep, "3-1.jpg").write_bytes(b"\xff\xd8\xff keep")
-    app_main.SESSIONS[f"h{beta_household}:abc"] = [{"role": "user", "content": "hi"}]
-    app_main.SESSION_TOUCHED[f"h{beta_household}:abc"] = 1.0
-    app_main.SESSIONS[f"h{DEFAULT_HOUSEHOLD_ID}:keep"] = []
+    # Chat history is the chat_sessions table since 2026-10-09 (it was two
+    # dicts on app.main): stored through the real save, so this goes red if
+    # the delete ever stops reaching the rows that save writes.
+    with tools.use_household(beta_household):
+        app_main._save_chat_session(f"h{beta_household}:abc", [{"role": "user", "content": "hi"}])
+    app_main._save_chat_session(f"h{DEFAULT_HOUSEHOLD_ID}:keep", [])
     proposals._PROPOSALS[beta_household] = {"p": {}}
     from app.tools.swap_options import _OPTIONS_CACHE as swap_cache
     swap_cache[(beta_household, 9)] = {"at": 0}
@@ -396,15 +399,18 @@ def test_delete_clears_photos_and_what_the_server_holds_in_memory(client, beta_h
         assert client.post("/api/household/delete", json={"confirm": "DELETE"}).status_code == 200
         assert not os.path.exists(folder)
         assert Path(keep, "3-1.jpg").exists()
-        assert f"h{beta_household}:abc" not in app_main.SESSIONS
-        assert f"h{beta_household}:abc" not in app_main.SESSION_TOUCHED
-        assert f"h{DEFAULT_HOUSEHOLD_ID}:keep" in app_main.SESSIONS
+        conn = get_conn()
+        try:
+            keys = {r[0] for r in conn.execute("SELECT session_key FROM chat_sessions")}
+        finally:
+            conn.close()
+        assert f"h{beta_household}:abc" not in keys
+        assert f"h{DEFAULT_HOUSEHOLD_ID}:keep" in keys
         assert beta_household not in proposals._PROPOSALS
         assert (beta_household, 9) not in swap_cache
         assert (DEFAULT_HOUSEHOLD_ID, 9) in swap_cache
     finally:
         swap_cache.pop((DEFAULT_HOUSEHOLD_ID, 9), None)
-        app_main.SESSIONS.pop(f"h{DEFAULT_HOUSEHOLD_ID}:keep", None)
         Path(keep, "3-1.jpg").unlink(missing_ok=True)
 
 
