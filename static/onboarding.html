@@ -3131,16 +3131,22 @@ document.getElementById('prep-day-tiles').addEventListener('click', e => {
 // prep day (the server refuses it without one), so it's only offered with
 // one. "A few in rotation" starts picked — one tap on Continue is an
 // answer.
+// `most` (2026-10-09) is the top of an option's own range — "3–4 lunches"
+// is 4 — and an option is only offered when the meal is on at least that
+// many days: lunch on weekends only was offered "3–4 lunches" (Loop Board,
+// Bug). Breakfast had the same hole. Dinner has no `most` on purpose: its
+// answer also sets the leftovers stance (leftoversStanceFromVariety), so
+// trimming it changes what the planner is told, which is Emily's call.
 const VARIETY_OPTIONS = {
   breakfast: [
-    { key: 'go_to_or_two', num: '1–2 breakfasts', title: 'A go-to or two', desc: 'Same thing most mornings, something different on the weekend.' },
-    { key: 'few_in_rotation', num: '3–4 breakfasts', title: 'A few in rotation', desc: 'Enough to mix it up, each one made more than once.' },
+    { key: 'go_to_or_two', most: 2, num: '1–2 breakfasts', title: 'A go-to or two', desc: 'Same thing most mornings, something different on the weekend.' },
+    { key: 'few_in_rotation', most: 4, num: '3–4 breakfasts', title: 'A few in rotation', desc: 'Enough to mix it up, each one made more than once.' },
     { key: 'new_every_day', num: 'All different', title: 'Something new every morning', desc: 'The most variety, and the most cooking.' },
   ],
   lunch: [
     { key: 'last_nights_dinner', num: 'Mostly leftovers', title: 'Last night’s dinner', desc: 'I’ll make dinner big enough to cover the next day’s lunch.' },
-    { key: 'meal_prep_ahead', num: '1–2 lunches', title: 'Meal prep ahead', desc: 'Made on your prep day, enough for the week.', needsPrepDay: true },
-    { key: 'few_in_rotation', num: '3–4 lunches', title: 'A few in rotation', desc: 'Each one made more than once.' },
+    { key: 'meal_prep_ahead', most: 2, num: '1–2 lunches', title: 'Meal prep ahead', desc: 'Made on your prep day, enough for the week.', needsPrepDay: true },
+    { key: 'few_in_rotation', most: 4, num: '3–4 lunches', title: 'A few in rotation', desc: 'Each one made more than once.' },
     { key: 'new_every_day', num: 'All different', title: 'Something new every day', desc: 'The most variety, and the most cooking.' },
   ],
   dinner: [
@@ -3152,14 +3158,28 @@ const VARIETY_OPTIONS = {
 const VARIETY_DEFAULT = 'few_in_rotation';
 const VARIETY_STEPS = ['variety-breakfast', 'variety-lunch', 'variety-dinner'];
 let varietyChoice = { breakfast: VARIETY_DEFAULT, lunch: VARIETY_DEFAULT, dinner: VARIETY_DEFAULT };
-function varietyOptionsFor(meal, prepDay) {
-  return VARIETY_OPTIONS[meal].filter(o => !o.needsPrepDay || prepDay);
+// `daysOn` left out means "don't trim by days" (the older callers).
+function varietyOptionsFor(meal, prepDay, daysOn) {
+  return VARIETY_OPTIONS[meal].filter(o => (!o.needsPrepDay || prepDay)
+    && !(daysOn !== undefined && o.most && o.most > daysOn));
 }
-// The pick as it stands: one that's no longer offered (the prep day went)
-// falls back to the default rather than being sent for the server to refuse.
+// What one variety screen offers this household: its prep day and the
+// days the meal is on in the grid.
+function varietyOffered(meal) {
+  return varietyOptionsFor(meal, hasPrepDay(), uwDaysOn(usualGrid[meal]));
+}
+// The pick as it stands: one that's no longer offered (the prep day went,
+// or the days shrank) falls back to the default rather than being sent
+// for the server to refuse — and when the default itself doesn't fit the
+// days, to "something new every day", which plans the same number the
+// server would have clamped the rotation to (one a day), and is the
+// option the screen shows lit. (typeof: the harnesses in
+// tests/test_onboarding_your_week.py lift this without a grid.)
 function currentVarietyChoice(meal) {
-  const offered = varietyOptionsFor(meal, hasPrepDay()).map(o => o.key);
-  return offered.indexOf(varietyChoice[meal]) !== -1 ? varietyChoice[meal] : VARIETY_DEFAULT;
+  const days = typeof usualGrid === 'undefined' ? undefined : uwDaysOn(usualGrid[meal]);
+  const offered = varietyOptionsFor(meal, hasPrepDay(), days).map(o => o.key);
+  if (offered.indexOf(varietyChoice[meal]) !== -1) return varietyChoice[meal];
+  return offered.indexOf(VARIETY_DEFAULT) !== -1 ? VARIETY_DEFAULT : 'new_every_day';
 }
 // The foot of one variety screen, from the steps this household is asked:
 // how many pips and how many are on, the "Breakfast · then lunch · then
@@ -3184,7 +3204,7 @@ function varietyFoot(flow, key) {
 }
 function buildVarietyStep(meal) {
   const chosen = currentVarietyChoice(meal);
-  document.getElementById('variety-' + meal + '-opts').innerHTML = varietyOptionsFor(meal, hasPrepDay()).map(o => {
+  document.getElementById('variety-' + meal + '-opts').innerHTML = varietyOffered(meal).map(o => {
     const on = o.key === chosen;
     return `<button type="button" class="q-opt${on ? ' is-on' : ''}" data-variety="${o.key}" aria-pressed="${on ? 'true' : 'false'}"><span class="q-opt-num">${escapeHtmlLocal(o.num)}</span><span class="q-opt-title">${escapeHtmlLocal(o.title)}</span><span class="q-opt-desc">${escapeHtmlLocal(o.desc)}</span></button>`;
   }).join('');
@@ -5196,7 +5216,17 @@ function stepFlow() {
     if (k === 'ai-consent') return !consented;
     // A meal that's off every day of the week has nothing to vary
     // (2026-09-30): its "how many different" screen is skipped.
-    if (VARIETY_STEPS.indexOf(k) !== -1) return uwMealOn(k.slice('variety-'.length));
+    // ...and breakfast or lunch on ONE day has no choice left (2026-10-09):
+    // one day is one dish, so it isn't asked (currentVarietyChoice sends
+    // one a day). (typeof: the navigation harnesses run this without the
+    // grid's helpers.)
+    if (VARIETY_STEPS.indexOf(k) !== -1) {
+      const meal = k.slice('variety-'.length);
+      if (!uwMealOn(meal)) return false;
+      const oneDay = meal !== 'dinner' && typeof uwDaysOn === 'function' && typeof usualGrid !== 'undefined'
+        && uwDaysOn(usualGrid[meal]) === 1;
+      return !oneDay;
+    }
     // Weekday lunches only when lunch is on for any weekday (the card).
     // ...or while somebody's Out from that screen is what turned it off.
     if (k === 'lunch-needs') return uwWeekdayLunchOn(usualGrid) || (typeof lunchOutHere === 'function' && lunchOutHere());
