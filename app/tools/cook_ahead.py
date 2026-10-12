@@ -38,11 +38,14 @@ ahead for really is one they still do.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date
 
 from ..db import get_conn
 from ._shared import household_id
 from . import leftovers as _leftovers
+
+logger = logging.getLogger("home_manager")
 
 # What a covered day's derived_from carries beyond links_to, so the
 # screens can tell a chosen batch from a planner-written leftovers night.
@@ -675,6 +678,24 @@ def set_cook_ahead(source_entry_id: int, covered_entry_ids: list[int]) -> dict |
         else:
             continue
         _save_derived(entry_id, derived)
+
+    # The freezer answer follows the batch. Fridge moves are booked per
+    # COOK night, so a day this batch now covers kept its pending "Move the
+    # salmon to the fridge — for Sunday's Salmon Bowls" for a night that
+    # reheats Wednesday's (measured on a throwaway DB: Saturday's Today
+    # said to thaw fish the household had already cooked), and a day
+    # released here cooks for itself again with no move at all.
+    # restate_frozen_after_batch_change is the pass batch_undo's rebatch
+    # already ran after this write; it lives here so every door — the Cook
+    # card, the approval card, approval's own batching — gets it, not just
+    # the undo. Idempotent, so rebatch running it again costs nothing.
+    # Never raises: the batch above is written, and a reminder pass that
+    # failed must not turn it into a refusal.
+    try:
+        from . import defrost as _defrost  # lazy: defrost imports weekly_plan, which imports this
+        _defrost.restate_frozen_after_batch_change(plan_id, [source_entry_id, *offered, *siblings])
+    except Exception:
+        logger.exception("Restating fridge moves after a cook-ahead change failed for plan %s", plan_id)
 
     return {
         "source_entry_id": source_entry_id,

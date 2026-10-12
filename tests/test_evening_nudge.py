@@ -165,6 +165,33 @@ def test_a_plain_night_is_the_dish_the_minutes_and_a_tap_into_cook(link):
     assert "\n" not in text and "!" not in text
 
 
+def _seed_long_dinner(prep: int, cook: int) -> None:
+    tools.add_recipe(
+        "Roast Chicken", ingredients=[{"item": "Whole chicken", "qty": "1"}],
+        prep_time_minutes=prep, cook_time_minutes=cook, default_servings=3,
+    )
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tools.plan_meal(ISO_TODAY, "Roast Chicken", slot="dinner", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=False)
+
+
+def test_an_hour_and_more_reads_the_way_today_says_it(link):
+    """Overnight hunt, 2026-10-10: a 110-minute roast texted "110 min" while
+    Today's chip, one tap away, said "1 hr 50 min". One spelling."""
+    _adults()
+    _seed_long_dinner(20, 90)
+    text = tools.build_evening_nudge(_at(17, 0))
+    assert text == f"Tonight: Roast Chicken — 1 hr 50 min. Tap to start. {LINK}/kitchen"
+    cook = next(m for m in tools.today_moves(day=TODAY, now=_at(17, 0))["moves"] if m["kind"] == "cook")
+    assert "1 hr 50 min" in cook["chips"], "the nudge and Today's chip say the same thing"
+
+
+def test_exactly_an_hour_reads_one_hour(link):
+    _adults()
+    _seed_long_dinner(15, 45)
+    assert tools.build_evening_nudge(_at(17, 0)) == f"Tonight: Roast Chicken — 1 hr. Tap to start. {LINK}/kitchen"
+
+
 def test_a_recipe_with_no_minutes_leaves_the_minutes_out(link):
     _adults()
     _seed_dinner(minutes=False)
@@ -370,6 +397,42 @@ def test_the_nudge_switch_and_the_morning_switch_both_gate_it():
     assert len(sender.calls) == 1
 
 
+def test_the_adult_out_tonight_is_not_told_to_start_cooking(link):
+    """Defect hunt 2026-10-12: "Dinner for 1 — Vineeth's out" on Today, and
+    Vineeth still got "Tap to start" at 5:30. He is skipped and NOT marked,
+    so an absence taken back inside the window still reaches him."""
+    _adults()
+    _seed_dinner()
+    _opt_in()
+    tools.set_slot_attendance(ISO_TODAY, "dinner", present_member_ids=["Emily"])
+    sender = _Sender()
+
+    results = tools.run_evening_nudges_once(now_utc=_local(17, 31), send=sender)
+
+    assert [m["name"] for m, _ in sender.calls] == ["Emily"]
+    assert [r["member_id"] for r in results] == [_member_id("Emily")]
+    assert _sent_on("Vineeth") == ""
+
+    # Plans change: he's home after all, and the next pass nudges him.
+    tools.set_slot_attendance(ISO_TODAY, "dinner", present_member_ids=["Emily", "Vineeth"])
+    tools.run_evening_nudges_once(now_utc=_local(17, 36), send=sender)
+    assert [m["name"] for m, _ in sender.calls] == ["Emily", "Vineeth"]
+    assert _sent_on("Vineeth") == ISO_TODAY
+
+
+def test_out_for_lunch_or_a_guest_at_dinner_still_gets_the_nudge(link):
+    """Only tonight's DINNER absence counts — lunch out is not dinner out,
+    and a guest at the table takes nobody off the list."""
+    _adults()
+    _seed_dinner()
+    _opt_in()
+    tools.set_slot_attendance(ISO_TODAY, "lunch", present_member_ids=["Emily"])
+    tools.set_slot_attendance(ISO_TODAY, "dinner", guest_count=2)
+    sender = _Sender()
+    tools.run_evening_nudges_once(now_utc=_local(17, 31), send=sender)
+    assert sorted(m["name"] for m, _ in sender.calls) == ["Emily", "Vineeth"]
+
+
 def test_a_failed_send_is_marked_and_not_retried_every_five_minutes(caplog):
     _adults("Emily")
     _seed_dinner()
@@ -473,7 +536,7 @@ def test_the_migration_is_present_and_members_are_wiped_between_tests():
     cols = {(t, c): typ for t, c, typ in app_db._MIGRATIONS}
     assert cols[("members", "evening_nudge_on")] == "INTEGER NOT NULL DEFAULT 1"
     assert cols[("members", "evening_nudge_sent_on")] == "TEXT NOT NULL DEFAULT ''"
-    from tests.conftest import _TABLES
+    from conftest import _TABLES
     assert "members" in _TABLES
     _adults("Emily")
     assert tools.get_evening_nudge_settings()["adults"][0]["on"] is True

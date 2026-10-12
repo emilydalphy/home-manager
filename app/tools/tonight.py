@@ -651,7 +651,8 @@ def _fed_label(target: dict) -> str:
     return _weekly_plan.fed_night_label(target)
 
 
-def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
+def _night_off_plan(conn, plan, rows, tonight_row, today: str,
+                    household_today: str | None = None) -> dict:
     """
     What "Not tonight — we're going out" will do with tonight, decided once
     and read twice (tonight_check's sub-line, tonight_night_off's write).
@@ -722,7 +723,38 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str) -> dict:
             "kind": "cook_on_fed", "dish": dish, "target": first, "rest": targets[1:],
             "line": f"{dish} moves to {_fed_label(first)}. The extra goes in the freezer.",
         }
-    return {"kind": "drop", "dish": dish, "line": f"{dish} comes off the week."}
+    # Tonight's row comes off, but the SAME dish can be planned again later
+    # in the week as a cook of its own (Lemon Pasta on Wednesday and on
+    # Sunday, no leftover link between them). Then "comes off the week" is
+    # untrue — the household reads it and goes looking for a Sunday dinner
+    # that isn't missing (Loop Board, 2026-10-09). Only LATER nights count:
+    # a Monday already eaten is not where the dish still is.
+    still_on = _still_on_later(rows, tonight_row, household_today or today)
+    if still_on:
+        return {"kind": "drop", "dish": dish, "still_on": still_on,
+                "line": f"{dish} is still on {_weekly_plan._join_with_and(still_on)}."}
+    return {"kind": "drop", "dish": dish, "still_on": [], "line": f"{dish} comes off the week."}
+
+
+def _still_on_later(rows, tonight_row, today: str) -> list[str]:
+    """The weekdays still ahead whose planned dinner is tonight's dish, by
+    name — the name being what the sentence says, so it is what decides
+    whether the sentence is true.
+
+    `today` is the household's REAL date, not the night being called off:
+    "we're out Thursday", said on Monday, leaves Tuesday's Lemon Pasta
+    still to come. A night that was cooked and then called off itself
+    (_cooked_night_off) stays `planned` as a record but its dinner went in
+    the freezer, so the dish is not "still on" it (review, 2026-10-09)."""
+    dish = _dish_name(tonight_row).casefold()
+    return [
+        _weekly_plan._weekday_of(r["date"]) for r in rows
+        if r["date"] > today and r["date"] != tonight_row["date"]
+        and r["id"] != tonight_row["id"]
+        and (r["slot_state"] or "planned") == "planned"
+        and not _cooked_night_off(r)
+        and _dish_name(r).casefold() == dish
+    ]
 
 
 def _said(kind: str, dish: str, plan_step: dict | None = None, use_soon: list[str] | None = None) -> str:
@@ -733,6 +765,9 @@ def _said(kind: str, dish: str, plan_step: dict | None = None, use_soon: list[st
         where = plan_step.get("free") if kind == "move" else None
         label = _weekly_plan._weekday_of(where) if where else _fed_label(plan_step["target"])
         said += f" {dish} moved to {label}."
+    elif kind == "drop" and (plan_step or {}).get("still_on"):
+        # Tonight is off, the dish isn't — see _night_off_plan's 'drop'.
+        said += f" {dish} is still on {_weekly_plan._join_with_and(plan_step['still_on'])}."
     elif kind == "drop":
         said += f" {dish} is off the week."
     elif kind == "freeze_reheat":
@@ -976,7 +1011,8 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             out["said"] = "Tonight’s already off." if is_off else "Nobody’s home tonight anyway."
             return out
 
-        step = _night_off_plan(conn, plan, rows, tonight_row, today)
+        step = _night_off_plan(conn, plan, rows, tonight_row, today,
+                               household_today=now.date().isoformat())
         kind = step["kind"]
         dish = step["dish"]
         out["kind"] = kind
@@ -999,6 +1035,10 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             touched_entries = [tonight_row["id"]] if tonight_row is not None else []
             _settle_night_off(plan_id, today, use_soon, conn)
             conn.commit()
+            # The weekdays the dish is still planned on after tonight — the
+            # fact `said` rests on, carried so a client building its own
+            # sentence (shell.js tonightNightOffSaid) reads it, not a rule.
+            out["still_on"] = step["still_on"]
             out["said"] = _said(kind, dish, step, use_soon)
         else:
             touched_entries = _night_off_with_undo(conn, plan, rows, tonight_row, today, step, out)

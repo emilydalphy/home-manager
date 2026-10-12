@@ -403,6 +403,60 @@ def test_an_address_left_on_someone_no_longer_an_adult_is_not_a_dead_end(outbox)
     assert res.json()["new_household"] is True
 
 
+def _abandoned_sign_up(email, outbox):
+    """Type an address on the sign-in screen, spend the code, and stop at
+    the first onboarding screen. Returns the empty household it made."""
+    client = TestClient(app)
+    _start(client, email)
+    res = _verify(client, email, _code_in(outbox[-1]))
+    assert res.json()["new_household"] is True
+    return security.read_session_household(client.cookies.get(security.COOKIE_NAME))
+
+
+def test_a_sign_up_nobody_finished_does_not_hold_the_address_for_ever(signed_in, outbox):
+    """Defect hunt, 2026-10-10: a partner types their address, lands in an
+    empty onboarding, stops, and joins the real household by invite. Adding
+    that address in Preferences sent them "It's already in use" and no code,
+    for ever — and the empty household can't be deleted from onboarding."""
+    abandoned = _abandoned_sign_up("pat@example.com", outbox)
+    pat = _adult(name="Pat")
+    signed_in.post("/api/whoami/pick", json={"member_id": pat})
+    res = signed_in.post("/api/account/email/start", json={"email": "pat@example.com"})
+    assert res.json()["detail"] == account_email.SENT_LINE
+    assert outbox[-1]["To"] == "pat@example.com" and outbox[-1]["Subject"] == "Your Pomona code"
+    res = signed_in.post("/api/account/email/verify", json={"email": "pat@example.com", "code": _code_in(outbox[-1])})
+    assert res.status_code == 200, res.text
+    assert account_email.lookup("pat@example.com") == (1, pat)
+    conn = get_conn()
+    assert conn.execute("SELECT 1 FROM signup_emails WHERE household_id = ?", (abandoned,)).fetchone() is None
+    # Left alone, never deleted from here.
+    assert conn.execute("SELECT 1 FROM households WHERE id = ?", (abandoned,)).fetchone() is not None
+    conn.close()
+    # And the address now signs Pat in to the household Pat actually uses.
+    phone = TestClient(app)
+    _start(phone, "pat@example.com")
+    assert _verify(phone, "pat@example.com", _code_in(outbox[-1])).json()["new_household"] is False
+    assert phone.get("/api/whoami").json()["member"]["id"] == pat
+
+
+def test_a_sign_up_with_people_in_it_still_holds_its_address(signed_in, outbox):
+    """The boundary: once somebody is in that household it is somebody's,
+    whether or not its address found its main person — a notice, no code,
+    and the address can't be moved even with a code in hand."""
+    started = _abandoned_sign_up("kept@example.com", outbox)
+    conn = get_conn()
+    conn.execute("INSERT INTO members (household_id, name, age_group) VALUES (?, 'Rory', 'teen')", (started,))
+    conn.commit()
+    conn.close()
+    signed_in.post("/api/whoami/pick", json={"member_id": _adult()})
+    sent_before = len(outbox)
+    signed_in.post("/api/account/email/start", json={"email": "kept@example.com"})
+    assert len(outbox) == sent_before + 1 and outbox[-1]["Subject"] != "Your Pomona code"
+    with pytest.raises(account_email.EmailCodeError):
+        account_email.set_member_email(1, _adult(name="Sky"), "kept@example.com")
+    assert account_email.lookup("kept@example.com") == (started, None)
+
+
 def test_the_sign_in_routes_are_public_and_the_account_ones_are_not():
     for path in ("/api/auth/email/start", "/api/auth/email/verify"):
         assert security.is_public_path(path)

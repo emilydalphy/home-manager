@@ -607,3 +607,59 @@ def test_a_sized_or_non_can_amount_is_not_touched_by_the_count_rule():
     assert tools.recipes.cooking_quantity("olive oil", 4, "2 cans") == "2 tbsp"
     # A fractional can is not a count anyone opens: the table's whole can stands.
     assert tools.recipes.cooking_quantity("black beans", 4, "0.5 can") == "1 can (15 oz)"
+
+
+# ---------- "1 ½ cups" is a measurement (defect hunt, 2026-10-10) ----------
+#
+# scale_recipe writes a scaled bracket/range/fraction line with glyphs
+# ("1 ½ cans (15 oz)"), and recipes off the web are written that way too.
+# The cooking judgements read them as "unmeasured" and replaced them with the
+# table's guess, so the cook view and the recipe page's stepper disagreed.
+
+@pytest.mark.parametrize("item, qty", [
+    ("Chicken broth", "1 ½ cups"),
+    ("Milk", "¾ cup"),
+    ("Flour", "2½ cups"),
+    ("Rice", "1 ½ cups (360 ml)"),
+    ("Chickpeas", "1 ½ cans (15 oz)"),
+])
+def test_an_amount_written_with_a_fraction_glyph_is_kept(item, qty):
+    assert tools.recipes._quantity_problem(item, qty) is None
+    assert tools.cooking_ingredients([{"item": item, "qty": qty}], servings=6)[0]["qty"] == qty
+
+
+def test_a_fraction_glyph_still_gets_the_plausibility_check():
+    """Read, not waved through: a glyph amount out of range for the table is
+    fixed the same way its 1/2 spelling is."""
+    glyph = tools.cooking_ingredients([{"item": "Butter", "qty": "2 ½ sticks"}], servings=2)[0]["qty"]
+    ascii_ = tools.cooking_ingredients([{"item": "Butter", "qty": "2 1/2 sticks"}], servings=2)[0]["qty"]
+    assert glyph == ascii_ != "2 ½ sticks"
+
+
+def test_the_cook_view_for_six_says_what_the_stepper_says_for_six():
+    from conftest import household_today
+
+    for name in ("Ana", "Ben", "Cy", "Di", "Ed", "Flo"):
+        tools.add_member(name)
+    tools.add_recipe(
+        "Bean Chili",
+        ingredients=[
+            {"item": "kidney beans", "qty": "1 can", "category": "pantry"},
+            {"item": "chicken broth", "qty": "1 cup", "category": "pantry"},
+            {"item": "ground beef", "qty": "1 lb", "category": "meat"},
+        ],
+        instructions=["Brown the beef.", "Add the beans and broth.", "Simmer."],
+        default_servings=4,
+    )
+    today = household_today()
+    monday = today - datetime.timedelta(days=today.weekday())
+    plan_id = tools.create_weekly_plan(monday.isoformat())["weekly_plan_id"]
+    tools.plan_meal(today.isoformat(), "Bean Chili", slot="dinner", weekly_plan_id=plan_id)
+
+    card = tools.get_cooker_view(plan_id)["meals"][0]
+    assert card["default_servings"] == 6
+    on_card = {i["item"]: i["qty"] for i in card["ingredients"]}
+    stepper = {i["item"]: i["qty"] for i in tools.scale_recipe("Bean Chili", 6)["scaled_ingredients"]}
+    assert on_card == stepper
+    # A can and a half — never the one can the table says a table of four opens.
+    assert on_card["kidney beans"] == "1 ½ cans (15 oz)"

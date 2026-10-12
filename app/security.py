@@ -604,11 +604,18 @@ async def auth_middleware(request, call_next):
     # activity write is), so a blocking SQLite call here would stall the
     # loop thread — and every concurrent request with it — on every single
     # request rather than once per 15 minutes.
+    #
+    # The same holds for the PERSON a cookie names: an adult who removed
+    # themselves is gone from members, and every other device they were
+    # signed in on is signed out here too, rather than staying in the
+    # household they left as whichever adult it resolves to
+    # (households.session_still_holds says why). One query either way.
     stale_cookie = False
-    if session and not await run_in_threadpool(households.household_exists, session[1]):
+    if session and not await run_in_threadpool(households.session_still_holds, session[1], session[3]):
         logger.warning(
-            "Session cookie named household %s, which no longer exists — signing out.",
+            "Session cookie named household %s member %s, which no longer exists — signing out.",
             session[1],
+            session[3],
         )
         session = None
         stale_cookie = True
@@ -739,6 +746,15 @@ def _safe_next(path: str) -> str:
     after a successful login.
     """
     if not path.startswith("/") or path.startswith("//"):
+        return "/"
+    # A backslash or any control character is refused too (defect hunt,
+    # 2026-10-11). Browsers read a backslash as "/" and silently drop tabs
+    # and newlines, so "/\evil.example" and "/<TAB>/evil.example" both mean
+    # "//evil.example" — off-site — by the time window.location.assign
+    # resolves them. The email sign-in hands this value to exactly that
+    # (static/login.html), and it was measured landing on another site.
+    # No path this app serves contains either.
+    if "\\" in path or any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in path):
         return "/"
     return path
 

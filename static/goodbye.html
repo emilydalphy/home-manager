@@ -60,6 +60,14 @@
   .gb-line { font-size: 21px; margin: 0 0 8px; }
   .gb-sub { color: var(--ink-secondary); font-size: 15px; line-height: 1.45; margin: 0 0 12px; }
   .gb-state[hidden] { display: none; }
+  /* The way out (defect hunt, 2026-10-11). The shell lands here with
+     location.replace and the cookie already gone, so in the iPhone app —
+     no address bar, no back gesture — this page was a dead end until the
+     app was force-quit. 44px tall like every other link (§2 rule 6). */
+  .gb-back {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+    padding: 0 4px; margin-top: 8px; font-weight: 700; font-size: 0.95rem;
+  }
 </style>
 </head>
 <body>
@@ -82,8 +90,24 @@
     <p class="gb-sub">Your details are gone from Pomona. Everyone else&rsquo;s plans and lists stay as they are. Backups keep a copy for up to 15 days, then that&rsquo;s gone too.</p>
     <p class="gb-sub">Thanks for letting me help.</p>
   </div>
+  <a class="gb-back" href="/login">Back to the start</a>
 </main>
 <script>
+// Every onboarding draft on this device goes (static/onboarding.html keeps
+// one per household while setup is unfinished, with allergies, ages and
+// helpers' phone numbers in it). Wrapped: a private window has no storage.
+function forgetOnboardingDrafts() {
+  try {
+    var store = window.localStorage, gone = [], i, k;
+    for (i = 0; i < store.length; i++) {
+      k = store.key(i);
+      if (k && k.indexOf('pomona-onboarding-draft:') === 0) gone.push(k);
+    }
+    for (i = 0; i < gone.length; i++) store.removeItem(gone[i]);
+  } catch (e) { /* private mode */ }
+}
+// Only reached after a delete or a leave (2026-10-09).
+forgetOnboardingDrafts();
 (function () {
   var left = /(?:^|[?&])left=1(?:&|$)/.test(window.location.search || '');
   document.getElementById('gb-deleted').hidden = left;

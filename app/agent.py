@@ -1683,7 +1683,7 @@ TOOL_DEFINITIONS = [
                     "items": {
                         "type": "object",
                         "properties": {
-                            "item": {"type": "string", "description": "The plain grocery-list name ('Carrots', never 'Carrots, julienned'), naming the kind whenever the count depends on it ('Persian cucumbers' with qty '6' — a bare 'Cucumbers' reads as full-size English ones)."},
+                            "item": {"type": "string", "description": "The plain grocery-list name ('Carrots', never 'Carrots, julienned'), naming the kind whenever the count depends on it ('Persian cucumbers' with qty '6' — a bare 'Cucumbers' reads as full-size English ones). In its plain shopping form: 'Plain yogurt', never 'Yogurt, plain'."},
                             "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead. A COUNT is the amount the DISH uses, never one each: a salad for four wants ONE lemon, not four."},
                             "category": {
                                 "type": "string",
@@ -1757,7 +1757,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "attribute_recipe_feedback",
-        "description": "Record which SPECIFIC household member a recipe's feedback belongs to — additive on top of mark_recipe_feedback's household-level rating, which stays as the fallback default for anyone without their own row here. Call the moment a rating comes with a name attached: either a fresh opinion ('Vineeth loved the skewers' — pass rating) or a correction to an existing household rating ('that was just my rating' — omit rating to reuse the recipe's current one). Powers per-person taste for solo-night suggestions and 'what does X like?' read-back (get_member_taste).",
+        "description": "Record which SPECIFIC household member a recipe's feedback belongs to — additive on top of mark_recipe_feedback's household-level rating, which stays as the fallback default for anyone without their own row here. Call the moment a rating comes with a name attached: either a fresh opinion ('Vineeth loved the skewers' — pass rating) or a correction to an existing household rating ('that was just my rating' — omit rating to reuse the recipe's current one). Powers per-person taste for solo-night suggestions and 'what does X like?' read-back (get_member_taste). member_name must be someone already in the household — it never adds a person; a guest's opinion goes in mark_recipe_feedback's notes.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2005,7 +2005,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "take_the_night_off",
-        "description": "\"We're going out tonight\" / \"we'll grab something\" / \"nobody's cooking tonight\" — settle tonight in one call, with no follow-up question. Takeout, leftovers or cereal all mean the same thing here, so don't ask which. Tonight's dish moves to the next free night of the plan when there is one (`moved_to` says which), otherwise it comes off the week and `use_soon` names anything already bought for it that won't keep — say that back in one line if it isn't empty. Either way the night ends deliberately empty: never call it a gap, never offer to fill it, never describe the week as short because of it. `already` true means nothing changed because the night was already empty — `already_reason` 'night_off' is a night off somebody already took (say so plainly, don't take it again), 'away' is a night nobody was home for anyway (say THAT, never \"night off\"). It never asks for anything to be changed first: a dish cooked double for a later night, with no free night, is cooked on the first night it was feeding instead (same size, `moved_to` says which) and tonight's share goes in the freezer; a leftovers night, or a dinner already cooked, goes in the freezer (`frozen` names it). `said` is the line to say back; if `thaw_now` is there, add those lines too — moving the dish has left a fridge move due today or earlier, which no screen can show. A status of 'refused' means there is no plan covering that night and nothing changed — say `message` back rather than retrying. A status of 'needs_confirmation' means NOTHING changed yet: the night the dish would move onto is already marked cooked, and moving onto it replaces that record — ask the household `message` in plain words and stop; only if they say yes in this conversation, call again with confirm_cooked true. Pass `day` only for a day other than today. For a trip or a night nobody is home at all, use set_slot_need or set_away_stretch instead — those are about who's in the house, this is about not cooking.",
+        "description": "\"We're going out tonight\" / \"we'll grab something\" / \"nobody's cooking tonight\" — settle tonight in one call, with no follow-up question. Takeout, leftovers or cereal all mean the same thing here, so don't ask which. Tonight's dish moves to the next free night of the plan when there is one (`moved_to` says which), otherwise tonight's row comes off (`still_on` names any later night the same dish is still planned on — then it is NOT off the week, so never say it is) and `use_soon` names anything already bought for it that won't keep — say that back in one line if it isn't empty. Either way the night ends deliberately empty: never call it a gap, never offer to fill it, never describe the week as short because of it. `already` true means nothing changed because the night was already empty — `already_reason` 'night_off' is a night off somebody already took (say so plainly, don't take it again), 'away' is a night nobody was home for anyway (say THAT, never \"night off\"). It never asks for anything to be changed first: a dish cooked double for a later night, with no free night, is cooked on the first night it was feeding instead (same size, `moved_to` says which) and tonight's share goes in the freezer; a leftovers night, or a dinner already cooked, goes in the freezer (`frozen` names it). `said` is the line to say back; if `thaw_now` is there, add those lines too — moving the dish has left a fridge move due today or earlier, which no screen can show. A status of 'refused' means there is no plan covering that night and nothing changed — say `message` back rather than retrying. A status of 'needs_confirmation' means NOTHING changed yet: the night the dish would move onto is already marked cooked, and moving onto it replaces that record — ask the household `message` in plain words and stop; only if they say yes in this conversation, call again with confirm_cooked true. Pass `day` only for a day other than today. For a trip or a night nobody is home at all, use set_slot_need or set_away_stretch instead — those are about who's in the house, this is about not cooking.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2366,7 +2366,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "mark_staple_plenty",
-        "description": "'We've got plenty of coffee' / 'we're fine for dish soap' — Pomona suggested a staple too early. Pushes its next due date a whole cadence out and takes any suggestion line for it off the grocery list. Doesn't change the learned rhythm.",
+        "description": "'We've got plenty of coffee' / 'we're fine for dish soap' — Pomona suggested a staple too early. Pushes its next due date a whole cadence out and takes its suggestion line off the grocery list — unless this week's meals need some too, in which case the line stays, cut back to what they need (the result's kept_on_list says how much; say that, not that it came off). Doesn't change the learned rhythm.",
         "input_schema": {"type": "object", "properties": {"item": {"type": "string"}}, "required": ["item"]},
     },
     {
@@ -2696,7 +2696,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_away_stretch",
-        "description": "Mark a whole away stretch in one gesture — e.g. \"we're away Saturday lunch through Sunday lunch\", or \"Vineeth's away for the weekend\" — the way to handle a trip conversationally, matching the week intake's own range gesture. Every slot from from_date/from_slot to to_date/to_slot INCLUSIVE has the travelers taken out of it. If that leaves NOBODY home for a slot, that slot is marked away (no planning, no groceries — same guarantee as a nobody-home dinner, now for any slot); if others are still home, the meal still happens, just for fewer people. Two more slots are derived automatically PER TRAVELER: that person's last meal at home before they go becomes 'quick' (grab-and-go), and their first meal back becomes 'ready_made' (earmarked with a batch/defrost recommendation rather than cooked fresh — the household still has to confirm that recommendation, see confirm_slot_recommendation). Use set_member_attendance instead for one person missing one meal, and set_slot_need for a single slot rather than a whole range.",
+        "description": "Mark a whole away stretch in one gesture — e.g. \"we're away Saturday lunch through Sunday lunch\", or \"Vineeth's away for the weekend\" — the way to handle a trip conversationally, matching the week intake's own range gesture. Every slot from from_date/from_slot to to_date/to_slot INCLUSIVE has the travelers taken out of it. If that leaves NOBODY home for a slot, that slot is marked away (no planning, no groceries — same guarantee as a nobody-home dinner, now for any slot); if others are still home, the meal still happens, just for fewer people. Two more slots are derived automatically PER TRAVELER: that person's last meal at home before they go becomes 'quick' (grab-and-go) — unless that meal has already gone by or is a meal the household asked for none of, in which case nothing is tagged quick (quick_slot comes back null), and their first meal back becomes 'ready_made' (earmarked with a batch/defrost recommendation rather than cooked fresh — the household still has to confirm that recommendation, see confirm_slot_recommendation). Use set_member_attendance instead for one person missing one meal, and set_slot_need for a single slot rather than a whole range.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -3933,7 +3933,7 @@ _RECIPE_DETAILS_TOOL = {
                 "items": {
                     "type": "object",
                     "properties": {
-                        "item": {"type": "string", "description": "The plain grocery-list name ('Baby spinach', 'Carrots'), never with a prep descriptor ('Carrots, julienned'). Name the kind when the count only makes sense for that kind ('Persian cucumbers', 'Cherry tomatoes')."},
+                        "item": {"type": "string", "description": "The plain grocery-list name ('Baby spinach', 'Carrots'), never with a prep descriptor ('Carrots, julienned'). Name the kind when the count only makes sense for that kind ('Persian cucumbers', 'Cherry tomatoes'). In its plain shopping form: 'Plain yogurt', never 'Yogurt, plain'."},
                         "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself. Never a recipe-prep measurement like '2 cups shredded'."},
                         "category": {
                             "type": "string",
@@ -4035,7 +4035,13 @@ spinach", "Carrots"), never with a prep descriptor tacked on ("Baby spinach, cho
 "Carrots, julienned"). This matters beyond phrasing: the grocery list merges lines by exact \
 item name, so "Baby spinach" in one recipe and "Baby spinach, chopped" in another become two \
 separate lines that never combine — quietly doubling what the household is told to buy. Prep \
-instructions belong in the recipe's instructions text, never in the ingredient name. One \
+instructions belong in the recipe's instructions text, never in the ingredient name. Write \
+the name in its plain shopping form, the way a person says it at the store — "Plain yogurt", \
+never "Yogurt, plain"; "Greek yogurt", never "Yogurt, Greek" (a prep word after the comma \
+is dropped, as above, never moved to the front) — and when the dish wants a \
+thing the household already buys under a plain name, use that name rather than a fancier \
+spelling of it. Three recipes calling one tub of yogurt three different names is three lines on \
+the list. One \
 descriptor DOES belong in the name: the kind, whenever the count only makes sense for that \
 kind — "Persian cucumbers" with qty "6", "Cherry tomatoes" with "1 pint", "Baby potatoes" with \
 "1.5 lbs", "Mini sweet peppers" with "8". A bare "Cucumbers", "Tomatoes", "Potatoes", \
@@ -5518,7 +5524,8 @@ are dairy; fresh vegetables/herbs are produce.
 - Write each ingredient's qty as how it's actually bought at the store (a head, a bunch, a bag, \
 a lb, a can) — except eggs and garlic, which are the number the recipe uses ("4" eggs, "3 \
 cloves"), never "1 dozen" or "1 head" — not how much ends up used once prepped, and keep the item name itself \
-free of prep descriptors ("Baby spinach", never "Baby spinach, chopped") — but DO name the kind \
+free of prep descriptors ("Baby spinach", never "Baby spinach, chopped") and in its plain \
+shopping form ("Plain yogurt", never "Yogurt, plain") — but DO name the kind \
 whenever the count depends on it ("Persian cucumbers" with qty "6", never a bare "Cucumbers" \
 meaning small ones: a bare name reads as the full-size kind). A COUNT is the amount the DISH \
 uses, never one each: a salad for four wants ONE lemon, not four. See the day-based prompt's \
@@ -7937,7 +7944,7 @@ _GENERATE_SIDES_TOOL = {
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "item": {"type": "string", "description": "The ingredient name with no prep descriptor — 'Baby spinach', never 'Baby spinach, chopped'."},
+                                    "item": {"type": "string", "description": "The ingredient name in its plain shopping form with no prep descriptor — 'Baby spinach', never 'Baby spinach, chopped'; 'Plain yogurt', never 'Yogurt, plain'."},
                                     "qty": {"type": "string", "description": "How it's actually bought at the store ('1 head', '1 bunch', '1 lb', '1 box'), not a prepped measurement — except eggs and garlic, which are the number used ('2' eggs, '2 cloves'), never '1 dozen' or '1 head'."},
                                     "category": {
                                         "type": "string",
@@ -8058,7 +8065,7 @@ _DISH_PROPERTIES = {
         "items": {
             "type": "object",
             "properties": {
-                "item": {"type": "string", "description": "The ingredient name with no prep descriptor."},
+                "item": {"type": "string", "description": "The ingredient name with no prep descriptor, in its plain shopping form — 'Plain yogurt', never 'Yogurt, plain'."},
                 "qty": {"type": "string", "description": "As bought at the store, for THIS table ('2 lb', '1 bunch', '2 cans')."},
                 "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
             },

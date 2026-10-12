@@ -194,7 +194,12 @@ class TestTheFreezerAskInTheEvening:
             nights[1].isoformat(), nights[2].isoformat()
         ]
         assert [n["date"] for n in result["notes"]] == [nights[0].isoformat()]
-        assert result["notes"][0]["note"] == _defrost.TOO_LATE_TO_THAW_NOTE
+        # The note names the night it is about, two days out — not
+        # "tonight" (2026-10-10, test_too_late_night_keeps_its_line.py).
+        assert result["notes"][0]["note"] == _defrost.too_late_to_thaw_note(
+            nights[0].isoformat(), "dinner", household_day
+        )
+        assert "tonight" not in result["notes"][0]["note"]
 
     def test_a_night_the_household_has_already_lost_is_refused(self, monkeypatch):
         """

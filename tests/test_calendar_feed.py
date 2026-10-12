@@ -848,3 +848,62 @@ def test_no_other_screen_grew_a_calendar_empty_state():
         assert "your calendar" not in src and "/api/calendar" not in src, name
     shell = (_STATIC / "shell.js").read_text(encoding="utf-8")
     assert shell.count("fetch('/api/calendar')") == 1, "one read (loadPrefsCalendar), shared by Preferences and What we know, and nowhere else"
+
+
+# ---------- one cancelled week of a recurring event (overnight defect hunt, 2026-10-11) ----------
+# A feed says "not this Tuesday" for one week of a weekly practice by
+# writing that occurrence again with its RECURRENCE-ID and STATUS:CANCELLED.
+# The cancelled copy used to be dropped before its RECURRENCE-ID was
+# recorded, so the series' own occurrence came back in its place and the
+# planner was told the evening was busy.
+
+def _weekly_practice_with_a_cancelled_week(*cancelled_lines: str) -> str:
+    first = MON - timedelta(days=13)  # a Tuesday two weeks before the window
+    cancelled = TUE + timedelta(days=7)
+    return _google(
+        _vevent(f"DTSTART;TZID=America/Toronto:{_d(first)}T173000", f"DTEND;TZID=America/Toronto:{_d(first)}T190000",
+                "RRULE:FREQ=WEEKLY;BYDAY=TU", "UID:practice@google.com", "SUMMARY:Soccer practice")
+        + _vevent("UID:practice@google.com",
+                  f"RECURRENCE-ID;TZID=America/Toronto:{_d(cancelled)}T173000",
+                  *cancelled_lines,
+                  "STATUS:CANCELLED", "SUMMARY:Soccer practice")
+    )
+
+
+def test_a_cancelled_week_of_a_recurring_event_is_not_on_the_calendar():
+    cancelled = TUE + timedelta(days=7)
+    ics = _weekly_practice_with_a_cancelled_week(
+        f"DTSTART;TZID=America/Toronto:{_d(cancelled)}T173000",
+        f"DTEND;TZID=America/Toronto:{_d(cancelled)}T190000",
+    )
+    result = cf.parse_ics(ics, MON, MON + timedelta(days=20))
+    dates = [e["date"] for e in result["events"]]
+    assert TUE.isoformat() in dates and (TUE + timedelta(days=14)).isoformat() in dates
+    assert cancelled.isoformat() not in dates
+    # And so the planner hears that evening as free.
+    days = cf.day_contexts(result["events"], [cancelled.isoformat(), TUE.isoformat()])
+    assert cancelled.isoformat() not in days
+    assert days[TUE.isoformat()]["evening_busy_from"] == "17:30"
+
+
+def test_a_cancelled_week_written_without_its_own_start_still_cancels_it():
+    cancelled = TUE + timedelta(days=7)
+    result = cf.parse_ics(_weekly_practice_with_a_cancelled_week(), MON, MON + timedelta(days=20))
+    assert cancelled.isoformat() not in [e["date"] for e in result["events"]]
+    assert result["skipped"] == 0
+
+
+def test_a_cancellation_naming_its_week_in_utc_still_cancels_a_local_series():
+    # Toronto series at 17:30; the cancelled week named in UTC (EDT is UTC-4).
+    cancelled = TUE + timedelta(days=7)
+    first = MON - timedelta(days=13)
+    ics = _google(
+        _vevent(f"DTSTART;TZID=America/Toronto:{_d(first)}T173000", f"DTEND;TZID=America/Toronto:{_d(first)}T190000",
+                "RRULE:FREQ=WEEKLY;BYDAY=TU", "UID:practice@google.com", "SUMMARY:Soccer practice")
+        + _vevent("UID:practice@google.com", f"RECURRENCE-ID:{_d(cancelled)}T213000Z",
+                  f"DTSTART:{_d(cancelled)}T213000Z", f"DTEND:{_d(cancelled)}T230000Z",
+                  "STATUS:CANCELLED", "SUMMARY:Soccer practice")
+    )
+    dates = [e["date"] for e in cf.parse_ics(ics, MON, MON + timedelta(days=20))["events"]]
+    assert cancelled.isoformat() not in dates
+    assert TUE.isoformat() in dates and (TUE + timedelta(days=14)).isoformat() in dates

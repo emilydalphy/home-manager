@@ -164,3 +164,23 @@ def test_morning_clock_keeps_its_own_default_through_human_time():
     assert _run("morningClock('')") == "7:00 am"
     assert _run("morningClock(null)") == "7:00 am"
     assert _run("morningClock('18:30')") == "6:30 pm"
+
+
+@_needs_node
+@pytest.mark.parametrize(
+    "qty,item,expected",
+    [
+        ("to taste", "salt", "salt, to taste"),       # defect hunt 2026-10-09: was "to taste salt"
+        ("for garnish", "Parsley", "Parsley, for garnish"),
+        ("a pinch", "chili flakes", "a pinch chili flakes"),  # an amount: unchanged
+        ("0.5 lb", "Flank steak", "½ lb Flank steak"),        # unchanged
+    ],
+)
+def test_a_how_much_phrase_reads_after_the_item(qty, item, expected):
+    harness = _HARNESS + _extract("cookIngredientLabel") + "\n"
+    script = harness + (
+        f"console.log(JSON.stringify(cookIngredientLabel({{ qty: {json.dumps(qty)}, item: {json.dumps(item)} }})));\n"
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    assert json.loads(res.stdout.strip()) == expected

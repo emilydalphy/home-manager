@@ -39,6 +39,7 @@ which bite; each one is named in the docstring of the test it pins.
 """
 from __future__ import annotations
 
+import json
 import time
 import types
 
@@ -50,11 +51,10 @@ from app.db import get_conn
 
 @pytest.fixture(autouse=True)
 def _clean_sessions():
-    main.SESSIONS.clear()
-    main.SESSION_TOUCHED.clear()
+    # The conversation is the chat_sessions table since 2026-10-09 (it was
+    # the SESSIONS / SESSION_TOUCHED dicts); conftest wipes it between
+    # tests, and this says so where the dicts used to be cleared.
     yield
-    main.SESSIONS.clear()
-    main.SESSION_TOUCHED.clear()
 
 
 def _request():
@@ -63,12 +63,21 @@ def _request():
 
 
 def _seed(session_id: str, turns: int, *, seconds_ago: float) -> None:
-    main.SESSIONS[session_id] = [
+    history = [
         m for i in range(turns)
         for m in ({"role": "user", "content": f"turn {i}"},
                   {"role": "assistant", "content": f"reply {i}"})
     ]
-    main.SESSION_TOUCHED[session_id] = time.time() - seconds_ago
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO chat_sessions (session_key, household_id, history_json, touched_at) "
+            "VALUES (?, ?, ?, ?)",
+            (session_id, tools.household_id(), json.dumps(history), time.time() - seconds_ago),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _turns(history: list) -> int:

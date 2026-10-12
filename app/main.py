@@ -29,12 +29,15 @@ import queue
 import re
 import threading
 import time
+# Aliased: _render_login's local is called `html`.
+from html import escape as html_escape
 
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
 from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
+from . import db
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
@@ -359,17 +362,25 @@ async def security_headers(request: Request, call_next):
     return response
 
 
-# In-memory chat history: session_id -> conversation.
+# Chat history: session key -> conversation, in the chat_sessions table.
 #
 # The session id is minted server-side and carried in the signed login
 # cookie (see security.issue_session). It used to come straight off the
 # request body with a default of "default", which meant any caller could
-# both read and append to the household's conversation, and could grow this
-# dict without bound by inventing new ids. Neither is possible now, but the
+# both read and append to the household's conversation, and could grow the
+# store without bound by inventing new ids. Neither is possible now, but the
 # TTL and cap below stay as a second line of defence — and they also stop a
 # long-lived deploy accumulating history for browsers that never come back.
-SESSIONS: dict[str, list[dict]] = {}
-SESSION_TOUCHED: dict[str, float] = {}
+#
+# IN THE DATABASE, NOT IN THIS PROCESS (2026-10-09). This was two dicts,
+# SESSIONS and SESSION_TOUCHED, so every redeploy — every merge to main —
+# dropped a household's conversation mid-sitting while the messages they
+# had just exchanged stayed on screen, and Pomona answered the next one as
+# if it had never seen them. A second uvicorn worker would have been
+# worse and quieter: each process its own half of one conversation. Read
+# from the table on every turn and never cached here, for that second
+# reason — a cache in one worker is exactly the stale copy the move exists
+# to get rid of. See schema.sql on chat_sessions for retention.
 _SESSION_TTL = 7 * 24 * 60 * 60  # a week without a message and it's dropped
 # Per household, deliberately — not across all of them. A single shared cap
 # meant one household's busy evening evicted another household's live
@@ -425,50 +436,149 @@ def _chat_session_state(request) -> tuple[str, list, bool]:
     the clock rather than two, so they can never disagree about it.
     """
     session_id = _chat_session_id(request)
-    is_new_sitting = time.time() - SESSION_TOUCHED.get(session_id, 0) > _NEW_SITTING_GAP
-    history = [] if is_new_sitting else SESSIONS.get(session_id, [])
+    stored, touched = _load_chat_session(session_id)
+    is_new_sitting = time.time() - touched > _NEW_SITTING_GAP
+    history = [] if is_new_sitting else stored
     return session_id, history, is_new_sitting
 
 
-def _session_household(session_key: str) -> str:
+def _load_chat_session(session_key: str) -> tuple[list, float]:
     """
-    The household part of a chat session key.
+    The stored conversation for this key and when it was last touched, or
+    ([], 0.0) — which reads as a new sitting — when there is none.
 
-    Keys are built by _chat_session_id below as "h<household>:<session id>",
-    so the household is everything before the first colon. A key in any
-    other shape falls back to itself, which puts it in a bucket of its own
-    rather than silently sharing one household's allowance with another —
-    the failure mode this split exists to prevent.
+    Filtered on household_id as well as the key: the key already carries
+    the household, but a read that ALSO says household_id = ? cannot hand
+    one household another's conversation even if a key were ever built
+    wrong. Belt and braces, on the one piece of data that holds what
+    somebody typed.
+
+    A failed read starts the turn fresh rather than 500ing it: the
+    household loses the thread of one conversation, which is exactly what
+    a restart used to cost them on every deploy, and the reply still comes.
+    Logged, so it is not silent.
     """
-    prefix, sep, _ = session_key.partition(":")
-    return prefix if sep else session_key
+    try:
+        conn = get_conn()
+        try:
+            row = conn.execute(
+                "SELECT history_json, touched_at FROM chat_sessions "
+                "WHERE session_key = ? AND household_id = ?",
+                (session_key, tools.household_id()),
+            ).fetchone()
+        finally:
+            conn.close()
+        if row is None:
+            return [], 0.0
+        return json.loads(row["history_json"]), float(row["touched_at"])
+    except Exception:
+        logger.exception("Reading the stored chat conversation failed; starting this turn fresh")
+        return [], 0.0
 
 
-def _prune_sessions() -> None:
-    now = time.time()
-    # Both sweeps below walk a snapshot (list(...)) rather than the live
-    # dict. /api/chat is a `def` route, so Starlette runs it in a
-    # threadpool and two households chatting at once really do mutate
-    # these dicts underneath a walk — which raises "dictionary changed
-    # size during iteration" and 500s somebody's message.
-    stale = [sid for sid, seen in list(SESSION_TOUCHED.items()) if now - seen > _SESSION_TTL]
-    for sid in stale:
-        SESSIONS.pop(sid, None)
-        SESSION_TOUCHED.pop(sid, None)
+def _history_for_storage(history: list) -> list:
+    """
+    The conversation as plain JSON, exactly as the Anthropic SDK would put
+    it on the wire.
+
+    run_agent_turn appends `response.content` as it came back — SDK block
+    OBJECTS (TextBlock, ToolUseBlock, thinking, server-tool results), not
+    dicts — next to plain dicts it builds itself (the person's words, every
+    tool_result). The dict store held the objects and the SDK serialised
+    them on the next request; a table cannot. So each object is dumped here
+    with the SAME call the SDK makes when it sends one
+    (anthropic._utils._transform: mode="json", by_alias, exclude_unset,
+    and the model's own __api_exclude__), which means the next turn sends
+    Claude the bytes it would have sent from memory — a signed thinking
+    block included, where a hand-picked set of fields would break the
+    signature. Everything reading the stored history back (trim_conversation,
+    _trim_fetched_for_resend, the turn summaries) already reads a block by
+    key or through agent._block_get, so a dict is what they expect anyway.
+    """
+    def plain(block):
+        if hasattr(block, "model_dump"):
+            return block.model_dump(
+                mode="json", by_alias=True, exclude_unset=True,
+                exclude=getattr(block, "__api_exclude__", None),
+            )
+        return block
+
+    out = []
+    for message in history:
+        content = message.get("content") if isinstance(message, dict) else None
+        if isinstance(content, list):
+            message = {**message, "content": [plain(b) for b in content]}
+        out.append(message)
+    return out
+
+
+def _save_chat_session(session_key: str, history: list) -> None:
+    """
+    Store this turn's trimmed conversation, then hold the TTL and the
+    per-household cap — in one db.write() block, so a failure part way
+    can't leave the connection holding the write lock (db.write's own
+    docstring has the measured cost of that).
+
+    It cannot break the turn it stores. The reply is already paid for and
+    in hand; a failed save costs the next turn its context, which is what a
+    restart used to cost, and is logged rather than turned into a 500.
+    """
+    try:
+        payload = json.dumps(_history_for_storage(history))
+        with db.write() as conn:
+            conn.execute(
+                "INSERT INTO chat_sessions (session_key, household_id, history_json, touched_at) "
+                "VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(session_key) DO UPDATE SET history_json = excluded.history_json, "
+                "touched_at = excluded.touched_at "
+                # The key names its household, so this never moves a row
+                # between households; the WHERE says so rather than trusting it.
+                "WHERE chat_sessions.household_id = excluded.household_id",
+                (session_key, tools.household_id(), payload, time.time()),
+            )
+            _prune_sessions(conn)
+    except Exception:
+        logger.exception("Saving the chat conversation failed; the next turn starts fresh")
+
+
+def _prune_chat_sessions_now() -> None:
+    """
+    The same TTL and cap as a save holds, run when nobody is chatting: at
+    startup and once a day beside the backup. Without it, "deleted a week
+    after its last message" (the privacy policy's words) only held on a
+    deploy where SOMEBODY kept chatting, because the sweep ran only inside
+    a save. Failure-tolerant like the save: logged, never raised, so it
+    cannot stop the app starting or the backup loop's next day.
+    """
+    try:
+        with db.write() as conn:
+            _prune_sessions(conn)
+    except Exception:
+        logger.exception("Sweeping expired chat conversations failed; the next save or day retries")
+
+
+def _prune_sessions(conn) -> None:
+    """
+    The week's TTL across every household, then the cap within each one,
+    on the caller's write connection.
+
+    Bucketing the cap by household is the whole point — see
+    _MAX_SESSIONS_PER_HOUSEHOLD above. It is by the household_id COLUMN
+    now rather than the key's prefix, which is the same bucket for every
+    key _chat_session_id builds.
+    """
+    conn.execute("DELETE FROM chat_sessions WHERE touched_at < ?", (time.time() - _SESSION_TTL,))
     # Still over the cap (many devices, all active): drop least-recent
-    # first, within each household separately. Bucketing by household is
-    # the whole point — see _MAX_SESSIONS_PER_HOUSEHOLD above.
-    by_household: dict[str, list[str]] = {}
-    for sid in list(SESSIONS):
-        by_household.setdefault(_session_household(sid), []).append(sid)
-    for keys in by_household.values():
-        over = len(keys) - _MAX_SESSIONS_PER_HOUSEHOLD
-        if over <= 0:
-            continue
-        keys.sort(key=lambda sid: SESSION_TOUCHED.get(sid, 0.0))
-        for sid in keys[:over]:
-            SESSIONS.pop(sid, None)
-            SESSION_TOUCHED.pop(sid, None)
+    # first. rowid breaks a tie in touched_at the way insertion order did.
+    conn.execute(
+        "DELETE FROM chat_sessions WHERE rowid IN ("
+        " SELECT rowid FROM ("
+        "  SELECT rowid, ROW_NUMBER() OVER ("
+        "   PARTITION BY household_id ORDER BY touched_at DESC, rowid DESC) AS n"
+        "  FROM chat_sessions)"
+        " WHERE n > ?)",
+        (_MAX_SESSIONS_PER_HOUSEHOLD,),
+    )
 
 
 def _chat_session_id(request: Request) -> str:
@@ -1110,6 +1220,8 @@ class StapleAddRequest(BaseModel):
     category: str = "other"
     every_days: int | None = None
     running_low: bool = False
+    # The Shop row it was made from, when it was — see tools.add_staple.
+    grocery_item_id: int | None = None
 
 
 class GroceryAddRequest(BaseModel):
@@ -1220,6 +1332,7 @@ class ResetRequest(BaseModel):
 @app.on_event("startup")
 def startup():
     init_db()
+    _prune_chat_sessions_now()
     # Says in the logs, on day one, whether this database will survive a
     # redeploy — rather than leaving that discoverable only by losing it.
     backup.warn_if_database_is_ephemeral()
@@ -1257,6 +1370,10 @@ async def start_backup_loop():
                 # that dies quietly would leave the household uncovered
                 # with nothing to show for it.
                 logger.exception("Backup maintenance failed; will try again tomorrow")
+            # A long-running quiet deploy restarts rarely, so startup alone
+            # would not hold the week. Its own try inside the helper: a
+            # failed sweep must not cost the backup, or the backup the sweep.
+            await run_in_threadpool(_prune_chat_sessions_now)
             await asyncio.sleep(24 * 60 * 60)
 
     asyncio.create_task(_loop())
@@ -2128,10 +2245,44 @@ def set_memory_member_age(req: MemberAgeRequest):
     return memory
 
 
+def _require_member_here(name: str | None) -> None:
+    """
+    Settings' people writes (age group, restrictions) are about somebody
+    already here: looked up, never created — the rule the age route next
+    door has had since 2026-10-06.
+
+    The tools underneath (set_member_age_group, set_member_dietary_restrictions)
+    get-or-create by name, which is right for chat ("my partner doesn't eat
+    shellfish" about someone not yet saved) and wrong for a screen that only
+    ever sends a name it is showing. Found 2026-10-10: an adult who left the
+    household (household_deletion.remove_member) came straight back as a
+    member — counted in meals, offered in "Who's this?" — the moment the
+    other adult's Settings, opened before they left, tapped their age chip
+    or added a restriction; and a blank name made a nameless person who
+    could become the main one. 400 for a blank name, 404 for a stranger,
+    nothing written either way.
+    """
+    # Blank is refused trimmed; the lookup is the tools' own (case-blind,
+    # untrimmed), so a name this check finds is the row the write lands on.
+    if not (name or "").strip():
+        raise HTTPException(status_code=400, detail="Say who this is about.")
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            (tools.household_id(), name),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"{name.strip()} isn't someone in this household.")
+
+
 @app.post("/api/memory/member/age-group")
 def set_memory_member_age_group(req: MemberAgeGroupRequest):
     """Set one member's age group — What We Know's People tab. No route onto
     set_member_age_group existed before this (see MemberAgeGroupRequest)."""
+    _require_member_here(req.name)
     try:
         tools.set_member_age_group(req.name, req.age_group)
         memory = tools.get_household_memory_for_display()
@@ -2146,6 +2297,7 @@ def set_memory_member_restrictions(req: MemberRestrictionsRequest):
     """Add or replace one member's dietary restrictions — What We Know's
     People tab. Thin wrapper over set_member_dietary_restrictions, same
     replace semantics (see MemberRestrictionsRequest)."""
+    _require_member_here(req.name)
     try:
         tools.set_member_dietary_restrictions(req.name, req.restrictions, replace=req.replace)
         memory = tools.get_household_memory_for_display()
@@ -5638,7 +5790,9 @@ def update_fact_view(fact_id: int, req: FactUpdateRequest):
     try:
         result = tools.update_fact(fact_id, text=req.text, hard=req.hard)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        # Two refusals share ValueError: a fact that isn't this household's
+        # is a 404, blank text (2026-10-12) is the caller's input — a 400.
+        raise HTTPException(status_code=404 if str(e).startswith("No fact") else 400, detail=str(e))
     except Exception as e:
         logger.exception("Fact update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -5942,7 +6096,8 @@ def add_staple_view(req: StapleAddRequest):
     """Make something a staple — from a tap on a bought line, or a typed name."""
     try:
         return tools.add_staple(
-            req.item, every_days=req.every_days, quantity=req.quantity, category=req.category, running_low=req.running_low
+            req.item, every_days=req.every_days, quantity=req.quantity, category=req.category,
+            running_low=req.running_low, grocery_item_id=req.grocery_item_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -6368,6 +6523,20 @@ def remove_grocery_list_item(item_id: int):
     return result
 
 
+@app.post("/api/grocery-list/{item_id}/remove-undo")
+def undo_remove_grocery_list_item(item_id: int):
+    """Remove's Undo for a line /remove answered `restorable` on: the same
+    row back, links to its meals and all (tools.undo_remove_grocery_item).
+    `restored` False when its meals have all gone since."""
+    try:
+        return tools.undo_remove_grocery_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Grocery list remove undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/grocery-list/already-have-summary")
 def get_grocery_already_have_summary_view():
     """
@@ -6617,11 +6786,36 @@ def get_member_share(token: str):
     return view
 
 
+# What one public, token-holding writer may leave (2026-10-10). These two
+# routes are unauthenticated writes, and a note reaches the chat agent
+# through get_member_notes — so it had no floor (a blank note saved as an
+# empty bubble) and no ceiling (a pasted megabyte went into the table and,
+# from there, into a prompt). The note's cap is the app's existing one for
+# free text a person types to us, feedback.MAX_WHAT_HAPPENED (2000); a
+# restriction is a short phrase, capped like an invited adult's name (200).
+# Refused with a sentence rather than cut short: a cut note says something
+# the person did not write. Rate limiting is app/ratelimit.py's, not here.
+MEMBER_SHARE_NOTE_MAX = 2000
+MEMBER_SHARE_RESTRICTION_MAX = 200
+
+
+def _member_share_text(value: str | None, limit: int, what: str) -> str:
+    text = (value or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail=f"Write the {what} first.")
+    if len(text) > limit:
+        raise HTTPException(
+            status_code=400, detail=f"That {what} is too long — keep it under {limit} characters."
+        )
+    return text
+
+
 @app.post("/api/member-share/{token}/restriction")
 def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
     """Public: add a dietary restriction as the member behind this token — merges with their existing list."""
+    restriction = _member_share_text(req.restriction, MEMBER_SHARE_RESTRICTION_MAX, "restriction")
     try:
-        tools.eater_add_dietary_restriction(token, [req.restriction])
+        tools.eater_add_dietary_restriction(token, [restriction])
         view = tools.resolve_member_share_link(token)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -6634,8 +6828,9 @@ def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
 @app.post("/api/member-share/{token}/note")
 def add_member_share_note(token: str, req: MemberNoteRequest):
     """Public: leave a freeform preference/feedback note as the member behind this token."""
+    note = _member_share_text(req.note, MEMBER_SHARE_NOTE_MAX, "note")
     try:
-        tools.eater_add_note(token, req.note)
+        tools.eater_add_note(token, note)
         view = tools.resolve_member_share_link(token)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -7096,14 +7291,12 @@ def _finish_chat_turn(session_id: str, history: list, reply: str, updated_histor
     # session id) can't grow this — and the full payload re-sent to Claude
     # every turn — without bound. See trim_conversation for why this is
     # safe to cut mid-list without breaking tool_use/tool_result pairing.
-    SESSIONS[session_id] = trim_conversation(updated_history)
-    SESSION_TOUCHED[session_id] = time.time()
-    _prune_sessions()
-    # The only durable record that this turn ever happened. SESSIONS above
-    # is memory-only and dies with the process, so without this line a
-    # restart erases every trace of how much the app was used — and unlike
+    _save_chat_session(session_id, trim_conversation(updated_history))
+    # The durable record that this turn happened. The conversation above is
+    # overwritten every turn and swept after a week, so without this line
+    # there would be no trace of how much the app was used — and unlike
     # most gaps, it can't be backfilled later. No message content is
-    # stored; see schema.sql on chat_turns.
+    # stored here; see schema.sql on chat_turns.
     #
     # Passed as one dict rather than **unpacked: unpacking happens at the
     # call site, *before* record_chat_turn's own error handling can catch
@@ -7482,7 +7675,11 @@ def _render_login(next_path: str, error: str = "") -> HTMLResponse:
     # Python, so the page stays editable as a normal static file.
     banner = f'<p class="error">{error}</p>' if error else ""
     html = html.replace("<!--ERROR-->", banner)
-    html = html.replace("__NEXT__", security.sanitize_next(next_path))
+    # Escaped, because it lands inside value="…" and comes straight from
+    # ?next= (defect hunt, 2026-10-11): a same-site path can still carry a
+    # quote, and /login?next=/"><script>… ran its script on the sign-in
+    # page, where the passphrase and the email code are typed.
+    html = html.replace("__NEXT__", html_escape(security.sanitize_next(next_path), quote=True))
     return HTMLResponse(html, status_code=401 if error else 200)
 
 
@@ -7564,7 +7761,11 @@ def login_submit(request: Request, password: str = Form(""), next: str = Form("/
 
 @app.get("/logout")
 def logout(request: Request):
-    response = RedirectResponse(url="/login", status_code=303)
+    # ?signed_out=1 is the login page's cue to remove this device's
+    # onboarding drafts (static/login.html) -- they hold a household's
+    # allergies and helpers' contacts. Not on every login visit: a session
+    # that ran out mid-setup signs back in to its draft.
+    response = RedirectResponse(url="/login?signed_out=1", status_code=303)
     response.delete_cookie(security.COOKIE_NAME, path="/")
     _forget_this_phone(request, response)
     return response
@@ -8741,7 +8942,7 @@ def _send_code_or_say_so(request: Request, email: str, purpose: str, **who) -> d
     if ratelimit.check("email_code_address_ip", f"{key}|{caller}") or ratelimit.check("email_code_address", key):
         logger.warning("Email code limit reached for one address; nothing sent")
         return {"sent": True, "detail": account_email.SENT_LINE}
-    if purpose == account_email.CHANGE and account_email.in_use(email):
+    if purpose == account_email.CHANGE and account_email.in_use_for_a_change(email):
         # Somebody else's address: no code — but an email all the same, so
         # this request takes as long as one that sent a code and the two
         # can't be told apart by timing (review, 2026-10-06). It tells the

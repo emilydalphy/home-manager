@@ -144,6 +144,24 @@ def _upsert(conn, member_name: str, weekday: str, fact_type: str, value: str, wh
     )
 
 
+def _member_spelling(conn, member_name: str) -> str:
+    """
+    The name as the household's member row spells it, when one matches in
+    any case; otherwise the name as given. Lunch facts are keyed by name,
+    and every reader (day_meals, week_intake, Settings' rows) looks them up
+    under the MEMBER's spelling — so "Vineeth's in the office Fridays",
+    said in chat about a member typed in as "vineeth", was stored under a
+    key nothing ever reads, and the tool still answered as if it had saved
+    (defect hunt 2026-10-12). No match is left as it was: a lunch answer
+    can arrive before its person does (setup, and the tests that model it).
+    """
+    row = conn.execute(
+        "SELECT name FROM members WHERE household_id = ? AND LOWER(TRIM(name)) = LOWER(?) ORDER BY id LIMIT 1",
+        (household_id(), member_name),
+    ).fetchone()
+    return row["name"] if row else member_name
+
+
 def set_lunch_location(member_name: str, location: str, weekday: str = "", source: str = "onboarding") -> dict:
     """
     Set where a household member typically is at lunchtime: 'home' (a real
@@ -166,6 +184,7 @@ def set_lunch_location(member_name: str, location: str, weekday: str = "", sourc
     if weekday and weekday not in WEEKDAYS:
         raise ValueError(f"weekday must be one of {WEEKDAYS} or blank (for the standing answer), not {weekday!r}.")
     conn = get_conn()
+    member_name = _member_spelling(conn, member_name)
     _upsert(conn, member_name, weekday, "lunch_location", location, "", source)
     conn.commit()
     conn.close()
@@ -187,6 +206,7 @@ def clear_lunch_location_override(member_name: str, weekday: str) -> dict:
             "call set_lunch_location with the new value and no weekday."
         )
     conn = get_conn()
+    member_name = _member_spelling(conn, member_name)
     conn.execute(
         "DELETE FROM household_rhythm WHERE household_id = ? AND member_name = ? AND weekday = ? AND fact_type = 'lunch_location'",
         (household_id(), member_name, weekday),
@@ -765,6 +785,10 @@ def save_rhythm_answers(
     conn = get_conn()
     try:
         for member_name, location in lunch_writes:
+            # The same keying as set_lunch_location: the bulk path is the
+            # one onboarding and Settings use, so it lands on the member's
+            # own spelling too (review of this branch, 2026-10-12).
+            member_name = _member_spelling(conn, member_name)
             _upsert(conn, member_name, "", "lunch_location", location, "", source)
             logged.append(f"rhythm:lunch_location:{member_name}")
         if meals_together:

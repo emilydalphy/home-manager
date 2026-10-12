@@ -97,3 +97,30 @@ def test_preferences_about_links_to_all_three_and_shows_the_version(signed_in):
 def test_only_the_three_pages_are_ever_read():
     with pytest.raises(ValueError):
         legal.render("../login")
+
+
+def test_the_backup_days_are_the_ones_the_backups_keep(monkeypatch, tmp_path):
+    """The privacy policy and the support page say how long a deleted
+    household lingers in the daily backups; that is app/backup.py's
+    RETENTION_DAYS, and a copy taken on the day of deleting goes one day
+    after that (prune_backups keeps a copy dated at the cutoff)."""
+    from datetime import datetime, timedelta
+
+    from app import backup
+
+    privacy, support = legal.render("privacy"), legal.render("support")
+    assert f"keep each copy for {backup.RETENTION_DAYS} days" in privacy
+    assert f"for up to {backup.RETENTION_DAYS + 1} days" in privacy
+    assert f"keep a copy for up to {backup.RETENTION_DAYS + 1} days" in support
+    assert "__BACKUP_" not in privacy + support
+
+    # And that second number is what pruning actually does.
+    monkeypatch.setattr(backup, "BACKUP_DIR", str(tmp_path))
+    taken = datetime(2026, 10, 1, 3, 0)
+    name = backup.backup_path_for(taken)
+
+    def survives(days_later):
+        Path(name).write_bytes(b"x")
+        backup.prune_backups(now=taken + timedelta(days=days_later))
+        return Path(name).exists()
+    assert survives(backup.RETENTION_DAYS) and not survives(backup.RETENTION_DAYS + 1)

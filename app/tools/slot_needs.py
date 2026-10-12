@@ -606,6 +606,9 @@ def set_away_stretch(
     the day before and its ready_made edge on the day after, crossing into
     the adjacent week rather than being omitted. That's correct: the last
     real meal before an 8-day trip really is the day before it starts.
+    The one exception is the quick edge on a slot already gone by on the
+    household clock, or held planned_empty: no quick tag at all then
+    (see _edge_slot_open).
 
     `member_names` scopes the trip to specific travelers (names or ids);
     None or empty means the whole household, which is both the common case
@@ -734,6 +737,16 @@ def set_away_stretch(
         )
         return True
 
+    # The last meal before heading out has to be one still AHEAD and one the
+    # household is actually eating. Recorded on Saturday morning, a trip
+    # from Saturday breakfast tagged FRIDAY's dinner "Last one before you
+    # head out — keeping it quick" (review, 2026-10-10): a meal already
+    # eaten. And a slot the plan holds planned_empty (none of that meal
+    # asked for, nobody home, a night off) is never offered as anything —
+    # CLAUDE.md's slot_state rule. Either way there is no quick meal, and
+    # the edge is left off rather than walked further back: which earlier
+    # meal would count instead is a product call nobody has made.
+    quick_edges = {k: v for k, v in quick_edges.items() if _edge_slot_open(*k)}
     for slot_key, edge_travelers in quick_edges.items():
         _apply_edge(slot_key, edge_travelers, "quick")
 
@@ -775,6 +788,36 @@ def set_away_stretch(
     }
 
 
+def _edge_slot_open(date_str: str, slot: str) -> bool:
+    """
+    Whether a derived trip edge may land on this meal: not already gone by
+    on the household's clock (the slot's own time — moves' clock, so "gone
+    by" means what Today means by it), and not a slot the plan holds
+    planned_empty. A slot no plan has written yet is open: the need is
+    what the generator reads when it gets there.
+    """
+    from . import cooker as _cooker  # local: cooker imports weekly_plan, which this module imports
+    from . import moves as _moves
+
+    when = _moves._slot_dt(date.fromisoformat(date_str), slot, _moves._dinner_clock())
+    if when <= _cooker.household_now():
+        return False
+    conn = get_conn()
+    try:
+        states = {
+            r["slot_state"] for r in conn.execute(
+                "SELECT mpe.slot_state FROM meal_plan_entries mpe "
+                "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+                "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.slot = ? "
+                "AND mpe.component_category IS NULL AND wp.status != 'retired'",
+                (household_id(), date_str, slot),
+            ).fetchall()
+        }
+    finally:
+        conn.close()
+    return not (states and states <= {"planned_empty"})
+
+
 def _recommend_ready_made(date_str: str, slot: str, conn=None) -> dict:
     """
     A first pass at what could cover a ready_made slot without fresh
@@ -787,9 +830,10 @@ def _recommend_ready_made(date_str: str, slot: str, conn=None) -> dict:
     accepts.
 
     A freezer item wins when one exists — a defrost is normally less
-    effort than a double batch. Falls back to the most recent real dinner
-    planned before this date in the household's current plan (if any) as
-    a "you cooked extra of this — save it for then" candidate. Neither may
+    effort than a double batch. Falls back to the most recent dinner
+    before this date that is still to be cooked (_batch_candidate — not
+    one already gone by, not a reheat) as a "cook extra of this — save it
+    for then" candidate. Neither may
     exist yet (nothing frozen, no plan generated) — that's a real "nothing
     to recommend yet" answer, not an error; the reminder machinery that
     actually acts on a confirmed recommendation belongs to the separate
@@ -813,20 +857,68 @@ def _recommend_ready_made(date_str: str, slot: str, conn=None) -> dict:
             conn.close()
         return {"recommended_defrost_item": freezer_item["item"], "recommended_batch_from_entry_id": None}
 
-    batch_from = conn.execute(
-        """
-        SELECT id FROM meal_plan_entries
-        WHERE household_id = ? AND slot = 'dinner' AND slot_state = 'planned'
-          AND date < ? AND component_category IS NULL
-        ORDER BY date DESC, id DESC LIMIT 1
-        """,
-        (household_id(), date_str),
-    ).fetchone()
+    batch_from = _batch_candidate(conn, date_str)
     if own_conn:
         conn.close()
     if batch_from:
-        return {"recommended_batch_from_entry_id": batch_from["id"], "recommended_defrost_item": None}
+        return {"recommended_batch_from_entry_id": batch_from, "recommended_defrost_item": None}
     return {"recommended_batch_from_entry_id": None, "recommended_defrost_item": None}
+
+
+def _batch_candidate(conn, date_str: str, only: int | None = None) -> int | None:
+    """
+    The dinner a "set aside a double batch of …" suggestion may name for a
+    meal on `date_str`: the latest one before it that is still a cook the
+    household can make double.
+
+    "Still" is the half the first version of this query left out — it
+    took the latest planned dinner before the meal, full stop (overnight
+    hunt, 2026-10-10). Two things that sentence cannot be about:
+
+    - a dinner that has ALREADY GONE BY, or been ticked cooked. Away for
+      Saturday breakfast and lunch, opened on Saturday: the first meal back
+      asked "I'll set aside a double batch of Friday's tacos — sound good?"
+      about tacos eaten the night before. Read on the household's clock
+      (cooker.household_today), not the server's, which is tomorrow from
+      8pm Eastern. Tonight's dinner, not yet cooked, still counts.
+    - a night that isn't a cook: a reheat (links_to), a freezer portion, a
+      dish carried to someone else's table — weekly_plan._cooks_that_night,
+      the test a swap already applies before moving a suggestion. Away for
+      Monday after a Saturday roast whose leftovers are Sunday's dinner
+      offered "a double batch of Sunday's roast chicken": Sunday is the
+      double batch.
+
+    - a written-in meal that says it isn't one: "Takeout pizza",
+      "Leftovers" with no recipe behind it — the Plan screen's own wording
+      check (weekly_plan.written_in_not_a_cook), not a second list.
+
+    Walked newest-first in SQL order rather than filtered in SQL, because
+    "is a cook" lives in derived_from_json and has one reader. `only`
+    asks the same question of one stored suggestion (describe_ready_made):
+    its id back when it still qualifies, else None. `conn` is the caller's
+    (_recommend_ready_made may be inside a write transaction); nothing here
+    commits or closes.
+    """
+    from . import cooker as _cooker  # local: cooker imports weekly_plan, which this module imports
+
+    today = _cooker.household_today(conn=conn).isoformat()
+    rows = conn.execute(
+        """
+        SELECT id, recipe_id, freeform_meal, derived_from_json FROM meal_plan_entries
+        WHERE household_id = ? AND slot = 'dinner' AND slot_state = 'planned'
+          AND date < ? AND date >= ? AND COALESCE(cooked_status, '') != 'done'
+          AND component_category IS NULL AND (? IS NULL OR id = ?)
+        ORDER BY date DESC, id DESC
+        """,
+        (household_id(), date_str, today, only, only),
+    ).fetchall()
+    return next((r["id"] for r in rows if _is_a_cook(r)), None)
+
+
+def _is_a_cook(row) -> bool:
+    if not _weekly_plan._cooks_that_night(row["derived_from_json"]):
+        return False
+    return bool(row["recipe_id"]) or not _weekly_plan.written_in_not_a_cook(row["freeform_meal"])
 
 
 def _weekday_name(date_str: str) -> str:
@@ -859,7 +951,24 @@ def describe_ready_made(date_str: str, slot: str) -> dict | None:
             "sentence": f"I’ll defrost the {need['recommended_defrost_item']} — sound good?",
         }
     elif need["recommended_batch_from_entry_id"]:
-        label = _batch_label(need["recommended_batch_from_entry_id"])
+        batch_id = need["recommended_batch_from_entry_id"]
+        if not need["recommendation_confirmed"]:
+            # A suggestion is stored when the trip is entered and read days
+            # later: set on Thursday, Saturday's card still asked to double
+            # Friday's tacos, eaten the night before. Unconfirmed, it is
+            # checked on read against the rule that picks it
+            # (_batch_candidate, also the "or:" line's rule, so the two
+            # lines agree) and is no suggestion once it fails. NOT re-picked
+            # here: Confirm (confirm_slot_recommendation) confirms the STORED
+            # id, so a card naming a different dinner would have the tap
+            # agree to something it never said. Nothing is written — this
+            # is a read. A CONFIRMED one is the household's word and stays.
+            conn = get_conn()
+            try:
+                batch_id = _batch_candidate(conn, date_str, only=batch_id)
+            finally:
+                conn.close()
+        label = _batch_label(batch_id) if batch_id else None
         if label:
             primary = {
                 "kind": "batch",
@@ -924,18 +1033,12 @@ def _fallback_freezer_item() -> str | None:
 
 
 def _fallback_batch_candidate(date_str: str) -> int | None:
+    """The "or:" line's batch — the same rule as the primary's (_batch_candidate)."""
     conn = get_conn()
-    row = conn.execute(
-        """
-        SELECT id FROM meal_plan_entries
-        WHERE household_id = ? AND slot = 'dinner' AND slot_state = 'planned'
-          AND date < ? AND component_category IS NULL
-        ORDER BY date DESC, id DESC LIMIT 1
-        """,
-        (household_id(), date_str),
-    ).fetchone()
-    conn.close()
-    return row["id"] if row else None
+    try:
+        return _batch_candidate(conn, date_str)
+    finally:
+        conn.close()
 
 
 def set_slot_recommendation(

@@ -2977,9 +2977,12 @@
       // with none on offer it opens the chat on tonight instead. The
       // offer stays after "Not now" here, because on a day with nothing
       // else on it the offer IS the screen; only the card is silenced.
+      // On a night the usual week has off there is no tonight to sort —
+      // the week is the only ask (see tonightIsOff).
       html = '<div class="dock-row">' +
         '<button type="button" class="dock-primary" id="plan-nudge-go">Let’s plan the week</button>' +
-        '<button type="button" class="dock-link" id="today-just-tonight">Just tonight</button>' +
+        (tonightIsOff(panel) ? '' :
+          '<button type="button" class="dock-link" id="today-just-tonight">Just tonight</button>') +
       '</div>';
     } else if (nudge && nudge.show && !panel._nudgeDismissed) {
       // One row, the same shape as the empty moment's: the apricot on the
@@ -3035,9 +3038,32 @@
   // Is there a period waiting to be planned? The nudge names it whether
   // it is showing or was dismissed for the week (both carry week_start);
   // with the week covered there is nothing to offer.
+  //
+  // "The week covered" means TODAY covered, read off the moves' own
+  // week_state, not off the nudge: from Friday the nudge names NEXT week
+  // while this one is set, and a set day can still be empty — a night
+  // off, a night nobody is home. That day used to read "Week set" over
+  // "Quiet day. Want me to sort dinner…" and "Just tonight", offering to
+  // sort the dinner just called off, with tomorrow's card hidden behind it
+  // (defect hunt, 2026-10-09; PRODUCT_FLOWS.md's "two screens, two
+  // stories", 2026-09-15). A covered day falls through to the tomorrow
+  // card, and next week's offer stays its own card with its own dock.
   function todayNeedsPlan(panel) {
     var nudge = panel._nudge;
+    var state = panel._moves && panel._moves.week_state;
+    if (state === 'set' || state === 'draft') return false;
     return !!(nudge && nudge.week_start);
+  }
+
+  // Tonight's dinner is one the usual week has off ("Don't plan" that
+  // night, or dinner off all week) and no plan covers today. The server
+  // decides (moves.usual_week_dinner_off, the same reads as the needs-you
+  // band's) so the rule lives in one place. Such a night used to be offered
+  // "Quiet day. Want me to sort dinner…" and "Just tonight" — sorting the
+  // dinner the household had just said not to plan (Loop Board,
+  // 2026-10-09). Planning the week is still a fair ask; tonight is not.
+  function tonightIsOff(panel) {
+    return !!(panel._moves && panel._moves.usual_week_dinner_off);
   }
 
   // The empty moment on Now (Emily's copy, 2026-09-11). Three cases for a
@@ -3064,7 +3090,9 @@
     var data = panel._moves || {};
     var html;
     if (needsPlan) {
-      html = panel._justTonight ? '' : emptyMomentHtml('sunrise', 'Quiet day. Want me to sort dinner, or the whole week?');
+      html = panel._justTonight ? '' : emptyMomentHtml('sunrise', tonightIsOff(panel)
+        ? 'Night off tonight. Want me to plan the week?'
+        : 'Quiet day. Want me to sort dinner, or the whole week?');
     } else if (data.tomorrow) {
       html = tomorrowCardHtml(data.tomorrow);
     } else {
@@ -3577,6 +3605,15 @@
     var said = 'Tonight’s off.';
     if (out.dish && out.moved_to_weekday) {
       said += ' ' + out.dish + ' moved to ' + out.moved_to_weekday + '.';
+    } else if (out.dish && out.still_on && out.still_on.length) {
+      // Tonight's row went but the same dish is planned later in the week
+      // (`still_on`, decided by tonight._night_off_plan) — it is not off
+      // the week. Joined the way weekly_plan._join_with_and joins it.
+      var on = out.still_on;
+      var where = on.length === 1 ? on[0]
+        : on.length === 2 ? on[0] + ' and ' + on[1]
+        : on.slice(0, -1).join(', ') + ', and ' + on[on.length - 1];
+      said += ' ' + out.dish + ' is still on ' + where + '.';
     } else if (out.dish) {
       said += ' ' + out.dish + ' is off the week.';
     }
@@ -6820,7 +6857,9 @@
         // A tap on a thing you buy is how a staple gets made without a
         // form (the other way is telling the assistant). Hidden once it
         // is one — the Staples card below the list is where it lives then.
-        (groIsStapleName(it.item)
+        // A line a staple already owns (a substitute keeps its staple_id)
+        // counts as one even under another name.
+        (it.staple_id || groIsStapleName(it.item)
           ? '<span class="gro-rowmenu-note">One of your staples</span>'
           : '<button type="button" class="gro-rowmenu-staple" data-gro="row-staple" data-id="' + id + '" ' +
               'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
@@ -8767,6 +8806,7 @@
               groDo(function () {
                 if (offKind === 'spice') return groPost('/api/grocery-list/' + offRow.item_id + '/spice', { ticked: true });
                 if (stapleId) return groPostEmpty('/api/staples/' + stapleId + '/undo');
+                if (r && r.restorable) return groPostEmpty('/api/grocery-list/' + offRow.item_id + '/remove-undo');
                 return groPost('/api/grocery-list/add', {
                   item: offRow.name, quantity: offRow.quantity || '', category: offRow.category || 'other'
                 });
@@ -8915,9 +8955,13 @@
         el.disabled = true;
         groceryState.openRowId = null;
         var goneStapleId = null;
+        var goneRestorable = false;
         groDo(function () {
           return groPostEmpty('/api/grocery-list/' + id + '/remove')
-            .then(function (r) { goneStapleId = r && r.staple_id ? r.staple_id : null; });
+            .then(function (r) {
+              goneStapleId = r && r.staple_id ? r.staple_id : null;
+              goneRestorable = !!(r && r.restorable);
+            });
         }, "Couldn't remove that — try again.").then(function (ok) {
           if (!ok) return;
           showToast(goneName + ' off the list', {
@@ -8932,7 +8976,24 @@
                 }, "Couldn't put that back — try again.");
                 return;
               }
-              // /remove is a hard delete (remove_grocery_item), so the undo
+              // A line with meals behind it was soft-removed: the same row
+              // comes back, still tied to those meals (grocery.
+              // undo_remove_grocery_item). Re-adding the name instead made
+              // it a hand-typed line that never cleared with the week.
+              if (goneRestorable) {
+                var goneBack = null;
+                groDo(function () {
+                  return groPostEmpty('/api/grocery-list/' + id + '/remove-undo')
+                    .then(function (r) { goneBack = r; });
+                }, "Couldn't put that back — try again.").then(function (ok) {
+                  // Every meal it was for has come off the plan since.
+                  if (ok && goneBack && goneBack.restored === false) {
+                    showToast(goneName + ' isn\u2019t needed now — those meals are off the plan');
+                  }
+                });
+                return;
+              }
+              // Otherwise /remove was a hard delete (remove_grocery_item), so the undo
               // puts the LINE back rather than the row: same name, same
               // quantity, same section, then its store again if it had one.
               // A new id, the same list — which is what the person meant.
@@ -8986,12 +9047,21 @@
         }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok || !stResult) return;
           var line;
+          // A line this week's meals had added to stays, cut back to what
+          // they need (staples._trim_to_the_weeks_part) — "off the list"
+          // would be untrue with the row still there.
+          var stTrim = stResult.removed_line && stResult.removed_line.trimmed;
+          var stKept = !stTrim ? '' : stTrim.quantity
+            ? stName + ' down to ' + stTrim.quantity + ' for this week\u2019s meals'
+            : stName + ' kept for this week\u2019s meals';
           if (stDecision === 'plenty') {
-            line = stName + ' off the list — I\u2019ll ask again in ' + groCadenceSpan(stResult.cadence_days);
+            line = stKept
+              ? stKept + ' — I\u2019ll ask again in ' + groCadenceSpan(stResult.cadence_days)
+              : stName + ' off the list — I\u2019ll ask again in ' + groCadenceSpan(stResult.cadence_days);
           } else if (stResult.just_paused) {
             line = stName + ' was paused — three trips skipped';
           } else {
-            line = stName + ' off the list — I\u2019ll ask again next week';
+            line = (stKept || stName + ' off the list') + ' — I\u2019ll ask again next week';
           }
           showToast(line, {
             label: 'Undo',
@@ -9012,7 +9082,12 @@
         el.disabled = true;
         groceryState.openRowId = null;
         groDo(function () {
-          return groPost('/api/staples/add', { item: mkName, quantity: mkQty, category: mkCat });
+          // The row itself, not just its name: the server makes THIS line
+          // the staple's line and records no purchase that didn't happen
+          // (tools.add_staple's grocery_item_id — 2026-10-09).
+          return groPost('/api/staples/add', {
+            item: mkName, quantity: mkQty, category: mkCat, grocery_item_id: Number(el.dataset.id)
+          });
         }, "Couldn't save that — try again.").then(function (ok) {
           if (ok) showToast(mkName + ' is a staple now — I\u2019ll put it on the list before you run out');
         });
@@ -15634,7 +15709,17 @@
     if (planned) {
       var swap = day.isPast ? '' : wkMiniHtml('data-wk-swap-sheet="' + slot + '"', 'wk-mini-swap', WK_ICONS.swap,
         opts.swapLabel || 'Swap', (opts.swapLabel || 'Swap') + ' — ' + name);
-      var tick = opts.done
+      // A day still ahead (on the household's clock — isToday / isPast come
+      // from get_week_menu) gets no Done: nothing on it has been cooked yet,
+      // and a tick is a record of something that happened — the same rule
+      // leftoversEatenNow keeps for a reheat's "Mark eaten" (Loop Board bug,
+      // 2026-10-09: Saturday's dinner offered Done on the Friday). A row
+      // there that is already ticked (chat can — check_off_meal has no date
+      // guard) keeps its pressed button, so Plan can still put it back.
+      // Cook-ahead is not this: it is cooked on the source day, and the
+      // nights it covers are reheat nights, whose action is Mark eaten.
+      var ahead = !day.isToday && !day.isPast;
+      var tick = opts.done && (!ahead || done)
         ? wkMiniHtml('data-wk-done="' + slot + '" aria-pressed="' + (done ? 'true' : 'false') + '"',
             'wk-mini-done' + (done ? ' is-done' : ''), WK_ICONS.tick, 'Done',
             // Only ever heard, never seen — and still the same euphemism
@@ -21702,7 +21787,16 @@
   // ingredients) and then the thing.
   function cookIngredientLabel(ing) {
     var qty = ing && ing.qty ? humanQtyText(ing.qty) : '';
-    var label = ((qty ? qty + ' ' : '') + ((ing && ing.item) || '')).trim();
+    // item_label is the server's "onions" for "2" + "onion" (recipes.
+    // _with_item_label) — the one plural rule, not a second one here.
+    var item = (ing && (ing.item_label || ing.item)) || '';
+    // An amount reads before the thing ("½ lb Flank steak"); a phrase that
+    // only says how much to use, with no number in it, reads after it, the
+    // way a recipe is written — "Salt, to taste", never "to taste salt"
+    // (defect hunt, 2026-10-09). "a pinch" / "a handful" read as amounts.
+    var trails = qty && !/\d/.test(qty) && /^(to|for|as|optional)\b/i.test(qty);
+    var label = (trails ? item + ', ' + qty
+      : (qty ? qty + ' ' : '') + item).trim();
     // "I'll use something else instead", said while sorting the week's
     // list (Shop) — the recipe still asks for fresh oregano, and this is
     // where the cook hears that dry is what's going in.
@@ -21906,7 +22000,10 @@
   // someone is standing at the counter with.
   function cookFocusPrepHtml(tasks) {
     if (!tasks.length) return '';
-    var done = tasks.filter(function (t) { return t.status === 'done'; }).length;
+    // A skipped step is handled, the same as on the prep session card and
+    // Today's moves — counting only 'done' left this meal saying "0 of 1"
+    // beside a session that showed the step ticked (2026-10-10).
+    var done = tasks.filter(function (t) { return t.status === 'done' || t.status === 'skipped'; }).length;
     var allDone = done === tasks.length;
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
@@ -21929,7 +22026,7 @@
       '</div>' +
       '<div class="cook-prep-grid">' +
         tasks.map(function (t) {
-          var isDone = t.status === 'done';
+          var isDone = t.status === 'done' || t.status === 'skipped';
           return '<div class="cook-prep-card' + (isDone ? ' is-done' : '') + '">' +
             '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
               'data-cook="check-prep" data-prep-id="' + t.id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
@@ -25477,6 +25574,17 @@
         // change on this side of the wire, where the surface that went
         // stale lives.
         prefsInvalidate();
+        // The rhythm answers ride this same card, and they are not only
+        // Preferences' rows: dinner_window is the clock Now's "Start by"
+        // and Cook's tonight are timed against, prep days are Cook's prep
+        // sessions, cooking_role names tonight's cook. "We eat later now,
+        // around 7:30" from chat left Now saying "Start by 4:55" until a
+        // reload (driven 2026-10-11) — while the same answer saved in
+        // Preferences re-reads Now (wwkSaveRhythm). Keen rather than per
+        // tool, like the week branch: the card carries no tool name, and
+        // both calls are no-ops on a screen that was never built.
+        refreshTodayMoves();
+        refreshKitchenPanel();
       } else if (action.tab === 'grocery') {
         refreshGroceryOnce();
         // The list changing also changes Today's shop move, which is a

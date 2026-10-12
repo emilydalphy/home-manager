@@ -28,6 +28,7 @@ scans use.
 """
 from __future__ import annotations
 
+import html as _html  # aliased: several functions here take a page as `html`
 import http.client
 import ipaddress
 import json
@@ -38,7 +39,7 @@ import ssl
 import time
 from html.parser import HTMLParser
 from typing import Callable
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import quote, urljoin, urlsplit
 
 from .tools import quantities as _quantities
 
@@ -82,6 +83,10 @@ MSG_UNREACHABLE = "I couldn't reach that page. Check the link, or try again in a
 MSG_TOO_BIG = "That page is too large for me to read."
 MSG_NOT_HTML = "That link isn't a web page I can read — a PDF or an image, maybe."
 MSG_NO_RECIPE = "I couldn't find a recipe on that page."
+# A TikTok whose caption carries no recipe: the recipe is most likely only
+# said out loud in the video, which nothing here can hear yet (2026-10-09).
+# Plain, and true; the sheet pairs it with "Tell me the recipe instead".
+MSG_NO_RECIPE_VIDEO = "I couldn't find a recipe in that video's caption — it may only be said in the video."
 MSG_NO_RECIPE_PHOTO = "I couldn't read a recipe in that photo — try a straighter, closer shot of the page."
 
 
@@ -241,6 +246,7 @@ def fetch_text(
     wrong_type_message: str = MSG_NOT_HTML,
     max_bytes: int = MAX_BYTES,
     label: str = "Fetch",
+    stop_at: Callable[[str], bool] | None = None,
 ) -> tuple[str, str]:
     """
     The guarded GET behind fetch_page, shared with the calendar feed
@@ -250,6 +256,14 @@ def fetch_text(
     (None accepts any — the caller then has to check the body is what it
     expects); `label` is only for the log line, which names the host and
     never the path, because a calendar link's path IS the secret.
+
+    `stop_at(url)`, when given, ends the walk at the first redirect whose
+    target it accepts and returns (that_url, "") without requesting it —
+    the TikTok short link wants only where it points, not the heavy,
+    bot-walled video page behind it. Every hop BEFORE that point went
+    through the same checks; the returned URL itself has not been
+    fetched, so the caller must not treat it as safe to connect to
+    without calling this again.
     """
     current = url.strip() if isinstance(url, str) else url
     deadline = time.monotonic() + TOTAL_SECONDS
@@ -275,6 +289,8 @@ def fetch_text(
                 if not location:
                     raise RecipeImportError(MSG_UNREACHABLE, "unreachable")
                 current = urljoin(current, location)
+                if stop_at is not None and stop_at(current):
+                    return current, ""
                 continue
             if status != 200:
                 raise RecipeImportError(MSG_UNREACHABLE, "unreachable")
@@ -498,8 +514,24 @@ def _text_of(value) -> str:
     return ""
 
 
+_ENTITY_RE = re.compile(r"&(?:#\d+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);")
+
+
 def _clean_text(text: str) -> str:
-    text = re.sub(r"<[^>]+>", " ", text or "")
+    # Entities first, then tags. A JSON-LD block is a <script> body, which an
+    # HTML parser hands over raw, and WordPress and plenty of other sites
+    # write it with the page's escaping still on: "Mac &amp; Cheese",
+    # "Nana&#39;s", "1&nbsp;cup". Undecoded, those were saved verbatim onto
+    # the recipe's name, its steps and the grocery list (defect hunt,
+    # 2026-10-11). Decoding before the tag strip means a tag written escaped
+    # ("&lt;p&gt;") is stripped like any other — which is why the strip only
+    # takes what looks like a real tag (a letter, or "/" and a letter, right
+    # after the "<"): "cook &lt; 5 min, then &gt; 2 min" decodes to a "<"
+    # and a ">" with words between them, and those words are the recipe.
+    # Only an entity WITH its semicolon is decoded: html.unescape alone also
+    # reads legacy names without one, and "&notes" would become "¬es".
+    text = _ENTITY_RE.sub(lambda m: _html.unescape(m.group(0)), text or "")
+    text = re.sub(r"</?[A-Za-z][^<>]*>", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return re.sub(r"\s+([.,;:!?])", r"\1", text)
 
@@ -610,6 +642,85 @@ def normalise_amount(qty: str) -> str:
     return text
 
 
+_MEASURE_TOKEN_RE = re.compile(r"^(?:\d[\d./]*)?(?P<unit>[a-z]*)\.?,?$", re.I)
+
+
+# A container a bracket after it SIZES ("1 can (15 oz)") rather than
+# re-measures; and the units that make a bracket a second measure of the
+# same amount ("(120g)", "(1 stick / 113g)").
+_CONTAINER_WORDS = {
+    "can", "cans", "tin", "tins", "jar", "jars", "package", "packages", "pkg", "packet", "packets",
+    "bag", "bags", "box", "boxes", "bottle", "bottles", "container", "containers", "tub", "tubs",
+}
+_SECOND_MEASURE_UNITS = (_UNIT_WORDS - _CONTAINER_WORDS) - {
+    "clove", "cloves", "slice", "slices", "bunch", "bunches", "head", "heads", "stalk", "stalks",
+    "sprig", "sprigs", "handful", "handfuls", "piece", "pieces", "fillet", "fillets", "dozen",
+    "ear", "ears", "leaf", "leaves", "sheet", "sheets", "strip", "strips", "cube", "cubes",
+}
+_BRACKET_TOKEN_RE = re.compile(r"\d*(?:[./]\d+)?\s*([a-z]+)", re.I)
+
+
+def _holds_a_measure(inside: str) -> bool:
+    """True for "120g", "180 ml", "1 stick / 113g" — a number with a
+    measuring unit. Not "2%", "85% lean", "optional", "about 3 medium", and
+    not "or 2 cups for extra", which is an alternative, not the same amount."""
+    text = inside.strip().lower()
+    if not re.search(r"\d", text) or "%" in text or text.startswith("or "):
+        return False
+    return any(m.group(1) in _SECOND_MEASURE_UNITS for m in _BRACKET_TOKEN_RE.finditer(text))
+
+
+def _without_second_measure(words: list[str], unit: str = "") -> tuple[list[str], str]:
+    """
+    The same amount said a second way, right after the unit: "1 cup (120g)
+    flour", "1/2 cup (1 stick / 113g) butter", "400 g / 14 oz spaghetti".
+    US baking sites print the grams in brackets on nearly every line and
+    UK ones print the ounces after a slash, and both landed on the ITEM —
+    "(120g) all-purpose flour" on the grocery list, a line that never
+    merges with "all-purpose flour" (defect hunt, 2026-10-11). The first
+    measure is the one kept, as normalise_amount already does for a
+    model-read "400 g / 14 oz".
+
+    Returns (the item's words, a package size). After a CONTAINER the
+    bracket is not a second measure but the size of the thing bought —
+    "1 can (15 oz) black beans" — so it is handed back to go on the qty,
+    "1 can (15 oz)", the way "1 (14 oz) can" already reads. A bracket that
+    holds no measuring unit ("(optional)", "(2%)", "(85% lean)") is
+    information about the item and stays where the page put it.
+    """
+    if not words:
+        return words, ""
+    joined = " ".join(words)
+    if joined.startswith("("):
+        close = joined.find(")")
+        if 0 < close <= 40:
+            inside = joined[1:close]
+            if unit.lower() in _CONTAINER_WORDS and re.search(r"\d", inside) and "%" not in inside:
+                return joined[close + 1:].split(), inside.strip()
+            if _holds_a_measure(inside):
+                return joined[close + 1:].split(), ""
+        return words, ""
+    if not words[0].startswith("/"):
+        return words, ""
+    rest = list(words)
+    rest[0] = rest[0][1:]
+    if not rest[0]:
+        rest.pop(0)
+    taken = 0
+    while rest:
+        m = _MEASURE_TOKEN_RE.match(rest[0])
+        unit = (m.group("unit") or "").lower() if m else ""
+        # "14oz", "oz" or a bare "2" (of "1 lb 2 oz") is part of the measure.
+        if m and (unit in _UNIT_WORDS if unit else rest[0][:1].isdigit()):
+            rest.pop(0)
+            taken += 1
+            continue
+        break
+    # Only a slash followed by a real measure is a second measure; "1 cup
+    # / or more" is something else, and is left as it was written.
+    return (rest if taken else words), ""
+
+
 def split_ingredient_line(line: str) -> dict:
     """
     "2 cups all-purpose flour, sifted" -> {"item": "all-purpose flour, sifted", "qty": "2 cups"}
@@ -647,12 +758,22 @@ def split_ingredient_line(line: str) -> dict:
     words = rest.split(" ")
     while words:
         word = words[0].lower().strip(".,")
+        # "400g/14oz" and "1 cup/240ml": the unit glued to the other
+        # measure by a slash. The unit is the part before it.
+        head, slash, tail = word.partition("/")
+        if slash and head in _UNIT_WORDS:
+            words[0:1] = [words[0][:len(head)], "/" + words[0][len(head) + 1:]]
+            word = head
         if word in _SIZE_WORDS or word in _UNIT_WORDS:
             qty_words.append(words.pop(0).strip(".,"))
             if word in _UNIT_WORDS:
                 break
             continue
         break
+    if qty_words and qty_words[-1].lower() in _UNIT_WORDS:
+        words, package_size = _without_second_measure(words, qty_words[-1])
+        if package_size and not size:
+            size = package_size
     if words and words[0].lower() == "of":
         words.pop(0)
     item = " ".join(words).strip(" ,")
@@ -927,12 +1048,103 @@ def draft_from_photo_read(detail: dict | None) -> dict:
     return first
 
 
+# ---------- TikTok: the recipe is in the caption (2026-10-09) ----------
+# Loop Board "Add from a link: read recipes from TikTok and other video
+# links". A TikTok page is built by JavaScript and carries no schema.org
+# markup, and its plain HTML holds no caption either, so the page path above
+# reads nothing and says MSG_NO_RECIPE for a video whose caption is the
+# whole recipe. TikTok's public oEmbed endpoint (no key, no login) answers
+# with the caption as `title` and the poster as `author_name`; that caption
+# goes to the same model reader a markup-less page gets. Short share links
+# (vt./vm.tiktok.com) redirect to the full video URL, which oEmbed wants,
+# so they are followed first — through fetch_text, so every hop is under
+# the SSRF rules like any other fetch. Out of scope: a recipe only SPOKEN
+# in the video (that needs a transcript); it gets MSG_NO_RECIPE_VIDEO and
+# the sheet's "Tell me the recipe instead". Instagram has the same oEmbed
+# shape but Meta requires an app token for it, so it isn't done here.
+
+_TIKTOK_HOSTS = {"tiktok.com", "www.tiktok.com", "m.tiktok.com", "vt.tiktok.com", "vm.tiktok.com"}
+_TIKTOK_VIDEO_PATH_RE = re.compile(r"^/@[^/?#]+/(?:video|photo)/\d+")
+TIKTOK_OEMBED_URL = "https://www.tiktok.com/oembed?url="
+MAX_OEMBED_BYTES = 256 * 1024  # a caption is ≤ 4,000 characters; the JSON around it is small
+
+
+def is_tiktok_url(url: str) -> bool:
+    try:
+        host = (urlsplit((url or "").strip()).hostname or "").rstrip(".").lower()
+    except (ValueError, AttributeError):
+        return False
+    return host in _TIKTOK_HOSTS
+
+
+def tiktok_video_url(url: str) -> str | None:
+    """The canonical https://www.tiktok.com/@user/video/<id> for a full
+    TikTok link, without the share link's tracking query; None for anything
+    else (a short link, a profile, the home page). It is also the credit the
+    saved recipe carries, so "From tiktok.com" opens the video itself."""
+    try:
+        parts = urlsplit((url or "").strip())
+        host = (parts.hostname or "").rstrip(".").lower()
+    except (ValueError, AttributeError):
+        return None
+    if parts.scheme not in ("http", "https") or host not in ("tiktok.com", "www.tiktok.com", "m.tiktok.com"):
+        return None
+    match = _TIKTOK_VIDEO_PATH_RE.match(parts.path)
+    return "https://www.tiktok.com" + match.group(0) if match else None
+
+
+def import_recipe_from_tiktok(
+    url: str,
+    model_reader: Callable[[str, str], dict | None] | None = None,
+) -> dict:
+    """A TikTok link to a recipe draft read off the video's caption."""
+    video = tiktok_video_url(url)
+    if video is None:
+        # A short link (or an old m.tiktok.com/v/… one): walk its redirects
+        # until one lands on a video, and stop there rather than fetch it.
+        final, _body = fetch_text(
+            url, label="TikTok link", stop_at=lambda u: tiktok_video_url(u) is not None,
+        )
+        video = tiktok_video_url(final)
+        if video is None:
+            raise RecipeImportError(MSG_NO_RECIPE, "no_recipe")
+    _final, body = fetch_text(
+        TIKTOK_OEMBED_URL + quote(video, safe=""),
+        accept="application/json",
+        max_bytes=MAX_OEMBED_BYTES,
+        label="TikTok oEmbed",
+    )
+    try:
+        data = json.loads(body)
+    except (ValueError, RecursionError):
+        # RecursionError: a pathologically nested body is not ValueError, and
+        # would otherwise reach the route's catch-all as a 500.
+        data = None
+    if not isinstance(data, dict):
+        # A bot wall or an error page in place of the JSON: TikTok didn't
+        # answer, which is "couldn't reach", not "no recipe".
+        raise RecipeImportError(MSG_UNREACHABLE, "unreachable")
+    # Line breaks kept: a caption's ingredients are often one per line.
+    caption = str(data.get("title") or "").strip()
+    author = _clean_text(str(data.get("author_name") or ""))
+    if caption and model_reader is not None:
+        # Who posted it rides inside the fence with the caption — data for
+        # the model to read, like a page's title.
+        text = "Caption of a TikTok video" + (f" posted by {author}" if author else "") + ":\n\n" + caption
+        draft = draft_from_model(model_reader(text[:MAX_MODEL_TEXT_CHARS], ""), video)
+        if draft is not None:
+            return draft
+    raise RecipeImportError(MSG_NO_RECIPE_VIDEO, "no_recipe")
+
+
 def import_recipe_from_url(
     url: str,
     model_reader: Callable[[str, str], dict | None] | None = None,
     fetch: Callable[[str], tuple[str, str]] = fetch_page,
 ) -> dict:
     """Fetch, then extract. `fetch` is injectable for tests — no test makes
-    a real HTTP request."""
+    a real HTTP request. A TikTok link takes the caption path above."""
+    if is_tiktok_url(url):
+        return import_recipe_from_tiktok(url, model_reader=model_reader)
     final_url, html = fetch(url)
     return extract_recipe_draft(html, final_url, model_reader=model_reader)

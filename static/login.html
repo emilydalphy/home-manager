@@ -441,6 +441,24 @@
   </div>
 <script src="/static/api.js"></script>
 <script>
+// Every onboarding draft on this device goes (static/onboarding.html keeps
+// one per household while setup is unfinished, with allergies, ages and
+// helpers' phone numbers in it). Wrapped: a private window has no storage.
+function forgetOnboardingDrafts() {
+  try {
+    var store = window.localStorage, gone = [], i, k;
+    for (i = 0; i < store.length; i++) {
+      k = store.key(i);
+      if (k && k.indexOf('pomona-onboarding-draft:') === 0) gone.push(k);
+    }
+    for (i = 0; i < gone.length; i++) store.removeItem(gone[i]);
+  } catch (e) { /* private mode */ }
+}
+// Only on the landing from /logout (?signed_out=1, 2026-10-09), not on
+// every visit: a session that ran out mid-setup signs back in to its draft.
+if (/(?:^|[?&])signed_out=1(?:&|$)/.test(window.location.search || '')) forgetOnboardingDrafts();
+</script>
+<script>
 /*
   Email + 6-digit code (Loop Board "App Store: anyone can sign up", Emily
   2026-10-05). Three steps on one screen: the email, the code, and the

@@ -609,6 +609,22 @@ def _follow_swap_with_recommendations(conn, held: list[dict], new_for_old: dict[
     return moved
 
 
+def written_in_not_a_cook(freeform_meal: str | None) -> str | None:
+    """
+    'leftovers' or 'takeout' when a written-in meal (no recipe) says it is
+    one — "Leftovers", "Takeout pizza", "order in" — else None. The Plan
+    screen's own wording check (get_week_menu's build_slot), lifted out so
+    slot_needs._batch_candidate asks the same question rather than keeping
+    a second list: neither is a cook anybody could make double.
+    """
+    text = (freeform_meal or "").lower()
+    if re.search(r"leftovers?\b", text):
+        return "leftovers"
+    if re.search(r"take[\s-]?out|delivery|order in", text):
+        return "takeout"
+    return None
+
+
 def _cooks_that_night(derived_from_json) -> bool:
     """
     Whether a dinner row is a real cook — something a household could make
@@ -685,7 +701,41 @@ def _recheck_ready_made_after_redate(conn, entry_ids) -> int:
             (rec["recommended_batch_from_entry_id"], rec["recommended_defrost_item"] or "",
              need["id"], household_id()),
         )
-    return len(stale)
+
+    # The other direction. A first meal back with NOTHING to suggest — the
+    # recompute above found no dinner still to cook before it (a suggestion
+    # names only those since 2026-10-10, slot_needs._batch_candidate) — can
+    # gain one when a dinner lands before it: the Undo of the night off that
+    # emptied it puts Wednesday's chili back in front of Thursday breakfast.
+    # Only needs that come after one of the meals that moved, so a move
+    # elsewhere in the week does not start offering things nobody lost.
+    moved_dates = [
+        r["date"] for r in conn.execute(
+            f"SELECT date FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks}) "
+            f"AND slot = 'dinner'",
+            (household_id(), *ids),
+        ).fetchall()
+    ]
+    refilled = 0
+    if moved_dates:
+        empty = conn.execute(
+            "SELECT id, date, slot FROM slot_needs WHERE household_id = ? AND need = 'ready_made' "
+            "AND recommended_batch_from_entry_id IS NULL AND TRIM(COALESCE(recommended_defrost_item, '')) = '' "
+            "AND date > ?",
+            (household_id(), min(moved_dates)),
+        ).fetchall()
+        for need in empty:
+            rec = _slot_needs._recommend_ready_made(need["date"], need["slot"], conn=conn)
+            if not (rec["recommended_batch_from_entry_id"] or rec["recommended_defrost_item"]):
+                continue
+            conn.execute(
+                "UPDATE slot_needs SET recommended_batch_from_entry_id = ?, recommended_defrost_item = ?, "
+                "recommendation_confirmed = 0, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+                (rec["recommended_batch_from_entry_id"], rec["recommended_defrost_item"] or "",
+                 need["id"], household_id()),
+            )
+            refilled += 1
+    return len(stale) + refilled
 
 
 def plan_slot_empty(
@@ -1117,6 +1167,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
                 "handed back and its line may be over-bought by one night's share",
                 rescale_source_id, entry_id,
             )
+        _keep_freezer_answer_after_rescale(weekly_plan_id, rescale_source_id, entry_id)
     return {
         "status": "dropped",
         "date": meal_date,
@@ -1272,6 +1323,49 @@ def _rescale_after_a_chain_moved(weekly_plan_id: int, source_entry_id: int, unli
         logger.exception(
             "Rescaling leftover source %s after moving its cook failed; the week is "
             "planned and its line may be a night's share out", source_entry_id,
+        )
+    _keep_freezer_answer_after_rescale(weekly_plan_id, source_entry_id, unlinked_entry_id)
+
+
+def _keep_freezer_answer_after_rescale(weekly_plan_id: int, source_entry_id: int, *also: int) -> None:
+    """
+    After a batch's line is re-derived, put back what the freezer step said
+    about it: the rescale re-ingests the recipe-week, and a line the step
+    set aside ("Salmon fillets: in the freezer") is not one the ingest
+    merges into, so it writes a FRESH needed line beside it. Measured on a
+    throwaway DB, main as of 2026-10-12: Wednesday's salmon batched for
+    Friday, the freezer step answered, then the Review stepper's "−" on
+    either night put "Salmon fillets 8 oz" on the shopping list — and the
+    toast's Undo put back a whole "1 lb" — for fish the household had just
+    said was in the freezer, under a fridge move telling them to thaw it.
+    Swapping the reheat night away did the same.
+
+    defrost.restate_frozen_after_batch_change is the pass unbatch already
+    runs after its own rescale for exactly this; the batch's nights are
+    the cook, every night it still feeds, and `also` (the night just
+    dropped, put back or swapped away). AFTER the caller's commit — it
+    opens its own connections. Never raises: the change is written, and a
+    reminder pass that failed must not say otherwise.
+
+    NOT covered, and the same class: the rescales that run inside another
+    write's transaction with no tail to hang this on (an away night on a
+    batch, a night off on a reheat night, generation's own tidying), and a
+    swap of the COOK night, whose former reheat nights re-ingest as
+    ordinary cooks that never had a move for restate to read the answer
+    off.
+    """
+    if not source_entry_id:
+        return
+    from . import defrost as _defrost  # lazy: defrost imports this module
+    from . import leftovers as _leftovers
+    try:
+        chain = _leftovers.plan_leftover_chains(weekly_plan_id)["sources"].get(source_entry_id) or {}
+        nights = [source_entry_id, *also, *(t["entry_id"] for t in chain.get("targets") or [])]
+        _defrost.restate_frozen_after_batch_change(weekly_plan_id, nights)
+    except Exception:
+        logger.exception(
+            "Keeping the freezer answer after rescaling leftover source %s failed; the "
+            "list may ask for something the household said is in the freezer", source_entry_id,
         )
 
 
@@ -3138,6 +3232,7 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
         return source["id"]
     if _weekly_plan_is_approved(weekly_plan_id):
         _rescale_leftover_source_grocery(source["id"], entry_id)
+        _keep_freezer_answer_after_rescale(weekly_plan_id, source["id"], entry_id)
     return None
 
 
@@ -5728,9 +5823,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # Neither a reheat nor takeout is a plate this app assembled, so
         # neither gets a plate note — "one-pot, nothing extra" over a night
         # that reheats an earlier batch would be describing the wrong meal.
-        if re.search(r"leftovers?\b", text):
+        written = written_in_not_a_cook(text)
+        if written == "leftovers":
             return {"title": title, "meta": "reheat", "source": "leftovers", **common, "plate_note": ""}
-        if re.search(r"take[\s-]?out|delivery|order in", text):
+        if written == "takeout":
             return {"title": title, "meta": "takeout", "source": "takeout", **common, "plate_note": ""}
         prep = row["prep_time_minutes"] or 0
         cook = row["cook_time_minutes"] or 0
@@ -6110,18 +6206,52 @@ def _suggest_quick_dinners(limit: int = 2) -> list[dict]:
     saved yet — the needs-you card skips the suggestion rows rather than
     inventing options in that case.
     """
+    # Not a breakfast or a snack (2026-10-09). The first generated week
+    # saves every dish as a recipe, its breakfasts and snacks with them,
+    # and those are always the quickest — so after one week this offered
+    # "Tonight needs a dinner: Apple slices · 3 min, Overnight oats · 5 min".
+    # Recipes carry no meal type; the plan is the only evidence of what a
+    # dish is for. So a recipe whose every plan row is a breakfast or a
+    # snack is left out, one that has been a lunch or a dinner even once
+    # stays in, and one never planned (an import, a typed-in recipe) stays
+    # in — nothing says it isn't a dinner. One grouped pass over the
+    # household's plan rows rather than a lookup per recipe: the table has
+    # no index and holds every household's weeks.
+    #
+    # Two holes in that, closed the same day (review). A swap REPLACES the
+    # plan row, so a draft breakfast swapped out of the week lost its only
+    # evidence and came back as "never planned": a recipe the week's draft
+    # wrote (from_draft) needs a lunch or dinner row of its own, and the
+    # never-planned pass is for imports and typed-in recipes only — the line
+    # list_saved_recipes draws too. And a component-based plan's rows carry
+    # their kind in component_category, with slot unused (plan_meal stores
+    # its 'dinner' default): a breakfast/snack/treat/dip component is a small
+    # one, a protein/vegetable/carb component a meal.
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT name, prep_time_minutes, cook_time_minutes
-        FROM recipes
-        WHERE household_id = ? AND rating != 'disliked' AND temporarily_excluded = 0
+        SELECT r.name, r.prep_time_minutes, r.cook_time_minutes
+        FROM recipes r
+        LEFT JOIN (
+            SELECT recipe_id,
+                   MAX(CASE WHEN component_category IS NULL THEN slot IN ('lunch', 'dinner')
+                            ELSE component_category IN ('protein', 'vegetable', 'carb') END) AS as_a_meal,
+                   MAX(CASE WHEN component_category IS NULL THEN slot IN ('breakfast', 'snack')
+                            ELSE component_category IN ('breakfast', 'snack', 'treat', 'dip') END) AS as_a_small_one
+            FROM meal_plan_entries
+            WHERE household_id = ? AND recipe_id IS NOT NULL
+            GROUP BY recipe_id
+        ) used ON used.recipe_id = r.id
+        WHERE r.household_id = ? AND r.rating != 'disliked' AND r.temporarily_excluded = 0
+          AND NOT (COALESCE(used.as_a_small_one, 0) = 1 AND COALESCE(used.as_a_meal, 0) = 0)
+          AND NOT (r.from_draft = 1 AND COALESCE(used.as_a_meal, 0) = 0)
         ORDER BY
-            (prep_time_minutes IS NULL AND cook_time_minutes IS NULL) ASC,
-            (COALESCE(prep_time_minutes, 0) + COALESCE(cook_time_minutes, 0)) ASC
+            (r.prep_time_minutes IS NULL AND r.cook_time_minutes IS NULL) ASC,
+            (COALESCE(r.prep_time_minutes, 0) + COALESCE(r.cook_time_minutes, 0)) ASC,
+            r.id ASC
         LIMIT ?
         """,
-        (household_id(), limit),
+        (household_id(), household_id(), limit),
     ).fetchall()
     conn.close()
     out = []
@@ -6220,6 +6350,16 @@ def get_needs_you_items() -> list[dict]:
         (household_id(), today.isoformat(), horizon_end.isoformat()),
     ).fetchall()
     dinner_by_date = {r["date"]: r for r in dinner_rows}
+    # The usual week's dinners off tonight and tomorrow: the nights it has
+    # off, and every night when dinner is off all week (off_slots_on leaves
+    # that case to the counts, so it is asked for separately). Empty for a
+    # household that never answered the usual week.
+    from . import usual_week as _usual_week
+    _window = [(today + timedelta(days=o)).isoformat() for o in (0, 1)]
+    if "dinner" in _usual_week.switched_off_meals():
+        usual_week_off_dinners = set(_window)
+    else:
+        usual_week_off_dinners = {d for (d, s) in _usual_week.off_slots_on(_window) if s == "dinner"}
     for offset in (0, 1):
         candidate = (today + timedelta(days=offset)).isoformat()
         when = "Tonight" if offset == 0 else "Tomorrow"
@@ -6256,6 +6396,15 @@ def get_needs_you_items() -> list[dict]:
 
         if row is not None:
             continue  # planned, or deliberately away — already handled
+
+        # No row, on a night the usual week has off (2026-10-09). Inside a
+        # plan that night is a planned_empty row and is handled above; a
+        # night no plan covers (before the first week, between weeks) has
+        # no row at all, so a household that said "Don't plan" Friday
+        # dinner was asked "Tonight needs a dinner" that Friday — the day
+        # it set the week up. Their answer is the same answer here.
+        if candidate in usual_week_off_dinners:
+            continue
 
         options = _suggest_quick_dinners()
         if not options:
@@ -7482,6 +7631,7 @@ def _replace_slot_entries(
         # or a "date:slot" one would quietly name the NEW dish on that slot
         # and an "entry_id:" one a row that no longer exists.
         orphaned_reheats: list[int] = []
+        rescaled: list[tuple[int, int]] = []  # (source, outgoing reheat) — see the tail
         for old_id in old_entry_ids:
             for target in (sources.get(old_id) or {}).get("targets") or []:
                 if target["entry_id"] not in old_entry_ids:
@@ -7500,6 +7650,7 @@ def _replace_slot_entries(
             rescale_source_id = _unlink_leftover_target(weekly_plan_id, old_id, conn=conn)
             if rescale_source_id is not None and approved:
                 _rescale_leftover_source_grocery(rescale_source_id, old_id, conn=conn)
+                rescaled.append((rescale_source_id, old_id))
             _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
         # Before the entries go, and on this connection — the order
         # clear_plan_slot uses, and the only way the pair is atomic. Five
@@ -7582,6 +7733,10 @@ def _replace_slot_entries(
     said = _defrost_resync(weekly_plan_id, [result.get("entry_id"), *orphaned_reheats])
     if said:
         result["thaw_now"] = said
+    # Swapping a reheat night away rescaled its cook's line above; keep the
+    # freezer step's answer on it (see _keep_freezer_answer_after_rescale).
+    for source_id, old_id in rescaled:
+        _keep_freezer_answer_after_rescale(weekly_plan_id, source_id, old_id)
     return result
 
 
@@ -7904,6 +8059,7 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
         for orphan_id in orphaned:
             _clear_leftover_link(conn, orphan_id)
 
+        rescaled: list[tuple[int, int]] = []  # (source, outgoing reheat) — see the tail
         for old_id in old_ids:
             reheat = chains["leftovers"].get(old_id)
             if reheat and reheat["source"]["entry_id"] in group:
@@ -7913,6 +8069,7 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
             rescale_source_id = _unlink_leftover_target(weekly_plan_id, old_id, conn=conn)
             if rescale_source_id is not None and approved:
                 _rescale_leftover_source_grocery(rescale_source_id, old_id, conn=conn)
+                rescaled.append((rescale_source_id, old_id))
         for old_id in old_ids:
             _grocery._reverse_meal_grocery_contributions(old_id, conn=conn)
         held_thawed = _release_prep_rows(conn, old_ids)
@@ -7970,6 +8127,8 @@ def replace_dish_on_days(weekly_plan_id: int, items: list[dict]) -> dict:
     said = _defrost_resync(weekly_plan_id, [*new_ids, *orphaned])
     if said:
         out["thaw_now"] = said
+    for source_id, old_id in rescaled:
+        _keep_freezer_answer_after_rescale(weekly_plan_id, source_id, old_id)
     return out
 
 

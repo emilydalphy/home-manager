@@ -562,7 +562,7 @@ def parse_ics(text: str, window_start: date, window_end: date) -> dict:
     calendar_props, raw_events = _split_components(_unfold(text))
 
     parsed_events = []
-    recurrence_ids: dict[str, set] = {}
+    recurrence_ids: dict[str, list] = {}  # uid -> [(wall, zone)] as written
     skipped = 0
     for props in raw_events:
         ev: dict = {"exdates": [], "rrule": None, "status": "", "uid": "", "summary": "", "recurrence_id": None}
@@ -597,14 +597,27 @@ def parse_ics(text: str, window_start: date, window_end: date) -> dict:
                 parsed = _parse_dt(value, params)
                 if parsed:
                     ev["recurrence_id"] = parsed
+        # An instance with a RECURRENCE-ID replaces that occurrence of its
+        # series — and that is just as true when the replacement is
+        # STATUS:CANCELLED, which is how a feed says "not this Tuesday" for
+        # one week of a weekly practice. So the id is recorded BEFORE the
+        # cancelled skip: recorded after it (as it was until 2026-10-11),
+        # the cancelled instance vanished and the series' own occurrence
+        # came back in its place, and the planner read a free evening as a
+        # busy one. It comes before the DTSTART check too: a cancelled
+        # instance needs no start of its own to say which one it removes.
+        if ev["recurrence_id"] and ev["uid"]:
+            # Kept as written and matched against the SERIES' zone below:
+            # a cancellation can name its occurrence in UTC
+            # ("RECURRENCE-ID:20260922T213000Z") under a Toronto series,
+            # and keyed in its own zone it lined up with nothing.
+            wall, _is_date, zone = ev["recurrence_id"]
+            recurrence_ids.setdefault(ev["uid"], []).append((wall, zone))
+        if ev["status"] == "CANCELLED":
+            continue
         if bad or "start" not in ev:
             skipped += 1
             continue
-        if ev["status"] == "CANCELLED":
-            continue
-        if ev["recurrence_id"] and ev["uid"]:
-            wall, _is_date, zone = ev["recurrence_id"]
-            recurrence_ids.setdefault(ev["uid"], set()).add(_wall_key(wall, zone, ev["zone"]))
         parsed_events.append(ev)
 
     display_tz, tz_source = resolve_display_zone(
@@ -633,7 +646,8 @@ def parse_ics(text: str, window_start: date, window_end: date) -> dict:
                 skipped += 1
                 continue
             excluded = {_wall_key(w, z, zone) for (w, _d, z) in ev["exdates"]}
-            excluded |= recurrence_ids.get(ev["uid"], set()) if ev["uid"] and not ev["recurrence_id"] else set()
+            if ev["uid"] and not ev["recurrence_id"]:
+                excluded |= {_wall_key(w, z, zone) for (w, z) in recurrence_ids.get(ev["uid"], [])}
             try:
                 starts = [
                     s for s in _occurrences(start, rule, all_day, zone, window_end)

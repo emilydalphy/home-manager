@@ -334,6 +334,46 @@ def remove_item_from_all_stores_typical_list(item: str) -> None:
             conn.commit()
 
 
+# The three answers the app itself offers for how often new recipes turn up
+# (the chat tool's enum in agent.py, and the generation prompt that reads
+# them). Anything else was stored as given until 2026-10-12 — "banana" saved
+# with a 200 — and the prompt then had no rule for it, so it is refused here,
+# where every writer passes.
+NOVELTY_PREFERENCES = ("mostly_favorites", "balanced", "surprise_me_often")
+
+# A protein rating is 1-5: 1 avoid, 5 a favourite (the chat tool's own scale;
+# the Settings chips write 5 and 1). 99 used to be stored as given, and the
+# planner then read it as a protein the household likes twenty times more
+# than a favourite. Refused rather than clamped: a number off the scale is a
+# misunderstanding, and quietly turning it into a 5 would be the app
+# answering for them.
+PROTEIN_RATING_MIN, PROTEIN_RATING_MAX = 1, 5
+
+
+def _checked_protein_ratings(ratings: dict) -> dict:
+    """Each rating as a whole number from 1 to 5, or a ValueError saying which.
+    A whole-number string ("5", which a model does send) is read as its
+    number; a bool is not a rating even though Python counts it as an int."""
+    checked = {}
+    for protein, rating in ratings.items():
+        try:
+            if isinstance(rating, bool):
+                raise ValueError
+            number = int(str(rating).strip()) if isinstance(rating, str) else int(rating)
+            if number != rating and not isinstance(rating, str):
+                raise ValueError  # 4.5 is not on the scale
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"{protein!s} needs a rating from {PROTEIN_RATING_MIN} to {PROTEIN_RATING_MAX}, not {rating!r}."
+            )
+        if not PROTEIN_RATING_MIN <= number <= PROTEIN_RATING_MAX:
+            raise ValueError(
+                f"{protein!s} needs a rating from {PROTEIN_RATING_MIN} to {PROTEIN_RATING_MAX}, not {number}."
+            )
+        checked[protein] = number
+    return checked
+
+
 def _same_protein(stored_key: str, new_key: str) -> bool:
     """Does `stored_key` hold the answer for the protein `new_key` names?
     "Chicken" does for "chicken", and "Fish / seafood" for "fish" — a
@@ -387,6 +427,14 @@ def set_household_meal_preferences(
     pass mark_complete=False if you're saving a partial update
     mid-conversation.
     """
+    # Checked before the write opens, so a refusal changes nothing — an
+    # empty novelty_preference still means "not this call's business".
+    if novelty_preference and novelty_preference not in NOVELTY_PREFERENCES:
+        raise ValueError(
+            f"novelty_preference must be one of {', '.join(NOVELTY_PREFERENCES)}, not {novelty_preference!r}."
+        )
+    if protein_preferences:
+        protein_preferences = _checked_protein_ratings(protein_preferences)
     with write() as conn:
         existing = conn.execute(
             "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)

@@ -143,6 +143,40 @@ def household_exists(household_id: int) -> bool:
     return row is not None
 
 
+def session_still_holds(household_id: int, member_id: int | None) -> bool:
+    """
+    Does what a signed session cookie says still stand: its household is
+    there, and — when the cookie names somebody — so is that person?
+
+    The second half (defect hunt, 2026-10-11): "Remove me from this
+    household" deletes the member row (household_deletion.remove_member)
+    and signs out the device it was tapped on, and nothing else. Bob's
+    other phone kept a cookie naming a member that no longer exists, so it
+    stayed in the household he had just left — and, with one adult left,
+    tools.current_member() resolved it to her: his iPad was signed in AS
+    Carol, could approve her week and point her sign-in email at his own
+    inbox. remove_member is the only thing that deletes a member row, so a
+    row gone means exactly "this person left".
+
+    A member who still exists but is no longer an adult (re-marked a child)
+    is NOT a reason to sign out — the row is there, and the pick simply
+    reads as no pick, as it always has.
+    """
+    conn = get_conn()
+    try:
+        if member_id is None:
+            row = conn.execute("SELECT 1 FROM households WHERE id = ?", (int(household_id),)).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT 1 FROM households h JOIN members m ON m.household_id = h.id "
+                "WHERE h.id = ? AND m.id = ?",
+                (int(household_id), int(member_id)),
+            ).fetchone()
+        return row is not None
+    finally:
+        conn.close()
+
+
 def adult_exists(household_id: int, member_id: int) -> bool:
     """
     Is this member an adult of this household, right now?
@@ -268,6 +302,7 @@ __all__ = [
     "create_household",
     "hash_passphrase",
     "household_exists",
+    "session_still_holds",
     "list_households",
     "passphrase_in_use",
     "resolve_passphrase",

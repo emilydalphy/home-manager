@@ -367,12 +367,52 @@ def update_recipe_details(
     """
     conn = get_conn()
     existing = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        "SELECT id, instructions_json, advance_prep_step_indices_json FROM recipes "
+        "WHERE household_id = ? AND LOWER(name) = LOWER(?)",
         (household_id(), recipe_name),
     ).fetchone()
     if not existing:
         conn.close()
         raise ValueError(f"No saved recipe named '{recipe_name}'.")
+
+    # The "Do ahead" markers are POSITIONS into the steps, so they belong to
+    # one particular list of steps. New steps with no markers given used to
+    # keep the old positions, which then pointed at whatever step now sat
+    # there — "Do ahead" beside "Serve", the real marinade step unmarked —
+    # and a position past the end landed on the side dish's steps, which
+    # cook mode appends after the recipe's own. So a marked step follows its
+    # TEXT to wherever it now sits, and one that is gone stops being marked.
+    # Explicit markers are kept to positions that exist.
+    old_steps = json.loads(existing["instructions_json"] or "[]")
+    steps = instructions if instructions is not None else old_steps
+    if instructions is not None and advance_prep_step_indices is None:
+        old_marked = json.loads(existing["advance_prep_step_indices_json"] or "[]")
+        advance_prep_step_indices = []
+        for pos in old_marked:
+            if not isinstance(pos, int) or not 1 <= pos <= len(old_steps):
+                continue
+            text = old_steps[pos - 1]
+            # Its own position first, so a recipe that repeats a step's
+            # words ("Stir.") keeps the marker on the one that was marked.
+            candidates = ([pos] if pos <= len(steps) else []) + list(range(1, len(steps) + 1))
+            for new_pos in candidates:
+                if steps[new_pos - 1] == text and new_pos not in advance_prep_step_indices:
+                    advance_prep_step_indices.append(new_pos)
+                    break
+            else:
+                # Not found word for word. With the same number of steps
+                # the list was reworded, not reshaped ("Marinate overnight"
+                # -> "Marinate at least 4 hours or overnight"), so the step
+                # in the same place is still the marked one — which is what
+                # main did, and dropping it left the do-ahead note pointing
+                # at no step. A list that grew or shrank has no such claim.
+                if len(steps) == len(old_steps) and pos not in advance_prep_step_indices:
+                    advance_prep_step_indices.append(pos)
+    if advance_prep_step_indices is not None:
+        advance_prep_step_indices = [
+            pos for pos in advance_prep_step_indices
+            if isinstance(pos, int) and 1 <= pos <= len(steps)
+        ]
 
     fields, params = [], []
     if instructions is not None:
@@ -860,7 +900,7 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # scaled as TEXT, by the same rules as the steps (scale_steps),
             # so the list and the steps agree and nothing written is lost.
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
-            scaled_ingredients.append({**ing, "qty": rescaled})
+            scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 unscaled_items.append(ing["item"])
             continue
@@ -878,7 +918,7 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
                 # Same rounding cooking_quantity applies, so the two agree
                 # about a thing that only comes whole.
                 scaled = max(1.0, round(scaled))
-            scaled_ingredients.append({**ing, "qty": _quantities._format_quantity(scaled, unit)})
+            scaled_ingredients.append(_with_item_label({**ing, "qty": _quantities._format_quantity(scaled, unit)}))
         else:
             scaled_ingredients.append(dict(ing))
             if (ing.get("qty") or "").strip():
@@ -1115,6 +1155,59 @@ def _pluralize_noun(phrase: str, many: bool) -> str:
         else:
             last = last[:-2] if lower.endswith(("oes", "ches", "shes", "xes")) else last[:-1]
     return f"{head}{sep}{last}"
+
+
+# The few things that are plainly counted whole, singular -> plural, picked
+# from what the repo's own recipes write with a bare count. Deliberately a
+# short list and not a rule: a general plural turned "3 garlic" into "3
+# garlics", "2 celery" into "2 celeries" and "2 tomato (Roma)" into "2 tomato
+# (Roma)s" (review, 2026-10-10). A missing plural reads a little stiff; a
+# wrong one reads broken.
+_COUNTABLE_PLURALS = {
+    "onion": "onions", "egg": "eggs", "carrot": "carrots", "lemon": "lemons",
+    "lime": "limes", "apple": "apples", "potato": "potatoes", "tomato": "tomatoes",
+    "cucumber": "cucumbers", "shallot": "shallots", "tortilla": "tortillas",
+    "banana": "bananas", "bun": "buns",
+}
+# "pepper" only as the vegetable — never "2 black pepper".
+_PEPPER_KINDS = {"bell", "red", "green", "yellow", "orange", "sweet", "poblano"}
+
+
+def _with_item_label(ing: dict) -> dict:
+    """
+    An ingredient row plus `item_label`: the thing as it reads after its
+    amount when the amount is a bare count of more than one and the thing
+    is plainly countable — "2" + "onion" says "2 onions", not "2 onion"
+    (the recipe page at 8 servings, 2026-10-10). `item` itself is never
+    rewritten: ticks, matching and the grocery list all key on it.
+
+    Only the last word of the name before any "(" or "," changes, and only
+    when it is in _COUNTABLE_PLURALS ("red onion, diced" -> "red onions,
+    diced"; "tomato (Roma)" -> "tomatoes (Roma)"). Everything else — an
+    amount with a unit, one or fewer, garlic, celery, rice — has no label.
+    """
+    out = dict(ing)
+    out.pop("item_label", None)
+    item = (out.get("item") or "").strip()
+    parsed = _quantities._parse_quantity((out.get("qty") or "").strip())
+    if not (item and parsed and parsed[1] is None and parsed[0] > 1 + 1e-9):
+        return out
+    cut = min((i for i in (item.find("("), item.find(",")) if i >= 0), default=len(item))
+    head, tail = item[:cut].rstrip(), item[cut:]
+    words = head.split()
+    if not words:
+        return out
+    last = words[-1].lower()
+    plural = _COUNTABLE_PLURALS.get(last)
+    if last == "pepper" and len(words) > 1 and words[-2].lower() in _PEPPER_KINDS:
+        plural = "peppers"
+    if not plural:
+        return out
+    if words[-1][:1].isupper():
+        plural = plural[:1].upper() + plural[1:]
+    words[-1] = plural
+    out["item_label"] = " ".join(words) + (" " + tail.lstrip() if tail.startswith("(") else tail)
+    return out
 
 
 def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = None) -> list:
@@ -1555,6 +1648,35 @@ def _is_canned_good(item: str) -> bool:
     return not any(_item_matches(_clean_item(item), w) for w in _NEVER_CANNED_WORDS)
 
 
+# "1 ½ cups", "¾ cup", "2½ tbsp" (defect hunt, 2026-10-10). The fraction
+# glyphs are how this app WRITES a scaled amount (scale_steps, which
+# scale_recipe uses for any line with a bracket, a range or a fraction in
+# it), and how plenty of recipes off the web are written. _parse_quantity
+# reads "1 1/2" but not "1 ½", so every judgement below called those
+# amounts "unmeasured" and cooking_ingredients REPLACED them with the
+# table's guess: the cook view for six said "6 cups" of broth for a recipe's
+# "1 ½ cups", "1 can" of chickpeas for "1 ½ cans (15 oz)", and the recipe
+# page's servings stepper and the cook view gave two answers for one count.
+# Read here, for the cooking judgements only — the line keeps its own words.
+_GLYPH_FRACTIONS = {
+    "½": "1/2", "⅓": "1/3", "⅔": "2/3", "¼": "1/4", "¾": "3/4",
+    "⅛": "1/8", "⅜": "3/8", "⅝": "5/8", "⅞": "7/8",
+}
+_GLYPH_FRACTION_RE = re.compile(r"(\d)?\s*([" + "".join(_GLYPH_FRACTIONS) + r"])")
+
+
+def _ascii_fractions(text: str) -> str:
+    """"1 ½ cups" → "1 1/2 cups": the spelling quantities' parsers read."""
+    return _GLYPH_FRACTION_RE.sub(
+        lambda m: (m.group(1) + " " if m.group(1) else "") + _GLYPH_FRACTIONS[m.group(2)], text or ""
+    )
+
+
+def _parse_cook_qty(text: str):
+    """_quantities._parse_quantity, reading ½-style fractions as 1/2."""
+    return _quantities._parse_quantity(_ascii_fractions(text))
+
+
 def _quantity_problem(item: str, qty: str) -> str | None:
     """
     Why this quantity can't be cooked from, or None if it can. The single
@@ -1566,7 +1688,7 @@ def _quantity_problem(item: str, qty: str) -> str | None:
         return "missing"
     if text.lower() in _FREEFORM_COOKING_OK:
         return None
-    parsed = _quantities._parse_quantity(text)
+    parsed = _parse_cook_qty(text)
     if not parsed:
         return "unmeasured"
     _amount, unit = parsed
@@ -1756,7 +1878,7 @@ def implausible_quantity(item: str, qty: str, servings: int | None = None) -> di
     if not klass:
         return None
     name, ranges = klass
-    parsed = _quantities._parse_quantity((qty or "").strip())
+    parsed = _parse_cook_qty((qty or "").strip())
     if not parsed:
         return None
     amount, unit = parsed
@@ -1790,7 +1912,7 @@ def plausible_cooking_quantity(item: str, qty: str, servings: int | None = None,
     table = cooking_quantity(item, servings=_servings_or_base(servings), shopping_qty=shopping_qty)
     if table and not implausible_quantity(item, table, servings):
         return table
-    amount, unit = _quantities._parse_quantity(qty.strip())
+    amount, unit = _parse_cook_qty(qty.strip())
     family, factor = _check_family(unit, problem["class"])
     bound = problem["high"] if problem["per_serving"] > problem["high"] else problem["low"]
     total = bound * _servings_or_base(servings)
@@ -2026,7 +2148,7 @@ def produce_count_problem(item: str, qty: str, servings: int | None = None) -> d
     core, note = _quantities._split_quantity_note((qty or "").strip())
     if any(word in note.lower().split() for word in _SMALL_KIND_NOTES):
         return None
-    parsed = _quantities._parse_quantity(core)
+    parsed = _parse_cook_qty(core)
     if not parsed or (parsed[1] is not None and parsed[1] not in _COUNT_UNITS):
         return None
     count = parsed[0] * _COUNT_UNITS.get(parsed[1] or "", 1)
@@ -2177,7 +2299,7 @@ def per_person_count_problem(item: str, qty: str, servings: int | None = None) -
     core, note = _quantities._split_quantity_note((qty or "").strip())
     if any(w in note.lower().split() for w in _SMALL_KIND_NOTES):
         return None   # "6 small" is the kind said in the amount
-    parsed = _quantities._parse_quantity(core)
+    parsed = _parse_cook_qty(core)
     if not parsed or parsed[1] not in _PER_PERSON_COUNT_UNITS:
         return None
     per_serving = parsed[0] / _servings_or_base(servings)
@@ -2228,7 +2350,7 @@ def plausible_count_quantity(item: str, qty: str, servings: int | None = None) -
     if not problem:
         return qty
     core, note = _quantities._split_quantity_note((qty or "").strip())
-    unit = (_quantities._parse_quantity(core) or (0, None))[1]
+    unit = (_parse_cook_qty(core) or (0, None))[1]
     fixed = max(1.0, float(int(problem["high"] * _servings_or_base(servings) + 1e-9)))
     return _quantities._with_note(_quantities._format_quantity(fixed, unit), note)
 
@@ -2402,7 +2524,9 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
             continue
         suggested = cooking_quantity(item, servings=servings, shopping_qty=qty)
         out.append({**ing, "qty": suggested, "shopping_qty": qty} if suggested else dict(ing))
-    return out
+    # Every row says its thing in the number its amount is ("2 onions") —
+    # see _with_item_label; `item` stays exactly as stored.
+    return [_with_item_label(r) if isinstance(r, dict) else r for r in out]
 
 
 def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -> dict:
@@ -3137,7 +3261,29 @@ def attribute_recipe_feedback(
                 f"Use one of: {', '.join(RECIPE_RATINGS)}."
             )
 
-        member_id = _household._get_or_create_member(conn, member_name)
+        # Looked up, never created. This used to get-or-create, so "Grandma
+        # loved the skewers" from a visiting grandma — or a nickname, or a
+        # typo — added a PERSON to the household: counted in every meal's
+        # headcount and portions from then on, offered in "Who's this?",
+        # for want of a taste row. A rating is about someone already here;
+        # adding someone is add_member's job, asked for in so many words.
+        # The refusal names who IS here so the model can retry with the
+        # right name, or keep a guest's opinion as a note on the recipe.
+        member = conn.execute(
+            "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            (household_id(), (member_name or "").strip()),
+        ).fetchone()
+        if not member:
+            names = [r["name"] for r in conn.execute(
+                "SELECT name FROM members WHERE household_id = ? ORDER BY id", (household_id(),),
+            )]
+            raise ValueError(
+                f"{member_name!r} isn't someone in this household"
+                + (f" (that's {', '.join(names)})" if names else "")
+                + ". Use one of those names, or, for a guest, keep it as a note "
+                "with mark_recipe_feedback instead — this never adds a person."
+            )
+        member_id = member["id"]
         conn.execute(
             """
             INSERT INTO member_recipe_feedback (household_id, recipe_id, member_id, rating, source, notes)
@@ -3491,6 +3637,57 @@ class _KitchenStock:
             else:
                 self._on_hand.setdefault(key, []).append(parsed)
 
+    def reserve_bought_for_meals_ahead(self, conn, exclude_plan_id: int | None = None) -> None:
+        """
+        Claim, before anything else asks, the stock that was BOUGHT for a
+        meal still to be cooked — so it is not offered a second time.
+
+        Ticking a line bought puts it on the shelf (mark_grocery_item), and
+        the shelf is only emptied when that dinner is cooked
+        (cooker._claim_inventory_depletion). In between, the pound of beef
+        bought on Monday for Wednesday's tacos is in the kitchen AND spoken
+        for. Without this, approving next week on the Friday (two live
+        weeks) read that pound as spare: next week's tacos got no beef and
+        no tortillas on the list (2026-10-12, reproduced over the real
+        approval), and the pre-shop check told the shopper a next-week line
+        was "maybe already home" for the same reason.
+
+        What is reserved is each such meal's own ledger share
+        (meal_plan_grocery_links.quantity) of a line that reached the shelf
+        (inventory_added_at set), for an entry not cooked, not depleted, not
+        on a retired plan and dated today or later. A past meal nobody
+        ticked is left out on purpose: whether it was eaten is unknown, and
+        guessing "not yet" would put a line on every week's list forever.
+        `exclude_plan_id` leaves one plan's own meals out: a caller asking
+        about THAT plan (defrost's thaw question) must not have the food
+        bought for its own dinners hidden from it.
+        A share in a unit that will not convert makes the claim unreadable,
+        and covers() then buys — the safe direction, as everywhere here.
+        """
+        today = _grocery._household_today(conn=conn).isoformat()
+        rows = conn.execute(
+            "SELECT g.item AS item, l.quantity AS quantity "
+            "FROM meal_plan_grocery_links l "
+            "JOIN grocery_items g ON g.id = l.grocery_item_id AND g.household_id = l.household_id "
+            "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
+            "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id AND w.household_id = e.household_id "
+            "WHERE l.household_id = ? AND g.status = 'purchased' AND g.inventory_added_at IS NOT NULL "
+            "AND e.cooked_status = 'pending' AND e.inventory_depleted_at IS NULL AND e.date >= ? "
+            "AND COALESCE(w.status, '') != 'retired' AND COALESCE(e.weekly_plan_id, -1) != ?",
+            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id),
+        ).fetchall()
+        for row in rows:
+            key = (row["item"] or "").strip().lower()
+            if key not in self._on_hand:
+                continue  # nothing on the shelf to reserve
+            parsed = _quantities._parse_quantity(row["quantity"] or "")
+            if parsed is None:
+                # An unreadable share: how much is spoken for is unknown, so
+                # nothing of this name can be shown to be spare.
+                self._unreadable.add(key)
+                continue
+            self._claimed.setdefault(key, []).append(parsed)
+
     def covers(self, item: str, need: tuple[float, str | None] | None) -> bool:
         """
         True when `need` — (amount, unit), this recipe-week's whole scaled
@@ -3639,6 +3836,9 @@ class WeekGroceryBuffer:
             conn = self.conn or get_conn()
             try:
                 self._stock = _KitchenStock(conn)
+                # What is already bought for a dinner still to come is not
+                # this pass's to spend — see reserve_bought_for_meals_ahead.
+                self._stock.reserve_bought_for_meals_ahead(conn)
             finally:
                 if self.conn is None:
                     conn.close()

@@ -2478,22 +2478,24 @@
   var awayRanges = [];   // ranges set this session, for the confirmation list
   var awayDraft = null;
 
-  function addDays(iso, n) {
-    var d = new Date(iso + 'T00:00:00');
-    d.setDate(d.getDate() + n);
-    return d.toISOString().slice(0, 10);
-  }
   function nextSlot(pos) {
     var i = MEAL_SEQ.indexOf(pos.slot);
     return i < MEAL_SEQ.length - 1
       ? { date: pos.date, slot: MEAL_SEQ[i + 1] }
-      : { date: addDays(pos.date, 1), slot: MEAL_SEQ[0] };
+      // addDaysIso, local fields: this read the date back through
+      // toISOString() until 2026-10-11 (defect hunt). Local midnight is the
+      // PREVIOUS day in UTC on any phone east of Greenwich (London in
+      // summer, all of Europe), so the day after Monday came back as
+      // Monday — "away from Monday after dinner" went round Monday's meals
+      // to the 100-meal guard, and Set this range marked Monday away
+      // instead of Tuesday.
+      : { date: addDaysIso(pos.date, 1), slot: MEAL_SEQ[0] };
   }
   function prevSlot(pos) {
     var i = MEAL_SEQ.indexOf(pos.slot);
     return i > 0
       ? { date: pos.date, slot: MEAL_SEQ[i - 1] }
-      : { date: addDays(pos.date, -1), slot: MEAL_SEQ[MEAL_SEQ.length - 1] };
+      : { date: addDaysIso(pos.date, -1), slot: MEAL_SEQ[MEAL_SEQ.length - 1] };
   }
   function slotRank(pos) {
     return new Date(pos.date + 'T00:00:00').getTime() / 86400000 * 3 + MEAL_SEQ.indexOf(pos.slot);

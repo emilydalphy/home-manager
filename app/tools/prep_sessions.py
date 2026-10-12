@@ -382,7 +382,14 @@ def _task_items(tasks: list[dict], prep_date: str, entries: dict[int, dict]) -> 
             "entry_id": task["meal_plan_entry_id"],
             "title": task["description"],
             "feeds": task["related_meal"] or (entry["meal"] if entry else ""),
-            "done": task["status"] == "done",
+            # 'skipped' is handled, not waiting (2026-10-10) — the household
+            # said not this one (check_off_prep_step's decline; chat offers
+            # it). Today's moves have counted it so since the defrost tile
+            # (moves.py), while this session kept the row unticked and its
+            # "N of M done" one short for the rest of the week. `skipped`
+            # says which kind of handled, for a reader that cares.
+            "done": task["status"] in ("done", "skipped"),
+            "skipped": task["status"] == "skipped",
             "covers": sorted(set(covers)),
             "minutes": (
                 PREP_CUT_MINUTES if is_cut

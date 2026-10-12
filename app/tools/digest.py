@@ -70,6 +70,7 @@ from . import attention as _attention
 from . import cooker as _cooker
 from . import moves as _moves
 from . import notifications as _notifications
+from . import quantities as _quantities
 from . import rhythm as _rhythm
 from . import slot_needs as _slot_needs
 
@@ -743,7 +744,15 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
             parts.append(("shop", MORNING_SHOP_DAY_LINE.format(by=by, things=things)))
         else:
             for m in timed:
-                parts.append(("shop", f"{_tidy(m['title'])} — {_tidy(m['detail'])}."))
+                detail = m["detail"]
+                # "Shop before tomorrow — 1 item, by tomorrow." said it twice
+                # (2026-10-10). The title already carries the day when the
+                # cook is tomorrow, so the deadline clause goes — the same
+                # call the shop-day line above makes about "by tomorrow".
+                when = str(m.get("time_label") or "")
+                if when == "by tomorrow" and "tomorrow" in str(m.get("title") or "").lower():
+                    detail = detail.rsplit(" · ", 1)[0] if detail.endswith(" · " + when) else detail
+                parts.append(("shop", f"{_tidy(m['title'])} — {_tidy(detail)}."))
 
     # 6. WHO'S AWAY TONIGHT (2026-10-04) — attendance's own sentence, word
     # for word. summary_line is where "Dinner for 3 — Vineeth's out." lives
@@ -1271,7 +1280,14 @@ def build_evening_nudge(now_local: datetime | None = None, link: bool = True) ->
         text = f"{_tidy(first['title'])} first — then {dish}."
     else:
         minutes = int(dinner.get("duration_min") or 0)
-        text = f"Tonight: {dish} — {minutes} min. Tap to start." if minutes else f"Tonight: {dish}. Tap to start."
+        # Spelled by quantities.format_duration, the one spelling Today's
+        # chip and Cook's card use: a roast read "110 min" here and "1 hr 50
+        # min" on the screen this text opens (overnight hunt, 2026-10-10).
+        # Under an hour the two agree ("35 min"), which is why it hid.
+        text = (
+            f"Tonight: {dish} — {_quantities.format_duration(minutes)}. Tap to start."
+            if minutes else f"Tonight: {dish}. Tap to start."
+        )
     # No address in a push notification (link=False): tapping it opens Cook.
     url = _app_link("kitchen") if link else ""
     return f"{text} {url}" if url else text
@@ -1371,9 +1387,21 @@ def _run_household_evening(now_utc: datetime, send: Callable[[dict, str], dict])
         return []
     sent_on = local_now.date().isoformat()
 
+    # Somebody marked out for tonight's dinner is not texted "Tap to start"
+    # (defect hunt 2026-10-12: with "Dinner for 1 — Vineeth's out" on Today,
+    # Vineeth still got the nudge at 5:30, wherever he was). The morning
+    # text still reaches him — it is the household's day, and its "away"
+    # part is how he hears he's not needed. Not stamped, so an absence
+    # undone inside the window still gets him tonight's nudge.
+    try:
+        out_tonight = set(_attendance.get_slot_attendance(sent_on, "dinner").get("absent_member_ids") or [])
+    except Exception:
+        logger.exception("Evening nudge: tonight's attendance could not be read; nudging everyone")
+        out_tonight = set()
     waiting = [
         r for r in _adult_rows(conn)
         if r["evening_nudge_on"] and r["evening_nudge_sent_on"] != sent_on
+        and r["id"] not in out_tonight
         and (_texts_on(r) or _push_ready(r["id"]))
     ]
     if not waiting:
