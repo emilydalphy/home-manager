@@ -303,6 +303,15 @@ why*, not duplicating the diff.
   `_require_member_here` in `app/main.py`: 400 blank, 404 stranger, nothing
   written — the rule `/api/memory/member/age` has had since 2026-10-06. Chat
   keeps get-or-create; it is right there.
+- **"Have it" then Put back re-reads the line from its meals** (2026-10-10;
+  branch `overnight/have-it-undo-recounts`; `tests/test_have_it_undo_recounts.py`).
+  The meal reversal skips a line that is off the list, so spinach dropped as
+  "Have it", one of two frittatas dropped, Put back -> "10 oz" for 5 oz of week.
+  Review round: the recount moved from Put back into the meal reversal
+  (`_reverse_meal_grocery_contributions` treats a set-aside plan line like a
+  live one, never deleting it), so a jar stays one jar and an edited amount is
+  only re-read when a meal really goes; carried_kept/dropped rows are excluded. Not done: a plan line whose meals ALL
+  went while off still comes back as it was.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
