@@ -275,8 +275,10 @@ def test_the_filler_list_stays_short():
 # 2026-10-05 because app/agent.py was held by another builder that night).
 # The merge key above heals a split line; this asks the recipe writers not
 # to split it in the first place. Pinned on every prompt that writes an
-# ingredient name for the grocery list: the per-dish recipe pass, the
-# pool planner, and the side writer's tool schema.
+# ingredient name for the grocery list: the per-dish recipe pass (prompt
+# and schema), the pool planner, the side writer, the big-meal writer and
+# chat's add_recipe. Recipe IMPORT is deliberately not on this list: a
+# parsed page keeps its names exactly as printed.
 
 def test_recipe_writer_is_told_the_plain_shopping_form():
     from app import agent
@@ -295,9 +297,43 @@ def test_pool_planner_is_told_the_plain_shopping_form():
             'shopping form ("Plain yogurt", never "Yogurt, plain")') in src
 
 
-def test_side_writer_schema_asks_for_the_plain_shopping_form():
+def _item_descriptions(node):
+    """Every ingredient `item` description anywhere under a tool schema."""
+    found = []
+    if isinstance(node, dict):
+        item = node.get("item")
+        if isinstance(item, dict) and "description" in item:
+            found.append(item["description"])
+        for value in node.values():
+            found.extend(_item_descriptions(value))
+    elif isinstance(node, list):
+        for value in node:
+            found.extend(_item_descriptions(value))
+    return found
+
+
+def _add_recipe_tool():
     from app import agent
-    item = (agent._GENERATE_SIDES_TOOL["input_schema"]["properties"]["sides"]
-            ["items"]["properties"]["ingredients"]["items"]["properties"]["item"])
-    assert "plain shopping form" in item["description"]
-    assert "'Plain yogurt', never 'Yogurt, plain'" in item["description"]
+    return next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "add_recipe")
+
+
+@pytest.mark.parametrize("schema", [
+    "_GENERATE_SIDES_TOOL", "_RECIPE_DETAILS_TOOL", "_DISH_PROPERTIES", "add_recipe",
+])
+def test_every_writer_schema_asks_for_the_plain_shopping_form(schema):
+    from app import agent
+    node = _add_recipe_tool() if schema == "add_recipe" else getattr(agent, schema)
+    descriptions = _item_descriptions(node)
+    assert descriptions, schema
+    for d in descriptions:
+        assert "'Plain yogurt', never 'Yogurt, plain'" in d, (schema, d)
+
+
+def test_no_example_moves_a_prep_word_to_the_front():
+    # Review catch: an earlier cut used "Diced tomatoes", never "Tomatoes,
+    # diced" -- but the merge key DROPS a post-comma prep word, so that
+    # example taught the one form ("Diced tomatoes") that never merges with
+    # plain "Tomatoes".
+    from app import agent
+    assert "Diced tomatoes" not in agent.RECIPE_DETAILS_INSTRUCTIONS
+    assert "never moved to the front" in agent.RECIPE_DETAILS_INSTRUCTIONS

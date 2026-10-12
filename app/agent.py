@@ -1683,7 +1683,7 @@ TOOL_DEFINITIONS = [
                     "items": {
                         "type": "object",
                         "properties": {
-                            "item": {"type": "string", "description": "The plain grocery-list name ('Carrots', never 'Carrots, julienned'), naming the kind whenever the count depends on it ('Persian cucumbers' with qty '6' — a bare 'Cucumbers' reads as full-size English ones)."},
+                            "item": {"type": "string", "description": "The plain grocery-list name ('Carrots', never 'Carrots, julienned'), naming the kind whenever the count depends on it ('Persian cucumbers' with qty '6' — a bare 'Cucumbers' reads as full-size English ones). In its plain shopping form: 'Plain yogurt', never 'Yogurt, plain'."},
                             "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead. A COUNT is the amount the DISH uses, never one each: a salad for four wants ONE lemon, not four."},
                             "category": {
                                 "type": "string",
@@ -3933,7 +3933,7 @@ _RECIPE_DETAILS_TOOL = {
                 "items": {
                     "type": "object",
                     "properties": {
-                        "item": {"type": "string", "description": "The plain grocery-list name ('Baby spinach', 'Carrots'), never with a prep descriptor ('Carrots, julienned'). Name the kind when the count only makes sense for that kind ('Persian cucumbers', 'Cherry tomatoes')."},
+                        "item": {"type": "string", "description": "The plain grocery-list name ('Baby spinach', 'Carrots'), never with a prep descriptor ('Carrots, julienned'). Name the kind when the count only makes sense for that kind ('Persian cucumbers', 'Cherry tomatoes'). In its plain shopping form: 'Plain yogurt', never 'Yogurt, plain'."},
                         "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself. Never a recipe-prep measurement like '2 cups shredded'."},
                         "category": {
                             "type": "string",
@@ -4037,7 +4037,8 @@ item name, so "Baby spinach" in one recipe and "Baby spinach, chopped" in anothe
 separate lines that never combine — quietly doubling what the household is told to buy. Prep \
 instructions belong in the recipe's instructions text, never in the ingredient name. Write \
 the name in its plain shopping form, the way a person says it at the store — "Plain yogurt", \
-never "Yogurt, plain"; "Diced tomatoes", never "Tomatoes, diced" — and when the dish wants a \
+never "Yogurt, plain"; "Greek yogurt", never "Yogurt, Greek" (a prep word after the comma \
+is dropped, as above, never moved to the front) — and when the dish wants a \
 thing the household already buys under a plain name, use that name rather than a fancier \
 spelling of it. Three recipes calling one tub of yogurt three different names is three lines on \
 the list. One \
@@ -8064,7 +8065,7 @@ _DISH_PROPERTIES = {
         "items": {
             "type": "object",
             "properties": {
-                "item": {"type": "string", "description": "The ingredient name with no prep descriptor."},
+                "item": {"type": "string", "description": "The ingredient name with no prep descriptor, in its plain shopping form — 'Plain yogurt', never 'Yogurt, plain'."},
                 "qty": {"type": "string", "description": "As bought at the store, for THIS table ('2 lb', '1 bunch', '2 cans')."},
                 "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
             },

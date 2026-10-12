@@ -15,8 +15,8 @@ why*, not duplicating the diff.
 
 - **The recipe writers are told the plain shopping name** (2026-10-12; branch
   `overnight/recipe-writer-plain-names`). The owed third criterion of "One
-  line for one thing": `RECIPE_DETAILS_INSTRUCTIONS`, the pool planner's
-  prompt and the side writer's `item` schema now ask for "Plain yogurt",
+  line for one thing": `RECIPE_DETAILS_INSTRUCTIONS` and its schema, the pool planner's
+  prompt, and the side, big-meal and chat add_recipe `item` schemas now ask for "Plain yogurt",
   never "Yogurt, plain". The merge key heals a split line; this stops the
   split at the source. Tests at the foot of
   `tests/test_grocery_one_line_for_one_thing.py`.
