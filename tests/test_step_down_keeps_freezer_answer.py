@@ -142,6 +142,20 @@ def test_swapping_the_reheat_night_buys_no_salmon(client):
     assert _move_dates(plan_id) == [_day(1)]
 
 
+def test_swapping_the_reheat_night_to_another_salmon_dish_still_buys_that_salmon(client):
+    """Review catch (2026-10-12): the swapped-in dish's own salmon merges
+    into the batch's fresh line, and nothing books Friday a fridge move —
+    so setting that line aside meant salmon neither bought nor thawed. A
+    line carrying a meal outside the batch stays needed."""
+    plan_id, wed, fri = _week()
+    tools.add_recipe("Salmon Tacos", ingredients=[{"item": "Salmon fillets", "qty": "1 lb", "category": "seafood"}],
+                     instructions=["Grill.", "Wrap."])
+
+    tools.swap_meal_in_plan(plan_id, _day(4), "Salmon Tacos", slot="dinner")
+
+    assert _to_buy() != [], "Friday's tacos need salmon the household never said it had a move for"
+
+
 def test_with_no_freezer_answer_the_step_down_still_trims_the_line(client):
     """NO-REGRESSION: nobody said the salmon was frozen, so the "−" is the
     ordinary trim it always was — the line comes down and stays needed."""

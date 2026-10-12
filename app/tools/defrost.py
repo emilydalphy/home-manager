@@ -1561,11 +1561,39 @@ def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
                 r for r in rows_for_item
                 if r["source_weekly_plan_id"] == weekly_plan_id and r.get("staple_id") is None
             ]
-            fresh = _set_aside_own_lines(plan_owned)
+            # And only a line every meal counted into is one of THESE nights.
+            # A line that also carries another meal's share — Friday swapped
+            # from the reheat to Salmon Tacos, whose pound merged into the
+            # same fresh line — is not this answer's to take off: nothing
+            # books Friday a move, so setting it aside meant salmon neither
+            # bought nor thawed. Left needed, by the rule above.
+            outside = _lines_with_other_meals([r["id"] for r in plan_owned], ids)
+            fresh = _set_aside_own_lines([r for r in plan_owned if r["id"] not in outside])
             set_aside += fresh
             if fresh:
                 _retire_superseded_freezer_lines(plan_owned, keep=fresh)
     return {"created": created, "cancelled": len(doomed), "set_aside": set_aside}
+
+
+def _lines_with_other_meals(line_ids: list[int], entry_ids: list[int]) -> set[int]:
+    """The lines among `line_ids` that some meal OUTSIDE `entry_ids` is
+    counted into (meal_plan_grocery_links)."""
+    if not line_ids:
+        return set()
+    lines = ",".join("?" * len(line_ids))
+    entry_ids = list(entry_ids) or [0]  # no ids: every counted meal is "outside"
+    entries = ",".join("?" * len(entry_ids))
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            f"SELECT DISTINCT grocery_item_id FROM meal_plan_grocery_links "
+            f"WHERE household_id = ? AND grocery_item_id IN ({lines}) "
+            f"AND meal_plan_entry_id NOT IN ({entries})",
+            (household_id(), *line_ids, *entry_ids),
+        ).fetchall()
+    finally:
+        conn.close()
+    return {r["grocery_item_id"] for r in rows}
 
 
 def _retire_superseded_freezer_lines(plan_owned: list[dict], keep: list[int]) -> int:
