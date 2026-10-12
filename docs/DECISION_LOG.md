@@ -51,6 +51,17 @@ why*, not duplicating the diff.
   slot is. Same commit pair: a meal the usual week has off
   (`usual_week_off`) and "no dinners at all" (`dinners_per_week:0`) now read
   "No dinner planned that day" too (`_meal_not_asked_for`) — people are home.
+- **A night off no longer says a dish is "off the week" when it's still on
+  a later night** (2026-10-09; branch `overnight/night-off-says-where-the-dish-is`;
+  tests `tests/test_night_off_dish_still_on.py`). Lemon Pasta planned Wed and
+  Sun as two cooks, no free night: kind `drop` takes Wednesday's row only, but
+  the sub-line and toast said "comes off / is off the week". `_night_off_plan`'s
+  drop now carries `still_on` (later weekdays with the same dish by name,
+  planned) and says "Lemon Pasta is still on Sunday." (toast: "Tonight's off.
+  Lemon Pasta is still on Sunday."); the payload carries `still_on` and
+  shell.js's fallback sentence reads it. Earlier nights don't count — a Monday
+  already eaten isn't where the dish is. Chat tool text says the same.
+
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

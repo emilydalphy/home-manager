@@ -3577,6 +3577,15 @@
     var said = 'Tonight’s off.';
     if (out.dish && out.moved_to_weekday) {
       said += ' ' + out.dish + ' moved to ' + out.moved_to_weekday + '.';
+    } else if (out.dish && out.still_on && out.still_on.length) {
+      // Tonight's row went but the same dish is planned later in the week
+      // (`still_on`, decided by tonight._night_off_plan) — it is not off
+      // the week. Joined the way weekly_plan._join_with_and joins it.
+      var on = out.still_on;
+      var where = on.length === 1 ? on[0]
+        : on.length === 2 ? on[0] + ' and ' + on[1]
+        : on.slice(0, -1).join(', ') + ', and ' + on[on.length - 1];
+      said += ' ' + out.dish + ' is still on ' + where + '.';
     } else if (out.dish) {
       said += ' ' + out.dish + ' is off the week.';
     }
