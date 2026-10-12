@@ -397,6 +397,15 @@ why*, not duplicating the diff.
   (15 oz)", like "1 (14 oz) can"); "(2%)", "(85% lean)", "(optional)" and
   "(or 2 cups …)" stay on the item. Tests
   `tests/test_recipe_import_second_measure.py`.
+- **A cancelled week of a recurring event frees that evening** (2026-10-11;
+  branch `overnight/cancelled-practice-frees-the-evening`). A feed cancels one
+  occurrence by repeating it with its RECURRENCE-ID and STATUS:CANCELLED;
+  `calendar_feed.parse_ics` dropped the cancelled copy BEFORE recording the
+  RECURRENCE-ID, so the series' own occurrence came back and the planner was
+  told a free Tuesday was busy. The id is recorded first now (also when the
+  cancelled copy has no DTSTART), and matched in the SERIES' zone, so a
+  cancellation written in UTC under a Toronto series lines up. Tests at the foot of
+  `tests/test_calendar_feed.py`.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
