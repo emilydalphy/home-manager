@@ -536,6 +536,20 @@ why*, not duplicating the diff.
   `test_protein_rating_replaces_old_key.py` now seeds its legacy "more" row
   straight into the table instead of through the writer.
 
+- **Food bought for a dinner still to come is not "already home"**
+  (2026-10-12; branch `overnight/bought-for-this-week-stays-this-weeks`;
+  tests `tests/test_bought_for_this_week_stays_this_weeks.py`). Tick this
+  week's taco beef on Monday, approve next week (tacos again) on Friday:
+  `_KitchenStock` read Monday's pound as spare, so next week's list had no
+  beef or tortillas, and pre-shop flagged a second pound "maybe already
+  home". `reserve_bought_for_meals_ahead` now claims each still-to-cook
+  meal's ledger share of a ticked line first (entry pending, not depleted,
+  dated today on, plan not retired) in every grocery ingest that uses
+  `WeekGroceryBuffer` (approval, swaps), in pre-shop, and in defrost's thaw
+  question for OTHER plans' meals (a plan's own bought food still covers its
+  own dinners; ticked rows are a guessed shelf defrost never reads, so only
+  a named fridge row is affected). A past meal nobody ticked reserves
+  nothing (eaten or not is unknown).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can

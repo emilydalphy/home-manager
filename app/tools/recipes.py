@@ -3582,6 +3582,57 @@ class _KitchenStock:
             else:
                 self._on_hand.setdefault(key, []).append(parsed)
 
+    def reserve_bought_for_meals_ahead(self, conn, exclude_plan_id: int | None = None) -> None:
+        """
+        Claim, before anything else asks, the stock that was BOUGHT for a
+        meal still to be cooked — so it is not offered a second time.
+
+        Ticking a line bought puts it on the shelf (mark_grocery_item), and
+        the shelf is only emptied when that dinner is cooked
+        (cooker._claim_inventory_depletion). In between, the pound of beef
+        bought on Monday for Wednesday's tacos is in the kitchen AND spoken
+        for. Without this, approving next week on the Friday (two live
+        weeks) read that pound as spare: next week's tacos got no beef and
+        no tortillas on the list (2026-10-12, reproduced over the real
+        approval), and the pre-shop check told the shopper a next-week line
+        was "maybe already home" for the same reason.
+
+        What is reserved is each such meal's own ledger share
+        (meal_plan_grocery_links.quantity) of a line that reached the shelf
+        (inventory_added_at set), for an entry not cooked, not depleted, not
+        on a retired plan and dated today or later. A past meal nobody
+        ticked is left out on purpose: whether it was eaten is unknown, and
+        guessing "not yet" would put a line on every week's list forever.
+        `exclude_plan_id` leaves one plan's own meals out: a caller asking
+        about THAT plan (defrost's thaw question) must not have the food
+        bought for its own dinners hidden from it.
+        A share in a unit that will not convert makes the claim unreadable,
+        and covers() then buys — the safe direction, as everywhere here.
+        """
+        today = _grocery._household_today(conn=conn).isoformat()
+        rows = conn.execute(
+            "SELECT g.item AS item, l.quantity AS quantity "
+            "FROM meal_plan_grocery_links l "
+            "JOIN grocery_items g ON g.id = l.grocery_item_id AND g.household_id = l.household_id "
+            "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
+            "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id AND w.household_id = e.household_id "
+            "WHERE l.household_id = ? AND g.status = 'purchased' AND g.inventory_added_at IS NOT NULL "
+            "AND e.cooked_status = 'pending' AND e.inventory_depleted_at IS NULL AND e.date >= ? "
+            "AND COALESCE(w.status, '') != 'retired' AND COALESCE(e.weekly_plan_id, -1) != ?",
+            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id),
+        ).fetchall()
+        for row in rows:
+            key = (row["item"] or "").strip().lower()
+            if key not in self._on_hand:
+                continue  # nothing on the shelf to reserve
+            parsed = _quantities._parse_quantity(row["quantity"] or "")
+            if parsed is None:
+                # An unreadable share: how much is spoken for is unknown, so
+                # nothing of this name can be shown to be spare.
+                self._unreadable.add(key)
+                continue
+            self._claimed.setdefault(key, []).append(parsed)
+
     def covers(self, item: str, need: tuple[float, str | None] | None) -> bool:
         """
         True when `need` — (amount, unit), this recipe-week's whole scaled
@@ -3730,6 +3781,9 @@ class WeekGroceryBuffer:
             conn = self.conn or get_conn()
             try:
                 self._stock = _KitchenStock(conn)
+                # What is already bought for a dinner still to come is not
+                # this pass's to spend — see reserve_bought_for_meals_ahead.
+                self._stock.reserve_bought_for_meals_ahead(conn)
             finally:
                 if self.conn is None:
                     conn.close()
