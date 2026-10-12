@@ -162,6 +162,26 @@ why*, not duplicating the diff.
   `component_category` (slot is unused there). Also feeds Plan's
   empty-dinner suggestions.
 
+- **A usual-week night off is not a "Quiet day" either** (2026-10-09, Loop
+  Board bug; branch `overnight/quiet-day-respects-usual-week`, STACKED on
+  `overnight/week-set-no-quiet-day` — merge that first; tests
+  `tests/test_quiet_day_usual_week_off.py`). Usual week with tonight's dinner
+  "Don't plan", no plan covering today: Today offered "Quiet day. Want me to
+  sort dinner…" + "Just tonight". The client had no way to know; the moves
+  payload now carries `usual_week_dinner_off` (moves.`_usual_week_dinner_off`:
+  `switched_off_meals` + `off_slots_on`, the same reads as the needs-you fix
+  on `usual-week-night-off-not-asked`; only asked when no plan covers the
+  day). Such a day reads "Night off tonight. Want me to plan the week?" (new
+  words) with "Let's plan the week" alone in the dock.
+- **A set week's empty day is not a "Quiet day"** (2026-10-09, defect hunt;
+  branch `overnight/week-set-no-quiet-day`; tests
+  `tests/test_week_set_no_quiet_day.py`). Approved week, Friday, "Night off"
+  tapped: Today read WEEK SET over "Quiet day. Want me to sort dinner, or the
+  whole week?" + "Just tonight", hiding tomorrow's card — `todayNeedsPlan`
+  asked only whether the nudge named a week, and from Friday it names NEXT
+  week. Now it is false whenever the moves' `week_state` is `set`/`draft`;
+  the day falls through to the tomorrow card and the ordinary nudge dock.
+  Also 12px above the tomorrow card in that slot (it touched Today's meals).
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
