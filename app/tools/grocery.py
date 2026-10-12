@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 import json
 from datetime import date
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import acting_name, household_id, require_household_row
 from . import inventory as _inventory
 from . import quantities as _quantities
@@ -805,14 +805,29 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
             and grocery_row["source_weekly_plan_id"] is not None
             and grocery_row["removed_by"] not in ("carried_kept", "carried_dropped")
         )
-        live = live or set_aside
+        # So does a line taken off with Remove (REMOVED_BY_LIST): its Undo
+        # puts the row back exactly as it stands (undo_remove_grocery_item),
+        # so it is kept in step with its meals while it is off — the same
+        # package and recompute rules as a live line, so a jar stays one
+        # jar and an edited amount is only re-read when a meal really goes.
+        # A household's own line has the plan's part taken off the same
+        # way, while it can still be measured. Never deleted here: the
+        # Undo must still find the row.
+        list_removed = (
+            grocery_row is not None and grocery_row["status"] == "removed"
+            and grocery_row["removed_by"] == REMOVED_BY_LIST
+        )
+        # Either way the row is off the list for now and its Undo / Put back
+        # must still find it, so it is recounted but never deleted here.
+        off_list = set_aside or list_removed
+        live = live or off_list
         if live and _quantities.package_unit(link["quantity"] or ""):
             still_wanted = conn.execute(
                 "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
                 f"WHERE household_id = ? AND grocery_item_id = ? AND id NOT IN {not_reversing}",
                 (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchone()["n"]
-            if not still_wanted and grocery_row["source_weekly_plan_id"] is not None and not set_aside:
+            if not still_wanted and grocery_row["source_weekly_plan_id"] is not None and not off_list:
                 conn.execute(
                     "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
                     (grocery_row["id"], household_id()),
@@ -869,8 +884,9 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                             "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
                             (new_qty, grocery_row["id"], household_id()),
                         )
-                        trimmed_items.append(grocery_row["item"])
-                elif not set_aside:
+                        if not off_list:
+                            trimmed_items.append(grocery_row["item"])
+                elif not off_list:
                     conn.execute(
                         "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
                         (grocery_row["id"], household_id()),
@@ -881,7 +897,7 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                     "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
                     (new_qty, grocery_row["id"], household_id()),
                 )
-                if not set_aside:  # not on the list: nothing to tell anyone
+                if not off_list:  # not on the list: nothing to tell anyone
                     trimmed_items.append(grocery_row["item"])
     if not narrowed:
         conn.execute("DELETE FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?", (household_id(), entry_id))
@@ -2432,7 +2448,8 @@ def remove_grocery_item(item_id: int) -> dict:
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     row = conn.execute(
-        "SELECT id, staple_id, status FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        "SELECT id, staple_id, status, removed_by FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
     ).fetchone()
     if row is not None and row["staple_id"] and row["status"] == "needed":
         # Removing a staple's suggestion is "not this trip" — otherwise the
@@ -2448,10 +2465,78 @@ def remove_grocery_item(item_id: int) -> dict:
         conn.commit()
         conn.close()
         return {"item_id": item_id, "deleted": True, "staple_id": row["staple_id"]}
+    if row is not None and row["status"] == "removed" and row["removed_by"] == REMOVED_BY_LIST:
+        # Already off by an earlier Remove (a double tap, a second screen):
+        # a no-op. Falling through to the hard delete took the row and its
+        # meal links with it, and the first toast's Undo had nothing left.
+        conn.close()
+        return {"item_id": item_id, "deleted": True, "restorable": True}
+    if row is not None and row["status"] == "needed" and conn.execute(
+        "SELECT 1 FROM meal_plan_grocery_links WHERE grocery_item_id = ? AND household_id = ? LIMIT 1",
+        (item_id, household_id()),
+    ).fetchone():
+        # A line with meals behind it is soft-removed, so the toast's Undo
+        # (undo_remove_grocery_item) can put back the very row. A hard
+        # delete cascades its meal_plan_grocery_links away, and the undo
+        # could only re-add the NAME — a person's own line, no meals on it:
+        # it no longer shrank when a night was dropped, never cleared when
+        # the week was over, and soaked up next week's amount (measured
+        # 2026-10-10: spinach stayed "10 oz" with both frittatas gone).
+        # Keeping the links also keeps a re-approval from putting back a
+        # line the household took off — the pre-shop drop's rule.
+        conn.execute(
+            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (REMOVED_BY_LIST, item_id, household_id()),
+        )
+        conn.commit()
+        conn.close()
+        return {"item_id": item_id, "deleted": True, "restorable": True}
     conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
     conn.commit()
     conn.close()
     return {"item_id": item_id, "deleted": True}
+
+
+# removed_by for a line a person took off with Remove (remove_grocery_item)
+# while meals still wanted it. Not an "already have" decision, so
+# pre_shop.get_already_have_decisions leaves it out.
+REMOVED_BY_LIST = "list"
+
+
+def undo_remove_grocery_item(item_id: int) -> dict:
+    """
+    The Undo on Remove's toast, for a line remove_grocery_item soft-removed:
+    the same row back on the list, its store, its meals' links and its
+    author intact. A night dropped or swapped in between is already
+    reflected (the meal reversal keeps a 'list' row in step); a week's line
+    with no meal links left has nothing to buy for, and stays off
+    ({"restored": False}). Only a 'list' removal is
+    restored here — a pre-shop or staple removal has its own undo.
+    """
+    with write() as conn:
+        require_household_row(conn, "grocery_items", item_id, label="grocery list item")
+        row = conn.execute(
+            "SELECT id, item, status, removed_by, source_weekly_plan_id FROM grocery_items "
+            "WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+        if row["status"] != "removed" or row["removed_by"] != REMOVED_BY_LIST:
+            return {"item_id": item_id, "item": row["item"], "restored": False}
+        if row["source_weekly_plan_id"] is not None and not conn.execute(
+            "SELECT 1 FROM meal_plan_grocery_links WHERE grocery_item_id = ? AND household_id = ? LIMIT 1",
+            (item_id, household_id()),
+        ).fetchone():
+            return {"item_id": item_id, "item": row["item"], "restored": False}
+        conn.execute(
+            "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL "
+            "WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        )
+        # No recount here: the meal reversal kept the row in step while it
+        # was off. Re-reading it on the way back made a jar "2 jars" and
+        # put the meals' "10 oz" over an amount the household had edited.
+    return {"item_id": item_id, "item": row["item"], "restored": True}
 
 
 def move_grocery_item_to_inventory(item_id: int) -> dict:
