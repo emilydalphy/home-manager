@@ -453,6 +453,14 @@ why*, not duplicating the diff.
   new position; not found word for word, it stays in place when the step count
   is unchanged (a reworded step) and is dropped otherwise; explicit markers are
   kept to positions that exist.
+- **A run-out invite link has a way back** (2026-10-11; branch
+  `overnight/join-has-a-way-in`; tests `tests/test_join_has_a_way_in.py`).
+  /join's "This link has run out." and "That didn't go through." (500, 429,
+  lost connection: only Try again) had no link at all for a signed-out
+  phone — in the iPhone app (no address bar, no back gesture) a dead end.
+  A 44px "Back to the start" link to /login under each, the same as
+  overnight/goodbye-has-a-way-back adds; hidden when whoami says the
+  browser is signed in.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
