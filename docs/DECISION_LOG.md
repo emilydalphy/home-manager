@@ -444,6 +444,15 @@ why*, not duplicating the diff.
   later now" left Now saying "Start by 4:55" until a reload (driven in a
   browser). That branch now also calls `refreshTodayMoves` and
   `refreshKitchenPanel`, as Preferences' own rhythm save already re-reads Now.
+- **A recipe's "Do ahead" markers follow their step when chat rewrites the steps**
+  (2026-10-11; branch `overnight/do-ahead-follows-the-step`; tests
+  `tests/test_do_ahead_follows_the_step.py`). `update_recipe_details` with new
+  `instructions` and no `advance_prep_step_indices` kept the old positions, so
+  "Do ahead" landed on whatever step now sat there (or, past the end, on a side
+  dish's appended steps). Now an old marker follows its step's exact text to its
+  new position; not found word for word, it stays in place when the step count
+  is unchanged (a reworded step) and is dropped otherwise; explicit markers are
+  kept to positions that exist.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
