@@ -1561,8 +1561,42 @@ def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
                 r for r in rows_for_item
                 if r["source_weekly_plan_id"] == weekly_plan_id and r.get("staple_id") is None
             ]
-            set_aside += _set_aside_own_lines(plan_owned)
+            fresh = _set_aside_own_lines(plan_owned)
+            set_aside += fresh
+            if fresh:
+                _retire_superseded_freezer_lines(plan_owned, keep=fresh)
     return {"created": created, "cancelled": len(doomed), "set_aside": set_aside}
+
+
+def _retire_superseded_freezer_lines(plan_owned: list[dict], keep: list[int]) -> int:
+    """
+    The set-aside line a rescale has just replaced. A rescale reverses
+    every meal of the recipe-week off its lines and re-ingests them, and a
+    removed line is not one the ingest merges into — so the old set-aside
+    line is left holding its first amount with no meal counted into it,
+    and the fresh line just set aside holds the real one. Kept, the two
+    are both "what the freezer step took off": un-tapping the chip
+    (confirm_frozen_items' put_back) then put BOTH back — measured, 2.5 lb
+    of salmon to buy for a 1 lb week after a "−", its Undo, and "actually
+    it's not frozen". Deleted only when nothing is counted into it any
+    more (meal_plan_grocery_links): a line another recipe still counts
+    into is that recipe's set-aside, not a stale one. Returns how many.
+    """
+    stale = [
+        r["id"] for r in plan_owned
+        if r["id"] not in keep and r["status"] == "removed" and r["removed_by"] == FREEZER_REMOVED_BY
+    ]
+    if not stale:
+        return 0
+    marks = ",".join("?" * len(stale))
+    with write() as conn:
+        cur = conn.execute(
+            f"DELETE FROM grocery_items WHERE household_id = ? AND id IN ({marks}) "
+            "AND status = 'removed' AND removed_by = ? "
+            "AND NOT EXISTS (SELECT 1 FROM meal_plan_grocery_links l WHERE l.grocery_item_id = grocery_items.id)",
+            (household_id(), *stale, FREEZER_REMOVED_BY),
+        )
+        return cur.rowcount
 
 
 def _release_frozen_item(item_name: str, weekly_plan_id: int | None = None) -> int:
