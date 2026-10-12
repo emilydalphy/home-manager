@@ -465,6 +465,9 @@ _MIGRATIONS = [
     # Carry-over (2026-09-13): the plan an unbought line came from when a
     # newer week set it aside — see schema.sql on carried_from_plan_id.
     ("grocery_items", "carried_from_plan_id", "INTEGER"),
+    # ...and, for a kept one merged onto this week's line, the plan that
+    # line belonged to before the keep (2026-10-12) — see schema.sql.
+    ("grocery_items", "kept_into_plan_id", "INTEGER"),
     # "Un-ticking a bought staple doesn't un-teach it" (2026-09-13): which
     # grocery line a 'bought' event stands on, and the staple's rhythm
     # fields before/after that tick, so the line's untick can take exactly

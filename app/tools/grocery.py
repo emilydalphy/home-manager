@@ -1793,7 +1793,7 @@ def _this_weeks_line(conn, item: str, quantity: str):
     # Not a line set aside as "somewhere else": Keep would park the kept
     # amount on a hidden line — the hole add_grocery_item closes too.
     for r in conn.execute(
-        "SELECT id, item, quantity, status FROM grocery_items WHERE household_id = ? "
+        "SELECT id, item, quantity, status, source_weekly_plan_id FROM grocery_items WHERE household_id = ? "
         "AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall():
@@ -1856,14 +1856,25 @@ def keep_carried_over_item(item_id: int) -> dict:
     target = _this_weeks_line(conn, row["item"], row["quantity"] or "")
     if target is not None:
         merged_qty, _reconciled = _try_consolidate_quantity(target["quantity"] or "", row["quantity"] or "")
+        # The kept amount is the household's own, so the line becomes
+        # theirs (source NULL) — the rule add_grocery_item's keep_standing
+        # and consolidate's `standing` already follow. Left plan-owned, the
+        # line is recomputed from its meals' ledger when one of them is
+        # swapped or dropped, and deleted with the last: Keep on 2 lbs of
+        # chicken thighs, swap this week's stir fry for pasta, and the
+        # chicken was gone from the list (2026-10-12, reproduced). As a
+        # standing want, a reversal takes only the meals' share back off
+        # (_restate_standing_want). The plan it belonged to is kept on the
+        # carried row so the undo below can hand the line back.
         conn.execute(
-            "UPDATE grocery_items SET quantity = ?, status = 'needed' WHERE id = ? AND household_id = ?",
+            "UPDATE grocery_items SET quantity = ?, status = 'needed', source_weekly_plan_id = NULL "
+            "WHERE id = ? AND household_id = ?",
             (merged_qty, target["id"], household_id()),
         )
         conn.execute(
-            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
-            "WHERE id = ? AND household_id = ?",
-            (_CARRIED_KEPT, item_id, household_id()),
+            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now'), "
+            "kept_into_plan_id = ? WHERE id = ? AND household_id = ?",
+            (_CARRIED_KEPT, target["source_weekly_plan_id"], item_id, household_id()),
         )
         conn.commit()
         conn.close()
@@ -1916,7 +1927,7 @@ def undo_carried_over_decision(item_id: int) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, quantity, status, removed_by, carried_from_plan_id FROM grocery_items "
+        "SELECT id, item, quantity, status, removed_by, carried_from_plan_id, kept_into_plan_id FROM grocery_items "
         "WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
@@ -1944,17 +1955,36 @@ def undo_carried_over_decision(item_id: int) -> dict:
             return {"item_id": item_id, "item": row["item"], "unchanged": True, "reason": "acted_on"}
         # Fully removed means the line held nothing but the kept amount
         # (this week's line was blank), so blank is what it goes back to.
-        conn.execute(
-            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
-            ("" if fully_removed else new_qty, target["id"], household_id()),
-        )
+        # Back to whoever owned the line before the keep made it the
+        # household's (kept_into_plan_id; NULL leaves a standing want as
+        # one). A row kept before that column existed has nothing recorded
+        # and stays standing — the old behaviour, never a guess.
+        still_for_a_meal = conn.execute(
+            "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
+            (household_id(), target["id"]),
+        ).fetchone()
+        if fully_removed and not still_for_a_meal and row["kept_into_plan_id"] is not None:
+            # The meals that line was for have since been swapped or
+            # dropped (which, now that the line is standing, took only
+            # their share off), so all that was left was the kept amount.
+            # Taking it back leaves nothing to buy: the line goes, rather
+            # than staying as a blank row nobody asked for.
+            conn.execute(
+                "DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (target["id"], household_id()),
+            )
+        else:
+            conn.execute(
+                "UPDATE grocery_items SET quantity = ?, "
+                "source_weekly_plan_id = COALESCE(?, source_weekly_plan_id) WHERE id = ? AND household_id = ?",
+                ("" if fully_removed else new_qty, row["kept_into_plan_id"], target["id"], household_id()),
+            )
     elif row["status"] not in ("removed", "needed"):
         # Bought or in a cart since: the decision has been acted on.
         conn.close()
         return {"item_id": item_id, "item": row["item"], "unchanged": True}
     conn.execute(
         "UPDATE grocery_items SET status = 'carried', removed_by = '', removed_at = NULL, "
-        "source_weekly_plan_id = carried_from_plan_id WHERE id = ? AND household_id = ?",
+        "source_weekly_plan_id = carried_from_plan_id, kept_into_plan_id = NULL WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     )
     conn.commit()

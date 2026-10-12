@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Keep" on last week's leftover survives this week's meal changing**
+  (2026-10-12; branch `overnight/kept-leftover-survives-a-swap`; tests
+  `tests/test_kept_leftover_survives_a_swap.py`). Keep merged the old 2 lbs
+  onto this week's PLAN-owned chicken line, which is recomputed from its
+  meals' ledger — swap or drop the stir fry and the line (kept 2 lbs too)
+  was deleted. The merged line is now the household's own (source NULL), as
+  `add_grocery_item`'s keep_standing and consolidate already do; new column
+  `grocery_items.kept_into_plan_id` lets Undo hand it back to its plan, and
+  an Undo after the meal went deletes the line rather than leaving a blank
+  row. Trade-off (same as a hand add onto a plan line): a kept line stays on
+  the list past its week instead of being set aside again.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
