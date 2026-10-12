@@ -246,6 +246,16 @@ why*, not duplicating the diff.
   `batch_components._combined_quantity` sums Cook-card amounts through the
   ASCII-only ledger sum, so a kept "2 ½ cups" blanked the batch ask's "N in
   all"; it now spells glyphs as "2 1/2" first (`recipes._ascii_fractions`).
+- **A typed amount on a staple's line makes the line the person's**
+  (2026-10-10; branch `overnight/typed-add-owns-staple-line`;
+  `tests/test_typed_add_owns_staple_line.py`). Running-low "Coffee · 1 bag"
+  plus a typed "2 bags" merged to "3 bags" still drawn as the staple's
+  "Probably running low"; "We have plenty" then took the typed bags off too.
+  `add_grocery_item`'s merge now sets `added_by` to the person when a
+  non-plan, non-staple add joins a staple's line (add_regulars' rule);
+  `staple_id` stays so buying still teaches the rhythm. Known gap: the add
+  sheet's Undo restores the amount, not the "running low" note.
+  Review round: `staples._drop_suggestion_lines` (pause, chat plenty) only drops `added_by='staple'` rows now.
 - **A recipe's stated can count is kept in the cook view** (2026-10-07; branch
   `overnight/can-count-kept`). "2 cans black beans" on a 4-serving recipe
   showed "1 can (15 oz)": `recipes.cooking_quantity` swapped an unsized can
