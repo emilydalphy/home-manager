@@ -265,11 +265,6 @@ _LATER_TRANCHE = {
         # so this is where it is now.
         (1, "UPDATE meal_plan_entries SET {} WHERE id = ?"),
     ],
-    "app/tools/tonight.py": [
-        (1, "DELETE FROM inventory_items WHERE id = ?"),
-        (1, "SELECT rev FROM inventory_items WHERE id = ?"),
-        (2, "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?"),
-    ],
 }
 
 # The TWELVE modules the two tranches have scoped — eight from tranche 1,
@@ -290,6 +285,7 @@ _DONE_MODULES = (
     "app/tools/spices.py",
     "app/tools/staples.py",
     "app/tools/stores.py",
+    "app/tools/tonight.py",
     "app/tools/usage.py",
     "app/tools/week_intake.py",
     "app/tools/weekly_plan.py",
