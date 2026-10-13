@@ -90,7 +90,7 @@ INTRO_STEPS_AFTER_THE_FIRST = ["intro-help", "intro-talk", "intro-know"]
 # steps were added ('lunch-needs', 'snacks'). No claim in this file
 # changed; the labels below follow the new order.
 QUESTION_STEPS = [
-    "your-name", "household", "helpers", "restrictions",
+    "your-name", "household", "helpers", "restrictions", "who-cooks",
     "meals-days", "shop-day", "prep",
     "variety-breakfast",
     "lunch-needs", "variety-lunch",
@@ -391,6 +391,9 @@ function buildDinnerTimeStep() { BUILT.push('dinner-time'); }
 // fixed-function-list hazard the 2026-09-21 draft-snag-flags entry
 // names. No assertion here changed.
 function buildShopDayStep() { BUILT.push('shop-day'); }
+// "Who usually cooks dinner?" (2026-10-13): STEP_BUILDERS names it, so
+// this list has to — the same hazard as the two lines above.
+function buildWhoCooksStep() { BUILT.push('who-cooks'); }
 function buildKitRepeatsStep() { BUILT.push('kit-repeats'); }
 // Setup's last answer (2026-10-05), same fixed-function-list hazard as
 // the line above: STEP_BUILDERS names it, so this list has to. A STUB
@@ -543,7 +546,9 @@ console.log(JSON.stringify(labels));
         "restrictions": "‹ Who helps",
         # UPDATED 2026-10-06 (Onboarding regrouped): the new order, and
         # "Dietary restrictions" / "Dinner timings" are those steps' names.
-        "meals-days": "‹ Dietary restrictions",
+        # UPDATED 2026-10-13: "Who usually cooks dinner?" ends the household.
+        "who-cooks": "‹ Dietary restrictions",
+        "meals-days": "‹ Who cooks",
         "shop-day": "‹ Who's eating",
         "prep": "‹ Shop day",
         "variety-breakfast": "‹ Cook ahead",
@@ -622,16 +627,16 @@ def test_the_control_and_the_gesture_agree_rather_than_fighting_each_other():
     bouncing forward onto the step you just left.
     """
     out = _run(_nav_harness() + """
-['helpers', 'restrictions', 'meals-days'].forEach(showStep);
+['helpers', 'restrictions', 'who-cooks', 'meals-days'].forEach(showStep);
 const depthBefore = depth();
 tapBack('meals-days');
 const afterTap = { on: currentStep, depth: depth() };
 gesture();
 console.log(JSON.stringify({ before: depthBefore, afterTap: afterTap, thenGesture: currentStep }));
 """)
-    assert out["before"] == 4
-    assert out["afterTap"] == {"on": "restrictions", "depth": 3}
-    assert out["thenGesture"] == "helpers", (
+    assert out["before"] == 5
+    assert out["afterTap"] == {"on": "who-cooks", "depth": 4}
+    assert out["thenGesture"] == "restrictions", (
         "the gesture after a back tap went forward again — the control pushed "
         "an entry instead of walking one back"
     )

@@ -871,7 +871,7 @@ def test_each_limit_is_on_its_meals_step():
     assert 'id="weeknight-max-chips"' in dinner and 'lunch-max' not in dinner
     assert 'id="lunch-max-chips"' in lunch
     flow = _const("ALL_STEPS")
-    assert flow.count("'") == 2 * 24
+    assert flow.count("'") == 2 * 25
 
 
 def test_the_hidden_group_has_the_display_guard_it_needs():

@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Onboarding asks "Who usually cooks dinner?"** (2026-10-13; branch
+  `overnight/onboarding-who-cooks`; tests `tests/test_onboarding_who_cooks.py`).
+  Emily 2026-10-12: "add only 'Who usually cooks?'". New step `who-cooks`
+  after "Dietary restrictions" (last of "Your household"): one chip per adult,
+  "We take turns" (two or more adults), "Whoever's free"; Skip stores nothing.
+  Saved by `saveRhythmAnswers` as the `cooking_role` rhythm fact (the one
+  Preferences' "Who cooks" edits and `move_owner` reads), only when answered
+  and only for a name still in the household. Kept in the reload draft as
+  `cook` (an older draft without it reads as unanswered). Why: a tester found
+  Settings asking things setup never did; this is the one that changes Today.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

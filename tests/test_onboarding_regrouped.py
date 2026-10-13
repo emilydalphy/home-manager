@@ -38,7 +38,7 @@ def _steps():
 
 def test_the_flow_is_household_schedule_then_meal_by_meal_then_the_rest():
     assert _steps()[4:] == [
-        "your-name", "household", "helpers", "restrictions",          # Your household
+        "your-name", "household", "helpers", "restrictions", "who-cooks",  # Your household
         "meals-days", "shop-day", "prep",                             # Your schedule
         "variety-breakfast",                                          # Breakfast
         "lunch-needs", "variety-lunch",                               # Lunch

@@ -1430,6 +1430,30 @@
 </div>
 
 
+<!-- "Who usually cooks dinner?" (Loop Board "Decide: which Settings
+     questions should onboarding also ask?", Emily 2026-10-12: "add only
+     'Who usually cooks?'"). The last of the household questions, because
+     its chips are the household's own adults. It is the cooking_role
+     rhythm fact Preferences' "Who cooks" row edits (app/tools/rhythm.py),
+     and it is what puts a name on tonight's cook and its prep on Today
+     (move_owner.py). Skippable: nothing is ever assumed about who cooks,
+     so a skip stores nothing and Preferences offers it later. -->
+<div id="step-who-cooks" style="display:none">
+  <button class="back-link" type="button" data-step-back="who-cooks" hidden></button>
+  <div class="q-body">
+    <p class="q-eyebrow"></p>
+    <h1 class="q-title">Who usually cooks dinner?</h1>
+    <p class="q-line">So I can tell the right person when to start.</p>
+    <div class="q-controls">
+      <div class="rhythm-chip-row" id="who-cooks-chips"></div>
+    </div>
+  </div>
+  <div class="q-foot">
+    <button class="btn-primary q-next" id="who-cooks-next" type="button">Continue</button>
+    <span class="q-skip-quiet" id="who-cooks-skip">Skip</span>
+  </div>
+</div>
+
 <!-- Who's eating, and when? (Emily, 2026-09-30 — replaces "Which meals
      should I plan?"). Breakfast, lunch and dinner x Monday-Sunday, every
      cell "everyone" to start; tapping a day opens its who's-eating picker
@@ -2314,6 +2338,44 @@ const DINNER_WINDOW_OPTIONS = [
 
 let rhythmDinnerWindow = '';
 
+// ---------- Who usually cooks dinner? (2026-10-13) ----------
+// The cooking_role rhythm fact, asked once in setup (Emily, 2026-10-12)
+// and written at the end with the rest of the rhythm (saveRhythmAnswers).
+// One chip per adult ("Mostly one person" with that name), then "We take
+// turns" where there are two adults to take them, and "Whoever's free" —
+// the same three answers Preferences' "Who cooks" row offers (rhythm.py
+// COOKING_ROLES). '' is unanswered and stores nothing.
+let cookRole = '';
+let cookWho = '';
+
+function cookAdultNames() {
+  const members = currentMembers().filter(m => m.name);
+  const adults = members.filter(m => m.age_group === 'adult');
+  return (adults.length ? adults : members).map(m => m.name);
+}
+
+function whoCooksOptions(names) {
+  const opts = names.map(n => ({ key: 'person:' + n, label: n }));
+  if (names.length > 1) opts.push({ key: 'turns', label: 'We take turns' });
+  opts.push({ key: 'whoever_free', label: 'Whoever’s free' });
+  return opts;
+}
+
+function buildWhoCooksStep() {
+  const names = cookAdultNames();
+  // A cook renamed or taken off the household since this was answered is
+  // no answer at all — the same pruning every name-keyed answer gets.
+  if (cookRole === 'one_person' && names.indexOf(cookWho) === -1) { cookRole = ''; cookWho = ''; }
+  if (cookRole === 'turns' && names.length < 2) cookRole = '';
+  const current = cookRole === 'one_person' ? 'person:' + cookWho : cookRole;
+  buildSingleSelectChips(document.getElementById('who-cooks-chips'), whoCooksOptions(names), current, (key) => {
+    if (key === current) { cookRole = ''; cookWho = ''; }
+    else if (key.indexOf('person:') === 0) { cookRole = 'one_person'; cookWho = key.slice('person:'.length); }
+    else { cookRole = key; cookWho = ''; }
+    buildWhoCooksStep();
+  });
+}
+
 // Single-select chip row: renders `options` into `container`, marking
 // `currentValue` active, and calls `onSelect(key)` when a chip is tapped.
 function buildSingleSelectChips(container, options, currentValue, onSelect) {
@@ -2789,6 +2851,16 @@ async function saveRhythmAnswers() {
   // nothing for an omitted field to preserve at the end of setup.
   body.shop_day = shopDay;
   body.top_up_shop_day = shopTopUpDay;
+  // Only when answered: '' leaves the fact alone (save_rhythm_answers),
+  // which is what a skip means — nothing is assumed about who cooks. A
+  // named cook is checked against the household as it ends, so a name
+  // corrected after this step can never be written.
+  if (cookRole === 'one_person' && cookAdultNames().indexOf(cookWho) !== -1) {
+    body.cooking_role = 'one_person';
+    body.cooking_role_who = cookWho;
+  } else if (cookRole === 'turns' || cookRole === 'whoever_free') {
+    body.cooking_role = cookRole;
+  }
   const res = await Api.fetch('/api/onboarding/rhythm', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
@@ -5154,7 +5226,7 @@ const INTRO_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know'];
 // Cook ahead now comes before "Meal prep ahead" is offered, and two
 // screens are new: Weekday lunches and Snacks a day. The section each
 // step belongs to is QUESTION_SECTIONS, below.
-const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'your-name', 'household', 'helpers', 'restrictions', 'meals-days', 'shop-day', 'prep', 'variety-breakfast', 'lunch-needs', 'variety-lunch', 'dinner-time', 'variety-dinner', 'snacks', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'anything-else', 'reveal'];
+const ALL_STEPS = ['intro-hello', 'intro-help', 'intro-talk', 'intro-know', 'your-name', 'household', 'helpers', 'restrictions', 'who-cooks', 'meals-days', 'shop-day', 'prep', 'variety-breakfast', 'lunch-needs', 'variety-lunch', 'dinner-time', 'variety-dinner', 'snacks', 'eating-style', 'wont-eat', 'excited-about', 'kit-repeats', 'ai-consent', 'anything-else', 'reveal'];
 
 // What each step is called when another step points back at it. Named
 // destinations, never "Back" (Emily, 2026-09-09) — a bare arrow asks you to
@@ -5184,6 +5256,7 @@ const STEP_TITLES = {
   'household': "Who's here",
   'helpers': 'Who helps',
   'restrictions': 'Dietary restrictions',
+  'who-cooks': 'Who cooks',
   'meals-days': "Who's eating",
   'prep': 'Cook ahead',
   'variety-breakfast': 'Breakfast',
@@ -5272,6 +5345,7 @@ const STEP_BUILDERS = {
   'household': buildHouseholdStep,
   'helpers': buildHelpersStep,
   'restrictions': buildRestrictionsStep,
+  'who-cooks': buildWhoCooksStep,
   'meals-days': buildMealsDaysStep,
   'prep': buildPrepStep,
   'variety-breakfast': function () { buildVarietyStep('breakfast'); },
@@ -5305,7 +5379,7 @@ const STEP_BUILDERS = {
 // not a place to be. The number is still the order, so it only ever
 // moves forward.
 const QUESTION_SECTIONS = {
-  'your-name': 1, 'household': 1, 'helpers': 1, 'restrictions': 1,
+  'your-name': 1, 'household': 1, 'helpers': 1, 'restrictions': 1, 'who-cooks': 1,
   'meals-days': 2, 'shop-day': 2, 'prep': 2,
   'variety-breakfast': 3,
   'lunch-needs': 4, 'variety-lunch': 4,
@@ -5581,6 +5655,12 @@ document.getElementById('helpers-next').onclick = () => {
   goForward('helpers');
 };
 document.getElementById('restrictions-next').onclick = () => { goForward('restrictions'); };
+document.getElementById('who-cooks-next').onclick = () => { goForward('who-cooks'); };
+document.getElementById('who-cooks-skip').onclick = () => {
+  cookRole = '';
+  cookWho = '';
+  goForward('who-cooks');
+};
 document.getElementById('meals-days-next').onclick = () => {
   // Nothing on at all is not a week to plan; the line under the grid says so.
   if (!uwTotalMeals(usualGrid)) { renderMealsDays(); return; }
@@ -6067,6 +6147,7 @@ function onboardingDraftSnapshot() {
     lunch: { location: lunchLocation, needs: lunchNeeds, home: lunchHome, outDays: lunchOutDays },
     snacks: memberSnacks,
     shop: { day: shopDay, topUp: shopTopUpDay },
+    cook: { role: cookRole, who: cookWho },
     prep: { answer: prepAnswer, days: prepDayKeys },
     variety: varietyChoice,
     dinner: { window: rhythmDinnerWindow, weeknightMax: weeknightMaxMinutes, lunchMax: weekdayLunchMaxMinutes },
@@ -6206,6 +6287,9 @@ function applyOnboardingDraft(d) {
   memberSnacks = d.snacks;
   shopDay = d.shop.day;
   shopTopUpDay = d.shop.topUp;
+  // A draft saved before this question existed has no `cook`.
+  cookRole = (d.cook && d.cook.role) || '';
+  cookWho = (d.cook && d.cook.who) || '';
   prepAnswer = d.prep.answer;
   prepDayKeys = d.prep.days;
   varietyChoice = d.variety;

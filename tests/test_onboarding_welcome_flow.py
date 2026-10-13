@@ -93,7 +93,7 @@ def test_the_four_intro_screens_come_before_the_household_step():
     # the week's shape comes before what you eat.
     # UPDATED 2026-10-06 (Onboarding regrouped, Emily's locked flow):
     # household -> schedule -> breakfast -> lunch -> dinner -> snacks -> the rest.
-    assert steps[5:] == ["household", "helpers", "restrictions",
+    assert steps[5:] == ["household", "helpers", "restrictions", "who-cooks",
                          "meals-days", "shop-day", "prep",
                          "variety-breakfast", "lunch-needs", "variety-lunch",
                          "dinner-time", "variety-dinner", "snacks",
