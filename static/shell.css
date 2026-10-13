@@ -5313,6 +5313,25 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-line .gro-box { width: 22px; height: 22px; border-radius: 7px; }
 .gro-line .gro-box svg { width: 14px; height: 14px; }
 .gro-line .gro-name { font-weight: 500; }
+/* Two live weeks' lines for one thing, drawn as one row (shell.js
+   groCollapseWeeks): the name, and under it the quiet per-week note
+   ("2 this week · 3 next week"). Only such a row has the wrapper, so every
+   other row is exactly as it was. */
+.gro-line-text { flex: 1 1 auto; min-width: 0; }
+.gro-line-text .gro-name { display: inline-block; max-width: 100%; }
+.gro-line-weeks {
+  margin: 2px 0 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+  transition: color var(--motion-base) var(--motion-ease);
+}
+.gro-line.done .gro-line-weeks { color: var(--ink-done); }
+/* The row's ⋯ on such a row: one amount box per week, each labelled. */
+.gro-rowmenu-weeks { flex-wrap: wrap; align-items: flex-end; }
+.gro-rowmenu-week { flex: 1 1 120px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.gro-rowmenu-week-label { font-family: var(--font-body); font-size: 12.5px; font-weight: 600; color: var(--ink-secondary); }
 .gro-line-qty {
   flex: 0 0 auto;
   font-family: var(--font-body);
