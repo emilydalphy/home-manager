@@ -22,6 +22,9 @@ why*, not duplicating the diff.
   settled on every surface). Filtered to rows carrying `inventory_item_id` — a
   night off's own use-soon note shares the kind and stays off this card.
   `.holding-done` gained `min-width: 44px` (measured 43.25px, rule 6).
+  Review round: a note whose portion is since PLANNED or EATEN is resolved by
+  `sweep_use_soon` itself (it runs on every queue read), so Today, Cook and
+  the morning text stop saying "worth eating soon" together.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

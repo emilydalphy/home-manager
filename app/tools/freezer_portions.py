@@ -592,16 +592,37 @@ def sweep_use_soon() -> list[dict]:
         try:
             today = _cooker.household_today(conn=conn)
             said = set()
+            pending = {}
             for r in conn.execute(
-                "SELECT detail_json FROM attention_items WHERE household_id = ? AND kind = ?",
+                "SELECT id, status, detail_json FROM attention_items WHERE household_id = ? AND kind = ?",
                 (household_id(), _tonight.USE_SOON_KIND),
             ).fetchall():
                 detail = _derived(r["detail_json"])
                 try:
-                    said.add(int(detail.get("inventory_item_id")))
+                    item_id = int(detail.get("inventory_item_id"))
                 except (TypeError, ValueError):
                     continue
+                said.add(item_id)
+                if r["status"] == "pending":
+                    pending[r["id"]] = item_id
             waiting = portions_to_plan(conn=conn)
+            # A note whose portion has since been PLANNED (a live plan
+            # stands a night on it) or EATEN (the row is gone) is no longer
+            # true — "worth eating soon" about a portion already on next
+            # Tuesday, or already eaten, is the app contradicting itself on
+            # Today, Cook and the morning text at once, since all three read
+            # this queue. Settled here, on the queue's own reader, so the
+            # three agree without each learning the rule. Resolved, not
+            # deleted: the row is still what keeps it said ONCE.
+            waiting_ids = {p["inventory_item_id"] for p in waiting}
+            stale = [aid for aid, item_id in pending.items() if item_id not in waiting_ids]
+            if stale:
+                conn.executemany(
+                    "UPDATE attention_items SET status = 'resolved', resolved_at = datetime('now') "
+                    "WHERE id = ? AND household_id = ? AND status = 'pending'",
+                    [(aid, household_id()) for aid in stale],
+                )
+                conn.commit()
         finally:
             conn.close()
         for portion in waiting:
