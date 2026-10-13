@@ -277,6 +277,9 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     )),
     (frozenset({"cheese", "cheeses"}), re.compile(r"\bcashew\s+cheeses?\b")),
     (frozenset({"sugar", "sugars"}), re.compile(r"\bsugar\s+snaps?\b")),
+    # A flax or chia "egg" is the egg-free stand-in (2026-10-13: "No eggs?
+    # Use a flax egg." read as eggs once the allergy note read steps).
+    (frozenset({"egg", "eggs"}), re.compile(r"\b(?:flax|chia)(?:\s+seed)?\s+eggs?\b")),
     # Second-round false positives (2026-09-30): foods named after an
     # allergen they don't contain.
     (frozenset({"beer", "beers"}), re.compile(r"\b(?:root|ginger)\s+beers?\b")),
@@ -1300,6 +1303,15 @@ def check_meal_conflicts(
                 for step in instructions if isinstance(step, str)
             ) if s
         ]
+        # "Stir the oats into the milk" over a list with oat milk is the
+        # oat milk: when the LIST names a compound exception, the steps'
+        # bare word is that compound, not the allergen (review, 2026-10-13).
+        listed_text = " ".join(segments[1:])
+        for words, pattern in _COMPOUND_EXCEPTIONS:
+            if pattern.search(listed_text):
+                bare = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(words))) + r")\b")
+                step_segments = [bare.sub(" ", s) for s in step_segments]
+        step_segments = [s for s in step_segments if s.strip()]
         for avoidance in avoidances:
             # Only a must-avoid, and only when the name and list missed it:
             # a dislike named in a step is not worth a line, and a clash

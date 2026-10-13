@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Steps-only round two: a choice is not a use, a pinch is not a purchase,
+  and the soft line reaches the screen** (2026-10-13; branch
+  `overnight/step-only-allergens`). Review found the first cut flagged safe
+  dishes and bought odds and ends: "butter or oil", "if you like",
+  "optional", "if you don't have", "leave the shrimp out", "egg-free", plant
+  milks and a flax egg read as uses; one recipe put Flour, Sugar, Soy sauce,
+  Bread, Rice, Lemon, Parsley on the list. Now `steps_without_negations`
+  drops optional sentences and either/or clauses, "swap IN" is a use, and
+  one-word keys skip coordination's `_COMPOUND_EXCEPTIONS`; the LIST repair
+  also skips serve-with/garnish/swap clauses, pinch/splash/knob/dust
+  amounts and `_PANTRY_STAPLES` (the allergy note still reads them). "An
+  egg" adds Eggs · 1. The draft root never rendered `soft_note` (only the
+  approved path's `weekNotesHtml` did) — `draftSoftNoteHtml` puts it at the
+  top of both views. Why: Emily 2026-09-04, a check that flags safe meals
+  is one people click past.
+
 - **An ingredient the steps use goes on the list when a recipe is saved;
   a must-avoid found only in the steps is a soft line** (2026-10-13; branch
   `overnight/step-only-allergens`; tests `tests/test_step_only_allergens.py`).

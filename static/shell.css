@@ -9225,6 +9225,10 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
   line-height: 1.45;
   color: var(--ink-secondary);
 }
+/* The draft root's soft line sits ABOVE the week (shell.js
+   draftSoftNoteHtml), so it needs the room below that .wk-notes keeps
+   above — or it touches the Schedule view's day tabs. */
+.wk-draft-notes { padding-bottom: 10px; }
 /* The draft's decision, directly under the week it is about. */
 /* Also a .dock (rule 2) — the box below only overrides the padding, because
    the Approve button needs a little more room above it than Cook's strip

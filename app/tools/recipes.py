@@ -436,10 +436,13 @@ def update_recipe_details(
         # the list, as on every other save (2026-10-12). Only ever ADDS —
         # the lines already there are left exactly as they were.
         old_ingredients = json.loads(existing["ingredients_json"] or "[]")
-        completed = complete_ingredient_list(
-            old_ingredients, instructions, default_servings or existing["default_servings"],
-        )
+        servings_now = default_servings or existing["default_servings"]
+        completed = complete_ingredient_list(old_ingredients, instructions, servings_now)
         if len(completed) > len(old_ingredients):
+            # The added lines get the same pre-save pass every saved line
+            # had; the old ones were settled when they were saved.
+            n = len(old_ingredients)
+            completed = completed[:n] + settle_cooking_quantities(completed[n:], servings_now)
             fields.append("ingredients_json = ?")
             params.append(json.dumps(completed))
     if default_servings is not None:
@@ -2973,6 +2976,53 @@ def _amount_mismatches(ingredients: list[dict], instructions: list[str], serving
     return out
 
 
+# A step's other name for a vocabulary word: "crack an egg" is the eggs
+# (review, 2026-10-13 — singular egg never matched "eggs"). Read on a text
+# with the egg words that are NOT a bought egg taken out first.
+_STEP_ALIASES = {"eggs": ("egg",)}
+_NOT_AN_EGG_RE = re.compile(r"\begg\s+(?:whites?|yolks?)\b|\b(?:flax|chia)\s+eggs?\b")
+
+
+def _step_words_missing(used_text: str, listed: str) -> list[str]:
+    """The vocabulary words `used_text` (steps, already read by
+    steps_without_negations) uses and `listed` (the list's names) hasn't
+    got — longest name only, rack and water excepted."""
+    from . import coordination as _coordination
+    # "Almond milk" is no milk and "peanut butter" no butter: a ONE-word
+    # key has to be found outside the allergy matcher's own compound
+    # exceptions — the same table, so the two can't disagree. A two-word
+    # key ("coconut milk", "peanut butter") is the compound itself.
+    plain = used_text
+    for _words, pattern in _coordination._COMPOUND_EXCEPTIONS:
+        plain = pattern.sub(" ", plain)
+    no_egg_words = _NOT_AN_EGG_RE.sub(" ", plain)
+
+    def used(key: str) -> bool:
+        if " " in key:
+            return _item_matches(used_text, key)
+        return _item_matches(plain, key) or any(
+            _item_matches(no_egg_words, alias) for alias in _STEP_ALIASES.get(key, ())
+        )
+
+    matched = [
+        key for key in COOKING_QUANTITIES_PER_4
+        # `is_spice` is asked LAST because it is the dear one: it is asked
+        # of a vocabulary word rather than of the recipe, so short-circuiting
+        # behind `_item_matches` means it runs for the handful of words a
+        # step really uses and not for all 176. Measured on a three-step
+        # recipe: 0.52 ms a call on main, 1.43 ms asked first, 0.55 ms here.
+        # Every one of these is a pure predicate, so the order is free.
+        if key not in _STEP_ONLY_WORDS
+        and used(key)
+        and not _item_matches(listed, key)
+        and not any(_item_matches(listed, a) for a in _STEP_ALIASES.get(key, ()))
+        and not _spices.is_spice(key)
+    ]
+    # Report the longest name for a thing, not every fragment of it:
+    # "heavy cream", never "heavy cream" and "cream".
+    return sorted(m for m in matched if not any(m != other and m in other for other in matched))
+
+
 def check_steps_ingredients_consistency(
     ingredients: list[dict], instructions: list[str], servings: int | None = None,
 ) -> dict:
@@ -3044,7 +3094,7 @@ def check_steps_ingredients_consistency(
     # (complete_ingredient_list), and "no eggs needed" must not buy eggs.
     # The unused half keeps the whole text: a listed item a step mentions
     # only to say it's optional has still been mentioned.
-    used_text = steps_without_negations(text)
+    used_text = " ".join(steps_without_negations(s) for s in steps)
     unused = []
     for name in names:
         # Any word of the name is enough: "Baby spinach" is "the spinach"
@@ -3054,27 +3104,12 @@ def check_steps_ingredients_consistency(
             unused.append(name)
 
     listed = " ".join(_clean_item(n) for n in names)
-    matched = [
-        key for key in COOKING_QUANTITIES_PER_4
-        # `is_spice` is asked LAST because it is the dear one: it is asked
-        # of a vocabulary word rather than of the recipe, so short-circuiting
-        # behind `_item_matches` means it runs for the handful of words a
-        # step really uses and not for all 176. Measured on a three-step
-        # recipe: 0.52 ms a call on main, 1.43 ms asked first, 0.55 ms here.
-        # Every one of these is a pure predicate, so the order is free.
-        if key not in _STEP_ONLY_WORDS
-        and _item_matches(used_text, key)
-        and not _item_matches(listed, key)
-        and not _spices.is_spice(key)
-    ]
-    # Report the longest name for a thing, not every fragment of it:
-    # "heavy cream", never "heavy cream" and "cream".
-    missing = [m for m in matched if not any(m != other and m in other for other in matched)]
+    missing = _step_words_missing(used_text, listed)
     mismatches = _amount_mismatches(ingredients or [], steps, servings)
     return {
         "ok": not unused and not missing and not mismatches,
         "unused_ingredients": unused,
-        "missing_from_list": sorted(missing),
+        "missing_from_list": missing,
         "amount_mismatches": mismatches,
     }
 
@@ -3099,17 +3134,97 @@ def check_steps_ingredients_consistency(
 _STEP_NEGATION_RE = re.compile(
     r"\b(?:no\s+need\s+(?:for|to\s+add)|don['’]?t\s+need|do\s+not\s+need|"
     r"without|instead\s+of|rather\s+than|in\s+place\s+of|"
-    r"skip|omit|leave\s+out|swap(?:\s+out)?|replace|no)\s+"
+    # "swap the tahini" / "swap out the tahini" leave it out; "swap IN
+    # peanut butter" puts the peanut in (review, 2026-10-13).
+    r"skip|omit|leave\s+out|swap(?!\s+in\b)(?:\s+out)?|replace|no)\s+"
     r"(?:(?:the|any|added|extra|some|more)\s+)?"
     r"[a-z-]+(?:\s+[a-z-]+)?"
+    # "leave the shrimp out for the kids": the split form of "leave out".
+    r"|\bleave\s+(?:(?:the|any)\s+)?[a-z-]+(?:\s+[a-z-]+)?\s+out\b"
+    # "egg-free", "dairy-free": a claim the food ISN'T there.
+    r"|\b[a-z]+[\s-]free\b"
+)
+
+# A sentence that offers a choice is not a use of what it offers. "Butter
+# is optional", "serve with sour cream or yogurt, if you like", "if you
+# don't have butter, use oil", "for a dairy-free version, skip the cheese
+# and the cream": each is the household's call, and reading any of them as
+# a use put Butter on the shopping list and a dairy line under a dairy-free
+# dish (review, 2026-10-13). The whole sentence goes — the choice it offers
+# reaches across its commas.
+_STEP_OPTIONAL_SENTENCE_RE = re.compile(
+    r"\bif\s+you\s+(?:like|prefer|want|wish|have\s+(?:it|some|them)|"
+    r"don['’]?t\s+have|do\s+not\s+have|can['’]?t\s+(?:find|get)|cannot\s+(?:find|get))\b|"
+    r"\bif\s+(?:desired|using|preferred|available)\b|\boptional(?:ly)?\b|"
+    r"\bfor\s+an?\s+[a-z-]+(?:\s+[a-z-]+)?\s+version\b"
+)
+_STEP_SWAP_IN_RE = re.compile(r"\b(?:swap|sub)\s+in\b|\bsubstitute\b")
+# A clause naming an alternative — "fry in butter or oil" — is neither
+# thing for certain. Only that comma-clause goes, and a number either side
+# ("4 or 5 minutes"), "or until", "or so", "or two" are a cook's timing,
+# not a choice of food.
+_STEP_OR_CLAUSE_RE = re.compile(
+    r"(?<![\d½¼¾])\s+or\s+(?!until\b|so\b|more\b|less\b|longer\b|overnight\b|"
+    r"two\b|three\b|four\b|five\b|[\d½¼¾])"
 )
 
 
 def steps_without_negations(text: str) -> str:
-    """Step text (lowercased) with each "no X" / "without the X" / "swap
-    the X" taken out — what the steps actually use. Shared with
-    coordination's steps-only allergy note so the two agree."""
-    return _STEP_NEGATION_RE.sub(" ", (text or "").lower())
+    """Step text (lowercased) with what it leaves out, offers as optional,
+    or offers as an either/or taken out — what the steps actually use.
+    Shared with coordination's steps-only allergy note so the list repair
+    and the note agree on what a step uses."""
+    kept = []
+    for sentence in re.split(r"(?<=[.!?;])\s+|[;\n]", (text or "").lower()):
+        # A swap suggestion is kept even when it is optional: "swap in
+        # peanut butter for the tahini if you like" is a peanut a cook may
+        # well use, and the allergy note should say so. The LIST repair
+        # passes it over (_STEP_SERVING_CLAUSE_RE) — nobody buys a swap.
+        if _STEP_OPTIONAL_SENTENCE_RE.search(sentence) and not _STEP_SWAP_IN_RE.search(sentence):
+            continue
+        clauses = [c for c in re.split(r",|\(|\)", sentence) if not _STEP_OR_CLAUSE_RE.search(c)]
+        kept.append(_STEP_NEGATION_RE.sub(" ", ", ".join(clauses)))
+    return " ".join(kept)
+
+
+# What the LIST repair passes over that the allergy note still reads. A
+# step's accompaniment ("serve with rice", "garnish with parsley") and a
+# token amount ("a pinch of sugar", "a splash of soy sauce", "dust with
+# flour") are not things to buy at a full cooking amount — one recipe put
+# Flour 2 cups, Sugar 8 tbsp and Bread 8 slices on a real list for them
+# (review, 2026-10-13). The note still sees them: "serve with peanut
+# sauce" is a peanut, whether or not it is shopping.
+_STEP_SERVING_CLAUSE_RE = re.compile(
+    r"\b(?:serve[sd]?\s+(?:it\s+|them\s+)?(?:with|over|alongside|on)|to\s+serve|garnish|for\s+serving|"
+    r"swap\s+in|sub\s+in|substitute)\b"
+)
+_STEP_TOKEN_AMOUNT_RE = re.compile(
+    r"\b(?:pinch|splash|knob|dash|dusting|squeeze|squeezes|drizzle|sprinkle|sprinkling|"
+    r"few\s+drops|drop|touch)\s+(?:of\s+)?(?:(?:the|some|fresh)\s+)?[a-z-]+(?:\s+[a-z-]+)?"
+    r"|\bdust(?:ed)?\s+(?:[a-z-]+\s+){0,3}?(?:with|in)\s+[a-z-]+"
+)
+# Pantry staples, passed over by the list repair the way the spice rack
+# is: a cupboard has flour, sugar and soy sauce, and a step reaching for
+# them is not a reason to buy a bag. NOT eggs, butter, milk or cream —
+# those a household runs out of, and a step using them should buy them.
+_PANTRY_STAPLES = frozenset({
+    "flour", "sugar", "brown sugar", "honey", "maple syrup", "cornstarch",
+    "baking powder", "baking soda", "vanilla extract", "soy sauce", "fish sauce",
+    "worcestershire sauce", "hot sauce", "sriracha", "ketchup", "mustard",
+    "dijon mustard", "mayonnaise", "tomato paste", "vinegar", "rice vinegar",
+    "white vinegar", "red wine vinegar", "balsamic vinegar", "apple cider vinegar",
+})
+
+
+def _steps_for_the_list(steps: list[str]) -> str:
+    """The steps as the list repair reads them: what they use, without the
+    accompaniments and the token amounts (see above)."""
+    out = []
+    for step in steps or []:
+        used = steps_without_negations(step or "")
+        clauses = [c for c in re.split(r"[,.;:]", used) if not _STEP_SERVING_CLAUSE_RE.search(c)]
+        out.append(_STEP_TOKEN_AMOUNT_RE.sub(" ", ", ".join(clauses)))
+    return " ".join(out)
 
 
 # A step's generic word when the list already names a kind of it: "sprinkle
@@ -3127,9 +3242,16 @@ _GENERIC_STEP_WORDS = {
               "noodles", "fusilli", "farfalle", "lasagna", "tagliatelle", "gnocchi"),
     "noodles": ("pasta", "spaghetti", "ramen", "udon", "soba", "vermicelli", "lo mein", "rice noodles"),
     "rice": ("risotto", "arborio"),
-    "bread": ("baguette", "sourdough", "ciabatta", "roll", "toast", "brioche", "focaccia"),
     "chicken": ("thigh", "breast", "drumstick"),
     "steak": ("sirloin", "ribeye", "flank", "skirt", "strip"),
+    # Review, 2026-10-13: "warm the bread" over pita or naan, "the egg
+    # whites" over eggs, "corn tortillas" over tortillas, the green onions
+    # over scallions.
+    "bread": ("baguette", "sourdough", "ciabatta", "roll", "toast", "brioche", "focaccia",
+              "pita", "naan", "tortilla", "bun", "bagel", "flatbread", "english muffin"),
+    "egg whites": ("egg",),
+    "corn": ("tortilla", "chip", "cornmeal", "polenta", "cornstarch"),
+    "green onions": ("scallion", "spring onion"),
 }
 
 _STEP_NUMBER_WORDS = {
@@ -3150,16 +3272,35 @@ def _amount_the_steps_use(key: str, steps: list[str]) -> str | None:
     own number comes first.
     """
     words = [w for w in re.findall(r"[a-z]+", key) if len(w) > 2] or [key]
+    words += list(_STEP_ALIASES.get(key, ()))
     total, unit_seen = 0.0, None
     found = False
     for step in steps:
         text = _STEP_NUMBER_WORD_RE.sub(lambda m: _STEP_NUMBER_WORDS[m.group(1)], (step or "").lower())
-        pinned, _strays = _amounts_in_one_step(text, [words])
+        # The other foods the step names compete for its numbers, so "beat
+        # 1 egg with the milk" is one egg and no amount of milk.
+        rivals = [
+            ([w for w in re.findall(r"[a-z]+", other) if len(w) > 2] or [other])
+            + list(_STEP_ALIASES.get(other, ()))
+            for other in COOKING_QUANTITIES_PER_4
+            if other != key and other not in key and any(
+                _item_matches(text, w) for w in (other, *_STEP_ALIASES.get(other, ()))
+            )
+        ]
+        pinned, _strays = _amounts_in_one_step(text, [words, *rivals])
         for _index, amount, unit in pinned:
+            if _index != 0:
+                continue
             if found and unit != unit_seen:
                 return None
             total, unit_seen, found = total + amount, unit, True
     if not found:
+        # "Crack an egg", "brush with egg wash": a singular egg is one.
+        if key == "eggs" and any(
+            re.search(r"\b(?:an?|one|1)\s+(?:\w+\s+)?egg\b|\begg\s+wash\b", (s or "").lower())
+            for s in steps
+        ) and not any(_item_matches((s or "").lower(), "eggs") for s in steps):
+            return "1"
         return None
     # Written the way a recipe line is ("1 1/2", not "1.5" or "1½"), which
     # is the shape the grocery list parses and merges.
@@ -3186,12 +3327,17 @@ def complete_ingredient_list(
     """
     try:
         lines = [i for i in (ingredients or []) if isinstance(i, dict)]
-        check = check_steps_ingredients_consistency(lines, instructions or [], servings)
-        missing = check.get("missing_from_list") or []
+        steps = [s for s in (instructions or []) if isinstance(s, str) and s.strip()]
+        listed = " ".join(_clean_item(i.get("item") or "") for i in lines)
+        if not lines or not steps:
+            return list(ingredients or [])
+        missing = [
+            key for key in _step_words_missing(_steps_for_the_list(steps), listed)
+            if key not in _PANTRY_STAPLES
+        ]
         if not missing:
             return list(ingredients or [])
         from ..recipe_import import guess_category as _guess_category
-        listed = " ".join(_clean_item(i.get("item") or "") for i in lines)
         added = []
         for key in missing:
             if any(_item_matches(listed, kind) for kind in _GENERIC_STEP_WORDS.get(key, ())):

@@ -109,3 +109,67 @@ def test_a_generic_step_word_does_not_buy_a_second_thing():
     listed = [{"item": "Parmesan", "qty": "1/2 cup"}, {"item": "Spaghetti", "qty": "12 oz"}]
     steps = ["Boil the pasta.", "Toss with the cheese."]
     assert _recipes.complete_ingredient_list(listed, steps, 4) == listed
+
+
+# --- the review's round (2026-10-13) ---------------------------------------
+
+DAIRY_SHELLFISH = ["allergy: dairy", "allergy: shellfish", "allergy: eggs"]
+
+
+@pytest.mark.parametrize("step", [
+    "Use almond milk instead of milk.",          # a plant milk is no milk
+    "Pour in the oat milk and stir.",
+    "If you don't have butter, use oil.",        # the household's call
+    "Butter is optional.",
+    "Fry the chicken in butter or oil until golden.",
+    "Serve with sour cream or yogurt, if you like.",
+    "Leave the shrimp out for the kids.",        # split "leave … out"
+    "This batter is egg-free and dairy-free.",
+])
+def test_a_choice_or_an_absence_in_a_step_adds_nothing_and_clashes_nothing(step):
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", DAIRY_SHELLFISH)
+    listed = [{"item": "Chicken thighs", "qty": "1 lb"}]
+    assert _recipes.complete_ingredient_list(listed, [step], 4) == listed
+    assert tools.check_meal_conflicts("Dish", ingredients=listed, instructions=[step]) == []
+
+
+def test_swapping_IN_peanut_butter_is_a_peanut_the_note_sees():
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", ["allergy: peanuts"])
+    listed = [{"item": "Tahini", "qty": "1/4 cup"}, {"item": "Noodles", "qty": "12 oz"}]
+    steps = ["Swap in peanut butter for the tahini if you like.", "Toss the noodles with the sauce."]
+    found = tools.check_meal_conflicts("Sesame Noodles", ingredients=listed, instructions=steps)
+    assert [(c["restriction"], c["steps_only"]) for c in found] == [("allergy: peanuts", True)]
+    # A swap is a suggestion: nothing is bought for it.
+    assert _recipes.complete_ingredient_list(listed, steps, 4) == listed
+
+
+@pytest.mark.parametrize("step", ["Crack an egg into each bowl.", "Beat one egg with the milk."])
+def test_a_single_egg_in_a_step_puts_eggs_on_the_list(step):
+    listed = [{"item": "Rice", "qty": "1 cup"}, {"item": "Milk", "qty": "1 cup"}]
+    added = _recipes.complete_ingredient_list(listed, [step], 4)[len(listed):]
+    assert [(a["item"], a["qty"]) for a in added] == [("Eggs", "1")]
+
+
+def test_pantry_odds_and_ends_do_not_go_on_the_shopping_list():
+    # The review's recipe: flour to dust, a pinch of sugar, a splash of soy
+    # sauce, a knob of butter "or" oil, a squeeze of lemon, parsley to
+    # garnish, rice "or" bread "if you like" — none of it is a purchase.
+    tools.add_recipe("Lemon Chicken Cutlets", ingredients=[
+        {"item": "Chicken breast", "qty": "1.5 lb"}, {"item": "Green beans", "qty": "1 lb"}],
+        instructions=[
+            "Season the chicken with salt and pepper, then dust with flour.",
+            "Fry in a knob of butter or a splash of olive oil until golden.",
+            "Deglaze with a splash of soy sauce and a pinch of sugar; finish with a squeeze of lemon.",
+            "Boil the green beans in salted water. Garnish with parsley; serve with rice or bread if you like.",
+        ], default_servings=4)
+    items = [i["item"] for i in tools.get_recipe("Lemon Chicken Cutlets")["ingredients"]]
+    assert items == ["Chicken breast", "Green beans"]
+    # The allergy note still reads the flour the steps dust with.
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", ["allergy: wheat"])
+    recipe = tools.get_recipe("Lemon Chicken Cutlets")
+    found = tools.check_meal_conflicts("Lemon Chicken Cutlets", ingredients=recipe["ingredients"],
+                                       instructions=recipe["instructions"])
+    assert [c.get("steps_only") for c in found] == [True]

@@ -189,12 +189,16 @@ def test_the_rule_reads_the_rack_rather_than_a_second_list():
     """
     import ast, inspect, textwrap
 
+    # The vocabulary pass moved into _step_words_missing on 2026-10-13 so
+    # the list repair (complete_ingredient_list) reads the same rule.
     tree = ast.parse(textwrap.dedent(
         inspect.getsource(recipes.check_steps_ingredients_consistency)
+        + "\n" + inspect.getsource(recipes._step_words_missing)
     ))
-    ast.get_docstring(tree.body[0])  # present; the point is what follows
-    tree.body[0].body[0] = ast.Expr(value=ast.Constant(value=""))
+    for fn in tree.body:
+        fn.body[0] = ast.Expr(value=ast.Constant(value=""))
     code = ast.unparse(tree)
+    assert "_step_words_missing" in ast.unparse(tree.body[0])
 
     assert "_spices.is_spice" in code, (
         "the rack has to be read from spices.is_spice, not copied here"
