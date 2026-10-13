@@ -72,9 +72,12 @@ def test_each_row_carries_the_cook_time():
     assert "'from ' + dayName(entry.leftover_from.date, { weekday: 'long' })" in meta
 
 
-def test_approval_lands_on_an_all_set_screen_in_spruce():
+def test_approval_lands_on_the_list_and_the_all_set_screen_is_kept_unrouted():
+    # 2b = A (Emily, 2026-10-12): "Approve the week" opens the list straight
+    # away with a toast. The All set screen below is no longer a stop.
     approve = _fn("submitWeekApproval")
-    assert "weekState.step = 'allset';" in approve
+    assert "weekState.step = 'allset';" not in approve
+    assert "goGroceryList();" in approve and "'Week approved'" in approve
     allset = _fn("allSetStepHtml")
     assert "All set." in allset and "' is planned.'" in allset and "'Week 1 is planned.'" in allset
     assert "receipt.meals" in allset and "receipt.recipes" in allset and "receipt.list_count" not in allset

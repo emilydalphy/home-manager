@@ -59,7 +59,7 @@ def test_the_drafts_dock_is_one_row_approve_then_the_round_more_on_both_toggle_s
     dock = html[html.index('class="wk-decide dock"'):]
     row = re.search(r'<div class="wk-dock-row">(.*?)</div>', dock, re.S)
     assert row, "the primary and More share one row"
-    assert row.group(1).startswith('<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">Approve · Open grocery list</button>')
+    assert row.group(1).startswith('<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">Approve the week</button>')
     assert row.group(1).endswith(_MORE + ">" + "<svg" + row.group(1).split("<svg", 1)[1])
     assert dock.count('id="wk-more"') == 1
     # The three dots, drawn as filled shapes (rule 7's own exception form).

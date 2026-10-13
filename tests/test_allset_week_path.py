@@ -145,20 +145,23 @@ def test_an_approved_week_docks_open_grocery_list_where_approve_was():
     assert out["set"].startswith('<div class="wk-decide dock">')
     assert 'id="wk-review-go">Open grocery list</button>' in out["set"]
     assert out["set"].count("dock-primary") == 1 and "week-approve-btn" not in out["set"]
-    assert 'id="week-approve-btn">Approve · Open grocery list</button>' in out["draft"]
+    # One verb, and it happens (2b = A, 2026-10-12): approving opens the list.
+    assert 'id="week-approve-btn">Approve the week</button>' in out["draft"]
     assert "wk-review-go" not in out["draft"]
     assert out["none"] == ""
     # One dock on the review, whichever state it is in (test_nav_v2_back_and_dock).
     assert SHELL_JS.count('<div class="wk-decide dock">') == 1
 
 
-def test_the_review_dock_goes_the_freezer_or_list_road_all_set_goes():
+def test_the_review_dock_opens_the_list_and_never_the_freezer_step_first():
+    # 2b = A (Emily, 2026-10-12): "Open grocery list" opens the grocery
+    # list. The freezer question is the root's quiet row, not a stop here.
     wire = SHELL_JS[SHELL_JS.index("  function wireMealsStep("):]
     wire = wire[:wire.index("\n  }\n")]
     assert "steps.querySelector('#wk-review-go')" in wire
     assert "goAfterWeekSet(panel, weekState.data || {});" in wire
     road = _extract("goAfterWeekSet", SHELL_JS)
-    assert "goMealsStep('freezer')" in road and "goGroceryList()" in road
+    assert "goMealsStep('freezer')" not in road and "goGroceryList()" in road
     assert "activateTab('grocery', true, { groScreen: 'plan' });" in _extract("goGroceryList", SHELL_JS)
 
 

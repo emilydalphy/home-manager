@@ -623,8 +623,10 @@ def test_the_step_has_the_title_the_line_the_apricot_answer_and_the_quiet_one():
     assert "What that means" in html
     assert "Chicken thighs → off the shopping list · into the fridge Saturday night, for Monday’s dinner." in html
     assert "Ground beef →" not in html, "only what is tapped"
-    assert 'id="wk-freezer-go">Add to the schedule · Open grocery list</button>' in html
-    assert 'id="wk-freezer-none">Nothing frozen — I’m buying it all</button>' in html
+    # 2c = A (Emily, 2026-10-06): a label that says what it does, live once
+    # something is picked, and the plain "Nothing this week" beside it.
+    assert 'id="wk-freezer-go">Add to the schedule</button>' in html
+    assert 'id="wk-freezer-none">Nothing this week</button>' in html
     assert html.count("dock-primary") == 1, "one apricot per screen"
     assert "None — all fresh" not in html
 
@@ -639,8 +641,11 @@ def test_the_quiet_button_is_keep_as_is_once_an_answer_stands_and_only_leaves():
     they stand, so un-tapping does not swap the button."""
     fresh = _run(_prelude() + f"defrostAskState = {{ planId: 7, items: {json.dumps([_CHICKEN, _BEEF])}, selected: {{}} }};\n"
                  "console.log(JSON.stringify(freezerStepHtml({ weekly_plan_id: 7 })));")
-    assert 'id="wk-freezer-none">Nothing frozen — I’m buying it all</button>' in fresh
+    assert 'id="wk-freezer-none">Nothing this week</button>' in fresh
     assert "wk-freezer-keep" not in fresh
+    # Nothing picked on a fresh step: there is nothing to add, so the
+    # button is dimmed rather than quietly saving "nothing frozen" (2c = A).
+    assert 'id="wk-freezer-go" disabled>Add to the schedule</button>' in fresh
 
     items = [dict(_CHICKEN, frozen=True), _BEEF]
     out = _run(_prelude()
@@ -662,7 +667,8 @@ def test_the_quiet_button_is_keep_as_is_once_an_answer_stands_and_only_leaves():
                + "console.log(JSON.stringify({ html: html, afterUntap: afterUntap, went: went, fetches: fetches, selected: defrostAskState.selected }));")
     assert 'id="wk-freezer-keep">Keep as is</button>' in out["html"]
     assert "Nothing frozen" not in out["html"]
-    assert 'id="wk-freezer-go">Add to the schedule · Open grocery list</button>' in out["html"]
+    # Reopened, it stays live: un-tapping and saving is how an answer is cancelled.
+    assert 'id="wk-freezer-go">Add to the schedule</button>' in out["html"]
     assert out["html"].count("dock-primary") == 1
     assert 'id="wk-freezer-keep">Keep as is</button>' in out["afterUntap"], "the button does not swap under an un-tap"
     assert out["went"] == ["week"] and out["fetches"] == 0, "Keep leaves and writes nothing"

@@ -260,7 +260,7 @@ def test_the_draft_dock_reads_approve_open_grocery_list_and_the_set_dock_open_gr
     html = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
                 f"console.log(JSON.stringify([reviewDecideHtml({json.dumps(_draft(days))}), reviewDecideHtml({json.dumps(_approved(days))})]));")
     draft, approved = html
-    assert 'id="week-approve-btn">Approve · Open grocery list</button>' in draft
+    assert 'id="week-approve-btn">Approve the week</button>' in draft
     assert draft.count("wk-decide dock") == 1
     assert 'class="dock-primary" id="wk-review-go">Open grocery list</button>' in approved
     assert "Approve" not in approved, "an approved week is never asked to approve again"
@@ -379,8 +379,10 @@ def test_the_freezer_step_has_the_chips_the_meaning_card_and_the_two_answers():
     assert "Chicken thighs → into the fridge Saturday night, for Monday’s dinner." in html
     assert "Ground beef → into the fridge Tuesday night, for Thursday’s dinner." in html
     assert "Salmon →" not in html, "only what is tapped"
-    assert 'id="wk-freezer-go">Add to the schedule · Open grocery list</button>' in html
-    assert 'id="wk-freezer-none">Nothing frozen — I’m buying it all</button>' in html
+    # 2c = A (Emily, 2026-10-06): the button says what it does, and is
+    # live because something is picked; "Nothing this week" is the answer.
+    assert 'id="wk-freezer-go">Add to the schedule</button>' in html
+    assert 'id="wk-freezer-none">Nothing this week</button>' in html
     assert html.count("dock-primary") == 1
 
 
@@ -415,27 +417,27 @@ def test_the_freezer_step_is_a_step_of_the_plan_flow_and_ends_when_plan_is_left(
     assert "} else if (weekState.step === 'freezer') {" in SHELL_JS
     assert "(weekState.step === 'allset' || weekState.step === 'freezer')" in SHELL_JS
     assert "search.indexOf('after=approve')" in SHELL_JS, "the reveal's hand-off"
-    assert "goMealsStep('freezer', { replace: true })" in SHELL_JS
+    # 2b = A (2026-10-12): approving never lands on the freezer step.
+    assert "goMealsStep('freezer', { replace: true })" not in SHELL_JS
     tile = SHELL_CSS[SHELL_CSS.index(".wk-freezer-tile {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-freezer-tile {"))]
     assert "background: var(--celadon-tint)" in tile and "color: var(--celadon-label)" in tile
     means = SHELL_CSS[SHELL_CSS.index(".wk-freezer-means {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-freezer-means {"))]
     assert "background: var(--celadon-tint)" in means
 
 
-def test_the_after_approve_hand_off_waits_for_the_freezer_items_and_says_approved_not_draft():
+def test_the_after_approve_hand_off_lands_on_the_list_and_says_approved_not_draft():
     """Integration follow-ups (2026-09-18): the Week 1 reveal hands in with
     ?after=approve&drafted=<Monday>. That week is past "change anything
-    before you approve it", so that toast stays quiet; and the freezer
-    step is only the landing when there is something to thaw — the items
-    are one request, awaited, rather than landing on an empty step."""
+    before you approve it", so that toast stays quiet. Since 2026-10-12
+    (2b = A) it lands on the list, always: the freezer question is Plan's
+    quiet row, not a step between "Approve the week" and the list."""
     build = SHELL_JS[SHELL_JS.index("async function buildWeekPanel("):SHELL_JS.index("async function loadPlanningPeriodDefault(")]
     assert "if (drafted && !afterApprove) {" in build
     assert build.index("var afterApprove = ") < build.index("await loadWeekMenu(panel);")
     landing = build[build.index("if (afterApprove && weekState.data && weekPlanState(weekState.data) === 'set') {"):]
-    assert "await ensureDefrostAskItems(panel, weekState.data);" in landing
-    assert "ask = !!(defrostAskState.items && defrostAskState.items.length);" in landing
-    assert "if (ask) goMealsStep('freezer', { replace: true });" in landing
-    assert "else { goGroceryList(); showToast('Your week was approved'); }" in landing
+    landing = landing[:landing.index("\n    }\n")]
+    assert "ensureDefrostAskItems" not in landing and "goMealsStep('freezer'" not in landing
+    assert "goGroceryList();\n      showToast('Your week was approved');" in landing
 
 
 # ---------------------------------------------------------------------------
