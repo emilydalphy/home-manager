@@ -173,3 +173,24 @@ def test_pantry_odds_and_ends_do_not_go_on_the_shopping_list():
     found = tools.check_meal_conflicts("Lemon Chicken Cutlets", ingredients=recipe["ingredients"],
                                        instructions=recipe["instructions"])
     assert [c.get("steps_only") for c in found] == [True]
+
+
+@pytest.mark.skipif(__import__("shutil").which("node") is None, reason="node renders the line")
+def test_the_draft_root_draws_the_soft_line_and_an_approved_week_does_not():
+    # The review's finding: the line reached the API and no screen, because
+    # the draft root renders through reviewStepHtml, which never read it.
+    from pathlib import Path
+    from test_week_seven_tiles import _extract, _run_node
+    shell = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+    assert "draftSoftNoteHtml(data)" in _extract("reviewStepHtml", shell)
+    line = "The steps for Tuesday’s Thai Basil Chicken Stir-Fry use eggs, which Sam is allergic to."
+    out = _run_node(
+        _extract("escapeHtml", shell) + "\n" + _extract("weekPlanState", shell) + "\n"
+        + _extract("draftSoftNoteHtml", shell) + "\n"
+        + "var line = " + json.dumps(line) + ";\n"
+        + "console.log(JSON.stringify([draftSoftNoteHtml({weekly_plan_id: 1, days: [{}], status: 'draft', soft_note: line}),"
+        + " draftSoftNoteHtml({weekly_plan_id: 1, days: [{}], status: 'approved', soft_note: line}),"
+        + " draftSoftNoteHtml({weekly_plan_id: 1, days: [{}], status: 'draft', soft_note: null})]));"
+    )
+    assert 'class="wk-note"' in out[0] and "Sam is allergic to" in out[0]
+    assert out[1] == "" and out[2] == ""
