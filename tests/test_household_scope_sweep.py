@@ -270,11 +270,6 @@ _LATER_TRANCHE = {
         (1, "SELECT rev FROM inventory_items WHERE id = ?"),
         (2, "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?"),
     ],
-    "app/tools/weekly_plan.py": [
-        (1, "SELECT name FROM recipes WHERE id = ?"),
-        (1, "SELECT week_start_date FROM weekly_plans WHERE id = ?"),
-        (1, "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ?"),
-    ],
 }
 
 # The TWELVE modules the two tranches have scoped — eight from tranche 1,
@@ -297,6 +292,7 @@ _DONE_MODULES = (
     "app/tools/stores.py",
     "app/tools/usage.py",
     "app/tools/week_intake.py",
+    "app/tools/weekly_plan.py",
 )
 
 

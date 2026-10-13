@@ -3086,7 +3086,10 @@ def _freeze_instead(row, source, derived: dict, links_to: str) -> None:
     meal = (source["freeform_meal"] or "").strip()
     if source["recipe_id"]:
         conn = get_conn()
-        name_row = conn.execute("SELECT name FROM recipes WHERE id = ?", (source["recipe_id"],)).fetchone()
+        name_row = conn.execute(
+            "SELECT name FROM recipes WHERE id = ? AND household_id = ?",
+            (source["recipe_id"], household_id()),
+        ).fetchone()
         conn.close()
         meal = name_row["name"] if name_row else meal
     night = {k: v for k, v in derived.items() if k != "links_to"}
@@ -6370,7 +6373,8 @@ def get_needs_you_items() -> list[dict]:
             week_start = None
             if row["weekly_plan_id"] is not None:
                 plan_row = conn.execute(
-                    "SELECT week_start_date FROM weekly_plans WHERE id = ?", (row["weekly_plan_id"],)
+                    "SELECT week_start_date FROM weekly_plans WHERE id = ? AND household_id = ?",
+                    (row["weekly_plan_id"], household_id()),
                 ).fetchone()
                 week_start = plan_row["week_start_date"] if plan_row else None
             items.append({
@@ -8873,8 +8877,8 @@ def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str
         said = (t["description"] or "").replace(f"for {old_wd}’s", f"for {new_wd}’s") \
             .replace(f"for {old_wd}'s", f"for {new_wd}'s")
         conn.execute(
-            "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ?",
-            (moved_to, said, t["id"]),
+            "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
+            (moved_to, said, t["id"], household_id()),
         )
     return len(tasks)
 
