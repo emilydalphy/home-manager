@@ -5868,7 +5868,7 @@
         '</div>';
       }).join('') +
     '</div>' +
-    '<button type="button" class="gro-sort-later" data-gro="carry-later">Decide later</button>';
+    '<button type="button" class="gro-carry-later" data-gro="carry-later">Decide later</button>';
   }
 
   // ---------- "Before you shop" ----------

@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Shop's "Decide later" is a quiet link, not a grey browser button**
+  (2026-10-13; branch `overnight/decide-later-button`). CARRY reused the
+  dead sort chooser's `.gro-sort-later` (its rule went 2026-09-18), so its
+  way out drew as the browser default. Renamed `.gro-carry-later`, styled
+  as the `.dock-link` / `.ask-change-leave` text link (`--apricot-label`,
+  no fill, 44px), centred under the card — a fill would read as a third
+  answer beside Keep and Don't need.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

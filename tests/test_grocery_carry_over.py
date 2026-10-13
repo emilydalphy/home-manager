@@ -538,6 +538,17 @@ settle(function () {
     assert out["row"] is True, "the way back in is a row at the top of the list"
 
 
+def test_decide_later_is_styled_as_the_quiet_way_out():
+    # It had no rule at all until 2026-10-13 and drew as the browser's grey
+    # default button: a quiet text link in the app's own link ink, not a fill.
+    css = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
+    start = css.index(".gro-carry-later {")
+    rule = css[start:css.index("}", start)]
+    assert "background: none" in rule and "border: none" in rule
+    assert "color: var(--apricot-label)" in rule
+    assert "min-height: 44px" in rule, "a 44px tap target"
+
+
 @_needs_node
 def test_with_nothing_carried_over_the_screen_never_appears():
     out = _node("""

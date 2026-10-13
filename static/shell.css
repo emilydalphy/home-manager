@@ -5659,6 +5659,29 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .gro-carry .gro-ps-actions { margin-top: 8px; }
 .gro-carry .gro-ps-btn-drop { border-color: var(--hairline-strong); }
+/* "Decide later" — the step's quiet way out. CARRY has no dock (the rows
+   are the actions), so this sits under the card in the same text-link
+   vocabulary as .dock-link / .ask-change-leave: --apricot-label on no fill,
+   never a filled button, which would read as a third answer beside Keep
+   and Don't need. It wore the old sort chooser's "later" class, whose rule
+   went with that chooser (2026-09-18 — test_grocery_fast_sort keeps it
+   gone), so until 2026-10-13 it drew as the browser's grey default. */
+.gro-carry-later {
+  display: block;
+  margin: 8px auto 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  white-space: nowrap;
+}
+.gro-carry-later:hover { color: var(--apricot-label-hover); }
+.gro-carry-later:disabled { opacity: .6; cursor: default; }
 
 /* ---------- "Already had on hand" (groNotNeededHtml) ----------
    A closed celadon confirmation at the foot of LIST — this week's Have it
