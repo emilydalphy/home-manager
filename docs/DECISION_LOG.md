@@ -21,7 +21,9 @@ why*, not duplicating the diff.
   `digest._for_a_later_meal`: a fridge move (always for a later day) or a
   prep step tied to another entry uses its own "for …" reason; a prep step
   for tonight keeps "first — then". CLAUDE.md's evening-nudge paragraph
-  still quotes the old line.
+  still quotes the old line. Review round: a general prep row (no entry,
+  `cooker.save_prep_tasks`) whose `related_meal` (now on the move) is not
+  tonight's dish reads "Soak the beans for Chili. Tonight: …" too.
 
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch

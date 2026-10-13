@@ -1318,8 +1318,17 @@ def _for_a_later_meal(first: dict | None, dinner: dict) -> str:
         return ""
     if first.get("kind") == "fridge":
         return reason
+    if first.get("kind") != "prep":
+        return ""
     entry = first.get("entry_id")
-    if first.get("kind") == "prep" and entry and entry != dinner.get("entry_id"):
+    if entry:
+        return reason if entry != dinner.get("entry_id") else ""
+    # A general prep row (no plan entry — cooker.save_prep_tasks) says what
+    # it is for by name only: a different dish from tonight's is a later
+    # meal ("Soak the beans for Chili. Tonight: Roast Chicken…"), never
+    # "first — then Roast Chicken" (review, 2026-10-13).
+    related = (first.get("related_meal") or "").strip().casefold()
+    if related and related != (dinner.get("title") or "").strip().casefold():
         return reason
     return ""
 

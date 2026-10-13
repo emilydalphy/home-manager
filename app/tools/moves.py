@@ -545,6 +545,10 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
             "tickable": True,
             "overdue": overdue,
             "entry_id": task.get("meal_plan_entry_id"),
+            # The meal it is for, by name — a general prep row (cooker.
+            # save_prep_tasks) carries no entry, and this is how the evening
+            # text tells "soak the beans" for Thursday from one for tonight.
+            "related_meal": task.get("related_meal") or "",
             "task_id": task["id"],
             "duration_min": 0,
             "time_label": when,

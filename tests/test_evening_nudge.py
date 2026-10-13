@@ -676,3 +676,20 @@ def test_the_morning_sheet_carries_the_evening_switch():
     assert ".morning-evening-row { min-height: 44px; }" in section
     assert ".morning-evening-row.is-off { opacity: 0.55; }" in section
     assert not re.search(r"#[0-9a-fA-F]{3,6}\b", section)
+
+
+def test_a_general_prep_step_for_a_later_meal_names_that_meal(link):
+    """Review catch (2026-10-13): a general prep row (no plan entry) for a
+    LATER dish read "Soak the beans first — then Chicken Skewers"."""
+    _adults()
+    plan_id = _seed_dinner()
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+        "related_meal, status, task_type) VALUES (?, ?, ?, 'Soak the beans', 'Chili', 'pending', 'general')",
+        (tools.household_id(), plan_id, ISO_TODAY),
+    )
+    conn.commit()
+    conn.close()
+    assert tools.build_evening_nudge(_at(17, 0), link=False) == \
+        "Soak the beans for Chili. Tonight: Chicken Skewers — 35 min."
