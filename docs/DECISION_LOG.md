@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The evening text's thaw line names the meal it's for** (2026-10-13;
+  branch `overnight/thaw-line-names-its-meal`; tests in
+  `tests/test_evening_nudge.py`). Emily's approved wording: "Move the beef to
+  the fridge for Monday's chili. Tonight: Roast Chicken — 1 hr 50 min."
+  "…fridge first — then Roast Chicken" read as if the beef went in the roast.
+  `digest._for_a_later_meal`: a fridge move (always for a later day) or a
+  prep step tied to another entry uses its own "for …" reason; a prep step
+  for tonight keeps "first — then". CLAUDE.md's evening-nudge paragraph
+  still quotes the old line.
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

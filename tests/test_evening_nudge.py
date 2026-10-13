@@ -211,7 +211,22 @@ def test_a_fridge_move_still_to_do_comes_first(link):
     plan_id = _seed_dinner()
     _prep_task(plan_id, "Move the chicken thighs to the fridge — for Thursday’s skewers.")
     text = tools.build_evening_nudge(_at(17, 0))
-    assert text == f"Move the chicken thighs to the fridge first — then Chicken Skewers. {LINK}/kitchen"
+    # Emily, 2026-10-12: the thaw names the meal it is FOR, then tonight's
+    # dish — never "first — then", which read as if it went in tonight's.
+    assert text == (f"Move the chicken thighs to the fridge for Thursday’s skewers. "
+                    f"Tonight: Chicken Skewers — 35 min. {LINK}/kitchen")
+
+
+def test_a_fridge_move_with_a_long_dinner_spells_the_hours(link):
+    _adults()
+    plan_id = _seed_dinner()
+    conn = get_conn()
+    conn.execute("UPDATE recipes SET prep_time_minutes = 20, cook_time_minutes = 90")
+    conn.commit()
+    conn.close()
+    _prep_task(plan_id, "Move the beef to the fridge — for Monday's chili.")
+    assert tools.build_evening_nudge(_at(17, 0), link=False) == \
+        "Move the beef to the fridge for Monday's chili. Tonight: Chicken Skewers — 1 hr 50 min."
 
 
 def test_a_prep_step_still_to_do_comes_first_too(link):
