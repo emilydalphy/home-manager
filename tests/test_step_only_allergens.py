@@ -119,19 +119,70 @@ DAIRY_SHELLFISH = ["allergy: dairy", "allergy: shellfish", "allergy: eggs"]
 @pytest.mark.parametrize("step", [
     "Use almond milk instead of milk.",          # a plant milk is no milk
     "Pour in the oat milk and stir.",
-    "If you don't have butter, use oil.",        # the household's call
-    "Butter is optional.",
-    "Fry the chicken in butter or oil until golden.",
-    "Serve with sour cream or yogurt, if you like.",
     "Leave the shrimp out for the kids.",        # split "leave … out"
     "This batter is egg-free and dairy-free.",
 ])
-def test_a_choice_or_an_absence_in_a_step_adds_nothing_and_clashes_nothing(step):
+def test_an_absence_in_a_step_adds_nothing_and_clashes_nothing(step):
     tools.add_member("Sam")
     tools.set_member_dietary_restrictions("Sam", DAIRY_SHELLFISH)
     listed = [{"item": "Chicken thighs", "qty": "1 lb"}]
     assert _recipes.complete_ingredient_list(listed, [step], 4) == listed
     assert tools.check_meal_conflicts("Dish", ingredients=listed, instructions=[step]) == []
+
+
+@pytest.mark.parametrize("step", [
+    "If you don't have butter, use oil.",        # the household's call
+    "Butter is optional.",
+    "Fry the chicken in butter or oil until golden.",
+    "Serve with sour cream or yogurt, if you like.",
+])
+def test_a_choice_in_a_step_buys_nothing_and_is_at_most_a_soft_line(step):
+    # A possible use: nothing on the shopping list, never a block — the
+    # soft line may say it (coordinator re-review, 2026-10-13).
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", DAIRY_SHELLFISH)
+    listed = [{"item": "Chicken thighs", "qty": "1 lb"}]
+    assert _recipes.complete_ingredient_list(listed, [step], 4) == listed
+    found = tools.check_meal_conflicts("Dish", ingredients=listed, instructions=[step])
+    assert all(c["severity"] == "soft" and c.get("steps_only") for c in found)
+
+
+# Each a real or possible use the first round of this fix silenced (the
+# coordinator's re-review, 2026-10-13). Each must be SAID — a hard clash
+# once the list is completed, or the soft steps line — never nothing.
+@pytest.mark.parametrize("step, allergy", [
+    ("Whisk 2 eggs with milk or cream.", "allergy: eggs"),
+    ("Whisk 2 eggs with milk or cream.", "allergy: dairy"),
+    ("Fold in the yogurt, or sour cream if you prefer.", "allergy: dairy"),
+    ("Cook in the butter, or use oil for a dairy-free version.", "allergy: dairy"),
+    ("Toss with the peanuts or cashews.", "allergy: peanuts"),
+    ("Toss with the peanuts or cashews.", "allergy: tree nuts"),
+    ("Finish with butter or cream.", "allergy: dairy"),
+    ("Brush with egg or milk.", "allergy: eggs"),
+    ("Fry in peanut oil or vegetable oil.", "allergy: peanuts"),
+    ("Top with sesame seeds if you like.", "allergy: sesame"),
+    ("Stir in the cream or milk, then simmer 5 minutes.", "allergy: dairy"),
+    ("Add the shrimp or chicken and cook 3 minutes.", "allergy: shellfish"),
+    ("Top with parmesan, if you have it.", "allergy: dairy"),
+    ("Serve over rice or with naan.", "allergy: wheat"),
+    ("Pour in the coconut milk or heavy cream.", "allergy: dairy"),
+    ("Thicken with a slurry of flour or cornstarch.", "allergy: wheat"),
+])
+def test_an_optional_or_either_or_use_is_still_said(step, allergy):
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", [allergy])
+    listed = [{"item": "Chicken thighs", "qty": "1 lb"}, {"item": "Rice", "qty": "1 cup"}]
+    completed = _recipes.complete_ingredient_list(listed, [step], 4)
+    found = tools.check_meal_conflicts("Dish", ingredients=completed, instructions=[step])
+    assert [c["restriction"] for c in found] == [allergy], (step, found)
+
+
+def test_the_certain_half_of_an_either_or_step_is_still_bought():
+    listed = [{"item": "Rice", "qty": "1 cup"}]
+    added = _recipes.complete_ingredient_list(listed, ["Whisk 2 eggs with milk or cream."], 4)[1:]
+    assert [(a["item"], a["qty"]) for a in added] == [("Eggs", "2")]
+    added = _recipes.complete_ingredient_list(listed, ["Melt the butter (or ghee) in a pan."], 4)[1:]
+    assert [a["item"] for a in added] == ["Butter"]
 
 
 def test_swapping_IN_peanut_butter_is_a_peanut_the_note_sees():
@@ -194,3 +245,14 @@ def test_the_draft_root_draws_the_soft_line_and_an_approved_week_does_not():
     )
     assert 'class="wk-note"' in out[0] and "Sam is allergic to" in out[0]
     assert out[1] == "" and out[2] == ""
+
+
+def test_the_soft_line_names_the_word_the_step_says():
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", ["allergy: dairy"])
+    listed = [{"item": "Chicken thighs", "qty": "1 lb"}]
+    tools.add_recipe("Pan Chicken", ingredients=listed,
+                     instructions=["Sear the chicken.", "Finish with butter or oil."], default_servings=4)
+    found = tools.check_plan_conflicts(_plan_with("Pan Chicken"))
+    assert found["settle"] is None
+    assert "use butter, which Sam is allergic to" in found["soft_note"], found["soft_note"]

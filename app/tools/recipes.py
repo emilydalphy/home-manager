@@ -3145,46 +3145,43 @@ _STEP_NEGATION_RE = re.compile(
     r"|\b[a-z]+[\s-]free\b"
 )
 
-# A sentence that offers a choice is not a use of what it offers. "Butter
-# is optional", "serve with sour cream or yogurt, if you like", "if you
-# don't have butter, use oil", "for a dairy-free version, skip the cheese
-# and the cream": each is the household's call, and reading any of them as
-# a use put Butter on the shopping list and a dairy line under a dairy-free
-# dish (review, 2026-10-13). The whole sentence goes — the choice it offers
-# reaches across its commas.
+def steps_without_negations(text: str) -> str:
+    """Step text (lowercased) with what it LEAVES OUT taken out — "no X",
+    "without the X", "skip/omit/swap (out) the X", "leave the X out",
+    "X-free", "instead of X". Real negations only: this is the allergy
+    note's reading (coordination.check_meal_conflicts) and the morning
+    report's, and a step that offers an allergen as an option or an
+    alternative ("butter or oil", "sesame seeds if you like") is a possible
+    use — worth the soft line (coordinator re-review, 2026-10-13: reading
+    those as absences silenced "Whisk 2 eggs with milk or cream"). The
+    list repair reads the steps harder; see _steps_for_the_list."""
+    return _STEP_NEGATION_RE.sub(" ", (text or "").lower())
+
+
+# A sentence that offers a choice is not a reason to BUY what it offers.
+# "Butter is optional", "serve with sour cream or yogurt, if you like",
+# "if you don't have butter, use oil", "for a dairy-free version, skip the
+# cheese and the cream": each is the household's call, and the first cut
+# put Butter on the shopping list for them (review, 2026-10-13). The whole
+# sentence goes — the choice reaches across its commas. LIST REPAIR ONLY:
+# the allergy note still reads these as a possible use.
 _STEP_OPTIONAL_SENTENCE_RE = re.compile(
     r"\bif\s+you\s+(?:like|prefer|want|wish|have\s+(?:it|some|them)|"
     r"don['’]?t\s+have|do\s+not\s+have|can['’]?t\s+(?:find|get)|cannot\s+(?:find|get))\b|"
     r"\bif\s+(?:desired|using|preferred|available)\b|\boptional(?:ly)?\b|"
     r"\bfor\s+an?\s+[a-z-]+(?:\s+[a-z-]+)?\s+version\b"
 )
-_STEP_SWAP_IN_RE = re.compile(r"\b(?:swap|sub)\s+in\b|\bsubstitute\b")
-# A clause naming an alternative — "fry in butter or oil" — is neither
-# thing for certain. Only that comma-clause goes, and a number either side
-# ("4 or 5 minutes"), "or until", "or so", "or two" are a cook's timing,
-# not a choice of food.
-_STEP_OR_CLAUSE_RE = re.compile(
-    r"(?<![\d½¼¾])\s+or\s+(?!until\b|so\b|more\b|less\b|longer\b|overnight\b|"
-    r"two\b|three\b|four\b|five\b|[\d½¼¾])"
+# An either/or — "butter or oil", "milk or cream", "peanut oil or vegetable
+# oil" — is neither thing for certain, so the list buys neither. Only the
+# two alternatives go (up to two words each side), never the clause: "Whisk
+# 2 eggs with milk or cream" still uses two eggs. A number either side ("4
+# or 5 minutes"), "or until", "or so", "or two" are a cook's timing, not a
+# choice of food. LIST REPAIR ONLY, as above.
+_STEP_OR_ALTERNATIVES_RE = re.compile(
+    r"(?:\b[a-z-]+\s+)?\b[a-z-]+\s+or\s+"
+    r"(?!until\b|so\b|more\b|less\b|longer\b|overnight\b|two\b|three\b|four\b|five\b|[\d½¼¾])"
+    r"(?:(?:the|a|an|some|with|use)\s+)?[a-z-]+(?:\s+(?!and\b|then\b|until\b)[a-z-]+)?"
 )
-
-
-def steps_without_negations(text: str) -> str:
-    """Step text (lowercased) with what it leaves out, offers as optional,
-    or offers as an either/or taken out — what the steps actually use.
-    Shared with coordination's steps-only allergy note so the list repair
-    and the note agree on what a step uses."""
-    kept = []
-    for sentence in re.split(r"(?<=[.!?;])\s+|[;\n]", (text or "").lower()):
-        # A swap suggestion is kept even when it is optional: "swap in
-        # peanut butter for the tahini if you like" is a peanut a cook may
-        # well use, and the allergy note should say so. The LIST repair
-        # passes it over (_STEP_SERVING_CLAUSE_RE) — nobody buys a swap.
-        if _STEP_OPTIONAL_SENTENCE_RE.search(sentence) and not _STEP_SWAP_IN_RE.search(sentence):
-            continue
-        clauses = [c for c in re.split(r",|\(|\)", sentence) if not _STEP_OR_CLAUSE_RE.search(c)]
-        kept.append(_STEP_NEGATION_RE.sub(" ", ", ".join(clauses)))
-    return " ".join(kept)
 
 
 # What the LIST repair passes over that the allergy note still reads. A
@@ -3221,9 +3218,18 @@ def _steps_for_the_list(steps: list[str]) -> str:
     accompaniments and the token amounts (see above)."""
     out = []
     for step in steps or []:
-        used = steps_without_negations(step or "")
-        clauses = [c for c in re.split(r"[,.;:]", used) if not _STEP_SERVING_CLAUSE_RE.search(c)]
-        out.append(_STEP_TOKEN_AMOUNT_RE.sub(" ", ", ".join(clauses)))
+        for sentence in re.split(r"(?<=[.!?;])\s+|[;\n]", (step or "").lower()):
+            if _STEP_OPTIONAL_SENTENCE_RE.search(sentence):
+                continue
+            # "Melt the butter (or ghee)": the aside is the alternative, the
+            # butter is the use — so the aside goes before the either/or rule
+            # could take the butter with it.
+            used = re.sub(r"\(\s*or\s+[^)]*\)", " ", steps_without_negations(sentence))
+            used = _STEP_OR_ALTERNATIVES_RE.sub(" ", used)
+            # Split on punctuation, NOT brackets: "serve with the tzatziki
+            # (it has yogurt)" is all one accompaniment.
+            clauses = [c for c in re.split(r"[,.;:]", used) if not _STEP_SERVING_CLAUSE_RE.search(c)]
+            out.append(_STEP_TOKEN_AMOUNT_RE.sub(" ", ", ".join(clauses)))
     return " ".join(out)
 
 

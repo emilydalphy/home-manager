@@ -1119,7 +1119,10 @@ def _steps_only_sentence(conflicts: list[dict]) -> str | None:
     c = found[0]
     when = _weekday(c.get("date"))
     dish = f"{when}’s {c['meal']}" if when else c["meal"]
-    matched = c.get("matched") or []
+    # The word the step actually says ("butter"), not the avoidance's
+    # name for it ("dairy") — "the steps use dairy" reads oddly and is
+    # harder to find in the method (coordinator re-review, 2026-10-13).
+    matched = c.get("matched_word") or c.get("matched") or []
     term = (matched if isinstance(matched, str) else (matched[0] if matched else "")) or "something"
     if c["member"]:
         tail = (f"which {c['member']} is allergic to"

@@ -27,7 +27,14 @@ why*, not duplicating the diff.
   egg" adds Eggs · 1. The draft root never rendered `soft_note` (only the
   approved path's `weekNotesHtml` did) — `draftSoftNoteHtml` puts it at the
   top of both views. Why: Emily 2026-09-04, a check that flags safe meals
-  is one people click past.
+  is one people click past. **Re-review, same day:** the optional and
+  either/or filters had also silenced the allergy NOTE ("Whisk 2 eggs with
+  milk or cream" said nothing). Split: `steps_without_negations` is real
+  negations only (the note, the morning report); optional sentences,
+  either/or pairs (only the two alternatives, so the 2 eggs are still
+  bought), serve-with, token amounts and pantry staples are the LIST
+  repair's alone (`_steps_for_the_list`). A possible use is a soft line;
+  it names the step's word ("use butter"), not the avoidance's ("dairy").
 
 - **An ingredient the steps use goes on the list when a recipe is saved;
   a must-avoid found only in the steps is a soft line** (2026-10-13; branch
