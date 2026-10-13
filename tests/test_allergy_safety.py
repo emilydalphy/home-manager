@@ -758,7 +758,11 @@ def test_the_approve_button_shows_the_warning_instead_of_discarding_it():
     assert "conflicts_note" in approve, \
         "approveWeek has to read the warning the endpoint sends, not just the status"
     assert "await res.json()" in approve
-    assert "showToast('Approved. ' + approval.conflicts_note" in approve
+    # 2026-10-13 (2b = A): the list opens straight away and the one toast
+    # says "Week approved…" with the warning after it — still said, never
+    # dropped.
+    assert "(approval.conflicts_note ? ' ' + approval.conflicts_note : '')" in approve
+    assert "showToast(approvedToast," in approve
 
 
 # ---------- 8. component-based households get checked too ----------
