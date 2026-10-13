@@ -1199,6 +1199,11 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    apricot (Rule 5). The slot is display:none while empty, exactly like
    the needs-you band, so a morning or an answered day leaves no gap. */
 .today-area-tonight:empty { display: none; }
+/* The household's clock, asked once (renderClockAsk, 2026-10-13): the
+   tonight card's shape, and gone the moment it is answered. */
+.today-area-clock:empty { display: none; }
+.today-area-clock { display: flex; flex-direction: column; }
+.clock-line { margin: 0 0 12px; font-size: 15px; line-height: 1.45; color: var(--ink-secondary); }
 .today-area-tonight { display: flex; flex-direction: column; }
 /* ---------- Yesterday: did you have it? (Emily, 2026-09-25) ----------
    Today's first card the morning after a day with an unticked meal

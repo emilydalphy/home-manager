@@ -577,6 +577,9 @@ ELS['lunch-max-group'] = makeEl('div'); ELS['lunch-max-group'].hidden = true;
         _fn("renderLunchMaxChips"),
         _fn("buildDinnerTimeStep"),
         """
+// The household's clock line (2026-10-13) is drawn on the same step;
+// this file is about the two time limits, so it is a stub here.
+function buildClockLine() {}
 function labels(id) { return ELS[id]._children.map(function (c) { return c.textContent; }); }
 function lit(id) {
   return ELS[id]._children.filter(function (c) { return c._classes.has('active'); })

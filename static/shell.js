@@ -1184,6 +1184,10 @@
           // First, because it is about a day already gone — answered in a
           // tap and out of the way before today starts. Empty — and so
           // display:none — on any day with nothing to ask.
+          // The household's clock, asked once (renderClockAsk): only for a
+          // household nobody ever answered for whose phone disagrees with
+          // the zone on file. Empty — display:none — every other time.
+          '<div id="today-clock" class="today-area-clock"></div>' +
           '<div id="yesterday-check" class="today-area-yesterday"></div>' +
           '<div id="tonight-ask" class="today-area-tonight"></div>' +
           // Tonight's open dinner (or a question about another day) stays
@@ -1241,6 +1245,7 @@
       '</div>';
 
 
+    renderClockAsk(panel);
     await Promise.all([
       loadPlanWeekNudge(panel),
       loadNeedsYou(panel),
@@ -1252,6 +1257,84 @@
       // chores card means no reason to hit /api/chores/today.
       (choresEnabled() ? loadChores(panel) : Promise.resolve())
     ]);
+  }
+
+  // ---------- The household's clock, asked once ----------
+  // Loop Board "Nothing ever asks the household where they live" (Emily,
+  // 2026-09-21 / 2026-10-12). Every screen reads "today" off the zone on
+  // file, and every household was put on Toronto's without being asked.
+  // Setup now confirms the phone's zone (onboarding's dinner-time step);
+  // a household from before that is asked HERE, once, and only when this
+  // phone's zone disagrees with a zone nobody chose (`timezone_set` false
+  // — see db.py's migration for why the flag). Either answer is final:
+  // "Keep Toronto" is recorded as an answer too, so the same phone on a
+  // trip is never asked again. The card's shape is the tonight card's —
+  // kicker, the line, the spruce/outline pair — so Now's apricot stays the
+  // dock's (Rule 5).
+  function phoneTimeZone() {
+    try {
+      var zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      // UTC / Etc/* is what a phone says when it was never told.
+      return (zone.indexOf('/') === -1 || zone.indexOf('Etc/') === 0) ? '' : zone;
+    } catch (e) { return ''; }
+  }
+
+  // "America/Vancouver" -> "Vancouver": the city the zone is named after.
+  function zoneCity(zone) {
+    return String(zone || '').split('/').pop().replace(/_/g, ' ');
+  }
+
+  function clockAskZone() {
+    if (!shellWho.loaded || shellWho.timezone_set) return '';
+    var phone = phoneTimeZone();
+    return (phone && shellWho.timezone && phone !== shellWho.timezone) ? phone : '';
+  }
+
+  function renderClockAsk(panel) {
+    var slot = panel.querySelector('#today-clock');
+    if (!slot) return;
+    var phone = clockAskZone();
+    if (!phone) { slot.innerHTML = ''; return; }
+    var here = zoneCity(phone), onFile = zoneCity(shellWho.timezone);
+    slot.innerHTML =
+      '<div class="shell-card needs-you-card clock-card" data-card-type="clock_ask">' +
+        '<div class="ny-kicker">Your clock</div>' +
+        '<div class="ny-title">' + escapeHtml('Looks like you’re in ' + here + '.') + '</div>' +
+        '<p class="clock-line">' + escapeHtml('I’ve been keeping ' + onFile + ' time. Switch to yours so tonight means tonight?') + '</p>' +
+        '<div class="ny-actions">' +
+          '<button type="button" class="btn-gold" data-clock-answer="use">' + escapeHtml('Use ' + here + ' time') + '</button>' +
+          '<button type="button" class="btn-sand" data-clock-answer="keep">' + escapeHtml('Keep ' + onFile) + '</button>' +
+        '</div>' +
+      '</div>';
+    slot.querySelectorAll('[data-clock-answer]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        answerClockAsk(panel, btn.getAttribute('data-clock-answer') === 'use' ? phone : '');
+      });
+    });
+  }
+
+  // `zone` '' is "keep the one on file". Either way the card goes and the
+  // flag is set; a new zone moves "today" itself, so Today is read again.
+  async function answerClockAsk(panel, zone) {
+    var slot = panel.querySelector('#today-clock');
+    var buttons = slot ? slot.querySelectorAll('button') : [];
+    buttons.forEach(function (b) { b.disabled = true; });
+    try {
+      var out = await Api.json('/api/household/clock', {
+        method: 'POST', body: zone ? { timezone: zone } : { keep: true }
+      });
+      shellWho.timezone = (out && out.timezone) || shellWho.timezone;
+      shellWho.timezone_set = true;
+      if (slot) slot.innerHTML = '';
+      if (zone) {
+        showToast('Your clock is ' + zoneCity(shellWho.timezone) + ' now.');
+        refreshTodayMoves();
+      }
+    } catch (err) {
+      // Api.json has already said it didn't work; the card stays to retry.
+      console.warn('Saving the clock failed:', err);
+      buttons.forEach(function (b) { b.disabled = false; });
+    }
   }
 
   // ---------- Holding for you ----------
@@ -12501,6 +12584,11 @@
       html += '<div class="wwk-chips">' +
         members.map(function (n) { return wwkChip(n, 'data-wwk="cooking-who" data-value="' + escapeHtml(n) + '"', who === n ? 'on' : ''); }).join('') + '</div>';
     }
+    // The household's clock (2026-10-13, "Nothing ever asks the household
+    // where they live"): readable and changeable here like every other
+    // standing fact. The zone on file, this phone's when it differs (one
+    // tap), and any other city typed — wwkSetClock.
+    html += wwkClockHtml();
     // From the old /meal-setup page (2026-09-25): the week's standing
     // shape in their words, which the weekly intake hands the planner
     // (meal_preferences.typical_week, week_intake). Saves on blur.
@@ -13370,6 +13458,7 @@
   // ---------- the "+ Add" chip -> input swap ----------
 
   var WWK_ADD_PLACEHOLDER = {
+    clock: 'Your city',
     restriction: 'Peanuts, gluten, vegetarian…',
     dislike: 'Olives, mushrooms…',
     cuisine: 'Sichuan, Mexican…',
@@ -13403,7 +13492,7 @@
     input._done = true;
     text = (text === undefined ? input.value : text).trim();
     var kind = input.getAttribute('data-kind');
-    var section = { restriction: 'people', dislike: 'wont-eat', cuisine: 'taste', 'store-item': 'stores', store: 'stores', regular: 'regulars' }[kind];
+    var section = { restriction: 'people', dislike: 'wont-eat', cuisine: 'taste', 'store-item': 'stores', store: 'stores', regular: 'regulars', clock: 'rhythm' }[kind];
     if (kind === 'fact') section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[input.getAttribute('data-category')];
     if (!text) { wwkRenderSection(section); return; }
     if (kind === 'restriction') wwkAddRestriction(input.getAttribute('data-member'), text);
@@ -13413,6 +13502,67 @@
     else if (kind === 'store') wwkAddStore(text);
     else if (kind === 'regular') wwkRegularAdd(text);
     else if (kind === 'fact') wwkAddFact(input.getAttribute('data-category'), text);
+    else if (kind === 'clock') wwkSetClockCity(text);
+  }
+
+  // ---------- Your clock (2026-10-13) ----------
+  // households.timezone, the clock every "today" is read on. Shown as the
+  // city the zone is named after; set through the same answer Today's
+  // one-time ask and setup's dinner-time line give (POST /api/household/
+  // clock), so changing it here is also an answer and is never asked again.
+  function wwkClockHtml() {
+    var onFile = shellWho.timezone || '';
+    var phone = phoneTimeZone();
+    var chips = onFile ? wwkChip(zoneCity(onFile), 'data-wwk="clock" data-value="' + escapeHtml(onFile) + '"', 'on') : '';
+    if (phone && phone !== onFile) {
+      chips += wwkChip('This phone: ' + zoneCity(phone), 'data-wwk="clock" data-value="' + escapeHtml(phone) + '"', '');
+    }
+    chips += wwkAddChip('data-wwk="add" data-kind="clock"', 'Another city');
+    return wwkLead('Your clock') + wwkNote('So “tonight” means tonight.') + '<div class="wwk-chips">' + chips + '</div>';
+  }
+
+  // A typed city to the zone named after it, off the browser's own list
+  // (onboarding.html's zoneForCity says the same, for the same reason —
+  // that page doesn't load this file). A zone name typed as one goes as it
+  // is; the server checks it.
+  function zoneForCity(text) {
+    var typed = String(text || '').trim();
+    if (!typed) return '';
+    if (typed.indexOf('/') !== -1) return typed;
+    var want = typed.toLowerCase().replace(/\s+/g, '_');
+    var zones = [];
+    try { zones = Intl.supportedValuesOf('timeZone'); } catch (e) { zones = []; }
+    for (var i = 0; i < zones.length; i++) {
+      if (zones[i].split('/').pop().toLowerCase() === want) return zones[i];
+    }
+    return '';
+  }
+
+  function wwkSetClockCity(text) {
+    var zone = zoneForCity(text);
+    if (!zone) {
+      showToast('I don’t know that one — try the nearest big city.');
+      wwkRenderSection('rhythm');
+      return;
+    }
+    wwkSetClock(zone);
+  }
+
+  async function wwkSetClock(zone) {
+    if (!zone || zone === shellWho.timezone) return;
+    try {
+      var out = await Api.json('/api/household/clock', { method: 'POST', body: { timezone: zone } });
+      shellWho.timezone = (out && out.timezone) || zone;
+      shellWho.timezone_set = true;
+      showToast('Your clock is ' + zoneCity(shellWho.timezone) + ' now.');
+      // "Today" may be a different day on the new clock, and the one-time
+      // ask on Today has been answered.
+      refreshTodayMoves();
+      if (panels.today && panels.today.dataset.built) renderClockAsk(panels.today);
+    } catch (err) {
+      console.warn('Saving the clock failed:', err);
+    }
+    wwkRenderSection('rhythm');
   }
 
   // ---------- freeform facts ----------
@@ -13486,6 +13636,7 @@
         case 'time-limit': return wwkSetTimeLimit(t.getAttribute('data-field'), parseInt(value, 10));
         case 'rhythm': return wwkSetRhythm(t.getAttribute('data-field'), value);
         case 'cooking-who': return wwkSetCookingWho(value);
+        case 'clock': return wwkSetClock(value);
         case 'prep-day': return wwkTogglePrepDay(value);
         case 'shop-day': return wwkSetShopDay(value);
         case 'shop-topup': return wwkSetTopUpDay(value);
@@ -26459,6 +26610,9 @@
       // The household's zone — every "today" on screen reads it
       // (todayLocalStr, householdHourNow). Missing on an older server: the phone's.
       shellWho.timezone = typeof data.timezone === 'string' ? data.timezone : '';
+      // Did anybody ever answer for it? Missing on an older server reads as
+      // answered, so an old server never puts the clock question up.
+      shellWho.timezone_set = data.timezone_set !== false;
       // The other adult's first open (openFirstOpen, below).
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || '';

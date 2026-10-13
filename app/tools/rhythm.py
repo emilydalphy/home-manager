@@ -23,6 +23,7 @@ preferences) is what memory._CONTEXT_SIGNALS' weighting reflects.
 from __future__ import annotations
 
 import json
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn
 from ._shared import EATS_HERE_SQL, household_id
@@ -694,6 +695,64 @@ def get_household_rhythm() -> dict:
     }
 
 
+# ---------- the household's clock (2026-10-13) ----------
+# households.timezone is the clock every screen reads "today" off
+# (cooker.household_zone). Until this nothing asked for it, so every
+# household was on Toronto time. Setup's dinner-time step now confirms the
+# phone's zone, Preferences can change it, and an existing household is
+# asked once if its phone disagrees with a zone nobody chose
+# (households.timezone_set — see db.py's migration for why the flag).
+
+def checked_timezone(name: str) -> str:
+    """An IANA zone name, stripped, or ValueError. The ONE validator for
+    households.timezone — the morning-text settings use it too, so the
+    column has one rule rather than two that can drift."""
+    zone = (name or "").strip()
+    try:
+        ZoneInfo(zone)
+    except (ZoneInfoNotFoundError, ValueError):
+        raise ValueError(f"I don't know the time zone {name!r} — it wants a name like America/Toronto.")
+    return zone
+
+
+def household_clock() -> dict:
+    """The stored zone and whether anybody ever answered for it."""
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT timezone, timezone_set FROM households WHERE id = ?", (household_id(),)
+    ).fetchone()
+    conn.close()
+    return {
+        "timezone": (row["timezone"] if row else "") or "",
+        "timezone_set": bool(row and row["timezone_set"]),
+    }
+
+
+def set_household_timezone(timezone: str = "", keep: bool = False) -> dict:
+    """
+    Answer the clock question: `timezone` (an IANA name) becomes the
+    household's, or `keep=True` says the stored one is right as it is.
+    Either way it is an answer, so timezone_set goes to 1 and the one-time
+    ask never fires again — a phone abroad on a trip is not a reason to
+    re-zone a household (Emily, 2026-09-21: "travel never re-zones").
+    """
+    conn = get_conn()
+    try:
+        if keep:
+            conn.execute("UPDATE households SET timezone_set = 1 WHERE id = ?", (household_id(),))
+        else:
+            zone = checked_timezone(timezone)
+            conn.execute(
+                "UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?",
+                (zone, household_id()),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+    _household._log_preference_event("rhythm:timezone", "write")
+    return household_clock()
+
+
 def save_rhythm_answers(
     lunch_location: dict[str, str] | None = None,
     meals_together: str = "",
@@ -706,6 +765,7 @@ def save_rhythm_answers(
     shop_day=None,
     top_up_shop_day=None,
     remind_before_shop=None,
+    timezone: str = "",
     source: str = "onboarding",
 ) -> dict:
     """
@@ -780,6 +840,11 @@ def save_rhythm_answers(
     _validate_shop_day(shop_day, "shop_day")
     _validate_shop_day(top_up_shop_day, "top_up_shop_day")
 
+    # The household's clock, confirmed on setup's dinner-time step (or
+    # changed in Preferences' rhythm section): a zone said here is an
+    # answer, so the flag goes with it. '' leaves both alone.
+    zone = checked_timezone(timezone) if (timezone or "").strip() else ""
+
     # -- every field above is valid; now the one write, one commit. --
     logged: list[str] = []
     conn = get_conn()
@@ -809,6 +874,12 @@ def save_rhythm_answers(
         if normalized_prep_days is not None:
             _upsert(conn, "", "", "prep_days", json.dumps(normalized_prep_days), "", source)
             logged.append("rhythm:prep_days")
+        if zone:
+            conn.execute(
+                "UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?",
+                (zone, household_id()),
+            )
+            logged.append("rhythm:timezone")
         conn.commit()
     except Exception:
         conn.rollback()

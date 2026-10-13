@@ -500,6 +500,17 @@
     font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ink-on-celadon);
   }
   .uw-sum[hidden] { display: none; }
+  /* The household's clock (2026-10-13): a readback with a correction on
+     it, so it is the .uw-sum line rather than a chip — the step's one
+     apricot stays Continue (rule 5). "Change" is a word in the sentence,
+     with its tap target grown by padding rather than by the line. */
+  .tz-change {
+    background: none; border: 0; margin: -12px 0; padding: 12px 4px;
+    font: inherit; color: var(--ink-strong); text-decoration: underline; cursor: pointer;
+  }
+  .tz-ask[hidden], .tz-note[hidden] { display: none; }
+  .tz-ask { display: flex; flex-direction: column; gap: 8px; }
+  .tz-note { margin: 0; font-size: 14px; line-height: 1.4; color: var(--ink-secondary); }
 
   /* Setup's last answer, "Anything else I should know?" (Loop Board,
      Emily 2026-10-04). The box with the mic in it, and the confirm card
@@ -1606,6 +1617,16 @@
     <p class="q-line">So I can tell you when to start cooking.</p>
     <div class="q-controls">
       <div class="rhythm-chip-row" id="rhythm-dinner-window-chips"></div>
+      <!-- The household's clock (Loop Board "Nothing ever asks the household
+           where they live", Emily 2026-10-12: "ask on the dinner-time step").
+           The phone's own zone, confirmed rather than asked; "Change" (or a
+           phone that can't say) opens the city box. buildClockLine. -->
+      <p class="uw-sum" id="tz-line" hidden></p>
+      <div class="tz-ask" id="tz-ask" hidden>
+        <label class="q-sub" for="tz-input">Which city&rsquo;s clock should I keep?</label>
+        <input type="text" id="tz-input" placeholder="Your city" autocomplete="address-level2" />
+        <p class="tz-note" id="tz-note" hidden></p>
+      </div>
       <div class="q-group">
         <p class="q-sub">How long can dinner take on a weeknight?</p>
         <p class="q-line">Monday to Friday, start to finish.</p>
@@ -2400,7 +2421,87 @@ function renderLunchMaxChips() {
 function buildDinnerTimeStep() {
   renderDinnerWindowChips();
   renderWeeknightMaxChips();
+  buildClockLine();
 }
+
+// ---------- The household's clock (2026-10-13) ----------
+// Every screen reads "today" off households.timezone, which nothing ever
+// asked for — so everybody was on Toronto time (Loop Board "Nothing ever
+// asks the household where they live"). Emily, 2026-09-21: take it from
+// the PHONE and confirm it in one line that names the city and says why;
+// 2026-10-12: on this step, the one that already asks for a clock time.
+// Sent with the rest of the rhythm at the end of setup (saveRhythmAnswers)
+// and stored as answered, so the app never asks again — not even from an
+// airport. A phone that can't say opens the city box instead.
+//
+// UTC / Etc/* is what a phone says when it has not been told, not where
+// anybody lives, so it reads as "can't say".
+function phoneTimeZone() {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    return (zone.indexOf('/') === -1 || zone.indexOf('Etc/') === 0) ? '' : zone;
+  } catch (e) { return ''; }
+}
+// "America/Vancouver" -> "Vancouver", "America/Argentina/Buenos_Aires" ->
+// "Buenos Aires": the city the zone is named after.
+function zoneCity(zone) {
+  return String(zone || '').split('/').pop().replace(/_/g, ' ');
+}
+// A typed city to the zone named after it, off the browser's own zone
+// list — no list of ours to keep. A city that isn't a zone's name ("Ottawa"
+// is America/Toronto) is not found, and the note says to try the nearest
+// big one. Something typed as a zone name already goes as it is; the
+// server checks it (rhythm.checked_timezone).
+function zoneForCity(text) {
+  const typed = String(text || '').trim();
+  if (!typed) return '';
+  if (typed.indexOf('/') !== -1) return typed;
+  const want = typed.toLowerCase().replace(/\s+/g, '_');
+  let zones = [];
+  try { zones = Intl.supportedValuesOf('timeZone'); } catch (e) { zones = []; }
+  return zones.find(z => z.split('/').pop().toLowerCase() === want) || '';
+}
+
+let clockZone = phoneTimeZone();   // what the clock will be set to; '' = say nothing
+let clockAsking = !clockZone;      // the city box is open
+// Continue on the step is the confirmation; Skip is not, so a skipped
+// step sends no clock and Today can still ask once (the card: "a
+// household that dismisses the line is no worse off than today").
+let clockSaid = false;
+
+function buildClockLine() {
+  const line = document.getElementById('tz-line');
+  const ask = document.getElementById('tz-ask');
+  line.hidden = !clockZone || clockAsking;
+  if (!line.hidden) {
+    line.innerHTML = '<b>Your clock: ' + escapeHtmlLocal(zoneCity(clockZone)) + '.</b> ' +
+      'So &ldquo;tonight&rdquo; means tonight. ' +
+      '<button type="button" class="tz-change" id="tz-change">Change</button>';
+    document.getElementById('tz-change').onclick = () => {
+      clockAsking = true;
+      buildClockLine();
+      document.getElementById('tz-input').focus();
+    };
+  }
+  ask.hidden = !clockAsking;
+}
+
+function takeTypedCity() {
+  const input = document.getElementById('tz-input');
+  const note = document.getElementById('tz-note');
+  if (!input.value.trim()) { note.hidden = true; return; }
+  const zone = zoneForCity(input.value);
+  if (!zone) {
+    note.textContent = 'I don’t know that one — try the nearest big city.';
+    note.hidden = false;
+    return;
+  }
+  note.hidden = true;
+  clockZone = zone;
+  clockAsking = false;
+  buildClockLine();
+}
+
 
 // ---------- Weekday lunches (Onboarding regrouped, 2026-10-06) ----------
 // Emily's locked screen (2026-10-05): "What does each person need for
@@ -2789,6 +2890,10 @@ async function saveRhythmAnswers() {
   // nothing for an omitted field to preserve at the end of setup.
   body.shop_day = shopDay;
   body.top_up_shop_day = shopTopUpDay;
+  // The clock only when there is one to say: '' leaves the stored zone
+  // and its never-answered flag alone, so a household that skipped is
+  // no worse off than before and Today can still ask once.
+  if (clockSaid && clockZone) body.timezone = clockZone;
   const res = await Api.fetch('/api/onboarding/rhythm', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
@@ -5593,11 +5698,20 @@ document.getElementById('prep-next').onclick = () => {
 VARIETY_STEPS.forEach(key => {
   document.getElementById(key + '-next').onclick = () => { goForward(key); };
 });
-document.getElementById('dinner-time-next').onclick = () => { goForward('dinner-time'); };
+document.getElementById('dinner-time-next').onclick = () => {
+  if (clockAsking) takeTypedCity();
+  clockSaid = true;
+  goForward('dinner-time');
+};
+document.getElementById('tz-input').addEventListener('change', takeTypedCity);
+document.getElementById('tz-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); takeTypedCity(); }
+});
 document.getElementById('lunch-needs-next').onclick = () => { goForward('lunch-needs'); };
 document.getElementById('snacks-next').onclick = () => { goForward('snacks'); };
 document.getElementById('dinner-time-skip').onclick = () => {
   rhythmDinnerWindow = '';
+  clockSaid = false;
   goForward('dinner-time');
 };
 document.getElementById('shop-day-next').onclick = () => { goForward('shop-day'); };
@@ -6070,6 +6184,7 @@ function onboardingDraftSnapshot() {
     prep: { answer: prepAnswer, days: prepDayKeys },
     variety: varietyChoice,
     dinner: { window: rhythmDinnerWindow, weeknightMax: weeknightMaxMinutes, lunchMax: weekdayLunchMaxMinutes },
+    clock: { zone: clockZone, asking: clockAsking, said: clockSaid },
     eatingStyle: { chips: chips('eating-style-chips'), text: val('eating-style') },
     wontEat: { presets: chips('wont-eat-presets'), items: wontEatItems.slice(), typing: val('wont-eat-input') },
     excited: { chips: chips('excited-chips'), typing: val('excited-custom') },
@@ -6210,6 +6325,9 @@ function applyOnboardingDraft(d) {
   prepDayKeys = d.prep.days;
   varietyChoice = d.variety;
   rhythmDinnerWindow = d.dinner.window;
+  // A draft saved before the clock line has no `clock`: the phone's own
+  // zone, as on a fresh page.
+  if (d.clock) { clockZone = d.clock.zone || ''; clockAsking = !!d.clock.asking; clockSaid = !!d.clock.said; }
   weeknightMaxMinutes = d.dinner.weeknightMax;
   weekdayLunchMaxMinutes = d.dinner.lunchMax;
   // The chip rows built once: build them now and light what was lit.

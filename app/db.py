@@ -683,6 +683,16 @@ _MIGRATIONS = [
     # gap) and Emily's is Toronto. It is the only place a household's zone
     # is stored; nothing else reads it yet.
     ("households", "timezone", "TEXT NOT NULL DEFAULT 'America/Toronto'"),
+    # Was the zone above ever ANSWERED? (Loop Board "Nothing ever asks the
+    # household where they live", Emily 2026-10-12.) The snacks_per_week_set
+    # lesson: a NOT NULL DEFAULT column cannot tell Toronto-by-default from
+    # Toronto-on-purpose, so a phone in Vancouver opening a household nobody
+    # ever asked is a question, and the same phone in a household that said
+    # "Toronto" is somebody travelling — never asked again. 1 once setup's
+    # dinner-time line, Preferences or the morning text set it, or once the
+    # household answered the one-time "Looks like you're in…" ask either way.
+    # Backfilled only for a zone that is not the default (somebody chose it).
+    ("households", "timezone_set", "INTEGER NOT NULL DEFAULT 0"),
     ("households", "morning_text_time", "TEXT NOT NULL DEFAULT '07:00'"),
     # Loop Board "Morning message: the household chooses what it includes"
     # (Emily, 2026-10-04): ONE setting for the whole household, not one per
@@ -1183,6 +1193,21 @@ def _backfill_snacks_per_week_set(conn):
     )
 
 
+def _backfill_timezone_set(conn):
+    """
+    A household whose zone is anything but the column's default chose it —
+    the morning-text settings were its only writer before timezone_set
+    existed — so it is an answer, and the one-time ask must not fire for
+    it. A household still on the default is left at 0: it may or may not
+    live in Toronto, and that is exactly the question. Idempotent: only
+    ever flips 0 -> 1.
+    """
+    conn.execute(
+        "UPDATE households SET timezone_set = 1 "
+        "WHERE timezone_set = 0 AND timezone != 'America/Toronto' AND timezone != ''"
+    )
+
+
 def _backfill_snack_dishes(conn):
     """
     Different snack dishes a week is never below snacks a day (2026-09-27):
@@ -1226,6 +1251,7 @@ def _run_migrations(conn):
     _backfill_snacks_per_week_set(conn)
     _backfill_meal_counts_set(conn)
     _backfill_snack_dishes(conn)
+    _backfill_timezone_set(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _backfill_primary_member(conn)
