@@ -2320,7 +2320,11 @@
     prep:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l9.5-9.5"/><path d="M11 8l5.5-5.5c1.6 1.6 2.4 4.2 1.2 6.4L15 11.5z"/></svg>',
     shop:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
+    // A slot the app handed back (moves.py `open_slot`): the empty plate —
+    // the reheat's plate without its steam, since nothing is on it yet.
+    open_slot:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.6"/></svg>'
   };
 
   // WHOSE MOVE IT IS — the one wording, and the only place a name is put
@@ -2571,7 +2575,11 @@
         '<span class="day-node-title">' + title + '</span>' + meta + why +
       '</button>';
     }
-    return '<div class="day-node is-' + state + '" data-move-id="' + id + '">' +
+    // An open slot's one line IS the question — the app's own sentence for
+    // why it handed the meal back — so it wraps rather than ellipsing
+    // halfway through it (shell.css .day-node.is-open-slot).
+    var kindCls = move.kind === 'open_slot' ? ' is-open-slot' : '';
+    return '<div class="day-node is-' + state + kindCls + '" data-move-id="' + id + '">' +
       moveTickHtml(move) +
       body +
       // A shop's second and later store rows are the same move: one door
@@ -2627,7 +2635,9 @@
   // Which group a move belongs in. Cooking and reheating are Cook; a
   // fridge move, a soak, a marinade and a batch-prep task are Prep. Until
   // 2026-10-05 the second list was rows inside the first.
-  var COOK_KINDS = { cook: 1, reheat: 1 };
+  // An open slot is a meal still to decide, so it sits with the meals, in
+  // its own place in the day (Emily, 2026-10-12: a row, not a card).
+  var COOK_KINDS = { cook: 1, reheat: 1, open_slot: 1 };
 
   // THE DAY'S MEALS — the first card on Today, and the one the card is
   // named after. One row per planned meal (moves.py's payload carries them
@@ -3904,6 +3914,13 @@
     // would silently do nothing.
     if (target.tab === 'week' && target['mealsView'] === 'cook') {
       return openRecipeFor(target['mealsFocus'] || true, { label: 'Today', tab: 'today' });
+    }
+    // An open slot (moves.py _open_slot_moves) is answered where its Pick
+    // already lives: that day on Plan, the slot's card ringed and scrolled
+    // to — the same landing a chat change uses (focusChangedWeekDay), so
+    // nothing new answers it. A payload without planDay still lands on Plan.
+    if (target.tab === 'week' && target.planDay) {
+      return focusChangedWeekDay(target.planDay.date, target.planDay.slot);
     }
     if (target.tab) return activateTab(target.tab, true);
   }
@@ -19706,6 +19723,10 @@
       // list, so anything showing that list is now stale. Background — an
       // answered question is not a new list, and the household is on Plan.
       if (data.status === 'approved') refreshGrocerySurfaces();
+      // Today draws an open slot as a row of its own (moves._open_slot_
+      // moves) and its "Pick" lands here — so the answer has to take that
+      // row off Today, or going back shows the question still asked.
+      refreshTodayMoves();
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Open slot resolution failed:', err);

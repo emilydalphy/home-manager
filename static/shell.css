@@ -769,6 +769,9 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    text-decoration whose colour transitions (see Motion, animation 3). */
 .day-node.is-done .day-node-title { color: var(--ink-done); }
 .day-node.is-done .day-node-meta { color: var(--ink-done); }
+/* An open slot's line is the app's sentence for why the meal is the
+   household's to fill (moves._open_slot_moves) — cut off, it says nothing. */
+.day-node.is-open-slot .day-node-meta { white-space: normal; }
 
 /* ---- The tag: which part of the day, in the eyebrow face ---- */
 .day-node-tag {

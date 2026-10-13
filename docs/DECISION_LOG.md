@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An open slot today is a row on Today's timeline, any meal** (2026-10-13;
+  branch `overnight/open-slot-row-on-today`; tests
+  `tests/test_open_slot_row_on_today.py`). Emily 2026-10-12: "a ROW on the
+  Today timeline (not a needs-you card), all slots". `get_cooker_view` now
+  carries `open_slots` (off the plan read it already makes), and
+  `moves._open_slot_moves` turns each of today's into kind `open_slot`: "Lunch
+  needs your call", the app's `open_reason` as its (wrapping) line, at the
+  slot's own hour, in the Cook group. Never featured, never tomorrow's card,
+  not tickable (`set_move_done("open:N")` is a no-op); tapping lands on that
+  day on Plan via `focusChangedWeekDay`, where Pick already lives, and
+  `resolveOpenSlot` now refreshes Today. Why: `moves_for_day` built nothing
+  for a slot with no meal, so an open breakfast/lunch/snack was on no screen
+  of Today. An open dinner keeps its needs-you card too (row + card).
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
