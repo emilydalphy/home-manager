@@ -104,8 +104,8 @@ def first_open_state(member: dict | None = None) -> dict:
             ).rowcount
             if claimed:
                 conn.execute(
-                    "UPDATE members SET first_open_seen_at = ? WHERE id = ?",
-                    (SEEN_SET_UP, member["id"]),
+                    "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND household_id = ?",
+                    (SEEN_SET_UP, member["id"], household_id()),
                 )
                 conn.commit()
                 return {"show": False, "set_up_by": member["name"]}
@@ -116,8 +116,8 @@ def first_open_state(member: dict | None = None) -> dict:
             ).fetchone()["set_up_by_member_id"]
         if set_up_by == member["id"]:
             conn.execute(
-                "UPDATE members SET first_open_seen_at = ? WHERE id = ?",
-                (SEEN_SET_UP, member["id"]),
+                "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND household_id = ?",
+                (SEEN_SET_UP, member["id"], household_id()),
             )
             conn.commit()
             return {"show": False, "set_up_by": member["name"]}
@@ -180,8 +180,9 @@ def record_setup_adult(candidate_ids: list[int] | None = None) -> int | None:
         if not claimed:
             return None
         conn.execute(
-            "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND first_open_seen_at = ''",
-            (SEEN_SET_UP, chosen),
+            "UPDATE members SET first_open_seen_at = ? "
+            "WHERE id = ? AND household_id = ? AND first_open_seen_at = ''",
+            (SEEN_SET_UP, chosen, household_id()),
         )
         conn.commit()
         return chosen

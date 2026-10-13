@@ -249,10 +249,6 @@ _LATER_TRANCHE = {
         (1, "SELECT planning_mode FROM weekly_plans WHERE id = ?"),
         (1, "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?"),
     ],
-    "app/tools/first_open.py": [
-        (2, "UPDATE members SET first_open_seen_at = ? WHERE id = ?"),
-        (1, "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND first_open_seen_at = ''"),
-    ],
     "app/tools/inventory.py": [
         (1, "DELETE FROM inventory_items WHERE id = ?"),
         (1, "UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ?"),
@@ -293,6 +289,7 @@ _LATER_TRANCHE = {
 _DONE_MODULES = (
     "app/tools/defrost.py",
     "app/tools/digest.py",
+    "app/tools/first_open.py",
     "app/tools/grocery.py",
     "app/tools/holidays.py",
     "app/tools/household.py",
