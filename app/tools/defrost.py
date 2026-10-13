@@ -1237,7 +1237,10 @@ def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
         "   JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
         "   JOIN weekly_plans wp ON wp.id = e.weekly_plan_id "
         "   WHERE l.grocery_item_id = g.id AND e.weekly_plan_id != ? "
-        f"  AND wp.status IN ({live})) AS shared_with "
+        f"  AND wp.status IN ({live})) AS shared_with, "
+        "  EXISTS (SELECT 1 FROM meal_plan_grocery_links l "
+        "          JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+        "          WHERE l.grocery_item_id = g.id AND e.weekly_plan_id = ?) AS has_this_plan "
         "FROM grocery_items g WHERE g.household_id = ? "
         "AND (g.source_weekly_plan_id = ? OR g.source_weekly_plan_id IS NULL "
         "     OR EXISTS (SELECT 1 FROM meal_plan_grocery_links l "
@@ -1245,7 +1248,7 @@ def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
         "                WHERE l.grocery_item_id = g.id AND e.weekly_plan_id = ?)) "
         f"AND ((g.status IN ({','.join('?' * len(_STILL_TO_BUY_STATUSES))}) AND g.excluded_from_list = 0) "
         "OR (g.status = 'removed' AND g.removed_by = ?))",
-        (weekly_plan_id, *_LIVE_PLAN_STATUSES, household_id(), weekly_plan_id, weekly_plan_id,
+        (weekly_plan_id, *_LIVE_PLAN_STATUSES, weekly_plan_id, household_id(), weekly_plan_id, weekly_plan_id,
          *_STILL_TO_BUY_STATUSES, FREEZER_REMOVED_BY),
     ).fetchall()
     conn.close()
@@ -1264,6 +1267,21 @@ def _own_lines(lines: list[dict]) -> list[dict]:
     """The lines a tapped chip may take off the list: not shared with
     another live plan's meal."""
     return [r for r in lines if not r["shared_with"]]
+
+
+def _plans_part_on(lines: list[dict]) -> list[dict]:
+    """
+    Of _own_lines, the ones a tapped chip really takes something off — the
+    lines the plan wrote, and a household's own line only where this
+    plan's meals are counted into it (_set_aside_own_lines leaves a hand
+    add carrying none of them to buy, 2026-10-12). Without this the step
+    promised "off the shopping list" over a hand-added salmon the answer
+    then left on it (review, 2026-10-13).
+    """
+    return [
+        r for r in _own_lines(lines)
+        if (r["source_weekly_plan_id"] is not None and not r.get("staple_id")) or r.get("has_this_plan")
+    ]
 
 
 def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
@@ -1367,10 +1385,12 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
             if description in frozen_nights:
                 frozen = True
         if nights:
-            own = _own_lines(lines[key])
+            own = _plans_part_on(lines[key])
             if own and short_of_time:
                 reason = ON_LIST_TOO_LATE
-            elif lines[key] and not own:
+            elif not own and any(r["shared_with"] for r in lines[key]):
+                # A hand-added line with none of this plan's meals in it is
+                # neither: it is simply not the step's to take off.
                 reason = ON_LIST_SHARED
             else:
                 reason = None

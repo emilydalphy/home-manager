@@ -28,6 +28,10 @@ why*, not duplicating the diff.
   `restate_frozen_after_batch_change` splits their line too (the batch's
   nights only). A household line with none of the plan's meals, or amounts it
   can't read apart, now stays to buy (it used to be set aside).
+  Review 2026-10-13: `meat_items_for_plan` still said `on_list` (→ "off the
+  shopping list") over such a line; it now counts only lines the plan wrote or
+  that carry this plan's links (`_plans_part_on`). Swapping a frozen night
+  away and back re-buying the salmon is on `main` too — filed as its own card.
 
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch

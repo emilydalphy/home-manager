@@ -113,3 +113,29 @@ def test_a_swap_of_the_reheat_night_leaves_their_amount_and_buys_no_frozen_salmo
     tools.swap_meal_in_plan(plan_id, _day(4), "Bean Chili", slot="dinner")
 
     assert _to_buy() == ["2 lbs"]
+
+
+def test_the_step_promises_off_the_list_only_where_the_plan_has_a_share(client):
+    """Review, 2026-10-13: the plan's salmon is bought; the household then
+    hand-adds two pounds of their own (no meal counted into it). Saying
+    "it's in the freezer" leaves that line to buy, so the step must not
+    say "off the shopping list" over it."""
+    plan_id, _wed, _fri = _salmon_week()
+    conn = get_conn()
+    conn.execute("UPDATE grocery_items SET status = 'purchased' WHERE item = 'Salmon fillets'")
+    conn.commit()
+    conn.close()
+    tools.add_grocery_item("Salmon fillets", quantity="2 lbs", category="seafood", added_by="Emily")
+
+    salmon = next(i for i in tools.meat_items_for_plan(plan_id) if i["item"] == "Salmon fillets")
+    assert salmon["on_list"] is False
+    assert salmon["on_list_reason"] is None, "not another plan's line either"
+
+    tools.confirm_frozen_items(plan_id, ["Salmon fillets"])
+    assert _to_buy() == ["2 lbs"], "and the answer does leave it to buy"
+
+
+def test_a_line_the_plans_share_is_counted_into_still_reads_on_the_list(client):
+    plan_id, _wed, _fri = _salmon_week(own_before="2 lbs")
+    salmon = next(i for i in tools.meat_items_for_plan(plan_id) if i["item"] == "Salmon fillets")
+    assert salmon["on_list"] is True
