@@ -3319,6 +3319,11 @@ def today_moves(date: str | None = None):
     fetches it used to make. See app/tools/moves.py for the ranking rule.
     """
     try:
+        # A week that ended with unbought lines while a later week was
+        # already approved: they go to Shop's keep-or-drop step on this,
+        # the first read after its last day (grocery.set_aside_ended_weeks)
+        # — before the moves are counted, so Today's Shop row agrees.
+        tools.set_aside_ended_weeks()
         payload = tools.today_moves(date)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -5926,6 +5931,8 @@ def get_grocery_list_view(status: str = "needed"):
     why they no longer are.
     """
     try:
+        if status == "needed":
+            tools.set_aside_ended_weeks()  # the Monday ask — see today_moves
         result = tools.get_grocery_list_by_section(status=status)
         result["multi_store"] = tools.is_multi_store_household()
         if status == "needed":
@@ -6017,6 +6024,8 @@ def get_grocery_list_by_store_view(status: str = "needed"):
     there — before_shop included.
     """
     try:
+        if status == "needed":
+            tools.set_aside_ended_weeks()  # the Monday ask — see today_moves
         result = tools.get_grocery_list_by_store(status=status)
         if status == "needed":
             needed = [it for store in result["stores"] for s in store["sections"] for it in s["items"]]
@@ -6229,6 +6238,9 @@ def get_carried_over_items_view():
     week's recipes want it too, so the two are never shown as one number.
     """
     try:
+        # Shop reads this beside the list, in parallel: whichever read is
+        # first does the Monday ask, so the step is never a read behind.
+        tools.set_aside_ended_weeks()
         items = tools.list_carried_over_items()
     except Exception as e:
         logger.exception("Carried-over list lookup failed")

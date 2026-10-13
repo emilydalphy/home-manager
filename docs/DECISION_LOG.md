@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A week that ends while a later week is approved asks keep-or-drop on
+  the next open** (2026-10-13; branch `overnight/ended-week-asks-on-monday`;
+  tests `tests/test_ended_week_asks_on_monday.py`). `grocery.set_aside_ended_weeks`
+  runs `set_aside_carried_over_items` against the live approved plan on the
+  first read of Today (`/api/today/moves`) or Shop (list, by-store, carried-
+  over) after a week's last day, household clock, under BEGIN IMMEDIATE. Why:
+  approval only sets aside weeks already ENDED, so approving next week early
+  meant this week's leftovers were never asked about. No approved live week:
+  nothing moves (approval asks). Answers are never re-asked: an answered line
+  is no longer a needed line of the ended plan.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

@@ -1845,6 +1845,60 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     return [{"item_id": r["id"], "item": r["item"], "quantity": r["quantity"] or ""} for r in set_aside]
 
 
+def set_aside_ended_weeks() -> list[dict]:
+    """
+    The Monday ask (Loop Board "When a week ends with unbought items and
+    next week was already approved, ask keep-or-drop on Monday", Emily
+    2026-10-03; rebuilt on main 2026-10-13). Returns the lines set aside.
+
+    set_aside_carried_over_items runs when a week is APPROVED, and only
+    sets aside weeks that have ENDED by then — so a household that approved
+    next week on Friday, while this week was still running, was never asked
+    about this week's leftovers at all: on Monday they simply stayed on the
+    list, groceries for meals that already happened. This is the same set-
+    aside, run on the first read of Today or Shop after a week's last day,
+    on the household's clock: the ended week's unbought lines go into the
+    same "Still on the list from last week" step, with the same Keep /
+    Don't need / Decide later. Nothing new is built for the asking.
+
+    Only when a later week is already APPROVED and still live — otherwise
+    approving the next week asks, exactly as it always has. What moves is
+    exactly what approval moves (a plan's line, still needed, not set
+    aside as "somewhere else", not a staple's — see
+    set_aside_carried_over_items), from a plan whose last day is before
+    today; a week on its last day is still running.
+
+    Opening again never asks twice. An answered line is no longer a
+    'needed' line of the ended plan — Don't need is removed, Keep either
+    went onto this week's line or became the household's own want (source
+    NULL), and Decide later is still 'carried', waiting — so a second read
+    finds nothing to move. BEGIN IMMEDIATE because Today and Shop read at
+    once on an open: two passes must not both see the same line.
+    """
+    today = _household_today().isoformat()
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        live_approved = None
+        for plan in conn.execute(
+            "SELECT id, week_start_date, content_start_date, day_count FROM weekly_plans "
+            "WHERE household_id = ? AND status = 'approved' ORDER BY id DESC",
+            (household_id(),),
+        ).fetchall():
+            start, days = _weekly_plan.plan_period(plan)
+            if days > 0 and _weekly_plan.period_end_date(start, days) >= today:
+                live_approved = plan["id"]
+                break
+        if live_approved is None:
+            conn.rollback()
+            return []
+        set_aside = set_aside_carried_over_items(live_approved, conn=conn)
+        conn.commit()
+    finally:
+        conn.close()
+    return set_aside
+
+
 def _this_weeks_line(conn, item: str, quantity: str):
     """
     The line a carried-over amount would merge into, if this week's
