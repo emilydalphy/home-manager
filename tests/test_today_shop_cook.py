@@ -72,6 +72,7 @@ def _prelude() -> str:
         + _function("moveRecipeTarget")
         + _function("moveDishHtml")
         + _function("tomorrowCardHtml")
+        + _function("todayShownMoves")  # what Today draws (2026-10-13)
         + _function("renderTodayMoves")
         + _function("renderTodayDock")
         + _function("todayIsEmpty")

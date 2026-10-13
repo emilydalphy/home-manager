@@ -86,6 +86,7 @@ _PRELUDE = (
     "function runTodayMoveAction(){}\n function dismissPlanWeekNudge(){}\n"
     "function startPlanningWeek(){}\n function openAskSheet(){}\n"
     "var planningPeriodDefault = null;\n"
+    + _function("todayShownMoves")  # what Today draws (2026-10-13)
     + _function("todayIsEmpty")
     + _function("todayNeedsPlan")
     + _function("tonightIsOff")
