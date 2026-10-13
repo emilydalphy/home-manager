@@ -87,8 +87,11 @@ def _harness(*extra: str) -> str:
         "wwkFactsHtml", "wwkStepperHtml", "wwkSnackDishes", "wwkProteinState", "wwkMem",
         "wwkRhythmHtml", "wwkTimeLimitHtml", "wwkTasteHtml",
         "wwkCuisineStored", "wwkIsPresetCuisine", *USUAL_WEEK_FNS, *extra,
+        # "Your clock" (2026-10-13) is a row of the rhythm section.
+        "wwkClockHtml", "phoneTimeZone", "zoneCity",
     ]
     return (
+        "var shellWho = { timezone: 'America/Toronto', timezone_set: true };\n"
         "var wwkState = { facts: [], pendingCookWho: false, openSections: {}, needs: null, lunchByDay: {} };\n"
         "var prefsState = { memory: null };\n"
         + _constants() + "\n"
