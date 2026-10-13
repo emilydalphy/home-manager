@@ -109,3 +109,53 @@ def test_with_no_later_week_approved_approval_asks_as_it_always_has(signed_in):
     signed_in.get("/api/today/moves")
     signed_in.get("/api/grocery-list/carried-over")
     assert _status(line) == "needed"
+
+
+
+# ---------- a locked database (review, 2026-10-13) ----------
+# The ask runs on every read of Today and Shop. Taking the write lock on
+# every one of them made both answer 500 "database is locked" while any
+# other write held it past the busy timeout.
+
+@pytest.fixture
+def lock_held(monkeypatch):
+    """Call it to have another connection hold the write lock — with a
+    short busy timeout, so a request that wants the lock gives up in a
+    moment rather than five seconds."""
+    import sqlite3
+
+    from app import db as _db
+
+    real_connect = sqlite3.connect
+    monkeypatch.setattr(_db.sqlite3, "connect", lambda *a, **k: real_connect(*a, **{**k, "timeout": 0.2}))
+    holders = []
+
+    def hold():
+        holder = real_connect(_db.DB_PATH)
+        holder.execute("BEGIN IMMEDIATE")
+        holders.append(holder)
+
+    yield hold
+    for holder in holders:
+        holder.rollback()
+        holder.close()
+
+
+_READS = ("/api/today/moves", "/api/grocery-list/carried-over", "/api/grocery-list/by-store?status=needed")
+
+
+def test_with_nothing_to_move_a_read_never_asks_for_the_lock(signed_in, week_ended_with_next_approved, lock_held, caplog):
+    _line("Oat milk", None)
+    lock_held()
+    for path in _READS:
+        assert signed_in.get(path).status_code == 200, path
+    # Not merely survived: it never waited on the lock at all.
+    assert "Setting aside an ended week" not in caplog.text
+
+
+def test_a_locked_database_never_stops_today_or_shop_loading(signed_in, week_ended_with_next_approved, lock_held):
+    line = _line("Leeks", week_ended_with_next_approved)
+    lock_held()
+    for path in _READS:
+        assert signed_in.get(path).status_code == 200, path
+    assert _status(line) == "needed", "nothing moved while locked — the next read asks"

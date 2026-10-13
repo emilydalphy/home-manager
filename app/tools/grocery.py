@@ -1872,23 +1872,24 @@ def set_aside_ended_weeks() -> list[dict]:
     'needed' line of the ended plan — Don't need is removed, Keep either
     went onto this week's line or became the household's own want (source
     NULL), and Decide later is still 'carried', waiting — so a second read
-    finds nothing to move. BEGIN IMMEDIATE because Today and Shop read at
-    once on an open: two passes must not both see the same line.
+    finds nothing to move.
+
+    It runs on every read of Today and Shop, so it must cost a read
+    nothing when there is nothing to do: a plain read decides first, and
+    only a read that finds a line to move takes the write lock (review,
+    2026-10-13 — taking BEGIN IMMEDIATE on every read made Today and Shop
+    answer 500 "database is locked" while any other write held the lock
+    past the busy timeout). The decision is made again inside the lock,
+    because Today and Shop read at once on an open and two passes must not
+    both move the same line.
     """
     today = _household_today().isoformat()
     conn = get_conn()
     try:
+        if _ended_week_to_ask_about(conn, today) is None:
+            return []
         conn.execute("BEGIN IMMEDIATE")
-        live_approved = None
-        for plan in conn.execute(
-            "SELECT id, week_start_date, content_start_date, day_count FROM weekly_plans "
-            "WHERE household_id = ? AND status = 'approved' ORDER BY id DESC",
-            (household_id(),),
-        ).fetchall():
-            start, days = _weekly_plan.plan_period(plan)
-            if days > 0 and _weekly_plan.period_end_date(start, days) >= today:
-                live_approved = plan["id"]
-                break
+        live_approved = _ended_week_to_ask_about(conn, today)
         if live_approved is None:
             conn.rollback()
             return []
@@ -1897,6 +1898,40 @@ def set_aside_ended_weeks() -> list[dict]:
     finally:
         conn.close()
     return set_aside
+
+
+def _ended_week_to_ask_about(conn, today: str) -> int | None:
+    """
+    The live approved plan to set aside against — but only when there is
+    something to set aside: a still-needed plan line (or an unticked spice,
+    which the set-aside clears) from a plan whose last day is before
+    `today`, not set aside as "somewhere else", not a staple's. None
+    otherwise. Read only.
+    """
+    live_approved = None
+    ended = set()
+    for plan in conn.execute(
+        "SELECT id, status, week_start_date, content_start_date, day_count FROM weekly_plans "
+        "WHERE household_id = ? ORDER BY id DESC",
+        (household_id(),),
+    ).fetchall():
+        start, days = _weekly_plan.plan_period(plan)
+        end = _weekly_plan.period_end_date(start, days)
+        if plan["status"] == "approved" and days > 0 and end >= today:
+            if live_approved is None:
+                live_approved = plan["id"]
+        elif start <= today and end < today:
+            ended.add(plan["id"])
+    if live_approved is None or not ended:
+        return None
+    marks = ",".join("?" * len(ended))
+    waiting = conn.execute(
+        "SELECT 1 FROM grocery_items WHERE household_id = ? AND ("
+        "(status = 'needed' AND excluded_from_list = 0 AND staple_id IS NULL) OR status = 'spice') "
+        f"AND source_weekly_plan_id IN ({marks}) LIMIT 1",
+        (household_id(), *sorted(ended)),
+    ).fetchone()
+    return live_approved if waiting else None
 
 
 def _this_weeks_line(conn, item: str, quantity: str):

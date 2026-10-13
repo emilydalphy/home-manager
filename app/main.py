@@ -3309,6 +3309,19 @@ def defrost_today():
     return {"tasks": tasks}
 
 
+def _ask_about_ended_weeks() -> None:
+    """
+    The Monday ask (grocery.set_aside_ended_weeks), on Today's and Shop's
+    reads. Never the reason a screen fails to load: a locked database or
+    anything else here is logged, and the screen loads with the list as it
+    stands — the next read asks.
+    """
+    try:
+        tools.set_aside_ended_weeks()
+    except Exception:
+        logger.exception("Setting aside an ended week's lines failed; the screen loads without it")
+
+
 @app.get("/api/today/moves")
 def today_moves(date: str | None = None):
     """
@@ -3323,7 +3336,7 @@ def today_moves(date: str | None = None):
         # already approved: they go to Shop's keep-or-drop step on this,
         # the first read after its last day (grocery.set_aside_ended_weeks)
         # — before the moves are counted, so Today's Shop row agrees.
-        tools.set_aside_ended_weeks()
+        _ask_about_ended_weeks()
         payload = tools.today_moves(date)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -5932,7 +5945,7 @@ def get_grocery_list_view(status: str = "needed"):
     """
     try:
         if status == "needed":
-            tools.set_aside_ended_weeks()  # the Monday ask — see today_moves
+            _ask_about_ended_weeks()
         result = tools.get_grocery_list_by_section(status=status)
         result["multi_store"] = tools.is_multi_store_household()
         if status == "needed":
@@ -6025,7 +6038,7 @@ def get_grocery_list_by_store_view(status: str = "needed"):
     """
     try:
         if status == "needed":
-            tools.set_aside_ended_weeks()  # the Monday ask — see today_moves
+            _ask_about_ended_weeks()
         result = tools.get_grocery_list_by_store(status=status)
         if status == "needed":
             needed = [it for store in result["stores"] for s in store["sections"] for it in s["items"]]
@@ -6240,7 +6253,7 @@ def get_carried_over_items_view():
     try:
         # Shop reads this beside the list, in parallel: whichever read is
         # first does the Monday ask, so the step is never a read behind.
-        tools.set_aside_ended_weeks()
+        _ask_about_ended_weeks()
         items = tools.list_carried_over_items()
     except Exception as e:
         logger.exception("Carried-over list lookup failed")

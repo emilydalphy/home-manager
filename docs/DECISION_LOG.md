@@ -23,6 +23,10 @@ why*, not duplicating the diff.
   meant this week's leftovers were never asked about. No approved live week:
   nothing moves (approval asks). Answers are never re-asked: an answered line
   is no longer a needed line of the ended plan.
+  Review fix: a read-only check decides first and only a read with a line
+  to move takes BEGIN IMMEDIATE (every read taking it made Today/Shop 500
+  "database is locked" behind another write); the four routes call it
+  through `main._ask_about_ended_weeks`, which logs and never fails the read.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
