@@ -391,96 +391,62 @@ def test_no_statement_reaches_a_household_owned_row_by_id_alone():
 # says nothing.
 # --------------------------------------------------------------------------
 
-_SWEEP_FLOOR = 30
-_SWEEP_FLOOR_MIN_HEADROOM = 5
+# Every by-id statement on an owned table the reader finds in app/, GUARDED
+# OR NOT. Measured 2026-10-13 on 70e633f: 446, of which 398 guarded. A floor
+# on THIS count, rather than on the unguarded one, is independent of how far
+# the tranches have got: scoping a statement moves it from one side to the
+# other and leaves the total where it was. The floor it replaced counted
+# only the unguarded statements, and so had to come down with every tranche
+# (the headroom test beside it existed because it once didn't) — and with
+# the last tranche it would have had to be zero, i.e. no floor at all.
+_READER_FLOOR = 400
 
 
-def test_the_sweep_still_finds_the_statements_it_is_named_for():
+def _every_by_id_statement() -> list[tuple[str, str]]:
+    out = []
+    for path in _python_files():
+        rel = _rel(path)
+        for _lineno, _func, stmt in _statements(open(path, encoding="utf-8").read()):
+            if _owned_tables_by_id(stmt):
+                out.append((rel, stmt))
+    return out
+
+
+def test_the_reader_still_reads_app():
     """
-    MEASURED 2026-09-30, after tranche 2: the sweep reads 46 statements in 11
-    files, of which 6 are the deliberate exemptions — so 40 reach
-    _offenders(). The floor sits under that so an ordinary later tranche does
-    not have to move it; when the list is genuinely nearly empty, this test
-    and _LATER_TRANCHE come out together.
-
-    (Tranche 1 set this floor at 40 against its own count of 45. Tranche 2
-    took the count to exactly 40, i.e. to the floor, so the docstring's own
-    "well under that" had stopped being true and the next tranche would have
-    had to move it. That is the rot the test below now measures rather than
-    trusts.)
-
     WHAT THIS ADDS over the equality test above, which is the stronger guard:
-    that one compares the sweep against _LATER_TRANCHE, so blinding the
-    reader AND shrinking the list to match passes it. This floor is
-    independent of the list, so it catches the pair.
+    that one compares the sweep against the lists, so blinding the reader AND
+    shrinking a list to match passes it — and with nothing left to scope,
+    "found nothing" is exactly what a blinded reader would say. This floor is
+    on every statement the reader sees, guarded or not, so it catches that.
     """
-    found = _offenders()
-    assert sum(found.values()) >= _SWEEP_FLOOR, (
-        f"the sweep found only {sum(found.values())} statements, under the floor of "
-        f"{_SWEEP_FLOOR}. Either a tranche has landed (lower the floor, shrink "
-        f"_LATER_TRANCHE) or the sweep has stopped matching — check _sql_text and "
-        f"_owned_tables_by_id before believing the good news."
+    found = _every_by_id_statement()
+    assert len(found) >= _READER_FLOOR, (
+        f"the reader found only {len(found)} by-id statements in app/, under the "
+        f"floor of {_READER_FLOOR}. Unless that much SQL really was deleted, the "
+        f"reader has stopped matching — check _sql_text and _owned_tables_by_id "
+        f"before believing the good news."
     )
 
 
-def test_the_floor_still_has_headroom_for_the_next_tranche():
-    """
-    THE FAILURE THIS GUARDS IS THE ONE THAT ALREADY HAPPENED, once, silently.
-    Tranche 1 set the floor at 40 against a count of 45 and wrote "well under
-    that so an ordinary later tranche does not have to move it"; tranche 2
-    took the count to exactly 40 and nothing said the sentence had stopped
-    being true. A floor with no headroom is a floor the next tranche trips
-    for the RIGHT reason and at the WRONG time — in the middle of scoping
-    something, with nothing explaining that the red is bookkeeping.
-
-    Deliberately one-sided. The opposite drift — a floor left far UNDER a
-    growing count, which is what rotted test_frontend_restored_2026_09_08's
-    shell.js floor — cannot happen quietly here: the count only grows when
-    new unguarded statements appear, and the equality test above already goes
-    red by name for those. A maximum-slack assertion would fire second, for a
-    cause already reported, and advise raising the floor when the answer is
-    to scope the statements. So it is not written.
-    """
-    count = sum(_offenders().values())
-    headroom = count - _SWEEP_FLOOR
-    assert headroom >= _SWEEP_FLOOR_MIN_HEADROOM, (
-        f"the sweep finds {count} statements against a floor of {_SWEEP_FLOOR} — "
-        f"{headroom} of headroom, under the {_SWEEP_FLOOR_MIN_HEADROOM} this guard "
-        f"asks for. Lower _SWEEP_FLOOR now, while you are here and know why, "
-        f"rather than leaving the next tranche to trip it. Say the measured count "
-        f"in the docstring above at the same time."
-    )
-
-
-@pytest.mark.parametrize("rel,stmt", [
-    # One by `id = ?`, one interpolated, in two different modules — so a
-    # change that blinds the reader to either shape is caught by name.
-    ("app/tools/defrost.py", "DELETE FROM prep_tasks WHERE id = ?"),
-    ("app/tools/inventory.py", "UPDATE inventory_items SET {} WHERE id = ?"),
+@pytest.mark.parametrize("rel,stmt,count", [
+    # One by `id = ?`, two interpolated, in three modules — so a change that
+    # blinds the reader to either shape is caught by name. Matched on the
+    # statement's opening, so each reads the same before and after it is
+    # scoped: the reader has to SEE it either way.
+    ("app/tools/defrost.py", "DELETE FROM prep_tasks WHERE id = ?", 1),
+    # The three interpolated SETs the card singled out as needing care
+    # rather than a regex pass. tonight.py's MOVED to plan_undo.py with the
+    # 2026-09-24 drop-dish work.
+    ("app/tools/inventory.py", "UPDATE inventory_items SET {} WHERE id = ?", 2),
+    ("app/tools/plan_undo.py", "UPDATE meal_plan_entries SET {} WHERE id = ?", 1),
 ])
-def test_the_sweep_still_names_two_specific_statements(rel, stmt):
-    found = _offenders()
-    assert found[(rel, stmt)] >= 1, (
-        f"the sweep no longer sees {stmt!r} in {rel}. If it was scoped, take it "
-        f"off _LATER_TRANCHE and name a different one here; if not, the reader is "
-        f"broken."
+def test_the_reader_still_sees_three_named_shapes(rel, stmt, count):
+    seen = [s for r, s in _every_by_id_statement() if r == rel and s.startswith(stmt)]
+    assert len(seen) >= count, (
+        f"the reader no longer sees {stmt!r} in {rel} (found {seen}). If the code "
+        f"moved, name a different one here; if not, the reader is broken."
     )
-
-
-def test_the_three_interpolated_set_statements_are_all_seen():
-    """
-    The card singles these three out as needing care rather than a regex
-    pass, and says a sweep blind to the hardest shapes is worth little. They
-    are in another builder's modules, so none is fixed here — what is
-    checked is that the sweep SEES all three, which was not assumed.
-
-    The card names two in inventory.py and one in tonight.py. tonight.py's
-    has MOVED: the 2026-09-24 drop-dish work lifted that snapshot/restore
-    machinery into plan_undo.py, and `grep "SET {" app/` finds it there.
-    """
-    found = _offenders()
-    assert found[("app/tools/inventory.py", "UPDATE inventory_items SET {} WHERE id = ?")] == 2
-    assert found[("app/tools/plan_undo.py", "UPDATE meal_plan_entries SET {} WHERE id = ?")] == 1
 
 
 def test_every_exemption_still_matches_something():
