@@ -19373,8 +19373,11 @@
       // The part the person picked, not the whole dish: "Chicken thighs
       // was swapped in" is what they just chose, and the card's line
       // carries the reason the recipe changed around it.
-      toastSaved(savedLine(choice, 'swapped in'),
-        { label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
+      // plate_parts.change_part answers through apply_pick, so a new part
+      // that needs thawing carries the same fridge line (thawToast).
+      var partToast = thawToast(savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS);
+      toastSaved(partToast.said,
+        { label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, partToast.ms);
       swapUndoTimer = setTimeout(function () {
         swapUndoTimer = null;
         if (swapStateFor(dayDate, slot)) { swapState = null; renderMealsStep(panel); }

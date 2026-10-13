@@ -24,6 +24,7 @@ why*, not duplicating the diff.
   `thaw_now` that `_replace_slot_entries` / `replace_dish_on_days` computed —
   they forward it now. Why: only chat ever said it. The Plan tile drag the
   card names is gone (2026-09-18); its swap lives on as Today's nights trade.
+  Review fix: the Tweak (plate part) toast goes through `thawToast` too.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
