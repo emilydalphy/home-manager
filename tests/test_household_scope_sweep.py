@@ -257,14 +257,6 @@ _LATER_TRANCHE = {
         # regex pass. Seen, and left for whoever owns that module.
         (2, "UPDATE inventory_items SET {} WHERE id = ?"),
     ],
-    "app/tools/plan_undo.py": [
-        (1, "SELECT 1 FROM grocery_items WHERE id = ?"),
-        (1, "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?"),
-        # The third interpolated SET. The card names it as tonight.py's; the
-        # 2026-09-24 drop-dish work LIFTED that machinery into plan_undo.py,
-        # so this is where it is now.
-        (1, "UPDATE meal_plan_entries SET {} WHERE id = ?"),
-    ],
 }
 
 # The TWELVE modules the two tranches have scoped — eight from tranche 1,
@@ -280,6 +272,7 @@ _DONE_MODULES = (
     "app/tools/household.py",
     "app/tools/meal_variety.py",
     "app/tools/memory.py",
+    "app/tools/plan_undo.py",
     "app/tools/recipes.py",
     "app/tools/slot_needs.py",
     "app/tools/spices.py",

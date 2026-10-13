@@ -198,8 +198,8 @@ def stamp(conn, holder_id: int, key: str, record: dict) -> None:
     derived = json.loads(row["derived_from_json"] or "{}")
     derived[key] = record
     conn.execute(
-        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-        (json.dumps(derived), holder_id),
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), holder_id, household_id()),
     )
 
 
@@ -270,8 +270,8 @@ def restore(conn, record: dict, holder_id: int) -> None:
         if exists:
             sets = ", ".join(f"{c} = ?" for c in cols if c != "id")
             conn.execute(
-                f"UPDATE meal_plan_entries SET {sets} WHERE id = ?",
-                (*[e[c] for c in cols if c != "id"], e["id"]),
+                f"UPDATE meal_plan_entries SET {sets} WHERE id = ? AND household_id = ?",
+                (*[e[c] for c in cols if c != "id"], e["id"], hh),
             )
         else:
             conn.execute(
@@ -308,6 +308,8 @@ def restore(conn, record: dict, holder_id: int) -> None:
     links = [
         l for l in record.get("links") or []
         if l.get("meal_plan_entry_id") not in holding
-        and conn.execute("SELECT 1 FROM grocery_items WHERE id = ?", (l["grocery_item_id"],)).fetchone()
+        and conn.execute(
+            "SELECT 1 FROM grocery_items WHERE id = ? AND household_id = ?", (l["grocery_item_id"], hh),
+        ).fetchone()
     ]
     reinsert(conn, "meal_plan_grocery_links", links, ignore=True)
