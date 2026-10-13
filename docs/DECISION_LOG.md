@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An amount edited on a plan's grocery line survives a dropped or swapped
+  night** (2026-10-13; branch `overnight/edited-amount-survives-a-drop`; tests
+  `tests/test_edited_amount_survives_a_drop.py`). Emily's 2026-10-12 call:
+  the extra is the household's own; a drop takes off only that night's share;
+  an edit below plan need is kept too. Edited UP, `update_grocery_item` makes
+  the line a standing want (`source_weekly_plan_id` NULL) so the reversal
+  restates it (`_restate_standing_want`) instead of recomputing it from the
+  ledger. Edited DOWN it stays a plan line, and `_no_more_than` holds every
+  reversal to "never more than the line asks for now" (a no-op for an
+  unedited line). `test_grocery_line_to_zero`'s edit-down case now expects
+  the household's 2, not the meals' 3, and `test_reheat_side_is_bought`'s
+  "−"-door characterisation is inverted as it asked (the edited 5 stands).
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

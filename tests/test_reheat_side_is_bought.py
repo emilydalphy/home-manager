@@ -784,8 +784,8 @@ def test_the_review_steppers_minus_shares_the_door_and_its_undo_is_exact():
     assert _lettuce_links() == 1
 
 
-def test_on_the_minus_door_the_rescale_has_the_last_word_on_an_edited_side_line():
-    """CHARACTERISATION — found by the branch's independent review, and the
+def test_on_the_minus_door_the_households_edit_on_a_side_line_stands():
+    """CHARACTERISATION (inverted 2026-10-13, see the assert) — found by the branch's independent review, and the
     one place the "keep the household's number" rule does NOT hold. The
     night off keeps an edited shared line (test above); the "−" cannot,
     because drop_dish_undo's rescale (_rescale_after_a_chain_moved) runs
@@ -805,5 +805,9 @@ def test_on_the_minus_door_the_rescale_has_the_last_word_on_an_edited_side_line(
     tools.update_grocery_item(_lettuce_id(), quantity="5 heads")
     tools.drop_dish_undo(plan_id, out["undo_entry_id"])
 
-    assert _list()["Lettuce"] == "2 heads", "the rescale recomputed it; if 5, invert this"
+    # INVERTED 2026-10-13 (overnight/edited-amount-survives-a-drop): an
+    # amount edited UP is the household's own now (Emily, 2026-10-12), so
+    # the line is a standing want the rescale restates rather than
+    # recomputes — the household's 5 stands.
+    assert _list()["Lettuce"] == "5 heads", "the household's edit stands"
     assert _lettuce_links() == 2

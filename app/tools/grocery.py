@@ -601,6 +601,31 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
     return current_qty, False
 
 
+def _more_than(qty: str, than_qty: str) -> bool:
+    """Whether `qty` is a bigger amount than `than_qty`, read in one unit.
+    False whenever either can't be read or the units don't convert — the
+    caller then does what it did before."""
+    a = _quantities._parse_quantity(qty or "")
+    b = _quantities._parse_quantity(than_qty or "")
+    if not a or not b:
+        return False
+    b_in_a = _quantities._convert_to_unit(b[0], b[1], a[1])
+    return b_in_a is not None and a[0] > b_in_a + 1e-9
+
+
+def _no_more_than(new_qty: str, current_qty: str) -> str:
+    """
+    A meal leaving never makes a line ask for MORE than it asks for now.
+    The recompute reads a plan line back off its ledger, which knows
+    nothing of an amount the household edited DOWN ("onion 3" -> 1, they
+    have two at home): left alone, dropping a night put it back up to what
+    the meals left need (Emily, 2026-10-12: an edit below what the plan
+    needs is kept). For a line nobody edited this changes nothing — the
+    meals left never round to more than all of them did.
+    """
+    return current_qty if _more_than(new_qty, current_qty) else new_qty
+
+
 def _restate_standing_want(
     current_qty: str, total_before: float, total_after: float, unit: str | None,
 ) -> tuple[str, bool] | None:
@@ -894,6 +919,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                     )
                 else:
                     new_qty, fully_removed = restated
+            if new_qty and not fully_removed:
+                new_qty = _no_more_than(new_qty, grocery_row["quantity"] or "")
             if fully_removed:
                 if is_standing_want:
                     if new_qty != (grocery_row["quantity"] or ""):
@@ -2519,7 +2546,8 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?",
+        "SELECT id, item, quantity, category, source_weekly_plan_id FROM grocery_items "
+        "WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
     if not row:
@@ -2527,8 +2555,21 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
         raise ValueError(f"No grocery list item with id {item_id}.")
     new_quantity = quantity if quantity is not None else row["quantity"]
     new_category = category if category is not None else row["category"]
+    # An amount edited UP on a plan's line makes the extra the household's
+    # own (Emily, 2026-10-12: "onion 3" -> 5, then a night off put it back
+    # to 2). A line with source_weekly_plan_id NULL is a standing want, the
+    # shape a hand-added line has: dropping or swapping a night takes only
+    # that night's share off it (_restate_standing_want) and the week's end
+    # never deletes it. An edit DOWN stays a plan line; the reversal's own
+    # "never more than the line asks for now" (_no_more_than) keeps it.
+    becomes_own = (
+        row["source_weekly_plan_id"] is not None
+        and _more_than(new_quantity or "", row["quantity"] or "")
+    )
     conn.execute(
-        "UPDATE grocery_items SET quantity = ?, category = ? WHERE id = ? AND household_id = ?",
+        "UPDATE grocery_items SET quantity = ?, category = ?"
+        + (", source_weekly_plan_id = NULL" if becomes_own else "")
+        + " WHERE id = ? AND household_id = ?",
         (new_quantity, new_category, item_id, household_id()),
     )
     conn.commit()

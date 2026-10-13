@@ -674,7 +674,11 @@ def test_a_hand_edit_below_the_plans_share_does_not_blank_the_line(family_of_thr
         )
     )
 
-    assert _qty("Onions") == "3", "two dinners still want 3 onions; the line is not blanked"
+    # Not blanked — and, since Emily's 2026-10-12 call ("an edit below what
+    # the plan needs is kept too"), not put back UP to the 3 the two dinners
+    # left want either: the household said 2 (grocery._no_more_than;
+    # tests/test_edited_amount_survives_a_drop.py).
+    assert _qty("Onions") == "2", "the household's own edit down stands; the line is not blanked"
 
 
 def _link_rows(item: str):
