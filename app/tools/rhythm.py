@@ -23,7 +23,8 @@ preferences) is what memory._CONTEXT_SIGNALS' weighting reflects.
 from __future__ import annotations
 
 import json
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from functools import lru_cache
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
 
 from ..db import get_conn
 from ._shared import EATS_HERE_SQL, household_id
@@ -712,7 +713,22 @@ def checked_timezone(name: str) -> str:
         ZoneInfo(zone)
     except (ZoneInfoNotFoundError, ValueError):
         raise ValueError(f"I don't know the time zone {name!r} — it wants a name like America/Toronto.")
+    # ZoneInfo also opens files that are not places — 'localtime',
+    # 'posixrules', 'Factory' — which would make "today" whatever the
+    # server happens to be set to. Only a real zone name is a clock.
+    # available_timezones() alone does not exclude them on every system
+    # (measured: it lists 'localtime' and 'Factory' here), so they are named.
+    if zone not in _known_zones() or zone in _NOT_PLACES:
+        raise ValueError(f"I don't know the time zone {name!r} — it wants a name like America/Toronto.")
     return zone
+
+
+_NOT_PLACES = frozenset({"localtime", "posixrules", "Factory"})
+
+
+@lru_cache(maxsize=1)
+def _known_zones() -> frozenset:
+    return frozenset(available_timezones())
 
 
 def household_clock() -> dict:

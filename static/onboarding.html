@@ -2486,20 +2486,24 @@ function buildClockLine() {
   ask.hidden = !clockAsking;
 }
 
+// 'ok' (a zone was found and is now the line), 'empty' (nothing typed) or
+// 'unknown' (typed, not a city the phone knows — the note says so). The
+// Continue handler reads it: only 'ok' is an answer to save.
 function takeTypedCity() {
   const input = document.getElementById('tz-input');
   const note = document.getElementById('tz-note');
-  if (!input.value.trim()) { note.hidden = true; return; }
+  if (!input.value.trim()) { note.hidden = true; return 'empty'; }
   const zone = zoneForCity(input.value);
   if (!zone) {
     note.textContent = 'I don’t know that one — try the nearest big city.';
     note.hidden = false;
-    return;
+    return 'unknown';
   }
   note.hidden = true;
   clockZone = zone;
   clockAsking = false;
   buildClockLine();
+  return 'ok';
 }
 
 
@@ -5698,9 +5702,19 @@ document.getElementById('prep-next').onclick = () => {
 VARIETY_STEPS.forEach(key => {
   document.getElementById(key + '-next').onclick = () => { goForward(key); };
 });
+// Continue confirms the clock only when there is one on the line. With the
+// city box open (review, 2026-10-13): a city it doesn't know keeps the step
+// up with the note showing, rather than saving the phone's zone as an
+// answer the household just tried to correct; an empty box saves nothing,
+// so Today can still ask once.
 document.getElementById('dinner-time-next').onclick = () => {
-  if (clockAsking) takeTypedCity();
-  clockSaid = true;
+  if (clockAsking) {
+    const got = takeTypedCity();
+    if (got === 'unknown') return;
+    clockSaid = got === 'ok';
+  } else {
+    clockSaid = !!clockZone;
+  }
   goForward('dinner-time');
 };
 document.getElementById('tz-input').addEventListener('change', takeTypedCity);

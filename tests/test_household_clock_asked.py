@@ -105,3 +105,43 @@ def test_setup_sends_the_clock_only_when_the_step_was_continued():
     ask = ask[:ask.index("\n  }\n")]
     assert "if (!shellWho.loaded || shellWho.timezone_set) return '';" in ask
     assert "phone !== shellWho.timezone" in ask
+
+
+def test_continue_with_the_city_box_open_never_saves_a_zone_nobody_confirmed():
+    """Review 2026-10-13: Change → an unknown city (or nothing) → Continue
+    used to save the PHONE's zone as answered, so Today never asked again."""
+    import json
+
+    import nodeharness
+
+    def fn(name):
+        start = ONBOARDING.index("function %s(" % name)
+        return ONBOARDING[start:ONBOARDING.index("\n}\n", start) + 3]
+
+    start = ONBOARDING.index("document.getElementById('dinner-time-next').onclick")
+    handler = ONBOARDING[start:ONBOARDING.index("\n};\n", start) + 4]
+    out = json.loads(nodeharness.run_node(fn("zoneForCity") + fn("takeTypedCity") + """
+var EL = { 'tz-input': { value: '' }, 'tz-note': { hidden: true, textContent: '' }, 'dinner-time-next': {} };
+var document = { getElementById: function (id) { return EL[id]; } };
+var clockZone = 'America/Vancouver', clockAsking = true, clockSaid = false, went = 0;
+function buildClockLine() {}
+function goForward() { went++; }
+""" + handler + """
+var r = {};
+EL['tz-input'].value = 'Ottawa'; EL['dinner-time-next'].onclick();
+r.unknown = { went: went, said: clockSaid, note: !EL['tz-note'].hidden, zone: clockZone };
+EL['tz-input'].value = ''; EL['dinner-time-next'].onclick();
+r.empty = { went: went, said: clockSaid, zone: clockZone };
+clockAsking = true; EL['tz-input'].value = 'Denver'; EL['dinner-time-next'].onclick();
+r.ok = { went: went, said: clockSaid, zone: clockZone };
+console.log(JSON.stringify(r));
+""", timeout=30).stdout)
+    assert out["unknown"] == {"went": 0, "said": False, "note": True, "zone": "America/Vancouver"}, "stays on the step"
+    assert out["empty"] == {"went": 1, "said": False, "zone": "America/Vancouver"}, "moves on, sends no zone"
+    assert out["ok"] == {"went": 2, "said": True, "zone": "America/Denver"}
+
+
+@pytest.mark.parametrize("name", ["localtime", "posixrules", "Factory"])
+def test_files_that_are_not_places_are_not_a_clock(name):
+    with pytest.raises(ValueError, match="I don't know the time zone"):
+        tools.checked_timezone(name)

@@ -28,6 +28,9 @@ why*, not duplicating the diff.
   Vancouver" — Use / Keep), both answers final via `POST /api/household/clock`;
   Preferences' rhythm section has "Your clock". Why: everyone was on
   Toronto's day; three earlier branches stopped at this.
+  Review fixes: with the city box open, an unknown city keeps the step up and
+  an empty box sends nothing (only a found zone is an answer); the validator
+  also refuses 'localtime' / 'posixrules' / 'Factory'.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
