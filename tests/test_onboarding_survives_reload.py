@@ -291,7 +291,7 @@ function answers(ctx) {
     lunchMax: weekdayLunchMaxMinutes, lunchNeeds: lunchNeeds, lunchHome: lunchHome, lunchOutDays: lunchOutDays,
     snacks: memberSnacks, eatingStyle: currentEatingStyle(), wontEat: currentWontEat(),
     excited: currentExcitedAbout(), kit: kitchenKit, firstPlanStart: firstPlanStart,
-    note: anythingElseNote,
+    note: anythingElseNote, cookRole: cookRole, cookWho: cookWho,
   })`));
 }
 
@@ -381,6 +381,7 @@ def test_every_kind_of_answer_comes_back_after_a_reload():
     memberSnacks['Arjun'] = 3;
     kitchenKit.push('air_fryer'); firstPlanStart = 'next_week';
     anythingElseNote = 'We eat late on Fridays';
+    cookRole = 'one_person'; cookWho = 'Sam';
     showStep('eating-style');
   `);
   tap(L, '#eating-style-chips [data-value="High-protein"]');

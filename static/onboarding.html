@@ -6235,6 +6235,7 @@ function readOnboardingDraft(raw) {
     },
     snacks: byName(d.snacks, v => num(v, 1)),
     shop: { day: str(obj(d.shop).day, ''), topUp: str(obj(d.shop).topUp, '') },
+    cook: { role: str(obj(d.cook).role, ''), who: str(obj(d.cook).who, '') },
     prep: { answer: str(obj(d.prep).answer, ''), days: strs(obj(d.prep).days) },
     variety: {
       breakfast: str(obj(d.variety).breakfast, VARIETY_DEFAULT),
