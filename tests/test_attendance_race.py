@@ -111,3 +111,28 @@ def test_a_toggle_keeps_the_guest_count(family):
     tools.set_member_attendance(day, "dinner", "Sam", present=False)
     att = tools.get_slot_attendance(day, "dinner")
     assert att["guest_count"] == 2 and att["absent_names"] == ["Sam"]
+
+
+def test_a_trip_and_a_tap_on_the_same_meal_both_stick(family, monkeypatch):
+    """Review catch (2026-10-13): remove_members_from_slot (what an away
+    stretch walks its range with) read and wrote the whole list outside
+    the meal's lock, so a toggle landing between lost Riley's "I'm out"."""
+    import time
+    from app.tools import attendance
+    ids = {m["name"]: m["id"] for m in tools.list_members()}
+    real_read = attendance.get_slot_attendance
+
+    def slow_read(*a, **kw):
+        # Widen the read-then-write window so a tap without the lock lands
+        # inside it every time, not one run in ten.
+        out = real_read(*a, **kw)
+        time.sleep(0.02)
+        return out
+
+    monkeypatch.setattr(attendance, "get_slot_attendance", slow_read)
+    for day, slot in [(d, s) for d in _next_week() for s in ("breakfast", "lunch", "dinner")]:
+        _together(
+            lambda: tools.remove_members_from_slot(day, slot, [ids["Sam"]]),
+            lambda: tools.set_member_attendance(day, slot, "Riley", present=False),
+        )
+        assert sorted(tools.get_slot_attendance(day, slot)["absent_names"]) == ["Riley", "Sam"], (day, slot)

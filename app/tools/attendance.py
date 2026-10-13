@@ -563,12 +563,17 @@ def remove_members_from_slot(
     date_str: str, slot: str, member_ids: list[int], source: str = "", away_stretch_id: int | None = None,
 ) -> dict:
     """Take specific people out of one meal, leaving everyone else as they are — the primitive set_away_stretch walks a range with."""
-    current = get_slot_attendance(date_str, slot)
-    remaining = [i for i in current["present_member_ids"] if i not in set(member_ids)]
-    return set_slot_attendance(
-        date_str, slot, present_member_ids=remaining or [],
-        source=source or "away_stretch", away_stretch_id=away_stretch_id,
-    )
+    # Under the meal's lock (see _slot_write_lock): the read and the
+    # whole-list write below are the shape that lost an "I'm out" — a
+    # toggle landing between them was overwritten (review, 2026-10-13:
+    # 1 in 10 racing a trip). set_slot_attendance re-takes the same RLock.
+    with _slot_write_lock(date_str, slot):
+        current = get_slot_attendance(date_str, slot)
+        remaining = [i for i in current["present_member_ids"] if i not in set(member_ids)]
+        return set_slot_attendance(
+            date_str, slot, present_member_ids=remaining or [],
+            source=source or "away_stretch", away_stretch_id=away_stretch_id,
+        )
 
 
 def reconcile_membership() -> dict:
