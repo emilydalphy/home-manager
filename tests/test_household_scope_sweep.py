@@ -39,6 +39,14 @@ listed in _LATER_TRANCHE below. Tranche 1 left "45", and its CLAUDE.md entry
 and its card both said "13 files"; all three were true when written and are
 not now, which is why each count here carries the date it was taken.
 
+RE-MEASURED, 2026-10-13, after TRANCHE 3: the last 40, in nine modules
+(defrost 8, inventory 6, attention 5, cooker 5, tonight 4, first_open 3,
+plan_undo 3, spices 3, weekly_plan 3) — the three interpolated SETs among
+them. _offenders() is empty and _LATER_TRANCHE is gone. The floor that
+guarded the reader counted unguarded statements and would have had to fall
+to zero with it; test_the_reader_still_reads_app counts every by-id
+statement, guarded or not, instead.
+
 WHAT IT CANNOT SEE, written down rather than left to be found:
   * SQL assembled through a LOCAL VARIABLE — knowing what the variable holds
     needs dataflow this does not do. Asserted, not described, by
@@ -229,41 +237,10 @@ _CROSS_HOUSEHOLD_ON_PURPOSE = {
         "address — same reason as match_code",
 }
 
-# NOT YET — the later tranches. Exact normalised SQL with a count, so that
-# fixing one forces the entry off this list (the assertion is equality, not
-# containment) and a NEW offender in an already-listed file is still caught.
-# This list only ever SHRINKS; when it is empty, delete it and the branch on
-# it in the sweep.
-_LATER_TRANCHE = {
-}
-
-# The TWELVE modules the two tranches have scoped — eight from tranche 1,
-# four more (meal_variety, memory, slot_needs, usage) from tranche 2. Named
-# so the sweep can say, when it goes red in one of them, that the module is
-# supposed to be finished.
-_DONE_MODULES = (
-    "app/tools/attention.py",
-    "app/tools/cooker.py",
-    "app/tools/defrost.py",
-    "app/tools/digest.py",
-    "app/tools/first_open.py",
-    "app/tools/grocery.py",
-    "app/tools/holidays.py",
-    "app/tools/household.py",
-    "app/tools/inventory.py",
-    "app/tools/meal_variety.py",
-    "app/tools/memory.py",
-    "app/tools/plan_undo.py",
-    "app/tools/recipes.py",
-    "app/tools/slot_needs.py",
-    "app/tools/spices.py",
-    "app/tools/staples.py",
-    "app/tools/stores.py",
-    "app/tools/tonight.py",
-    "app/tools/usage.py",
-    "app/tools/week_intake.py",
-    "app/tools/weekly_plan.py",
-)
+# There is no "not yet" list any more. Tranche 3 (2026-10-13) scoped the
+# last 40 statements, in nine modules, and _LATER_TRANCHE went with them as
+# its own comment asked: every by-id statement on an owned table in app/
+# names household_id now, except the exemptions above.
 
 
 def _offenders() -> collections.Counter:
@@ -289,33 +266,19 @@ def _offenders() -> collections.Counter:
 
 def test_no_statement_reaches_a_household_owned_row_by_id_alone():
     """
-    THE GUARD. Not "these 56 sites are fixed" — that goes quiet the day a
-    57th appears. Every statement in app/ that addresses a household-owned
+    THE GUARD. Not "these 101 sites are fixed" — that goes quiet the day a
+    102nd appears. Every statement in app/ that addresses a household-owned
     table by a row id must name household_id too, unless it is one of the
-    six that run across households on purpose.
-
-    Equality rather than containment, deliberately: fixing something on the
-    later-tranche list makes this go red saying "take it off the list", which
-    is what keeps the list shrinking honestly instead of outliving the work.
+    exemptions that run across households on purpose. Since tranche 3 there
+    is nothing left waiting, so the answer is an empty list.
     """
-    expected: collections.Counter = collections.Counter()
-    for rel, entries in _LATER_TRANCHE.items():
-        for count, stmt in entries:
-            expected[(rel, stmt)] += count
-
-    found = _offenders()
-    if found == expected:
+    new = _offenders()
+    if not new:
         return
 
-    new = found - expected
-    fixed = expected - found
     lines = []
     for (rel, stmt), n in sorted(new.items()):
-        note = " (this module is supposed to be finished)" if rel in _DONE_MODULES else ""
-        lines.append(f"  NOT SCOPED{note}: {rel}\n    {stmt}" + (f"   x{n}" if n > 1 else ""))
-    for (rel, stmt), n in sorted(fixed.items()):
-        lines.append(f"  ALREADY SCOPED, take it off _LATER_TRANCHE: {rel}\n    {stmt}"
-                     + (f"   x{n}" if n > 1 else ""))
+        lines.append(f"  NOT SCOPED: {rel}\n    {stmt}" + (f"   x{n}" if n > 1 else ""))
     hint = ""
     if any(rel in ("app/db.py", "app/invites.py") for (rel, _s) in new):
         hint = (
@@ -329,7 +292,7 @@ def test_no_statement_reaches_a_household_owned_row_by_id_alone():
             "the exemption back rather than 'fixing' the migrations.\n"
         )
     raise AssertionError(
-        "the household scope sweep disagrees with _LATER_TRANCHE.\n\n"
+        "the household scope sweep found statements that are not scoped.\n\n"
         "A statement that reaches a household-owned row by a bare id must "
         "name household_id as well — scope it like its neighbours "
         "(WHERE id = ? AND household_id = ?, with household_id() in the "
@@ -855,8 +818,8 @@ def test_the_claim_the_single_module_sweep_used_to_make_still_holds():
     """
     The sweep this generalises made one narrower claim: no statement in
     weekly_plan.py reaches meal_plan_entries by a row id without naming
-    household_id. That claim is carried by the equality assertion above (none
-    of weekly_plan.py's three remaining offenders is on meal_plan_entries),
+    household_id. That claim is carried by the sweep above (which since
+    tranche 3 finds nothing anywhere),
     but it is restated here so that removing the old file's sweep took no
     coverage with it, and so the six statements it fixed on 2026-09-24 cannot
     quietly come unguarded.
@@ -867,3 +830,98 @@ def test_the_claim_the_single_module_sweep_used_to_make_still_holds():
         if "meal_plan_entries" in _owned_tables_by_id(stmt) and "household_id" not in stmt
     ]
     assert bad == [], bad
+
+
+# --------------------------------------------------------------------------
+# TRANCHE 3 (2026-10-13). One newly scoped statement per module, driven by
+# hand on a two-household database — read out of the module's OWN source
+# rather than copied here, so the test drives the SQL the app runs. Handed
+# the other household's row id it moves (or finds) nothing; handed the
+# owning household it reaches the row, so the zero is not vacuous.
+# --------------------------------------------------------------------------
+
+def _seed_owned_row(table: str, hid: int) -> int:
+    conn = get_conn()
+    try:
+        if table == "prep_tasks":
+            plan = conn.execute(
+                "INSERT INTO weekly_plans (household_id, week_start_date) VALUES (?, '2026-10-12')", (hid,)
+            ).lastrowid
+            cur = conn.execute(
+                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description) "
+                "VALUES (?, ?, '2026-10-13', 'Move the beef to the fridge')", (hid, plan))
+        elif table == "weekly_plans":
+            cur = conn.execute(
+                "INSERT INTO weekly_plans (household_id, week_start_date) VALUES (?, '2026-10-12')", (hid,))
+        elif table == "meal_plan_entries":
+            cur = conn.execute(
+                "INSERT INTO meal_plan_entries (household_id, date, slot) VALUES (?, '2026-10-13', 'dinner')",
+                (hid,))
+        elif table == "members":
+            cur = conn.execute("INSERT INTO members (household_id, name) VALUES (?, 'Sam')", (hid,))
+        elif table == "attention_items":
+            cur = conn.execute(
+                "INSERT INTO attention_items (household_id, kind, summary) VALUES (?, 'use_soon', 'x')", (hid,))
+        elif table == "recipes":
+            cur = conn.execute("INSERT INTO recipes (household_id, name) VALUES (?, 'Kofte')", (hid,))
+        else:
+            cur = conn.execute(f"INSERT INTO {table} (household_id, item) VALUES (?, 'Cumin')", (hid,))
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+@pytest.mark.parametrize("module,stmt", [
+    ("defrost", "UPDATE prep_tasks SET task_date = ?, quantity = ? WHERE id = ? AND household_id = ?"),
+    ("inventory", "UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?"),
+    ("attention", "UPDATE attention_items SET detail_json = ? WHERE id = ? AND household_id = ?"),
+    ("cooker", "SELECT planning_mode FROM weekly_plans WHERE id = ? AND household_id = ?"),
+    ("tonight", "DELETE FROM inventory_items WHERE id = ? AND household_id = ?"),
+    ("first_open", "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND household_id = ? AND first_open_seen_at = ''"),
+    ("plan_undo", "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?"),
+    ("spices", "UPDATE grocery_items SET status = 'spice' WHERE id = ? AND household_id = ?"),
+    ("weekly_plan", "SELECT name FROM recipes WHERE id = ? AND household_id = ?"),
+])
+def test_tranche_3_a_foreign_id_reaches_nothing(two_households, module, stmt):
+    source = open(os.path.join(_APP, "tools", f"{module}.py"), encoding="utf-8").read()
+    assert stmt in [s for _l, _f, s in _statements(source)], f"{module}.py no longer runs {stmt!r}"
+    table = sorted(_owned_tables_by_id(stmt))[0]
+    theirs = _seed_owned_row(table, two_households["other"])
+    fillers = ["2026-10-14"] * (stmt.count("?") - 2)
+
+    conn = get_conn()
+    try:
+        foreign = conn.execute(stmt, (*fillers, theirs, DEFAULT_HOUSEHOLD_ID))
+        if stmt.startswith("SELECT"):
+            assert foreign.fetchone() is None
+        else:
+            assert foreign.rowcount == 0
+        assert conn.execute(f"SELECT 1 FROM {table} WHERE id = ?", (theirs,)).fetchone(), \
+            "the other household's row is still there"
+        own = conn.execute(stmt, (*fillers, theirs, two_households["other"]))
+        if stmt.startswith("SELECT"):
+            assert own.fetchone() is not None
+        else:
+            assert own.rowcount == 1
+        conn.rollback()
+    finally:
+        conn.close()
+
+
+def test_tranche_3_functions_refuse_a_foreign_id_in_their_own_words(two_households):
+    """The belt: the household-filtered read above each scoped write already
+    turns a foreign id away, so the guard is the braces."""
+    from app.tools import attention, inventory, spices
+
+    inv = _seed_owned_row("inventory_items", two_households["other"])
+    assert inventory.step_inventory_quantity(inv, 1) == {"item_id": inv, "found": False}
+    assert inventory.step_inventory_expiration(inv, 1)["found"] is False
+
+    line = _seed_owned_row("grocery_items", two_households["other"])
+    with pytest.raises(ValueError, match="No grocery list item"):
+        spices.tick_spice(line, True)
+
+    item = _seed_owned_row("attention_items", two_households["other"])
+    assert attention.record_attention_item_usage(item, "1 cup") == {
+        "item_id": item, "applied": False, "reason": "not found or already resolved"}

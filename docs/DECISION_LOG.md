@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Household-scope sweep, tranche 3: the last 40 statements are scoped**
+  (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
+  module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
+  first_open 3, plan_undo 3, spices 3, weekly_plan 3 — the three interpolated
+  SETs among them. Every id already came from a household-filtered read, so no
+  behaviour changes (295 statements across the nine files compared against
+  main with the clause stripped: identical). `_LATER_TRANCHE` is gone; the
+  old unguarded-count floor would have had to fall to zero, so the reader's
+  floor now counts every by-id statement, guarded or not (446).
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
