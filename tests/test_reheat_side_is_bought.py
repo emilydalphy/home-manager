@@ -806,8 +806,9 @@ def test_on_the_minus_door_the_households_edit_on_a_side_line_stands():
     tools.drop_dish_undo(plan_id, out["undo_entry_id"])
 
     # INVERTED 2026-10-13 (overnight/edited-amount-survives-a-drop): an
-    # amount edited UP is the household's own now (Emily, 2026-10-12), so
-    # the line is a standing want the rescale restates rather than
-    # recomputes — the household's 5 stands.
-    assert _list()["Lettuce"] == "5 heads", "the household's edit stands"
+    # amount edited UP keeps its extra as the household's own (Emily,
+    # 2026-10-12), recorded as kept_amount beside the plan's line, which
+    # every recompute counts in. 5 typed over the 1 head the plan wanted
+    # is 4 of theirs; the undo brings the cook's head back: 2 + 4.
+    assert _list()["Lettuce"] == "6 heads", "the household's extra stands"
     assert _lettuce_links() == 2

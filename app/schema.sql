@@ -1051,6 +1051,15 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- On the CARRIED row that was kept: the line its amount went onto, so
     -- the keep's undo takes it back off exactly that row.
     kept_into_item_id INTEGER,
+    -- An amount the household edited DOWN on a plan's line
+    -- (update_grocery_item, Emily 2026-10-12: "an edit below what the plan
+    -- needs is kept"). short_amount is how far under the meals' amount
+    -- they went, edited_to the number they typed; every recompute of the
+    -- line puts it back as max(meals - short, min(typed, meals)), so a
+    -- swap, an undo or a drop and re-plan never walks it back up, and a
+    -- meal added later still adds its share. An edit UP is kept_amount.
+    short_amount TEXT NOT NULL DEFAULT '',
+    edited_to TEXT NOT NULL DEFAULT '',
     -- "Something you run out of, mentioned in chat, is offered as a staple"
     -- (Loop Board, 2026-09-15): set the moment the CHAT add tool
     -- (app/tools/staples.py offer_for_chat_grocery_add, called only from

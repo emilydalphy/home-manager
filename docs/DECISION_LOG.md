@@ -17,14 +17,20 @@ why*, not duplicating the diff.
   night** (2026-10-13; branch `overnight/edited-amount-survives-a-drop`; tests
   `tests/test_edited_amount_survives_a_drop.py`). Emily's 2026-10-12 call:
   the extra is the household's own; a drop takes off only that night's share;
-  an edit below plan need is kept too. Edited UP, `update_grocery_item` makes
-  the line a standing want (`source_weekly_plan_id` NULL) so the reversal
-  restates it (`_restate_standing_want`) instead of recomputing it from the
-  ledger. Edited DOWN it stays a plan line, and `_no_more_than` holds every
-  reversal to "never more than the line asks for now" (a no-op for an
-  unedited line). `test_grocery_line_to_zero`'s edit-down case now expects
-  the household's 2, not the meals' 3, and `test_reheat_side_is_bought`'s
-  "−"-door characterisation is inverted as it asked (the edited 5 stands).
+  an edit below plan need is kept too. The line STAYS the plan's (so it is
+  still set aside as last week's leftover and swept after its week);
+  `update_grocery_item` records the edit beside it
+  (`_household_edit_columns`): above the meals' ledger → `kept_amount` (the
+  column "Keep" uses, counted by every reversal/recompute); below →
+  `short_amount` + `edited_to`, put back on every recompute and after every
+  ingest merge as max(meals − short, min(typed, meals)). Review 2026-10-13
+  killed the first cut: making an edited-up line a standing want let it soak
+  up each later week (5 → 7 → 9, never offered as a leftover), and capping
+  only the removal let a drop + re-plan walk an edit down back up (1 → 2 → 3).
+  `test_grocery_line_to_zero`'s edit-down case (a standing want; held by
+  `_no_more_than`) expects the household's 2; `test_reheat_side_is_bought`'s
+  "−"-door characterisation is inverted (5 typed over the plan's 1 = 4 extra,
+  + the restored head = 6).
 
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
