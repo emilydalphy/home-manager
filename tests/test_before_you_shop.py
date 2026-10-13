@@ -629,3 +629,36 @@ settle(function () {
     assert ">Done<" in out["lastDock"] and "Sort the list" not in out["lastDock"]
     assert out["step"] == "list"
     assert out["urls"] == ["/api/grocery-list/before-shop-done"]
+
+
+# ---------- a regular somebody picked is theirs, adult or no adult ----------
+# 2026-10-13 (defect hunt): add_regulars wrote added_by = acting_name(""),
+# which is "" when no adult is resolved for the request, and Shop read an
+# empty added_by on a staple's line as Pomona's own guess — "Probably
+# running low" with a "We have plenty" that took nothing off (the server
+# only takes back added_by 'staple').
+
+def test_a_regular_picked_with_no_adult_resolved_is_still_the_persons():
+    out = tools.add_regulars(["Milk"])
+    row = next(i for i in tools.list_grocery_list(status="needed") if i["item"] == "Milk")
+    assert row["id"] == out["added"][0]["item_id"]
+    assert row["staple_id"], "still linked, so buying it teaches the rhythm"
+    assert row["added_by"] == "user", "never blank, never 'staple'"
+
+
+def test_shop_only_calls_a_staple_line_pomonas_when_the_staple_put_it_there():
+    from shop_harness import run, needs_node  # noqa: F401
+    if shutil.which("node") is None:
+        pytest.skip("node is needed to execute the shell's own functions")
+    out = run("""
+function row(id, addedBy) {
+  return { id: id, item: 'Milk ' + id, quantity: '', store: 'Costco', store_decided: 1, category: 'dairy',
+           status: 'needed', staple_id: 3, added_by: addedBy };
+}
+console.log(JSON.stringify({
+  pomona: groLineHtml(row(1, 'staple'), {}).indexOf('Probably running low') !== -1,
+  blank: groLineHtml(row(2, ''), {}).indexOf('Probably running low') !== -1,
+  person: groLineHtml(row(3, 'user'), {}).indexOf('Probably running low') !== -1
+}));
+""")
+    assert out == {"pomona": True, "blank": False, "person": False}

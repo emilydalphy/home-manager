@@ -6634,8 +6634,10 @@
     // A regular somebody ticked on "Before you shop" also carries its
     // staple_id (so buying it teaches the rhythm), but it is theirs, not a
     // guess: "Probably running low" is only for a line Pomona put there on
-    // its own (added_by 'staple').
-    var staple = !!it.staple_id && (!it.added_by || it.added_by === 'staple');
+    // its own (added_by 'staple') — the same test the server's "We have
+    // plenty" uses, so the buttons never show on a line they cannot take
+    // off (an empty added_by did until 2026-10-13).
+    var staple = !!it.staple_id && it.added_by === 'staple';
     return '<div class="gro-row gro-line' + (bought ? ' done' : '') + (open ? ' open' : '') +
         (staple ? ' gro-line-staple' : '') + '" data-gro="line-tick" data-id="' + id + '" data-bought="' + (bought ? '1' : '0') + '">' +
       '<button type="button" class="gro-box' + (bought ? ' checked' : '') + '" role="checkbox" ' +
