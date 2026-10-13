@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"It's in the freezer" takes off only the plan's own amount** (2026-10-13;
+  branch `overnight/freezer-takes-only-the-plans-share`; tests
+  `tests/test_freezer_takes_only_the_plans_share.py`). Emily's yes of
+  2026-10-12. A line holding the household's own salmon plus the plan's was
+  set aside whole (their 2 lb gone), and after "−"/Undo the rescale merged the
+  frozen pound back onto their line. `defrost._set_aside_own_lines` now sets a
+  plan-written line aside as before, but SPLITS a household's own line
+  (`source_weekly_plan_id` NULL or a staple's): `_split_off_plan_share` moves
+  the plan's ledger rows onto a new set-aside line (FREEZER_REMOVED_BY) sized
+  to their rounded total and restates their line with
+  `grocery._restate_standing_want`, one transaction. Put back is the ordinary
+  undo on that line — exactly the plan's amount, once.
+  `restate_frozen_after_batch_change` splits their line too (the batch's
+  nights only). A household line with none of the plan's meals, or amounts it
+  can't read apart, now stays to buy (it used to be set aside).
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
