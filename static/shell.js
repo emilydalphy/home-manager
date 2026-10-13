@@ -2854,10 +2854,22 @@
   // the two contradicting each other (Loop Board, 2026-09-15).
   var WEEK_STATE_LABELS = { set: 'Week set', draft: 'Draft' };
 
+  // The moves Today draws. Everything the server sent, less tonight's open
+  // dinner ROW while tonight's open-dinner needs-you card is up: that card
+  // is already the answer to the same question (the 2026-09-08 rule below,
+  // "two answers to the same question"), so the row (moves._open_slot_
+  // moves) steps aside and comes back if the card goes. Lunch, breakfast
+  // and snack rows have no card and always show.
+  function todayShownMoves(panel, data) {
+    var moves = (data && data.moves) || [];
+    if (!panel._openDinnerCard) return moves;
+    return moves.filter(function (m) { return !(m.kind === 'open_slot' && m.slot === 'dinner'); });
+  }
+
   function renderTodayMoves(panel, data) {
     if (!data) return;
     panel._moves = data;
-    var moves = data.moves || [];
+    var moves = todayShownMoves(panel, data);
 
     // The band carries the week's chip and no line. Now tells the day's
     // story, not a score: the ticks on the rows already say what's done,
@@ -3042,7 +3054,7 @@
   // loads race, so this is only an answer once the moves have arrived.
   function todayIsEmpty(panel) {
     var data = panel._moves;
-    return !!(data && !(data.moves || []).length && !panel._featured);
+    return !!(data && !todayShownMoves(panel, data).length && !panel._featured);
   }
 
   // Is there a period waiting to be planned? The nudge names it whether
@@ -3920,7 +3932,7 @@
     // to — the same landing a chat change uses (focusChangedWeekDay), so
     // nothing new answers it. A payload without planDay still lands on Plan.
     if (target.tab === 'week' && target.planDay) {
-      return focusChangedWeekDay(target.planDay.date, target.planDay.slot);
+      return focusChangedWeekDay(target.planDay.date, target.planDay.slot, { schedule: true });
     }
     if (target.tab) return activateTab(target.tab, true);
   }
@@ -24759,8 +24771,13 @@
   // just have *started* building the panel (buildWeekPanel → loadWeekMenu
   // is async): renderWeekMenu drains it once the days actually exist, and
   // the direct call below covers the already-built case, whichever wins.
-  function focusChangedWeekDay(date, slot) {
-    weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner' } : null;
+  //
+  // `opts.schedule` (Today's open-slot row): land where the slot's Pick is.
+  // A draft opens on Meals by category, which has no per-day rows and no
+  // Pick, so the focus there found nothing and silently stopped; with it
+  // the draft is switched to its Schedule view first (applyPendingDayFocus).
+  function focusChangedWeekDay(date, slot, opts) {
+    weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner', schedule: !!(opts && opts.schedule) } : null;
     activateTab('week', true);
     var panel = panels['week'];
     if (panel && panel.dataset.built) applyPendingDayFocus(panel);
@@ -24773,6 +24790,16 @@
     weekState.days.forEach(function (d, i) { if (d.date === pending.date) index = i; });
     if (index < 0) return; // the change landed outside the week on screen
     weekState.pendingDayFocus = null;
+    // A draft on its Meals-by-category view: Schedule first, keyed to this
+    // plan so draftView() keeps it rather than resetting to the menu.
+    var data = weekState.data;
+    if (pending.schedule && data && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
+      weekState.draftView = 'days';
+      weekState.draftViewPlanId = data.weekly_plan_id;
+    }
+    // The Schedule is a carousel of every day: open it on this one
+    // (wireReviewCarousel lands on reviewState.dayIndex).
+    if (pending.schedule) reviewState.dayIndex = index;
     // The root shows the day in full under its strip (2026-09-14), so a
     // changed meal is legible right there: select that day and stay — no
     // step to go back from. (Until then this opened the Day step, because
@@ -24780,8 +24807,11 @@
     goMealsStep('week', { dayIndex: index, replace: true });
     // The row on the root's day card (2026-09-18) — the Day step's slot
     // cards are one tap in and not what is on screen here.
-    var target = panel.querySelector('.wk-row[data-wk-row="' + pending.slot + '"]') ||
-      panel.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
+    // Inside that day's card when the screen is the Schedule carousel, whose
+    // every card has the same rows — the first match would be Monday's.
+    var scope = panel.querySelector('[data-wk-card="' + index + '"]') || panel;
+    var target = scope.querySelector('.wk-row[data-wk-row="' + pending.slot + '"]') ||
+      scope.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
     if (!target) return;
     target.classList.add('just-changed');
     // Long enough to notice, short enough that it's gone before it can be

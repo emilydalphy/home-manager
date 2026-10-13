@@ -25,7 +25,9 @@ why*, not duplicating the diff.
   day on Plan via `focusChangedWeekDay`, where Pick already lives, and
   `resolveOpenSlot` now refreshes Today. Why: `moves_for_day` built nothing
   for a slot with no meal, so an open breakfast/lunch/snack was on no screen
-  of Today. An open dinner keeps its needs-you card too (row + card).
+  of Today. Review fixes: tonight's open-dinner row steps aside while its
+  needs-you card is up (`todayShownMoves`); on a draft the tap opens the
+  Schedule view on that day's card, not Meals-by-category (no Pick there).
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
