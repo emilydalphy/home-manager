@@ -110,8 +110,9 @@ def add_attention_item(kind: str, summary: str, detail: dict | None = None) -> d
         # call actually supplies.
         merged = {**json.loads(existing["detail_json"]), **detail}
         conn.execute(
-            "UPDATE attention_items SET status = 'pending', summary = ?, detail_json = ?, resolved_at = NULL WHERE id = ?",
-            (summary, json.dumps(merged), existing["id"]),
+            "UPDATE attention_items SET status = 'pending', summary = ?, detail_json = ?, resolved_at = NULL "
+            "WHERE id = ? AND household_id = ?",
+            (summary, json.dumps(merged), existing["id"], household_id()),
         )
         conn.commit()
         conn.close()
@@ -214,7 +215,9 @@ def record_attention_item_usage(item_id: int, amount_used: str = "") -> dict:
     remaining, reconciled = _inventory._try_subtract_quantity(baseline, amount_used)
     conn = get_conn()
     if remaining is None:
-        conn.execute("DELETE FROM inventory_items WHERE id = ?", (inv_row["id"],))
+        conn.execute(
+            "DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (inv_row["id"], household_id())
+        )
         conn.commit()
         conn.close()
         resolve_attention_item(item_id, "resolved")
@@ -223,13 +226,19 @@ def record_attention_item_usage(item_id: int, amount_used: str = "") -> dict:
             "units_reconciled": True, "replaced_prior_answer": replacing,
         }
     conn.execute(
-        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?",
-        (remaining, inv_row["id"]),
+        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (remaining, inv_row["id"], household_id()),
     )
     conn.commit()
-    new_rev = conn.execute("SELECT rev FROM inventory_items WHERE id = ?", (inv_row["id"],)).fetchone()["rev"]
+    new_rev = conn.execute(
+        "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?", (inv_row["id"], household_id())
+    ).fetchone()["rev"]
     detail["applied"] = {"before": baseline, "after": remaining, "rev_after": new_rev}
-    conn.execute("UPDATE attention_items SET detail_json = ? WHERE id = ?", (json.dumps(detail), item_id))
+    conn.execute(
+        "UPDATE attention_items SET detail_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(detail), item_id, household_id()),
+    )
     conn.commit()
     conn.close()
     resolve_attention_item(item_id, "resolved")

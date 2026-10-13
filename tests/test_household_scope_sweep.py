@@ -235,13 +235,6 @@ _CROSS_HOUSEHOLD_ON_PURPOSE = {
 # This list only ever SHRINKS; when it is empty, delete it and the branch on
 # it in the sweep.
 _LATER_TRANCHE = {
-    "app/tools/attention.py": [
-        (1, "DELETE FROM inventory_items WHERE id = ?"),
-        (1, "SELECT rev FROM inventory_items WHERE id = ?"),
-        (1, "UPDATE attention_items SET detail_json = ? WHERE id = ?"),
-        (1, "UPDATE attention_items SET status = 'pending', summary = ?, detail_json = ?, resolved_at = NULL WHERE id = ?"),
-        (1, "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?"),
-    ],
     "app/tools/inventory.py": [
         (1, "DELETE FROM inventory_items WHERE id = ?"),
         (1, "UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ?"),
@@ -257,6 +250,7 @@ _LATER_TRANCHE = {
 # so the sweep can say, when it goes red in one of them, that the module is
 # supposed to be finished.
 _DONE_MODULES = (
+    "app/tools/attention.py",
     "app/tools/cooker.py",
     "app/tools/defrost.py",
     "app/tools/digest.py",
