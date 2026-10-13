@@ -41,8 +41,9 @@ slot — each is its own meal.
 from __future__ import annotations
 
 import datetime
+import json
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id
 from . import bring_over as _bring_over
 from . import cooker as _cooker
@@ -50,6 +51,10 @@ from . import leftovers as _leftovers
 from . import weekly_plan as _weekly_plan
 
 ANSWERS = ("had", "skipped")
+
+# On the empty night a skipped double-batch cook leaves behind (see
+# _skip_moving_the_cook): what the night was, for anyone reading it later.
+SKIPPED_MOVED_CONSTRAINT = "skipped_moved_on"
 
 
 class NotAskedAbout(ValueError):
@@ -143,18 +148,95 @@ def answer_yesterday(entry_id: int, answer: str, today: datetime.date | None = N
     row = next((m for m in current["meals"] if m["entry_id"] == entry_id), None)
     if row is None:
         raise NotAskedAbout("That meal isn't one I'm asking about any more.")
+    moved = None
     if answer == "had":
         _cooker.check_off_meal(entry_id, "done")
     else:
-        conn = get_conn()
-        conn.execute(
-            "UPDATE meal_plan_entries SET skipped_at = datetime('now') "
-            "WHERE id = ? AND household_id = ? AND skipped_at IS NULL",
-            (entry_id, household_id()),
-        )
-        conn.commit()
-        conn.close()
+        moved = _skip(entry_id, row["meal"], current["date"])
     fresh = yesterday_check(today)
     fresh["meal"] = row["meal"]
     fresh["answer"] = answer
+    if moved:
+        # {"date", "slot", "label"} — where the dish is now cooked.
+        fresh["moved_to"] = moved
     return fresh
+
+
+def _skip(entry_id: int, meal: str, day: str) -> dict | None:
+    """
+    "We skipped it". For an ordinary meal: stamp skipped_at (the module
+    docstring). For a cook that was making a double batch for later
+    nights, the dish moves to the first of them instead (Emily,
+    2026-10-12, option A: "the dish moves to the leftovers night"):
+    Friday's tacos cooked double for Saturday, skipped on Friday, are
+    Saturday's dinner — not "Tacos, leftovers from Friday", promising a
+    batch nobody cooked, on Today, the morning text and the reheat move.
+
+    The move is weekly_plan.move_cook_onto_fed_night, the night off's and
+    the Review stepper's own: Saturday's leftovers row goes, the cook lands
+    on it (its shopping with it — the ledger rows are the cook entry's), a
+    later fed night re-points at Saturday, and the fridge moves travel. The
+    chain's bookkeeping is the stepper's: Saturday is no longer a night
+    the batch feeds. The batch is NOT kept double with a freezer portion
+    the way a night off keeps it — Friday's share was never cooked, so
+    there is no portion; it is ingredients already bought. Yesterday's
+    slot is left planned_empty, never absent, saying where the dish went.
+    No skipped_at: the dish was not skipped, it moved, and if Saturday
+    goes unticked tomorrow's card asks about it like any other meal.
+
+    Not when the first fed night is already ticked cooked (the move would
+    delete that record) or when nothing later is fed — then it is the
+    ordinary skip. One transaction: either the dish moved and the empty
+    night stands in its place, or nothing changed.
+    """
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        entry = conn.execute(
+            "SELECT id, weekly_plan_id, date, slot FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+        target = None
+        if entry is not None:
+            source = _leftovers.plan_leftover_chains(entry["weekly_plan_id"], conn=conn)["sources"].get(entry_id)
+            # Later than yesterday: a lunch that fed yesterday's dinner has
+            # nowhere useful to move to — that dinner is already past.
+            fed = _weekly_plan.fed_nights_in_eating_order(source, day)
+            if fed and not _weekly_plan.fed_night_is_cooked(conn, fed[0]):
+                target = fed[0]
+        if target is None:
+            conn.execute(
+                "UPDATE meal_plan_entries SET skipped_at = datetime('now') "
+                "WHERE id = ? AND household_id = ? AND skipped_at IS NULL",
+                (entry_id, household_id()),
+            )
+            return None
+        plan_id = entry["weekly_plan_id"]
+        new_ref = f"{target['date']}:{target['slot']}"
+        _weekly_plan.move_cook_onto_fed_night(conn, plan_id, entry_id, entry["date"], entry["slot"], target)
+        # The night it landed on is the cook now, not a night it feeds.
+        derived = json.loads(conn.execute(
+            "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()["derived_from_json"] or "{}")
+        fed_keys = derived.get("make_double_for") or []
+        if isinstance(fed_keys, str):
+            fed_keys = [fed_keys]
+        fed_keys = [k for k in fed_keys if str(k).strip() != new_ref]
+        if fed_keys:
+            derived["make_double_for"] = fed_keys
+            derived["make_double_note"] = _weekly_plan._make_double_note_text(fed_keys, target["slot"])
+        else:
+            derived.pop("make_double_for", None)
+            derived.pop("make_double_note", None)
+        conn.execute(
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(derived), entry_id, household_id()),
+        )
+        label = _weekly_plan.fed_night_label(target)
+        _weekly_plan.plan_slot_empty(
+            plan_id, entry["date"], entry["slot"],
+            reason=f"Skipped — the {meal} moved to {label}.",
+            derived_from={"constraint": SKIPPED_MOVED_CONSTRAINT, "moved_entry_id": entry_id},
+            conn=conn,
+        )
+    return {"date": target["date"], "slot": target["slot"], "label": label}

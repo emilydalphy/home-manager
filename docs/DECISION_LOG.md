@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"We skipped it" on a double-batch cook moves the dish to the night it
+  fed** (2026-10-13; branch `overnight/skipped-cook-moves-to-the-fed-night`;
+  tests `tests/test_skipped_cook_moves_on.py`). Emily's option A (2026-10-12):
+  Friday's tacos cooked double for Saturday, skipped, left Saturday saying
+  "leftovers from Friday" everywhere. `yesterday_check._skip` now runs
+  `weekly_plan.move_cook_onto_fed_night` (the night off's and the "−"'s own
+  move), drops the landed night from `make_double_for`, and leaves yesterday
+  `planned_empty` ("Skipped — the Tacos moved to Saturday."), one
+  transaction. No skipped_at on the moved entry (it moved, not skipped) and no
+  freezer portion (Friday's share was never cooked). Not when the fed night is
+  already ticked, or nothing later is fed: then it is the ordinary stamp.
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
