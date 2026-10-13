@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The freezer toasts say where the food is, and agree with it**
+  (2026-10-13; branch `overnight/freezer-toast-wording`). "Anything already
+  in the freezer?" answered "Chicken thighs was put in the freezer" — wrong
+  tense for food already frozen, wrong number for a plural cut. Now
+  `freezerLine`/`freezerCount` (beside `savedLine`): "… are already in the
+  freezer" there, "… are in the freezer" after Shop's "Yes, freezing it".
+  Plural = last word ends in a lone -s (not -ss/-us/-is); "Molasses" would
+  misread, accepted. The rest of `savedLine`'s "Carrots was added" is untouched.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

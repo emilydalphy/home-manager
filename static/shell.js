@@ -2192,6 +2192,28 @@
   function savedCount(n, verbed) {
     return n + (n === 1 ? ' thing was ' : ' things were ') + (verbed || 'saved');
   }
+  // The freezer toasts are where the house "<thing> was <verbed>" reads
+  // wrong out loud (2026-10-13). What the household told us is a state,
+  // not something done to the food: "Anything already in the freezer?"
+  // answers "Chicken thighs are already in the freezer", and "Yes,
+  // freezing it" at the store answers "Chicken thighs are in the freezer"
+  // — the same words the answered block under the line uses. The cuts
+  // that land here are mostly plural, so the verb agrees: a last word
+  // ending in a lone -s reads as plural (thighs, fillets, peas); -ss, -us
+  // and -is ("Swiss", "hummus", "couscous") stay singular.
+  function savedIsPlural(name) {
+    var last = String(name || '').trim().split(/\s+/).pop().toLowerCase();
+    return /[^su]s$/.test(last) && !/is$/.test(last);
+  }
+  function freezerLine(thing, already) {
+    var where = (already ? 'already ' : '') + 'in the freezer';
+    var name = savedName(thing);
+    if (!name) return SAVED_PLAIN;
+    return name + (savedIsPlural(name) ? ' are ' : ' is ') + where;
+  }
+  function freezerCount(n) {
+    return n + (n === 1 ? ' thing is' : ' things are') + ' already in the freezer';
+  }
   function toastSaved(said, action, holdMs) {
     showToast(said || SAVED_PLAIN, action || null, holdMs);
   }
@@ -6776,7 +6798,7 @@
     if (answer !== 'freezer') return; // "Straight to the fridge" writes nothing
     groFreezeSend(id, 'freezer');
     var frozen = groFindLine(id);
-    toastSaved(savedLine(frozen && frozen.item, 'put in the freezer'), {
+    toastSaved(freezerLine(frozen && frozen.item), {
       label: 'Undo',
       onClick: function () {
         // The move goes, and the question is back where it was.
@@ -20005,9 +20027,9 @@
         // plus its way out, so it's shown as-is, held long enough to read.
         showToast(notes[0], null, 9000);
       } else if (items.length === 1) {
-        toastSaved(savedLine(items[0], 'put in the freezer'));
+        toastSaved(freezerLine(items[0], true));
       } else if (items.length) {
-        toastSaved(savedCount(items.length, 'put in the freezer'));
+        toastSaved(freezerCount(items.length));
       } else {
         // "Nothing's frozen" is a real answer with no thing to name.
         toastSaved();
