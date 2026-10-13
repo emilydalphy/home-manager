@@ -77,3 +77,24 @@ def test_all_four_toasts_add_the_line_and_hold_it_longer():
                  "thawToast(said, out, 6000)",
                  "thawToast(tonightNightOffSaid(out), out, 6000)"):
         assert call in src, call
+
+
+def test_the_line_joins_as_a_second_sentence_and_holds_the_toast_longer():
+    import json
+
+    import nodeharness
+
+    src = Path(__file__).resolve().parents[1].joinpath("static", "shell.js").read_text()
+    start = src.index("  function thawToast(")
+    fn = src[start:src.index("\n  }\n", start) + 4]
+    out = json.loads(nodeharness.run_node("var MOVE_THAW_TOAST_MS = 10000;\n" + fn + """
+var thaw = { thaw_now: ['Move the Chicken thighs to the fridge now.'] };
+console.log(JSON.stringify([
+  thawToast('Chicken Skewers tonight.', thaw, 6000),
+  thawToast('Chicken Skewers was swapped in', thaw, 8000),
+  thawToast('Night off.', {}, 6000),
+]));
+""", timeout=30).stdout)
+    assert out[0] == {"said": "Chicken Skewers tonight. Move the Chicken thighs to the fridge now.", "ms": 10000}
+    assert out[1] == {"said": "Chicken Skewers was swapped in. Move the Chicken thighs to the fridge now.", "ms": 10000}
+    assert out[2] == {"said": "Night off.", "ms": 6000}, "nothing to thaw: the toast is as it was"
