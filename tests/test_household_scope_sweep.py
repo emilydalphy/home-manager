@@ -235,14 +235,6 @@ _CROSS_HOUSEHOLD_ON_PURPOSE = {
 # This list only ever SHRINKS; when it is empty, delete it and the branch on
 # it in the sweep.
 _LATER_TRANCHE = {
-    "app/tools/inventory.py": [
-        (1, "DELETE FROM inventory_items WHERE id = ?"),
-        (1, "UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ?"),
-        (2, "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?"),
-        # The two interpolated SETs the card warns need care rather than a
-        # regex pass. Seen, and left for whoever owns that module.
-        (2, "UPDATE inventory_items SET {} WHERE id = ?"),
-    ],
 }
 
 # The TWELVE modules the two tranches have scoped — eight from tranche 1,
@@ -258,6 +250,7 @@ _DONE_MODULES = (
     "app/tools/grocery.py",
     "app/tools/holidays.py",
     "app/tools/household.py",
+    "app/tools/inventory.py",
     "app/tools/meal_variety.py",
     "app/tools/memory.py",
     "app/tools/plan_undo.py",
