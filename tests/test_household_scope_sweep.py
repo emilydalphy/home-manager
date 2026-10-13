@@ -316,7 +316,7 @@ def test_no_statement_reaches_a_household_owned_row_by_id_alone():
 # only the unguarded statements, and so had to come down with every tranche
 # (the headroom test beside it existed because it once didn't) — and with
 # the last tranche it would have had to be zero, i.e. no floor at all.
-_READER_FLOOR = 400
+_READER_FLOOR = 430
 
 
 def _every_by_id_statement() -> list[tuple[str, str]]:
