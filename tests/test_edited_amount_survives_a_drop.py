@@ -149,3 +149,76 @@ def test_an_edit_down_still_buys_a_new_meals_share():
     tools.plan_meal(_day(5), "French Onion Soup", slot="dinner", weekly_plan_id=plan_id,
                     add_ingredients_to_grocery_list=True)
     assert _onions() == ["3"]
+
+
+# ---- Re-review, 2026-10-13: an edit meeting last week's "Keep". The edit
+# speaks for the meals' part of the line; the kept amount rides on top of
+# it, and undoing the Keep takes only the Keep back off.
+
+def _week_two_with_a_carried_onion(frozen_today, *dishes):
+    """Last week's "onion 3" left unbought; this week plans `dishes` (day,
+    recipe) and is approved, so last week's 3 waits for Keep / Don't need.
+    Returns (this week's plan, this week's onion line, the carried row)."""
+    _week()
+    frozen_today(_day(7) + "T08:00:00")
+    plan2 = tools.create_weekly_plan(_day(7))["weekly_plan_id"]
+    for day, dish in dishes:
+        tools.plan_meal(_day(day), dish, slot="dinner", weekly_plan_id=plan2)
+    tools.approve_weekly_plan(plan2, "Alex")
+    conn = get_conn()
+    line = conn.execute(
+        "SELECT id FROM grocery_items WHERE LOWER(item) = 'onion' AND status = 'needed'"
+    ).fetchone()["id"]
+    carried = conn.execute(
+        "SELECT id FROM grocery_items WHERE LOWER(item) = 'onion' AND status = 'carried'"
+    ).fetchone()["id"]
+    conn.close()
+    return plan2, line, carried
+
+
+def test_an_edit_down_then_a_keep_survives_a_dropped_night(frozen_today):
+    """3 for this week's soup and chili, edited to 1 (two at home), then
+    last week's 3 kept: 4. Chili taken off: the soup's 1 under the
+    household's edit, plus the kept 3 — still 4. It read 2, the edit
+    applied to a total that already held the kept amount."""
+    plan2, line, carried = _week_two_with_a_carried_onion(
+        frozen_today, (8, "Lentil Soup"), (10, "Chili"))
+    assert _onions() == ["3"]
+    tools.update_grocery_item(line, quantity="1")
+    tools.keep_carried_over_item(carried)
+    assert _onions() == ["4"]
+    tools.drop_dish_from_day(plan2, _entry(plan2, _day(10)))
+    assert _onions() == ["4"]
+
+
+def test_undoing_a_keep_after_an_edit_leaves_the_households_number(frozen_today):
+    """Chili's 2 plus last week's kept 3 is 5; edited to 1; the Keep
+    undone. The line went blank with the chili still planned — the edit had
+    folded the kept amount away and the undo subtracted it from the 1. The
+    household's 1 stands."""
+    _plan2, line, carried = _week_two_with_a_carried_onion(frozen_today, (10, "Chili"))
+    tools.keep_carried_over_item(carried)
+    assert _onions() == ["5"]
+    tools.update_grocery_item(line, quantity="1")
+    tools.undo_carried_over_decision(carried)
+    assert _onions() == ["1"]
+
+
+def test_an_edit_to_nothing_is_remembered_through_a_drop_and_replan():
+    plan_id, _soup, _chili, line_id = _week()
+    tools.update_grocery_item(line_id, quantity="0")
+    tools.drop_dish_from_day(plan_id, _entry(plan_id, _day(1)))
+    tools.swap_meal_in_plan(plan_id, _day(1), "Lentil Soup", slot="dinner")
+    assert _onions() == ["0"]
+
+
+def test_an_unreadable_edit_clears_the_recorded_edit():
+    _plan_id, _soup, _chili, line_id = _week()
+    tools.update_grocery_item(line_id, quantity="1")
+    tools.update_grocery_item(line_id, quantity="a few")
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT kept_amount, short_amount, edited_to FROM grocery_items WHERE id = ?", (line_id,)
+    ).fetchone()
+    conn.close()
+    assert tuple(row) == ("", "", "")

@@ -27,6 +27,10 @@ why*, not duplicating the diff.
   killed the first cut: making an edited-up line a standing want let it soak
   up each later week (5 → 7 → 9, never offered as a leftover), and capping
   only the removal let a drop + re-plan walk an edit down back up (1 → 2 → 3).
+  Re-review: the edit applies to the MEALS' part alone with any kept amount on
+  top (`_plan_line_amount`) — on the total it ate a Keep (4 → 2 after a drop);
+  undoing a Keep after an edit down rebuilds from ledger + edit (it blanked);
+  a typed "0" stays 0; an unreadable typed amount clears all three columns.
   `test_grocery_line_to_zero`'s edit-down case (a standing want; held by
   `_no_more_than`) expects the household's 2; `test_reheat_side_is_bought`'s
   "−"-door characterisation is inverted (5 typed over the plan's 1 = 4 extra,
