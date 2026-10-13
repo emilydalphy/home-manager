@@ -397,7 +397,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
         "create_household", "set_passphrase"
     ],
     "app/tools/attendance.py": [
-        "_write", "clear_slot_attendance"
+        "clear_slot_attendance"
     ],
     "app/tools/attention.py": [
         "add_attention_item", "record_attention_item_usage",

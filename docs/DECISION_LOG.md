@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Two "I'm out"s on the same meal at the same instant both stick**
+  (2026-10-13; branch `overnight/both-outs-stick`, rebuilt on main from the
+  stale `attendance-race-2026-10-03`; tests `tests/test_attendance_race.py`).
+  `set_member_attendance` read the present list, took one person out in
+  Python and wrote the whole list back on another connection — a lost update
+  (3 of 4 new tests fail on main). It now changes one person in the STORED
+  absent list on one connection under `BEGIN IMMEDIATE`, and a per-meal
+  in-process RLock (`_slot_write_lock`, also taken by `set_slot_attendance`)
+  holds the away-need sync to the order the writes landed. In-process only:
+  several workers would still write correctly but need a shared lock for the
+  sync's order.
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
