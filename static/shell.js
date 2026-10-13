@@ -5354,7 +5354,7 @@
     // (Plan's freezer step), it reads the same `after=approve` and lands
     // the household there instead; until then the list is the next step.
     if (new URLSearchParams(window.location.search).get('after') === 'approve') {
-      showToast('Your week was approved');
+      showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));
       window.history.replaceState({ tab: 'grocery' }, '', window.location.pathname);
     }
   }
@@ -14465,7 +14465,7 @@
       // step first (2b = A, 2026-10-12): the reveal's button says
       // "Approve the week", and the question waits on Plan's freezer row.
       goGroceryList();
-      showToast('Your week was approved');
+      showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));
     }
   }
 
@@ -19983,6 +19983,10 @@
 
   async function submitDefrostAsk(panel, data, items) {
     var buttons = panel.querySelectorAll('.wk-freezer-dock button, .defrost-chip');
+    // Remember which were already off: "Add to the schedule" is dimmed
+    // while nothing is picked, and a failed save must not wake it up
+    // under a label that promises the opposite of "nothing frozen".
+    var wasDisabled = Array.prototype.map.call(buttons, function (b) { return b.disabled; });
     buttons.forEach(function (b) { b.disabled = true; });
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-confirm', {
@@ -20025,7 +20029,7 @@
       refreshGrocerySurfaces();
     } catch (err) {
       console.warn('Defrost confirmation failed:', err);
-      buttons.forEach(function (b) { b.disabled = false; });
+      buttons.forEach(function (b, i) { b.disabled = wasDisabled[i]; });
       showToast('That didn’t save — try again.');
     }
   }
@@ -20750,6 +20754,15 @@
   // after the household has tapped the "Approve anyway" button that
   // showApproveConfirm renders below — never inferred, never set on the
   // first tap.
+  // "Week approved · 3 things to buy." — one sentence for every way a
+  // week gets approved (Plan's button here, and the onboarding reveal's,
+  // which hands `added` over in its ?after=approve URL). A week that added
+  // nothing says the first half alone rather than "0 things".
+  function weekApprovedLine(added) {
+    var n = Number(added) || 0;
+    return 'Week approved' + (n > 0 ? ' · ' + n + (n === 1 ? ' thing' : ' things') + ' to buy' : '') + '.';
+  }
+
   async function submitWeekApproval(panel, data, approvedBy, confirmHardConflicts) {
     var btn = panel.querySelector('#week-approve-btn');
     var restoreLabel = btn ? btn.textContent : 'Approve the week';
@@ -20797,11 +20810,14 @@
       // from before the tap, kept only as a fallback — see
       // weekTakeoverToastNote. Both are null the rest of the time, so this
       // changes nothing about the toast on an ordinary approval.
-      var added = Number(approval.groceries_added) || 0;
-      var approvedLine = 'Week approved' +
-        (added > 0 ? ' · ' + added + (added === 1 ? ' thing' : ' things') + ' to buy' : '') + '.';
+      var approvedLine = weekApprovedLine(approval.groceries_added);
       var takeoverNote = weekTakeoverToastNote(approval.replaced, data.replaces);
+      // What approval batched rides the same toast: All set was the only
+      // screen that said it, and nothing was asked, so this is the one
+      // place the household hears that one cook now covers several meals.
+      var batchedLine = approval.batched_line || '';
       var approvedToast = approvedLine +
+        (batchedLine ? ' ' + batchedLine : '') +
         (approval.conflicts_note ? ' ' + approval.conflicts_note : '') +
         (takeoverNote ? ' ' + takeoverNote + '.' : '');
       // Approving is the one action in this app that writes to the grocery
@@ -20823,7 +20839,7 @@
       // the freezer row asks its question quietly.
       weekState.step = 'week';
       goGroceryList();
-      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote) ? 9000 : 6000);
+      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote || batchedLine) ? 9000 : 6000);
       await loadWeekMenu(panel);
       // The notifications ask's moment (iPhone app only; see offerPush):
       // a week is settled, so there's a morning note and a dinner nudge to

@@ -437,7 +437,7 @@ def test_the_after_approve_hand_off_lands_on_the_list_and_says_approved_not_draf
     landing = build[build.index("if (afterApprove && weekState.data && weekPlanState(weekState.data) === 'set') {"):]
     landing = landing[:landing.index("\n    }\n")]
     assert "ensureDefrostAskItems" not in landing and "goMealsStep('freezer'" not in landing
-    assert "goGroceryList();\n      showToast('Your week was approved');" in landing
+    assert "goGroceryList();\n      showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));" in landing
 
 
 # ---------------------------------------------------------------------------

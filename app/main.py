@@ -45,6 +45,7 @@ from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
 from .tools import prep_sessions as _prep_sessions
+from .tools import weekly_plan as _weekly_plan
 
 
 # Nothing else in the app configures logging, and an unconfigured logger
@@ -5116,6 +5117,11 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         "conflicts": result["conflicts"],
         "conflicts_note": result["conflicts_note"],
         "replaced": replaced,
+        # What approval batched ("I've made Monday's chili big enough for
+        # Thursday too."). All set used to be the only screen that said it;
+        # approving now lands on the list instead, so the toast carries it
+        # (weekly_plan.batched_line) — "" when nothing was batched.
+        "batched_line": _weekly_plan.batched_line(result["weekly_plan_id"]),
     }
 
 
