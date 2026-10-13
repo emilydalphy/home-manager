@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Freezing it?" says to keep the sooner night's share in the fridge**
+  (2026-10-13, defect hunt; branch `overnight/freeze-keeps-the-sooner-night`).
+  Ground beef for Wednesday's and Sunday's tacos, ticked Tuesday: the offer
+  is Sunday's (Wednesday's 48h move has gone) and read "Freezing it?", so
+  the pack went in the freezer and Wednesday's dinner was frozen solid. The
+  offer now carries `keep_fresh_label` (nights the line feeds, today or
+  later, before the asked one) and the block reads "Freezing some? Keep
+  Wednesday’s in the fridge…", "Yes, freezing Sunday’s", "Sunday’s in the
+  freezer — out Friday night." The booking was already per-night; unchanged.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

@@ -1961,6 +1961,18 @@ def freezing_offer_for_grocery_line(line: dict, *, conn=None, today: date | None
             return None
         if _settled_move_for_entry(c, meal["entry_id"], {item_name, line.get("item") or ""}) is not None:
             return None
+        # The nights this same pack feeds BEFORE the one asked about that
+        # are still ahead — today or later, not cooked, not skipped — but
+        # too close to thaw for (_grocery_line_first_meal passed over them).
+        # Ground beef for Wednesday's and Sunday's tacos, ticked on Tuesday:
+        # the question is about Sunday, and "Freezing it?" alone read as
+        # "freeze the pack", leaving Wednesday's dinner frozen solid
+        # (defect hunt 2026-10-13). Those nights' share stays in the fridge,
+        # so the sentence has to say so.
+        keep_fresh = [
+            m for m in _grocery_line_meals(c, int(line["id"]))
+            if today.isoformat() <= m["date"] < meal["date"]
+        ]
     finally:
         if own_conn:
             c.close()
@@ -1970,7 +1982,23 @@ def freezing_offer_for_grocery_line(line: dict, *, conn=None, today: date | None
         "cook_date": meal["date"], "cook_weekday": _weekday_name(meal["date"]),
         "move_date": move_date_str, "move_label": _move_label(move_date_str, today),
         "lead_hours": lead_hours, "lead_tier": tier,
+        "keep_fresh_label": _keep_fresh_label([m["date"] for m in keep_fresh], today),
     }
+
+
+def _keep_fresh_label(dates: list[str], today: date) -> str:
+    """"Wednesday’s", "today’s", "Wednesday’s and Thursday’s" — the nights
+    whose share of a pack stays in the fridge — or "" when there are none.
+    One night per date, in order (two meals on one day are one share). The
+    curly apostrophe is the screen's: the sentence around it ("Yes,
+    freezing Sunday’s") is written with one."""
+    names = []
+    for d in sorted(set(dates)):
+        name = "today’s" if d == today.isoformat() else f"{_weekday_name(d)}’s"
+        names.append(name)
+    if len(names) <= 1:
+        return "".join(names)
+    return ", ".join(names[:-1]) + " and " + names[-1]
 
 
 def stamp_freezing_offers(items: list[dict]) -> list[dict]:
