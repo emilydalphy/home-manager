@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An invited adult adds their email on the invite link** (2026-10-13;
+  branch `overnight/invite-keeps-your-email`; tests
+  `tests/test_invite_keeps_your_email.py`). /join, once the link has signed
+  them in, asks "You're in." + their email and a code (the Preferences
+  routes, `/api/account/email/*`), with "Not now"; skipped when they already
+  have one or codes are off (503). Onboarding's hello and name screens carry
+  "Not you? Sign out" (/logout). Why: an email household has no passphrase,
+  so an invited adult who signed out and back in by email made a new, empty
+  household (Emily's Option A, 2026-10-12). No backend change.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

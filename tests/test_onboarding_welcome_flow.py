@@ -186,11 +186,16 @@ def test_the_first_screen_says_hello_and_its_purpose_and_nothing_more():
     after. That screen is gone — the purpose line now sits under the title
     here, in the same breath, and this is what replaces the old
     one-line-and-a-button assertion.
+
+    UPDATED 2026-10-13: plus the quiet "Not you? Sign out" under the
+    button (Emily's decision, 2026-10-12 — an address nobody knew starts a
+    new household and lands HERE, with no way out but finishing setup).
     """
     assert _text("intro-hello") == (
         "Hi, I’m Pomona. I’m your home manager. My job is to make your life "
         "easier by taking on the mental load of planning your weekly meals "
-        "and helping you get food on the table. Nice to meet you"
+        "and helping you get food on the table. Nice to meet you "
+        "Not you? Sign out"
     )
 
 

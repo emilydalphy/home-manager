@@ -1172,6 +1172,23 @@
      .on-spruce). */
   .back-link.on-spruce { color: var(--ivory-ink-muted); }
   .back-link.on-spruce:hover { color: var(--ivory-ink); }
+  /* "Not you? Sign out" (Loop Board "An invited adult who signs out and
+     signs back in by email lands in a brand-new empty household", Emily
+     2026-10-12). An address nobody knows starts a new household and lands
+     here; someone who meant to come back to their family's household had
+     no way out but finishing setup or typing /logout. On the first screen
+     and on the first question (where a reload mid-setup lands), quiet,
+     its own 44px row (§2 rule 6). /logout also clears this device's
+     setup draft (login.html, ?signed_out=1). */
+  .not-you {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 44px; margin: -6px 0 0;
+    font-family: var(--font-body); font-size: 15px; font-weight: 600;
+    color: var(--ink-secondary); text-decoration: none;
+  }
+  .not-you:hover { color: var(--ink-strong); }
+  .not-you.on-spruce { color: var(--ivory-ink-muted); }
+  .not-you.on-spruce:hover { color: var(--ivory-ink); }
 
   /* ---------- Sharing with Claude (App Store 5.1.2(i), 2026-09-27) ----------
      The consent step, between the last question and the first week: what
@@ -1245,6 +1262,7 @@
     <div class="intro-foot">
       <div class="intro-pager" aria-hidden="true"><span class="is-on"></span><span></span><span></span><span></span></div>
       <button class="intro-next" id="intro-hello-next" type="button">Nice to meet you<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg></button>
+      <a class="not-you on-spruce" href="/logout">Not you? Sign out</a>
     </div>
   </div>
 </div>
@@ -1349,6 +1367,7 @@
   </div>
   <div class="q-foot">
     <button class="btn-primary q-next" id="your-name-next" type="button">Next</button>
+    <a class="not-you" href="/logout">Not you? Sign out</a>
   </div>
 </div>
 
