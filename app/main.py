@@ -3416,6 +3416,26 @@ def today_yesterday_answer(req: YesterdayAnswerRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class YesterdayUndoRequest(BaseModel):
+    """The Undo on a "moved to Saturday" toast: the answer's own handle."""
+    undo_entry_id: int
+
+
+@app.post("/api/today/yesterday/undo")
+def today_yesterday_undo(req: YesterdayUndoRequest):
+    """
+    Undo a "We skipped it" that moved a double-batch cook onto the night
+    it fed (tools.undo_skipped_move): both nights back as they were, and
+    yesterday's question asked again. A refusal (something changed since)
+    is an answer with a sentence, not an error.
+    """
+    try:
+        return tools.undo_skipped_move(req.undo_entry_id)
+    except Exception as e:
+        logger.exception("Undoing yesterday's skip failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/today/tonight")
 def today_tonight():
     """

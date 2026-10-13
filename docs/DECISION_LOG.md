@@ -24,6 +24,12 @@ why*, not duplicating the diff.
   transaction. No skipped_at on the moved entry (it moved, not skipped) and no
   freezer portion (Friday's share was never cooked). Not when the fed night is
   already ticked, or nothing later is fed: then it is the ordinary stamp.
+  Review round: a pending thaw that travelled onto a past day is re-dated to
+  today and said (`thaw_now`, via `defrost.resync_plan_thaws`); the move
+  stamps a `plan_undo` record on yesterday's empty row and
+  `POST /api/today/yesterday/undo` (`undo_skipped_move`) puts both nights
+  back; shell.js toasts "<Dish> moved to <Day>." with Undo and refreshes
+  Today, Plan and Cook.
 
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch

@@ -100,3 +100,80 @@ def test_an_ordinary_dinner_skipped_is_only_stamped():
     assert "moved_to" not in out
     [row] = _rows(plan, yday)
     assert row["id"] == entry and row["skipped_at"] is not None
+
+
+def _thaw(plan, entry_id, task_date):
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal, "
+        "status, task_type, meal_plan_entry_id) VALUES (?, ?, ?, ?, 'Tacos', 'pending', 'defrost', ?)",
+        (tools.household_id(), plan, task_date,
+         "Move the ground beef to the fridge — for Monday's Tacos.", entry_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def _thaw_dates(entry_id):
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT task_date FROM prep_tasks WHERE meal_plan_entry_id = ? AND task_type = 'defrost' "
+        "AND status = 'pending'", (entry_id,)).fetchall()
+    conn.close()
+    return [r["task_date"] for r in rows]
+
+
+def test_the_moved_cooks_fridge_move_is_due_today_and_said(monkeypatch):
+    """Review catch: the thaw travelled +1 day with the cook and landed on
+    YESTERDAY (a thaw is never dated on the cook's day), so nothing said to
+    take the beef out before "Tap to start"."""
+    from app.tools import defrost
+    monkeypatch.setattr(defrost, "sync_defrost_tasks", lambda plan_id: {})
+    plan, today, yday = _plan()
+    cook, _fed = _chain(plan, yday, [today.isoformat()])
+    before_yday = (today - datetime.timedelta(days=2)).isoformat()
+    _thaw(plan, cook, before_yday)
+
+    out = tools.answer_yesterday(cook, "skipped", today)
+
+    assert _thaw_dates(cook) == [today.isoformat()]
+    assert out["thaw_now"] == ["Move the ground beef to the fridge today."]
+
+
+def test_undo_puts_both_nights_back_and_asks_again():
+    plan, today, yday = _plan()
+    cook, (fed,) = _chain(plan, yday, [today.isoformat()])
+    before = {d: _rows(plan, d) for d in (yday, today.isoformat())}
+
+    out = tools.answer_yesterday(cook, "skipped", today)
+    assert out["can_undo"] is True
+    back = tools.undo_skipped_move(out["undo_entry_id"])
+
+    assert back["status"] == "restored"
+    assert {d: _rows(plan, d) for d in (yday, today.isoformat())} == before
+    assert set(leftovers.plan_leftover_chains(plan)["leftovers"]) == {fed}
+    assert [m["entry_id"] for m in tools.yesterday_check(today)["meals"]] == [cook]
+    # Once only.
+    assert tools.undo_skipped_move(out["undo_entry_id"])["status"] == "refused"
+
+
+def test_the_screen_says_where_it_went_refreshes_and_offers_undo():
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text(encoding="utf-8")
+    start = js.index("async function answerYesterday(")
+    body = js[start:js.index("async function undoYesterdaySkip(", start)]
+    assert "out.moved_to" in body and "' moved to '" in body and "out.thaw_now" in body
+    assert "label: 'Undo'" in body and "undoYesterdaySkip(panel" in body
+    assert "refreshTodayMoves()" in body
+    assert "refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }])" in body
+    undo = js[js.index("async function undoYesterdaySkip("):]
+    undo = undo[:undo.index("\n  }\n") + 4]
+    assert "/api/today/yesterday/undo" in undo and "loadYesterdayCheck(panel)" in undo
+
+
+def test_the_undo_route(signed_in):
+    plan, today, yday = _plan()
+    cook, _fed = _chain(plan, yday, [today.isoformat()])
+    out = signed_in.post("/api/today/yesterday/answer", json={"entry_id": cook, "answer": "skipped"}).json()
+    res = signed_in.post("/api/today/yesterday/undo", json={"undo_entry_id": out["undo_entry_id"]})
+    assert res.status_code == 200 and res.json()["status"] == "restored"

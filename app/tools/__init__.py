@@ -890,6 +890,7 @@ from .proposals import (  # noqa: F401
 from .yesterday_check import (  # noqa: F401
     NotAskedAbout,
     answer_yesterday,
+    undo_skipped_move,
     yesterday_check,
 )
 # Now's "Tonight: X. Still good?" card, its swap-from-the-plan sheet

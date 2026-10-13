@@ -48,6 +48,7 @@ from ._shared import household_id
 from . import bring_over as _bring_over
 from . import cooker as _cooker
 from . import leftovers as _leftovers
+from . import plan_undo as _plan_undo
 from . import weekly_plan as _weekly_plan
 
 ANSWERS = ("had", "skipped")
@@ -152,17 +153,27 @@ def answer_yesterday(entry_id: int, answer: str, today: datetime.date | None = N
     if answer == "had":
         _cooker.check_off_meal(entry_id, "done")
     else:
-        moved = _skip(entry_id, row["meal"], current["date"])
+        moved = _skip(entry_id, row["meal"], current["date"], today.isoformat())
     fresh = yesterday_check(today)
     fresh["meal"] = row["meal"]
     fresh["answer"] = answer
     if moved:
-        # {"date", "slot", "label"} — where the dish is now cooked.
-        fresh["moved_to"] = moved
+        # {"date", "slot", "label"} — where the dish is now cooked — plus
+        # the Undo's handle and any fridge move that has to start now.
+        fresh["moved_to"] = {k: moved[k] for k in ("date", "slot", "label")}
+        fresh["undo_entry_id"] = moved["undo_entry_id"]
+        fresh["can_undo"] = True
+        if moved.get("thaw_now"):
+            fresh["thaw_now"] = moved["thaw_now"]
     return fresh
 
 
-def _skip(entry_id: int, meal: str, day: str) -> dict | None:
+# Where a moved skip's undo record lives: on the planned_empty row it
+# leaves on yesterday (plan_undo's holder), as the night off keeps its own.
+SKIPPED_UNDO_KEY = "skipped_moved_undo"
+
+
+def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
     """
     "We skipped it". For an ordinary meal: stamp skipped_at (the module
     docstring). For a cook that was making a double batch for later
@@ -212,7 +223,28 @@ def _skip(entry_id: int, meal: str, day: str) -> dict | None:
             return None
         plan_id = entry["weekly_plan_id"]
         new_ref = f"{target['date']}:{target['slot']}"
+        old_ref = f"{entry['date']}:{entry['slot']}"
+        # The Undo's snapshot, before the first write — the night off's
+        # machinery (plan_undo), so "skipped" rewriting the plan can be
+        # taken back exactly like "not tonight" can.
+        all_rows = conn.execute(
+            "SELECT id, derived_from_json FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+            "AND component_category IS NULL",
+            (plan_id, household_id()),
+        ).fetchall()
+        direct = {entry_id, *[t["entry_id"] for t in fed]}
+        touched = _plan_undo.touched_ids(all_rows, direct, [old_ref, new_ref])
+        snap = _plan_undo.snapshot(conn, touched)
         _weekly_plan.move_cook_onto_fed_night(conn, plan_id, entry_id, entry["date"], entry["slot"], target)
+        # The fridge move travelled with the cook by the days it moved, and
+        # a thaw is never dated on the cook's own day — so a move that was
+        # due before yesterday now reads as due yesterday, a day gone, and
+        # nothing says to take the food out. It is due now: today.
+        conn.execute(
+            "UPDATE prep_tasks SET task_date = ? WHERE household_id = ? AND meal_plan_entry_id = ? "
+            "AND task_type = 'defrost' AND status = 'pending' AND task_date < ?",
+            (today, household_id(), entry_id, today),
+        )
         # The night it landed on is the cook now, not a night it feeds.
         derived = json.loads(conn.execute(
             "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
@@ -233,10 +265,47 @@ def _skip(entry_id: int, meal: str, day: str) -> dict | None:
             (json.dumps(derived), entry_id, household_id()),
         )
         label = _weekly_plan.fed_night_label(target)
-        _weekly_plan.plan_slot_empty(
+        holder_id = _weekly_plan.plan_slot_empty(
             plan_id, entry["date"], entry["slot"],
             reason=f"Skipped — the {meal} moved to {label}.",
             derived_from={"constraint": SKIPPED_MOVED_CONSTRAINT, "moved_entry_id": entry_id},
             conn=conn,
-        )
-    return {"date": target["date"], "slot": target["slot"], "label": label}
+        )["entry_id"]
+        _plan_undo.stamp(conn, holder_id, SKIPPED_UNDO_KEY, {
+            "kind": "skipped_moved", "dish": meal, **snap,
+            "after": _plan_undo.fingerprint(conn, touched, holder_id),
+            "grocery": _plan_undo.lines_changed(conn, snap),
+        })
+    # After the commit: the thaw pass opens connections of its own. Never
+    # raises (resync_plan_thaws), so a failed reminder can't undo the move.
+    from . import defrost as _defrost
+    thaw_now = _defrost.resync_plan_thaws(plan_id, [entry_id], today=today)
+    return {"date": target["date"], "slot": target["slot"], "label": label,
+            "undo_entry_id": holder_id, "thaw_now": thaw_now}
+
+
+def undo_skipped_move(holder_entry_id: int) -> dict:
+    """
+    Undo on the "moved to Saturday" toast: put both nights back exactly as
+    they were — the dish on yesterday, its leftovers night, the chain, the
+    fridge moves on their old dates — and yesterday's question with them
+    (the row is unanswered again, so the card asks it). Only while nothing
+    the answer touched has changed since (plan_undo.still_as_left);
+    otherwise nothing is written and `status` is 'refused' with a sentence.
+    """
+    nothing = {"status": "refused", "message": "There’s nothing to put back."}
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        holder = conn.execute(
+            "SELECT * FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (int(holder_entry_id), household_id()),
+        ).fetchone()
+        record = _plan_undo.read(holder, SKIPPED_UNDO_KEY) if holder is not None else None
+        if not record:
+            return nothing
+        if not _plan_undo.still_as_left(conn, record, holder["id"]):
+            return {"status": "refused", "message": "That’s changed since, so I’ve left it as it is."}
+        _plan_undo.restore(conn, record, holder["id"])
+    dish = record.get("dish") or ""
+    return {"status": "restored", "dish": dish or None,
+            "said": f"{dish} is back where it was." if dish else "It’s back where it was."}
