@@ -28,6 +28,11 @@ why*, not duplicating the diff.
   the ⋯ has one amount box per week. Why: two onion rows read as "which do I
   buy?" (Emily, 2026-10-03; rebuilt on main per her 2026-10-12 call).
   Freezing-it on a grouped row books the lead week's meal only.
+  Review fixes: Remove sends each week's /remove with allSettled and, if one
+  fails, puts back the ones that went before saying so (all or nothing);
+  Undo decides per line (remove-undo the restorable, re-add the rest with
+  their own week's amount); "Make it a staple" isn't offered on a two-weeks
+  row (it made a staple of the total, tied to one week's line).
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

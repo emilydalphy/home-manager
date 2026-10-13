@@ -180,3 +180,48 @@ settle(function () {
 """)
     assert out["dropped"] == ["/api/grocery-list/11/pre-shop", "/api/grocery-list/12/pre-shop"]
     assert out["undone"] == ["/api/grocery-list/11/pre-shop-undo", "/api/grocery-list/12/pre-shop-undo"]
+
+
+@shop_harness.needs_node
+def test_remove_that_fails_for_one_week_puts_the_other_back_and_says_so():
+    """Review, 2026-10-13: Remove sent both weeks' /remove at once; if one
+    failed, the other was already off with no Undo and no trace."""
+    out = shop_harness.run(_SCREEN + """
+const REMOVE_BODY = { restorable: true };
+fetch = function (url, opts) {
+  POSTS.push({ url: url, body: JSON.parse((opts && opts.body) || '{}') });
+  const failed = url === '/api/grocery-list/12/remove';
+  const body = /\\/remove$/.test(url) ? REMOVE_BODY : {};
+  return Promise.resolve({ ok: !failed, status: failed ? 500 : 200, json: function () { return Promise.resolve(body); } });
+};
+groceryState.openRowId = '11';
+clickIfRendered({ gro: 'row-remove', id: '11', name: 'Onions', qty: '5', cat: 'produce', store: '' });
+settle(function () {
+  console.log(JSON.stringify({
+    urls: POSTS.map(function (p) { return p.url; }).filter(function (u) { return /remove/.test(u); }),
+    toast: lastToast()
+  }));
+});
+""")
+    assert out["urls"] == [
+        "/api/grocery-list/11/remove", "/api/grocery-list/12/remove", "/api/grocery-list/11/remove-undo",
+    ]
+    assert out["toast"]["msg"] == "Couldn't remove that — try again."
+    assert out["toast"]["action"] is None, "nothing half-done is left to undo"
+
+
+@shop_harness.needs_node
+def test_a_two_weeks_row_does_not_offer_make_it_a_staple():
+    """Review, 2026-10-13: it made a staple of the two weeks' TOTAL tied to
+    one week's line. A staple is one line with one amount."""
+    out = shop_harness.run(_SCREEN + """
+groceryState.openRowId = '11';
+const combined = screenHtml();
+groceryState.openRowId = '13';
+const loneHtml = screenHtml();
+console.log(JSON.stringify({
+  combined: combined.indexOf('data-gro="row-staple"') !== -1,
+  lone: loneHtml.indexOf('data-gro="row-staple"') !== -1
+}));
+""")
+    assert out == {"combined": False, "lone": True}

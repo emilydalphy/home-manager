@@ -6939,8 +6939,11 @@
         // is one — the Staples card below the list is where it lives then.
         // A line a staple already owns (a substitute keeps its staple_id)
         // counts as one even under another name.
+        // Not on a two-weeks row: a staple is one line with one amount,
+        // and this row is two weeks' lines and their total.
         (it.staple_id || groIsStapleName(it.item)
           ? '<span class="gro-rowmenu-note">One of your staples</span>'
+          : (it.week_parts && it.week_parts.length) ? ''
           : '<button type="button" class="gro-rowmenu-staple" data-gro="row-staple" data-id="' + id + '" ' +
               'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
               'data-cat="' + escapeHtml(it.category || 'other') + '">Make it a staple</button>') +
@@ -9071,17 +9074,35 @@
         el.disabled = true;
         groceryState.openRowId = null;
         var goneStapleId = null;
-        var goneRestorable = false;
         // Every week's line behind the row (a two-weeks row is never a
-        // staple's, so the staple undo below is never one of these).
+        // staple's, so the staple undo below is never one of these), and
+        // each one's own amount for putting it back by hand.
         var goneIds = groIdsFor(id);
+        var goneLine = groFindLine(id);
+        var goneParts = {};
+        ((goneLine && goneLine.week_parts) || []).forEach(function (part) {
+          goneParts[String(part.id)] = part.quantity || '';
+        });
+        var goneDone = [];
         groDo(function () {
-          return Promise.all(goneIds.map(function (one) {
+          return Promise.allSettled(goneIds.map(function (one) {
             return groPostEmpty('/api/grocery-list/' + one + '/remove');
-          })).then(function (all) {
-            var r = all[0];
-            goneStapleId = r && r.staple_id ? r.staple_id : null;
-            goneRestorable = all.every(function (x) { return !!(x && x.restorable); });
+          })).then(function (settled) {
+            settled.forEach(function (res, i) {
+              if (res.status === 'fulfilled') goneDone.push({ id: goneIds[i], r: res.value });
+            });
+            if (goneDone.length === goneIds.length) {
+              var first = goneDone[0].r;
+              goneStapleId = first && first.staple_id ? first.staple_id : null;
+              return;
+            }
+            // One week's line came off and another didn't: the row is one
+            // thing, so it is all or nothing — what did come off goes
+            // back before the failure is said, rather than leaving half a
+            // row gone with no Undo to reach it.
+            return groPutRemovedBack(goneDone, goneName, goneCat, goneStore, goneParts, goneQty)
+              .catch(function () { /* the failure below is the one said */ })
+              .then(function () { throw new Error('remove failed for part of the row'); });
           });
         }, "Couldn't remove that — try again.").then(function (ok) {
           if (!ok) return;
@@ -9097,38 +9118,18 @@
                 }, "Couldn't put that back — try again.");
                 return;
               }
-              // A line with meals behind it was soft-removed: the same row
-              // comes back, still tied to those meals (grocery.
-              // undo_remove_grocery_item). Re-adding the name instead made
-              // it a hand-typed line that never cleared with the week.
-              if (goneRestorable) {
-                var goneBack = null;
-                groDo(function () {
-                  return Promise.all(goneIds.map(function (one) {
-                    return groPostEmpty('/api/grocery-list/' + one + '/remove-undo');
-                  })).then(function (all) {
+              var goneBack = null;
+              groDo(function () {
+                return groPutRemovedBack(goneDone, goneName, goneCat, goneStore, goneParts, goneQty)
+                  .then(function (all) {
                     goneBack = { restored: all.some(function (r) { return !(r && r.restored === false); }) };
                   });
-                }, "Couldn't put that back — try again.").then(function (ok) {
-                  // Every meal it was for has come off the plan since.
-                  if (ok && goneBack && goneBack.restored === false) {
-                    showToast(goneName + ' isn\u2019t needed now — those meals are off the plan');
-                  }
-                });
-                return;
-              }
-              // Otherwise /remove was a hard delete (remove_grocery_item), so the undo
-              // puts the LINE back rather than the row: same name, same
-              // quantity, same section, then its store again if it had one.
-              // A new id, the same list — which is what the person meant.
-              groDo(function () {
-                return groPost('/api/grocery-list/add', { item: goneName, quantity: goneQty, category: goneCat })
-                  .then(function (r) {
-                    var backId = r && r.item_id;
-                    if (!goneStore || !backId) return r;
-                    return groPost('/api/grocery-list/' + backId + '/store', { store: goneStore });
-                  });
-              }, "Couldn't put that back — try again.");
+              }, "Couldn't put that back — try again.").then(function (ok) {
+                // Every meal it was for has come off the plan since.
+                if (ok && goneBack && goneBack.restored === false) {
+                  showToast(goneName + ' isn’t needed now — those meals are off the plan');
+                }
+              });
             }
           });
         });
@@ -9508,6 +9509,28 @@
         groPutBack(id, el.dataset.name);
         return;
     }
+  }
+
+  // Put back what Remove took off, line by line (`done`: [{ id, r }] — the
+  // id and /remove's answer). A line with meals behind it was soft-removed
+  // and comes back as the same row, still tied to those meals (grocery.
+  // undo_remove_grocery_item); re-adding the name instead made it a
+  // hand-typed line that never cleared with the week. Any other line was a
+  // hard delete (remove_grocery_item), so the LINE comes back: same name,
+  // its own amount (a two-weeks row's week part, else the row's), same
+  // section, then its store again. Decided per line, because one week's
+  // line can be restorable and the other not.
+  function groPutRemovedBack(done, name, cat, store, parts, fallbackQty) {
+    return Promise.all(done.map(function (x) {
+      if (x.r && x.r.restorable) return groPostEmpty('/api/grocery-list/' + x.id + '/remove-undo');
+      var qty = Object.prototype.hasOwnProperty.call(parts, String(x.id)) ? parts[String(x.id)] : fallbackQty;
+      return groPost('/api/grocery-list/add', { item: name, quantity: qty, category: cat })
+        .then(function (r) {
+          var backId = r && r.item_id;
+          if (!store || !backId) return r;
+          return groPost('/api/grocery-list/' + backId + '/store', { store: store });
+        });
+    }));
   }
 
   // ---------- "Getting it elsewhere", and the way back ----------
