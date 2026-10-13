@@ -1056,6 +1056,12 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     # (swap_meal_in_plan._taste_verdict_for_slot).
     if result.get("taste_verdict"):
         out["taste_verdict"] = result["taste_verdict"]
+    # A fridge move the swap made due now ("Move the chicken thighs to the
+    # fridge now.", defrost.thaw_move_sentence), carried through so the
+    # Plan screen's Swap toast can say it (Emily, 2026-10-12). It was
+    # computed on every swap and dropped right here, so only chat said it.
+    if result.get("thaw_now"):
+        out["thaw_now"] = result["thaw_now"]
     return out
 
 
@@ -1758,6 +1764,9 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
     verdict = _weekly_plan._taste_verdict_for_slot(pick["meal_name"], first["date"], first["slot"])
     if verdict:
         out["taste_verdict"] = verdict
+    # The same fridge line apply_pick carries, for a whole dish swapped.
+    if result.get("thaw_now"):
+        out["thaw_now"] = result["thaw_now"]
     return out
 
 
