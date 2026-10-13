@@ -455,8 +455,9 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
             existing_id = existing_by_key.get(key)
             if existing_id:
                 conn.execute(
-                    "UPDATE prep_tasks SET description = ?, related_meal = ?, quantity = ? WHERE id = ?",
-                    (c["description"], c["related_meal"], c["quantity"], existing_id),
+                    "UPDATE prep_tasks SET description = ?, related_meal = ?, quantity = ? "
+                    "WHERE id = ? AND household_id = ?",
+                    (c["description"], c["related_meal"], c["quantity"], existing_id, household_id()),
                 )
                 kept_ids.add(existing_id)
                 updated += 1
@@ -532,7 +533,10 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
         stale_ids += [r["id"] for r in own_existing if r["id"] not in kept_ids]
 
         if stale_ids:
-            conn.executemany("DELETE FROM prep_tasks WHERE id = ?", [(i,) for i in stale_ids])
+            conn.executemany(
+                "DELETE FROM prep_tasks WHERE id = ? AND household_id = ?",
+                [(i, household_id()) for i in stale_ids],
+            )
         conn.commit()
     finally:
         conn.close()
@@ -741,7 +745,10 @@ def defrost_task_from_ready_made(date_str: str, slot: str) -> dict | None:
     item_name = (need.get("recommended_defrost_item") or "").strip()
     if not need.get("recommendation_confirmed") or not item_name or weekly_plan_id is None:
         if existing:
-            conn.executemany("DELETE FROM prep_tasks WHERE id = ?", [(r["id"],) for r in existing])
+            conn.executemany(
+                "DELETE FROM prep_tasks WHERE id = ? AND household_id = ?",
+                [(r["id"], household_id()) for r in existing],
+            )
             conn.commit()
         conn.close()
         return None
@@ -750,7 +757,10 @@ def defrost_task_from_ready_made(date_str: str, slot: str) -> dict | None:
     match = next((i for i in freezer_items if i["item"].strip().lower() == item_name.lower()), None)
     if not match:
         if existing:
-            conn.executemany("DELETE FROM prep_tasks WHERE id = ?", [(r["id"],) for r in existing])
+            conn.executemany(
+                "DELETE FROM prep_tasks WHERE id = ? AND household_id = ?",
+                [(r["id"], household_id()) for r in existing],
+            )
             conn.commit()
         conn.close()
         return None
@@ -762,8 +772,9 @@ def defrost_task_from_ready_made(date_str: str, slot: str) -> dict | None:
 
     if existing:
         conn.execute(
-            "UPDATE prep_tasks SET task_date = ?, description = ?, inventory_item_id = ? WHERE id = ?",
-            (move_date, description, match["id"], existing[0]["id"]),
+            "UPDATE prep_tasks SET task_date = ?, description = ?, inventory_item_id = ? "
+            "WHERE id = ? AND household_id = ?",
+            (move_date, description, match["id"], existing[0]["id"], household_id()),
         )
         task_id = existing[0]["id"]
     else:
@@ -1578,8 +1589,8 @@ def _book_frozen_moves(conn, weekly_plan_id, plan_meats, selected_lower, today, 
         ).fetchone()
         if existing:
             conn.execute(
-                "UPDATE prep_tasks SET task_date = ?, quantity = ? WHERE id = ?",
-                (move_date_str, quantity, existing["id"]),
+                "UPDATE prep_tasks SET task_date = ?, quantity = ? WHERE id = ? AND household_id = ?",
+                (move_date_str, quantity, existing["id"], household_id()),
             )
             task_id = existing["id"]
         else:
@@ -1786,7 +1797,10 @@ def _release_frozen_item(item_name: str, weekly_plan_id: int | None = None) -> i
         if match and _matches_selected_item(match.group(1), wanted):
             doomed.append((r["id"],))
     if doomed:
-        conn.executemany("DELETE FROM prep_tasks WHERE id = ?", doomed)
+        conn.executemany(
+            "DELETE FROM prep_tasks WHERE id = ? AND household_id = ?",
+            [(i, household_id()) for (i,) in doomed],
+        )
         conn.commit()
     conn.close()
     return len(doomed)
@@ -2063,7 +2077,10 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
             if meal is not None:
                 row = _settled_move_for_entry(conn, meal["entry_id"], {meal["item"], line["item"]})
                 if row is not None and row["status"] == "pending":
-                    conn.execute("DELETE FROM prep_tasks WHERE id = ?", (row["id"],))
+                    conn.execute(
+                        "DELETE FROM prep_tasks WHERE id = ? AND household_id = ?",
+                        (row["id"], household_id()),
+                    )
                     conn.commit()
                     removed = row["id"]
             return {"item_id": item_id, "freezing": False, "removed_prep_task_id": removed}

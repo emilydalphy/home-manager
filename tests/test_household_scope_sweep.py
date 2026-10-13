@@ -249,12 +249,6 @@ _LATER_TRANCHE = {
         (1, "SELECT planning_mode FROM weekly_plans WHERE id = ?"),
         (1, "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?"),
     ],
-    "app/tools/defrost.py": [
-        (5, "DELETE FROM prep_tasks WHERE id = ?"),
-        (1, "UPDATE prep_tasks SET description = ?, related_meal = ?, quantity = ? WHERE id = ?"),
-        (1, "UPDATE prep_tasks SET task_date = ?, description = ?, inventory_item_id = ? WHERE id = ?"),
-        (1, "UPDATE prep_tasks SET task_date = ?, quantity = ? WHERE id = ?"),
-    ],
     "app/tools/first_open.py": [
         (2, "UPDATE members SET first_open_seen_at = ? WHERE id = ?"),
         (1, "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND first_open_seen_at = ''"),
@@ -297,6 +291,7 @@ _LATER_TRANCHE = {
 # so the sweep can say, when it goes red in one of them, that the module is
 # supposed to be finished.
 _DONE_MODULES = (
+    "app/tools/defrost.py",
     "app/tools/digest.py",
     "app/tools/grocery.py",
     "app/tools/holidays.py",
