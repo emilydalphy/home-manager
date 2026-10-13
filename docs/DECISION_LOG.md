@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An ingredient the steps use goes on the list when a recipe is saved;
+  a must-avoid found only in the steps is a soft line** (2026-10-13; branch
+  `overnight/step-only-allergens`; tests `tests/test_step_only_allergens.py`).
+  Emily's 2026-10-12 call (Option B + A's soft variant): "Beat two eggs" with
+  no egg listed passed the allergy check in silence, which reads the list and
+  never the method. `recipes.complete_ingredient_list` adds the consistency
+  check's `missing_from_list` (same vocabulary, rack exempt) on every save —
+  `add_recipe`, `fill_recipe_details`, `update_recipe_details` (new steps),
+  `apply_rewrite` — and BEFORE the gate in chat add, the recipe pass and the
+  rewrite. What a step leaves out ("without the eggs", "no need for cream",
+  "swap the butter") is stripped first (`steps_without_negations`, two words
+  past the trigger, no further). For recipes saved earlier,
+  `check_meal_conflicts(instructions=…)` from `check_plan_conflicts` returns a
+  hard avoidance seen only in the steps as `severity: soft, steps_only` →
+  one sentence in `soft_note`; it never gates approval. No sweep of saved
+  recipes.
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

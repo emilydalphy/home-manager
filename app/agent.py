@@ -4545,6 +4545,11 @@ def rewrite_meal_recipe(entry_id: int, request_text: str) -> dict:
             logger.warning("Recipe rewrite for %r came back without %s (attempt %d)",
                            name, "ingredients" if not ingredients else "steps", attempt)
             continue
+        # As in the recipe pass: the gate judges the list that will be
+        # saved, steps' ingredients included (2026-10-12).
+        ingredients = tools.complete_ingredient_list(
+            ingredients, detail.get("instructions") or [], detail.get("default_servings"),
+        )
         clashes = _allergen_gate.hard_clashes(name, ingredients=ingredients, avoidances=avoidances)
         if clashes:
             food = _allergen_gate._food_word(clashes)
@@ -4988,6 +4993,13 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 logger.warning("Recipe pass for %r came back without %s (attempt %d)",
                                name, "ingredients" if not ingredients else "steps", attempt)
                 continue
+            # The list completed from the steps BEFORE the gate (2026-10-12),
+            # so an egg only the method uses is a clash the retry is told
+            # about, not one saved and found at approval.
+            ingredients = tools.complete_ingredient_list(
+                ingredients, detail.get("instructions") or [],
+                detail.get("default_servings") or shared.get("serves"),
+            )
             clashes = _allergen_gate.hard_clashes(plain, ingredients=ingredients, avoidances=avoidances)
             if clashes:
                 food = _allergen_gate._food_word(clashes)

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from fractions import Fraction
 from urllib.parse import urlsplit
 from ..db import get_conn, write
 from ._shared import household_id
@@ -38,6 +39,16 @@ def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
     ingredients = kwargs.get("ingredients")
     if ingredients is None and len(args) >= 2:
         ingredients = args[1]
+    # The list completed from the steps BEFORE the gate, so the gate judges
+    # the list that will be saved — an egg only the method used is refused
+    # here, by name, rather than saved and caught later (2026-10-12).
+    instructions = kwargs.get("instructions")
+    if isinstance(ingredients, list) and instructions:
+        ingredients = complete_ingredient_list(ingredients, instructions, kwargs.get("default_servings"))
+        if "ingredients" in kwargs:
+            kwargs["ingredients"] = ingredients
+        elif len(args) >= 2:
+            args = (args[0], ingredients, *args[2:])
     if isinstance(name, str):
         _allergen_gate.refuse_recipe_if_clashing(name, ingredients, override=override)
     return add_recipe(*args, **kwargs)
@@ -126,7 +137,10 @@ def add_recipe(
     main_protein = main_protein or ""
     advance_prep_notes = advance_prep_notes or ""
     default_servings = default_servings or 4
-    ingredients = settle_cooking_quantities(ingredients or [], default_servings)
+    # What the steps use goes on the list (Emily, 2026-10-12): the allergy
+    # check and the shopping list both read the list, never the method.
+    ingredients = complete_ingredient_list(ingredients or [], instructions or [], default_servings)
+    ingredients = settle_cooking_quantities(ingredients, default_servings)
 
     # The check and the INSERT share one transaction, opened with BEGIN
     # IMMEDIATE so the write lock is held from the READ rather than from
@@ -367,7 +381,7 @@ def update_recipe_details(
     """
     conn = get_conn()
     existing = conn.execute(
-        "SELECT id, instructions_json, advance_prep_step_indices_json FROM recipes "
+        "SELECT id, instructions_json, advance_prep_step_indices_json, ingredients_json, default_servings FROM recipes "
         "WHERE household_id = ? AND LOWER(name) = LOWER(?)",
         (household_id(), recipe_name),
     ).fetchone()
@@ -418,6 +432,16 @@ def update_recipe_details(
     if instructions is not None:
         fields.append("instructions_json = ?")
         params.append(json.dumps(instructions))
+        # New steps can reach for something the list hasn't got; it goes on
+        # the list, as on every other save (2026-10-12). Only ever ADDS —
+        # the lines already there are left exactly as they were.
+        old_ingredients = json.loads(existing["ingredients_json"] or "[]")
+        completed = complete_ingredient_list(
+            old_ingredients, instructions, default_servings or existing["default_servings"],
+        )
+        if len(completed) > len(old_ingredients):
+            fields.append("ingredients_json = ?")
+            params.append(json.dumps(completed))
     if default_servings is not None:
         fields.append("default_servings = ?")
         params.append(default_servings)
@@ -474,7 +498,9 @@ def fill_recipe_details(
     returned as is — two approvals racing, or Cook's fill-in landing after
     the approval's, must not overwrite a good recipe with a second draft.
     """
-    settled = settle_cooking_quantities(ingredients or [], default_servings)
+    # The steps' ingredients on the list, as add_recipe does (2026-10-12).
+    ingredients = complete_ingredient_list(ingredients or [], instructions or [], default_servings)
+    settled = settle_cooking_quantities(ingredients, default_servings)
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -3012,6 +3038,13 @@ def check_steps_ingredients_consistency(
         return {"ok": True, "unused_ingredients": [], "missing_from_list": [], "amount_mismatches": []}
 
     text = " ".join(steps).lower()
+    # The missing half reads the steps with what they LEAVE OUT taken out
+    # ("no need for cream", "works without the eggs too") — since
+    # 2026-10-13 a missing word is added to the list on save
+    # (complete_ingredient_list), and "no eggs needed" must not buy eggs.
+    # The unused half keeps the whole text: a listed item a step mentions
+    # only to say it's optional has still been mentioned.
+    used_text = steps_without_negations(text)
     unused = []
     for name in names:
         # Any word of the name is enough: "Baby spinach" is "the spinach"
@@ -3030,7 +3063,7 @@ def check_steps_ingredients_consistency(
         # recipe: 0.52 ms a call on main, 1.43 ms asked first, 0.55 ms here.
         # Every one of these is a pure predicate, so the order is free.
         if key not in _STEP_ONLY_WORDS
-        and _item_matches(text, key)
+        and _item_matches(used_text, key)
         and not _item_matches(listed, key)
         and not _spices.is_spice(key)
     ]
@@ -3044,6 +3077,143 @@ def check_steps_ingredients_consistency(
         "missing_from_list": sorted(missing),
         "amount_mismatches": mismatches,
     }
+
+
+# ---------- a step's ingredient goes on the list (Emily, 2026-10-12) ----------
+#
+# The Thai Basil Stir-Fry on the live app: "Beat two eggs and scramble
+# them in the wok", and no egg on the ingredient list. The allergy check
+# reads the list, so a household with an egg allergy on file was told
+# nothing. Emily's call (Option B): an ingredient the steps use and the
+# list forgot is a hole in the LIST, and it is filled when the recipe is
+# saved — so the allergy check sees it, the shopping list buys it, and
+# the cook has it on the counter. coordination's steps-only soft note is
+# the backstop for recipes saved before this.
+#
+# What a step LEAVES OUT is not a use of it. Three shapes the card named
+# by test: "swap the butter for oil", "this works without the eggs too",
+# "no need for cream". The trigger and at most two words after it (past
+# an article) are taken out — two, not "to the end of the clause", because
+# "cook without the lid until the eggs set" still uses the eggs, and a
+# negation read too far is an allergen this app stops seeing.
+_STEP_NEGATION_RE = re.compile(
+    r"\b(?:no\s+need\s+(?:for|to\s+add)|don['’]?t\s+need|do\s+not\s+need|"
+    r"without|instead\s+of|rather\s+than|in\s+place\s+of|"
+    r"skip|omit|leave\s+out|swap(?:\s+out)?|replace|no)\s+"
+    r"(?:(?:the|any|added|extra|some|more)\s+)?"
+    r"[a-z-]+(?:\s+[a-z-]+)?"
+)
+
+
+def steps_without_negations(text: str) -> str:
+    """Step text (lowercased) with each "no X" / "without the X" / "swap
+    the X" taken out — what the steps actually use. Shared with
+    coordination's steps-only allergy note so the two agree."""
+    return _STEP_NEGATION_RE.sub(" ", (text or "").lower())
+
+
+# A step's generic word when the list already names a kind of it: "sprinkle
+# the cheese" over a list with Parmesan is the Parmesan, and "add the
+# broth" over a list with chicken stock is the stock. Adding "cheese 1 cup"
+# there would buy a second thing. The allergy check already sees the
+# specific line, so skipping these costs no safety.
+_GENERIC_STEP_WORDS = {
+    "cheese": ("parmesan", "cheddar", "mozzarella", "feta", "goat cheese", "cream cheese",
+               "cottage cheese", "ricotta", "gruyere", "pecorino", "halloumi", "paneer",
+               "brie", "provolone", "monterey jack", "cotija", "queso", "manchego"),
+    "broth": ("stock", "bouillon"),
+    "stock": ("broth", "bouillon"),
+    "pasta": ("spaghetti", "penne", "linguine", "fettuccine", "macaroni", "rigatoni", "orzo",
+              "noodles", "fusilli", "farfalle", "lasagna", "tagliatelle", "gnocchi"),
+    "noodles": ("pasta", "spaghetti", "ramen", "udon", "soba", "vermicelli", "lo mein", "rice noodles"),
+    "rice": ("risotto", "arborio"),
+    "bread": ("baguette", "sourdough", "ciabatta", "roll", "toast", "brioche", "focaccia"),
+    "chicken": ("thigh", "breast", "drumstick"),
+    "steak": ("sirloin", "ribeye", "flank", "skirt", "strip"),
+}
+
+_STEP_NUMBER_WORDS = {
+    # Not "a"/"an": "a splash of milk" is no count of milk.
+    "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
+    "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10", "twelve": "12",
+}
+_STEP_NUMBER_WORD_RE = re.compile(r"\b(" + "|".join(_STEP_NUMBER_WORDS) + r")\b")
+
+
+def _amount_the_steps_use(key: str, steps: list[str]) -> str | None:
+    """
+    "2" for "Beat two eggs", "1/2 cup" for "stir in 1/2 cup heavy cream":
+    what the steps themselves say of `key`, summed across steps when every
+    amount is in the same unit. None when the steps give no amount (or
+    give it two ways), and the caller falls back to the table — the list
+    should agree with the step the cook reads, which is why the step's
+    own number comes first.
+    """
+    words = [w for w in re.findall(r"[a-z]+", key) if len(w) > 2] or [key]
+    total, unit_seen = 0.0, None
+    found = False
+    for step in steps:
+        text = _STEP_NUMBER_WORD_RE.sub(lambda m: _STEP_NUMBER_WORDS[m.group(1)], (step or "").lower())
+        pinned, _strays = _amounts_in_one_step(text, [words])
+        for _index, amount, unit in pinned:
+            if found and unit != unit_seen:
+                return None
+            total, unit_seen, found = total + amount, unit, True
+    if not found:
+        return None
+    # Written the way a recipe line is ("1 1/2", not "1.5" or "1½"), which
+    # is the shape the grocery list parses and merges.
+    whole, part = int(total), Fraction(total - int(total)).limit_denominator(8)
+    number = " ".join(p for p in (str(whole) if whole else "", str(part) if part else "") if p) or "0"
+    return f"{number} {unit_seen}".strip() if unit_seen else number
+
+
+def complete_ingredient_list(
+    ingredients: list[dict], instructions: list[str], servings: int | None = None,
+) -> list[dict]:
+    """
+    The ingredient list with every ingredient the steps use and the list
+    forgot added to the end (Emily, 2026-10-12, Option B) — see the note
+    above. The same vocabulary and the same rack exemption as
+    check_steps_ingredients_consistency's missing half, because that IS
+    the finding being repaired: salt and oil stay off (the rack), water
+    stays off, and what a step leaves out is not a use.
+
+    Each added line carries `added_from_steps: True` so it can be told
+    apart from what the writer listed, and an amount: the steps' own if
+    they give one, else the table's for `servings`. Never raises — a list
+    it can't read comes back as it was; it never removes or edits a line.
+    """
+    try:
+        lines = [i for i in (ingredients or []) if isinstance(i, dict)]
+        check = check_steps_ingredients_consistency(lines, instructions or [], servings)
+        missing = check.get("missing_from_list") or []
+        if not missing:
+            return list(ingredients or [])
+        from ..recipe_import import guess_category as _guess_category
+        listed = " ".join(_clean_item(i.get("item") or "") for i in lines)
+        added = []
+        for key in missing:
+            if any(_item_matches(listed, kind) for kind in _GENERIC_STEP_WORDS.get(key, ())):
+                continue
+            qty = _amount_the_steps_use(key, instructions or []) or cooking_quantity(key, servings) or ""
+            added.append({
+                "item": key[0].upper() + key[1:], "qty": qty,
+                # The import sheet's own guesser — one rule for which aisle
+                # a named ingredient is in. Imported here: recipe_import
+                # imports this package.
+                "category": _guess_category(key, qty),
+                "added_from_steps": True,
+            })
+        if added:
+            logger.info(
+                "Recipe steps use %s, which the list didn't have; added to the list",
+                ", ".join(a["item"] for a in added),
+            )
+        return list(ingredients or []) + added
+    except Exception:
+        logger.exception("Could not complete an ingredient list from its steps; saving it as written")
+        return list(ingredients or [])
 
 
 def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str = "") -> dict:

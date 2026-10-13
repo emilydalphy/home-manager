@@ -386,7 +386,11 @@ def test_a_package_unit_in_the_fill_triggers_one_repair_call(monkeypatch):
     repair_prompt = messages.prompts[1]
     assert "Olive oil" in repair_prompt and "Spaghetti" not in repair_prompt
     saved = {i["item"]: i.get("cook_qty") for i in tools.get_recipe("Lemon Pasta")["ingredients"]}
-    assert saved == {"Olive oil": "1/4 cup", "Spaghetti": "1 lb"}
+    # The spinach those steps wilt is on the list now (2026-10-13: an
+    # ingredient the steps use goes on the list when they are saved —
+    # tests/test_step_only_allergens.py). It carries no cook_qty; the two
+    # lines this test is about are unchanged.
+    assert saved == {"Olive oil": "1/4 cup", "Spaghetti": "1 lb", "Spinach": None}
 
 
 def test_a_repair_that_comes_back_wrong_falls_back_to_the_table(monkeypatch):
