@@ -16949,7 +16949,7 @@
 
   function wkCanMove(day, slot, entry) {
     if (!MOVE_SLOTS[slot] || !day || day.isPast || day.before_plan_start) return false;
-    if (!entry || entry.state !== 'planned' || entry.cooked) return false;
+    if (!entry || entry.state !== 'planned' || entry.cooked || entry.cooking) return false;
     if (entry.entry_id === null || entry.entry_id === undefined) return false;
     if ((entry.leftover_from && entry.leftover_from.date) || entry.source === 'leftovers') return false;
     return true;

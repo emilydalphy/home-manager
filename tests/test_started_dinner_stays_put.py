@@ -117,3 +117,101 @@ def test_an_unstarted_tonight_still_moves():
     out = meal_move.move_meal(w["plan"], w["tonight"], w["later"][0])
     assert out["status"] == "moved"
     assert _date_of(w["tonight"]) == w["later"][0]
+
+
+# ------------------------------------------------ the review's four doors
+# (independent review of 34fbd520: three more ways a started cook moved, and
+# a past night that read "Already cooking")
+
+import json  # noqa: E402
+
+from app.tools import tonight as _tonight  # noqa: E402
+
+CHICKEN = "Seared Garlic Chicken Thighs"
+
+
+def _full_week_chicken_feeds_a_later_night():
+    """Every night planned (no free night), tonight's chicken cooked double
+    for the next night — the night off's 'cook_on_fed' case."""
+    week, today, days = _week()
+    fed = [d for d in days if d > today][0]
+    for name in ("Emily", "Julia"):
+        tools.add_member(name)
+    plan = tools.create_weekly_plan(week)["weekly_plan_id"]
+    for day in days:
+        if day == fed:
+            tools.plan_meal(day, CHICKEN, slot="dinner", weekly_plan_id=plan,
+                            derived_from={"links_to": f"{today}:dinner"})
+            continue
+        dish = CHICKEN if day == today else f"Filler {day}"
+        tools.add_recipe(dish, ingredients=[{"item": f"Main for {dish}", "qty": "1 lb", "category": "meat"}],
+                         prep_time_minutes=10, cook_time_minutes=25, default_servings=2)
+        tools.plan_meal(day, dish, slot="dinner", weekly_plan_id=plan)
+    tools.repair_leftover_chains(plan)
+    tools.approve_weekly_plan(plan)
+    conn = get_conn()
+    tonight = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE date = ? AND slot = 'dinner' AND household_id = ?",
+        (today, tools.household_id())).fetchone()["id"]
+    conn.close()
+    assert tonight in tools.plan_leftover_chains(plan)["sources"]
+    return plan, tonight, today
+
+
+def _rows():
+    conn = get_conn()
+    out = [tuple(r) for r in conn.execute("SELECT * FROM meal_plan_entries ORDER BY id").fetchall()]
+    conn.close()
+    return out
+
+
+def test_a_night_off_does_not_carry_a_started_cook_onto_the_night_it_feeds():
+    plan, tonight, today = _full_week_chicken_feeds_a_later_night()
+    cooker.start_cooking(tonight)
+    before = _rows()
+
+    out = _tonight.tonight_night_off()
+
+    assert out["status"] == "refused"
+    assert out["message"] == f"The {CHICKEN} is already cooking, so it stays on tonight."
+    assert _rows() == before
+    assert _date_of(tonight) == today
+
+
+def test_the_review_minus_does_not_move_a_started_cook_onto_its_fed_night():
+    plan, tonight, today = _full_week_chicken_feeds_a_later_night()
+    cooker.start_cooking(tonight)
+    before = _rows()
+
+    out = tools.drop_dish_from_day(plan, tonight)
+
+    assert out["status"] == "refused"
+    assert "is already cooking — I’ll leave that one on the week" in out["message"]
+    assert _rows() == before
+
+
+def test_the_week_payload_says_cooking_and_the_move_button_reads_it():
+    w = _setup()
+    assert '"cooking": true' not in json.dumps(tools.get_week_menu(w["plan"]))
+    _start(w)
+    assert '"cooking": true' in json.dumps(tools.get_week_menu(w["plan"]))
+    from pathlib import Path
+    shell = (Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text(encoding="utf-8")
+    body = shell.split("function wkCanMove(", 1)[1].split("\n  }\n", 1)[0]
+    assert "entry.cooking" in body, "a started dinner gets no Move button, same as a cooked one"
+
+
+def test_a_past_night_reads_gone_by_not_cooking():
+    w = _setup()
+    _, today, days = _week()
+    monday = days[0]
+    tools.add_recipe("Old Soup", ingredients=[{"item": "Soup onion", "qty": "1", "category": "produce"}],
+                     prep_time_minutes=10, cook_time_minutes=20, default_servings=4)
+    past = tools.plan_meal(monday, "Old Soup", slot="dinner", weekly_plan_id=w["plan"])["entry_id"]
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET cook_started_at = ? WHERE id = ?", (f"{monday}T18:00:00", past))
+    conn.commit()
+    conn.close()
+
+    days_out = {d["date"]: d for d in meal_move.move_options(w["plan"], past)["days"]}
+    assert days_out[w["later"][0]]["reason"] == "Already gone by"

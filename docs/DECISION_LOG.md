@@ -24,7 +24,14 @@ why*, not duplicating the diff.
   picker line "Already cooking", swap "… is already cooking — I’ll leave
   that one where it is." "Mark not cooked" clears the start, so it moves
   again. Side effect by design: a night off on a started dinner no longer
-  offers to move the dish to another night.
+  offers to move the dish to another night. Review follow-up, same branch:
+  the night off's `cook_on_fed` and the Review "−" (`drop_dish_from_day`)
+  also carried a started cook onto its fed night with the start stamp —
+  both now refuse ("The X is already cooking, so it stays on tonight." /
+  "… is already cooking — I’ll leave that one on the week."); the week
+  payload carries `cooking` and `wkCanMove` hides Move on it; a past night
+  reads "Already gone by" before "Already cooking". Open for Emily: whether
+  night off / recipe swap should be offered at all once a cook has started.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

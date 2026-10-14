@@ -965,7 +965,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
     row = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.component_category,
-               mpe.derived_from_json, mpe.cooked_status,
+               mpe.derived_from_json, mpe.cooked_status, mpe.cook_started_at,
                COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -997,18 +997,23 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
     chained = chains["leftovers"].get(row["id"])
     dish = chained["source"]["meal"] if chained else row["meal"]
 
-    if (row["cooked_status"] or "") == "done":
+    begun = cook_begun(row)
+    if begun:
         # An answer, not an error: the same `refused` shape this function
         # already uses for a chain source, so the screen shows the sentence
-        # rather than a generic failure. Nothing is written.
+        # rather than a generic failure. Nothing is written. A cook that has
+        # STARTED is refused the same way (overnight 2026-10-14): a chain
+        # source's "−" moves the cook onto its fed night, and the start
+        # stamp went with it — "cooking since yesterday".
+        said = "has already been cooked" if begun == "cooked" else "is already cooking"
         return {
             "status": "refused",
             "date": meal_date,
             "slot": slot,
             "dish": dish,
             "message": (
-                f"{dish} on {date.fromisoformat(meal_date).strftime('%A')} has already "
-                "been cooked — I’ll leave that one on the week."
+                f"{dish} on {date.fromisoformat(meal_date).strftime('%A')} {said}"
+                " — I’ll leave that one on the week."
             ),
         }
 
@@ -5579,7 +5584,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         SELECT mpe.id, mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
                COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
-               mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
+               mpe.food_groups_json, mpe.sides_json, mpe.cooked_status, mpe.cook_started_at,
                r.prep_time_minutes, r.cook_time_minutes,
                r.tags_json, r.instructions_json, r.main_protein, r.ingredients_json, r.cuisine,
                r.source_url, r.source_book, r.source_author, r.source_page,
@@ -5779,6 +5784,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # take the tick, the inventory it depleted and the shopping
             # line for a meal that has already been eaten with it.
             "cooked": (row["cooked_status"] or "") == "done",
+            # Its cook has started but isn't ticked (cook_begun): the Move
+            # button stays off it like a cooked one (overnight 2026-10-14).
+            "cooking": cook_begun(row) == "cooking",
         }
         # A confirmed chain (see `chains` above) takes priority over the
         # freeform-text heuristic below: a chain entry can carry a REAL

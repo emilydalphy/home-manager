@@ -312,13 +312,14 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
     chains = snap["chains"]
     if _is_reheat(source, chains):
         return {"ok": False, "reason": "Leftovers move with the meal they come from"}
+    if source["date"] < today:
+        return {"ok": False, "reason": "Already gone by"}
     # Cooked, or started — a dinner on the stove stays put
-    # (weekly_plan.cook_begun, overnight 2026-10-14).
+    # (weekly_plan.cook_begun, overnight 2026-10-14). After the gone-by
+    # check, so a past night reads as gone by, not "Already cooking".
     begun = _weekly_plan.cook_begun(source)
     if begun:
         return {"ok": False, "reason": _BEGUN_SHORT[begun]}
-    if source["date"] < today:
-        return {"ok": False, "reason": "Already gone by"}
 
     delta = (date.fromisoformat(to_date) - date.fromisoformat(source["date"])).days
     members = [source]
