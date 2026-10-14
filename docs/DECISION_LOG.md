@@ -22,7 +22,10 @@ why*, not duplicating the diff.
   ingest's own factor (servings/count, package unscaled, no number → 1.0)
   in both plan walkers, so every booking door agrees. Not shown on Today or
   the evening text (they read only the description); it is the chat
-  tools' and get_defrost_*'s amount.
+  tools' and get_defrost_*'s amount. Review fix: `attendance._shopper_quantity`
+  (only caller: the thaw) now rounds UP to its step — 3/4 of 1 1/2 lbs read
+  "1 lb", short — and kg/l step in 0.05 of their own unit (3/4 of 1 kg read
+  "5 kg").
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

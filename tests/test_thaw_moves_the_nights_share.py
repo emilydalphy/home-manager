@@ -134,3 +134,38 @@ def test_the_freezer_inventory_path_books_the_same_share():
     [candidate] = tools.defrost_candidates_for_plan(plan_id)
 
     assert _same_amount(candidate["quantity"], "12 oz"), candidate["quantity"]
+
+
+# ---------- the move's figure (review, 2026-10-14) ----------
+# A thaw is rounded the way it is moved, and never DOWN past the night's
+# share: three quarters of 1 1/2 lbs is 1.125 lb, and "1 lb" would leave the
+# dish short. A kg or litre amount steps in hundredths of its own unit, not
+# the 5 g steps a gram amount takes ("0.75 kg", never "5 kg").
+
+def _booked_for(qty: str) -> str:
+    _three_at_home()
+    _tacos(qty=qty)
+    week, dates = _week()
+    plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
+    tools.plan_meal(dates[3], "Beef Tacos", slot="dinner", weekly_plan_id=plan_id)
+    defrost.confirm_frozen_items(plan_id, ["Ground beef"])
+    [booked] = _move_quantities()
+    return booked
+
+
+def test_a_share_between_quarters_rounds_up_not_down():
+    booked = _booked_for("1 1/2 lbs")
+    assert booked == "1 1/4 lbs", booked
+
+
+def test_a_kilo_amount_keeps_its_own_scale():
+    assert _booked_for("1 kg") == "0.75 kg"
+
+
+def test_a_litre_amount_keeps_its_own_scale():
+    assert _booked_for("1 l") == "0.75 l"
+
+
+def test_a_gram_amount_rounds_up_to_its_step():
+    # 375 g, up to the 10 g step a scale reads above 100 g — over, never under.
+    assert _booked_for("500 g") == "380 g"
