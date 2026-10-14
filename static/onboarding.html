@@ -3870,6 +3870,12 @@ async function saveOnboardingAnswers() {
     // the names above (app/tools/member_needs.py).
     lunch_needs: lunchNeedsPayload(),
     member_snacks: memberSnacksPayload(),
+    // "This week / Next week", sent here as well as on the reveal's stream
+    // (2026-10-14): this is the one post both answers to sharing with
+    // Claude make, and "Not now" never reaches the stream — so the answer
+    // was dropped and Plan offered next week. The server keeps the period
+    // it names until a week exists.
+    first_plan_start: firstPlanStart,
   };
   const res = await Api.fetch('/api/onboarding/answers', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),

@@ -258,6 +258,10 @@ def clean_state():
         # nobody in it has no main person" read a dangling id of 2 left by
         # the test before it.
         conn.execute("UPDATE households SET primary_member_id = NULL WHERE id = 1")
+        # Setup's remembered "This week / Next week" (2026-10-14) is on the
+        # row too, and steers Plan's default for a household with no week —
+        # one test's answer must not become the next test's default.
+        conn.execute("UPDATE households SET first_period_start = '' WHERE id = 1")
         # Household 1 has said yes to sharing with Claude, in every test —
         # see _database above for why, and for the tests that undo it.
         conn.execute(
