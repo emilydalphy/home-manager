@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The Plan root's selected day says its name once** (2026-10-14; branch
+  `overnight/day-view-says-the-day-once`; test in
+  `tests/test_plan_cards_2026_09_18.py`). It read "Wednesday" as the
+  heading and again as the card's title: `weekDayHtml` reuses Check the
+  week's `wkDayCardHtml`, where seven cards stand side by side and each
+  must name its day. The root now passes `dayNamed: true` and the card
+  keeps only its count ("1 meal" / the away line); Check the week unchanged.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

@@ -473,6 +473,24 @@ def test_the_roots_rows_carry_done_and_swap_and_the_card_is_followed_by_add_a_me
 
 
 @_needs_node
+def test_the_roots_day_says_its_name_once_and_keeps_the_count():
+    """Defect hunt, 2026-10-14: the root read "Wednesday" as its heading
+    and "Wednesday" again as the card's title, because the card is Check
+    the week's, where seven of them stand side by side and each must say
+    whose it is. Under the strip the heading already has; the card keeps
+    its count. Check the week's card still names its day."""
+    days = _week()
+    html = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
+                f"console.log(JSON.stringify(weekDayHtml({json.dumps(days[1])}, 1, {json.dumps(_approved(days))})));")
+    assert html.count(">Tuesday<") == 1, html
+    assert 'class="wk-card-day"' not in html
+    assert '<span class="wk-card-count">3 meals</span>' in html
+    card = _run(_prelude() + f"weekState.days = {json.dumps(days)};\n"
+                f"console.log(JSON.stringify(wkDayCardHtml({json.dumps(days[1])}, 1, {{ done: false }})));")
+    assert '<span class="wk-card-day">Tuesday</span>' in card
+
+
+@_needs_node
 def test_a_done_row_strikes_through_and_its_button_turns_celadon_with_put_back():
     days = _week()
     days[1]["dinner"]["cooked"] = True

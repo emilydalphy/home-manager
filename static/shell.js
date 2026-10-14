@@ -15275,7 +15275,7 @@
         (day.isToday ? '<span class="wk-root-day-today">Today</span>' : '') +
       '</div>' +
       (head ? '<div class="wk-day-head">' + head + '</div>' : '') +
-      wkDayCardHtml(day, i, { done: true, swapLabel: 'Swap' }) +
+      wkDayCardHtml(day, i, { done: true, swapLabel: 'Swap', dayNamed: true }) +
       weekSnacksHtml(day) +
       '<button type="button" class="wk-mini wk-mini-add" data-wk-add-meal="1">' + WK_ICONS.plus + 'Add a meal</button>' +
       weekFreezerRowHtml(data || {}, weekState.days) +
@@ -15841,7 +15841,13 @@
     return '<div class="shell-card wk-day-card' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
         (build ? ' is-blank' : '') + '" data-wk-card="' + i + '">' +
       '<div class="wk-card-head">' +
-        '<span class="wk-card-day">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + '</span>' +
+        // Check the week stands seven of these side by side, so each card
+        // says whose day it is. Under the Plan root's strip the day's name
+        // is already the heading above the card (weekDayHtml), and saying
+        // it twice read "Wednesday / Wednesday" (defect hunt, 2026-10-14) —
+        // there the card keeps only its count.
+        (opts && opts.dayNamed ? ''
+          : '<span class="wk-card-day">' + escapeHtml(dayName(day.date, { weekday: 'long' })) + '</span>') +
         '<span class="wk-card-count">' + escapeHtml(count) + '</span>' +
       '</div>' +
       (tags.length
