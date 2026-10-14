@@ -693,7 +693,14 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     soonest = None
     soonest_meal = None
     for meal in view.get("meals") or []:
-        if meal.get("is_leftovers") or meal.get("cooked_status") == "done":
+        # A cook already STARTED is out for the same reason a cooked one is:
+        # it is on the stove, so whatever of its is still on the list is
+        # either in the kitchen or being done without — not a trip with a
+        # clock on it. Driving the app 2026-10-14, Now featured "Shop for
+        # tonight · by 5:55" and "Go shopping" over a dinner already
+        # cooking. The deadline falls to the next waiting cook, if any.
+        if (meal.get("is_leftovers") or meal.get("cooked_status") == "done"
+                or meal.get("cook_started_at")):
             continue
         try:
             at = _slot_dt(date.fromisoformat(meal["date"]), meal.get("slot") or "dinner", dinner_clock)

@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A started cook no longer puts a shop deadline on Today** (2026-10-14;
+  branch `overnight/no-shop-nudge-once-cooking`; tests
+  `tests/test_no_shop_nudge_once_cooking.py`). With tonight's dinner on the
+  stove (`cook_started_at` set), Now still featured "Shop for tonight · by
+  5:55" / "Go shopping". `moves._shop_move` now skips a started meal the
+  same way it skips a cooked one, so the deadline falls to the next waiting
+  cook — and, like a cooked dinner, a started one alone is no cook to count
+  against (no move at all). List and `shop.count` unchanged.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
