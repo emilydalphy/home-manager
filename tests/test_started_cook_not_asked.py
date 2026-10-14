@@ -57,3 +57,14 @@ def test_another_nights_start_does_not_silence_tonight():
     tomorrow = (datetime.date.fromisoformat(TONIGHT) + datetime.timedelta(days=1)).isoformat()
     _set_started(tomorrow, f"{tomorrow}T15:40:00")
     assert tools.tonight_check(now=AFTERNOON)["ask"] is True
+
+
+def test_a_start_or_un_cook_re_reads_nows_tonight_card():
+    """Review, 2026-10-14: the server went quiet, but an open Today kept
+    asking "Still good?" until a reload -- nothing re-read the card after a
+    start (or brought it back after "Mark not cooked"). Every cook write
+    funnels through refreshPlanSurfacesAfterCook."""
+    from test_kitchen_and_preferences import _function
+    fn = _function("refreshPlanSurfacesAfterCook")
+    assert "loadTonightAsk(panels.today)" in fn
+    assert "panels.today.dataset.built" in fn, "a no-op when Now was never opened"
