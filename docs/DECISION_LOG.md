@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Cook's root dock says "Keep cooking" once tonight's cook has started**
+  (2026-10-14, defect hunt; branch `overnight/kitchen-dock-keep-cooking`;
+  tests `tests/test_kitchen_dock_keep_cooking.py`). After "Start cooking" the
+  Tonight card read STARTED 5:50 over a dock still saying "Start cooking";
+  the recipe screen and the Meal step already said "Keep cooking".
+  `kitchenTodayRows` grew `underway` (real start on record, or a step
+  ticked — the same reading) and `cookRootDockHtml` reads it. Words only.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
