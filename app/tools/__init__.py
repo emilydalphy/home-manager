@@ -238,6 +238,7 @@ from .grocery import (  # noqa: F401
     mergeable_duplicate_groups,
     drop_carried_over_item,
     entry_ids_awaiting_a_shop,
+    needed_item_ids_for_entries,
     exclude_grocery_item,
     get_grocery_list_by_section,
     include_grocery_item,
