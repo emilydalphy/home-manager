@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Today's "Tonight: X. Still good?" is not asked once the cook has started**
+  (2026-10-14, defect hunt; branch `overnight/started-cook-not-asked`; tests
+  `tests/test_started_cook_not_asked.py`). Tapping "Start cooking" at 5:50 and
+  opening Today at 5:52 showed the question, its swap sheet and night off
+  about the pot on the stove: `tonight_check` read `cooked_status` but not
+  `cook_started_at` (the evening nudge already goes quiet on it). New quiet
+  reason `'cooking'`; "Mark not cooked" clears the column and the ask returns.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
