@@ -274,6 +274,36 @@ def _batch_quantity(ing: dict, batch_factor: float) -> str:
     return (_attendance.scale_ingredients([{**ing, "qty": qty}], batch_factor)[0].get("qty") or "").strip()
 
 
+def _night_scale(ing: dict, meal: dict, default_servings) -> float:
+    """
+    The table half of a move's amount: what the grocery ingest multiplies
+    this ingredient by for this night's eaters before any batch
+    (recipes._add_recipe_ingredients_for_entries), so the move, the
+    night's ledger share and Cook's card all say one amount.
+
+    Why it exists (review of overnight/freeze-keeps-the-sooner-night,
+    2026-10-13): a move used to carry the recipe's own quantity, so a
+    recipe for four eaten by three bought 12 oz of beef and was told to
+    thaw 1 lb. Same three shapes the ingest tells apart — a package is a
+    package (one bag, never three quarters of one), a bare count takes
+    count_scale_factor, everything else servings_scale_factor. An amount
+    with no number in it is 1.0, so it books worded exactly as written.
+    """
+    raw = (ing.get("qty") or "").strip()
+    if not raw or _quantities.package_unit(raw):
+        return 1.0
+    core, _note = _quantities._split_quantity_note(raw)
+    parsed = _quantities._parse_quantity(core)
+    if parsed is None:
+        return 1.0
+    scale = (
+        _attendance.count_scale_factor
+        if parsed[1] in _recipes._PER_PERSON_COUNT_UNITS
+        else _attendance.servings_scale_factor
+    )
+    return scale(meal["date"], meal.get("slot") or "dinner", default_servings)
+
+
 def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: str | None) -> list[dict]:
     """
     Walk a plan's meals, cross-referencing each recipe's ingredient list
@@ -349,7 +379,10 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
                 "task_date": move_date,
                 "description": _describe(match["item"], m["meal"], m["date"]),
                 "related_meal": m["meal"],
-                "quantity": _batch_quantity(ing, batch_factor),
+                # The night's share, batch included — see _night_scale.
+                "quantity": _batch_quantity(
+                    ing, batch_factor * _night_scale(ing, m, recipe.get("default_servings")),
+                ),
                 "lead_hours": lead_hours,
                 "lead_tier": tier,
             })
@@ -993,7 +1026,11 @@ def _iter_plan_meat_ingredients(weekly_plan_id: int):
             ing_name = (ing.get("item") or "").strip()
             if not ing_name:
                 continue
-            yield m, ing, ing_name, batch_factor
+            # The factor handed on is the night's whole share — this
+            # night's table (_night_scale) times any batch — so every
+            # reader (_book_frozen_moves, _plan_need_by_item,
+            # _plan_move_quantity) moves what the night will cook.
+            yield m, ing, ing_name, batch_factor * _night_scale(ing, m, recipe.get("default_servings"))
 
 
 # Which rows' shelf the app guessed rather than being told — the one list,
