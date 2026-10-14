@@ -140,3 +140,32 @@ def test_a_hand_added_amount_stays_to_buy(client):
 
     assert _lines() == ["2 lbs"], "their 2 lb, and nothing of Friday's on top"
     assert _set_aside() == ["8 oz"]
+
+
+@pytest.mark.today("2026-10-14 10:00")
+def test_a_share_left_to_buy_books_no_thaw(client):
+    """Review, 2026-10-14: tonight swapped to salmon is too late to thaw, so
+    its share is bought. Saturday then swapped away and back lands its share
+    on that same to-buy line -- it must stay bought only, not ALSO get a
+    fridge move under a chip reading frozen."""
+    tools.add_member("Emily")
+    tools.add_recipe("Salmon Bowls", ingredients=[{"item": "Salmon fillets", "qty": "8 oz", "category": "seafood"}],
+                     instructions=["Bake."])
+    tools.add_recipe("Bean Chili", ingredients=[{"item": "Black beans", "qty": "2 cans", "category": "pantry"}],
+                     instructions=["Simmer."])
+    plan_id = tools.create_weekly_plan(MON.isoformat())["weekly_plan_id"]
+    tools.plan_meal(_day(2), "Bean Chili", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_day(3), "Salmon Bowls", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_day(5), "Salmon Bowls", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily", confirm_hard_conflicts=True)
+    tools.confirm_frozen_items(plan_id, ["Salmon fillets"])
+    tools.swap_meal_in_plan(plan_id, _day(2), "Salmon Bowls", slot="dinner")
+    assert _lines() == ["2 oz"], "premise: tonight is too late to thaw, so it is bought"
+
+    tools.swap_meal_in_plan(plan_id, _day(5), "Bean Chili", slot="dinner")
+    tools.swap_meal_in_plan(plan_id, _day(5), "Salmon Bowls", slot="dinner")
+
+    assert _lines() == ["4 oz"], "Saturday's share joined tonight's line to buy"
+    assert _day(4) not in [d for _m, d in _moves(plan_id)], (
+        "CATCH: bought, so not thawed as well (Saturday's move is Friday's)"
+    )

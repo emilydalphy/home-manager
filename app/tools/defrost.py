@@ -1774,25 +1774,36 @@ def carry_freezer_answer_to_nights(weekly_plan_id: int, entry_ids) -> dict:
     if not targets:
         return {"created": [], "set_aside": []}
 
-    today = _cooker.household_today()
-    dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
-    with write() as conn:
-        created, notes = _book_frozen_moves(
-            conn, weekly_plan_id, plan_meats, set(targets), today, dinner_window, entry_ids=set(ids),
-        )
-    short_of_time = {n["item"].lower() for n in notes}
-
-    folded: list[int] = []
-    for key, target in targets.items():
-        if _matches_selected_item(key, short_of_time):
-            continue
+    # Only an item whose new share can actually leave the list gets a move.
+    # Booking first and checking the line after (review, 2026-10-14) left a
+    # night whose share had landed on a line another night is still buying
+    # both thawed AND bought, under a chip reading frozen.
+    fresh_by_key = {}
+    for key in targets:
         fresh = [
             r["id"] for r in _own_lines(lines[key])
             if r["status"] in _STILL_TO_BUY_STATUSES
             and r["source_weekly_plan_id"] == weekly_plan_id and r.get("staple_id") is None
         ]
         fresh = [i for i in fresh if i not in _lines_with_other_meals(fresh, ids)]
-        if fresh and _fold_into_set_aside_line(fresh, target):
+        if fresh:
+            fresh_by_key[key] = fresh
+    if not fresh_by_key:
+        return {"created": [], "set_aside": []}
+
+    today = _cooker.household_today()
+    dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
+    with write() as conn:
+        created, notes = _book_frozen_moves(
+            conn, weekly_plan_id, plan_meats, set(fresh_by_key), today, dinner_window, entry_ids=set(ids),
+        )
+    short_of_time = {n["item"].lower() for n in notes}
+
+    folded: list[int] = []
+    for key, fresh in fresh_by_key.items():
+        if _matches_selected_item(key, short_of_time):
+            continue
+        if _fold_into_set_aside_line(fresh, targets[key]):
             folded += fresh
     return {"created": created, "set_aside": folded}
 
