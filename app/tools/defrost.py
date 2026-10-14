@@ -1698,6 +1698,145 @@ def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
     return {"created": created, "cancelled": len(doomed), "set_aside": set_aside}
 
 
+def carry_freezer_answer_to_nights(weekly_plan_id: int, entry_ids) -> dict:
+    """
+    Bring meals just swapped INTO an approved week under the freezer
+    answer the household already gave for their ingredient.
+
+    Measured on main, 2026-10-13: Salmon Bowls Tuesday and Friday, the
+    freezer step answered "Salmon fillets: in the freezer" (both moves
+    booked, the line set aside). Friday swapped to Bean Chili and back:
+    the swap back's ingest cannot merge into a set-aside line, so it wrote
+    a fresh "Salmon fillets" to BUY — under a chip that still read frozen
+    and no move for Friday. Each round trip left one more such line, and
+    un-tapping the chip afterwards put every set-aside generation back at
+    once.
+
+    The answer is read the way the chip reads it: an item with a move the
+    household booked by hand on some night of this plan (inventory_item_id
+    NULL, pending or done — the `frozen` of meat_items_for_plan) AND a line
+    the freezer step set aside for it. The second half is what makes it
+    the step's yes rather than Shop's "Yes, freezing it", whose food is
+    being bought and must be bought for the new night too. For such an
+    item, on `entry_ids` only: the move is booked the way the step books
+    it, and the line the swap-in wrote — this plan's, with no meal outside
+    these nights counted into it — is folded into the set-aside line
+    (ledger rows moved, its amount re-read from them, the fresh line
+    deleted), so the frozen amount is ONE line holding the plan's share
+    and "not frozen after all" puts back exactly that, once.
+
+    Left to buy, the safe direction: a night too late to thaw for (a note
+    from _book_frozen_moves — neither thawed nor bought otherwise), a
+    household's own line the swap-in merged into (their amount is theirs;
+    source plan NULL lines are never re-derived), a staples line, and a
+    line another meal is counted into. Runs after the caller's commit.
+
+    A judgment, named: the yes is per ITEM, as the chip is — a salmon
+    night that never left (a third salmon dinner swapped in) joins it too,
+    exactly as re-saving the step with the chip on would book it. The
+    chip shows that night under the yes and reopening the step changes it.
+    """
+    ids = [int(i) for i in (entry_ids or []) if i]
+    if not weekly_plan_id or not ids:
+        return {"created": [], "set_aside": []}
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT description FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? "
+            "AND task_type = 'defrost' AND inventory_item_id IS NULL AND meal_plan_entry_id IS NOT NULL "
+            "AND status IN ('pending', 'done') "
+            "AND COALESCE(json_extract(detail_json, '$.kind'), '') != ?",
+            (household_id(), weekly_plan_id, OWN_PORTION_KIND),
+        ).fetchall()
+    finally:
+        conn.close()
+    answered = {thawed_item(r["description"]).lower() for r in rows} - {""}
+    if not answered:
+        return {"created": [], "set_aside": []}
+
+    plan_meats = list(_iter_plan_meat_ingredients(weekly_plan_id))
+    names = {}
+    for m, _ing, ing_name, _factor in plan_meats:
+        if m.get("entry_id") in ids and _matches_selected_item(ing_name, answered):
+            names.setdefault(ing_name.lower(), ing_name)
+    if not names:
+        return {"created": [], "set_aside": []}
+    lines = _grocery_lines_by_item(names, weekly_plan_id)
+    targets = {}
+    for key, rows_for_item in lines.items():
+        aside = [
+            r for r in _own_lines(rows_for_item)
+            if r["status"] == "removed" and r["removed_by"] == FREEZER_REMOVED_BY
+            and r["source_weekly_plan_id"] == weekly_plan_id and r.get("staple_id") is None
+        ]
+        if aside:
+            targets[key] = aside[0]["id"]
+    if not targets:
+        return {"created": [], "set_aside": []}
+
+    today = _cooker.household_today()
+    dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
+    with write() as conn:
+        created, notes = _book_frozen_moves(
+            conn, weekly_plan_id, plan_meats, set(targets), today, dinner_window, entry_ids=set(ids),
+        )
+    short_of_time = {n["item"].lower() for n in notes}
+
+    folded: list[int] = []
+    for key, target in targets.items():
+        if _matches_selected_item(key, short_of_time):
+            continue
+        fresh = [
+            r["id"] for r in _own_lines(lines[key])
+            if r["status"] in _STILL_TO_BUY_STATUSES
+            and r["source_weekly_plan_id"] == weekly_plan_id and r.get("staple_id") is None
+        ]
+        fresh = [i for i in fresh if i not in _lines_with_other_meals(fresh, ids)]
+        if fresh and _fold_into_set_aside_line(fresh, target):
+            folded += fresh
+    return {"created": created, "set_aside": folded}
+
+
+def _fold_into_set_aside_line(line_ids: list[int], target_id: int) -> bool:
+    """
+    Move the ledger rows of `line_ids` onto the freezer step's set-aside
+    line and re-read its amount from its whole ledger (unrounded shares,
+    summed once — grocery._recompute_plan_line_from_ledger's arithmetic,
+    which skips a removed line), then delete the emptied lines. One
+    transaction: either the share moved or nothing did.
+    """
+    marks = ",".join("?" * len(line_ids))
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        qtys = [
+            r["quantity"] or "" for r in conn.execute(
+                f"SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? "
+                f"AND grocery_item_id IN (?, {marks}) ORDER BY id",
+                (household_id(), target_id, *line_ids),
+            ).fetchall()
+        ]
+        summed = _quantities._sum_ledger_quantities(qtys)
+        if not summed:
+            # A ledger that can't be added up (a freeform amount): the
+            # fresh line stays to buy rather than vanish into a set-aside
+            # line whose amount would then be wrong.
+            return False
+        conn.execute(
+            f"UPDATE meal_plan_grocery_links SET grocery_item_id = ? "
+            f"WHERE household_id = ? AND grocery_item_id IN ({marks})",
+            (target_id, household_id(), *line_ids),
+        )
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+            (summed, target_id, household_id()),
+        )
+        conn.execute(
+            f"DELETE FROM grocery_items WHERE household_id = ? AND id IN ({marks})",
+            (household_id(), *line_ids),
+        )
+    return True
+
+
 def _lines_with_other_meals(line_ids: list[int], entry_ids: list[int]) -> set[int]:
     """The lines among `line_ids` that some meal OUTSIDE `entry_ids` is
     counted into (meal_plan_grocery_links)."""
