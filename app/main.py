@@ -1657,12 +1657,14 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         # through, and after the rhythm post (finishSetupAndReveal's order)
         # so the plan-ready day it reads is the one just given. The period
         # it files under is what's kept — the one the yes path plans.
+        # A failure here is logged, not raised: the answers above are saved,
+        # and a 500 would have the page re-post them (review, 2026-10-14) —
+        # losing this only means Plan offers its ordinary default.
         try:
             period_key, _, _ = _first_plan_window(req.first_plan_start == "next_week")
             tools.remember_first_period(period_key)
-        except Exception as e:
+        except Exception:
             logger.exception("Onboarding first-period save failed")
-            raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
 
 
