@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A dinner whose cook has started stays on its night** (2026-10-14, defect
+  hunt; branch `overnight/started-dinner-stays-put`; tests
+  `tests/test_started_dinner_stays_put.py`). Once "Start cooking" set
+  `cook_started_at`, the Move sheet, `move_meal`, the nights swap (route,
+  chat `swap_dinner_nights`, Now's dry-run probes) all still said yes and
+  moved a dinner already on the stove — they asked only about the cooked
+  tick. Now `weekly_plan.cook_begun(row)` ('cooked' / 'cooking' / None) is
+  the one rule those doors ask, both ways (moving it out, trading into it):
+  picker line "Already cooking", swap "… is already cooking — I’ll leave
+  that one where it is." "Mark not cooked" clears the start, so it moves
+  again. Side effect by design: a night off on a started dinner no longer
+  offers to move the dish to another night.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

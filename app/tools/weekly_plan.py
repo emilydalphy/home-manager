@@ -8632,6 +8632,22 @@ def _weekday_of(date_str: str) -> str:
     return date.fromisoformat(date_str).strftime("%A")
 
 
+def cook_begun(row) -> str | None:
+    """'cooked' for a meal ticked done, 'cooking' for one whose cook has
+    started (cook_started_at), else None. The one rule every "this meal is
+    now on another day" door asks before it moves a row (overnight
+    2026-10-14): a dinner already on the stove stays on its night exactly as
+    a cooked one always has. Before this, the nights swap and the Move sheet
+    asked only about the tick, so tonight's dinner could be traded away
+    mid-cook. "Mark not cooked" clears the start, which is what makes it
+    movable again. `row` needs cooked_status and cook_started_at."""
+    if (row["cooked_status"] or "") == "done":
+        return "cooked"
+    if row["cook_started_at"]:
+        return "cooking"
+    return None
+
+
 def _nights_swap_refusal(message: str, date_a: str, date_b: str) -> dict:
     return {"status": "refused", "date_a": date_a, "date_b": date_b, "message": message}
 
@@ -9100,6 +9116,7 @@ def _apply_dinner_nights_swap(
         rows = conn.execute(
             """
             SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status,
+                   mpe.cook_started_at,
                    mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
             FROM meal_plan_entries mpe
             LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -9118,9 +9135,11 @@ def _apply_dinner_nights_swap(
             if r["slot_state"] == "planned_empty":
                 return _nights_swap_refusal(
                     f"Nobody’s cooking {wd} — I’ve left it as it is.", date_a, date_b)
-            if (r["cooked_status"] or "") == "done":
+            begun = cook_begun(r)
+            if begun:
+                said = "has already been cooked" if begun == "cooked" else "is already cooking"
                 return _nights_swap_refusal(
-                    f"{r['meal']} on {wd} has already been cooked — I’ll leave that one where it is.",
+                    f"{r['meal']} on {wd} {said} — I’ll leave that one where it is.",
                     date_a, date_b)
         if undo:
             # Both halves have to still say they came from each other; a
