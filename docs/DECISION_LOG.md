@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The Cook shelf's one-word dish never lands on a cooking word**
+  (2026-10-14; branch `overnight/day-label-names-the-dish`; tests in
+  `tests/test_cook_shelf.py`). `dishShortWord` read "Fry" for "Chicken Stir
+  Fry" and "Grilled" for "Grilled salmon with rice": its fallback took the
+  last capitalised word, and a sentence-case name has only the first. Now
+  "Stir Fry" is read as "Stir-fry" (Emily's 2026-09-13 dish word, kept — so
+  that tile says "Stir-fry", not "Chicken"), and `COOK_METHOD_WORDS`
+  (Grilled, Roast, Baked, Crispy…) are skipped in both fallbacks.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

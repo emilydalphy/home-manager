@@ -10090,10 +10090,23 @@
     'satay', 'souvlaki', 'gyros', 'falafel', 'hummus', 'tortellini', 'ravioli', 'mac'
   ];
   var COOK_JOIN_WORDS = ['and', 'with', 'of', 'the', 'a', 'in', 'on', 'for', 'or', '&', 'n', "'n'"];
+  // How it was cooked is never what it is. The fallback below used to take
+  // the last capitalised word, and a name typed in sentence case has only
+  // one — so "Grilled salmon with rice" read "Grilled" on the tile (defect
+  // hunt, 2026-10-14). These words are passed over; the dish words above
+  // still win first, so a stir-fry is still "Stir-fry".
+  var COOK_METHOD_WORDS = [
+    'grilled', 'grill', 'roast', 'roasted', 'baked', 'fried', 'fry', 'stir', 'pan', 'sheet',
+    'slow', 'cooker', 'cooked', 'seared', 'braised', 'smoked', 'poached', 'steamed', 'sauteed',
+    'crispy', 'creamy', 'sticky', 'spicy', 'easy', 'quick', 'simple', 'homemade', 'pulled',
+    'air', 'instant', 'one-pot', 'one-pan', 'sheet-pan', 'pan-fried', 'pan-seared', 'oven'
+  ];
 
   function dishShortWord(name, shortName) {
     if (shortName && String(shortName).trim()) return dishTitleCase(String(shortName).trim());
-    var main = String(name || '').split(/\s+with\s+/i)[0];
+    // "Stir Fry" typed as two words is the same dish as "Stir-Fry" — read
+    // whole, or the tile says "Fry".
+    var main = String(name || '').split(/\s+with\s+/i)[0].replace(/\bstir\s+fry\b/ig, 'Stir-fry');
     var words = main.trim().split(/\s+/).filter(function (w) {
       return w && COOK_JOIN_WORDS.indexOf(w.toLowerCase().replace(/[^\w'&-]/g, '')) === -1;
     });
@@ -10107,9 +10120,14 @@
       var tail = w.split('-').pop();
       if (tail !== w && COOK_DISH_WORDS.indexOf(tail) !== -1) return dishTitleCase(tail);
     }
-    // The last word that starts with a capital, else the first word.
+    // The last word that starts with a capital, else the first word —
+    // either way, never a cooking word while there is another to say.
+    var isMethod = function (word) { return COOK_METHOD_WORDS.indexOf(word.toLowerCase()) !== -1; };
     for (var j = clean.length - 1; j >= 0; j--) {
-      if (/^[A-Z]/.test(clean[j])) return dishTitleCase(clean[j]);
+      if (/^[A-Z]/.test(clean[j]) && !isMethod(clean[j])) return dishTitleCase(clean[j]);
+    }
+    for (var k = 0; k < clean.length; k++) {
+      if (!isMethod(clean[k])) return dishTitleCase(clean[k]);
     }
     return dishTitleCase(clean[0]);
   }
