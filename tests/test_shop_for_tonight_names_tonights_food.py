@@ -111,3 +111,11 @@ def test_a_stop_with_nothing_for_tonight_names_nothing_and_comes_last():
     assert by_store["Metro"]["items"] == ["Kidney beans"]
     assert by_store["Metro"]["count"] == 2
     assert stops[-1]["store"] == "Farm stand"
+
+
+def test_a_store_with_nothing_for_tonight_shows_no_bare_ellipsis():
+    """The row's "…" says "and more besides the names" -- with no names it
+    would be a lone ellipsis under the store."""
+    from test_kitchen_and_preferences import _function
+    fn = _function("todayShopRowsHtml")
+    assert "var meta = items ? items +" in fn

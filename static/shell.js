@@ -2593,7 +2593,10 @@
       var n = stop.count || (stop.items || []).length;
       var name = stop.store || 'Any store';
       var items = (stop.items || []).join(', ');
-      var meta = items + (n > (stop.items || []).length ? '…' : '');
+      // A store holding none of tonight's food names nothing (moves.py
+      // names only tonight's lines) — a bare "…" there would read as a
+      // name that failed to load.
+      var meta = items ? items + (n > (stop.items || []).length ? '…' : '') : '';
       // Whose the shop is, when somebody said (slice 2), leads the first
       // stop's line the way it leads every other row's — once per move.
       var whose = i ? '' : moveOwnerClause(move);
