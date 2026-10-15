@@ -287,6 +287,8 @@ def _swap_region() -> str:
         "var SWAP_TROUBLE = 'That didn’t work just now — nothing changed.';\n"
         + _function("swapStateFor") + _function("clearSwapUndoTimer") + _function("weekStartForSwap")
         + _function("mealDisplayName")
+        # The fridge line a swap can carry (thawToast, 2026-10-13).
+        + "var MOVE_THAW_TOAST_MS = 10000;\n" + _function("thawToast")
         + _function("runSwapInPlace") + _function("runSwapUndo")
     )
 

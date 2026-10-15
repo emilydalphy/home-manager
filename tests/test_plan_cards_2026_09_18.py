@@ -613,7 +613,10 @@ def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():
     # the dish that landed, and that the server's sentence wins when there is
     # one.
     assert "out.said || savedLine(picked.meal, 'swapped in')" in SHELL_JS
-    assert "{ label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);" in SHELL_JS
+    # 2026-10-13 (overnight/fridge-line-on-swap-toast): the hold is the
+    # thaw helper's answer — SWAP_UNDO_MS, or longer when a fridge line rides.
+    assert "thawToast(out.said || savedLine(picked.meal, 'swapped in'), out, SWAP_UNDO_MS)" in SHELL_JS
+    assert "{ label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, pickToast.ms);" in SHELL_JS
     assert "'/api/cooker/check-meal'" in _extract("runMealDone", SHELL_JS), "Done is the same server tick Today's move uses"
 
 

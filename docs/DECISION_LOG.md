@@ -266,6 +266,18 @@ why*, not duplicating the diff.
   Review fixes: with the city box open, an unknown city keeps the step up and
   an empty box sends nothing (only a found zone is an answer); the validator
   also refuses 'localtime' / 'posixrules' / 'Factory'.
+- **The fridge line rides on the swap / nights-trade / night-off toast**
+  (2026-10-13; branch `overnight/fridge-line-on-swap-toast`; tests
+  `tests/test_fridge_line_on_swap_toast.py`). Emily 2026-10-12: "add the
+  fridge line to the swap / drag / night-off toast, as the Move sheet already
+  does". `shell.js thawToast` appends `thaw_now` and holds the toast
+  `MOVE_THAW_TOAST_MS`, on four toasts: Plan's Swap pick (swap-choose), the
+  in-place swap, Today's "trade tonight with another night", and the night
+  off. Server: `swap_in_place.apply_pick` / `apply_pick_to_days` dropped the
+  `thaw_now` that `_replace_slot_entries` / `replace_dish_on_days` computed —
+  they forward it now. Why: only chat ever said it. The Plan tile drag the
+  card names is gone (2026-09-18); its swap lives on as Today's nights trade.
+  Review fix: the Tweak (plate part) toast goes through `thawToast` too.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

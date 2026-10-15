@@ -568,8 +568,9 @@ def test_the_sheet_selects_then_saves_and_the_protein_goes_through_the_swaps_und
     k = SHELL_JS.index("  async function runMealChangePart(choice) {")
     change = SHELL_JS[k:k + 3200]
     assert "/change-part'" in change
-    assert "toastSaved(savedLine(choice, 'swapped in')," in change
-    assert "{ label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);" in change
+    # 2026-10-13: through thawToast, so a part that needs thawing says so.
+    assert "thawToast(savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS)" in change
+    assert "{ label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, partToast.ms);" in change
     assert "reason: out.reason || ''" in change
     # The add's confirmation is S10's too: the card's line carries when it
     # starts, the pop-up names what went on ("Roasted potatoes was added").

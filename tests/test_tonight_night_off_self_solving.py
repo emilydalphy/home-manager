@@ -564,6 +564,8 @@ function showToast(m, a) { toasts.push({m: m, undo: !!(a && a.label === 'Undo')}
 function closeTonightSheet() { closed++; }
 function afterTonightSwap() { after++; }
 var tonightSheet = null, TONIGHT_SWAP_TROUBLE = 'x';
+var MOVE_THAW_TOAST_MS = 10000;
+""" + SHELL_JS[SHELL_JS.index("  function thawToast("):SHELL_JS.index("\n  }\n", SHELL_JS.index("  function thawToast(")) + 4] + """
 var reply;
 function fetch() { return Promise.resolve({ok: true, json: function () { return Promise.resolve(reply); }}); }
 """ + SHELL_JS[start:end] + """

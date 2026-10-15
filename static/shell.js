@@ -3731,12 +3731,13 @@
       var away = (out.moved || []).filter(function (m) { return m.to === otherDate; })[0];
       var said = toTonight && toTonight.meal ? toTonight.meal + ' tonight.' : 'Swapped.';
       if (away && away.meal) said += ' ' + away.meal + ' on ' + dayName(otherDate, { weekday: 'long' }) + '.';
-      showToast(said, {
+      var tradeToast = thawToast(said, out, 6000);
+      showToast(tradeToast.said, {
         label: 'Undo',
         onClick: function () {
           return undoTonightSwap(panel, tonightDate, otherDate, away && away.meal);
         }
-      }, 6000);
+      }, tradeToast.ms);
       afterTonightSwap(panel);
     } catch (err) {
       console.warn('Swapping tonight failed:', err);
@@ -3794,10 +3795,11 @@
         return;
       }
       var tonightDate = data.date;
-      showToast(tonightNightOffSaid(out), out.can_undo ? {
+      var offToast = thawToast(tonightNightOffSaid(out), out, 6000);
+      showToast(offToast.said, out.can_undo ? {
         label: 'Undo',
         onClick: function () { return undoTonightNightOff(panel, tonightDate, out.dish); }
-      } : null, 6000);
+      } : null, offToast.ms);
       // listMoved: the one thing a night off can change that a nights swap
       // never does — a dropped dish puts back whatever it had put on the
       // list that nobody has bought yet. This used to be a
@@ -17450,8 +17452,9 @@
       // toast naming one of them is the bug the server fix is for
       // (2026-10-04). Built there, beside the rows that were written,
       // because it counts meals.
-      toastSaved(out.said || savedLine(picked.meal, 'swapped in'),
-        { label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, SWAP_UNDO_MS);
+      var pickToast = thawToast(out.said || savedLine(picked.meal, 'swapped in'), out, SWAP_UNDO_MS);
+      toastSaved(pickToast.said,
+        { label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, pickToast.ms);
       await loadWeekMenu(panel);
       if (weekState.data && weekState.data.status === 'approved') refreshGrocerySurfaces();
     } catch (err) {
@@ -17581,6 +17584,24 @@
   // so it can be read (Emily, 2026-09-28, decision 5).
   var MOVE_TOAST_MS = 6000;
   var MOVE_THAW_TOAST_MS = 10000;
+
+  // The same second sentence on the other three changes that can make a
+  // fridge move due now — a swap, tonight traded with another night, a
+  // night off (Emily, 2026-10-12: "add the fridge line to the swap / drag
+  // / night-off toast, as the Move sheet already does"). `thaw_now` is the
+  // server's own sentence list (defrost.thaw_move_sentence via
+  // resync_plan_thaws, e.g. "Move the chicken thighs to the fridge now."),
+  // empty or absent when nothing is due today — a later move is already
+  // its own row on Today. Returns the toast's words and how long to hold
+  // it: `holdMs` when there is no fridge line, the Move sheet's longer
+  // hold when there is one to read.
+  function thawToast(said, out, holdMs) {
+    var thaw = ((out && out.thaw_now) || []).join(' ');
+    if (!thaw) return { said: said, ms: holdMs };
+    var head = String(said || '').replace(/\s+$/, '');
+    var sep = !head ? '' : (/[.!?…]$/.test(head) ? ' ' : '. ');
+    return { said: head + sep + thaw, ms: Math.max(holdMs || 0, MOVE_THAW_TOAST_MS) };
+  }
 
   async function runMoveMeal(toDate) {
     var st = swapSheetState;
@@ -19444,8 +19465,10 @@
       // that changed more than one meal says the server's own sentence
       // instead (swap_in_place.swapped_said), for the reason runSwapPick
       // gives.
-      toastSaved(data.said || savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in'),
-        { label: 'Undo', onClick: function () { runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
+      var swapToast = thawToast(data.said || savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in'),
+        data, SWAP_UNDO_MS);
+      toastSaved(swapToast.said,
+        { label: 'Undo', onClick: function () { runSwapUndo(panel, day, slot); } }, swapToast.ms);
       // Then the rest of the week, quietly: a swap can change the badge,
       // the subtitle, the draft's clash line and Kitchen's reading of the
       // same week. loadWeekMenu is the one place that keeps all of those
@@ -19882,8 +19905,11 @@
       // The part the person picked, not the whole dish: "Chicken thighs
       // was swapped in" is what they just chose, and the card's line
       // carries the reason the recipe changed around it.
-      toastSaved(savedLine(choice, 'swapped in'),
-        { label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, SWAP_UNDO_MS);
+      // plate_parts.change_part answers through apply_pick, so a new part
+      // that needs thawing carries the same fridge line (thawToast).
+      var partToast = thawToast(savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS);
+      toastSaved(partToast.said,
+        { label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, partToast.ms);
       swapUndoTimer = setTimeout(function () {
         swapUndoTimer = null;
         if (swapStateFor(dayDate, slot)) { swapState = null; renderMealsStep(panel); }
