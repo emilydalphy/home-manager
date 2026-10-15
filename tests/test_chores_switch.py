@@ -670,6 +670,7 @@ function loadTonightAsk(p) { CALLS.push('tonight'); return Promise.resolve(); }
 function loadYesterdayCheck(p) { CALLS.push('yesterday'); return Promise.resolve(); }
 function loadTodayMoves(p) { CALLS.push('moves'); return Promise.resolve(); }
 function loadHolding(p) { CALLS.push('holding'); return Promise.resolve(); }
+function loadUseSoon(p) { CALLS.push('usesoon'); return Promise.resolve(); }
 function fetch(url) { FETCHED.push(url); return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ chores: [], chores_set_up: true, enabled: true }); } }); }
 function markSvg() { return '<svg class="pomona-mark"></svg>'; }
 """ + _band_identity_js() + _function("prefsGearHtml") + _function("rootBandHtml") + _function("choresEnabled") + _function("buildTodayPanel")
@@ -715,7 +716,7 @@ buildTodayPanel(panel).then(function () {
     assert not any("/api/chores" in u for u in out["fetched"]), "an off house must make no chores request"
     # The rest of Now is untouched.
     assert 'id="today-band"' in out["html"] and 'id="today-rest"' in out["html"] and 'id="needs-you-band"' in out["html"]
-    assert out["calls"] == ["nudge", "needsyou", "tonight", "yesterday", "moves", "holding"]
+    assert out["calls"] == ["nudge", "needsyou", "tonight", "yesterday", "moves", "holding", "usesoon"]
 
 
 @_needs_node

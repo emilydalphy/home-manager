@@ -22,6 +22,18 @@ why*, not duplicating the diff.
   main with the clause stripped: identical). `_LATER_TRANCHE` is gone; the
   old unguarded-count floor would have had to fall to zero, so the reader's
   floor now counts every by-id statement, guarded or not (446).
+- **A freezer portion nobody has planned in four weeks is said on Today**
+  (2026-10-13; branch `overnight/freezer-portion-nudge-on-today`; tests
+  `tests/test_freezer_use_soon_on_today.py`). Criterion 3 of the freezer-portion
+  card: `sweep_use_soon` already queued the note once ever (`use_soon` kind),
+  read by Cook's fold and the morning text; Today now draws the same queue row
+  in the Holding card's quiet shape ("Use soon", Done → resolves it, so it is
+  settled on every surface). Filtered to rows carrying `inventory_item_id` — a
+  night off's own use-soon note shares the kind and stays off this card.
+  `.holding-done` gained `min-width: 44px` (measured 43.25px, rule 6).
+  Review round: a note whose portion is since PLANNED or EATEN is resolved by
+  `sweep_use_soon` itself (it runs on every queue read), so Today, Cook and
+  the morning text stop saying "worth eating soon" together.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

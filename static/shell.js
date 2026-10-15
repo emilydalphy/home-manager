@@ -1197,6 +1197,10 @@
           // nothing could act on yet, in their words. Empty — and so
           // display:none — when nothing is held. ASSUMED placement, pending
           // Emily's call: one slot, so moving it is moving one line.
+          // A freezer portion nobody has planned in four weeks
+          // (loadUseSoon): the attention queue's own sentence, once, until
+          // someone marks it done. Empty — and so display:none — otherwise.
+          '<div id="today-usesoon" class="today-area-usesoon"></div>' +
           '<div id="today-holding" class="today-area-holding"></div>' +
           // The household's Chores switch (choresEnabled, off /api/whoami):
           // with it off this card is left out of the markup entirely — not
@@ -1248,6 +1252,7 @@
       loadYesterdayCheck(panel),
       loadTodayMoves(panel),
       loadHolding(panel),
+      loadUseSoon(panel),
       // The Chores switch again: skip the call, not just the render — no
       // chores card means no reason to hit /api/chores/today.
       (choresEnabled() ? loadChores(panel) : Promise.resolve())
@@ -1404,6 +1409,89 @@
       console.warn('Held thing restore failed:', err);
       heldState.items = items.filter(function (h) { return h !== item; });
       renderHeldEverywhere();
+      showToast('That didn’t save. Try it again.');
+    }
+  }
+
+  // ---------- Use soon (a freezer portion nobody has planned) ----------
+  // Loop Board "Freezer portions from a night off get planned into a later
+  // week", criterion 3: a portion not used within ~4 weeks "surfaces once
+  // on Today as a use-soon item". The server already says it — once ever,
+  // on the attention queue (freezer_portions.sweep_use_soon, run lazily by
+  // GET /api/attention itself) — and Cook's fold and the morning text
+  // already read it from there. This is the same row on Today, in the
+  // Holding card's quiet shape (no apricot fill, no dock): reusing the
+  // queue rather than a second store is what keeps "once" true across all
+  // three surfaces — Done here is Done on Cook too.
+  //
+  // Only the freezer portion's note (it names an inventory_item_id).
+  // A night off's own use-soon note shares the kind but is already said
+  // on Today at the moment of the night off (the Tonight ask's toast), and
+  // putting it up again here is not what the card asked for.
+  function isFreezerUseSoon(it) {
+    return it && it.kind === 'use_soon' && it.id != null &&
+      it.detail && it.detail.inventory_item_id != null;
+  }
+
+  var useSoonState = { items: [] };
+
+  async function loadUseSoon(panel) {
+    if (!panel.querySelector('#today-usesoon')) return;
+    try {
+      var data = await Api.json('/api/attention', { quiet: true });
+      useSoonState.items = ((data && data.items) || []).filter(isFreezerUseSoon);
+    } catch (err) {
+      // Nothing shown is the safe failure — a reminder is not worth a
+      // card about an error.
+      console.warn('Use-soon lookup failed:', err);
+      useSoonState.items = [];
+    }
+    renderUseSoon(panel);
+  }
+
+  function renderUseSoon(panel) {
+    var slot = panel.querySelector('#today-usesoon');
+    if (!slot) return;
+    var items = useSoonState.items || [];
+    if (!items.length) { slot.innerHTML = ''; return; }
+    slot.innerHTML =
+      '<div class="shell-card holding-card usesoon-card">' +
+        '<div class="chores-header"><h2>Use soon</h2></div>' +
+        items.map(function (it) {
+          return '<div class="holding-row" data-usesoon-id="' + it.id + '">' +
+            '<div class="holding-main">' +
+              '<div class="holding-text">' + escapeHtml(it.summary) + '</div>' +
+            '</div>' +
+            '<button type="button" class="holding-done" data-usesoon-done="' + it.id + '">Done</button>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    slot.querySelectorAll('[data-usesoon-done]').forEach(function (btn) {
+      btn.addEventListener('click', function () { resolveUseSoon(panel, btn); });
+    });
+  }
+
+  async function resolveUseSoon(panel, btn) {
+    var id = btn.getAttribute('data-usesoon-done');
+    var gone = (useSoonState.items || []).filter(function (it) { return String(it.id) === String(id); })[0];
+    if (!gone) return;
+    btn.disabled = true;
+    try {
+      var data = await Api.json('/api/attention/' + encodeURIComponent(id) + '/resolve', {
+        body: { status: 'resolved' },
+        quiet: true
+      });
+      var left = (data && data.items) || [];
+      useSoonState.items = left.filter(isFreezerUseSoon);
+      // The same queue feeds Cook's fold; keep it from showing the row
+      // this tap just settled until Cook next reads it.
+      if (typeof cookState !== 'undefined') cookState.attention = left;
+      renderUseSoon(panel);
+      // No Undo: the queue has no reopen, and Cook's own "marked handled"
+      // offers none either (S10 — Undo where the change can be undone).
+      toastSaved(savedLine(gone.detail && gone.detail.dish, 'marked handled'));
+    } catch (err) {
+      btn.disabled = false;
       showToast('That didn’t save. Try it again.');
     }
   }

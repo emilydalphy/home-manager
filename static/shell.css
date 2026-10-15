@@ -2030,6 +2030,9 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
    "Not quite" is. The slot is display:none while empty, like the
    needs-you band, so a day with nothing held leaves no gap. */
 .today-area-holding:empty { display: none; }
+/* Use soon (renderUseSoon): a freezer portion nobody has planned in four
+   weeks, in the Holding card's own rows. Same empty rule, same reason. */
+.today-area-usesoon:empty { display: none; }
 .holding-card { padding: 14px 14px 4px; }
 .holding-row {
   display: flex;
@@ -2058,6 +2061,8 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .holding-done {
   flex: 0 0 auto;
   min-height: 44px;
+  /* "Done" in 13px bold measured 43.25px wide at 390px (rule 6). */
+  min-width: 44px;
   padding: 0 6px;
   border: 0;
   background: none;
