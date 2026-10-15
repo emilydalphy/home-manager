@@ -1498,6 +1498,30 @@ def entry_ids_awaiting_a_shop() -> set[int]:
     return {r["entry_id"] for r in rows}
 
 
+def needed_item_ids_for_entries(entry_ids) -> set[int]:
+    """
+    The needed lines these meal_plan_entries rows put on the list — the
+    other half of entry_ids_awaiting_a_shop above, read off the same ledger
+    by the same rule ('needed', not set aside). It is what lets Today's
+    "Shop for tonight" NAME tonight's food rather than whatever the list
+    happens to sort first (moves._shop_move).
+    """
+    ids = [int(i) for i in entry_ids if i]
+    if not ids:
+        return set()
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT DISTINCT l.grocery_item_id AS item_id "
+        "FROM meal_plan_grocery_links l JOIN grocery_items g ON g.id = l.grocery_item_id "
+        "WHERE l.household_id = ? AND g.household_id = ? "
+        "  AND g.status = 'needed' AND g.excluded_from_list = 0 "
+        f"  AND l.meal_plan_entry_id IN ({','.join('?' * len(ids))})",
+        (household_id(), household_id(), *ids),
+    ).fetchall()
+    conn.close()
+    return {r["item_id"] for r in rows}
+
+
 def exclude_grocery_item(item_id: int) -> dict:
     """
     Hide an item from the normal shown/shopped grocery list without

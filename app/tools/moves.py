@@ -634,7 +634,7 @@ SHOP_ACTION_LABEL = "Go shopping"  # Today's dock when the shop is next up; open
 STOP_PREVIEW_ITEMS = 3  # how many of a stop's things the row names before "…"
 
 
-def _shop_stops(needed: list[dict]) -> list[dict]:
+def _shop_stops(needed: list[dict], named: set[int] | None = None) -> list[dict]:
     """
     The list, one entry per store with something to buy on it — what
     Today's Shop group draws a row from ("Costco · 6 things", then the
@@ -643,15 +643,29 @@ def _shop_stops(needed: list[dict]) -> list[dict]:
     that pile, groStoreLabel), last; a list nothing is tagged on is one
     stop, its whole self. Stores keep the order the list first names them
     in (the list is sorted by category then item, so that is stable).
+
+    `named`, when given, is which lines the row may NAME (grocery_items
+    ids): the timed "Shop for tonight" passes tonight's own lines, off the
+    ledger. Its counts stay every needed line in that store — you are
+    buying the lot — but the things it names are the ones the trip is FOR.
+    Named by the list's sort alone, a chili night read "bell pepper,
+    broccoli, cherry tomatoes…" (2026-10-13). A store with none of
+    tonight's lines names nothing and goes after the ones that do.
     """
     by_store: dict[str, list[str]] = {}
+    counts: dict[str, int] = {}
     for row in needed:
         store = (row.get("store") or "").strip()
         if store == "Unassigned":
             store = ""
-        by_store.setdefault(store, []).append((row.get("item") or "").strip())
+        counts[store] = counts.get(store, 0) + 1
+        items = by_store.setdefault(store, [])
+        if named is None or row.get("id") in named:
+            items.append((row.get("item") or "").strip())
     names = [n for n in by_store if n] + ([""] if "" in by_store else [])
-    return [{"store": n, "count": len(by_store[n]), "items": by_store[n][:STOP_PREVIEW_ITEMS]}
+    if named is not None:
+        names.sort(key=lambda n: not by_store[n])  # stable: tonight's stores lead
+    return [{"store": n, "count": counts[n], "items": by_store[n][:STOP_PREVIEW_ITEMS]}
             for n in names]
 
 
@@ -822,7 +836,17 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         when = "by tomorrow"
 
     count = len(needed)
-    stop_rows = _shop_stops(needed)
+    # The count is the whole list (you are buying the lot); the things
+    # NAMED are the ones this cook is waiting on, off the same ledger that
+    # gave it the deadline — see _shop_stops' `named`.
+    try:
+        tonights = _grocery.needed_item_ids_for_entries(
+            soonest_meal.get("entry_ids") or [soonest_meal.get("entry_id")]
+        )
+    except Exception:
+        logger.exception("Today's shop move could not read which lines are tonight's")
+        tonights = set()
+    stop_rows = _shop_stops(needed, named=tonights)
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",

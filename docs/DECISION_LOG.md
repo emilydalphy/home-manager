@@ -331,6 +331,19 @@ why*, not duplicating the diff.
   the recipe screen and the Meal step already said "Keep cooking".
   `kitchenTodayRows` grew `underway` (real start on record, or a step
   ticked — the same reading) and `cookRootDockHtml` reads it. Words only.
+- **"Shop for tonight" names tonight's food** (2026-10-14; branch
+  `overnight/shop-for-tonight-names-tonights-food`; tests
+  `tests/test_shop_for_tonight_names_tonights_food.py`). On a chili night the
+  timed move named "bell pepper, broccoli, cherry tomatoes…": the deadline
+  came off the per-meal ledger (2026-09-16) but the names came off the list's
+  own sort. Now the timed move's `stops[].items` and `meta` name only the
+  needed lines the soonest waiting cook put there
+  (`grocery.needed_item_ids_for_entries`, same ledger and rule as
+  `entry_ids_awaiting_a_shop`); a store with none of them names nothing and
+  goes last. Counts stay the whole list (deliberate, "you are buying the
+  lot"); the move's existence and the untimed line are unchanged; the morning
+  text carries only the count, so it needed nothing. Open: a store row with
+  no tonight lines draws "Metro · 3 things · …" (shell.js adds the "…").
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
