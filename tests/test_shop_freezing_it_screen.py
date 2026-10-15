@@ -132,6 +132,31 @@ console.log(JSON.stringify({
 
 
 @needs_node
+def test_a_pack_that_also_feeds_a_sooner_night_asks_about_freezing_some():
+    """Ground beef for Wednesday's and Sunday's tacos, ticked on Tuesday:
+    Wednesday is too close to thaw for, so its share stays in the fridge and
+    the question says so, rather than "Freezing it?" for the whole pack
+    (defect hunt 2026-10-13)."""
+    out = _screen("""
+mockup();
+groceryState.data.stores.Costco.sections[0].items[0].freezing =
+  Object.assign(offer('Friday night', 'Sunday'), { keep_fresh_label: 'Wednesday’s' });
+tick(1);
+var asked = card(list(), 'Costco');
+clickIfRendered({ gro: 'freeze-yes', id: '1' });
+console.log(JSON.stringify({
+  text: blockText(asked),
+  yes: /Yes, freezing Sunday’s<\\/button>/.test(asked),
+  answered: blockText(card(list(), 'Costco'))
+}));
+""")
+    assert out["text"] == ("Freezing some? Keep Wednesday’s in the fridge. "
+                           "I’ll remind you Friday night to move the rest over for Sunday.")
+    assert out["yes"] is True
+    assert out["answered"] == "Sunday’s in the freezer — out Friday night."
+
+
+@needs_node
 def test_no_question_on_a_non_meat_tick_or_a_loose_meat_line():
     out = _screen("""
 mockup();

@@ -375,3 +375,28 @@ def test_a_night_already_cooked_is_not_the_one_asked_about(signed_in):
     conn.close()
     offer = _line(signed_in, "Chicken thighs")["freezing"]
     assert offer["cook_date"] == (TODAY + datetime.timedelta(days=5)).isoformat()
+
+
+def test_a_sooner_night_too_close_to_thaw_is_named_as_staying_in_the_fridge(signed_in):
+    """Tomorrow (its 48h move was yesterday) and five days out on one line:
+    the offer is about the later night, and names tomorrow's share as the
+    one that stays in the fridge (defect hunt 2026-10-13). A night already
+    gone is not named — nothing is left to keep for it."""
+    _plan_around_today([-1, 1, 5])
+    offer = _line(signed_in, "Chicken thighs")["freezing"]
+    later = TODAY + datetime.timedelta(days=5)
+    tomorrow = TODAY + datetime.timedelta(days=1)
+    assert offer["cook_date"] == later.isoformat()
+    assert offer["keep_fresh_label"] == f"{tomorrow.strftime('%A')}’s"
+
+
+def test_a_pack_for_one_night_names_nothing_to_keep_back(signed_in):
+    _plan_around_today([-1, 5])
+    assert _line(signed_in, "Chicken thighs")["freezing"]["keep_fresh_label"] == ""
+
+
+def test_the_keep_back_label_reads_like_a_person():
+    today = datetime.date(2026, 10, 13)  # a Tuesday
+    assert defrost._keep_fresh_label([], today) == ""
+    assert defrost._keep_fresh_label(["2026-10-13"], today) == "today’s"
+    assert defrost._keep_fresh_label(["2026-10-15", "2026-10-14", "2026-10-14"], today) == "Wednesday’s and Thursday’s"

@@ -4917,7 +4917,7 @@
     // never offline never sees the line this drives.
     offline: false,
     // The one "Freezing it?" follow-up on the list (groFreezingHtml, Loop
-    // Board 3e21f4c0): { id, moveLabel, cookWeekday, answer } where answer
+    // Board 3e21f4c0): { id, moveLabel, cookWeekday, keepFresh, answer } where answer
     // is null while the question is open, 'freezer' after "Yes, freezing
     // it", 'fridge' after "Straight to the fridge". One at a time on
     // purpose — the next tick, a put-back, or leaving the screen collapses
@@ -6815,20 +6815,29 @@
   // under it.
   function groFreezingHtml(f) {
     var id = String(f.id);
+    // keepFresh ("Wednesday’s") names the sooner nights the same pack
+    // feeds that are too close to thaw for: their share stays in the
+    // fridge, so the question is about freezing SOME of it, never the pack
+    // (defrost.freezing_offer_for_grocery_line, 2026-10-13).
+    var some = !!f.keepFresh;
     if (f.answer === 'freezer') {
       return '<div class="gro-freeze is-answered" data-freeze-for="' + id + '">' +
-        '<p class="gro-freeze-text">In the freezer — out ' + escapeHtml(f.moveLabel) + '.</p></div>';
+        '<p class="gro-freeze-text">' + (some ? escapeHtml(f.cookWeekday) + '’s in the freezer' : 'In the freezer') +
+          ' — out ' + escapeHtml(f.moveLabel) + '.</p></div>';
     }
     if (f.answer === 'fridge') {
       return '<div class="gro-freeze is-answered" data-freeze-for="' + id + '">' +
         '<p class="gro-freeze-text">In the fridge.</p></div>';
     }
     return '<div class="gro-freeze" data-freeze-for="' + id + '">' +
-      '<p class="gro-freeze-text">Freezing it? I’ll remind you ' + escapeHtml(f.moveLabel) +
-        ' to move it to the fridge for ' + escapeHtml(f.cookWeekday) + '.</p>' +
+      '<p class="gro-freeze-text">' + (some
+        ? 'Freezing some? Keep ' + escapeHtml(f.keepFresh) + ' in the fridge. I’ll remind you ' +
+          escapeHtml(f.moveLabel) + ' to move the rest over for ' + escapeHtml(f.cookWeekday) + '.'
+        : 'Freezing it? I’ll remind you ' + escapeHtml(f.moveLabel) +
+          ' to move it to the fridge for ' + escapeHtml(f.cookWeekday) + '.') + '</p>' +
       '<div class="gro-freeze-acts">' +
         '<button type="button" class="wk-mini gro-freeze-yes" data-gro="freeze-yes" data-id="' + id + '">' +
-          GRO_ICONS.snow + 'Yes, freezing it</button>' +
+          GRO_ICONS.snow + (some ? 'Yes, freezing ' + escapeHtml(f.cookWeekday) + '’s' : 'Yes, freezing it') + '</button>' +
         '<button type="button" class="wk-mini is-ghost" data-gro="freeze-fridge" data-id="' + id + '">' +
           'Straight to the fridge</button>' +
       '</div>' +
@@ -6913,7 +6922,8 @@
     }
     groceryState.freezingAsked[String(id)] = true;
     groceryState.freezing = {
-      id: String(id), moveLabel: offer.move_label || '', cookWeekday: offer.cook_weekday || '', answer: null
+      id: String(id), moveLabel: offer.move_label || '', cookWeekday: offer.cook_weekday || '',
+      keepFresh: offer.keep_fresh_label || '', answer: null
     };
   }
 
