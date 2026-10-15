@@ -233,6 +233,21 @@ why*, not duplicating the diff.
   "Not you? Sign out" (/logout). Why: an email household has no passphrase,
   so an invited adult who signed out and back in by email made a new, empty
   household (Emily's Option A, 2026-10-12). No backend change.
+- **An open slot today is a row on Today's timeline, any meal** (2026-10-13;
+  branch `overnight/open-slot-row-on-today`; tests
+  `tests/test_open_slot_row_on_today.py`). Emily 2026-10-12: "a ROW on the
+  Today timeline (not a needs-you card), all slots". `get_cooker_view` now
+  carries `open_slots` (off the plan read it already makes), and
+  `moves._open_slot_moves` turns each of today's into kind `open_slot`: "Lunch
+  needs your call", the app's `open_reason` as its (wrapping) line, at the
+  slot's own hour, in the Cook group. Never featured, never tomorrow's card,
+  not tickable (`set_move_done("open:N")` is a no-op); tapping lands on that
+  day on Plan via `focusChangedWeekDay`, where Pick already lives, and
+  `resolveOpenSlot` now refreshes Today. Why: `moves_for_day` built nothing
+  for a slot with no meal, so an open breakfast/lunch/snack was on no screen
+  of Today. Review fixes: tonight's open-dinner row steps aside while its
+  needs-you card is up (`todayShownMoves`); on a draft the tap opens the
+  Schedule view on that day's card, not Meals-by-category (no Pick there).
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

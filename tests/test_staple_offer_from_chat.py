@@ -358,7 +358,7 @@ def _chip_functions_block() -> str:
     the one-line equivalent itself rather than slicing a second,
     non-contiguous region out of the file."""
     start = "  function renderAskChips(actions) {"
-    end = "  function focusChangedWeekDay(date, slot) {"
+    end = "  function focusChangedWeekDay(date, slot, opts) {"
     a = SHELL_JS.index(start)
     b = SHELL_JS.index(end, a)
     return SHELL_JS[a:b]

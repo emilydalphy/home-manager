@@ -2430,7 +2430,11 @@
     prep:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l9.5-9.5"/><path d="M11 8l5.5-5.5c1.6 1.6 2.4 4.2 1.2 6.4L15 11.5z"/></svg>',
     shop:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
+    // A slot the app handed back (moves.py `open_slot`): the empty plate —
+    // the reheat's plate without its steam, since nothing is on it yet.
+    open_slot:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.6"/></svg>'
   };
 
   // WHOSE MOVE IT IS — the one wording, and the only place a name is put
@@ -2681,7 +2685,11 @@
         '<span class="day-node-title">' + title + '</span>' + meta + why +
       '</button>';
     }
-    return '<div class="day-node is-' + state + '" data-move-id="' + id + '">' +
+    // An open slot's one line IS the question — the app's own sentence for
+    // why it handed the meal back — so it wraps rather than ellipsing
+    // halfway through it (shell.css .day-node.is-open-slot).
+    var kindCls = move.kind === 'open_slot' ? ' is-open-slot' : '';
+    return '<div class="day-node is-' + state + kindCls + '" data-move-id="' + id + '">' +
       moveTickHtml(move) +
       body +
       // A shop's second and later store rows are the same move: one door
@@ -2737,7 +2745,9 @@
   // Which group a move belongs in. Cooking and reheating are Cook; a
   // fridge move, a soak, a marinade and a batch-prep task are Prep. Until
   // 2026-10-05 the second list was rows inside the first.
-  var COOK_KINDS = { cook: 1, reheat: 1 };
+  // An open slot is a meal still to decide, so it sits with the meals, in
+  // its own place in the day (Emily, 2026-10-12: a row, not a card).
+  var COOK_KINDS = { cook: 1, reheat: 1, open_slot: 1 };
 
   // THE DAY'S MEALS — the first card on Today, and the one the card is
   // named after. One row per planned meal (moves.py's payload carries them
@@ -2954,10 +2964,22 @@
   // the two contradicting each other (Loop Board, 2026-09-15).
   var WEEK_STATE_LABELS = { set: 'Week set', draft: 'Draft' };
 
+  // The moves Today draws. Everything the server sent, less tonight's open
+  // dinner ROW while tonight's open-dinner needs-you card is up: that card
+  // is already the answer to the same question (the 2026-09-08 rule below,
+  // "two answers to the same question"), so the row (moves._open_slot_
+  // moves) steps aside and comes back if the card goes. Lunch, breakfast
+  // and snack rows have no card and always show.
+  function todayShownMoves(panel, data) {
+    var moves = (data && data.moves) || [];
+    if (!panel._openDinnerCard) return moves;
+    return moves.filter(function (m) { return !(m.kind === 'open_slot' && m.slot === 'dinner'); });
+  }
+
   function renderTodayMoves(panel, data) {
     if (!data) return;
     panel._moves = data;
-    var moves = data.moves || [];
+    var moves = todayShownMoves(panel, data);
 
     // The band carries the week's chip and no line. Now tells the day's
     // story, not a score: the ticks on the rows already say what's done,
@@ -3142,7 +3164,7 @@
   // loads race, so this is only an answer once the moves have arrived.
   function todayIsEmpty(panel) {
     var data = panel._moves;
-    return !!(data && !(data.moves || []).length && !panel._featured);
+    return !!(data && !todayShownMoves(panel, data).length && !panel._featured);
   }
 
   // Is there a period waiting to be planned? The nudge names it whether
@@ -4056,6 +4078,13 @@
     // would silently do nothing.
     if (target.tab === 'week' && target['mealsView'] === 'cook') {
       return openRecipeFor(target['mealsFocus'] || true, { label: 'Today', tab: 'today' });
+    }
+    // An open slot (moves.py _open_slot_moves) is answered where its Pick
+    // already lives: that day on Plan, the slot's card ringed and scrolled
+    // to — the same landing a chat change uses (focusChangedWeekDay), so
+    // nothing new answers it. A payload without planDay still lands on Plan.
+    if (target.tab === 'week' && target.planDay) {
+      return focusChangedWeekDay(target.planDay.date, target.planDay.slot, { schedule: true });
     }
     if (target.tab) return activateTab(target.tab, true);
   }
@@ -20058,6 +20087,10 @@
       // list, so anything showing that list is now stale. Background — an
       // answered question is not a new list, and the household is on Plan.
       if (data.status === 'approved') refreshGrocerySurfaces();
+      // Today draws an open slot as a row of its own (moves._open_slot_
+      // moves) and its "Pick" lands here — so the answer has to take that
+      // row off Today, or going back shows the question still asked.
+      refreshTodayMoves();
       await loadWeekMenu(panel);
     } catch (err) {
       console.warn('Open slot resolution failed:', err);
@@ -25090,8 +25123,13 @@
   // just have *started* building the panel (buildWeekPanel → loadWeekMenu
   // is async): renderWeekMenu drains it once the days actually exist, and
   // the direct call below covers the already-built case, whichever wins.
-  function focusChangedWeekDay(date, slot) {
-    weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner' } : null;
+  //
+  // `opts.schedule` (Today's open-slot row): land where the slot's Pick is.
+  // A draft opens on Meals by category, which has no per-day rows and no
+  // Pick, so the focus there found nothing and silently stopped; with it
+  // the draft is switched to its Schedule view first (applyPendingDayFocus).
+  function focusChangedWeekDay(date, slot, opts) {
+    weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner', schedule: !!(opts && opts.schedule) } : null;
     activateTab('week', true);
     var panel = panels['week'];
     if (panel && panel.dataset.built) applyPendingDayFocus(panel);
@@ -25104,6 +25142,16 @@
     weekState.days.forEach(function (d, i) { if (d.date === pending.date) index = i; });
     if (index < 0) return; // the change landed outside the week on screen
     weekState.pendingDayFocus = null;
+    // A draft on its Meals-by-category view: Schedule first, keyed to this
+    // plan so draftView() keeps it rather than resetting to the menu.
+    var data = weekState.data;
+    if (pending.schedule && data && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
+      weekState.draftView = 'days';
+      weekState.draftViewPlanId = data.weekly_plan_id;
+    }
+    // The Schedule is a carousel of every day: open it on this one
+    // (wireReviewCarousel lands on reviewState.dayIndex).
+    if (pending.schedule) reviewState.dayIndex = index;
     // The root shows the day in full under its strip (2026-09-14), so a
     // changed meal is legible right there: select that day and stay — no
     // step to go back from. (Until then this opened the Day step, because
@@ -25111,8 +25159,11 @@
     goMealsStep('week', { dayIndex: index, replace: true });
     // The row on the root's day card (2026-09-18) — the Day step's slot
     // cards are one tap in and not what is on screen here.
-    var target = panel.querySelector('.wk-row[data-wk-row="' + pending.slot + '"]') ||
-      panel.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
+    // Inside that day's card when the screen is the Schedule carousel, whose
+    // every card has the same rows — the first match would be Monday's.
+    var scope = panel.querySelector('[data-wk-card="' + index + '"]') || panel;
+    var target = scope.querySelector('.wk-row[data-wk-row="' + pending.slot + '"]') ||
+      scope.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
     if (!target) return;
     target.classList.add('just-changed');
     // Long enough to notice, short enough that it's gone before it can be

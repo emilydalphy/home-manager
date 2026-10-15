@@ -2125,6 +2125,20 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # None on every ordinary call, including one that named its own
         # weekly_plan_id.
         "last_planned_label": last_planned_label,
+        # The slots this plan handed back as decisions ('open', with the
+        # sentence that says why) — the one state `meals` above filters out
+        # that still asks something of the household. Today draws each as a
+        # quiet row on its timeline (moves._open_slot_moves; Emily,
+        # 2026-10-12: "a ROW on the Today timeline, not a needs-you card, all
+        # slots"). Off the same plan read as everything else here, so it
+        # costs no query. planned_empty is never in it: a night nobody is
+        # home is not a question.
+        "open_slots": [
+            {"entry_id": m["entry_id"], "date": m["date"], "slot": m["slot"],
+             "open_reason": m.get("open_reason") or ""}
+            for m in plan["meals"]
+            if m.get("slot_state") == "open"
+        ],
     }
 
 

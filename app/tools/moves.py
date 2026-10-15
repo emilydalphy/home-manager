@@ -470,6 +470,78 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
     return moves
 
 
+def _open_slot_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
+    """
+    One quiet row per slot today that the app handed back as a decision
+    (slot_state 'open'), whatever the meal. Emily, 2026-10-12: "a ROW on
+    the Today timeline (not a needs-you card), all slots".
+
+    Until this, an open breakfast, lunch or snack showed on no screen of
+    Today at all — the cooker view filters every slot with no meal behind
+    it, so no move was ever built for one, and the needs-you band only
+    knows dinner's two shapes. An open dinner keeps its needs-you card
+    exactly as it was; this row sits beside it in the day, the way every
+    other meal does.
+
+    Placed at the slot's own hour so it sorts into the day where the meal
+    would have been, carrying the app's own open_reason as its one line.
+    It is never the featured move (featured_move_id) and never tomorrow's
+    card (today_moves): Now's one apricot is for something to DO, and an
+    open lunch is a choice, not a deadline. Not tickable — there is
+    nothing to tick until a meal is picked, and picking happens where the
+    Pick control already lives: the action opens that day on Plan.
+
+    planned_empty never reaches here: cooker.get_cooker_view's open_slots
+    holds 'open' rows only. A slot that also has a cookable meal on it (a
+    duplicate row, which audit_plan_slots exists to catch) is not offered
+    as a question over the meal the household can see.
+    """
+    day_str = day.isoformat()
+    filled = {
+        (m.get("date"), m.get("slot"))
+        for m in view.get("meals") or []
+        if m.get("slot") != "snack"
+    }
+    moves: list[dict] = []
+    for s in view.get("open_slots") or []:
+        if s.get("date") != day_str:
+            continue
+        slot = s.get("slot") or "dinner"
+        if (day_str, slot) in filled:
+            continue
+        at = _slot_dt(day, slot, dinner_clock)
+        reason = (s.get("open_reason") or "").strip()
+        moves.append({
+            "id": f"open:{s['entry_id']}",
+            "kind": "open_slot",
+            # The dinner card's own words ("Tonight's dinner needs your
+            # call"), cut to the slot — the row has no room for "Tonight's",
+            # and its Morning / Afternoon / Evening tag already says when.
+            "title": f"{slot.capitalize()} needs your call",
+            "detail": reason,
+            "reason": "",
+            "date": day_str,
+            "slot": slot,
+            "window_start": at.isoformat(),
+            "window_end": (at + timedelta(hours=SLOT_WINDOW_HOURS)).isoformat(),
+            "weight": WEIGHT_LOW,
+            "action": {
+                "label": "Pick",
+                "target": {"tab": "week", "planDay": {"date": day_str, "slot": slot}},
+            },
+            "done": False,
+            "tickable": False,
+            "overdue": False,
+            "entry_id": s["entry_id"],
+            "task_id": None,
+            "duration_min": 0,
+            "time_label": _slot_time_label(slot, at),
+            "meta": reason,
+            "chips": [],
+        })
+    return moves
+
+
 def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:
     """
     Fridge moves (task_type='defrost') and the rest of the day's prep.
@@ -1000,7 +1072,8 @@ def moves_for_day(
                 m["detail"] = generic["detail"]
                 m["time_label"] = generic["time_label"]
         shop = []
-    moves = _cook_and_reheat_moves(view, target, dinner_clock) + prep + shop
+    moves = (_cook_and_reheat_moves(view, target, dinner_clock)
+             + _open_slot_moves(view, target, dinner_clock) + prep + shop)
     moves.sort(key=lambda m: (m["window_start"], -m["weight"], m["id"]))
     return _stamp_owners(moves, owners)
 
@@ -1034,7 +1107,7 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
     candidates = [
         m for m in moves
         if not m["done"]
-        and m["kind"] != "reheat"
+        and m["kind"] not in ("reheat", "open_slot")
         and m.get("timed", True)
         and m["window_start"] <= horizon
         and (m.get("overdue") or m["window_end"] >= now_iso)
@@ -1123,7 +1196,10 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         ahead_owners = owners if ahead_view is view else _move_owner.resolve(ahead_view, rhythm)
         ahead = moves_for_day(next_day, now=now, view=ahead_view,
                               owners=ahead_owners, rhythm=rhythm)
-        undone = [m for m in ahead if not m["done"]]
+        # An open slot tomorrow is not tomorrow's first move: tomorrow's
+        # open slots keep the treatment they had (the needs-you band's
+        # "Tomorrow needs a dinner", Plan's own Pick) — the row is today's.
+        undone = [m for m in ahead if not m["done"] and m["kind"] != "open_slot"]
         tomorrow = undone[0] if undone else None
 
     week_state = _week_state(view, target)
@@ -1240,6 +1316,10 @@ def set_move_done(move_id: str, done: bool = True) -> dict:
     if kind in ("fridge", "prep"):
         _cooker.check_off_prep_step(int(ref), status)
         return {"id": move_id, "done": done, "dispatched_to": "check_off_prep_step"}
+    if kind == "open":
+        # An open slot is answered by picking a meal on Plan, never by a
+        # tick (see _open_slot_moves) — same honest no-op as a shop.
+        return {"id": move_id, "done": False, "dispatched_to": None}
     if kind == "shop":
         # Shopping is done when the list says so — there is nothing here to
         # write, and inventing a flag would make Today disagree with Grocery.
