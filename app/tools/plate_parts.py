@@ -216,7 +216,10 @@ def _in_dish_part_name(role: str, ingredients: list[dict] | None, dish: str | No
                 standin = item
             continue
         if role == "vegetable":
-            if (ing.get("category") or "").strip().lower() != "produce":
+            # A line with no category is read by name (recipes.store_section,
+            # 2026-10-15), or a chat recipe's broccoli was never its veg.
+            from . import recipes as _recipes
+            if _recipes.store_section(ing) != "produce":
                 continue
             # A low-carb base (cauliflower rice, zucchini noodles) is the
             # plate's CARB line, not its veg (plates.carb_standin).

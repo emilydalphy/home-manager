@@ -939,7 +939,13 @@ def _needs_food_the_freezer_cannot_reach(night: dict, description: str, booked: 
 
 
 def _is_meat_ingredient(ing: dict) -> bool:
-    return (ing.get("category") or "").strip().lower() in _MEAT_CATEGORY_ALIASES
+    category = (ing.get("category") or "").strip().lower()
+    if category in _MEAT_CATEGORY_ALIASES:
+        return True
+    # A recipe saved with no category is read by name (2026-10-15) — until
+    # then its chicken was never asked about. An explicit category other
+    # than meat is the recipe's own word and stands.
+    return not category and _recipes.store_section(ing) == "meat/seafood"
 
 
 def _matches_selected_item(ingredient_name: str, selected_lower: set[str]) -> bool:

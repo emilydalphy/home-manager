@@ -420,9 +420,17 @@ def side_ingredients(sides: list[dict] | None) -> list[dict]:
             out.append({
                 "item": item,
                 "qty": (ing.get("qty") or "").strip(),
-                "category": (ing.get("category") or "other").strip() or "other",
+                # A side written with no category shops by its name, same
+                # as a recipe's line (recipes.store_section, 2026-10-15).
+                "category": _store_section(ing),
             })
     return out
+
+
+def _store_section(ing: dict) -> str:
+    # Imported here: recipes reaches back into this module.
+    from . import recipes as _recipes
+    return _recipes.store_section(ing)
 
 
 def sides_label(sides: list[dict] | None) -> str:
@@ -983,7 +991,7 @@ def scale_side_ingredients(side: dict, target_servings: int | None) -> list[dict
         row = {
             "item": item,
             "qty": (ing.get("qty") or "").strip(),
-            "category": (ing.get("category") or "other").strip() or "other",
+            "category": _store_section(ing),
         }
         if base and target_servings and target_servings > 0:
             from . import quantities as _quantities

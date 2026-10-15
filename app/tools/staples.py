@@ -74,6 +74,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
 from . import quantities as _quantities
+from . import recipes as _recipes
 from . import spices as _spices
 
 logger = logging.getLogger("home_manager")
@@ -1455,11 +1456,29 @@ def sync_due_staples() -> dict:
     return {"added": added}
 
 
+def _line_category(s) -> str:
+    """
+    The aisle a staple's line goes under on Shop. A staple ticked on
+    "Before you shop" or typed into regulars is saved with category
+    'other' — nobody is asked — so until 2026-10-15 milk, butter and eggs
+    all went onto the list under Other. A staple whose category names a
+    real aisle keeps it; otherwise the aisle comes from the name, the same
+    guess a recipe's line gets (recipes.store_section). Household goods
+    stay Other: the list has no aisle for dish soap.
+    """
+    category = _clean_category(s["category"])
+    if category in _quantities._GROCERY_SECTION_ORDER and category != "other":
+        return category
+    if section_for(s["item"], s["category"]) == "household":
+        return "other"
+    return _recipes.store_section({"item": s["item"], "qty": s["quantity"] or ""})
+
+
 def _put_on_list(conn, s) -> dict:
     """One ordinary grocery line for a staple, by the same add path a typed
     item uses, linked back with staple_id. Commits nothing itself."""
     res = _grocery.add_grocery_item(
-        s["item"], quantity=s["quantity"] or "", category=s["category"], added_by=ADDED_BY_STAPLE, conn=conn
+        s["item"], quantity=s["quantity"] or "", category=_line_category(s), added_by=ADDED_BY_STAPLE, conn=conn
     )
     conn.execute(
         "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ?",

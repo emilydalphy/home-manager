@@ -1969,6 +1969,26 @@ def _implausible_lines(ingredients: list[dict], servings: int | None, as_written
     return out
 
 
+def store_section(ing: dict) -> str:
+    """
+    The aisle a recipe line is shopped in: its own category when it names
+    one the list knows, else recipe_import.guess_category's guess from the
+    name (2026-10-15). Chat's add_recipe leaves category optional and a
+    recipe saved without one put every line of an approved week under
+    Other on Shop, and a chicken thigh with no "meat/seafood" was never
+    asked about at the defrost step (defrost._is_meat_ingredient). Read
+    where the aisle is used and never written onto the recipe, so a better
+    guess later corrects every recipe at once rather than a wrong one
+    sticking to the row (review, 2026-10-15).
+    """
+    category = (ing.get("category") or "").strip().lower()
+    if category in _quantities._GROCERY_SECTION_ORDER:
+        return category
+    # Imported here: recipe_import imports this package.
+    from .. import recipe_import as _recipe_import
+    return _recipe_import.guess_category(ing.get("item") or "", ing.get("qty") or "")
+
+
 def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> list[dict]:
     """
     The pre-save pass: the same ingredient dicts, with a cook_qty written
@@ -4245,7 +4265,7 @@ def _add_recipe_ingredients_for_entries(
         # package (you cannot buy two thirds of a jar), so asking the
         # unscaled quantity keeps the classification stable across meals.
         raw_qty = ing.get("qty", "") or ""
-        category = ing.get("category", "other")
+        category = store_section(ing)
         # Split exactly the way _normalize_grocery_quantity does, so the
         # amount and the note that rides with it ("1 bag (2 lb), frozen")
         # come apart the same on both sides of the list. _parse_quantity
