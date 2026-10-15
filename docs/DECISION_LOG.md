@@ -120,6 +120,15 @@ why*, not duplicating the diff.
   stretch walks) now reads and writes under the same lock — racing a tap it
   lost Riley's absence 1 in 10.
 
+- **A regular somebody picks is never drawn as Pomona's guess** (2026-10-13,
+  defect hunt; branch `overnight/picked-regular-is-yours`). `add_regulars`
+  wrote `added_by = acting_name("")` — "" with no adult resolved — and Shop
+  read a blank `added_by` on a staple's line as the staple's own: "Probably
+  running low" + a "We have plenty" the server ignores (it takes back
+  'staple' only). Now `or "user"` there and on `add_grocery_item`'s insert
+  (the merge branch already had it), and `groLineHtml` asks the server's own
+  question: `added_by === 'staple'`. Other `acting_name("")` callers write
+  `removed_by`/`approved_by`, not `added_by` — not this trap.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

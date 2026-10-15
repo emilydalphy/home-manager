@@ -1309,6 +1309,8 @@ def add_grocery_item(
     # Who added it: the adult picked on this device, when the caller did
     # not say (the shell sends nothing; the offline queue replays the same
     # body). "ai" and an explicit name are kept — see _shared.acting_name.
+    # Never empty: a blank added_by is what Shop reads as the staple's own
+    # line (the merge branch above has the same "or 'user'").
     # A plan's spice starts in the "Spices this week" section, unticked —
     # the list assumes a spice rack (Emily, 2026-09-13; see spices.py). A
     # person's own add is a thing to buy, spice or not. Imported here, not
@@ -1318,7 +1320,7 @@ def add_grocery_item(
     cur = conn.execute(
         "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store, status) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (household_id(), item, quantity, category, acting_name(added_by), source_weekly_plan_id, preferred_store, status),
+        (household_id(), item, quantity, category, acting_name(added_by) or "user", source_weekly_plan_id, preferred_store, status),
     )
     item_id = cur.lastrowid
     if own_conn:

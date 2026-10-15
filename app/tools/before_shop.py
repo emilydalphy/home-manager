@@ -490,10 +490,14 @@ def add_regulars(names: list[str]) -> dict:
             put = _staples._put_on_list(conn, staple)
             # The person ticked it, so it is theirs ("you added it today"),
             # not Pomona's "probably running low" suggestion — that wording
-            # is for a line the app put there on its own.
+            # is for a line the app put there on its own. "user" when no
+            # adult is resolved (2026-10-13): acting_name("") is "" then,
+            # and an empty added_by read on Shop as the staple's own guess,
+            # with a "We have plenty" that took nothing off (the server
+            # only takes back added_by 'staple').
             conn.execute(
                 "UPDATE grocery_items SET added_by = ? WHERE id = ? AND household_id = ?",
-                (acting_name(""), put["item_id"], household_id()),
+                (acting_name("") or "user", put["item_id"], household_id()),
             )
             if staple["id"] in made:
                 # The new staple's 'added' row names the line it was made
