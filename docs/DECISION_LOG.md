@@ -248,6 +248,24 @@ why*, not duplicating the diff.
   of Today. Review fixes: tonight's open-dinner row steps aside while its
   needs-you card is up (`todayShownMoves`); on a draft the tap opens the
   Schedule view on that day's card, not Meals-by-category (no Pick there).
+- **The household's clock is asked for, not assumed** (2026-10-13; branch
+  `overnight/household-clock-asked`; tests `tests/test_household_clock_asked.py`).
+  Emily 2026-09-21 (phone's zone, confirmed in one line, travel never
+  re-zones) + 2026-10-12 (dinner-time step + was-it-ever-answered flag).
+  New `households.timezone_set` (backfilled 1 only where the zone is not the
+  default). Setup's dinner-time step shows "Your clock: Vancouver. So
+  'tonight' means tonight. Change" off `Intl…timeZone`; Change (or a phone
+  that can't say) opens a city box resolved against `Intl.supportedValuesOf`;
+  sent as `timezone` on `/api/onboarding/rhythm` only on Continue.
+  `rhythm.checked_timezone` is now the column's one validator (digest's
+  morning-text write uses it and sets the flag). An unanswered household
+  whose phone disagrees gets one Today card ("Looks like you're in
+  Vancouver" — Use / Keep), both answers final via `POST /api/household/clock`;
+  Preferences' rhythm section has "Your clock". Why: everyone was on
+  Toronto's day; three earlier branches stopped at this.
+  Review fixes: with the city box open, an unknown city keeps the step up and
+  an empty box sends nothing (only a found zone is an answer); the validator
+  also refuses 'localtime' / 'posixrules' / 'Factory'.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

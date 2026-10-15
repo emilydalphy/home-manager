@@ -508,12 +508,16 @@ def set_morning_text_for_member(
             (normalise_time(time), household_id()),
         )
     if timezone is not None:
+        # rhythm.checked_timezone is the column's one validator; a zone
+        # chosen here is an answer, so the was-it-ever-answered flag goes
+        # with it (households.timezone_set, 2026-10-13).
+        from . import rhythm as _rhythm
         try:
-            ZoneInfo(timezone.strip())
-        except (ZoneInfoNotFoundError, ValueError):
+            zone = _rhythm.checked_timezone(timezone)
+        except ValueError:
             conn.close()
-            raise ValueError(f"I don't know the time zone {timezone!r} — it wants a name like America/Toronto.")
-        conn.execute("UPDATE households SET timezone = ? WHERE id = ?", (timezone.strip(), household_id()))
+            raise
+        conn.execute("UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?", (zone, household_id()))
     if parts is not None or add_parts is not None or drop_parts is not None:
         # Composed off what is STORED rather than off the defaults, so a
         # delta on a household that has never answered adds to the three

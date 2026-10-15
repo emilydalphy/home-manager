@@ -671,6 +671,8 @@ function loadYesterdayCheck(p) { CALLS.push('yesterday'); return Promise.resolve
 function loadTodayMoves(p) { CALLS.push('moves'); return Promise.resolve(); }
 function loadHolding(p) { CALLS.push('holding'); return Promise.resolve(); }
 function loadUseSoon(p) { CALLS.push('usesoon'); return Promise.resolve(); }
+// The household's clock, asked once (2026-10-13): drawn, not loaded.
+function renderClockAsk(p) {}
 function fetch(url) { FETCHED.push(url); return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ chores: [], chores_set_up: true, enabled: true }); } }); }
 function markSvg() { return '<svg class="pomona-mark"></svg>'; }
 """ + _band_identity_js() + _function("prefsGearHtml") + _function("rootBandHtml") + _function("choresEnabled") + _function("buildTodayPanel")

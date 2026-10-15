@@ -243,7 +243,7 @@ def clean_state():
         # '' is "nobody asked", so a test that ticks the shop box must not
         # hand the next test a household that already chose.
         conn.execute(
-            "UPDATE households SET timezone = 'America/Toronto', morning_text_time = '07:00', "
+            "UPDATE households SET timezone = 'America/Toronto', timezone_set = 0, morning_text_time = '07:00', "
             "country = 'CA', province = 'ON', chores_enabled = 0, morning_text_parts = '' "
             "WHERE id = 1"
         )

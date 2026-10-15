@@ -872,6 +872,9 @@ class OnboardingRhythmRequest(BaseModel):
     meals_together: str = ""
     cooking_role: str = ""
     cooking_role_who: str = ""
+    # The household's clock, confirmed from the phone on the dinner-time
+    # step (or changed in Preferences) — an IANA name; '' leaves it alone.
+    timezone: str = ""
     dinner_window: str = ""
     planning_anchor: str = ""
     leftovers_stance: str = ""
@@ -1738,6 +1741,7 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
             shop_day=req.shop_day,
             top_up_shop_day=req.top_up_shop_day,
             remind_before_shop=req.remind_before_shop,
+            timezone=req.timezone,
             source="onboarding",
         )
     except ValueError as e:
@@ -1746,6 +1750,28 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
         logger.exception("Onboarding rhythm save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+class HouseholdClockRequest(BaseModel):
+    # An IANA zone name ("America/Vancouver"), or keep=true for "the one on
+    # file is right" — both are answers (tools.set_household_timezone).
+    timezone: str = ""
+    keep: bool = False
+
+
+@app.post("/api/household/clock")
+def set_household_clock(req: HouseholdClockRequest):
+    """
+    The household's clock, answered (Loop Board "Nothing ever asks the
+    household where they live", Emily 2026-10-12). Today's one-time
+    "Looks like you're in Vancouver" line posts here either way, and so
+    does Preferences' "Your clock". A zone the server doesn't know is a 400
+    carrying the sentence to show.
+    """
+    try:
+        return tools.set_household_timezone(req.timezone, keep=req.keep)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 class OnboardingNoteRequest(BaseModel):
@@ -8689,6 +8715,11 @@ def whoami(request: Request):
         "household_id": current,
         "household_name": row["name"] if row else "",
         "timezone": getattr(zone, "key", "") or "",
+        # Did anybody ever answer for that zone (households.timezone_set)?
+        # False is the one case the shell may ask "Looks like you're in…",
+        # and only when this phone's own zone disagrees — never for a
+        # household that already said, so a trip never re-zones it.
+        "timezone_set": tools.household_clock()["timezone_set"],
         "member": member,
         "adults": adults,
         "needs_pick": member is None and len(adults) > 1,
