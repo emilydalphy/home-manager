@@ -39,6 +39,14 @@ listed in _LATER_TRANCHE below. Tranche 1 left "45", and its CLAUDE.md entry
 and its card both said "13 files"; all three were true when written and are
 not now, which is why each count here carries the date it was taken.
 
+RE-MEASURED, 2026-10-13, after TRANCHE 3: the last 40, in nine modules
+(defrost 8, inventory 6, attention 5, cooker 5, tonight 4, first_open 3,
+plan_undo 3, spices 3, weekly_plan 3) — the three interpolated SETs among
+them. _offenders() is empty and _LATER_TRANCHE is gone. The floor that
+guarded the reader counted unguarded statements and would have had to fall
+to zero with it; test_the_reader_still_reads_app counts every by-id
+statement, guarded or not, instead.
+
 WHAT IT CANNOT SEE, written down rather than left to be found:
   * SQL assembled through a LOCAL VARIABLE — knowing what the variable holds
     needs dataflow this does not do. Asserted, not described, by
@@ -229,87 +237,10 @@ _CROSS_HOUSEHOLD_ON_PURPOSE = {
         "address — same reason as match_code",
 }
 
-# NOT YET — the later tranches. Exact normalised SQL with a count, so that
-# fixing one forces the entry off this list (the assertion is equality, not
-# containment) and a NEW offender in an already-listed file is still caught.
-# This list only ever SHRINKS; when it is empty, delete it and the branch on
-# it in the sweep.
-_LATER_TRANCHE = {
-    "app/tools/attention.py": [
-        (1, "DELETE FROM inventory_items WHERE id = ?"),
-        (1, "SELECT rev FROM inventory_items WHERE id = ?"),
-        (1, "UPDATE attention_items SET detail_json = ? WHERE id = ?"),
-        (1, "UPDATE attention_items SET status = 'pending', summary = ?, detail_json = ?, resolved_at = NULL WHERE id = ?"),
-        (1, "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?"),
-    ],
-    "app/tools/cooker.py": [
-        (1, "DELETE FROM inventory_items WHERE id = ?"),
-        (1, "SELECT * FROM weekly_plans WHERE id = ?"),
-        (1, "SELECT cook_started_at FROM meal_plan_entries WHERE id = ?"),
-        (1, "SELECT planning_mode FROM weekly_plans WHERE id = ?"),
-        (1, "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?"),
-    ],
-    "app/tools/defrost.py": [
-        (5, "DELETE FROM prep_tasks WHERE id = ?"),
-        (1, "UPDATE prep_tasks SET description = ?, related_meal = ?, quantity = ? WHERE id = ?"),
-        (1, "UPDATE prep_tasks SET task_date = ?, description = ?, inventory_item_id = ? WHERE id = ?"),
-        (1, "UPDATE prep_tasks SET task_date = ?, quantity = ? WHERE id = ?"),
-    ],
-    "app/tools/first_open.py": [
-        (2, "UPDATE members SET first_open_seen_at = ? WHERE id = ?"),
-        (1, "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND first_open_seen_at = ''"),
-    ],
-    "app/tools/inventory.py": [
-        (1, "DELETE FROM inventory_items WHERE id = ?"),
-        (1, "UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ?"),
-        (2, "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?"),
-        # The two interpolated SETs the card warns need care rather than a
-        # regex pass. Seen, and left for whoever owns that module.
-        (2, "UPDATE inventory_items SET {} WHERE id = ?"),
-    ],
-    "app/tools/plan_undo.py": [
-        (1, "SELECT 1 FROM grocery_items WHERE id = ?"),
-        (1, "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?"),
-        # The third interpolated SET. The card names it as tonight.py's; the
-        # 2026-09-24 drop-dish work LIFTED that machinery into plan_undo.py,
-        # so this is where it is now.
-        (1, "UPDATE meal_plan_entries SET {} WHERE id = ?"),
-    ],
-    "app/tools/spices.py": [
-        (1, "UPDATE grocery_items SET status = 'needed' WHERE id = ?"),
-        (1, "UPDATE grocery_items SET status = 'needed', staple_id = ? WHERE id = ?"),
-        (1, "UPDATE grocery_items SET status = 'spice' WHERE id = ?"),
-    ],
-    "app/tools/tonight.py": [
-        (1, "DELETE FROM inventory_items WHERE id = ?"),
-        (1, "SELECT rev FROM inventory_items WHERE id = ?"),
-        (2, "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?"),
-    ],
-    "app/tools/weekly_plan.py": [
-        (1, "SELECT name FROM recipes WHERE id = ?"),
-        (1, "SELECT week_start_date FROM weekly_plans WHERE id = ?"),
-        (1, "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ?"),
-    ],
-}
-
-# The TWELVE modules the two tranches have scoped — eight from tranche 1,
-# four more (meal_variety, memory, slot_needs, usage) from tranche 2. Named
-# so the sweep can say, when it goes red in one of them, that the module is
-# supposed to be finished.
-_DONE_MODULES = (
-    "app/tools/digest.py",
-    "app/tools/grocery.py",
-    "app/tools/holidays.py",
-    "app/tools/household.py",
-    "app/tools/meal_variety.py",
-    "app/tools/memory.py",
-    "app/tools/recipes.py",
-    "app/tools/slot_needs.py",
-    "app/tools/staples.py",
-    "app/tools/stores.py",
-    "app/tools/usage.py",
-    "app/tools/week_intake.py",
-)
+# There is no "not yet" list any more. Tranche 3 (2026-10-13) scoped the
+# last 40 statements, in nine modules, and _LATER_TRANCHE went with them as
+# its own comment asked: every by-id statement on an owned table in app/
+# names household_id now, except the exemptions above.
 
 
 def _offenders() -> collections.Counter:
@@ -335,33 +266,19 @@ def _offenders() -> collections.Counter:
 
 def test_no_statement_reaches_a_household_owned_row_by_id_alone():
     """
-    THE GUARD. Not "these 56 sites are fixed" — that goes quiet the day a
-    57th appears. Every statement in app/ that addresses a household-owned
+    THE GUARD. Not "these 101 sites are fixed" — that goes quiet the day a
+    102nd appears. Every statement in app/ that addresses a household-owned
     table by a row id must name household_id too, unless it is one of the
-    six that run across households on purpose.
-
-    Equality rather than containment, deliberately: fixing something on the
-    later-tranche list makes this go red saying "take it off the list", which
-    is what keeps the list shrinking honestly instead of outliving the work.
+    exemptions that run across households on purpose. Since tranche 3 there
+    is nothing left waiting, so the answer is an empty list.
     """
-    expected: collections.Counter = collections.Counter()
-    for rel, entries in _LATER_TRANCHE.items():
-        for count, stmt in entries:
-            expected[(rel, stmt)] += count
-
-    found = _offenders()
-    if found == expected:
+    new = _offenders()
+    if not new:
         return
 
-    new = found - expected
-    fixed = expected - found
     lines = []
     for (rel, stmt), n in sorted(new.items()):
-        note = " (this module is supposed to be finished)" if rel in _DONE_MODULES else ""
-        lines.append(f"  NOT SCOPED{note}: {rel}\n    {stmt}" + (f"   x{n}" if n > 1 else ""))
-    for (rel, stmt), n in sorted(fixed.items()):
-        lines.append(f"  ALREADY SCOPED, take it off _LATER_TRANCHE: {rel}\n    {stmt}"
-                     + (f"   x{n}" if n > 1 else ""))
+        lines.append(f"  NOT SCOPED: {rel}\n    {stmt}" + (f"   x{n}" if n > 1 else ""))
     hint = ""
     if any(rel in ("app/db.py", "app/invites.py") for (rel, _s) in new):
         hint = (
@@ -375,7 +292,7 @@ def test_no_statement_reaches_a_household_owned_row_by_id_alone():
             "the exemption back rather than 'fixing' the migrations.\n"
         )
     raise AssertionError(
-        "the household scope sweep disagrees with _LATER_TRANCHE.\n\n"
+        "the household scope sweep found statements that are not scoped.\n\n"
         "A statement that reaches a household-owned row by a bare id must "
         "name household_id as well — scope it like its neighbours "
         "(WHERE id = ? AND household_id = ?, with household_id() in the "
@@ -391,96 +308,62 @@ def test_no_statement_reaches_a_household_owned_row_by_id_alone():
 # says nothing.
 # --------------------------------------------------------------------------
 
-_SWEEP_FLOOR = 30
-_SWEEP_FLOOR_MIN_HEADROOM = 5
+# Every by-id statement on an owned table the reader finds in app/, GUARDED
+# OR NOT. Measured 2026-10-13 on 70e633f: 446, of which 398 guarded. A floor
+# on THIS count, rather than on the unguarded one, is independent of how far
+# the tranches have got: scoping a statement moves it from one side to the
+# other and leaves the total where it was. The floor it replaced counted
+# only the unguarded statements, and so had to come down with every tranche
+# (the headroom test beside it existed because it once didn't) — and with
+# the last tranche it would have had to be zero, i.e. no floor at all.
+_READER_FLOOR = 430
 
 
-def test_the_sweep_still_finds_the_statements_it_is_named_for():
+def _every_by_id_statement() -> list[tuple[str, str]]:
+    out = []
+    for path in _python_files():
+        rel = _rel(path)
+        for _lineno, _func, stmt in _statements(open(path, encoding="utf-8").read()):
+            if _owned_tables_by_id(stmt):
+                out.append((rel, stmt))
+    return out
+
+
+def test_the_reader_still_reads_app():
     """
-    MEASURED 2026-09-30, after tranche 2: the sweep reads 46 statements in 11
-    files, of which 6 are the deliberate exemptions — so 40 reach
-    _offenders(). The floor sits under that so an ordinary later tranche does
-    not have to move it; when the list is genuinely nearly empty, this test
-    and _LATER_TRANCHE come out together.
-
-    (Tranche 1 set this floor at 40 against its own count of 45. Tranche 2
-    took the count to exactly 40, i.e. to the floor, so the docstring's own
-    "well under that" had stopped being true and the next tranche would have
-    had to move it. That is the rot the test below now measures rather than
-    trusts.)
-
     WHAT THIS ADDS over the equality test above, which is the stronger guard:
-    that one compares the sweep against _LATER_TRANCHE, so blinding the
-    reader AND shrinking the list to match passes it. This floor is
-    independent of the list, so it catches the pair.
+    that one compares the sweep against the lists, so blinding the reader AND
+    shrinking a list to match passes it — and with nothing left to scope,
+    "found nothing" is exactly what a blinded reader would say. This floor is
+    on every statement the reader sees, guarded or not, so it catches that.
     """
-    found = _offenders()
-    assert sum(found.values()) >= _SWEEP_FLOOR, (
-        f"the sweep found only {sum(found.values())} statements, under the floor of "
-        f"{_SWEEP_FLOOR}. Either a tranche has landed (lower the floor, shrink "
-        f"_LATER_TRANCHE) or the sweep has stopped matching — check _sql_text and "
-        f"_owned_tables_by_id before believing the good news."
+    found = _every_by_id_statement()
+    assert len(found) >= _READER_FLOOR, (
+        f"the reader found only {len(found)} by-id statements in app/, under the "
+        f"floor of {_READER_FLOOR}. Unless that much SQL really was deleted, the "
+        f"reader has stopped matching — check _sql_text and _owned_tables_by_id "
+        f"before believing the good news."
     )
 
 
-def test_the_floor_still_has_headroom_for_the_next_tranche():
-    """
-    THE FAILURE THIS GUARDS IS THE ONE THAT ALREADY HAPPENED, once, silently.
-    Tranche 1 set the floor at 40 against a count of 45 and wrote "well under
-    that so an ordinary later tranche does not have to move it"; tranche 2
-    took the count to exactly 40 and nothing said the sentence had stopped
-    being true. A floor with no headroom is a floor the next tranche trips
-    for the RIGHT reason and at the WRONG time — in the middle of scoping
-    something, with nothing explaining that the red is bookkeeping.
-
-    Deliberately one-sided. The opposite drift — a floor left far UNDER a
-    growing count, which is what rotted test_frontend_restored_2026_09_08's
-    shell.js floor — cannot happen quietly here: the count only grows when
-    new unguarded statements appear, and the equality test above already goes
-    red by name for those. A maximum-slack assertion would fire second, for a
-    cause already reported, and advise raising the floor when the answer is
-    to scope the statements. So it is not written.
-    """
-    count = sum(_offenders().values())
-    headroom = count - _SWEEP_FLOOR
-    assert headroom >= _SWEEP_FLOOR_MIN_HEADROOM, (
-        f"the sweep finds {count} statements against a floor of {_SWEEP_FLOOR} — "
-        f"{headroom} of headroom, under the {_SWEEP_FLOOR_MIN_HEADROOM} this guard "
-        f"asks for. Lower _SWEEP_FLOOR now, while you are here and know why, "
-        f"rather than leaving the next tranche to trip it. Say the measured count "
-        f"in the docstring above at the same time."
-    )
-
-
-@pytest.mark.parametrize("rel,stmt", [
-    # One by `id = ?`, one interpolated, in two different modules — so a
-    # change that blinds the reader to either shape is caught by name.
-    ("app/tools/defrost.py", "DELETE FROM prep_tasks WHERE id = ?"),
-    ("app/tools/inventory.py", "UPDATE inventory_items SET {} WHERE id = ?"),
+@pytest.mark.parametrize("rel,stmt,count", [
+    # One by `id = ?`, two interpolated, in three modules — so a change that
+    # blinds the reader to either shape is caught by name. Matched on the
+    # statement's opening, so each reads the same before and after it is
+    # scoped: the reader has to SEE it either way.
+    ("app/tools/defrost.py", "DELETE FROM prep_tasks WHERE id = ?", 1),
+    # The three interpolated SETs the card singled out as needing care
+    # rather than a regex pass. tonight.py's MOVED to plan_undo.py with the
+    # 2026-09-24 drop-dish work.
+    ("app/tools/inventory.py", "UPDATE inventory_items SET {} WHERE id = ?", 2),
+    ("app/tools/plan_undo.py", "UPDATE meal_plan_entries SET {} WHERE id = ?", 1),
 ])
-def test_the_sweep_still_names_two_specific_statements(rel, stmt):
-    found = _offenders()
-    assert found[(rel, stmt)] >= 1, (
-        f"the sweep no longer sees {stmt!r} in {rel}. If it was scoped, take it "
-        f"off _LATER_TRANCHE and name a different one here; if not, the reader is "
-        f"broken."
+def test_the_reader_still_sees_three_named_shapes(rel, stmt, count):
+    seen = [s for r, s in _every_by_id_statement() if r == rel and s.startswith(stmt)]
+    assert len(seen) >= count, (
+        f"the reader no longer sees {stmt!r} in {rel} (found {seen}). If the code "
+        f"moved, name a different one here; if not, the reader is broken."
     )
-
-
-def test_the_three_interpolated_set_statements_are_all_seen():
-    """
-    The card singles these three out as needing care rather than a regex
-    pass, and says a sweep blind to the hardest shapes is worth little. They
-    are in another builder's modules, so none is fixed here — what is
-    checked is that the sweep SEES all three, which was not assumed.
-
-    The card names two in inventory.py and one in tonight.py. tonight.py's
-    has MOVED: the 2026-09-24 drop-dish work lifted that snapshot/restore
-    machinery into plan_undo.py, and `grep "SET {" app/` finds it there.
-    """
-    found = _offenders()
-    assert found[("app/tools/inventory.py", "UPDATE inventory_items SET {} WHERE id = ?")] == 2
-    assert found[("app/tools/plan_undo.py", "UPDATE meal_plan_entries SET {} WHERE id = ?")] == 1
 
 
 def test_every_exemption_still_matches_something():
@@ -935,8 +818,8 @@ def test_the_claim_the_single_module_sweep_used_to_make_still_holds():
     """
     The sweep this generalises made one narrower claim: no statement in
     weekly_plan.py reaches meal_plan_entries by a row id without naming
-    household_id. That claim is carried by the equality assertion above (none
-    of weekly_plan.py's three remaining offenders is on meal_plan_entries),
+    household_id. That claim is carried by the sweep above (which since
+    tranche 3 finds nothing anywhere),
     but it is restated here so that removing the old file's sweep took no
     coverage with it, and so the six statements it fixed on 2026-09-24 cannot
     quietly come unguarded.
@@ -947,3 +830,98 @@ def test_the_claim_the_single_module_sweep_used_to_make_still_holds():
         if "meal_plan_entries" in _owned_tables_by_id(stmt) and "household_id" not in stmt
     ]
     assert bad == [], bad
+
+
+# --------------------------------------------------------------------------
+# TRANCHE 3 (2026-10-13). One newly scoped statement per module, driven by
+# hand on a two-household database — read out of the module's OWN source
+# rather than copied here, so the test drives the SQL the app runs. Handed
+# the other household's row id it moves (or finds) nothing; handed the
+# owning household it reaches the row, so the zero is not vacuous.
+# --------------------------------------------------------------------------
+
+def _seed_owned_row(table: str, hid: int) -> int:
+    conn = get_conn()
+    try:
+        if table == "prep_tasks":
+            plan = conn.execute(
+                "INSERT INTO weekly_plans (household_id, week_start_date) VALUES (?, '2026-10-12')", (hid,)
+            ).lastrowid
+            cur = conn.execute(
+                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description) "
+                "VALUES (?, ?, '2026-10-13', 'Move the beef to the fridge')", (hid, plan))
+        elif table == "weekly_plans":
+            cur = conn.execute(
+                "INSERT INTO weekly_plans (household_id, week_start_date) VALUES (?, '2026-10-12')", (hid,))
+        elif table == "meal_plan_entries":
+            cur = conn.execute(
+                "INSERT INTO meal_plan_entries (household_id, date, slot) VALUES (?, '2026-10-13', 'dinner')",
+                (hid,))
+        elif table == "members":
+            cur = conn.execute("INSERT INTO members (household_id, name) VALUES (?, 'Sam')", (hid,))
+        elif table == "attention_items":
+            cur = conn.execute(
+                "INSERT INTO attention_items (household_id, kind, summary) VALUES (?, 'use_soon', 'x')", (hid,))
+        elif table == "recipes":
+            cur = conn.execute("INSERT INTO recipes (household_id, name) VALUES (?, 'Kofte')", (hid,))
+        else:
+            cur = conn.execute(f"INSERT INTO {table} (household_id, item) VALUES (?, 'Cumin')", (hid,))
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+@pytest.mark.parametrize("module,stmt", [
+    ("defrost", "UPDATE prep_tasks SET task_date = ?, quantity = ? WHERE id = ? AND household_id = ?"),
+    ("inventory", "UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?"),
+    ("attention", "UPDATE attention_items SET detail_json = ? WHERE id = ? AND household_id = ?"),
+    ("cooker", "SELECT planning_mode FROM weekly_plans WHERE id = ? AND household_id = ?"),
+    ("tonight", "DELETE FROM inventory_items WHERE id = ? AND household_id = ?"),
+    ("first_open", "UPDATE members SET first_open_seen_at = ? WHERE id = ? AND household_id = ? AND first_open_seen_at = ''"),
+    ("plan_undo", "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?"),
+    ("spices", "UPDATE grocery_items SET status = 'spice' WHERE id = ? AND household_id = ?"),
+    ("weekly_plan", "SELECT name FROM recipes WHERE id = ? AND household_id = ?"),
+])
+def test_tranche_3_a_foreign_id_reaches_nothing(two_households, module, stmt):
+    source = open(os.path.join(_APP, "tools", f"{module}.py"), encoding="utf-8").read()
+    assert stmt in [s for _l, _f, s in _statements(source)], f"{module}.py no longer runs {stmt!r}"
+    table = sorted(_owned_tables_by_id(stmt))[0]
+    theirs = _seed_owned_row(table, two_households["other"])
+    fillers = ["2026-10-14"] * (stmt.count("?") - 2)
+
+    conn = get_conn()
+    try:
+        foreign = conn.execute(stmt, (*fillers, theirs, DEFAULT_HOUSEHOLD_ID))
+        if stmt.startswith("SELECT"):
+            assert foreign.fetchone() is None
+        else:
+            assert foreign.rowcount == 0
+        assert conn.execute(f"SELECT 1 FROM {table} WHERE id = ?", (theirs,)).fetchone(), \
+            "the other household's row is still there"
+        own = conn.execute(stmt, (*fillers, theirs, two_households["other"]))
+        if stmt.startswith("SELECT"):
+            assert own.fetchone() is not None
+        else:
+            assert own.rowcount == 1
+        conn.rollback()
+    finally:
+        conn.close()
+
+
+def test_tranche_3_functions_refuse_a_foreign_id_in_their_own_words(two_households):
+    """The belt: the household-filtered read above each scoped write already
+    turns a foreign id away, so the guard is the braces."""
+    from app.tools import attention, inventory, spices
+
+    inv = _seed_owned_row("inventory_items", two_households["other"])
+    assert inventory.step_inventory_quantity(inv, 1) == {"item_id": inv, "found": False}
+    assert inventory.step_inventory_expiration(inv, 1)["found"] is False
+
+    line = _seed_owned_row("grocery_items", two_households["other"])
+    with pytest.raises(ValueError, match="No grocery list item"):
+        spices.tick_spice(line, True)
+
+    item = _seed_owned_row("attention_items", two_households["other"])
+    assert attention.record_attention_item_usage(item, "1 cup") == {
+        "item_id": item, "applied": False, "reason": "not found or already resolved"}

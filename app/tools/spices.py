@@ -256,7 +256,8 @@ def list_spices_this_week() -> dict:
                 # (status 'needed' + staple_id), so the list's own
                 # We-have-plenty / Not-this-trip work on it too.
                 conn.execute(
-                    "UPDATE grocery_items SET status = 'needed', staple_id = ? WHERE id = ?", (staple["id"], r["id"])
+                    "UPDATE grocery_items SET status = 'needed', staple_id = ? WHERE id = ? AND household_id = ?",
+                    (staple["id"], r["id"], household_id()),
                 )
                 ticked = linked = True
         # "Probably running low": Pomona's own tick (the line carries the
@@ -288,14 +289,20 @@ def tick_spice(item_id: int, ticked: bool = True) -> dict:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
     if ticked and row["status"] == "spice":
-        conn.execute("UPDATE grocery_items SET status = 'needed' WHERE id = ?", (item_id,))
+        conn.execute(
+            "UPDATE grocery_items SET status = 'needed' WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        )
         # Ticking a jar back after unticking Pomona's pre-tick is "actually,
         # I do need it": the plenty is taken back and the staple is due
         # again — the pre-shop screen's own undo (staples.reverse_last_answer).
         if row["staple_id"]:
             _staples.reverse_last_answer(conn, row["staple_id"])
     elif not ticked and row["status"] == "needed" and is_spice(row["item"]):
-        conn.execute("UPDATE grocery_items SET status = 'spice' WHERE id = ?", (item_id,))
+        conn.execute(
+            "UPDATE grocery_items SET status = 'spice' WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        )
         # Unticking a pre-ticked jar is "we have plenty": the staple's next
         # due date moves a whole cadence out, so the card won't tick it
         # again next week. The row stays this week's recipe's spice,

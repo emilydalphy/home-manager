@@ -176,13 +176,16 @@ def _use_inventory_row_by_id(item_id: int, minus_qty: str) -> dict:
         return {"item_id": item_id, "item": row["item"], "quantity": row["quantity"], "units_reconciled": False}
     remaining, reconciled = _inventory._try_subtract_quantity(row["quantity"] or "", minus_qty)
     if remaining is None:
-        conn.execute("DELETE FROM inventory_items WHERE id = ?", (item_id,))
+        conn.execute(
+            "DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        )
         conn.commit()
         conn.close()
         return {"item_id": item_id, "item": row["item"], "removed": True, "units_reconciled": True}
     conn.execute(
-        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?",
-        (remaining, item_id),
+        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (remaining, item_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -411,7 +414,8 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     linked_statuses = {entry_id: row["cooked_status"]}
     if row and row["weekly_plan_id"] is not None:
         plan_row = conn.execute(
-            "SELECT planning_mode FROM weekly_plans WHERE id = ?", (row["weekly_plan_id"],)
+            "SELECT planning_mode FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (row["weekly_plan_id"], household_id()),
         ).fetchone()
         if plan_row and plan_row["planning_mode"] == "component_based":
             siblings = conn.execute(
@@ -1012,7 +1016,8 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
         # Read it back rather than trusting the value just sent: if another
         # tap landed first, COALESCE kept theirs and that is the real one.
         started = conn.execute(
-            "SELECT cook_started_at FROM meal_plan_entries WHERE id = ?", (entry_id,)
+            "SELECT cook_started_at FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
         ).fetchone()["cook_started_at"]
     else:
         started = row["cook_started_at"]
@@ -1088,7 +1093,9 @@ def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
     # by the holiday's own plan has to show up where Now and the Cook
     # screen actually look, which is the plan covering today — and the
     # holiday's plan still sees its own dinner's rows, wherever dated.
-    plan_row = conn.execute("SELECT * FROM weekly_plans WHERE id = ?", (weekly_plan_id,)).fetchone()
+    plan_row = conn.execute(
+        "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?", (weekly_plan_id, household_id())
+    ).fetchone()
     first = last = None
     if plan_row is not None:
         from . import week_intake as _week_intake

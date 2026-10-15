@@ -810,7 +810,9 @@ def _freeze_portion(conn, dish: str, servings: int, cooked_on: str) -> dict:
         (household_id(), item, quantity, NIGHT_OFF_FROZEN_SOURCE, keeps),
     )
     inv_id = cur.lastrowid
-    rev = conn.execute("SELECT rev FROM inventory_items WHERE id = ?", (inv_id,)).fetchone()["rev"]
+    rev = conn.execute(
+        "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?", (inv_id, household_id())
+    ).fetchone()["rev"]
     return {"id": inv_id, "rev": rev, "item": item, "quantity": quantity}
 
 
@@ -848,8 +850,8 @@ def _shrink_chain_into_freezer(conn, source_id: int, gone_ref: str, servings: in
     extra["night_off"] = night_off_from
     derived[_leftovers.FREEZER_EXTRA_KEY] = extra
     conn.execute(
-        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-        (json.dumps(derived), source_id),
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), source_id, household_id()),
     )
 
 
@@ -1178,8 +1180,8 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
         derived = json.loads(tonight_row["derived_from_json"] or "{}")
         derived[NIGHT_OFF_CONSTRAINT] = {"constraint": NIGHT_OFF_CONSTRAINT, "inventory_item_id": frozen["id"]}
         conn.execute(
-            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
-            (json.dumps(derived), tonight_row["id"]),
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(derived), tonight_row["id"], household_id()),
         )
         holder_id = tonight_row["id"]
 
@@ -1262,7 +1264,10 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
             if row is None or row["rev"] != inv["rev"]:
                 conn.rollback()
                 return changed
-            conn.execute("DELETE FROM inventory_items WHERE id = ?", (inv["id"],))
+            conn.execute(
+                "DELETE FROM inventory_items WHERE id = ? AND household_id = ?",
+                (inv["id"], household_id()),
+            )
 
         _plan_undo.restore(conn, record, holder["id"])
         conn.commit()

@@ -72,7 +72,10 @@ def step_inventory_quantity(item_id: int, delta: float) -> dict:
         conn.close()
         return {"item_id": item_id, "found": False}
     new_qty = _step_quantity_text(row["quantity"], delta)
-    conn.execute("UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?", (new_qty, item_id))
+    conn.execute(
+        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (new_qty, item_id, household_id()),
+    )
     conn.commit()
     conn.close()
     return {"item_id": item_id, "found": True, "quantity": new_qty}
@@ -101,7 +104,11 @@ def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
     except ValueError:
         base_date = _today()
     new_date = (base_date + timedelta(days=delta_days)).isoformat()
-    conn.execute("UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') WHERE id = ?", (new_date, item_id))
+    conn.execute(
+        "UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (new_date, item_id, household_id()),
+    )
     conn.commit()
     conn.close()
     return {"item_id": item_id, "found": True, "expiration_date": new_date}
@@ -227,9 +234,9 @@ def _add_to_inventory(
         if location and location != existing["location"]:
             fields += ", location = ?"
             params.append(location)
-        params.append(existing["id"])
+        params += [existing["id"], household_id()]
         before = _receipt_snapshot(conn, existing["id"])
-        conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ?", params)
+        conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ? AND household_id = ?", params)
         item_id = existing["id"]
     else:
         before = None
@@ -359,8 +366,8 @@ def update_inventory(
             if location and location != existing["location"]:
                 fields += ", location = ?"
                 params.append(location)
-            params.append(existing["id"])
-            conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ?", params)
+            params += [existing["id"], household_id()]
+            conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ? AND household_id = ?", params)
             conn.commit()
             item_id = existing["id"]
         else:
@@ -387,13 +394,17 @@ def update_inventory(
             return {"item": item, "found": False}
         remaining, reconciled = _try_subtract_quantity(existing["quantity"] or "", quantity)
         if remaining is None:
-            conn.execute("DELETE FROM inventory_items WHERE id = ?", (existing["id"],))
+            conn.execute(
+                "DELETE FROM inventory_items WHERE id = ? AND household_id = ?",
+                (existing["id"], household_id()),
+            )
             conn.commit()
             conn.close()
             return {"item": item, "removed": True}
         conn.execute(
-            "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ?",
-            (remaining, existing["id"]),
+            "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (remaining, existing["id"], household_id()),
         )
         conn.commit()
         conn.close()
