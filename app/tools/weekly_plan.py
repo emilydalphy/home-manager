@@ -1010,7 +1010,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
     row = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.component_category,
-               mpe.derived_from_json, mpe.cooked_status,
+               mpe.derived_from_json, mpe.cooked_status, mpe.cook_started_at,
                COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -1042,18 +1042,23 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
     chained = chains["leftovers"].get(row["id"])
     dish = chained["source"]["meal"] if chained else row["meal"]
 
-    if (row["cooked_status"] or "") == "done":
+    begun = cook_begun(row)
+    if begun:
         # An answer, not an error: the same `refused` shape this function
         # already uses for a chain source, so the screen shows the sentence
-        # rather than a generic failure. Nothing is written.
+        # rather than a generic failure. Nothing is written. A cook that has
+        # STARTED is refused the same way (overnight 2026-10-14): a chain
+        # source's "−" moves the cook onto its fed night, and the start
+        # stamp went with it — "cooking since yesterday".
+        said = "has already been cooked" if begun == "cooked" else "is already cooking"
         return {
             "status": "refused",
             "date": meal_date,
             "slot": slot,
             "dish": dish,
             "message": (
-                f"{dish} on {date.fromisoformat(meal_date).strftime('%A')} has already "
-                "been cooked — I’ll leave that one on the week."
+                f"{dish} on {date.fromisoformat(meal_date).strftime('%A')} {said}"
+                " — I’ll leave that one on the week."
             ),
         }
 
@@ -5640,7 +5645,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         SELECT mpe.id, mpe.date, mpe.slot, mpe.recipe_id, mpe.freeform_meal,
                COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.slot_state, mpe.open_reason, mpe.reasoning, mpe.derived_from_json,
-               mpe.food_groups_json, mpe.sides_json, mpe.cooked_status,
+               mpe.food_groups_json, mpe.sides_json, mpe.cooked_status, mpe.cook_started_at,
                r.prep_time_minutes, r.cook_time_minutes,
                r.tags_json, r.instructions_json, r.main_protein, r.ingredients_json, r.cuisine,
                r.source_url, r.source_book, r.source_author, r.source_page,
@@ -5840,6 +5845,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # take the tick, the inventory it depleted and the shopping
             # line for a meal that has already been eaten with it.
             "cooked": (row["cooked_status"] or "") == "done",
+            # Its cook has started but isn't ticked (cook_begun): the Move
+            # button stays off it like a cooked one (overnight 2026-10-14).
+            "cooking": cook_begun(row) == "cooking",
         }
         # A confirmed chain (see `chains` above) takes priority over the
         # freeform-text heuristic below: a chain entry can carry a REAL
@@ -8714,6 +8722,22 @@ def _weekday_of(date_str: str) -> str:
     return date.fromisoformat(date_str).strftime("%A")
 
 
+def cook_begun(row) -> str | None:
+    """'cooked' for a meal ticked done, 'cooking' for one whose cook has
+    started (cook_started_at), else None. The one rule every "this meal is
+    now on another day" door asks before it moves a row (overnight
+    2026-10-14): a dinner already on the stove stays on its night exactly as
+    a cooked one always has. Before this, the nights swap and the Move sheet
+    asked only about the tick, so tonight's dinner could be traded away
+    mid-cook. "Mark not cooked" clears the start, which is what makes it
+    movable again. `row` needs cooked_status and cook_started_at."""
+    if (row["cooked_status"] or "") == "done":
+        return "cooked"
+    if row["cook_started_at"]:
+        return "cooking"
+    return None
+
+
 def _nights_swap_refusal(message: str, date_a: str, date_b: str) -> dict:
     return {"status": "refused", "date_a": date_a, "date_b": date_b, "message": message}
 
@@ -9182,6 +9206,7 @@ def _apply_dinner_nights_swap(
         rows = conn.execute(
             """
             SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status,
+                   mpe.cook_started_at,
                    mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
             FROM meal_plan_entries mpe
             LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -9200,9 +9225,11 @@ def _apply_dinner_nights_swap(
             if r["slot_state"] == "planned_empty":
                 return _nights_swap_refusal(
                     f"Nobody’s cooking {wd} — I’ve left it as it is.", date_a, date_b)
-            if (r["cooked_status"] or "") == "done":
+            begun = cook_begun(r)
+            if begun:
+                said = "has already been cooked" if begun == "cooked" else "is already cooking"
                 return _nights_swap_refusal(
-                    f"{r['meal']} on {wd} has already been cooked — I’ll leave that one where it is.",
+                    f"{r['meal']} on {wd} {said} — I’ll leave that one where it is.",
                     date_a, date_b)
         if undo:
             # Both halves have to still say they came from each other; a

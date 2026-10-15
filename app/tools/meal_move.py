@@ -64,6 +64,10 @@ logger = logging.getLogger("home_manager")
 MOVABLE_SLOTS = ("lunch", "dinner")
 _SLOT_PLURALS = {"lunch": "lunches", "dinner": "dinners"}
 
+# A row whose cook has begun (weekly_plan.cook_begun) never moves; the
+# picker's short line for it.
+_BEGUN_SHORT = {"cooked": "Already cooked", "cooking": "Already cooking"}
+
 _WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
@@ -114,7 +118,7 @@ def _snapshot(weekly_plan_id: int, conn) -> dict:
     rows = conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.cooked_status,
-               mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal,
+               mpe.cook_started_at, mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal,
                r.prep_time_minutes, r.cook_time_minutes
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -308,10 +312,14 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
     chains = snap["chains"]
     if _is_reheat(source, chains):
         return {"ok": False, "reason": "Leftovers move with the meal they come from"}
-    if (source["cooked_status"] or "") == "done":
-        return {"ok": False, "reason": "Already cooked"}
     if source["date"] < today:
         return {"ok": False, "reason": "Already gone by"}
+    # Cooked, or started — a dinner on the stove stays put
+    # (weekly_plan.cook_begun, overnight 2026-10-14). After the gone-by
+    # check, so a past night reads as gone by, not "Already cooking".
+    begun = _weekly_plan.cook_begun(source)
+    if begun:
+        return {"ok": False, "reason": _BEGUN_SHORT[begun]}
 
     delta = (date.fromisoformat(to_date) - date.fromisoformat(source["date"])).days
     members = [source]
@@ -377,8 +385,10 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
             if _nobody_home_row(there):
                 return {"ok": False, "reason": f"Its leftovers would land on {wd}, and nobody’s home"}
             return {"ok": False, "reason": f"Its leftovers would land on {wd}, which isn’t planned"}
-        if (there["cooked_status"] or "") == "done":
-            return {"ok": False, "reason": "Already cooked" if tapped else f"{wd}’s {m['slot']} is already cooked"}
+        begun = _weekly_plan.cook_begun(there)
+        if begun:
+            return {"ok": False, "reason": _BEGUN_SHORT[begun] if tapped
+                    else f"{wd}’s {m['slot']} is already {begun}"}
         if pos[0] < today:
             return {"ok": False, "reason": "Already gone by"}
         if tapped and there["slot_state"] == "planned" and \
@@ -936,8 +946,11 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
                 continue
             if token.get("to") != r["date"]:
                 raise ValueError("That meal has moved again since, so there’s nothing to put back.")
-            if (r["cooked_status"] or "") == "done":
+            begun = _weekly_plan.cook_begun(r)
+            if begun == "cooked":
                 raise ValueError("That meal has been cooked since, so it stays where it is.")
+            if begun:
+                raise ValueError("That meal is cooking now, so it stays where it is.")
             placement[r["id"]] = token.get("date")
             restore_cuts.update(token.get("prep_cuts") or {})
             for pos in token.get("opened") or []:

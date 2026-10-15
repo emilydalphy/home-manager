@@ -360,6 +360,25 @@ why*, not duplicating the diff.
   390px: Plan now opens "This week · Oct 14–20". "Next week" + "Not now"
   is honoured the same way.
 
+- **A dinner whose cook has started stays on its night** (2026-10-14, defect
+  hunt; branch `overnight/started-dinner-stays-put`; tests
+  `tests/test_started_dinner_stays_put.py`). Once "Start cooking" set
+  `cook_started_at`, the Move sheet, `move_meal`, the nights swap (route,
+  chat `swap_dinner_nights`, Now's dry-run probes) all still said yes and
+  moved a dinner already on the stove — they asked only about the cooked
+  tick. Now `weekly_plan.cook_begun(row)` ('cooked' / 'cooking' / None) is
+  the one rule those doors ask, both ways (moving it out, trading into it):
+  picker line "Already cooking", swap "… is already cooking — I’ll leave
+  that one where it is." "Mark not cooked" clears the start, so it moves
+  again. Side effect by design: a night off on a started dinner no longer
+  offers to move the dish to another night. Review follow-up, same branch:
+  the night off's `cook_on_fed` and the Review "−" (`drop_dish_from_day`)
+  also carried a started cook onto its fed night with the start stamp —
+  both now refuse ("The X is already cooking, so it stays on tonight." /
+  "… is already cooking — I’ll leave that one on the week."); the week
+  payload carries `cooking` and `wkCanMove` hides Move on it; a past night
+  reads "Already gone by" before "Already cooking". Open for Emily: whether
+  night off / recipe swap should be offered at all once a cook has started.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
