@@ -5126,7 +5126,7 @@ def week_receipt(days: list[dict], weekly_plan_id: int, today: str = "") -> dict
                  week." rather than naming a day that isn't there.
 
     ...and `batched_line`: what approval batched for the household, said
-    once on All set (see batched_line below) — "" when nothing was.
+    once (see batched_line below) — "" when nothing was.
 
     `days` is get_week_menu's own day list, so an away night ("Out —
     nothing to cook", state planned_empty) and an open slot count as
@@ -5223,7 +5223,7 @@ _SLOT_PLURAL = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinner
 
 def batched_line(weekly_plan_id: int) -> str:
     """
-    The one quiet line under All set's numbers that says what approval
+    The one quiet line, said on approval's toast, that says what approval
     batched (Loop Board "Batch a shared ingredient automatically when the
     household preps", 2026-09-21 — Emily's "show the value" note): nothing
     was asked, so this is the only place the household hears that one

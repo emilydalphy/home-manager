@@ -5628,7 +5628,7 @@
     // (Plan's freezer step), it reads the same `after=approve` and lands
     // the household there instead; until then the list is the next step.
     if (new URLSearchParams(window.location.search).get('after') === 'approve') {
-      showToast('Your week was approved');
+      showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));
       window.history.replaceState({ tab: 'grocery' }, '', window.location.pathname);
     }
   }
@@ -14982,18 +14982,11 @@
       window.history.replaceState({ tab: 'week' }, '', afterApprove ? '/week' : window.location.pathname);
     }
     if (afterApprove && weekState.data && weekPlanState(weekState.data) === 'set') {
-      // The freezer step only when there is something to ask: the items
-      // are one request (ensureDefrostAskItems), awaited here rather than
-      // landing on an empty "Nothing … needs thawing" step while it is
-      // still in flight. Already answered, or nothing frozen: the list,
-      // said the way Shop says it (S10).
-      var ask = false;
-      if (!weekState.data.defrost_asked_at) {
-        await ensureDefrostAskItems(panel, weekState.data);
-        ask = !!(defrostAskState.items && defrostAskState.items.length);
-      }
-      if (ask) goMealsStep('freezer', { replace: true });
-      else { goGroceryList(); showToast('Your week was approved'); }
+      // The list, said the way Shop says it (S10) — and never the freezer
+      // step first (2b = A, 2026-10-12): the reveal's button says
+      // "Approve the week", and the question waits on Plan's freezer row.
+      goGroceryList();
+      showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));
     }
   }
 
@@ -16798,12 +16791,14 @@
   // implementation. Only one of the two steps is ever in the DOM at a
   // time (renderMealsStep replaces #week-steps outright).
   //
-  // "Approve · Open grocery list" (Emily, 2026-09-18): approving is what
-  // builds the list, and the button says where it goes next — All set,
-  // then the freezer question, then the list (see submitWeekApproval and
-  // goAfterWeekSet). An approved week's dock reads "Open grocery list"
-  // and takes the same road minus the approval: the freezer step if it
-  // has not been answered for this plan, else straight to the list.
+  // "Approve the week" — one verb, and it happens (Emily, 2026-10-12,
+  // "Buttons that promise more than they do", 2b = A). It read "Approve ·
+  // Open grocery list" from 2026-09-18 and then went to All set and the
+  // freezer question first, so the label was two actions and neither was
+  // the next screen. Now the tap approves and the list opens straight
+  // away with a toast (submitWeekApproval); the freezer question waits on
+  // the root as its quiet row (weekFreezerRowHtml). An approved week's
+  // dock reads "Open grocery list" and does exactly that (goAfterWeekSet).
   //
   // One row (Emily, 2026-09-21, board D4 — "too thick"): the primary
   // fills the width, the round More (wkDockMoreHtml) sits beside it, and
@@ -16824,7 +16819,7 @@
           '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
             (openCount
               ? escapeHtml(approveWithOpenLabel(data, openCount))
-              : 'Approve · Open grocery list') +
+              : 'Approve the week') +
           '</button>' +
           wkDockMoreHtml() +
         '</div>' +
@@ -16845,19 +16840,13 @@
       WK_ICONS.more + '</button>';
   }
 
-  // Where an approved week goes from "Open grocery list" (Check the week,
-  // the freezer row's road, the reveal's after=approve hand-off): the
-  // freezer question if it has not been answered for this plan and there
-  // is something to ask about, else the list. The items are usually
-  // already cached (ensureDefrostAskItems); if they are not yet, the
-  // freezer step itself fetches them and steps aside when there are none.
-  function goAfterWeekSet(panel, data) {
-    if (!data || data.status !== 'approved' || data.defrost_asked_at) return goGroceryList();
-    if (defrostAskState.planId === data.weekly_plan_id && defrostAskState.items !== null &&
-        !defrostAskState.items.length) {
-      return goGroceryList();
-    }
-    goMealsStep('freezer');
+  // Where an approved week goes from "Open grocery list": the list. Until
+  // 2026-10-12 it went to the freezer question first whenever that was
+  // unanswered, which made the button say one thing and do another (2b =
+  // A). The question is the root's quiet freezer row now, asked when the
+  // household chooses to — never a screen in the way of the list.
+  function goAfterWeekSet() {
+    return goGroceryList();
   }
 
   // The list, and the Plan tab back on its root for the next visit — a
@@ -20453,12 +20442,21 @@
       // cancelled by a glance at this step. Un-tapping the chip and
       // "Add to the schedule" is the one way to cancel (latest answer
       // wins, on purpose, through the same write).
+      //
+      // "Add to the schedule" is dimmed until a chip is on (Emily,
+      // 2026-10-06, 2c = A): with nothing picked it had nothing to add, and
+      // tapping it wrote "nothing frozen" under a label that promised the
+      // opposite. That answer is the plain "Nothing this week" beside it.
+      // Reopened, it stays live with nothing on — un-tapping every chip and
+      // saving is how a standing answer is cancelled (see above).
       var reopened = defrostAskItemsAlreadyAnswered(items);
+      var nothingPicked = !defrostSelectedItems().length;
       dock = '<div class="dock wk-freezer-dock">' +
-        '<button type="button" class="dock-primary" id="wk-freezer-go">Add to the schedule · Open grocery list</button>' +
+        '<button type="button" class="dock-primary" id="wk-freezer-go"' +
+          (nothingPicked && !reopened ? ' disabled' : '') + '>Add to the schedule</button>' +
         (reopened
           ? '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-keep">Keep as is</button>'
-          : '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-none">Nothing frozen — I’m buying it all</button>') +
+          : '<button type="button" class="wk-freezer-none-btn" id="wk-freezer-none">Nothing this week</button>') +
       '</div>';
     }
     return '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
@@ -20547,6 +20545,10 @@
 
   async function submitDefrostAsk(panel, data, items) {
     var buttons = panel.querySelectorAll('.wk-freezer-dock button, .defrost-chip');
+    // Remember which were already off: "Add to the schedule" is dimmed
+    // while nothing is picked, and a failed save must not wake it up
+    // under a label that promises the opposite of "nothing frozen".
+    var wasDisabled = Array.prototype.map.call(buttons, function (b) { return b.disabled; });
     buttons.forEach(function (b) { b.disabled = true; });
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-confirm', {
@@ -20583,11 +20585,13 @@
       // The answer moved lines off (or back onto) the list, so a Shop
       // panel already built this page view is re-read before it is shown
       // — and Today's moves with it, the fridge move being one of them.
+      // The household stays on Plan: the step is reached from the root's
+      // freezer row now, and its button says "Add to the schedule", not
+      // "Open grocery list" (2b = A / 2c = A, 2026-10-12).
       refreshGrocerySurfaces();
-      goGroceryList();
     } catch (err) {
       console.warn('Defrost confirmation failed:', err);
-      buttons.forEach(function (b) { b.disabled = false; });
+      buttons.forEach(function (b, i) { b.disabled = wasDisabled[i]; });
       showToast('That didn’t save — try again.');
     }
   }
@@ -21312,6 +21316,15 @@
   // after the household has tapped the "Approve anyway" button that
   // showApproveConfirm renders below — never inferred, never set on the
   // first tap.
+  // "Week approved · 3 things to buy." — one sentence for every way a
+  // week gets approved (Plan's button here, and the onboarding reveal's,
+  // which hands `added` over in its ?after=approve URL). A week that added
+  // nothing says the first half alone rather than "0 things".
+  function weekApprovedLine(added) {
+    var n = Number(added) || 0;
+    return 'Week approved' + (n > 0 ? ' · ' + n + (n === 1 ? ' thing' : ' things') + ' to buy' : '') + '.';
+  }
+
   async function submitWeekApproval(panel, data, approvedBy, confirmHardConflicts) {
     var btn = panel.querySelector('#week-approve-btn');
     var restoreLabel = btn ? btn.textContent : 'Approve the week';
@@ -21348,23 +21361,27 @@
         return;
       }
 
-      var openListAction = {
-        label: 'Open the list',
-        onClick: function () { activateTab('grocery', true, { groScreen: 'plan' }); }
-      };
+      // The list opens straight away and this toast says what happened
+      // (Emily, 2026-10-12, 2b = A — the mockup's "Week approved · 34
+      // things to buy"). The count is what approving just put on the list
+      // (`groceries_added`); a week that added nothing says the first half
+      // alone rather than "0 things".
+      //
       // `approval.replaced` is what the approve endpoint itself just did
       // (the real takeover); `data.replaces` is get_week_menu's preview
       // from before the tap, kept only as a fallback — see
       // weekTakeoverToastNote. Both are null the rest of the time, so this
       // changes nothing about the toast on an ordinary approval.
+      var approvedLine = weekApprovedLine(approval.groceries_added);
       var takeoverNote = weekTakeoverToastNote(approval.replaced, data.replaces);
-      if (approval.conflicts_note) {
-        showToast('Approved. ' + approval.conflicts_note + (takeoverNote ? ' ' + takeoverNote + '.' : ''), openListAction, 9000);
-      } else if (takeoverNote) {
-        showToast('Approved. ' + takeoverNote + '. I’ll get your list together.', openListAction, 9000);
-      } else {
-        showToast('Approved. I’ll get your list together.', openListAction);
-      }
+      // What approval batched rides the same toast: All set was the only
+      // screen that said it, and nothing was asked, so this is the one
+      // place the household hears that one cook now covers several meals.
+      var batchedLine = approval.batched_line || '';
+      var approvedToast = approvedLine +
+        (batchedLine ? ' ' + batchedLine : '') +
+        (approval.conflicts_note ? ' ' + approval.conflicts_note : '') +
+        (takeoverNote ? ' ' + takeoverNote + '.' : '');
       // Approving is the one action in this app that writes to the grocery
       // list wholesale, so anything already showing that list is stale the
       // moment it succeeds — the same staleness
@@ -21375,20 +21392,20 @@
       // the list being built, so the leftovers question reopens and "Open
       // the list" may land on CARRY. The household is watching it happen.
       refreshGrocerySurfaces({ refill: true });
-      // Land on the All set screen (Emily, 2026-09-11: "make this the dark
-      // background and more of a fun screen") — the one finish in the loop
-      // that gets its own screen (DESIGN_SYSTEM §2b S5). The root's
-      // receipt card is dismissed by it, so "See the week" lands clean.
-      weekState.step = 'allset';
       // Fresh items for the freezer question: the list was just built, so
       // what the app has no other record of has just changed.
       defrostAskState.items = null;
       defrostAskState.selected = {};
+      // Straight to the list (2b = A). The All set screen this used to land
+      // on is no longer a stop on the way; Plan reopens on its root, where
+      // the freezer row asks its question quietly.
+      weekState.step = 'week';
+      goGroceryList();
+      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote || batchedLine) ? 9000 : 6000);
       await loadWeekMenu(panel);
-      if (scrollEl) scrollEl.scrollTop = 0;
       // The notifications ask's moment (iPhone app only; see offerPush):
       // a week is settled, so there's a morning note and a dinner nudge to
-      // send. A beat after the All set screen lands, not over the toast.
+      // send. A beat after the list lands, not over the toast.
       setTimeout(offerPush, 1200);
     } catch (err) {
       console.warn('Week approval failed:', err);

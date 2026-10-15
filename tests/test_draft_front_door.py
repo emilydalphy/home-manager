@@ -282,7 +282,7 @@ def test_what_were_eating_is_one_card_per_meal_type_with_the_days_and_one_fact_a
     for gone in ("Out — nothing to cook", "wk-card-tags", "rv-step", "data-rv-", "wk-carousel", "wk-daytab", "7 meals", 'id="wk-help"'):
         assert gone not in html, gone
     # Under it: Approve and the round More, one row in the dock.
-    assert 'id="week-approve-btn">Approve · Open grocery list</button>' in html
+    assert 'id="week-approve-btn">Approve the week</button>' in html
     assert "Plan it differently" not in html
     assert 'id="wk-more"' in html and html.index("wk-decide dock") < html.index('id="wk-more"')
 
@@ -294,7 +294,7 @@ def test_which_days_is_the_carousel_as_built_with_the_same_dock_under_it():
                 f"console.log(JSON.stringify(reviewStepHtml({json.dumps(_draft(days))}, weekState.days, true)));")
     assert 'id="wk-carousel"' in html and html.count('data-wk-card="') == 3 and html.count("data-wk-daytab=") == 3
     assert "wk-menu" not in html
-    assert 'id="week-approve-btn">Approve · Open grocery list</button>' in html
+    assert 'id="week-approve-btn">Approve the week</button>' in html
     assert "Plan it differently" not in html and 'id="wk-more"' in html
     # The row says its minutes and no reason (Emily, 2026-09-27, decision C).
     assert ">33 min<" in html and "as asked" not in html

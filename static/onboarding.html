@@ -657,7 +657,9 @@
      sideways strip of one card per day — the day's meals with a Swap under
      each — so the first thing the household does with the plan is look at
      it a day at a time and change what they don't fancy. The one apricot
-     is in the foot ("Approve · Open grocery list"). The "15 meals" number
+     is in the foot ("Approve the week" since 2026-10-12, 2b = A: it
+     approves and the list opens; it read "Approve · Open grocery list",
+     which was two actions). The "15 meals" number
      and the end-of-setup receipt that used to sit here are gone: the
      numbers live on the app's All set screen, and what setup saved is on
      Preferences. Canonical tokens throughout. ---------- */
@@ -1925,7 +1927,7 @@
     <p class="reveal-foot-note" id="reveal-approve-note" hidden></p>
     <!-- Approve IS the yes (the app's own approve route): the week is
          settled and the shopping list written, then the app opens on it. -->
-    <button class="btn-primary q-next reveal-primary-btn" id="reveal-done-btn" type="button">Approve &middot; Open grocery list</button>
+    <button class="btn-primary q-next reveal-primary-btn" id="reveal-done-btn" type="button">Approve the week</button>
     <button class="reveal-quiet-link" id="reveal-iterate-btn" type="button">or tweak it with me</button>
   </div>
   <!-- A failed generation shows this instead of reveal-actions above, never
@@ -6028,7 +6030,7 @@ INTRO_STEPS.forEach(key => {
 // the week is settled and the shopping list written before the app opens.
 // Then the hand-off: /grocery?after=approve&drafted=<the plan's Monday>.
 // shell.js's Shop tab reads `after=approve` (buildGroceryPanel) and says
-// "Your week was approved"; a step between approving and the list
+// "Week approved · N things to buy." (weekApprovedLine); a step between approving and the list
 // (Plan's freezer step) can read the same param and land there instead.
 // `drafted` rides along for the same reason it always has: the first plan
 // is not always the week today sits in.
@@ -6038,8 +6040,12 @@ INTRO_STEPS.forEach(key => {
 // button sends confirm_hard_conflicts, exactly as shell.js's
 // showApproveConfirm does.
 let revealApproveConfirming = false;
-function revealAfterApproveUrl() {
-  return '/grocery?after=approve' + (firstPlanWeekStart ? '&drafted=' + encodeURIComponent(firstPlanWeekStart) : '');
+// `added` is the approve answer's groceries_added, so the shell's toast
+// reads the same "Week approved · N things to buy." the Plan tab's
+// Approve says (2b = A, 2026-10-12) rather than a vaguer line.
+function revealAfterApproveUrl(added) {
+  return '/grocery?after=approve' + (firstPlanWeekStart ? '&drafted=' + encodeURIComponent(firstPlanWeekStart) : '')
+    + (Number(added) > 0 ? '&added=' + Number(added) : '');
 }
 async function approveFirstWeek() {
   const btn = document.getElementById('reveal-done-btn');
@@ -6063,7 +6069,7 @@ async function approveFirstWeek() {
       btn.textContent = 'Approve anyway';
       return;
     }
-    window.location.href = revealAfterApproveUrl();
+    window.location.href = revealAfterApproveUrl(data.groceries_added);
   } catch (err) {
     console.warn('First-week approval failed:', err);
     note.textContent = "Couldn't approve just now — nothing changed. Try again in a moment.";

@@ -278,6 +278,20 @@ why*, not duplicating the diff.
   they forward it now. Why: only chat ever said it. The Plan tile drag the
   card names is gone (2026-09-18); its swap lives on as Today's nights trade.
   Review fix: the Tweak (plate part) toast goes through `thawToast` too.
+- **"Approve the week" approves and opens the list; "Add to the schedule"
+  waits for a pick** (2026-10-13; branch `overnight/buttons-say-what-they-do`).
+  Emily: 2b = A (2026-10-12), 2c = A (2026-10-06). The draft's button (and
+  the Week 1 reveal's) reads "Approve the week"; `submitWeekApproval` opens
+  the list straight away with "Week approved · N things to buy." (N =
+  `groceries_added`) instead of All set → freezer step → list; the
+  approved dock's "Open grocery list" and the reveal hand-off go straight to
+  the list (`goAfterWeekSet`). The freezer question is the root's existing
+  freezer row. Its step's primary is "Add to the schedule", disabled until a
+  chip is on (live when reopened, so an answer can still be cancelled),
+  beside "Nothing this week"; saving stays on Plan. `allSetStepHtml` is kept
+  but nothing routes to it. **2a NOT built**: "Plan my first week" on the
+  consent screen would still lead to "Anything else", which must stay after
+  consent (it reads the note with a model call) — Emily's call on the card.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

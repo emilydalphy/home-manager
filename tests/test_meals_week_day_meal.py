@@ -349,7 +349,7 @@ def test_the_draft_review_band_is_gone_and_the_decision_moved_under_the_card():
     )
     # UPDATED 2026-09-11 (Build 3 of the screen-by-screen redesign, Emily's decisions C and E): a draft's root IS the review, so the week card's own decision strip (Check the week / Approve this week / the italic Tweak it with me) is gone; the one apricot is reviewDecideHtml's, in the dock.
     _assert_in("function reviewDecideHtml(", SHELL_JS, "the draft's decision (in the review it opens on)", "shell.js")
-    _assert_in("Approve · Open grocery list", SHELL_JS, "the Approve button (2026-09-18 wording)", "shell.js")
+    _assert_in("Approve the week", SHELL_JS, "the Approve button (2026-10-12 wording, 2b = A)", "shell.js")
     # The receipt row above the card went on 2026-09-18 with the asks it held.
     assert 'id="week-approve-row"' not in SHELL_JS
 

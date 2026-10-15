@@ -244,6 +244,9 @@ def test_approval_batches_the_component_tells_the_household_once_and_never_asks(
     assert menu["receipt"]["batched_line"] == (
         f"I’ve batched the eggs: one pot {_weekday(TUE)} covers {_weekday(THU)}."
     )
+    # Approving lands on the list now, not All set, so the approve answer
+    # itself carries the line for the toast (shell.js submitWeekApproval).
+    assert body["batched_line"] == menu["receipt"]["batched_line"]
     # ...and the later dish's Cook screen carries the note.
     cards = _cards(plan_id)
     assert next(i for i in cards[salad]["ingredients"] if i["item"] == "Large eggs")["made_ahead"] == f"boiled {_weekday(TUE)}"
@@ -261,6 +264,7 @@ def test_approval_without_prep_days_batches_no_component_and_has_no_line(signed_
     assert res.status_code == 200 and res.json()["status"] == "approved"
     assert _batch_rows(plan_id) == []
     assert signed_in.get("/api/week-menu").json()["receipt"]["batched_line"] == ""
+    assert res.json()["batched_line"] == ""
 
 
 def test_a_re_approval_does_not_batch_twice(signed_in):
@@ -401,3 +405,14 @@ def test_all_set_has_no_batched_line_when_nothing_was_batched():
         html = _render(receipt)
         assert "wk-allset-batched" not in html
         assert "batched" not in html.lower()
+
+
+def test_the_approve_toast_says_the_batched_line():
+    """All set is no longer a stop after approving (2b = A, 2026-10-12), so
+    the toast is the only screen left to say what approval batched."""
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text()
+    body = src[src.index("async function submitWeekApproval"):]
+    body = body[: body.index("\n  }\n")]
+    assert "approval.batched_line" in body
+    assert "batchedLine ? ' ' + batchedLine" in body

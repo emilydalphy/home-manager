@@ -262,7 +262,7 @@ def test_the_head_says_what_the_screen_is_for_and_nothing_else():
     assert 'id="reveal-number"' not in step and 'id="reveal-receipt"' not in step
     for gone in ("Review my week", "YOU'RE SET UP", "That's everything I need."):
         assert gone not in ONBOARDING_VISIBLE, gone
-    assert ">Approve &middot; Open grocery list</button>" in step
+    assert ">Approve the week</button>" in step
     assert ">or tweak it with me</button>" in step
 
 
@@ -288,7 +288,7 @@ def test_approve_is_the_apps_own_approve_route_and_hands_off_to_the_list():
     assert "'/grocery?after=approve'" in _fn("revealAfterApproveUrl")
     # The other end: Shop reads it, says it took, and scrubs it.
     assert "get('after') === 'approve'" in SHELL_JS
-    assert "showToast('Your week was approved');" in SHELL_JS
+    assert "showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));" in SHELL_JS
 
 
 def test_a_failed_week_keeps_try_again_and_take_me_in_anyway():
