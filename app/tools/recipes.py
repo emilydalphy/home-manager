@@ -4218,6 +4218,12 @@ class WeekGroceryBuffer:
                 or (_quantities._measurable_unit(unit) and not add_result.get("units_reconciled", True))
             ):
                 _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
+            elif add_result["merged"]:
+                # A line the household edited down keeps their number
+                # (Emily, 2026-10-12) — see grocery._with_household_edit.
+                _grocery._recompute_plan_line_from_ledger(
+                    add_result["item_id"], conn=self.conn, only_if_edited_down=True,
+                )
         self._lines.clear()
 
 

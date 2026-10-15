@@ -84,6 +84,28 @@ why*, not duplicating the diff.
   still quotes the old line. Review round: a general prep row (no entry,
   `cooker.save_prep_tasks`) whose `related_meal` (now on the move) is not
   tonight's dish reads "Soak the beans for Chili. Tonight: …" too.
+- **An amount edited on a plan's grocery line survives a dropped or swapped
+  night** (2026-10-13; branch `overnight/edited-amount-survives-a-drop`; tests
+  `tests/test_edited_amount_survives_a_drop.py`). Emily's 2026-10-12 call:
+  the extra is the household's own; a drop takes off only that night's share;
+  an edit below plan need is kept too. The line STAYS the plan's (so it is
+  still set aside as last week's leftover and swept after its week);
+  `update_grocery_item` records the edit beside it
+  (`_household_edit_columns`): above the meals' ledger → `kept_amount` (the
+  column "Keep" uses, counted by every reversal/recompute); below →
+  `short_amount` + `edited_to`, put back on every recompute and after every
+  ingest merge as max(meals − short, min(typed, meals)). Review 2026-10-13
+  killed the first cut: making an edited-up line a standing want let it soak
+  up each later week (5 → 7 → 9, never offered as a leftover), and capping
+  only the removal let a drop + re-plan walk an edit down back up (1 → 2 → 3).
+  Re-review: the edit applies to the MEALS' part alone with any kept amount on
+  top (`_plan_line_amount`) — on the total it ate a Keep (4 → 2 after a drop);
+  undoing a Keep after an edit down rebuilds from ledger + edit (it blanked);
+  a typed "0" stays 0; an unreadable typed amount clears all three columns.
+  `test_grocery_line_to_zero`'s edit-down case (a standing want; held by
+  `_no_more_than`) expects the household's 2; `test_reheat_side_is_bought`'s
+  "−"-door characterisation is inverted (5 typed over the plan's 1 = 4 extra,
+  + the restored head = 6).
 
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch

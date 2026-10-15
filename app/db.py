@@ -469,6 +469,9 @@ _MIGRATIONS = [
     # kept row the line it went onto — see schema.sql.
     ("grocery_items", "kept_amount", "TEXT NOT NULL DEFAULT ''"),
     ("grocery_items", "kept_into_item_id", "INTEGER"),
+    # An amount edited down on a plan's line (2026-10-13) — see schema.sql.
+    ("grocery_items", "short_amount", "TEXT NOT NULL DEFAULT ''"),
+    ("grocery_items", "edited_to", "TEXT NOT NULL DEFAULT ''"),
     # "Un-ticking a bought staple doesn't un-teach it" (2026-09-13): which
     # grocery line a 'bought' event stands on, and the staple's rhythm
     # fields before/after that tick, so the line's untick can take exactly

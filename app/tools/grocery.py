@@ -601,6 +601,152 @@ def _subtract_quantity(current_qty: str, remove_qty: str) -> tuple[str, bool]:
     return current_qty, False
 
 
+def _more_than(qty: str, than_qty: str) -> bool:
+    """Whether `qty` is a bigger amount than `than_qty`, read in one unit.
+    False whenever either can't be read or the units don't convert — the
+    caller then does what it did before."""
+    a = _quantities._parse_quantity(qty or "")
+    b = _quantities._parse_quantity(than_qty or "")
+    if not a or not b:
+        return False
+    b_in_a = _quantities._convert_to_unit(b[0], b[1], a[1])
+    return b_in_a is not None and a[0] > b_in_a + 1e-9
+
+
+def _no_more_than(new_qty: str, current_qty: str) -> str:
+    """
+    A meal leaving never makes a line ask for MORE than it asks for now
+    (Emily, 2026-10-12: an edit below what the plan needs is kept). On a
+    plan's line the edit itself is stored and put back on every recompute
+    (_with_household_edit); this is what holds it on a household's own
+    line, whose restate cannot see an edit down, and a backstop on any
+    line. For a line nobody edited this changes nothing — the meals left
+    never round to more than all of them did.
+    """
+    return current_qty if _more_than(new_qty, current_qty) else new_qty
+
+
+def _with_household_edit(plan_qty: str, short: str, edited: str) -> str:
+    """
+    A plan line's amount as its meals' ledger reads it (`plan_qty`), with
+    the household's edit DOWN put back on it — see schema.sql on
+    short_amount. max(meals - short, min(typed, meals)):
+
+    - "onion 3" edited to 1 (short 2). Lentil Soup's night goes: the meals
+      left want 2, and the household's 1 stands (not 2, and not 0 — they
+      typed 1). The soup planned again: 3 - 2 = 1, still their 1. Before
+      this was stored, each recompute forgot the edit and a drop and
+      re-plan walked the line 1 -> 2 -> 3 (review, 2026-10-13).
+    - A new dinner wanting 2 more: 5 - 2 = 3 — the new meal's share is
+      bought; the household's edit only ever spoke for what was planned.
+    - Every meal gone: the meals want nothing, so neither does the line.
+
+    Returns `plan_qty` unchanged when there is no edit or anything can't
+    be read in one unit — the line is then what its meals say, as before.
+    """
+    if not (short or "").strip():
+        return plan_qty
+    plan_amount, _note = _quantities._split_quantity_note((plan_qty or "").strip())
+    p = _quantities._parse_quantity(plan_amount)
+    s = _quantities._parse_quantity(short)
+    e = _quantities._parse_quantity(edited)
+    if not p or not s or not e:
+        return plan_qty
+    s_amt = _quantities._convert_to_unit(s[0], s[1], p[1])
+    e_amt = _quantities._convert_to_unit(e[0], e[1], p[1])
+    if s_amt is None or e_amt is None:
+        return plan_qty
+    amount = max(p[0] - s_amt, min(e_amt, p[0]))
+    if amount >= p[0] - 1e-9:
+        return plan_qty
+    if amount <= 1e-9:
+        # "0" typed (they have all of it) stays 0 — a blank result read as
+        # "no edit" and the next recompute forgot it (re-review, 2026-10-13).
+        return _quantities._with_note(_quantities._format_quantity(0, p[1]), _note)
+    return _quantities._with_note(_quantities._humanize_grocery_quantity(amount, p[1]), _note)
+
+
+def _plan_line_amount(ledger: list[str], kept: str, short: str, edited: str) -> str | None:
+    """
+    A plan line's amount from its parts: the meals' ledger, with the
+    household's edit down on THAT part alone (_with_household_edit), and
+    any kept amount on top. Applied to a total that already held a kept
+    leftover, the edit ate the Keep: soup 1 + chili 2 edited to 1, last
+    week's 3 kept (4), chili off — read 2, not 1 + 3 (re-review,
+    2026-10-13). Without an edit down it is the plain sum it always was.
+    None when the ledger can't be read (the caller's fallback applies).
+    """
+    kept = (kept or "").strip()
+    if not (short or "").strip():
+        return _quantities._sum_ledger_quantities(ledger + ([kept] if kept else []))
+    meals = _quantities._sum_ledger_quantities(ledger)
+    if meals is None:
+        return None
+    if meals:
+        meals = _with_household_edit(meals, short, edited)
+    if not kept:
+        return meals
+    # A meals part edited down to nothing adds nothing — and is left out
+    # rather than summed, since the ledger sum floors a lone 0 at one.
+    parsed = _quantities._parse_quantity(meals or "")
+    parts = [meals] if parsed and parsed[0] > 0 else []
+    return _quantities._sum_ledger_quantities(parts + [kept])
+
+
+def _household_edit_columns(conn, row, new_quantity: str) -> dict | None:
+    """
+    What an edit of a plan line's amount records beside it (Emily,
+    2026-10-12: the household's number survives the plan changing). The
+    line STAYS the plan's — that is what sets it aside as "still on the
+    list from last week" after its week and lets the week-end sweep clear
+    it; making it a standing want (the first cut of this) let an edited
+    line soak up every later week's onions, 5 -> 7 -> 9, never asked about.
+
+    Above what its meals want: the difference is kept_amount, the column
+    "Keep" already uses — every reversal and recompute counts it in, and
+    it is still there when the last meal goes. Below: short_amount and
+    edited_to (_with_household_edit). Equal: neither.
+
+    An amount typed that isn't a number clears all three. None when the
+    meals' side can't be read in one unit with it — the columns are left
+    as they were and the line follows its meals, as before.
+    """
+    ledger = [
+        r["quantity"] or "" for r in conn.execute(
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ?",
+            (household_id(), row["id"]),
+        ).fetchall()
+    ]
+    meals = _quantities._sum_ledger_quantities(ledger)
+    typed = _quantities._parse_quantity(
+        _quantities._split_quantity_note((new_quantity or "").strip())[0]
+    )
+    clear = {"kept_amount": "", "short_amount": "", "edited_to": ""}
+    if not typed:
+        # "a few": no number left to keep an edit against.
+        return clear
+    if meals is None:
+        return None
+    if not meals:
+        # No meal behind it (its last one went while something was kept):
+        # all of it is the household's.
+        return {**clear, "kept_amount": _quantities._format_quantity(typed[0], typed[1])}
+    m = _quantities._parse_quantity(meals)
+    m_amt = _quantities._convert_to_unit(m[0], m[1], typed[1]) if m else None
+    if m_amt is None:
+        return None
+    diff = typed[0] - m_amt
+    if diff > 1e-9:
+        return {**clear, "kept_amount": _quantities._format_quantity(diff, typed[1])}
+    if diff < -1e-9:
+        return {
+            **clear,
+            "short_amount": _quantities._format_quantity(-diff, typed[1]),
+            "edited_to": _quantities._format_quantity(typed[0], typed[1]),
+        }
+    return clear
+
+
 def _restate_standing_want(
     current_qty: str, total_before: float, total_after: float, unit: str | None,
 ) -> tuple[str, bool] | None:
@@ -781,7 +927,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
     trimmed_items = []
     for link in links:
         grocery_row = conn.execute(
-            "SELECT id, item, quantity, status, removed_by, source_weekly_plan_id, kept_amount FROM grocery_items "
+            "SELECT id, item, quantity, status, removed_by, source_weekly_plan_id, kept_amount, "
+            "short_amount, edited_to FROM grocery_items "
             "WHERE id = ? AND household_id = ?",
             (link["grocery_item_id"], household_id()),
         ).fetchone()
@@ -857,8 +1004,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                 (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchall()
             other_qtys = [row["quantity"] or "" for row in other_rows]
-            summed = None if is_standing_want else _quantities._sum_ledger_quantities(
-                other_qtys + ([kept] if kept else []))
+            summed = None if is_standing_want else _plan_line_amount(
+                other_qtys, kept, grocery_row["short_amount"], grocery_row["edited_to"])
             if summed is not None:
                 # Fully accounted for by the ledger (and any kept amount) —
                 # recompute rather than subtract (see the docstring above).
@@ -894,6 +1041,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                     )
                 else:
                     new_qty, fully_removed = restated
+            if new_qty and not fully_removed:
+                new_qty = _no_more_than(new_qty, grocery_row["quantity"] or "")
             if fully_removed:
                 if is_standing_want:
                     if new_qty != (grocery_row["quantity"] or ""):
@@ -929,7 +1078,7 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
     return {"removed_items": removed_items, "trimmed_items": trimmed_items}
 
 
-def _recompute_plan_line_from_ledger(item_id: int, conn=None) -> None:
+def _recompute_plan_line_from_ledger(item_id: int, conn=None, only_if_edited_down: bool = False) -> None:
     """
     Put a plan-owned grocery line back to what its whole ledger adds up
     to — the recompute half of _reverse_meal_grocery_contributions, run
@@ -955,11 +1104,18 @@ def _recompute_plan_line_from_ledger(item_id: int, conn=None) -> None:
     if own_conn:
         conn = get_conn()
     row = conn.execute(
-        "SELECT id, quantity, status, source_weekly_plan_id, kept_amount FROM grocery_items "
-        "WHERE id = ? AND household_id = ?",
+        "SELECT id, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to "
+        "FROM grocery_items WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
-    if not row or row["source_weekly_plan_id"] is None or row["status"] not in ("needed", "spice"):
+    # only_if_edited_down: the ingest's call after any merge. A meal's
+    # share summed onto a line the household edited down undid the edit a
+    # little more with every swap; re-read off the ledger, the edit goes
+    # back on (_with_household_edit). Any other line is left as the add
+    # wrote it.
+    if not row or row["source_weekly_plan_id"] is None or row["status"] not in ("needed", "spice") or (
+        only_if_edited_down and not (row["short_amount"] or "").strip()
+    ):
         if own_conn:
             conn.close()
         return
@@ -970,10 +1126,8 @@ def _recompute_plan_line_from_ledger(item_id: int, conn=None) -> None:
         ).fetchall()
     ]
     # A kept leftover on the line is part of what it says (see
-    # keep_carried_over_item).
-    if (row["kept_amount"] or "").strip():
-        qtys.append(row["kept_amount"].strip())
-    summed = _quantities._sum_ledger_quantities(qtys)
+    # keep_carried_over_item), and so is the household's edit down.
+    summed = _plan_line_amount(qtys, row["kept_amount"], row["short_amount"], row["edited_to"])
     if summed:
         new_qty = _quantities._with_note(summed, _quantities._quantity_note(row["quantity"] or ""))
         if new_qty != (row["quantity"] or ""):
@@ -1863,7 +2017,8 @@ def _this_weeks_line(conn, item: str, quantity: str):
     # Not a line set aside as "somewhere else": Keep would park the kept
     # amount on a hidden line — the hole add_grocery_item closes too.
     for r in conn.execute(
-        "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount FROM grocery_items "
+        "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to "
+        "FROM grocery_items "
         "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall():
@@ -2026,8 +2181,8 @@ def undo_carried_over_decision(item_id: int) -> dict:
         # record and is found by name, as it always was.
         if row["kept_into_item_id"] is not None:
             target = conn.execute(
-                "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount FROM grocery_items "
-                "WHERE id = ? AND household_id = ?",
+                "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to "
+                "FROM grocery_items WHERE id = ? AND household_id = ?",
                 (row["kept_into_item_id"], household_id()),
             ).fetchone()
         else:
@@ -2039,6 +2194,13 @@ def undo_carried_over_decision(item_id: int) -> dict:
         if target["source_weekly_plan_id"] is not None and (target["kept_amount"] or "").strip():
             left, gone = _subtract_quantity(target["kept_amount"], row["quantity"] or "")
             kept_left = "" if gone else left
+        elif target["source_weekly_plan_id"] is not None and (target["short_amount"] or "").strip():
+            # The household edited the line down after the Keep, which
+            # folded the kept amount into their number: nothing kept is
+            # left to take off, and the line is its meals under their edit.
+            # Subtracting the Keep from the "1" they typed blanked it with
+            # the chili still planned (re-review, 2026-10-13).
+            kept_left = ""
         rebuilt = False
         # Not a sealed package: its line is one bag for the week however
         # many meals name it, so it is never re-read off the ledger (see
@@ -2061,12 +2223,13 @@ def undo_carried_over_decision(item_id: int) -> dict:
                              (target["id"], household_id()))
                 rebuilt = True
             else:
-                summed = _quantities._sum_ledger_quantities(ledger + ([kept_left] if kept_left else []))
+                summed = _plan_line_amount(ledger, kept_left or "", target["short_amount"], target["edited_to"])
                 if summed is not None:
                     note = _quantities._quantity_note(target["quantity"] or "")
+                    rebuilt_qty = _quantities._with_note(summed, note) if summed else ""
                     conn.execute(
                         "UPDATE grocery_items SET quantity = ?, kept_amount = ? WHERE id = ? AND household_id = ?",
-                        (_quantities._with_note(summed, note) if summed else "", kept_left,
+                        (rebuilt_qty, kept_left,
                          target["id"], household_id()),
                     )
                     rebuilt = True
@@ -2519,7 +2682,8 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, quantity, category FROM grocery_items WHERE id = ? AND household_id = ?",
+        "SELECT id, item, quantity, category, source_weekly_plan_id FROM grocery_items "
+        "WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
     if not row:
@@ -2527,10 +2691,22 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
         raise ValueError(f"No grocery list item with id {item_id}.")
     new_quantity = quantity if quantity is not None else row["quantity"]
     new_category = category if category is not None else row["category"]
+    # The household's number survives the plan changing (Emily,
+    # 2026-10-12) — recorded beside the line, which stays the plan's; see
+    # _household_edit_columns.
+    edit = None
+    if quantity is not None and row["source_weekly_plan_id"] is not None:
+        edit = _household_edit_columns(conn, row, new_quantity or "")
     conn.execute(
         "UPDATE grocery_items SET quantity = ?, category = ? WHERE id = ? AND household_id = ?",
         (new_quantity, new_category, item_id, household_id()),
     )
+    if edit is not None:
+        conn.execute(
+            "UPDATE grocery_items SET kept_amount = ?, short_amount = ?, edited_to = ? "
+            "WHERE id = ? AND household_id = ?",
+            (edit["kept_amount"], edit["short_amount"], edit["edited_to"], item_id, household_id()),
+        )
     conn.commit()
     conn.close()
     return {"item_id": item_id, "item": row["item"], "quantity": new_quantity, "category": new_category, "found": True}
