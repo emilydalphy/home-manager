@@ -7741,7 +7741,27 @@ def _replace_slot_entries(
     # freezer step's answer on it (see _keep_freezer_answer_after_rescale).
     for source_id, old_id in rescaled:
         _keep_freezer_answer_after_rescale(weekly_plan_id, source_id, old_id)
+    # And the meal coming IN: a night swapped back to the salmon dinner the
+    # household already said is in the freezer joins that answer instead of
+    # buying the salmon again (defrost.carry_freezer_answer_to_nights).
+    if approved and result.get("entry_id"):
+        _carry_freezer_answer(weekly_plan_id, [result["entry_id"]])
     return result
+
+
+def _carry_freezer_answer(weekly_plan_id: int, entry_ids: list) -> None:
+    """defrost.carry_freezer_answer_to_nights, imported where it is called
+    (the same cycle as _defrost_resync). Never raises: the swap is written,
+    and a reminder pass that failed must not say otherwise."""
+    from . import defrost as _defrost
+
+    try:
+        _defrost.carry_freezer_answer_to_nights(weekly_plan_id, entry_ids)
+    except Exception:
+        logger.exception(
+            "Carrying the freezer answer onto swapped-in nights %s failed; the list may ask "
+            "for something the household said is in the freezer", entry_ids,
+        )
 
 
 def _defrost_resync(weekly_plan_id: int, entry_ids: list) -> list[str]:

@@ -302,6 +302,21 @@ why*, not duplicating the diff.
   and only for a name still in the household. Kept in the reload draft as
   `cook` (an older draft without it reads as unanswered). Why: a tester found
   Settings asking things setup never did; this is the one that changes Today.
+- **A night swapped back keeps the freezer answer** (2026-10-14; branch
+  `overnight/freezer-answer-survives-a-swap`; tests
+  `tests/test_freezer_answer_survives_a_swap.py`). Salmon two nights, freezer
+  step "in the freezer", Friday swapped to chili and back: the swap-in's ingest
+  can't merge into a set-aside line, so it wrote a fresh salmon line to buy, no
+  Friday move, and every round trip left another set-aside line that
+  un-tapping put back all at once. `_replace_slot_entries`' tail now runs
+  `defrost.carry_freezer_answer_to_nights` on an approved week: for an item
+  with a hand-booked move on the plan AND a freezer set-aside line, the new
+  night's move is booked and its fresh plan line is folded into the set-aside
+  line (ledger moved, amount re-read). Left to buy: too late to thaw, a
+  standing want or staples line, a line another meal shares. Judgment: per
+  ITEM, as the chip is — a third salmon night swapped in joins too. Not done:
+  a swapped-out cook's former reheat nights (orphaned) are not carried.
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

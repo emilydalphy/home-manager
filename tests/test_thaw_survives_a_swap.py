@@ -414,10 +414,13 @@ def test_the_swap_still_opens_exactly_one_connection(week_with_a_thaw, monkeypat
     # the exact shape the sibling guards take (test_planning_periods.py's
     # takeover guard asserts a total and explains every connection in it).
     # Measured on this tree: the resync re-reads the week's thaws through
-    # weekly_plan (2), defrost (2) and the household clock (1).
+    # weekly_plan (2), defrost (2) and the household clock (1) — plus one
+    # defrost read since 2026-10-14: carry_freezer_answer_to_nights asking
+    # whether the household booked any freezer move by hand on this week
+    # (nothing here, so that one read is all it costs).
     after = {k: marks["end"][k] - closed[k] for k in opened}
     assert after == {**{k: 0 for k in opened},
-                     "weekly_plan": 2, "defrost": 2, "cooker": 1}, (
+                     "weekly_plan": 2, "defrost": 3, "cooker": 1}, (
         f"the post-commit thaw resync's own connection count moved: {after}"
     )
 
