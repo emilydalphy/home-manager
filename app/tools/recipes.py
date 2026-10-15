@@ -1971,8 +1971,8 @@ def _implausible_lines(ingredients: list[dict], servings: int | None, as_written
 
 def store_section(ing: dict) -> str:
     """
-    The aisle a recipe line is shopped in: its own category when it names
-    one the list knows, else recipe_import.guess_category's guess from the
+    The aisle a recipe line is shopped in: its own category when it has
+    one, else recipe_import.guess_category's guess from the
     name (2026-10-15). Chat's add_recipe leaves category optional and a
     recipe saved without one put every line of an approved week under
     Other on Shop, and a chicken thigh with no "meat/seafood" was never
@@ -1982,7 +1982,9 @@ def store_section(ing: dict) -> str:
     sticking to the row (review, 2026-10-15).
     """
     category = (ing.get("category") or "").strip().lower()
-    if category in _quantities._GROCERY_SECTION_ORDER:
+    if category:
+        # Whatever the recipe said stands, even a word the list folds to
+        # Other ("household" foil, "meat"): only a blank is guessed.
         return category
     # Imported here: recipe_import imports this package.
     from .. import recipe_import as _recipe_import
