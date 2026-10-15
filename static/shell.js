@@ -3394,7 +3394,9 @@
   // Optimistic (§6, the common case never waits): the row leaves on the
   // tap, and the card with it when it was the last. A failed save puts it
   // back and says so. The toast names the meal (S10); there is no Undo,
-  // because Today's own cooked tick has none either.
+  // because Today's own cooked tick has none either — except when a skip
+  // moved a double-batch cook onto the night it fed (out.moved_to): that
+  // rewrote the plan, so it carries one (undoYesterdaySkip).
   async function answerYesterday(panel, entryId, answer) {
     var data = panel._yesterday;
     if (!data || !data.meals) return;
@@ -3417,7 +3419,25 @@
         return;
       }
       if (!res.ok) throw new Error('yesterday answer failed (' + res.status + ')');
-      renderYesterdayCheck(panel, await res.json());
+      var out = await res.json();
+      renderYesterdayCheck(panel, out);
+      if (out.moved_to) {
+        // A skipped double-batch cook moved onto the night it was feeding
+        // (yesterday_check._skip, 2026-10-13): say where it went, and any
+        // fridge move that now has to start, with an Undo — the answer
+        // rewrote the plan, so it can be taken back like a night off.
+        var said = meal.meal + ' moved to ' + out.moved_to.label + '.';
+        if (out.thaw_now && out.thaw_now.length) said += ' ' + out.thaw_now.join(' ');
+        var undoId = out.undo_entry_id;
+        showToast(said, out.can_undo ? {
+          label: 'Undo',
+          onClick: function () { return undoYesterdaySkip(panel, undoId); }
+        } : null, 6000);
+        // Today's moves (tonight is a cook now, not a reheat), Plan and Cook.
+        refreshTodayMoves();
+        refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+        return;
+      }
       showToast(savedLine(meal.meal, answer === 'had' ? 'marked cooked' : 'marked skipped'));
       // A cooked tick moves what Plan and Cook show (and the pantry).
       if (answer === 'had') refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
@@ -3425,6 +3445,28 @@
       console.warn('Could not save yesterday’s answer:', err);
       renderYesterdayCheck(panel, Object.assign({}, data, { meals: before }));
       showToast('That didn’t save. Try it again.');
+    }
+  }
+
+  // Undo on the "moved to Saturday" toast (POST /api/today/yesterday/undo):
+  // both nights back as they were, and the yesterday card asks again — or
+  // the server's sentence when something has changed since.
+  async function undoYesterdaySkip(panel, undoEntryId) {
+    try {
+      var res = await Api.fetch('/api/today/yesterday/undo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ undo_entry_id: undoEntryId })
+      });
+      if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      var out = await res.json();
+      showToast(out.status === 'restored' ? out.said : (out.message || 'That didn’t work. Try it again.'));
+      loadYesterdayCheck(panel);
+      refreshTodayMoves();
+      refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+    } catch (err) {
+      console.warn('Undoing yesterday’s skip failed:', err);
+      showToast('That didn’t work. Try it again.');
     }
   }
 

@@ -148,6 +148,23 @@ why*, not duplicating the diff.
   shopping list") over such a line; it now counts only lines the plan wrote or
   that carry this plan's links (`_plans_part_on`). Swapping a frozen night
   away and back re-buying the salmon is on `main` too — filed as its own card.
+- **"We skipped it" on a double-batch cook moves the dish to the night it
+  fed** (2026-10-13; branch `overnight/skipped-cook-moves-to-the-fed-night`;
+  tests `tests/test_skipped_cook_moves_on.py`). Emily's option A (2026-10-12):
+  Friday's tacos cooked double for Saturday, skipped, left Saturday saying
+  "leftovers from Friday" everywhere. `yesterday_check._skip` now runs
+  `weekly_plan.move_cook_onto_fed_night` (the night off's and the "−"'s own
+  move), drops the landed night from `make_double_for`, and leaves yesterday
+  `planned_empty` ("Skipped — the Tacos moved to Saturday."), one
+  transaction. No skipped_at on the moved entry (it moved, not skipped) and no
+  freezer portion (Friday's share was never cooked). Not when the fed night is
+  already ticked, or nothing later is fed: then it is the ordinary stamp.
+  Review round: a pending thaw that travelled onto a past day is re-dated to
+  today and said (`thaw_now`, via `defrost.resync_plan_thaws`); the move
+  stamps a `plan_undo` record on yesterday's empty row and
+  `POST /api/today/yesterday/undo` (`undo_skipped_move`) puts both nights
+  back; shell.js toasts "<Dish> moved to <Day>." with Undo and refreshes
+  Today, Plan and Cook.
 
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch

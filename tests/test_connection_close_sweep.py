@@ -536,9 +536,6 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
         "retire_expired_drafts", "set_planning_mode", "set_week_constraints",
         "swap_component_in_plan", "swap_meal_in_plan"
     ],
-    "app/tools/yesterday_check.py": [
-        "answer_yesterday"
-    ],
 }
 
 # The conn=None-with-a-get_conn-fallback shape, picked out of the census
