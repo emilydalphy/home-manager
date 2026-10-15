@@ -157,6 +157,18 @@ def test_dish_short_word_prefers_a_short_name_and_never_a_joining_word():
     assert out == ["Tikka", "Broccoli", "Rice"]
 
 
+@_needs_node
+def test_dish_short_word_never_lands_on_a_cooking_word():
+    """Defect hunt, 2026-10-14: the shelf read "Fry" for "Chicken Stir
+    Fry" and "Grilled" for "Grilled salmon with rice". A stir-fry spelled
+    as two words is still Emily's "Stir-fry"; a method word is never the
+    dish. Ordinary names keep the word they always had."""
+    cases = ["Chicken Stir Fry", "Grilled salmon with rice", "Slow Cooker Pulled Pork",
+             "Roast chicken", "Crispy Baked Tofu", "Chicken Tikka Masala", "Beef and Broccoli"]
+    out = _node("console.log(JSON.stringify(" + json.dumps(cases) + ".map(function (c) { return dishShortWord(c); })));")
+    assert out == ["Stir-fry", "Salmon", "Pork", "Chicken", "Tofu", "Tikka", "Broccoli"]
+
+
 # --------------------------------------------------------------------------
 # The shelf
 # --------------------------------------------------------------------------
