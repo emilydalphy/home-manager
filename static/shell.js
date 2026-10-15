@@ -23781,6 +23781,10 @@
   // made in chat.
   function refreshPlanSurfacesAfterCook() {
     refreshTodayMoves();
+    // Now's "Still good?" card is a reading of the same night: a start
+    // silences it and "Mark not cooked" brings it back (review,
+    // 2026-10-14 — the open page kept asking until a reload).
+    if (panels.today && panels.today.dataset.built) loadTonightAsk(panels.today);
     refreshKitchenMoves();
     refreshWeekPanel({ kitchenFresh: true });
   }

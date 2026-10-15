@@ -147,6 +147,7 @@ def _dinner_rows(conn, plan_id: int):
     return conn.execute(
         """
         SELECT mpe.id, mpe.date, mpe.slot_state, mpe.cooked_status, mpe.derived_from_json,
+               mpe.cook_started_at,
                COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -192,13 +193,13 @@ def tonight_check(now: datetime | None = None) -> dict:
 
     `ask` is True only when every one of these holds: it is the afternoon;
     a plan covers today and tonight's dinner on it is a real, planned,
-    not-yet-cooked dish; and nobody has said "Yes" today. `answered` is
+    not-yet-cooked, not-yet-started dish; and nobody has said "Yes" today. `answered` is
     NOT one of those conditions read backwards: it is a fact about the
     day on its own, true whenever a Yes is on file, and it is reported
     alongside every `reason` rather than only the ones that get far
     enough to look. `reason` names the first condition that fails —
     'morning', 'no_plan', 'components', 'unplanned', 'away', 'open',
-    'cooked', 'answered', 'night_off' — so a screen (or a test) can tell a
+    'cooked', 'cooking', 'answered', 'night_off' — so a screen (or a test) can tell a
     quiet card from a broken one. 'night_off' is the one quiet reason the
     screen still draws something for: `night_off` is True, `use_soon`
     lists anything already bought for the dropped dish that won't keep,
@@ -342,6 +343,15 @@ def tonight_check(now: datetime | None = None) -> dict:
         return out
     if (tonight_row["cooked_status"] or "") == "done":
         out["reason"] = "cooked"
+        return out
+    if tonight_row["cook_started_at"]:
+        # Somebody tapped "Start cooking": the pot is on the stove, so
+        # "Still good?" — and the swap sheet and night off behind it — is a
+        # question about a dinner already decided (defect hunt, 2026-10-14:
+        # the card asked two minutes after the start). The evening nudge
+        # goes quiet on the same column; "Mark not cooked" clears it, and
+        # then this asks again.
+        out["reason"] = "cooking"
         return out
     if not afternoon:
         out["reason"] = "morning"
