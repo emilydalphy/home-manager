@@ -259,7 +259,7 @@ settle(function () {
     assert out["afterYes"]["text"] == "In the freezer — out Saturday night."
     assert out["afterYes"]["buttons"] == 0, "folded to the one line"
     assert out["afterYes"]["posts"] == [["/api/grocery-list/1/freezing", {"answer": "freezer"}]]
-    assert out["afterYes"]["toast"] == {"msg": "Chicken thighs was put in the freezer", "action": "Undo"}
+    assert out["afterYes"]["toast"] == {"msg": "Chicken thighs are in the freezer", "action": "Undo"}
     assert out["afterPutBack"]["posts"][-1] == ["/api/grocery-list/1/freezing", {"answer": "fridge"}], "Put back removes the move"
     assert out["afterPutBack"]["buttons"] == 2 and out["afterPutBack"]["text"].startswith("Freezing it?"), "and the question is back"
 
@@ -353,7 +353,7 @@ settle(function () {
     assert out["offline"]["text"] == "In the freezer — out Saturday night.", "answered on the screen at once"
     assert out["offline"]["queued"] == [["1", "status", "purchased"], ["1", "freezing", "freezer"]]
     assert out["offline"]["posts"] == 0
-    assert out["offline"]["toast"] == {"msg": "Chicken thighs was put in the freezer", "action": "Undo"}
+    assert out["offline"]["toast"] == {"msg": "Chicken thighs are in the freezer", "action": "Undo"}
     assert out["sent"] == [
         ["/api/grocery-list/1/status", {"status": "purchased"}],
         ["/api/grocery-list/1/freezing", {"answer": "freezer"}],

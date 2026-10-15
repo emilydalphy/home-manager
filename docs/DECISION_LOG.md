@@ -216,6 +216,14 @@ why*, not duplicating the diff.
   to move takes BEGIN IMMEDIATE (every read taking it made Today/Shop 500
   "database is locked" behind another write); the four routes call it
   through `main._ask_about_ended_weeks`, which logs and never fails the read.
+- **The freezer toasts say where the food is, and agree with it**
+  (2026-10-13; branch `overnight/freezer-toast-wording`). "Anything already
+  in the freezer?" answered "Chicken thighs was put in the freezer" — wrong
+  tense for food already frozen, wrong number for a plural cut. Now
+  `freezerLine`/`freezerCount` (beside `savedLine`): "… are already in the
+  freezer" there, "… are in the freezer" after Shop's "Yes, freezing it".
+  Plural = last word ends in a lone -s (not -ss/-us/-is); "Molasses" would
+  misread, accepted. The rest of `savedLine`'s "Carrots was added" is untouched.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

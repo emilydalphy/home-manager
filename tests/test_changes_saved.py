@@ -130,6 +130,32 @@ console.log(JSON.stringify({
     assert out["cut"].startswith("Ask Mel whether the cottage")
 
 
+def test_the_freezer_toasts_say_where_the_food_is_and_agree_with_it():
+    """'Chicken thighs was put in the freezer' answered "Anything already in
+    the freezer?" (2026-10-13): wrong tense for something already frozen,
+    and wrong number for a plural cut."""
+    script = _STUBS + _TOAST_CORE + """
+console.log(JSON.stringify({
+  already: freezerLine('Chicken thighs', true),
+  shop: freezerLine('Chicken thighs'),
+  one: freezerLine('Ground beef', true),
+  hummus: freezerLine('Hummus', true),
+  plain: freezerLine('', true),
+  many: freezerCount(3),
+  single: freezerCount(1)
+}));
+"""
+    out = _node(script)
+    assert out["already"] == "Chicken thighs are already in the freezer"
+    assert out["shop"] == "Chicken thighs are in the freezer"
+    assert out["one"] == "Ground beef is already in the freezer"
+    assert out["hummus"] == "Hummus is already in the freezer"
+    assert out["plain"] == "Saved"
+    assert out["many"] == "3 things are already in the freezer"
+    assert out["single"] == "1 thing is already in the freezer"
+    assert "put in the freezer'" not in SHELL_JS
+
+
 def test_the_rule_is_written_down_where_the_others_are():
     assert "S10 · A decision is saved on purpose, and the app says so." in DESIGN
     # The words S10 quotes are not asserted here on purpose — see this
