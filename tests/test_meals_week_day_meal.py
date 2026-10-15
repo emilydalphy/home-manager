@@ -203,7 +203,9 @@ def test_the_root_is_a_strip_of_day_tiles_and_the_selected_day():
     _assert_in("function weekDayHtml(", SHELL_JS, "the day under the strip", "shell.js")
     _assert_in("function weekSnacksHtml(", SHELL_JS, "the snacks two-up", "shell.js")
     _assert_in("data-wk-tile=", SHELL_JS, "the tile's day handle", "shell.js")
-    _assert_in("wkDayCardHtml(day, i, { done: true, swapLabel: 'Swap' })", SHELL_JS,
+    # dayNamed (2026-10-14): the heading above the card already says the
+    # day, so the root's card doesn't say it again.
+    _assert_in("wkDayCardHtml(day, i, { done: true, swapLabel: 'Swap', dayNamed: true })", SHELL_JS,
                "the day's one card with its rows (Done + Swap), 2026-09-18", "shell.js")
     _assert_in(".wk-tile.is-today { background: var(--sand);", SHELL_CSS, "today's tinted tile", "shell.css")
     _assert_in(".wk-tile.is-selected { border-color: var(--ink-strong); }", SHELL_CSS, "the selected tile's rim", "shell.css")
