@@ -166,6 +166,26 @@ why*, not duplicating the diff.
   back; shell.js toasts "<Dish> moved to <Day>." with Undo and refreshes
   Today, Plan and Cook.
 
+- **Shop draws one row for a thing two live weeks both need** (2026-10-13;
+  branch `overnight/two-weeks-one-row`; tests `tests/test_two_weeks_one_row.py`).
+  `tools.stamp_week_groups` (app/tools/week_lines.py, display only, writes
+  nothing) marks plan lines of one item from different plans, same store /
+  aisle / status, with a shared `week_group` (total, "2 this week · 3 next
+  week", ids, per-week parts); the by-store, bought and already-have-summary
+  reads carry it, and shell.js `groCollapseWeeks` draws the lead line while
+  every tap (tick, Have it, Put back, set aside, store, remove, substitute,
+  sort, each Undo) goes to every id via `groIdsFor`. Each week keeps its own
+  line underneath (the ledger rule). Hand adds and staples never group; the
+  row's "Maybe already home" shows only when every week's line is flagged
+  (stock is claimed as granted, so that means the shelf covers the sum), and
+  the ⋯ has one amount box per week. Why: two onion rows read as "which do I
+  buy?" (Emily, 2026-10-03; rebuilt on main per her 2026-10-12 call).
+  Freezing-it on a grouped row books the lead week's meal only.
+  Review fixes: Remove sends each week's /remove with allSettled and, if one
+  fails, puts back the ones that went before saying so (all or nothing);
+  Undo decides per line (remove-undo the restorable, re-add the rest with
+  their own week's amount); "Make it a staple" isn't offered on a two-weeks
+  row (it made a staple of the total, tied to one week's line).
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

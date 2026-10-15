@@ -5155,6 +5155,14 @@
         stores[name][it.status === 'in_cart' ? 'inCart' : 'purchased'].push(it);
       });
     });
+    // Two live weeks' lines for one thing are one row on this screen
+    // (groCollapseWeeks) — the needed rows and the ticked ones alike.
+    Object.keys(stores).forEach(function (name) {
+      var st = stores[name];
+      st.sections.forEach(function (sec) { sec.items = groCollapseWeeks(sec.items || []); });
+      st.purchased = groCollapseWeeks(st.purchased);
+      st.inCart = groCollapseWeeks(st.inCart);
+    });
     // The big meal's two trips, when a hosted holiday is ahead (Holidays
     // slice 2, app/tools/big_meal.py): each of its lines carries
     // shop_timing 'early' | 'fresh', and this names the trips. Null on an
@@ -5594,7 +5602,10 @@
     try {
       var res = await Api.fetch('/api/grocery-list/already-have-summary');
       if (!res.ok) { groceryState.alreadyHaveSummary = { already_have: [], elsewhere: [] }; return; }
-      groceryState.alreadyHaveSummary = await res.json();
+      var summary = await res.json();
+      summary.already_have = groCollapseWeeks(summary.already_have || []);
+      summary.elsewhere = groCollapseWeeks(summary.elsewhere || []);
+      groceryState.alreadyHaveSummary = summary;
     } catch (err) { groceryState.alreadyHaveSummary = { already_have: [], elsewhere: [] }; }
   }
 
@@ -6775,7 +6786,10 @@
         'data-bought="' + (bought ? '1' : '0') + '" ' +
         'aria-label="' + escapeHtml((bought ? 'Put ' + it.item + ' back on the list' : 'Bought ' + it.item)) + '">' +
         (bought ? GRO_ICONS.tick : '') + '</button>' +
-      '<p class="gro-name">' + escapeHtml(it.item) + '</p>' +
+      (it.week_note
+        ? '<div class="gro-line-text"><p class="gro-name">' + escapeHtml(it.item) + '</p>' +
+            '<p class="gro-line-weeks">' + escapeHtml(it.week_note) + '</p></div>'
+        : '<p class="gro-name">' + escapeHtml(it.item) + '</p>') +
       (it.quantity ? '<span class="gro-line-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
       '<button type="button" class="gro-rowmore" data-gro="row-menu" data-id="' + id + '" ' +
         'aria-expanded="' + open + '" aria-label="More for ' + escapeHtml(it.item) + '">' +
@@ -6819,6 +6833,56 @@
           'Straight to the fridge</button>' +
       '</div>' +
     '</div>';
+  }
+
+  // ---------- Two weeks, one row (Loop Board "Shop shows one line per
+  // item while two weeks are live", Emily 2026-10-03) ----------
+  // Next week approved while this week still runs: each week keeps its
+  // OWN line for the onions (a swap in one week must take off only that
+  // week's amount), and the server marks the lines that are one thing to
+  // buy with the same `week_group` (app/tools/week_lines.py). Here they
+  // become one row: the lead line, carrying the total ("Onions 5"), the
+  // note ("2 this week · 3 next week"), every id behind it (group_ids)
+  // and each week's own amount (week_parts). Display only — every tap on
+  // the row goes to every id (groIdsFor), so the lines underneath stay
+  // one per week. A line with no group is returned exactly as it came.
+  function groCollapseWeeks(items) {
+    var present = {};
+    (items || []).forEach(function (it) { present[String(it.id)] = true; });
+    var out = [];
+    (items || []).forEach(function (it) {
+      var g = it.week_group;
+      // The lead not in this same list (it never should be elsewhere):
+      // leave every line as it is rather than lose one.
+      if (!g || !present[String(g.lead_id)]) { out.push(it); return; }
+      if (String(it.id) !== String(g.lead_id)) return;
+      out.push(Object.assign({}, it, {
+        quantity: g.total,
+        week_note: g.note,
+        group_ids: (g.ids || []).slice(),
+        week_parts: g.parts || [],
+        pre_shop: g.pre_shop || null
+      }));
+    });
+    return out;
+  }
+  // Every line a row stands for: its group's, or just its own. Looked up
+  // on the list and on the two foot sections, which is everywhere a row
+  // can be tapped.
+  function groIdsFor(id) {
+    var line = groFindLine(id);
+    if (!line) {
+      var summary = groceryState.alreadyHaveSummary || {};
+      (summary.already_have || []).concat(summary.elsewhere || []).forEach(function (it) {
+        if (!line && String(it.id) === String(id)) line = it;
+      });
+    }
+    return line && line.group_ids && line.group_ids.length ? line.group_ids.slice() : [String(id)];
+  }
+  // One write per line behind the row, all at once; the caller's groDo
+  // sees one success or one failure.
+  function groEachId(id, send) {
+    return Promise.all(groIdsFor(id).map(function (one) { return send(one); }));
   }
 
   // The line with this id, wherever the tick has filed it.
@@ -6962,13 +7026,29 @@
   // is never the thing the screen is for.
   function groRowMenuHtml(it, data) {
     var id = String(it.id);
+    // A row standing for two weeks gets a box per week: each week's
+    // amount stays its own, so changing next week's never touches this
+    // week's line.
+    var qtyHtml = it.week_parts && it.week_parts.length
+      ? '<div class="gro-rowmenu-qty gro-rowmenu-weeks">' +
+          it.week_parts.map(function (part) {
+            var label = part.label.charAt(0).toUpperCase() + part.label.slice(1);
+            return '<label class="gro-rowmenu-week"><span class="gro-rowmenu-week-label">' + escapeHtml(label) + '</span>' +
+              '<input type="text" class="gro-rowmenu-input" id="gro-rowqty-' + String(part.id) + '" ' +
+                'data-was="' + escapeHtml(part.quantity || '') + '" ' +
+                'value="' + escapeHtml(part.quantity || '') + '" placeholder="How much?" ' +
+                'aria-label="' + escapeHtml('Quantity for ' + it.item + ', ' + part.label) + '" /></label>';
+          }).join('') +
+          '<button type="button" class="gro-rowmenu-save" data-gro="row-qty" data-id="' + id + '">Save</button>' +
+        '</div>'
+      : '<div class="gro-rowmenu-qty">' +
+          '<input type="text" class="gro-rowmenu-input" id="gro-rowqty-' + id + '" ' +
+            'value="' + escapeHtml(it.quantity || '') + '" placeholder="How much?" ' +
+            'aria-label="Quantity for ' + escapeHtml(it.item) + '" />' +
+          '<button type="button" class="gro-rowmenu-save" data-gro="row-qty" data-id="' + id + '">Save</button>' +
+        '</div>';
     return '<div class="gro-rowmenu" data-menu-for="' + id + '">' +
-      '<div class="gro-rowmenu-qty">' +
-        '<input type="text" class="gro-rowmenu-input" id="gro-rowqty-' + id + '" ' +
-          'value="' + escapeHtml(it.quantity || '') + '" placeholder="How much?" ' +
-          'aria-label="Quantity for ' + escapeHtml(it.item) + '" />' +
-        '<button type="button" class="gro-rowmenu-save" data-gro="row-qty" data-id="' + id + '">Save</button>' +
-      '</div>' +
+      qtyHtml +
       '<div class="gro-pills open">' +
         groPillStores(data).map(function (n) {
           return '<button type="button" class="gro-pill" data-gro="row-store" data-id="' + id + '" ' +
@@ -6991,8 +7071,11 @@
         // is one — the Staples card below the list is where it lives then.
         // A line a staple already owns (a substitute keeps its staple_id)
         // counts as one even under another name.
+        // Not on a two-weeks row: a staple is one line with one amount,
+        // and this row is two weeks' lines and their total.
         (it.staple_id || groIsStapleName(it.item)
           ? '<span class="gro-rowmenu-note">One of your staples</span>'
+          : (it.week_parts && it.week_parts.length) ? ''
           : '<button type="button" class="gro-rowmenu-staple" data-gro="row-staple" data-id="' + id + '" ' +
               'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
               'data-cat="' + escapeHtml(it.category || 'other') + '">Make it a staple</button>') +
@@ -7213,7 +7296,10 @@
     var item = null;
     groUnsorted(data).forEach(function (it) { if (String(it.id) === String(id)) item = it; });
     if (!item) return; // already left (a second tap on a row that is going)
-    var previous = groPreviousStores([item]);
+    // A two-weeks row (groCollapseWeeks) puts back every week's line.
+    var previous = groPreviousStores((item.group_ids && item.group_ids.length ? item.group_ids : [item.id]).map(function (one) {
+      return String(one) === String(item.id) ? item : Object.assign({}, item, { id: one });
+    }));
     var seq = ++groSortAllSeq;
     item.store_decided = 1;
     if (!groUnsorted(data).length) groceryState.sortAllDone = true;
@@ -7222,8 +7308,11 @@
     // from, and next week's list puts it there without asking (card
     // 3e31f4c0-5231-81ca). The one-week-only move (a row's "Any", or a
     // remember: false write) stays out of the usual.
+    var sortIds = (item.group_ids && item.group_ids.length) ? item.group_ids.slice() : [String(id)];
     groDo(function () {
-      return groPost('/api/grocery-list/' + id + '/store', { store: store, remember: true });
+      return Promise.all(sortIds.map(function (one) {
+        return groPost('/api/grocery-list/' + one + '/store', { store: store, remember: true });
+      }));
     }, "Couldn't sort that — try again.").then(function (ok) {
       if (!ok || seq !== groSortAllSeq) return;
       groRememberLocally(item.item, store);
@@ -8432,9 +8521,13 @@
     var tickedLine = groFindLine(id);
     if (tickedLine && tickedLine.store) groceryState.storeInView = tickedLine.store;
     var next = bought ? 'needed' : 'purchased';
+    // Both weeks' lines, when this row is two weeks' (groCollapseWeeks).
+    var tickIds = groIdsFor(id);
     groFreezingAfterTick(id, bought);
     var finishing = groTickBookkeeping(id, bought);
     groTick(id, next);
+    // ...and every other week's line behind this row.
+    tickIds.forEach(function (one) { if (String(one) !== String(id)) groTick(one, next); });
     groAnimateRowSettle(id);
     if (next === 'purchased') groRecordStopDone(id);
     var wayBack = {
@@ -8446,6 +8539,7 @@
         groceryState.freezing = null;
         var refinishing = groTickBookkeeping(id, !bought);
         groTick(id, bought ? 'purchased' : 'needed');
+        tickIds.forEach(function (one) { if (String(one) !== String(id)) groTick(one, bought ? 'purchased' : 'needed'); });
         groAnimateRowSettle(id);
         if (bought) groRecordStopDone(id);
         if (refinishing !== null) groRollUpAfterBeat(refinishing);
@@ -9025,6 +9119,27 @@
 
       case 'row-qty': {
         var rowQtyPanel = groPanel();
+        var rowQtyLine = groFindLine(id);
+        if (rowQtyLine && rowQtyLine.week_parts && rowQtyLine.week_parts.length) {
+          // Two weeks' row: only the boxes somebody changed are written.
+          var weekQtys = rowQtyLine.week_parts.map(function (part) {
+            var box = rowQtyPanel && rowQtyPanel.querySelector('#gro-rowqty-' + part.id);
+            return box && box.value.trim() !== (box.getAttribute('data-was') || '')
+              ? { id: part.id, quantity: box.value.trim() } : null;
+          }).filter(Boolean);
+          if (!weekQtys.length) { groceryState.openRowId = null; renderGrocery(); return; }
+          el.disabled = true;
+          groDo(function () {
+            return Promise.all(weekQtys.map(function (w) {
+              return groPost('/api/grocery-list/' + w.id + '/update', { quantity: w.quantity });
+            }));
+          }, "Couldn't save that — try again.").then(function (ok) {
+            if (!ok) return;
+            groceryState.openRowId = null;
+            renderGrocery();
+          });
+          return;
+        }
         var rowQtyInput = rowQtyPanel && rowQtyPanel.querySelector('#gro-rowqty-' + id);
         if (!rowQtyInput) return;
         var rowQty = rowQtyInput.value.trim();
@@ -9053,10 +9168,14 @@
         // The row as it stands, for the toast's Undo: the same
         // one-row bulk undo "Sort them all" uses, so the row AND the
         // usual store go back together (groRunBulkUndo).
-        var rowWas = rowItem ? groPreviousStores([rowItem]) : null;
+        var rowWas = rowItem ? groPreviousStores(groIdsFor(id).map(function (one) {
+          return String(one) === String(rowItem.id) ? rowItem : Object.assign({}, rowItem, { id: one });
+        })) : null;
         el.disabled = true;
         groDo(function () {
-          return groPost('/api/grocery-list/' + id + '/store', { store: rowStore });
+          return groEachId(id, function (one) {
+            return groPost('/api/grocery-list/' + one + '/store', { store: rowStore });
+          });
         }, "Couldn't move that — try again.").then(function (ok) {
           if (!ok) return;
           if (rowItem && rowStore) groRememberLocally(rowItem.item, rowStore);
@@ -9087,13 +9206,36 @@
         el.disabled = true;
         groceryState.openRowId = null;
         var goneStapleId = null;
-        var goneRestorable = false;
+        // Every week's line behind the row (a two-weeks row is never a
+        // staple's, so the staple undo below is never one of these), and
+        // each one's own amount for putting it back by hand.
+        var goneIds = groIdsFor(id);
+        var goneLine = groFindLine(id);
+        var goneParts = {};
+        ((goneLine && goneLine.week_parts) || []).forEach(function (part) {
+          goneParts[String(part.id)] = part.quantity || '';
+        });
+        var goneDone = [];
         groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/remove')
-            .then(function (r) {
-              goneStapleId = r && r.staple_id ? r.staple_id : null;
-              goneRestorable = !!(r && r.restorable);
+          return Promise.allSettled(goneIds.map(function (one) {
+            return groPostEmpty('/api/grocery-list/' + one + '/remove');
+          })).then(function (settled) {
+            settled.forEach(function (res, i) {
+              if (res.status === 'fulfilled') goneDone.push({ id: goneIds[i], r: res.value });
             });
+            if (goneDone.length === goneIds.length) {
+              var first = goneDone[0].r;
+              goneStapleId = first && first.staple_id ? first.staple_id : null;
+              return;
+            }
+            // One week's line came off and another didn't: the row is one
+            // thing, so it is all or nothing — what did come off goes
+            // back before the failure is said, rather than leaving half a
+            // row gone with no Undo to reach it.
+            return groPutRemovedBack(goneDone, goneName, goneCat, goneStore, goneParts, goneQty)
+              .catch(function () { /* the failure below is the one said */ })
+              .then(function () { throw new Error('remove failed for part of the row'); });
+          });
         }, "Couldn't remove that — try again.").then(function (ok) {
           if (!ok) return;
           showToast(goneName + ' off the list', {
@@ -9108,35 +9250,18 @@
                 }, "Couldn't put that back — try again.");
                 return;
               }
-              // A line with meals behind it was soft-removed: the same row
-              // comes back, still tied to those meals (grocery.
-              // undo_remove_grocery_item). Re-adding the name instead made
-              // it a hand-typed line that never cleared with the week.
-              if (goneRestorable) {
-                var goneBack = null;
-                groDo(function () {
-                  return groPostEmpty('/api/grocery-list/' + id + '/remove-undo')
-                    .then(function (r) { goneBack = r; });
-                }, "Couldn't put that back — try again.").then(function (ok) {
-                  // Every meal it was for has come off the plan since.
-                  if (ok && goneBack && goneBack.restored === false) {
-                    showToast(goneName + ' isn\u2019t needed now — those meals are off the plan');
-                  }
-                });
-                return;
-              }
-              // Otherwise /remove was a hard delete (remove_grocery_item), so the undo
-              // puts the LINE back rather than the row: same name, same
-              // quantity, same section, then its store again if it had one.
-              // A new id, the same list — which is what the person meant.
+              var goneBack = null;
               groDo(function () {
-                return groPost('/api/grocery-list/add', { item: goneName, quantity: goneQty, category: goneCat })
-                  .then(function (r) {
-                    var backId = r && r.item_id;
-                    if (!goneStore || !backId) return r;
-                    return groPost('/api/grocery-list/' + backId + '/store', { store: goneStore });
+                return groPutRemovedBack(goneDone, goneName, goneCat, goneStore, goneParts, goneQty)
+                  .then(function (all) {
+                    goneBack = { restored: all.some(function (r) { return !(r && r.restored === false); }) };
                   });
-              }, "Couldn't put that back — try again.");
+              }, "Couldn't put that back — try again.").then(function (ok) {
+                // Every meal it was for has come off the plan since.
+                if (ok && goneBack && goneBack.restored === false) {
+                  showToast(goneName + ' isn’t needed now — those meals are off the plan');
+                }
+              });
             }
           });
         });
@@ -9266,8 +9391,14 @@
         // finish ("All sorted.") rather than dumping the household back
         // on the list with no way of knowing they got there.
         var psOnSortScreen = groceryState.step === 'sortall';
+        // The row's own block on a two-weeks row answers for both weeks
+        // (it is only offered when the kitchen covers both — week_lines.py).
+        // The banner names one line and answers for that line alone.
+        var psIds = el.closest('.gro-athome') ? groIdsFor(psId) : [String(psId)];
         groDo(function () {
-          return groPost('/api/grocery-list/' + psId + '/pre-shop', { decision: decision, author: 'user' });
+          return Promise.all(psIds.map(function (one) {
+            return groPost('/api/grocery-list/' + one + '/pre-shop', { decision: decision, author: 'user' });
+          }));
         }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok) return;
           if (psOnSortScreen && decision === 'drop') groAdvanceSort();
@@ -9278,7 +9409,9 @@
               label: 'Undo',
               onClick: function () {
                 groDo(function () {
-                  return groPostEmpty('/api/grocery-list/' + psId + '/pre-shop-undo');
+                  return Promise.all(psIds.map(function (one) {
+                    return groPostEmpty('/api/grocery-list/' + one + '/pre-shop-undo');
+                  }));
                 }, "Couldn't undo that — try again.");
               }
             });
@@ -9373,8 +9506,11 @@
         el.disabled = true;
         groceryState.openRowId = null;
         groceryState.substOpenId = null;
+        var haveIds = groIdsFor(haveId);
         groDo(function () {
-          return groPost('/api/grocery-list/' + haveId + '/pre-shop', { decision: 'drop', author: 'user' });
+          return Promise.all(haveIds.map(function (one) {
+            return groPost('/api/grocery-list/' + one + '/pre-shop', { decision: 'drop', author: 'user' });
+          }));
         }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok) return;
           if (onSortScreen) groAdvanceSort();
@@ -9382,7 +9518,9 @@
             label: 'Undo',
             onClick: function () {
               groDo(function () {
-                return groPostEmpty('/api/grocery-list/' + haveId + '/pre-shop-undo');
+                return Promise.all(haveIds.map(function (one) {
+                  return groPostEmpty('/api/grocery-list/' + one + '/pre-shop-undo');
+                }));
               }, "Couldn't undo that — try again.");
             }
           });
@@ -9411,10 +9549,13 @@
         el.disabled = true;
         groceryState.openRowId = null;
         groceryState.substOpenId = null;
+        var substIds = groIdsFor(substId);
         groDo(function () {
-          return groPost('/api/grocery-list/' + substId + '/substitute', {
-            alternative: alternative, at_home: substHave, author: 'user'
-          });
+          return Promise.all(substIds.map(function (one) {
+            return groPost('/api/grocery-list/' + one + '/substitute', {
+              alternative: alternative, at_home: substHave, author: 'user'
+            });
+          }));
         }, "Couldn't save that — try again.").then(function (ok) {
           if (!ok) return;
           // The renamed line is still in the queue if it has no store;
@@ -9426,7 +9567,9 @@
             label: 'Undo',
             onClick: function () {
               groDo(function () {
-                return groPostEmpty('/api/grocery-list/' + substId + '/substitute-undo');
+                return Promise.all(substIds.map(function (one) {
+                  return groPostEmpty('/api/grocery-list/' + one + '/substitute-undo');
+                }));
               }, "Couldn't undo that — try again.");
             }
           });
@@ -9474,8 +9617,10 @@
           .filter(function (it) { return String(it.id) === String(id); })
           .map(function (it) { return it.item; })[0];
         groDo(function () {
-          return groPostEmpty('/api/grocery-list/' + id + '/pre-shop-undo').then(function (body) {
-            undoneMoves = (body && body.moves_cancelled) || 0;
+          return groEachId(id, function (one) {
+            return groPostEmpty('/api/grocery-list/' + one + '/pre-shop-undo');
+          }).then(function (all) {
+            all.forEach(function (body) { undoneMoves += (body && body.moves_cancelled) || 0; });
           });
         }, "Couldn't undo that — try again.").then(function (ok) {
           if (!ok) return;
@@ -9498,6 +9643,28 @@
     }
   }
 
+  // Put back what Remove took off, line by line (`done`: [{ id, r }] — the
+  // id and /remove's answer). A line with meals behind it was soft-removed
+  // and comes back as the same row, still tied to those meals (grocery.
+  // undo_remove_grocery_item); re-adding the name instead made it a
+  // hand-typed line that never cleared with the week. Any other line was a
+  // hard delete (remove_grocery_item), so the LINE comes back: same name,
+  // its own amount (a two-weeks row's week part, else the row's), same
+  // section, then its store again. Decided per line, because one week's
+  // line can be restorable and the other not.
+  function groPutRemovedBack(done, name, cat, store, parts, fallbackQty) {
+    return Promise.all(done.map(function (x) {
+      if (x.r && x.r.restorable) return groPostEmpty('/api/grocery-list/' + x.id + '/remove-undo');
+      var qty = Object.prototype.hasOwnProperty.call(parts, String(x.id)) ? parts[String(x.id)] : fallbackQty;
+      return groPost('/api/grocery-list/add', { item: name, quantity: qty, category: cat })
+        .then(function (r) {
+          var backId = r && r.item_id;
+          if (!store || !backId) return r;
+          return groPost('/api/grocery-list/' + backId + '/store', { store: store });
+        });
+    }));
+  }
+
   // ---------- "Getting it elsewhere", and the way back ----------
   // Setting a thing aside is a decision, so it says it took (S10) and the
   // way back is on the toast — the same shape as Remove's undo. Before
@@ -9508,14 +9675,17 @@
   // sorted." — the undo is the later tap's, so it wins).
   function groSetAside(id, name, after) {
     var aside = name || 'That';
+    var asideIds = groIdsFor(id);
     return groDo(function () {
-      return groPostEmpty('/api/grocery-list/' + id + '/exclude');
+      return Promise.all(asideIds.map(function (one) {
+        return groPostEmpty('/api/grocery-list/' + one + '/exclude');
+      }));
     }, "Couldn't set that aside — try again.").then(function (ok) {
       if (!ok) return false;
       if (after) after();
       showToast(aside + ' set aside — getting it elsewhere.', {
         label: 'Undo',
-        onClick: function () { groPutBack(id, name); }
+        onClick: function () { groPutBack(id, name, asideIds); }
       }, GRO_UNDO_MS);
       return true;
     });
@@ -9530,9 +9700,14 @@
     var said = savedName(name);
     return said ? said + ' is back on the list.' : 'It’s back on the list.';
   }
-  function groPutBack(id, name) {
+  // `ids`: every line the row stood for when it was set aside (the
+  // toast's Undo knows them; the foot's row looks them up).
+  function groPutBack(id, name, ids) {
+    var backIds = ids || groIdsFor(id);
     return groDo(function () {
-      return groPostEmpty('/api/grocery-list/' + id + '/include');
+      return Promise.all(backIds.map(function (one) {
+        return groPostEmpty('/api/grocery-list/' + one + '/include');
+      }));
     }, "Couldn't put that back — try again.").then(function (ok) {
       if (ok) showToast(groBackOnListLine(name));
       return ok;

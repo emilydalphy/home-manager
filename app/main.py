@@ -5959,6 +5959,9 @@ def get_grocery_list_view(status: str = "needed"):
             # on, and the other statuses are read by screens that have no
             # pass to offer.
             result["before_shop"] = tools.before_shop_state()
+        # Shop reads its ticked rows from here (status=bought): two weeks'
+        # lines ticked together stay one row (app/tools/week_lines.py).
+        tools.stamp_week_groups([it for s in result["sections"] for it in s["items"]])
     except Exception as e:
         logger.exception("Grocery list lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -6048,6 +6051,10 @@ def get_grocery_list_by_store_view(status: str = "needed"):
             # together, by consolidate's own rule — never two weeks' lines,
             # never two amounts that can't be added (mergeable_duplicate_groups).
             result["duplicates"] = tools.mergeable_duplicate_groups()
+        # Two live weeks' lines for one thing are one row on Shop
+        # (app/tools/week_lines.py). After the pre-shop flags: a grouped
+        # row's own flag is built from its lines' flags.
+        tools.stamp_week_groups([it for store in result["stores"] for s in store["sections"] for it in s["items"]])
     except Exception as e:
         logger.exception("Grocery list by-store lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -6569,6 +6576,10 @@ def get_grocery_already_have_summary_view():
     try:
         already_have = tools.get_already_have_decisions()
         elsewhere = tools.list_grocery_list(status="excluded")
+        # A two-weeks row taken off together is one row here too, put back
+        # with one tap (app/tools/week_lines.py).
+        tools.stamp_week_groups(already_have)
+        tools.stamp_week_groups(elsewhere)
     except Exception as e:
         logger.exception("Grocery already-have summary lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

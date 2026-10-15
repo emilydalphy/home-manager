@@ -912,3 +912,8 @@ from .tonight import (  # noqa: F401
 # "nothing this week is spicy" (QA walk, 2026-10-02 — the ragu had chili
 # flakes). Agent tool only; no screen reads it.
 from .week_ingredients import get_week_ingredients  # noqa: F401
+
+# Shop's one row for a thing two live weeks both need (Loop Board "Shop
+# shows one line per item while two weeks are live", 2026-10-13). Display
+# only: a screen's own read stamps it; never an agent tool.
+from .week_lines import stamp_week_groups  # noqa: F401
