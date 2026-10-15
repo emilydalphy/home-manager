@@ -251,6 +251,7 @@ from .grocery import (  # noqa: F401
     undo_remove_grocery_item,
     repair_grocery_quantities,
     set_aside_carried_over_items,
+    set_aside_ended_weeks,
     substitute_grocery_item,
     substitutions_for_plan,
     undo_carried_over_decision,
