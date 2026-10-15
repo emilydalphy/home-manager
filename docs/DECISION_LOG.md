@@ -34,6 +34,46 @@ why*, not duplicating the diff.
   Review round: a note whose portion is since PLANNED or EATEN is resolved by
   `sweep_use_soon` itself (it runs on every queue read), so Today, Cook and
   the morning text stop saying "worth eating soon" together.
+- **Steps-only round two: a choice is not a use, a pinch is not a purchase,
+  and the soft line reaches the screen** (2026-10-13; branch
+  `overnight/step-only-allergens`). Review found the first cut flagged safe
+  dishes and bought odds and ends: "butter or oil", "if you like",
+  "optional", "if you don't have", "leave the shrimp out", "egg-free", plant
+  milks and a flax egg read as uses; one recipe put Flour, Sugar, Soy sauce,
+  Bread, Rice, Lemon, Parsley on the list. Now `steps_without_negations`
+  drops optional sentences and either/or clauses, "swap IN" is a use, and
+  one-word keys skip coordination's `_COMPOUND_EXCEPTIONS`; the LIST repair
+  also skips serve-with/garnish/swap clauses, pinch/splash/knob/dust
+  amounts and `_PANTRY_STAPLES` (the allergy note still reads them). "An
+  egg" adds Eggs · 1. The draft root never rendered `soft_note` (only the
+  approved path's `weekNotesHtml` did) — `draftSoftNoteHtml` puts it at the
+  top of both views. Why: Emily 2026-09-04, a check that flags safe meals
+  is one people click past. **Re-review, same day:** the optional and
+  either/or filters had also silenced the allergy NOTE ("Whisk 2 eggs with
+  milk or cream" said nothing). Split: `steps_without_negations` is real
+  negations only (the note, the morning report); optional sentences,
+  either/or pairs (only the two alternatives, so the 2 eggs are still
+  bought), serve-with, token amounts and pantry staples are the LIST
+  repair's alone (`_steps_for_the_list`). A possible use is a soft line;
+  it names the step's word ("use butter"), not the avoidance's ("dairy").
+
+- **An ingredient the steps use goes on the list when a recipe is saved;
+  a must-avoid found only in the steps is a soft line** (2026-10-13; branch
+  `overnight/step-only-allergens`; tests `tests/test_step_only_allergens.py`).
+  Emily's 2026-10-12 call (Option B + A's soft variant): "Beat two eggs" with
+  no egg listed passed the allergy check in silence, which reads the list and
+  never the method. `recipes.complete_ingredient_list` adds the consistency
+  check's `missing_from_list` (same vocabulary, rack exempt) on every save —
+  `add_recipe`, `fill_recipe_details`, `update_recipe_details` (new steps),
+  `apply_rewrite` — and BEFORE the gate in chat add, the recipe pass and the
+  rewrite. What a step leaves out ("without the eggs", "no need for cream",
+  "swap the butter") is stripped first (`steps_without_negations`, two words
+  past the trigger, no further). For recipes saved earlier,
+  `check_meal_conflicts(instructions=…)` from `check_plan_conflicts` returns a
+  hard avoidance seen only in the steps as `severity: soft, steps_only` →
+  one sentence in `soft_note`; it never gates approval. No sweep of saved
+  recipes.
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

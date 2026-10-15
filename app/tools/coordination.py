@@ -277,6 +277,9 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     )),
     (frozenset({"cheese", "cheeses"}), re.compile(r"\bcashew\s+cheeses?\b")),
     (frozenset({"sugar", "sugars"}), re.compile(r"\bsugar\s+snaps?\b")),
+    # A flax or chia "egg" is the egg-free stand-in (2026-10-13: "No eggs?
+    # Use a flax egg." read as eggs once the allergy note read steps).
+    (frozenset({"egg", "eggs"}), re.compile(r"\b(?:flax|chia)(?:\s+seed)?\s+eggs?\b")),
     # Second-round false positives (2026-09-30): foods named after an
     # allergen they don't contain.
     (frozenset({"beer", "beers"}), re.compile(r"\b(?:root|ginger)\s+beers?\b")),
@@ -1087,9 +1090,51 @@ def _soft_note(conflicts: list[dict]) -> str | None:
     is a list, and a list of preferences under a week nobody has to change is
     exactly the chrome this screen's redesign removed.
     """
-    soft = [c for c in conflicts if c["severity"] == "soft" and c["member"]]
+    steps = _steps_only_sentence(conflicts)
+    soft = [c for c in conflicts if c["severity"] == "soft" and c["member"] and not c.get("steps_only")]
     if not soft:
+        return steps
+    taste = _taste_sentence(soft)
+    # The steps' line first: it is about somebody's safety, the other is
+    # about somebody's taste.
+    return f"{steps} {taste}" if steps else taste
+
+
+def _steps_only_sentence(conflicts: list[dict]) -> str | None:
+    """
+    "The steps for Wednesday’s Thai Basil Chicken use eggs, which Sam is
+    allergic to." — a must-avoid found only in a recipe's method
+    (check_meal_conflicts' `instructions`, 2026-10-12). One quiet line
+    beside the taste line, never a card: the ingredient list doesn't have
+    it, so it is the steps being read, and steps are prose.
+    """
+    found = [c for c in conflicts if c.get("steps_only")]
+    if not found:
         return None
+    found = sorted(found, key=lambda c: (c.get("date") or "", c["meal"]))
+    meals = {c["meal"] for c in found}
+    if len(meals) > 1:
+        return (f"The steps for {_spell(len(meals))} meals use something you’ve asked me "
+                "to avoid that isn’t on their ingredient lists.")
+    c = found[0]
+    when = _weekday(c.get("date"))
+    dish = f"{when}’s {c['meal']}" if when else c["meal"]
+    # The word the step actually says ("butter"), not the avoidance's
+    # name for it ("dairy") — "the steps use dairy" reads oddly and is
+    # harder to find in the method (coordinator re-review, 2026-10-13).
+    matched = c.get("matched_word") or c.get("matched") or []
+    term = (matched if isinstance(matched, str) else (matched[0] if matched else "")) or "something"
+    if c["member"]:
+        tail = (f"which {c['member']} is allergic to"
+                if _ALLERGY_LABEL_RE.search(c.get("restriction") or "")
+                else f"which {c['member']} can’t have")
+    else:
+        tail = "which you’ve asked me to avoid"
+    return f"The steps for {dish} use {term}, {tail}."
+
+
+def _taste_sentence(soft: list[dict]) -> str:
+    """The taste-veto half of _soft_note."""
     soft = sorted(soft, key=lambda c: (c.get("date") or "", c["meal"]))
     seen = {(c["member"], c["date"], c["meal"]) for c in soft}
     if len(seen) == 1:
@@ -1139,6 +1184,7 @@ def check_meal_conflicts(
     sides: list[dict] | None = None,
     avoidances: list[dict] | None = None,
     negate_labels: bool | None = None,
+    instructions: list[str] | None = None,
 ) -> list[dict]:
     """
     Every avoidance ONE dish trips — the per-dish half of
@@ -1168,6 +1214,19 @@ def check_meal_conflicts(
     final without one — the name is matched strictly, so a "-free" label
     never sneaks the allergen in and still backstops the alias table
     (2026-09-30: "Dairy-Free Soup" over "half-and-half").
+
+    `instructions` (the recipe's steps) is the backstop Emily chose on
+    2026-10-12 for a step that uses an allergen the list forgot ("Beat two
+    eggs", no egg listed): a HARD avoidance found ONLY in the steps comes
+    back as a SOFT hit with `steps_only: True` — said out loud, never a
+    block. Soft because steps are prose and prose negates, and a hard
+    check that flags safe meals is one the household learns to click past
+    (Emily, 2026-09-04). Every recipe saved since then has the step's
+    ingredient on its list (recipes.complete_ingredient_list), where it is
+    an ordinary hard clash; this catches the ones saved before. Each step
+    is its own segment, with what it leaves out ("no need for cream")
+    taken out first — recipes.steps_without_negations, the same reading
+    the list repair uses.
     """
     name = (meal_name or "").strip()
     if not name:
@@ -1239,6 +1298,43 @@ def check_meal_conflicts(
             # avoidance) — for the log line that says why a dish was held.
             "matched_word": matched_word,
         })
+    if instructions:
+        hit_labels = {(h["member"], h["restriction"]) for h in hits}
+        step_segments = [
+            s for s in (
+                _fold(_recipes.steps_without_negations(step))
+                for step in instructions if isinstance(step, str)
+            ) if s
+        ]
+        # "Stir the oats into the milk" over a list with oat milk is the
+        # oat milk: when the LIST names a compound exception, the steps'
+        # bare word is that compound, not the allergen (review, 2026-10-13).
+        listed_text = " ".join(segments[1:])
+        for words, pattern in _COMPOUND_EXCEPTIONS:
+            if pattern.search(listed_text):
+                bare = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(words))) + r")\b")
+                step_segments = [bare.sub(" ", s) for s in step_segments]
+        step_segments = [s for s in step_segments if s.strip()]
+        for avoidance in avoidances:
+            # Only a must-avoid, and only when the name and list missed it:
+            # a dislike named in a step is not worth a line, and a clash
+            # already found is already said, harder.
+            if avoidance["severity"] != "hard" or not step_segments:
+                continue
+            if (avoidance["member"], avoidance["label"]) in hit_labels:
+                continue
+            detail = _match_detail(avoidance["terms"], step_segments, {
+                i for i, s in enumerate(step_segments) if _GLUTEN_FREE_SEGMENT_RE.search(s)
+            })
+            if not detail:
+                continue
+            matched, matched_word = detail
+            hits.append({
+                "meal": name, "member": avoidance["member"],
+                "restriction": avoidance["label"], "source": avoidance["source"],
+                "severity": "soft", "steps_only": True,
+                "matched": matched, "matched_word": matched_word,
+            })
     return hits
 
 
@@ -1319,6 +1415,9 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         for hit in check_meal_conflicts(
             name,
             ingredients=(recipe or {}).get("ingredients"),
+            # The steps, for a must-avoid only the method uses — a soft
+            # line, never a block (2026-10-12; see check_meal_conflicts).
+            instructions=(recipe or {}).get("instructions"),
             # A dish on a DRAFT whose recipe hasn't been written yet may be
             # read on its label ("Dairy-Free Pancakes"): the recipe pass
             # matches its real list at approval. Anything else is matched

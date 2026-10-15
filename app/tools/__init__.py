@@ -573,6 +573,7 @@ from .recipes import (  # noqa: F401
     add_recipe_for_chat,
     attribute_recipe_feedback,
     check_steps_ingredients_consistency,
+    complete_ingredient_list,
     cooking_ingredients,
     cooking_quantity,
     DuplicateRecipeName,

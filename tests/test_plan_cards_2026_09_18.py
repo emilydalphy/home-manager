@@ -72,6 +72,9 @@ def _prelude() -> str:
         # a failed assertion. Stubbed to nothing: these tests are about
         # what the step draws around the views.
         + "function weekFlagsHtml() { return ''; }\n"
+        # And the draft's soft line (draftSoftNoteHtml, 2026-10-13), for
+        # the same reason — tests/test_step_only_allergens.py draws it.
+        + "function draftSoftNoteHtml() { return ''; }\n"
         + "function weekReplacesNote() { return ''; }\n"
         + "function dayAttendanceLine() { return ''; }\n"
         + "function planEntryLabel(n, which, planned) { return (planned ? 'Re-plan ' : 'Plan ') + (which === 'current' ? 'this week' : 'next week'); }\n"

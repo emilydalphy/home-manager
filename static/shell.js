@@ -15487,6 +15487,19 @@
       .some(function (s) { return s && s.sides && s.sides.length; });
   }
 
+  // The draft root's soft line — "The steps for Tuesday's Thai Basil
+  // Chicken use eggs, which Sam is allergic to.", or somebody isn't keen
+  // (coordination._soft_note, server-worded). weekNotesHtml carries it on
+  // the approved-week path only; the draft root renders through
+  // reviewStepHtml, so until 2026-10-13 the line reached the API and no
+  // screen. Top of the draft, beside the flags, so both of its views say
+  // it — one quiet line, never a card or a button: it never gates Approve.
+  function draftSoftNoteHtml(data) {
+    if (weekPlanState(data) !== 'draft' || !data.soft_note) return '';
+    return '<div class="wk-notes wk-draft-notes"><div class="wk-note">' +
+      escapeHtml(data.soft_note) + '</div></div>';
+  }
+
   function weekNotesHtml(data, day) {
     var notes = [];
     if (data.plates_note && _dayHasPlateSides(day)) notes.push(data.plates_note);
@@ -16234,7 +16247,7 @@
     // approved week, which is what makes this one expression safe on the
     // deeper, approved-week form of this screen too.
     var head = root
-      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data)
+      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data)
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
