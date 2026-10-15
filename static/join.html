@@ -42,9 +42,9 @@
     inside the app", Emily 2026-09-25). The link is /join#<token>: the
     fragment never reaches the server, so this page reads it, takes it out
     of the address bar at once, and POSTs it to /api/join. On success the
-    session cookie is set and the page goes to "/" — signed in to the
-    household as the adult named in the invite, with no passphrase and no
-    "Who's this?". On anything else it says the link has run out and to
+    session cookie is set — signed in to the household as the adult named
+    in the invite, with no passphrase and no "Who's this?" — and the page
+    asks for their email (below) before going to "/". On anything else it says the link has run out and to
     ask for a new one: never a sign-in error.
 
     Same small centred layout as not-found.html, all through tokens.
@@ -74,6 +74,47 @@
   /* Its own line, centred: beside Try again it read as a second button. */
   .jn-signin { display: flex; width: fit-content; margin: 8px auto 0; align-items: center; justify-content: center; min-height: 44px; padding: 0 4px; font-weight: 700; font-size: 0.95rem; }
   .jn-signin[hidden] { display: none; }
+
+  /* "You're in" — the invited adult's email (Loop Board "An invited adult
+     who signs out and signs back in by email lands in a brand-new empty
+     household", Emily's Option A, 2026-10-12). An email household has no
+     passphrase, so the email screen is the only way back in, and an
+     address nobody knew used to start a stranger's household. Asked here,
+     the moment the link has said who this is, the address is theirs in
+     THIS household from day one. Same /api/account/email routes
+     Preferences uses: by now the browser is signed in as them. */
+  .jn-form { display: flex; flex-direction: column; gap: 12px; margin: 0; text-align: left; }
+  .jn-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 50px;
+    padding: 12px 16px;
+    border-radius: var(--radius-control);
+    border: 1.5px solid var(--hairline-strong);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px; /* a phone doesn't zoom the page on focus */
+  }
+  .jn-input:focus { border-color: var(--ink-strong); }
+  .jn-input::placeholder { color: var(--ink-placeholder); }
+  .jn-form .btn-primary { min-height: 52px; width: 100%; }
+  .jn-msg { margin: 0; color: var(--urgent-label); font-size: 14.5px; line-height: 1.4; text-align: center; }
+  .jn-msg[hidden] { display: none; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .jn-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 18px; margin-top: 8px; }
+  /* The quiet ways round, each its own 44px row (§2 rule 6). */
+  .jn-quiet {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0 4px;
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 0.95rem; font-weight: 600;
+    color: var(--ink-secondary); text-decoration: none;
+  }
+  .jn-quiet:hover { color: var(--ink-strong); }
 </style>
 </head>
 <body>
@@ -97,6 +138,33 @@
     <a class="btn-primary jn-open" id="jn-open" href="/" hidden>Open Pomona</a>
     <a class="jn-signin" id="jn-signin" href="/login">Back to the start</a>
   </div>
+  <div class="jn-state" id="jn-email" hidden>
+    <h1 class="jn-line">You&rsquo;re in.</h1>
+    <p class="jn-sub">Add your email so you can always get back to this household &mdash; on a new phone, or after you sign out.</p>
+    <form class="jn-form" id="jn-email-form" novalidate>
+      <label class="sr-only" for="jn-email-input">Your email</label>
+      <input class="jn-input" id="jn-email-input" type="email" inputmode="email" placeholder="Your email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="254" />
+      <p class="jn-msg" id="jn-email-msg" role="alert" hidden></p>
+      <button type="submit" class="btn-primary" id="jn-email-send">Send me a code</button>
+    </form>
+    <div class="jn-links">
+      <a class="jn-quiet" id="jn-later" href="/">Not now</a>
+    </div>
+  </div>
+  <div class="jn-state" id="jn-code" hidden>
+    <h1 class="jn-line">Check your email.</h1>
+    <p class="jn-sub" id="jn-code-sent" aria-live="polite"></p>
+    <form class="jn-form" id="jn-code-form" novalidate>
+      <label class="sr-only" for="jn-code-input">6-digit code</label>
+      <input class="jn-input" id="jn-code-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="6-digit code" autocomplete="one-time-code" maxlength="6" />
+      <p class="jn-msg" id="jn-code-msg" role="alert" hidden></p>
+      <button type="submit" class="btn-primary" id="jn-code-go">Save my email</button>
+    </form>
+    <div class="jn-links">
+      <button type="button" class="jn-quiet" id="jn-resend">Send a new code</button>
+      <button type="button" class="jn-quiet" id="jn-other">Use a different email</button>
+    </div>
+  </div>
   <div class="jn-state" id="jn-trouble" hidden>
     <h1 class="jn-line">That didn&rsquo;t go through.</h1>
     <p class="jn-sub" id="jn-trouble-sub">Check your connection and try again.</p>
@@ -104,6 +172,7 @@
     <a class="jn-signin" id="jn-trouble-signin" href="/login">Back to the start</a>
   </div>
 </main>
+<script src="/static/api.js"></script>
 <script>
 (function () {
   var token = (window.location.hash || '').replace(/^#/, '');
@@ -115,7 +184,7 @@
   }
 
   function show(id) {
-    ['jn-working', 'jn-gone', 'jn-trouble'].forEach(function (key) {
+    ['jn-working', 'jn-gone', 'jn-trouble', 'jn-email', 'jn-code'].forEach(function (key) {
       document.getElementById(key).hidden = key !== id;
     });
   }
@@ -159,11 +228,106 @@
       trouble('Check your connection and try again.');
       return;
     }
-    if (res.ok) { window.location.replace('/'); return; }
+    if (res.ok) { askForEmail(); return; }
     if (res.status === 429) { trouble('That’s a lot of tries at once. Give it a few minutes, then try again.'); return; }
     if (res.status >= 500) { trouble('Something went wrong on my side. Try again in a moment.'); return; }
     runOut();
   }
+
+  // ---- The email, now that the link has said who this is ----
+  // Anything that can't ask (the adult already has an address, email
+  // codes aren't switched on, the connection dropped) goes straight into
+  // the app: they are signed in either way, and Preferences can add it.
+  var email = '';
+  var busy = false;
+  function into() { window.location.replace('/'); }
+  function say(id, text) {
+    var el = document.getElementById(id);
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+  async function post(path, body) {
+    var r = await Api.fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    var data = {};
+    try { data = await r.json(); } catch (e) { /* not JSON */ }
+    return { ok: r.ok, status: r.status, data: data };
+  }
+  function failureLine(r) {
+    if (r.status === 429) return 'That’s a lot of tries. Wait a few minutes, then try again.';
+    if (r.data && typeof r.data.detail === 'string' && r.status < 500) return r.data.detail;
+    return 'That didn’t go through. Try again in a moment.';
+  }
+
+  async function askForEmail() {
+    try {
+      var r = await Api.fetch('/api/account/email');
+      var state = r.ok ? await r.json() : null;
+      if (!state || state.email || !state.can_change) { into(); return; }
+    } catch (e) { into(); return; }
+    show('jn-email');
+    try { document.getElementById('jn-email-input').focus(); } catch (e) { /* not focusable yet */ }
+  }
+
+  async function sendCode(again) {
+    if (busy) return;
+    if (!again) {
+      var value = (document.getElementById('jn-email-input').value || '').trim();
+      if (!value || value.indexOf('@') < 1) { say('jn-email-msg', 'Type your email address first.'); return; }
+      email = value;
+    }
+    var where = again ? 'jn-code-msg' : 'jn-email-msg';
+    busy = true;
+    say('jn-email-msg', ''); say('jn-code-msg', '');
+    try {
+      var r = await post('/api/account/email/start', { email: email });
+      // Email codes switched off on this server: nothing to send, so no
+      // reason to hold them at the door.
+      if (r.status === 503) { into(); return; }
+      if (!r.ok) { say(where, failureLine(r)); return; }
+      document.getElementById('jn-code-sent').textContent =
+        'We’ve sent a code to ' + email + ' if that email can be used. It works for 10 minutes.';
+      document.getElementById('jn-code-input').value = '';
+      show('jn-code');
+      try { document.getElementById('jn-code-input').focus(); } catch (e) { /* not focusable yet */ }
+    } catch (e) {
+      say(where, 'That didn’t go through. Check your connection and try again.');
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function checkCode() {
+    if (busy) return;
+    var code = (document.getElementById('jn-code-input').value || '').replace(/\s+/g, '');
+    if (!/^\d{6}$/.test(code)) { say('jn-code-msg', 'The code is 6 numbers.'); return; }
+    busy = true;
+    say('jn-code-msg', '');
+    try {
+      var r = await post('/api/account/email/verify', { email: email, code: code });
+      if (!r.ok) { say('jn-code-msg', failureLine(r)); return; }
+      into();
+    } catch (e) {
+      say('jn-code-msg', 'That didn’t go through. Check your connection and try again.');
+    } finally {
+      busy = false;
+    }
+  }
+
+  document.getElementById('jn-email-form').addEventListener('submit', function (e) { e.preventDefault(); sendCode(false); });
+  document.getElementById('jn-code-form').addEventListener('submit', function (e) { e.preventDefault(); checkCode(); });
+  document.getElementById('jn-resend').addEventListener('click', function () { sendCode(true); });
+  document.getElementById('jn-other').addEventListener('click', function () {
+    show('jn-email');
+    try { document.getElementById('jn-email-input').focus(); } catch (e) { /* not focusable yet */ }
+  });
+  // Six digits typed or pasted: go, as the sign-in screen does.
+  document.getElementById('jn-code-input').addEventListener('input', function () {
+    if (/^\d{6}$/.test((document.getElementById('jn-code-input').value || '').replace(/\s+/g, ''))) checkCode();
+  });
 
   document.getElementById('jn-retry').addEventListener('click', join);
   join();
