@@ -10324,6 +10324,14 @@
         // start by. The dish keeps its name — it is still what is being
         // eaten, and it is still the row that gets ticked.
         prepped: prepped,
+        // Under way: the real start is on record, or a step is ticked — the
+        // same reading the recipe screen's dock and the Meal step's make
+        // for "Keep cooking" (cookRecipeDockHtml, mealDockHtml), so the
+        // root's dock cannot say "Start cooking" under a card that already
+        // reads STARTED 5:50 (defect hunt, 2026-10-14). typeof: the tests
+        // run this builder alone under node.
+        underway: !done && (!!meal.cook_started_at ||
+          (typeof mealCookUnderway === 'function' && mealCookUnderway(meal))),
         title: isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner'),
         // Whose it is leads the line, exactly as it does on Today —
         // moveOwnerClause is the one wording (MOVE_OWNER_WORDS), so the two
@@ -10975,7 +10983,8 @@
     }).join('') + '</div>';
   }
 
-  // The dock. "Start cooking" opens tonight's cook on its recipe
+  // The dock. "Start cooking" ("Keep cooking" once it is under way — see
+  // kitchenTodayRows' `underway`) opens tonight's cook on its recipe
   // (cookEnterFocus — every way in lands there); a reheat night's one
   // action is "Mark eaten" (the same write the reheat screen makes). A
   // finished night, or a day with nothing to cook, has no dock at all —
@@ -11002,7 +11011,8 @@
         'data-name="' + escapeHtml(row.title || '') + '">' +
         escapeHtml(REHEAT_ACTION_LABEL) + '</button>';
     }
-    return '<button type="button" class="dock-primary" data-cook="start-tonight" data-idx="' + row.idx + '">Start cooking</button>';
+    return '<button type="button" class="dock-primary" data-cook="start-tonight" data-idx="' + row.idx + '">' +
+      (row.underway ? 'Keep cooking' : 'Start cooking') + '</button>';
   }
 
   // The quiet way to the tab's three rare entry points — Recipes, Add
