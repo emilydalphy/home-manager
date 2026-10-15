@@ -379,6 +379,19 @@ why*, not duplicating the diff.
   payload carries `cooking` and `wkCanMove` hides Move on it; a past night
   reads "Already gone by" before "Already cooking". Open for Emily: whether
   night off / recipe swap should be offered at all once a cook has started.
+- **A fridge move carries the night's share, not the recipe's amount**
+  (2026-10-14; branch `overnight/thaw-moves-the-nights-share`; tests
+  `tests/test_thaw_moves_the_nights_share.py`). A recipe for 4 eaten by 3
+  bought 12 oz of beef (ledger 12 oz, Cook 0.75 lb) and booked "1 lb" on
+  `prep_tasks.quantity`; a batch used servings ÷ cook_eaters and so thawed
+  2 lbs where the list bought 1.5. `defrost._night_scale` applies the
+  ingest's own factor (servings/count, package unscaled, no number → 1.0)
+  in both plan walkers, so every booking door agrees. Not shown on Today or
+  the evening text (they read only the description); it is the chat
+  tools' and get_defrost_*'s amount. Review fix: `attendance._shopper_quantity`
+  (only caller: the thaw) now rounds UP to its step — 3/4 of 1 1/2 lbs read
+  "1 lb", short — and kg/l step in 0.05 of their own unit (3/4 of 1 kg read
+  "5 kg").
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

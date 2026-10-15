@@ -831,6 +831,10 @@ def _shopper_quantity(amount: float, unit: str | None) -> str:
     "1/2 cup" into "4 tbsp" and a third of "500 g" into "166.75 g". Someone
     halving a recipe wants a quarter cup, not four tablespoons of the same
     thing.
+
+    Every step rounds UP, never to the nearest. The one caller is a thaw
+    (defrost._batch_quantity), and a move that rounds down leaves the dish
+    short: three quarters of 1 1/2 lbs read "1 lb" (review, 2026-10-14).
     """
     if amount <= 0:
         return _quantities._format_quantity(0, unit)
@@ -841,13 +845,18 @@ def _shopper_quantity(amount: float, unit: str | None) -> str:
         return _quantities._format_quantity(max(1, math.ceil(amount - 1e-9)), unit)
     if unit in _METRIC_UNITS:
         # Metric weights/volumes read as round numbers on a scale, not as
-        # fractions: 5g steps under 100, 10g above.
-        step = 5 if amount < 100 else 10
-        rounded = max(step, int(round(amount / step)) * step)
+        # fractions: 5g steps under 100, 10g above. A kg or litre amount
+        # steps in hundredths of its OWN unit — the gram steps made three
+        # quarters of "1 kg" read "5 kg" (review, 2026-10-14).
+        if unit in ("kg", "l"):
+            step = 0.05
+        else:
+            step = 5 if amount < 100 else 10
+        rounded = round(max(step, math.ceil(amount / step - 1e-9) * step), 2)
         return _quantities._format_quantity(rounded, unit)
     whole = math.floor(amount + 1e-9)
     frac = amount - whole
-    nearest = min(_quantities._NICE_FRACTIONS, key=lambda f: abs(f - frac))
+    nearest = min(f for f in _quantities._NICE_FRACTIONS if f >= frac - 1e-9)
     if nearest >= 1.0:
         whole, nearest = whole + 1, 0.0
     if whole == 0 and nearest == 0.0:
