@@ -50,9 +50,11 @@ from __future__ import annotations
 
 import json
 import math
+import threading
+from contextlib import contextmanager
 from datetime import date, timedelta
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import IN_MEALS_SQL, household_id
 from . import weekly_plan as _weekly_plan
 from . import quantities as _quantities
@@ -235,11 +237,33 @@ def get_slot_attendance(date_str: str, slot: str, conn=None) -> dict:
     return _attendance_dict(rows, row, date_str, slot)
 
 
-def _write(date_str: str, slot: str, absent_ids: list[int], guest_count: int,
-           source: str, away_stretch_id: int | None) -> None:
-    conn = get_conn()
-    conn.execute(
-        """
+# One meal's attendance is written by one gesture at a time (Loop Board,
+# "Two adults marking themselves away at the same instant", rebuilt
+# 2026-10-13). Two phones tapping "I'm out" on the same dinner used to
+# both read the same present list, each take one person out, and each
+# write the whole list back — the second write erased the first. The
+# toggle is now a read-modify-write on ONE connection under BEGIN
+# IMMEDIATE (set_member_attendance), which keeps the stored list right on
+# its own; this lock additionally holds the away-need sync that follows
+# each write to the order the writes landed, so "the last two out empty
+# the dinner and take its groceries off" runs once, against the final
+# list. In-process only: production is one process (the same assumption
+# as agent._WEEK_GENERATION_LOCKS). Re-entrant, because
+# set_slot_attendance takes it and is reached from inside it.
+_SLOT_WRITE_LOCKS: dict[tuple, threading.RLock] = {}
+_SLOT_WRITE_LOCKS_GUARD = threading.Lock()
+
+
+@contextmanager
+def _slot_write_lock(date_str: str, slot: str):
+    key = (household_id(), date_str, slot)
+    with _SLOT_WRITE_LOCKS_GUARD:
+        lock = _SLOT_WRITE_LOCKS.setdefault(key, threading.RLock())
+    with lock:
+        yield
+
+
+_UPSERT_ATTENDANCE_SQL = """
         INSERT INTO slot_attendance
             (household_id, date, slot, absent_member_ids_json, guest_count, source, away_stretch_id, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
@@ -249,11 +273,16 @@ def _write(date_str: str, slot: str, absent_ids: list[int], guest_count: int,
             source = excluded.source,
             away_stretch_id = COALESCE(excluded.away_stretch_id, slot_attendance.away_stretch_id),
             updated_at = datetime('now')
-        """,
-        (household_id(), date_str, slot, json.dumps(sorted(absent_ids)), int(guest_count), source, away_stretch_id),
-    )
-    conn.commit()
-    conn.close()
+        """
+
+
+def _write(date_str: str, slot: str, absent_ids: list[int], guest_count: int,
+           source: str, away_stretch_id: int | None) -> None:
+    with write() as conn:
+        conn.execute(
+            _UPSERT_ATTENDANCE_SQL,
+            (household_id(), date_str, slot, json.dumps(sorted(absent_ids)), int(guest_count), source, away_stretch_id),
+        )
 
 
 def _sync_away_need(date_str: str, slot: str, att: dict, away_stretch_id: int | None = None) -> str:
@@ -350,6 +379,16 @@ def set_slot_attendance(
     """
     date.fromisoformat(date_str)
     _validate_writable_slot(slot)
+    with _slot_write_lock(date_str, slot):
+        return _set_slot_attendance_locked(
+            date_str, slot, present_member_ids, guest_count, source, away_stretch_id,
+        )
+
+
+def _set_slot_attendance_locked(
+    date_str: str, slot: str, present_member_ids: list | None,
+    guest_count: int | None, source: str, away_stretch_id: int | None,
+) -> dict:
     current = get_slot_attendance(date_str, slot)
     if present_member_ids is None:
         absent = current["absent_member_ids"]
@@ -361,6 +400,12 @@ def set_slot_attendance(
         absent = [i for i in _household_member_ids() if i not in set(present)]
     guests = current["guest_count"] if guest_count is None else max(0, int(guest_count))
     _write(date_str, slot, absent, guests, source or current["source"] or "", away_stretch_id)
+    return _after_attendance_write(date_str, slot, away_stretch_id)
+
+
+def _after_attendance_write(date_str: str, slot: str, away_stretch_id: int | None) -> dict:
+    """What every attendance write does once the row is stored: read it
+    back, keep the away need in step, and let a hosted holiday follow."""
     att = get_slot_attendance(date_str, slot)
     att["away_need"] = _sync_away_need(date_str, slot, att, away_stretch_id)
     # A hosted holiday's dinner whose table just changed size follows it
@@ -384,15 +429,30 @@ def set_member_attendance(date_str: str, slot: str, member: str, present: bool =
     """
     date.fromisoformat(date_str)
     _validate_writable_slot(slot)
-    member_ids = resolve_member_ids([member])
-    current = get_slot_attendance(date_str, slot)
-    present_set = set(current["present_member_ids"])
-    if present:
-        present_set |= set(member_ids)
-    else:
-        present_set -= set(member_ids)
-    ordered = [i for i in _household_member_ids() if i in present_set]
-    return set_slot_attendance(date_str, slot, present_member_ids=ordered or [], source="toggle")
+    member_ids = set(resolve_member_ids([member]))
+    with _slot_write_lock(date_str, slot):
+        # Read and write on ONE connection, holding the write lock from the
+        # read: this changes one person in the STORED absent list rather
+        # than writing back a whole list read a moment ago, which is what
+        # lost the other adult's "I'm out" (see _slot_write_lock).
+        with write() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            live = [r["id"] for r in _member_rows(conn)]
+            row = conn.execute(
+                "SELECT absent_member_ids_json, guest_count FROM slot_attendance "
+                "WHERE household_id = ? AND date = ? AND slot = ?",
+                (household_id(), date_str, slot),
+            ).fetchone()
+            absent = set(json.loads(row["absent_member_ids_json"] or "[]")) if row else set()
+            absent = (absent - member_ids) if present else (absent | member_ids)
+            # Live members only, as the whole-list write always stored it:
+            # someone since removed stops being carried along.
+            conn.execute(_UPSERT_ATTENDANCE_SQL, (
+                household_id(), date_str, slot,
+                json.dumps(sorted(i for i in live if i in absent)),
+                int(row["guest_count"] or 0) if row else 0, "toggle", None,
+            ))
+        return _after_attendance_write(date_str, slot, None)
 
 
 def set_day_attendance(date_str: str, slots: dict, source: str = "sheet") -> dict:
@@ -503,12 +563,17 @@ def remove_members_from_slot(
     date_str: str, slot: str, member_ids: list[int], source: str = "", away_stretch_id: int | None = None,
 ) -> dict:
     """Take specific people out of one meal, leaving everyone else as they are — the primitive set_away_stretch walks a range with."""
-    current = get_slot_attendance(date_str, slot)
-    remaining = [i for i in current["present_member_ids"] if i not in set(member_ids)]
-    return set_slot_attendance(
-        date_str, slot, present_member_ids=remaining or [],
-        source=source or "away_stretch", away_stretch_id=away_stretch_id,
-    )
+    # Under the meal's lock (see _slot_write_lock): the read and the
+    # whole-list write below are the shape that lost an "I'm out" — a
+    # toggle landing between them was overwritten (review, 2026-10-13:
+    # 1 in 10 racing a trip). set_slot_attendance re-takes the same RLock.
+    with _slot_write_lock(date_str, slot):
+        current = get_slot_attendance(date_str, slot)
+        remaining = [i for i in current["present_member_ids"] if i not in set(member_ids)]
+        return set_slot_attendance(
+            date_str, slot, present_member_ids=remaining or [],
+            source=source or "away_stretch", away_stretch_id=away_stretch_id,
+        )
 
 
 def reconcile_membership() -> dict:

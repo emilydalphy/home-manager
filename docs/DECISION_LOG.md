@@ -106,6 +106,19 @@ why*, not duplicating the diff.
   `_no_more_than`) expects the household's 2; `test_reheat_side_is_bought`'s
   "−"-door characterisation is inverted (5 typed over the plan's 1 = 4 extra,
   + the restored head = 6).
+- **Two "I'm out"s on the same meal at the same instant both stick**
+  (2026-10-13; branch `overnight/both-outs-stick`, rebuilt on main from the
+  stale `attendance-race-2026-10-03`; tests `tests/test_attendance_race.py`).
+  `set_member_attendance` read the present list, took one person out in
+  Python and wrote the whole list back on another connection — a lost update
+  (3 of 4 new tests fail on main). It now changes one person in the STORED
+  absent list on one connection under `BEGIN IMMEDIATE`, and a per-meal
+  in-process RLock (`_slot_write_lock`, also taken by `set_slot_attendance`)
+  holds the away-need sync to the order the writes landed. In-process only:
+  several workers would still write correctly but need a shared lock for the
+  sync's order. Review round: `remove_members_from_slot` (what an away
+  stretch walks) now reads and writes under the same lock — racing a tap it
+  lost Riley's absence 1 in 10.
 
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
