@@ -51,6 +51,8 @@ def test_the_screens_run_in_the_storyboards_order():
         # gained a step.
         "your-name",
         "household", "helpers", "restrictions",
+        # UPDATED 2026-10-13: "Who usually cooks dinner?" (Emily, 2026-10-12).
+        "who-cooks",
         # UPDATED 2026-10-06 (Onboarding regrouped, Emily's locked flow of
         # 2026-10-05): your schedule (who's eating, shop day, cook ahead),
         # then meal by meal -- breakfast; weekday lunches + lunch variety;
@@ -77,13 +79,13 @@ def test_the_intro_still_lists_the_four_steps_in_that_order():
 def test_each_question_names_its_step_in_the_eyebrow():
     out = _run(_nav_harness() + """
 console.log(JSON.stringify(%s.map(function (k) { return stepEyebrow(k); })));
-""" % json.dumps(["your-name", "household", "helpers", "restrictions", "meals-days", "prep", "variety-lunch",
+""" % json.dumps(["your-name", "household", "helpers", "restrictions", "who-cooks", "meals-days", "prep", "variety-lunch",
                   "dinner-time", "eating-style", "kit-repeats", "ai-consent", "reveal"]))
     # UPDATED 2026-10-06 (Onboarding regrouped): seven sections, and the
     # eyebrow is the section's NAME ("the section name shows in the
     # header") rather than "2 of 4 · ...".
     assert out == [
-        "Your household", "Your household", "Your household", "Your household",
+        "Your household", "Your household", "Your household", "Your household", "Your household",
         "Your schedule", "Your schedule", "Lunch",
         "Dinner", "The rest", "The rest",
         "The rest", "",
