@@ -77,7 +77,7 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import date, timedelta
+from datetime import timedelta
 
 from app import households, tools
 from app.db import (
@@ -88,6 +88,8 @@ from app.db import (
     misplaced_db_path_error,
 )
 from app import ai_consent
+from app.tools import usual_week
+from app.tools.cooker import household_today
 from app.tools._shared import DEFAULT_HOUSEHOLD_ID, use_household
 
 # Fixed and unmistakable — this is how the script (and any human reading
@@ -253,26 +255,51 @@ def _build_demo_data(household_id: int) -> dict:
             cook_time_minutes=15,
         )
 
-        today = date.today()
+        # The household's own day, not the server's: the screens run on
+        # households.timezone, and for four hours of every UTC evening the
+        # server's date is already tomorrow's.
+        today = household_today()
         week_start = today - timedelta(days=today.weekday())
         plan = tools.create_weekly_plan(week_start.isoformat())
         plan_id = plan["weekly_plan_id"]
 
         # A believable week: the three saved recipes plus a few realistic
         # freeform nights, so the plan doesn't read as three dishes on
-        # repeat.
+        # repeat. Thursday eats Wednesday's chili the way a generated week
+        # does it — a leftovers chain (links_to, checked by
+        # repair_leftover_chains) — so Wednesday is cooked double and
+        # bought for, and Thursday is a reheat everywhere (2026-10-15: a
+        # freeform "Leftover chili" bought chili for one night and read
+        # as "Leftover chili, leftovers" in the morning text).
         dinners = [
             "Chicken Stir Fry",
             "Tacos",
             "Weeknight Chili",
-            "Leftover chili",
+            "Weeknight Chili",
             "Pesto Pasta",
             "Pizza night",
             "Grilled salmon with rice",
         ]
         for offset, dish in enumerate(dinners):
             meal_date = (week_start + timedelta(days=offset)).isoformat()
-            tools.plan_meal(meal_date, dish, slot="dinner", weekly_plan_id=plan_id)
+            derived = None
+            if offset == 3:
+                derived = {"links_to": f"{(week_start + timedelta(days=2)).isoformat()}:dinner"}
+            tools.plan_meal(meal_date, dish, slot="dinner", weekly_plan_id=plan_id, derived_from=derived)
+        tools.repair_leftover_chains(plan_id)
+
+        # The household plans dinners only (its usual week has breakfast
+        # and lunch off), so those meals are written the way a generated
+        # week writes them — planned empty, "Not planned" — rather than
+        # left absent, which Plan shows as "Nothing yet · Pick" on every
+        # day of the week the reviewer opens.
+        for offset in range(7):
+            meal_date = (week_start + timedelta(days=offset)).isoformat()
+            for slot in ("breakfast", "lunch"):
+                tools.plan_slot_empty(
+                    weekly_plan_id=plan_id, meal_date=meal_date, slot=slot,
+                    reason=usual_week.OFF_REASON, derived_from={"constraint": usual_week.OFF_CONSTRAINT},
+                )
 
         # Approving is what puts the week's ingredients on the grocery
         # list (see approve_weekly_plan's docstring) — this is also what

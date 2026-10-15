@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The App Store demo week is written like a generated one** (2026-10-15;
+  branch `overnight/demo-week-looks-finished`; test in
+  `tests/test_demo_household.py`). Seen at phone width: the reviewer's Plan
+  said "Nothing yet · Pick" for breakfast and lunch on all seven days, and
+  Thursday's freeform "Leftover chili" bought chili for one night and read
+  "Tonight: Leftover chili, leftovers." `create_demo_household.py` now writes
+  breakfast/lunch planned_empty with the usual-week "Not planned" reason,
+  makes Thursday a real chain off Wednesday (`links_to` +
+  `repair_leftover_chains`), and dates the week from the household's clock,
+  not the server's. Demo data only; no app code changed.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
