@@ -918,7 +918,7 @@ def test_the_booked_move_shows_on_every_surface_a_drafted_weeks_does(frozen_kitc
     # 3 — the evening nudge
     nudge = digest.build_evening_nudge(
         now_local=datetime.datetime.fromisoformat(f"{move_day}T18:05:00"), link=False) or ""
-    assert nudge.startswith("Move the Chicken thighs to the fridge first")
+    assert nudge.startswith("Move the Chicken thighs to the fridge for ")
     # 4 — Cook's thaw list (the prep schedule, and the tab's own session)
     assert [t["description"] for t in tools.get_prep_schedule(plan_id)
             if t["task_type"] == "defrost"] == [sentence]

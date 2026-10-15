@@ -73,6 +73,17 @@ why*, not duplicating the diff.
   hard avoidance seen only in the steps as `severity: soft, steps_only` →
   one sentence in `soft_note`; it never gates approval. No sweep of saved
   recipes.
+- **The evening text's thaw line names the meal it's for** (2026-10-13;
+  branch `overnight/thaw-line-names-its-meal`; tests in
+  `tests/test_evening_nudge.py`). Emily's approved wording: "Move the beef to
+  the fridge for Monday's chili. Tonight: Roast Chicken — 1 hr 50 min."
+  "…fridge first — then Roast Chicken" read as if the beef went in the roast.
+  `digest._for_a_later_meal`: a fridge move (always for a later day) or a
+  prep step tied to another entry uses its own "for …" reason; a prep step
+  for tonight keeps "first — then". CLAUDE.md's evening-nudge paragraph
+  still quotes the old line. Review round: a general prep row (no entry,
+  `cooker.save_prep_tasks`) whose `related_meal` (now on the move) is not
+  tonight's dish reads "Soak the beans for Chili. Tonight: …" too.
 
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch

@@ -110,7 +110,7 @@ def test_friday_shows_it_on_today_the_morning_text_and_the_evening_nudge():
 
     evening = datetime.datetime.fromisoformat(f"{friday}T18:05:00")
     assert (digest.build_evening_nudge(now_local=evening, link=False) or "").startswith(
-        "Move the Soup to the fridge first")
+        "Move the Soup to the fridge for Saturday's lunch. Tonight:")
 
     # Nothing on Saturday itself: by then it is too late to thaw.
     saturday = dates[5]

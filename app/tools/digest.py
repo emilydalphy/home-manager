@@ -1260,7 +1260,8 @@ def build_evening_nudge(now_local: datetime | None = None, link: bool = True) ->
     The nudge, or None when tonight doesn't want one. One breath:
 
         Tonight: lemon chicken & orzo — 35 min. Tap to start. <link>
-        Move the chicken thighs to the fridge first — then lemon chicken & orzo. <link>
+        Marinate the chicken first — then lemon chicken & orzo. <link>
+        Move the beef to the fridge for Monday's chili. Tonight: lemon chicken & orzo — 35 min. <link>
 
     The dish is named as stored; the minutes are the plan's own total
     (cooker.cook_total_minutes, via the move) and are left out when the
@@ -1276,21 +1277,60 @@ def build_evening_nudge(now_local: datetime | None = None, link: bool = True) ->
         return None
     dish = _tidy(dinner["title"])
     first = tonight["first"]
-    if first is not None:
+    minutes = int(dinner.get("duration_min") or 0)
+    # Spelled by quantities.format_duration, the one spelling Today's
+    # chip and Cook's card use: a roast read "110 min" here and "1 hr 50
+    # min" on the screen this text opens (overnight hunt, 2026-10-10).
+    # Under an hour the two agree ("35 min"), which is why it hid.
+    tonight_line = (
+        f"Tonight: {dish} — {_quantities.format_duration(minutes)}."
+        if minutes else f"Tonight: {dish}."
+    )
+    later = _for_a_later_meal(first, dinner)
+    if later:
+        # A thaw for ANOTHER night names that night's meal, then tonight's
+        # dish (Emily, 2026-10-12: "Move the beef to the fridge for
+        # Monday's chili. Tonight: Roast Chicken — 1 hr 50 min."). "First —
+        # then Roast Chicken" read as if the beef went in the roast.
+        text = f"{_tidy(first['title'])} {later}. {tonight_line}"
+    elif first is not None:
         text = f"{_tidy(first['title'])} first — then {dish}."
     else:
-        minutes = int(dinner.get("duration_min") or 0)
-        # Spelled by quantities.format_duration, the one spelling Today's
-        # chip and Cook's card use: a roast read "110 min" here and "1 hr 50
-        # min" on the screen this text opens (overnight hunt, 2026-10-10).
-        # Under an hour the two agree ("35 min"), which is why it hid.
-        text = (
-            f"Tonight: {dish} — {_quantities.format_duration(minutes)}. Tap to start."
-            if minutes else f"Tonight: {dish}. Tap to start."
-        )
+        text = f"{tonight_line} Tap to start."
     # No address in a push notification (link=False): tapping it opens Cook.
     url = _app_link("kitchen") if link else ""
     return f"{text} {url}" if url else text
+
+
+def _for_a_later_meal(first: dict | None, dinner: dict) -> str:
+    """
+    "for Monday's Chili" when the thing to do first is for a LATER meal
+    than tonight's, else ''. A fridge move always is — defrost never
+    schedules one on the cook's own day (see moves._prep_moves) — and its
+    "what it's for" is the reason defrost._describe wrote. A prep step is
+    only when it is tied to a different plan entry than tonight's dinner
+    and says what for; one for tonight still reads "first — then".
+    """
+    if not first:
+        return ""
+    reason = _tidy(first.get("reason") or "")
+    if not reason.lower().startswith("for "):
+        return ""
+    if first.get("kind") == "fridge":
+        return reason
+    if first.get("kind") != "prep":
+        return ""
+    entry = first.get("entry_id")
+    if entry:
+        return reason if entry != dinner.get("entry_id") else ""
+    # A general prep row (no plan entry — cooker.save_prep_tasks) says what
+    # it is for by name only: a different dish from tonight's is a later
+    # meal ("Soak the beans for Chili. Tonight: Roast Chicken…"), never
+    # "first — then Roast Chicken" (review, 2026-10-13).
+    related = (first.get("related_meal") or "").strip().casefold()
+    if related and related != (dinner.get("title") or "").strip().casefold():
+        return reason
+    return ""
 
 
 def send_evening_nudge(member: dict, text: str) -> dict:

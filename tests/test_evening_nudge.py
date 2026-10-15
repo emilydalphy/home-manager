@@ -211,7 +211,22 @@ def test_a_fridge_move_still_to_do_comes_first(link):
     plan_id = _seed_dinner()
     _prep_task(plan_id, "Move the chicken thighs to the fridge — for Thursday’s skewers.")
     text = tools.build_evening_nudge(_at(17, 0))
-    assert text == f"Move the chicken thighs to the fridge first — then Chicken Skewers. {LINK}/kitchen"
+    # Emily, 2026-10-12: the thaw names the meal it is FOR, then tonight's
+    # dish — never "first — then", which read as if it went in tonight's.
+    assert text == (f"Move the chicken thighs to the fridge for Thursday’s skewers. "
+                    f"Tonight: Chicken Skewers — 35 min. {LINK}/kitchen")
+
+
+def test_a_fridge_move_with_a_long_dinner_spells_the_hours(link):
+    _adults()
+    plan_id = _seed_dinner()
+    conn = get_conn()
+    conn.execute("UPDATE recipes SET prep_time_minutes = 20, cook_time_minutes = 90")
+    conn.commit()
+    conn.close()
+    _prep_task(plan_id, "Move the beef to the fridge — for Monday's chili.")
+    assert tools.build_evening_nudge(_at(17, 0), link=False) == \
+        "Move the beef to the fridge for Monday's chili. Tonight: Chicken Skewers — 1 hr 50 min."
 
 
 def test_a_prep_step_still_to_do_comes_first_too(link):
@@ -661,3 +676,20 @@ def test_the_morning_sheet_carries_the_evening_switch():
     assert ".morning-evening-row { min-height: 44px; }" in section
     assert ".morning-evening-row.is-off { opacity: 0.55; }" in section
     assert not re.search(r"#[0-9a-fA-F]{3,6}\b", section)
+
+
+def test_a_general_prep_step_for_a_later_meal_names_that_meal(link):
+    """Review catch (2026-10-13): a general prep row (no plan entry) for a
+    LATER dish read "Soak the beans first — then Chicken Skewers"."""
+    _adults()
+    plan_id = _seed_dinner()
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+        "related_meal, status, task_type) VALUES (?, ?, ?, 'Soak the beans', 'Chili', 'pending', 'general')",
+        (tools.household_id(), plan_id, ISO_TODAY),
+    )
+    conn.commit()
+    conn.close()
+    assert tools.build_evening_nudge(_at(17, 0), link=False) == \
+        "Soak the beans for Chili. Tonight: Chicken Skewers — 35 min."
