@@ -851,6 +851,12 @@ class OnboardingAnswersRequest(BaseModel):
     # Optional, so an older client is unaffected.
     lunch_needs: dict | None = None
     member_snacks: dict | None = None
+    # Setup's "This week / Next week" (2026-10-14): 'this_week' |
+    # 'next_week', the same words FirstPlanRequest.start takes. Sent here
+    # because this post is the one write BOTH answers to sharing with
+    # Claude make — the first-plan request carried it alone, and "Not now"
+    # never sends that. Optional: an older client remembers nothing.
+    first_plan_start: str | None = None
 
 
 class MemberNeedsRequest(BaseModel):
@@ -1610,6 +1616,8 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         tools.validate_member_needs(req.lunch_needs, req.member_snacks)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    if req.first_plan_start not in (None, "this_week", "next_week"):
+        raise HTTPException(status_code=400, detail="first_plan_start must be 'this_week' or 'next_week'.")
     try:
         memory = tools.save_onboarding_answers(
             member_names=req.member_names,
@@ -1648,6 +1656,19 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             logger.exception("Onboarding member needs save failed")
             raise HTTPException(status_code=500, detail=f"Server error: {e}")
         memory = dict(memory, member_needs=needs)
+    if req.first_plan_start is not None:
+        # Resolved NOW, by the same function the first plan is generated
+        # through, and after the rhythm post (finishSetupAndReveal's order)
+        # so the plan-ready day it reads is the one just given. The period
+        # it files under is what's kept — the one the yes path plans.
+        # A failure here is logged, not raised: the answers above are saved,
+        # and a 500 would have the page re-post them (review, 2026-10-14) —
+        # losing this only means Plan offers its ordinary default.
+        try:
+            period_key, _, _ = _first_plan_window(req.first_plan_start == "next_week")
+            tools.remember_first_period(period_key)
+        except Exception:
+            logger.exception("Onboarding first-period save failed")
     return memory
 
 

@@ -7,7 +7,7 @@ import json
 import logging
 import re
 from datetime import date, datetime, timedelta
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import acting_member_id_for, acting_name, household_id, require_household_row
 from . import coordination as _coordination
 from . import grocery as _grocery
@@ -345,6 +345,51 @@ def first_plan_start() -> str | None:
     ).fetchone()
     conn.close()
     return (row["first_start"] or None) if row else None
+
+
+def remember_first_period(start_date: str) -> None:
+    """
+    Keep the period setup's "This week / Next week" answer chose — its
+    start, as main._first_plan_window resolves it — for a household that
+    has no week yet.
+
+    The answer used to travel ONLY in the first-plan request, and "Not now"
+    to sharing with Claude never makes that request — so the answer was
+    dropped and Plan fell back to its Friday rule, offering a Wednesday
+    sign-up who said "This week" the next period and the one after
+    (2026-10-14). Kept as a date rather than as the words because "next
+    week" said on a Wednesday is a particular week, not whichever comes
+    after the day it is read. suggest_planning_period reads it back
+    (_remembered_first_period) until a plan exists or its days have gone.
+    """
+    with write() as conn:
+        conn.execute(
+            "UPDATE households SET first_period_start = ? WHERE id = ?",
+            (start_date, household_id()),
+        )
+
+
+def _remembered_first_period(today: date, day_count: int) -> date | None:
+    """
+    The start of setup's chosen first period while the household has no
+    live plan and that period (`day_count` long, the household's own
+    horizon) still has a day left — else None. Once any week exists it is
+    that week's job to say where the household is, and an answer whose
+    days have all gone answers nothing.
+    """
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT first_period_start FROM households WHERE id = ?", (household_id(),),
+    ).fetchone()
+    conn.close()
+    if not row or not row["first_period_start"]:
+        return None
+    start = date.fromisoformat(row["first_period_start"])
+    if period_end_date(start.isoformat(), day_count) < today.isoformat():
+        return None
+    if first_plan_start() is not None:
+        return None
+    return start
 
 
 def period_end_date(start_date: str, day_count: int) -> str:
@@ -1927,14 +1972,27 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
     today = date.fromisoformat(from_date) if from_date else _household_today()
     anchor = (_rhythm_anchor() or "sunday")
     is_current = True
-    if anchor == "as_we_go":
+    day_count = 3 if anchor == "as_we_go" else 7
+    # The household's own answer beats this default's guess (2026-10-14):
+    # setup asked "This week or next?", and a household with no week yet is
+    # offered the period that answer chose — the one the yes path's first
+    # plan is filed under — whichever way it answered sharing with Claude.
+    # It replaces only WHICH period (so no Friday shift): the offer still
+    # starts no earlier than today and runs the household's own horizon,
+    # as every suggestion does (2026-09-20/21, below). Not for
+    # plan_ahead=False: that caller IS the resolver of the answer
+    # (main._first_plan_window), and feeding it its own result back would
+    # be circular.
+    remembered = _remembered_first_period(today, day_count) if plan_ahead else None
+    if remembered is not None:
+        start = max(remembered, today)
+        is_current = remembered <= today
+    elif anchor == "as_we_go":
         start = today
-        day_count = 3
     else:
         ready_index = _rhythm.PLANNING_ANCHOR_WEEKDAYS.index(anchor)
         start_index = (ready_index + 1) % 7
         start = today - timedelta(days=(today.weekday() - start_index) % 7)
-        day_count = 7
         if plan_ahead and _attention_moves_on(today, start.isoformat(), day_count):
             conn = get_conn()
             approved = _live_plan_covering(conn, today.isoformat(), approved_only=True)

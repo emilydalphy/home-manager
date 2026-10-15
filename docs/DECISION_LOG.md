@@ -344,6 +344,22 @@ why*, not duplicating the diff.
   lot"); the move's existence and the untimed line are unchanged; the morning
   text carries only the count, so it needed nothing. Open: a store row with
   no tonight lines draws "Metro · 3 things · …" (shell.js adds the "…").
+- **"This week" in setup survives "Not now" to sharing with Claude**
+  (2026-10-14; branch `overnight/not-now-keeps-this-week`; tests
+  `tests/test_onboarding_not_now_keeps_this_week.py`). The start answer
+  rode ONLY on the first-plan stream, which "Not now" never calls, so it
+  was dropped and Plan's Friday rule offered a Wednesday, Saturday-shop
+  sign-up next week and the week after. Not deliberate — nothing in the log
+  or code ties the start answer to consent. Now `/api/onboarding/answers`
+  (the write both consent answers make) carries `first_plan_start`; the
+  server resolves it through `_first_plan_window` and keeps the period's
+  start in `households.first_period_start`, and `suggest_planning_period`
+  offers that period (clamped to today, the household's own length) while
+  the household has no live plan and the period has days left. The yes
+  path's first plan is unchanged (`plan_ahead=False` ignores it). Driven at
+  390px: Plan now opens "This week · Oct 14–20". "Next week" + "Not now"
+  is honoured the same way.
+
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests

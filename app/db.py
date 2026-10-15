@@ -855,6 +855,10 @@ _MIGRATIONS = [
     # else the first adult) at the next startup, and primary_member_id()
     # resolves one lazily for a household made between startups.
     ("households", "primary_member_id", "INTEGER"),
+    # Setup's "This week / Next week" answer, kept as the start of the
+    # period it chose (2026-10-14) — see weekly_plan.remember_first_period.
+    # '' on every existing household: nobody is owed an answer never given.
+    ("households", "first_period_start", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
