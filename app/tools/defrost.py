@@ -1248,7 +1248,10 @@ def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
         "   JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
         "   JOIN weekly_plans wp ON wp.id = e.weekly_plan_id "
         "   WHERE l.grocery_item_id = g.id AND e.weekly_plan_id != ? "
-        f"  AND wp.status IN ({live})) AS shared_with "
+        f"  AND wp.status IN ({live})) AS shared_with, "
+        "  EXISTS (SELECT 1 FROM meal_plan_grocery_links l "
+        "          JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+        "          WHERE l.grocery_item_id = g.id AND e.weekly_plan_id = ?) AS has_this_plan "
         "FROM grocery_items g WHERE g.household_id = ? "
         "AND (g.source_weekly_plan_id = ? OR g.source_weekly_plan_id IS NULL "
         "     OR EXISTS (SELECT 1 FROM meal_plan_grocery_links l "
@@ -1256,7 +1259,7 @@ def _grocery_lines_by_item(names, weekly_plan_id: int) -> dict[str, list[dict]]:
         "                WHERE l.grocery_item_id = g.id AND e.weekly_plan_id = ?)) "
         f"AND ((g.status IN ({','.join('?' * len(_STILL_TO_BUY_STATUSES))}) AND g.excluded_from_list = 0) "
         "OR (g.status = 'removed' AND g.removed_by = ?))",
-        (weekly_plan_id, *_LIVE_PLAN_STATUSES, household_id(), weekly_plan_id, weekly_plan_id,
+        (weekly_plan_id, *_LIVE_PLAN_STATUSES, weekly_plan_id, household_id(), weekly_plan_id, weekly_plan_id,
          *_STILL_TO_BUY_STATUSES, FREEZER_REMOVED_BY),
     ).fetchall()
     conn.close()
@@ -1275,6 +1278,21 @@ def _own_lines(lines: list[dict]) -> list[dict]:
     """The lines a tapped chip may take off the list: not shared with
     another live plan's meal."""
     return [r for r in lines if not r["shared_with"]]
+
+
+def _plans_part_on(lines: list[dict]) -> list[dict]:
+    """
+    Of _own_lines, the ones a tapped chip really takes something off — the
+    lines the plan wrote, and a household's own line only where this
+    plan's meals are counted into it (_set_aside_own_lines leaves a hand
+    add carrying none of them to buy, 2026-10-12). Without this the step
+    promised "off the shopping list" over a hand-added salmon the answer
+    then left on it (review, 2026-10-13).
+    """
+    return [
+        r for r in _own_lines(lines)
+        if (r["source_weekly_plan_id"] is not None and not r.get("staple_id")) or r.get("has_this_plan")
+    ]
 
 
 def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
@@ -1378,10 +1396,12 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
             if description in frozen_nights:
                 frozen = True
         if nights:
-            own = _own_lines(lines[key])
+            own = _plans_part_on(lines[key])
             if own and short_of_time:
                 reason = ON_LIST_TOO_LATE
-            elif lines[key] and not own:
+            elif not own and any(r["shared_with"] for r in lines[key]):
+                # A hand-added line with none of this plan's meals in it is
+                # neither: it is simply not the step's to take off.
                 reason = ON_LIST_SHARED
             else:
                 reason = None
@@ -1507,7 +1527,7 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
             # one line, and either spelling must keep it.
             if _matches_selected_item(key, short_of_time):
                 continue
-            set_aside += _set_aside_own_lines(lines[key])
+            set_aside += _set_aside_own_lines(lines[key], weekly_plan_id)
         else:
             for row in lines[key]:
                 if row["status"] == "removed":
@@ -1523,17 +1543,115 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
             "put_back": put_back, "cancelled": cancelled}
 
 
-def _set_aside_own_lines(lines: list[dict]) -> list[int]:
-    """Take this plan's own still-to-buy lines for one frozen item off the
-    list, the freezer step's way (FREEZER_REMOVED_BY). Returns their ids."""
+def _set_aside_own_lines(lines: list[dict], weekly_plan_id: int, entry_ids=None) -> list[int]:
+    """
+    Take this plan's own amount of one frozen item off the list, the
+    freezer step's way (FREEZER_REMOVED_BY). Returns the ids of the lines
+    now set aside.
+
+    ONLY THE PLAN'S AMOUNT (Emily, 2026-10-12). A line can hold the plan's
+    pound of salmon AND the household's own two — a hand add before
+    approval that the plan joined, or after it, which makes the line
+    theirs (source_weekly_plan_id NULL). Setting that whole line aside took
+    their two pounds off the list with the plan's one. So a line the plan
+    wrote is set aside as before, and a household's own line has the plan's
+    recorded share split off it into a set-aside line of its own
+    (_split_off_plan_share): their amount stays to buy, and "not frozen
+    after all" (pre_shop.undo_pre_shop_drop on the split line) puts back
+    exactly the plan's amount, once. A household's own line carrying none of
+    this plan's meals — or one whose amounts can't be read apart — is left
+    to buy: buying again costs a trip, losing their amount costs the meal.
+    `entry_ids` narrows "the plan's share" to those meals' (a batch change
+    restating the answer for its own nights).
+    """
     from . import pre_shop as _pre_shop
 
     out = []
     for row in _own_lines(lines):
-        if row["status"] != "removed":
-            _pre_shop.drop_grocery_item_pre_shop(row["id"], author=FREEZER_REMOVED_BY)
-            out.append(row["id"])
+        if row["status"] == "removed":
+            continue
+        if row["source_weekly_plan_id"] is None or row.get("staple_id"):
+            split = _split_off_plan_share(row["id"], weekly_plan_id, entry_ids)
+            if split is None:
+                continue
+            if split != row["id"]:
+                out.append(split)
+                continue
+        _pre_shop.drop_grocery_item_pre_shop(row["id"], author=FREEZER_REMOVED_BY)
+        out.append(row["id"])
     return out
+
+
+def _split_off_plan_share(line_id: int, weekly_plan_id: int, entry_ids=None) -> int | None:
+    """
+    Move this plan's share of a household's own grocery line onto a line of
+    its own, set aside as frozen. Returns the new line's id; `line_id`
+    itself when the line is all the plan's (nothing of the household's to
+    keep, so the caller sets the whole line aside as it always did); None
+    when there is nothing of this plan's on it or the amounts can't be read
+    apart (the caller leaves it to buy).
+
+    The plan's share is its ledger rows (meal_plan_grocery_links) — moved
+    to the new line, so every later recount (a swap, a "−", its Undo)
+    finds the frozen meals on the frozen line and the household's line
+    holds only what is theirs. What stays on their line is
+    grocery._restate_standing_want's answer, the same arithmetic a dropped
+    night takes off it, so the two never disagree about where the plan's
+    part ends. One transaction: either the share moved or nothing did.
+    """
+    from . import grocery as _grocery
+
+    wanted = None if entry_ids is None else {int(i) for i in entry_ids}
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT id, item, quantity, category, status, store FROM grocery_items "
+            "WHERE id = ? AND household_id = ?",
+            (line_id, household_id()),
+        ).fetchone()
+        if row is None or row["status"] not in _STILL_TO_BUY_STATUSES:
+            return None
+        links = conn.execute(
+            "SELECT l.id, l.quantity, e.weekly_plan_id, e.id AS entry_id "
+            "FROM meal_plan_grocery_links l JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+            "WHERE l.household_id = ? AND l.grocery_item_id = ?",
+            (household_id(), line_id),
+        ).fetchall()
+        mine = [
+            l for l in links
+            if l["weekly_plan_id"] == weekly_plan_id and (wanted is None or l["entry_id"] in wanted)
+        ]
+        if not mine:
+            return None
+        mine_ids = {l["id"] for l in mine}
+        others = [l["quantity"] or "" for l in links if l["id"] not in mine_ids]
+        totals = _quantities._ledger_totals([l["quantity"] or "" for l in links], others)
+        share = _quantities._ledger_totals([l["quantity"] or "" for l in mine], [])
+        restated = None if totals is None else _grocery._restate_standing_want(row["quantity"] or "", *totals)
+        if share is None or restated is None:
+            return None
+        left, nothing_left = restated
+        if nothing_left or not left:
+            return line_id
+        amount, _none, unit = share
+        rounded, rounded_unit = _quantities._shopping_round(amount, unit)
+        cur = conn.execute(
+            "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, status, "
+            "source_weekly_plan_id, store, removed_by, removed_at) "
+            "VALUES (?, ?, ?, ?, 'ai', 'removed', ?, ?, ?, datetime('now'))",
+            (household_id(), row["item"], _quantities._humanize_grocery_quantity(rounded, rounded_unit),
+             row["category"], weekly_plan_id, row["store"] or "", FREEZER_REMOVED_BY),
+        )
+        new_id = cur.lastrowid
+        conn.executemany(
+            "UPDATE meal_plan_grocery_links SET grocery_item_id = ? WHERE id = ? AND household_id = ?",
+            [(new_id, l["id"], household_id()) for l in mine],
+        )
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+            (left, line_id, household_id()),
+        )
+    return new_id
 
 
 def _book_frozen_moves(conn, weekly_plan_id, plan_meats, selected_lower, today, dinner_window, entry_ids=None):
@@ -1702,7 +1820,16 @@ def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
             # books Friday a move, so setting it aside meant salmon neither
             # bought nor thawed. Left needed, by the rule above.
             outside = _lines_with_other_meals([r["id"] for r in plan_owned], ids)
-            fresh = _set_aside_own_lines([r for r in plan_owned if r["id"] not in outside])
+            fresh = _set_aside_own_lines([r for r in plan_owned if r["id"] not in outside], weekly_plan_id)
+            # The household's own line the rescale merged these nights back
+            # into (2026-10-12: "−" then Undo showed their 2 lb plus the
+            # frozen 1 lb): only THESE nights' share comes off it, onto a
+            # set-aside line of its own (_split_off_plan_share).
+            own = [
+                r for r in rows_for_item
+                if r["source_weekly_plan_id"] is None and r["status"] != "removed"
+            ]
+            fresh += _set_aside_own_lines(own, weekly_plan_id, entry_ids=set(ids))
             set_aside += fresh
             if fresh:
                 _retire_superseded_freezer_lines(plan_owned, keep=fresh)

@@ -453,6 +453,11 @@ def test_a_row_with_no_location_on_it_is_read_the_way_every_screen_reads_it():
 # line off. So a line to buy no longer silences, and each item says
 # whether it has one (`on_list`), which is what the step's "off the
 # shopping list" half is promised on.
+#
+# The line these tests add is the PLAN's (source_weekly_plan_id), standing
+# in for what approval would put there: since 2026-10-12 a yes takes only
+# the plan's share, so a hand add carrying none of this plan's meals stays
+# to buy and is not `on_list` (test_freezer_takes_only_the_plans_share.py).
 
 def test_something_still_on_the_shopping_list_is_asked_about_and_says_so():
     """CATCH — the whole chicken. Until 2026-09-21 this list was empty at
@@ -461,7 +466,8 @@ def test_something_still_on_the_shopping_list_is_asked_about_and_says_so():
     _household()
     _meat("Roast Chicken", "Whole Chicken")
     plan_id = _meat_week((NEXT_THU, "Roast Chicken"))
-    tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood")
+    tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood",
+                           source_weekly_plan_id=plan_id)
 
     assert _on_list(plan_id) == [("Whole Chicken", True)]
 
@@ -473,7 +479,8 @@ def test_every_kind_of_line_still_to_buy_counts_as_on_the_list(status):
     _household()
     _meat()
     plan_id = _meat_week()
-    tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood")
+    tools.add_grocery_item("Chicken Thighs", quantity="1 lb", category="meat/seafood",
+                           source_weekly_plan_id=plan_id)
     _sql("UPDATE grocery_items SET status = ?", status)
 
     assert _on_list(plan_id) == [("Chicken Thighs", True)]
@@ -528,7 +535,8 @@ def test_a_plural_spelling_is_still_the_same_thing():
     _household()
     _meat()
     plan_id = _meat_week()
-    tools.add_grocery_item("Chicken Thigh", quantity="1 lb", category="meat/seafood")
+    tools.add_grocery_item("Chicken Thigh", quantity="1 lb", category="meat/seafood",
+                           source_weekly_plan_id=plan_id)
 
     assert _on_list(plan_id) == [("Chicken Thighs", True)]
 
@@ -812,7 +820,8 @@ def test_the_route_serves_the_narrowed_list(signed_in):
     plan_id = _meat_week((NEXT_TUE, "Shrimp Skewers"), (NEXT_THU, "Roast Chicken"),
                          (NEXT_SAT, "Chicken Skewers"))
     tools.update_inventory("Shrimp", "add", quantity="3 lbs", location="fridge", category="meat/seafood")
-    tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood")
+    tools.add_grocery_item("Whole Chicken", quantity="1", category="meat/seafood",
+                           source_weekly_plan_id=plan_id)
 
     body = signed_in.get(f"/api/week/{NEXT_WEEK}/defrost-items").json()
     assert body["weekly_plan_id"] == plan_id
