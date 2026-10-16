@@ -95,6 +95,8 @@ def test_a_can_size_after_the_word_reaches_the_grocery_layer():
     # Not shorthand: a word that only starts with T stays the item.
     ("2 T-bone steaks", "T-bone steaks", "2"),
     ("4 Thyme sprigs", "Thyme sprigs", "4"),
+    ("2 T bone steaks", "T bone steaks", "2"),
+    ("1 large T bone steak", "T bone steak", "1 large"),
 ])
 def test_cookbook_t_and_capital_t_are_teaspoon_and_tablespoon(line, item, qty):
     """"2 T butter" saved an item called "T butter" with a bare "2"
