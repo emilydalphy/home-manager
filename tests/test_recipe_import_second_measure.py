@@ -85,3 +85,18 @@ def test_a_bracket_that_sizes_or_describes_keeps_what_it_says(line, item, qty):
 def test_a_can_size_after_the_word_reaches_the_grocery_layer():
     qty = ri.split_ingredient_line("1 can (15 oz) black beans, drained")["qty"]
     assert tools._parse_quantity(qty) == (1.0, "can (15 oz)")
+
+
+@pytest.mark.parametrize("line,item,qty", [
+    ("2 T butter", "butter", "2 tbsp"),
+    ("3 T. honey", "honey", "3 tbsp"),
+    ("1 t salt", "salt", "1 tsp"),
+    ("1 t. vanilla", "vanilla", "1 tsp"),
+    # Not shorthand: a word that only starts with T stays the item.
+    ("2 T-bone steaks", "T-bone steaks", "2"),
+    ("4 Thyme sprigs", "Thyme sprigs", "4"),
+])
+def test_cookbook_t_and_capital_t_are_teaspoon_and_tablespoon(line, item, qty):
+    """"2 T butter" saved an item called "T butter" with a bare "2"
+    (defect hunt, 2026-10-16). Case decides which spoon it is."""
+    assert ri.split_ingredient_line(line) == {"item": item, "qty": qty}

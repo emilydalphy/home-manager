@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Recipe links: cookbook "T" and "t" are tablespoon and teaspoon**
+  (2026-10-16; branch `overnight/recipe-link-short-units`).
+  `split_ingredient_line` lower-cased the unit before matching, so "2 T
+  butter" saved an item called "T butter" with a bare "2". A lone "T"/"T."
+  now reads as tbsp and "t"/"t." as tsp, before the lower-casing.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
