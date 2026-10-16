@@ -156,6 +156,29 @@ console.log(JSON.stringify({
     assert "put in the freezer'" not in SHELL_JS
 
 
+def test_freezing_one_nights_share_names_the_night_in_the_toast():
+    """One pack, two dinners: the block under the line says "Sunday's in the
+    freezer" while the sooner night's share stays in the fridge. The toast
+    said "Ground beef is in the freezer" — the whole pack (2026-10-16)."""
+    script = _STUBS + _TOAST_CORE + """
+console.log(JSON.stringify({
+  share: freezerLine('Ground beef', false, 'Sunday'),
+  plural: freezerLine('Chicken thighs', false, 'Sunday'),
+  acronym: freezerLine('BBQ ribs', false, 'Friday'),
+  whole: freezerLine('Ground beef', false, ''),
+  plain: freezerLine('', false, 'Sunday')
+}));
+"""
+    out = _node(script)
+    assert out["share"] == "Sunday’s ground beef is in the freezer"
+    assert out["plural"] == "Sunday’s chicken thighs are in the freezer"
+    assert out["acronym"] == "Friday’s BBQ ribs are in the freezer"
+    assert out["whole"] == "Ground beef is in the freezer"
+    assert out["plain"] == "Saved"
+    # The shop-tick answer passes the night only when some stays fresh.
+    assert "freezerLine(frozen && frozen.item, false, f.keepFresh ? f.cookWeekday : '')" in SHELL_JS
+
+
 def test_the_rule_is_written_down_where_the_others_are():
     assert "S10 · A decision is saved on purpose, and the app says so." in DESIGN
     # The words S10 quotes are not asserted here on purpose — see this
