@@ -1004,12 +1004,22 @@ def _usual_week_off(week_start: str, day_count: int = 7) -> list[dict]:
     and silently dropped. Never raises: an unreadable usual week asks
     about every lunch, as before.
     """
+    from . import memory as _memory
     from . import usual_week as _usual_week
 
     try:
         dates = period_dates(week_start, day_count)
-        whole = _usual_week.switched_off_meals()
+        whole = set(_usual_week.switched_off_meals())
         off = _usual_week.off_slots_on(dates)
+        # The planner's zero-count pass reads the raw count, not the grid
+        # (agent.py, zero_counts), and a count set to 0 from chat or What we
+        # know leaves a saved grid as it was (review, 2026-10-16) — so a 0
+        # here is off all week too, or step 3 would ask about lunches the
+        # draft then empties.
+        counts = _memory.get_household_memory() or {}
+        for slot, key in (("lunch", "lunches_per_week"), ("dinner", "dinners_per_week")):
+            if counts.get(key) == 0:
+                whole.add(slot)
     except Exception:
         return []
     return [

@@ -73,6 +73,23 @@ def test_a_grid_says_exactly_the_days_it_has_off():
     ])
 
 
+def test_a_count_set_to_zero_after_the_grid_wins_as_the_planner_reads_it():
+    """Review, 2026-10-16: lunch Mon-Wed in a saved grid, then lunches set to
+    0 from chat or What we know. The grid keeps Mon-Wed on, but the
+    planner's zero-count pass reads the count and empties every lunch — so
+    step 3 must not ask about Mon-Wed either."""
+    grid = {
+        "lunch": {d: ("everyone" if d in ("monday", "tuesday", "wednesday") else "off") for d in WEEKDAYS},
+        "dinner": {d: "everyone" for d in WEEKDAYS},
+    }
+    tools.save_usual_week(grid=grid)
+    tools.set_household_meal_preferences(lunches_per_week=0)
+    mon = _monday()
+    off = tools.get_week_intake_prefill(mon)["usual_week_off"]
+    assert sorted(o["date"] for o in off if o["slot"] == "lunch") == [_plus(mon, i) for i in range(7)]
+    assert not [o for o in off if o["slot"] == "dinner"]
+
+
 def test_a_household_that_never_said_has_nothing_off_and_a_long_period_is_covered():
     mon = _monday()
     assert tools.get_week_intake_prefill(mon)["usual_week_off"] == []
