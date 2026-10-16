@@ -8747,6 +8747,11 @@ def whoami(request: Request):
         # and only when this phone's own zone disagrees — never for a
         # household that already said, so a trip never re-zones it.
         "timezone_set": tools.household_clock()["timezone_set"],
+        # The browser's own names for that same zone (Chrome says
+        # "Asia/Calcutta" for a stored Asia/Kolkata — rhythm's
+        # _BROWSER_ZONE_NAMES), so the shell never takes the phone for
+        # being somewhere else when it is not.
+        "timezone_aliases": tools.browser_zone_names(getattr(zone, "key", "") or ""),
         "member": member,
         "adults": adults,
         "needs_pick": member is None and len(adults) > 1,

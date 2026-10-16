@@ -707,8 +707,12 @@ def get_household_rhythm() -> dict:
 def checked_timezone(name: str) -> str:
     """An IANA zone name, stripped, or ValueError. The ONE validator for
     households.timezone — the morning-text settings use it too, so the
-    column has one rule rather than two that can drift."""
+    column has one rule rather than two that can drift.
+
+    A browser's old name for a zone is taken as the zone it names, and the
+    current name is what gets stored (_BROWSER_ZONE_NAMES)."""
     zone = (name or "").strip()
+    zone = _BROWSER_ZONE_NAMES.get(zone, zone)
     try:
         ZoneInfo(zone)
     except (ZoneInfoNotFoundError, ValueError):
@@ -724,6 +728,50 @@ def checked_timezone(name: str) -> str:
 
 
 _NOT_PLACES = frozenset({"localtime", "posixrules", "Factory"})
+
+# The names Chrome (and every browser on its engine — Edge, Samsung
+# Internet, Android's web view) gives for these zones, against the names
+# the server's zone data knows them by. Chrome keeps the OLD spelling:
+# measured on Chromium 141, a phone in India reports
+# Intl…resolvedOptions().timeZone as "Asia/Calcutta", and its own
+# supportedValuesOf('timeZone') lists Calcutta and not Kolkata. The old
+# names are only links in the zone database, and the server's copy can be
+# built without them (this sandbox's is: ZoneInfo("Asia/Calcutta") fails),
+# so checked_timezone refused them — and setup's last tap posts the
+# phone's zone with the rest of the rhythm, so a household in India,
+# Vietnam, Ukraine, Nepal, Myanmar or Argentina on Chrome got "Couldn't
+# save that" on "Build my first week" however often they tried, and
+# Today's "Use Calcutta time" failed the same way (defect hunt,
+# 2026-10-16). The complete list: every name in Chromium 141's
+# supportedValuesOf('timeZone') that Python's available_timezones() does
+# not list, each mapped to the zone it is a link to.
+_BROWSER_ZONE_NAMES = {
+    "Africa/Asmera": "Africa/Asmara",
+    "America/Buenos_Aires": "America/Argentina/Buenos_Aires",
+    "America/Catamarca": "America/Argentina/Catamarca",
+    "America/Cordoba": "America/Argentina/Cordoba",
+    "America/Godthab": "America/Nuuk",
+    "America/Indianapolis": "America/Indiana/Indianapolis",
+    "America/Jujuy": "America/Argentina/Jujuy",
+    "America/Louisville": "America/Kentucky/Louisville",
+    "America/Mendoza": "America/Argentina/Mendoza",
+    "Asia/Calcutta": "Asia/Kolkata",
+    "Asia/Katmandu": "Asia/Kathmandu",
+    "Asia/Rangoon": "Asia/Yangon",
+    "Asia/Saigon": "Asia/Ho_Chi_Minh",
+    "Atlantic/Faeroe": "Atlantic/Faroe",
+    "Europe/Kiev": "Europe/Kyiv",
+    "Pacific/Enderbury": "Pacific/Kanton",
+    "Pacific/Ponape": "Pacific/Pohnpei",
+    "Pacific/Truk": "Pacific/Chuuk",
+}
+
+
+def browser_zone_names(zone: str) -> list[str]:
+    """The names a browser may give for `zone` besides `zone` itself —
+    ["Asia/Calcutta"] for Asia/Kolkata — so the shell can tell a phone
+    that says Calcutta is on the household's clock, not somewhere else."""
+    return sorted(old for old, new in _BROWSER_ZONE_NAMES.items() if new == zone)
 
 
 @lru_cache(maxsize=1)
