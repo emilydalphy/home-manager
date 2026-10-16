@@ -1388,8 +1388,14 @@ def sync_due_staples() -> dict:
     where it is called from (get_grocery_list_by_section and
     get_grocery_list_by_store, for status 'needed').
     """
+    # The household's day and zone, read before this function's own
+    # connection opens (each helper opens one of its own).
+    from . import cooker as _cooker
+    from . import pre_shop as _pre_shop
+    today_date = _today()
+    day_began = _pre_shop._household_day_start_utc(today_date, _cooker.household_zone())
     conn = get_conn()
-    today = _iso(_today())
+    today = _iso(today_date)
     due = conn.execute(
         "SELECT * FROM staples WHERE household_id = ? AND paused = 0 AND next_due_at <= ? ORDER BY item",
         (household_id(), today),
@@ -1407,12 +1413,14 @@ def sync_due_staples() -> dict:
     # pre-shop drop — is this trip's answer; don't ask again until
     # tomorrow at the earliest. Older removed lines are just leftovers of
     # earlier answers, and go.
-    # One clock: the module's _today(), not SQLite's UTC date('now').
-    # removed_at is stamped in UTC and _today() is the HOUSEHOLD's day, so
-    # west of UTC a line removed this evening carries tomorrow's UTC date
-    # and stays inside this window for longer. That direction is still
-    # quiet — an answered line is kept as answered, never re-offered — and
-    # it is the only comparison in this module the phrase covers.
+    # One clock, instant against instant: removed_at is stamped in UTC, so
+    # it is compared with the UTC moment the HOUSEHOLD's today began
+    # (pre_shop._household_day_start_utc), not with today's date. Comparing
+    # date(removed_at) with the household's date was quiet west of UTC but
+    # not east of it (defect hunt, 2026-10-16): in Kolkata a "Not this trip"
+    # tapped at 9am is still yesterday in UTC, so the next read of the list
+    # deleted the row, and Undo had nothing to put back — it made a fresh
+    # line and lost the store and amount the household had set.
     #
     # It is NOT a blessing on the module's clock generally, which is how
     # it read while _today() was the server's: the due test right above
@@ -1421,8 +1429,8 @@ def sync_due_staples() -> dict:
     # _today() for the measurement.
     conn.execute(
         "DELETE FROM grocery_items WHERE household_id = ? AND staple_id IS NOT NULL AND status = 'removed' "
-        "AND date(removed_at) < ?",
-        (household_id(), today),
+        "AND removed_at < ?",
+        (household_id(), day_began),
     )
     answered_today = {
         row["staple_id"]
