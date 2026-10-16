@@ -166,6 +166,7 @@ console.log(JSON.stringify({
   plural: freezerLine('Chicken thighs', false, 'Sunday'),
   acronym: freezerLine('BBQ ribs', false, 'Friday'),
   whole: freezerLine('Ground beef', false, ''),
+  titled: freezerLine('Ground Beef', false, 'Sunday'),
   plain: freezerLine('', false, 'Sunday')
 }));
 """
@@ -174,6 +175,7 @@ console.log(JSON.stringify({
     assert out["plural"] == "Sunday’s chicken thighs are in the freezer"
     assert out["acronym"] == "Friday’s BBQ ribs are in the freezer"
     assert out["whole"] == "Ground beef is in the freezer"
+    assert out["titled"] == "Sunday’s Ground Beef is in the freezer"
     assert out["plain"] == "Saved"
     # The shop-tick answer passes the night only when some stays fresh.
     assert "freezerLine(frozen && frozen.item, false, f.keepFresh ? f.cookWeekday : '')" in SHELL_JS

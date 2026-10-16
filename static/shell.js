@@ -2381,14 +2381,16 @@
   // so the toast says whose it is, as the answered block under the line
   // does: "Sunday’s ground beef is in the freezer", not the whole pack's
   // "Ground beef is in the freezer" (2026-10-16). The name's first letter
-  // drops to lower case mid-sentence unless it reads as an acronym ("BBQ").
+  // drops to lower case mid-sentence unless it reads as an acronym ("BBQ")
+  // or the household typed it in title case ("Ground Beef" would otherwise
+  // come out "ground Beef").
   function freezerLine(thing, already, night) {
     var where = (already ? 'already ' : '') + 'in the freezer';
     var name = savedName(thing);
     if (!name) return SAVED_PLAIN;
     var said = name;
     if (night) {
-      if (!/^\S[A-Z]/.test(name)) said = name.charAt(0).toLowerCase() + name.slice(1);
+      if (!/^\S[A-Z]/.test(name) && !/\s[A-Z]/.test(name)) said = name.charAt(0).toLowerCase() + name.slice(1);
       said = night + '’s ' + said;
     }
     return said + (savedIsPlural(name) ? ' are ' : ' is ') + where;
