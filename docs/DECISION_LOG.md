@@ -23,6 +23,8 @@ why*, not duplicating the diff.
   (package/box/pack/packet/carton/block; not bag/bottle/jar/tub, not oils or
   spices, not when implausible), and "package"/"pkg" are package words.
   The grocery side is untouched.
+  Review follow-up: a stated count ("10 count") is that many pieces, and a
+  packet under an ounce (yeast, gelatin) keeps the line as written.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,

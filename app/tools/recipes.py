@@ -2459,13 +2459,33 @@ def _stated_package_amount(item: str, shopping_qty: str, servings: int | None = 
     )
     if not m or m.group("word").lower() not in _PER_USE_PACKAGE_WORDS:
         return None
-    if any(_item_matches(_clean_item(item), w) for w in _NEVER_CANNED_WORDS):
-        return None
     count = _step_number(m.group("n"))
     size_text = re.sub(r"\b(?:each|about|approx\.?|approximately)\b", " ", m.group("size"), flags=re.IGNORECASE)
     size_text = re.sub(r"(\d)\s*-\s*([a-z])", r"\1 \2", size_text, flags=re.IGNORECASE)
-    size = _quantities._parse_quantity(" ".join(size_text.split()))
-    if not count or count <= 0 or not size or size[1] not in _quantities._measure_units():
+    size_text = " ".join(size_text.split())
+    if not count or count <= 0:
+        return None
+    # "1 (10 count) package flour tortillas" is ten tortillas — the count
+    # the recipe stated, not the table's per-4 eight (review, 2026-10-16).
+    counted = re.fullmatch(r"(\d+)\s*(?:count|ct\.?|pieces|pcs\.?)", size_text, flags=re.IGNORECASE)
+    if counted:
+        pieces = count * int(counted.group(1))
+        if abs(pieces - round(pieces)) > 1e-9 or implausible_quantity(item, str(int(pieces)), servings):
+            return None
+        return str(int(pieces))
+    # Counted pieces are checked before this: "flour" is never used whole,
+    # but "flour tortillas, 10 count" is ten tortillas.
+    if any(_item_matches(_clean_item(item), w) for w in _NEVER_CANNED_WORDS):
+        return None
+    size = _quantities._parse_quantity(size_text)
+    if not size or size[1] not in _quantities._measure_units():
+        return None
+    # A packet under an ounce is yeast, gelatin, a seasoning mix: measured
+    # in spoons and never halved by weight ("⅛ oz active dry yeast" at a
+    # table of two — review, 2026-10-16). It takes the table's spoons, the
+    # same as an unsized "1 packet yeast" always has.
+    grams = {"oz": 28.35, "g": 1.0, "kg": 1000.0, "lb": 453.6}.get(size[1])
+    if grams is not None and size[0] * grams < 28:
         return None
     amount = _quantities._format_quantity(round(count * size[0], 3), size[1])
     if implausible_quantity(item, amount, servings):

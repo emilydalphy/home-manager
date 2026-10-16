@@ -82,3 +82,22 @@ def test_an_implausible_stated_size_falls_back_to_the_table():
     assert tools.cooking_ingredients(
         [{"item": "chicken thighs", "qty": "1 package (5 lb)"}], servings=4,
     )[0]["qty"] == "1.5 lb"
+
+
+def test_a_small_packet_keeps_its_whole_packet_rather_than_an_ounce_fraction():
+    """Review, 2026-10-16: "1 package (.25 ounce)" of yeast read "¼ oz", and
+    "⅛ oz" at a table of two. Under an ounce it is spoons or the whole
+    packet, never a weight to halve — the line stays as the recipe wrote it."""
+    assert tools.recipes._stated_package_amount("active dry yeast", "1 package (.25 ounce)", 4) is None
+    shown = tools.cooking_ingredients([{"item": "active dry yeast", "qty": "1 package (.25 ounce)"}], servings=4)[0]["qty"]
+    assert "oz" not in shown
+
+
+@pytest.mark.parametrize("item, qty, shows", [
+    ("flour tortillas", "1 package (10 count)", "10"),
+    ("corn tortillas", "2 packages (12 ct)", "24"),
+])
+def test_a_stated_count_is_that_many_pieces(item, qty, shows):
+    """Review, 2026-10-16: "1 (10 count) package flour tortillas" showed the
+    table's 8 — the count the recipe stated, thrown away."""
+    assert tools.recipes._stated_package_amount(item, qty, 4) == shows
