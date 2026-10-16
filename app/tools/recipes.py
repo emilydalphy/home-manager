@@ -1398,6 +1398,21 @@ COOKING_BASE_SERVINGS = 4
 _COOKING_PACKAGE_UNITS = {
     "bag", "bottle", "box", "carton", "container", "jar", "pack", "packet",
     "punnet", "sachet", "tub",
+    # "package" is how a recipe off the web (and the import sheet, which
+    # turns "1 (16 ounce) package spaghetti" into "1 package (16 ounce)")
+    # spells "pack", and the parser keeps its plural. Missing from here,
+    # the Cook screen said "1 package spaghetti" (defect hunt, 2026-10-16).
+    "package", "packages", "pkg",
+}
+
+# Packages of things eaten a package at a time — quantities' own line
+# (the comment above _PACKAGE_UNITS: "a box of pasta, a carton of broth, a
+# packet of yeast"), so bag/bottle/jar/tub/container, which a household
+# draws on all week, are deliberately not here. When one of these states
+# its size, the size IS what goes in the pan: see _stated_package_amount.
+_PER_USE_PACKAGE_WORDS = {
+    "package", "packages", "pkg", "pkgs", "box", "boxes", "pack", "packs",
+    "packet", "packets", "carton", "cartons", "block", "blocks",
 }
 
 # "1 can (14 oz)" is the exception a household really does cook from — a
@@ -2409,6 +2424,55 @@ def _stated_can_count(base: str, shopping_qty: str) -> str | None:
     return _quantities._format_quantity(stated[0], parsed_base[1])
 
 
+_SIZED_PACKAGE_RE = re.compile(
+    r"^\s*(?P<n>\d+(?:\.\d+)?(?:\s+\d+/\d+)?|\d+/\d+)\s+(?P<word>[a-z]+)\s*\((?P<size>[^()]*)\)\s*$",
+    re.IGNORECASE,
+)
+
+
+def _stated_package_amount(item: str, shopping_qty: str, servings: int | None = None) -> str | None:
+    """
+    "8 oz" for "1 package (8 oz)" cream cheese, "16 oz" for "2 packages
+    (8 oz each)": the amount a sized per-use package says it holds, times
+    how many of them. None for anything else.
+
+    A recipe off a link writes "1 (8 ounce) package cream cheese" and means
+    every ounce of it. The cook view used to throw the size away with the
+    package word and put the table's per-4 guess in its place, so the Cook
+    screen said "4 oz cream cheese" beside a recipe that uses eight, and
+    "2 oz" at a table of two (defect hunt, 2026-10-16). The size is a
+    measurement the recipe already stated; the table is only for a line
+    that has none.
+
+    Never for a package a household draws on all week (bag, bottle, jar,
+    tub — the size is the bottle, not the pour), never for a substance
+    that never goes in whole (a 5 lb box of sugar, a 1 oz packet of
+    seasoning — _NEVER_CANNED_WORDS), and never when the amount is out of
+    range for the table it is written for (implausible_quantity), so this
+    cannot reintroduce the stick of butter in a soup for two.
+    """
+    # The line as written first: the note splitter files a bracket it
+    # can't read ("8 oz each", "8-oz") as a note, which is the size.
+    raw = (shopping_qty or "").strip()
+    m = _SIZED_PACKAGE_RE.match(_ascii_fractions(raw)) or _SIZED_PACKAGE_RE.match(
+        _ascii_fractions(_quantities._split_quantity_note(raw)[0])
+    )
+    if not m or m.group("word").lower() not in _PER_USE_PACKAGE_WORDS:
+        return None
+    if any(_item_matches(_clean_item(item), w) for w in _NEVER_CANNED_WORDS):
+        return None
+    count = _step_number(m.group("n"))
+    size_text = re.sub(r"\b(?:each|about|approx\.?|approximately)\b", " ", m.group("size"), flags=re.IGNORECASE)
+    size_text = re.sub(r"(\d)\s*-\s*([a-z])", r"\1 \2", size_text, flags=re.IGNORECASE)
+    size = _quantities._parse_quantity(" ".join(size_text.split()))
+    if not count or count <= 0 or not size or size[1] not in _quantities._measure_units():
+        return None
+    amount = _quantities._format_quantity(round(count * size[0], 3), size[1])
+    if implausible_quantity(item, amount, servings):
+        return None
+    return amount
+
+
 def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str = "") -> str | None:
     """
     What actually goes in the pan for `item`, for `servings` people —
@@ -2421,6 +2485,12 @@ def cooking_quantity(item: str, servings: int | None = None, shopping_qty: str =
     same derivation the Cooker view uses for every recipe saved before
     cook_qty existed.
     """
+    # A sized package the recipe uses whole says its own amount, at the
+    # recipe's own table — ahead of the table's guess, like
+    # _stated_can_count below.
+    stated_package = _stated_package_amount(item, shopping_qty, servings)
+    if stated_package:
+        return stated_package
     base = _table_lookup(item)
     if base is None:
         clean = _clean_item(item)

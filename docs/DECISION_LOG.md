@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A sized package on the Cook screen is its size** (2026-10-16; branch
+  `overnight/sized-package-cook-amount`; tests
+  `tests/test_sized_package_cook_amount.py`). An imported "1 (8 ounce) package
+  cream cheese" showed "4 oz" at the recipe's own four (the table's guess; the
+  size was dropped with the package word), and "1 package (16 ounce)
+  spaghetti" stayed a package word that the stepper couldn't scale.
+  `recipes._stated_package_amount` reads the size for per-use packages
+  (package/box/pack/packet/carton/block; not bag/bottle/jar/tub, not oils or
+  spices, not when implausible), and "package"/"pkg" are package words.
+  The grocery side is untouched.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
