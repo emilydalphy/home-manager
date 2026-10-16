@@ -4742,6 +4742,14 @@ def _compute_freshness(meal_dicts: list[dict], plan_created_at: str) -> dict:
     ages. What this signal means is "this plan brought it in", and
     created_at is the honest record of that.
     Freeform/untracked entries (no saved recipe) aren't counted either way.
+
+    Each RECIPE counts once, however many meals it fills (defect hunt,
+    2026-10-16). Both readers say the number as recipes — share.html's
+    "N new recipes this week", the planning prompt's "two new recipes this
+    week" — and it used to be counted per meal, so one new overnight-oats
+    recipe on five breakfasts and a curry that also feeds Tuesday's
+    leftovers came out as seven new recipes. A seeded week of four recipes
+    read "14 new recipes this week" on the share page.
     """
     conn = get_conn()
     rows = conn.execute(
@@ -4750,17 +4758,15 @@ def _compute_freshness(meal_dicts: list[dict], plan_created_at: str) -> dict:
     conn.close()
     created_by_name = {r["name"].lower(): r["created_at"] for r in rows}
 
-    new_count = 0
-    repeat_count = 0
+    new_names: set[str] = set()
+    repeat_names: set[str] = set()
     for m in meal_dicts:
-        created_at = created_by_name.get((m["meal"] or "").lower())
+        name = (m["meal"] or "").lower()
+        created_at = created_by_name.get(name)
         if created_at is None:
             continue
-        if created_at >= plan_created_at:
-            new_count += 1
-        else:
-            repeat_count += 1
-    return {"new_recipe_count": new_count, "repeat_recipe_count": repeat_count}
+        (new_names if created_at >= plan_created_at else repeat_names).add(name)
+    return {"new_recipe_count": len(new_names), "repeat_recipe_count": len(repeat_names)}
 
 
 def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
@@ -4778,8 +4784,8 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     household's very first generated plan — mention this warmly, e.g.
     "here's your first week, built around what you told me") and
     `new_recipe_count`/`repeat_recipe_count` (the freshness signal — how
-    many planned meals are recipes this plan brought in vs. ones the
-    household already had saved).
+    many distinct recipes this plan brought in vs. ones the household
+    already had saved; a recipe on five days is one).
     """
     conn = get_conn()
     if weekly_plan_id is None:

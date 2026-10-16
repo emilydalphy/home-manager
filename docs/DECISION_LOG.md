@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"N new recipes this week" counts recipes, not meals** (2026-10-16, defect
+  hunt; branch `overnight/new-recipes-counted-once`; tests
+  `tests/test_new_recipes_counted_once.py`). `_compute_freshness` counted one
+  per meal, so a new oats recipe on five breakfasts plus a curry and its
+  leftovers night read as 7; the share page said "14 new recipes this week"
+  for a week of four. Both readers (share.html, the planning prompt) say it
+  as recipes, so each distinct recipe now counts once; same for repeats.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
