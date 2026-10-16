@@ -66,6 +66,7 @@ import os
 import posixpath
 import secrets
 import time
+from urllib.parse import quote
 
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, RedirectResponse
@@ -627,7 +628,15 @@ async def auth_middleware(request, call_next):
 
     wants_html = "text/html" in request.headers.get("accept", "")
     if wants_html and request.method == "GET":
-        response = RedirectResponse(url=f"/login?next={_safe_next(path)}", status_code=303)
+        # The query string rides along, encoded as one value (2026-10-16):
+        # a link like /plan-week?week=2026-10-19 used to come back from
+        # sign-in as plain /plan-week, the week it named gone, and an
+        # unencoded "&" would have split it into a second /login param.
+        target = path
+        query = request.scope.get("query_string", b"").decode("latin-1")
+        if query:
+            target = f"{path}?{query}"
+        response = RedirectResponse(url=f"/login?next={quote(_safe_next(target), safe='/')}", status_code=303)
     else:
         response = JSONResponse({"detail": "Please sign in again."}, status_code=401)
     if stale_cookie:
