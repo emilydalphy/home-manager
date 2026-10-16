@@ -987,6 +987,38 @@ def _usual_lunch() -> dict:
         return {"choice": None, "dishes": 0}
 
 
+def _usual_week_off(week_start: str, day_count: int = 7) -> list[dict]:
+    """
+    [{"date", "slot"}] for every lunch and dinner of the period the usual
+    week has off — the slots the planner will write empty whatever step 3
+    says (usual_week.settle_off_slots, and lunches_per_week 0's zero-count
+    pass for a meal off all week). Read the way the needs-you band reads it
+    (moves._usual_week_dinner_off): off_slots_on for a day the grid has off,
+    every day for a meal switched off entirely, since off_slots_on leaves
+    that one to the counts.
+
+    Why the screen needs it (defect hunt, 2026-10-16): a household with
+    lunch off in its usual week was asked "5 lunches, Monday to Friday" on
+    step 3 every week, "Same as last week?" said "5 cooked on the day", and
+    the draft then had no lunches at all — the answer was asked for, saved
+    and silently dropped. Never raises: an unreadable usual week asks
+    about every lunch, as before.
+    """
+    from . import usual_week as _usual_week
+
+    try:
+        dates = period_dates(week_start, day_count)
+        whole = _usual_week.switched_off_meals()
+        off = _usual_week.off_slots_on(dates)
+    except Exception:
+        return []
+    return [
+        {"date": d, "slot": slot}
+        for d in dates for slot in ("lunch", "dinner")
+        if slot in whole or (d, slot) in off
+    ]
+
+
 def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> list[dict]:
     """
     Per-day packed-lunch suggestions derived from household rhythm (Loop
@@ -1307,6 +1339,10 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # chosen. QA walk 2, 2026-10-02: the step opened on "Cooked that
         # day" every day whatever setup said. See plan-week.html lunchPrefill.
         "usual_lunch": _usual_lunch(),
+        # The lunches and dinners the usual week has off in this period —
+        # step 3 neither counts nor asks about a lunch here, nor offers one
+        # as leftovers of a dinner that won't be cooked. See _usual_week_off.
+        "usual_week_off": _usual_week_off(week_start, day_count),
         # What the mood screen opens already knowing: the moods and cuisines
         # the household chose for the period before this one, or None for a
         # first week. See _last_period_intake.
