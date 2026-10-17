@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The Plan root says where a short plan ends; "Before this plan" only
+  before it** (2026-10-17; branch `overnight/plan-says-where-it-ends`, tests
+  `tests/test_plan_ends_line.py`). A plan that stops before its week does
+  (made Wednesday for Wed–Fri, a short custom range) shows one quiet line,
+  "This plan ends Friday.", above the strip on both roots, and the button
+  already there (approved dock / draft band) reads "Plan from Saturday" —
+  same stretch and tap (planNextWeek), no second button. Server decides:
+  `next_period.after_short_plan` (next_period_after: the offer starts the
+  day after the plan, the plan is shorter than the household's horizon, and
+  it ends before its shown week's last day); nothing when the next day is
+  already held. `pastEmptyWord` dropped the "nothing in any slot" fallback:
+  a past day inside the plan the household emptied is "Not planned" again;
+  the server flags every lead-in day, and a payload without the key falls
+  back to the date against `period_start_date`.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,

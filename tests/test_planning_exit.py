@@ -140,6 +140,7 @@ def _review_root_html(status: str, root: bool) -> str:
         # reviewStepHtml needs a stub here or the harness cannot run.
         "function weekFlagsHtml(){ return ''; }\n"
         "function draftSoftNoteHtml(){ return ''; }\n"
+        "function planEndsLineHtml(){ return ''; }\n"
         "function reviewOpenIndex(){ return 0; }\n"
         "function wkDayMealCount(){ return 1; }\n"
         "function wkDayTabsHtml(){ return '<div class=\"wk-daytabs\"></div>'; }\n"

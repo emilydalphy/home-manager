@@ -2330,6 +2330,19 @@ def next_period_after(plan: dict, today: str = "") -> dict:
         start = following
         is_current = False
     day_count = int(suggestion["day_count"]) or 7
+    # The plan on screen stops before the week it is drawn in does — a plan
+    # made on a Wednesday for Wed–Fri, or a short custom range — and the
+    # stretch on offer is the day right after it. The Plan root then says
+    # where the plan ends and names that day on its button (Loop Board,
+    # "the plan says what it covers"). Shorter than the household's own
+    # horizon, so a household planning three days at a time is never told
+    # every plan "ends" early; and before the shown week's last day, so a
+    # part-week that runs to Sunday (onboarding on a Wednesday) says nothing.
+    week_end = date.fromisoformat(plan["week_start_date"]) + timedelta(days=6)
+    after_short_plan = bool(
+        days >= 1 and start == following and days < day_count
+        and following <= week_end
+    )
 
     held = find_overlapping_plans(start.isoformat(), day_count, exclude_plan_id=plan_id)
     is_planned = any(p["overlap_dates"][0] == start.isoformat() for p in held)
@@ -2351,6 +2364,7 @@ def next_period_after(plan: dict, today: str = "") -> dict:
         "is_planned": is_planned,
         "draft_plan_id": draft["weekly_plan_id"] if draft else None,
         "draft_week_start": draft["week_start_date"] if draft else None,
+        "after_short_plan": after_short_plan,
     }
 
 

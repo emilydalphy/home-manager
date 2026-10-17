@@ -200,11 +200,14 @@ def test_a_day_before_the_plan_began_reads_quietly_not_as_a_gap():
         + _function("pastEmptyWord")
         + "\nconsole.log(JSON.stringify(["
         "pastEmptyWord({ before_plan_start: true, dinner: null }),"          # server-flagged
-        "pastEmptyWord({ before_plan_start: false, breakfast: null, lunch: null, dinner: null }),"  # unflagged, nothing at all
+        # A past day INSIDE the plan the household emptied is a gap in this
+        # plan, not a day before it (review, 2026-10-17 — the first cut keyed
+        # "Before this plan" off "nothing in any slot" as well).
+        "pastEmptyWord({ before_plan_start: false, breakfast: null, lunch: null, dinner: null }),"
         "pastEmptyWord({ before_plan_start: false, dinner: { state: 'planned' } })"  # a real gap in a planned day
         "]));"
     )
-    assert out == ["Before this plan", "Before this plan", "Not planned"]
+    assert out == ["Before this plan", "Not planned", "Not planned"]
 
 
 def test_every_past_empty_slot_goes_through_the_one_word():
