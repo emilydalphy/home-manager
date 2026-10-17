@@ -15880,6 +15880,8 @@
     // plans from ("Plan from Saturday"), the line above it says where this
     // plan ends (planEndsLineHtml). Same stretch, same tap.
     if (next.after_short_plan && next.start_date && !next.is_planned && !next.draft_plan_id) {
+      // On the plan's last day the next day is tomorrow, said as such.
+      if (next.start_date === addDaysLocal(todayLocalStr(), 1)) return 'Plan from tomorrow';
       return 'Plan from ' + dayName(next.start_date, { weekday: 'long' });
     }
     if (next.draft_plan_id) {
@@ -15909,8 +15911,9 @@
     var next = nextPeriodFor(data || {}, (data || {}).days);
     if (!planEndsEarly(next)) return '';
     var last = addDaysLocal(next.start_date, -1);
+    var when = last === todayLocalStr() ? 'today' : dayName(last, { weekday: 'long' });
     return '<div class="wk-notes wk-draft-notes wk-plan-ends"><div class="wk-note">This plan ends ' +
-      escapeHtml(dayName(last, { weekday: 'long' })) + '.</div></div>';
+      escapeHtml(when) + '.</div></div>';
   }
 
   function planNextWeek() {

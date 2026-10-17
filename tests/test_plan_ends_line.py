@@ -87,6 +87,23 @@ def test_a_short_custom_range_filed_under_its_own_first_day_is_flagged_too():
     assert _offer(wed, 3, filed=wed)["after_short_plan"] is True
 
 
+def test_a_plan_that_has_already_ended_falls_back_to_the_ordinary_wording():
+    # Review, 2026-10-17: a Mon–Wed plan seen on Thursday. The fallback
+    # suggestion starts today, the same day as "the day after the plan",
+    # and must not be read as one.
+    # Pinned to the review's own dates: next_period_after takes the day as
+    # an argument, and on a Thursday the fallback suggestion is this week
+    # from today — which is what made the two days coincide.
+    nxt = _weekly_plan.next_period_after({
+        "weekly_plan_id": 987654,
+        "period_start_date": "2026-10-12",
+        "day_count": 3,
+        "week_start_date": "2026-10-12",
+    }, today="2026-10-15")
+    assert nxt["start_date"] == "2026-10-15", "the fallback really does start today"
+    assert nxt["after_short_plan"] is False
+
+
 def test_a_part_week_that_runs_to_sunday_and_a_whole_week_say_nothing():
     mon = _next_monday()
     assert _offer(mon + _dt.timedelta(days=2), 5, filed=mon)["after_short_plan"] is False
@@ -106,6 +123,8 @@ def _prelude() -> str:
         _function("escapeHtml") + "\n" + _DAYNAME
         + "var planningPeriodDefault = null;\n"
         + "function thisWeekStartLocal() { return '2026-10-12'; }\n"
+        + "var TODAY = '2026-10-14';\n"
+        + "function todayLocalStr() { return TODAY; }\n"
         + _function("addDaysLocal") + "\n"
         + _function("nextPeriodFor") + "\n"
         + _function("planEntryLabel") + "\n"
@@ -129,6 +148,17 @@ console.log(JSON.stringify([planEndsLineHtml(data), planNextLabel(nextPeriodFor(
     assert "This plan ends Friday." in out[0]
     assert "<button" not in out[0], "the next step is the button already on screen"
     assert out[1] == "Plan from Saturday"
+
+
+@_needs_node
+def test_on_the_plans_last_day_it_says_today_and_tomorrow():
+    data = {"weekly_plan_id": 1, "days": [{"date": "2026-10-14"}], "next_period": _SHORT}
+    out = _node(_prelude() + f"""
+TODAY = '2026-10-16';
+var data = {json.dumps(data)};
+console.log(JSON.stringify([planEndsLineHtml(data), planNextLabel(nextPeriodFor(data, data.days))]));""")
+    assert "This plan ends today." in out[0]
+    assert out[1] == "Plan from tomorrow"
 
 
 @_needs_node

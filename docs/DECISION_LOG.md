@@ -26,7 +26,10 @@ why*, not duplicating the diff.
   already held. `pastEmptyWord` dropped the "nothing in any slot" fallback:
   a past day inside the plan the household emptied is "Not planned" again;
   the server flags every lead-in day, and a payload without the key falls
-  back to the date against `period_start_date`.
+  back to the date against `period_start_date`. An already-ended plan never
+  carries the flag (`following > today`: its fallback offer can start today,
+  which read "Plan from Thursday" under a Mon–Wed plan); on the plan's last
+  day it says "This plan ends today." / "Plan from tomorrow".
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
