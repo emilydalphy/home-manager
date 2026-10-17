@@ -4195,6 +4195,7 @@ function revealSlotFromPlanMeal(m) {
   return {
     slot: m.slot, state: m.slot_state || 'planned',
     dish: String(m.meal || '').trim(), meta: '', entryId: m.entry_id || null, from: '', fromSlot: '', fromMeal: '',
+    past: m.slot_state === 'planned_empty' && !!m.past,
   };
 }
 
@@ -4256,7 +4257,10 @@ function groupRevealMealsByDay(meals) {
     if (!byDate.has(m.date)) byDate.set(m.date, { date: m.date, slots: {} });
     revealPlaceSlot(byDate.get(m.date).slots, revealSlotFromPlanMeal(m));
   });
-  return Array.from(byDate.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  // A day whose every meal had gone by is left out, as revealDaysFromMenu does.
+  return Array.from(byDate.values())
+    .filter(d => !Object.keys(d.slots).every(k => d.slots[k].past))
+    .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 }
 
 // get_week_menu's days → the same shape. Days before the plan's own start

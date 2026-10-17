@@ -16646,8 +16646,11 @@
   }
 
   // The day tabs above the carousel: 36px, sand, the one in view apricot.
+  // Eight or more days scroll sideways, as the week strip does (.is-long):
+  // a Saturday-night first plan runs into the next week and is filed under
+  // this one's Monday, so its draft has fourteen tabs.
   function wkDayTabsHtml(days, selected) {
-    return '<div class="wk-daytabs" role="tablist" aria-label="Days">' +
+    return '<div class="wk-daytabs' + (days.length > 7 ? ' is-long' : '') + '" role="tablist" aria-label="Days">' +
       days.map(function (day, i) {
         var on = i === selected;
         return '<button type="button" class="wk-daytab' + (on ? ' is-on' : '') + '" role="tab" ' +
@@ -16771,6 +16774,10 @@
     steps.querySelectorAll('.wk-dot-page').forEach(function (dot, i) {
       dot.classList.toggle('is-on', i === index);
     });
+    // A scrolling row of tabs keeps the day in view centred under the thumb.
+    var bar = steps.querySelector('.wk-daytabs.is-long');
+    var on = bar && bar.querySelector('[data-wk-daytab="' + index + '"]');
+    if (on) bar.scrollLeft = Math.max(0, on.offsetLeft - bar.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2);
   }
 
   function wireReviewCarousel(panel, steps) {

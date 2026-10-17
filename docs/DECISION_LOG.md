@@ -22,6 +22,10 @@ why*, not duplicating the diff.
   counts a fully gone today as no day: Saturday 11pm runs Sat + the next
   whole week (9 days) rather than a one-day reveal or a fold that orphans
   Saturday. Sunday still folds forward as before. Emily's call to revisit.
+  Review follow-up: that plan is filed under this Monday, so the draft's
+  day tabs number 14 — they now scroll (`.wk-daytabs.is-long`, as the
+  week strip does) and keep the open day centred; get_weekly_plan's rows
+  carry `past` too, so the reveal's no-menu fallback drops the gone day.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,

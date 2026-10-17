@@ -121,3 +121,41 @@ def test_saturday_11pm_first_plan_keeps_saturday_and_reveals_from_sunday(monkeyp
     assert all(saturday[s]["past"] for s in ("breakfast", "lunch", "dinner"))
     shown = _reveal_dates(days)
     assert shown[0] == "2026-10-18" and shown[-1] == "2026-10-25" and len(shown) == 8
+
+
+# ---------- the reveal's fallback (the menu fetch failed) ----------
+
+@reveal._needs_node
+def test_the_reveals_flat_fallback_also_leaves_out_a_gone_day():
+    plan_id = tools.create_weekly_plan(MONDAY)["weekly_plan_id"]
+    friday = "2026-10-16"
+    for slot in ("breakfast", "lunch", "dinner"):
+        _gone(plan_id, THURSDAY, slot)
+    tools.plan_meal(friday, "Tacos", slot="dinner", weekly_plan_id=plan_id)
+    meals = tools.get_weekly_plan(plan_id)["meals"]
+    assert all(m.get("past") for m in meals if m["date"] == THURSDAY)
+    assert not any(m.get("past") for m in meals if m["date"] == friday)
+    out = reveal._run(reveal._reveal_harness() + f"""
+console.log(JSON.stringify(groupRevealMealsByDay({json.dumps(meals)}).map(d => d.date)));
+""")
+    assert out == [friday]
+
+
+# ---------- the draft's day tabs, for a period longer than a week ----------
+
+import test_plan_cards_2026_09_18 as plan_cards  # noqa: E402
+
+
+def _tabs_class(n_days: int) -> str:
+    days = [plan_cards._day((_dt.date(2026, 10, 12) + _dt.timedelta(days=i)).isoformat()) for i in range(n_days)]
+    html = plan_cards._run(plan_cards._prelude() + f"console.log(JSON.stringify(wkDayTabsHtml({json.dumps(days)}, 5)));")
+    return html.split('"', 2)[1]
+
+
+@plan_cards._needs_node
+def test_a_saturday_nights_fourteen_draft_tabs_scroll_and_a_week_does_not():
+    # The nine-day first plan filed under this Monday: Mon 12 – Sun 25.
+    assert _tabs_class(14) == "wk-daytabs is-long"
+    assert _tabs_class(7) == "wk-daytabs"
+    css = plan_cards.SHELL_CSS
+    assert ".wk-daytabs.is-long {" in css and ".wk-daytabs.is-long .wk-daytab { flex: 0 0 46px; }" in css

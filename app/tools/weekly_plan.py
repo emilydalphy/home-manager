@@ -4809,7 +4809,8 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         f"""
         SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal,
                mpe.food_groups_json, mpe.component_category, mpe.cooked_status, mpe.reasoning,
-               mpe.slot_state, mpe.open_reason, mpe.sides_json, r.ingredients_json
+               mpe.slot_state, mpe.open_reason, mpe.sides_json, r.ingredients_json,
+               mpe.derived_from_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ?
@@ -4856,6 +4857,13 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     for _d in meal_dicts:
         if _d["slot_state"] == "planned_empty" and _d["slot"] in _switched_off:
             _d["meal_off"] = True
+    # …and one that had already gone by when the week was drafted says
+    # `past`, as get_week_menu's entry does (2026-10-17): the reveal's
+    # fallback leaves out a day whose every meal had gone, like the menu.
+    for _d, _m in zip(meal_dicts, meals):
+        if _d["slot_state"] == "planned_empty" and \
+                (json.loads(_m["derived_from_json"] or "{}").get("constraint") == "already_past"):
+            _d["past"] = True
     # One cook, packed several ways (Onboarding regrouped, 2026-10-05): a
     # planned weekday lunch carries how each person at it takes theirs —
     # "Arjun: nut-free, warm in a thermos". Worked out from their own

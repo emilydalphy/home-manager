@@ -9657,6 +9657,18 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
   cursor: pointer;
 }
 .wk-daytab::before { content: ""; position: absolute; inset: -4px 0; }
+/* Eight or more days scroll sideways, like .wk-strip.is-long. */
+.wk-daytabs.is-long {
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Room for the tab's taller tap area (::before) inside the scroller. */
+  padding-bottom: 4px;
+  margin-bottom: -4px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.wk-daytabs.is-long::-webkit-scrollbar { display: none; }
+.wk-daytabs.is-long .wk-daytab { flex: 0 0 46px; }
 .wk-daytab.is-on { background: var(--apricot); color: var(--on-accent-ink); }
 .wk-carousel {
   position: relative;
