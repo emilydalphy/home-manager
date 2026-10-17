@@ -45,6 +45,7 @@ from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
 from .tools import prep_sessions as _prep_sessions
+from .tools import today_meals as _today_meals
 from .tools import weekly_plan as _weekly_plan
 
 
@@ -1921,6 +1922,16 @@ def _first_plan_window(start_next_week: bool) -> tuple[str, int, str]:
       unchanged: a part-week with one day left in it folds forward into
       the next whole period instead, because a one-day plan is a lot of
       machinery for a single dinner.
+
+    A late-evening sign-up (every one of today's meals already gone, on
+    today_meals' clock) still keeps today IN the plan — a first week that
+    starts tomorrow leaves today in no plan, and Today and Meals then ask
+    to put a week together and for tonight's dinner (review of the
+    discarded tomorrow-start attempt). The reveal skips the gone day
+    instead (onboarding.html, revealDaysFromMenu). What changes here is
+    only the floor: a part-week whose one real day is tomorrow counts as
+    one day, and runs on through the next whole period rather than
+    folding forward and leaving today out.
     """
     # The household's day: the server is already tomorrow from 8pm Toronto,
     # which made a Sunday-evening sign-up's part-week start on Monday.
@@ -1937,8 +1948,18 @@ def _first_plan_window(start_next_week: bool) -> tuple[str, int, str]:
     if not start_next_week:
         content = today if today > start else start
         remaining = day_count - (content - start).days
-        if remaining > 1:
+        # Today counts as a day of the plan only while one of its meals is
+        # still ahead. Read off the same clock generation empties gone meals
+        # by, and only when that clock agrees which day today is.
+        now = _today_meals.household_now()
+        today_gone = now.date() == today and _today_meals.first_meal_ahead(now) is None
+        if remaining - (1 if today_gone else 0) > 1:
             return start.isoformat(), remaining, content.isoformat()
+        if today_gone and remaining > 1:
+            # 11pm on the period's second-to-last day: tomorrow alone would
+            # be a one-day reveal, and folding forward would orphan today.
+            # Carry the part-week through the next whole period instead.
+            return start.isoformat(), remaining + day_count, content.isoformat()
     nxt = start + datetime.timedelta(days=day_count)
     return nxt.isoformat(), day_count, nxt.isoformat()
 

@@ -4184,6 +4184,8 @@ function revealSlotFromMenu(slot, entry) {
     meta: meta,
     entryId: entry.entry_id || null,
     from: leftover ? leftover.date : '', fromSlot: '', fromMeal: leftover ? String(leftover.meal || '') : '',
+    // A meal that had already gone by when the week was drafted.
+    past: state === 'planned_empty' && !!entry.past,
   };
 }
 
@@ -4259,7 +4261,10 @@ function groupRevealMealsByDay(meals) {
 
 // get_week_menu's days → the same shape. Days before the plan's own start
 // and days with nothing on them are left out — a part-week's blank Monday
-// is not a day to swipe to.
+// is not a day to swipe to. So is a day whose every meal had gone by when
+// the week was drafted (an 11pm sign-up's today): the plan keeps it, so
+// Today and Meals still have tonight, but the reveal opens on the first
+// day with something on it rather than "0 meals · Nothing planned".
 function revealDaysFromMenu(menuDays) {
   const out = [];
   (menuDays || []).forEach(day => {
@@ -4275,7 +4280,8 @@ function revealDaysFromMenu(menuDays) {
       const s = revealSlotFromMenu('snack', entry);
       if (s) { s.key = revealSnackKey(i); slots[s.key] = s; }
     });
-    if (Object.keys(slots).length) out.push({ date: day.date, slots: slots });
+    const keys = Object.keys(slots);
+    if (keys.length && !keys.every(k => slots[k].past)) out.push({ date: day.date, slots: slots });
   });
   return out;
 }

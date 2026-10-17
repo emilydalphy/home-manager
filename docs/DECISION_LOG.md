@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A late-evening sign-up's reveal opens on the next day with meals**
+  (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
+  `tests/test_late_signup_reveal.py`). The plan still starts today (a
+  tomorrow-start left today in no plan: Today asked to put a week together
+  and for tonight's dinner — that attempt was discarded); the reveal leaves
+  out a day whose every meal is `past` on get_week_menu. `_first_plan_window`
+  counts a fully gone today as no day: Saturday 11pm runs Sat + the next
+  whole week (9 days) rather than a one-day reveal or a fold that orphans
+  Saturday. Sunday still folds forward as before. Emily's call to revisit.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
