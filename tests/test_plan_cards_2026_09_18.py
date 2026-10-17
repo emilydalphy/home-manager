@@ -75,6 +75,9 @@ def _prelude() -> str:
         # And the draft's soft line (draftSoftNoteHtml, 2026-10-13), for
         # the same reason — tests/test_step_only_allergens.py draws it.
         + "function draftSoftNoteHtml() { return ''; }\n"
+        # And "This plan ends Friday." (planEndsLineHtml, 2026-10-17), the
+        # same way — tests/test_plan_ends_line.py draws it.
+        + "function planEndsLineHtml() { return ''; }\n"
         + "function weekReplacesNote() { return ''; }\n"
         + "function dayAttendanceLine() { return ''; }\n"
         + "function planEntryLabel(n, which, planned) { return (planned ? 'Re-plan ' : 'Plan ') + (which === 'current' ? 'this week' : 'next week'); }\n"

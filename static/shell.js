@@ -15846,7 +15846,7 @@
     // only as the fallback for a payload without it.
     var next = nextPeriodFor(data, days);
     var selected = mealsCurrentDay() ? weekState.selectedIndex : 0;
-    return weekSuggestedNoteHtml(data) +
+    return weekSuggestedNoteHtml(data) + planEndsLineHtml(data) +
       weekStripHtml(days, selected) +
       (days[selected] ? weekDayHtml(days[selected], selected, data) : '') +
       weekNotesHtml(data, days[selected]) +
@@ -15876,11 +15876,44 @@
   // Re-plan is still the pill inside the draft.
   function planNextLabel(next) {
     next = next || {};
+    // A plan that stops before its week does: the button names the day it
+    // plans from ("Plan from Saturday"), the line above it says where this
+    // plan ends (planEndsLineHtml). Same stretch, same tap.
+    if (next.after_short_plan && next.start_date && !next.is_planned && !next.draft_plan_id) {
+      // On the plan's last day the next day is tomorrow, said as such.
+      if (next.start_date === addDaysLocal(todayLocalStr(), 1)) return 'Plan from tomorrow';
+      return 'Plan from ' + dayName(next.start_date, { weekday: 'long' });
+    }
     if (next.draft_plan_id) {
       if ((next.day_count || 7) !== 7) return 'See the draft';
       return next.is_current_period ? 'See this week’s draft' : 'See next week’s draft';
     }
     return planEntryLabel(next.day_count || 7, next.is_current_period ? 'current' : 'next', next.is_planned);
+  }
+
+  // Whether the stretch on offer starts the day after a plan that ends
+  // before the week it is drawn in — weekly_plan.next_period_after's
+  // after_short_plan — and nothing holds that day yet. A held day keeps
+  // its own "Re-plan" / "See the draft" wording and gets no line. (The
+  // same test is written out in planNextLabel, whose node tests load it
+  // without this helper.)
+  function planEndsEarly(next) {
+    return !!(next && next.after_short_plan && next.start_date &&
+      !next.is_planned && !next.draft_plan_id);
+  }
+
+  // "This plan ends Friday." — one quiet line on the Plan root when the
+  // plan stops before its week does, so the empty days after it are
+  // explained. Its next step is the button already on screen (the
+  // approved dock's #wk-plan-next, the draft band's #wk-band-plan-next),
+  // which planNextLabel names "Plan from Saturday" in this state.
+  function planEndsLineHtml(data) {
+    var next = nextPeriodFor(data || {}, (data || {}).days);
+    if (!planEndsEarly(next)) return '';
+    var last = addDaysLocal(next.start_date, -1);
+    var when = last === todayLocalStr() ? 'today' : dayName(last, { weekday: 'long' });
+    return '<div class="wk-notes wk-draft-notes wk-plan-ends"><div class="wk-note">This plan ends ' +
+      escapeHtml(when) + '.</div></div>';
   }
 
   function planNextWeek() {
@@ -16239,13 +16272,21 @@
   // What an empty slot on a day that has already gone by says. "Not
   // planned" read as a gap in the household's own plan on a Tuesday first
   // plan, for the Saturday–Monday before it began (Loop Board, walkthrough
-  // 2026-10-06). A day before the plan began — flagged by the server, or a
-  // past day with nothing in ANY slot, which is the same fact on a plan
-  // that did not flag it — says so quietly; a past day that has other
-  // meals keeps "Not planned", because there it is true.
+  // 2026-10-06). A day before the plan's first day says so quietly. That
+  // is the server's before_plan_start (get_week_menu sends it on every
+  // day of both plan shapes); a payload without the key falls back to the
+  // day's date against the plan's first day. A past day INSIDE the plan
+  // keeps "Not planned" even when every slot on it is empty — a day the
+  // household emptied is a gap in this plan, not a day before it (review,
+  // 2026-10-17: the first cut said "Before this plan" for any past day
+  // with nothing in any slot).
   function pastEmptyWord(day) {
-    var nothingAtAll = !WEEK_SLOTS.some(function (s) { return !!day[s]; });
-    return (day.before_plan_start || nothingAtAll) ? 'Before this plan' : 'Not planned';
+    var before = day.before_plan_start;
+    if (before === undefined) {
+      var start = (typeof weekState !== 'undefined' && weekState.data && weekState.data.period_start_date) || '';
+      before = !!(start && day.date && day.date < start);
+    }
+    return before ? 'Before this plan' : 'Not planned';
   }
 
   function wkMealRowHtml(day, slot, opts) {
@@ -16713,7 +16754,7 @@
     // approved week, which is what makes this one expression safe on the
     // deeper, approved-week form of this screen too.
     var head = root
-      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data)
+      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data)
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
