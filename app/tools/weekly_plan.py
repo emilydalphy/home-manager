@@ -2002,19 +2002,22 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
             conn = get_conn()
             approved = _live_plan_covering(conn, today.isoformat(), approved_only=True)
             if approved is None:
-                # A plan that held part of this week and ended on a day the
-                # offer had ALREADY moved on to what follows it (Wed–Fri:
-                # Friday said "Plan from tomorrow") keeps that offer after
-                # midnight. Without this Saturday jumped to next Monday and
-                # the weekend between was never offered again (defect hunt
-                # 2026-10-18). A plan that ended earlier in the week
-                # (Mon–Wed) never made that offer, and the week is still
-                # read as unplanned, as before.
+                # A plan that held part of this week and has ended keeps
+                # offering what follows it when the day after it is itself
+                # past the plan-ahead point. Every plan offers the day after
+                # it on its last day ("Plan from tomorrow"); for one ending
+                # Thursday or later, midnight used to swap that offer for
+                # next Monday, because nothing covered today and the Friday
+                # rule read the week as unplanned — so Fri/Sat/Sun were
+                # never offered again (defect hunt 2026-10-18). For one
+                # ending earlier (Mon–Wed) the next morning is still before
+                # the plan-ahead point and offers today anyway; from Friday
+                # such a week is read as unplanned, as before.
                 ended = _approved_plan_ended_within(conn, start.isoformat(), today.isoformat())
                 if ended is not None:
                     ended_start, ended_days = plan_period(ended)
-                    last_day = date.fromisoformat(period_end_date(ended_start, ended_days))
-                    if _attention_moves_on(last_day, start.isoformat(), day_count):
+                    day_after = date.fromisoformat(period_end_date(ended_start, ended_days)) + timedelta(days=1)
+                    if _attention_moves_on(day_after, start.isoformat(), day_count):
                         approved = ended
             conn.close()
             if approved is None:

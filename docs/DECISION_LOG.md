@@ -22,10 +22,12 @@ why*, not duplicating the diff.
   and plan-week all said Oct 26, and today and tomorrow (no meals) were never
   offered. The rule's approved branch now also takes an approved plan that
   held part of this week and ended before today
-  (`_approved_plan_ended_within`) — only when its last day was itself past
-  the plan-ahead point (it had already offered "Plan from tomorrow"), so
-  Saturday says exactly what Friday did. A Mon–Wed plan, or a week with
-  nothing approved in it, still moves on to next week. For Emily:
+  (`_approved_plan_ended_within`) — when the day AFTER it is past the
+  plan-ahead point, so the morning after says what the last day did. Review
+  round: gating on the last day missed every plan ending Thursday (Fri–Thu
+  weeks, Tue–Thu, Mon–Thu: Thursday offered Friday, Friday 00:00 offered next
+  Monday). A Mon–Wed plan (Thursday still offers Thursday) or a week with
+  nothing approved in it still moves on to next week from Friday. For Emily:
   that Saturday offer keeps Friday's words ("Next week" eyebrow, "Plan next
   week" button) for a stretch starting today — shell.js wording, not touched.
 - **A late-evening sign-up's reveal opens on the next day with meals**

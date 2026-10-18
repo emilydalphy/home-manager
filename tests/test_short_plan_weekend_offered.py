@@ -126,11 +126,32 @@ def test_no_offer_over_next_week_when_it_is_already_planned(pin_today):
     assert tools.get_week_planning_nudge()["show"] is False
 
 
-def test_a_plan_that_ended_before_the_offer_moved_on_keeps_the_friday_rule(pin_today):
-    # Mon–Wed: Wednesday never offered "Plan from tomorrow", so Saturday
-    # reads this week as unplanned and offers next week, as it always has
-    # (test_planning_periods' dismissal test pins the same).
+def test_a_plan_ending_wednesday_keeps_the_friday_rule(pin_today):
+    # Mon–Wed: Thursday morning still offers from Thursday (before the
+    # plan-ahead point), so there was no midnight jump to undo; by Saturday
+    # the week reads as unplanned and next week is offered, as it always
+    # has (test_planning_periods' dismissal test pins the same).
     _approved("2026-10-19", 3)
     pin_today(SATURDAY)
 
     assert tools.suggest_planning_period()["start_date"] == NEXT_MONDAY
+
+
+THURSDAY = "2026-10-22"
+
+
+@pytest.mark.parametrize("start,days", [("2026-10-16", 7), ("2026-10-20", 3), ("2026-10-19", 4)])
+def test_a_plan_ending_thursday_keeps_friday_offered_after_midnight(pin_today, start, days):
+    # An ordinary Fri–Thu week (the important one), Tue–Thu and Mon–Thu.
+    # Was: Thursday offered Friday, Friday 00:00 offered next Monday.
+    _approved(start, days)
+
+    pin_today(THURSDAY)
+    thursday = _offers()
+    pin_today(FRIDAY)
+    friday = _offers()
+
+    # Thursday's nudge and Plan button offer what follows the plan (Plan's
+    # default is still Thursday itself, before the plan-ahead point).
+    assert thursday[1:] == (FRIDAY, FRIDAY)
+    assert friday == (FRIDAY, FRIDAY, FRIDAY)
