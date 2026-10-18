@@ -15,6 +15,7 @@ are what "this week is on the list" actually means.
 import pytest
 
 from app import tools
+from app.tools import grocery as _grocery
 from app.db import get_conn
 from tests.test_draft_waits_for_approval import _approved_week, _draft_over, _needed
 from tests.test_planning_periods import _plan_row, recipes, stub_model  # noqa: F401
@@ -65,3 +66,45 @@ def test_a_never_approved_draft_over_an_approved_week_still_drops(recipes, stub_
     draft = _draft_over(stub_model, tools.period_dates(week, 7)[3], 4)
     assert tools.discard_draft_plan(draft["weekly_plan_id"])["status"] == "retired"
     assert _needed() == before
+
+
+def _plans_lines(plan_id):
+    conn = get_conn()
+    ids = [r[0] for r in conn.execute(
+        "SELECT DISTINCT l.grocery_item_id FROM meal_plan_grocery_links l "
+        "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id WHERE e.weekly_plan_id = ?",
+        (plan_id,),
+    ).fetchall()]
+    conn.close()
+    assert ids
+    return ids
+
+
+def test_a_reopened_week_whose_lines_were_all_bought_can_be_dropped(recipes, stub_model):
+    """Bought lines keep their links, but nothing is on the list to orphan."""
+    week, plan_id = _approved_week(stub_model)
+    for item_id in _plans_lines(plan_id):
+        _grocery.mark_grocery_item(item_id, "purchased")
+    assert _needed() == {}
+    tools.reopen_weekly_plan(plan_id)
+    assert tools.discard_draft_plan(plan_id)["status"] == "retired"
+
+
+def test_a_reopened_week_whose_lines_were_all_dropped_can_be_dropped(recipes, stub_model):
+    """A pre-shop drop is a soft 'removed' — the link survives it."""
+    week, plan_id = _approved_week(stub_model)
+    for item_id in _plans_lines(plan_id):
+        _grocery.remove_grocery_item(item_id)
+    assert _needed() == {}
+    tools.reopen_weekly_plan(plan_id)
+    assert tools.discard_draft_plan(plan_id)["status"] == "retired"
+
+
+def test_one_line_still_to_buy_is_enough_to_refuse(recipes, stub_model):
+    week, plan_id = _approved_week(stub_model)
+    lines = _plans_lines(plan_id)
+    for item_id in lines[1:]:
+        _grocery.mark_grocery_item(item_id, "purchased")
+    tools.reopen_weekly_plan(plan_id)
+    with pytest.raises(tools.SlotRefused, match="already on your shopping list"):
+        tools.discard_draft_plan(plan_id)

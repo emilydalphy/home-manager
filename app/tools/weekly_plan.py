@@ -2586,10 +2586,20 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
     # ledger is the signal, not the status: any line this plan still has on
     # the list. Refused, not reversed — reopen's own promise is that nothing
     # comes off the list, and a re-plan already reconciles it.
+    #
+    # "On the list" is what the Grocery screen shows: a line still to buy
+    # (needed / in_cart / spice / carried) and not excluded. A bought or
+    # pre-shop-dropped line keeps its link (only a hard delete cascades),
+    # and a week whose lines are all of those has nothing left on the list
+    # to orphan — so it drops like any draft, and the refusal never says
+    # "already on your shopping list" about an empty list.
     if plan["status"] == "draft" and conn.execute(
         "SELECT 1 FROM meal_plan_grocery_links l "
         "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
-        "WHERE e.weekly_plan_id = ? AND l.household_id = ? LIMIT 1",
+        "JOIN grocery_items g ON g.id = l.grocery_item_id AND g.household_id = l.household_id "
+        "WHERE e.weekly_plan_id = ? AND l.household_id = ? "
+        "AND g.status IN ('needed', 'in_cart', 'spice', 'carried') "
+        "AND g.excluded_from_list = 0 LIMIT 1",
         (weekly_plan_id, household_id()),
     ).fetchone():
         conn.close()

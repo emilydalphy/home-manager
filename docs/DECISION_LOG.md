@@ -20,8 +20,12 @@ why*, not duplicating the diff.
   but `discard_draft_plan` refused only `status = 'approved'`, so reopen →
   "drop it" retired a shopped-for week and left its lines (e.g. `beans 21
   tins`) for meals that no longer exist. Now refused (SlotRefused, route 200
-  `refused`) when any `meal_plan_grocery_links` row belongs to the plan —
-  the ledger, not the status, since reopen clears every approval stamp.
+  `refused`) when the plan has a linked line still ON the list (`needed`/
+  `in_cart`/`spice`/`carried`, not excluded — what Grocery shows) — the
+  ledger, not the status, since reopen clears every approval stamp. A week
+  whose lines are all bought or pre-shop-dropped (links survive both) drops
+  like any draft: nothing left to orphan, and "already on your shopping
+  list" would be false. Emily can revisit that.
   Refused rather than reversed: the approved refusal's own reason applies
   verbatim, reopen promises "nothing has come off your shopping list", and a
   re-plan already reconciles. Taking the lines back instead is Emily's call.
