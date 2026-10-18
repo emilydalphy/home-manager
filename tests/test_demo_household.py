@@ -242,3 +242,19 @@ def test_demo_household_has_already_allowed_sharing_with_claude():
     assert not ai_consent.has_consent(hid)
     demo.main()
     assert ai_consent.has_consent(hid)
+
+
+def test_demo_week_is_a_finished_week_not_a_half_filled_one():
+    """2026-10-15, seen at phone width: the reviewer's Plan showed "Nothing
+    yet · Pick" for breakfast and lunch on every day, and Thursday's
+    freeform "Leftover chili" bought chili for one night. The week is now
+    written the way a generated one is: every meal slot present, and
+    Thursday a real leftovers chain off Wednesday's cook."""
+    demo.main()
+    with use_household(demo._find_demo_household()["id"]):
+        plan = tools.get_weekly_plan()
+        assert tools.audit_plan_slots(plan["weekly_plan_id"])["complete"] is True
+        chains = tools.plan_leftover_chains(plan["weekly_plan_id"])
+        assert len(chains["leftovers"]) == 1
+        beef = [i for i in tools.list_grocery_list() if i["item"] == "ground beef"]
+        assert [i["quantity"] for i in beef] == ["1 lb"]
