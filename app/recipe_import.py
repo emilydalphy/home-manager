@@ -607,6 +607,17 @@ _UNBRACKETED_SIZE_RE = re.compile(
     re.I,
 )
 _TO_TASTE_RE = re.compile(r"^(?P<item>.*?)[,\s]*\b(?P<qty>to taste|as needed|for serving|for garnish|optional)\b\.?\s*$", re.I)
+# "A pinch of salt", "Pinch of red pepper flakes", "a handful of basil":
+# an amount written as words, not a number. Left on the item it read as no
+# amount at all, so the cook card filled one in from its table — "1 tsp a
+# pinch of salt" — and the list carried "a pinch of salt" as its own line
+# beside "salt" (defect hunt, 2026-10-18). Spelled the way the rest of the
+# app writes it ("a pinch" — recipes._FREEFORM_COOKING_OK).
+_WORD_AMOUNT_RE = re.compile(
+    r"^(?:an?\s+)?(?P<amt>pinch|dash|splash|handful|knob|sprinkle|drizzle|squeeze|few\s+dashes|few\s+drops)"
+    r"\s+of\s+(?P<item>\S.*)$",
+    re.I,
+)
 
 
 def _normalise_fractions(text: str) -> str:
@@ -753,6 +764,7 @@ def split_ingredient_line(line: str) -> dict:
     "2 cups all-purpose flour, sifted" -> {"item": "all-purpose flour, sifted", "qty": "2 cups"}
     "1 (14 oz) can diced tomatoes"     -> {"item": "diced tomatoes", "qty": "1 can (14 oz)"}
     "Salt, to taste"                   -> {"item": "Salt", "qty": "to taste"}
+    "A pinch of salt"                  -> {"item": "salt", "qty": "a pinch"}
     "Fresh basil leaves"               -> {"item": "Fresh basil leaves", "qty": ""}
 
     Deterministic and forgiving: what it can't read it leaves on the item
@@ -766,6 +778,10 @@ def split_ingredient_line(line: str) -> dict:
         return {"item": "", "qty": ""}
     match = _LINE_RE.match(text)
     if not match or not match.group("num"):
+        worded = _WORD_AMOUNT_RE.match(text)
+        if worded:
+            amount = re.sub(r"\s+", " ", worded.group("amt").lower())
+            return {"item": worded.group("item").strip(" ,"), "qty": f"a {amount}"}
         taste = _TO_TASTE_RE.match(text)
         if taste and taste.group("item").strip():
             return {"item": taste.group("item").strip(" ,"), "qty": taste.group("qty").lower()}

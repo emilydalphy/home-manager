@@ -89,6 +89,15 @@ why*, not duplicating the diff.
   Summing it (6 tbsp) trips `recipes.plausible_cooking_quantity`, which
   then rewrites "1 cup plus 2 tbsp sugar" to 0.5 cup on the cook card —
   waits on Emily's call on that guard.
+- **A recipe link's "a pinch of salt" is salt, a pinch — not "1 tsp a
+  pinch of salt"** (2026-10-18; branch `overnight/link-pinch-is-an-amount`;
+  tests `tests/test_recipe_import_word_amounts.py`). `split_ingredient_line`
+  only read a leading NUMBER, so a worded amount stayed on the item with no
+  qty: the cook card filled the blank from its table (1 tsp, 1/2 tsp for
+  flakes) and the list carried "a pinch of salt" beside "salt".
+  `_WORD_AMOUNT_RE` lifts pinch/dash/splash/handful/knob/sprinkle/drizzle/
+  squeeze/a few drops|dashes — only when followed by "of" — into the qty,
+  spelled "a pinch" as `_FREEFORM_COOKING_OK` already reads it.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
