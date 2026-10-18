@@ -757,6 +757,17 @@ def split_ingredient_line(line: str) -> dict:
     qty_words = []
     words = rest.split(" ")
     while words:
+        # Cookbook shorthand is case-sensitive: "T" is a tablespoon and "t"
+        # a teaspoon (defect hunt, 2026-10-16). Lower-cased they matched
+        # nothing, so "2 T butter" saved an item called "T butter" with a
+        # bare "2" — a grocery line nobody can merge or measure.
+        # Not before "bone": "2 T bone steaks" is a T-bone written without
+        # its hyphen, not two tablespoons of bone steak.
+        shorthand = {"T": "tbsp", "t": "tsp"}.get(words[0].strip(".,"))
+        if shorthand and len(words) > 1 and words[1].lower().startswith("bone"):
+            shorthand = None
+        if shorthand:
+            words[0] = shorthand
         word = words[0].lower().strip(".,")
         # "400g/14oz" and "1 cup/240ml": the unit glued to the other
         # measure by a slash. The unit is the part before it.
