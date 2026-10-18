@@ -894,6 +894,33 @@ def get_recipe_by_id(recipe_id: int) -> dict | None:
 _QTY_NEEDS_TEXT_SCALING = re.compile(r"[(),½⅓⅔¼¾⅛⅜⅝⅞]|\d\s*(?:-|–|to)\s*\d")
 
 
+# "1-2" onions, "3-4 large" eggs: a COUNT range with no unit. scale_steps
+# only rescales a bare count when an ingredient word follows it, which a
+# step has ("add 1-2 onions") and the qty column does not — so the list
+# stayed "1-2" at double while the steps said "2-4 onions" (review of the
+# range fix, 2026-10-18; before it the table's guess was scaled instead).
+
+
+def _scaled_count_range(qty_text: str, ratio: float) -> str | None:
+    """A unitless count range scaled whole, both ends ("3-4 large" x2 ->
+    "6-8 large"), written once when the ends meet; None for anything else
+    (a range with a unit is scale_steps' to scale)."""
+    # Built here: _STEP_NUM is defined with the step scaler further down.
+    m = re.match(
+        r"^\s*(?P<a>" + _STEP_NUM + r")(?P<sep>\s*(?:-|–|—|to)\s*)(?P<b>" + _STEP_NUM + r")(?P<rest>\s.*)?$",
+        qty_text or "", re.IGNORECASE,
+    )
+    if not m or _STEP_UNIT_RE.match(m.group("rest") or ""):
+        return None
+    a, b = _step_number(m.group("a")), _step_number(m.group("b"))
+    if a is None or b is None:
+        return None
+    new_a = _step_amount_text(max(1.0, float(round(a * ratio))))
+    new_b = _step_amount_text(max(1.0, float(round(b * ratio))))
+    amount = new_a if new_a == new_b else new_a + m.group("sep") + new_b
+    return amount + (m.group("rest") or "")
+
+
 def scale_recipe(recipe_name: str, target_servings: int) -> dict:
     """
     Scale a saved recipe's ingredient quantities from its default_servings
@@ -929,6 +956,8 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # scaled as TEXT, by the same rules as the steps (scale_steps),
             # so the list and the steps agree and nothing written is lost.
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
+            if rescaled == qty_text and abs(ratio - 1) > 1e-9:
+                rescaled = _scaled_count_range(qty_text, ratio) or qty_text
             scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 unscaled_items.append(ing["item"])
@@ -1321,7 +1350,9 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
                     if written[:1].isupper():
                         unit_text = unit_text[:1].upper() + unit_text[1:]
                 amount = _step_amount_text(new_a)
-                if new_b is not None:
+                # A range whose two ends round to one number is that number
+                # ("1 to 2 cloves" halved is "1 clove", not "1 to 1 clove").
+                if new_b is not None and _step_amount_text(new_b) != amount:
                     amount += m.group("sep") + _step_amount_text(new_b)
                 # "250ml" made "187 ½ml" reads as nothing; a space goes in
                 # whenever the new amount has one of its own.
@@ -1339,7 +1370,7 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
             new_b = _step_scaled(b, ratio, whole_only)[0] if b is not None else None
             biggest = new_b if new_b is not None else new_a
             amount = _step_amount_text(new_a)
-            if new_b is not None:
+            if new_b is not None and _step_amount_text(new_b) != amount:
                 amount += m.group("sep") + _step_amount_text(new_b)
             # The count word is the one that agrees with the number: "2 garlic
             # cloves", not "2 garlics clove". Only ever turned when the count
@@ -1716,9 +1747,28 @@ def _ascii_fractions(text: str) -> str:
     )
 
 
+# "2-3 cloves", "1 to 2 cups", "2–3 lb" (defect hunt, 2026-10-18). The same
+# trap as the glyphs above, one shape over: _parse_quantity reads no range,
+# so _quantity_problem called it "unmeasured" and cooking_ingredients put
+# the table's per-4 guess in its place — a recipe for four that said "1 to
+# 2 cloves" of garlic told the cook 3, and "2-3 lb" of thighs said 1.5 lb.
+# A range is a measurement. It is judged by its LOW end: if any of what the
+# recipe allows is a sensible amount, the line keeps its own words (the
+# plausibility section's own rule — a false alarm rewrites what the cook
+# meant), and scale_recipe already scales a range as text.
+_NUM = r"\d+(?:\.\d+)?(?:\s+\d+/\d+)?|\d+/\d+"
+_RANGE_RE = re.compile(r"^\s*(" + _NUM + r")\s*(?:-|–|—|to)\s*(?:" + _NUM + r")(\s.*)?$", re.IGNORECASE)
+
+
 def _parse_cook_qty(text: str):
-    """_quantities._parse_quantity, reading ½-style fractions as 1/2."""
-    return _quantities._parse_quantity(_ascii_fractions(text))
+    """_quantities._parse_quantity, reading ½-style fractions as 1/2 and a
+    range by its low end ("2-3 cloves" → 2 clove)."""
+    ascii_text = _ascii_fractions(text)
+    parsed = _quantities._parse_quantity(ascii_text)
+    if parsed:
+        return parsed
+    m = _RANGE_RE.match(ascii_text or "")
+    return _quantities._parse_quantity(m.group(1) + (m.group(2) or "")) if m else None
 
 
 def _quantity_problem(item: str, qty: str) -> str | None:

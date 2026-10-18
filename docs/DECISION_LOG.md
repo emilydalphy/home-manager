@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A recipe's range is a measurement on the cook card** (2026-10-18,
+  defect hunt; branch `overnight/cook-card-keeps-ranges`; tests
+  `tests/test_recipe_range_amounts.py`). `_parse_quantity` reads no range,
+  so `_quantity_problem` called "1 to 2 cloves" / "2-3 lb" / "2–3 tbsp"
+  "unmeasured" and `cooking_ingredients` put the table's per-4 guess there:
+  the cook card said 3 cloves for "1 to 2", 1.5 lb for "2-3 lb", and
+  scale_recipe's range-as-text path never saw a range. `_parse_cook_qty`
+  reads a range by its LOW end (cooking judgements only; the line keeps its
+  words), so the plausibility rule still corrects "3-4 sticks" for two.
+  `scale_steps` writes a range whose ends meet once ("1 clove", not "1 to 1
+  clove"). The batch ask's "N in all" is blank for a range (unaddable).
+  Review: a unitless COUNT range ("1-2" onions, "3-4 large" eggs) stayed
+  as written on the stepper while its steps scaled — scale_steps needs a
+  noun after a bare count; `_scaled_count_range` scales both ends whole.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
