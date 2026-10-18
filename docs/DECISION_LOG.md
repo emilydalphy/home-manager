@@ -111,6 +111,19 @@ why*, not duplicating the diff.
   gives. `_convert_to_unit` is untouched: coverage/ingest keep "nothing
   else is guessed at" (2026-09-14). After a recompute the line reads in the
   meals' unit (lbs), not the "kg" typed — as an "oz" edit on a lb line does.
+- **A chat tool that changed nothing draws no "updated" card** (2026-10-18,
+  defect hunt; branch `overnight/nothing-changed-no-card`; tests
+  `tests/test_nothing_changed_draws_no_card.py`). A write tool's returned
+  (not raised) "no" — `status` refused / needs_confirmation / nothing /
+  ambiguous, or `found: false` — came back is_error False, so a refused
+  swap_dinner_nights read "Week updated · Swapped in Weeknight Chili on
+  Wednesday has already been cooked…", remove_staple on an unknown name
+  "Removed oat milk", and `_turn_wrote_anything` let "I've swapped those
+  dinners" through. Also `explain_meal_choice` / `check_plan_conflicts` /
+  `scale_recipe` read but aren't named get_/list_, so "why chili?" drew
+  "Saved what you told me". One predicate pair in agent.py
+  (`is_read_only_tool`, `result_changed_nothing`) used by both the cards
+  and the claim check.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

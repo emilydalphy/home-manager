@@ -7225,7 +7225,12 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             if not isinstance(block, dict) or block.get("type") != "tool_result" or block.get("is_error"):
                 continue
             name, args = tool_names_by_id.get(block.get("tool_use_id"), (None, None))
-            if not name or name.startswith(_READ_ONLY_PREFIXES):
+            if not name or agent.is_read_only_tool(name):
+                continue
+            # A refusal, a question back, a name that matched nothing: the
+            # tool answered without writing, so no screen changed and the
+            # card would say something untrue (agent.result_changed_nothing).
+            if agent.result_changed_nothing(block.get("content")):
                 continue
             # A proposal writes nothing: the household saves it from the
             # card, and THAT is when the week changes (and the shell says
