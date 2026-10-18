@@ -369,6 +369,27 @@ def test_the_steps_route_answers_signed_in(signed_in):
     assert [a["item"] for a in added] == ["Tea"]
 
 
+def test_the_undo_route_takes_back_only_what_the_add_made(signed_in):
+    """GAP (2026-10-16): the toast's Undo posts {item_ids} to its own route,
+    which no test called — a renamed field or a dropped route would have
+    left "Undo" doing nothing while every tool-level test stayed green.
+    A hand-added line's id sent alongside stays put: undo is for the
+    staple lines the add just made."""
+    own = tools.add_grocery_item("Bananas")["item_id"]
+    added = signed_in.post("/api/grocery-list/before-shop/regulars", json={"items": ["Tea"]}).json()["added"]
+    ids = [a["item_id"] for a in added] + [own]
+    res = signed_in.post("/api/grocery-list/before-shop/regulars-undo", json={"item_ids": ids})
+    assert res.status_code == 200
+    assert res.json() == {"removed": 1}
+    conn = get_conn()
+    try:
+        names = {r["item"] for r in conn.execute("SELECT item FROM grocery_items WHERE household_id = 1")}
+    finally:
+        conn.close()
+    assert "Tea" not in names
+    assert "Bananas" in names
+
+
 # ---------------------------------------------------------------------------
 # 4. The screen (node, the region's own functions)
 # ---------------------------------------------------------------------------

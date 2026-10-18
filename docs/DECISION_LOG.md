@@ -83,6 +83,11 @@ why*, not duplicating the diff.
   `split_ingredient_line` lower-cased the unit before matching, so "2 T
   butter" saved an item called "T butter" with a bare "2". A lone "T"/"T."
   now reads as tbsp and "t"/"t." as tsp, before the lower-casing.
+- **Test gap closed: "Before you shop" Undo's own route** (2026-10-16; branch
+  `overnight/regulars-undo-route-pinned`, tests only). The toast's Undo posts
+  `{item_ids}` to `/api/grocery-list/before-shop/regulars-undo`; only the tool
+  was tested, so a renamed field or dropped route would leave Undo silently
+  doing nothing. Pinned through HTTP, with a hand-added id sent alongside.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
