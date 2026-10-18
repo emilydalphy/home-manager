@@ -2659,6 +2659,52 @@ class InvalidGroceryStatus(ValueError):
     """
 
 
+def _catch_up_unticked_plan_line(conn, item_id: int) -> None:
+    """
+    A plan's line coming back onto the list from the trolley re-reads its
+    amount off the meals still planned, when a meal went while it was
+    ticked.
+
+    _reverse_meal_grocery_contributions leaves a bought line's amount alone
+    (nothing is yanked out of a cart) but always deletes the leaving meal's
+    ledger rows, so the line was left saying more than its meals: rice
+    ticked at "6 cups", a stir-fry night dropped, untick -> "6 cups" to
+    buy for 4 cups of dinners. Only ever DOWN, and only when the ledger
+    still reads in the line's unit: a line whose meals never changed reads
+    the same, a household's edit is put back by _plan_line_amount, and
+    wording ("a few") is never replaced. Left alone: a person's own line
+    (its dropped share went with the ledger row and can't be told apart
+    from their want), a sealed package (one bottle however many meals),
+    and a line with no meals left — the same open case as a set-aside
+    line whose meals all went while it was off.
+    """
+    row = conn.execute(
+        "SELECT quantity, source_weekly_plan_id, kept_amount, short_amount, edited_to "
+        "FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if row is None or row["source_weekly_plan_id"] is None:
+        return
+    current = row["quantity"] or ""
+    if _quantities.package_unit(current):
+        return
+    ledger = [
+        r["quantity"] or "" for r in conn.execute(
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ?",
+            (household_id(), item_id),
+        ).fetchall()
+    ]
+    if not ledger:
+        return
+    summed = _plan_line_amount(ledger, row["kept_amount"], row["short_amount"], row["edited_to"])
+    if not summed or not _more_than(_quantities._split_quantity_note(current)[0], summed):
+        return
+    conn.execute(
+        "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+        (_quantities._with_note(summed, _quantities._quantity_note(current)), item_id, household_id()),
+    )
+
+
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     Update a grocery item's status (needed/in_cart/purchased). Marking
@@ -2749,6 +2795,8 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
             f"UPDATE grocery_items SET {fields} WHERE id = ? AND household_id = ?",
             (*params, item_id, household_id()),
         )
+        if status == "needed" and row["status"] in ("purchased", "in_cart"):
+            _catch_up_unticked_plan_line(conn, item_id)
         conn.commit()
     except Exception:
         conn.rollback()
