@@ -794,9 +794,9 @@ def split_ingredient_line(line: str) -> dict:
 
 _CATEGORY_WORDS = (
     ("meat/seafood", ("chicken", "beef", "pork", "lamb", "turkey", "bacon", "sausage", "steak",
-                      "ham", "salmon", "shrimp", "prawn", "fish", "cod", "tuna", "tilapia",
+                      "salmon", "shrimp", "prawn", "fish", "cod", "tuna", "tilapia",
                       "brisket", "ribs", "chorizo", "veal", "duck", "anchov",
-                      "scallop", "mussel", "clam", "crab", "lobster", "mince")),
+                      "scallop", "mussel", "clam", "crab", "lobster")),
     ("dairy", ("milk", "cheese", "butter", "cream", "yogurt", "yoghurt", "egg", "parmesan",
                "mozzarella", "cheddar", "feta", "ricotta", "mascarpone", "tofu", "paneer",
                "buttermilk", "ghee")),
@@ -835,6 +835,25 @@ def guess_category(item: str, qty: str = "") -> str:
         return "frozen"
     if re.search(r"\b(eggplant|aubergine)\b", name):
         return "produce"
+    # More of the same, found 2026-10-15 when this guess started filing
+    # chat recipes and regulars too: a spice or starch named after a fresh
+    # thing is pantry ("black pepper", "ground ginger", "cornstarch",
+    # "peanut butter"); a squash or a beefsteak tomato is produce, not the
+    # dairy or meat its "butter"/"beef" would say; and ham and mince are
+    # whole words — "minced garlic", "graham crackers" and "mincemeat" are
+    # not meat.
+    if re.search(
+        r"\b(peanut|almond|cashew|apple|nut) butter\b|\bpeppercorns?\b"
+        r"|\b(black|white|ground|cracked) pepper\b|\bsalt and pepper\b"
+        r"|\bcorn ?(starch|meal|flour)\b"
+        r"|\bground (ginger|cinnamon|cumin|coriander|nutmeg|cloves?|turmeric|paprika|cardamom|allspice|mustard)\b",
+        name,
+    ):
+        return "pantry"
+    if re.search(r"\b(squash|butternut|beefsteak)\b", name):
+        return "produce"
+    if re.search(r"\bham\b|\bmince\b|\bminced (beef|pork|lamb|meat|turkey|chicken|veal)\b", name):
+        return "meat/seafood"
     if re.search(
         r"\b(broth|stock|bouillon|sauce|powder|seasoning|extract|oil|vinegar|flour|sugar|rice|pasta|noodles)\b"
         r"|\b(coconut|almond|oat|soy|rice) milk\b|\bnutritional yeast\b|\bcream of tartar\b"

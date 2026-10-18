@@ -455,6 +455,21 @@ why*, not duplicating the diff.
   makes Thursday a real chain off Wednesday (`links_to` +
   `repair_leftover_chains`), and dates the week from the household's clock,
   not the server's. Demo data only; no app code changed.
+- **A grocery line nobody gave an aisle is filed by its name, not under
+  Other** (2026-10-15; branch `overnight/lines-find-their-aisle`; tests
+  `tests/test_recipe_lines_find_their_aisle.py`). Found driving the App Store
+  demo household: every approved line sat under Other, because chat's
+  `add_recipe` leaves `category` optional and the ingest read
+  `ing.get("category", "other")`. The same gap kept an uncategorised chicken
+  out of the defrost ask, and every regular ticked on "Before you shop"
+  (saved as 'other') went on the list under Other too. `recipes.store_section`
+  guesses from the name with `recipe_import.guess_category`, read where the
+  aisle is used (ingest, sides, defrost's meat check, plate veg, a staple's
+  line via `staples._line_category`) and never saved onto the recipe, so a
+  wrong guess can't stick. Review found the guess's substring traps ("minced
+  garlic" as meat, "butternut squash" as dairy, "black pepper" as produce);
+  fixed in `guess_category`, which helps link imports too.
+  An explicit category stands; household goods stay Other.
 - **"Two moves turn the household's 1 lb of beef into 12 oz" was a misread
   list, not a loss** (2026-10-09; branch
   `overnight/standing-want-survives-two-moves`; tests
