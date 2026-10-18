@@ -88,6 +88,12 @@ why*, not duplicating the diff.
   `{item_ids}` to `/api/grocery-list/before-shop/regulars-undo`; only the tool
   was tested, so a renamed field or dropped route would leave Undo silently
   doing nothing. Pinned through HTTP, with a hand-added id sent alongside.
+- **Sign-in keeps a link's query string** (2026-10-16; branch
+  `overnight/sign-in-keeps-the-link`). The auth gate sent a signed-out
+  browser to `/login?next=<path>` with the query dropped, so
+  `/plan-week?week=2026-10-19` came back as plain `/plan-week`. Now the path
+  and query go through `_safe_next` and are percent-encoded as one value (an
+  unencoded "&" would have split into a second /login param).
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,

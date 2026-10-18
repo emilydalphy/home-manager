@@ -88,3 +88,29 @@ def test_email_sign_in_never_hands_back_an_off_site_next(outbox):
     )
     assert res.status_code == 200, res.text
     assert res.json()["next"] == "/"
+
+
+def test_a_link_s_query_string_survives_the_trip_through_sign_in(client):
+    """/plan-week?week=2026-10-19 came back from sign-in as plain /plan-week
+    — the week the link named was gone (defect hunt, 2026-10-16). It rides
+    in ?next= as one encoded value, so its own "&" stays inside it."""
+    res = client.get(
+        "/plan-week?week=2026-10-19&from=text",
+        headers={"accept": "text/html"},
+        follow_redirects=False,
+    )
+    assert res.status_code == 303
+    assert res.headers["location"] == "/login?next=/plan-week%3Fweek%3D2026-10-19%26from%3Dtext"
+    page = client.get(res.headers["location"], follow_redirects=False)
+    assert _next_value(page.text) == "/plan-week?week=2026-10-19&amp;from=text"
+    back = client.post(
+        "/login",
+        data={"password": "test-password", "next": "/plan-week?week=2026-10-19&from=text"},
+        follow_redirects=False,
+    )
+    assert back.headers["location"] == "/plan-week?week=2026-10-19&from=text"
+
+
+def test_a_plain_path_is_sent_to_sign_in_unchanged(client):
+    res = client.get("/week", headers={"accept": "text/html"}, follow_redirects=False)
+    assert res.headers["location"] == "/login?next=/week"
