@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Dropping a REOPENED week is refused while its groceries are on the
+  list** (2026-10-18; branch `overnight/discard-reopened-week`; tests
+  `tests/test_discard_a_reopened_week.py`). `reopen_weekly_plan` sets an
+  approved week back to `draft` and keeps its list lines (DECISIONS.md #2),
+  but `discard_draft_plan` refused only `status = 'approved'`, so reopen →
+  "drop it" retired a shopped-for week and left its lines (e.g. `beans 21
+  tins`) for meals that no longer exist. Now refused (SlotRefused, route 200
+  `refused`) when any `meal_plan_grocery_links` row belongs to the plan —
+  the ledger, not the status, since reopen clears every approval stamp.
+  Refused rather than reversed: the approved refusal's own reason applies
+  verbatim, reopen promises "nothing has come off your shopping list", and a
+  re-plan already reconciles. Taking the lines back instead is Emily's call.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

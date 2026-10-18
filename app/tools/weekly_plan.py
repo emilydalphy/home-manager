@@ -2553,6 +2553,10 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
     already-retired plan is a no-op — the household tapping twice, or a
     stale screen, must not be an error.
 
+    A REOPENED week (status 'draft' again, its approval's groceries still
+    on the list) is refused the same way, by the ledger rather than the
+    status — see the check below.
+
     `approved_week_label` names the approved week this draft was sitting
     over, when there is one, so the screen that dropped it can say which
     week is theirs again instead of just that something went.
@@ -2574,6 +2578,25 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
     if plan["status"] == "approved":
         conn.close()
         raise SlotRefused("That week's approved — reopen it or re-plan it instead.")
+    # A REOPENED week is a draft by status only (overnight/discard-reopened-
+    # week): reopen_weekly_plan clears every approval stamp but deliberately
+    # leaves the groceries its approval added. Retiring it would leave those
+    # lines on the list for meals that no longer exist — the same "takes the
+    # list's own reason away" the approved refusal above is about. The
+    # ledger is the signal, not the status: any line this plan still has on
+    # the list. Refused, not reversed — reopen's own promise is that nothing
+    # comes off the list, and a re-plan already reconciles it.
+    if plan["status"] == "draft" and conn.execute(
+        "SELECT 1 FROM meal_plan_grocery_links l "
+        "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+        "WHERE e.weekly_plan_id = ? AND l.household_id = ? LIMIT 1",
+        (weekly_plan_id, household_id()),
+    ).fetchone():
+        conn.close()
+        raise SlotRefused(
+            "That week's groceries are already on your shopping list — "
+            "approve it again or re-plan it instead."
+        )
 
     start, days = plan_period(plan)
     label = _format_period_range(start, days)
