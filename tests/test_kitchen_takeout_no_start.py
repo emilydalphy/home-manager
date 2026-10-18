@@ -107,13 +107,15 @@ def test_a_saved_takeout_recipe_and_a_takeout_style_home_cook_still_start():
 @_needs_node
 def test_kitchen_names_a_takeout_night_with_no_start_and_no_clock():
     """CATCH. The Tonight card names the dinner, says there is nothing to
-    cook, shows no Start / On the table tiles, and the dock is empty."""
+    cook, shows no Start / On the table tiles, and the dock is the reheat's
+    "Mark eaten" tick, never "Start cooking"."""
     meals = [_meal(1, MON, "Takeout pizza", is_takeout=True, prep_time_minutes=None, cook_time_minutes=None)]
     out = _tonight(meals, [], {"cook_name": "Emily"}, MON, 0)
     assert '<h2 class="cook-tonight-dish">Takeout pizza</h2>' in out["html"]
     assert ">Nothing to cook for this one.<" in out["html"]
     assert "cook-tonight-times" not in out["html"]
-    assert out["dock"] == ""
+    assert 'data-cook="check-meal" data-entry-id="1" data-next="done"' in out["dock"]
+    assert ">Mark eaten</button>" in out["dock"] and "Start cooking" not in out["dock"]
     sub = _node(
         _function("kitchenSubtitle") + "\nvar meals = " + json.dumps(meals) + ";\n"
         "console.log(JSON.stringify(kitchenSubtitle(kitchenTodayRows(meals, [], '" + MON + "'), meals, '" + MON + "')));"
@@ -135,17 +137,28 @@ def test_a_cook_lunch_beside_a_takeout_dinner_still_gets_the_card_and_start():
 
 
 @_needs_node
-def test_a_takeout_night_opened_from_the_shelf_has_no_recipe_ask_and_no_dock():
-    """CATCH. The tile opened the recipe screen: "No saved recipe for this
-    one — ask me for it in the chat." over "Done — on the table"."""
+def test_a_takeout_night_opened_from_the_shelf_or_plan_is_the_reheat_screen_with_mark_eaten():
+    """CATCH. The tile (and Plan's dock) opened the recipe screen: "No saved
+    recipe for this one — ask me for it in the chat." over "Done — on the
+    table". Now the reheat screen's shape: the name, one line, Mark eaten."""
     html = _node(
-        _function("cookTakeoutFocusHtml") + "\n"
+        _function("cookReheatCardHtml") + "\n" + _function("cookReheatFocusHtml") + "\n"
+        + _function("cookTakeoutFocusHtml") + "\n"
+        "var ICONS = { arrow: '' };\n"
         "function cookBackLabel(){ return 'Cook'; }\n"
-        "function recipeTitleHtml(m){ return '<h1>' + escapeHtml(m.meal) + '</h1>'; }\n"
-        "function recipeForLine(){ return ''; }\n"
+        "function cookDateLabel(d){ return d; }\n"
         + _function("cookFocusHtml").split("var steps")[0] + "}\n"
-        "console.log(JSON.stringify(cookFocusHtml({}, " + json.dumps([_meal(1, MON, "Takeout pizza", is_takeout=True)]) + ", 0)));"
+        "console.log(JSON.stringify(cookFocusHtml({}, " + json.dumps([_meal(7, MON, "Takeout pizza", is_takeout=True)]) + ", 0)));"
     )
-    assert "<h1>Takeout pizza</h1>" in html
+    assert ">Takeout pizza</h2>" in html
     assert ">Nothing to cook for this one.<" in html
-    assert "dock" not in html and "ask me for it" not in html
+    assert 'data-cook="check-meal" data-entry-id="7" data-next="done"' in html and "Mark eaten" in html
+    assert "ask me for it" not in html and "Start cooking" not in html
+
+
+def test_plans_meal_dock_says_mark_eaten_for_a_takeout_night():
+    """CATCH (source). mealDockHtml's "Done — on the table" for a takeout
+    night: the same eaten branch a reheat takes."""
+    from test_cook_shelf import SHELL_JS
+    dock = _function("mealDockHtml", SHELL_JS)
+    assert "entry.source === 'takeout'" in dock.split("var cookable")[0]

@@ -11022,8 +11022,6 @@
   // cooked"), never from here.
   function cookRootDockHtml(row) {
     if (!row || row.done) return '';
-    // Takeout: nothing to start and nothing to tick — the card names it.
-    if (row.isTakeout) return '';
     // Prepped on an earlier day: "Start cooking" would be the app telling
     // them to cook something it has already told them to cook on the prep
     // day. What is left to do is the tick — and it has to be HERE, because
@@ -11038,7 +11036,8 @@
         'data-next="done" data-name="' + escapeHtml(row.title || '') + '" aria-label="Mark cooked">' +
         'Mark it cooked</button>';
     }
-    if (row.isReheat) {
+    // Takeout ticks the way a reheat does: nothing to start, still eaten.
+    if (row.isReheat || row.isTakeout) {
       return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="done" ' +
         'data-name="' + escapeHtml(row.title || '') + '">' +
         escapeHtml(REHEAT_ACTION_LABEL) + '</button>';
@@ -18456,7 +18455,7 @@
   function mealRecipeFor(slot, entry, cookMeal) {
     // A reheat night and a grab-and-go snack have no cook in them (the
     // dock says "Mark eaten"), so nothing here is a recipe to read or add to.
-    var eaten = !!entry && (entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry)));
+    var eaten = !!entry && (entry.source === 'leftovers' || entry.source === 'takeout' || (isSnackSlot(slot) && !isRealCook(entry)));
     var isCook = !!(cookMeal && !cookMeal.is_leftovers && entry) && !eaten;
     var pending = !cookMeal && typeof planCookView === 'function' && !planCookView();
     var failed = pending && typeof planCookViewFailed === 'function' && planCookViewFailed();
@@ -18652,7 +18651,9 @@
   function mealDockHtml(day, slot, info) {
     var entry = daySlotEntry(day, slot);
     if (!entry || entry.state !== 'planned' || day.isPast) return '';
-    var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
+    // A written-in takeout night is eaten, never cooked: "Mark eaten",
+    // which opens Cook's takeout screen to tick it (cookTakeoutFocusHtml).
+    var eaten = entry.source === 'leftovers' || entry.source === 'takeout' || (isSnackSlot(slot) && !isRealCook(entry));
     var cookable = typeof planCookableNow !== 'function' || planCookableNow();
     // A reheat night not yet eatable (a draft, a day ahead — see
     // leftoversEatenNow) has nothing to mark and nothing to cook: the
@@ -23554,21 +23555,14 @@
     '</div>';
   }
 
-  // A written-in takeout meal opened from the shelf: its name and who it's
-  // for, one plain line, no recipe ask and no dock — nothing to start or
-  // finish (is_takeout, cooker.get_cooker_view; overnight 2026-10-18).
+  // A written-in takeout meal opened from the shelf, Plan's dock or "Cook
+  // this": the reheat screen's shape and its "Mark eaten" — its name, one
+  // plain line, no recipe ask and no start (is_takeout,
+  // cooker.get_cooker_view; overnight 2026-10-18).
   function cookTakeoutFocusHtml(meal) {
-    return '<div class="cook-focus cook-recipe">' +
-      '<div class="cook-recipe-head">' +
-        '<button type="button" class="crumb" data-cook="exit-focus">&lsaquo; ' +
-          escapeHtml(cookBackLabel()) + '</button>' +
-      '</div>' +
-      '<div class="cook-body recipe-body">' +
-        recipeTitleHtml(meal) +
-        recipeForLine(meal) +
-        '<p class="cook-norecipe recipe-norecipe">Nothing to cook for this one.</p>' +
-      '</div>' +
-    '</div>';
+    return cookReheatFocusHtml(Object.assign({}, meal, {
+      leftovers_headline: meal.meal, reheat_note: 'Nothing to cook for this one.', leftovers_from: null
+    }));
   }
 
   function cookFocusHtml(data, meals, idx) {
@@ -23828,6 +23822,9 @@
       // to not-cooked (S10, copy sweep finding 1 — the box carries the
       // name it is drawn beside, `data-name`).
       if (justCooked) toastMealLogged();
+      // "Mark eaten" (a reheat, a takeout night) is a tick, not an un-cook:
+      // it said "Takeout pizza isn't cooked yet" (overnight 2026-10-18).
+      else if (el.getAttribute('data-next') === 'done') toastSaved();
       else toastSaved(cookNotCookedLine(el));
     } catch (err) {
       el.disabled = false;
