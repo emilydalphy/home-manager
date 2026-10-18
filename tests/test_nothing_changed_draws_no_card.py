@@ -18,6 +18,7 @@ import datetime
 import types
 
 from app import agent, main, tools
+from conftest import household_today
 
 
 class _Usage:
@@ -40,7 +41,8 @@ def _turn(monkeypatch, name, args, reply="Right."):
 
 
 def _week():
-    monday = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
+    today = household_today()
+    monday = today - datetime.timedelta(days=today.weekday())
     days = tools._week_dates((monday + datetime.timedelta(days=7)).isoformat())
     for name in ("Bean Chili", "Chicken Traybake"):
         tools.add_recipe(name, ingredients=[{"item": "Onion", "qty": "1", "category": "produce"}],
