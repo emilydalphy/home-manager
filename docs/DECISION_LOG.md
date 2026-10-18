@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A plan line corrected to "3 kg" keeps the household's number through a
+  dropped night** (2026-10-18, defect hunt; branch
+  `overnight/metric-edit-survives-a-drop`; tests
+  `tests/test_metric_edit_survives_a_drop.py`). "Chicken breast · 4 lbs"
+  edited to "3 kg", a curry night dropped -> "2.5 lbs": kg and lb didn't
+  convert, so `_household_edit_columns` recorded nothing and the recompute
+  read only the meals. `quantities._convert_for_household_edit` bridges
+  kg/g <-> lb/oz and l/ml <-> cup/tbsp/tsp (exact factors, US cup; never
+  mass <-> volume) for that one read, and the edit is stored in the MEALS'
+  unit so every recompute still sums one family -> "5 lbs", as "6.5 lbs"
+  gives. `_convert_to_unit` is untouched: coverage/ingest keep "nothing
+  else is guessed at" (2026-09-14). After a recompute the line reads in the
+  meals' unit (lbs), not the "kg" typed — as an "oz" edit on a lb line does.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

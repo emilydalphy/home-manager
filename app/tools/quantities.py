@@ -604,6 +604,40 @@ _METRIC_VOL_TO_ML = {"ml": 1.0, "l": 1000.0}
 _UNIT_CONVERSION_GROUPS = [_VOLUME_TO_TSP, _WEIGHT_TO_OZ, _MASS_TO_G, _METRIC_VOL_TO_ML]
 
 
+# The bridges between the imperial and metric family of ONE dimension —
+# mass to mass, volume to volume, never one into the other. Kept out of
+# _convert_to_unit on purpose: what the kitchen has and what the ingest
+# skips is decided there, and "nothing else is guessed at" is that
+# decision (2026-09-14). They are exact, so they are only ever used where a
+# household's own typed number is being read against its meals' — see
+# _convert_for_household_edit.
+_SYSTEM_BRIDGES = [
+    (_WEIGHT_TO_OZ, _MASS_TO_G, 28.349523125),      # g in one oz
+    (_VOLUME_TO_TSP, _METRIC_VOL_TO_ML, 4.92892159375),  # ml in one US tsp
+]
+
+
+def _convert_for_household_edit(amount: float, from_unit: str | None, to_unit: str | None) -> float | None:
+    """
+    _convert_to_unit, plus kg/g <-> lb/oz and l/ml <-> cup/tbsp/tsp.
+
+    For the household's edit on a plan line (grocery._household_edit_columns)
+    and nowhere else. A Toronto household corrects "Chicken breast · 5 lbs"
+    to "3 kg", what the pack says; with the two families unconvertible the
+    edit was never recorded and the first dropped night put the line back
+    to its meals' "3.5 lbs" (2026-10-18). Mass never converts to volume.
+    """
+    same = _convert_to_unit(amount, from_unit, to_unit)
+    if same is not None:
+        return same
+    for imperial, metric, metric_per_imperial_base in _SYSTEM_BRIDGES:
+        if from_unit in imperial and to_unit in metric:
+            return amount * imperial[from_unit] * metric_per_imperial_base / metric[to_unit]
+        if from_unit in metric and to_unit in imperial:
+            return amount * metric[from_unit] / metric_per_imperial_base / imperial[to_unit]
+    return None
+
+
 # COUNTED PACKS (Loop Board, 2026-09-13 — Emily's list said "Eggs · 4
 # dozen"). A store sells a pack of N countable things and a recipe uses a
 # few of them: eggs by the dozen, garlic by the head. Every recipe the app
