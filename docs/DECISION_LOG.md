@@ -141,6 +141,18 @@ why*, not duplicating the diff.
   nothing approved in it still moves on to next week from Friday. For Emily:
   that Saturday offer keeps Friday's words ("Next week" eyebrow, "Plan next
   week" button) for a stretch starting today — shell.js wording, not touched.
+- **Inventory write routes now driven over HTTP** (2026-10-18; branch
+  `overnight/untested-write-routes`; tests `tests/test_untested_write_routes.py`).
+  A sweep of app/main.py for paths no test names found 12: `GET /api/needs-you`,
+  `/api/stores`, the inventory reads (`/api/inventory`, `/expiring`,
+  `/by-location`, `/duplicates`) and the writes `POST /api/inventory/update`,
+  `/api/inventory/{id}/remove|quantity|location|expiration` and
+  `/api/grocery-list/before-shop/regulars-undo` (that one is pinned on
+  `overnight/regulars-undo-route-pinned`, so left alone). Scoping was already
+  covered for all of them (test_isolation_attack enumerates app.routes; the
+  tools filter on household_id) — no leak found. Pinned the inventory writes:
+  the sheet's routes change the row they name, and a stale id is
+  404/found=False, not a 500 or a new row.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
