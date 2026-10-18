@@ -124,6 +124,23 @@ why*, not duplicating the diff.
   "Saved what you told me". One predicate pair in agent.py
   (`is_read_only_tool`, `result_changed_nothing`) used by both the cards
   and the claim check.
+- **The weekend after a short plan is offered the morning it begins**
+  (2026-10-18, defect hunt; branch `overnight/short-plan-weekend-offered`;
+  tests `tests/test_short_plan_weekend_offered.py`). An approved Wed–Fri plan:
+  Friday offered Sat 24–Fri 30 everywhere ("Plan from tomorrow"), but at
+  midnight nothing covered today, so `suggest_planning_period`'s Friday rule
+  read the week as unplanned and jumped to next Monday — Now, Plan's button
+  and plan-week all said Oct 26, and today and tomorrow (no meals) were never
+  offered. The rule's approved branch now also takes an approved plan that
+  held part of this week and ended before today
+  (`_approved_plan_ended_within`) — when the day AFTER it is past the
+  plan-ahead point, so the morning after says what the last day did. Review
+  round: gating on the last day missed every plan ending Thursday (Fri–Thu
+  weeks, Tue–Thu, Mon–Thu: Thursday offered Friday, Friday 00:00 offered next
+  Monday). A Mon–Wed plan (Thursday still offers Thursday) or a week with
+  nothing approved in it still moves on to next week from Friday. For Emily:
+  that Saturday offer keeps Friday's words ("Next week" eyebrow, "Plan next
+  week" button) for a stretch starting today — shell.js wording, not touched.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

@@ -2009,6 +2009,24 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
         if plan_ahead and _attention_moves_on(today, start.isoformat(), day_count):
             conn = get_conn()
             approved = _live_plan_covering(conn, today.isoformat(), approved_only=True)
+            if approved is None:
+                # A plan that held part of this week and has ended keeps
+                # offering what follows it when the day after it is itself
+                # past the plan-ahead point. Every plan offers the day after
+                # it on its last day ("Plan from tomorrow"); for one ending
+                # Thursday or later, midnight used to swap that offer for
+                # next Monday, because nothing covered today and the Friday
+                # rule read the week as unplanned — so Fri/Sat/Sun were
+                # never offered again (defect hunt 2026-10-18). For one
+                # ending earlier (Mon–Wed) the next morning is still before
+                # the plan-ahead point and offers today anyway; from Friday
+                # such a week is read as unplanned, as before.
+                ended = _approved_plan_ended_within(conn, start.isoformat(), today.isoformat())
+                if ended is not None:
+                    ended_start, ended_days = plan_period(ended)
+                    day_after = date.fromisoformat(period_end_date(ended_start, ended_days)) + timedelta(days=1)
+                    if _attention_moves_on(day_after, start.isoformat(), day_count):
+                        approved = ended
             conn.close()
             if approved is None:
                 start = start + timedelta(days=day_count)
@@ -2120,6 +2138,23 @@ def _rhythm_anchor() -> str:
 # every day-resolver already used, so with no draft in play nothing
 # changes.
 _SQL_APPROVED_FIRST = "(status = 'approved') DESC"
+
+
+def _approved_plan_ended_within(conn, since: str, today: str):
+    """
+    The approved plan whose last day falls on or after `since` and before
+    `today` — the latest-ending one — or None. suggest_planning_period
+    asks it for a week that was planned in part and has run out before
+    its end (see the call).
+    """
+    return conn.execute(
+        f"SELECT * FROM weekly_plans WHERE household_id = ? AND status = 'approved' "
+        f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') >= date(?) "
+        f"AND date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') < date(?) "
+        f"ORDER BY date({_SQL_PERIOD_START}, '+' || {_SQL_PERIOD_LAST_OFFSET} || ' days') DESC, "
+        f"created_at DESC, id DESC LIMIT 1",
+        (household_id(), since, today),
+    ).fetchone()
 
 
 def _live_plan_covering(conn, day: str, approved_only: bool = False):
