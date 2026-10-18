@@ -43,6 +43,21 @@ why*, not duplicating the diff.
   Refused rather than reversed: the approved refusal's own reason applies
   verbatim, reopen promises "nothing has come off your shopping list", and a
   re-plan already reconciles. Taking the lines back instead is Emily's call.
+- **A written-in takeout dinner is not a cook on Today or in the texts**
+  (2026-10-18; branch `overnight/takeout-night-not-a-cook`; tests
+  `tests/test_takeout_night_not_a_cook.py`). "Takeout pizza" (or the open
+  slot's "Takeout, don't plan it" answer) was a `cook` move: Now's card read
+  "Cook this" and the 5pm nudge texted "Tonight: Takeout pizza. Tap to
+  start." `moves._cook_and_reheat_moves` now skips a recipe-less meal that
+  `weekly_plan.written_in_not_a_cook` calls takeout (Plan's own check); the
+  morning text names it from Today's meals row (`digest._takeout_tonight`).
+  Review follow-ups: `move_owner._is_a_cook` skips it too (`moves.is_takeout_night`)
+  — with "we take turns", Sam's turns had landed on the hidden takeout nights;
+  and the takeout word check now has word boundaries and lets a home cook in
+  takeout's style stay a cook ("takeout-style", "delivery-style", "homemade",
+  "copycat", "fakeaway"). Not done: Cook's card and `start_cook` still offer
+  "Start cooking" for it (shell.js), and the stored meal is the button label
+  "Takeout, don't plan it".
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

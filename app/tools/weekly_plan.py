@@ -665,9 +665,17 @@ def written_in_not_a_cook(freeform_meal: str | None) -> str | None:
     text = (freeform_meal or "").lower()
     if re.search(r"leftovers?\b", text):
         return "leftovers"
-    if re.search(r"take[\s-]?out|delivery|order in", text):
+    # A dish cooked AT home in takeout's style is a cook, not takeout
+    # (review, 2026-10-18): "Thai takeout-style curry", "homemade pizza
+    # delivery night", "copycat General Tso's takeout", "fakeaway".
+    if re.search(r"\btake[\s-]?out\b|\bdelivery\b|\border in\b", text) and not _COOKED_LIKE_TAKEOUT_RE.search(text):
         return "takeout"
     return None
+
+
+_COOKED_LIKE_TAKEOUT_RE = re.compile(
+    r"(?:take[\s-]?out|delivery)[\s-]+style|\bfakeaway|\bhome[\s-]?made\b|\bcopycat\b"
+)
 
 
 def _cooks_that_night(derived_from_json) -> bool:
