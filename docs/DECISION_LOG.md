@@ -94,6 +94,18 @@ why*, not duplicating the diff.
   `/plan-week?week=2026-10-19` came back as plain `/plan-week`. Now the path
   and query go through `_safe_next` and are percent-encoded as one value (an
   unencoded "&" would have split into a second /login param).
+- **A sized package on the Cook screen is its size** (2026-10-16; branch
+  `overnight/sized-package-cook-amount`; tests
+  `tests/test_sized_package_cook_amount.py`). An imported "1 (8 ounce) package
+  cream cheese" showed "4 oz" at the recipe's own four (the table's guess; the
+  size was dropped with the package word), and "1 package (16 ounce)
+  spaghetti" stayed a package word that the stepper couldn't scale.
+  `recipes._stated_package_amount` reads the size for per-use packages
+  (package/box/pack/packet/carton/block; not bag/bottle/jar/tub, not oils or
+  spices, not when implausible), and "package"/"pkg" are package words.
+  The grocery side is untouched.
+  Review follow-up: a stated count ("10 count") is that many pieces, and a
+  packet under an ounce (yeast, gelatin) keeps the line as written.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
