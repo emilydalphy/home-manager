@@ -344,6 +344,17 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             })
             continue
 
+        # A written-in takeout night ("Takeout pizza", or the open slot's own
+        # "Takeout, don't plan it") is a meal but not a move: nothing to cook,
+        # start or reheat. It was a cook here — Now's card read "Cook this"
+        # over it and the evening nudge texted "Tonight: Takeout pizza. Tap
+        # to start." (overnight hunt, 2026-10-18). Plan's own word check
+        # (weekly_plan.written_in_not_a_cook), recipe-less only, exactly as
+        # the named-leftovers pass in cooker.py; Today's meals row still
+        # names it, and the morning text says it from there.
+        if not meal.get("recipe_id") and _weekly_plan.written_in_not_a_cook(meal.get("meal")) == "takeout":
+            continue
+
         # A lunch whose batch was cooked on an earlier (prep) day is not a
         # cook today (Emily, 2026-09-30, option (a) on the "Today's timeline
         # still calls a prepped lunch a cook" card): it reads "Chili —

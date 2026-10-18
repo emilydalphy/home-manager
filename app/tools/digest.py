@@ -73,6 +73,7 @@ from . import notifications as _notifications
 from . import quantities as _quantities
 from . import rhythm as _rhythm
 from . import slot_needs as _slot_needs
+from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger("home_manager")
 
@@ -569,6 +570,18 @@ def _tidy(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").replace(" · ", ", ")).strip().rstrip(".?!")
 
 
+def _takeout_tonight(payload: dict) -> str:
+    """Tonight's written-in takeout dish as Today's meals row names it, or ''."""
+    for row in payload.get("day_meals") or []:
+        if row.get("slot") != "dinner":
+            continue
+        for line in row.get("lines") or []:
+            dish = line.get("dish") or ""
+            if _weekly_plan.written_in_not_a_cook(dish) == "takeout":
+                return dish
+    return ""
+
+
 def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
     """
     Everything today asks of the house that the household asked to hear
@@ -622,6 +635,10 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
         elif dinner_reheat:
             provenance = _tidy(dinner_reheat["detail"]).split(",")[0]
             parts.append(("meals", f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}."))
+        elif _takeout_tonight(payload):
+            # A takeout night is no move (moves._cook_and_reheat_moves), so
+            # it is read off Today's own meals row: named, never a start.
+            parts.append(("meals", f"Tonight: {_tidy(_takeout_tonight(payload))}."))
         elif kinds.get("dinner_decision", {}).get("key") == f"dinner_gap:{now_local.date().isoformat()}":
             # The feed's nudge covers tonight OR tomorrow; only tonight's gap
             # belongs in today's text. Two shapes, two lines, because they are

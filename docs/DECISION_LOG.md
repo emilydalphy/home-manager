@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A written-in takeout dinner is not a cook on Today or in the texts**
+  (2026-10-18; branch `overnight/takeout-night-not-a-cook`; tests
+  `tests/test_takeout_night_not_a_cook.py`). "Takeout pizza" (or the open
+  slot's "Takeout, don't plan it" answer) was a `cook` move: Now's card read
+  "Cook this" and the 5pm nudge texted "Tonight: Takeout pizza. Tap to
+  start." `moves._cook_and_reheat_moves` now skips a recipe-less meal that
+  `weekly_plan.written_in_not_a_cook` calls takeout (Plan's own check); the
+  morning text names it from Today's meals row (`digest._takeout_tonight`).
+  Not done: Cook's card and `start_cook` still offer "Start cooking" for it
+  (shell.js), and the stored meal is the button label "Takeout, don't plan it".
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
