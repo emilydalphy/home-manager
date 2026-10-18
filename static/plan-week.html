@@ -2974,10 +2974,21 @@
     var out = (byDay[slot] && byDay[slot].absent_names) || [];
     return names.length > 0 && names.every(function (n) { return out.indexOf(n) !== -1; });
   }
-  function dinnerOff(iso) {
-    return (answers.night_tags[iso] || []).indexOf('out') !== -1 || nobodyHomeFor(iso, 'dinner');
+  // A meal the household's usual week has off that day (the prefill's
+  // usual_week_off — every day, for a meal switched off altogether). The
+  // planner writes those slots empty whatever this screen says, so a
+  // household with no lunches in its usual week was asked about "5
+  // lunches, Monday to Friday" and then got none (defect hunt,
+  // 2026-10-16). Such a lunch is not counted or asked about, and such a
+  // dinner is not offered as the next day's leftovers.
+  function usualWeekOff(iso, slot) {
+    return ((data && data.usual_week_off) || []).some(function (o) { return o.date === iso && o.slot === slot; });
   }
-  function currentLunchDates() { return lunchDates(plannedDays(), nobodyHomeFor); }
+  function noMealFor(iso, slot) { return usualWeekOff(iso, slot) || nobodyHomeFor(iso, slot); }
+  function dinnerOff(iso) {
+    return (answers.night_tags[iso] || []).indexOf('out') !== -1 || noMealFor(iso, 'dinner');
+  }
+  function currentLunchDates() { return lunchDates(plannedDays(), noMealFor); }
   function lunchOk(iso) {
     return leftoversOk(iso, plannedDays().map(function (d) { return d.date; }), dinnerOff);
   }

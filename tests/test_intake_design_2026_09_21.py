@@ -136,7 +136,7 @@ class TestWhichDays:
         assert "plannedDays().forEach(function (day) {" in _extract("paintTiles")
         # Step 3 (weekday lunches since 2026-09-25) reads the period's
         # weekdays off plannedDays.
-        assert "function currentLunchDates() { return lunchDates(plannedDays(), nobodyHomeFor); }" in PAGE
+        assert "function currentLunchDates() { return lunchDates(plannedDays(), noMealFor); }" in PAGE
         assert "var days = plannedDays().map(function (d) { return d.date; });" in _extract("openAwaySheet")
         assert "var days = plannedDays();" in _extract("buildAwaySheet")
         assert "host.innerHTML = ((data && data.holidays) || []).map(holidayBlockHtml).join('');" in _extract("renderHolidayBlocks")

@@ -67,6 +67,17 @@ why*, not duplicating the diff.
   leftovers night read as 7; the share page said "14 new recipes this week"
   for a week of four. Both readers (share.html, the planning prompt) say it
   as recipes, so each distinct recipe now counts once; same for repeats.
+- **Plan a week's step 3 leaves out a lunch the usual week has off**
+  (2026-10-16, defect hunt; branch
+  `overnight/plan-week-lunch-step-honours-usual-week`; tests
+  `tests/test_plan_week_lunch_usual_week_off.py`). A household with lunch
+  off (lunches_per_week 0, or the grid's cells "off") was asked "5 lunches,
+  Monday to Friday", "Same as last week?" said "5 cooked on the day", and
+  the draft had none — the planner writes those slots empty whatever step 3
+  says. The prefill now carries `usual_week_off` (week_intake._usual_week_off:
+  `switched_off_meals` + `off_slots_on`, lunches and dinners); the page's
+  `noMealFor` drops those lunches (the step skips when none is left) and a
+  usual-week-off dinner is never offered as the next day's leftovers.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
