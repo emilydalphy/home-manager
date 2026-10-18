@@ -894,6 +894,33 @@ def get_recipe_by_id(recipe_id: int) -> dict | None:
 _QTY_NEEDS_TEXT_SCALING = re.compile(r"[(),½⅓⅔¼¾⅛⅜⅝⅞]|\d\s*(?:-|–|to)\s*\d")
 
 
+# "1-2" onions, "3-4 large" eggs: a COUNT range with no unit. scale_steps
+# only rescales a bare count when an ingredient word follows it, which a
+# step has ("add 1-2 onions") and the qty column does not — so the list
+# stayed "1-2" at double while the steps said "2-4 onions" (review of the
+# range fix, 2026-10-18; before it the table's guess was scaled instead).
+
+
+def _scaled_count_range(qty_text: str, ratio: float) -> str | None:
+    """A unitless count range scaled whole, both ends ("3-4 large" x2 ->
+    "6-8 large"), written once when the ends meet; None for anything else
+    (a range with a unit is scale_steps' to scale)."""
+    # Built here: _STEP_NUM is defined with the step scaler further down.
+    m = re.match(
+        r"^\s*(?P<a>" + _STEP_NUM + r")(?P<sep>\s*(?:-|–|—|to)\s*)(?P<b>" + _STEP_NUM + r")(?P<rest>\s.*)?$",
+        qty_text or "", re.IGNORECASE,
+    )
+    if not m or _STEP_UNIT_RE.match(m.group("rest") or ""):
+        return None
+    a, b = _step_number(m.group("a")), _step_number(m.group("b"))
+    if a is None or b is None:
+        return None
+    new_a = _step_amount_text(max(1.0, float(round(a * ratio))))
+    new_b = _step_amount_text(max(1.0, float(round(b * ratio))))
+    amount = new_a if new_a == new_b else new_a + m.group("sep") + new_b
+    return amount + (m.group("rest") or "")
+
+
 def scale_recipe(recipe_name: str, target_servings: int) -> dict:
     """
     Scale a saved recipe's ingredient quantities from its default_servings
@@ -929,6 +956,8 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # scaled as TEXT, by the same rules as the steps (scale_steps),
             # so the list and the steps agree and nothing written is lost.
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
+            if rescaled == qty_text and abs(ratio - 1) > 1e-9:
+                rescaled = _scaled_count_range(qty_text, ratio) or qty_text
             scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 unscaled_items.append(ing["item"])

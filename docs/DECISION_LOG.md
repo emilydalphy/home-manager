@@ -24,6 +24,9 @@ why*, not duplicating the diff.
   words), so the plausibility rule still corrects "3-4 sticks" for two.
   `scale_steps` writes a range whose ends meet once ("1 clove", not "1 to 1
   clove"). The batch ask's "N in all" is blank for a range (unaddable).
+  Review: a unitless COUNT range ("1-2" onions, "3-4 large" eggs) stayed
+  as written on the stepper while its steps scaled — scale_steps needs a
+  noun after a bare count; `_scaled_count_range` scales both ends whole.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

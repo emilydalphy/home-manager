@@ -97,3 +97,21 @@ def test_tonights_cook_card_shows_the_range_sized_to_the_table(signed_in):
     # the table's 1.5 lb or 3 cloves.
     assert qtys["Chicken thighs"] == "1-1 ½ lbs"
     assert qtys["Garlic"] == "1 clove"
+
+
+def test_a_count_range_with_no_unit_scales_on_the_stepper():
+    # Review of the fix: "1-2" onions and "3-4 large" eggs stayed as written
+    # (and in unscaled_items) while the steps beside them scaled.
+    tools.add_recipe(
+        "Onion Frittata",
+        ingredients=[{"item": "Onions", "qty": "1-2"}, {"item": "Eggs", "qty": "3-4 large"}],
+        instructions=["Add 1-2 onions.", "Beat 3-4 eggs."],
+        default_servings=4,
+    )
+    double = tools.scale_recipe("Onion Frittata", 8)
+    assert [i["qty"] for i in double["scaled_ingredients"]] == ["2-4", "6-8 large"]
+    assert double["unscaled_items"] == []
+    assert double["scaled_instructions"] == ["Add 2-4 onions.", "Beat 6-8 eggs."]
+    half = tools.scale_recipe("Onion Frittata", 2)
+    assert [i["qty"] for i in half["scaled_ingredients"]] == ["1", "2 large"]
+    assert half["unscaled_items"] == []
