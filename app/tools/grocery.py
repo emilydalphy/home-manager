@@ -709,7 +709,9 @@ def _household_edit_columns(conn, row, new_quantity: str) -> dict | None:
 
     An amount typed that isn't a number clears all three. None when the
     meals' side can't be read in one unit with it — the columns are left
-    as they were and the line follows its meals, as before.
+    as they were and the line follows its meals, as before. "3 kg" against
+    "5 lbs" IS read in one unit (quantities._convert_for_household_edit),
+    and recorded in the meals' unit; mass against volume never is.
     """
     ledger = [
         r["quantity"] or "" for r in conn.execute(
@@ -733,6 +735,13 @@ def _household_edit_columns(conn, row, new_quantity: str) -> dict | None:
         return {**clear, "kept_amount": _quantities._format_quantity(typed[0], typed[1])}
     m = _quantities._parse_quantity(meals)
     m_amt = _quantities._convert_to_unit(m[0], m[1], typed[1]) if m else None
+    if m_amt is None and m:
+        # Typed in the other system ("3 kg" on a "5 lbs" line): read the
+        # typed number in the MEALS' unit and record the edit there, so
+        # every later recompute sums one family the way it always has.
+        in_meals_unit = _quantities._convert_for_household_edit(typed[0], typed[1], m[1])
+        if in_meals_unit is not None:
+            typed, m_amt = (in_meals_unit, m[1]), m[0]
     if m_amt is None:
         return None
     diff = typed[0] - m_amt
