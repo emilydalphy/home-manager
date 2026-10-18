@@ -10432,8 +10432,34 @@ def _build_proactive_check_block() -> dict | None:
 # how it was meant.
 
 # Same two prefixes main._categorize_tool trusts: everything that reads is
-# named get_* or list_*, everything else can write.
+# named get_* or list_*, everything else can write...
 _READ_ONLY_PREFIXES = ("get_", "list_")
+# ...except these three, which read and are named for what they answer.
+# "Why chili?" (explain_meal_choice) drew "Household info updated · Saved
+# what you told me" and let "I've updated your plan" through as true.
+READ_ONLY_TOOLS = frozenset({"explain_meal_choice", "check_plan_conflicts", "scale_recipe"})
+# A write tool's own "nothing changed" answer, returned rather than raised:
+# a 'refused' swap, a 'needs_confirmation' approval, an unbatch that found
+# 'nothing' or is 'ambiguous', a staple or inventory name that matched
+# nothing (found false). is_error is False on all of them, so each used to
+# draw an "updated" card -- "Swapped in Weeknight Chili on Wednesday has
+# already been cooked" -- and back a "Done, moved it" as true.
+_NOTHING_CHANGED_STATUSES = frozenset({"refused", "needs_confirmation", "nothing", "ambiguous"})
+
+
+def is_read_only_tool(name: str) -> bool:
+    return bool(name) and (name.startswith(_READ_ONLY_PREFIXES) or name in READ_ONLY_TOOLS)
+
+
+def result_changed_nothing(content) -> bool:
+    """Whether a successful tool_result's content says it wrote nothing."""
+    try:
+        result = json.loads(content) if isinstance(content, str) else content
+    except (TypeError, ValueError):
+        return False
+    if not isinstance(result, dict):
+        return False
+    return result.get("status") in _NOTHING_CHANGED_STATUSES or result.get("found") is False
 
 _CHANGE_VERBS = (
     "changed|swapped|replaced|updated|added|removed|deleted|planned|scheduled"
@@ -10521,7 +10547,8 @@ def _turn_wrote_anything(new_entries: list[dict]) -> bool:
             name = names_by_id.get(block.get("tool_use_id")) or ""
             # A proposal writes nothing — it is a card for the household to
             # save — so it does not back a claim that the week changed.
-            if name and not name.startswith(_READ_ONLY_PREFIXES) and name != "propose_plan_changes":
+            if name and not is_read_only_tool(name) and name != "propose_plan_changes" \
+                    and not result_changed_nothing(block.get("content")):
                 return True
     return False
 
