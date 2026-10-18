@@ -89,6 +89,9 @@ def _harness(*extra: str) -> str:
         "wwkCuisineStored", "wwkIsPresetCuisine", *USUAL_WEEK_FNS, *extra,
         # "Your clock" (2026-10-13) is a row of the rhythm section.
         "wwkClockHtml", "phoneTimeZone", "zoneCity",
+        # The clock row asks isClockOnFile, so a browser's old zone name
+        # ("Asia/Calcutta") counts as the zone on file (browser-zone-names).
+        "isClockOnFile",
     ]
     return (
         "var shellWho = { timezone: 'America/Toronto', timezone_set: true };\n"
