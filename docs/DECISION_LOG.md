@@ -53,6 +53,13 @@ why*, not duplicating the diff.
   doesn't) maps each to its current zone, which is what's stored; `/api/whoami`
   carries `timezone_aliases` so the shell's `isClockOnFile` doesn't take a
   Calcutta phone for being outside a Kolkata household.
+- **Freezing one night's share of a pack: the toast names the night**
+  (2026-10-16; branch `overnight/freezer-toast-names-the-night`). With
+  `keep_fresh_label` set the block under the line already said "Sunday’s in
+  the freezer"; the Undo toast still said "Ground beef is in the freezer" —
+  the whole pack, contradicting "Keep Wednesday’s in the fridge". `freezerLine`
+  takes an optional night ("Sunday’s ground beef is in the freezer"); the
+  follow-up the freezer-toast-wording card named once both branches merged.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,

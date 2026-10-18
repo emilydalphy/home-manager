@@ -2383,11 +2383,24 @@
     var last = String(name || '').trim().split(/\s+/).pop().toLowerCase();
     return /[^su]s$/.test(last) && !/is$/.test(last);
   }
-  function freezerLine(thing, already) {
+  // night ("Sunday"): only that night's share of the pack is being frozen
+  // (keep_fresh_label set — the sooner nights' share stays in the fridge),
+  // so the toast says whose it is, as the answered block under the line
+  // does: "Sunday’s ground beef is in the freezer", not the whole pack's
+  // "Ground beef is in the freezer" (2026-10-16). The name's first letter
+  // drops to lower case mid-sentence unless it reads as an acronym ("BBQ")
+  // or the household typed it in title case ("Ground Beef" would otherwise
+  // come out "ground Beef").
+  function freezerLine(thing, already, night) {
     var where = (already ? 'already ' : '') + 'in the freezer';
     var name = savedName(thing);
     if (!name) return SAVED_PLAIN;
-    return name + (savedIsPlural(name) ? ' are ' : ' is ') + where;
+    var said = name;
+    if (night) {
+      if (!/^\S[A-Z]/.test(name) && !/\s[A-Z]/.test(name)) said = name.charAt(0).toLowerCase() + name.slice(1);
+      said = night + '’s ' + said;
+    }
+    return said + (savedIsPlural(name) ? ' are ' : ' is ') + where;
   }
   function freezerCount(n) {
     return n + (n === 1 ? ' thing is' : ' things are') + ' already in the freezer';
@@ -7128,7 +7141,7 @@
     if (answer !== 'freezer') return; // "Straight to the fridge" writes nothing
     groFreezeSend(id, 'freezer');
     var frozen = groFindLine(id);
-    toastSaved(freezerLine(frozen && frozen.item), {
+    toastSaved(freezerLine(frozen && frozen.item, false, f.keepFresh ? f.cookWeekday : ''), {
       label: 'Undo',
       onClick: function () {
         // The move goes, and the question is back where it was.

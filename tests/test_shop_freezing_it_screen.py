@@ -147,9 +147,13 @@ clickIfRendered({ gro: 'freeze-yes', id: '1' });
 console.log(JSON.stringify({
   text: blockText(asked),
   yes: /Yes, freezing Sunday’s<\\/button>/.test(asked),
-  answered: blockText(card(list(), 'Costco'))
+  answered: blockText(card(list(), 'Costco')),
+  toast: lastToast()
 }));
 """)
+    # The toast names whose share went in, as the block does — not the
+    # whole pack's "Chicken thighs are in the freezer" (2026-10-16).
+    assert out["toast"] == {"msg": "Sunday’s chicken thighs are in the freezer", "action": "Undo"}
     assert out["text"] == ("Freezing some? Keep Wednesday’s in the fridge. "
                            "I’ll remind you Friday night to move the rest over for Sunday.")
     assert out["yes"] is True
