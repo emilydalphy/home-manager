@@ -153,6 +153,16 @@ why*, not duplicating the diff.
   tools filter on household_id) — no leak found. Pinned the inventory writes:
   the sheet's routes change the row they name, and a stale id is
   404/found=False, not a 500 or a new row.
+- **A plan line unticked after a night was dropped asks for the meals left**
+  (2026-10-18, defect hunt; branch `overnight/untick-reads-the-meals-left`;
+  tests `tests/test_untick_after_a_drop.py`). Rice ticked at "4 cups", a
+  stir-fry night dropped, untick -> "4 cups" for 2 cups of dinners: the meal
+  reversal leaves a bought line's amount alone but deletes the dropped
+  night's ledger rows. `mark_grocery_item` now re-reads a plan line leaving
+  purchased/in_cart for needed off its ledger (`_plan_line_amount`, so an
+  edit down stands), only ever down. Not covered: a person's own line (the
+  dropped share left with its ledger row), and a line whose meals ALL went
+  while ticked (comes back as it was, like the set-aside case).
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
