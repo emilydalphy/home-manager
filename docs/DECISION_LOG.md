@@ -43,6 +43,24 @@ why*, not duplicating the diff.
   Refused rather than reversed: the approved refusal's own reason applies
   verbatim, reopen promises "nothing has come off your shopping list", and a
   re-plan already reconciles. Taking the lines back instead is Emily's call.
+- **Kitchen offers no "Start cooking" for a written-in takeout night**
+  (2026-10-18; branch `overnight/kitchen-takeout-no-start`; tests
+  `tests/test_kitchen_takeout_no_start.py`). The half the entry below left:
+  Cook's Tonight card read "Takeout pizza" with Start / On the table tiles
+  over a "Start cooking" dock, and `start_cooking` wrote a start on it.
+  `get_cooker_view` now marks each card `is_takeout` (moves.is_takeout_night
+  — the server says, shell.js never re-derives the word check);
+  `start_cooking` refuses "Nothing to cook on a takeout night." (200,
+  status refused, like its reheat neighbour). The card shows the name and
+  "Nothing to cook for this one.", no tiles, and the reheat's "Mark eaten"
+  in the dock; band says "nothing to cook today"; a takeout row under
+  another cook is a plain line. Every way in (the shelf tile, Plan's Meal
+  dock — now "Mark eaten", as a reheat's — and the Day step's "Cook this")
+  lands on the reheat screen's shape with its "Mark eaten" — review
+  follow-up: the first cut's quiet screen had no button, a dead end. A
+  "Mark eaten" tick also toasted "Takeout pizza isn't cooked yet" (reheats
+  too, in cookCheckMeal); it says "Takeout pizza was marked eaten" now. A saved recipe named with
+  "takeout" and "Thai takeout-style curry" still start.
 - **A written-in takeout dinner is not a cook on Today or in the texts**
   (2026-10-18; branch `overnight/takeout-night-not-a-cook`; tests
   `tests/test_takeout_night_not_a_cook.py`). "Takeout pizza" (or the open

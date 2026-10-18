@@ -10328,6 +10328,10 @@
       if (meal.date !== todayIso) return;
       var move = byEntry[meal.entry_id] || null;
       var isReheat = !!meal.is_leftovers;
+      // A written-in takeout meal: named, never a cook — no "Start
+      // cooking", no clock (the server marks it: cooker.get_cooker_view's
+      // is_takeout, the predicate Today's moves use).
+      var isTakeout = !isReheat && !!meal.is_takeout;
       var prepped = cookPreppedAhead(meal);
       // The plan row and the move say the same thing about "cooked" — the
       // move's `done` is read off cooked_status (app/tools/moves.py) — but
@@ -10338,6 +10342,7 @@
         idx: idx,
         entryId: meal.entry_id,
         isReheat: isReheat,
+        isTakeout: isTakeout,
         done: done,
         // The move itself rides along: the Tonight card reads its "Start
         // by" chip and its time label, which is the same arithmetic the
@@ -10361,14 +10366,14 @@
         // screens cannot name the same cook two different ways. The typeof
         // guard is this file's own idiom for a Cook builder that the tests
         // run alone under node (see cookTonightTimes' cookRealClock read).
-        line: cookOwnerPrefix(move) + kitchenTodayLine(meal, move, isReheat, done, prepped),
+        line: isTakeout ? '' : cookOwnerPrefix(move) + kitchenTodayLine(meal, move, isReheat, done, prepped),
         // "Cook" / "Reheat" while it is still ahead of you, and the past
         // tense of whichever it was once it is done — a reheat night was
         // never cooked, it was eaten (REHEAT_ACTION_LABEL says so too).
         // Made ahead and eaten cold (served_cold, cooker.py) is "Prepped":
         // it's ready to go, nothing to warm (Emily, 2026-09-25).
-        badge: done ? (isReheat ? 'eaten' : 'cooked')
-          : (isReheat ? (meal.served_cold ? 'Prepped' : 'Reheat') : (prepped ? 'Prepped' : 'Cook'))
+        badge: done ? (isReheat || isTakeout ? 'eaten' : 'cooked')
+          : isTakeout ? 'Takeout' : (isReheat ? (meal.served_cold ? 'Prepped' : 'Reheat') : (prepped ? 'Prepped' : 'Cook'))
       });
     });
     return rows;
@@ -10433,9 +10438,11 @@
   }
 
   function kitchenSubtitle(rows, meals, todayIso) {
-    var cooks = rows.filter(function (r) { return !r.isReheat && !r.done && !r.prepped; });
+    var cooks = rows.filter(function (r) { return !r.isReheat && !r.isTakeout && !r.done && !r.prepped; });
     var anyDone = rows.some(function (r) { return r.done; });
     if (!cooks.length) {
+      // Only takeout today: nothing was ever there to cook, so not "left".
+      if (rows.length && rows.every(function (r) { return r.isTakeout && !r.done; })) return 'nothing to cook today';
       return rows.length ? 'nothing left to cook today' : '';
     }
     var allDinner = cooks.every(function (r) {
@@ -10456,7 +10463,7 @@
   // year never reads as this month's Wednesday (Loop Board, 2026-09-15).
   function kitchenNextCookLine(meals, todayIso) {
     var next = (meals || []).filter(function (m) {
-      return m.date && !m.component_category && m.date > todayIso && !m.is_leftovers && m.meal;
+      return m.date && !m.component_category && m.date > todayIso && !m.is_leftovers && !m.is_takeout && m.meal;
     }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })[0];
     if (!next) return '';
     if (daysBetweenLocal(todayIso, next.date) <= 6) {
@@ -10474,17 +10481,18 @@
   // kitchenTodayRowHtml so the harness tests that slice that one function
   // keep running the real thing.
   function kitchenTodayRowHtml(row) {
-    var checkLabel = row.isReheat
+    var quiet = row.isReheat || row.isTakeout;
+    var checkLabel = quiet
       ? (row.done ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL)
       : (row.done ? 'Mark not cooked' : 'Mark cooked');
     // A reheat is a line, never a way into a recipe — there is no cook
     // here, so there is nothing for a cook screen to hold (Emily,
     // 2026-09-04). Its box still ticks: the dish gets eaten either way.
-    var name = row.isReheat
+    var name = quiet
       ? '<span class="cook-week-name">' + escapeHtml(row.title) + '</span>'
       : '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + row.idx + '">' +
           escapeHtml(row.title) + '</button>';
-    var badgeCls = 'cook-badge cook-badge-tag' + (row.done || row.isReheat ? '' : ' cook-badge-warm');
+    var badgeCls = 'cook-badge cook-badge-tag' + (row.done || quiet ? '' : ' cook-badge-warm');
     return '<div class="cook-week-item' + (row.done ? ' is-done' : '') + '">' +
       '<div class="cook-week-row">' +
         '<button type="button" class="cook-box' + (row.done ? ' checked' : '') + '" ' +
@@ -10492,7 +10500,7 @@
           'data-name="' + escapeHtml(row.title) + '" ' +
           'aria-label="' + escapeHtml(checkLabel) + '">' + COOK_ICONS.check + '</button>' +
         name +
-        (row.isReheat
+        (quiet
           ? '<span class="' + badgeCls + '">' + escapeHtml(row.badge) + '</span>'
           : '<button type="button" class="' + badgeCls + ' cook-badge-tap" data-cook="focus" data-idx="' +
               row.idx + '">' + escapeHtml(row.badge) + '</button>') +
@@ -10711,7 +10719,7 @@
     // day: the card is what to DO now, and there is nothing to do about
     // food that is already made.
     var todo = rows.filter(function (r) { return !r.done; });
-    var toCook = todo.filter(function (r) { return !r.prepped; });
+    var toCook = todo.filter(function (r) { return !r.prepped && !r.isTakeout; });
     if (toCook.length) return toCook[0];
     return todo.length ? todo[0] : rows[rows.length - 1];
   }
@@ -10848,9 +10856,10 @@
     var cookName = (row.move && ('owner_name' in row.move))
       ? row.move.owner_name
       : (data && data.cook_name);
-    var tiles = row.done ? [] : cookTonightTimes(row, meal);
+    var tiles = row.done || row.isTakeout ? [] : cookTonightTimes(row, meal);
     var note = row.done
-      ? (row.isReheat ? 'Eaten.' : 'Cooked.')
+      ? (row.isReheat || row.isTakeout ? 'Eaten.' : 'Cooked.')
+      : row.isTakeout ? 'Nothing to cook for this one.'
       : ((typeof cookStartedLine === 'function' && cookStartedLine(row, meal)) || cookTonightNote(data, meal));
     return '<section class="cook-tonight' + (row.done ? ' is-done' : '') + (row.isReheat ? ' is-reheat' : '') + '" aria-label="Tonight">' +
       '<span class="cook-tonight-eyebrow">' + escapeHtml(cookTonightEyebrow(meal, todayIso, cookName)) + '</span>' +
@@ -11047,7 +11056,8 @@
         'data-next="done" data-name="' + escapeHtml(row.title || '') + '" aria-label="Mark cooked">' +
         'Mark it cooked</button>';
     }
-    if (row.isReheat) {
+    // Takeout ticks the way a reheat does: nothing to start, still eaten.
+    if (row.isReheat || row.isTakeout) {
       return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="done" ' +
         'data-name="' + escapeHtml(row.title || '') + '">' +
         escapeHtml(REHEAT_ACTION_LABEL) + '</button>';
@@ -18465,7 +18475,7 @@
   function mealRecipeFor(slot, entry, cookMeal) {
     // A reheat night and a grab-and-go snack have no cook in them (the
     // dock says "Mark eaten"), so nothing here is a recipe to read or add to.
-    var eaten = !!entry && (entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry)));
+    var eaten = !!entry && (entry.source === 'leftovers' || entry.source === 'takeout' || (isSnackSlot(slot) && !isRealCook(entry)));
     var isCook = !!(cookMeal && !cookMeal.is_leftovers && entry) && !eaten;
     var pending = !cookMeal && typeof planCookView === 'function' && !planCookView();
     var failed = pending && typeof planCookViewFailed === 'function' && planCookViewFailed();
@@ -18661,7 +18671,9 @@
   function mealDockHtml(day, slot, info) {
     var entry = daySlotEntry(day, slot);
     if (!entry || entry.state !== 'planned' || day.isPast) return '';
-    var eaten = entry.source === 'leftovers' || (isSnackSlot(slot) && !isRealCook(entry));
+    // A written-in takeout night is eaten, never cooked: "Mark eaten",
+    // which opens Cook's takeout screen to tick it (cookTakeoutFocusHtml).
+    var eaten = entry.source === 'leftovers' || entry.source === 'takeout' || (isSnackSlot(slot) && !isRealCook(entry));
     var cookable = typeof planCookableNow !== 'function' || planCookableNow();
     // A reheat night not yet eatable (a draft, a day ahead — see
     // leftoversEatenNow) has nothing to mark and nothing to cook: the
@@ -23563,9 +23575,20 @@
     '</div>';
   }
 
+  // A written-in takeout meal opened from the shelf, Plan's dock or "Cook
+  // this": the reheat screen's shape and its "Mark eaten" — its name, one
+  // plain line, no recipe ask and no start (is_takeout,
+  // cooker.get_cooker_view; overnight 2026-10-18).
+  function cookTakeoutFocusHtml(meal) {
+    return cookReheatFocusHtml(Object.assign({}, meal, {
+      leftovers_headline: meal.meal, reheat_note: 'Nothing to cook for this one.', leftovers_from: null
+    }));
+  }
+
   function cookFocusHtml(data, meals, idx) {
     var meal = meals[idx];
     if (meal.is_leftovers) return cookReheatFocusHtml(meal);
+    if (meal.is_takeout) return cookTakeoutFocusHtml(meal);
     var steps = meal.instructions || [];
     // A stage that has nothing behind it any more — the recipe was filled
     // in and then emptied, or a deep link landed mid-journey — falls back
@@ -23819,6 +23842,9 @@
       // to not-cooked (S10, copy sweep finding 1 — the box carries the
       // name it is drawn beside, `data-name`).
       if (justCooked) toastMealLogged();
+      // "Mark eaten" (a reheat, a takeout night) is a tick, not an un-cook:
+      // it said "Takeout pizza isn't cooked yet" (overnight 2026-10-18).
+      else if (el.getAttribute('data-next') === 'done') toastSaved(savedLine(el.getAttribute('data-name'), 'marked eaten'));
       else toastSaved(cookNotCookedLine(el));
     } catch (err) {
       el.disabled = false;

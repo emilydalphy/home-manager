@@ -1005,6 +1005,14 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
     if row["recipe_id"] is None and (row["freeform_meal"] or "").strip().lower().startswith("leftover"):
         conn.close()
         return {"status": "refused", "entry_id": entry_id, "message": "Nothing to start on a reheat night."}
+    # A written-in takeout night is a meal, not a cook (moves.is_takeout_night
+    # — the one predicate Today, the texts and the rotation already ask), so
+    # chat or a stale screen can't write a start on it. A saved recipe with
+    # "takeout" in its name, or "Thai takeout-style curry", is still a cook.
+    from . import moves as _moves  # local: moves imports this module
+    if _moves.is_takeout_night({"recipe_id": row["recipe_id"], "meal": row["freeform_meal"]}):
+        conn.close()
+        return {"status": "refused", "entry_id": entry_id, "message": "Nothing to cook on a takeout night."}
     already_started = row["cook_started_at"] is not None
     if not already_started:
         conn.execute(
@@ -2063,6 +2071,14 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
                 if sw:
                     ing["substitute"] = sw["alternative"]
                     ing["substitute_at_home"] = bool(sw["at_home"])
+
+    # A written-in takeout meal (no saved recipe): Cook names it and offers
+    # no "Start cooking" (shell.js kitchenTodayRows reads this, never its own
+    # word check). Same predicate as Today's moves; after the chain passes so
+    # a card they turned into a reheat stays a reheat.
+    from . import moves as _moves  # local: moves imports this module
+    for m in meals:
+        m["is_takeout"] = not m.get("is_leftovers") and _moves.is_takeout_night(m)
 
     prep_tasks = get_prep_schedule(plan_id) if plan_id is not None else []
     return {
