@@ -76,6 +76,19 @@ why*, not duplicating the diff.
   "copycat", "fakeaway"). Not done: Cook's card and `start_cook` still offer
   "Start cooking" for it (shell.js), and the stored meal is the button label
   "Takeout, don't plan it".
+- **A recipe link's "1 tsp each salt and pepper" is two lines, salt and
+  pepper** (2026-10-18; branch `overnight/link-each-is-one-line-per-name`;
+  tests `tests/test_recipe_import_each.py`). `split_ingredient_line` stopped
+  at the unit, so "each salt and pepper" (or "of salt and pepper") was the
+  item — a list line that merges with nothing. "each" (and a following
+  "of") is now marked on the qty and `split_ingredient_lines` (JSON-LD and
+  model-string paths) makes a line per name, splitting only a list ending
+  in and/&. Without a unit ("1 each red and green bell pepper") the names
+  may share a noun, so "each" is dropped and the line stays whole.
+  Held back: "1/4 cup + 2 tbsp flour" still saves item "+ 2 tbsp flour".
+  Summing it (6 tbsp) trips `recipes.plausible_cooking_quantity`, which
+  then rewrites "1 cup plus 2 tbsp sugar" to 0.5 cup on the cook card —
+  waits on Emily's call on that guard.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

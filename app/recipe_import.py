@@ -721,6 +721,33 @@ def _without_second_measure(words: list[str], unit: str = "") -> tuple[list[str]
     return (rest if taken else words), ""
 
 
+def split_ingredient_lines(line: str) -> list[dict]:
+    """
+    split_ingredient_line, except that one amount for EACH of several
+    things becomes a line per thing:
+    "1 tsp each salt and pepper" -> salt 1 tsp, pepper 1 tsp;
+    "1/2 tsp each cumin, coriander and paprika" -> three lines.
+    Two things to buy are two grocery lines that merge with the salt and
+    the pepper already on the list; one line "salt and pepper · 1 tsp
+    each" merges with neither. The names split only on a list that ends
+    in "and"/"&", and any note after the last name ("mint, chopped") stays
+    on that name. Anything else is the one line split_ingredient_line read.
+    """
+    parsed = split_ingredient_line(line)
+    if not parsed["qty"].endswith(" each"):
+        return [parsed]
+    qty = parsed["qty"][: -len(" each")]
+    pieces = re.split(r"\s+(?:and|&)\s+", parsed["item"])
+    if len(pieces) < 2:
+        return [{"item": parsed["item"], "qty": qty}]
+    # Commas list the names before the last "and"; the last piece keeps
+    # whatever follows it.
+    *before, last = pieces
+    names = [n.strip(" ,") for chunk in before for n in chunk.split(",")]
+    names = [n for n in names if n] + [last.strip(" ,")]
+    return [{"item": name, "qty": qty} for name in names]
+
+
 def split_ingredient_line(line: str) -> dict:
     """
     "2 cups all-purpose flour, sifted" -> {"item": "all-purpose flour, sifted", "qty": "2 cups"}
@@ -787,6 +814,18 @@ def split_ingredient_line(line: str) -> dict:
             size = package_size
     if words and words[0].lower() == "of":
         words.pop(0)
+    # "1 tsp each (of) salt and pepper": one amount for each of several
+    # things. Left on the item it read "each salt and pepper" (defect hunt,
+    # 2026-10-18). With a unit it is marked on the qty, and
+    # split_ingredient_lines makes a line per thing. Without one — "1 each
+    # red and green bell pepper" — the names may share a noun, so the word
+    # is just dropped and the line stays whole.
+    each = False
+    if len(words) > 1 and words[0].lower() == "each":
+        words.pop(0)
+        each = bool(qty_words)
+        if len(words) > 1 and words[0].lower() == "of":
+            words.pop(0)
     item = " ".join(words).strip(" ,")
     unit = " ".join(qty_words)
     qty = f"{amount} {unit}".strip()
@@ -794,6 +833,8 @@ def split_ingredient_line(line: str) -> dict:
         # "1 (14 oz) can" -> "1 can (14 oz)", which is how the grocery
         # layer writes a sized package.
         qty = f"{qty} ({size})"
+    if each:
+        qty = f"{qty} each"
     if not item:
         # "2 eggs" reads as number + item; a line that was only a number
         # and a unit ("2 cups") has nothing to name.
@@ -918,10 +959,10 @@ def draft_from_json_ld(node: dict, source_url: str) -> dict:
     ingredients = []
     for raw in raw_ingredients or []:
         text = _text_of(raw) if not isinstance(raw, str) else raw
-        parsed = split_ingredient_line(text)
-        if parsed["item"]:
-            parsed["category"] = guess_category(parsed["item"], parsed["qty"])
-            ingredients.append(parsed)
+        for parsed in split_ingredient_lines(text):
+            if parsed["item"]:
+                parsed["category"] = guess_category(parsed["item"], parsed["qty"])
+                ingredients.append(parsed)
 
     prep = parse_duration_minutes(node.get("prepTime"))
     cook = parse_duration_minutes(node.get("cookTime"))
@@ -962,18 +1003,19 @@ def draft_from_model(detail: dict | None, source_url: str, fallback_name: str = 
     ingredients = []
     for raw in detail.get("ingredients") or []:
         if isinstance(raw, str):
-            parsed = split_ingredient_line(raw)
+            lines = split_ingredient_lines(raw)
         elif isinstance(raw, dict):
-            parsed = {"item": _clean_text(raw.get("item") or ""), "qty": normalise_amount(raw.get("qty") or "")}
-            if parsed["item"] and not parsed["qty"]:
-                parsed = split_ingredient_line(parsed["item"])
+            lines = [{"item": _clean_text(raw.get("item") or ""), "qty": normalise_amount(raw.get("qty") or "")}]
+            if lines[0]["item"] and not lines[0]["qty"]:
+                lines = split_ingredient_lines(lines[0]["item"])
         else:
             continue
-        if not parsed["item"]:
-            continue
         category = raw.get("category") if isinstance(raw, dict) else None
-        parsed["category"] = category if category in _quantities._GROCERY_SECTION_ORDER else guess_category(parsed["item"], parsed["qty"])
-        ingredients.append(parsed)
+        for parsed in lines:
+            if not parsed["item"]:
+                continue
+            parsed["category"] = category if category in _quantities._GROCERY_SECTION_ORDER else guess_category(parsed["item"], parsed["qty"])
+            ingredients.append(parsed)
     draft = {
         "name": _clean_text(detail.get("name") or "") or _clean_text(fallback_name),
         "default_servings": parse_servings(detail.get("default_servings")) or 4,
