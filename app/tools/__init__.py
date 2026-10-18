@@ -627,6 +627,7 @@ from .rhythm import (  # noqa: F401
     PREP_DAY_WEEKDAYS,
     PREP_MINUTES_CHOICES,
     WEEKDAYS,
+    browser_zone_names,
     checked_timezone,
     clear_lunch_location_override,
     effective_lunch_location,

@@ -1289,10 +1289,17 @@
     return String(zone || '').split('/').pop().replace(/_/g, ' ');
   }
 
+  // Is `zone` the clock on file? Chrome names some zones by their old
+  // names — a phone in India says "Asia/Calcutta" where the server stores
+  // Asia/Kolkata — and that phone is not somewhere else.
+  function isClockOnFile(zone) {
+    return zone === shellWho.timezone || (shellWho.timezone_aliases || []).indexOf(zone) !== -1;
+  }
+
   function clockAskZone() {
     if (!shellWho.loaded || shellWho.timezone_set) return '';
     var phone = phoneTimeZone();
-    return (phone && shellWho.timezone && phone !== shellWho.timezone) ? phone : '';
+    return (phone && shellWho.timezone && !isClockOnFile(phone)) ? phone : '';
   }
 
   function renderClockAsk(panel) {
@@ -13915,7 +13922,7 @@
     var onFile = shellWho.timezone || '';
     var phone = phoneTimeZone();
     var chips = onFile ? wwkChip(zoneCity(onFile), 'data-wwk="clock" data-value="' + escapeHtml(onFile) + '"', 'on') : '';
-    if (phone && phone !== onFile) {
+    if (phone && !isClockOnFile(phone)) {
       chips += wwkChip('This phone: ' + zoneCity(phone), 'data-wwk="clock" data-value="' + escapeHtml(phone) + '"', '');
     }
     chips += wwkAddChip('data-wwk="add" data-kind="clock"', 'Another city');
@@ -13950,7 +13957,7 @@
   }
 
   async function wwkSetClock(zone) {
-    if (!zone || zone === shellWho.timezone) return;
+    if (!zone || isClockOnFile(zone)) return;
     try {
       var out = await Api.json('/api/household/clock', { method: 'POST', body: { timezone: zone } });
       shellWho.timezone = (out && out.timezone) || zone;
@@ -27148,6 +27155,9 @@
       // Did anybody ever answer for it? Missing on an older server reads as
       // answered, so an old server never puts the clock question up.
       shellWho.timezone_set = data.timezone_set !== false;
+      // The browser's own old names for that zone ("Asia/Calcutta" for
+      // Asia/Kolkata — app/tools/rhythm.py, _BROWSER_ZONE_NAMES).
+      shellWho.timezone_aliases = Array.isArray(data.timezone_aliases) ? data.timezone_aliases : [];
       // The other adult's first open (openFirstOpen, below).
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || '';

@@ -104,7 +104,9 @@ def test_setup_sends_the_clock_only_when_the_step_was_continued():
     ask = SHELL_JS[SHELL_JS.index("function clockAskZone()"):]
     ask = ask[:ask.index("\n  }\n")]
     assert "if (!shellWho.loaded || shellWho.timezone_set) return '';" in ask
-    assert "phone !== shellWho.timezone" in ask
+    # The browser's old name for the zone on file is not "elsewhere"
+    # (tests/test_browser_zone_names.py).
+    assert "!isClockOnFile(phone)" in ask
 
 
 def test_continue_with_the_city_box_open_never_saves_a_zone_nobody_confirmed():

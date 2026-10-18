@@ -43,6 +43,16 @@ why*, not duplicating the diff.
   carries the flag (`following > today`: its fallback offer can start today,
   which read "Plan from Thursday" under a Mon–Wed plan); on the plan's last
   day it says "This plan ends today." / "Plan from tomorrow".
+- **Chrome's old zone names are the household's clock** (2026-10-16; branch
+  `overnight/browser-zone-names`; tests `tests/test_browser_zone_names.py`).
+  Chrome reports India as `Asia/Calcutta` (also Saigon, Kiev, Katmandu,
+  Rangoon, Buenos_Aires…); `rhythm.checked_timezone` refused them on a server
+  whose zone data lacks the old links, so setup's "Build my first week" 400'd
+  on every try ("Couldn't save that") and Today's "Use Calcutta time" failed.
+  Now `_BROWSER_ZONE_NAMES` (all 18 names Chromium 141 lists that Python
+  doesn't) maps each to its current zone, which is what's stored; `/api/whoami`
+  carries `timezone_aliases` so the shell's `isClockOnFile` doesn't take a
+  Calcutta phone for being outside a Kolkata household.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
