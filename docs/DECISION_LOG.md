@@ -60,6 +60,13 @@ why*, not duplicating the diff.
   the whole pack, contradicting "Keep Wednesday’s in the fridge". `freezerLine`
   takes an optional night ("Sunday’s ground beef is in the freezer"); the
   follow-up the freezer-toast-wording card named once both branches merged.
+- **"N new recipes this week" counts recipes, not meals** (2026-10-16, defect
+  hunt; branch `overnight/new-recipes-counted-once`; tests
+  `tests/test_new_recipes_counted_once.py`). `_compute_freshness` counted one
+  per meal, so a new oats recipe on five breakfasts plus a curry and its
+  leftovers night read as 7; the share page said "14 new recipes this week"
+  for a week of four. Both readers (share.html, the planning prompt) say it
+  as recipes, so each distinct recipe now counts once; same for repeats.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,
