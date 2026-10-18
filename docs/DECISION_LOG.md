@@ -106,6 +106,12 @@ why*, not duplicating the diff.
   The grocery side is untouched.
   Review follow-up: a stated count ("10 count") is that many pieces, and a
   packet under an ounce (yeast, gelatin) keeps the line as written.
+- **Staples: this morning's "Not this trip" survives east of UTC** (2026-10-16;
+  branch `overnight/staple-undo-household-day`). `sync_due_staples` deleted
+  answered staple lines where `date(removed_at) < household today`; removed_at
+  is UTC, so in Tokyo/Kolkata a morning answer was "yesterday" and went on
+  the next list read, and Undo made a fresh line without its store/amount.
+  Now instant against instant via `pre_shop._household_day_start_utc`.
 - **Household-scope sweep, tranche 3: the last 40 statements are scoped**
   (2026-10-13; branch `overnight/household-scope-tranche-3`, one commit per
   module). defrost 8, inventory 6, attention 5, cooker 5, tonight 4,

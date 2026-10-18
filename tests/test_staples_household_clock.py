@@ -304,3 +304,52 @@ class TestTheOverrideAndTheCost:
             f"the household clock was read with {seen_depth[0]} of this call's "
             "connections already open"
         )
+
+
+# --------------------------------------------------------------------------
+# An answer given this morning, east of UTC, is kept for Undo.
+# --------------------------------------------------------------------------
+
+def _answered_line(item: str, removed_at_utc: datetime) -> int:
+    """The staple's line, taken off ("Not this trip") at a given UTC instant."""
+    conn = get_conn()
+    staple_id = conn.execute(
+        "SELECT id FROM staples WHERE household_id = ? AND item = ?", (tools.household_id(), item)
+    ).fetchone()["id"]
+    line = conn.execute(
+        "INSERT INTO grocery_items (household_id, item, quantity, status, staple_id, removed_by, removed_at) "
+        "VALUES (?, ?, '2', 'removed', ?, 'staple', ?)",
+        (tools.household_id(), item, staple_id, removed_at_utc.strftime("%Y-%m-%d %H:%M:%S")),
+    ).lastrowid
+    conn.commit()
+    conn.close()
+    return line
+
+
+def _still_there(line_id: int) -> bool:
+    conn = get_conn()
+    hit = conn.execute("SELECT 1 FROM grocery_items WHERE id = ?", (line_id,)).fetchone()
+    conn.close()
+    return hit is not None
+
+
+class TestThisMorningsAnswerSurvivesTheNextRead:
+    def test_east_of_utc_an_answer_from_this_morning_is_kept(self, monkeypatch):
+        """CATCH (defect hunt, 2026-10-16). Tokyo 07:30 is still yesterday in
+        UTC, and date(removed_at) was compared with the household's date, so
+        the next read of the list deleted the answered row — and Undo had
+        nothing to put back."""
+        household_today = _ahead(monkeypatch)
+        _due_on("Dish soap", household_today)
+        line = _answered_line("Dish soap", UTC_LATE - timedelta(hours=1))
+        _staples.sync_due_staples()
+        assert _still_there(line)
+        assert not _listed("Dish soap"), "answered today, so not asked again"
+
+    def test_an_answer_from_the_households_yesterday_still_goes(self, monkeypatch):
+        """NO-REGRESSION GUARD: the cleanup still clears yesterday's answers."""
+        household_today = _ahead(monkeypatch)
+        _due_on("Dish soap", household_today)
+        line = _answered_line("Dish soap", UTC_LATE - timedelta(hours=10))
+        _staples.sync_due_staples()
+        assert not _still_there(line)
