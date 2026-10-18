@@ -13,6 +13,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Kitchen offers no "Start cooking" for a written-in takeout night**
+  (2026-10-18; branch `overnight/kitchen-takeout-no-start`; tests
+  `tests/test_kitchen_takeout_no_start.py`). The half the entry below left:
+  Cook's Tonight card read "Takeout pizza" with Start / On the table tiles
+  over a "Start cooking" dock, and `start_cooking` wrote a start on it.
+  `get_cooker_view` now marks each card `is_takeout` (moves.is_takeout_night
+  — the server says, shell.js never re-derives the word check);
+  `start_cooking` refuses "Nothing to cook on a takeout night." (200,
+  status refused, like its reheat neighbour). The card shows the name and
+  "Nothing to cook for this one.", no tiles, no dock; band says "nothing to
+  cook today"; a takeout row under another cook is a plain line; the shelf
+  tile opens a quiet screen (no "ask me for the recipe", no "Done — on the
+  table"). A saved recipe named with "takeout" and "Thai takeout-style
+  curry" still start. Not done: Plan's Meal step dock (mealDockHtml) still
+  offers "Done — on the table" for it.
 - **A written-in takeout dinner is not a cook on Today or in the texts**
   (2026-10-18; branch `overnight/takeout-night-not-a-cook`; tests
   `tests/test_takeout_night_not_a_cook.py`). "Takeout pizza" (or the open
