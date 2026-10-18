@@ -167,10 +167,11 @@ def _overrides() -> dict[tuple[str, str], tuple[int | None, str | None]]:
 def _is_a_cook(meal: dict) -> bool:
     """
     Exactly what becomes a cook move in moves._cook_and_reheat_moves: a
-    dated entry that is not a reheat. Kept as one predicate so the
-    rotation can never count a night the screen doesn't draw a cook on.
+    dated entry that is not a reheat and not a written-in takeout night
+    (moves.is_takeout_night). Kept as one predicate so the rotation can
+    never count a night the screen doesn't draw a cook on.
     """
-    return bool(meal.get("date")) and not meal.get("is_leftovers")
+    return bool(meal.get("date")) and not meal.get("is_leftovers") and not _moves.is_takeout_night(meal)
 
 
 class MoveOwners:

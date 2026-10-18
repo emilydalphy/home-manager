@@ -288,6 +288,13 @@ def _weekday(day: str) -> str:
 
 # ---------- the sources ----------
 
+def is_takeout_night(meal: dict) -> bool:
+    """A written-in takeout meal (no saved recipe): a meal, never a cook
+    move. move_owner._is_a_cook asks this too, so the rotation never hands
+    a turn to a night Today draws no cook on."""
+    return not meal.get("recipe_id") and _weekly_plan.written_in_not_a_cook(meal.get("meal")) == "takeout"
+
+
 def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
     day_str = day.isoformat()
     moves: list[dict] = []
@@ -352,7 +359,7 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
         # (weekly_plan.written_in_not_a_cook), recipe-less only, exactly as
         # the named-leftovers pass in cooker.py; Today's meals row still
         # names it, and the morning text says it from there.
-        if not meal.get("recipe_id") and _weekly_plan.written_in_not_a_cook(meal.get("meal")) == "takeout":
+        if is_takeout_night(meal):
             continue
 
         # A lunch whose batch was cooked on an earlier (prep) day is not a

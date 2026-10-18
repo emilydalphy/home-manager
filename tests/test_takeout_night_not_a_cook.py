@@ -16,6 +16,8 @@ import datetime as dt
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from app import tools
 from conftest import household_today
 
@@ -95,3 +97,52 @@ def test_a_saved_recipe_with_takeout_in_its_name_is_still_a_cook():
     cooks = [m for m in tools.today_moves(day=TODAY, now=_at(17, 5))["moves"] if m["kind"] == "cook"]
     assert [m["title"] for m in cooks] == ["Takeout-Style Pad Thai"]
     assert tools.build_evening_nudge(_at(17, 30), link=False) == "Tonight: Takeout-Style Pad Thai — 30 min. Tap to start."
+
+
+def test_turns_skip_a_takeout_night_so_each_adult_gets_a_visible_cook():
+    """CATCH (review, 2026-10-18). With "we take turns", a takeout night still
+    counted as a cook day in move_owner: Sam's turns landed on the hidden
+    takeout nights and Emily owned every cook Today actually draws."""
+    from app.tools import moves as _moves
+
+    for n in ("Emily", "Sam"):
+        tools.add_member(n)
+        tools.set_member_age_group(n, "adult")
+    tools.add_recipe("Chicken Skewers", ingredients=[{"item": "Chicken Thighs", "qty": "1 lb"}],
+                     prep_time_minutes=10, cook_time_minutes=25, default_servings=3)
+    start = TODAY - dt.timedelta(days=2)
+    days = [(start + dt.timedelta(days=i)).isoformat() for i in range(4)]
+    plan_id = tools.create_weekly_plan(start.isoformat())["weekly_plan_id"]
+    for d, dish in zip(days, ["Chicken Skewers", "Takeout pizza", "Chicken Skewers", "Takeout pizza"]):
+        tools.plan_meal(d, dish, slot="dinner", weekly_plan_id=plan_id, add_ingredients_to_grocery_list=False)
+    tools.set_cooking_role("turns")
+
+    owners = [m["owner_name"] for d in days for m in _moves.moves_for_day(d, now=_at(9)) if m["kind"] == "cook"]
+    assert owners == ["Emily", "Sam"]
+
+
+@pytest.mark.parametrize("dish, expected", [
+    ("Takeout pizza", "takeout"),
+    ("Order in", "takeout"),
+    ("Thai delivery", "takeout"),
+    ("Take-out sushi", "takeout"),
+    ("Thai takeout-style curry", None),
+    ("Delivery-style pizza", None),
+    ("Homemade pizza delivery night", None),
+    ("Copycat General Tso's takeout", None),
+    ("Fakeaway takeout curry", None),
+    ("Chicken Skewers", None),
+])
+def test_only_a_real_takeout_is_read_as_takeout(dish, expected):
+    """CATCH for the cooked-at-home rows, GUARD for the true takeouts: a dish
+    made at home in takeout's style is a cook, and keeps its nudge."""
+    from app.tools import weekly_plan as _weekly_plan
+
+    assert _weekly_plan.written_in_not_a_cook(dish) == expected
+
+
+def test_a_takeout_style_dish_written_in_still_gets_its_nudge():
+    """CATCH. "Thai takeout-style curry" written in lost its cook move."""
+    _adult_opted_in()
+    _plan("Thai takeout-style curry")
+    assert tools.build_evening_nudge(_at(17, 30), link=False) == "Tonight: Thai takeout-style curry. Tap to start."
