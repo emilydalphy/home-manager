@@ -27,6 +27,22 @@ why*, not duplicating the diff.
   Review: a unitless COUNT range ("1-2" onions, "3-4 large" eggs) stayed
   as written on the stepper while its steps scaled — scale_steps needs a
   noun after a bare count; `_scaled_count_range` scales both ends whole.
+- **Dropping a REOPENED week is refused while its groceries are on the
+  list** (2026-10-18; branch `overnight/discard-reopened-week`; tests
+  `tests/test_discard_a_reopened_week.py`). `reopen_weekly_plan` sets an
+  approved week back to `draft` and keeps its list lines (DECISIONS.md #2),
+  but `discard_draft_plan` refused only `status = 'approved'`, so reopen →
+  "drop it" retired a shopped-for week and left its lines (e.g. `beans 21
+  tins`) for meals that no longer exist. Now refused (SlotRefused, route 200
+  `refused`) when the plan has a linked line still ON the list (`needed`/
+  `in_cart`/`spice`/`carried`, not excluded — what Grocery shows) — the
+  ledger, not the status, since reopen clears every approval stamp. A week
+  whose lines are all bought or pre-shop-dropped (links survive both) drops
+  like any draft: nothing left to orphan, and "already on your shopping
+  list" would be false. Emily can revisit that.
+  Refused rather than reversed: the approved refusal's own reason applies
+  verbatim, reopen promises "nothing has come off your shopping list", and a
+  re-plan already reconciles. Taking the lines back instead is Emily's call.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
