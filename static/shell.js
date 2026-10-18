@@ -23824,7 +23824,7 @@
       if (justCooked) toastMealLogged();
       // "Mark eaten" (a reheat, a takeout night) is a tick, not an un-cook:
       // it said "Takeout pizza isn't cooked yet" (overnight 2026-10-18).
-      else if (el.getAttribute('data-next') === 'done') toastSaved();
+      else if (el.getAttribute('data-next') === 'done') toastSaved(savedLine(el.getAttribute('data-name'), 'marked eaten'));
       else toastSaved(cookNotCookedLine(el));
     } catch (err) {
       el.disabled = false;

@@ -29,7 +29,7 @@ why*, not duplicating the diff.
   lands on the reheat screen's shape with its "Mark eaten" — review
   follow-up: the first cut's quiet screen had no button, a dead end. A
   "Mark eaten" tick also toasted "Takeout pizza isn't cooked yet" (reheats
-  too, in cookCheckMeal); it says "Saved" now. A saved recipe named with
+  too, in cookCheckMeal); it says "Takeout pizza was marked eaten" now. A saved recipe named with
   "takeout" and "Thai takeout-style curry" still start.
 - **A written-in takeout dinner is not a cook on Today or in the texts**
   (2026-10-18; branch `overnight/takeout-night-not-a-cook`; tests
