@@ -199,7 +199,7 @@ def _broth_plan() -> tuple[int, int, int]:
     _household()
     tools.add_recipe(
         "Herb Broth",
-        ingredients=[{"item": "chicken broth", "qty": "0.6 cup"}],
+        ingredients=[{"item": "milk", "qty": "0.6 cup"}],
         default_servings=3,
     )
     plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
@@ -212,13 +212,13 @@ def _broth_plan() -> tuple[int, int, int]:
 @ON_MONDAY
 def test_broth_line_survives_a_cup_to_tablespoon_roll_in_either_order():
     plan_id, first, second = _broth_plan()
-    row = _grocery_row("chicken broth")
+    row = _grocery_row("milk")
     assert row is not None
     assert row["quantity"] == "1 1/4 cups"
 
     remaining_qty = _ledger_qtys(second)[0]
     grocery._reverse_meal_grocery_contributions(first)
-    row = _grocery_row("chicken broth")
+    row = _grocery_row("milk")
     assert row is not None
     # 0.6 cup is 2/3 cup on a shopping list since part cups read as cups
     # (2026-10-18); until then this line rolled down to "9.5 tbsp", which is
@@ -226,7 +226,7 @@ def test_broth_line_survives_a_cup_to_tablespoon_roll_in_either_order():
     assert row["quantity"] == "2/3 cup"
     assert row["quantity"] == quantities._sum_ledger_quantities([remaining_qty])
     grocery._reverse_meal_grocery_contributions(second)
-    assert _grocery_row("chicken broth") is None
+    assert _grocery_row("milk") is None
 
 
 # ---------- packages are untouched by this change ----------
@@ -236,20 +236,20 @@ def test_broth_line_survives_a_cup_to_tablespoon_roll_in_either_order():
 def test_package_line_survives_reversals_until_its_last_link():
     _household()
     tools.add_recipe(
-        "Pancakes", ingredients=[{"item": "maple syrup", "qty": "1 bottle"}], default_servings=3,
+        "Pancakes", ingredients=[{"item": "pancake mix", "qty": "1 bottle"}], default_servings=3,
     )
     plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
     first = tools.plan_meal(MON, "Pancakes", slot="breakfast", weekly_plan_id=plan_id)["entry_id"]
     second = tools.plan_meal(FRI, "Pancakes", slot="breakfast", weekly_plan_id=plan_id)["entry_id"]
     tools.approve_weekly_plan(plan_id, "Emily")
-    assert _grocery_row("maple syrup")["quantity"] == "1 bottle"
+    assert _grocery_row("pancake mix")["quantity"] == "1 bottle"
 
     grocery._reverse_meal_grocery_contributions(first)
-    row = _grocery_row("maple syrup")
+    row = _grocery_row("pancake mix")
     assert row is not None and row["quantity"] == "1 bottle", "still wanted by the second meal"
 
     grocery._reverse_meal_grocery_contributions(second)
-    assert _grocery_row("maple syrup") is None
+    assert _grocery_row("pancake mix") is None
 
 
 # ---------- a hand-added standing want is never recomputed away ----------

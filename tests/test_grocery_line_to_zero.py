@@ -276,18 +276,18 @@ def test_a_sealed_package_still_survives_until_its_last_meal(family_of_three):
     apportioned or re-derived — it comes off when the last meal holding a
     link to it does."""
     plan_id, entries = _plan(
-        "Pancakes", {"item": "Maple syrup", "qty": "1 bottle", "category": "pantry"},
+        "Pancakes", {"item": "Pancake mix", "qty": "1 bottle", "category": "pantry"},
         3, [D0, D1, D2],
     )
-    assert _qty("Maple syrup") == "1 bottle"
-    assert _links("Maple syrup") == ["1 bottle", "1 bottle", "1 bottle"]
+    assert _qty("Pancake mix") == "1 bottle"
+    assert _links("Pancake mix") == ["1 bottle", "1 bottle", "1 bottle"]
 
     grocery._reverse_meal_grocery_contributions(entries[0])
-    assert _qty("Maple syrup") == "1 bottle"
+    assert _qty("Pancake mix") == "1 bottle"
     grocery._reverse_meal_grocery_contributions(entries[1])
-    assert _qty("Maple syrup") == "1 bottle"
+    assert _qty("Pancake mix") == "1 bottle"
     grocery._reverse_meal_grocery_contributions(entries[2])
-    assert _qty("Maple syrup") is None
+    assert _qty("Pancake mix") is None
 
 
 def test_a_line_already_in_the_cart_is_left_exactly_alone(family_of_three):

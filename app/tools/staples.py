@@ -204,9 +204,21 @@ def _default_cadence(category: str, item: str = "") -> int:
 # them (assumed set, Emily's ticket of 2026-09-13; the names are one line
 # to change). A section is derived, never stored — see section_for.
 SECTION_SPICES = "spices"
-SECTION_ORDER = ["spices", "pantry", "fridge", "household", "other"]
+# The list's own two (2026-10-18): a sauce or pantry staple that came home
+# through "Sauces / Pantry staples this week" is kept the spice-rack way
+# (staples.kept_by_list), in a section of its own so it reads as the rack's
+# and not as a regular. A staple a person set up — "coffee, every two
+# weeks" — stays in Pantry basics and keeps its rhythm, whatever its name.
+SECTION_SAUCES = "sauces"
+SECTION_PANTRY_STAPLES = "pantry_staples"
+# Kept by the list's sections, never by a person: never put on the list on
+# a rhythm (sync_due_staples), never offered as a regular.
+RACK_SECTIONS = frozenset({SECTION_SPICES, SECTION_SAUCES, SECTION_PANTRY_STAPLES})
+SECTION_ORDER = ["spices", "sauces", "pantry_staples", "pantry", "fridge", "household", "other"]
 SECTION_LABELS = {
     "spices": "Spices",
+    "sauces": "Sauces",
+    "pantry_staples": "Pantry staples",
     "pantry": "Pantry basics",
     "fridge": "Fridge basics",
     "household": "Household supplies",
@@ -216,7 +228,7 @@ SECTION_LABELS = {
 # A grocery category that already says where a thing lives. Frozen goes
 # with the fridge — it is the same appliance — rather than the pantry.
 _FRIDGE_CATEGORIES = {"produce", "dairy", "meat/seafood", "frozen"}
-_PANTRY_CATEGORIES = {"pantry"}
+_PANTRY_CATEGORIES = {"pantry", "canned"}
 
 # The small classifier for a name whose category doesn't settle it (a chat
 # add is "other" unless the model said better). Matched lowercased with
@@ -288,17 +300,28 @@ def _name_section_food(item: str) -> str | None:
     return None
 
 
-def section_for(item: str, category: str | None = None) -> str:
+def section_for(item: str, category: str | None = None, kept: bool = False) -> str:
     """
     Which of SECTION_ORDER a staple belongs in, from its name and grocery
     category and nothing else — nobody picks a section. In order: a spice
-    (spices.is_spice, the same list the "Spices this week" card uses) is
-    Spices; a household word in the name is Household supplies whatever
-    the category says; then the category (household / fridge / pantry);
-    then a food word in the name; then Other.
+    (spices.assumed_section, the same list the "Spices this week" card
+    uses) is Spices; a sauce or pantry staple the list's sections keep
+    (`kept`, staples.kept_by_list) is Sauces / Pantry staples; then a
+    household word in the name is Household supplies whatever the category
+    says; then the category (household / fridge / pantry); then a food
+    word in the name; then Other.
+
+    A name on the old spice-rack list that is now a sauce or a pantry
+    staple (sesame seeds, stock cubes, baking soda, chili oil...) counts as
+    kept whatever the flag says: it was the rack's before 2026-10-18 and a
+    staple made for it then has no flag, but it must not start being put on
+    the list on a rhythm now.
     """
-    if _spices.is_spice(item):
+    assumed = _spices.assumed_section(item)
+    if assumed == _spices.SECTION_SPICES:
         return SECTION_SPICES
+    if assumed is not None and (kept or _spices.is_spice(item)):
+        return SECTION_SAUCES if assumed == _spices.SECTION_SAUCES else SECTION_PANTRY_STAPLES
     by_name = _name_section(item)
     if by_name:
         return by_name
@@ -475,13 +498,17 @@ def _shape(r, today: date | None = None) -> dict:
     """
     today = today or _today()
     next_due = r["next_due_at"]
-    section = section_for(r["item"], r["category"])
+    section = section_for(r["item"], r["category"], kept=_kept(r))
     return {
         "id": r["id"],
         "item": r["item"],
         "category": r["category"],
         "section": section,
         "section_label": SECTION_LABELS[section],
+        # Kept by the list's own sections (spices, sauces, pantry staples),
+        # not by a person: the screens that list a household's regulars
+        # leave these out.
+        "rack": section in RACK_SECTIONS,
         "quantity": r["quantity"] or "",
         "cadence_days": r["cadence_days"],
         "cadence_source": r["cadence_source"],
@@ -493,6 +520,19 @@ def _shape(r, today: date | None = None) -> dict:
         "skip_streak": r["skip_streak"],
         "paused": bool(r["paused"]),
     }
+
+
+def _kept(r) -> bool:
+    """staples.kept_by_list, read safely off any staples row."""
+    try:
+        return bool(r["kept_by_list"])
+    except (IndexError, KeyError):
+        return False
+
+
+def in_rack(r) -> bool:
+    """Whether a staples row is kept by the list's sections (RACK_SECTIONS)."""
+    return section_for(r["item"], r["category"], kept=_kept(r)) in RACK_SECTIONS
 
 
 def _event(
@@ -714,7 +754,7 @@ def add_staple(
             "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ? AND staple_id IS NULL",
             (staple_id, line["id"], household_id()),
         )
-    if running_low and not on_list and section_for(name, cat) == SECTION_SPICES:
+    if running_low and not on_list and in_rack(_row(conn, staple_id)):
         # sync_due_staples never lists a spice on its own (see the module
         # note), so "we're out of cumin" puts the line on today, here —
         # unless it was made from a line already there.
@@ -767,11 +807,17 @@ def _create_spice_staple(conn, item: str, category: str, except_line_id: int | N
     if existing:
         return existing
     today = _today()
-    cadence = _default_cadence(category, item)
+    # A sauce or pantry staple is kept the same way (2026-10-18), flagged
+    # so it reads as the list's and not as a regular, on its own first
+    # cadence — a bag of rice goes faster than a jar of cumin.
+    assumed = _spices.assumed_section(item)
+    kept = assumed in (_spices.SECTION_SAUCES, _spices.SECTION_PANTRY)
+    cadence = _spices.PANTRY_RECENTLY_BOUGHT_DAYS if kept else _default_cadence(category, item)
     cur = conn.execute(
         "INSERT INTO staples (household_id, item, category, quantity, cadence_days, cadence_source, "
-        "last_bought_at, next_due_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-        (household_id(), item, _clean_category(category), "", cadence, "default", None, _iso(today + timedelta(days=cadence))),
+        "last_bought_at, next_due_at, kept_by_list) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (household_id(), item, _clean_category(category), "", cadence, "default", None,
+         _iso(today + timedelta(days=cadence)), 1 if kept else 0),
     )
     staple_id = cur.lastrowid
     _event(conn, staple_id, "added", "spice")
@@ -803,7 +849,7 @@ def seed_spice_staples(conn) -> int:
     made = 0
     for r in rows:
         key = _grocery._merge_key(r["item"])
-        if not key or key in known or not _spices.is_spice(r["item"]):
+        if not key or key in known or not _spices.is_assumed(r["item"]):
             continue
         _create_spice_staple(conn, r["item"], r["category"])
         known.add(key)
@@ -1270,7 +1316,7 @@ def record_staple_purchase(
     r = _row(conn, staple_id) if staple_id else None
     if r is None:
         r = _find_by_name(conn, item)
-    if r is None and _spices.is_spice(item):
+    if r is None and _spices.is_assumed(item):
         r = _create_spice_staple(conn, item, category, except_line_id=grocery_item_id)
     if r is None:
         conn.close()
@@ -1446,7 +1492,8 @@ def sync_due_staples() -> dict:
             continue
         # A spice waits for a recipe to want it (the "Spices this week"
         # card pre-ticks it then) — never a line of its own. Module note.
-        if section_for(s["item"], s["category"]) == SECTION_SPICES:
+        # The same for a sauce or pantry staple the list's sections keep.
+        if in_rack(s):
             continue
         # A staple's name shouldn't ever be blank -- it's typed in
         # directly -- but add_grocery_item now trims and rejects a blank

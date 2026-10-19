@@ -79,9 +79,9 @@ def _defrost_rows():
 # ---------- the offer on the list ----------
 
 def test_a_meat_line_a_meal_recorded_carries_the_offer_and_a_non_meat_line_does_not(signed_in):
-    plan_id, dates = _plan_with([(3, "Chicken Skewers", "Chicken thighs"), (2, "Orzo Salad", "Orzo", "pantry")])
+    plan_id, dates = _plan_with([(3, "Chicken Skewers", "Chicken thighs"), (2, "Gnocchi Salad", "Gnocchi", "pantry")])
     thighs = _line(signed_in, "Chicken thighs")
-    orzo = _line(signed_in, "Orzo")
+    orzo = _line(signed_in, "Gnocchi")
 
     assert "freezing" not in orzo
     offer = thighs["freezing"]
@@ -260,8 +260,8 @@ def test_the_route_needs_a_session(client):
 
 
 def test_a_non_meat_line_and_a_loose_line_are_refused(signed_in):
-    _plan_with([(2, "Orzo Salad", "Orzo", "pantry")])
-    orzo = _line(signed_in, "Orzo")["id"]
+    _plan_with([(2, "Gnocchi Salad", "Gnocchi", "pantry")])
+    orzo = _line(signed_in, "Gnocchi")["id"]
     res = signed_in.post(f"/api/grocery-list/{orzo}/freezing", json={"answer": "freezer"})
     assert res.status_code == 400
 

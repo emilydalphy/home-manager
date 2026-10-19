@@ -618,9 +618,11 @@ def test_a_staples_section_is_derived_from_its_name_and_category(name, category,
 
 
 def test_the_five_sections_in_order_with_their_headings():
-    assert st.SECTION_ORDER == ["spices", "pantry", "fridge", "household", "other"]
+    # Plus the list's own two since 2026-10-18 — the sauces and pantry
+    # staples it keeps the spice-rack way (test_pantry_staples_assumed.py).
+    assert st.SECTION_ORDER == ["spices", "sauces", "pantry_staples", "pantry", "fridge", "household", "other"]
     assert [st.SECTION_LABELS[k] for k in st.SECTION_ORDER] == [
-        "Spices", "Pantry basics", "Fridge basics", "Household supplies", "Other",
+        "Spices", "Sauces", "Pantry staples", "Pantry basics", "Fridge basics", "Household supplies", "Other",
     ]
 
 

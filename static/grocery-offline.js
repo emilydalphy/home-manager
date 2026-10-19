@@ -71,7 +71,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var SECTION_ORDER = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
+  var SECTION_ORDER = ['produce', 'dairy', 'meat/seafood', 'pantry', 'canned', 'frozen', 'other'];
   var COPY_PREFIX = 'pomona.grocery.copy.h';
   var QUEUE_PREFIX = 'pomona.grocery.queue.h';
   var SHOPS_PREFIX = 'pomona.grocery.shops.h';

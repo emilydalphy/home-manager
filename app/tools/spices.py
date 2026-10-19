@@ -49,6 +49,7 @@ from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
 from . import quantities as _quantities
+from . import pantry as _pantry
 from . import staples as _staples
 
 # A spice staple's first cadence, before Pomona has seen the jar bought
@@ -56,6 +57,11 @@ from . import staples as _staples
 # weeks — a jar lasts months, and being wrong here costs one manual add
 # ("cumin"), which merges straight onto the pending line and ticks it.
 RECENTLY_BOUGHT_DAYS = 56
+
+# The same window for a sauce or pantry staple that came home through the
+# list (2026-10-18): four weeks. A bag of rice or a jar of honey goes
+# faster than a jar of cumin, and being wrong costs the same one tick.
+PANTRY_RECENTLY_BOUGHT_DAYS = 28
 
 # The classifier. Names are matched on their merge key (lowercased,
 # last-word singularised — see grocery._merge_key), with descriptor words
@@ -199,6 +205,40 @@ def _is_spice_name(name: str) -> bool:
         if base in _SPICES and base not in _NOT_ALONE:
             return True
     return last in _SPICES and last not in _NOT_ALONE
+
+
+# The three sections of things the list assumes are at home (spices
+# 2026-09-13; sauces and pantry staples, Emily, 2026-10-18). All three are
+# the one 'spice' status and the one tick below; only the heading differs.
+SECTION_SPICES = "spices"
+SECTION_SAUCES = "sauces"
+SECTION_PANTRY = "pantry"
+ASSUMED_SECTIONS = (SECTION_SPICES, SECTION_SAUCES, SECTION_PANTRY)
+
+
+def assumed_section(name: str) -> str | None:
+    """
+    Which "... this week" section a recipe's ingredient waits in instead of
+    a store aisle — "sauces", "pantry" or "spices" — or None for a real
+    purchase. Sauces and pantry staples are asked FIRST, because a few
+    names on the spice-rack list were Emily's pantry staples before they
+    were anybody's spices (sesame seeds, stock cubes, baking soda, vanilla
+    extract, coconut oil) and "chili oil" is a sauce whatever its last word
+    says. is_spice itself is left as it was: recipes and plan_quality read
+    it as "the rack", and widening it would change what they report.
+    """
+    if _pantry.is_sauce(name):
+        return SECTION_SAUCES
+    if _pantry.is_pantry_staple(name):
+        return SECTION_PANTRY
+    if is_spice(name):
+        return SECTION_SPICES
+    return None
+
+
+def is_assumed(name: str) -> bool:
+    """Whether the list assumes this is at home (any of the three sections)."""
+    return assumed_section(name) is not None
 
 
 # The word a spice comes as: "cumin seeds", "cinnamon sticks", "vanilla
@@ -422,16 +462,48 @@ def week_total(item: str, links: list) -> dict:
 
 
 def _rack(conn) -> dict[str, dict]:
-    """The spice rack as the staples know it: merge key -> the staple row,
-    for every staple in the Spices section, seeding first so a spice bought
-    before this existed counts too."""
+    """The rack as the staples know it: merge key -> the staple row, for
+    every staple the list's sections keep (spices, and the sauces and
+    pantry staples that came home through them — staples.RACK_SECTIONS),
+    seeding first so one bought before this existed counts too. A staple a
+    person set up ("coffee, every two weeks") is not in it: that one keeps
+    its own rhythm on the list, and the recipe's coffee is asked about
+    here as usual."""
     _staples.seed_spice_staples(conn)
     rows = conn.execute("SELECT * FROM staples WHERE household_id = ?", (household_id(),)).fetchall()
-    return {
-        _grocery._merge_key(r["item"]): r
-        for r in rows
-        if _staples.section_for(r["item"], r["category"]) == _staples.SECTION_SPICES
-    }
+    return {_grocery._merge_key(r["item"]): r for r in rows if _staples.in_rack(r)}
+
+
+def _known_sauces(conn) -> set[str]:
+    """
+    Merge keys of the sauces this kitchen has shown it has (2026-10-18):
+    ticked, or left unticked through a shop (assumed_known), or bought —
+    any staple by that name, or any purchased line. A sauce on "Sauces this
+    week" that is none of these carries "Check you have this".
+    """
+    keys = {r["item_key"] for r in conn.execute(
+        "SELECT item_key FROM assumed_known WHERE household_id = ?", (household_id(),)).fetchall()}
+    keys |= {_grocery._merge_key(r["item"]) for r in conn.execute(
+        "SELECT item FROM staples WHERE household_id = ?", (household_id(),)).fetchall()}
+    keys |= {_grocery._merge_key(r["item"]) for r in conn.execute(
+        "SELECT DISTINCT item FROM grocery_items WHERE household_id = ? AND status = 'purchased'",
+        (household_id(),)).fetchall()}
+    return keys
+
+
+def note_known(conn, items, how: str) -> None:
+    """
+    Remember that the household has these sauces — `how` is 'ticked' or
+    'had_it' (left unticked through a shop: "counts as we have it", Emily,
+    2026-10-18). Only sauces are remembered; the flag is theirs alone.
+    Commits nothing itself.
+    """
+    rows = [(household_id(), _grocery._merge_key(name), how)
+            for name in items if assumed_section(name) == SECTION_SAUCES]
+    rows = [r for r in rows if r[1]]
+    if rows:
+        conn.executemany(
+            "INSERT OR IGNORE INTO assumed_known (household_id, item_key, how) VALUES (?, ?, ?)", rows)
 
 
 def _bought_lately(staple, today: date) -> bool:
@@ -456,36 +528,88 @@ def bought_recently(item: str, conn=None) -> bool:
     return bool(staple) and _bought_lately(staple, _staples._today())
 
 
+# "A lot this week" (Emily, 2026-10-18): a staple the week is BUILT on —
+# four cups of rice for a batch cook — is still assumed, but flagged in its
+# section, because that is the one a half-empty bag runs out on. Measured
+# off the line's own amount, in millilitres or grams; a sauce flags at far
+# less than a dry good, since a cup of soy sauce is half a bottle.
+_A_LOT_ML = {SECTION_PANTRY: 720.0, SECTION_SAUCES: 240.0}   # 3 cups / 1 cup
+_A_LOT_G = {SECTION_PANTRY: 900.0, SECTION_SAUCES: 250.0}    # 2 lb / ~half a pound
+_ML = {"tsp": 4.93, "tbsp": 14.79, "cup": 236.6, "ml": 1.0, "l": 1000.0}
+_G = {"g": 1.0, "kg": 1000.0, "oz": 28.35, "lb": 453.6}
+
+
+def _a_lot(section: str | None, quantity: str) -> bool:
+    if section not in _A_LOT_ML:
+        return False
+    from . import quantities as _quantities
+    ml = g = 0.0
+    for seg in (quantity or "").split(" + "):
+        parsed = _quantities._parse_quantity(seg)
+        if not parsed or not parsed[1]:
+            continue
+        amount, unit = parsed
+        if unit in _ML:
+            ml += amount * _ML[unit]
+        elif unit in _G:
+            g += amount * _G[unit]
+    return ml >= _A_LOT_ML[section] or g >= _A_LOT_G[section]
+
+
 def list_spices_this_week() -> dict:
     """
-    The "Spices this week" section: every spice line the week's recipes put
-    on the list (status 'spice', unticked) plus any spice already ticked
-    onto the list (a 'needed' or 'in_cart' line whose name is a spice),
-    each with `ticked`. The spice rack (the Spices section of staples)
-    pre-answers it: a pending spice bought within its cadence is left out
-    and named in `recently_bought`; one whose cadence has run out is ticked
+    The list's three "assumed at home" sections — "Spices this week",
+    "Sauces this week" and "Pantry staples this week" — from one read:
+    every line the week's recipes put there (status 'spice', unticked) plus
+    any already ticked onto the list, each with `ticked` and its `section`.
+    A ticked spice is any live line whose name is a spice (a hand-added
+    cumin included, as it always was); a ticked sauce or pantry staple is
+    only a RECIPE's line ticked through (or one the rack pre-ticked) — a
+    person's own "rice" is an ordinary line in its aisle, not this week's
+    recipes, and showing it in both places would ask the question twice.
+
+    The rack (the staples kept by these sections — staples.RACK_SECTIONS)
+    pre-answers it: a pending line bought within its cadence is left out
+    and named in `recently_bought` (and per section in
+    `recently_bought_by_section`); one whose cadence has run out is ticked
     here and now — an ordinary needed line carrying its staple_id, `due`
     so the card can say "probably running low" — and stays ticked until
     someone says otherwise (tick_spice's untick is "we have plenty").
+    `a_lot` marks a sauce or staple the week uses a great deal of.
     """
     conn = get_conn()
     rack = _rack(conn)
+    known = _known_sauces(conn)
     today = _staples._today()
     rows = conn.execute(
-        "SELECT id, item, quantity, category, status, store, staple_id FROM grocery_items "
+        "SELECT id, item, quantity, category, status, store, staple_id, source_weekly_plan_id FROM grocery_items "
         "WHERE household_id = ? AND status IN ('spice', 'needed', 'in_cart') AND excluded_from_list = 0 "
         "ORDER BY item",
         (household_id(),),
     ).fetchall()
     items, left_out = [], []
+    by_section: dict[str, list[str]] = {k: [] for k in ASSUMED_SECTIONS}
     for r in rows:
-        if r["status"] != "spice" and not is_spice(r["item"]):
+        section = assumed_section(r["item"])
+        if r["status"] != "spice" and section is None:
             continue
-        ticked, linked = r["status"] != "spice", bool(r["staple_id"])
         staple = rack.get(_grocery._merge_key(r["item"]))
+        if (r["status"] != "spice" and section != SECTION_SPICES and r["source_weekly_plan_id"] is None
+                and not (r["staple_id"] and staple is not None and staple["id"] == r["staple_id"])):
+            continue
+        # A row still waiting whose name the classifier has since stopped
+        # knowing (a list word removed) stays where it was put.
+        section = section or SECTION_SPICES
+        ticked, linked = r["status"] != "spice", bool(r["staple_id"])
+        a_lot = _a_lot(section, r["quantity"] or "")
         if not ticked and staple is not None:
-            if _bought_lately(staple, today):
+            # A big amount is never left out on "bought lately" (review,
+            # 2026-10-19): one bottle of soy sauce last week does not cover
+            # a recipe built on two cups of it. It shows, unticked, with
+            # "A lot this week", so the one that runs out gets its look.
+            if _bought_lately(staple, today) and not a_lot:
                 left_out.append(r["item"])
+                by_section[section].append(r["item"])
                 continue
             if _due(staple, today) and not linked:
                 # Pre-ticked: made the same way a due staple's line is
@@ -511,11 +635,17 @@ def list_spices_this_week() -> dict:
             "id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
             "total": week_total(r["item"], links)["text"] if links else "",
             "category": r["category"], "store": r["store"] or "",
-            "ticked": ticked, "due": due,
+            "ticked": ticked, "due": due, "section": section,
+            "a_lot": a_lot,
+            # "Check you have this": a sauce this kitchen has never ticked,
+            # bought or kept through a shop. It only asks for a look — it
+            # adds nothing to the list.
+            "new": bool(section == SECTION_SAUCES and not ticked
+                        and _grocery._merge_key(r["item"]) not in known),
         })
     conn.commit()
     conn.close()
-    return {"items": items, "recently_bought": left_out}
+    return {"items": items, "recently_bought": left_out, "recently_bought_by_section": by_section}
 
 
 def tick_spice(item_id: int, ticked: bool = True) -> dict:
@@ -527,23 +657,41 @@ def tick_spice(item_id: int, ticked: bool = True) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, status, staple_id FROM grocery_items WHERE id = ? AND household_id = ?",
+        "SELECT id, item, status, staple_id, source_weekly_plan_id FROM grocery_items "
+        "WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
     if row is None:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    # A line a person added to themselves and a recipe's amount joined is
+    # theirs (no plan behind it — grocery's keep_standing). Unticking it
+    # back into the section would take THEIR amount off the list with the
+    # recipe's, and a pending row with no plan never clears (review,
+    # 2026-10-19: ticked rice 2 cups + a typed 3 cups = 5 cups, untick, all
+    # gone). So it stays on the list and says why; the amount is edited on
+    # the list's own row.
+    if not ticked and row["status"] == "needed" and row["source_weekly_plan_id"] is None and conn.execute(
+        "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
+        (household_id(), item_id),
+    ).fetchone():
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "ticked": True, "unchanged": True,
+                "said": "You added some of this yourself, so it stays on the list. Change the amount there."}
     if ticked and row["status"] == "spice":
         conn.execute(
             "UPDATE grocery_items SET status = 'needed' WHERE id = ? AND household_id = ?",
             (item_id, household_id()),
         )
+        # A sauce ticked is a sauce this kitchen knows: no more "Check you
+        # have this" on it, even once it is unticked again.
+        note_known(conn, [row["item"]], "ticked")
         # Ticking a jar back after unticking Pomona's pre-tick is "actually,
         # I do need it": the plenty is taken back and the staple is due
         # again — the pre-shop screen's own undo (staples.reverse_last_answer).
         if row["staple_id"]:
             _staples.reverse_last_answer(conn, row["staple_id"])
-    elif not ticked and row["status"] == "needed" and is_spice(row["item"]):
+    elif not ticked and row["status"] == "needed" and is_assumed(row["item"]):
         conn.execute(
             "UPDATE grocery_items SET status = 'spice' WHERE id = ? AND household_id = ?",
             (item_id, household_id()),

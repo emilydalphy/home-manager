@@ -82,7 +82,7 @@ def test_at_seven_in_the_morning_the_shop_is_named_after_breakfast():
     CATCH. The measured case: on 277d854 this reads "Shop for tonight"
     over a deadline fifty-five minutes away, in the morning.
     """
-    _week_with({"breakfast": ("Overnight Oats", "Rolled oats"),
+    _week_with({"breakfast": ("Overnight Oats", "Greek yogurt"),
                 "dinner": ("Bean Chili", "Black beans")})
     shop = _shop(_at(7))
     assert shop["title"] == "Shop for breakfast"
@@ -94,7 +94,7 @@ def test_the_morning_text_says_it_too():
     CATCH, and the half that matters most — this is the channel built to
     reach the household OUT of the app, and it goes out at 07:00.
     """
-    _week_with({"breakfast": ("Overnight Oats", "Rolled oats"),
+    _week_with({"breakfast": ("Overnight Oats", "Greek yogurt"),
                 "dinner": ("Bean Chili", "Black beans")})
     # TRIPWIRE, 2026-10-05: the shop reminder became one of the six parts a
     # household ticks (digest.MORNING_PART_CHOICES) and the card leaves it
@@ -119,7 +119,7 @@ def test_once_breakfast_is_behind_you_it_is_tonight_again():
     tonight's. Pinned by mutation: make `_shop_title` answer anything but
     "Shop for tonight" for dinner and this fails.
     """
-    _week_with({"breakfast": ("Overnight Oats", "Rolled oats"),
+    _week_with({"breakfast": ("Overnight Oats", "Greek yogurt"),
                 "dinner": ("Bean Chili", "Black beans")})
     shop = _shop(_at(11))
     assert shop["title"] == "Shop for tonight"
@@ -201,10 +201,10 @@ def test_the_title_reads_the_soonest_waiting_cooks_slot_and_not_the_first_meal_o
     already bought, so the list is waiting on lunch alone — and the title
     has to say lunch even though breakfast is still ahead.
     """
-    _week_with({"breakfast": ("Overnight Oats", "Rolled oats"),
+    _week_with({"breakfast": ("Overnight Oats", "Greek yogurt"),
                 "lunch": ("Turkey Sandwiches", "Sliced turkey")})
     for row in tools.list_grocery_list(status="needed"):
-        if row["item"].lower().startswith("rolled oats"):
+        if row["item"].lower().startswith("greek yogurt"):
             tools.mark_grocery_item(row["id"], "purchased")
     assert _shop(_at(6))["title"] == "Shop for lunch"
 

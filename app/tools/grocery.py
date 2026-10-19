@@ -715,7 +715,7 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
         other_plan = row["source_weekly_plan_id"]
         if (
             source_plan is not None and other_plan is not None and other_plan != source_plan
-            and row["status"] != "spice" and not _spices.is_spice(row["item"])
+            and row["status"] != "spice" and not _spices.is_assumed(row["item"])
         ):
             continue
         households_line = row["source_weekly_plan_id"] is None and row["status"] == "needed"
@@ -1521,6 +1521,17 @@ def add_grocery_item(
     if len(quantity) > MAX_QUANTITY_LENGTH:
         quantity = quantity[:MAX_QUANTITY_LENGTH].rstrip()
     quantity = _quantities._normalize_grocery_quantity(quantity)
+    # A recipe's "light soy sauce", "dark soy sauce" and "tamari" are one
+    # bottle on the list (Emily, 2026-10-18) — renamed before the merge key
+    # is taken, so they meet on one line. A person's own words are kept.
+    # A tin goes in the canned aisle whoever added it: "canned is not a
+    # staple", it is bought as normal, and the tins sit together.
+    # Imported here: pantry.py imports this module for its singulariser.
+    from . import pantry as _pantry
+    if source_weekly_plan_id is not None:
+        item = _pantry.canonical_name(item)
+    if _pantry.is_canned(item):
+        category = "canned"
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
@@ -1628,11 +1639,14 @@ def add_grocery_item(
     # Never empty: a blank added_by is what Shop reads as the staple's own
     # line (the merge branch above has the same "or 'user'").
     # A plan's spice starts in the "Spices this week" section, unticked —
-    # the list assumes a spice rack (Emily, 2026-09-13; see spices.py). A
-    # person's own add is a thing to buy, spice or not. Imported here, not
-    # at the top: spices.py imports this module for the merge key.
+    # the list assumes a spice rack (Emily, 2026-09-13; see spices.py) —
+    # and so does a plan's sauce or pantry staple, in "Sauces this week" /
+    # "Pantry staples this week" (pantry.py, 2026-10-18): the same status,
+    # the same tick. A person's own add is a thing to buy, whatever it is.
+    # Imported here, not at the top: spices.py imports this module for
+    # the merge key.
     from . import spices as _spices
-    status = "spice" if source_weekly_plan_id is not None and _spices.is_spice(item) else "needed"
+    status = "spice" if source_weekly_plan_id is not None and _spices.is_assumed(item) else "needed"
     cur = conn.execute(
         "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, source_weekly_plan_id, store, status) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -2325,12 +2339,16 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
     # wanted, so there is nothing to keep or drop: they go, and this
     # week's recipes put their own in (spices.py).
     stale_spices = conn.execute(
-        "SELECT id, source_weekly_plan_id FROM grocery_items WHERE household_id = ? AND status = 'spice' "
+        "SELECT id, item, source_weekly_plan_id FROM grocery_items WHERE household_id = ? AND status = 'spice' "
         "AND source_weekly_plan_id IS NOT NULL AND source_weekly_plan_id != ?",
         (household_id(), weekly_plan_id),
     ).fetchall()
     stale_spices = [r for r in stale_spices if r["source_weekly_plan_id"] in ended]
     if stale_spices:
+        # A sauce left unticked through a whole week's shop counts as "we
+        # have it" (Emily, 2026-10-18): its "Check you have this" is done.
+        from . import spices as _spices  # lazy: spices imports this module
+        _spices.note_known(conn, [r["item"] for r in stale_spices], "had_it")
         conn.executemany(
             "DELETE FROM grocery_items WHERE id = ? AND household_id = ?",
             [(r["id"], household_id()) for r in stale_spices],

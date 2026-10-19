@@ -35,7 +35,7 @@ def _lentils() -> list[tuple[str, int | None]]:
     conn = get_conn()
     rows = conn.execute(
         "SELECT quantity, source_weekly_plan_id FROM grocery_items "
-        "WHERE lower(item) = 'red lentils' AND status = 'needed' ORDER BY id"
+        "WHERE lower(item) = 'canned lentils' AND status = 'needed' ORDER BY id"
     ).fetchall()
     conn.close()
     return [(r["quantity"], r["source_weekly_plan_id"]) for r in rows]
@@ -49,8 +49,8 @@ def test_mass_against_volume_stays_two_parts(a, b):
 
 @pytest.fixture
 def lentil_week():
-    tools.add_recipe("Dal", ingredients=[{"item": "Red lentils", "qty": "1.5 cups", "category": "pantry"}])
-    tools.add_recipe("Lentil Soup", ingredients=[{"item": "Red lentils", "qty": "8 tbsp", "category": "pantry"}])
+    tools.add_recipe("Dal", ingredients=[{"item": "Canned lentils", "qty": "1.5 cups", "category": "pantry"}])
+    tools.add_recipe("Lentil Soup", ingredients=[{"item": "Canned lentils", "qty": "8 tbsp", "category": "pantry"}])
     tools.add_recipe("Toast", ingredients=[{"item": "Bread", "qty": "1 loaf", "category": "pantry"}])
     today = _today()
     plan = tools.create_weekly_plan(today.isoformat(), day_count=3)["weekly_plan_id"]
@@ -94,10 +94,10 @@ def test_a_half_cup_share_joins_the_households_cup_and_leaves_it_whole(lentil_we
     any cup share, and taking the meal away puts back exactly "1 cup"."""
     plan, tomorrow = lentil_week
     conn = get_conn()
-    conn.execute("DELETE FROM grocery_items WHERE lower(item) = 'red lentils'")
+    conn.execute("DELETE FROM grocery_items WHERE lower(item) = 'canned lentils'")
     conn.commit()
     conn.close()
-    tools.add_grocery_item("Red lentils", quantity="1 cup", category="pantry")
+    tools.add_grocery_item("Canned lentils", quantity="1 cup", category="pantry")
     tools.swap_meal_in_plan(plan, tomorrow, "Lentil Soup", slot="dinner")
     assert _lentils() == [("1 1/2 cups", None)]
     tools.swap_meal_in_plan(plan, tomorrow, "Toast", slot="dinner")
@@ -107,12 +107,12 @@ def test_a_half_cup_share_joins_the_households_cup_and_leaves_it_whole(lentil_we
 def test_a_small_amount_is_never_swallowed_by_a_household_line(lentil_week):
     """GUARD (review blocker 2): "1 cup" + "2 tbsp" never reads "1 cup"."""
     plan, tomorrow = lentil_week
-    tools.add_recipe("Lentil Garnish", ingredients=[{"item": "Red lentils", "qty": "2 tbsp", "category": "pantry"}])
+    tools.add_recipe("Lentil Garnish", ingredients=[{"item": "Canned lentils", "qty": "2 tbsp", "category": "pantry"}])
     conn = get_conn()
-    conn.execute("DELETE FROM grocery_items WHERE lower(item) = 'red lentils'")
+    conn.execute("DELETE FROM grocery_items WHERE lower(item) = 'canned lentils'")
     conn.commit()
     conn.close()
-    tools.add_grocery_item("Red lentils", quantity="1 cup", category="pantry")
+    tools.add_grocery_item("Canned lentils", quantity="1 cup", category="pantry")
     tools.swap_meal_in_plan(plan, tomorrow, "Lentil Garnish", slot="dinner")
     assert sorted(q for q, _ in _lentils()) == ["1 cup", "2 tbsp"]
 
