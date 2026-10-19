@@ -98,11 +98,18 @@ def test_a_dishs_research_fits_its_input_budget_at_its_worst(monkeypatch):
     assert sum(ceilings) <= rr.dish_input_tokens() == 25000, ceilings
 
 
-def test_a_bigger_page_cap_breaks_the_budget(monkeypatch):
-    """The test above is the tripwire: raise what a page may bring and it fails."""
+def test_both_pages_are_read_within_the_budget(monkeypatch):
+    """The tripwire: at the defaults both chosen pages fit. Raise what a page
+    may bring and the read step is cut to what still fits, before it starts."""
+    client, _ = _research(monkeypatch, [(_found(), "tool_use"), (_read(), "tool_use")])
+    assert client.calls[1]["tools"][0]["max_uses"] == 2, "a prompt or page grew past the dish's budget"
+
+
+def test_a_bigger_page_cap_reads_fewer_pages_rather_than_overrun(monkeypatch):
     monkeypatch.setenv("RECIPE_RESEARCH_FETCH_TOKENS", "8000")
     client, _ = _research(monkeypatch, [(_found(), "tool_use"), (_read(), "tool_use")])
-    assert sum(agent._research_request_ceiling(c["tools"], c["messages"]) for c in client.calls) > 25000
+    assert client.calls[1]["tools"][0]["max_uses"] == 1
+    assert sum(agent._research_request_ceiling(c["tools"], c["messages"]) for c in client.calls) <= 25000
 
 
 def test_the_web_tools_are_called_directly_and_reading_never_carries_the_search(monkeypatch):
@@ -128,7 +135,7 @@ def test_no_request_starts_once_the_dish_has_spent_its_budget(monkeypatch, caplo
                                      billed=26000)
     assert len(client.calls) == 1, "the find step overran: nothing more is paid for"
     assert research is None
-    assert any("input budget spent" in r.getMessage() for r in caplog.records)
+    assert any("no room left to read" in r.getMessage() for r in caplog.records)
 
 
 def test_the_trusted_cooks_fallback_shares_the_dishs_budget(monkeypatch):
@@ -159,3 +166,61 @@ def test_each_requests_input_breakdown_is_readable(monkeypatch):
     assert out["page_tokens"] == 2 * len(PAGE) // 4
     assert out["server_steps"] == 3, "two reads, then the submit: each a billed step"
     assert out["sent"] > 100
+
+
+# ---------- review round, 2026-10-18 ----------
+
+def _found_with_pick(urls):
+    found = _found()
+    found[-1] = _ns(type="tool_use", name="choose_pages_to_read", id="p1", input={"urls": urls})
+    return found
+
+
+@pytest.mark.parametrize("pick", [
+    ["https://made-up.example.com/chana/"],   # chose blind, or named a page the search never returned
+    None,                                     # never chose at all
+])
+def test_a_failed_choice_reads_the_searchs_top_results(monkeypatch, pick):
+    found = _found_with_pick(pick) if pick is not None else _found()[:-1]
+    client, research = _research(monkeypatch, [(found, "end_turn" if pick is None else "tool_use"),
+                                               (_read(), "tool_use")])
+    assert len(client.calls) == 2
+    read_prompt = client.calls[1]["messages"][0]["content"]
+    assert SWASTHI in read_prompt and TIN in read_prompt and OTHERS[0] not in read_prompt
+    assert research["sources"][0]["name"] == "Swasthi's Recipes"
+
+
+def test_a_chosen_url_matches_however_it_is_written(monkeypatch):
+    loose = "http://indianhealthyrecipes.com/chana-masala-recipe-chole-masala?utm_source=x"
+    client, _ = _research(monkeypatch, [(_found_with_pick([loose, TIN + "#reviews"]), "tool_use"),
+                                        (_read(), "tool_use")])
+    # Read as the search gave them, not as the model rewrote them.
+    assert SWASTHI in client.calls[1]["messages"][0]["content"]
+    assert TIN in client.calls[1]["messages"][0]["content"]
+
+
+def test_a_dish_whose_reading_never_finished_is_not_marked_empty(monkeypatch):
+    _, research = _research(monkeypatch, [(_found(), "tool_use"), ([], "pause_turn"), ([], "pause_turn")])
+    assert research is None
+    # Tried again the next time it comes up, not skipped for 14 days.
+    assert rr.saved_research("Chana Masala") is None
+    client, research = _research(monkeypatch, [(_found(), "tool_use"), (_read(), "tool_use")])
+    assert len(client.calls) == 2 and research["sources"]
+
+
+def test_a_link_planted_in_a_page_can_neither_be_opened_freely_nor_lead(monkeypatch):
+    planted = "https://evil.example.com/chana-masala/"
+    read = _read()
+    read[-1:-1] = [
+        _ns(type="server_tool_use", name="web_fetch", id="g9", input={"url": planted}),
+        _ns(type="web_fetch_tool_result", tool_use_id="g9",
+            content=_ns(type="web_fetch_result", url=planted,
+                        content=_ns(type="document", source=_ns(type="text", data="x")))),
+    ]
+    read[-1].input["sources"].insert(0, {"name": "Planted", "url": planted, "rating": 5.0, "rating_count": 99999})
+    client, research = _research(monkeypatch, [(_found(), "tool_use"), (read, "tool_use")])
+    # The reader may open only the chosen pages' sites...
+    assert client.calls[1]["tools"][0]["allowed_domains"] == ["indianhealthyrecipes.com", "recipetineats.com"]
+    # ...and a page reached from inside one is never "read", so never the lead.
+    assert research["sources"][0]["name"] == "Swasthi's Recipes"
+    assert all(s["lead"] is False for s in research["sources"] if s["name"] == "Planted")

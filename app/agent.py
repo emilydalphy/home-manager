@@ -17,6 +17,7 @@ import json
 import re
 import threading
 import time
+import urllib.parse
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import ai_consent, calendar_feed, chat_progress, tools
 from .tools import allergen_gate as _allergen_gate
@@ -4240,6 +4241,7 @@ _RESEARCH_MAX_ROUNDS = 2  # pause_turn continuations per step, at most
 # under _recipe_research.dish_input_tokens().
 _SEARCH_RESULT_TOKENS = 6000      # one direct search's results (Anthropic's own example turn: ~6K in all)
 _SERVER_TOOL_PROMPT_TOKENS = 500  # what a server tool adds to every step's input, beyond what we send
+_STEP_OUTPUT_TOKENS = 400         # the model's own words and thinking at each step, re-billed at every later one
 
 _PICK_PAGES_TOOL = {
     "name": "choose_pages_to_read",
@@ -4409,9 +4411,11 @@ def _research_request_ceiling(tools_now: list, messages: list) -> int:
     """
     The most input one research request can be billed, worst case: every
     server tool use is its own sampling step, each step is billed what was
-    sent (plus each server tool's own prompt) and everything returned
-    before it, searches come first and every page is read to the cap.
-    _SEARCH_RESULT_TOKENS is the one assumption — it can't be capped.
+    sent (plus each server tool's own prompt), everything returned before
+    it and _STEP_OUTPUT_TOKENS for what the model wrote at each step before
+    it; searches come first and every page is read to the cap.
+    _SEARCH_RESULT_TOKENS and _STEP_OUTPUT_TOKENS are assumptions — neither
+    can be capped from here.
     """
     base = (len(json.dumps({"tools": tools_now, "messages": messages}, default=str)) // 4
             + _SERVER_TOOL_PROMPT_TOKENS * sum(1 for t in tools_now if "type" in t))
@@ -4423,16 +4427,18 @@ def _research_request_ceiling(tools_now: list, messages: list) -> int:
         if tool.get("name") == "web_fetch":
             returns += [int(tool.get("max_content_tokens") or 0)] * int(tool.get("max_uses") or 0)
     total, context = 0, base
-    for step_return in [0] + returns:
-        context += step_return
+    for step, step_return in enumerate([0] + returns):
+        context += step_return + (_STEP_OUTPUT_TOKENS if step else 0)
         total += context
     return total
 
 
-def _research_tools(remaining: dict, trusted: list | None, *, search: bool, fetch: bool) -> list:
+def _research_tools(remaining: dict, trusted: list | None, *, search: bool, fetch: bool,
+                    fetch_domains: list | None = None) -> list:
     """The web tools one step may use, bounded by what the dish has left.
     Called directly (no dynamic filtering): see the note above
-    _SEARCH_RESULT_TOKENS for why the code-execution layer is off."""
+    _SEARCH_RESULT_TOKENS for why the code-execution layer is off.
+    `fetch_domains`, when given, is the only sites the reader may open."""
     sites = [site for _, site in trusted] if trusted else None
     out = []
     if search and remaining["web_search"] > 0:
@@ -4444,15 +4450,16 @@ def _research_tools(remaining: dict, trusted: list | None, *, search: bool, fetc
     if fetch and remaining["web_fetch"] > 0:
         tool = {"type": "web_fetch_20260209", "name": "web_fetch", "max_uses": remaining["web_fetch"],
                 "max_content_tokens": _recipe_research.fetch_tokens(), "allowed_callers": ["direct"]}
-        if sites:
-            tool["allowed_domains"] = sites
+        if fetch_domains or sites:
+            tool["allowed_domains"] = list(fetch_domains or sites)
         out.append(tool)
     return out
 
 
 def _research_step(client, name: str, step: str, prompt: str, client_tool: dict, *,
                    left: dict, spent: dict, tokens: dict, trusted: list | None,
-                   search: bool, fetch: bool, deadline: float | None):
+                   search: bool, fetch: bool, deadline: float | None,
+                   fetch_domains: list | None = None):
     """
     One request (and at most _RESEARCH_MAX_ROUNDS - 1 pause_turn
     continuations) of a dish's research. Updates `spent` (searches and
@@ -4480,7 +4487,8 @@ def _research_step(client, name: str, step: str, prompt: str, client_tool: dict,
                            name, tokens["spent"], tokens["budget"], step)
             break
         remaining = {k: left[k] - spent[k] for k in left}
-        tools_now = _research_tools(remaining, trusted, search=search, fetch=fetch)
+        tools_now = _research_tools(remaining, trusted, search=search, fetch=fetch,
+                                    fetch_domains=fetch_domains)
         if not tools_now and round_no == 0:
             break
         # A continuation whose web tools are spent still goes: what is left
@@ -4521,6 +4529,33 @@ def _research_step(client, name: str, step: str, prompt: str, client_tool: dict,
         # A long search turn paused: send it back as it is to carry on.
         messages = messages + [{"role": "assistant", "content": _trim_fetched_for_resend(content)}]
     return all_content, None
+
+
+_TRACKING_PARAMS = {"fbclid", "gclid", "msclkid", "mc_cid", "mc_eid", "ref", "_ga"}
+
+
+def _url_key(url: str) -> str:
+    """A URL as it should compare: no scheme, no www., no trailing slash or
+    fragment, no tracking parameters, lowercased."""
+    parts = urllib.parse.urlsplit(str(url or "").strip())
+    host = parts.netloc.lower().removeprefix("www.")
+    query = "&".join(q for q in parts.query.split("&")
+                     if q and not (q.split("=")[0].lower() in _TRACKING_PARAMS
+                                   or q.lower().startswith("utm_")))
+    return f"{host}{parts.path.rstrip('/')}" + (f"?{query}" if query else "")
+
+
+def _research_hosts(urls: list, trusted: list | None) -> list:
+    """The sites of `urls` (each once, no www.), kept to the trusted cooks'
+    sites when there are some."""
+    hosts = []
+    for url in urls:
+        host = urllib.parse.urlsplit(url).netloc.lower().removeprefix("www.")
+        if trusted and not any(host == site or host.endswith("." + site) for _, site in trusted):
+            continue
+        if host and host not in hosts:
+            hosts.append(host)
+    return hosts
 
 
 def _search_titles(content) -> dict:
@@ -4568,34 +4603,76 @@ def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
         _PICK_PAGES_TOOL, left=left, spent=spent, tokens=tokens, trusted=trusted,
         search=True, fetch=False, deadline=deadline)
     titles = _search_titles(found_content)
+    by_key = {}
+    for url in titles:
+        by_key.setdefault(_url_key(url), url)
     chosen = []
     for url in ((_block_get(picked, "input") or {}).get("urls") or []) if picked is not None else []:
-        url = str(url or "").strip()
         # Only a page the search really returned — the read step can't open
         # anything else, and a URL the model wrote itself is not evidence.
-        if url in titles and url not in chosen:
-            chosen.append(url)
+        # Matched loosely (slash, scheme, www, tracking params), then read
+        # as the search gave it.
+        found = by_key.get(_url_key(str(url or "")))
+        if found and found not in chosen:
+            chosen.append(found)
+    if not chosen and titles:
+        # Review, 2026-10-18: the model chose blind (in the same step as the
+        # search), named pages the search didn't return, or never chose.
+        # The search still ranked its results; read its top ones rather
+        # than throw the paid search away.
+        logger.info("Research for %r: %s; reading the search's top results instead", name,
+                    "no page was chosen" if picked is None else "none of the chosen pages was in the results")
+        chosen = list(titles)
     chosen = chosen[:pages_wanted]
     if not chosen:
-        if picked is not None and not titles:
+        if picked is not None:
             # The first live run's tell (review, 2026-10-06), moved to the
             # find step: pages were named but no search result was read as
             # a URL. Either nothing was searched, or the web tools' result
             # shape isn't the one this reads.
             logger.warning("Research for %r chose pages but no search/fetch result URL was read "
                            "— check the web tool result shape", name)
+        elif spent["web_search"] == 0:
+            # No search ran at all (out of time or budget before it): that
+            # is not "nothing to find", so the dish isn't marked empty.
+            logger.info("Research for %r: no search was made", name)
+            return _result(incomplete=True)
         else:
-            logger.info("Research for %r: the search gave no page to read", name)
+            logger.info("Research for %r: the search returned no results", name)
+        return _result()
+    # The reader may open only the chosen pages' sites (review, 2026-10-18):
+    # a link planted in a fetched page is not a page anyone chose.
+    hosts = _research_hosts(chosen, trusted)
+    if not hosts:
+        return _result()
+    # The budget can't stop a request once it is running, so the read step
+    # is sized to what is left before it starts: fewer pages, or none.
+    read_tools = read_messages = None
+    while chosen:
+        read_left = {**left, "web_fetch": min(left["web_fetch"], len(chosen))}
+        read_tools = _research_tools({k: read_left[k] - spent[k] for k in read_left}, trusted,
+                                     search=False, fetch=True, fetch_domains=hosts) + [_RESEARCH_TOOL]
+        read_messages = [{"role": "user", "content": _read_prompt(
+            name, cuisine, dish_note, [(u, titles[u]) for u in chosen])}]
+        if tokens["spent"] + _research_request_ceiling(read_tools, read_messages) <= tokens["budget"]:
+            break
+        chosen = chosen[:-1]
+    if not chosen:
+        logger.warning("Research for %r: %d of %d input tokens spent finding — no room left to read",
+                       name, tokens["spent"], tokens["budget"])
         return _result()
     read_content, submitted = _research_step(
-        client, name, "read", _read_prompt(name, cuisine, dish_note, [(u, titles[u]) for u in chosen]),
-        _RESEARCH_TOOL, left={**left, "web_fetch": min(left["web_fetch"], len(chosen))},
-        spent=spent, tokens=tokens, trusted=trusted, search=False, fetch=True, deadline=deadline)
+        client, name, "read", read_messages[0]["content"], _RESEARCH_TOOL, left=read_left,
+        spent=spent, tokens=tokens, trusted=trusted, search=False, fetch=True, deadline=deadline,
+        fetch_domains=hosts)
     if tokens["spent"] > tokens["budget"]:
         logger.warning("Research for %r billed %d input tokens, over its %d budget",
                        name, tokens["spent"], tokens["budget"])
     if submitted is None:
-        return _result()
+        # Found pages but never finished reading them (out of time, or a
+        # paused turn ran out of rounds): not "nothing to find", so the dish
+        # isn't marked empty and is tried again another week.
+        return _result(incomplete=True)
     evidence = _research_evidence(found_content + read_content)
     raw = _block_get(submitted, "input") or {}
     reported = [r for r in (raw.get("sources") or []) if isinstance(r, dict)]
@@ -4609,9 +4686,12 @@ def research_dish_llm(name: str, cuisine: str = "", dish_note: str = "",
             "(%d result blocks) — check the web tool result shape", name, len(reported),
             evidence["results"],
         )
+    chosen_keys = {_url_key(u) for u in chosen}
     sources = _recipe_research.clean_sources(
         reported, seen_urls=evidence["seen"], blocked_urls=evidence["blocked"],
-        read_urls=evidence["read"],
+        # Only a chosen page that was read can lead — never one reached
+        # from inside another page.
+        read_urls={u for u in evidence["read"] if _url_key(u) in chosen_keys},
     )
     if not sources:
         return _result()
@@ -4660,6 +4740,12 @@ def research_dish(name: str, cuisine: str = "", dish_note: str = "", *, search: 
                     found, sources, fallback = from_cooks, from_cooks["sources"], True
         ordered = _recipe_research.pick_lead(sources, trusted if fallback else None)
         if not ordered:
+            if found.get("incomplete") and not sources:
+                # Review, 2026-10-18: the pages were never read (time ran
+                # out) or no search ran — another week can try again, so
+                # this is not remembered as a dish with nothing to find.
+                logger.info("Research for %r didn't finish; writing without it, not marked empty", name)
+                return None
             logger.info("Research for %r found nothing usable; writing without it", name)
             _recipe_research.note_empty_research(name)
             return None

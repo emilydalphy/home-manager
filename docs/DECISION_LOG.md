@@ -24,6 +24,10 @@ why*, not duplicating the diff.
   `RECIPE_RESEARCH_INPUT_TOKENS` (25,000) stops any further request once a dish
   has spent it, fallback included; the test sums each request's worst case.
   Not verified live: the ~6K a search's results cost is Anthropic's example.
+  Review round: a failed choice reads the search's top results (and a dish
+  whose reading never finished isn't marked empty); chosen URLs match loosely;
+  the reader may open only the chosen sites and only a chosen page can lead;
+  the read step is cut to fit the budget before it starts (+400 a step re-billed).
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

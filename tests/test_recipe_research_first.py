@@ -136,6 +136,7 @@ A = "https://www.example-a.com/chana-masala/"
 B = "https://example-b.com/chana"
 C = "https://example-c.com/chole"
 GONE = "https://example-d.com/never-seen"
+SWASTHI = "https://www.indianhealthyrecipes.com/chana-masala/"
 
 
 # ---------- the lead ----------
@@ -186,7 +187,8 @@ def test_research_keeps_only_pages_it_saw_skips_a_refused_site_and_is_saved(monk
     assert [t.get("type") for t in client.calls[0]["tools"]][0] == "web_search_20260209"
     assert [t.get("type") for t in client.calls[1]["tools"]][0] == "web_fetch_20260209"
     assert "allowed_domains" not in client.calls[0]["tools"][0]
-    assert "allowed_domains" not in client.calls[1]["tools"][0]
+    # The reader may open only the chosen pages' own sites.
+    assert client.calls[1]["tools"][0]["allowed_domains"] == ["example-a.com", "example-c.com"]
 
 
 def test_a_dish_that_comes_back_is_not_researched_again(monkeypatch):
@@ -228,7 +230,9 @@ def test_nothing_well_rated_falls_back_to_the_trusted_cooks_for_the_cuisine(monk
     fallback_read = {t.get("name"): t for t in client.calls[3]["tools"]}
     allowed = fallback_find["web_search"]["allowed_domains"]
     assert "indianhealthyrecipes.com" in allowed and "hebbarskitchen.com" in allowed
-    assert fallback_read["web_fetch"]["allowed_domains"] == allowed
+    # The reader: only the chosen pages' sites, all of them trusted cooks.
+    assert fallback_read["web_fetch"]["allowed_domains"] == ["hebbarskitchen.com", "indianhealthyrecipes.com"]
+    assert set(fallback_read["web_fetch"]["allowed_domains"]) <= set(allowed)
     assert research["fallback_used"] is True
     # Neither is rated, so the earliest cook on the trusted list leads.
     assert research["sources"][0]["name"] == "Swasthi's Recipes"
@@ -381,8 +385,8 @@ def test_only_a_page_that_was_read_can_lead(monkeypatch):
 
 def test_nothing_read_is_no_research_and_the_empty_result_is_remembered(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        *_pass(_search([A]) + [_submit([{"name": "A", "url": A, "rating": 4.9, "rating_count": 500}])]),
-        *_pass(_search([B], tool_id="s2") + [_submit([{"name": "B", "url": B, "rating": None, "rating_count": None}])]),
+        # The one page chosen refused the reader: nothing was read.
+        *_pass(_search([A]) + _fetch_refused(A) + [_submit([{"name": "A", "url": A, "rating": 4.9, "rating_count": 500}])]),
     ]))
     assert agent.research_dish("Chana Masala", "Indian", "") is None
     calls = len(client.calls)
@@ -402,9 +406,9 @@ def test_the_per_dish_budget_holds_across_continuations_and_the_fallback(monkeyp
         ([_pick([A, B])], "tool_use"),
         (_fetched([A], prefix="x"), "pause_turn"),
         ([], "pause_turn"),               # second and last round: never submits
-        *_pass(_read([C], "s3") + [_submit([{"name": "C", "url": C, "rating": None, "rating_count": None}])]),
+        *_pass(_read([SWASTHI], "s3") + [_submit([{"name": "Swasthi", "url": SWASTHI, "rating": None, "rating_count": None}])]),
     ]))
-    agent.research_dish("Chana Masala", "Indian", "")
+    agent.research_dish("Chana Masala", "North Indian", "")
     assert len(client.calls) == 6, "two rounds a step at most; then the fallback's find and read"
     first_tools = {t["name"]: t for t in client.calls[0]["tools"] if "max_uses" in t}
     assert first_tools["web_search"]["max_uses"] == agent._OPEN_SEARCH_SHARE["web_search"]
