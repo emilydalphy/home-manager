@@ -195,7 +195,18 @@ def _default_cadence(category: str, item: str = "") -> int:
             return _spices.RECENTLY_BOUGHT_DAYS
         if section == "household":
             return DEFAULT_CADENCE_DAYS["household"]
-    return DEFAULT_CADENCE_DAYS.get((category or "other").strip().lower(), FALLBACK_CADENCE_DAYS)
+    cat = (category or "other").strip().lower()
+    if item and cat == "other":
+        # A regular typed by name alone (Before you shop's "Add a regular",
+        # What we know's Regulars, a chat add) arrives as "other", and the
+        # catch-all said "Milk — about every 3 weeks" (defect hunt
+        # 2026-10-19). The name says what it is, the same way the recipe
+        # import files an ingredient, so milk and eggs start weekly and
+        # chicken fortnightly; a name it doesn't know reads as pantry,
+        # which is the catch-all's 21 anyway.
+        from ..recipe_import import guess_category as _guess_category
+        cat = _guess_category(item)
+    return DEFAULT_CADENCE_DAYS.get(cat, FALLBACK_CADENCE_DAYS)
 
 
 # ------------------------------------------------------------ sections ----

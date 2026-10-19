@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A regular typed by name starts on its food's rhythm** (2026-10-19;
+  branch `overnight/milk-is-weekly`; tests
+  `tests/test_staple_cadence_from_the_name.py`). Before you shop's "Add a
+  regular" and What we know's Regulars send only the name, so the staple is
+  "other" and `_default_cadence` gave the catch-all 21: "Milk — about every
+  3 weeks". An "other" staple now takes its default from the name via
+  `recipe_import.guess_category` (milk/eggs 7, meat 14, unknown 21); an
+  explicit category or a told cadence still wins. Category is not stored —
+  cadence only.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
