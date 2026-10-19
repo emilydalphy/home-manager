@@ -235,12 +235,12 @@ def test_both_scripts_document_ssh_and_warn_off_run():
 
 # ---------- the scripts must actually stop ----------
 
-def _run_script(script, db_path, extra_env=None):
+def _run_script(script, db_path, extra_env=None, args=()):
     env = {**os.environ, "DB_PATH": db_path}
     env.pop("RAILWAY_VOLUME_MOUNT_PATH", None)
     env.update(extra_env or {})
     return subprocess.run(
-        [sys.executable, script],
+        [sys.executable, script, *args],
         cwd=REPO_ROOT,
         env=env,
         capture_output=True,
@@ -292,3 +292,22 @@ def test_scripts_refuse_when_the_volume_is_named_but_not_mounted(tmp_path):
     assert result.returncode != 0, "production vars on a laptop must be refused"
     assert not target.exists(), "a decoy database was created"
     assert "nothing is mounted there" in result.stderr
+
+
+def test_seed_library_script_refuses_when_the_volume_is_named_but_not_mounted(tmp_path):
+    """seed_recipe_library.py (2026-10-19) behind the same guard. --samples
+    makes no model call, and the key is stripped and the API pointed
+    nowhere besides, so even a broken guard can't spend anything."""
+    mount = tmp_path / "data"
+    mount.mkdir()
+    target = mount / "home_manager.db"
+    env = {"RAILWAY_VOLUME_MOUNT_PATH": str(mount), "ANTHROPIC_API_KEY": "",
+           "ANTHROPIC_BASE_URL": "http://127.0.0.1:9", "DISABLE_BACKUPS": "1"}
+
+    result = _run_script("seed_recipe_library.py", str(target), extra_env=env,
+                         args=("--i-mean-it", "--samples"))
+
+    assert result.returncode != 0
+    assert not target.exists(), "a decoy database was created"
+    assert "nothing is mounted there" in result.stderr
+    assert "railway ssh -- python seed_recipe_library.py" in result.stderr

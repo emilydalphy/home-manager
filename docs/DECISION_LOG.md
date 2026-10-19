@@ -163,6 +163,26 @@ why*, not duplicating the diff.
   edit down stands), only ever down. Not covered: a person's own line (the
   dropped share left with its ledger row), and a line whose meals ALL went
   while ticked (comes back as it was, like the set-aside case).
+- **Shared Recipe Library: the 500-dish starter list, six samples to review, and a seed script**
+  (2026-10-19; branch `overnight/recipe-library-starter-list`, stacked on and
+  merging AFTER `overnight/shared-recipe-library`, which itself merges after
+  `overnight/research-input-budget`; tests `tests/test_recipe_library_seed.py`,
+  `tests/test_seed_recipe_library.py`). `data/recipe_library_seed.json`: 500
+  everyday dishes, the select's 15 cuisines split as the card proposed
+  (297 dinners / 83 lunches / 68 breakfasts / 52 snacks), keys =
+  `recipe_research.dish_key`, names ASCII because dish_key doesn't fold
+  accents. Six samples (`data/recipe_library_samples.json`, file_entry
+  arguments; review page `mockups/recipe-library-samples.html`) were researched
+  by search only — this sandbox can't open recipe sites directly, so ratings
+  and methods are as the search tool read the pages; Emily should click
+  through. `seed_recipe_library.py` refuses without `--i-mean-it` (it spends
+  API money; for after the samples are approved), files through
+  `file_entry(origin="seed")` in batches, skips any dish with a written base,
+  reuses filed research, touches no household's recipes (but runs as
+  household 1: consent checked, spend logged there, and a dish whose research
+  finds nothing gets household 1's empty dish_research mark, skipped until
+  `--retry-empty`); rejects a recipe not written for 4; no flag abbreviations;
+  `--samples` files the six with no model call. Not run against any live DB.
 - **Shared Recipe Library, step 1: a dish researched once serves every household**
   (2026-10-19; branch `overnight/shared-recipe-library`, stacked on and
   merging AFTER `overnight/research-input-budget`; tests

@@ -1,0 +1,719 @@
+{
+ "about": "Six starter-list dishes researched the route-3 way for Emily to review before the seed runs (one each American, Italian, Indian, Mexican, Thai, Ethiopian). Each entry is the keyword arguments of recipe_library.file_entry. Lead = pick_lead's rule: top rating to one decimal with 20+ ratings, most ratings breaking a tie. Ratings as shown on 2026-10-19.",
+ "samples": [
+  {
+   "dish_name": "Meatloaf",
+   "cuisine": "American",
+   "main_protein": "beef",
+   "default_servings": 4,
+   "prep_time_minutes": 15,
+   "cook_time_minutes": 55,
+   "ingredients": [
+    {
+     "item": "Ground beef",
+     "qty": "1.5 lb",
+     "category": "meat/seafood"
+    },
+    {
+     "item": "Panko breadcrumbs",
+     "qty": "3/4 cup",
+     "category": "pantry"
+    },
+    {
+     "item": "Milk",
+     "qty": "1/2 cup",
+     "category": "dairy"
+    },
+    {
+     "item": "Eggs",
+     "qty": "2",
+     "category": "dairy"
+    },
+    {
+     "item": "Yellow onion",
+     "qty": "1",
+     "category": "produce"
+    },
+    {
+     "item": "Garlic",
+     "qty": "3 cloves",
+     "category": "produce"
+    },
+    {
+     "item": "Ketchup",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "1/2 cup + 2 tbsp"
+    },
+    {
+     "item": "Worcestershire sauce",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "1 tbsp"
+    },
+    {
+     "item": "Brown sugar",
+     "qty": "1 bag",
+     "category": "pantry",
+     "cook_qty": "3 tbsp"
+    },
+    {
+     "item": "Apple cider vinegar",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Salt",
+     "qty": "1 box",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Black pepper",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1/2 tsp"
+    }
+   ],
+   "instructions": [
+    "Heat the oven to 350°F and line a rimmed baking sheet with parchment. A loaf shaped on a sheet browns on every side; one in a loaf pan steams.",
+    "In a large bowl, stir the 3/4 cup panko into the 1/2 cup milk and leave it 5 minutes. The soaked crumbs are what keep the loaf moist.",
+    "Grate the onion on the large holes of a box grater straight into the bowl, juice and all, and mince the 3 cloves garlic in too. Grated onion melts into the meat, where chunks would fall out when you slice.",
+    "Add the 2 eggs, 2 tbsp ketchup, 1 tbsp Worcestershire, 1 tsp salt and 1/2 tsp pepper and whisk them into the crumbs. Add the 1.5 lb ground beef and mix with your hands until there are no streaks, then stop, because overworked meat turns dense.",
+    "Tip it onto the sheet and pat it into a loaf about 7 inches long and 3 inches tall. Bake 35 minutes.",
+    "While it bakes, stir the glaze together: 1/2 cup ketchup, 3 tbsp brown sugar and 1 tsp vinegar.",
+    "Spread the glaze over the top and sides and bake 15 to 20 minutes more, until the glaze is sticky and a thermometer in the middle reads 160°F. The glaze goes on late so the sugar doesn't burn.",
+    "Let it rest 10 minutes before slicing, so the juices settle and the slices hold together. Wrap any leftover slices for sandwiches tomorrow."
+   ],
+   "method_notes": "All three bind about 2 lb lean ground beef with breadcrumbs, milk, eggs and onion (The Wholesome Dish adds Worcestershire), shape a free-form loaf and bake at 350°F to 160°F inside, glazing only for the last 15-20 minutes so the sugar doesn't burn. Natasha's and The Wholesome Dish glaze with ketchup, brown sugar and vinegar (white and red wine); Spend With Pennies uses chili sauce and ketchup, brown sugar optional, and bakes 40 minutes before glazing. Natasha's says a loaf pan needs 375°F. All rest it 10-15 minutes before slicing.",
+   "sources": [
+    {
+     "name": "Natasha's Kitchen",
+     "title": "The Best Meatloaf Recipe",
+     "url": "https://natashaskitchen.com/meatloaf-recipe/",
+     "rating": 4.98,
+     "rating_count": 9801,
+     "lead": true
+    },
+    {
+     "name": "Spend With Pennies",
+     "title": "The BEST Meatloaf Recipe",
+     "url": "https://www.spendwithpennies.com/best-meatloaf-recipe/",
+     "rating": 4.95,
+     "rating_count": 2984,
+     "lead": false
+    },
+    {
+     "name": "The Wholesome Dish",
+     "title": "The Best Classic Meatloaf",
+     "url": "https://www.thewholesomedish.com/the-best-classic-meatloaf/",
+     "rating": 4.97,
+     "rating_count": 2202,
+     "lead": false
+    }
+   ],
+   "advance_prep_notes": "",
+   "advance_prep_step_indices": [],
+   "fallback_used": false,
+   "origin": "seed"
+  },
+  {
+   "dish_name": "Chicken Piccata",
+   "cuisine": "Italian",
+   "main_protein": "chicken",
+   "default_servings": 4,
+   "prep_time_minutes": 15,
+   "cook_time_minutes": 20,
+   "ingredients": [
+    {
+     "item": "Boneless skinless chicken breasts",
+     "qty": "1.5 lb",
+     "category": "meat/seafood"
+    },
+    {
+     "item": "All-purpose flour",
+     "qty": "1/2 cup",
+     "category": "pantry"
+    },
+    {
+     "item": "Unsalted butter",
+     "qty": "4 tbsp",
+     "category": "dairy"
+    },
+    {
+     "item": "Olive oil",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "3 tbsp"
+    },
+    {
+     "item": "Dry white wine",
+     "qty": "1/2 cup",
+     "category": "other"
+    },
+    {
+     "item": "Lemons",
+     "qty": "2",
+     "category": "produce"
+    },
+    {
+     "item": "Capers",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "3 tbsp"
+    },
+    {
+     "item": "Fresh parsley",
+     "qty": "1 bunch",
+     "category": "produce",
+     "cook_qty": "2 tbsp chopped"
+    },
+    {
+     "item": "Salt",
+     "qty": "1 box",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Black pepper",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1/2 tsp"
+    }
+   ],
+   "instructions": [
+    "Get the sauce things ready first, because the pan moves fast at the end: juice 1 to 2 lemons (you want 1/4 cup) and thinly slice any lemon left over, rinse the 3 tbsp capers and chop 2 tbsp parsley.",
+    "Slice each chicken breast in half through its thickness so you have 4 thin cutlets, then press them flat with your palm. Thin cutlets cook through in the time the outside takes to brown.",
+    "Season both sides with 1 tsp salt and 1/2 tsp pepper. Put the 1/2 cup flour on a plate, press each cutlet into it and shake off the extra. A thin coat browns; a thick one turns gummy in the sauce.",
+    "Heat 1 1/2 tbsp olive oil and 1 tbsp butter in a large skillet over medium-high. When the butter foams, lay in 2 cutlets and leave them alone 3 to 4 minutes, until golden underneath and they let go of the pan. Flip and cook 2 to 3 minutes more, to 165°F in the thickest part, then move them to a plate.",
+    "Add the other 1 1/2 tbsp oil and 1 tbsp butter and cook the last 2 cutlets the same way.",
+    "With the pan still on medium-high, pour in the 1/2 cup wine (or chicken broth). It'll hiss. Scrape up the brown bits, because that's where the sauce's flavor is, and let it bubble 1 minute, until reduced by about half.",
+    "Add the 1/4 cup lemon juice, the capers and the last 2 tbsp butter. Swirl until the butter melts into a glossy sauce, then slide the chicken back in for 1 to 2 minutes, turning it once to coat.",
+    "Serve with the sauce spooned over and the parsley and any lemon slices on top. Pasta or bread takes care of the extra sauce."
+   ],
+   "method_notes": "All three split breasts into thin cutlets, dredge lightly in seasoned flour and sear in butter and oil over medium-high in two batches, 2-4 minutes a side to 165°F, then build the sauce in the same pan: white wine (or broth) to deglaze, lemon juice, capers, a last piece of butter swirled in off the boil. Natasha's uses 1/2 cup wine, 1/4 cup lemon juice and 3 tbsp capers for 6 cutlets and returns the chicken to the sauce for 2 minutes. RecipeTin Eats adds parmesan to the flour, reduces the wine by half before the lemon, swirls the butter in over low heat so it stays glossy, and says low-sodium broth stands in for the wine.",
+   "sources": [
+    {
+     "name": "Natasha's Kitchen",
+     "title": "Chicken Piccata Recipe",
+     "url": "https://natashaskitchen.com/chicken-piccata-recipe/",
+     "rating": 4.97,
+     "rating_count": 125,
+     "lead": true
+    },
+    {
+     "name": "Once Upon a Chef",
+     "title": "Chicken Piccata",
+     "url": "https://www.onceuponachef.com/recipes/chicken-piccata.html",
+     "rating": 4.91,
+     "rating_count": 177,
+     "lead": false
+    },
+    {
+     "name": "RecipeTin Eats",
+     "title": "A better Chicken Piccata",
+     "url": "https://www.recipetineats.com/chicken-piccata/",
+     "rating": 4.91,
+     "rating_count": 107,
+     "lead": false
+    }
+   ],
+   "advance_prep_notes": "",
+   "advance_prep_step_indices": [],
+   "fallback_used": false,
+   "origin": "seed"
+  },
+  {
+   "dish_name": "Chana Masala",
+   "cuisine": "Indian",
+   "main_protein": "chickpeas",
+   "default_servings": 4,
+   "prep_time_minutes": 15,
+   "cook_time_minutes": 40,
+   "ingredients": [
+    {
+     "item": "Chickpeas",
+     "qty": "2 cans (15 oz)",
+     "category": "pantry"
+    },
+    {
+     "item": "Yellow onions",
+     "qty": "2",
+     "category": "produce"
+    },
+    {
+     "item": "Roma tomatoes",
+     "qty": "3",
+     "category": "produce"
+    },
+    {
+     "item": "Ginger",
+     "qty": "1 piece (2 inch)",
+     "category": "produce",
+     "cook_qty": "1 tbsp grated"
+    },
+    {
+     "item": "Garlic",
+     "qty": "4 cloves",
+     "category": "produce"
+    },
+    {
+     "item": "Green chili",
+     "qty": "1",
+     "category": "produce"
+    },
+    {
+     "item": "Vegetable oil",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "3 tbsp"
+    },
+    {
+     "item": "Cumin seeds",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Bay leaves",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1"
+    },
+    {
+     "item": "Ground turmeric",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1/2 tsp"
+    },
+    {
+     "item": "Kashmiri chili powder",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Ground coriander",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "2 tsp"
+    },
+    {
+     "item": "Garam masala",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Kasuri methi",
+     "qty": "1 bag",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Lemon",
+     "qty": "1",
+     "category": "produce"
+    },
+    {
+     "item": "Cilantro",
+     "qty": "1 bunch",
+     "category": "produce",
+     "cook_qty": "2 tbsp chopped"
+    },
+    {
+     "item": "Salt",
+     "qty": "1 box",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    }
+   ],
+   "instructions": [
+    "Finely chop the 2 onions and the 3 tomatoes, grate 1 tbsp ginger, mince the 4 cloves garlic and slit the green chili down one side. Drain and rinse the 2 cans chickpeas.",
+    "Heat 3 tbsp oil in a heavy pot over medium. Add the 1 tsp cumin seeds and the bay leaf. In about 20 seconds the seeds will sizzle and smell toasty, and that's your cue for the onions.",
+    "Add the onions with 1/2 tsp of the salt and cook, stirring now and then, 10 to 12 minutes, until deep golden. Don't rush this step: the onions are where the gravy's body and sweetness come from.",
+    "Stir in the ginger, garlic and green chili for 1 minute, until the raw smell is gone.",
+    "Turn the heat to low and add 1/2 tsp turmeric, 1 tsp Kashmiri chili powder and 2 tsp coriander. Stir 30 seconds so they bloom in the oil, with a splash of water if they start to catch.",
+    "Add the tomatoes and cook 6 to 8 minutes over medium, mashing with the spoon, until they collapse and the oil shows at the edges.",
+    "Add the chickpeas, the other 1/2 tsp salt and 1 1/2 cups water. Mash a few chickpeas against the side of the pot, which thickens the gravy. Cover and simmer 15 minutes.",
+    "Rub 1 tsp kasuri methi between your palms over the pot and stir in 1 tsp garam masala. Simmer 2 minutes more, then turn off the heat.",
+    "Squeeze in the juice of half the lemon, taste, and add the rest if it wants more brightness. Scatter the 2 tbsp cilantro and serve with rice or roti."
+   ],
+   "method_notes": "All three build an onion-tomato masala: whole spices or cumin seeds in oil, onions cooked golden (the step they all say not to rush), ginger-garlic, then ground spices bloomed briefly before chopped tomatoes cook down until the oil separates. Chickpeas (canned, or soaked and pressure-cooked) simmer in it with water 15 minutes, partly mashed to thicken. Swasthi's uses Kashmiri chili, turmeric, coriander and garam masala and finishes with kasuri methi and optional amchur; Tea for Turmeric starts from 3/4 cup dried chickpeas soaked overnight and simmers 25-30 minutes; Piping Pot Curry soaks them and pressure-cooks everything in one pot with 1.5 cups water (1 cup for canned).",
+   "sources": [
+    {
+     "name": "Swasthi's Recipes",
+     "title": "Authentic Chana Masala Recipe (Chickpea Masala)",
+     "url": "https://www.indianhealthyrecipes.com/chana-masala/",
+     "rating": 4.97,
+     "rating_count": 732,
+     "lead": true
+    },
+    {
+     "name": "Tea for Turmeric",
+     "title": "Authentic Chana Masala (Indian Chickpea Curry)",
+     "url": "https://www.teaforturmeric.com/chana-masala/",
+     "rating": 4.91,
+     "rating_count": 224,
+     "lead": false
+    },
+    {
+     "name": "Piping Pot Curry",
+     "title": "Instant Pot Chana Masala",
+     "url": "https://pipingpotcurry.com/punjabi-chole-instant-pot/",
+     "rating": 4.89,
+     "rating_count": 314,
+     "lead": false
+    }
+   ],
+   "advance_prep_notes": "",
+   "advance_prep_step_indices": [],
+   "fallback_used": false,
+   "origin": "seed"
+  },
+  {
+   "dish_name": "Chicken Tinga",
+   "cuisine": "Mexican",
+   "main_protein": "chicken",
+   "default_servings": 4,
+   "prep_time_minutes": 10,
+   "cook_time_minutes": 40,
+   "ingredients": [
+    {
+     "item": "Boneless skinless chicken thighs",
+     "qty": "1.5 lb",
+     "category": "meat/seafood"
+    },
+    {
+     "item": "White onion",
+     "qty": "1",
+     "category": "produce"
+    },
+    {
+     "item": "Garlic",
+     "qty": "3 cloves",
+     "category": "produce"
+    },
+    {
+     "item": "Tomato sauce",
+     "qty": "1 can (15 oz)",
+     "category": "pantry"
+    },
+    {
+     "item": "Chipotles in adobo",
+     "qty": "1 can (7 oz)",
+     "category": "pantry",
+     "cook_qty": "2 chipotles + 2 tbsp adobo"
+    },
+    {
+     "item": "Mexican oregano",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Ground cumin",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1/2 tsp"
+    },
+    {
+     "item": "Olive oil",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "2 tbsp"
+    },
+    {
+     "item": "Salt",
+     "qty": "1 box",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Black pepper",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "1/2 tsp"
+    },
+    {
+     "item": "Corn tortillas",
+     "qty": "12",
+     "category": "other"
+    },
+    {
+     "item": "Avocado",
+     "qty": "1",
+     "category": "produce"
+    },
+    {
+     "item": "Mexican crema",
+     "qty": "1 tub",
+     "category": "dairy",
+     "cook_qty": "1/2 cup"
+    },
+    {
+     "item": "Queso fresco",
+     "qty": "4 oz",
+     "category": "dairy"
+    },
+    {
+     "item": "Lime",
+     "qty": "1",
+     "category": "produce"
+    }
+   ],
+   "instructions": [
+    "Pat the 1.5 lb chicken thighs dry and season with 1 tsp salt and 1/2 tsp pepper. Slice the onion thinly and mince the 3 cloves garlic.",
+    "Heat 2 tbsp olive oil in a large deep skillet over medium-high. Lay in the thighs and leave them 3 minutes, until they brown and release, then flip for 2 minutes. They finish in the sauce, so move them to a plate.",
+    "Turn the heat to medium and add the onion to the same pan. Cook 5 minutes, scraping up the browned bits, until soft and gold at the edges. Add the garlic, 1 tsp oregano and 1/2 tsp cumin for 30 seconds, until fragrant.",
+    "Blend the can of tomato sauce with 2 chipotles and 2 tbsp adobo from the can until smooth. Start with 2: heat is easy to add at the end and impossible to take out. The rest of the can keeps in the fridge.",
+    "Pour the sauce over the onions, bring it to a bubble, then return the chicken and its juices. Cover, turn to low and simmer 25 minutes, until the chicken pulls apart with a fork.",
+    "Shred the chicken in the pan with two forks and stir it through the sauce. Simmer uncovered 5 minutes so the sauce clings instead of running. Taste now, and chop in another chipotle if you want more heat.",
+    "Warm the 12 tortillas in a dry pan. Serve the tinga on them with sliced avocado, the 1/2 cup crema, the 4 oz queso fresco crumbled over and lime wedges."
+   ],
+   "method_notes": "All three cook onion (and garlic) soft, add chicken, and simmer it in a tomato and chipotle-in-adobo sauce until it shreds, then return the shredded meat to the sauce to soak it up. Chili Pepper Madness sears 2 lb thighs, blends a 15 oz can of tomato sauce with the chipotles and simmers 30 minutes, seasoning with Mexican oregano, cumin and chili powder; it suggests half the can of chipotles for less heat. Mexico in My Kitchen chops fresh tomatoes and chipotles rather than blending and starts from poached shredded chicken. Reviewers on every page say to adjust the chipotles for heat.",
+   "sources": [
+    {
+     "name": "Chili Pepper Madness",
+     "title": "Chicken Tinga Recipe (Mexican Chipotle Shredded Chicken)",
+     "url": "https://www.chilipeppermadness.com/recipes/chicken-tinga/",
+     "rating": 4.98,
+     "rating_count": 41,
+     "lead": true
+    },
+    {
+     "name": "Mexico in My Kitchen",
+     "title": "Chicken Tinga Recipe",
+     "url": "https://www.mexicoinmykitchen.com/chicken-tinga-recipe/",
+     "rating": 4.94,
+     "rating_count": 61,
+     "lead": false
+    },
+    {
+     "name": "Isabel Eats",
+     "title": "Chicken Tinga Recipe",
+     "url": "https://www.isabeleats.com/chicken-tinga/",
+     "rating": 5.0,
+     "rating_count": 13,
+     "lead": false
+    }
+   ],
+   "advance_prep_notes": "",
+   "advance_prep_step_indices": [],
+   "fallback_used": false,
+   "origin": "seed"
+  },
+  {
+   "dish_name": "Thai Basil Chicken",
+   "cuisine": "Thai",
+   "main_protein": "chicken",
+   "default_servings": 4,
+   "prep_time_minutes": 10,
+   "cook_time_minutes": 15,
+   "ingredients": [
+    {
+     "item": "Ground chicken",
+     "qty": "1 lb",
+     "category": "meat/seafood"
+    },
+    {
+     "item": "Thai bird chilies",
+     "qty": "1 package",
+     "category": "produce",
+     "cook_qty": "3"
+    },
+    {
+     "item": "Shallots",
+     "qty": "3",
+     "category": "produce"
+    },
+    {
+     "item": "Garlic",
+     "qty": "5 cloves",
+     "category": "produce"
+    },
+    {
+     "item": "Thai basil",
+     "qty": "1 bunch",
+     "category": "produce"
+    },
+    {
+     "item": "Eggs",
+     "qty": "4",
+     "category": "dairy"
+    },
+    {
+     "item": "Vegetable oil",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "5 tbsp"
+    },
+    {
+     "item": "Sugar",
+     "qty": "1 bag",
+     "category": "pantry",
+     "cook_qty": "2 tsp"
+    },
+    {
+     "item": "Soy sauce",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "2 tbsp"
+    },
+    {
+     "item": "Fish sauce",
+     "qty": "1 bottle",
+     "category": "pantry",
+     "cook_qty": "1 tbsp"
+    },
+    {
+     "item": "Low-sodium chicken broth",
+     "qty": "1/3 cup",
+     "category": "pantry"
+    },
+    {
+     "item": "Jasmine rice",
+     "qty": "1 1/2 cups",
+     "category": "pantry"
+    }
+   ],
+   "instructions": [
+    "Rinse the 1 1/2 cups jasmine rice and get it cooking first. The stir-fry takes ten minutes and won't wait for it.",
+    "Thinly slice the 3 shallots, the 5 cloves garlic and 3 Thai chilies (1 is plenty if anyone at the table is wary of heat). Pick the leaves off the basil. Everything goes in fast, so have it all by the stove.",
+    "Fry the eggs first. Heat 2 tbsp oil in a wok or large skillet over medium-high and fry the 4 eggs two at a time, spooning the hot oil over the whites, about 2 minutes, until the edges are brown and lacy and the yolks still soft. Set them aside.",
+    "Turn the heat to high and add the other 3 tbsp oil with the chilies, shallots and garlic. Stir 1 to 2 minutes, until soft and just browning at the edges. Stand back a little, because the chilies catch in your throat.",
+    "Add the 1 lb ground chicken and stir-fry 2 minutes, breaking it into small bits, until no pink is left.",
+    "Add 2 tsp sugar, 2 tbsp soy sauce and 1 tbsp fish sauce and toss for 1 minute.",
+    "Pour in the 1/3 cup broth (or water). It'll bubble hard and cook off in under a minute, leaving the chicken glossy.",
+    "Off the heat, stir in all the basil until it wilts, about 20 seconds. Serve over the rice with a fried egg on each plate."
+   ],
+   "method_notes": "Both fry chilies and garlic (Woks of Life adds shallots) hot and fast, add coarsely ground chicken, season with fish sauce, soy and a little sugar, and stir the basil in off the heat; both serve it over jasmine rice with a crisp fried egg. Woks of Life uses 1 lb chicken, 2 tbsp soy, 1 tbsp fish sauce, 2 tsp sugar and deglazes with 1/3 cup broth, 10 minutes start to finish. Hot Thai Kitchen pounds the chilies and garlic into a rough paste and adds oyster sauce and dark soy; both say holy basil is the real thing and Thai basil is a fine stand-in (Hot Thai Kitchen prefers Italian basil as the closer match).",
+   "sources": [
+    {
+     "name": "The Woks of Life",
+     "title": "10-Minute Thai Basil Chicken (Easy Gai Pad Krapow)",
+     "url": "https://thewoksoflife.com/thai-basil-chicken-pad-krapow/",
+     "rating": 4.95,
+     "rating_count": 192,
+     "lead": true
+    },
+    {
+     "name": "Hot Thai Kitchen",
+     "title": "Pad Kra Pao (Pad Gaprao) - Holy Basil Chicken Stir-Fry",
+     "url": "https://hot-thai-kitchen.com/holy-basil-stir-fry/",
+     "rating": 5.0,
+     "rating_count": 58,
+     "lead": false
+    }
+   ],
+   "advance_prep_notes": "",
+   "advance_prep_step_indices": [],
+   "fallback_used": false,
+   "origin": "seed"
+  },
+  {
+   "dish_name": "Misir Wat",
+   "cuisine": "Ethiopian",
+   "main_protein": "lentils",
+   "default_servings": 4,
+   "prep_time_minutes": 10,
+   "cook_time_minutes": 55,
+   "ingredients": [
+    {
+     "item": "Red lentils",
+     "qty": "1 cup",
+     "category": "pantry"
+    },
+    {
+     "item": "Ghee",
+     "qty": "1 jar",
+     "category": "dairy",
+     "cook_qty": "4 tbsp"
+    },
+    {
+     "item": "Yellow onion",
+     "qty": "1",
+     "category": "produce"
+    },
+    {
+     "item": "Garlic",
+     "qty": "4 cloves",
+     "category": "produce"
+    },
+    {
+     "item": "Roma tomato",
+     "qty": "1",
+     "category": "produce"
+    },
+    {
+     "item": "Tomato paste",
+     "qty": "1 can (6 oz)",
+     "category": "pantry",
+     "cook_qty": "2 tbsp"
+    },
+    {
+     "item": "Berbere",
+     "qty": "1 jar",
+     "category": "pantry",
+     "cook_qty": "2 tbsp"
+    },
+    {
+     "item": "Vegetable broth",
+     "qty": "2 1/2 cups",
+     "category": "pantry"
+    },
+    {
+     "item": "Salt",
+     "qty": "1 box",
+     "category": "pantry",
+     "cook_qty": "1 tsp"
+    },
+    {
+     "item": "Injera",
+     "qty": "1 package",
+     "category": "other"
+    }
+   ],
+   "instructions": [
+    "Finely chop the onion, mince the 4 cloves garlic and dice the tomato. Rinse the 1 cup lentils in a sieve until the water runs mostly clear, so the stew doesn't foam.",
+    "Melt 2 tbsp of the ghee (niter kibbeh, if you have it) in a heavy pot over medium-high. Cook the onion 8 to 10 minutes, stirring often, until golden. Give it the time, because the onions are the base of the stew.",
+    "Add the garlic, tomato, 2 tbsp tomato paste and 1 tbsp of the berbere. Cook 3 to 4 minutes, stirring, until the paste darkens and it smells toasty. Turn the heat down if the berbere starts to stick, because burnt berbere turns bitter.",
+    "Add the lentils, the 2 1/2 cups broth and 1 tsp salt. Bring to a boil, then cover and simmer on low 35 to 40 minutes, stirring now and then, until the lentils break down into a thick stew. If it gets stiff before then, add a splash of water.",
+    "Stir in the last 2 tbsp ghee and 1 tbsp berbere and simmer 2 minutes more. The second spoon of berbere is what gives it its fresh heat. Taste for salt.",
+    "Serve with injera to scoop it up, or over rice."
+   ],
+   "method_notes": "All three cook a lot of onion slowly in spiced butter (niter kibbeh) or oil until golden, fry garlic, tomato or tomato paste and berbere in it, then simmer red lentils in broth until they collapse into a thick stew. The Daring Gourmet uses 1 cup lentils to 2 1/2 cups broth, splits both the niter kibbeh and the berbere, and stirs the second half in at the end, simmering about 40 minutes covered. Immaculate Bites adds ginger, coriander or cumin and smoked paprika; Urban Farmie makes it vegan with oil in about 45 minutes, simmering 20-25 minutes with the rest of the berbere added late, and offers paprika, coriander and chili powder if there's no berbere.",
+   "sources": [
+    {
+     "name": "The Daring Gourmet",
+     "title": "Misir Wat (Ethiopian Spiced Red Lentils)",
+     "url": "https://www.daringgourmet.com/misir-wat-ethiopian-spiced-red-lentils/",
+     "rating": 4.97,
+     "rating_count": 96,
+     "lead": true
+    },
+    {
+     "name": "Immaculate Bites",
+     "title": "Ethiopian Lentil Stew",
+     "url": "https://www.africanbites.com/ethiopian-lentil-stew/",
+     "rating": 4.92,
+     "rating_count": 72,
+     "lead": false
+    },
+    {
+     "name": "Urban Farmie",
+     "title": "Misir Wat (Misir Wot) Ethiopian Red Lentil Stew Recipe",
+     "url": "https://urbanfarmie.com/misir-wot/",
+     "rating": 5.0,
+     "rating_count": 63,
+     "lead": false
+    }
+   ],
+   "advance_prep_notes": "",
+   "advance_prep_step_indices": [],
+   "fallback_used": false,
+   "origin": "seed"
+  }
+ ]
+}
