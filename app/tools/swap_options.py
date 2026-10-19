@@ -577,11 +577,11 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     # changed since the sheet opened, they may not fit the new ones.
     if cached.get("group", (entry_id,)) != _group_key(group):
         raise ValueError("Those picks aren't on offer any more — tap Swap again.")
+    # No time cap at the tap: the picks were offered under each day's cap
+    # (_gated), and the one the household chose is theirs — never refused
+    # for time (Emily, 2026-10-18; swap_in_place.over_cap_said says a day
+    # it runs past instead).
     why = _gate_all(pick, group)
-    if not why and len(group) > 1:
-        # Every day held to its OWN cap — a rush Friday is 30 minutes even
-        # when Thursday has none (Emily's standing rule, 2026-09-22).
-        why = _swap.cap_gate(weekly_plan_id, pick, group)
     if why:
         return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     on_draft = not _plan_is_approved(weekly_plan_id)
@@ -620,11 +620,9 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         # the recipe underneath them is the model's. (apply_pick still holds
         # the name to its own ingredients — honest_meal_name.)
         pick = dict(full, meal_name=pick["meal_name"], reason=pick.get("reason") or full.get("reason") or "")
+        # The written-out recipe can run past the line the pick was offered
+        # with; that is said in the toast (over_cap_said), never a refusal.
         why = _gate_all(pick, group, _swap.pick_gate)
-        if not why and len(group) > 1:
-            # The written-out recipe's own minutes, which can run past the
-            # line the pick was offered with.
-            why = _swap.cap_gate(weekly_plan_id, pick, group)
         if why:
             return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
     if len(group) > 1:
@@ -640,12 +638,14 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         keeping = [m for m in group if m["entry_id"] not in instead]
         out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, correct_title=correct_title,
                                        instead=instead,
-                                       serves=_swap.batch_serves(weekly_plan_id, keeping, entry))
+                                       serves=_swap.batch_serves(weekly_plan_id, keeping, entry),
+                                       own_pick=True)
     else:
         # `group` rather than letting apply_pick widen for itself: it has
         # already been read here (and the picks asked and gated against
         # it), so a second read would answer the same question twice.
-        out = _swap.apply_pick(weekly_plan_id, entry, pick, correct_title=correct_title, group=group)
+        out = _swap.apply_pick(weekly_plan_id, entry, pick, correct_title=correct_title, group=group,
+                               own_pick=True)
     out["status"] = "swapped"
     for member in group:
         forget_options(member["entry_id"])

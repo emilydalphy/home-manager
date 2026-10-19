@@ -911,7 +911,8 @@ def honest_meal_name(pick: dict) -> str:
 
 
 def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool = False,
-               correct_title: bool = True, group: list[dict] | None = None) -> dict:
+               correct_title: bool = True, group: list[dict] | None = None,
+               own_pick: bool = False) -> dict:
     """
     Put an already-chosen dish on `entry`'s slot: save it as a recipe if it
     is new, swap it in through swap_meal_in_plan, and write the undo note.
@@ -935,6 +936,10 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     "Chili with mince" corrected back to the taken "Chili", the new recipe
     therefore not saved, and the OLD beef chili planned again and reported
     as a change.
+
+    `own_pick`: the household chose this dish themselves (over_cap_said),
+    so no day's time cap refuses it — a day it runs past is said in
+    `over_cap_said` (and `said`) instead.
     """
     # The BACKSTOP for a night that has already gone by, and deliberately
     # dead code from the three doors above it: swap_meal_in_place,
@@ -982,7 +987,8 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
         keeping = [m for m in group if m["entry_id"] not in instead]
         return apply_pick_to_days(weekly_plan_id, group, pick, carry_sides=carry_sides,
                                   correct_title=correct_title, instead=instead,
-                                  serves=batch_serves(weekly_plan_id, keeping, entry))
+                                  serves=batch_serves(weekly_plan_id, keeping, entry),
+                                  own_pick=own_pick)
 
     serves = _table_for(entry["date"], entry["slot"])["serves"]
     if correct_title:
@@ -1062,6 +1068,10 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     # computed on every swap and dropped right here, so only chat said it.
     if result.get("thaw_now"):
         out["thaw_now"] = result["thaw_now"]
+    if own_pick:
+        line = over_cap_said(weekly_plan_id, pick, [entry])
+        if line:
+            out["over_cap_said"] = out["said"] = line
     return out
 
 
@@ -1507,6 +1517,37 @@ def cap_gate(weekly_plan_id: int, pick: dict, entries: list[dict]) -> str | None
     return None
 
 
+# THE HOUSEHOLD'S OWN PICK IS NEVER REFUSED FOR TIME (Emily, 2026-10-18:
+# "If I ask for chicken it should let me do it"). Her Thursday stir-fry,
+# Tweak -> Change the protein -> Ground chicken, came back "I left it as
+# it was — Ground chicken takes 55 minutes, and Thursday only has 30":
+# the household chose that dish, and cap_gate above treated the choice
+# like one of Pomona's own suggestions. The cap is Pomona's rule for what
+# IT offers (cap_gate still filters the three picks and re-picks a slow
+# generated night); a dish the household picked themselves — a Tweak
+# option or what they typed, a Swap card they tapped, a chat change card —
+# goes on, and is told about in one quiet line instead.
+def over_cap_said(weekly_plan_id: int, pick: dict, entries: list[dict], said: str = "") -> str:
+    """The toast for a household's own pick that runs past a day's cap —
+    "Done — Thai Basil Chicken Stir-Fry runs about 40 minutes, a bit over
+    Thursday's 30." — or "" when it fits (or says no minutes at all).
+    `said` is a sentence the write already has (swapped_said, for a dish
+    on several meals); the time goes after it rather than replacing it."""
+    minutes = _pick_minutes(pick)
+    if not minutes:
+        return ""
+    for entry, cap in day_caps(weekly_plan_id, entries):
+        if cap and minutes > cap:
+            # "A bit over" only while it IS a bit — 90 minutes against 30
+            # is not, and saying so would be the soft kind of wrong.
+            over = "a bit over" if minutes - cap <= 15 else "over"
+            tail = f"runs about {minutes} minutes, {over} {_weekday(entry['date'])}’s {cap}."
+            if said:
+                return f"{said.rstrip()} It {tail}"
+            return f"Done — {pick.get('meal_name') or 'this one'} {tail}"
+    return ""
+
+
 # The confirmation a swap that changed more than one meal says back
 # (Gowthami's household, 2026-10-04: a dinner cooked double for the next
 # day's lunch is two meals, and the toast named one). Built HERE, beside
@@ -1608,7 +1649,8 @@ def instead_of_the_leftovers(weekly_plan_id: int, entry: dict, group: list[dict]
 
 def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
                        carry_sides: bool = False, correct_title: bool = True,
-                       serves: int | None = None, instead: dict[int, dict] | None = None) -> dict:
+                       serves: int | None = None, instead: dict[int, dict] | None = None,
+                       own_pick: bool = False) -> dict:
     """
     apply_pick for a dish planned on several days: the same chosen dish on
     every one of `entries` (dish_days' answer), in ONE transaction
@@ -1642,13 +1684,18 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
     still the old dish). Each day keeps ITS OWN sides, and Undo carries
     them back (_undo_dish_swap). `serves` is what a new recipe is saved
     for when the pick doesn't say — the change asks for the whole batch.
+
+    `own_pick` is apply_pick's own: the household chose this dish, so the
+    cap backstop below does not refuse it (over_cap_said).
     """
     for entry in entries:
         if _weekly_plan.night_has_gone(entry["date"]):
             raise _weekly_plan.SlotRefused(_weekly_plan.NIGHT_GONE)
-    # Each day's own time cap, as the backstop (choose_swap_option asks
-    # first, in its own words): nothing is saved or written past this.
-    too_long = cap_gate(weekly_plan_id, pick, entries)
+    # Each day's own time cap, as the backstop for a dish POMONA picked
+    # (swap_meal_in_place): nothing is saved or written past this. A dish
+    # the household picked is never refused for time — it is said instead,
+    # at the end (over_cap_said).
+    too_long = None if own_pick else cap_gate(weekly_plan_id, pick, entries)
     if too_long:
         raise _weekly_plan.SlotRefused(f"I left it as it was — {pick.get('meal_name') or 'that'} {too_long}.")
     first = entries[0]
@@ -1767,6 +1814,11 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
     # The same fridge line apply_pick carries, for a whole dish swapped.
     if result.get("thaw_now"):
         out["thaw_now"] = result["thaw_now"]
+    if own_pick:
+        line = over_cap_said(weekly_plan_id, pick, [e for e in entries if e["entry_id"] not in instead],
+                             said=out.get("said") or "")
+        if line:
+            out["over_cap_said"] = out["said"] = line
     return out
 
 

@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The household's own pick is never refused for time** (2026-10-19;
+  branch `overnight/own-pick-never-refused`; tests
+  `tests/test_own_pick_never_refused.py`). Emily, 2026-10-18: "If I ask for
+  chicken it should let me do it" — Tweak → Ground chicken on a 25-minute
+  stir-fry answered "Ground chicken takes 55 minutes, and Thursday only has
+  30". Change a part, a tapped Swap card and a chat change card now pass
+  `own_pick=True` and skip `cap_gate`; a night it runs past is one toast
+  line (`swap_in_place.over_cap_said`: "Done — X runs about 40 minutes, a
+  bit over Thursday's 30."). The cap still filters Pomona's own picks
+  (`_gated`, `swap_meal_in_place`'s backstop, cap_enforce, dinner_gaps).
+  The 55 was the rewrite estimating from nothing: it is now told
+  `current_minutes`, and a quick protein (ground, shrimp, tofu…) can't make
+  the dish slower (`plate_parts._keep_quick_time`). Only a chained dinner
+  reached the refusal — a single night never was gated. Salmon → shrimp
+  via Tweak works on main for a single night; via "Change recipe" the name
+  stays "Seared Salmon…" by design (rewrite keeps the dish) — not changed.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

@@ -473,11 +473,11 @@ def test_a_row_that_landed_before_a_later_row_raised_can_still_be_undone(week, m
     real = sip.apply_pick
     calls = {"n": 0}
 
-    def flaky(plan_id, entry, pick):
+    def flaky(plan_id, entry, pick, **kw):
         calls["n"] += 1
         if calls["n"] == 2:
             raise ValueError("boom")
-        return real(plan_id, entry, pick)
+        return real(plan_id, entry, pick, **kw)
 
     monkeypatch.setattr(sip, "apply_pick", flaky)
     with pytest.raises(ValueError):

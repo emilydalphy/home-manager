@@ -19981,7 +19981,10 @@
       // carries the reason the recipe changed around it.
       // plate_parts.change_part answers through apply_pick, so a new part
       // that needs thawing carries the same fridge line (thawToast).
-      var partToast = thawToast(savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS);
+      // A pick that runs past the night's time limit still goes on (the
+      // household's own pick is never refused for time); the server's
+      // one line names the dish and the minutes (over_cap_said).
+      var partToast = thawToast(out.over_cap_said || savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS);
       toastSaved(partToast.said,
         { label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, partToast.ms);
       swapUndoTimer = setTimeout(function () {

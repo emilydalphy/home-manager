@@ -569,7 +569,7 @@ def test_the_sheet_selects_then_saves_and_the_protein_goes_through_the_swaps_und
     change = SHELL_JS[k:k + 3200]
     assert "/change-part'" in change
     # 2026-10-13: through thawToast, so a part that needs thawing says so.
-    assert "thawToast(savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS)" in change
+    assert "thawToast(out.over_cap_said || savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS)" in change
     assert "{ label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, partToast.ms);" in change
     assert "reason: out.reason || ''" in change
     # The add's confirmation is S10's too: the card's line carries when it

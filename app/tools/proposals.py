@@ -420,7 +420,9 @@ def apply_proposal(proposal_id: str) -> dict:
         if entry["meal"].strip().lower() == cand["meal_name"].strip().lower():
             continue
         try:
-            result = _swap.apply_pick(plan_id, entry, cand)
+            # own_pick: a chat change is the household asking for it, so a
+            # night it runs long on is never a refusal (over_cap_said).
+            result = _swap.apply_pick(plan_id, entry, cand, own_pick=True)
         except _weekly_plan.SlotRefused as refusal:
             # apply_pick carries its own past-night backstop, and it reads
             # the clock for itself rather than taking the one resolved
