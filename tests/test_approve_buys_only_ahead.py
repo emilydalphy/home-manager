@@ -135,12 +135,15 @@ def test_a_gone_cook_night_that_was_cooked_keeps_its_leftovers_night():
     conn.commit()
     conn.close()
 
-    tools.approve_weekly_plan(plan, "Alex")
+    preview = tools.preview_plan_grocery_impact(plan)
+    result = tools.approve_weekly_plan(plan, "Alex")
 
     sat = _dinner(SAT)
     assert (sat["slot_state"], sat["meal"]) == ("planned", "Chicken Skewers")
     assert sat["id"] in _leftovers.plan_leftover_chains(plan)["leftovers"]
     assert _items() == set()
+    # Nor is the reheat's dish promised as a shop (review, 2026-10-19).
+    assert preview["would_add_count"] == result["groceries_added_count"] == 0
 
 
 def test_before_today_is_the_households_today_not_the_servers(monkeypatch):
@@ -176,4 +179,44 @@ def test_a_repeat_whose_first_day_is_gone_is_not_batched_onto_it():
     sat = _dinner(SAT)
     assert (sat["slot_state"], sat["meal"]) == ("planned", "Chicken Skewers")
     assert sat["id"] not in _leftovers.plan_leftover_chains(plan)["leftovers"]
+    assert {g["item"]: g["quantity"] for g in tools.list_grocery_list()}["chicken thighs"] == "2 lbs"
+
+
+def test_dropping_the_reheat_of_an_eaten_cook_night_buys_nothing_for_it():
+    """Review, 2026-10-19 (A). Thursday's skewers were cooked, Saturday
+    reheats them. Taking Saturday away rescales the cook night's batch —
+    and that rescale used to buy Thursday's chicken, for a dinner eaten."""
+    _recipes()
+    plan = tools.create_weekly_plan(WEEK)["weekly_plan_id"]
+    thu = tools.plan_meal(THU, "Chicken Skewers", slot="dinner", weekly_plan_id=plan)
+    sat = tools.plan_meal(SAT, "Chicken Skewers", slot="dinner", weekly_plan_id=plan,
+                          derived_from={"links_to": f"{THU}:dinner"})
+    tools.plan_meal(SUN, "Tacos", slot="dinner", weekly_plan_id=plan)
+    tools.repair_leftover_chains(plan)
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET cooked_status = 'done' WHERE id = ?", (thu["entry_id"],))
+    conn.commit()
+    conn.close()
+    tools.approve_weekly_plan(plan, "Alex")
+
+    tools.drop_dish_from_day(plan, sat["entry_id"])
+
+    assert _items() == {"tortillas", "ground beef"}
+
+
+def test_a_rescale_does_not_buy_a_gone_night_approval_skipped():
+    """Review, 2026-10-19 (B). Tuesday's skewers went by unbought; Saturday
+    cooks them again, double, for Sunday. Dropping Sunday rescales the
+    recipe's nights — Saturday's batch only, not Tuesday's too."""
+    _recipes()
+    plan = tools.create_weekly_plan(WEEK)["weekly_plan_id"]
+    tools.plan_meal(TUE, "Chicken Skewers", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal(SAT, "Chicken Skewers", slot="dinner", weekly_plan_id=plan)
+    sun = tools.plan_meal(SUN, "Chicken Skewers", slot="dinner", weekly_plan_id=plan,
+                          derived_from={"links_to": f"{SAT}:dinner"})
+    tools.repair_leftover_chains(plan)
+    tools.approve_weekly_plan(plan, "Alex")
+
+    tools.drop_dish_from_day(plan, sun["entry_id"])
+
     assert {g["item"]: g["quantity"] for g in tools.list_grocery_list()}["chicken thighs"] == "2 lbs"

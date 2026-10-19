@@ -22,8 +22,11 @@ why*, not duplicating the diff.
   slot at approval (`constraint: cook_night_gone`, said as a question); a
   cook ticked done, or bought for by an earlier approval, keeps its reheat.
   `cook_ahead_repeats` ignores gone days, so a prep-day batch never hangs a
-  future night off a past cook. Why: Emily, 2026-10-18, "don't buy for
-  anything that didn't/won't happen." Slice 1 pinned ~190 tests that
+  future night off a past cook; `_rescale_leftover_source_grocery` re-buys
+  only nights still ahead or already on the list (review: dropping the
+  reheat of an eaten Thursday bought Thursday again); the preview counts a
+  reheat's sides only, as the ingest does. Why: Emily, 2026-10-18, "don't
+  buy for anything that didn't/won't happen." Slice 1 pinned ~190 tests that
   approved "this week's Monday" on whatever day the suite ran:
   `conftest.on_the_weeks_monday` (run on the seeded Monday) and
   `conftest.approving_on` (a past week approved while it was ahead).

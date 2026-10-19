@@ -258,6 +258,9 @@ def test_the_fed_night_buys_its_own_portion_again():
     assert "list" not in out["said"].lower()
 
 
+@ON_MONDAY
+
+
 def test_a_side_the_batch_had_swallowed_comes_back_and_the_reply_says_so():
     """The one shape where un-batching really does move a LINE: a fed
     night contributes nothing while it is a reheat — including its side —

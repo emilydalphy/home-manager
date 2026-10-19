@@ -34,7 +34,7 @@ from app import agent, tools
 from app.db import get_conn
 from app.tools import bring_over, draft_opener, meal_variety
 from app.tools import swap_in_place as sip
-from conftest import approving_on, on_the_weeks_monday
+from conftest import approving_on, household_today, on_the_weeks_monday
 
 # Approval buys only from the household's today on: run on the seeded week's Monday.
 ON_MONDAY = on_the_weeks_monday()
@@ -509,6 +509,11 @@ class TestTheShopping:
         stub_model(_week(week, FRESH_DINNERS))
         new = agent.generate_weekly_plan(week)["weekly_plan_id"]
         tools.approve_weekly_plan(new)
+        # Positive control: the swapped night is still ahead and this week
+        # does shop, so the "nothing bought" below is the bring-over's doing
+        # rather than approval skipping a night that has gone by.
+        assert dates[3] >= household_today().isoformat()
+        assert [r for r in _needed("Miso cod base") if r["source_weekly_plan_id"] == new]
         tools.swap_meal_in_plan(new, dates[3], "Tomato soup", slot="dinner")
         assert [r for r in _needed("Chicken tikka masala base") if r["source_weekly_plan_id"] == new] == []
         assert [r for r in _needed("Chicken tikka masala greens") if r["source_weekly_plan_id"] == new] == []

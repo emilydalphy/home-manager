@@ -3389,11 +3389,18 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
         if own_conn:
             conn.close()
         return
+    # Only what approval would buy (2026-10-19): a meal still ahead, or one
+    # already on the list. A night gone by that approval skipped — an eaten
+    # Thursday, a Tuesday nobody shopped for — must not be bought by a
+    # rescale either (the shape recipe_change._approved_users_of uses).
+    today = _household_today(conn=conn).isoformat()
     entries = conn.execute(
         "SELECT mpe.id, mpe.recipe_id, r.ingredients_json, r.default_servings, mpe.sides_json "
         "FROM meal_plan_entries mpe JOIN recipes r ON r.id = mpe.recipe_id "
         "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.recipe_id = ? "
         "AND mpe.component_category IS NULL AND mpe.id != ? "
+        "AND (mpe.date >= ? OR EXISTS (SELECT 1 FROM meal_plan_grocery_links l "
+        "     WHERE l.meal_plan_entry_id = mpe.id AND l.household_id = mpe.household_id)) "
         # Source last. It carries the group's biggest single ledger share
         # (scaled up for the whole batch), so reversing every other entry
         # first keeps the running grocery-line remainder above
@@ -3407,7 +3414,7 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
         "ORDER BY (mpe.id = ?) ASC, mpe.date ASC, mpe.id ASC",
         (
             source["weekly_plan_id"], household_id(), source["recipe_id"], unlinked_entry_id,
-            source_entry_id,
+            today, source_entry_id,
         ),
     ).fetchall()
     if own_conn:
@@ -7032,6 +7039,12 @@ def preview_plan_grocery_impact(weekly_plan_id: int, today: str | None = None) -
         conn.close()
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     entries = _plan_grocery_candidate_entries(conn, weekly_plan_id, today=today)
+    # A leftovers night buys only the sides cooked on it (the ingest's
+    # rule). Its dish used to hide behind the cook night's identical names;
+    # with gone cook nights date-filtered out it no longer can, and a
+    # reheat of Thursday's (cooked) chili was promised as a shop.
+    from . import leftovers as _leftovers
+    reheats = set(_leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)["leftovers"])
     have_names = {
         row["item"].strip().lower()
         for row in conn.execute(
@@ -7044,7 +7057,14 @@ def preview_plan_grocery_impact(weekly_plan_id: int, today: str | None = None) -
     would_add: set[str] = set()
     already_have: set[str] = set()
     for entry in entries:
-        for ing in _entry_shopping_ingredients(entry):
+        if entry["id"] in reheats:
+            shopping = [
+                ing for side, _servings, cooked_on_the_night in _entry_side_groups(entry)
+                if cooked_on_the_night for ing in side
+            ]
+        else:
+            shopping = _entry_shopping_ingredients(entry)
+        for ing in shopping:
             name = ing["item"].strip()
             if name.lower() in have_names:
                 already_have.add(name.lower())

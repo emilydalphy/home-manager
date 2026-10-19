@@ -196,6 +196,9 @@ def test_swapping_a_target_in_an_approved_plan_rescales_the_sources_grocery_line
     assert _ledger_items_for(fri) == {}
 
 
+@ON_MONDAY
+
+
 def test_clearing_a_target_slot_behaves_the_same_as_swapping_it():
     _household()
     _wraps()
