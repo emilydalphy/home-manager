@@ -1633,6 +1633,10 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             snacks_per_week=req.snacks_per_week,
             snacks_per_day=req.snacks_per_day,
         )
+    except ValueError as e:
+        # A count outside the week (preferences.checked_meal_count), refused
+        # before anything was written.
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Onboarding answers save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

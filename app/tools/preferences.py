@@ -374,6 +374,32 @@ def _checked_protein_ratings(ratings: dict) -> dict:
     return checked
 
 
+# How many DISTINCT breakfasts/lunches/dinners/snacks a week (0-7 — a count
+# larger than the week has no meaning) and snacks a DAY (0-6). This range
+# lived only in edit_preference, the Settings/What we know door, until
+# 2026-10-19: onboarding's answers and the chat tool come in through
+# set_household_meal_preferences, which stored whatever arrived, so a POST
+# of dinners_per_week 50 / breakfasts -3 / snacks_per_day 40 saved with a
+# 200 and the usual week then read back "50 different dinners" and 40
+# snacks a day. Checked here, where every writer passes.
+MEAL_COUNT_MAX = {
+    "dinners_per_week": 7, "breakfasts_per_week": 7, "lunches_per_week": 7,
+    "snacks_per_week": 7, "snacks_per_day": 6,
+}
+
+
+def checked_meal_count(field: str, value) -> int:
+    """`value` as a whole number in `field`'s range, or a ValueError saying so."""
+    top = MEAL_COUNT_MAX[field]
+    try:
+        count = int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field} must be a whole number from 0 to {top}.")
+    if not 0 <= count <= top:
+        raise ValueError(f"{field} must be from 0 to {top}, not {count}.")
+    return count
+
+
 def _same_protein(stored_key: str, new_key: str) -> bool:
     """Does `stored_key` hold the answer for the protein `new_key` names?
     "Chicken" does for "chicken", and "Fish / seafood" for "fish" — a
@@ -435,6 +461,16 @@ def set_household_meal_preferences(
         )
     if protein_preferences:
         protein_preferences = _checked_protein_ratings(protein_preferences)
+    if dinners_per_week is not None:
+        dinners_per_week = checked_meal_count("dinners_per_week", dinners_per_week)
+    if breakfasts_per_week is not None:
+        breakfasts_per_week = checked_meal_count("breakfasts_per_week", breakfasts_per_week)
+    if lunches_per_week is not None:
+        lunches_per_week = checked_meal_count("lunches_per_week", lunches_per_week)
+    if snacks_per_week is not None:
+        snacks_per_week = checked_meal_count("snacks_per_week", snacks_per_week)
+    if snacks_per_day is not None:
+        snacks_per_day = checked_meal_count("snacks_per_day", snacks_per_day)
     with write() as conn:
         existing = conn.execute(
             "SELECT * FROM meal_preferences WHERE household_id = ?", (household_id(),)
@@ -648,6 +684,16 @@ def save_onboarding_answers(
     events same as any later correction, not something to hide "this
     month"'s number behind.
     """
+    # The counts are checked again where they are written, but by then the
+    # people and restrictions above them are saved — so a bad count refuses
+    # the whole answer set here, before anything is written.
+    for field, value in (
+        ("dinners_per_week", dinners_per_week), ("breakfasts_per_week", breakfasts_per_week),
+        ("lunches_per_week", lunches_per_week), ("snacks_per_week", snacks_per_week),
+        ("snacks_per_day", snacks_per_day),
+    ):
+        if value is not None:
+            checked_meal_count(field, value)
     for name in member_names:
         name = name.strip()
         if not name:
