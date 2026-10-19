@@ -10080,6 +10080,33 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
   color: var(--ink);
 }
 .wk-tweak-adds { padding-top: 0; }
+/* "Something else" (2026-10-19): the fourth row reads as a way in, not
+   a part, so its name is the quieter weight .plate-row.is-missing uses.
+   Opened, it is the Change recipe sheet's own ask box (.cr-ask-label,
+   .cr-ask, .cr-said, .cr-go) — the sheet's one apricot is "Change it";
+   the parts' Change buttons are apricot TEXT, never a fill. */
+.wk-tweak-else-name { color: var(--ink-secondary); font-weight: 600; }
+.wk-tweak-else { display: flex; flex-direction: column; gap: 10px; }
+.wk-tweak-else[hidden], .wk-tweak-else [hidden] { display: none; }
+.wk-tweak-done-row { display: flex; align-items: center; gap: 12px; }
+.wk-tweak-done-row[hidden] { display: none; }
+.wk-tweak-done {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink-strong);
+}
+.wk-tweak-remember { display: flex; flex-direction: column; gap: 8px; }
+.wk-tweak-remember-q {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-strong);
+}
 /* The sheet's "Ask for something else": a full-width outline button.
    Its own class — it was .wk-swap-tell until 2026-09-21, the same class as
    the dock's and the swap line's quiet "Ask for something else" link, so

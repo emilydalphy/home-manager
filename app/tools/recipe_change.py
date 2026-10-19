@@ -666,6 +666,68 @@ REWRITE_NOT_CHANGEABLE = "There’s no recipe on that one to rewrite."
 REWRITE_NO_RECIPE = "That meal has no saved recipe yet — I’ll write one when you approve the week."
 
 
+def meal_for_request(entry_id: int) -> dict | None:
+    """
+    The dish and recipe one of this household's meals is on, for filing a
+    request that did not land (agent.rewrite_meal_recipe). None for an id
+    that isn't this household's, so a stray id never puts another
+    household's meal on this one's record.
+    """
+    conn = get_conn()
+    try:
+        entry = _entry_row(conn, entry_id)
+    finally:
+        conn.close()
+    if not entry:
+        return None
+    return {"entry_id": int(entry["id"]), "dish": entry["meal"] or "",
+            "recipe_id": int(entry["recipe_id"]) if entry["recipe_id"] else None}
+
+
+def unwritten_recipe_name(entry_id: int) -> str | None:
+    """
+    The recipe's name when this meal is a draft dish whose recipe has not
+    been written yet (details_pending — the recipe pass writes it at
+    approval), else None. The Tweak sheet's "Something else" reaches these
+    where the Change recipe button never does (that only shows on a
+    written recipe), and the answer there is to write it now, the way the
+    Cook screen does (agent.fill_in_recipe), then change it.
+    """
+    conn = get_conn()
+    try:
+        entry = _entry_row(conn, entry_id)
+        if (not entry or entry["slot_state"] != CHANGEABLE_SLOT_STATE or not entry["recipe_id"]
+                or _is_reheat(conn, entry)):
+            return None
+        recipe = conn.execute(
+            "SELECT name, details_pending FROM recipes WHERE id = ? AND household_id = ?",
+            (int(entry["recipe_id"]), household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    return recipe["name"] if recipe and recipe["details_pending"] else None
+
+
+# What makes a typed change read as a standing rule rather than one
+# meal's ("we never want cilantro", "the kids don't eat the sauce") — the
+# answer then offers to remember it (Tweak sheet, 2026-10-19). A word
+# list, for request_theme's reason: a wrong guess costs one offer the
+# household ignores, and the chat — which does the remembering — reads
+# the words itself and picks the right list for them.
+_LASTING_WORDS = (
+    "never", "ever", "always", "any more", "anymore", "for good", "from now on",
+    "every time", "don't eat", "dont eat", "doesn't eat", "doesnt eat", "do not eat",
+    "won't eat", "wont eat", "can't stand", "cant stand", "hate", "hates",
+    "allergic", "can't have", "cant have", "don't like", "doesn't like",
+)
+
+
+def reads_as_lasting(text: str) -> bool:
+    """Whether a typed change reads as a standing rule (_LASTING_WORDS)."""
+    low = re.sub("[\u2019\u2018]", "'", str(text or "").lower())
+    return any(re.search(r"(?<![a-z])" + re.escape(w) + r"(?![a-z])", low) for w in _LASTING_WORDS)
+
+
 def rewrite_spec(entry_id: int) -> dict:
     """
     What the recipe writer is given for a rewrite: the dish as it stands,
