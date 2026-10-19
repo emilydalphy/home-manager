@@ -2998,6 +2998,10 @@ def add_recipe_endpoint(req: AddRecipeRequest):
             source_book=req.source_book.strip()[:200],
             source_author=req.source_author.strip()[:200],
             source_page=req.source_page.strip()[:40],
+            # Every amount here is one the household has looked at in the
+            # review sheet — off a page, a photo, or typed — so the cook card
+            # shows it as written (Emily, 2026-10-18).
+            amounts_as_written=True,
         )
         # The page photo(s) the draft was read from, kept with the recipe
         # (recipe photo import). Only this household's pending tokens

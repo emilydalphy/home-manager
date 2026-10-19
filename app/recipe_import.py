@@ -621,6 +621,36 @@ _RANGE_QTY_RE = re.compile(rf"^(?P<lo>{_NUMBER})\s*(?:–|-|to)\s*(?P<hi>{_NUMBE
 _DUAL_UNIT_RE = re.compile(r"^(?P<first>.+?\S)\s+/\s+\S.*$")
 
 
+_PLUS_RE = re.compile(rf"^(?:\+|plus\b)\s*(?P<num>{_NUMBER})\s*(?P<unit>[A-Za-z]+)\.?(?=\s|$)\s*(?P<rest>.*)$", re.I)
+
+
+def _plus_one_amount(amount: str, unit: str, rest: str) -> tuple[str, str] | None:
+    """
+    "1/4 cup + 2 tbsp flour" — one amount said in two units, as US baking
+    recipes write anything between the cups (defect hunt 2026-10-18; it
+    imported as an item called "+ 2 tbsp flour", which the grocery list
+    never merged with flour). Given the first amount and unit and what
+    follows them, returns (one qty in the SMALLER unit, the rest) — "6
+    tbsp", "18 oz" — or None when the second part isn't an amount of the
+    same family ("1 cup + 2 eggs"), which is left as the page wrote it.
+    The smaller unit because it is the one the sum comes out whole in;
+    the grocery list rolls it up for shopping as it does any other line.
+    """
+    plus = _PLUS_RE.match(rest)
+    if not plus:
+        return None
+    first = _quantities._parse_quantity(f"{amount} {unit}")
+    second = _quantities._parse_quantity(f"{plus.group('num')} {plus.group('unit')}")
+    if not first or not second or not first[1] or not second[1]:
+        return None
+    in_second = _quantities._convert_to_unit(first[0], first[1], second[1])
+    in_first = _quantities._convert_to_unit(second[0], second[1], first[1])
+    if in_second is None or in_first is None:
+        return None
+    total, unit_out = (in_second + second[0], second[1]) if in_second >= first[0] else (first[0] + in_first, first[1])
+    return _quantities._format_quantity(round(total, 3), unit_out), plus.group("rest")
+
+
 def normalise_amount(qty: str) -> str:
     """
     An amount a model copied off a page, made readable by
@@ -639,6 +669,13 @@ def normalise_amount(qty: str) -> str:
     span = _RANGE_QTY_RE.match(text)
     if span:
         text = (span.group("hi") + span.group("rest")).strip()
+    # "1/4 cup + 2 tbsp" → "6 tbsp", the same reading split_ingredient_line
+    # gives a page's line.
+    head = re.match(rf"^(?P<num>{_NUMBER})\s*(?P<unit>[A-Za-z]+)\.?\s*(?P<rest>[+p].*)$", text, re.I)
+    if head:
+        joined = _plus_one_amount(head.group("num"), head.group("unit"), head.group("rest"))
+        if joined and not joined[1].strip():
+            text = joined[0]
     return text
 
 
@@ -770,6 +807,12 @@ def split_ingredient_line(line: str) -> dict:
                 break
             continue
         break
+    if len(qty_words) == 1 and words:
+        joined = _plus_one_amount(amount, qty_words[0], " ".join(words))
+        if joined:
+            # The one amount replaces both; it already carries its unit.
+            amount, qty_words = joined[0], []
+            words = joined[1].split(" ") if joined[1] else []
     if qty_words and qty_words[-1].lower() in _UNIT_WORDS:
         words, package_size = _without_second_measure(words, qty_words[-1])
         if package_size and not size:
