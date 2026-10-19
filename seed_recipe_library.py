@@ -27,8 +27,13 @@ A dish whose research or writing fails is logged and left out; the next run
 tries it again. --samples files the six reviewed samples
 (data/recipe_library_samples.json) as they stand, with no API calls.
 
-Nothing here reads or writes any household's own tables: research is not
-saved into anyone's dish_research, and no recipes row is created.
+No household's recipes or research are touched: research is not saved into
+anyone's dish_research, and no recipes row is created. Two things DO run as
+household 1, because a script has no request and household_id() defaults to
+1: the AI-consent check every model call makes (household 1 must have said
+yes), and the api_calls usage rows, so this run's spend shows up under
+household 1 in observability_report.py. The run prints that, so the morning
+report's numbers for that day can be read for what they are.
 """
 from __future__ import annotations
 
@@ -256,6 +261,7 @@ def main(argv: list[str] | None = None) -> int:
         for r in file_samples(load_samples()):
             print(f"  {r['outcome']:<13} {r['dish']}")
         return 0
+    print("Model calls run as household 1: its consent is checked and the spend is logged under it.")
     dishes = load_dishes()
     if args.cuisine:
         dishes = [d for d in dishes if d["cuisine"].lower() == args.cuisine.lower()]

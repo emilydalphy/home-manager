@@ -28,7 +28,8 @@ why*, not duplicating the diff.
   through. `seed_recipe_library.py` refuses without `--i-mean-it` (it spends
   API money; for after the samples are approved), files through
   `file_entry(origin="seed")` in batches, skips any dish with a written base,
-  reuses filed research, writes nothing to any household's tables;
+  reuses filed research, touches no household's recipes or research (but
+  its model calls run as household 1: consent checked, spend logged there);
   `--samples` files the six with no model call. Not run against any live DB.
 - **Shared Recipe Library, step 1: a dish researched once serves every household**
   (2026-10-19; branch `overnight/shared-recipe-library`, stacked on and
