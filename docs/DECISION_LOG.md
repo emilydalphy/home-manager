@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Recipe steps sound like a person, and a temperature is the target**
+  (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
+  and "cook it until we reach 160 internal temperature, if you have a
+  thermometer check with it"; she said to take it as feedback on the
+  writing STYLE, not one recipe; branch `recipe-voice-2026-10-19`; tests
+  `tests/test_write_it_down.py`). WRITE_IT_DOWN (which both planners and
+  RECIPE_DETAILS_INSTRUCTIONS carry, so the library, the recipe pass and
+  rewrites) modelled the "..., because X" tag she flagged in its own
+  example. Now: a reason only where it stops a mistake, said aloud as its
+  own sentence, most steps none; a temperature as the goal with the
+  thermometer optional and a no-thermometer check. The six samples in
+  data/recipe_library_samples.json and mockups/recipe-library-samples.html
+  were rewritten to match (same step counts).
 - **A recipe's range is a measurement on the cook card** (2026-10-18,
   defect hunt; branch `overnight/cook-card-keeps-ranges`; tests
   `tests/test_recipe_range_amounts.py`). `_parse_quantity` reads no range,

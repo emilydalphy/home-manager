@@ -316,3 +316,24 @@ def test_rice_from_the_packet_plus_a_dressing_is_not_asked_how_hot():
         "Toss the rice with the edamame, cucumber and dressing; top with avocado.",
     ])]
     assert "no_heat_named" not in _round2(week)
+
+
+def test_a_temperature_is_the_target_and_the_thermometer_is_optional():
+    """Emily, 2026-10-19, on the meatloaf sample: "we want to cook it until
+    we reach 160 internal temperature, if you have a thermometer check with
+    it". The number is the goal, the thermometer is optional, and there's a
+    check for the cook who hasn't got one."""
+    block = agent.WRITE_IT_DOWN
+    assert "say it as the TARGET you're cooking to" in block
+    assert "No thermometer?" in block
+
+
+def test_a_reason_is_said_out_loud_not_tagged_on_with_because():
+    """Emily, 2026-10-19: "...then stop, because overworked meat turns dense"
+    read as "very robotic and AI". The block models the spoken version and
+    names the tag it replaces; its old example used that same tag."""
+    block = agent.WRITE_IT_DOWN
+    assert "Any longer and \\\nthe meatloaf" not in block  # one string, no stray continuation
+    assert "Any longer and the meatloaf comes out dense." in " ".join(block.split())
+    assert "because it stops the dal softening" not in block
+    assert "Most steps need no reason at all." in " ".join(block.split())
