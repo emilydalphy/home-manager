@@ -41,6 +41,7 @@ counts, no jars to enter: the rack is inferred from what came home.
 """
 from __future__ import annotations
 
+import re
 from datetime import date, timedelta
 
 from ..db import get_conn
@@ -115,7 +116,31 @@ _DRIED_WORDS = {"dried", "dry"}
 def is_spice(name: str) -> bool:
     """
     Whether a recipe ingredient belongs in the "Spices this week" section
-    rather than a store aisle. Name-based, from the list above, tried
+    rather than a store aisle — _is_spice_name on the name, and failing
+    that on the name without what a recipe hangs on it: "Paprika (sweet)",
+    "Red pepper flakes, optional", "Paprika, for garnish" (plain "Paprika"
+    sat in Spices while "Paprika (sweet)" went to the aisles — Loop Board,
+    realistic week amounts, 2026-10-19). "Salt and black pepper" is two
+    rack things, so it is one too.
+    """
+    raw = " ".join((name or "").strip().lower().split())
+    if _is_spice_name(raw):
+        return True
+    # "Basil (dried)" keeps its "dried"; "Paprika (smoked, sweet)" can't.
+    opened = raw.replace("(", " ").replace(")", " ")
+    bare = _PAREN_RE.sub(" ", raw).split(",", 1)[0].strip()
+    if any(c != raw and _is_spice_name(c) for c in (opened, opened.split(",", 1)[0], bare)):
+        return True
+    halves = [h for h in re.split(r"\s+(?:and|&)\s+", bare) if h.strip()]
+    return len(halves) > 1 and all(_is_spice_name(h) for h in halves)
+
+
+_PAREN_RE = re.compile(r"\([^()]*\)")
+
+
+def _is_spice_name(name: str) -> bool:
+    """
+    Name-based, from the list above, tried
     from the most specific reading to the least:
 
       1. the whole name ("ground ginger", "black pepper");

@@ -247,6 +247,28 @@ _CONTAINER_UNIT_SINGULARS = {plural: singular for singular, plural in _CONTAINER
 # side that only ever costs an extra line rather than a missing dinner.
 _PACKAGE_UNITS = {"bag", "bottle", "container", "jar", "tub"}
 
+# The words a SPICE-RACK thing (spices.is_spice) is bought in. Wider than
+# _PACKAGE_UNITS on purpose, because the question is asked of the name as
+# well as the word: a box of pasta is one dinner's, a box of salt is the
+# rack's for months. A recipe's shopping qty for flaky salt is "1 box" —
+# the box, not the pinch the dish uses — so seven snacks of one recipe
+# summed to "7 boxes" (Loop Board, Tester Home plan 72). See
+# grocery._rack_quantity, the one rule that reads this.
+_RACK_PACKAGE_WORDS = {
+    "box", "container", "jar", "bag", "bottle", "tin", "shaker", "canister",
+    "packet", "pouch", "tube", "grinder", "pack", "package", "can", "carton", "tub",
+}
+
+
+def rack_package(qty: str) -> tuple[float, str] | None:
+    """(count, unit) when `qty` names a package a spice comes in ("1 box",
+    "2 jars"), else None — a measured amount, a bare count, freeform text."""
+    parsed = _parse_quantity(qty or "")
+    if not parsed or not parsed[1]:
+        return None
+    word = _split_package_size(parsed[1])[0].rpartition(" ")[2]
+    return parsed if word in _RACK_PACKAGE_WORDS or word[:-1] in _RACK_PACKAGE_WORDS else None
+
 
 def _normalize_container_word(unit_str: str) -> str:
     """Singularize a trailing container word ("lb bags" -> "lb bag") so a

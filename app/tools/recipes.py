@@ -4588,6 +4588,11 @@ def _add_recipe_ingredients_for_entries(
         core, note = _quantities._split_quantity_note(raw_qty.strip())
         pack_share = _counted_pack_share(ing["item"], core, default_servings)
         package = _quantities.package_unit(raw_qty)
+        if not package and not pack_share and _quantities.rack_package(core) and _spices.is_spice(ing["item"]):
+            # A spice's "1 box" is the rack's box, bought once for the week
+            # however many snacks pinch from it (grocery._rack_quantity):
+            # the package path, not a per-portion sum of boxes.
+            package = _quantities.rack_package(core)[1]
         # A BARE COUNT of a whole thing — three tomatoes, two lemons, one
         # apple — is the one shape where the shopping amount and the
         # cooking amount are the same number, and the one the household
