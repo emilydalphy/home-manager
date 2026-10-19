@@ -41,6 +41,8 @@ import json
 import logging
 import math
 import threading
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date
 
 from ..db import get_conn
@@ -178,9 +180,97 @@ def resolve_dishes(meal: str, choice: str | None, on_count: int, fallback: int |
     return max(1, min(int(n), on_count))
 
 
+# ---------- this week only (re-plan Option B, Emily 2026-10-18) ----------
+#
+# A change made while re-planning applies to THAT week only; the usual
+# answers in Settings stay as they are. The week's changes live on its
+# week_intake revision (week_answers_json, normalize_week_answers below),
+# and generation reads them by setting this for the length of one draft
+# (this_week): every reader of the usual week inside it — the targets, the
+# off slots, "just these people", the usual lunch answer, the prep days —
+# then sees the week as the household said it is this time. Nothing that
+# SAVES the usual week runs inside it (Settings and onboarding never set it).
+_THIS_WEEK: ContextVar[dict | None] = ContextVar("usual_week_this_week", default=None)
+
+
+@contextmanager
+def this_week(answers: dict | None):
+    """Read the usual week as `answers` (a week_answers dict) changes it,
+    for the duration of the block. None or {} changes nothing — and also
+    stops generation_plan reading a live plan's week instead."""
+    # {} (not None) for "no changes": a scoped read never goes looking for
+    # another plan's week (week_answers_on).
+    token = _THIS_WEEK.set(dict(answers or {}))
+    try:
+        yield
+    finally:
+        _THIS_WEEK.reset(token)
+
+
+def normalize_week_answers(raw) -> dict:
+    """
+    One week's changes to the household-level answers, checked and in the
+    shape stored — only the keys sent:
+
+      grid        {meal: {weekday: "everyone" | "off" | [member ids]}} —
+                  "Who's eating" this week, the whole grid (names or ids in,
+                  ids out, as save_usual_week reads them).
+      prep        {"days": [weekday, ...]} — "Do you like to cook ahead?"
+                  this week; [] is no prep day this week.
+      variety     {meal: choice key} — "How many different …?" this week.
+      lunch_needs {name: {"needs": [...], "days": {...}}} — "What does each
+                  person need for weekday lunches?" this week.
+
+    Raises ValueError on anything malformed; writes nothing.
+    """
+    from . import member_needs as _member_needs
+    from . import rhythm as _rhythm
+
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError("week_answers must be an object.")
+    unknown = set(raw) - {"grid", "prep", "variety", "lunch_needs"}
+    if unknown:
+        raise ValueError(f"week_answers can't hold {', '.join(sorted(unknown))}.")
+    out: dict = {}
+    if raw.get("grid") is not None:
+        conn = get_conn()
+        try:
+            state = _state(conn)
+        finally:
+            conn.close()
+        out["grid"] = _parse_grid(raw["grid"], state["members"], state["grid"])
+    if raw.get("prep") is not None:
+        prep = raw["prep"]
+        if not isinstance(prep, dict):
+            raise ValueError("week_answers.prep must be an object with days.")
+        days = _rhythm._normalize_prep_days([{"weekday": d} for d in (prep.get("days") or [])])
+        out["prep"] = {"days": [d["weekday"] for d in days]}
+    if raw.get("variety") is not None:
+        variety = raw["variety"]
+        if not isinstance(variety, dict):
+            raise ValueError("week_answers.variety must be an object of meal → choice.")
+        out["variety"] = {}
+        for meal, choice in variety.items():
+            if meal not in MEALS or choice not in VARIETY_CHOICES[meal]:
+                raise ValueError(f"{meal} variety this week must be one of {', '.join(VARIETY_CHOICES.get(meal, {}))}.")
+            out["variety"][meal] = choice
+    if raw.get("lunch_needs") is not None:
+        needs = raw["lunch_needs"]
+        if not isinstance(needs, dict):
+            raise ValueError("week_answers.lunch_needs must be an object of person → needs.")
+        out["lunch_needs"] = {str(n): _member_needs._clean_entry(e, str(n)) for n, e in needs.items()}
+    return out
+
+
 def _prep_answer() -> dict:
     from . import rhythm as _rhythm
 
+    week = _THIS_WEEK.get()
+    if week and week.get("prep") is not None:
+        # Every prep day is up to 2 hours (onboarding, 2026-10-06).
+        return {"days": list(week["prep"].get("days") or []), "length": "longer"}
     days = _rhythm.get_household_rhythm().get("prep_days") or []
     minutes = [d.get("minutes") for d in days if d.get("minutes")]
     length = None
@@ -196,14 +286,22 @@ def _state(conn) -> dict:
     ids = {m["id"] for m in members}
     counts = _counts(row)
     stored = _stored(row)
-    prep_days = _prep_answer()["days"] if stored else []
+    week = _THIS_WEEK.get() or {}
+    prep_days = _prep_answer()["days"] if (stored or week) else []
     if stored:
         grid = {m: {d: _clean_cell((stored["grid"].get(m) or {}).get(d, EVERYONE), ids) for d in WEEKDAYS}
                 for m in MEALS}
     else:
         grid = _derived_grid(counts)
+    usual_grid = grid
+    if week.get("grid"):
+        # This week's "Who's eating" (this_week), read back against today's
+        # members like a stored grid.
+        grid = {m: {d: _clean_cell((week["grid"].get(m) or {}).get(d, grid[m][d]), ids) for d in WEEKDAYS}
+                for m in MEALS}
     variety = {}
     stored_variety = (stored or {}).get("variety") or {}
+    week_variety = week.get("variety") or {}
     for m in MEALS:
         on = len(days_on(grid, m))
         choice = (stored_variety.get(m) or {}).get("choice")
@@ -213,13 +311,22 @@ def _state(conn) -> dict:
         # A number changed somewhere else since (chat's edit_preference, the
         # old Different dishes steppers) wins, and the choice it no longer
         # matches is dropped rather than shown as what they picked.
-        if choice is not None and resolve_dishes(m, choice, on) != dishes:
+        usual_on = len(days_on(usual_grid, m))
+        if choice is not None and resolve_dishes(m, choice, usual_on) != dishes:
             choice = None
+        if week_variety.get(m) in VARIETY_CHOICES[m]:
+            # This week's choice, its number against this week's days.
+            choice = week_variety[m]
+            dishes = resolve_dishes(m, choice, on) if on else 0
+        elif on != usual_on:
+            # The days changed this week and the choice didn't: the same
+            # choice, counted against the days it is on now.
+            dishes = resolve_dishes(m, choice, on, fallback=min(dishes, on) if dishes else on) if on else 0
         if (m, choice) in NEEDS_PREP_DAY and not prep_days:
             choice = None
         variety[m] = {"choice": choice, "dishes": dishes, "days_on": on}
     return {
-        "answered": stored is not None,
+        "answered": stored is not None or bool(week),
         "grid": grid,
         "variety": variety,
         "snacks_per_day": int(row["snacks_per_day"]) if row else 2,
@@ -536,6 +643,35 @@ def _weekday(iso: str) -> str:
     return WEEKDAYS[date.fromisoformat(iso).weekday()]
 
 
+def week_answers_on(iso: str) -> dict:
+    """
+    The week's own answers (week_answers) of the live plan holding `iso`,
+    or {} — an approved plan first, then the newest. What lets the readers
+    of the usual week OUTSIDE a draft (the menu's left-out meals, Today's
+    moves, "Build a plan" on a left-out day, a swap's table size) agree
+    with the draft about a week whose "Who's eating" was changed for that
+    week only.
+    """
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT wi.week_answers_json AS a FROM weekly_plans wp JOIN week_intake wi "
+            "ON wi.id = wp.intake_id AND wi.household_id = wp.household_id "
+            "WHERE wp.household_id = ? AND wp.status != 'retired' "
+            "AND COALESCE(NULLIF(wp.content_start_date, ''), wp.week_start_date) <= ? "
+            "AND date(COALESCE(NULLIF(wp.content_start_date, ''), wp.week_start_date), "
+            "'+' || (COALESCE(NULLIF(wp.day_count, 0), 7) - 1) || ' days') >= ? "
+            "ORDER BY (wp.status = 'approved') DESC, wp.id DESC LIMIT 1",
+            (household_id(), iso, iso),
+        ).fetchone()
+    finally:
+        conn.close()
+    try:
+        return json.loads(row["a"] or "{}") if row else {}
+    except (TypeError, ValueError):
+        return {}
+
+
 def generation_plan(dates: list[str], skipped: list[str] | None = None) -> dict:
     """
     What the usual week means for one period being planned:
@@ -553,6 +689,13 @@ def generation_plan(dates: list[str], skipped: list[str] | None = None) -> dict:
     Unanswered: nothing to do, and the counts are left to the existing
     proration exactly as before.
     """
+    if _THIS_WEEK.get() is None and dates:
+        # Not inside a draft: the week these dates are planned in may have
+        # been changed for that week only (re-plan Option B).
+        week = week_answers_on(min(dates))
+        if week:
+            with this_week(week):
+                return generation_plan(dates, skipped)
     conn = get_conn()
     try:
         state = _state(conn)

@@ -3699,6 +3699,10 @@ class WeekIntakeRequest(BaseModel):
     # prefill's last_week_uncooked, as [{"entry_ids": [...]}]; [] clears
     # it. See tools/bring_over.py.
     brought_over: list | None = None
+    # Re-plan Option B (2026-10-18): the household-level answers changed for
+    # THIS week only — {"grid", "prep", "variety", "lunch_needs"}, the
+    # whole set each time; {} clears it. See usual_week.normalize_week_answers.
+    week_answers: dict | None = None
 
 
 class WeekGenerateRequest(BaseModel):
@@ -3908,6 +3912,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             skipped_days=req.skipped_days,
             weekday_lunches=req.weekday_lunches,
             brought_over=req.brought_over,
+            week_answers=req.week_answers,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -83,3 +83,147 @@ class TestSlice1SetupIsLastWeek:
         finish: the answers are there for whichever week is planned next."""
         _finish_setup(signed_in, allow=False)
         assert tools.get_week_intake("2026-10-10")["cuisines"] == ["Thai", "Italian"]
+
+
+# ==========================================================================
+# Slice 3 (server): a change made while re-planning is for THIS week only
+# (Emily's default, 2026-10-18): it rides on the week's intake revision as
+# week_answers, the draft reads it, and Settings keeps the usual answer.
+# ==========================================================================
+
+from app.tools import allergen_gate, member_needs, swap_in_place as sip, usual_week  # noqa: E402
+
+WEEK = "2026-10-17"          # the period after the first week (Sat - Fri)
+
+
+def _slot(date, slot, name):
+    return {"date": date, "slot": slot, "meal_name": name, "is_new_recipe": True,
+            "ingredients": [{"item": f"{name} stuff", "qty": "1"}], "reasoning": f"{name} because",
+            "food_groups": ["protein", "vegetable", "carb"]}
+
+
+def _week_of(dates, dinners):
+    out = []
+    for i, d in enumerate(dates):
+        out += [_slot(d, "breakfast", "Oats"), _slot(d, "lunch", "Wrap"), _slot(d, "dinner", dinners[i % len(dinners)])]
+    return out
+
+
+@pytest.fixture
+def stub_model(monkeypatch):
+    seen = {}
+
+    def _stub(days):
+        def fake(ctx):
+            seen["ctx"] = ctx
+            return days
+        monkeypatch.setattr(agent, "generate_weekly_plan_llm", fake)
+        return seen
+
+    names = iter(["Moussaka", "Bibimbap", "Ratatouille", "Jerk chicken", "Pierogi", "Dal", "Laksa", "Tagine"] * 4)
+
+    def quick(context):
+        return {"meal_name": next(names), "ingredients": ["Stuff"], "dish_note": "Simple.",
+                "food_groups": ["protein", "vegetable", "carb"]}
+
+    monkeypatch.setattr(allergen_gate, "quick_pick", quick)
+    monkeypatch.setattr(sip, "_pick_replacement", lambda c: {
+        "meal_name": next(names), "reason": "new", "ingredients": [{"item": "x", "qty": "1", "category": "pantry"}],
+        "instructions": ["Cook."], "food_groups": ["protein", "vegetable", "carb"],
+        "prep_time_minutes": 10, "cook_time_minutes": 10})
+    return _stub
+
+
+def _household():
+    people = {n: tools.add_member(n)["member_id"] for n in ("Emily", "Vineeth")}
+    tools.save_usual_week(variety={"dinner": "few_in_rotation"}, prep={"days": ["sunday"], "length": "longer"})
+    return people
+
+
+class TestThisWeekOnly:
+    def test_the_change_rides_on_the_weeks_intake_and_settings_keep_the_usual(self, signed_in):
+        _household()
+        before = tools.get_usual_week()
+        res = signed_in.post(f"/api/week/{WEEK}/intake", json={"day_count": 7, "week_answers": {
+            "variety": {"dinner": "new_every_day"}, "prep": {"days": []},
+            "grid": {"dinner": {"friday": ["Emily"]}},
+        }})
+        assert res.status_code == 200, res.text
+        saved = res.json()["week_answers"]
+        assert saved["variety"] == {"dinner": "new_every_day"} and saved["prep"] == {"days": []}
+        emily = [m["id"] for m in before["members"] if m["name"] == "Emily"]
+        assert saved["grid"]["dinner"]["friday"] == emily
+        assert tools.get_usual_week() == before                       # Settings untouched
+        # A later week starts from the usual answers, not from this one's:
+        # "last week" carries no week_answers.
+        nxt = tools.get_week_intake_prefill("2026-10-31")
+        assert nxt["intake"] is None and "week_answers" not in nxt["last_intake"]
+        assert nxt["usual"]["variety"]["dinner"]["choice"] == "few_in_rotation"
+        assert nxt["usual"]["prep"]["days"] == ["sunday"]
+
+    def test_a_later_revision_keeps_the_weeks_changes(self):
+        _household()
+        tools.save_week_intake(WEEK, week_answers={"variety": {"breakfast": "go_to_or_two"}})
+        tools.save_week_intake(WEEK, moods=["Comfort food"])
+        assert tools.get_week_intake(WEEK)["week_answers"] == {"variety": {"breakfast": "go_to_or_two"}}
+
+    def test_a_malformed_change_is_refused_before_anything_is_written(self, signed_in):
+        _household()
+        res = signed_in.post(f"/api/week/{WEEK}/intake", json={"week_answers": {"variety": {"dinner": "lots"}}})
+        assert res.status_code == 400
+        assert tools.get_week_intake(WEEK) is None
+
+    def test_the_draft_plans_the_week_as_changed(self, stub_model):
+        _household()
+        dates = tools.period_dates(WEEK, 7)
+        friday = dates[6]
+        tools.save_week_intake(WEEK, week_answers={
+            "variety": {"dinner": "new_every_day"}, "prep": {"days": []},
+            "grid": {"dinner": {"friday": ["Emily"]}},
+        })
+        seen = stub_model(_week_of(dates, ["Chili", "Tacos", "Curry", "Stew", "Pho", "Paella", "Risotto"]))
+        agent.generate_weekly_plan(WEEK)
+        memory = seen["ctx"]["household_memory"]
+        assert memory["dinners_per_week"] == 7                 # "Something new every night", this week
+        assert memory["rhythm"]["prep_days"] == []             # no prep day this week
+        assert tools.get_slot_attendance(friday, "dinner")["present_names"] == ["Emily"]
+        assert tools.get_slot_attendance(dates[5], "dinner")["headcount"] == 2
+
+    def test_a_week_with_no_changes_drafts_from_the_usual_answers(self, stub_model):
+        _household()
+        dates = tools.period_dates(WEEK, 7)
+        tools.save_week_intake(WEEK, moods=["Comfort food"])
+        seen = stub_model(_week_of(dates, ["Chili", "Tacos", "Curry", "Stew"]))
+        agent.generate_weekly_plan(WEEK)
+        memory = seen["ctx"]["household_memory"]
+        assert memory["dinners_per_week"] == 4
+        assert [d["weekday"] for d in memory["rhythm"]["prep_days"]] == ["sunday"]
+
+    def test_after_the_draft_the_menu_still_reads_the_weeks_own_grid(self, stub_model):
+        """A swap, the menu's left-out meals and Today's moves read the usual
+        week outside any draft; for a week changed for itself they read that
+        week's answer (usual_week.week_answers_on), and the week after is
+        the usual one again."""
+        _household()
+        dates = tools.period_dates(WEEK, 7)
+        saturday = dates[0]
+        tools.save_week_intake(WEEK, week_answers={"grid": {"breakfast": {"saturday": "off"}}})
+        stub_model(_week_of(dates, ["Chili", "Tacos", "Curry", "Stew"]))
+        agent.generate_weekly_plan(WEEK)
+        assert (saturday, "breakfast") in usual_week.off_slots_on([saturday])
+        assert ("2026-10-24", "breakfast") not in usual_week.off_slots_on(["2026-10-24"])
+
+    def test_this_weeks_lunch_needs_pack_this_weeks_lunches(self):
+        _household()
+        monday = tools.period_dates(WEEK, 7)[2]
+        assert member_needs.lunch_packing([monday]) == {}
+        with usual_week.this_week({"lunch_needs": {"Emily": {"needs": ["thermos"], "days": {}}}}):
+            packing = member_needs.lunch_packing([monday])
+            assert [(p["name"], p["how"]) for p in packing[monday]] == [("Emily", "warm in a thermos")]
+        assert member_needs.lunch_packing([monday]) == {}
+
+    def test_a_nut_free_answer_for_this_week_only_adds_to_the_safety_list(self):
+        _household()
+        with usual_week.this_week({"lunch_needs": {"Vineeth": {"needs": ["nut_free"], "days": {}}}}):
+            assert member_needs.nut_free_member_names() == ["Vineeth"]
+        assert member_needs.nut_free_member_names() == []

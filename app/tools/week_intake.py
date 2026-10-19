@@ -470,6 +470,9 @@ def _intake_row_to_dict(row) -> dict:
         # "Bring over from last week" (2026-09-25) — [] when nothing was.
         # The shape is tools/bring_over.resolve's; see that module.
         "brought_over": json.loads(row["brought_over_json"] or "[]"),
+        # Re-plan Option B (2026-10-18): what was changed for THIS week only
+        # — {} when nothing was. See usual_week.normalize_week_answers.
+        "week_answers": json.loads(row["week_answers_json"] or "{}"),
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
         "freeform": row["freeform"],
@@ -532,6 +535,7 @@ def save_week_intake(
     skipped_days: list | None = None,
     weekday_lunches: dict | None = None,
     brought_over: list | None = None,
+    week_answers: dict | None = None,
 ) -> dict:
     """
     Record the household's answers for a week, as a NEW REVISION.
@@ -580,10 +584,18 @@ def save_week_intake(
     get_week_intake_prefill's `last_week_uncooked` the household ticked,
     each naming its entry_ids. What is stored is rebuilt from that offer
     (tools/bring_over.resolve), never taken from the request; [] clears it.
+
+    week_answers is re-plan Option B's (2026-10-18): the household-level
+    answers changed while re-planning, for this week only — checked and
+    shaped by usual_week.normalize_week_answers; {} clears it. The usual
+    answers in Settings are never touched from here.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
     if brought_over is not None:
         brought_over = _bring_over.resolve(brought_over, week_start)
+    if week_answers is not None:
+        from . import usual_week as _usual_week
+        week_answers = _usual_week.normalize_week_answers(week_answers)
     period = period_dates(week_start, day_count)
     week_days = set(period)
     if weekday_lunches is not None:
@@ -647,7 +659,7 @@ def save_week_intake(
             base = _intake_row_to_dict(current) if current else {
                 "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],
                 "skipped_days": [], "moods": [], "cuisines": [], "freeform": "",
-                "weekday_lunches": {}, "brought_over": [],
+                "weekday_lunches": {}, "brought_over": [], "week_answers": {},
             }
 
             def pick(new, key, _base=base):
@@ -692,8 +704,8 @@ def save_week_intake(
                     night_tags_json, guest_counts_json, packed_lunch_days_json,
                     skipped_days_json, moods_json, cuisines_json, freeform,
                     household_snapshot_json, preferences_snapshot_json,
-                    weekday_lunches_json, brought_over_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    weekday_lunches_json, brought_over_json, week_answers_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     household_id(), week_start, revision,
@@ -712,6 +724,7 @@ def save_week_intake(
                     json.dumps(preferences_snapshot),
                     json.dumps(lunches_saved),
                     json.dumps(pick(brought_over, "brought_over")),
+                    json.dumps(pick(week_answers, "week_answers")),
                 ),
             )
             conn.commit()
@@ -1014,6 +1027,23 @@ def _usual_lunch() -> dict:
         return {"choice": lunch.get("choice"), "dishes": int(lunch.get("dishes") or 0)}
     except Exception:
         return {"choice": None, "dishes": 0}
+
+
+def _usual_answers() -> dict:
+    """The usual week and each person's lunch needs, for the prefill's
+    `usual`. Never raises: a summary page with nothing to show still opens."""
+    from . import member_needs as _member_needs
+    from . import usual_week as _usual_week
+
+    try:
+        usual = _usual_week.get_usual_week()
+    except Exception:
+        usual = {"answered": False, "members": [], "grid": {}, "variety": {}, "prep": {"days": []}}
+    try:
+        needs = _member_needs.get_member_needs()
+    except Exception:
+        needs = []
+    return dict(usual, member_needs=needs)
 
 
 def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> list[dict]:
@@ -1336,6 +1366,13 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # chosen. QA walk 2, 2026-10-02: the step opened on "Cooked that
         # day" every day whatever setup said. See plan-week.html lunchPrefill.
         "usual_lunch": _usual_lunch(),
+        # Re-plan Option B (2026-10-18): the household's usual answers, which
+        # "Same as last week?" shows on its rows and opens onboarding's own
+        # screens on — the usual week (members, the who's-eating grid by
+        # member id, the variety per meal, the prep days) and each person's
+        # lunch needs. A change made there is this week's (the intake's
+        # week_answers); these stay as they are.
+        "usual": _usual_answers(),
         # What the mood screen opens already knowing: the moods and cuisines
         # the household chose for the period before this one, or None for a
         # first week. See _last_period_intake.

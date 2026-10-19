@@ -259,6 +259,14 @@ def nut_free_member_names() -> list[str]:
             needs.extend(day or [])
         if "nut_free" in needs:
             out.append(r["name"])
+    # A nut-free answer given for this week only (usual_week.this_week) is
+    # honoured too — only ever ADDED: a safety answer is never taken away
+    # for one week.
+    from .usual_week import _THIS_WEEK
+    for name, entry in ((_THIS_WEEK.get() or {}).get("lunch_needs") or {}).items():
+        needs = list(entry.get("needs") or []) + [n for d in (entry.get("days") or {}).values() for n in (d or [])]
+        if "nut_free" in needs and name.strip().lower() not in {n.strip().lower() for n in out}:
+            out.append(name)
     return out
 
 
@@ -345,6 +353,17 @@ def _needs_by_member(conn) -> dict[str, dict]:
         entry = _load_entry(r["lunch_needs_json"])
         if entry and (entry["needs"] or entry["days"]):
             out[r["name"]] = entry
+    # This week's answer for a person, while a draft reads the week as
+    # re-planning changed it (usual_week.this_week, 2026-10-18).
+    from .usual_week import _THIS_WEEK
+    week = (_THIS_WEEK.get() or {}).get("lunch_needs") or {}
+    names = {n.strip().lower(): n for n in out}
+    for name, entry in week.items():
+        key = names.get(name.strip().lower(), name)
+        if entry.get("needs") or entry.get("days"):
+            out[key] = entry
+        else:
+            out.pop(key, None)
     return out
 
 
