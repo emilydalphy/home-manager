@@ -531,6 +531,29 @@ why*, not duplicating the diff.
   only a chain's reheat is fed now. Repro was inferred (the row's own Swap
   worked against a throwaway DB; the Meal step path gave exactly Emily's
   result), not taken from her data. Toast is the existing swapped_said line.
+- **A recipe the household brought in shows its amounts as written**
+  (2026-10-19; Emily 2026-10-18 "Yes.", changing the 2026-09-13 rule; branch
+  `overnight/recipe-amounts-as-written`; tests
+  `tests/test_recipe_amounts_as_written.py`). `plausible_cooking_quantity`
+  turned a cake for 4's "1 ¼ cups sugar" into ½ cup and "10 tbsp butter"
+  into 2 tbsp. The review sheet's save (`/api/recipes/add`: link, cookbook
+  photo, or typed there) now marks each line `verbatim`
+  (`add_recipe(amounts_as_written=True)`), and the per-serving and per-person
+  count checks leave that line's own qty alone on the cook card, in the
+  morning report and in the grocery ingest (`_households_own_amount`). Still
+  checked: everything the app writes (draft, fill, route-3 research — it
+  rewrites in Pomona's voice — swaps, recipe change, and chat's add_recipe,
+  which cannot tell a pasted recipe from one the model wrote), lines the app
+  adds from the steps, and any cook_qty. A run-once migration (user_version
+  5) marks existing recipes with a source_url or a kept photo; a cookbook
+  credit alone does not count, nor a line `added_from_steps`, nor a recipe
+  Change recipe rewrote and nobody undid. Every other door strips the mark
+  (`without_household_marks`: add_recipe, fill, rewrite; the rewrite prompt
+  never sees it), so a model handing a line back cannot carry it. With it:
+  "1/4 cup + 2 tbsp flour" imports as flour with the page's words; the save
+  (`recipe_import.one_amount`) stores qty "6 tbsp" for the grocery list and
+  `qty_as_written` for the cook card, which scales it as text. Same unit
+  sums as a fraction ("1 1/3 cups"); two families are left as written.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

@@ -3051,7 +3051,13 @@ def add_recipe_endpoint(req: AddRecipeRequest):
         if not item:
             continue
         category = ing.category if ing.category in tools._GROCERY_SECTION_ORDER else recipe_import.guess_category(item, ing.qty)
-        ingredients.append({"item": item, "qty": ing.qty.strip(), "category": category})
+        line = {"item": item, "qty": ing.qty.strip(), "category": category}
+        # "1/4 cup + 2 tbsp": the grocery list gets one amount it can add
+        # up ("6 tbsp"), the cook card the words as written.
+        summed = recipe_import.one_amount(line["qty"])
+        if summed:
+            line = {**line, "qty": summed, "qty_as_written": line["qty"]}
+        ingredients.append(line)
     instructions = [step.strip() for step in req.instructions if step and step.strip()]
     if not ingredients and not instructions:
         raise HTTPException(status_code=400, detail="A recipe needs at least its ingredients or its steps.")
@@ -3085,6 +3091,10 @@ def add_recipe_endpoint(req: AddRecipeRequest):
             source_book=req.source_book.strip()[:200],
             source_author=req.source_author.strip()[:200],
             source_page=req.source_page.strip()[:40],
+            # Every amount here is one the household has looked at in the
+            # review sheet — off a page, a photo, or typed — so the cook card
+            # shows it as written (Emily, 2026-10-18).
+            amounts_as_written=True,
         )
         # The page photo(s) the draft was read from, kept with the recipe
         # (recipe photo import). Only this household's pending tokens

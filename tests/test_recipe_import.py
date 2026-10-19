@@ -687,7 +687,9 @@ def test_a_reviewed_draft_saves_through_add_recipe_with_parsed_ingredients_and_i
     assert saved["cuisine"] == "Tex-Mex"
     assert len(saved["instructions"]) == 2
     beef = next(i for i in saved["ingredients"] if i["item"] == "ground beef")
-    assert beef == {"item": "ground beef", "qty": "1 lb", "category": "meat/seafood"}
+    # `verbatim`: the page's amount, which the cook card shows as written
+    # (2026-10-18, tests/test_recipe_amounts_as_written.py).
+    assert beef == {"item": "ground beef", "qty": "1 lb", "category": "meat/seafood", "verbatim": True}
     # And it is a recipe like any other: the cook view reads its amounts
     # and the grocery layer can sum them.
     cooked = {i["item"]: i["qty"] for i in tools.cooking_ingredients(saved["ingredients"], servings=6)}
@@ -721,8 +723,8 @@ def test_a_saved_recipe_drops_blank_lines_guesses_categories_and_ignores_a_bad_s
     assert res.status_code == 200, res.text
     saved = tools.get_recipe("Greens")
     assert saved["ingredients"] == [
-        {"item": "spinach", "qty": "4 cups", "category": "produce"},
-        {"item": "feta", "qty": "1/2 cup", "category": "dairy"},
+        {"item": "spinach", "qty": "4 cups", "category": "produce", "verbatim": True},
+        {"item": "feta", "qty": "1/2 cup", "category": "dairy", "verbatim": True},
     ]
     assert saved["instructions"] == ["Wilt."]
     assert saved["default_servings"] == 4

@@ -1293,6 +1293,7 @@ _DATA_VERSION_COOK_COUNTERS = 1
 _DATA_VERSION_FIRST_OPEN = 2
 _DATA_VERSION_ONBOARDING_REGROUPED = 3
 _DATA_VERSION_LITTLE_ONE_IS_CHILD = 4
+_DATA_VERSION_VERBATIM_AMOUNTS = 5
 
 
 def _run_once_data_migrations(conn):
@@ -1301,6 +1302,7 @@ def _run_once_data_migrations(conn):
         (_DATA_VERSION_FIRST_OPEN, _mark_existing_members_first_open_seen),
         (_DATA_VERSION_ONBOARDING_REGROUPED, _migrate_prep_and_lunch_limits),
         (_DATA_VERSION_LITTLE_ONE_IS_CHILD, _migrate_little_one_to_child),
+        (_DATA_VERSION_VERBATIM_AMOUNTS, _mark_link_recipe_amounts_verbatim),
     ]
     current = conn.execute("PRAGMA user_version").fetchone()[0]
     for version, step in steps:
@@ -1351,6 +1353,45 @@ def _migrate_prep_and_lunch_limits(conn):
         "UPDATE meal_preferences SET weekday_lunch_max_minutes = 20 "
         "WHERE weekday_lunch_max_minutes = 10"
     )
+
+
+def _mark_link_recipe_amounts_verbatim(conn):
+    """
+    Recipes brought in from a link before 2026-10-18 get their lines marked
+    `verbatim`, as the review sheet's save now does, so the cook card shows
+    the page's "1 ¼ cups sugar" rather than the check's old guess (which
+    stays in cook_qty, unread). A source_url or a kept page photo marks the
+    review sheet's save; a cookbook credit alone does not, since a chat
+    recipe the model wrote from memory of the book carries one too. Not
+    marked (review, 2026-10-19): a line the app added from the steps
+    (`added_from_steps`), and every line of a recipe Change recipe has
+    since rewritten and nobody undid — those are the model's now. Runs
+    ONCE: a restart must not mark lines the app writes later.
+    """
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if "recipes" not in tables:
+        return
+    photo = (" OR EXISTS (SELECT 1 FROM recipe_photos p WHERE p.recipe_id = recipes.id "
+             "AND p.household_id = recipes.household_id)") if "recipe_photos" in tables else ""
+    rewritten = (" AND NOT EXISTS (SELECT 1 FROM recipe_change_requests r WHERE r.recipe_id = recipes.id "
+                 "AND r.household_id = recipes.household_id AND r.outcome = 'rewritten' "
+                 "AND r.previous_json IS NOT NULL)") if "recipe_change_requests" in tables else ""
+    rows = conn.execute(
+        "SELECT id, household_id, ingredients_json FROM recipes WHERE (source_url != ''" + photo + ")" + rewritten
+    ).fetchall()
+    for row in rows:
+        try:
+            lines = json.loads(row["ingredients_json"] or "[]")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(lines, list):
+            continue
+        marked = [
+            {**ing, "verbatim": True} if isinstance(ing, dict) and not ing.get("added_from_steps") else ing
+            for ing in lines
+        ]
+        conn.execute("UPDATE recipes SET ingredients_json = ? WHERE id = ? AND household_id = ?",
+                     (json.dumps(marked), row["id"], row["household_id"]))
 
 
 def _migrate_little_one_to_child(conn):

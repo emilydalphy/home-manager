@@ -76,6 +76,7 @@ def add_recipe(
     dish_note: str = "",
     from_draft: bool = False,
     measure_spices: bool = False,
+    amounts_as_written: bool = False,
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -118,6 +119,11 @@ def add_recipe(
     the per-serving ranges in _PLAUSIBLE_PER_SERVING at default_servings
     (settle_cooking_quantities): a line out of range gets a cook_qty the
     cook can trust, and its shopping qty is stored exactly as given.
+
+    amounts_as_written=True is the review sheet's save (/api/recipes/add:
+    a link, a cookbook photo, or what the household typed there): every
+    line given is marked `verbatim` and that range check leaves its qty
+    alone (Emily, 2026-10-18). Never set it for a recipe the app wrote.
     """
     # One household, one recipe per name. Checked here rather than at each
     # door because the door with no check was the one a person reaches by
@@ -138,6 +144,14 @@ def add_recipe(
     main_protein = main_protein or ""
     advance_prep_notes = advance_prep_notes or ""
     default_servings = default_servings or 4
+    # Marked BEFORE the list is completed from the steps: a line the app
+    # adds there is the app's own guess and keeps the check. Any other door
+    # has the mark taken OFF: a model handed a saved recipe (get_recipe in
+    # chat, a rewrite) can send its lines back with the mark still on.
+    if amounts_as_written:
+        ingredients = [{**ing, "verbatim": True} if isinstance(ing, dict) else ing for ing in ingredients or []]
+    else:
+        ingredients = without_household_marks(ingredients or [])
     # What the steps use goes on the list (Emily, 2026-10-12): the allergy
     # check and the shopping list both read the list, never the method.
     ingredients = complete_ingredient_list(ingredients or [], instructions or [], default_servings)
@@ -506,7 +520,8 @@ def fill_recipe_details(
     the approval's, must not overwrite a good recipe with a second draft.
     """
     # The steps' ingredients on the list, as add_recipe does (2026-10-12).
-    ingredients = complete_ingredient_list(ingredients or [], instructions or [], default_servings)
+    # The model wrote these lines, so none is the household's own.
+    ingredients = complete_ingredient_list(without_household_marks(ingredients or []), instructions or [], default_servings)
     settled = settle_cooking_quantities(ingredients, default_servings, measure_spices=True)
     conn = get_conn()
     try:
@@ -899,7 +914,8 @@ def get_recipe_by_id(recipe_id: int) -> dict | None:
 # reads those as a package size, drops them, or gives up; scale_steps
 # scales every amount in them and keeps every word — a bracket after a
 # measure moves with it, the size of one can stays.
-_QTY_NEEDS_TEXT_SCALING = re.compile(r"[(),½⅓⅔¼¾⅛⅜⅝⅞]|\d\s*(?:-|–|to)\s*\d")
+# "+": a page's "1 1/2 cups + 2 tbsp", shown as written, scales as text.
+_QTY_NEEDS_TEXT_SCALING = re.compile(r"[(),+½⅓⅔¼¾⅛⅜⅝⅞]|\d\s*(?:-|–|to)\s*\d")
 
 
 # "1-2" onions, "3-4 large" eggs: a COUNT range with no unit. scale_steps
@@ -2102,6 +2118,37 @@ def plausible_cooking_quantity(item: str, qty: str, servings: int | None = None,
     return _quantities._format_quantity(round(fixed, 3), unit)
 
 
+# What only the review sheet's save may write onto a line (add_recipe's
+# amounts_as_written). A cook_qty is the app's, and stays.
+_HOUSEHOLD_MARKS = ("verbatim", "qty_as_written")
+
+
+def without_household_marks(ingredients: list) -> list:
+    """The same lines with the household's marks taken off — for every
+    save of lines a MODEL returned, which may be a saved recipe's lines
+    handed back (a rewrite, a fill, chat's add_recipe)."""
+    return [
+        {k: v for k, v in ing.items() if k not in _HOUSEHOLD_MARKS} if isinstance(ing, dict) else ing
+        for ing in ingredients or []
+    ]
+
+
+def _households_own_amount(ing: dict) -> bool:
+    """
+    True for a line whose qty is the household's own and measures
+    something: marked `verbatim` (taken word for word from a recipe page,
+    a cookbook photo, or typed in the review sheet — add_recipe's
+    amounts_as_written) and readable as an amount. The per-serving check
+    leaves such a qty alone (Emily, 2026-10-18, changing the 2026-09-13
+    rule): it was built for amounts the MODEL made up, and on real recipes
+    it turned a cake's "1 ¼ cups sugar" into ½ cup. A cook_qty on the same
+    line is never covered — anything there the app wrote.
+    """
+    item = (ing.get("item") or "").strip()
+    qty = (ing.get("qty") or "").strip()
+    return bool(ing.get("verbatim")) and bool(item) and bool(qty) and not _quantity_problem(item, qty)
+
+
 def _implausible_lines(ingredients: list[dict], servings: int | None, as_written: bool = False) -> list[dict]:
     """
     The lines of a recipe whose cooking amount is out of range for
@@ -2127,7 +2174,7 @@ def _implausible_lines(ingredients: list[dict], servings: int | None, as_written
     """
     out = []
     for index, ing in enumerate(ingredients or []):
-        if not isinstance(ing, dict):
+        if not isinstance(ing, dict) or _households_own_amount(ing):
             continue
         item = (ing.get("item") or "").strip()
         qty = (ing.get("qty") or "").strip()
@@ -2841,6 +2888,15 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
         item = (ing.get("item") or "").strip()
         qty = (ing.get("qty") or "").strip()
         stored = (ing.get("cook_qty") or "").strip()
+        if _households_own_amount(ing):
+            # The recipe's own amount, ahead of any cook_qty: a link recipe
+            # saved before 2026-10-18 carries the check's old guess there.
+            # "1 1/2 cups + 2 tbsp" is shown in the page's words; its qty is
+            # the sum the grocery list adds up (recipe_import.one_amount).
+            row = {k: v for k, v in ing.items() if k not in ("cook_qty", "qty_as_written")}
+            written = (ing.get("qty_as_written") or "").strip()
+            out.append({**row, "qty": written, "shopping_qty": qty} if written else row)
+            continue
         if stored and not _quantity_problem(item, stored):
             sane = plausible_cooking_quantity(item, stored, servings, shopping_qty=qty)
             out.append({**ing, "qty": sane, "shopping_qty": qty})
@@ -4969,7 +5025,7 @@ def _add_recipe_ingredients_for_entries(
             not pack_share and not package
             and (_quantities._parse_quantity(core) or (0, ""))[1] in _PER_PERSON_COUNT_UNITS
         )
-        if bare_count:
+        if bare_count and not _households_own_amount(ing):
             core = plausible_count_quantity(ing["item"], core, default_servings)
         parsed_core = _quantities._parse_quantity(core)
         factor_for_entry = count_scale_for_entry if bare_count else scale_for_entry

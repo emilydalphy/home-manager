@@ -632,6 +632,75 @@ _RANGE_QTY_RE = re.compile(rf"^(?P<lo>{_NUMBER})\s*(?:–|-|to)\s*(?P<hi>{_NUMBE
 _DUAL_UNIT_RE = re.compile(r"^(?P<first>.+?\S)\s+/\s+\S.*$")
 
 
+_PLUS_RE = re.compile(rf"^(?:\+|plus\b)\s*(?P<num>{_NUMBER})\s*(?P<unit>[A-Za-z]+)\.?(?=\s|$)\s*(?P<rest>.*)$", re.I)
+_JOINED_RE = re.compile(rf"^(?P<num>{_NUMBER})\s*(?P<unit>[A-Za-z]+)\.?\s*(?P<rest>(?:\+|plus\b).*)$", re.I)
+
+
+def _plus_one_amount(amount: str, unit: str, rest: str) -> tuple[str, str, str] | None:
+    """
+    "1/4 cup + 2 tbsp flour" — one amount said in two units, as US baking
+    recipes write anything between the cups (defect hunt 2026-10-18; it
+    imported as an item called "+ 2 tbsp flour", which the grocery list
+    never merged with flour). Given the first amount and unit and what
+    follows them, returns (the amount as the page wrote it, "1/4 cup + 2
+    tbsp"; the rest of the line; the second unit) — or None when the second
+    part isn't an amount of the same family ("1 cup + 2 eggs"), which is
+    left as the page wrote it. The draft keeps the page's words; the sum
+    the grocery list needs is one_amount's, worked out at the save.
+    """
+    plus = _PLUS_RE.match(rest)
+    if not plus:
+        return None
+    second = f"{plus.group('num')} {plus.group('unit')}"
+    if not one_amount(f"{amount} {unit} + {second}"):
+        return None
+    return f"{amount} {unit} + {second}", plus.group("rest"), plus.group("unit")
+
+
+def _kitchen_number(x: float) -> str:
+    """1.3333 → "1 1/3", 0.75 → "3/4", 6 → "6": the fractions a measuring
+    cup or spoon is marked in, else the plain number."""
+    whole = int(x)
+    frac = x - whole
+    for den in (2, 3, 4, 8):
+        n = round(frac * den)
+        if abs(frac - n / den) < 0.01:
+            if n in (0, den):
+                return str(whole + (1 if n == den else 0))
+            return f"{whole} {n}/{den}" if whole else f"{n}/{den}"
+    return _quantities._plain_number(round(x, 3))
+
+
+def one_amount(qty: str) -> str | None:
+    """
+    "1/4 cup + 2 tbsp" as ONE amount the grocery list can add up — "6
+    tbsp" — or None for anything that is not two amounts of one family
+    joined by "+" / "plus". Same unit stays in it ("1 cup + 1/3 cup" → "1
+    1/3 cups"); two units go to the smaller, where the sum comes out whole
+    ("1 1/2 cups + 2 tbsp" → "26 tbsp"). The grocery list rolls that up for
+    shopping as it does any other line; the cook card shows the page's own
+    words (recipes.cooking_ingredients, `qty_as_written`).
+    """
+    head = _JOINED_RE.match(_clean_text(_normalise_fractions(qty or "")))
+    if not head:
+        return None
+    plus = _PLUS_RE.match(head.group("rest"))
+    if not plus or plus.group("rest").strip():
+        return None
+    first = _quantities._parse_quantity(f"{head.group('num')} {head.group('unit')}")
+    second = _quantities._parse_quantity(f"{plus.group('num')} {plus.group('unit')}")
+    if not first or not second or not first[1] or not second[1]:
+        return None
+    in_second = _quantities._convert_to_unit(first[0], first[1], second[1])
+    in_first = _quantities._convert_to_unit(second[0], second[1], first[1])
+    if in_second is None or in_first is None:
+        return None
+    total, unit_out = (in_second + second[0], second[1]) if in_second >= first[0] else (first[0] + in_first, first[1])
+    # _format_quantity for the unit's singular/plural, the number as a cook writes it.
+    written_unit = _quantities._format_quantity(round(total, 3), unit_out).split(" ", 1)[1]
+    return f"{_kitchen_number(total)} {written_unit}"
+
+
 def normalise_amount(qty: str) -> str:
     """
     An amount a model copied off a page, made readable by
@@ -650,6 +719,13 @@ def normalise_amount(qty: str) -> str:
     span = _RANGE_QTY_RE.match(text)
     if span:
         text = (span.group("hi") + span.group("rest")).strip()
+    # "1/4 cup plus 2 tbsp." → "1/4 cup + 2 tbsp", the same words
+    # split_ingredient_line keeps for a page's line.
+    head = _JOINED_RE.match(text)
+    if head:
+        joined = _plus_one_amount(head.group("num"), head.group("unit"), head.group("rest"))
+        if joined and not joined[1].strip():
+            text = joined[0]
     return text
 
 
@@ -798,6 +874,7 @@ def split_ingredient_line(line: str) -> dict:
         rest = rest[unbracketed.end("u"):].lstrip(". ")
 
     qty_words = []
+    amount_is_written = False
     words = rest.split(" ")
     while words:
         # Cookbook shorthand is case-sensitive: "T" is a tablespoon and "t"
@@ -824,6 +901,15 @@ def split_ingredient_line(line: str) -> dict:
                 break
             continue
         break
+    if len(qty_words) == 1 and words:
+        joined = _plus_one_amount(amount, qty_words[0], " ".join(words))
+        if joined:
+            # Both amounts stay on the qty as the page wrote them; the
+            # second unit is the one a bracket after it re-measures
+            # ("3/4 cup + 2 tbsp (105g) flour").
+            amount, qty_words = joined[0], [joined[2]]
+            words = joined[1].split(" ") if joined[1] else []
+            amount_is_written = True
     if qty_words and qty_words[-1].lower() in _UNIT_WORDS:
         words, package_size = _without_second_measure(words, qty_words[-1])
         if package_size and not size:
@@ -843,7 +929,7 @@ def split_ingredient_line(line: str) -> dict:
         if len(words) > 1 and words[0].lower() == "of":
             words.pop(0)
     item = " ".join(words).strip(" ,")
-    unit = " ".join(qty_words)
+    unit = "" if amount_is_written else " ".join(qty_words)
     qty = f"{amount} {unit}".strip()
     if size:
         # "1 (14 oz) can" -> "1 can (14 oz)", which is how the grocery
