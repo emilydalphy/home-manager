@@ -529,6 +529,7 @@ def _save_recipe_if_new(pick: dict, serves: int) -> None:
     if _recipes.existing_recipe_named(name):
         return
     _recipes.add_recipe(
+        measure_spices=True,  # the model wrote it (spice_measures_not_packages)
         name=name,
         ingredients=ingredients,
         food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],

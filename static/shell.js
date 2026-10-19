@@ -6696,7 +6696,9 @@
               // the answer ("we have plenty") — no second button.
               (sp.due ? '<span class="gro-spice-due">Probably running low</span>' : '') +
             '</p>' +
-            (sp.quantity ? '<span class="gro-qty">' + escapeHtml(sp.quantity) + '</span>' : '') +
+            // The week's measured total ("2½ tsp", "about ½ tsp") where
+            // the meals said one; a tick still buys one jar (spices.py).
+            ((sp.total || sp.quantity) ? '<span class="gro-qty">' + escapeHtml(sp.total || sp.quantity) + '</span>' : '') +
           '</div>';
         }).join('') +
         (spices.recently_bought.length

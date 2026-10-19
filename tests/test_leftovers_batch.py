@@ -207,7 +207,7 @@ def test_the_shop_buys_the_batch_once():
     assert bought == {"beef": "2 lbs", "lettuce": "2 heads"}
     # Salt is a spice-rack thing: it waits unticked in the spices section
     # (spices.py, 2026-09-13), once for the batch like everything else.
-    assert [(g["item"], g["quantity"]) for g in tools.list_grocery_list(status="spice")] == [("salt", "to taste")]
+    assert [(g["item"], g["quantity"]) for g in tools.list_grocery_list(status="spice")] == [("salt", "1 box")]
 
 
 def test_the_reheat_night_contributes_nothing_to_the_shop():

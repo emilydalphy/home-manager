@@ -764,7 +764,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
     servings = int(detail.get("default_servings") or spec.get("default_servings") or 4)
     # What the steps use goes on the list, as on every save (2026-10-12).
     ingredients = _recipes.complete_ingredient_list(ingredients, instructions, servings)
-    settled = _recipes.settle_cooking_quantities(ingredients, servings)
+    settled = _recipes.settle_cooking_quantities(ingredients, servings, measure_spices=True)
     hid = household_id()
     conn = get_conn()
     try:

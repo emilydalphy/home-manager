@@ -75,6 +75,7 @@ def add_recipe(
     details_pending: bool = False,
     dish_note: str = "",
     from_draft: bool = False,
+    measure_spices: bool = False,
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -140,7 +141,9 @@ def add_recipe(
     # What the steps use goes on the list (Emily, 2026-10-12): the allergy
     # check and the shopping list both read the list, never the method.
     ingredients = complete_ingredient_list(ingredients or [], instructions or [], default_servings)
-    ingredients = settle_cooking_quantities(ingredients, default_servings)
+    # measure_spices: set by the doors where the model wrote this recipe
+    # (spice_measures_not_packages); a typed or imported one is left as is.
+    ingredients = settle_cooking_quantities(ingredients, default_servings, measure_spices=measure_spices)
 
     # The check and the INSERT share one transaction, opened with BEGIN
     # IMMEDIATE so the write lock is held from the READ rather than from
@@ -504,7 +507,7 @@ def fill_recipe_details(
     """
     # The steps' ingredients on the list, as add_recipe does (2026-10-12).
     ingredients = complete_ingredient_list(ingredients or [], instructions or [], default_servings)
-    settled = settle_cooking_quantities(ingredients, default_servings)
+    settled = settle_cooking_quantities(ingredients, default_servings, measure_spices=True)
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -2166,7 +2169,9 @@ def store_section(ing: dict) -> str:
     return _recipe_import.guess_category(ing.get("item") or "", ing.get("qty") or "")
 
 
-def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> list[dict]:
+def settle_cooking_quantities(
+    ingredients: list[dict], servings: int | None, measure_spices: bool = False,
+) -> list[dict]:
     """
     The pre-save pass: the same ingredient dicts, with a cook_qty written
     onto any line whose cooking amount is out of range for `servings`
@@ -2174,7 +2179,9 @@ def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> 
     dish for `servings` uses (see _PER_PERSON_COUNT_CEILING). Everything
     else is returned untouched — a line that measures sensibly gets no
     cook_qty it did not have, and the shopping qty is never rewritten
-    here. Logged at INFO so a run of these is visible without a database.
+    here — but, with `measure_spices` (a door where the model wrote the
+    recipe), for a package on a spice line (spice_measures_not_packages).
+    Logged at INFO so a run of these is visible without a database.
 
     The shopping qty staying as written is not an oversight for a COUNT
     line, where the two amounts are the same number: the grocery ingest
@@ -2182,6 +2189,8 @@ def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> 
     (_add_recipe_ingredients_for_entries), which is what covers every
     recipe already saved as well as every one saved from here.
     """
+    if measure_spices:
+        ingredients = spice_measures_not_packages(ingredients, servings)
     fixes = {line["index"]: line for line in _implausible_lines(ingredients, servings)}
     if not fixes:
         return ingredients
@@ -2195,6 +2204,52 @@ def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> 
             _servings_or_base(servings), line["item"], line["qty"], line["problem"]["class"], line["shows"],
         )
     return out
+
+
+def spice_measures_not_packages(ingredients: list[dict], servings: int | None = None) -> list[dict]:
+    """
+    A spice-rack line (spices.is_spice: spices, dried herbs, salt, pepper,
+    oils) that a MODEL wrote with a package is saved with a measure instead
+    (Loop Board, 2026-10-18: "the recipe should be providing
+    measurements"): "1 jar" of cumin is not what the dish uses, and the
+    Spices section would have nothing to total. Only the doors where the
+    model writes the recipe call this (settle_cooking_quantities'
+    `measure_spices`: the week's generation, the recipe pass, a rewrite, a
+    big meal's main, a swap's new dish) — a recipe a person typed or
+    brought in from a page or a book says what it says (review,
+    2026-10-19: a salt crust's "1 box" is the box).
+
+    The replacement: the line's own measured cook_qty, else the amount the
+    Cook screen already shows for it (cooking_quantity's table — "1
+    bottle" of oil cooked as 2 tbsp for four), else "to taste" ("as
+    needed" for an oil). The package written is kept beside it as
+    `package_qty`, never thrown away. Never rewritten: a frying oil (the
+    bottle IS the amount) and a package count above one (the recipe meant
+    more than a little).
+    """
+    out, changed = [], False
+    for ing in ingredients:
+        item, qty = ing.get("item") or "", (ing.get("qty") or "").strip()
+        core = _quantities._split_quantity_note(qty)[0]
+        pack = _quantities.rack_package(core)
+        if not (pack and _spices.is_spice(item)) or pack[0] > 1 + 1e-9 or _spices.is_frying(item, qty):
+            out.append(ing)
+            continue
+        changed = True
+        cook = (ing.get("cook_qty") or "").strip()
+        table = cooking_quantity(item, servings=servings, shopping_qty=qty)
+        if cook and not _quantities.rack_package(_quantities._split_quantity_note(cook)[0]):
+            measured = cook
+        elif table and not _quantity_problem(item, table):
+            # The cook view's own amount for it (cooking_quantity) — what
+            # the Cook screen already showed for "1 bottle" of oil.
+            measured = table
+        else:
+            measured = "as needed" if _spices._is_oil(item) else "to taste"
+        fixed = {**ing, "qty": measured, "package_qty": qty}
+        logger.info("Spice saved as a measure, not a package: %s '%s' -> '%s'", item, qty, measured)
+        out.append(fixed)
+    return out if changed else ingredients
 
 
 def implausible_quantity_message(line: dict, servings: int | None) -> str:
@@ -3988,7 +4043,10 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     return {"name": recipe_name, "temporarily_excluded": excluded}
 
 
-def _record_grocery_link(entry_id: int, item: str, grocery_item_id: int, qty: str, conn=None) -> None:
+def _record_grocery_link(
+    entry_id: int, item: str, grocery_item_id: int, qty: str, conn=None,
+    measure: tuple[float, bool] | None = None,
+) -> None:
     """
     Record exactly what THIS meal contributed to that grocery line, before
     it got merged with anything else already there — see
@@ -4000,13 +4058,20 @@ def _record_grocery_link(entry_id: int, item: str, grocery_item_id: int, qty: st
     ingest running inside swap_meal_in_plan's one transaction — see
     _add_recipe_ingredients_for_entries); left unset it commits on a
     connection of its own, exactly as before.
+
+    `measure` is a spice-rack share's (teaspoons, about) — what the
+    Spices section totals (spices.week_total); None for anything else.
     """
     own_conn = conn is None
     link_conn = get_conn() if own_conn else conn
     link_conn.execute(
-        "INSERT INTO meal_plan_grocery_links (household_id, meal_plan_entry_id, grocery_item_id, item, quantity) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (household_id(), entry_id, grocery_item_id, item, _quantities._strip_prep_descriptor(qty or "")),
+        "INSERT INTO meal_plan_grocery_links "
+        "(household_id, meal_plan_entry_id, grocery_item_id, item, quantity, measure_tsp, measure_about) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (
+            household_id(), entry_id, grocery_item_id, item, _quantities._strip_prep_descriptor(qty or ""),
+            measure[0] if measure else None, 1 if measure and measure[1] else 0,
+        ),
     )
     if own_conn:
         link_conn.commit()
@@ -4409,7 +4474,10 @@ class WeekGroceryBuffer:
                     conn.close()
         return self._stock
 
-    def add(self, entry_id: int, item: str, category: str, amount: float, unit: str | None, note: str) -> None:
+    def add(
+        self, entry_id: int, item: str, category: str, amount: float, unit: str | None, note: str,
+        measure: tuple[float, bool] | None = None,
+    ) -> None:
         if unit in _quantities._VOLUME_TO_TSP:
             # One volume line per item, however its recipes wrote it: "2/3
             # cup" and "2 tbsp" are rounded ONCE on their sum, the way
@@ -4422,12 +4490,16 @@ class WeekGroceryBuffer:
         if line is None:
             line = self._lines[key] = {
                 "item": item, "category": category, "unit": unit, "note": note, "shares": {},
+                "measures": {},
             }
         else:
             # "Onions" and "Yellow onion" share a key (grocery._SAME_PURCHASE);
             # the line carries the variety, which tells the shopper more.
             line["item"] = _grocery._more_specific_name(line["item"], item)
         line["shares"][entry_id] = line["shares"].get(entry_id, 0.0) + amount
+        if measure is not None:
+            tsp, about = line["measures"].get(entry_id, (0.0, False))
+            line["measures"][entry_id] = (tsp + measure[0], about or measure[1])
 
     def flush(self) -> None:
         for line in self._lines.values():
@@ -4452,6 +4524,7 @@ class WeekGroceryBuffer:
                 _record_grocery_link(
                     entry_id, line["item"], add_result["item_id"],
                     _ledger_share(share, line["unit"], unit), conn=self.conn,
+                    measure=line["measures"].get(entry_id),
                 )
             # A counted pack that landed on a line the plan already had is
             # re-read from the whole ledger, so two passes' cartons don't
@@ -4463,10 +4536,11 @@ class WeekGroceryBuffer:
             # PLAN-owned line is re-read; a household's standing want never
             # takes a different-unit plan share in the first place
             # (_merge_target), so its own amount is never re-rounded.
-            if _grocery._store_kind(line["item"]):
+            if _grocery._store_kind(line["item"]) or _spices.is_spice(line["item"]):
                 # Bread, berries, yogurt…: the line is written in the
                 # store's unit, read off the whole ledger once
-                # (grocery._store_amount) — merged or new alike.
+                # (grocery._store_amount) — merged or new alike. A spice
+                # too: its line buys one jar (grocery._rack_quantity).
                 _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
             elif add_result["merged"] and (
                 _quantities._pack_group(unit)
@@ -4832,6 +4906,16 @@ def _add_recipe_ingredients_for_entries(
         # package (you cannot buy two thirds of a jar), so asking the
         # unscaled quantity keeps the classification stable across meals.
         raw_qty = ing.get("qty", "") or ""
+        # A spice-rack line's cooking measure, when the recipe has one that
+        # differs (an old "1 jar" with its teaspoons in cook_qty, or an
+        # amount the plausibility pass held down): the Spices row totals
+        # what the cook will use, and the line's jar count reads the same.
+        # Not a frying oil: the pot of oil is the amount, held down or not.
+        cook_qty = (ing.get("cook_qty") or "").strip()
+        if cook_qty and _spices.is_spice(ing["item"]) and not _spices.is_frying(ing["item"], raw_qty):
+            cooked = _spices.spice_measure(ing["item"], cook_qty)
+            if cooked[0] is not None and not cooked[1]:
+                raw_qty = cook_qty
         category = store_section(ing)
         # Split exactly the way _normalize_grocery_quantity does, so the
         # amount and the note that rides with it ("1 bag (2 lb), frozen")
@@ -4867,6 +4951,20 @@ def _add_recipe_ingredients_for_entries(
         # A package and a counted pack keep their own paths and their own
         # factor: one bottle is one bottle, and a dozen eggs really does
         # scale with the eaters.
+        # A spice-rack thing's measure for the Spices section's week total
+        # (spices.week_total) — pinch, dash and "to taste" converted, per
+        # meal at that meal's scale, batch included.
+        spice_tsp = None
+        if not pack_share and _spices.is_spice(ing["item"]):
+            spice_tsp = _spices.spice_measure(ing["item"], raw_qty, default_servings or 4)
+            if spice_tsp[0] is None:
+                spice_tsp = None
+
+        def measure_for(entry_id):
+            if spice_tsp is None:
+                return None
+            return (spice_tsp[0] * scale_for_entry.get(entry_id, 1.0), spice_tsp[1])
+
         bare_count = (
             not pack_share and not package
             and (_quantities._parse_quantity(core) or (0, ""))[1] in _PER_PERSON_COUNT_UNITS
@@ -4909,6 +5007,13 @@ def _add_recipe_ingredients_for_entries(
             ), parsed_core[1])
         else:
             need = None
+        if spice_tsp is not None:
+            # A spice is bought in store units (grocery._rack_quantity), so
+            # the kitchen is asked about the units THIS recipe-week needs: a
+            # bottle at home covers a week's 2 tbsp, not its 6 cups of
+            # frying oil (three bottles).
+            week_tsp = sum(spice_tsp[0] * scale_for_entry.get(e, 1.0) for e in contributing_ids)
+            need = _quantities._parse_quantity(_spices.store_unit(ing["item"], week_tsp))
         if stock.covers(ing["item"], need):
             already_have.append(ing["item"])
             continue
@@ -4933,8 +5038,10 @@ def _add_recipe_ingredients_for_entries(
                 source_weekly_plan_id=weekly_plan_id, quantity_mode="max", conn=conn,
             )
             for entry_id in contributing_ids:
-                _record_grocery_link(entry_id, line_name, add_result["item_id"], raw_qty, conn=conn)
-            if _grocery._store_kind(line_name):
+                _record_grocery_link(
+                    entry_id, line_name, add_result["item_id"], raw_qty, conn=conn, measure=measure_for(entry_id),
+                )
+            if _grocery._store_kind(line_name) or spice_tsp is not None:
                 _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=conn)
         else:
             parsed = parsed_core
@@ -4946,7 +5053,7 @@ def _add_recipe_ingredients_for_entries(
                     buffer.add(
                         entry_id, line_name, category,
                         _capped_share(ing["item"], parsed[0], factor_for_entry[entry_id], batch_part.get(entry_id, 1.0), parsed[1]),
-                        parsed[1], note,
+                        parsed[1], note, measure=measure_for(entry_id),
                     )
             else:
                 # "A bunch", "to taste", blank. No number to scale or sum,
@@ -4957,7 +5064,12 @@ def _add_recipe_ingredients_for_entries(
                         ing["item"], quantity=raw_qty, category=category,
                         added_by="ai", source_weekly_plan_id=weekly_plan_id, conn=conn,
                     )
-                    _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn)
+                    _record_grocery_link(
+                        entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn,
+                        measure=measure_for(entry_id),
+                    )
+                if spice_tsp is not None:
+                    _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=conn)
         # Once per ingredient, not once per meal: this is the list of
         # NAMES that landed on the shopping list, and approve_weekly_plan
         # counts it distinctly anyway.

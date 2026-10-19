@@ -102,20 +102,22 @@ def test_salt_kinds_and_flakes_are_one_line_and_one_package():
 
     spices = _lines("spice")
     salt = [k for k in spices if _grocery._merge_key(k) == "salt"]
-    assert len(salt) == 1 and spices[salt[0]] == "1 container"
+    # One store unit, the kind's (a box of salt), whatever package word a
+    # recipe used (overnight/spice-totals-for-the-week).
+    assert len(salt) == 1 and spices[salt[0]] == "1 box"
     pepper = [k for k in spices if _grocery._merge_key(k) == "black pepper"]
     assert len(pepper) == 1 and spices[pepper[0]] == "1 jar"
     flakes = [k for k in spices if _grocery._merge_key(k) == "red pepper flake"]
     assert len(flakes) == 1 and spices[flakes[0]] == "1 jar"
     # Flaky salt is a finish, bought for the crunch: its own line, once.
     flaky = [k for k in spices if _grocery._merge_key(k) == "flaky salt"]
-    assert len(flaky) == 1 and spices[flaky[0]] == "a pinch"
+    assert len(flaky) == 1 and spices[flaky[0]] == "1 box"
 
 
 def test_taking_the_box_meal_off_leaves_what_the_others_measured():
     """CATCH (reversal). The ledger is re-read the way the merge built the
-    line: the box goes with its meal, the teaspoons left read as teaspoons;
-    the last meal off takes the line."""
+    line: the box goes with its meal, the teaspoons left still buy the one
+    box (the row shows them); the last meal off takes the line."""
     _two_adults()
     tools.add_recipe("Boxed", default_servings=2, ingredients=[{"item": "Salt", "qty": "1 box"}])
     tools.add_recipe("Measured", default_servings=2, ingredients=[{"item": "Sea salt", "qty": "1 tsp"}])
@@ -127,21 +129,24 @@ def test_taking_the_box_meal_off_leaves_what_the_others_measured():
     assert list(_lines("spice").values()) == ["1 box"]
 
     _grocery._reverse_meal_grocery_contributions(boxed)
-    assert list(_lines("spice").values()) == ["2 tsp"]
+    assert list(_lines("spice").values()) == ["1 box"]
+    assert [sp["total"] for sp in _spices.list_spices_this_week()["items"]] == ["2 tsp"]
     _grocery._reverse_meal_grocery_contributions(m1)
     _grocery._reverse_meal_grocery_contributions(m2)
     assert _lines("spice") == {}
 
 
 def test_a_measured_spice_still_adds_up():
-    """GUARD. With no package anywhere, a week's teaspoons are still a sum."""
+    """GUARD. With no package anywhere, a week's teaspoons are still a sum
+    — on the row; the line buys the jar."""
     _two_adults()
     tools.add_recipe("Curry", default_servings=2, ingredients=[{"item": "Cumin", "qty": "1 tsp"}])
     plan_id = _plan()
     for n in range(3):
         tools.plan_meal(_d(n), "Curry", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id, "Emily")
-    assert _lines("spice") == {"Cumin": "1 tbsp"}
+    assert _lines("spice") == {"Cumin": "1 jar"}
+    assert [sp["total"] for sp in _spices.list_spices_this_week()["items"]] == ["1 tbsp"]
 
 
 def test_a_box_of_pasta_is_still_one_per_dinner():

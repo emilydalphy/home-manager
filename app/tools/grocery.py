@@ -431,19 +431,21 @@ def _rack_quantity(item: str, qtys: list[str]) -> str | None:
     """
     What a spice-rack line (spices.is_spice) holds, from its parts — the
     amounts already on it and the one arriving, or its whole ledger — or
-    None when the ordinary arithmetic applies.
+    None when the name isn't a spice-rack thing.
 
-    A seasoning the week uses by the pinch is at most ONE package (Loop
-    Board, realistic week amounts: "seven pinches of flaky salt is one box,
-    not seven"; Salt read "1 container + 6 boxes", Black pepper "3
-    containers + 2 jars"). So a package wins outright: the same word keeps
-    the larger count, as _greater_of_quantity does for any package, and a
-    second word, a measured amount or "to taste" beside it is covered by
-    the package already on the line. With no package, "to taste" beside a
-    measured amount is covered by the amount; only measured amounts with
-    nothing else are the ordinary sum (None). The merge and every
-    recompute off the ledger ask this one function, so the line a week
-    builds is the line a removal re-derives.
+    One STORE UNIT, whatever the week's recipes measure (Loop Board,
+    2026-10-18: "Ticking a spice to buy adds one store unit ('1 jar'),
+    whatever the total"): seven pinches of flaky salt are one box, not
+    seven (Tester Home plan 72), and 2½ tsp of cumin are one jar, not a
+    line reading "2.5 tsp" that nobody can buy. The unit is the kind's
+    (spices.store_unit: a jar, a bottle of oil, a box of salt) whatever
+    package word an old recipe used, so the line reads the same whichever
+    meal arrived first; two only when the measured parts come to more
+    than one holds.
+    The measured total itself is the Spices row's to show
+    (spices.week_total), not the line's. The merge and every recompute
+    off the ledger ask this one function, so the line a week builds is
+    the line a removal re-derives.
     """
     from . import spices as _spices  # lazy: spices imports this module
 
@@ -452,17 +454,29 @@ def _rack_quantity(item: str, qtys: list[str]) -> str | None:
     parts = [_quantities._split_repeat_count(p)[0] for p in parts if p]
     if not parts or not _spices.is_spice(item):
         return None
-    packs = [p for p in (_quantities.rack_package(q) for q in parts) if p]
-    if packs:
-        unit = packs[0][1]
-        return _quantities._format_quantity(max(n for n, u in packs if u == unit), unit)
-    measured = [q for q in parts if _quantities._parse_quantity(q)]
-    if not measured:
-        # Only words: "to taste" seven times is "to taste" once.
-        return parts[0] if all(p.lower() == parts[0].lower() for p in parts) else None
-    if len(measured) == len(parts):
-        return None
-    return _quantities._sum_ledger_quantities(measured)
+    # Only what the parts really measure counts toward a second unit; a
+    # package or "to taste" here is a little (spices.spice_measure).
+    measured = sum(
+        m for m, about in (_spices.spice_measure(item, p) for p in parts) if m is not None and not about
+    )
+    # A recipe that names MORE than one package ("2 bottles" of frying
+    # oil) meant it: that count is a floor, as the old max rule had it.
+    return _with_package_floor(_spices.store_unit(item, measured), parts)
+
+
+def _with_package_floor(rack: str, theirs: list[str]) -> str:
+    """`rack` (_rack_quantity's store units), or the largest package
+    amount among `theirs` when that is more — in their words."""
+    best = _quantities._parse_quantity(rack) or (0.0, None)
+    out = rack
+    for qty in theirs:
+        pack = _quantities.rack_package(
+            _quantities._strip_prep_descriptor(_quantities._split_quantity_note((qty or "").strip())[0])
+        )
+        if pack and pack[0] > best[0] + 1e-9:
+            best = pack
+            out = _quantities._format_quantity(pack[0], _quantities._normalize_container_word(pack[1]))
+    return out
 
 
 # What a shopper picks off the shelf for the things recipes measure in
@@ -705,16 +719,26 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
         ):
             continue
         households_line = row["source_weekly_plan_id"] is None and row["status"] == "needed"
-        if not standing and _spices.is_spice(row["item"]) and (
-            not households_line
-            or (_quantities.rack_package(row["quantity"] or "") and _quantities.rack_package(quantity))
+        if _spices.is_spice(row["item"]) and (
+            (not standing and (
+                not households_line
+                or (_quantities.rack_package(row["quantity"] or "") and _quantities.rack_package(quantity))
+            ))
+            # A person asking for cumin onto the plan's cumin answers its
+            # reminder: the jar the plan's line already buys, not a second.
+            or (standing and row["source_weekly_plan_id"] is not None)
         ):
             # A plan's spice is at most one package (_rack_quantity). Onto a
             # household's own line only package-onto-package, which no
             # removal ever re-derives (the package rule holds the line).
             rack = _rack_quantity(row["item"], [row["quantity"] or "", quantity])
             if rack is not None:
-                return row, rack, True
+                # A household's own count is a floor, never collapsed: their
+                # "2 jars" stays 2 jars whatever a plan's share would buy
+                # (review, 2026-10-19).
+                theirs = [row["quantity"] or ""] if households_line else []
+                theirs += [quantity] if standing else []
+                return row, _with_package_floor(rack, theirs), True
         merged_qty, merged = None, False
         if households_line and consolidate is _try_consolidate_quantity:
             # Onto a household's own line, the household's own second
@@ -2488,6 +2512,15 @@ def keep_carried_over_item(item_id: int) -> dict:
     target = _this_weeks_line(conn, row["item"], row["quantity"] or "")
     if target is not None:
         merged_qty, _reconciled = _try_consolidate_quantity(target["quantity"] or "", row["quantity"] or "")
+        # Last week's unbought jar of cumin is the jar this week's cumin
+        # needs too: one store unit, nothing kept on top (_rack_quantity) —
+        # a Keep read "2 jars" for one recipe's tablespoon.
+        rack = (
+            _rack_quantity(target["item"], [target["quantity"] or "", row["quantity"] or ""])
+            if target["source_weekly_plan_id"] is not None else None
+        )
+        if rack is not None:
+            merged_qty = rack
         # On a plan's line the kept amount is also recorded as kept_amount
         # (2026-10-12). The line is recomputed from its meals' ledger when
         # one is swapped or dropped, and deleted with the last — which took
@@ -2498,7 +2531,7 @@ def keep_carried_over_item(item_id: int) -> dict:
         # week after week, owned by nobody). A household's own line needs
         # nothing: a reversal only ever takes the meals' share off it.
         kept_amount = target["kept_amount"] or ""
-        if target["source_weekly_plan_id"] is not None:
+        if target["source_weekly_plan_id"] is not None and rack is None:
             kept_amount = (
                 _try_consolidate_quantity(kept_amount, row["quantity"] or "")[0]
                 if kept_amount.strip() else (row["quantity"] or "")

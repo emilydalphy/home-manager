@@ -262,7 +262,10 @@ def test_a_freeform_quantity_is_still_not_guessed_at(week, family_of_three):
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
-    assert _qty("Salt") == "a pinch"
+    # The line buys the box; the pinch is the Spices row's to show
+    # (spice-totals-for-the-week) — still never "3/4 pinch".
+    assert _qty("Salt") == "1 box"
+    assert [sp["total"] for sp in tools.list_spices_this_week()["items"]] == ["a pinch"]
 
 
 # ---------- the ledger has to add back up to the line ----------
