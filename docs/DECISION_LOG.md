@@ -24,6 +24,11 @@ why*, not duplicating the diff.
   allergen gate — the chat's gate with `override` already ran), attaches a
   slot with no row to the plan, and refuses `planned_empty`. A slot already
   holding a meal is unchanged (still a standalone row — swap is its door).
+  Review follow-up: the no-row path buys by the plan's approved state, not
+  the chat's flag (a draft bought before approval, and discard left the
+  line on a retired week; an approved week bought nothing by default); a
+  meal the household switched off is told "turn them back on in
+  Preferences, under Your rhythm", not "if you're in after all".
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

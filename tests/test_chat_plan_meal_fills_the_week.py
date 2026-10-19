@@ -110,3 +110,46 @@ def test_a_slot_with_no_row_on_a_covered_day_joins_the_plan():
 
     assert _rows(WED, "lunch") == [{"id": out["entry_id"], "weekly_plan_id": plan,
                                     "slot_state": "planned", "meal": "Bean Chili"}]
+
+
+# ------------------------------------------- review follow-up, 2026-10-19
+
+def _needed(item: str) -> list[dict]:
+    return [g for g in tools.list_grocery_list(status="needed") if g["item"] == item]
+
+
+def test_a_no_row_slot_on_a_draft_buys_nothing_even_when_chat_was_told_yes():
+    """A draft buys at approval. Buying here first left a line tied to a
+    week that discard_draft_plan could then retire under it."""
+    plan = _week(approve=False)
+
+    agent.TOOL_FUNCTIONS["plan_meal"](meal_date=WED, meal="Bean Chili", slot="dinner",
+                                      add_ingredients_to_grocery_list=True)
+    assert _needed("Bean Chili beans") == []
+
+    tools.discard_draft_plan(plan)
+    assert _needed("Bean Chili beans") == []
+
+
+def test_a_no_row_slot_on_an_approved_week_is_bought_once_with_the_default_flag():
+    _week(approve=True)
+
+    agent.TOOL_FUNCTIONS["plan_meal"](meal_date=WED, meal="Bean Chili", slot="dinner")
+
+    lines = _needed("Bean Chili beans")
+    assert len(lines) == 1 and lines[0]["quantity"] == "1 can", lines
+
+
+def test_a_meal_the_household_switched_off_says_where_to_turn_it_on():
+    plan = _week(approve=False)
+    tools.plan_slot_empty(plan, WED, "breakfast", "You’ve asked me not to plan breakfasts — I’ve left this to you.",
+                          derived_from={"constraint": "breakfasts_per_week:0"})
+
+    with pytest.raises(tools.SlotRefused) as refused:
+        agent.TOOL_FUNCTIONS["plan_meal"](meal_date=WED, meal="Bean Chili", slot="breakfast")
+
+    assert str(refused.value) == (
+        "You’ve asked me not to plan breakfasts, so nothing is planned or bought for this one. "
+        "You can turn them back on in Preferences, under Your rhythm."
+    )
+    assert [r["slot_state"] for r in _rows(WED, "breakfast")] == ["planned_empty"]
