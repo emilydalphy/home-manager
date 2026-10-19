@@ -60,3 +60,17 @@ def test_settings_keeps_its_own_messages():
     with pytest.raises(ValueError, match=r"snacks_per_day must be a whole number from 0 to 6\."):
         tools.edit_preference("snacks_per_day", "lots")
     assert tools.edit_preference("dinners_per_week", "5") and _counts()["dinners_per_week"] == 5
+
+
+def test_the_chat_tools_tell_the_model_the_range_the_code_keeps():
+    # Review follow-up: both tool descriptions said 1-7 while the write
+    # takes 0 ("none at all") — the model was told a narrower rule than
+    # the one it is held to.
+    from app import agent
+
+    schemas = {t["name"]: t for t in agent.TOOL_DEFINITIONS}
+    props = schemas["set_household_meal_preferences"]["input_schema"]["properties"]
+    for field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week"):
+        assert "0-7" in props[field]["description"] and "1-7" not in props[field]["description"]
+    edit = schemas["edit_preference"]["description"]
+    assert "(integer 0-7, each independent" in edit
