@@ -69,6 +69,12 @@
     weekday lunches (mockup A1, 2026-09-25 — it took in board D2's "on the
     go" days as "Taking it with you"); under step 4, "+ Add one" at the
     end of the cuisines opens its own screen (boards B4a/B4b).
+
+    SINCE RE-PLAN OPTION B (Emily, 2026-10-18): the page opens on "Same as
+    last week?" every time, and its rows open onboarding's own question
+    screens (#setup-host, static/setup-screens.js) — the five steps above
+    are no longer walked in a row; "Which days?" is the one still this
+    page's. See the #same section and the decision log.
   */
   :root {
     color-scheme: light;
@@ -4310,12 +4316,15 @@
       keepVariety('dinner');
     } else if (name === 'lunch-needs') {
       var said = lunchNeedsPayload() || {};
+      var before = needsKey(weekNeeds());
       if (needsKey(said) === needsKey(usualNeeds())) delete weekAnswers.lunch_needs;
       else weekAnswers.lunch_needs = said;
       // Out takes a person off the grid's weekday lunches (onboarding's
       // rule), so the grid is this week's too.
       keepGrid();
-      answers.packed_lunch_days = packedLunchDates(said);
+      // The lunches taken out follow the needs — only once they changed,
+      // so a household with none on record keeps last week's days.
+      if (needsKey(said) !== before) answers.packed_lunch_days = packedLunchDates(said);
       if (lunch.ready) reconcileLunches();
     } else if (name === 'variety-lunch') {
       keepVariety('lunch');

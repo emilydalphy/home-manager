@@ -6031,7 +6031,7 @@ def _generate_weekly_plan_once(
                     week_start_date, done.get("plan_id"),
                 )
                 return tools.get_weekly_plan(done["plan_id"])
-        plan = _generate_weekly_plan(
+        plan = _generate_weekly_plan_as_changed(
             week_start_date,
             constraints_notes=constraints_notes,
             day_count=day_count,
@@ -6362,7 +6362,7 @@ def _honest_meal_names(items: list[dict]) -> None:
             taken.add(honest.strip().lower())
 
 
-def _generate_weekly_plan(
+def _generate_weekly_plan_as_changed(
     week_start_date: str,
     constraints_notes: str = "",
     day_count: int = 7,
@@ -6371,7 +6371,7 @@ def _generate_weekly_plan(
     period_start: str | None = None,
 ) -> dict:
     """
-    _draft_weekly_plan (below) with the week read as the household changed
+    _generate_weekly_plan (below) with the week read as the household changed
     it while re-planning (re-plan Option B, Emily 2026-10-18): a change made
     on "Same as last week?" — who's eating, cook ahead, how many different
     breakfasts / lunches / dinners, each person's lunch needs — applies to
@@ -6379,7 +6379,7 @@ def _generate_weekly_plan(
     read through usual_week.this_week for the length of one draft, so every
     reader of the usual week and of the lunch needs inside it sees this
     week's answer while Settings keeps the usual one. The intake is the one
-    _draft_weekly_plan resolves (the revision asked for, else the week's
+    _generate_weekly_plan resolves (the revision asked for, else the week's
     current one).
     """
     if intake_id is not None:
@@ -6389,13 +6389,13 @@ def _generate_weekly_plan(
     else:
         intake = tools.get_week_intake(week_start_date)
     with _usual_week.this_week((intake or {}).get("week_answers") or None):
-        return _draft_weekly_plan(
+        return _generate_weekly_plan(
             week_start_date, constraints_notes=constraints_notes, day_count=day_count,
             intake_id=intake_id, skip_days=skip_days, period_start=period_start,
         )
 
 
-def _draft_weekly_plan(
+def _generate_weekly_plan(
     week_start_date: str,
     constraints_notes: str = "",
     day_count: int = 7,
