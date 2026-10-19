@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import json
+import math
 from datetime import date
 from ..db import get_conn, write
 from ._shared import acting_name, household_id, require_household_row
@@ -167,6 +168,43 @@ _SAME_PURCHASE = {
     "plain greek yoghurt": "plain yogurt",
     "greek yoghurt": "plain yogurt",
     "plain yoghurt": "plain yogurt",
+    # Seasonings that do one job under several names (Loop Board,
+    # realistic week amounts, 2026-10-19: Salt / Sea salt / Flaky salt and
+    # red chili flakes / red pepper flakes as separate lines). Cooking salt
+    # is one purchase whatever the grind; FLAKY salt is not here — it is a
+    # finishing salt, bought for the crunch, and keeps its own line.
+    "sea salt": "salt",
+    "fine sea salt": "salt",
+    "coarse sea salt": "salt",
+    "kosher salt": "salt",
+    "table salt": "salt",
+    "fine salt": "salt",
+    "iodized salt": "salt",
+    "flaky sea salt": "flaky salt",
+    "sea salt flake": "flaky salt",
+    "flake salt": "flaky salt",
+    "maldon salt": "flaky salt",
+    "maldon sea salt": "flaky salt",
+    "red chili flake": "red pepper flake",
+    "red chilli flake": "red pepper flake",
+    "red chile flake": "red pepper flake",
+    "chili flake": "red pepper flake",
+    "chilli flake": "red pepper flake",
+    "crushed red pepper": "red pepper flake",
+    "crushed red pepper flake": "red pepper flake",
+    # Sandwich bread for the same toast (the card: "Multigrain bread 8
+    # slices" beside "Whole grain bread 2 slices"). White and sourdough
+    # are a different loaf and stay their own.
+    "multigrain bread": "whole grain bread",
+    "multi-grain bread": "whole grain bread",
+    "whole-grain bread": "whole grain bread",
+    "wholegrain bread": "whole grain bread",
+    "whole wheat bread": "whole grain bread",
+    "whole-wheat bread": "whole grain bread",
+    "ground black pepper": "black pepper",
+    "freshly ground black pepper": "black pepper",
+    "fresh ground black pepper": "black pepper",
+    "cracked black pepper": "black pepper",
 }
 
 
@@ -389,6 +427,153 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=True)
 
 
+def _rack_quantity(item: str, qtys: list[str]) -> str | None:
+    """
+    What a spice-rack line (spices.is_spice) holds, from its parts — the
+    amounts already on it and the one arriving, or its whole ledger — or
+    None when the ordinary arithmetic applies.
+
+    A seasoning the week uses by the pinch is at most ONE package (Loop
+    Board, realistic week amounts: "seven pinches of flaky salt is one box,
+    not seven"; Salt read "1 container + 6 boxes", Black pepper "3
+    containers + 2 jars"). So a package wins outright: the same word keeps
+    the larger count, as _greater_of_quantity does for any package, and a
+    second word, a measured amount or "to taste" beside it is covered by
+    the package already on the line. With no package, "to taste" beside a
+    measured amount is covered by the amount; only measured amounts with
+    nothing else are the ordinary sum (None). The merge and every
+    recompute off the ledger ask this one function, so the line a week
+    builds is the line a removal re-derives.
+    """
+    from . import spices as _spices  # lazy: spices imports this module
+
+    parts = [_quantities._strip_prep_descriptor(_quantities._split_quantity_note((q or "").strip())[0])
+             for q in qtys]
+    parts = [_quantities._split_repeat_count(p)[0] for p in parts if p]
+    if not parts or not _spices.is_spice(item):
+        return None
+    packs = [p for p in (_quantities.rack_package(q) for q in parts) if p]
+    if packs:
+        unit = packs[0][1]
+        return _quantities._format_quantity(max(n for n, u in packs if u == unit), unit)
+    measured = [q for q in parts if _quantities._parse_quantity(q)]
+    if not measured:
+        # Only words: "to taste" seven times is "to taste" once.
+        return parts[0] if all(p.lower() == parts[0].lower() for p in parts) else None
+    if len(measured) == len(parts):
+        return None
+    return _quantities._sum_ledger_quantities(measured)
+
+
+# What a shopper picks off the shelf for the things recipes measure in
+# kitchen units (Loop Board, realistic week amounts, 2026-10-19: "8 slices"
+# of bread, "5 cups" of blueberries and Greek yogurt, "2 cups" of granola,
+# Butter "1 tub + 10 tbsp", Feta "12 oz + 1 cup crumbled", Baby spinach
+# "1 bag + 2 cups"). Per kind: the store unit (sized where the size is the
+# thing to know), and how much of one each kitchen unit is — per cup, per
+# gram, per slice, per package word. Approximate on purpose (a cup of
+# crumbled feta is ~150 g; a loaf ~20 slices) and rounded UP to whole store
+# units, the direction this module errs. One line of the table to argue.
+_STORE_UNITS = {
+    "bread": ("loaf", {"slice": 1 / 20, "loaf": 1.0}),
+    "berries": ("pint", {"cup": 0.5, "pint": 1.0, "container": 1.0, "punnet": 1.0}),
+    "yogurt": ("tub (750 g)", {"cup": 1 / 3, "g": 1 / 750, "tub": 1.0, "container": 1.0}),
+    "granola": ("bag", {"cup": 0.25, "g": 1 / 400, "bag": 1.0, "box": 1.0}),
+    # Not "stick": a recipe that buys butter by the stick is shopped by the
+    # stick (test_recipe_quantity_sanity), so such a ledger reads as before.
+    "butter": ("lb", {"cup": 0.5, "g": 1 / 454, "tub": 1.0, "block": 1.0,
+                      "package": 1.0, "pack": 1.0}),
+    "feta": ("block (200 g)", {"cup": 0.75, "g": 1 / 200, "block": 1.0, "container": 1.0, "tub": 1.0,
+                               "package": 1.0}),
+    "baby spinach": ("bag", {"cup": 0.2, "g": 1 / 142, "bag": 1.0, "container": 1.0, "box": 1.0,
+                             "package": 1.0}),
+}
+_BERRY_WORDS = {"blueberry", "raspberry", "blackberry", "strawberry"}
+_NOT_A_LOAF = {"crumb", "breadcrumb", "flour", "garlic", "naan", "pita", "banana", "corn", "flat", "monkey"}
+_NOT_FRESH = {"frozen", "dried", "jam", "freeze"}
+_G_PER = {"g": 1.0, "kg": 1000.0, "oz": 28.35, "lb": 453.6}
+
+
+def _store_kind(item: str) -> str | None:
+    """Which _STORE_UNITS kind a grocery name is, by its merge key."""
+    key = _merge_key(item)
+    words = key.replace("-", " ").split(" ")
+    if not words or not words[-1] or any(w in _NOT_FRESH for w in words):
+        return None
+    last = words[-1]
+    if last in ("bread", "sourdough") and not (set(words) & _NOT_A_LOAF):
+        return "bread"
+    if last in _BERRY_WORDS or key in ("cherry tomato", "grape tomato"):
+        return "berries"
+    if last in ("yogurt", "yoghurt"):
+        return "yogurt"
+    if last == "granola":
+        return "granola"
+    if key in ("butter", "unsalted butter", "salted butter"):
+        return "butter"
+    if last == "feta" or key == "feta cheese":
+        return "feta"
+    if key == "baby spinach":
+        return "baby spinach"
+    return None
+
+
+def _store_amount(item: str, qtys: list[str]) -> str | None:
+    """
+    A plan line's amount in the store's unit, from its ledger — "3 pints",
+    "2 tubs (750 g)", "1 lb" — or None when the item has no store unit or a
+    row can't be read in it (the ordinary arithmetic applies).
+
+    Read off the WHOLE LEDGER, never off the line's text, so it is the one
+    rounding on the whole line: the meals' unrounded shares (cups, slices,
+    grams) are converted and added, a sealed package (the "1 tub" the
+    package path bought once for the week, quantities._PACKAGE_UNITS)
+    counts once however many meals name it, and the total is rounded UP to
+    whole store units once. The ingest and every removal both ask this,
+    through _plan_or_rack_amount, so a week and its re-reads agree.
+    """
+    kind = _store_kind(item)
+    if not kind:
+        return None
+    unit, per = _STORE_UNITS[kind]
+    packages, measured, seen, by_weight = 0.0, 0.0, False, 0
+    for raw in qtys:
+        core = _quantities._strip_prep_descriptor(_quantities._split_quantity_note((raw or "").strip())[0])
+        if not core:
+            continue
+        parsed = _quantities._parse_quantity(core)
+        if not parsed or not parsed[1]:
+            return None
+        amount, u = parsed
+        word = _quantities._split_package_size(u)[0].rpartition(" ")[2]
+        if u in _quantities._VOLUME_TO_TSP and "cup" in per:
+            measured += amount * _quantities._VOLUME_TO_TSP[u] / _quantities._VOLUME_TO_TSP["cup"] * per["cup"]
+        elif u in _G_PER and "g" in per:
+            measured += amount * _G_PER[u] * per["g"]
+            by_weight += 1
+        elif word in per and word in _quantities._PACKAGE_UNITS:
+            packages = max(packages, amount * per[word])
+        elif word in per:
+            measured += amount * per[word]
+        else:
+            return None
+        seen = True
+    if not seen or by_weight == sum(1 for q in qtys if (q or "").strip()):
+        # Nothing to convert, or only weights: a weight is what the label
+        # says already ("300 g" of yogurt is the cook card's 300 g —
+        # test_onboarding_planning). Weights convert only beside a cup or a
+        # package, to make one amount of "12 oz + 1 cup crumbled".
+        return None
+    # A sealed package is what the week draws on, so it covers measured
+    # amounts up to its own size — "1 tub" of butter and 10 tbsp is the tub
+    # (the package rule's generous-downward bet, recipes'
+    # _add_recipe_ingredients_for_entries). Past its size the package was
+    # not enough for them, so the two add: a tub and 3 cups of butter is
+    # 2.5 lb, not the 1.5 the larger alone says (review, 2026-10-19).
+    total = packages if measured <= packages + 1e-9 else packages + measured
+    return _quantities._format_quantity(max(1.0, float(math.ceil(total - 1e-6))), unit)
+
+
 def _sum_volumes(existing_qty: str, new_qty: str, exact: bool, same_unit: bool = False) -> str | None:
     """
     Two volumes (cup/tbsp/tsp) added as one amount, or None when either is
@@ -520,6 +705,16 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
         ):
             continue
         households_line = row["source_weekly_plan_id"] is None and row["status"] == "needed"
+        if not standing and _spices.is_spice(row["item"]) and (
+            not households_line
+            or (_quantities.rack_package(row["quantity"] or "") and _quantities.rack_package(quantity))
+        ):
+            # A plan's spice is at most one package (_rack_quantity). Onto a
+            # household's own line only package-onto-package, which no
+            # removal ever re-derives (the package rule holds the line).
+            rack = _rack_quantity(row["item"], [row["quantity"] or "", quantity])
+            if rack is not None:
+                return row, rack, True
         merged_qty, merged = None, False
         if households_line and consolidate is _try_consolidate_quantity:
             # Onto a household's own line, the household's own second
@@ -707,6 +902,34 @@ def _with_household_edit(plan_qty: str, short: str, edited: str) -> str:
     return _quantities._with_note(_quantities._humanize_grocery_quantity(amount, p[1]), _note)
 
 
+def _spices_is_spice(item: str) -> bool:
+    from . import spices as _spices  # lazy: spices imports this module
+    return _spices.is_spice(item)
+
+
+def _holds_one_package(item: str, qty: str) -> bool:
+    """A ledger row that holds its line as one package until the last meal
+    naming it goes: a sealed package (quantities.package_unit), or a spice
+    in any package it comes in (_rack_quantity)."""
+    return bool(_quantities.package_unit(qty) or (_quantities.rack_package(qty) and _spices_is_spice(item)))
+
+
+def _plan_or_rack_amount(item: str, ledger: list[str], kept: str, short: str, edited: str) -> str | None:
+    """_plan_line_amount, except where the NAME decides how a ledger reads:
+    a spice is one package (_rack_quantity), and bread, berries, yogurt,
+    granola, butter, feta and baby spinach are counted in the unit the
+    store sells them in (_store_amount). The household's edit down and any
+    kept amount go on top of that reading, as they do on the plain one."""
+    meals = (_rack_quantity(item, ledger) or _store_amount(item, ledger)) if ledger else None
+    if meals is None:
+        return _plan_line_amount(ledger, kept, short, edited)
+    meals = _with_household_edit(meals, short, edited)
+    kept = (kept or "").strip()
+    if not kept:
+        return meals
+    return _quantities._sum_ledger_quantities([meals, kept]) or meals
+
+
 def _plan_line_amount(ledger: list[str], kept: str, short: str, edited: str) -> str | None:
     """
     A plan line's amount from its parts: the meals' ledger, with the
@@ -760,7 +983,10 @@ def _household_edit_columns(conn, row, new_quantity: str) -> dict | None:
             (household_id(), row["id"]),
         ).fetchall()
     ]
-    meals = _quantities._sum_ledger_quantities(ledger)
+    # Read the way the line is written (a spice's one jar, berries in
+    # pints), or an edit of "3 pints" down to 2 had no meals' amount in
+    # pints to be measured against.
+    meals = _plan_or_rack_amount(row["item"], ledger, "", "", "")
     typed = _quantities._parse_quantity(
         _quantities._split_quantity_note((new_quantity or "").strip())[0]
     )
@@ -1028,7 +1254,7 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
         # must still find it, so it is recounted but never deleted here.
         off_list = set_aside or list_removed
         live = live or off_list
-        if live and _quantities.package_unit(link["quantity"] or ""):
+        if live and _holds_one_package(grocery_row["item"], link["quantity"] or ""):
             still_wanted = conn.execute(
                 "SELECT COUNT(*) AS n FROM meal_plan_grocery_links "
                 f"WHERE household_id = ? AND grocery_item_id = ? AND id NOT IN {not_reversing}",
@@ -1051,6 +1277,13 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                         (new_qty, grocery_row["id"], household_id()),
                     )
                     trimmed_items.append(grocery_row["item"])
+            elif still_wanted and grocery_row["source_weekly_plan_id"] is not None and (
+                _spices_is_spice(grocery_row["item"]) or _store_kind(grocery_row["item"])
+            ):
+                # A spice's box going while a measured pinch stays, or a tub
+                # of yogurt while the cups stay: the line reads what is left
+                # (_plan_or_rack_amount), not the package.
+                _recompute_plan_line_from_ledger(grocery_row["id"], conn=conn, skip_link_ids=reversing_ids)
         elif live:
             is_standing_want = grocery_row["source_weekly_plan_id"] is None
             other_rows = conn.execute(
@@ -1059,8 +1292,8 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                 (household_id(), link["grocery_item_id"], *reversing_ids),
             ).fetchall()
             other_qtys = [row["quantity"] or "" for row in other_rows]
-            summed = None if is_standing_want else _plan_line_amount(
-                other_qtys, kept, grocery_row["short_amount"], grocery_row["edited_to"])
+            summed = None if is_standing_want else _plan_or_rack_amount(
+                grocery_row["item"], other_qtys, kept, grocery_row["short_amount"], grocery_row["edited_to"])
             if summed is not None:
                 # Fully accounted for by the ledger (and any kept amount) —
                 # recompute rather than subtract (see the docstring above).
@@ -1133,7 +1366,9 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
     return {"removed_items": removed_items, "trimmed_items": trimmed_items}
 
 
-def _recompute_plan_line_from_ledger(item_id: int, conn=None, only_if_edited_down: bool = False) -> None:
+def _recompute_plan_line_from_ledger(
+    item_id: int, conn=None, only_if_edited_down: bool = False, skip_link_ids: list[int] | None = None,
+) -> None:
     """
     Put a plan-owned grocery line back to what its whole ledger adds up
     to — the recompute half of _reverse_meal_grocery_contributions, run
@@ -1159,7 +1394,7 @@ def _recompute_plan_line_from_ledger(item_id: int, conn=None, only_if_edited_dow
     if own_conn:
         conn = get_conn()
     row = conn.execute(
-        "SELECT id, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to "
+        "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to "
         "FROM grocery_items WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
@@ -1174,15 +1409,17 @@ def _recompute_plan_line_from_ledger(item_id: int, conn=None, only_if_edited_dow
         if own_conn:
             conn.close()
         return
+    skip = set(skip_link_ids or ())
     qtys = [
         r["quantity"] or "" for r in conn.execute(
-            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? ORDER BY id",
+            "SELECT id, quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? ORDER BY id",
             (household_id(), item_id),
         ).fetchall()
+        if r["id"] not in skip
     ]
     # A kept leftover on the line is part of what it says (see
     # keep_carried_over_item), and so is the household's edit down.
-    summed = _plan_line_amount(qtys, row["kept_amount"], row["short_amount"], row["edited_to"])
+    summed = _plan_or_rack_amount(row["item"], qtys, row["kept_amount"], row["short_amount"], row["edited_to"])
     if summed:
         new_qty = _quantities._with_note(summed, _quantities._quantity_note(row["quantity"] or ""))
         if new_qty != (row["quantity"] or ""):

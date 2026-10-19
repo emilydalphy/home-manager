@@ -1644,6 +1644,82 @@ def _table_lookup(item: str) -> str | None:
 _COUNTED_PACK_ITEMS = {"eggs": _quantities._EGGS_TO_EACH, "garlic": _quantities._GARLIC_TO_CLOVE}
 
 
+# The most ONE pot of a dish takes of an aromatic, however many plates it
+# is scaled to (Loop Board, realistic week amounts, 2026-10-19: one Mon–Wed
+# Garlic Shrimp batch asked for 5 bunches of parsley, and the week for 6
+# heads of garlic and 12 lemons). Fresh herbs, garlic and citrus season a
+# pot; they don't grow with the plates the way shrimp does. A PER-INGREDIENT
+# CEILING, not sub-linear scaling: it never touches an amount the recipe
+# wrote for its own table (a pesto's 3 bunches stays 3), never changes a
+# dish scaled down, and is one number per thing that can be argued with.
+# (unit the share is counted in, name words, ceiling).
+_HERB_WORDS = frozenset({
+    "basil", "cilantro", "coriander", "parsley", "mint", "dill", "chive", "chives",
+    "rosemary", "thyme", "sage", "tarragon", "oregano", "lemongrass",
+})
+_AROMATIC_CEILINGS = (
+    ("bunch", _HERB_WORDS, 2.0),             # a bunch or two a pot
+    ("clove", frozenset({"garlic"}), 10.0),  # a head of garlic
+)
+# Not lemons or limes: lemonade or lemon bars made three times over really
+# do want three times the lemons (review, 2026-10-19).
+
+
+def _aromatic_ceiling(item: str, unit: str | None) -> float | None:
+    """The per-dish ceiling for this ingredient in `unit`, or None."""
+    if _spices.is_spice(item):
+        return None  # dried oregano is the rack's
+    words = re.findall(r"[a-z]+", _clean_item(item))
+    if not words:
+        return None
+    for ceiling_unit, names, ceiling in _AROMATIC_CEILINGS:
+        if unit == ceiling_unit and words[-1] in names:
+            return ceiling
+    return None
+
+
+def _capped_share(item: str, amount: float, factor: float, batch: float, unit: str | None) -> float:
+    """
+    A meal's share with the aromatic ceiling on its BATCH multiplier only.
+    `factor` is everything (headcount, the recipe's own table, the batch);
+    `batch` is the part of it that is cooking extra nights in one pot. The
+    pot for tonight's table — eight eaters off a recipe for four want its
+    12 cloves — is never capped; only the extra nights stop at the ceiling
+    (review, 2026-10-19: a normal 8-eater week lost a head of garlic).
+    """
+    scaled = amount * factor
+    ceiling = _aromatic_ceiling(item, unit)
+    if ceiling is None or batch <= 1:
+        return scaled
+    return min(scaled, max(scaled / batch, ceiling))
+
+
+# Words that say WHICH product to pick up — a cut, a kind — riding on a
+# recipe's quantity: "12 oz, boneless, skinless" (Loop Board, realistic
+# week amounts, 2026-10-19: "descriptors go in the name or a note, never
+# the quantity"). The list has no note of its own, so they move into the
+# NAME, where a shopper reads which pack to take: "Boneless skinless
+# chicken thighs · 12 oz". Size and state words (large, frozen…) stay the
+# quantity's note, as quantities._DESCRIPTOR_WORDS has always kept them.
+_NAME_WORDS_IN_QTY = ("boneless", "skinless", "unsalted", "unsweetened", "seedless")
+
+
+def _name_takes_descriptors(item: str, note: str) -> tuple[str, str]:
+    """(name, note) with the product words of `note` moved into the name."""
+    parts = [p.strip() for p in (note or "").split(",") if p.strip()]
+    words = [p for p in parts if p.lower() in _NAME_WORDS_IN_QTY]
+    if not words:
+        return item, note
+    rest = ", ".join(p for p in parts if p.lower() not in _NAME_WORDS_IN_QTY)
+    have = (item or "").lower()
+    new = [w.lower() for w in words if not re.search(rf"\b{w.lower()}\b", have)]
+    if not new:
+        return item, rest
+    body = item[:1].lower() + item[1:] if item[:1].isupper() and not item[:2].isupper() else item
+    name = " ".join(new + [body])
+    return name[:1].upper() + name[1:], rest
+
+
 def _counted_pack_share(item: str, core_qty: str, default_servings: int | None) -> tuple[float, str] | None:
     """
     What ONE meal of this recipe, at the recipe's own table, uses of a
@@ -4387,7 +4463,12 @@ class WeekGroceryBuffer:
             # PLAN-owned line is re-read; a household's standing want never
             # takes a different-unit plan share in the first place
             # (_merge_target), so its own amount is never re-rounded.
-            if add_result["merged"] and (
+            if _grocery._store_kind(line["item"]):
+                # Bread, berries, yogurt…: the line is written in the
+                # store's unit, read off the whole ledger once
+                # (grocery._store_amount) — merged or new alike.
+                _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
+            elif add_result["merged"] and (
                 _quantities._pack_group(unit)
                 or (_quantities._measurable_unit(unit) and not add_result.get("units_reconciled", True))
             ):
@@ -4593,6 +4674,9 @@ def _add_recipe_ingredients_for_entries(
     # not, and asking attendance again per ingredient would be a
     # connection per ingredient per meal.
     count_scale_for_entry: dict[int, float] = {}
+    # The batch part of each factor, kept apart for the aromatic ceiling
+    # (_capped_share), which caps only that part.
+    batch_part: dict[int, float] = {}
     contributing_ids: list[int] = []
     chains_by_plan: dict[int, dict] = {}
     # "Bring over from last week" (Emily, 2026-09-25): a meal brought over
@@ -4685,6 +4769,7 @@ def _add_recipe_ingredients_for_entries(
                     # three. Only the RECIPE anchor is capped for a count,
                     # never this.
                     batch_factor = batch["servings"] / batch["cook_eaters"]
+                    batch_part[entry_id] = batch_factor
                     scale *= batch_factor
                     count_scale *= batch_factor
         contributing_ids.append(entry_id)
@@ -4753,8 +4838,15 @@ def _add_recipe_ingredients_for_entries(
         # come apart the same on both sides of the list. _parse_quantity
         # strips a prep descriptor ("3, diced") itself.
         core, note = _quantities._split_quantity_note(raw_qty.strip())
+        named_note = note
+        line_name, note = _name_takes_descriptors(ing["item"], note)
         pack_share = _counted_pack_share(ing["item"], core, default_servings)
         package = _quantities.package_unit(raw_qty)
+        if not package and not pack_share and _quantities.rack_package(core) and _spices.is_spice(ing["item"]):
+            # A spice's "1 box" is the rack's box, bought once for the week
+            # however many snacks pinch from it (grocery._rack_quantity):
+            # the package path, not a per-portion sum of boxes.
+            package = _quantities.rack_package(core)[1]
         # A BARE COUNT of a whole thing — three tomatoes, two lemons, one
         # apple — is the one shape where the shopping amount and the
         # cooking amount are the same number, and the one the household
@@ -4784,9 +4876,9 @@ def _add_recipe_ingredients_for_entries(
         parsed_core = _quantities._parse_quantity(core)
         factor_for_entry = count_scale_for_entry if bare_count else scale_for_entry
         # Every meal in this group added together — the same sum the
-        # buffer arrives at one share at a time, so the kitchen is asked
-        # about the week's amount and not one night's.
-        week_scale = sum(factor_for_entry[e] for e in contributing_ids)
+        # buffer arrives at one share at a time (aromatic ceiling and all,
+        # _capped_share), so the kitchen is asked about the week's amount
+        # and not one night's.
         # What this whole recipe-week claims on the ingredient, written the
         # way the branches below write it into the buffer — so the kitchen
         # is asked about the amount that would actually be bought. A
@@ -4804,11 +4896,17 @@ def _add_recipe_ingredients_for_entries(
         # spice goes to the list's own spice section (spices.py) rather
         # than the aisles. One line to reverse if it reads as noise.
         if pack_share:
-            need = (pack_share[0] * week_scale, pack_share[1])
+            need = (sum(
+                _capped_share(ing["item"], pack_share[0], factor_for_entry[e], batch_part.get(e, 1.0), pack_share[1])
+                for e in contributing_ids
+            ), pack_share[1])
         elif package:
             need = _quantities._parse_quantity(raw_qty)
         elif parsed_core:
-            need = (parsed_core[0] * week_scale, parsed_core[1])
+            need = (sum(
+                _capped_share(ing["item"], parsed_core[0], factor_for_entry[e], batch_part.get(e, 1.0), parsed_core[1])
+                for e in contributing_ids
+            ), parsed_core[1])
         else:
             need = None
         if stock.covers(ing["item"], need):
@@ -4824,16 +4922,20 @@ def _add_recipe_ingredients_for_entries(
             share, small_unit = pack_share
             for entry_id in contributing_ids:
                 buffer.add(
-                    entry_id, ing["item"], category,
-                    share * factor_for_entry[entry_id], small_unit, note,
+                    entry_id, line_name, category,
+                    _capped_share(ing["item"], share, factor_for_entry[entry_id], batch_part.get(entry_id, 1.0), small_unit), small_unit, note,
                 )
         elif package:
+            if note != named_note:
+                raw_qty = _quantities._with_note(core, note)
             add_result = _grocery.add_grocery_item(
-                ing["item"], quantity=raw_qty, category=category, added_by="ai",
+                line_name, quantity=raw_qty, category=category, added_by="ai",
                 source_weekly_plan_id=weekly_plan_id, quantity_mode="max", conn=conn,
             )
             for entry_id in contributing_ids:
-                _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn)
+                _record_grocery_link(entry_id, line_name, add_result["item_id"], raw_qty, conn=conn)
+            if _grocery._store_kind(line_name):
+                _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=conn)
         else:
             parsed = parsed_core
             if parsed:
@@ -4842,8 +4944,9 @@ def _add_recipe_ingredients_for_entries(
                 # added its claim on the same item.
                 for entry_id in contributing_ids:
                     buffer.add(
-                        entry_id, ing["item"], category,
-                        parsed[0] * factor_for_entry[entry_id], parsed[1], note,
+                        entry_id, line_name, category,
+                        _capped_share(ing["item"], parsed[0], factor_for_entry[entry_id], batch_part.get(entry_id, 1.0), parsed[1]),
+                        parsed[1], note,
                     )
             else:
                 # "A bunch", "to taste", blank. No number to scale or sum,

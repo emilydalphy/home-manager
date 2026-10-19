@@ -247,6 +247,28 @@ _CONTAINER_UNIT_SINGULARS = {plural: singular for singular, plural in _CONTAINER
 # side that only ever costs an extra line rather than a missing dinner.
 _PACKAGE_UNITS = {"bag", "bottle", "container", "jar", "tub"}
 
+# The words a SPICE-RACK thing (spices.is_spice) is bought in. Wider than
+# _PACKAGE_UNITS on purpose, because the question is asked of the name as
+# well as the word: a box of pasta is one dinner's, a box of salt is the
+# rack's for months. A recipe's shopping qty for flaky salt is "1 box" —
+# the box, not the pinch the dish uses — so seven snacks of one recipe
+# summed to "7 boxes" (Loop Board, Tester Home plan 72). See
+# grocery._rack_quantity, the one rule that reads this.
+_RACK_PACKAGE_WORDS = {
+    "box", "container", "jar", "bag", "bottle", "tin", "shaker", "canister",
+    "packet", "pouch", "tube", "grinder", "pack", "package", "can", "carton", "tub",
+}
+
+
+def rack_package(qty: str) -> tuple[float, str] | None:
+    """(count, unit) when `qty` names a package a spice comes in ("1 box",
+    "2 jars"), else None — a measured amount, a bare count, freeform text."""
+    parsed = _parse_quantity(qty or "")
+    if not parsed or not parsed[1]:
+        return None
+    word = _split_package_size(parsed[1])[0].rpartition(" ")[2]
+    return parsed if word in _RACK_PACKAGE_WORDS or word[:-1] in _RACK_PACKAGE_WORDS else None
+
 
 def _normalize_container_word(unit_str: str) -> str:
     """Singularize a trailing container word ("lb bags" -> "lb bag") so a
@@ -293,6 +315,18 @@ _DESCRIPTOR_WORDS = {
     # onions — but they never touch the number, so "1 large" and "1/2"
     # still add up to a single count the way that table intends.
     "large", "extra-large", "medium", "small", "whole", "jumbo", "xl",
+}
+
+
+# How the cook prepares it, written after the unit — "1 cup crumbled",
+# "2 cups chopped". Neither the product nor the amount bought: left in, it
+# read as the unit "cup crumbled", which adds up with nothing ("Feta · 12 oz
+# + 1 cup crumbled", Loop Board, realistic week amounts, 2026-10-19). After
+# a comma it was already dropped (_strip_prep_descriptor); this is the same
+# thing without the comma.
+_PREP_WORDS = {
+    "crumbled", "chopped", "shredded", "grated", "diced", "sliced", "minced",
+    "cubed", "halved", "quartered", "torn", "julienned", "drained", "rinsed",
 }
 
 
@@ -364,6 +398,8 @@ def _split_quantity_note(qty: str) -> tuple[str, str]:
         if token.strip().lower() in _DESCRIPTOR_WORDS:
             notes.append(token.strip().lower())
             continue
+        if token.strip().lower() in _PREP_WORDS:
+            continue  # how it is cut, not what is bought: dropped
         kept.append(token)
     core = re.sub(r"\s+", " ", "".join(kept)).strip().strip(" ,")
     return core, _merge_notes(notes)

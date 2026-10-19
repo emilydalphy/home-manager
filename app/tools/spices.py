@@ -41,6 +41,7 @@ counts, no jars to enter: the rack is inferred from what came home.
 """
 from __future__ import annotations
 
+import re
 from datetime import date, timedelta
 
 from ..db import get_conn
@@ -115,7 +116,41 @@ _DRIED_WORDS = {"dried", "dry"}
 def is_spice(name: str) -> bool:
     """
     Whether a recipe ingredient belongs in the "Spices this week" section
-    rather than a store aisle. Name-based, from the list above, tried
+    rather than a store aisle — _is_spice_name on the name, and failing
+    that on the name without what a recipe hangs on it: "Paprika (sweet)",
+    "Red pepper flakes, optional", "Paprika, for garnish" (plain "Paprika"
+    sat in Spices while "Paprika (sweet)" went to the aisles — Loop Board,
+    realistic week amounts, 2026-10-19). "Salt and black pepper" is two
+    rack things, so it is one too.
+    """
+    raw = " ".join((name or "").strip().lower().split())
+    if _is_spice_name(raw):
+        return True
+    # Fresh anywhere is bought fresh: "Oregano (fresh)", "Bay leaves (fresh)".
+    if "fresh" in re.findall(r"[a-z]+", raw):
+        return False
+    # "Basil (dried)" keeps its "dried" in the opened reading. The reading
+    # WITHOUT the brackets is only for brackets that merely describe it
+    # ("Paprika (smoked, sweet)"); "Pepper (bell)" and "Cloves (garlic)"
+    # name a different thing there (review, 2026-10-19).
+    opened = raw.replace("(", " ").replace(")", " ")
+    inside = re.findall(r"[a-z]+", " ".join(_PAREN_RE.findall(raw)))
+    candidates = [opened, opened.split(",", 1)[0]]
+    if all(w in _DESCRIPTORS or w in _DRIED_WORDS for w in inside):
+        candidates.append(_PAREN_RE.sub(" ", raw).split(",", 1)[0].strip())
+    if any(c != raw and _is_spice_name(c) for c in candidates):
+        return True
+    bare = candidates[-1] if len(candidates) == 3 else raw.split(",", 1)[0]
+    halves = [h for h in re.split(r"\s+(?:and|&)\s+", bare) if h.strip()]
+    return len(halves) > 1 and all(_is_spice_name(h) for h in halves)
+
+
+_PAREN_RE = re.compile(r"\([^()]*\)")
+
+
+def _is_spice_name(name: str) -> bool:
+    """
+    Name-based, from the list above, tried
     from the most specific reading to the least:
 
       1. the whole name ("ground ginger", "black pepper");
