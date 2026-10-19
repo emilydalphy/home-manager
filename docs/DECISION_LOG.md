@@ -554,6 +554,14 @@ why*, not duplicating the diff.
   (`recipe_import.one_amount`) stores qty "6 tbsp" for the grocery list and
   `qty_as_written` for the cook card, which scales it as text. Same unit
   sums as a fraction ("1 1/3 cups"); two families are left as written.
+- **Today's "Shall I put … together?" card answers itself when the dock is
+  taken** (2026-10-19; branch `overnight/plan-next-week-button`; tests
+  `tests/test_today_nudge_card_button.py`). With a featured move ("Go
+  shopping") owning the dock, the offer card showed with no way to answer it
+  on Today. Emily's Option A (2026-10-18): the card carries an outline
+  `.btn-secondary` "Plan next week" ("Plan this week" for the current
+  period), hidden whenever the dock draws `#plan-nudge-go`, so a free dock is
+  still the one answer. Both call `startPlanningFromNudge`, so they can't drift.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

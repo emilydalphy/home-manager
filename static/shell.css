@@ -3921,6 +3921,14 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   font-size: 16px;
   letter-spacing: -0.02em;
 }
+/* The offer card's own answer, shown only while another action owns the
+   dock (renderTodayDock). The theme's outline secondary, sized to the 44px
+   target and sitting under the copy rather than stretched across it. */
+.plan-nudge-card-go {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: 2px;
+}
 .plan-nudge-dismissed { border-top-color: var(--hairline); }
 .plan-nudge-link {
   background: none;
