@@ -185,6 +185,14 @@ _VERBATIM_ALIASES: dict[str, set[str]] = {
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
 _ALLERGEN_ALIASES["peanuts"] = _ALLERGEN_ALIASES["peanut"]
 _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
+# A milk allergy is a dairy allergy: cheese, butter and yogurt are made of
+# milk. Before this a "milk allergy" (or "lactose intolerant") restriction
+# matched the literal word "milk" and let a cheddar snack and a yogurt
+# breakfast straight through. "Dairy" already lists "milk", so this only
+# widens the restriction written the other way round; an excepted "oat
+# milk is fine" still lifts milk out as it did (see _match_terms).
+_ALLERGEN_ALIASES["milk"] = _ALLERGEN_ALIASES["dairy"]
+_ALLERGEN_ALIASES["lactose"] = _ALLERGEN_ALIASES["dairy"]
 
 # The table as it stood before the 2026-09-30 widening, kept for ONE
 # reader: plan_quality's title rule builds its "known food word"

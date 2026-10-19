@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A milk allergy is the dairy family** (2026-10-19; branch
+  `overnight/milk-allergy-is-dairy`; tests in `tests/test_allergy_safety.py`).
+  A "milk allergy" / "lactose intolerant" restriction matched the literal word
+  "milk", so cheddar, yogurt and butter passed every gate (found by the review
+  of the snack-variety pool, which offered Greek yogurt and cheddar to a
+  milk-allergic adult). `_ALLERGEN_ALIASES["milk"]` and `["lactose"]` now
+  point at the dairy family. A two-word phrase ("no cow milk") stays literal,
+  and "oat milk is fine" still lifts milk out, as before.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

@@ -971,6 +971,26 @@ class TestCompoundFoodsThatAreNotTheAllergen:
 
         assert tools.check_plan_conflicts(self._plan_with("Soda Bread"))["conflicts"]
 
+    @pytest.mark.parametrize("restriction", ["milk allergy", "lactose intolerant", "allergic to milk"])
+    @pytest.mark.parametrize("dish, item", [
+        ("Apple Slices with Cheddar", "cheddar"),
+        ("Greek Yogurt with Berries", "greek yogurt"),
+        ("Garlic Butter Toast", "butter"),
+    ])
+    def test_a_milk_restriction_holds_back_what_milk_is_made_into(self, kitchen, restriction, dish, item):
+        """A "milk allergy" is the dairy family, not the word "milk": it used
+        to let cheddar and yogurt through because neither says milk."""
+        tools.add_recipe(dish, ingredients=[{"item": item, "qty": "1 cup"}])
+        tools.set_member_dietary_restrictions("Emily", [restriction])
+
+        assert tools.check_plan_conflicts(self._plan_with(dish))["conflicts"]
+
+    def test_a_milk_allergy_still_lets_coconut_milk_through(self, kitchen):
+        tools.add_recipe("Thai Curry", ingredients=[{"item": "coconut milk", "qty": "400ml"}])
+        tools.set_member_dietary_restrictions("Emily", ["milk allergy"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Thai Curry"))["conflicts"] == []
+
     def test_coconut_milk_is_not_dairy(self, kitchen):
         tools.add_recipe("Thai Curry", ingredients=[{"item": "coconut milk", "qty": "400ml"}])
         tools.set_member_dietary_restrictions("Emily", ["dairy free"])
