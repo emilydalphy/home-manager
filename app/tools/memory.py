@@ -12,6 +12,7 @@ from . import household as _household
 from . import preferences as _preferences
 from . import primary_member as _primary_member
 from . import rhythm as _rhythm
+from . import snack_variety as _snack_variety
 # time_caps imports nothing from the app (that is its whole point), so
 # reading its default here cannot make a cycle — and it means the default
 # this dict falls back to and the default minutes_cap falls back to are
@@ -412,7 +413,18 @@ def get_household_memory() -> dict:
         # How many DIFFERENT snack dishes a week (2026-09-27) — the "Snacks"
         # stepper under Different dishes a week; the draft folds to it
         # (meal_variety.enforce_snack_dishes). See schema.sql.
-        "snack_dishes_per_week": prefs["snack_dishes_per_week"] if prefs else 2,
+        # Read as an answer only once someone set it (2026-10-19, Loop Board
+        # "not the same orange snack 7 days running"): the column's default 2
+        # at two a day is every snack on every day, so an unset count reads
+        # as enough dishes for no snack on more than three days
+        # (snack_variety.default_snack_dishes) — the stepper shows that, and
+        # the draft folds to it.
+        "snack_dishes_per_week": (
+            prefs["snack_dishes_per_week"] if prefs and prefs["snack_dishes_per_week_set"]
+            else _snack_variety.default_snack_dishes(prefs["snacks_per_day"] if prefs else 2)
+            or (prefs["snack_dishes_per_week"] if prefs else 2)
+        ),
+        "snack_dishes_per_week_set": bool(prefs["snack_dishes_per_week_set"]) if prefs else False,
         # Whether the three per-week counts are the household's answers
         # (Emily, 2026-09-21) — what lets generation treat them as targets
         # to reach, not only ceilings. See schema.sql on meal_counts_set.
@@ -773,6 +785,10 @@ def edit_preference(field: str, value) -> dict:
                 f"ON CONFLICT(household_id) DO UPDATE SET {column} = excluded.{column}, updated_at = datetime('now')",
                 (household_id(), stored),
             )
+            if field == "snack_dishes_per_week":
+                # The stepper or chat said a number: it is theirs now.
+                conn.execute("UPDATE meal_preferences SET snack_dishes_per_week_set = 1 WHERE household_id = ?",
+                             (household_id(),))
         # complete_plates is stored as 0/1 but is a yes/no everywhere else
         # (get_household_memory, the toggle, the pass) — hand it back as one
         # rather than making every caller remember which side of the column
