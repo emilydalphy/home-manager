@@ -518,7 +518,34 @@ def _ask_options(context: dict, role: str = "protein") -> list[dict]:
     return []
 
 
-def _clean_options(raw: list, exclude: str) -> list[dict]:
+def _offerable(options: list[dict]) -> list[dict] | None:
+    """The options the household may be shown, by swap_in_place.offer_gate
+    — or None when the check could not run, which the caller treats as the
+    whole list unchecked. Run on a fresh answer AND on a cached one: a
+    Won't-eat food added after the sheet first opened must not come back
+    from the cache for the rest of its 30 minutes (review, 2026-10-19)."""
+    _swap = _swap_mod()
+    # Read once for the whole list, not per option.
+    avoidances = _swap.offer_avoidances()
+    if avoidances is None:
+        return None
+    out = []
+    for o in options:
+        why = _swap.offer_gate(o["name"], note=o.get("note") or "", avoidances=avoidances)
+        if why == _swap.CHECK_FAILED:
+            return None
+        if why:
+            logger.warning("plate part option %r dropped: %s", o["name"], why)
+            continue
+        out.append(o)
+    return out
+
+
+def _clean_options(raw: list, exclude: str) -> list[dict] | None:
+    """The model's options, tidied and checked — None when the household
+    check could not run (see _offerable). The check runs BEFORE the four
+    are counted, so a dropped one makes room for the next; fewer left is
+    fewer shown, never one put back."""
     out = []
     seen = set()
     for o in raw or []:
@@ -536,9 +563,11 @@ def _clean_options(raw: list, exclude: str) -> list[dict]:
             continue
         seen.add(name.lower())
         out.append({"name": name[:1].upper() + name[1:], "note": (o.get("note") or "").strip()[:40]})
-        if len(out) >= MAX_OPTIONS:
-            break
-    return out
+    # The prompt hands the model must_not_contain and dislikes; this is what
+    # makes it so. "Ground pork" with the note "excluded, no pork" reached a
+    # no-pork house's sheet (2026-10-19).
+    checked = _offerable(out)
+    return None if checked is None else checked[:MAX_OPTIONS]
 
 
 def part_options(weekly_plan_id: int, entry_id: int, role: str = "protein", asker=None) -> dict:
@@ -576,8 +605,13 @@ def part_options(weekly_plan_id: int, entry_id: int, role: str = "protein", aske
     key = (household_id(), entry_id, role)
     cached = _OPTIONS_CACHE.get(key)
     if cached and cached["meal"] == entry["meal"] and time.time() - cached["at"] < _OPTIONS_TTL:
+        options = _offerable(cached["options"])
+        if options is None:
+            return {"entry_id": entry_id, "meal": entry["meal"], "role": role,
+                    "current": cached["current"], "options": [], "options_unavailable": True}
+        cached["options"] = options
         return {"entry_id": entry_id, "meal": entry["meal"], "role": role,
-                "current": cached["current"], "options": cached["options"],
+                "current": cached["current"], "options": options,
                 "options_unavailable": cached.get("unavailable", False)}
     context = _options_context(entry, recipe, role, current)
     ask = asker or (lambda ctx: _ask_options(ctx, role))
@@ -592,6 +626,11 @@ def part_options(weekly_plan_id: int, entry_id: int, role: str = "protein", aske
         raw = []
         unavailable = True
     options = _clean_options(raw, current)
+    if options is None:
+        # The household check couldn't run: nothing unchecked is shown, and
+        # nothing is cached, so the next open asks again.
+        return {"entry_id": entry_id, "meal": entry["meal"], "role": role, "current": current,
+                "options": [], "options_unavailable": True}
     _OPTIONS_CACHE[key] = {"at": time.time(), "meal": entry["meal"], "current": current,
                             "options": options, "unavailable": unavailable}
     return {"entry_id": entry_id, "meal": entry["meal"], "role": role, "current": current,

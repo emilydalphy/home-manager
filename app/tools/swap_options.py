@@ -310,8 +310,42 @@ def _gate(pick: dict, entry: dict) -> str | None:
     return _swap.pick_gate(pick, entry)
 
 
+def _offered_ingredients(pick: dict) -> list[dict]:
+    from . import recipes as _recipes
+    if _saved_dish(pick.get("meal_name") or ""):
+        return _recipes.saved_ingredients(pick["meal_name"])
+    return pick.get("ingredients") or []
+
+
+def _offer_why(pick: dict, avoidances: list[dict]) -> str | None:
+    """swap_in_place.offer_gate for one pick: judged on the saved recipe's
+    list for a dish the house already has, the way _gate is — the short
+    list is not what gets cooked."""
+    return _swap.offer_gate(pick["meal_name"], ingredients=_offered_ingredients(pick),
+                            note=pick.get("reason") or "", avoidances=avoidances)
+
+
+def _still_offerable(options: list[dict]) -> list[dict] | None:
+    """A cached set, checked again before it is served: a Won't-eat food or
+    an allergy added since the sheet first opened takes its pick off
+    (review, 2026-10-19). None when the check can't run."""
+    avoidances = _swap.offer_avoidances()
+    if avoidances is None:
+        return None
+    out = []
+    for pick in options:
+        why = _offer_why(pick, avoidances)
+        if why == _swap.CHECK_FAILED:
+            return None
+        if why:
+            logger.warning("swap_options dropped cached %r: %s", pick["meal_name"], why)
+            continue
+        out.append(pick)
+    return out
+
+
 def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = None,
-           weekly_plan_id: int | None = None) -> list[dict]:
+           weekly_plan_id: int | None = None) -> list[dict] | None:
     """The picks the household may actually have, in the order the model
     gave them, at most OPTION_COUNT, none repeating `avoid` or each other.
     For a whole dish (`group`, more than one day) every day's table is
@@ -320,6 +354,11 @@ def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = 
     days = group if group and len(group) > 1 else [entry]
     out: list[dict] = []
     seen = {a.strip().lower() for a in avoid}
+    # Read once for the whole set, not per pick. None (or a check that
+    # can't run) is the whole set unchecked: answered None, shown nothing.
+    avoidances = _swap.offer_avoidances()
+    if avoidances is None:
+        return None
     for pick in raw or []:
         if not isinstance(pick, dict):
             continue
@@ -328,6 +367,13 @@ def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = 
             continue
         pick = dict(pick, meal_name=name, ingredients=_as_ingredient_rows(pick.get("ingredients")))
         why = _gate_all(pick, days)
+        # Stricter than the tap's gate, on purpose (swap_in_place.offer_gate):
+        # a pick is the app's own suggestion, so the Won't eat list keeps it
+        # off the sheet, and so does a reason that says it's excluded.
+        if not why:
+            why = _offer_why(pick, avoidances)
+            if why == _swap.CHECK_FAILED:
+                return None
         if not why and len(days) > 1:
             why = _swap.cap_gate(weekly_plan_id, pick, days)
         if why:
@@ -430,9 +476,15 @@ def _swap_options_locked(weekly_plan_id: int, entry: dict, avoid: list[str] | No
     # round: the cache holds for the same set of days only.
     if (cached and cached["meal"] == entry["meal"] and time.time() - cached["at"] < _OPTIONS_TTL
             and cached.get("group", (entry_id,)) == _group_key(group)):
-        return {"entry_id": entry_id, "meal": entry["meal"],
-                "options": [_option_view(i, p) for i, p in enumerate(cached["options"])],
-                "options_unavailable": cached["unavailable"]}
+        options = _still_offerable(cached["options"])
+        if options is not None:
+            # Written back, so the index a tap sends still names the pick
+            # the sheet drew (choose_swap_option reads this list).
+            cached["options"] = options
+            return {"entry_id": entry_id, "meal": entry["meal"],
+                    "options": [_option_view(i, p) for i, p in enumerate(options)],
+                    "options_unavailable": cached["unavailable"]}
+        return {"entry_id": entry_id, "meal": entry["meal"], "options": [], "options_unavailable": True}
     tried = _swap._dedup([entry["meal"]] + list(avoid or []))
     if len(group) > 1:
         context = _swap.build_dish_swap_context(weekly_plan_id, group, tried)
@@ -458,6 +510,10 @@ def _swap_options_locked(weekly_plan_id: int, entry: dict, avoid: list[str] | No
         raw = []
         unavailable = True
     options = _gated(entry, raw, tried, group, weekly_plan_id)
+    if options is None:
+        # The household check couldn't run: nothing unchecked is shown and
+        # nothing cached, so the next open asks again.
+        return {"entry_id": entry_id, "meal": entry["meal"], "options": [], "options_unavailable": True}
     # Next to agent's own per-call line ("llm call swap_options took …"):
     # the whole ask, gate included, and how many picks survived it.
     logger.info("swap_options for entry %s: %d of %d picks kept in %.2fs",

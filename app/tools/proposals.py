@@ -42,6 +42,7 @@ import secrets
 import time
 
 from ._shared import household_id
+from . import allergen_gate as _allergen_gate
 from . import recipes as _recipes
 from . import swap_in_place as _swap
 from . import weekly_plan as _weekly_plan
@@ -146,6 +147,7 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
     if not plan.get("weekly_plan_id"):
         return {"error": "No plan by that id for this household."}
     out_rows = []
+    avoidances = _swap.offer_avoidances()
     for raw in (rows or [])[:_MAX_ROWS]:
         if not isinstance(raw, dict):
             continue
@@ -184,6 +186,15 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
                 clash = _swap._hard_clash(c)
                 if clash:
                     unsafe.append(_clash_line(c["meal_name"], clash))
+                    continue
+                # The option lists' own gate (swap_in_place.offer_gate): the
+                # Won't eat list and a reason that says it's excluded keep a
+                # candidate off the card too — "Pulled Pork Tacos" to a
+                # no-pork house (review, 2026-10-19) — unless the household
+                # named that food in this very message.
+                why = _offer_why(c, avoidances)
+                if why:
+                    unsafe.append(f"{c['meal_name']} {why}")
                 else:
                     safe.append(c)
             shoppable = safe
@@ -229,6 +240,20 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
     }
     bucket[pid] = proposal
     return public_view(proposal)
+
+
+def _offer_why(cand: dict, avoidances: list[dict] | None) -> str | None:
+    """swap_in_place.offer_gate for one card candidate, with the person's
+    own words this turn as `asked`. Unreadable avoidances are a refusal,
+    never an unchecked candidate."""
+    if avoidances is None:
+        return "couldn't be checked against what this house won't eat"
+    why = _swap.offer_gate(cand["meal_name"], ingredients=cand.get("ingredients"),
+                           note=cand.get("reason") or "", avoidances=avoidances,
+                           asked=_allergen_gate.chat_turn_message(), saved_fallback=True)
+    if why == _swap.CHECK_FAILED:
+        return "couldn't be checked against what this house won't eat"
+    return why
 
 
 def _clash_line(meal_name: str, clash: list[dict]) -> str:
@@ -320,7 +345,7 @@ def another_for_row(proposal_id: str, row_index: int, picker=None) -> dict:
             logger.warning("proposal another came back with no dish (attempt %d)", attempt)
             break
         offered.append(cand["meal_name"])
-        why = _swap.pick_gate(cand, entry)
+        why = _swap.pick_gate(cand, entry) or _offer_why(cand, _swap.offer_avoidances())
         if why is None:
             row["candidates"] = (row["candidates"] + [cand])[-_MAX_CANDIDATES:]
             row["chosen"] = len(row["candidates"]) - 1

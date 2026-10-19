@@ -55,6 +55,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import re
 import uuid
 
 from ..db import get_conn
@@ -563,6 +564,112 @@ def _hard_clash(pick: dict) -> list[dict]:
         return [{"meal": pick.get("meal_name") or "", "severity": "hard", "member": None,
                  "restriction": "", "source": "check_failed", "matched": []}]
     return [h for h in hits if h.get("severity") == "hard"]
+
+
+# What a model writes on an option it knows the household can't have. The
+# card that brought this in (Loop Board, 2026-10-19): "Ground pork" offered
+# for a beef stir-fry with the note "excluded, no pork" — listed, flagged,
+# and shown. Only a note that says the option ITSELF is off counts: the word
+# leading the note as its verdict ("Excluded, no pork", "Not allowed here",
+# "(excluded)"), or said OF it ("this is off-limits", "but excluded"). A note
+# that only mentions the word stays (review, 2026-10-19): "not excluded",
+# "excluded the cilantro" (a verb, what the option leaves out), "nothing
+# off-limits here", "keeps clear of the excluded pork" — and so does "Emily
+# can't have dairy, so it's oat milk", a SAFE pick saying why it's safe.
+_FLAG_WORDS = r"(?:excluded|not\s+allowed|off[- ]limits|forbidden|not\s+permitted|on\s+the\s+never\s+list)"
+_SELF_FLAGGED_RES = (
+    # Leading the note (or after a colon or dash: "Pork — excluded") as its
+    # verdict, followed by nothing or a break — never by an object
+    # ("excluded the cilantro").
+    re.compile(r"(?:^\W*|[:—–]\s*|\s-\s*)" + _FLAG_WORDS + r"(?=\s*(?:$|[,.;:!)\-—–]|for\b|by\b|here\b|in\b|as\b|because\b))",
+               re.IGNORECASE),
+    re.compile(r"\(\s*" + _FLAG_WORDS + r"\b[^)]*\)", re.IGNORECASE),
+    # Said of the option: "this is off-limits", "but excluded".
+    re.compile(r"\b(?:is|it's|it’s|it\s+is|this\s+is|that's|that’s|which\s+is|but|though|yet)\s+"
+               + _FLAG_WORDS + r"\b", re.IGNORECASE),
+)
+
+
+def _self_flagged(note: str) -> bool:
+    note = (note or "").strip()
+    return bool(note) and any(r.search(note) for r in _SELF_FLAGGED_RES)
+
+
+# What offer_gate answers when the check itself could not run. A caller
+# treats it as "this whole list is unchecked": nothing shown, nothing
+# cached, the sheet told the AI side is down (options_unavailable) — never
+# a sheet of unchecked options, and never one traceback per option.
+CHECK_FAILED = "the exclusion check failed"
+
+
+def offer_avoidances() -> list[dict] | None:
+    """The household's avoidances, read ONCE for a whole option list; None
+    when they can't be read (the caller answers CHECK_FAILED for the list)."""
+    try:
+        return _coordination._avoidances()
+    except Exception:
+        logger.exception("Reading the household's avoidances failed; offering nothing unchecked")
+        return None
+
+
+def _asked_for(hit: dict, asked: str) -> bool:
+    """Whether the household's own words this turn named the food a
+    Won't-eat hit is about ("make it pork" with pork on the list): then
+    it's their ask, not the app's suggestion, and a dislike doesn't stop it."""
+    text = _coordination._fold(asked or "")
+    if not text:
+        return False
+    words = {(hit.get("restriction") or "").strip().lower(), (hit.get("matched_word") or "").strip().lower()}
+    return any(w and re.search(r"\b" + re.escape(_coordination._fold(w)) + r"\b", text) for w in words)
+
+
+def offer_gate(name: str, ingredients: list[dict] | None = None, note: str = "",
+               avoidances: list[dict] | None = None, asked: str = "",
+               saved_fallback: bool = False) -> str | None:
+    """
+    Why an option the AI offers must stay off the sheet, or None when it
+    may be shown — for every option list a sheet or card draws
+    (plate_parts' Change the protein/veg/carb, swap_options' three picks,
+    the chat change card's candidates and its Another). The prompt already
+    tells the model must_not_contain and dislikes; this is the code that
+    holds it to that, because a prompt instruction is a request.
+
+    Stricter than pick_gate on one point, deliberately: the household's
+    Won't eat list (dislikes — where "we don't eat pork" is saved,
+    memory.add_fact_from_chat) is a reason here. A dislike never refuses a
+    dish someone ASKED for (_hard_clash), but an option is the app's own
+    suggestion, and suggesting a food the house said it won't eat is the
+    one thing an option list must not do. `asked` is the household's own
+    words where there are some (a chat turn): a Won't-eat food they named
+    there is theirs to have. Never an allergy or hard fact — those have
+    their own override door (allergen_gate).
+
+    Same matcher as the draft's banner (coordination.check_meal_conflicts),
+    so a conditional rule's exception ("no cauliflower unless cauliflower
+    rice") is honoured the same way. A step-only hit is not a reason —
+    options carry no steps. `saved_fallback` judges a dish named with no
+    list on its saved recipe's, as _hard_clash does. Returns CHECK_FAILED
+    when the check could not run.
+    """
+    name = (name or "").strip()
+    if _self_flagged(note):
+        return "flagged as excluded by the model"
+    rows = _clean_ingredients(ingredients)
+    try:
+        if not rows and saved_fallback:
+            rows = _recipes.saved_ingredients(name)
+        hits = _coordination.check_meal_conflicts(name, ingredients=rows, avoidances=avoidances)
+    except Exception:
+        logger.exception("Exclusion check failed for an option; leaving the list off rather than guessing")
+        return CHECK_FAILED
+    for hit in hits:
+        if hit.get("steps_only"):
+            continue
+        if hit.get("severity") == "hard":
+            return f"clashes with {hit.get('restriction') or 'something this house can’t have'}"
+        if hit.get("source") == "dislike" and not _asked_for(hit, asked):
+            return f"is on the household's Won't eat list ({hit.get('restriction')})"
+    return None
 
 
 # ---------- the swap ----------

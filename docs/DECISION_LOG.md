@@ -226,6 +226,24 @@ why*, not duplicating the diff.
   whose reading never finished isn't marked empty); chosen URLs match loosely;
   the reader may open only the chosen sites and only a chosen page can lead;
   the read step is cut to fit the budget before it starts (+400 a step re-billed).
+- **An option the household can't have never reaches a sheet** (2026-10-19;
+  branch `overnight/excluded-options-filtered`; tests
+  `tests/test_excluded_options_filtered.py`). Change the protein offered
+  "Ground pork — excluded, no pork": the prompt said no, nothing in code did.
+  `swap_in_place.offer_gate` now drops, before the sheet counts its options,
+  any option that trips the Won't eat list (dislikes — where "we don't eat
+  pork" is saved), an allergy or a hard fact (the banner's own matcher,
+  `check_meal_conflicts`), or whose own note says it's excluded. Used by
+  plate_parts' option list (protein/veg/carb) and Swap's three picks. Fewer
+  left is fewer shown, never refilled. Stricter than pick_gate on dislikes
+  on purpose: an option is the app's suggestion, a typed choice is not.
+  Review round: "pork" now reaches bacon/ham/chorizo/prosciutto/… (and beef
+  its unambiguous cuts) via `coordination._MEAT_ALIASES`, a table of its own
+  so plan_quality's title words don't move; a note only counts when it calls
+  the option itself excluded ("excluded the cilantro" stays); the chat change
+  card and its Another are gated too, a Won't-eat food passing only when the
+  person named it this turn; cached sheets are re-checked when served; a
+  check that can't run shows nothing, says `options_unavailable`, caches nothing.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

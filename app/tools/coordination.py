@@ -173,6 +173,24 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara"},
     "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne"},
 }
+# Meats said the household's way ("we don't eat pork") reach the cuts and
+# cures that ARE that meat. A no-pork house was offered Bacon lardons,
+# Chorizo and Ham (review, 2026-10-19): "pork" reached only the word pork.
+# Only words that are pork by definition — no "sausage", "kielbasa",
+# "pastrami" or "speck", which are as often chicken, turkey or beef — and
+# beef the same way ("steak" and "brisket" can be anything). Whole-word, so
+# "hamburger" and "graham" are not ham. A table of its own, read only by
+# _match_terms: _ALLERGEN_ALIASES' keys are also plan_quality's allergen
+# title words and big_meal's food words, and a meat is neither an allergen
+# warning in a title nor a reason to change either.
+_MEAT_ALIASES: dict[str, set[str]] = {
+    "pork": {"bacon", "ham", "prosciutto", "pancetta", "chorizo", "lardon", "lardons",
+             "guanciale", "salami", "pepperoni", "carnitas", "char siu", "mortadella",
+             "nduja", "soppressata", "capicola", "chicharron", "chicharrones", "tonkatsu",
+             "jamon"},
+    "beef": {"sirloin", "ribeye", "rib eye", "bresaola", "filet mignon", "ground chuck",
+             "chuck roast"},
+}
 # Aliases matched exactly as written, with no singular/plural twin: an
 # egg-white line says "3 whites", and the singular would reach "white
 # wine" and "white beans".
@@ -642,7 +660,7 @@ def _match_terms(
         kept: list[str] = []
         for word in phrase:
             variants: set[str] = set()
-            for base in {word} | _ALLERGEN_ALIASES.get(word, set()):
+            for base in {word} | _ALLERGEN_ALIASES.get(word, set()) | _MEAT_ALIASES.get(word, set()):
                 variants |= _keyword_variants(base)
             variants |= _VERBATIM_ALIASES.get(word, set())
             variants -= excluded
