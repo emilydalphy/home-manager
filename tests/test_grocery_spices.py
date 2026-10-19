@@ -153,7 +153,9 @@ def test_a_person_asking_for_a_spice_ticks_it(curry_week):
     """A hand add is a want: it merges onto the pending line and puts it
     on the list, rather than starting a second cumin."""
     tools.add_grocery_item("ground cumin", "1 jar", category="pantry")
-    assert _needed()["Ground cumin"] == "1 tbsp + 1 jar", "one line (units honestly unreconciled), on the list"
+    # One line, on the list; it shops as the jar they asked for, not
+    # "1 tbsp + 1 jar" (a spice line shops by the jar, 2026-10-19).
+    assert _needed()["Ground cumin"] == "1 jar", "one line, on the list"
     assert [sp["item"] for sp in tools.list_spices_this_week()["items"] if "cumin" in sp["item"].lower()] == ["Ground cumin"]
     assert _section()["Ground cumin"]["ticked"] is True
 

@@ -41,9 +41,11 @@ counts, no jars to enter: the rack is inferred from what came home.
 """
 from __future__ import annotations
 
+import math
+import re
 from datetime import date, timedelta
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id
 from . import grocery as _grocery
 from . import staples as _staples
@@ -390,13 +392,29 @@ def is_oil(name: str) -> bool:
 
 def _to_tsp(text: str) -> float | None:
     """A volume measure in teaspoons ("1 1/2 tbsp" -> 4.5), or None."""
+    found = _leading_tsp(text)
+    return found[0] if found else None
+
+
+def _leading_tsp(text: str) -> tuple[float, str] | None:
+    """
+    (teaspoons, what follows) for a quantity that STARTS with a volume
+    measure — "1/2 tsp freshly ground", "2 tsp plus more to taste" — or
+    None. Recipes hang words after the amount that the quantity parser
+    reads as part of the unit; the shortest run of words that parses as a
+    volume is the amount, the rest a note (review, 2026-10-19).
+    """
     from . import recipes as _recipes  # lazy: recipes imports this module
     core, _note = _quantities_split(text)
-    parsed = _recipes._parse_cook_qty(core) if core else None
-    if not parsed or parsed[0] is None or not parsed[1]:
-        return None
-    unit = parsed[1].split(" ")[0]
-    return parsed[0] * _TSP_IN[unit] if unit in _TSP_IN else None
+    words = core.replace(",", " , ").split()
+    for end in range(1, min(len(words), 4) + 1):
+        parsed = _recipes._parse_cook_qty(" ".join(words[:end]))
+        if not parsed or parsed[0] is None or not parsed[1]:
+            continue
+        unit = parsed[1].split(" ")[0]
+        if unit in _TSP_IN:
+            return parsed[0] * _TSP_IN[unit], " ".join(words[end:]).strip(" ,")
+    return None
 
 
 def _quantities_split(text: str) -> tuple[str, str]:
@@ -452,9 +470,10 @@ def spice_measure(item: str, qty: str, servings: int | None = None, cook_qty: st
         never as a box — until the recipe is regenerated with a measure.
     """
     text = (qty or "").strip()
-    tsp = _to_tsp(text)
-    if tsp is not None:
-        return tsp, MEASURED
+    lead = _leading_tsp(text)
+    if lead is not None:
+        # "2 tsp plus more to taste" is two teaspoons and a bit: about.
+        return lead[0], ESTIMATE if "taste" in lead[1].lower() else MEASURED
     tiny = _tiny_tsp(text)
     if tiny is not None:
         return tiny, ESTIMATE
@@ -537,8 +556,14 @@ def week_measures(conn, item_ids) -> dict[int, dict]:
     return out
 
 
+def _round_half_up(x: float) -> int:
+    """Half rounds UP, as the shop line's rounding does — Python's round()
+    sends 2.5 to 2, which made a row disagree with its own line."""
+    return int(math.floor(x + 0.5 + 1e-9))
+
+
 _EIGHTHS = {0: "", 1: "⅛", 2: "¼", 3: "⅜", 4: "½", 5: "⅝", 6: "¾", 7: "⅞"}
-_HALVES = {0: "", 1: "½"}
+_QUARTERS = {0: "", 1: "¼", 2: "½", 3: "¾"}
 
 
 def _mixed(whole: int, frac: str) -> str:
@@ -549,7 +574,8 @@ def amount_text(item: str, tsp: float, estimated: bool = False, little_only: boo
     """
     The Spices row's amount: "2½ tsp", "about 1½ tbsp", "⅔ cup".
     Teaspoons to the nearest eighth (a pinch never rounds away to
-    nothing), tablespoons from 1 tbsp up in halves, and an oil past 4 tbsp
+    nothing), tablespoons from 1 tbsp up in quarters — the shop line's own
+    step, so the two agree — and an oil past 4 tbsp
     in measuring-cup steps (quarters and thirds, the cups in the drawer).
     "about" whenever any contribution was an estimate.
     """
@@ -568,9 +594,9 @@ def amount_text(item: str, tsp: float, estimated: bool = False, little_only: boo
             whole, best = whole + 1, (0.0, "")
         return f"{about}{_mixed(whole, best[1])} cup" if whole or best[1] else f"{about}¼ cup"
     if tsp + 1e-9 >= 3:
-        halves = round(tsp / 3 * 2)
-        return f"{about}{_mixed(halves // 2, _HALVES[halves % 2])} tbsp"
-    eighths = max(1, round(tsp * 8))
+        quarters = _round_half_up(tsp / 3 * 4)
+        return f"{about}{_mixed(quarters // 4, _QUARTERS[quarters % 4])} tbsp"
+    eighths = max(1, _round_half_up(tsp * 8))
     if eighths >= 24:
         return f"{about}1 tbsp"
     return f"{about}{_mixed(eighths // 8, _EIGHTHS[eighths % 8])} tsp"
@@ -584,18 +610,75 @@ _JAR_HOLDS_TSP = 24.0
 _BOTTLE_HOLDS_TSP = 96.0
 
 
-def store_quantity(item: str, quantity: str) -> str | None:
+def store_quantity(item: str, quantity: str, plan_line: bool = False) -> str | None:
     """
     What a TICKED spice line says on the shop list: one store unit ("1
     jar", "1 bottle"), two only past what one holds — never the measured
-    total, which is a cooking amount and stays on the Spices row. None when
-    the line's quantity is not a volume (a household's own "2 jars", a
-    count of cinnamon sticks): that is left as written.
+    total, which is a cooking amount and stays on the Spices row.
+
+    A volume becomes the jar on any line, a person's typed "2 tbsp" salt
+    included: it is bought by the jar either way. A PLAN's line that is not
+    a volume becomes one jar too — a line already on a list at deploy
+    still says "7 boxes" from the old package wording, and that was never
+    seven of anything (review, 2026-10-19) — unless it already counts the
+    store unit itself ("2 bottles", an old recipe that really asked for
+    two). Anything else a person wrote (their "2 jars", a count of
+    cinnamon sticks) is None: left as written.
     """
+    oil = is_oil(item)
+    word = "bottle" if oil else "jar"
     tsp = _to_tsp(quantity or "")
     if tsp is None:
-        return None
-    oil = is_oil(item)
+        if not plan_line or re.fullmatch(rf"\s*\d+\s+{word}s?\s*", quantity or "", flags=re.I):
+            return None
+        return f"1 {word}"
     holds = _BOTTLE_HOLDS_TSP if oil else _JAR_HOLDS_TSP
-    word = "bottle" if oil else "jar"
     return f"2 {word}s" if tsp > holds + 1e-9 else f"1 {word}"
+
+
+def restate_plan_line(item_id: int, conn=None) -> None:
+    """
+    Re-read a PLAN's spice line in teaspoons, ledger and all — run by the
+    ingest when a measured spice share has just merged onto a line.
+
+    A line already on a list when this change shipped was written in the
+    recipes' old package words: "7 boxes" of flaky salt, a ledger of seven
+    "1 box" rows. A meal swapped in afterwards adds "0.25 tsp" to it, and
+    the list's own merge can only glue the two ("6 boxes + 0.25 tsp",
+    review 2026-10-19). So every ledger row of the line is rewritten in
+    the reading week_measures already gives it (a box is "a little", a
+    pinch 1/16 tsp — the same table, nothing new guessed) and the line is
+    rounded once from the total, as the ingest would have written it.
+
+    Left alone: a person's own line (it has no ledger to restate), and a
+    line with a row that is not a volume at all (a count of bay leaves).
+    """
+    from . import quantities as _quantities
+    if conn is None:
+        with write() as own_conn:
+            restate_plan_line(item_id, conn=own_conn)
+        return
+    line = conn.execute(
+        "SELECT id, item, source_weekly_plan_id, status FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    rows = conn.execute(
+        "SELECT id, item, quantity, estimated FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ?",
+        (household_id(), item_id),
+    ).fetchall() if line else []
+    readings = [(r, _ledger_measure(r["item"], r["quantity"] or "", r["estimated"])) for r in rows]
+    if (
+        line and line["source_weekly_plan_id"] is not None and line["status"] in ("needed", "spice")
+        and readings and all(m is not None for _r, m in readings)
+    ):
+        from . import recipes as _recipes  # lazy: recipes imports this module
+        for r, (tsp, kind) in readings:
+            conn.execute(
+                "UPDATE meal_plan_grocery_links SET quantity = ?, estimated = ? WHERE id = ? AND household_id = ?",
+                (_recipes._ledger_share(tsp, "tsp", "tsp"), ESTIMATE_FLAG[kind], r["id"], household_id()),
+            )
+        total = sum(m[0] for _r, m in readings)
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+            (_quantities._format_quantity(*_quantities._shopping_round(total, "tsp")), item_id, household_id()),
+        )

@@ -224,3 +224,78 @@ def test_a_new_recipe_never_saves_a_spice_as_a_package():
     tools.add_recipe("Rub", ingredients=[{"item": "Garam masala", "qty": "1 jar"}], default_servings=2)
     stored = tools.get_recipe("Rub")
     assert all("jar" not in (i.get("qty") or "") for i in stored["ingredients"])
+
+
+# ---------- review, 2026-10-19 ----------
+
+@pytest.mark.parametrize("qty, tsp, kind", [
+    ("1/2 tsp freshly ground", 0.5, spices.MEASURED),
+    ("1 1/2 tbsp ground", 4.5, spices.MEASURED),
+    ("2 tsp plus more to taste", 2.0, spices.ESTIMATE),
+    ("1 tsp, or to taste", 1.0, spices.ESTIMATE),
+])
+def test_a_measure_with_words_after_it_is_still_the_measure(qty, tsp, kind):
+    assert spices.spice_measure("Black pepper", qty, 2) == (tsp, kind)
+
+
+def test_a_described_measure_sums_and_ticks_to_a_jar():
+    _household()
+    tools.add_recipe("Steak", ingredients=[
+        {"item": "Black pepper", "qty": "1/2 tsp freshly ground", "category": "pantry"},
+        {"item": "Steak", "qty": "1 lb", "category": "meat/seafood"},
+    ], default_servings=2)
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    for d in (0, 2):
+        tools.plan_meal(_day(d), "Steak", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    pepper = _section()["Black pepper"]
+    assert pepper["quantity"] == "1 tsp"
+    tools.tick_spice(pepper["id"])
+    assert _needed()["Black pepper"] == "1 jar"
+
+
+def test_a_line_still_in_package_words_at_deploy_shops_as_a_jar_and_re_reads_in_tsp(week):
+    """A list approved before this change: "7 boxes" on the line, "1 box"
+    per snack in its ledger. Ticked, it buys one jar; a meal added later
+    re-reads the whole line in teaspoons rather than "6 boxes + 0.0625 tsp"."""
+    conn = get_conn()
+    line = conn.execute("SELECT id FROM grocery_items WHERE item = 'Flaky salt'").fetchone()["id"]
+    conn.execute("UPDATE grocery_items SET quantity = '7 boxes' WHERE id = ?", (line,))
+    conn.execute("UPDATE meal_plan_grocery_links SET quantity = '1 box', estimated = 0 WHERE grocery_item_id = ?", (line,))
+    conn.commit()
+    conn.close()
+    assert _section()["Flaky salt"]["quantity"] == "a little"
+    tools.tick_spice(line)
+    assert _needed()["Flaky salt"] == "1 jar"
+
+    tools.add_recipe("Salted nuts", ingredients=[
+        {"item": "Almonds", "qty": "1 cup", "category": "pantry"},
+        {"item": "Flaky salt", "qty": "a pinch", "category": "pantry"},
+    ], default_servings=2)
+    tools.swap_meal_in_plan(week, _day(6), "Salted nuts", slot="snack")
+
+    conn = get_conn()
+    stored = conn.execute("SELECT quantity FROM grocery_items WHERE id = ?", (line,)).fetchone()["quantity"]
+    ledger = [r["quantity"] for r in conn.execute(
+        "SELECT quantity FROM meal_plan_grocery_links WHERE grocery_item_id = ?", (line,))]
+    conn.close()
+    assert "box" not in stored and "+" not in stored, stored
+    assert all(q.endswith("tsp") for q in ledger), ledger
+    # 6 x "a little" (1/4 tsp) left + the new snack's pinch: about 1⅝ tsp.
+    assert _section()["Flaky salt"]["quantity"] == "about 1⅝ tsp"
+    assert _needed()["Flaky salt"] == "1 jar"
+
+
+def test_the_row_rounds_half_up_like_the_line():
+    assert spices.amount_text("Ground cumin", 6.75) == "2¼ tbsp"
+    assert spices.amount_text("Ground cumin", 5 / 16) == "⅜ tsp"
+
+
+def test_a_bought_spice_goes_into_the_kitchen_as_the_jar(week):
+    salt = _section()["Flaky salt"]
+    tools.tick_spice(salt["id"])
+    tools.mark_grocery_item(salt["id"], "purchased")
+    conn = get_conn()
+    row = conn.execute("SELECT quantity FROM inventory_items WHERE item = 'Flaky salt'").fetchone()
+    conn.close()
+    assert row is not None and row["quantity"] == "1 jar"

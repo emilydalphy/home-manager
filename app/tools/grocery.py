@@ -1442,9 +1442,9 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     out = []
     for r in rows:
         d = dict(r)
-        jar = _spices.store_quantity(d["item"], d.get("quantity") or "") if (
-            d["status"] != "spice" and d.get("source_weekly_plan_id") is not None and _spices.is_spice(d.get("item") or "")
-        ) else None
+        jar = _spices.store_quantity(
+            d["item"], d.get("quantity") or "", plan_line=d.get("source_weekly_plan_id") is not None,
+        ) if d.get("status") != "spice" and _spices.is_spice(d.get("item") or "") else None
         d["quantity"] = jar or _quantities.tidy_display_quantity(d.get("item") or "", d.get("quantity") or "") or d.get("quantity")
         out.append(d)
     return out
@@ -2699,8 +2699,8 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
         # otherwise — 20/20 concurrent pairs doubled before this.
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT item, quantity, category, status, staple_id, inventory_added_at, inventory_receipt_json "
-            "FROM grocery_items WHERE id = ? AND household_id = ?",
+            "SELECT item, quantity, category, status, staple_id, inventory_added_at, inventory_receipt_json, "
+            "source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
             (item_id, household_id()),
         ).fetchone()
         if row is None:
@@ -2722,8 +2722,16 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
         params: list = [status]
         if status == "purchased":
             if row["inventory_added_at"] is None:
+                # A spice comes home as the jar the list showed, not the
+                # teaspoons the week's recipes measure (spices.store_quantity).
+                from . import spices as _spices  # lazy: spices imports this module
+                bought_qty = (
+                    _spices.store_quantity(
+                        row["item"], row["quantity"] or "", plan_line=row["source_weekly_plan_id"] is not None,
+                    ) if _spices.is_spice(row["item"]) else None
+                ) or row["quantity"] or ""
                 receipt = _inventory._add_to_inventory(
-                    row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"], conn=conn
+                    row["item"], bought_qty, source="grocery_checkoff", category=row["category"], conn=conn
                 )
                 fields += ", inventory_added_at = datetime('now'), inventory_receipt_json = ?"
                 params.append(json.dumps({

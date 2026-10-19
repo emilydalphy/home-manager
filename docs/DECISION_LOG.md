@@ -29,6 +29,13 @@ why*, not duplicating the diff.
   into its cook_qty, "to taste" (salt/pepper) or blank. Why: "Flaky salt · 7
   boxes" from seven pinches. Oils were already in the section (is_spice);
   shell.js untouched. A pinch now scales with eaters (test_attendance edited).
+  Review fixes: a measure with words after it ("1/2 tsp freshly ground", "2
+  tsp plus more to taste" = about) is the measure; ANY spice line with a
+  volume shops as the jar, and a plan line still in package words at deploy
+  ("7 boxes") shops as one; a tsp share merging onto a plan spice line
+  re-reads the line and its ledger in tsp (`spices.restate_plan_line`), not
+  "6 boxes + 0.25 tsp"; display rounds half up, tbsp in quarters like the
+  line; a bought spice goes into inventory as the jar.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

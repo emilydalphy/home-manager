@@ -4257,7 +4257,11 @@ class WeekGroceryBuffer:
             # PLAN-owned line is re-read; a household's standing want never
             # takes a different-unit plan share in the first place
             # (_merge_target), so its own amount is never re-rounded.
-            if add_result["merged"] and (
+            if add_result["merged"] and line["unit"] == "tsp" and _spices.is_spice(line["item"]):
+                # A spice's teaspoons onto a line that may still be in the
+                # old package words ("6 boxes + 0.25 tsp") — re-read whole.
+                _spices.restate_plan_line(add_result["item_id"], conn=self.conn)
+            elif add_result["merged"] and (
                 _quantities._pack_group(unit)
                 or (_quantities._measurable_unit(unit) and not add_result.get("units_reconciled", True))
             ):
