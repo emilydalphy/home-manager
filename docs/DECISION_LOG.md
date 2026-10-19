@@ -665,6 +665,22 @@ why*, not duplicating the diff.
   `_leftovers_too_old_after_redate` refuses when the swap made a fridge
   chain longer than three days (one it already had can still be shortened;
   freezer portions and Undo are exempt).
+- **A meal planned in chat onto a night of the week lands in the week**
+  (2026-10-19; branch `overnight/chat-fills-the-open-night`; tests
+  `tests/test_chat_plan_meal_fills_the_week.py`). The chat `plan_meal` tool
+  has no weekly_plan_id, and the prompt and the change card send the model
+  to it for an OPEN night — so it wrote a standalone row beside the open
+  one: chat said "planned", Plan/Today still asked for the call, the dish
+  showed nowhere. `meal_plans._into_the_covering_plan` now settles an open
+  row through `_replace_slot_entries` (resolve_open_slot's write, minus its
+  allergen gate — the chat's gate with `override` already ran), attaches a
+  slot with no row to the plan, and refuses `planned_empty`. A slot already
+  holding a meal is unchanged (still a standalone row — swap is its door).
+  Review follow-up: the no-row path buys by the plan's approved state, not
+  the chat's flag (a draft bought before approval, and discard left the
+  line on a retired week; an approved week bought nothing by default); a
+  meal the household switched off is told "turn them back on in
+  Preferences, under Your rhythm", not "if you're in after all".
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

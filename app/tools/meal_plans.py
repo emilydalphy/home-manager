@@ -35,7 +35,93 @@ def plan_meal_for_chat(*args, override: bool = False, **kwargs) -> dict:
         meal = args[1]
     if isinstance(meal, str):
         _allergen_gate.refuse_if_clashing(meal, override=override)
-    return plan_meal(*args, **kwargs)
+    import inspect
+    bound = inspect.signature(plan_meal).bind(*args, **kwargs)
+    bound.apply_defaults()
+    filed = _into_the_covering_plan(bound.arguments)
+    if filed is not None:
+        return filed
+    return plan_meal(**bound.arguments)
+
+
+def _into_the_covering_plan(a: dict) -> dict | None:
+    """
+    A chat plan_meal for a night a live plan already covers, filed INTO
+    that plan — or None for the one-off it has always been.
+
+    The chat tool's schema has no weekly_plan_id, and the system prompt and
+    the change card (proposals.py's row `problem`) both send the model here
+    for an open night. So it wrote a standalone row (weekly_plan_id NULL)
+    beside the open one: the chat said Friday was planned while Plan still
+    read "I'd like your call on this one", Today still "Dinner needs your
+    call", and the dish showed nowhere (overnight hunt, 2026-10-19).
+
+      - an `open` row is settled the way resolve_open_slot settles one
+        (the same _replace_slot_entries write, so an approved week buys for
+        it) — but without that function's own allergen gate, because the
+        chat's gate above has already run and `override` is honoured there;
+      - `planned_empty` is refused: planning beside it would buy for a
+        meal nobody is eating. Nobody home gets resolve_open_slot's words;
+        a meal the household switched off (`{slot}s_per_week:0`, or off
+        every day of the usual week) is told where to turn it back on,
+        because "if you're in after all" is not the answer to "no
+        breakfasts, please";
+      - no row at all on that slot is attached to the plan, buying exactly
+        as the open-slot write does — by the plan's approved state, never
+        by the chat's flag. A draft buys at approval (approve_weekly_plan),
+        so buying here first left a line tied to a week that could still be
+        discarded; an approved week has had its yes, and a meal on it with
+        nothing bought is a dinner without its food;
+      - a slot that already holds a meal is left as it was — swap is that
+        door, and the prompt says so.
+    """
+    if a.get("weekly_plan_id") is not None or a.get("component_category") is not None \
+            or a.get("conn") is not None:
+        return None
+    meal_date, slot = a.get("meal_date"), a.get("slot") or "dinner"
+    if not isinstance(meal_date, str) or not isinstance(a.get("meal"), str):
+        return None
+    _weekly_plan.validate_slot(slot)
+    conn = get_conn()
+    try:
+        plan = _weekly_plan._live_plan_covering(conn, meal_date)
+        if plan is None or plan["planning_mode"] == "component_based":
+            return None
+        rows = conn.execute(
+            "SELECT id, slot_state, open_reason, derived_from_json FROM meal_plan_entries "
+            "WHERE weekly_plan_id = ? AND household_id = ? AND date = ? AND slot = ? ORDER BY id",
+            (plan["id"], household_id(), meal_date, slot),
+        ).fetchall()
+    finally:
+        conn.close()
+    states = {r["slot_state"] for r in rows}
+    if "planned_empty" in states:
+        constraints = {
+            str(json.loads(r["derived_from_json"] or "{}").get("constraint") or "")
+            for r in rows if r["slot_state"] == "planned_empty"
+        }
+        from . import usual_week as _usual_week  # lazy: it reaches back into weekly_plan
+        if f"{slot}s_per_week:0" in constraints or slot in _usual_week.switched_off_meals():
+            raise _weekly_plan.SlotRefused(
+                f"You’ve asked me not to plan {slot}s, so nothing is planned or bought for this one. "
+                "You can turn them back on in Preferences, under Your rhythm."
+            )
+        raise _weekly_plan.SlotRefused(
+            f"That {slot} is deliberately empty — nothing is planned or bought for it. "
+            "Change the night's answer if you're in after all."
+        )
+    if not rows:
+        return plan_meal(**{**a, "weekly_plan_id": plan["id"],
+                            "add_ingredients_to_grocery_list": plan["status"] == "approved"})
+    if states == {"open"}:
+        return _weekly_plan._replace_slot_entries(
+            plan["id"], [r["id"] for r in rows], meal_date, slot, a["meal"].strip(),
+            food_groups=a.get("food_groups"),
+            reasoning="you chose this one",
+            derived_from={"constraint": "settled_by_household",
+                          "answered": rows[0]["open_reason"] or ""},
+        )
+    return None
 
 
 def plan_meal(
