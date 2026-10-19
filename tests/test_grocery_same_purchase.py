@@ -19,11 +19,16 @@ import pytest
 from app import tools
 from app.db import get_conn
 from app.tools import grocery
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -86,6 +91,7 @@ def _qa_week() -> tuple[int, int, int]:
 # ---------- the QA walk, end to end ----------
 
 
+@ON_MONDAY
 def test_approving_the_week_puts_onions_on_one_line_with_the_amounts_added():
     """CATCH: main lists "Onions 2" and "Yellow onion 3"."""
     _qa_week()
@@ -95,6 +101,7 @@ def test_approving_the_week_puts_onions_on_one_line_with_the_amounts_added():
     assert onions[0]["quantity"] == "5"
 
 
+@ON_MONDAY
 def test_approving_the_week_puts_rice_on_one_line_with_the_amounts_added():
     """CATCH: main lists "Rice 2 cups" and "Long-grain white rice 1 cup"."""
     _qa_week()
@@ -104,6 +111,7 @@ def test_approving_the_week_puts_rice_on_one_line_with_the_amounts_added():
     assert rice[0]["quantity"] == "3 cups"
 
 
+@ON_MONDAY
 def test_the_specific_name_wins_whichever_recipe_comes_first():
     """CATCH: the order meals land in must not decide the wording."""
     _household()
@@ -120,6 +128,7 @@ def test_the_specific_name_wins_whichever_recipe_comes_first():
 # ---------- reversing still works on the merged line ----------
 
 
+@ON_MONDAY
 def test_removing_the_variety_meal_leaves_the_plain_meals_amount():
     plan_id, plain, variety = _qa_week()
     grocery._reverse_meal_grocery_contributions(variety)
@@ -128,6 +137,7 @@ def test_removing_the_variety_meal_leaves_the_plain_meals_amount():
     assert [r["quantity"] for r in rice] == ["2 cups"]
 
 
+@ON_MONDAY
 def test_removing_the_plain_meal_leaves_the_variety_meals_amount():
     plan_id, plain, variety = _qa_week()
     grocery._reverse_meal_grocery_contributions(plain)
@@ -148,6 +158,7 @@ def test_clearing_the_week_takes_the_merged_lines_off():
     assert _lines_for("onion") == [] and _lines_for("rice") == []
 
 
+@ON_MONDAY
 def test_swapping_the_variety_meal_out_takes_its_share_back():
     plan_id, plain, variety = _qa_week()
     tools.add_recipe("Tacos", ingredients=[{"item": "Tortillas", "qty": "8"}], default_servings=4)
@@ -156,6 +167,7 @@ def test_swapping_the_variety_meal_out_takes_its_share_back():
     assert [r["quantity"] for r in _lines_for("rice")] == ["2 cups"]
 
 
+@ON_MONDAY
 def test_a_meal_planned_after_approval_joins_the_line_and_names_it():
     """CATCH: a later plan add ("Yellow onion") onto a plan line ("Onions")."""
     _household()
@@ -271,6 +283,7 @@ def test_things_bought_separately_stay_apart(a, b):
     assert len(_needed()) == 2, f"{a!r} and {b!r} are different purchases"
 
 
+@ON_MONDAY
 def test_red_onion_in_a_week_with_onions_stays_its_own_line():
     _household()
     tools.add_recipe("Salsa", ingredients=[{"item": "Red onion", "qty": "1"}], default_servings=4)

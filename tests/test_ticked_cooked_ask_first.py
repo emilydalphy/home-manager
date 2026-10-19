@@ -33,6 +33,10 @@ from app.db import get_conn
 from app.tools import allergen_gate
 from app.tools import tonight as _tonight
 from app.tools import weekly_plan as _wp
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -306,6 +310,7 @@ def _full_week_chicken_feeds_friday() -> int:
 
 
 class TestTheNightOffAsksFirst:
+    @ON_MONDAY
     def test_a_ticked_fed_night_is_asked_about_and_nothing_is_written(self):
         """CATCH — the same deletion through the other door. On main this
         answered `night_off` and Friday's ticked row was gone."""
@@ -324,6 +329,7 @@ class TestTheNightOffAsksFirst:
         assert _dump() == before
         assert _row(friday)["cooked_status"] == "done"
 
+    @ON_MONDAY
     def test_a_yes_goes_ahead_and_undo_puts_the_tick_back(self):
         """CATCH (flag absent on main)."""
         _full_week_chicken_feeds_friday()
@@ -338,6 +344,7 @@ class TestTheNightOffAsksFirst:
         assert back["status"] == "restored"
         assert _row(friday)["cooked_status"] == "done"
 
+    @ON_MONDAY
     def test_a_tick_made_as_the_lock_is_taken_is_seen_under_it(self, monkeypatch):
         """CATCH. The same race through this door: Friday is ticked at the
         moment the night off asks for its lock, and it is still asked about."""
@@ -350,6 +357,7 @@ class TestTheNightOffAsksFirst:
         assert out["status"] == "needs_confirmation"
         assert _row(friday)["cooked_status"] == "done"
 
+    @ON_MONDAY
     def test_the_sheets_yes_names_friday_and_goes_through(self):
         """CATCH. What the sheet sends back — the night it showed — is a yes."""
         _full_week_chicken_feeds_friday()
@@ -363,6 +371,7 @@ class TestTheNightOffAsksFirst:
         assert out["status"] == "night_off"
         assert _row(friday) is None
 
+    @ON_MONDAY
     def test_an_unticked_fed_night_is_not_asked_about(self):
         """GUARD — green on main."""
         _full_week_chicken_feeds_friday()
@@ -371,6 +380,7 @@ class TestTheNightOffAsksFirst:
 
         assert out["status"] == "night_off" and out["kind"] == "cook_on_fed"
 
+    @ON_MONDAY
     def test_the_route_asks_then_goes_ahead_on_yes(self, signed_in):
         """CATCH."""
         _full_week_chicken_feeds_friday()
@@ -385,6 +395,7 @@ class TestTheNightOffAsksFirst:
         assert yes.status_code == 200 and yes.json()["status"] == "night_off"
         assert _row(friday) is None
 
+    @ON_MONDAY
     def test_the_chat_tool_takes_the_flag_and_is_told_to_ask(self):
         """CATCH. The tool schema offers confirm_cooked, the description
         says to ask on needs_confirmation, and a yes passed as the model

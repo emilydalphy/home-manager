@@ -48,6 +48,10 @@ from app import agent, tools
 from app.db import get_conn
 from app.tools import allergen_gate, draft_opener, leftovers, meal_variety, plan_quality
 from app.tools import swap_in_place as sip
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 # ---------- the world ----------
@@ -723,6 +727,7 @@ def test_a_generic_last_word_is_not_a_request(last_week, stub_model, picker):
 
 # ---------- the list follows the dish ----------
 
+@ON_MONDAY
 def test_the_grocery_list_follows_the_replacement(last_week, stub_model, picker):
     """
     NAME. The pass runs at generation, when nothing has reached the list —

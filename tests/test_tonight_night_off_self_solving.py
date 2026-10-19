@@ -35,6 +35,10 @@ from app import tools
 from app.db import get_conn
 from app.tools import leftovers as _leftovers
 from app.tools import tonight as _tonight
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -146,6 +150,7 @@ def _add_defrost(entry_id: int, plan: int, task_date: str, weekday: str) -> int:
 
 # ------------------------------------ (c) cooked double, no free night
 
+@ON_MONDAY
 def test_the_cook_moves_onto_the_night_it_was_feeding():
     """Emily's own case. The cook lands on Friday (the night it fed),
     keeping its row, so its grocery links ride along by id; Friday's
@@ -170,6 +175,7 @@ def test_the_cook_moves_onto_the_night_it_was_feeding():
     assert chains["freezer"] == {cook_id: 3}
 
 
+@ON_MONDAY
 def test_the_batch_keeps_its_size_and_the_extra_goes_in_the_freezer():
     """Same size: the Cook card still says six (three at Friday's table,
     three for the freezer), and says why. The freezer holds tonight's three."""
@@ -192,6 +198,7 @@ def test_the_batch_keeps_its_size_and_the_extra_goes_in_the_freezer():
     }]
 
 
+@ON_MONDAY
 def test_later_fed_nights_keep_their_leftovers_from_the_new_cook_night():
     """Fed Thursday AND Saturday: the cook goes to Thursday, and Saturday's
     reheat now names Thursday — _rewrite_chain_ref, the nights swap's own —
@@ -241,6 +248,7 @@ def test_the_toast_names_what_changed():
     assert out["can_undo"] is True
 
 
+@ON_MONDAY
 def test_two_taps_at_once_move_the_cook_once():
     """The lock-first rule still holds on the new path: one tap does the
     work, the other finds tonight already off. One cook on Friday, one
@@ -342,6 +350,7 @@ def test_a_leftovers_night_goes_in_the_freezer_even_with_a_free_night():
 
 # ------------------------------------ (e) already cooked tonight
 
+@ON_MONDAY
 def test_a_dinner_already_cooked_goes_in_the_freezer_and_now_says_night_off():
     """The row stays — the tick is a record, and a chain may still be eating
     from it — tonight's share goes in the freezer, and Now's card states the
@@ -380,6 +389,7 @@ def test_a_dinner_already_cooked_goes_in_the_freezer_and_now_says_night_off():
     ({TONIGHT: CHICKEN}, {FRI: TONIGHT}, True, "freeze_cooked"),
     ({TONIGHT: CHICKEN}, {}, True, "freeze_cooked"),
 ])
+@ON_MONDAY
 def test_no_shape_of_a_planned_dinner_is_refused(cook, leftovers, cooked, kind):
     """The standing rule, over every shape: whatever tonight is, the tap
     settles it, and the row said beforehand what it would do."""
@@ -510,6 +520,7 @@ def test_undo_leaves_the_week_alone_once_it_has_changed_since():
     assert _dump() == before
 
 
+@ON_MONDAY
 def test_undo_leaves_the_week_alone_once_the_freezer_row_is_touched():
     """Somebody used some of the frozen chicken already — the rev bump says
     so — and Undo won't delete food the kitchen has since accounted for."""

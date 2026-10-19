@@ -403,6 +403,23 @@ why*, not duplicating the diff.
   payload) and put a tapped-off day back; `reconcileLunches` now runs it
   only when the lunches change (`lunch.reachedFor`) or on a fresh prefill,
   never over a saved answer as saved. Onboarding doesn't run the rule.
+- **Approving part-way through buys only for the meals still ahead**
+  (2026-10-19; branch `overnight/approve-buys-only-ahead`; tests
+  `tests/test_approve_buys_only_ahead.py`). `_plan_grocery_candidate_entries`
+  (approval's and the preview's one query) skips meals dated before the
+  household's today (tonight is still bought). A leftovers night still
+  ahead whose cook night went by uncooked and unbought becomes an `open`
+  slot at approval (`constraint: cook_night_gone`, said as a question); a
+  cook ticked done, or bought for by an earlier approval, keeps its reheat.
+  `cook_ahead_repeats` ignores gone days, so a prep-day batch never hangs a
+  future night off a past cook; `_rescale_leftover_source_grocery` re-buys
+  only nights still ahead or already on the list (review: dropping the
+  reheat of an eaten Thursday bought Thursday again); the preview counts a
+  reheat's sides only, as the ingest does. Why: Emily, 2026-10-18, "don't
+  buy for anything that didn't/won't happen." Slice 1 pinned ~190 tests that
+  approved "this week's Monday" on whatever day the suite ran:
+  `conftest.on_the_weeks_monday` (run on the seeded Monday) and
+  `conftest.approving_on` (a past week approved while it was ahead).
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

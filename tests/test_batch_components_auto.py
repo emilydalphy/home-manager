@@ -26,6 +26,10 @@ from conftest import household_today
 from app import db, tools
 from app.tools import cook_ahead, weekly_plan
 from test_allset_week_path import _PLAN_PRELUDE, _APPROVED
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _monday() -> datetime.date:
@@ -204,6 +208,7 @@ def test_running_the_rule_twice_writes_one_batch():
     assert len(_batch_rows(plan_id)) == 1
 
 
+@ON_MONDAY
 def test_a_component_only_one_dish_cooks_is_left_alone_however_many_days():
     _household()
     _egg_toast()
@@ -302,6 +307,7 @@ def test_one_component_covering_two_later_dishes_names_the_pot_and_the_days():
     assert line == f"I’ve batched the rice: one pot {_weekday(MON)} covers {_weekday(WED)} and {_weekday(FRI)}."
 
 
+@ON_MONDAY
 def test_a_repeated_dish_alone_reads_big_enough_for():
     """The 2026-09-18 rule already batched a repeated dish silently; it gets
     the same one line (Emily: show the value)."""
@@ -314,6 +320,7 @@ def test_a_repeated_dish_alone_reads_big_enough_for():
     assert weekly_plan.batched_line(plan_id) == f"I’ve made {_weekday(MON)}’s Turkey Chili big enough for {_weekday(THU)} too."
 
 
+@ON_MONDAY
 def test_several_batches_read_as_one_line_with_the_count():
     _household()
     _rice_bowl()
@@ -332,6 +339,7 @@ def test_several_batches_read_as_one_line_with_the_count():
     assert line == "I’ve batched Turkey Chili and the rice — one cook each, covering 2 dinners."
 
 
+@ON_MONDAY
 def test_mixed_slots_say_meals():
     _household()
     _egg_toast()

@@ -19,11 +19,16 @@ import datetime
 from app import tools
 from app.tools import quantities
 from app.db import get_conn
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -156,6 +161,7 @@ def test_swapping_the_last_target_turns_the_source_into_an_ordinary_cook():
     assert not any(m.get("is_leftovers") and m.get("leftovers_from", {}).get("entry_id") == tue for m in view["meals"])
 
 
+@ON_MONDAY
 def test_swapping_a_target_in_an_approved_plan_rescales_the_sources_grocery_line():
     _household()
     _wraps()
@@ -189,6 +195,9 @@ def test_swapping_a_target_in_an_approved_plan_rescales_the_sources_grocery_line
     # contributor left.
     assert _ledger_items_for(tue) == {"beef": "2 lbs", "lettuce": "2 heads", "salt": "to taste"}
     assert _ledger_items_for(fri) == {}
+
+
+@ON_MONDAY
 
 
 def test_clearing_a_target_slot_behaves_the_same_as_swapping_it():
@@ -241,6 +250,7 @@ def _beef_skillet():
     )
 
 
+@ON_MONDAY
 def test_rescale_shares_one_buffer_with_an_unrelated_same_recipe_cook():
     """
     _rescale_leftover_source_grocery used to reverse-and-reingest the

@@ -18,11 +18,16 @@ import json
 
 from app import db, tools
 from app.tools import batch_components as bc
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -193,6 +198,7 @@ def test_a_component_in_one_dish_only_is_not_offered(signed_in):
     assert signed_in.get(f"/api/week/{WEEK}/cook-ahead-items").json()["components"] == []
 
 
+@ON_MONDAY
 def test_the_same_dish_on_two_days_stays_the_per_dish_question(signed_in):
     """Egg toast on Monday and Wednesday is a repeat of one dish — the
     cook-ahead block already asks about it, so no component block doubles

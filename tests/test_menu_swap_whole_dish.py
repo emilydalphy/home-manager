@@ -32,6 +32,7 @@ from app import tools
 from app.db import get_conn
 from app.tools._shared import use_household
 from test_week_seven_tiles import _extract, _extract_var
+from conftest import approving_on
 
 sop = importlib.import_module("app.tools.swap_options")
 
@@ -427,7 +428,9 @@ def test_an_approved_chain_buys_one_batch_of_the_new_dish(home):
 
 def test_an_approved_week_of_separate_cooks_buys_each_day(home):
     _separate_cooks(home)
-    tools.approve_weekly_plan(home, "Alex")
+    # Approved yesterday, as the week began, so yesterday's lunch was bought.
+    with approving_on(datetime.date.fromisoformat(START)):
+        tools.approve_weekly_plan(home, "Alex")
     before = _grocery()
     assert before["Shrimp"] == "3 lbs"
     _swap_whole(home, D1, "lunch")

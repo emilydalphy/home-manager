@@ -969,6 +969,54 @@ def household_pin(hour: int, minute: int = 0, on: _dt.date | None = None) -> _dt
     return at_home.astimezone().replace(tzinfo=None)
 
 
+def on_the_weeks_monday(monday: _dt.date | None = None):
+    """
+    `pytestmark = on_the_weeks_monday()` — run a file on the Monday of the
+    week it seeds, at the household's 09:00.
+
+    For the files that seed "this week's Monday" and then APPROVE it. Since
+    2026-10-18 approval buys only for meals on or after the household's
+    today (weekly_plan._plan_grocery_candidate_entries), so a file that
+    expects Monday's groceries was asserting on whatever weekday the suite
+    ran: green on a Monday, red on a Friday. Pinned to that Monday, the
+    whole seeded week is ahead of the household on every day the suite runs.
+
+    `monday` defaults to this week's on the household's clock — the same
+    answer a file's own module-level `_monday()` gives at import, under any
+    session pin, because both read the clock as it stands at collection.
+    A file whose `_monday()` reads the process's clock passes its own, so
+    the pin and its constants can never name two different weeks.
+    """
+    if monday is None:
+        today = household_today()
+        monday = today - _dt.timedelta(days=today.weekday())
+    return pytest.mark.today(household_pin(9, on=monday))
+
+
+@contextlib.contextmanager
+def approving_on(day: _dt.date):
+    """
+    `with approving_on(last_monday): tools.approve_weekly_plan(...)` — an
+    approval made back when that week was still ahead.
+
+    For a file that seeds LAST week's approved shop (a carried-over line, a
+    bag already bought) and then works on this week. Approval buys only for
+    meals on or after the household's today (2026-10-18), so approving last
+    week today buys nothing and the scenario never forms. This moves only
+    the approval's own "today" (weekly_plan._household_today, which
+    _plan_grocery_candidate_entries and cook_ahead read), not the whole
+    clock, so the rest of the test still runs on the day it runs on.
+    """
+    from app.tools import weekly_plan as _wp
+
+    real = _wp._household_today
+    _wp._household_today = lambda conn=None: day
+    try:
+        yield
+    finally:
+        _wp._household_today = real
+
+
 def pin_household_clock(monkeypatch) -> None:
     """
     Make a pin of `weekly_plan.date` mean ONE date, for the household's

@@ -18,6 +18,10 @@ import datetime
 from conftest import household_today
 from app import db, tools
 from app.tools import grocery as _grocery, weekly_plan
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _monday() -> datetime.date:
@@ -72,6 +76,7 @@ def _ledger(entry_id):
     return n
 
 
+@ON_MONDAY
 def test_excluding_an_entry_takes_its_ledger_rows_with_it():
     """The card's own repro: exclude Thursday, leave its ledger rows on
     file, recompute. Before the fix the line came back "12 oz + 1.5 lbs"
@@ -86,6 +91,9 @@ def test_excluding_an_entry_takes_its_ledger_rows_with_it():
     assert _ledger(ids[THU]) == 0
 
 
+@ON_MONDAY
+
+
 def test_the_callers_own_reversal_after_it_changes_nothing():
     """Every caller today reverses the excluded entry right after the
     rescale returns. That must stay harmless: nothing left to reverse."""
@@ -96,6 +104,9 @@ def test_the_callers_own_reversal_after_it_changes_nothing():
     _grocery._reverse_meal_grocery_contributions(ids[THU])
 
     assert _lines() == after == {"Ground beef": "1.5 lbs", "Onion": "2"}
+
+
+@ON_MONDAY
 
 
 def test_the_same_on_the_callers_connection():
@@ -112,6 +123,7 @@ def test_the_same_on_the_callers_connection():
     assert _ledger(ids[THU]) == 0
 
 
+@ON_MONDAY
 def test_a_standing_want_on_the_line_is_not_taken_down_with_it():
     """A hand-added onion shares the line with the plan's. The excluded
     night's share comes off once — in the helper, not again in the caller —
@@ -125,6 +137,9 @@ def test_a_standing_want_on_the_line_is_not_taken_down_with_it():
     assert _lines()["Onion"] == before
 
 
+@ON_MONDAY
+
+
 def test_nothing_excluded_still_rebuys_the_whole_recipe_week():
     """meal_variety and batch_undo pass 0: nothing to clear, and the
     recompute is the whole recipe-week as before — the batch on the cook
@@ -134,6 +149,9 @@ def test_nothing_excluded_still_rebuys_the_whole_recipe_week():
 
     assert _lines() == {"Ground beef": "1.5 lbs", "Onion": "2"}
     assert _ledger(ids[MON]) == 2
+
+
+@ON_MONDAY
 
 
 def test_clearing_the_fed_night_through_the_real_caller():

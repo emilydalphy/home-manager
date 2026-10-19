@@ -87,6 +87,7 @@ from app.tools import plate_parts as _parts
 from app.tools import proposals as _proposals
 from app.tools import swap_in_place as _swap
 from app.tools import weekly_plan as _wp
+from conftest import approving_on
 
 
 SERVER_TODAY = date.today()
@@ -221,7 +222,9 @@ def _seed(*days: str, approve: bool = False) -> int:
     for day in days:
         tools.plan_meal(day, "Bean Chili", slot="dinner", weekly_plan_id=plan)
     if approve:
-        tools.approve_weekly_plan(plan)
+        # Approved before the first of them had gone by, so it was bought for.
+        with approving_on(date.fromisoformat(min(days))):
+            tools.approve_weekly_plan(plan)
     return plan
 
 

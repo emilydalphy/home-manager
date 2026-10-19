@@ -28,6 +28,10 @@ from shop_harness import CLICK
 
 from app import tools
 from app.db import get_conn
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 REPO = Path(__file__).resolve().parent.parent
@@ -73,6 +77,7 @@ def _cook_ingredients(plan_id: int) -> dict[str, list[dict]]:
 
 # ---------- use something else ----------
 
+@ON_MONDAY
 def test_the_line_becomes_the_alternative_and_the_recipe_says_so(week):
     oregano = _needed()["Fresh oregano"]
     assert oregano["quantity"] == "3 tbsp", "two recipes, one line"
@@ -89,6 +94,7 @@ def test_the_line_becomes_the_alternative_and_the_recipe_says_so(week):
     assert "substitute" not in next(i for i in cook["Greek salad"] if i["item"] == "Feta")
 
 
+@ON_MONDAY
 def test_an_alternative_already_at_home_takes_the_line_off(week):
     oregano = _needed()["Fresh oregano"]
     result = tools.substitute_grocery_item(oregano["id"], "dry oregano", at_home=True, author="Emily")
@@ -101,6 +107,7 @@ def test_an_alternative_already_at_home_takes_the_line_off(week):
     assert decided["dry oregano"]["removed_by"] == "Emily"
 
 
+@ON_MONDAY
 def test_undo_puts_the_original_back_either_way(week):
     oregano = _needed()["Fresh oregano"]
     tools.substitute_grocery_item(oregano["id"], "dry oregano")
@@ -115,6 +122,7 @@ def test_undo_puts_the_original_back_either_way(week):
     assert tools.undo_substitution(oregano["id"])["unchanged"] is True, "nothing left to undo"
 
 
+@ON_MONDAY
 def test_the_alternative_picks_up_its_usual_store(week):
     tools.set_item_store("dry oregano", "Bulk Barn")
     oregano = _needed()["Fresh oregano"]
@@ -122,6 +130,7 @@ def test_the_alternative_picks_up_its_usual_store(week):
     assert _needed()["dry oregano"]["store"] == "Bulk Barn"
 
 
+@ON_MONDAY
 def test_a_swap_is_this_weeks_not_the_recipes(week):
     """Next week the recipe asks for fresh oregano again."""
     oregano = _needed()["Fresh oregano"]
@@ -137,6 +146,7 @@ def test_a_swap_is_this_weeks_not_the_recipes(week):
     assert "substitute" not in next(i for i in _cook_ingredients(plan_b)["Greek salad"] if i["item"] == "Fresh oregano")
 
 
+@ON_MONDAY
 def test_a_blank_alternative_and_a_bought_line_are_refused(week):
     oregano = _needed()["Fresh oregano"]
     with pytest.raises(ValueError):
@@ -154,6 +164,7 @@ def test_a_pending_spice_swapped_for_something_goes_on_the_list(week):
     assert "cumin seeds" in _needed(), "choosing what to buy instead is choosing to buy it"
 
 
+@ON_MONDAY
 def test_a_swap_dies_with_the_line_it_was_made_on(week):
     """Verifier, 2026-09-13: both meals that wanted the oregano swapped out
     → the ledger deletes the line; a third meal wanting fresh oregano
@@ -186,6 +197,7 @@ def test_a_swap_with_no_plan_annotates_nothing_later():
 
 # ---------- have it already: no inventory ----------
 
+@ON_MONDAY
 def test_have_it_is_the_pre_shop_drop_and_never_an_inventory_write(week):
     cucumber = _needed()["Cucumber"]
     tools.drop_grocery_item_pre_shop(cucumber["id"], author="Emily")
@@ -198,6 +210,7 @@ def test_have_it_is_the_pre_shop_drop_and_never_an_inventory_write(week):
 
 # ---------- over HTTP ----------
 
+@ON_MONDAY
 def test_the_routes(signed_in, week):
     oregano = _needed()["Fresh oregano"]
     res = signed_in.post(f"/api/grocery-list/{oregano['id']}/substitute", json={"alternative": "dry oregano"})

@@ -16,6 +16,10 @@ from conftest import household_today
 
 from app import tools
 from app.db import get_conn
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _next_week(day: int) -> str:
@@ -118,6 +122,7 @@ def test_with_every_meal_gone_while_set_aside_the_row_is_still_there_to_put_back
     assert (row["status"], row["quantity"]) == ("needed", "5 oz")
 
 
+@ON_MONDAY
 def test_a_kept_carry_over_is_not_recounted_so_its_undo_takes_off_what_it_added():
     """Review, 2026-10-10: last week's two curries' "4 lbs" kept onto this
     week's "2 lbs" (-> 6 lbs; the carried row is removed/'carried_kept' at

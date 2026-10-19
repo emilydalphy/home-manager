@@ -24,6 +24,10 @@ import nodeharness
 from conftest import household_today
 from app import agent, db, main, tools
 from app.tools import batch_components, batch_undo, cook_ahead, cooker, weekly_plan
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _monday() -> datetime.date:
@@ -137,6 +141,7 @@ def _cards(plan_id):
 
 # ---------- the state the ticket starts from ----------
 
+@ON_MONDAY
 def test_approving_a_week_with_prep_days_really_does_batch_both_kinds():
     """The precondition, so nothing below can pass over a week that was
     never batched in the first place."""
@@ -186,6 +191,7 @@ def test_the_tool_is_named_in_the_system_prompt_with_its_three_phrasings():
 
 # ---------- a repeated dish ----------
 
+@ON_MONDAY
 def test_cook_the_chili_fresh_on_thursday_puts_thursday_back_to_its_own_cook():
     plan_id, _ = _batched_week()
 
@@ -229,6 +235,7 @@ def test_the_shopping_list_says_the_same_thing_before_and_after():
     assert "list" not in out["said"].lower()
 
 
+@ON_MONDAY
 def test_the_fed_night_buys_its_own_portion_again():
     """The ledger, not the lines. A later rescale (any swap on that
     recipe) moves the whole amount onto the cook night and leaves the fed
@@ -249,6 +256,9 @@ def test_the_fed_night_buys_its_own_portion_again():
     # claim about the list.
     assert out["list_changed"] is False
     assert "list" not in out["said"].lower()
+
+
+@ON_MONDAY
 
 
 def test_a_side_the_batch_had_swallowed_comes_back_and_the_reply_says_so():
@@ -282,6 +292,7 @@ def test_a_side_the_batch_had_swallowed_comes_back_and_the_reply_says_so():
     assert out["said"].endswith("Your list has changed to match.")
 
 
+@ON_MONDAY
 def test_one_day_of_a_longer_batch_is_freed_and_the_rest_stays():
     _household()
     _chili()
@@ -364,6 +375,7 @@ def test_clear_batch_component_is_its_own_write_not_an_empty_set_batch_component
 
 # ---------- everything this week ----------
 
+@ON_MONDAY
 def test_no_batch_cooking_this_week_takes_both_kinds_apart_in_one_call():
     plan_id, _ = _batched_week()
 
@@ -377,6 +389,7 @@ def test_no_batch_cooking_this_week_takes_both_kinds_apart_in_one_call():
 
 # ---------- undo ----------
 
+@ON_MONDAY
 def test_undo_puts_a_dish_batch_back_exactly_as_it_was():
     plan_id, _ = _batched_week()
     before_cards, before_grocery = _cards(plan_id), _grocery()
@@ -402,6 +415,7 @@ def test_undo_puts_a_component_batch_back_exactly_as_it_was():
     assert _prep_rows() == before
 
 
+@ON_MONDAY
 def test_undo_also_forgets_the_choice_so_the_week_batches_again():
     """An undo that left "never batch this" standing would put the batch
     back and then have the next approval take it away again."""
@@ -415,6 +429,7 @@ def test_undo_also_forgets_the_choice_so_the_week_batches_again():
     assert batch_undo.declined_dish_entry_ids(plan_id) == set()
 
 
+@ON_MONDAY
 def test_undo_never_moves_the_shopping_list():
     """Making a batch has never changed what has to be bought
     (cook_ahead.py), and a rescale here would re-ingest the fed night as a
@@ -453,6 +468,7 @@ def test_an_undo_payload_for_another_households_plan_writes_nothing():
 
 # ---------- remembering the choice ----------
 
+@ON_MONDAY
 def test_re_approving_the_week_does_not_put_a_dish_batch_back():
     plan_id, _ = _batched_week()
     tools.unbatch("chili")
@@ -503,6 +519,7 @@ def test_a_batch_nobody_objected_to_is_still_written_beside_one_they_did():
     assert batch_components.batched_components(plan_id) != []
 
 
+@ON_MONDAY
 def test_a_day_swapped_away_takes_its_own_objection_with_it():
     """The memory lives on the entry, so a new row is a new decision."""
     plan_id, ids = _batched_week()
@@ -639,6 +656,7 @@ def test_the_card_is_tagged_week_so_both_screens_refresh():
     assert main._categorize_tool("unbatch") == ("week", "week", None)
 
 
+@ON_MONDAY
 def test_the_undo_route_puts_it_back(signed_in):
     plan_id, _ = _batched_week()
     out = tools.unbatch("chili")
@@ -793,6 +811,7 @@ def test_the_undo_button_still_works_with_two_weeks_on_file():
 SAT = _day(5)
 
 
+@ON_MONDAY
 def test_dont_batch_a_dish_cooked_twice_takes_both_cooks_apart_without_asking():
     """Mon, Wed, Fri, Sat is two batches of the same chili (Monday's can't
     reach Friday). "Don't batch the chili" means both; asking "Which one —
@@ -809,6 +828,7 @@ def test_dont_batch_a_dish_cooked_twice_takes_both_cooks_apart_without_asking():
     assert cook_ahead.batched_dishes(plan_id) == []
 
 
+@ON_MONDAY
 def test_the_all_set_line_names_a_dish_cooked_twice_once():
     from app.tools import weekly_plan
     _household()

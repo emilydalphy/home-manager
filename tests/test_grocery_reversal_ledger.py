@@ -42,11 +42,16 @@ import datetime
 from app import tools
 from app.db import get_conn
 from app.tools import grocery, quantities
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -139,6 +144,7 @@ def _beef_plan() -> tuple[int, int, int]:
     return plan_id, first, second
 
 
+@ON_MONDAY
 def test_beef_line_rounds_once_to_a_pound_and_a_quarter():
     plan_id, first, second = _beef_plan()
     row = _grocery_row("ground beef")
@@ -153,6 +159,7 @@ def test_beef_line_rounds_once_to_a_pound_and_a_quarter():
     assert quantities._sum_ledger_quantities(ledger) == "1.25 lbs"
 
 
+@ON_MONDAY
 def test_reversing_first_meal_then_second_leaves_the_line_exact_then_empty():
     plan_id, first, second = _beef_plan()
     remaining_qty = _ledger_qtys(second)[0]
@@ -168,6 +175,7 @@ def test_reversing_first_meal_then_second_leaves_the_line_exact_then_empty():
     assert _grocery_row("ground beef") is None
 
 
+@ON_MONDAY
 def test_reversing_second_meal_then_first_leaves_the_line_exact_then_empty():
     plan_id, first, second = _beef_plan()
     remaining_qty = _ledger_qtys(first)[0]
@@ -201,6 +209,7 @@ def _broth_plan() -> tuple[int, int, int]:
     return plan_id, first, second
 
 
+@ON_MONDAY
 def test_broth_line_survives_a_cup_to_tablespoon_roll_in_either_order():
     plan_id, first, second = _broth_plan()
     row = _grocery_row("chicken broth")
@@ -223,6 +232,7 @@ def test_broth_line_survives_a_cup_to_tablespoon_roll_in_either_order():
 # ---------- packages are untouched by this change ----------
 
 
+@ON_MONDAY
 def test_package_line_survives_reversals_until_its_last_link():
     _household()
     tools.add_recipe(
@@ -245,6 +255,7 @@ def test_package_line_survives_reversals_until_its_last_link():
 # ---------- a hand-added standing want is never recomputed away ----------
 
 
+@ON_MONDAY
 def test_hand_added_standing_want_survives_its_meals_being_reversed():
     _household()
     tools.add_grocery_item("carrots", quantity="")
@@ -267,6 +278,7 @@ def test_hand_added_standing_want_survives_its_meals_being_reversed():
 # ---------- full-cycle regression: shared ingredient + a leftover chain ----------
 
 
+@ON_MONDAY
 def test_approve_then_clear_empties_a_week_with_shared_ingredients_and_a_leftover_chain():
     _household()
     tools.add_recipe(

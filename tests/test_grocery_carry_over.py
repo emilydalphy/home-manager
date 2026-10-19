@@ -40,6 +40,7 @@ from shop_harness import CLICK
 from app import tools
 from app.db import get_conn
 from app.tools import grocery as _grocery
+from conftest import on_the_weeks_monday
 
 
 REPO = Path(__file__).resolve().parent.parent
@@ -50,6 +51,10 @@ def _monday(offset_weeks: int = 0) -> str:
     today = datetime.date.today()
     monday = today - datetime.timedelta(days=today.weekday())
     return (monday + datetime.timedelta(days=7 * offset_weeks)).isoformat()
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(datetime.date.fromisoformat(_monday()))
 
 
 def _rows() -> dict[str, dict]:
@@ -100,6 +105,7 @@ def _approve_week(offset_weeks: int, day_index: int = 0, meal: str = "Chicken cu
 
 # ---------- the bug ----------
 
+@ON_MONDAY
 def test_this_weeks_recipes_land_on_their_own_lines(curry):
     """The headline: a week approved after an unfinished list yields this
     week's amounts alone, not this week's plus last week's."""
@@ -116,6 +122,7 @@ def test_this_weeks_recipes_land_on_their_own_lines(curry):
     assert rows[1]["source_weekly_plan_id"] == week_b
 
 
+@ON_MONDAY
 def test_the_carried_lines_are_listed_beside_this_weeks_amount(curry):
     _approve_week(0)
     _approve_week(1)
@@ -126,6 +133,7 @@ def test_the_carried_lines_are_listed_beside_this_weeks_amount(curry):
     assert by_name["Chicken thighs"]["this_week_quantity"] == "2 lbs"
 
 
+@ON_MONDAY
 def test_a_leftover_this_week_does_not_want_shows_no_this_week_amount(curry):
     tools.add_recipe("Toast", ingredients=[{"item": "Bread", "qty": "1 loaf", "category": "pantry"}])
     _approve_week(0)
@@ -147,6 +155,7 @@ def test_carried_lines_are_off_every_needed_view_and_count(curry):
     assert names.count("Chicken thighs") == 1
 
 
+@ON_MONDAY
 def test_approval_reports_what_it_set_aside(curry):
     _approve_week(0)
     plan_b = tools.create_weekly_plan(_monday(1))["weekly_plan_id"]
@@ -182,6 +191,7 @@ def test_a_week_that_has_not_started_is_not_last_week(curry):
     assert [i["quantity"] for i in tools.list_grocery_list() if i["item"] == "Chicken thighs"] == ["2 lbs", "2 lbs"]
 
 
+@ON_MONDAY
 def test_an_excluded_or_in_cart_line_is_the_shoppers_not_the_plans(curry):
     _approve_week(0)
     thighs = next(i for i in tools.list_grocery_list() if i["item"] == "Chicken thighs")
@@ -192,6 +202,7 @@ def test_an_excluded_or_in_cart_line_is_the_shoppers_not_the_plans(curry):
     assert tools.list_carried_over_items() == []
 
 
+@ON_MONDAY
 def test_a_staple_suggestion_is_not_a_leftover(curry):
     _approve_week(0)
     conn = get_conn()
@@ -218,6 +229,7 @@ def _carried(item: str) -> dict:
     return next(c for c in tools.list_carried_over_items() if c["item"] == item)
 
 
+@ON_MONDAY
 def test_keep_adds_the_old_amount_onto_this_weeks_line_out_loud(curry):
     _approve_week(0)
     _approve_week(1)
@@ -230,6 +242,7 @@ def test_keep_adds_the_old_amount_onto_this_weeks_line_out_loud(curry):
     assert all(d["item"] != "Chicken thighs" for d in tools.get_already_have_decisions())
 
 
+@ON_MONDAY
 def test_keep_restores_a_line_this_week_did_not_want_as_a_standing_want(curry):
     tools.add_recipe("Toast", ingredients=[{"item": "Bread", "qty": "1 loaf", "category": "pantry"}])
     _approve_week(0)
@@ -243,6 +256,7 @@ def test_keep_restores_a_line_this_week_did_not_want_as_a_standing_want(curry):
     assert kept["source_weekly_plan_id"] is None, "asked for, so never auto-cleared"
 
 
+@ON_MONDAY
 def test_drop_takes_it_off_and_undo_brings_the_question_back(curry):
     _approve_week(0)
     _approve_week(1)
@@ -255,6 +269,7 @@ def test_drop_takes_it_off_and_undo_brings_the_question_back(curry):
     assert {c["item"] for c in tools.list_carried_over_items()} == {"Chicken thighs", "Onion"}
 
 
+@ON_MONDAY
 def test_undo_of_a_merged_keep_takes_the_amount_back_off(curry):
     _approve_week(0)
     _approve_week(1)
@@ -266,6 +281,7 @@ def test_undo_of_a_merged_keep_takes_the_amount_back_off(curry):
     assert _carried("Chicken thighs")["quantity"] == "2 lbs"
 
 
+@ON_MONDAY
 def test_undo_of_a_restored_keep_goes_back_to_waiting(curry):
     tools.add_recipe("Toast", ingredients=[{"item": "Bread", "qty": "1 loaf", "category": "pantry"}])
     week_a = _approve_week(0)
@@ -278,6 +294,7 @@ def test_undo_of_a_restored_keep_goes_back_to_waiting(curry):
     assert back["status"] == "carried" and back["source_weekly_plan_id"] == week_a
 
 
+@ON_MONDAY
 def test_undo_of_a_keep_that_cannot_come_back_off_does_not_reopen(curry):
     """Verifier, 2026-09-13: a keep merged into a line it can't be
     subtracted back out of, or a line since bought, can't be undone —
@@ -300,6 +317,7 @@ def test_undo_of_a_keep_that_cannot_come_back_off_does_not_reopen(curry):
     assert all(c["item"] != "Chicken thighs" for c in tools.list_carried_over_items()), "not asked again"
 
 
+@ON_MONDAY
 def test_keep_never_glues_last_weeks_amount_onto_a_line_in_another_unit(curry):
     """Last week's "2 lbs" beside this week's "1 bag": Keep used to write
     "1 bag + 2 lbs", which nothing could take back apart. The old line
@@ -318,6 +336,7 @@ def test_keep_never_glues_last_weeks_amount_onto_a_line_in_another_unit(curry):
     assert _carried("Chicken thighs")["quantity"] == "2 lbs"
 
 
+@ON_MONDAY
 def test_undo_of_a_keep_after_the_line_was_bought_does_not_reopen(curry):
     _approve_week(0)
     _approve_week(1)
@@ -330,6 +349,7 @@ def test_undo_of_a_keep_after_the_line_was_bought_does_not_reopen(curry):
     assert all(c["item"] != "Chicken thighs" for c in tools.list_carried_over_items())
 
 
+@ON_MONDAY
 def test_answers_are_idempotent_and_undo_leaves_a_never_carried_row_alone(curry):
     _approve_week(0)
     _approve_week(1)
@@ -342,6 +362,7 @@ def test_answers_are_idempotent_and_undo_leaves_a_never_carried_row_alone(curry)
     assert _needed("Onion") == "2"
 
 
+@ON_MONDAY
 def test_a_stale_carried_line_is_cleared_with_the_rest_once_its_week_is_gone(curry):
     """Never answered, and its plan has gone by: the same stale leftover
     clear_stale_grocery_items has always removed."""
@@ -362,6 +383,7 @@ def test_a_stale_carried_line_is_cleared_with_the_rest_once_its_week_is_gone(cur
 
 # ---------- over HTTP ----------
 
+@ON_MONDAY
 def test_the_routes(signed_in, curry):
     _approve_week(0)
     _approve_week(1)
@@ -560,6 +582,7 @@ console.log(JSON.stringify({ step: groceryState.step, row: groListHtml(grocerySt
     assert out["row"] == -1
 
 
+@ON_MONDAY
 def test_keep_never_lands_on_a_line_set_aside_as_somewhere_else(curry):
     """Loop Board, 2026-10-07: this week's thighs marked "somewhere else",
     then last week's thighs kept — the kept amount comes back as a visible

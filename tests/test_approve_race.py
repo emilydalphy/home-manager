@@ -33,7 +33,7 @@ import datetime
 import threading
 
 import pytest
-from conftest import household_pin, household_today
+from conftest import approving_on, household_pin, household_today
 
 from app import tools
 from app.db import get_conn
@@ -201,7 +201,9 @@ def test_the_carried_over_receipt_is_not_doubled_either(frozen_today):
     week_a = (_monday() - datetime.timedelta(days=7)).isoformat()
     plan_a = tools.create_weekly_plan(week_a)["weekly_plan_id"]
     tools.plan_meal(week_a, "Chicken curry", slot="dinner", weekly_plan_id=plan_a)
-    tools.approve_weekly_plan(plan_a, approved_by="Emily")
+    # Approved while it was still ahead, so its shop was bought for.
+    with approving_on(datetime.date.fromisoformat(week_a)):
+        tools.approve_weekly_plan(plan_a, approved_by="Emily")
 
     week_b = _monday().isoformat()
     plan_b = tools.create_weekly_plan(week_b)["weekly_plan_id"]

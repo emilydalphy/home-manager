@@ -33,11 +33,16 @@ import app.db as _appdb
 from app.db import DB_PATH, get_conn
 from app.tools import attendance, grocery, leftovers, meal_plans, recipes, weekly_plan
 from app.tools import swap_in_place as sip
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -197,6 +202,7 @@ def _assert_untouched(before: dict, plan_id: int, day: str, slot: str, missing_b
 
 # ------------------------------------------- a failure at EVERY stage
 
+@ON_MONDAY
 def test_a_failure_after_the_delete_leaves_the_day_exactly_as_it_was(monkeypatch):
     """
     The seam itself, stated once: the old row was deleted and committed
@@ -247,6 +253,7 @@ def test_a_failure_inside_the_row_insert_leaves_the_day_exactly_as_it_was(monkey
     assert [r["id"] for r in _rows_on(MON, "dinner")] == [entry_id]
 
 
+@ON_MONDAY
 def test_a_failure_inside_the_grocery_ingest_puts_the_list_back(monkeypatch):
     """
     The deepest seam, and the one that needed the whole ingest tree to
@@ -282,6 +289,7 @@ def test_a_failure_after_the_grocery_reversal_puts_the_list_back(monkeypatch):
     _assert_untouched(before, plan_id, MON, "dinner", missing)
 
 
+@ON_MONDAY
 def test_a_failure_after_the_chain_unlink_leaves_the_chain_intact(monkeypatch):
     """Swapping a reheat night: the cook night was told first, and then the swap died."""
     plan_id, mon, wed, thu = _chain_plan()
@@ -299,6 +307,7 @@ def test_a_failure_after_the_chain_unlink_leaves_the_chain_intact(monkeypatch):
     assert _grocery_by_item() == {"beef": "3 lbs", "lettuce": "3 heads"}
 
 
+@ON_MONDAY
 def test_a_failure_inside_the_source_rescale_leaves_the_list_and_chain_intact(monkeypatch):
     """
     The step drop_dish_from_day had to run AFTER its commit, logged not
@@ -752,6 +761,7 @@ def test_the_happy_path_lands_where_it_always_did():
     assert {"date": MON, "slot": "dinner"} not in tools.audit_plan_slots(plan_id)["missing"]
 
 
+@ON_MONDAY
 def test_swapping_a_reheat_night_still_rescales_the_source():
     """
     The rescale now runs INSIDE the transaction rather than after
@@ -771,6 +781,7 @@ def test_swapping_a_reheat_night_still_rescales_the_source():
     assert [t["entry_id"] for t in tools.plan_leftover_chains(plan_id)["sources"][mon]["targets"]] == [thu]
 
 
+@ON_MONDAY
 def test_swapping_the_cook_night_still_buys_for_the_nights_it_fed():
     """_reingest_unlinked_entries, inside the transaction now, still does its job."""
     plan_id, mon, wed, thu = _chain_plan()
@@ -797,6 +808,7 @@ def test_a_draft_swap_still_leaves_the_grocery_list_alone():
     assert [r["recipe_id"] is not None for r in _rows_on(MON, "dinner")] == [True]
 
 
+@ON_MONDAY
 def test_resolve_open_slot_still_settles_the_slot_and_buys_for_it():
     plan_id, entry_id = _plain_plan()
     tools.plan_slot_open(plan_id, TUE, "dinner", "Tuesday I'd rather ask than guess.")

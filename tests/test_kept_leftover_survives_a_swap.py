@@ -29,16 +29,20 @@ from app.db import get_conn
 from app.tools import grocery as _grocery
 from conftest import household_today
 from unittest import mock
+from conftest import approving_on
 
 
 def _approve(start: datetime.date, meal: str = "Stir Fry", night_offset: int = 2, today: datetime.date | None = None) -> dict:
     plan = tools.create_weekly_plan(start.isoformat(), day_count=7)["weekly_plan_id"]
     night = (start + datetime.timedelta(days=night_offset)).isoformat()
     tools.plan_meal(night, meal, slot="dinner", weekly_plan_id=plan)
+    # Approved on its own first day, so a past week's shop is really bought
+    # for (approval buys only from today on) and is there to carry over.
     if today is None:
-        res = tools.approve_weekly_plan(plan, approved_by="Emily")
+        with approving_on(start):
+            res = tools.approve_weekly_plan(plan, approved_by="Emily")
     else:
-        with mock.patch.object(_grocery, "_household_today", lambda conn=None: today):
+        with mock.patch.object(_grocery, "_household_today", lambda conn=None: today), approving_on(start):
             res = tools.approve_weekly_plan(plan, approved_by="Emily")
     return {"plan": plan, "night": night, "carried": res["carried_over"]}
 

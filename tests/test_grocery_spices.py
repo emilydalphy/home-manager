@@ -30,6 +30,10 @@ from app import tools
 from app.db import get_conn
 from app.tools import grocery as _grocery
 from app.tools import spices
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 REPO = Path(__file__).resolve().parent.parent
@@ -114,6 +118,7 @@ def test_everything_else_stays_where_it_is(name):
 
 # ---------- the section ----------
 
+@ON_MONDAY
 def test_a_recipes_spices_wait_unticked_and_off_the_to_buy_list(curry_week):
     needed = _needed()
     assert set(needed) == {"Chicken thighs", "Fresh cilantro", "Tortillas"}, "no spice on the buy list"
@@ -129,6 +134,7 @@ def test_a_recipes_spices_wait_unticked_and_off_the_to_buy_list(curry_week):
     assert sum(len(s["items"]) for st in by_store["stores"] for s in st["sections"]) == 3
 
 
+@ON_MONDAY
 def test_a_tick_moves_the_spice_onto_the_list_and_an_untick_back(curry_week):
     cumin = _section()["Ground cumin"]
     tools.tick_spice(cumin["id"])
@@ -140,6 +146,7 @@ def test_a_tick_moves_the_spice_onto_the_list_and_an_untick_back(curry_week):
     assert _section()["Ground cumin"]["ticked"] is False
 
 
+@ON_MONDAY
 def test_a_ticked_spice_lands_in_its_usual_store(curry_week):
     tools.set_item_store("Smoked paprika", "Bulk Barn")
     paprika = _section()["Smoked paprika"]
@@ -149,6 +156,7 @@ def test_a_ticked_spice_lands_in_its_usual_store(curry_week):
     assert "Smoked paprika" in by_store.get("Bulk Barn", [])
 
 
+@ON_MONDAY
 def test_a_person_asking_for_a_spice_ticks_it(curry_week):
     """A hand add is a want: it merges onto the pending line and puts it
     on the list, rather than starting a second cumin."""
@@ -226,6 +234,7 @@ def _days_ago(n: int) -> str:
     return (household_today() - datetime.timedelta(days=n)).isoformat()
 
 
+@ON_MONDAY
 def test_a_ticked_spice_that_came_home_is_a_spices_staple(curry_week):
     tools.tick_spice(_section()["Ground cumin"]["id"], True)
     cumin_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "Ground cumin")
@@ -238,6 +247,7 @@ def test_a_ticked_spice_that_came_home_is_a_spices_staple(curry_week):
     assert cumin["due"] is False
 
 
+@ON_MONDAY
 def test_a_spice_whose_cadence_has_run_out_is_pre_ticked(curry_week):
     tools.add_staple("Ground cumin", category="pantry")
     _rack_says("Ground cumin", _days_ago(70), _days_ago(14))
@@ -254,6 +264,7 @@ def test_a_spice_whose_cadence_has_run_out_is_pre_ticked(curry_week):
     assert tools.list_spices_this_week()["recently_bought"] == []
 
 
+@ON_MONDAY
 def test_the_card_reads_the_staples_cadence_not_a_second_clock(curry_week):
     """A jar the household has shown it buys every three months is 'bought
     lately' for three months, not eight weeks — the learned cadence is
@@ -269,6 +280,7 @@ def test_the_card_reads_the_staples_cadence_not_a_second_clock(curry_week):
     assert "Ground cumin" not in {sp["item"] for sp in got["items"]}
 
 
+@ON_MONDAY
 def test_unticking_a_pre_ticked_jar_is_we_have_plenty_and_a_retick_takes_it_back(curry_week):
     tools.add_staple("Ground cumin", category="pantry")
     _rack_says("Ground cumin", _days_ago(70), _days_ago(14))
@@ -294,6 +306,7 @@ def test_unticking_a_pre_ticked_jar_is_we_have_plenty_and_a_retick_takes_it_back
     assert "plenty" not in kinds
 
 
+@ON_MONDAY
 def test_a_hand_ticked_jar_is_not_probably_running_low(curry_week):
     """No staple, no claim: a person's own tick is just a thing to buy."""
     tools.tick_spice(_section()["Smoked paprika"]["id"], True)
@@ -318,6 +331,7 @@ def test_the_sort_queue_and_the_trip_never_see_an_unticked_spice(curry_week):
     assert all(f["name"] not in _section() for f in tools.get_pre_shop_flags())
 
 
+@ON_MONDAY
 def test_swapping_out_the_only_meal_that_wanted_a_spice_clears_its_line(curry_week):
     days = tools._week_dates(_monday(0))
     tools.add_recipe("Plain rice", ingredients=[{"item": "Rice", "qty": "2 cups", "category": "pantry"}])
@@ -344,6 +358,7 @@ def test_a_new_week_replaces_last_weeks_unticked_spices(curry_week):
     assert set(_section()) == {"Chili powder"}, "last week's unticked spices were never wanted"
 
 
+@ON_MONDAY
 def test_a_ticked_spice_from_last_week_goes_through_keep_or_drop(curry_week):
     cumin = _section()["Ground cumin"]
     tools.tick_spice(cumin["id"])
@@ -360,6 +375,7 @@ def test_a_ticked_spice_from_last_week_goes_through_keep_or_drop(curry_week):
     assert _needed()["Ground cumin"] == "1 jar", "last week's unbought jar is this week's jar"
 
 
+@ON_MONDAY
 def test_the_routes(signed_in, curry_week):
     res = signed_in.get("/api/grocery-list/spices")
     assert res.status_code == 200
