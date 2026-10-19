@@ -311,7 +311,7 @@ def test_a_rewrite_from_the_households_own_words_files_nothing(
             "prep_time_minutes": 20, "cook_time_minutes": 15,
             "ingredients": a_recipe["ingredients"], "instructions": a_recipe["instructions"]}
 
-    def _apply(spec_base, detail, text):
+    def _apply(spec_base, detail, text, **_kw):
         conn = get_conn()
         conn.execute("UPDATE recipes SET instructions_json = ? WHERE id = ? AND household_id = 1",
                      (json.dumps(["Grill the chicken with extra lime."] + detail["instructions"]),

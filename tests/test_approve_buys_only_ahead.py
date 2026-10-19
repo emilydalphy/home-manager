@@ -51,7 +51,9 @@ def _recipes() -> None:
     tools.add_recipe("Tacos", ingredients=[
         {"item": "tortillas", "qty": "8"}, {"item": "ground beef", "qty": "1 lb"},
     ], default_servings=2)
-    tools.add_recipe("Pasta", ingredients=[{"item": "penne", "qty": "1 lb"}], default_servings=2)
+    # (Merge 2026-10-19: not a pantry staple, which pantry-staples-assumed
+    # leaves off the list as already at home.)
+    tools.add_recipe("Pasta", ingredients=[{"item": "italian sausage", "qty": "1 lb"}], default_servings=2)
 
 
 def _items() -> set[str]:
@@ -95,7 +97,7 @@ def test_tonight_is_still_bought_for():
 
     tools.approve_weekly_plan(plan, "Alex")
 
-    assert _items() == {"penne"}
+    assert _items() == {"italian sausage"}
 
 
 def test_a_gone_cook_night_does_not_buy_for_its_leftovers_and_the_night_is_asked():

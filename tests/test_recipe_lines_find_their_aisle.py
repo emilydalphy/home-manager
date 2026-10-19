@@ -47,7 +47,7 @@ def test_a_chat_recipe_saved_without_categories_shops_by_aisle():
     tools.add_recipe("Stir Fry", ingredients=[
         {"item": "Chicken breast", "qty": "1 lb"},
         {"item": "Bell pepper", "qty": "1"},
-        {"item": "Soy sauce", "qty": "2 tbsp"},
+        {"item": "Tortilla chips", "qty": "1 bag"},  # a pantry aisle line the list still buys (merge 2026-10-19)
     ])
     week = _next_week()
     plan = tools.create_weekly_plan(week)
@@ -55,7 +55,7 @@ def test_a_chat_recipe_saved_without_categories_shops_by_aisle():
     tools.approve_weekly_plan(plan["weekly_plan_id"])
 
     sections = _sections()
-    assert (sections["chicken breast"], sections["bell pepper"], sections["soy sauce"]) == ("meat/seafood", "produce", "pantry")
+    assert (sections["chicken breast"], sections["bell pepper"], sections["tortilla chips"]) == ("meat/seafood", "produce", "pantry")
     # The guess is read, never written onto the recipe.
     assert all("category" not in i for i in tools.get_recipe("Stir Fry")["ingredients"])
 

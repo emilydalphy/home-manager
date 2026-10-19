@@ -198,20 +198,22 @@ def _cook_card_text(name, servings=4):
 def test_the_flour_merges_on_the_grocery_list_and_shows_as_written_on_the_card(signed_in, monkeypatch):
     page = json.dumps({
         "@type": "Recipe", "name": "Shortbread", "recipeYield": "4",
-        "recipeIngredient": ["1 1/2 cups plus 2 tablespoons flour", "10 tbsp butter"],
+        "recipeIngredient": ["1 1/2 cups plus 2 tablespoons almond flour", "10 tbsp butter"],
         "recipeInstructions": "Mix.\nBake.",
     })
     _wire(monkeypatch, {"/sb": _html_response(_page(page))})
     draft = signed_in.post("/api/recipes/import-url", json={"url": "https://bake.example.com/sb"}).json()["draft"]
-    assert ("flour", "1 1/2 cups + 2 tablespoons") in [(i["item"], i["qty"]) for i in draft["ingredients"]]
+    assert ("almond flour", "1 1/2 cups + 2 tablespoons") in [(i["item"], i["qty"]) for i in draft["ingredients"]]
     assert signed_in.post("/api/recipes/add", json=draft).status_code == 200
-    flour = next(i for i in tools.get_recipe("Shortbread")["ingredients"] if i["item"] == "flour")
+    flour = next(i for i in tools.get_recipe("Shortbread")["ingredients"] if i["item"] == "almond flour")
     assert (flour["qty"], flour["qty_as_written"]) == ("26 tbsp", "1 1/2 cups + 2 tablespoons")
     # The cook card: the page's words, and scaled as words.
-    assert _cook_card_text("Shortbread")["flour"] == "1 1/2 cups + 2 tablespoons"
-    assert _cook_card_text("Shortbread", 8)["flour"] == "3 cups + 4 tablespoons"
-    # The grocery list: one flour line with another meal's flour, no "+".
-    tools.add_recipe("Pancakes", ingredients=[{"item": "flour", "qty": "1 cup", "category": "pantry"}])
+    assert _cook_card_text("Shortbread")["almond flour"] == "1 1/2 cups + 2 tablespoons"
+    assert _cook_card_text("Shortbread", 8)["almond flour"] == "3 cups + 4 tablespoons"
+    # Almond flour, not plain flour: pantry-staples-assumed keeps plain flour
+    # off the list as already at home (merge 2026-10-19).
+    # The grocery list: one almond flour line with another meal's almond flour, no "+".
+    tools.add_recipe("Pancakes", ingredients=[{"item": "almond flour", "qty": "1 cup", "category": "pantry"}])
     today = datetime.date.fromisoformat(household_date(0))
     plan = tools.create_weekly_plan(today.isoformat(), day_count=3)["weekly_plan_id"]
     tools.plan_meal(today.isoformat(), "Pancakes", slot="dinner", weekly_plan_id=plan)
@@ -220,7 +222,7 @@ def test_the_flour_merges_on_the_grocery_list_and_shows_as_written_on_the_card(s
     conn = db.get_conn()
     rows = conn.execute("SELECT item, quantity FROM grocery_items WHERE status = 'needed' AND item LIKE '%flour%'").fetchall()
     conn.close()
-    assert len(rows) == 1 and rows[0]["item"].lower() == "flour"
+    assert len(rows) == 1 and rows[0]["item"].lower() == "almond flour"
     assert tools._parse_quantity(rows[0]["quantity"])[1] in ("cup", "tbsp")
     assert "+" not in rows[0]["quantity"]
 

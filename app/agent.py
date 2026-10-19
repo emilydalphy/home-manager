@@ -5032,10 +5032,7 @@ def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False)
                     continue
                 return {"status": "blocked", "said": tools.wont_eat_said(disliked)}
         return tools.apply_rewrite(spec_base, detail, text, this_meal_only=this_meal_only)
-    tools.record_recipe_change_request(
-        name, text, meal_plan_entry_id=entry_id,
-        recipe_id=spec_base["recipe_id"], outcome=tools.OUTCOME_FAILED,
-    )
+    # Filed once, by the caller (_file_unanswered_change), not here too.
     raise ValueError("That rewrite didn’t come together — try it again.")
 
 

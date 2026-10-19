@@ -76,12 +76,12 @@ def test_a_households_own_lentils_keep_their_own_line(lentil_week):
     the household's standing line, on a plan line of its own, and goes
     when the meal goes — the household's "1 cup" is never re-rounded."""
     plan, tomorrow = lentil_week
-    tools.add_recipe("Lentil Garnish", ingredients=[{"item": "Red lentils", "qty": "2 tbsp", "category": "pantry"}])
+    tools.add_recipe("Lentil Garnish", ingredients=[{"item": "Canned lentils", "qty": "2 tbsp", "category": "pantry"}])
     conn = get_conn()
-    conn.execute("DELETE FROM grocery_items WHERE lower(item) = 'red lentils'")
+    conn.execute("DELETE FROM grocery_items WHERE lower(item) = 'canned lentils'")
     conn.commit()
     conn.close()
-    tools.add_grocery_item("Red lentils", quantity="1 cup", category="pantry")
+    tools.add_grocery_item("Canned lentils", quantity="1 cup", category="pantry")
     tools.swap_meal_in_plan(plan, tomorrow, "Lentil Garnish", slot="dinner")
     assert _lentils() == [("1 cup", None), ("2 tbsp", plan)]
     tools.swap_meal_in_plan(plan, tomorrow, "Toast", slot="dinner")

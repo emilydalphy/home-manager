@@ -105,7 +105,9 @@ PERIOD = ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", 
 
 
 def _page(script: str, off: list[tuple[str, str]], out_names: dict | None = None) -> object:
-    names = ("usualWeekOff", "noMealFor", "nobodyHomeFor", "dinnerOff", "currentLunchDates", "lunchOk")
+    # gridOffFor: re-plan Option B's reading, which noMealFor also asks
+    # (merge 2026-10-19); off when the prefill has no `usual`.
+    names = ("usualWeekOff", "gridOffFor", "noMealFor", "nobodyHomeFor", "dinnerOff", "currentLunchDates", "lunchOk")
     stubs = (
         "var data = " + json.dumps({
             "days": [{"date": d} for d in PERIOD],

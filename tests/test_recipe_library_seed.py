@@ -44,7 +44,9 @@ def test_five_hundred_dishes_split_as_proposed():
 
 
 def test_cuisines_are_exactly_the_ones_a_household_can_pick():
-    onboarding = _select_cuisines("static/onboarding.html", r"const CUISINES")
+    # Onboarding's screens live in setup-screens.js since re-plan Option B
+    # (merge 2026-10-19).
+    onboarding = _select_cuisines("static/setup-screens.js", r"const CUISINES")
     what_we_know = _select_cuisines("static/shell.js", r"var WWK_CUISINES")
     assert onboarding == what_we_know == SEED["cuisines"]
     assert set(PROPOSED) == set(onboarding)

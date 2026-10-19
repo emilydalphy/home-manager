@@ -948,7 +948,11 @@ def test_an_ordinary_dinner_pays_nothing_for_the_widening(home):
     # with the grocery ingest and a neighbouring card may legitimately
     # move it by one or two. 87 is what the naive widening cost, so the
     # ceiling has to sit well under it to catch a revert.
-    assert len(seen) < 75, f"the plain swap paid {len(seen)} connections for a widening it does not use"
+    # Merge 2026-10-19: the 10-18/10-19 batch (store hours, pantry staples,
+    # spice measures on the ingest) put the plain swap at 78 and the
+    # reverted early return at 108, so the ceiling moved 75 -> 90: still
+    # well under a revert, with the same headroom as before.
+    assert len(seen) < 90, f"the plain swap paid {len(seen)} connections for a widening it does not use"
     # ...and a lower bound too, because "< 75" is also green at zero,
     # which would mean the counter stopped counting.
     assert len(seen) > 20

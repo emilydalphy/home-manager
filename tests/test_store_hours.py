@@ -119,7 +119,7 @@ def test_still_to_do_in_the_morning_stays_quiet():
     for n in ("Emily", "Vineeth"):
         tools.add_member(n)
     tools.add_usual_stores(["Farm Boy"])
-    tools.add_recipe("Overnight Oats", ingredients=[{"item": "Rolled oats", "qty": "1 lb", "category": "pantry"}],
+    tools.add_recipe("Overnight Oats", ingredients=[{"item": "Blueberries", "qty": "1 pint", "category": "produce"}],  # not a pantry staple (merge 2026-10-19)
                      prep_time_minutes=10, cook_time_minutes=15, default_servings=2)
     plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
     tools.plan_meal(ISO_TODAY, "Overnight Oats", slot="breakfast", weekly_plan_id=plan_id,
@@ -279,7 +279,7 @@ def test_a_midnight_close_is_tonights_last_chance_for_a_cook_tomorrow():
     for n in ("Emily", "Vineeth"):
         tools.add_member(n)
     tools.add_usual_stores(["Farm Boy"])
-    tools.add_recipe("Overnight Oats", ingredients=[{"item": "Rolled oats", "qty": "1 lb", "category": "pantry"}],
+    tools.add_recipe("Overnight Oats", ingredients=[{"item": "Blueberries", "qty": "1 pint", "category": "produce"}],  # not a pantry staple (merge 2026-10-19)
                      prep_time_minutes=10, cook_time_minutes=15, default_servings=2)
     plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
     tomorrow = (TODAY + datetime.timedelta(days=1)).isoformat()
