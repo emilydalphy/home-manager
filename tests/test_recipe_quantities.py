@@ -266,9 +266,7 @@ def test_the_saved_recipe_keeps_its_shopping_quantities():
     tools.save_cooking_quantities("Lemon Pasta", {"Olive oil": "3 tbsp"})
 
     saved = {i["item"]: i for i in tools.get_recipe("Lemon Pasta")["ingredients"]}
-    # spice-totals-for-the-week: a spice line is saved as a measure (the Cook
-    # screen's own amount), never a package; the list still buys one bottle.
-    assert saved["Olive oil"]["qty"] == "2 tbsp"
+    assert saved["Olive oil"]["qty"] == "1 bottle"
     assert saved["Olive oil"]["cook_qty"] == "3 tbsp"
 
 
@@ -426,7 +424,7 @@ def test_a_repair_that_comes_back_wrong_falls_back_to_the_table(monkeypatch):
     assert len(messages.prompts) == 3
     saved = tools.get_recipe("Lemon Pasta")["ingredients"][0]
     assert saved["cook_qty"] == "2 tbsp"
-    assert saved["qty"] == "2 tbsp", "a spice line is saved as a measure, never a package"
+    assert saved["qty"] == "1 bottle", "the shopping amount is untouched"
 
 
 def test_a_fill_that_omits_an_ingredient_entirely_still_gets_a_measurement(monkeypatch):
@@ -467,17 +465,15 @@ def test_the_prompt_names_only_the_ingredients_that_need_a_cooking_amount(monkey
     """
     tools.add_recipe(
         "Lemon Pasta",
-        # Soy sauce, not olive oil: a spice-rack line is saved as a measure
-        # since spice-totals-for-the-week, so it never needs asking about.
-        ingredients=[{"item": "Chicken thighs", "qty": "2 lb"}, {"item": "Soy sauce", "qty": "1 bottle"}],
+        ingredients=[{"item": "Chicken thighs", "qty": "2 lb"}, {"item": "Olive oil", "qty": "1 bottle"}],
         default_servings=4,
     )
-    messages = _stub(monkeypatch, _response(_detail([{"item": "Soy sauce", "cook_qty": "2 tbsp"}])))
+    messages = _stub(monkeypatch, _response(_detail([{"item": "Olive oil", "cook_qty": "2 tbsp"}])))
 
     agent.fill_in_recipe("Lemon Pasta")
 
     ask = messages.prompts[0].split("The household cooks from this")[1]
-    assert "Soy sauce" in ask and "Chicken thighs" not in ask
+    assert "Olive oil" in ask and "Chicken thighs" not in ask
     assert "SHOPPING amount" in ask
     assert "package word" in ask
 

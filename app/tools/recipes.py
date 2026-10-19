@@ -75,6 +75,7 @@ def add_recipe(
     details_pending: bool = False,
     dish_note: str = "",
     from_draft: bool = False,
+    measure_spices: bool = False,
 ) -> dict:
     """
     Save a recipe. ingredients is a list of {"item": str, "qty": str}. tags
@@ -140,7 +141,9 @@ def add_recipe(
     # What the steps use goes on the list (Emily, 2026-10-12): the allergy
     # check and the shopping list both read the list, never the method.
     ingredients = complete_ingredient_list(ingredients or [], instructions or [], default_servings)
-    ingredients = settle_cooking_quantities(ingredients, default_servings)
+    # measure_spices: set by the doors where the model wrote this recipe
+    # (spice_measures_not_packages); a typed or imported one is left as is.
+    ingredients = settle_cooking_quantities(ingredients, default_servings, measure_spices=measure_spices)
 
     # The check and the INSERT share one transaction, opened with BEGIN
     # IMMEDIATE so the write lock is held from the READ rather than from
@@ -503,7 +506,7 @@ def fill_recipe_details(
     """
     # The steps' ingredients on the list, as add_recipe does (2026-10-12).
     ingredients = complete_ingredient_list(ingredients or [], instructions or [], default_servings)
-    settled = settle_cooking_quantities(ingredients, default_servings)
+    settled = settle_cooking_quantities(ingredients, default_servings, measure_spices=True)
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -2074,7 +2077,9 @@ def _implausible_lines(ingredients: list[dict], servings: int | None, as_written
     return out
 
 
-def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> list[dict]:
+def settle_cooking_quantities(
+    ingredients: list[dict], servings: int | None, measure_spices: bool = False,
+) -> list[dict]:
     """
     The pre-save pass: the same ingredient dicts, with a cook_qty written
     onto any line whose cooking amount is out of range for `servings`
@@ -2082,7 +2087,8 @@ def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> 
     dish for `servings` uses (see _PER_PERSON_COUNT_CEILING). Everything
     else is returned untouched — a line that measures sensibly gets no
     cook_qty it did not have, and the shopping qty is never rewritten
-    here — but for a package on a spice line (spice_measures_not_packages).
+    here — but, with `measure_spices` (a door where the model wrote the
+    recipe), for a package on a spice line (spice_measures_not_packages).
     Logged at INFO so a run of these is visible without a database.
 
     The shopping qty staying as written is not an oversight for a COUNT
@@ -2091,7 +2097,8 @@ def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> 
     (_add_recipe_ingredients_for_entries), which is what covers every
     recipe already saved as well as every one saved from here.
     """
-    ingredients = spice_measures_not_packages(ingredients, servings)
+    if measure_spices:
+        ingredients = spice_measures_not_packages(ingredients, servings)
     fixes = {line["index"]: line for line in _implausible_lines(ingredients, servings)}
     if not fixes:
         return ingredients
@@ -2110,25 +2117,30 @@ def settle_cooking_quantities(ingredients: list[dict], servings: int | None) -> 
 def spice_measures_not_packages(ingredients: list[dict], servings: int | None = None) -> list[dict]:
     """
     A spice-rack line (spices.is_spice: spices, dried herbs, salt, pepper,
-    oils) is saved with a MEASURE, never a package (Loop Board, 2026-10-18:
-    "the recipe should be providing measurements"). A package word on one
-    — "1 jar" of cumin, "1 box" of salt — is not what the dish uses, and
-    the Spices section would otherwise have nothing to total. So it is
-    replaced, on the way in, by the cook's measured amount when the line
-    carries one, else the amount the Cook screen already shows for it
-    (cooking_quantity's table — "1 bottle" of oil cooked as 2 tbsp for
-    four), else "to taste" ("as needed" for an oil): an honest "we weren't
-    told", which the Spices total reads as a little (or salt and pepper by
-    the serving), rather than a number made up here. The
-    one exception to settle_cooking_quantities leaving the shopping qty
-    alone. Recipes already on disk are not rewritten; the ingest reads
-    their package as "a little" (spices.spice_measure).
+    oils) that a MODEL wrote with a package is saved with a measure instead
+    (Loop Board, 2026-10-18: "the recipe should be providing
+    measurements"): "1 jar" of cumin is not what the dish uses, and the
+    Spices section would have nothing to total. Only the doors where the
+    model writes the recipe call this (settle_cooking_quantities'
+    `measure_spices`: the week's generation, the recipe pass, a rewrite, a
+    big meal's main, a swap's new dish) — a recipe a person typed or
+    brought in from a page or a book says what it says (review,
+    2026-10-19: a salt crust's "1 box" is the box).
+
+    The replacement: the line's own measured cook_qty, else the amount the
+    Cook screen already shows for it (cooking_quantity's table — "1
+    bottle" of oil cooked as 2 tbsp for four), else "to taste" ("as
+    needed" for an oil). The package written is kept beside it as
+    `package_qty`, never thrown away. Never rewritten: a frying oil (the
+    bottle IS the amount) and a package count above one (the recipe meant
+    more than a little).
     """
     out, changed = [], False
     for ing in ingredients:
         item, qty = ing.get("item") or "", (ing.get("qty") or "").strip()
         core = _quantities._split_quantity_note(qty)[0]
-        if not (_quantities.rack_package(core) and _spices.is_spice(item)):
+        pack = _quantities.rack_package(core)
+        if not (pack and _spices.is_spice(item)) or pack[0] > 1 + 1e-9 or _spices.is_frying(item, qty):
             out.append(ing)
             continue
         changed = True
@@ -2142,8 +2154,7 @@ def spice_measures_not_packages(ingredients: list[dict], servings: int | None = 
             measured = table
         else:
             measured = "as needed" if _spices._is_oil(item) else "to taste"
-        fixed = {k: v for k, v in ing.items() if k != "cook_qty"}
-        fixed["qty"] = measured
+        fixed = {**ing, "qty": measured, "package_qty": qty}
         logger.info("Spice saved as a measure, not a package: %s '%s' -> '%s'", item, qty, measured)
         out.append(fixed)
     return out if changed else ingredients
@@ -4732,8 +4743,9 @@ def _add_recipe_ingredients_for_entries(
         # differs (an old "1 jar" with its teaspoons in cook_qty, or an
         # amount the plausibility pass held down): the Spices row totals
         # what the cook will use, and the line's jar count reads the same.
+        # Not a frying oil: the pot of oil is the amount, held down or not.
         cook_qty = (ing.get("cook_qty") or "").strip()
-        if cook_qty and _spices.is_spice(ing["item"]):
+        if cook_qty and _spices.is_spice(ing["item"]) and not _spices.is_frying(ing["item"], raw_qty):
             cooked = _spices.spice_measure(ing["item"], cook_qty)
             if cooked[0] is not None and not cooked[1]:
                 raw_qty = cook_qty
@@ -4829,10 +4841,12 @@ def _add_recipe_ingredients_for_entries(
         else:
             need = None
         if spice_tsp is not None:
-            # A spice is bought as one store unit (grocery._rack_quantity),
-            # so the kitchen is asked about that: a bottle of oil at home is
-            # the bottle this week would buy, whatever teaspoons it measures.
-            need = (1.0, _spices.store_unit(ing["item"], 0).split(" ", 1)[1])
+            # A spice is bought in store units (grocery._rack_quantity), so
+            # the kitchen is asked about the units THIS recipe-week needs: a
+            # bottle at home covers a week's 2 tbsp, not its 6 cups of
+            # frying oil (three bottles).
+            week_tsp = sum(spice_tsp[0] * scale_for_entry.get(e, 1.0) for e in contributing_ids)
+            need = _quantities._parse_quantity(_spices.store_unit(ing["item"], week_tsp))
         if stock.covers(ing["item"], need):
             already_have.append(ing["item"])
             continue

@@ -132,10 +132,7 @@ def test_a_recipe_that_really_wants_two_bottles_still_gets_two(week):
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
-    # Superseded for spice-rack things (spice-totals-for-the-week, Emily
-    # 2026-10-18): a tick buys ONE store unit whatever the recipes wrote,
-    # two only when the measured total passes what a bottle holds.
-    assert _qty("Olive oil") == "1 bottle"
+    assert _qty("Olive oil") == "2 bottles"
 
 
 # ---------- the amounts that are supposed to add up ----------

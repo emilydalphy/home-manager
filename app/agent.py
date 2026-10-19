@@ -6915,6 +6915,7 @@ def _generate_weekly_plan(
             # are saved whole exactly as before.
             pending = not item.get("ingredients")
             tools.add_recipe(
+                measure_spices=True,  # the model wrote it (spice_measures_not_packages)
                 name=meal_name,
                 from_draft=True,
                 ingredients=item.get("ingredients", []),

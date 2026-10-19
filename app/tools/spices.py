@@ -126,6 +126,10 @@ def is_spice(name: str) -> bool:
     rack things, so it is one too.
     """
     raw = " ".join((name or "").strip().lower().split())
+    # What it's FOR is not what it is, with or without the comma: "Vegetable
+    # oil for frying" and "Canola oil, for frying" are one kind of line
+    # (review, 2026-10-19 — punctuation decided it).
+    raw = _FOR_RE.sub("", raw).strip() or raw
     if _is_spice_name(raw):
         return True
     # Fresh anywhere is bought fresh: "Oregano (fresh)", "Bay leaves (fresh)".
@@ -148,6 +152,7 @@ def is_spice(name: str) -> bool:
 
 
 _PAREN_RE = re.compile(r"\([^()]*\)")
+_FOR_RE = re.compile(r",?\s+for\s+[a-z ,'-]+$")
 
 
 def _is_spice_name(name: str) -> bool:
@@ -370,10 +375,17 @@ def store_unit(item: str, tsp: float) -> str:
     """
     What a tick buys: one store unit ("1 jar", "1 bottle", "1 box"),
     whatever the week's total, unless the total is more than a typical
-    one holds: then two.
+    one holds: then as many as hold it — 6 cups of frying oil is three
+    bottles, not two (review, 2026-10-19).
     """
     unit, holds = _store_unit_kind(item)
-    return _quantities._format_quantity(2 if tsp > holds + 1e-9 else 1, unit)
+    return _quantities._format_quantity(max(1, math.ceil(tsp / holds - 1e-9)), unit)
+
+
+def is_frying(item: str, qty: str = "") -> bool:
+    """A frying oil: the bottle is the amount, not a little of it."""
+    text = f"{item or ''} {qty or ''}".lower()
+    return _is_oil(item) and bool(re.search(r"\b(fry|frying|deep[- ]fry|deep[- ]frying)\b", text))
 
 
 def week_total(item: str, links: list) -> dict:

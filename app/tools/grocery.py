@@ -459,7 +459,24 @@ def _rack_quantity(item: str, qtys: list[str]) -> str | None:
     measured = sum(
         m for m, about in (_spices.spice_measure(item, p) for p in parts) if m is not None and not about
     )
-    return _spices.store_unit(item, measured)
+    # A recipe that names MORE than one package ("2 bottles" of frying
+    # oil) meant it: that count is a floor, as the old max rule had it.
+    return _with_package_floor(_spices.store_unit(item, measured), parts)
+
+
+def _with_package_floor(rack: str, theirs: list[str]) -> str:
+    """`rack` (_rack_quantity's store units), or the largest package
+    amount among `theirs` when that is more — in their words."""
+    best = _quantities._parse_quantity(rack) or (0.0, None)
+    out = rack
+    for qty in theirs:
+        pack = _quantities.rack_package(
+            _quantities._strip_prep_descriptor(_quantities._split_quantity_note((qty or "").strip())[0])
+        )
+        if pack and pack[0] > best[0] + 1e-9:
+            best = pack
+            out = _quantities._format_quantity(pack[0], _quantities._normalize_container_word(pack[1]))
+    return out
 
 
 # What a shopper picks off the shelf for the things recipes measure in
@@ -716,7 +733,12 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
             # removal ever re-derives (the package rule holds the line).
             rack = _rack_quantity(row["item"], [row["quantity"] or "", quantity])
             if rack is not None:
-                return row, rack, True
+                # A household's own count is a floor, never collapsed: their
+                # "2 jars" stays 2 jars whatever a plan's share would buy
+                # (review, 2026-10-19).
+                theirs = [row["quantity"] or ""] if households_line else []
+                theirs += [quantity] if standing else []
+                return row, _with_package_floor(rack, theirs), True
         merged_qty, merged = None, False
         if households_line and consolidate is _try_consolidate_quantity:
             # Onto a household's own line, the household's own second

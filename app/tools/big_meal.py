@@ -703,6 +703,7 @@ def _recipe_for_main(main: dict, holiday_name: str) -> int:
     if row:
         return row["id"]
     saved = _recipes.add_recipe(
+        measure_spices=True,  # the model wrote it (spice_measures_not_packages)
         name=main["name"],
         ingredients=main["ingredients"],
         tags=["big meal", holiday_name.lower()],

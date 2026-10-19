@@ -176,17 +176,109 @@ def test_the_cooks_measure_is_what_an_old_jar_line_totals():
 
 # ---------- recipes carry measures ----------
 
-def test_a_package_on_a_spice_is_never_saved_as_its_amount():
-    saved = tools.add_recipe("Roast", default_servings=4, ingredients=[
+def test_a_package_on_a_spice_the_model_wrote_is_saved_as_a_measure():
+    """A door where the model wrote the recipe (measure_spices)."""
+    saved = tools.add_recipe("Roast", default_servings=4, measure_spices=True, ingredients=[
         {"item": "Ground cumin", "qty": "1 jar", "category": "pantry"},
         {"item": "Paprika", "qty": "1 jar", "cook_qty": "2 tsp", "category": "pantry"},
         {"item": "Olive oil", "qty": "1 bottle", "category": "pantry"},
         {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry"},
+        {"item": "Canola oil, for frying", "qty": "2 bottles", "category": "pantry"},
+        {"item": "Vegetable oil for frying", "qty": "1 bottle", "category": "pantry"},
+        {"item": "Cumin seeds", "qty": "2 jars", "category": "pantry"},
     ])
     assert saved["recipe_id"]
     by = {i["item"]: i for i in _recipes.saved_ingredients("Roast")}
-    # No cook amount: the Cook screen's own (cooking_quantity's table).
-    assert by["Ground cumin"]["qty"] == "1 tsp"
-    assert by["Paprika"]["qty"] == "2 tsp" and "cook_qty" not in by["Paprika"]
+    # No cook amount: the Cook screen's own (cooking_quantity's table); the
+    # package written is kept beside it, never thrown away.
+    assert by["Ground cumin"]["qty"] == "1 tsp" and by["Ground cumin"]["package_qty"] == "1 jar"
+    assert by["Paprika"]["qty"] == "2 tsp"
     assert by["Olive oil"]["qty"] == "2 tbsp"
     assert by["Soy sauce"]["qty"] == "1 bottle", "a condiment is still bought by the bottle"
+    # Never rewritten: a frying oil, and a package count above one.
+    assert by["Canola oil, for frying"]["qty"] == "2 bottles"
+    assert by["Vegetable oil for frying"]["qty"] == "1 bottle"
+    assert by["Cumin seeds"]["qty"] == "2 jars"
+
+
+def test_a_typed_or_imported_recipe_says_what_it_says():
+    """A person's recipe, a page's, a book's: no table defaults (review,
+    2026-10-19 — a salt crust's box is the box)."""
+    tools.add_recipe("Salt Crust Fish", default_servings=4, ingredients=[
+        {"item": "Kosher salt", "qty": "1 box", "category": "pantry"},
+        {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry"},
+    ])
+    tools.add_recipe("Page Curry", default_servings=4, source_url="https://example.com/curry", ingredients=[
+        {"item": "Ground cumin", "qty": "1 jar", "category": "pantry"},
+    ])
+    fish = {i["item"]: i["qty"] for i in _recipes.saved_ingredients("Salt Crust Fish")}
+    assert fish == {"Kosher salt": "1 box", "Vanilla extract": "1 bottle"}
+    assert _recipes.saved_ingredients("Page Curry")[0]["qty"] == "1 jar"
+    # Saving cooking amounts onto it later doesn't rewrite its shopping qty.
+    tools.save_cooking_quantities("Salt Crust Fish", {"Vanilla extract": "1 tsp"})
+    fish = {i["item"]: i for i in _recipes.saved_ingredients("Salt Crust Fish")}
+    assert fish["Vanilla extract"]["qty"] == "1 bottle" and fish["Vanilla extract"]["cook_qty"] == "1 tsp"
+    assert fish["Kosher salt"]["qty"] == "1 box"
+
+
+# ---------- a household's own count is a floor ----------
+
+def _needed():
+    return {i["item"]: i["quantity"] for i in tools.list_grocery_list()}
+
+
+def test_a_households_two_jars_survive_a_plans_jar_landing_on_them():
+    plan_id = _plan()
+    tools.add_grocery_item("Ground cumin", "2 jars", category="pantry")
+    tools.add_recipe("Old Curry", default_servings=2, ingredients=[
+        {"item": "Ground cumin", "qty": "1 jar", "category": "pantry"},
+    ])
+    tools.plan_meal(_d(0), "Old Curry", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    assert _needed()["Ground cumin"] == "2 jars"
+
+
+def test_typing_two_jars_onto_the_plans_jar_keeps_two():
+    plan_id = _plan()
+    tools.add_recipe("Curry", default_servings=2, ingredients=[
+        {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+    ])
+    tools.plan_meal(_d(0), "Curry", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    assert _rows()["Ground cumin"]["quantity"] == "1 jar"
+    tools.add_grocery_item("ground cumin", "2 jars", category="pantry")
+    assert _needed()["Ground cumin"] == "2 jars"
+
+
+# ---------- frying oil: as many bottles as it takes ----------
+
+def test_six_cups_of_frying_oil_buy_three_bottles_and_one_at_home_does_not_cover_it():
+    plan_id = _plan()
+    tools.update_inventory("Vegetable oil for frying", "add", quantity="1 bottle", category="pantry")
+    tools.add_recipe("Fried Chicken", default_servings=2, ingredients=[
+        {"item": "Chicken thighs", "qty": "2 lbs", "category": "meat/seafood"},
+        {"item": "Vegetable oil for frying", "qty": "6 cups", "category": "pantry"},
+    ])
+    tools.plan_meal(_d(0), "Fried Chicken", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    row = _rows()["Vegetable oil for frying"]
+    assert row["quantity"] == "3 bottles"
+    assert row["total"] == "6 cups"
+
+
+def test_one_bottle_at_home_still_covers_a_weeks_spoonfuls():
+    plan_id = _plan()
+    tools.update_inventory("Olive oil", "add", quantity="1 bottle", category="pantry")
+    tools.add_recipe("Salad", default_servings=2, ingredients=[
+        {"item": "Lettuce", "qty": "1 head", "category": "produce"},
+        {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+    ])
+    tools.plan_meal(_d(0), "Salad", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    assert "Olive oil" not in _rows()
+
+
+def test_frying_oil_reads_the_same_with_or_without_the_comma():
+    assert _spices.is_spice("Vegetable oil for frying") and _spices.is_spice("Canola oil, for frying")
+    assert _spices.store_unit("Canola oil, for frying", 6 * 48) == "3 bottles"
+    assert _spices.store_unit("Ground cumin", 0.25) == "1 jar"
