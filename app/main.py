@@ -47,6 +47,8 @@ from .tools import meal_move as _meal_move
 from .tools import prep_sessions as _prep_sessions
 from .tools import today_meals as _today_meals
 from .tools import weekly_plan as _weekly_plan
+from .tools import coordination as _coordination
+from .tools import memory as _memory
 
 
 # Nothing else in the app configures logging, and an unconfigured logger
@@ -1852,7 +1854,79 @@ def read_onboarding_note(req: OnboardingNoteRequest):
     except Exception as e:
         logger.exception("Reading setup's note failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    reading = _wont_eat_as_said(reading, note)
     return {"read": bool(reading), "reading": reading or {}}
+
+
+# An exception's words that are not a food ("unless I ask", "only if it's
+# the weekend"): a condition, so the rule is read without one.
+_NOT_AN_EXCEPTION = frozenset({"i", "we", "you", "he", "she", "they", "someone", "somebody", "anyone", "ask", "asked"})
+_EXCEPTION_LEAD_RE = re.compile(r"^(?:(?:if|when|it'?s|its|it|is|they'?re|they|are|the|a|an|made|as|in|of)\s+)+")
+_EXCEPTION_TAIL_RE = re.compile(r"\s+(?:is|are)\s+(?:fine|ok|okay|alright|allowed|welcome)\b.*$|\s+(?:please|thanks)\b.*$")
+
+
+def _as_written(note: str, food: str) -> str:
+    """The food in the household's own spelling: lower case, unless the note
+    capitalises it mid-sentence ("no Doritos"). The model's "Cauliflower"
+    read back as "Never recommend Cauliflower" (Loop Board, 2026-10-19)."""
+    food = " ".join((food or "").split())
+    m = re.search(r"\b" + re.escape(food) + r"\b", note, re.IGNORECASE)
+    if m and m.group(0) != m.group(0).lower() and not re.search(r"(?:^|[.!?\n])\s*$", note[:m.start()]):
+        return m.group(0)
+    return food.lower()
+
+
+def _exception_in_note(note: str, food: str) -> str:
+    """The exception the household gave this food, read out of their own
+    words, or '' — "unless it's cauliflower rice" -> "cauliflower rice".
+    A "but" counts only when it says the thing is fine ("but shiitake is
+    fine"); "but we love peppers" is a different sentence."""
+    text = note.lower().replace("’", "'")
+    m = re.search(r"\b" + re.escape(food.lower()) + r"(?:e?s)?\b", text)
+    if not m:
+        return ""
+    clause = re.split(r"[.;!?\n]", text[m.end():], maxsplit=1)[0]
+    c = _coordination._CONTRAST_RE.search(clause)
+    if not c:
+        return ""
+    tail = re.split(r",|\band\b|\bor\b", clause[c.end():], maxsplit=1)[0]
+    if c.group(0) == "but" and not _coordination._FINE_RE.search(tail):
+        return ""
+    tail = _EXCEPTION_TAIL_RE.sub("", tail.strip())
+    tail = _EXCEPTION_LEAD_RE.sub("", tail).strip(" ,'\"")
+    words = tail.split()
+    if not words or len(words) > 4 or any(w in _NOT_AN_EXCEPTION or w in _memory._NOT_A_FOOD for w in words):
+        return ""
+    return tail
+
+
+def _wont_eat_as_said(reading: dict | None, note: str) -> dict | None:
+    """
+    The reading's won't-eats as the strings setup will SAVE: "cauliflower",
+    or "cauliflower, except cauliflower rice" when the rule has an
+    exception. The confirm card draws that same string, so it can only
+    approve what is stored, and the stored rule keeps cauliflower rice on
+    the table: the planner reads it, and coordination's matcher reads the
+    exception as a carve-out.
+
+    The exception is model output, so it is enforced here rather than
+    trusted: one the model dropped is put back from the household's own
+    words (_exception_in_note). Plain strings (an older reading) still work.
+    """
+    if not reading or not isinstance(reading.get("wont_eat"), list):
+        return reading
+    out: list[str] = []
+    for item in reading["wont_eat"]:
+        food, exception = (item, "") if isinstance(item, str) else (
+            ((item or {}).get("food") or "", (item or {}).get("except") or "") if isinstance(item, dict) else ("", ""))
+        food = _as_written(note, food)
+        if not food:
+            continue
+        exception = _as_written(note, exception) if exception.strip() else _exception_in_note(note, food)
+        line = f"{food}, except {exception}" if exception else food
+        if line.lower() not in (o.lower() for o in out):
+            out.append(line)
+    return dict(reading, wont_eat=out)
 
 
 @app.get("/api/members/{name}/share-link")
