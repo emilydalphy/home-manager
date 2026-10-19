@@ -1435,10 +1435,17 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     # Said the way a person reads it (quantities.tidy_display_quantity):
     # whole lemons, no eighths, one unit per item. Display only - nothing
     # here is written back.
+    # A spice ticked onto the list is bought by the jar, whatever the
+    # week's recipes measure (spices.store_quantity) — the measured total
+    # stays on the "Spices this week" row. Display only, like the tidy.
+    from . import spices as _spices  # lazy: spices imports this module
     out = []
     for r in rows:
         d = dict(r)
-        d["quantity"] = _quantities.tidy_display_quantity(d.get("item") or "", d.get("quantity") or "") or d.get("quantity")
+        jar = _spices.store_quantity(d["item"], d.get("quantity") or "") if (
+            d["status"] != "spice" and d.get("source_weekly_plan_id") is not None and _spices.is_spice(d.get("item") or "")
+        ) else None
+        d["quantity"] = jar or _quantities.tidy_display_quantity(d.get("item") or "", d.get("quantity") or "") or d.get("quantity")
         out.append(d)
     return out
 

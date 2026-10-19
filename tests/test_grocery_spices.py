@@ -130,8 +130,11 @@ def test_a_recipes_spices_wait_unticked_and_off_the_to_buy_list(curry_week):
 def test_a_tick_moves_the_spice_onto_the_list_and_an_untick_back(curry_week):
     cumin = _section()["Ground cumin"]
     tools.tick_spice(cumin["id"])
-    assert _needed()["Ground cumin"] == "1 tbsp"
+    # The shop list buys the jar; the week's measure stays on the row
+    # (Loop Board "Spices in measures", 2026-10-19).
+    assert _needed()["Ground cumin"] == "1 jar"
     assert _section()["Ground cumin"]["ticked"] is True, "still in the section, shown ticked"
+    assert _section()["Ground cumin"]["quantity"] == "1 tbsp"
     tools.tick_spice(cumin["id"], ticked=False)
     assert "Ground cumin" not in _needed()
     assert _section()["Ground cumin"]["ticked"] is False
@@ -354,7 +357,8 @@ def test_a_ticked_spice_from_last_week_goes_through_keep_or_drop(curry_week):
     assert _section()["Ground cumin"]["ticked"] is False, "this week's own cumin, unticked"
     tools.keep_carried_over_item(carried["Ground cumin"]["item_id"])
     assert _section()["Ground cumin"]["ticked"] is True, "kept means buy it"
-    assert _needed()["Ground cumin"] == "2 tbsp"
+    # Two weeks' tablespoons are still one jar to buy (2026-10-19).
+    assert _needed()["Ground cumin"] == "1 jar"
 
 
 def test_the_routes(signed_in, curry_week):

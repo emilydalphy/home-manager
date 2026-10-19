@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Spices this week totals in tsp/tbsp; a tick buys one jar** (2026-10-19;
+  branch `overnight/spices-in-measures`; tests
+  `tests/test_spices_in_measures.py`). A recipe's spice/salt/pepper/oil is
+  converted to teaspoons at ingest (`spices.spice_measure`: pinch 1/16, dash
+  ⅛, smidgen 1/32, "to taste" ¼ tsp salt / ⅛ pepper per serving, a package
+  "a little" = ¼ tsp; a stored measured cook_qty wins over a package) and
+  goes down the ordinary per-portion path, so batch/attendance scaling and
+  round-once still hold; `meal_plan_grocery_links.estimated` (0/1/2) is what
+  makes a row say "about" / "a little". The row's amount is summed from the
+  UNROUNDED ledger (`spices.week_measures`, old "1 box" rows read through the
+  same table); the ticked shop line shows "1 jar"/"1 bottle" (2 past ½ cup /
+  2 cups) at display time in `list_grocery_list`, the stored measure left
+  alone. Generation prompts now ask for measures; save turns a spice package
+  into its cook_qty, "to taste" (salt/pepper) or blank. Why: "Flaky salt · 7
+  boxes" from seven pinches. Oils were already in the section (is_spice);
+  shell.js untouched. A pinch now scales with eaters (test_attendance edited).
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

@@ -104,9 +104,12 @@ def test_three_different_dinners_listing_olive_oil_buy_one_bottle(week):
     separate dinners each honestly list a bottle of oil, and the household
     still wants one bottle.
     """
+    # Soy sauce, not olive oil, since 2026-10-19: an oil is a spice-rack
+    # thing measured in tbsp now ("Spices in measures"), so the package
+    # rule is pinned on a condiment that is still bought by the bottle.
     for name in ("Stir fry", "Roast chicken", "Pasta"):
         tools.add_recipe(name, ingredients=[
-            {"item": "Olive oil", "qty": "1 bottle", "category": "pantry"},
+            {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry"},
         ])
     days = _days()
     for date, name in zip(days[:3], ("Stir fry", "Roast chicken", "Pasta")):
@@ -114,7 +117,7 @@ def test_three_different_dinners_listing_olive_oil_buy_one_bottle(week):
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
-    assert _qty("Olive oil") == "1 bottle"
+    assert _qty("Soy sauce") == "1 bottle"
 
 
 def test_a_recipe_that_really_wants_two_bottles_still_gets_two(week):
@@ -122,17 +125,20 @@ def test_a_recipe_that_really_wants_two_bottles_still_gets_two(week):
     "One per week" is a floor, not a cap: a recipe that names more than one
     package wins over the recipes beside it that name one.
     """
+    # Soy sauce, not olive oil, since 2026-10-19: an oil is a spice-rack
+    # thing measured in tbsp now ("Spices in measures"), so the package
+    # rule is pinned on a condiment that is still bought by the bottle.
     tools.add_recipe("Fry up", ingredients=[
-        {"item": "Olive oil", "qty": "2 bottles", "category": "pantry"}])
+        {"item": "Soy sauce", "qty": "2 bottles", "category": "pantry"}])
     tools.add_recipe("Salad", ingredients=[
-        {"item": "Olive oil", "qty": "1 bottle", "category": "pantry"}])
+        {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry"}])
     days = _days()
     tools.plan_meal(days[0], "Fry up", slot="dinner", weekly_plan_id=week)
     tools.plan_meal(days[1], "Salad", slot="lunch", weekly_plan_id=week)
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
-    assert _qty("Olive oil") == "2 bottles"
+    assert _qty("Soy sauce") == "2 bottles"
 
 
 # ---------- the amounts that are supposed to add up ----------
@@ -244,8 +250,11 @@ def test_swapping_one_meal_leaves_the_bottle_the_other_meals_still_need(week):
     because three dinners want it; changing one of those dinners must not
     take it away from the two that remain.
     """
+    # Soy sauce, not olive oil, since 2026-10-19: an oil is a spice-rack
+    # thing measured in tbsp now ("Spices in measures"), so the package
+    # rule is pinned on a condiment that is still bought by the bottle.
     tools.add_recipe("Stir fry", ingredients=[
-        {"item": "Olive oil", "qty": "1 bottle", "category": "pantry"},
+        {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry"},
         {"item": "Bell peppers", "qty": "3", "category": "produce"},
     ])
     tools.add_recipe("Soup", ingredients=[{"item": "Carrots", "qty": "4", "category": "produce"}])
@@ -256,7 +265,7 @@ def test_swapping_one_meal_leaves_the_bottle_the_other_meals_still_need(week):
 
     tools.swap_meal_in_plan(week, days[0], "Soup", slot="dinner")
 
-    assert _qty("Olive oil") == "1 bottle", "two dinners still need the oil"
+    assert _qty("Soy sauce") == "1 bottle", "two dinners still need the oil"
     assert _qty("Bell peppers") == "6", "only the swapped meal's peppers came off"
 
 
@@ -356,17 +365,20 @@ def test_headcount_still_scales_the_per_portion_amounts(week):
 
 def test_headcount_does_not_split_a_package(week):
     """Half a table still buys one whole bottle — you cannot buy half a jar."""
+    # Soy sauce, not olive oil, since 2026-10-19: an oil is a spice-rack
+    # thing measured in tbsp now ("Spices in measures"), so the package
+    # rule is pinned on a condiment that is still bought by the bottle.
     tools.add_member("Emily")
     tools.add_member("Vineeth")
     days = _days()
     tools.set_member_attendance(days[0], "dinner", "Vineeth", present=False)
     tools.add_recipe("Stir fry", ingredients=[
-        {"item": "Olive oil", "qty": "1 bottle", "category": "pantry"}])
+        {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry"}])
     tools.plan_meal(days[0], "Stir fry", slot="dinner", weekly_plan_id=week)
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
-    assert _qty("Olive oil") == "1 bottle"
+    assert _qty("Soy sauce") == "1 bottle"
 
 
 # ---------- descriptors: "(frozen)", "3 bag frozen", "1 large" ----------
@@ -528,7 +540,8 @@ def test_emilys_first_approved_week_reads_like_a_shopping_list(week):
     assert _qty("Hummus") == "1 tub"              # was 4 tubs
     assert _qty("Quinoa") == "1 bag"              # was 3 bags
     assert _qty("Cottage cheese") == "1 tub (48 oz)"   # was "48 oz tubs"
-    assert _qty("Olive oil") == "1 bottle"        # was 3 bottles
+    # was 3 bottles; since 2026-10-19 an oil is measured, never packaged
+    assert "bottle" not in _qty("Olive oil")
     assert _qty("Bell peppers") == "17"           # honest sum, uncapped
 
 

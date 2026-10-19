@@ -640,13 +640,14 @@ def test_a_package_keeps_its_own_path(week):
     for i in range(3):
         _plan(
             week, f"Dinner {i}",
-            [{"item": "Olive oil", "qty": "1 bottle", "category": "pantry"}],
+            # Soy sauce, not olive oil: an oil is measured since 2026-10-19.
+            [{"item": "Soy sauce", "qty": "1 bottle", "category": "pantry"}],
             4, "dinner", [i],
         )
 
     tools.approve_weekly_plan(week, approved_by="A")
 
-    assert _qty("Olive oil") == "1 bottle"
+    assert _qty("Soy sauce") == "1 bottle"
 
 
 def test_a_freeform_amount_is_not_treated_as_a_count():

@@ -609,7 +609,11 @@ def test_a_bigger_table_buys_more(couple, recipe, stub_model):
 
 
 def test_freeform_quantities_are_left_alone_rather_than_guessed_at(couple, recipe, stub_model):
-    """"A pinch" does not become "half a pinch"."""
+    """"A pinch" does not become "half a pinch" — of anything freeform.
+    Salt is the exception since 2026-10-19 (Loop Board "Spices in
+    measures"): a spice's pinch is 1/16 tsp by the decided table, and a
+    measure scales to the table like any other, so the one eater at
+    Thursday's dinner of a recipe for four salts with a quarter of it."""
     week = _week_start()
     thursday = tools._week_dates(week)[3]
     tools.set_member_attendance(thursday, "dinner", "Vineeth", present=False)
@@ -619,7 +623,7 @@ def test_freeform_quantities_are_left_alone_rather_than_guessed_at(couple, recip
     plan_id = plan["weekly_plan_id"]
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
 
-    assert _grocery_qty_for(plan_id, thursday, "dinner", "salt") == "a pinch"
+    assert _grocery_qty_for(plan_id, thursday, "dinner", "salt") == "0.015625 tsp"
 
 
 def test_a_week_where_everyone_is_home_buys_for_everyone_who_is_home(couple, recipe, stub_model):

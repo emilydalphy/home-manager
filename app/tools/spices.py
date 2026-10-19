@@ -241,6 +241,8 @@ def list_spices_this_week() -> dict:
         "ORDER BY item",
         (household_id(),),
     ).fetchall()
+    # How much the week's recipes use, from the ledger — the row's amount.
+    measures = week_measures(conn, [r["id"] for r in rows if r["status"] == "spice" or is_spice(r["item"])])
     items, left_out = [], []
     for r in rows:
         if r["status"] != "spice" and not is_spice(r["item"]):
@@ -263,8 +265,13 @@ def list_spices_this_week() -> dict:
         # "Probably running low": Pomona's own tick (the line carries the
         # staple) while the rack still says due — an untick's plenty clears it.
         due = bool(ticked and linked and staple is not None and _due(staple, today))
+        # The measured total when the recipes gave one ("Ground cumin ·
+        # 2½ tsp"), ticked or not — the jar a tick buys is the shop list's
+        # line, never this row's. A person's own add keeps its own words.
+        week = measures.get(r["id"])
+        quantity = amount_text(r["item"], week["tsp"], week["estimated"], week["little_only"]) if week else (r["quantity"] or "")
         items.append({
-            "id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
+            "id": r["id"], "item": r["item"], "quantity": quantity,
             "category": r["category"], "store": r["store"] or "",
             "ticked": ticked, "due": due,
         })
@@ -315,3 +322,280 @@ def tick_spice(item_id: int, ticked: bool = True) -> dict:
     conn.commit()
     conn.close()
     return {"item_id": item_id, "item": row["item"], "ticked": ticked}
+
+
+# ---------- how much of each spice the week needs (Loop Board "Spices in
+# measures", 2026-10-19) ----------
+#
+# "Spices this week" used to total a spice the way the aisles total a box
+# of pasta: the generation prompt wrote spices as the package they come in,
+# so seven snacks that each salt with "a pinch" — or name "1 box" of flaky
+# salt — read "Flaky salt · 7 boxes". The row now says how much the week's
+# recipes USE, in teaspoons and tablespoons ("Ground cumin · 2½ tsp"), and
+# the jar is a separate answer, asked only once the spice is ticked onto
+# the list (store_quantity below).
+#
+# The arithmetic stays the grocery list's: a recipe's spice is converted to
+# TEASPOONS at ingest (spice_measure, called by
+# recipes._add_recipe_ingredients_for_entries) and then goes down the
+# ordinary per-portion path — scaled to the eaters and the batch, summed
+# across the week, rounded ONCE on the line, with each meal's UNROUNDED
+# share in the ledger. The one thing the ledger cannot say from a number
+# is whether that number was a guess, so a converted pinch or "to taste"
+# writes its row with `estimated` set (1 a guess, 2 "a little"), and the
+# row reads "about".
+
+# Teaspoons in one of each volume unit. Weights (g, oz) are left alone:
+# a spice by weight has no honest teaspoon reading without its density.
+_TSP_IN = {"tsp": 1.0, "tbsp": 3.0, "cup": 48.0, "ml": 1 / 4.92892, "l": 1000 / 4.92892}
+
+# The decided table (Emily, on the card): a dash is ⅛ tsp, a pinch 1/16,
+# a smidgen 1/32. Each one is an estimate however exactly it is written.
+_TINY_MEASURES = {
+    "pinch": 1 / 16, "pinches": 1 / 16,
+    "dash": 1 / 8, "dashes": 1 / 8,
+    "smidgen": 1 / 32, "smidgens": 1 / 32, "smidgeon": 1 / 32, "smidgeons": 1 / 32,
+}
+
+# "To taste": a quarter teaspoon of salt per serving the recipe makes, an
+# eighth of pepper (the card's numbers). Anything else written to taste,
+# blank, or as a package is "a little", counted as a quarter teaspoon.
+_SALT_TSP_PER_SERVING = 0.25
+_PEPPER_TSP_PER_SERVING = 0.125
+A_LITTLE_TSP = 0.25
+
+# A package is not an amount: "1 jar" of paprika says what to buy, never
+# how much goes in. Wider than quantities._PACKAGE_UNITS on purpose — that
+# set answers "does one last a week", this one "is this a container".
+_PACKAGE_WORDS = {
+    "jar", "box", "container", "bottle", "bag", "tub", "pack", "packet",
+    "sachet", "can", "tin", "shaker", "carton",
+}
+
+# Measure kinds a contribution can be. "little" is the package / unknown
+# reading: it counts as A_LITTLE_TSP but a row made only of these says
+# "a little" rather than inventing a number.
+MEASURED, ESTIMATE, LITTLE = "measured", "estimate", "little"
+# How each kind is written in meal_plan_grocery_links.estimated, the one
+# thing a ledger row's number cannot say about itself.
+ESTIMATE_FLAG = {MEASURED: 0, ESTIMATE: 1, LITTLE: 2}
+_FLAG_KIND = {flag: kind for kind, flag in ESTIMATE_FLAG.items()}
+
+
+def is_oil(name: str) -> bool:
+    """An oil (or a spray of one) — measured in tbsp and cups, bought by the bottle."""
+    words = (name or "").lower().replace(",", " ").split()
+    return "oil" in words or "spray" in words
+
+
+def _to_tsp(text: str) -> float | None:
+    """A volume measure in teaspoons ("1 1/2 tbsp" -> 4.5), or None."""
+    from . import recipes as _recipes  # lazy: recipes imports this module
+    core, _note = _quantities_split(text)
+    parsed = _recipes._parse_cook_qty(core) if core else None
+    if not parsed or parsed[0] is None or not parsed[1]:
+        return None
+    unit = parsed[1].split(" ")[0]
+    return parsed[0] * _TSP_IN[unit] if unit in _TSP_IN else None
+
+
+def _quantities_split(text: str) -> tuple[str, str]:
+    from . import quantities as _quantities
+    return _quantities._split_quantity_note((text or "").strip())
+
+
+def _tiny_tsp(text: str) -> float | None:
+    """'a pinch', 'pinch', '2 pinches', 'a dash of', 'smidgen' -> teaspoons, or None."""
+    words = (text or "").strip().lower().replace(",", " ").split()
+    if not words:
+        return None
+    count = 1.0
+    if words[0] in ("a", "an", "one"):
+        words = words[1:]
+    elif len(words) > 1:
+        from . import recipes as _recipes  # lazy: recipes imports this module
+        parsed = _recipes._parse_cook_qty(" ".join(words))
+        if not parsed or parsed[0] is None or not parsed[1]:
+            return None
+        count, words = parsed[0], parsed[1].split(" ")
+    if not words or words[0] not in _TINY_MEASURES:
+        return None
+    return count * _TINY_MEASURES[words[0]]
+
+
+def _is_package(text: str) -> bool:
+    from . import recipes as _recipes  # lazy: recipes imports this module
+    core, _note = _quantities_split(text)
+    parsed = _recipes._parse_cook_qty(core) if core else None
+    if not parsed or not parsed[1]:
+        return False
+    word = parsed[1].split(" ")[0].lower()
+    return word in _PACKAGE_WORDS or word.rstrip("s") in _PACKAGE_WORDS or word[:-2] in _PACKAGE_WORDS
+
+
+def spice_measure(item: str, qty: str, servings: int | None = None, cook_qty: str = "") -> tuple[float, str] | None:
+    """
+    (teaspoons, kind) for one recipe line of a spice, at the recipe's own
+    servings, or None when the line is something else and is left exactly
+    as it was: a count ("2 bay leaves", "1 cinnamon stick") or a weight.
+
+    In order:
+      - a volume measure is MEASURED and simply converted ("1 tbsp" = 3);
+      - a pinch / dash / smidgen is an ESTIMATE, by the table above;
+      - a recipe's own stored cook_qty, when the shopping qty is a package
+        or nothing: that is the measured amount the recipe-fill saved and
+        the Cook screen already shows, so the row agrees with the cook
+        rather than guessing — not a backfill, the recipe said it;
+      - "to taste", blank, "season with": salt and pepper per serving
+        (an ESTIMATE); any other spice "a little";
+      - a package unit ("1 jar", "1 box") is LITTLE — counted as ¼ tsp,
+        never as a box — until the recipe is regenerated with a measure.
+    """
+    text = (qty or "").strip()
+    tsp = _to_tsp(text)
+    if tsp is not None:
+        return tsp, MEASURED
+    tiny = _tiny_tsp(text)
+    if tiny is not None:
+        return tiny, ESTIMATE
+    package = _is_package(text)
+    if package or not _has_number(text):
+        stored = _to_tsp(cook_qty or "")
+        if stored is not None:
+            return stored, MEASURED
+        stored_tiny = _tiny_tsp(cook_qty or "")
+        if stored_tiny is not None:
+            return stored_tiny, ESTIMATE
+    if package:
+        return A_LITTLE_TSP, LITTLE
+    if _has_number(text):
+        return None  # a count or a weight: not ours to convert
+    per_serving = _per_serving_to_taste(item)
+    if per_serving and servings:
+        return per_serving * servings, ESTIMATE
+    return A_LITTLE_TSP, LITTLE
+
+
+def _has_number(text: str) -> bool:
+    return any(ch.isdigit() for ch in text or "") or any(ch in "¼½¾⅓⅔⅛⅜⅝⅞" for ch in text or "")
+
+
+def _per_serving_to_taste(item: str) -> float:
+    words = set((item or "").lower().replace(",", " ").split())
+    salt, pepper = "salt" in words, bool(words & {"pepper", "peppercorn", "peppercorns"})
+    return (_SALT_TSP_PER_SERVING if salt else 0.0) + (_PEPPER_TSP_PER_SERVING if pepper else 0.0)
+
+
+def _ledger_measure(item: str, quantity: str, estimated: int) -> tuple[float, str] | None:
+    """
+    One ledger row read as (teaspoons, kind). A row written since this
+    change is already teaspoons (or a tsp-family unit); `estimated` says
+    whether it was a guess. A row written BEFORE it carries the recipe's
+    own words — "1 box", "a pinch", "to taste" — and is read through the
+    same table, servings unknown, so last week's list stops saying boxes
+    without anything being rewritten.
+    """
+    tsp = _to_tsp(quantity)
+    if tsp is not None:
+        return tsp, _FLAG_KIND.get(estimated or 0, ESTIMATE)
+    return spice_measure(item, quantity)
+
+
+def week_measures(conn, item_ids) -> dict[int, dict]:
+    """
+    grocery item id -> {"tsp", "estimated", "little_only"} summed over the
+    per-meal ledger (meal_plan_grocery_links) — the UNROUNDED shares, so a
+    week of pinches is seven sixteenths and not seven quarters. A line
+    with no ledger rows (a person's own add) or with a row that is not a
+    volume at all (a count of bay leaves) is left out: its own quantity
+    is the honest answer there.
+    """
+    ids = [int(i) for i in item_ids]
+    if not ids:
+        return {}
+    marks = ",".join("?" * len(ids))
+    rows = conn.execute(
+        f"SELECT grocery_item_id, item, quantity, estimated FROM meal_plan_grocery_links "
+        f"WHERE household_id = ? AND grocery_item_id IN ({marks})",
+        (household_id(), *ids),
+    ).fetchall()
+    out: dict[int, dict] = {}
+    unreadable: set[int] = set()
+    for r in rows:
+        gid = r["grocery_item_id"]
+        measure = _ledger_measure(r["item"], r["quantity"] or "", r["estimated"])
+        if measure is None:
+            unreadable.add(gid)
+            continue
+        tsp, kind = measure
+        total = out.setdefault(gid, {"tsp": 0.0, "estimated": False, "little_only": True})
+        total["tsp"] += tsp
+        total["estimated"] = total["estimated"] or kind != MEASURED
+        total["little_only"] = total["little_only"] and kind == LITTLE
+    for gid in unreadable:
+        out.pop(gid, None)
+    return out
+
+
+_EIGHTHS = {0: "", 1: "⅛", 2: "¼", 3: "⅜", 4: "½", 5: "⅝", 6: "¾", 7: "⅞"}
+_HALVES = {0: "", 1: "½"}
+
+
+def _mixed(whole: int, frac: str) -> str:
+    return f"{whole}{frac}" if whole and frac else (frac or str(whole))
+
+
+def amount_text(item: str, tsp: float, estimated: bool = False, little_only: bool = False) -> str:
+    """
+    The Spices row's amount: "2½ tsp", "about 1½ tbsp", "⅔ cup".
+    Teaspoons to the nearest eighth (a pinch never rounds away to
+    nothing), tablespoons from 1 tbsp up in halves, and an oil past 4 tbsp
+    in measuring-cup steps (quarters and thirds, the cups in the drawer).
+    "about" whenever any contribution was an estimate.
+    """
+    if little_only:
+        return "a little"
+    about = "about " if estimated else ""
+    if is_oil(item) and tsp > 12 + 1e-9:
+        cups = tsp / 48
+        steps = [(n / d, label) for n, d, label in (
+            (1, 4, "¼"), (1, 3, "⅓"), (1, 2, "½"), (2, 3, "⅔"), (3, 4, "¾"),
+        )]
+        whole = int(cups)
+        rest = cups - whole
+        best = min([(0.0, "")] + steps + [(1.0, "")], key=lambda s: abs(s[0] - rest))
+        if best[0] == 1.0:
+            whole, best = whole + 1, (0.0, "")
+        return f"{about}{_mixed(whole, best[1])} cup" if whole or best[1] else f"{about}¼ cup"
+    if tsp + 1e-9 >= 3:
+        halves = round(tsp / 3 * 2)
+        return f"{about}{_mixed(halves // 2, _HALVES[halves % 2])} tbsp"
+    eighths = max(1, round(tsp * 8))
+    if eighths >= 24:
+        return f"{about}1 tbsp"
+    return f"{about}{_mixed(eighths // 8, _EIGHTHS[eighths % 8])} tsp"
+
+
+# What a typical jar of ground spice holds, and a bottle of oil: past it a
+# week genuinely needs a second one. A guess, said here so it can be argued
+# with — ½ cup is the card's number for a jar; 2 cups (about 500 ml) is
+# this builder's for a bottle.
+_JAR_HOLDS_TSP = 24.0
+_BOTTLE_HOLDS_TSP = 96.0
+
+
+def store_quantity(item: str, quantity: str) -> str | None:
+    """
+    What a TICKED spice line says on the shop list: one store unit ("1
+    jar", "1 bottle"), two only past what one holds — never the measured
+    total, which is a cooking amount and stays on the Spices row. None when
+    the line's quantity is not a volume (a household's own "2 jars", a
+    count of cinnamon sticks): that is left as written.
+    """
+    tsp = _to_tsp(quantity or "")
+    if tsp is None:
+        return None
+    oil = is_oil(item)
+    holds = _BOTTLE_HOLDS_TSP if oil else _JAR_HOLDS_TSP
+    word = "bottle" if oil else "jar"
+    return f"2 {word}s" if tsp > holds + 1e-9 else f"1 {word}"

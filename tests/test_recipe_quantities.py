@@ -254,10 +254,14 @@ def test_the_grocery_list_still_buys_one_bottle():
     bought = {g["item"]: g["quantity"] for g in tools.list_grocery_list()}
     assert bought["Baby spinach"] == "1 bag"
     # The oil waits unticked in the "Spices this week" section now
-    # (spices.py, 2026-09-13) — one bottle there, and not on the to-buy list.
-    spices = {g["item"]: g["quantity"] for g in tools.list_grocery_list(status="spice")}
-    assert spices["Olive oil"] == "1 bottle"
+    # (spices.py, 2026-09-13) and not on the to-buy list. Since 2026-10-19
+    # ("Spices in measures") a spice is never a package: "1 bottle" with no
+    # measure behind it reads "a little" there, and a tick buys the bottle.
+    section = {g["item"]: g for g in tools.list_spices_this_week()["items"]}
+    assert section["Olive oil"]["quantity"] == "a little"
     assert "Olive oil" not in bought
+    tools.tick_spice(section["Olive oil"]["id"])
+    assert {g["item"]: g["quantity"] for g in tools.list_grocery_list()}["Olive oil"] == "1 bottle"
 
 
 def test_the_saved_recipe_keeps_its_shopping_quantities():
@@ -266,7 +270,9 @@ def test_the_saved_recipe_keeps_its_shopping_quantities():
     tools.save_cooking_quantities("Lemon Pasta", {"Olive oil": "3 tbsp"})
 
     saved = {i["item"]: i for i in tools.get_recipe("Lemon Pasta")["ingredients"]}
-    assert saved["Olive oil"]["qty"] == "1 bottle"
+    # Except a spice's package (2026-10-19, "Spices in measures"): an oil
+    # is shopped by its measure, so the recipe's own measure becomes it.
+    assert saved["Olive oil"]["qty"] == "3 tbsp"
     assert saved["Olive oil"]["cook_qty"] == "3 tbsp"
 
 
@@ -424,7 +430,9 @@ def test_a_repair_that_comes_back_wrong_falls_back_to_the_table(monkeypatch):
     assert len(messages.prompts) == 3
     saved = tools.get_recipe("Lemon Pasta")["ingredients"][0]
     assert saved["cook_qty"] == "2 tbsp"
-    assert saved["qty"] == "1 bottle", "the shopping amount is untouched"
+    # An oil's "1 bottle" is never kept as a spice amount (2026-10-19):
+    # the measured cook_qty becomes the qty.
+    assert saved["qty"] == "2 tbsp"
 
 
 def test_a_fill_that_omits_an_ingredient_entirely_still_gets_a_measurement(monkeypatch):

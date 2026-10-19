@@ -859,6 +859,11 @@ _MIGRATIONS = [
     # period it chose (2026-10-14) — see weekly_plan.remember_first_period.
     # '' on every existing household: nobody is owed an answer never given.
     ("households", "first_period_start", "TEXT NOT NULL DEFAULT ''"),
+    # A spice's ledger row that was a guess (a pinch, "to taste") — the
+    # Spices row says "about" (spices.spice_measure, 2026-10-19). 0 on
+    # every existing row: those carry the recipe's own words and are read
+    # through the same table at display time.
+    ("meal_plan_grocery_links", "estimated", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

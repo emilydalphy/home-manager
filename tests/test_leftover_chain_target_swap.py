@@ -164,9 +164,10 @@ def test_swapping_a_target_in_an_approved_plan_rescales_the_sources_grocery_line
     tools.approve_weekly_plan(plan_id, "Emily")
 
     # The full batch of 3 (Tue + Wed + Fri, 3 eaters apiece) against a
-    # recipe written for 3 is a 3x scale.
-    assert _grocery_by_item() == {"beef": "3 lbs", "lettuce": "3 heads", "salt": "to taste"}
-    assert _ledger_items_for(tue) == {"beef": "3 lbs", "lettuce": "3 heads", "salt": "to taste"}
+    # recipe written for 3 is a 3x scale. Salt "to taste" is ¼ tsp a
+    # serving since 2026-10-19 ("Spices in measures"), scaled the same.
+    assert _grocery_by_item() == {"beef": "3 lbs", "lettuce": "3 heads", "salt": "2.25 tsp"}
+    assert _ledger_items_for(tue) == {"beef": "3 lbs", "lettuce": "3 heads", "salt": "2.25 tsp"}
     assert _ledger_items_for(wed) == {}
     assert _ledger_items_for(fri) == {}
 
@@ -178,7 +179,7 @@ def test_swapping_a_target_in_an_approved_plan_rescales_the_sources_grocery_line
     on_list = _grocery_by_item()
     assert on_list["beef"] == "2 lbs"
     assert on_list["lettuce"] == "2 heads"
-    assert on_list["salt"] == "to taste"
+    assert on_list["salt"] == "1.5 tsp"
     assert on_list["stock"] == "1 l"
     assert len(on_list) == 4
 
@@ -186,7 +187,7 @@ def test_swapping_a_target_in_an_approved_plan_rescales_the_sources_grocery_line
     # one line on the list and the one row in the ledger agree, which is
     # what "the ledger sums to the line" means once there's only one
     # contributor left.
-    assert _ledger_items_for(tue) == {"beef": "2 lbs", "lettuce": "2 heads", "salt": "to taste"}
+    assert _ledger_items_for(tue) == {"beef": "2 lbs", "lettuce": "2 heads", "salt": "1.5 tsp"}
     assert _ledger_items_for(fri) == {}
 
 
@@ -214,10 +215,10 @@ def test_clearing_a_target_slot_behaves_the_same_as_swapping_it():
     on_list = _grocery_by_item()
     assert on_list["beef"] == "1 lb"
     assert on_list["lettuce"] == "1 head"
-    assert on_list["salt"] == "to taste"
+    assert on_list["salt"] == "0.75 tsp"
     assert on_list["stock"] == "1 l"
     assert len(on_list) == 4
-    assert _ledger_items_for(tue) == {"beef": "1 lb", "lettuce": "1 head", "salt": "to taste"}
+    assert _ledger_items_for(tue) == {"beef": "1 lb", "lettuce": "1 head", "salt": "0.75 tsp"}
     assert _ledger_items_for(fri) == {}
 
 

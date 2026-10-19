@@ -1168,6 +1168,10 @@ CREATE TABLE IF NOT EXISTS meal_plan_grocery_links (
     -- lossy — see recipes._ledger_share. Rows written before 2026-09-13
     -- carry an apportioned rounded share instead.
     quantity TEXT NOT NULL DEFAULT '',
+    -- A spice's teaspoons that were a guess: 1 a pinch or "to taste"
+    -- ("about"), 2 a package read as "a little"; 0 measured or not a
+    -- spice (spices.spice_measure, 2026-10-19).
+    estimated INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

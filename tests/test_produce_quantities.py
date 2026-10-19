@@ -210,7 +210,8 @@ def test_a_package_is_still_one_package_however_small_the_table(week, family_of_
     """Three quarters of a table still buys one whole bottle. The servings
     anchor is a per-portion rule and must not reach the package path."""
     tools.add_recipe("Stir fry", ingredients=[
-        {"item": "Olive oil", "qty": "1 bottle", "category": "pantry"},
+        # Soy sauce, not olive oil: an oil is measured since 2026-10-19.
+        {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry"},
         {"item": "Baby spinach", "qty": "1 bag", "category": "produce"},
     ], default_servings=4)
     for date in _days()[:3]:
@@ -218,7 +219,7 @@ def test_a_package_is_still_one_package_however_small_the_table(week, family_of_
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
-    assert _qty("Olive oil") == "1 bottle"
+    assert _qty("Soy sauce") == "1 bottle"
     assert _qty("Baby spinach") == "1 bag"
 
 
@@ -256,13 +257,15 @@ def test_a_prep_descriptor_is_still_not_a_note(week, family_of_three):
 def test_a_freeform_quantity_is_still_not_guessed_at(week, family_of_three):
     """"A pinch" has no number in it, so it never enters the buffer and
     three quarters of a pinch is not a thing anyone writes down."""
+    # Sugar, not salt: a spice's pinch is 1/16 tsp since 2026-10-19
+    # (spices.spice_measure); anything else freeform still is not guessed.
     tools.add_recipe("Pepper dinner", ingredients=[
-        {"item": "Salt", "qty": "a pinch", "category": "pantry"}], default_servings=4)
+        {"item": "Sugar", "qty": "a pinch", "category": "pantry"}], default_servings=4)
     tools.plan_meal(_days()[0], "Pepper dinner", slot="dinner", weekly_plan_id=week)
 
     tools.approve_weekly_plan(week, approved_by="Emily")
 
-    assert _qty("Salt") == "a pinch"
+    assert _qty("Sugar") == "a pinch"
 
 
 # ---------- the ledger has to add back up to the line ----------

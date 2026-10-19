@@ -101,7 +101,9 @@ def test_swapping_the_source_reingests_the_former_reheat_nights_own_ingredients(
     # The batch bought the doubled amount, and Thursday itself bought
     # nothing — the starting point this fix has to leave intact for the
     # source, and correct for the reheat night.
-    assert _grocery_by_item() == {"beef": "2 lbs", "lettuce": "2 heads", "salt": "to taste"}
+    # Salt "to taste" is ¼ tsp a serving since 2026-10-19 ("Spices in
+    # measures"), so it doubles with the batch like everything else.
+    assert _grocery_by_item() == {"beef": "2 lbs", "lettuce": "2 heads", "salt": "1.5 tsp"}
     assert _ledger_items_for(thu_entry) == {}
 
     tools.swap_meal_in_plan(plan_id, TUE, "Soup", slot="dinner")
@@ -115,13 +117,13 @@ def test_swapping_the_source_reingests_the_former_reheat_nights_own_ingredients(
     assert on_list["stock"] == "1 l"
     assert on_list["beef"] == "1 lb"
     assert on_list["lettuce"] == "1 head"
-    assert on_list["salt"] == "to taste"
+    assert on_list["salt"] == "0.75 tsp"
     assert "stock" in on_list and len(on_list) == 4
 
     # The ledger actually recorded Thursday's own contribution — not just a
     # coincidentally-matching grocery line — which is what lets it reverse
     # symmetrically below.
-    assert _ledger_items_for(thu_entry) == {"beef": "1 lb", "lettuce": "1 head", "salt": "to taste"}
+    assert _ledger_items_for(thu_entry) == {"beef": "1 lb", "lettuce": "1 head", "salt": "0.75 tsp"}
 
 
 def test_clearing_after_the_swap_leaves_the_list_empty():

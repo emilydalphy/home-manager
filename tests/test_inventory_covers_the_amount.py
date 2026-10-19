@@ -215,13 +215,14 @@ def test_a_package_still_covers_the_same_package():
     """One bottle of oil at home is still one bottle of oil not bought —
     the ordinary sealed-package case has to keep working. GREEN on
     2120af5: a no-regression guard."""
-    _recipe("Sheet Pan Chicken", [{"item": "Olive oil", "qty": "1 bottle", "category": "pantry"}])
-    tools.update_inventory("Olive oil", "add", quantity="1 bottle", category="pantry")
+    # Soy sauce, not olive oil: an oil is measured since 2026-10-19.
+    _recipe("Sheet Pan Chicken", [{"item": "Soy sauce", "qty": "1 bottle", "category": "pantry"}])
+    tools.update_inventory("Soy sauce", "add", quantity="1 bottle", category="pantry")
 
     day = _next_week_dates(1)[0]
     _approve_week([(day, "Sheet Pan Chicken")])
 
-    assert _on_list("Olive oil") is None
+    assert _on_list("Soy sauce") is None
 
 
 # ------------------------------------------- rows for one name are summed

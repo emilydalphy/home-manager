@@ -80,7 +80,9 @@ def test_the_line_becomes_the_alternative_and_the_recipe_says_so(week):
     assert result["item"] == "dry oregano" and result["original_item"] == "Fresh oregano"
     needed = _needed()
     assert "Fresh oregano" not in needed
-    assert needed["dry oregano"]["quantity"] == "3 tbsp", "the amount stays for the person to adjust"
+    # A DRIED herb is a spice-rack thing, bought by the jar on the list
+    # (2026-10-19, "Spices in measures"); the stored 3 tbsp is untouched.
+    assert needed["dry oregano"]["quantity"] == "1 jar"
     cook = _cook_ingredients(week)
     for meal in ("Greek salad", "Lemon chicken"):
         line = next(i for i in cook[meal] if i["item"] == "Fresh oregano")

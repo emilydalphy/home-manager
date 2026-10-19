@@ -1684,7 +1684,7 @@ TOOL_DEFINITIONS = [
                         "type": "object",
                         "properties": {
                             "item": {"type": "string", "description": "The plain grocery-list name ('Carrots', never 'Carrots, julienned'), naming the kind whenever the count depends on it ('Persian cucumbers' with qty '6' — a bare 'Cucumbers' reads as full-size English ones). In its plain shopping form: 'Plain yogurt', never 'Yogurt, plain'."},
-                            "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead. A COUNT is the amount the DISH uses, never one each: a salad for four wants ONE lemon, not four."},
+                            "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; spices, dried herbs, salt, pepper and oils are the measure used ('2 tsp', '1 tbsp', oils may be '1/4 cup'), never '1 jar'; the grocery list adds the week's eggs up and rounds to dozens itself — this is what shows up on the grocery list when the recipe gets planned, not a recipe-prep measurement like '2 cups shredded'. Any prep-specific amount belongs in the instructions text instead. A COUNT is the amount the DISH uses, never one each: a salad for four wants ONE lemon, not four."},
                             "category": {
                                 "type": "string",
                                 "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -3934,7 +3934,7 @@ _RECIPE_DETAILS_TOOL = {
                     "type": "object",
                     "properties": {
                         "item": {"type": "string", "description": "The plain grocery-list name ('Baby spinach', 'Carrots'), never with a prep descriptor ('Carrots, julienned'). Name the kind when the count only makes sense for that kind ('Persian cucumbers', 'Cherry tomatoes'). In its plain shopping form: 'Plain yogurt', never 'Yogurt, plain'."},
-                        "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself. Never a recipe-prep measurement like '2 cups shredded'."},
+                        "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; spices, dried herbs, salt, pepper and oils are the measure used ('2 tsp', '1 tbsp', oils may be '1/4 cup'), never '1 jar'; the grocery list adds the week's eggs up and rounds to dozens itself. Never a recipe-prep measurement like '2 cups shredded'."},
                         "category": {
                             "type": "string",
                             "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -4049,13 +4049,18 @@ kind — "Persian cucumbers" with qty "6", "Cherry tomatoes" with "1 pint", "Bab
 beefsteak tomato, a russet, a bell pepper), so "6 cucumbers" sends the shopper home with six \
 English cucumbers — a crazy amount — when the recipe meant six small Persian ones. Say which \
 kind; the list shows exactly the name you write.
-- Ingredients used in only a small amount, where a single store-bought unit obviously covers \
-many uses across a whole week — spices, dried herbs, cooking oil, vinegar, soy sauce and \
-similar condiments, salt, pepper, sugar — are written as the sealed unit they come in: "1 jar", \
-"1 bottle", "1 bag", "1 tub". Never a measurement ("2 tsp") and never a fraction of a package \
-("1/6 bottle"): other recipes this week are being written at the same time as this one, and the \
-grocery list counts a sealed package ONCE for the whole week no matter how many recipes name \
-it, so "1 bottle" of olive oil on six recipes buys one bottle. This does NOT apply to \
+- SPICES, DRIED HERBS, SALT, PEPPER AND COOKING OILS are written as the MEASURE this recipe \
+uses, in tsp or tbsp ("2 tsp" ground cumin, "1 tbsp" kosher salt, "1/2 tsp" black pepper); an \
+oil may be tbsp or cup ("3 tbsp", "1/4 cup" olive oil). Never a package ("1 jar", "1 box", "1 \
+bottle") for these: the list shows the household how much of each spice the week's recipes \
+need, and buys the jar itself. "a pinch" and "to taste" are fine where that is the honest amount. \
+- Other ingredients used in only a small amount, where a single store-bought unit obviously \
+covers many uses across a whole week — vinegar, soy sauce and similar condiments, sugar — are \
+written as the sealed unit they come in: "1 bottle", "1 bag", "1 tub". Never a measurement \
+("2 tsp") and never a fraction of a package ("1/6 bottle"): other recipes this week are being \
+written at the same time as this one, and the grocery list counts a sealed package ONCE for the \
+whole week no matter how many recipes name it, so "1 bottle" of soy sauce on six recipes buys \
+one bottle. This does NOT apply to \
 ingredients genuinely consumed in real per-recipe portions even when pantry-sourced — canned \
 beans, rice, pasta, broth, flour for baking — those need their own real qty every time, since \
 each use is an actual portion, not a pinch.
@@ -5399,7 +5404,7 @@ _GENERATE_COMPONENT_PLAN_TOOL = {
                                 "type": "object",
                                 "properties": {
                                     "item": {"type": "string"},
-                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; the grocery list adds the week's eggs up and rounds to dozens itself, not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
+                                    "qty": {"type": "string", "description": "How it's actually bought at the store (e.g. '1 head', '1 bunch', '1 lb', '1 can') — except eggs and garlic, which are the NUMBER the recipe uses ('4' eggs, '3 cloves' garlic), never '1 dozen' or '1 head'; spices, dried herbs, salt, pepper and oils are the measure used ('2 tsp', '1 tbsp', oils may be '1/4 cup'), never '1 jar'; the grocery list adds the week's eggs up and rounds to dozens itself, not a recipe-prep measurement like '2 cups shredded' — see the prompt guidance above on this."},
                                     "category": {
                                         "type": "string",
                                         "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -5541,8 +5546,9 @@ shopping form ("Plain yogurt", never "Yogurt, plain") — but DO name the kind \
 whenever the count depends on it ("Persian cucumbers" with qty "6", never a bare "Cucumbers" \
 meaning small ones: a bare name reads as the full-size kind). A COUNT is the amount the DISH \
 uses, never one each: a salad for four wants ONE lemon, not four. See the day-based prompt's \
-guidance on this and on not re-adding a fresh unit of a staple (spices, oil, condiments) on \
-every item that uses it, same rules apply here.
+guidance on this and on not re-adding a fresh unit of a staple (condiments) on every item \
+that uses it, and on writing spices, dried herbs, salt, pepper and oils as tsp/tbsp (oils may be \
+cup) — same rules apply here.
 - current_inventory lists what's already on hand — still include those ingredients in a new \
 recipe's list for accuracy, but don't let already-stocked items influence which items you pick.
 - near_expiring_inventory lists items already expired or expiring soon, most urgent first — \
@@ -7957,7 +7963,7 @@ _GENERATE_SIDES_TOOL = {
                                 "type": "object",
                                 "properties": {
                                     "item": {"type": "string", "description": "The ingredient name in its plain shopping form with no prep descriptor — 'Baby spinach', never 'Baby spinach, chopped'; 'Plain yogurt', never 'Yogurt, plain'."},
-                                    "qty": {"type": "string", "description": "How it's actually bought at the store ('1 head', '1 bunch', '1 lb', '1 box'), not a prepped measurement — except eggs and garlic, which are the number used ('2' eggs, '2 cloves'), never '1 dozen' or '1 head'."},
+                                    "qty": {"type": "string", "description": "How it's actually bought at the store ('1 head', '1 bunch', '1 lb', '1 box'), not a prepped measurement — except eggs and garlic, which are the number used ('2' eggs, '2 cloves'), never '1 dozen' or '1 head'; spices, dried herbs, salt, pepper and oils are the measure used ('2 tsp', '1 tbsp'), never '1 jar'."},
                                     "category": {
                                         "type": "string",
                                         "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
@@ -8078,7 +8084,7 @@ _DISH_PROPERTIES = {
             "type": "object",
             "properties": {
                 "item": {"type": "string", "description": "The ingredient name with no prep descriptor, in its plain shopping form — 'Plain yogurt', never 'Yogurt, plain'."},
-                "qty": {"type": "string", "description": "As bought at the store, for THIS table ('2 lb', '1 bunch', '2 cans')."},
+                "qty": {"type": "string", "description": "As bought at the store, for THIS table ('2 lb', '1 bunch', '2 cans'); spices, dried herbs, salt, pepper and oils are the measure used ('2 tsp', '1 tbsp'), never '1 jar'."},
                 "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
             },
             "required": ["item", "qty", "category"],
