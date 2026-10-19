@@ -536,7 +536,7 @@ def _store_amount(item: str, qtys: list[str]) -> str | None:
     if not kind:
         return None
     unit, per = _STORE_UNITS[kind]
-    packages, measured, seen = 0.0, 0.0, False
+    packages, measured, seen, by_weight = 0.0, 0.0, False, 0
     for raw in qtys:
         core = _quantities._strip_prep_descriptor(_quantities._split_quantity_note((raw or "").strip())[0])
         if not core:
@@ -550,6 +550,7 @@ def _store_amount(item: str, qtys: list[str]) -> str | None:
             measured += amount * _quantities._VOLUME_TO_TSP[u] / _quantities._VOLUME_TO_TSP["cup"] * per["cup"]
         elif u in _G_PER and "g" in per:
             measured += amount * _G_PER[u] * per["g"]
+            by_weight += 1
         elif word in per and word in _quantities._PACKAGE_UNITS:
             packages = max(packages, amount * per[word])
         elif word in per:
@@ -557,7 +558,11 @@ def _store_amount(item: str, qtys: list[str]) -> str | None:
         else:
             return None
         seen = True
-    if not seen:
+    if not seen or by_weight == sum(1 for q in qtys if (q or "").strip()):
+        # Nothing to convert, or only weights: a weight is what the label
+        # says already ("300 g" of yogurt is the cook card's 300 g —
+        # test_onboarding_planning). Weights convert only beside a cup or a
+        # package, to make one amount of "12 oz + 1 cup crumbled".
         return None
     # A sealed package is what the week draws on, so it covers measured
     # amounts up to its own size — "1 tub" of butter and 10 tbsp is the tub

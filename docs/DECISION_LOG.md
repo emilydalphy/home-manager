@@ -13,6 +13,33 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Realistic week amounts: one box of salt, two bunches of parsley, loaves
+  and pints** (2026-10-19; branch `overnight/realistic-week-amounts`, STACKED on
+  `overnight/part-cups-read-as-cups` — merge after it; tests
+  `tests/test_realistic_week_amounts.py`). Three slices, all landed:
+  (1) a spice-rack thing is at most ONE package a week — a spice's "1 box"
+  takes the package path, and the merge and every ledger re-read ask
+  `grocery._rack_quantity` (package beats measure beats "to taste"); salt
+  kinds (not flaky), red chili/pepper flakes, ground black pepper share a
+  `_SAME_PURCHASE` key; `is_spice` reads "Paprika (sweet)", "…, optional",
+  "salt and pepper". (2) Aromatics: a **per-ingredient ceiling per dish**, not
+  sub-linear scaling (`recipes._AROMATIC_CEILINGS`: herbs 2 bunches, garlic
+  10 cloves, lemons/limes 3) — never below what the recipe wrote, so it only
+  stops batch scaling; the capped share is the ledger's unrounded share.
+  (3) Store units (`grocery._STORE_UNITS`: bread loaf=20 slices, berries/cherry
+  tomatoes pint=2 cups, yogurt 750 g tub=3 cups, granola bag=4 cups, butter
+  lb, feta 200 g block, baby spinach bag=5 cups) read off the WHOLE ledger and
+  rounded up once (`_store_amount`; a weights-only ledger stays in weight,
+  the label says it already; via `_plan_or_rack_amount` on ingest and
+  removal; a sealed package covers measures up to its size). Prep words after
+  a unit ("1 cup crumbled") are dropped; "boneless, skinless" moves into the
+  name; multigrain/whole grain/whole wheat bread share a line.
+  Why: Tester Home plan 72 read 7 boxes of flaky salt, 6 bunches parsley,
+  "Butter 1 tub + 10 tbsp". Invariants kept: ledger untouched (unrounded),
+  standing wants never take the rack/store reading (household lines skip it).
+  Not done: butter by the stick stays sticks; ingredient amounts the card
+  quotes as examples ("Feta · 2 blocks") are approximate, not matched; the
+  pantry-staples branch owns sauces/pantry sections.
 - **Part cups read as cups on the list** (2026-10-19; branch
   `overnight/part-cups-read-as-cups`; tests `tests/test_part_cups_read_as_cups.py`).
   `_roll_up_unit` rolls into cups from ¼ cup (`_ROLL_UP_FROM`), cups round to
