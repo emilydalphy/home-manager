@@ -163,6 +163,21 @@ why*, not duplicating the diff.
   edit down stands), only ever down. Not covered: a person's own line (the
   dropped share left with its ledger row), and a line whose meals ALL went
   while ticked (comes back as it was, like the set-aside case).
+- **Recipe research: ~134K input tokens a dish down to ~16K (est.)**
+  (2026-10-18; branch `overnight/research-input-budget`; tests
+  `tests/test_research_input_budget.py`). The page cap held; the bill was the
+  server-side loop re-billing the whole context at every step, multiplied by
+  dynamic filtering (the `_20260209` web tools' default code-execution layer)
+  and by one request that searched AND read. Now `allowed_callers: ["direct"]`,
+  and two requests a dish — find (search, then `choose_pages_to_read`) and read
+  (fetch only those URLs, then submit) — so the search results are billed once.
+  `RECIPE_RESEARCH_INPUT_TOKENS` (25,000) stops any further request once a dish
+  has spent it, fallback included; the test sums each request's worst case.
+  Not verified live: the ~6K a search's results cost is Anthropic's example.
+  Review round: a failed choice reads the search's top results (and a dish
+  whose reading never finished isn't marked empty); chosen URLs match loosely;
+  the reader may open only the chosen sites and only a chosen page can lead;
+  the read step is cut to fit the budget before it starts (+400 a step re-billed).
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

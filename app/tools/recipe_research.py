@@ -689,6 +689,16 @@ def fetch_tokens() -> int:
     return max(500, _env_number("RECIPE_RESEARCH_FETCH_TOKENS", 3000))
 
 
+def dish_input_tokens() -> int:
+    """Most input tokens one dish's research may be billed, across every
+    request it makes (RECIPE_RESEARCH_INPUT_TOKENS, default 25,000). Loop
+    Board 2026-10-18: a dish was billed ~134,000 with pages capped at 3,000,
+    because every server-side step of a request is billed the WHOLE context
+    again. No new request (a continuation, the read step, the fallback)
+    starts once a dish has spent this."""
+    return _env_number("RECIPE_RESEARCH_INPUT_TOKENS", 25000)
+
+
 def dish_seconds() -> float:
     """Wall-clock cap on one dish's whole research step
     (RECIPE_RESEARCH_DISH_SECONDS, default 60)."""
