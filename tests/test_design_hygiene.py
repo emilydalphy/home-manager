@@ -53,6 +53,9 @@ LIVE_FILES = [
     # The "Need a hand?" sheet (2026-09-18): a script that draws markup and
     # injects its own stylesheet, so it answers to the same rules a page does.
     "help-sheet.js",
+    # The first-open tour (2026-10-18): draws its own card; its colours are
+    # shell.css tokens.
+    "tour.js",
 ]
 
 # `&#9733;`-style HTML numeric entities (a plain "★" written as an entity)

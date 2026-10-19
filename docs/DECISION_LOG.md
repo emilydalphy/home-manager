@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The first-open tour (Option A) is built** (2026-10-19; branch
+  `overnight/first-open-tour`; tests `tests/test_first_open_tour.py`; mockups
+  `mockups/first-open-tour.html`). Six spotlight stops — Swap/Tweak,
+  Move/Pick, the Pomona button, Shop, Cook, Today — starting on Plan's first
+  draft and ending back on it; `static/tour.js` draws it, `shell.js`
+  starts it (`maybeStartFirstTour`) and replays it ("Show me around again"
+  in Preferences). Done/skipped is `members.tour_ended_how` (the household's
+  column with nobody picked), server-side, first ending kept. Why no tour for
+  a household with any approved week (`app/tools/tour.py`): it's the card's
+  rule and the only way to keep every household already using Pomona out of
+  it. Consequence worth knowing: onboarding's reveal "Approve the week"
+  approves before Plan is ever seen, so that path gets no tour — only "or
+  tweak it with me" and opening Plan before approving do. Emily's call.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
