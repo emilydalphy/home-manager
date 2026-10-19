@@ -700,6 +700,17 @@ why*, not duplicating the diff.
   the check also runs when an already-built Plan is shown (the second
   adult's welcome had held it off), one start per load; stop 3 / Cook copy
   no longer promise a tap the overlay takes.
+- **2026-10-19 — Own sign-ins for everyone: mockups + build plan, design only
+  (branch `overnight/own-logins-mockups`).** `mockups/own-logins.html` (15
+  phones, steps A–F, tokens copied from theme.css, light + dark) and
+  `mockups/own-logins-plan.md` (plain-words flow A–H, slices 0–6 with
+  acceptance criteria, 4 questions). No app code changed. Found in the code:
+  email + code sign-in, invites, `member_emails` and the old-inbox check on
+  an email change are already built — the gap is SMTP on Railway (slice 0,
+  blocks everything), the email being required at join, per-person session
+  end, the People list, removing another adult, and switching passphrases
+  off. Supersedes the older Loop Board card "everyone has their own login".
+
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Own sign-ins</title>
+<!--
+  Mockup for the Loop Board card "Mockups: everyone in the household has
+  their own login, all connected to the same household" (Emily, 2026-10-18).
+  Design only: not wired to the app, nothing here is built. Self-contained:
+  the tokens below are copied value for value from static/theme.css (light
+  :root, the guarded dark media block, and its forced-dark twin), so every
+  colour on the page goes through a token (DESIGN_SYSTEM.md rule 9). The
+  plain-words flow, the build plan and the open questions are in
+  mockups/own-logins-plan.md. Phones are 375px wide.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@1,6..72,400&display=swap">
+<style>
+/* ---------- tokens, copied from static/theme.css ---------- */
+:root {
+  color-scheme: light;
+  --ground: #FBF6EE; --surface: #FFFDF8; --surface-raised: #fff;
+  --spruce: #1B3328; --spruce-raised: #24402F; --spruce-hover: #2B4A37; --spruce-edge: transparent;
+  --field: #12211A; --celadon-tint: #E2EDE5; --ink-strong: #1B3328;
+  --ink: #23302A; --ink-on-celadon: #24362D; --ivory-ink: #F6EEE1; --ivory-ink-muted: rgba(246, 238, 225, .92);
+  --on-spruce-ink: #fff; --ink-secondary: #7C7161; --ink-muted: #7E7360; --ink-placeholder: #797060;
+  --ink-inactive: #948970; --ink-done: #7A705E;
+  --apricot: #E0915C; --apricot-light: #F2B98E; --apricot-deep: #C4703C; --apricot-label: #A2582F;
+  --apricot-rule: rgba(224, 145, 92, .34);
+  --celadon: #A9C4B0; --celadon-edge: #C7DACD; --celadon-label: #4F6B5B;
+  --on-accent-ink: #1B3328;
+  --hairline: #EEE3D0; --hairline-strong: #E6D9C4; --hairline-deep: #D9C9AF; --on-spruce-edge: #2E5240;
+  --sand: #F3EBDC; --sand-deep: #E6D9C4;
+  --urgent: #B23A22; --urgent-ink: #F6EEE1; --urgent-tint: #F7E6DE; --urgent-label: #8F2C17;
+  --font-display: "Bricolage Grotesque", "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-body: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-accent: "Newsreader", Georgia, "Times New Roman", Times, serif;
+  --radius-hero: 30px; --radius-card: 20px; --radius-ask: 18px; --radius-action: 17px; --radius-tile: 15px;
+  --radius-control: 14px; --radius-chip: 11px; --radius-badge: 10px; --radius-badge-sm: 9px; --radius-pill: 999px;
+  --shadow-hero: 0 26px 48px -30px rgba(18, 36, 25, .85);
+  --shadow-action: 0 16px 28px -18px rgba(224, 145, 92, .8);
+  --shadow-sheet: 0 -8px 30px rgba(35, 48, 42, .2);
+  --shadow-dialog: 0 18px 44px rgba(35, 48, 42, .28);
+  --shadow-toast: 0 6px 20px rgba(0, 0, 0, .18);
+  --scrim: rgba(35, 48, 42, .45);
+  --toast-bg: #23302A; --toast-ink: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #101F19; --surface: #172C22; --spruce: #22422F; --spruce-raised: #2E5140; --celadon-tint: #1C3B2C;
+    --spruce-edge: #2C4B38; --field: #0B1712; --spruce-hover: #32573F; --surface-raised: #192F24;
+    --ink: #F3EBDD; --ink-on-celadon: #F3EBDD; --ivory-ink: #F3EBDD; --ivory-ink-muted: #E4DCCE;
+    --ink-secondary: #BFB6A5; --ink-muted: #BFB6A5; --ink-placeholder: #9C9384; --ink-inactive: #9C9384;
+    --ink-done: #A9A091; --ink-strong: #F3EBDD;
+    --apricot: #E9A16C; --apricot-light: #F2B98E; --apricot-deep: #E9A16C; --apricot-label: #F2B98E;
+    --apricot-rule: rgba(233, 161, 108, .30);
+    --celadon: #A9C4B0; --celadon-edge: #2E5240; --celadon-label: #97BDA4; --on-accent-ink: #14261D;
+    --hairline: #26382E; --hairline-strong: #33473B; --hairline-deep: #33473B; --sand: #223328; --sand-deep: #33473B;
+    --urgent: #E6705B; --urgent-ink: #14261D; --urgent-tint: #3B1D16; --urgent-label: #F0A594;
+    --shadow-hero: 0 26px 48px -30px rgba(0, 0, 0, .75);
+    --shadow-action: 0 16px 28px -18px rgba(233, 161, 108, .45);
+    --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, .55);
+    --shadow-dialog: 0 18px 44px rgba(0, 0, 0, .60);
+    --shadow-toast: 0 6px 20px rgba(0, 0, 0, .50);
+    --scrim: rgba(0, 0, 0, .66);
+    --toast-bg: #2E5140; --toast-ink: #F3EBDD;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #101F19; --surface: #172C22; --spruce: #22422F; --spruce-raised: #2E5140; --celadon-tint: #1C3B2C;
+  --spruce-edge: #2C4B38; --field: #0B1712; --spruce-hover: #32573F; --surface-raised: #192F24;
+  --ink: #F3EBDD; --ink-on-celadon: #F3EBDD; --ivory-ink: #F3EBDD; --ivory-ink-muted: #E4DCCE;
+  --ink-secondary: #BFB6A5; --ink-muted: #BFB6A5; --ink-placeholder: #9C9384; --ink-inactive: #9C9384;
+  --ink-done: #A9A091; --ink-strong: #F3EBDD;
+  --apricot: #E9A16C; --apricot-light: #F2B98E; --apricot-deep: #E9A16C; --apricot-label: #F2B98E;
+  --apricot-rule: rgba(233, 161, 108, .30);
+  --celadon: #A9C4B0; --celadon-edge: #2E5240; --celadon-label: #97BDA4; --on-accent-ink: #14261D;
+  --hairline: #26382E; --hairline-strong: #33473B; --hairline-deep: #33473B; --sand: #223328; --sand-deep: #33473B;
+  --urgent: #E6705B; --urgent-ink: #14261D; --urgent-tint: #3B1D16; --urgent-label: #F0A594;
+  --shadow-hero: 0 26px 48px -30px rgba(0, 0, 0, .75);
+  --shadow-action: 0 16px 28px -18px rgba(233, 161, 108, .45);
+  --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, .55);
+  --shadow-dialog: 0 18px 44px rgba(0, 0, 0, .60);
+  --shadow-toast: 0 6px 20px rgba(0, 0, 0, .50);
+  --scrim: rgba(0, 0, 0, .66);
+  --toast-bg: #2E5140; --toast-ink: #F3EBDD;
+}
+
+/* ---------- the page around the phones ---------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--ground); color: var(--ink); font-family: var(--font-body); padding: 24px 16px 64px; }
+.page { max-width: 1240px; margin: 0 auto; }
+.intro { max-width: 760px; margin: 0 auto 8px; }
+.intro h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; font-size: 31px; margin: 0 0 8px; }
+.intro p { margin: 0 0 10px; color: var(--ink-secondary); line-height: 1.5; font-size: 16px; }
+.theme-pick { display: inline-flex; gap: 4px; background: var(--sand); border-radius: var(--radius-pill); padding: 4px; margin: 6px 0 4px; }
+.theme-pick button { min-height: 44px; min-width: 64px; border: 0; border-radius: var(--radius-pill); background: transparent;
+  font: 700 14px var(--font-body); color: var(--ink-secondary); cursor: pointer; }
+.theme-pick button[aria-pressed="true"] { background: var(--surface); color: var(--ink-strong); }
+section.step { margin: 44px auto 0; }
+.step-head { max-width: 760px; margin: 0 auto 18px; }
+.step-head .eyebrow { color: var(--apricot-label); }
+.step-head h2 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.028em; font-size: 24px; margin: 4px 0 6px; }
+.step-head p { margin: 0; color: var(--ink-secondary); line-height: 1.5; }
+.row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+figure { margin: 0; width: 375px; max-width: 100%; }
+figcaption { margin-top: 12px; font-size: 14px; color: var(--ink-secondary); line-height: 1.45; }
+figcaption b { color: var(--ink); }
+.eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
+.changes { max-width: 760px; margin: 0 auto; display: grid; gap: 12px; }
+.change { background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 16px; }
+.change h3 { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em; margin: 4px 0 6px; }
+.change p { margin: 0; line-height: 1.5; font-size: 15px; }
+.change .was { color: var(--ink-secondary); }
+
+/* ---------- a phone ---------- */
+.phone { width: 375px; max-width: 100%; height: 740px; position: relative; overflow: hidden; border-radius: 36px;
+  border: 1.5px solid var(--hairline-strong); background: var(--ground); color: var(--ink); }
+svg.i { width: 22px; height: 22px; flex: 0 0 auto; }
+
+/* The front door: the one spruce-ground screen (static/login.html). */
+.door { background-color: var(--spruce);
+  background-image: radial-gradient(132% 60% at 50% 3%, color-mix(in srgb, var(--apricot) 17%, transparent) 0%,
+    color-mix(in srgb, var(--apricot) 5%, transparent) 44%, transparent 74%);
+  color: var(--ivory-ink); display: flex; flex-direction: column; border-color: var(--spruce-edge); }
+.door-top { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 64px 26px 24px; text-align: center; }
+.plaque { width: 66px; height: 66px; border-radius: 22px; border: 1.5px solid var(--on-spruce-edge);
+  background: var(--spruce-raised); display: grid; place-items: center; color: var(--apricot); }
+.plaque svg { width: 34px; height: 34px; }
+.wordmark { font-family: var(--font-display); font-weight: 700; font-size: 56px; letter-spacing: -0.045em; line-height: 1; margin: 0; color: var(--ivory-ink); }
+.rule { width: 46px; height: 2px; border-radius: 1px; background: var(--apricot-rule); }
+.door h3 { font-family: var(--font-display); font-weight: 700; font-size: 31px; letter-spacing: -0.038em; line-height: 1.08; margin: 0; color: var(--ivory-ink); }
+.door .line { font-size: 16px; line-height: 1.45; color: var(--ivory-ink-muted); margin: 0; max-width: 300px; }
+.door .accent { font-family: var(--font-accent); font-style: italic; font-size: 20px; color: var(--apricot-light); margin: 0; }
+.door-bottom { padding: 0 26px 30px; display: flex; flex-direction: column; gap: 12px; }
+.field { height: 56px; border-radius: var(--radius-ask); background: var(--spruce-raised); border: 1.5px solid var(--on-spruce-edge);
+  display: flex; align-items: center; gap: 11px; padding: 0 16px; font-size: 16px; font-weight: 600; color: var(--ivory-ink); }
+.field.focus { border-color: var(--celadon); }
+.field svg { color: var(--celadon); }
+.field .ph { color: var(--ivory-ink-muted); opacity: .66; }
+.digits { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.digits span { height: 58px; border-radius: var(--radius-control); background: var(--spruce-raised); border: 1.5px solid var(--on-spruce-edge);
+  display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 24px; color: var(--ivory-ink); }
+.digits span.on { border-color: var(--celadon); }
+.btn { height: 56px; width: 100%; border: 0; border-radius: var(--radius-ask); background: var(--apricot); color: var(--on-accent-ink);
+  font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: -0.02em; box-shadow: var(--shadow-action);
+  display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.sm { height: 52px; font-size: 17px; border-radius: var(--radius-action); }
+.links { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 18px; }
+.switch { min-height: 44px; display: inline-flex; align-items: center; padding: 0 6px; background: none; border: 0;
+  font: 600 14px var(--font-body); color: var(--ivory-ink); text-decoration: underline; text-decoration-color: var(--apricot-rule); text-underline-offset: 4px; }
+.agree { margin: 0; text-align: center; font-size: 12.5px; color: var(--ivory-ink-muted); opacity: .8; line-height: 1.45; }
+.agree u { text-decoration-color: var(--apricot-rule); }
+
+/* The app's own screens: root band, cards, tab bar. */
+.band { background: var(--spruce); color: var(--ivory-ink); padding: 18px 20px 46px; position: relative; border-bottom: 1.5px solid var(--spruce-edge); }
+.band-top { display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; gap: 7px; font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: -0.02em; color: var(--ivory-ink-muted); }
+.brand svg { width: 20px; height: 20px; color: var(--apricot-light); }
+.tile44 { width: 44px; height: 44px; border-radius: var(--radius-tile); background: var(--spruce-raised); display: grid; place-items: center; color: var(--ivory-ink); }
+.band h3 { font-family: var(--font-display); font-weight: 700; font-size: 31px; letter-spacing: -0.038em; margin: 10px 0 2px; color: var(--ivory-ink); }
+.band .sub { font-size: 15px; color: var(--ivory-ink-muted); display: flex; align-items: center; gap: 8px; }
+.chip { font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; background: var(--spruce-raised); color: var(--ivory-ink-muted);
+  padding: 4px 8px; border-radius: var(--radius-badge-sm); }
+.pour { position: relative; margin-top: -30px; background: var(--ground); border-radius: var(--radius-hero) var(--radius-hero) 0 0; padding: 20px 20px 0; }
+.card { background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 14px 16px; }
+.stack { display: grid; gap: 12px; }
+.card .t { font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em; margin-top: 3px; }
+.card .s { font-size: 14px; color: var(--ink-secondary); margin-top: 2px; }
+.calm { background: var(--celadon-tint); border-color: var(--celadon-edge); color: var(--ink-on-celadon); }
+.calm .eyebrow { color: var(--celadon-label); }
+.mrow { display: flex; align-items: center; gap: 12px; min-height: 52px; }
+.mrow + .mrow { border-top: 1.5px solid var(--hairline); }
+.tick { width: 26px; height: 26px; border-radius: 9px; border: 2px solid var(--hairline-deep); flex: 0 0 auto; }
+.mrow .t { margin: 0; font-size: 16px; }
+.tabs { position: absolute; left: 0; right: 0; bottom: 0; height: 76px; display: flex; border-top: 1.5px solid var(--hairline); background: var(--ground); padding-bottom: 8px; }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 700; color: var(--ink-inactive); }
+.tab.on { color: var(--ink-strong); }
+.fab { position: absolute; right: 16px; bottom: 90px; width: 54px; height: 54px; border-radius: 50%; background: var(--spruce); color: var(--apricot-light);
+  display: grid; place-items: center; box-shadow: var(--shadow-hero); border: 1.5px solid var(--spruce-edge); }
+.fab svg { width: 26px; height: 26px; }
+
+/* Sheets and dialogs. */
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: var(--radius-hero) var(--radius-hero) 0 0;
+  box-shadow: var(--shadow-sheet); padding: 10px 20px 26px; }
+.sheet.tall { top: 46px; overflow: hidden; }
+.grabber { width: 40px; height: 5px; border-radius: var(--radius-pill); background: var(--hairline-strong); margin: 0 auto 16px; }
+.sheet h4, .dialog h4 { font-family: var(--font-display); font-weight: 700; font-size: 24px; letter-spacing: -0.028em; margin: 0; }
+.sheet .lead, .dialog .lead { margin: 6px 0 18px; font-size: 16px; line-height: 1.45; color: var(--ink-secondary); }
+.quiet { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin-top: 6px; background: none; border: 0;
+  font: 700 15px var(--font-body); color: var(--ink-secondary); }
+.dialog { position: absolute; left: 20px; right: 20px; top: 50%; transform: translateY(-50%); background: var(--surface); border-radius: var(--radius-card);
+  box-shadow: var(--shadow-dialog); padding: 22px 20px 14px; }
+.sheet-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sheet-top h4 { font-size: 26px; }
+.x { width: 44px; height: 44px; border-radius: var(--radius-tile); background: var(--sand); display: grid; place-items: center; color: var(--ink); }
+.group-label { margin: 18px 0 8px; }
+.people { background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 2px 14px; }
+.person { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 0; }
+.person + .person { border-top: 1.5px solid var(--hairline); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: 15px;
+  background: var(--sand); color: var(--ink); flex: 0 0 auto; }
+.avatar.a1 { background: var(--apricot-light); color: var(--on-accent-ink); }
+.avatar.a2 { background: var(--celadon); color: var(--on-accent-ink); }
+.who { flex: 1 1 auto; min-width: 0; }
+.who .n { font-weight: 700; font-size: 16px; }
+.who .h { font-size: 13.5px; color: var(--ink-secondary); margin-top: 1px; overflow-wrap: anywhere; }
+.who .h.ok { color: var(--celadon-label); font-weight: 600; }
+.mini { min-height: 36px; padding: 0 12px; border-radius: var(--radius-control); background: var(--sand); color: var(--ink-strong);
+  font: 700 14px var(--font-body); border: 0; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; position: relative; }
+.mini::before { content: ""; position: absolute; inset: -4px; }
+.mini.outline { background: transparent; border: 1.5px solid var(--hairline-strong); }
+.chev { color: var(--apricot-label); width: 18px; height: 18px; }
+.add-row { display: flex; align-items: center; gap: 8px; min-height: 48px; font-weight: 700; font-size: 15px; color: var(--ink-strong); padding: 4px 2px; }
+.prow { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 58px; background: var(--surface);
+  border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 10px 14px; }
+.prow .tt { font-weight: 700; font-size: 16px; }
+.prow .ss { font-size: 14px; color: var(--ink-secondary); margin-top: 1px; }
+.ring { box-shadow: 0 0 0 2px var(--apricot); }
+.toast { position: absolute; left: 16px; right: 16px; bottom: 156px; background: var(--toast-bg); color: var(--toast-ink); border-radius: var(--radius-control);
+  box-shadow: var(--shadow-toast); padding: 13px 16px; font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; }
+.message-preview { background: var(--sand); border-radius: var(--radius-card); padding: 14px 16px; font-size: 15px; line-height: 1.45; }
+.message-preview .eyebrow { display: block; margin-bottom: 6px; }
+
+/* Vineeth's Messages app — drawn plainly, from tokens. */
+.msgs-head { padding: 22px 20px 14px; text-align: center; border-bottom: 1.5px solid var(--hairline); }
+.msgs-head .avatar { margin: 0 auto 6px; width: 48px; height: 48px; font-size: 19px; }
+.msgs-head .n { font-weight: 700; font-size: 14px; }
+.thread { padding: 18px 16px; display: grid; gap: 8px; }
+.when { text-align: center; font-size: 12px; color: var(--ink-secondary); font-weight: 600; margin-bottom: 4px; }
+.bubble { max-width: 82%; background: var(--sand); border-radius: 20px 20px 20px 6px; padding: 10px 14px; font-size: 16px; line-height: 1.4; }
+.linkcard { max-width: 82%; border: 1.5px solid var(--hairline-strong); border-radius: 20px 20px 20px 6px; overflow: hidden; background: var(--surface); }
+.linkcard .art { height: 104px; background: var(--spruce); display: grid; place-items: center; color: var(--apricot); }
+.linkcard .art svg { width: 40px; height: 40px; }
+.linkcard .meta { padding: 10px 14px 12px; }
+.linkcard .meta .t { font-weight: 700; font-size: 15px; }
+.linkcard .meta .s { font-size: 13px; color: var(--ink-secondary); }
+
+/* Onboarding's question screens (static/onboarding.html, .q-title). */
+.q { padding: 30px 22px 0; }
+.q .progress { height: 4px; border-radius: var(--radius-pill); background: var(--sand); overflow: hidden; margin-bottom: 30px; }
+.q .progress i { display: block; height: 100%; width: 14%; background: var(--apricot); }
+.q h3 { font-family: var(--font-display); font-weight: 700; font-size: 31px; letter-spacing: -0.038em; line-height: 1.08; margin: 0 0 8px; }
+.q .lead { margin: 0 0 22px; font-size: 16px; color: var(--ink-secondary); line-height: 1.45; }
+.ifield { height: 56px; border-radius: var(--radius-control); border: 1.5px solid var(--ink-strong); background: var(--surface);
+  display: flex; align-items: center; padding: 0 16px; font-size: 17px; font-weight: 600; }
+.signed { margin-top: 14px; display: flex; align-items: center; gap: 10px; background: var(--celadon-tint); border: 1.5px solid var(--celadon-edge);
+  border-radius: var(--radius-control); padding: 12px 14px; font-size: 14.5px; color: var(--ink-on-celadon); }
+.signed svg { color: var(--celadon-label); width: 20px; height: 20px; }
+.dock { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 20px 26px; background: var(--ground); border-top: 1.5px solid var(--hairline); }
+
+@media (max-width: 420px) {
+  .row { gap: 36px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="intro">
+  <span class="eyebrow">Design proposal · not built</span>
+  <h1>Everyone gets their own sign-in</h1>
+  <p>Each adult signs in with their own email and a 6-digit code, and lands in the same household. Here's every step, one phone per screen. The plain-words version, the build plan and the questions for Emily are in <b>own-logins-plan.md</b>, next to this file.</p>
+  <div class="theme-pick" role="group" aria-label="Appearance">
+    <button type="button" data-theme-pick="auto" aria-pressed="true">Auto</button>
+    <button type="button" data-theme-pick="light" aria-pressed="false">Light</button>
+    <button type="button" data-theme-pick="dark" aria-pressed="false">Dark</button>
+  </div>
+</div>
+
+<!-- ====================== (a) first adult ====================== -->
+<section class="step">
+  <div class="step-head">
+    <span class="eyebrow">Step A</span>
+    <h2>Emily signs up and starts the household</h2>
+    <p>The front door asks for an email, never a passphrase. A new email makes a new household; onboarding's first question names the person the email belongs to.</p>
+  </div>
+  <div class="row">
+    <figure>
+      <div class="phone door">
+        <div class="door-top">
+          <div class="plaque"><svg data-icon="mark" data-w="1.7"></svg></div>
+          <p class="wordmark">Pomona</p>
+          <div class="rule"></div>
+          <p class="accent">This one’s just for your household.</p>
+        </div>
+        <div class="door-bottom">
+          <div class="field focus"><svg class="i" data-icon="mail"></svg><span>emily@example.com</span></div>
+          <button class="btn" type="button">Send me a code</button>
+          <p class="agree">By continuing you agree to the <u>Terms</u> and <u>Privacy Policy</u>.</p>
+        </div>
+      </div>
+      <figcaption><b>A1 · The front door.</b> Built today, behind the SMTP switch. The only change: the passphrase link stops showing once a household has moved over (step E). Same screen for a brand-new person and for someone coming back.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone door">
+        <div class="door-top">
+          <h3>Check your email.</h3>
+          <p class="line">I sent a code to emily@example.com. It works for 10 minutes.</p>
+        </div>
+        <div class="door-bottom">
+          <div class="digits"><span>4</span><span>8</span><span>1</span><span>2</span><span>0</span><span class="on">7</span></div>
+          <button class="btn" type="button">Come in</button>
+          <div class="links"><button class="switch" type="button">Send a new code</button><button class="switch" type="button">Use a different email</button></div>
+        </div>
+      </div>
+      <figcaption><b>A2 · The code.</b> Six numbers, once, ten minutes, five tries. Pasting the code or tapping it from the email's notification fills all six boxes.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="q">
+          <div class="progress"><i></i></div>
+          <h3>What’s your name?</h3>
+          <p class="lead">So I know who I’m talking to.</p>
+          <div class="ifield">Emily</div>
+          <div class="signed"><svg class="i" data-icon="check"></svg><span>You’ll sign in as emily@example.com.</span></div>
+        </div>
+        <div class="dock"><button class="btn sm" type="button">Next</button></div>
+      </div>
+      <figcaption><b>A3 · The email gets a person.</b> Onboarding's first question, as it is today, plus one line: the email now belongs to Emily (the code already does this quietly — <code>claim_signup_email</code>). Then the usual setup. When she adds Vineeth as an adult on "Who else lives with you?", he's in the household already; he just can't sign in yet.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ====================== (b) invite ====================== -->
+<section class="step">
+  <div class="step-head">
+    <span class="eyebrow">Step B</span>
+    <h2>Emily invites Vineeth</h2>
+    <p>From Settings → People. The link goes out by text, email or whatever the phone offers. It works once, within a week.</p>
+  </div>
+  <div class="row">
+    <figure>
+      <div class="phone">
+        <div class="band">
+          <div class="band-top"><span class="brand"><svg data-icon="mark" data-w="1.8"></svg>Pomona</span><span class="tile44"><svg class="i" data-icon="gear"></svg></span></div>
+          <h3>Today</h3><div class="sub">Monday, Oct 19</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet tall">
+          <div class="sheet-top"><h4>Settings</h4><span class="x"><svg class="i" data-icon="x"></svg></span></div>
+          <div class="eyebrow group-label">People</div>
+          <div class="people">
+            <div class="person"><span class="avatar a1">E</span><span class="who"><div class="n">Emily · you</div><div class="h">emily@example.com</div></span></div>
+            <div class="person"><span class="avatar a2">V</span><span class="who"><div class="n">Vineeth</div><div class="h">Not signed in yet</div></span><button class="mini ring" type="button">Invite Vineeth</button></div>
+            <div class="person"><span class="avatar">T</span><span class="who"><div class="n">Theo</div><div class="h">7 · doesn’t sign in</div></span></div>
+          </div>
+          <div class="add-row"><svg class="i" data-icon="plus"></svg>Add someone</div>
+          <div class="eyebrow group-label">Your household</div>
+          <div class="stack">
+            <div class="prow"><span><div class="tt">How you eat</div><div class="ss">Balanced, nothing restrictive</div></span><svg class="chev" data-icon="chev"></svg></div>
+            <div class="prow"><span><div class="tt">Morning text</div><div class="ss">Off</div></span><svg class="chev" data-icon="chev"></svg></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>B1 · People, in Settings.</b> One row per person, saying how they get in: their email, "Not signed in yet", or "doesn't sign in" for a child. The invite button is on the row (ringed here only to point at it). This replaces today's invite rows inside What we know.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="band">
+          <div class="band-top"><span class="brand"><svg data-icon="mark" data-w="1.8"></svg>Pomona</span><span class="tile44"><svg class="i" data-icon="gear"></svg></span></div>
+          <h3>Today</h3><div class="sub">Monday, Oct 19</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grabber"></div>
+          <h4>Invite Vineeth</h4>
+          <p class="lead">He’ll sign in with his own email and see the same plan and list as you.</p>
+          <div class="message-preview"><span class="eyebrow">What he’ll get</span>I’ve set us up on Pomona for our meals and shopping. This link gets you in on your phone. It works once, within a week.</div>
+          <div style="height:18px"></div>
+          <button class="btn sm" type="button"><svg class="i" data-icon="send"></svg>Send Vineeth’s link</button>
+          <button class="quiet" type="button">Copy the link instead</button>
+        </div>
+      </div>
+      <figcaption><b>B2 · The invite.</b> "Send Vineeth's link" opens the phone's share sheet — Messages, Mail, WhatsApp — the way the invite works today. After it's sent: <i>"Vineeth's link was sent"</i>, and his row reads "Invited · today" with "Send a new link".</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="msgs-head"><span class="avatar a1">E</span><div class="n">Emily</div></div>
+        <div class="thread">
+          <div class="when">Today 8:12 AM</div>
+          <div class="bubble">I’ve set us up on Pomona for our meals and shopping. This link gets you in on your phone. It works once, within a week.</div>
+          <div class="linkcard ring"><div class="art"><svg data-icon="mark" data-w="1.7"></svg></div><div class="meta"><div class="t">Join your household on Pomona</div><div class="s">pomona · one-time link</div></div></div>
+        </div>
+      </div>
+      <figcaption><b>B3 · What Vineeth sees.</b> A text from Emily, in her words, not Pomona's. Tapping the link opens Pomona (the app if he has it, the web page if not).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ====================== (c) second adult ====================== -->
+<section class="step">
+  <div class="step-head">
+    <span class="eyebrow">Step C</span>
+    <h2>Vineeth opens the link and signs up as himself</h2>
+    <p>The link says which household and which person. His email and code make it his own sign-in. No passphrase, no "Who's this?".</p>
+  </div>
+  <div class="row">
+    <figure>
+      <div class="phone door">
+        <div class="door-top">
+          <div class="plaque"><svg data-icon="mark" data-w="1.7"></svg></div>
+          <h3>Hi Vineeth.</h3>
+          <p class="line">Emily’s added you to your household. Add your email — it’s how you’ll sign in from now on.</p>
+        </div>
+        <div class="door-bottom">
+          <div class="field focus"><svg class="i" data-icon="mail"></svg><span>vineeth@example.com</span></div>
+          <button class="btn" type="button">Send me a code</button>
+          <p class="agree">By continuing you agree to the <u>Terms</u> and <u>Privacy Policy</u>.</p>
+        </div>
+      </div>
+      <figcaption><b>C1 · The link's landing.</b> Today's join page signs him in first and asks for an email after, with "Not now". Proposed: the email comes first and there is no skip (Question 1), and the link isn't used up until the code is right — so stopping halfway doesn't waste it.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone door">
+        <div class="door-top">
+          <h3>Check your email.</h3>
+          <p class="line">I sent a code to vineeth@example.com. It works for 10 minutes.</p>
+        </div>
+        <div class="door-bottom">
+          <div class="digits"><span>3</span><span>0</span><span>9</span><span>5</span><span class="on">1</span><span></span></div>
+          <button class="btn" type="button">Join the household</button>
+          <div class="links"><button class="switch" type="button">Send a new code</button><button class="switch" type="button">Use a different email</button></div>
+        </div>
+      </div>
+      <figcaption><b>C2 · His code.</b> Same screen as A2; the button says what happens. If that email already runs a household of its own, he's told so here and nothing moves without asking (see the plan).</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="band">
+          <div class="band-top"><span class="brand"><svg data-icon="mark" data-w="1.8"></svg>Pomona</span><span class="tile44"><svg class="i" data-icon="gear"></svg></span></div>
+          <h3>Today</h3><div class="sub">Monday, Oct 19 <span class="chip">Week set</span></div>
+        </div>
+        <div class="pour">
+          <div class="stack">
+            <div class="card calm"><span class="eyebrow">You’re in</span><div class="t">Same plan and list as Emily.</div></div>
+            <div class="card">
+              <span class="eyebrow">Evening · Cook</span>
+              <div class="mrow"><span class="tick"></span><span><div class="t">Chicken Skewers</div><div class="s">35 min · start at 6:00</div></span></div>
+              <div class="mrow"><span class="tick"></span><span><div class="t">Move the salmon to the fridge</div><div class="s">For Wednesday</div></span></div>
+            </div>
+            <div class="card"><span class="eyebrow">Shop</span><div class="mrow"><span class="tick"></span><span><div class="t">Costco</div><div class="s">12 things</div></span></div></div>
+          </div>
+        </div>
+        <div class="fab"><svg data-icon="mark" data-w="1.8"></svg></div>
+        <div class="tabs">
+          <div class="tab on"><svg class="i" data-icon="sun"></svg>Today</div><div class="tab"><svg class="i" data-icon="week"></svg>Plan</div>
+          <div class="tab"><svg class="i" data-icon="bag"></svg>Shop</div><div class="tab"><svg class="i" data-icon="pot"></svg>Cook</div>
+        </div>
+      </div>
+      <figcaption><b>C3 · He lands in the household, as himself.</b> Straight onto Today — the week Emily approved, the list she's building. The celadon line shows once. Emily's People row for him now reads "vineeth@example.com · Joined Oct 19".</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ====================== (d) new phone ====================== -->
+<section class="step">
+  <div class="step-head">
+    <span class="eyebrow">Step D</span>
+    <h2>Vineeth gets a new phone</h2>
+    <p>He signs in with his email and a code — the same front door as A1 and A2 — and he's himself again. Each person can see which phones they're signed in on.</p>
+  </div>
+  <div class="row">
+    <figure>
+      <div class="phone door">
+        <div class="door-top">
+          <div class="plaque"><svg data-icon="mark" data-w="1.7"></svg></div>
+          <p class="wordmark">Pomona</p>
+          <div class="rule"></div>
+          <p class="accent">This one’s just for your household.</p>
+        </div>
+        <div class="door-bottom">
+          <div class="field focus"><svg class="i" data-icon="mail"></svg><span>vineeth@example.com</span></div>
+          <button class="btn" type="button">Send me a code</button>
+          <p class="agree">By continuing you agree to the <u>Terms</u> and <u>Privacy Policy</u>.</p>
+        </div>
+      </div>
+      <figcaption><b>D1 · New phone, same door.</b> Email, then the code screen from A2 ("Come in"). His email already belongs to Vineeth in Emily's household, so that's where he lands — no question about which household, no "Who's this?".</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="band">
+          <div class="band-top"><span class="brand"><svg data-icon="mark" data-w="1.8"></svg>Pomona</span><span class="tile44"><svg class="i" data-icon="gear"></svg></span></div>
+          <h3>Today</h3><div class="sub">Tuesday, Oct 20</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet tall">
+          <div class="sheet-top"><h4>Settings</h4><span class="x"><svg class="i" data-icon="x"></svg></span></div>
+          <div class="eyebrow group-label">You</div>
+          <div class="people">
+            <div class="person"><span class="avatar a2">V</span><span class="who"><div class="n">Vineeth</div><div class="h">vineeth@example.com</div></span><button class="mini outline" type="button">Change</button></div>
+          </div>
+          <div class="eyebrow group-label">Signed in on</div>
+          <div class="people">
+            <div class="person"><span class="avatar"><svg class="i" data-icon="phone" style="width:18px;height:18px"></svg></span><span class="who"><div class="n">This iPhone</div><div class="h ok">Now</div></span></div>
+            <div class="person"><span class="avatar"><svg class="i" data-icon="phone" style="width:18px;height:18px"></svg></span><span class="who"><div class="n">iPhone</div><div class="h">Last used Oct 2</div></span><button class="mini" type="button">Sign out</button></div>
+          </div>
+          <button class="quiet" type="button">Sign out of every other phone</button>
+          <div class="eyebrow group-label">People</div>
+          <div class="people">
+            <div class="person"><span class="avatar a1">E</span><span class="who"><div class="n">Emily</div><div class="h">emily@example.com</div></span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>D2 · "You", in Settings.</b> Who's signed in, with what email, on which phones. A lost or sold phone is signed out from here, from any other phone. Nothing in the household changes; it just stops opening on that phone.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ====================== (e) migration ====================== -->
+<section class="step">
+  <div class="step-head">
+    <span class="eyebrow">Step E</span>
+    <h2>Moving today's passphrase households over</h2>
+    <p>Emily's, Julia's, Gowthami's and Tester Home. Nothing about the household moves or is copied: each adult's email is attached to the person who's already there, with all their history. The passphrase keeps working until every adult has an email.</p>
+  </div>
+  <div class="row">
+    <figure>
+      <div class="phone">
+        <div class="band">
+          <div class="band-top"><span class="brand"><svg data-icon="mark" data-w="1.8"></svg>Pomona</span><span class="tile44"><svg class="i" data-icon="gear"></svg></span></div>
+          <h3>Today</h3><div class="sub">Monday, Oct 26</div>
+        </div>
+        <div class="pour"><div class="stack"><div class="card"><span class="eyebrow">Evening · Cook</span><div class="t">Turkey Tacos</div></div></div></div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <div class="grabber"></div>
+          <h4>Your own sign-in</h4>
+          <p class="lead">Instead of the shared passphrase, each of you signs in with your own email. Your plan, list and recipes stay just as they are.</p>
+          <button class="btn sm" type="button">Add my email</button>
+          <button class="quiet" type="button">Not now</button>
+        </div>
+      </div>
+      <figcaption><b>E1 · The notice.</b> Shown once to each adult who signed in with the passphrase and has no email yet (on the device their "Who's this?" pick already names). "Add my email" goes to the code screen and attaches the email to them. "Not now" brings it back in three days; the Settings row is always there.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="band">
+          <div class="band-top"><span class="brand"><svg data-icon="mark" data-w="1.8"></svg>Pomona</span><span class="tile44"><svg class="i" data-icon="gear"></svg></span></div>
+          <h3>Today</h3><div class="sub">Monday, Oct 26</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet tall">
+          <div class="sheet-top"><h4>Settings</h4><span class="x"><svg class="i" data-icon="x"></svg></span></div>
+          <div class="eyebrow group-label">People</div>
+          <div class="people">
+            <div class="person"><span class="avatar a1">E</span><span class="who"><div class="n">Emily · you</div><div class="h ok">emily@example.com</div></span></div>
+            <div class="person"><span class="avatar a2">V</span><span class="who"><div class="n">Vineeth</div><div class="h">Still using the passphrase</div></span><button class="mini" type="button">Remind him</button></div>
+            <div class="person"><span class="avatar">T</span><span class="who"><div class="n">Theo</div><div class="h">7 · doesn’t sign in</div></span></div>
+          </div>
+          <div style="height:12px"></div>
+          <div class="card calm"><span class="eyebrow">The passphrase</span><div class="t" style="font-size:15px;font-family:var(--font-body)">Switches off once you’ve both added an email.</div></div>
+        </div>
+      </div>
+      <figcaption><b>E2 · Who's moved over.</b> "Remind him" sends Vineeth the same one-time link as an invite; opening it asks for his email (C1, C2). When the last adult adds theirs, the passphrase stops opening this household and the notice goes for good — the toast reads <i>"The passphrase was switched off"</i>.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ====================== (f) removing ====================== -->
+<section class="step">
+  <div class="step-head">
+    <span class="eyebrow">Step F</span>
+    <h2>Removing a person</h2>
+    <p>From the same People list. Their phones stop opening the household; everything they planned, added or cooked stays with the household.</p>
+  </div>
+  <div class="row">
+    <figure>
+      <div class="phone">
+        <div class="band">
+          <div class="band-top"><span class="brand"><svg data-icon="mark" data-w="1.8"></svg>Pomona</span><span class="tile44"><svg class="i" data-icon="gear"></svg></span></div>
+          <h3>Today</h3><div class="sub">Monday, Nov 2</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet tall">
+          <div class="sheet-top"><h4>Settings</h4><span class="x"><svg class="i" data-icon="x"></svg></span></div>
+          <div class="eyebrow group-label">People</div>
+          <div class="people">
+            <div class="person"><span class="avatar a1">E</span><span class="who"><div class="n">Emily · you</div><div class="h">emily@example.com</div></span></div>
+            <div class="person"><span class="avatar a2">V</span><span class="who"><div class="n">Vineeth</div><div class="h">vineeth@example.com · Joined Oct 19</div></span><svg class="chev" data-icon="chev"></svg></div>
+            <div class="person"><span class="avatar">M</span><span class="who"><div class="n">Maria</div><div class="h">maria@example.com · not eating here</div></span><svg class="chev" data-icon="chev"></svg></div>
+            <div class="person"><span class="avatar">T</span><span class="who"><div class="n">Theo</div><div class="h">7 · doesn’t sign in</div></span><svg class="chev" data-icon="chev"></svg></div>
+          </div>
+          <div class="add-row"><svg class="i" data-icon="plus"></svg>Add someone</div>
+        </div>
+      </div>
+      <figcaption><b>F1 · The People list, settled.</b> Everyone in the house, and how each gets in. Tapping a person opens their sheet: their name and age, Send a new link, and at the bottom, quietly, "Remove Maria from the household". Your own row has "Leave this household" instead (that's today's "Remove me").</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone">
+        <div class="band">
+          <div class="band-top"><span class="brand"><svg data-icon="mark" data-w="1.8"></svg>Pomona</span><span class="tile44"><svg class="i" data-icon="gear"></svg></span></div>
+          <h3>Today</h3><div class="sub">Monday, Nov 2</div>
+        </div>
+        <div class="scrim"></div>
+        <div class="dialog" role="dialog" aria-labelledby="rm-t">
+          <h4 id="rm-t">Remove Maria?</h4>
+          <p class="lead">She’ll be signed out on her phones. Everything she added stays with the household.</p>
+          <button class="btn sm" type="button">Remove Maria</button>
+          <button class="quiet" type="button">Keep her</button>
+        </div>
+      </div>
+      <figcaption><b>F2 · The confirm.</b> One tap more, says what happens, says what doesn't. After: <i>"Maria was removed"</i>, and her email gets a short note that she's no longer in the household. No undo — adding her back is an invite.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ====================== what changes ====================== -->
+<section class="step">
+  <div class="step-head">
+    <span class="eyebrow">What changes for the household</span>
+    <h2>Four things that start telling the truth</h2>
+    <p>Today the app trusts a tap on "Who's this?". Once each person signs in as themselves, these stop being guesses.</p>
+  </div>
+  <div class="changes">
+    <div class="change"><span class="eyebrow">Gone</span><h3>"Who's this?"</h3>
+      <p class="was">Now: after the passphrase, a two-adult house picks a name, and the phone remembers it.</p>
+      <p>Then: the sign-in is the person. Nobody is asked, and nobody can pick someone else by mistake (or on purpose).</p></div>
+    <div class="change"><span class="eyebrow">Real</span><h3>"Approved by Vineeth"</h3>
+      <p class="was">Now: names whoever was picked on the phone that tapped Approve.</p>
+      <p>Then: names the person who signed in and tapped it. Same for grocery adds, the pre-shop drops and the week's questions.</p></div>
+    <div class="change"><span class="eyebrow">Addressed</span><h3>Notifications go to a person</h3>
+      <p class="was">Now: "Emily settled the week" shows on every phone without a pick, and one tap away clears it for the whole house.</p>
+      <p>Then: it goes to Vineeth, on his phones, and his dismissing it doesn't clear Emily's. The morning text and evening nudge already go to a person's own number.</p></div>
+    <div class="change"><span class="eyebrow">Possible</span><h3>"Since you last looked"</h3>
+      <p class="was">Now: not built — it can't be, because the app doesn't know when <i>you</i> last looked.</p>
+      <p>Then: each sign-in remembers when that person last opened Pomona, so "Emily approved the week, added milk and left you the defrost" can be said to Vineeth, and only what's new to him.</p></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+// Inline stroke icons, one 24-grid, stroke 2.2 (DESIGN_SYSTEM.md rule 7);
+// the Pomona mark keeps the weight given in data-w.
+(function () {
+  var P = {
+    mark: '<path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/><path d="M12 9V6.2"/><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.5 7 8.5 6 8.5-6"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    x: '<path d="M6 6l12 12M18 6 6 18"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    chev: '<path d="m9 6 6 6-6 6"/>',
+    send: '<path d="M4 12 20 4l-6 16-3-7z"/><path d="m11 13 9-9"/>',
+    phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+    sun: '<path d="M4 18h16"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 6v3M5.6 9.6l1.8 1.8M18.4 9.6l-1.8 1.8"/>',
+    week: '<path d="M3 7h18M3 17h18"/><circle cx="5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="8.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
+    bag: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
+    pot: '<path d="M4 10h16v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M2 10h2M20 10h2M9 6.5c0-1 1-1 1-2M14 6.5c0-1 1-1 1-2"/>'
+  };
+  var els = document.querySelectorAll('svg[data-icon]');
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i], name = el.getAttribute('data-icon');
+    el.setAttribute('viewBox', '0 0 24 24');
+    el.setAttribute('fill', 'none');
+    el.setAttribute('stroke', 'currentColor');
+    el.setAttribute('stroke-width', el.getAttribute('data-w') || '2.2');
+    el.setAttribute('stroke-linecap', 'round');
+    el.setAttribute('stroke-linejoin', 'round');
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = P[name] || '';
+  }
+  // The page's own Auto / Light / Dark, the app's data-theme mechanism.
+  var picks = document.querySelectorAll('[data-theme-pick]');
+  function apply(v) {
+    if (v === 'light' || v === 'dark') document.documentElement.setAttribute('data-theme', v);
+    else document.documentElement.removeAttribute('data-theme');
+    for (var j = 0; j < picks.length; j++) picks[j].setAttribute('aria-pressed', String(picks[j].getAttribute('data-theme-pick') === v));
+  }
+  for (var k = 0; k < picks.length; k++) picks[k].addEventListener('click', function () { apply(this.getAttribute('data-theme-pick')); });
+})();
+</script>
+</body>
+</html>
