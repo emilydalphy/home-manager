@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A meal planned in chat onto a night of the week lands in the week**
+  (2026-10-19; branch `overnight/chat-fills-the-open-night`; tests
+  `tests/test_chat_plan_meal_fills_the_week.py`). The chat `plan_meal` tool
+  has no weekly_plan_id, and the prompt and the change card send the model
+  to it for an OPEN night — so it wrote a standalone row beside the open
+  one: chat said "planned", Plan/Today still asked for the call, the dish
+  showed nowhere. `meal_plans._into_the_covering_plan` now settles an open
+  row through `_replace_slot_entries` (resolve_open_slot's write, minus its
+  allergen gate — the chat's gate with `override` already ran), attaches a
+  slot with no row to the plan, and refuses `planned_empty`. A slot already
+  holding a meal is unchanged (still a standalone row — swap is its door).
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
