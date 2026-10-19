@@ -35,6 +35,13 @@ why*, not duplicating the diff.
   the day sheet and "Add a cuisine" are unreachable but still in the page
   (follow-up to delete with their tests); the day sheet's "Leftovers" dinner
   tag has no place on the new screens.
+  Review fixes: a this-week cook ahead / nut-free need / meal turned off now
+  holds AFTER the draft too — approval's batching and the plan's prep
+  sessions read the plan's week (`usual_week.for_plan`; `get_household_
+  rhythm` honours the scope), `lunch_packing` and `switched_off_meals` read
+  the dated week (`for_date`), and `nut_free_member_names` adds every live
+  plan's week (safety only adds). Cook ahead's Done no longer paints the
+  unlaid lunch screen; a saved week change stays tinted after a reload.
 - **An added prep day says why, in one line** (2026-10-19; branch
   `overnight/prep-day-says-why`; tests `tests/test_weekday_lunches.py`
   `TestTheAddedPrepDaySaysWhy`). Plan a week step 3: when `ensurePrepReach`

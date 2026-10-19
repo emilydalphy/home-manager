@@ -672,6 +672,71 @@ def week_answers_on(iso: str) -> dict:
         return {}
 
 
+def live_week_answers() -> list[dict]:
+    """Every live plan's week answers that hold any — for a reader with no
+    dates that must not miss one (a nut-free need given for one week)."""
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT DISTINCT wi.week_answers_json AS a FROM weekly_plans wp JOIN week_intake wi "
+            "ON wi.id = wp.intake_id AND wi.household_id = wp.household_id "
+            "WHERE wp.household_id = ? AND wp.status != 'retired' AND wi.week_answers_json != '{}'",
+            (household_id(),),
+        ).fetchall()
+    finally:
+        conn.close()
+    out = []
+    for r in rows:
+        try:
+            out.append(json.loads(r["a"] or "{}"))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def plan_week_answers(weekly_plan_id: int) -> dict:
+    """The week's own answers (week_answers) of the intake a plan was
+    drafted from, or {} — what approval and the prep sessions read the
+    week by (for_plan)."""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT wi.week_answers_json AS a FROM weekly_plans wp JOIN week_intake wi "
+            "ON wi.id = wp.intake_id AND wi.household_id = wp.household_id "
+            "WHERE wp.id = ? AND wp.household_id = ?",
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    try:
+        return json.loads(row["a"] or "{}") if row else {}
+    except (TypeError, ValueError):
+        return {}
+
+
+@contextmanager
+def for_plan(weekly_plan_id: int):
+    """this_week for the week a plan was drafted for — approval's batching
+    and the plan's prep sessions read its prep days this way. Inside a
+    scope already (a draft), the scope stands."""
+    if _THIS_WEEK.get() is not None:
+        yield
+        return
+    with this_week(plan_week_answers(weekly_plan_id)):
+        yield
+
+
+@contextmanager
+def for_date(iso: str):
+    """this_week for the live plan holding `iso` (week_answers_on), for a
+    reader that knows a date but not a plan. Inside a scope, it stands."""
+    if _THIS_WEEK.get() is not None or not iso:
+        yield
+        return
+    with this_week(week_answers_on(iso)):
+        yield
+
+
 def generation_plan(dates: list[str], skipped: list[str] | None = None) -> dict:
     """
     What the usual week means for one period being planned:
@@ -736,7 +801,7 @@ def generation_plan(dates: list[str], skipped: list[str] | None = None) -> dict:
     return out
 
 
-def switched_off_meals() -> set[str]:
+def switched_off_meals(dates: list[str] | None = None) -> set[str]:
     """
     The meals this household has switched off ENTIRELY in its usual week:
     no day of the grid has them on (breakfast set to None in onboarding, or
@@ -745,7 +810,14 @@ def switched_off_meals() -> set[str]:
     its grid derived from its counts (a count of 0 is off every day) and
     the answer is the same. A meal that is on most days and off or empty on
     one is NOT in this set — that day's row keeps its own wording.
+
+    `dates` (re-plan Option B): the days being shown, so a week whose
+    who's-eating was changed for that week only reads as it was changed
+    (for_date on the first of them) — outside a draft as well as in one.
     """
+    if dates and _THIS_WEEK.get() is None:
+        with for_date(min(dates)):
+            return switched_off_meals()
     conn = get_conn()
     try:
         state = _state(conn)

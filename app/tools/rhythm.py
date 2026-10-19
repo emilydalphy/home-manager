@@ -678,6 +678,15 @@ def get_household_rhythm() -> dict:
                 parsed = []
             prep_days = parsed if isinstance(parsed, list) else []
 
+    # Cook ahead answered for ONE week while re-planning (re-plan Option B,
+    # 2026-10-18): inside that week's scope (usual_week.this_week — a draft,
+    # its approval, its prep sessions) the prep days are that week's. Every
+    # prep day is up to 2 hours (onboarding). Settings never read in a scope.
+    from .usual_week import _THIS_WEEK
+    week_prep = (_THIS_WEEK.get() or {}).get("prep")
+    if week_prep is not None:
+        prep_days = [{"weekday": d, "minutes": 120} for d in (week_prep.get("days") or [])]
+
     return {
         "lunch_location": lunch_location,
         "meals_together": meals_together,

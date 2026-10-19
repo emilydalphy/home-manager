@@ -1278,9 +1278,9 @@ def _usual_week_dinner_off(day: date) -> bool:
     them). The same two reads get_needs_you_items makes for "Tonight needs
     a dinner" on the usual-week-night-off-not-asked branch.
     """
-    if "dinner" in _usual_week.switched_off_meals():
-        return True
     iso = day.isoformat()
+    if "dinner" in _usual_week.switched_off_meals([iso]):
+        return True
     return (iso, "dinner") in _usual_week.off_slots_on([iso])
 
 

@@ -1029,6 +1029,19 @@ def _usual_lunch() -> dict:
         return {"choice": None, "dishes": 0}
 
 
+def _week_prep_days(intake: dict | None) -> list[str]:
+    """The prep days a period's lunches lay out from: the household's
+    standing ones (rhythm.prep_days), or this week's when the week's own
+    answers changed cook ahead (usual_week.this_week). Week order from
+    Sunday."""
+    from . import usual_week as _usual_week
+
+    with _usual_week.this_week((intake or {}).get("week_answers") or None):
+        days = _rhythm.get_household_rhythm().get("prep_days") or []
+    names = {(p.get("weekday") if isinstance(p, dict) else str(p)).lower() for p in days}
+    return [d for d in _weekday_lunches.PREP_WEEKDAYS if d in names]
+
+
 def _usual_answers() -> dict:
     """The usual week and each person's lunch needs, for the prefill's
     `usual`. Never raises: a summary page with nothing to show still opens."""
@@ -1355,11 +1368,9 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # (rhythm.prep_days, lowercase weekday names, in week order from
         # Sunday) — where the prep-day chips start when neither this week
         # nor last week has an answer.
-        "rhythm_prep_days": [
-            d for d in _weekday_lunches.PREP_WEEKDAYS
-            if d in {(p.get("weekday") if isinstance(p, dict) else str(p)).lower()
-                     for p in (_rhythm.get_household_rhythm().get("prep_days") or [])}
-        ],
+        # This week's own when cook ahead was changed for it while
+        # re-planning (re-plan Option B — _week_prep_days).
+        "rhythm_prep_days": _week_prep_days(intake),
         # Step 3's starting point for a week with no answer of its own and
         # none last week: the lunch variety the household chose ("A few in
         # rotation" …) and its number — {"choice": None, ...} when never

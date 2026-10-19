@@ -355,7 +355,8 @@ class TestTheScreensAreOnboardings:
             assert f'<div id="step-{name}"' in ONBOARDING, name
             assert f"'{name}'" in lifted, name
         loader = _extract("loadSetupScreens")
-        assert "Api.fetch('/static/onboarding.html'" in loader
+        assert "fetch('/static/onboarding.html', { credentials: 'same-origin' })" in loader
+        assert "Api.fetch('/static/onboarding.html'" not in loader
         assert "doc.getElementById('step-' + name)" in loader
         assert "wireSetupScreens();" in loader
         # Onboarding's own titles reach the page through its markup.
@@ -400,7 +401,7 @@ class TestTheRowsWords:
         script = (
             "function esc(s) { return String(s); }\n"
             + _const("UW_MEALS") + _extract("uwCleanCell", SCREENS) + "\n"
-            + _var("SAME_COPY") + _var("EXTRA_TAGS")
+            + _var("SAME_COPY") + _var("EXTRA_TAGS") + _var("PREP_WEEKDAYS")
             + "\n".join(_extract(n) for n in ("isoLocal", "addDaysIso", "weekdayName", "joinWords", "capitalize",
                                                "titleDay", "weekdayIndex", "daysValue", "whoValue", "cookValue",
                                                "cuisinesValue"))
@@ -429,7 +430,7 @@ var off = { breakfast: all(), lunch: all(), dinner: all() };
 console.log(JSON.stringify({
   days: daysValue('2026-10-19', 7), one: daysValue('2026-10-23', 1),
   plain: plain, changed: changed, single: one, offDays: whoValue(off),
-  cook: cookValue(['sunday']), twoCook: cookValue(['sunday', 'wednesday']), noCook: cookValue([]),
+  cook: cookValue(['sunday']), twoCook: cookValue(['wednesday', 'sunday']), noCook: cookValue([]),
   cuisines: cuisinesValue(['Thai', 'Italian', 'Mexican'], ['Something warm']),
   many: cuisinesValue(['Thai', 'Italian', 'Mexican', 'Greek'], []), none: cuisinesValue([], [])
 }));""")
@@ -461,8 +462,9 @@ console.log(JSON.stringify({
             "var els = {}; function $(id) { return els[id] || (els[id] = { innerHTML: '', querySelectorAll: function () { return []; } }); }\n"
             "function esc(s) { return String(s); }\n"
             "var sameBaseline = null; var seq = " + json.dumps(values) + "; var n = 0;\n"
-            "function sameValues() { return seq[n++]; }\n"
-            + _var("SAME_ROWS") + _var("SAME_COPY") + _extract("renderSame") + "\n"
+            "function sameValues() { return seq[n++]; } var weekAnswers = {};\n"
+            + _var("SAME_ROWS") + _var("SAME_COPY") + _var("WEEK_ROWS") + _extract("usualBaseline")
+            + _extract("renderSame") + "\n"
             "renderSame(); var first = $('same-rows').innerHTML; renderSame();\n"
             "console.log(JSON.stringify({ first: first, second: $('same-rows').innerHTML }));\n"
         )
@@ -498,3 +500,91 @@ def test_the_copy_lists_other_lines():
     assert "var GUESTS_ADD = '+ Guests';" in PAGE
     # "Surprise me" is the first mood chip, under "This week, lean toward".
     assert "chipWithCustom(moods, [SURPRISE_MOOD].concat(MOODS), true);" in _extract("openCuisinesScreen")
+
+
+# ==========================================================================
+# Review fixes (2026-10-19, the independent review of this branch)
+# ==========================================================================
+
+from app.tools import cook_ahead, coordination, prep_sessions  # noqa: E402
+from app.tools import swap_in_place as _sip  # noqa: E402
+
+
+def _plan_with_oats(week_answers=None):
+    """A Sat-Fri plan for WEEK with Oats every breakfast, drafted from an
+    intake carrying `week_answers`."""
+    tools.add_recipe("Oats", ingredients=[{"item": "oats", "qty": "1 cup"}], default_servings=2,
+                     prep_time_minutes=5, cook_time_minutes=10, instructions=["Cook."])
+    dates = tools.period_dates(WEEK, 7)
+    plan_id = tools.create_weekly_plan(WEEK)["weekly_plan_id"]
+    for d in dates:
+        tools.plan_meal(d, "Oats", slot="breakfast", weekly_plan_id=plan_id)
+    intake = tools.save_week_intake(WEEK, week_answers=week_answers or {})
+    tools.attach_intake_to_plan(plan_id, intake["intake_id"])
+    return plan_id, dates
+
+
+class TestReviewFixes:
+    @_needs_node
+    def test_done_on_cook_ahead_before_the_lunch_screen_was_ever_laid_out(self):
+        """Done on "Do you like to cook ahead?" with a prep day, before the
+        lunch screen had been opened this visit: the reach rule runs and
+        nothing paints a count that doesn't exist (it threw)."""
+        script = (
+            "function $(id) { return null; }\n"
+            + _var("LUNCH_KEEP_DAYS") + _var("PREP_WEEKDAYS")
+            + "\n".join(_extract(n) for n in ("isoLocal", "addDaysIso", "isoWeekday", "prevIso", "prepDayFor",
+                                               "ensurePrepReach", "reachPrepDays", "lunchKindsIn",
+                                               "takeCookAhead", "paintLunchStep"))
+            + """
+var DATES = ['2026-10-19', '2026-10-20', '2026-10-21', '2026-10-22', '2026-10-23'];
+var data = { rhythm_prep_days: ['sunday'] };
+var lunch = { ready: true, kinds: {}, prepDays: ['sunday'], reachAdded: [] };
+DATES.forEach(function (d) { lunch.kinds[d] = 'prepped'; });
+function currentLunchDates() { return DATES; }
+function lunchOk() { return true; }
+takeCookAhead(['sunday']);
+paintLunchStep();
+console.log(JSON.stringify({ prep: lunch.prepDays, added: lunch.reachAdded }));""")
+        assert _node(script) == {"prep": ["sunday", "wednesday"], "added": ["wednesday"]}
+
+    def test_approval_batches_by_the_weeks_own_cook_ahead(self):
+        _household()                                   # Sunday prep, usually
+        plan_id, _ = _plan_with_oats({"prep": {"days": []}})
+        out = tools.approve_weekly_plan(plan_id)
+        assert out["cook_ahead"]["prep_days"] is False and out["cook_ahead"]["applied"] == []
+
+    def test_a_prep_day_given_for_this_week_only_batches_at_approval(self):
+        tools.add_member("Emily")                      # no prep day, usually
+        plan_id, _ = _plan_with_oats({"prep": {"days": ["friday"]}})
+        out = tools.approve_weekly_plan(plan_id)
+        assert out["cook_ahead"]["prep_days"] is True
+        assert {a["dish"] for a in out["cook_ahead"]["applied"]} == {"Oats"}
+        # The usual answer is still no prep day.
+        assert tools.get_household_rhythm()["prep_days"] == []
+
+    def test_the_plans_prep_sessions_read_the_weeks_prep_days(self):
+        _household()
+        plan_id, dates = _plan_with_oats({"prep": {"days": ["tuesday"]}})
+        with usual_week.for_plan(plan_id):
+            assert [p["weekday"] for p in tools.get_household_rhythm()["prep_days"]] == ["tuesday"]
+        assert [p["weekday"] for p in tools.get_household_rhythm()["prep_days"]] == ["sunday"]
+        prep_sessions.prep_sessions_for_plan(plan_id)   # reads under the scope, never raises
+
+    def test_a_nut_free_need_for_this_week_holds_after_the_draft(self):
+        """SAFETY: the gate and a later swap read the week's own answer
+        once a live plan carries it, with no draft scope around them."""
+        _household()
+        _plan_with_oats({"lunch_needs": {"Vineeth": {"needs": ["nut_free"], "days": {}}}})
+        assert member_needs.nut_free_member_names() == ["Vineeth"]
+        assert any(a["member"] == "Vineeth" and "nut-free lunch" in a["label"] for a in coordination._avoidances())
+        assert any(line.startswith("Vineeth: no nuts") for line in _sip._hard_exclusions())
+
+    def test_a_meal_turned_off_for_this_week_reads_off_outside_the_draft(self):
+        _household()
+        _, dates = _plan_with_oats({"grid": {"breakfast": {d: "off" for d in usual_week.WEEKDAYS}}})
+        assert "breakfast" in usual_week.switched_off_meals(dates)
+        assert "breakfast" not in usual_week.switched_off_meals()           # the usual week
+        assert "breakfast" not in usual_week.switched_off_meals(["2026-10-31"])
+        # ...and this week's packing reads this week's needs by date.
+        assert member_needs.lunch_packing(["2026-10-31"]) == {}

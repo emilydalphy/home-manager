@@ -807,6 +807,8 @@
 /* "Weekday lunches were changed · Undo" (re-plan Option B): above the
    foot's one button, and the shell's .toast-action for the Undo. */
 .toast.has-action { bottom: calc(100px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 14px; }
+/* While it is up, the page scrolls far enough that the last row clears it. */
+body.toast-up { padding-bottom: 260px; }
 .toast.has-action[hidden] { display: none; }
 .toast-action {
   background: none; border: none; padding: 0; min-height: 44px;
@@ -1209,6 +1211,9 @@
     if (!toastEl) return;
     toastEl.textContent = message;
     if (action) toastEl.classList.add('has-action'); else toastEl.classList.remove('has-action');
+    if (document.body && document.body.classList) {
+      if (action) document.body.classList.add('toast-up'); else document.body.classList.remove('toast-up');
+    }
     if (action) {
       var btn = document.createElement('button');
       btn.type = 'button';
@@ -1226,7 +1231,10 @@
     void toastEl.offsetWidth;
     toastEl.classList.add('pop-in');
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.hidden = true; }, action ? 6000 : 2200);
+    toastTimer = setTimeout(function () {
+      toastEl.hidden = true;
+      if (action && document.body && document.body.classList) document.body.classList.remove('toast-up');
+    }, action ? 6000 : 2200);
   }
   function savedLine(thing, verbed) {
     var name = String(thing === null || thing === undefined ? '' : thing).trim();
@@ -3300,6 +3308,8 @@
   }
 
   function paintLunchStep() {
+    // Nothing to paint until renderLunchStep has laid the screen out.
+    if (!$('lunch-n-prepped')) return;
     var dates = currentLunchDates();
     var counts = lunchCounts(lunch.kinds, dates);
     LUNCH_KINDS.forEach(function (kind) {
@@ -3743,7 +3753,8 @@
   }
 
   function cookValue(days) {
-    return days.length ? joinWords(days.map(titleDay)) + SAME_COPY.prepLength : SAME_COPY.noPrep;
+    var ordered = PREP_WEEKDAYS.filter(function (d) { return days.indexOf(d) !== -1; });
+    return ordered.length ? joinWords(ordered.map(titleDay)) + SAME_COPY.prepLength : SAME_COPY.noPrep;
   }
 
   // "Both packed · Meal prep ahead · Thursday prep for Friday". Where
@@ -3811,9 +3822,25 @@
     };
   }
 
+  // What the page is measured against for "· Changed": the rows as they
+  // open, except that a row this week's own answers changed (week_answers,
+  // saved — so still changed after a reload) is measured against the
+  // household's usual answer (review, 2026-10-19).
+  var WEEK_ROWS = ['who', 'cook', 'breakfast', 'lunches', 'dinner'];
+  function usualBaseline(values) {
+    if (!Object.keys(weekAnswers).length) return values;
+    var kept = weekAnswers;
+    weekAnswers = {};
+    var usualValues;
+    try { usualValues = sameValues(); } finally { weekAnswers = kept; }
+    var out = Object.assign({}, values);
+    WEEK_ROWS.forEach(function (k) { out[k] = usualValues[k]; });
+    return out;
+  }
+
   function renderSame() {
     var values = sameValues();
-    if (!sameBaseline) sameBaseline = values;
+    if (!sameBaseline) sameBaseline = usualBaseline(values);
     $('same-rows').innerHTML = SAME_ROWS.map(function (r) {
       var changed = values[r.key] !== sameBaseline[r.key];
       return '<button type="button" class="same-row' + (changed ? ' changed' : '') + '" data-row="' + r.key + '">' +
@@ -3935,7 +3962,7 @@
     var row = SAME_ROWS.filter(function (r) { return r.key === key; })[0];
     if (!row) return;
     changeRow = row;
-    changeBefore = { state: captureState(), value: sameValues()[key] };
+    changeBefore = { state: captureState(), value: sameValues()[key], snap: answersSnapshot(), period: weekStart + '|' + dayCount };
     // The last change's pop-up (and its Undo) is about the page, not this.
     if (toastEl) toastEl.hidden = true;
     if (!row.screen) {
@@ -3968,8 +3995,11 @@
         if (savedThisVisit && sameNotice && !sameNotice.label) sameNotice = null;
       }
     }
-    await saveIntake(samePayload());
     var row = changeRow, before = changeBefore;
+    // Done with nothing changed writes no revision.
+    if (!before || before.snap !== answersSnapshot() || before.period !== weekStart + '|' + dayCount) {
+      await saveIntake(samePayload());
+    }
     changeRow = null;
     changeBefore = null;
     showSame();
@@ -4073,7 +4103,10 @@
   var setupReady = null;
   function loadSetupScreens() {
     if (!setupReady) {
-      setupReady = Api.fetch('/static/onboarding.html', { credentials: 'same-origin' })
+      // A plain same-origin fetch, never Api.fetch: this is a page of the
+      // app itself, not the API, and Api.setBase would send it to another
+      // origin without the cookie.
+      setupReady = fetch('/static/onboarding.html', { credentials: 'same-origin' })
         .then(function (res) {
           if (!res.ok) throw new Error('onboarding screens failed to load');
           return res.text();
@@ -4369,9 +4402,13 @@
       lunch.reachedFor = JSON.stringify(lunchKindsIn(dates));
       return;
     }
+    // The reach rule over the new days, without painting: the lunch
+    // screen may never have been laid out this visit (review, 2026-10-19 —
+    // takeLunchKinds painted counts that didn't exist yet, and Done threw).
     lunch.prepDays = days.slice();
     lunch.reachAdded = [];
-    takeLunchKinds(Object.assign({}, lunch.kinds));
+    reachPrepDays(dates);
+    lunch.reachedFor = JSON.stringify(lunchKindsIn(dates));
   }
 
   // The foot's button on a screen: Continue from the first lunch screen to

@@ -259,14 +259,20 @@ def nut_free_member_names() -> list[str]:
             needs.extend(day or [])
         if "nut_free" in needs:
             out.append(r["name"])
-    # A nut-free answer given for this week only (usual_week.this_week) is
+    # A nut-free answer given for one week only (re-plan Option B) is
     # honoured too — only ever ADDED: a safety answer is never taken away
-    # for one week.
-    from .usual_week import _THIS_WEEK
-    for name, entry in ((_THIS_WEEK.get() or {}).get("lunch_needs") or {}).items():
-        needs = list(entry.get("needs") or []) + [n for d in (entry.get("days") or {}).values() for n in (d or [])]
-        if "nut_free" in needs and name.strip().lower() not in {n.strip().lower() for n in out}:
-            out.append(name)
+    # for one week. Inside a draft, that week's (usual_week.this_week);
+    # everywhere else — the allergen gate, a swap, the menu — EVERY live
+    # plan's week, since this list has no dates: over-safe on purpose, the
+    # same call NUT_FREE_AVOIDANCES makes.
+    from .usual_week import _THIS_WEEK, live_week_answers
+    scoped = _THIS_WEEK.get()
+    weeks = [scoped] if scoped is not None else live_week_answers()
+    for week in weeks:
+        for name, entry in ((week or {}).get("lunch_needs") or {}).items():
+            needs = list(entry.get("needs") or []) + [n for d in (entry.get("days") or {}).values() for n in (d or [])]
+            if "nut_free" in needs and name.strip().lower() not in {n.strip().lower() for n in out}:
+                out.append(name)
     return out
 
 
@@ -377,11 +383,15 @@ def lunch_packing(dates: list[str]) -> dict[str, list[dict]]:
     before.
     """
     from . import attendance as _attendance
-    conn = get_conn()
-    try:
-        by_name = _needs_by_member(conn)
-    finally:
-        conn.close()
+    from . import usual_week as _usual_week
+    # Outside a draft, the week these dates are planned in may have its own
+    # lunch needs (re-plan Option B): read them as that week said them.
+    with _usual_week.for_date(min(dates) if dates else ""):
+        conn = get_conn()
+        try:
+            by_name = _needs_by_member(conn)
+        finally:
+            conn.close()
     if not by_name:
         return {}
     out: dict[str, list[dict]] = {}
