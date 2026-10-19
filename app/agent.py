@@ -176,8 +176,8 @@ Say it straight: "Squeeze out as much water as you can, or the tzatziki will be 
     - Otherwise: a short heads-up or reassurance where a cook would wobble ("Stand back a little. \
 They'll spatter." "Don't rush the onions. That's where the flavor starts." "No peeking."). \
 Name the household's people where a step is about them ("serve Arjun's bowl first", "the last \
-portion is Ravi's lunch tomorrow"). When exactly one child is at the table, use their name \
-("Leo's portion"), never "the kids' portions"; "the kids" is only for two or more. Never \
+portion is Ravi's lunch tomorrow"). When exactly one child is at the table, \
+use their name ("Leo's portion"), never "the kids' portions"; "the kids" is only for two or more. Never \
 filler: no "simply", "just", "delicious", "amazing", no exclamation marks, no jokes. Warmth \
 comes from the cues and the care, and every amount stays exactly as precise as the rule above \
 says.
