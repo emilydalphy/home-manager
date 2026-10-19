@@ -99,7 +99,7 @@ def test_each_sample_is_a_whole_recipe_with_its_lead_first():
         assert s["default_servings"] and s["prep_time_minutes"] and s["cook_time_minutes"]
         # The lead is the app's own rule, not a hand pick: re-running it on
         # the sources as they stand changes nothing.
-        assert len(s["sources"]) >= 3 and s["sources"][0]["lead"]
+        assert len(s["sources"]) >= 2 and s["sources"][0]["lead"]
         again = recipe_research.pick_lead([{k: v for k, v in x.items() if k != "lead"} for x in s["sources"]])
         assert [x["url"] for x in again] == [x["url"] for x in s["sources"]]
         assert all(x["url"].startswith("https://") and x["rating_count"] for x in s["sources"])

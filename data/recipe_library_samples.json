@@ -183,14 +183,14 @@
     }
    ],
    "instructions": [
-    "Get the sauce things ready first, because the pan moves fast at the end: juice one lemon (you want 1/4 cup), slice the other thinly, rinse the 3 tbsp capers and chop 2 tbsp parsley.",
+    "Get the sauce things ready first, because the pan moves fast at the end: juice 1 to 2 lemons (you want 1/4 cup) and thinly slice any lemon left over, rinse the 3 tbsp capers and chop 2 tbsp parsley.",
     "Slice each chicken breast in half through its thickness so you have 4 thin cutlets, then press them flat with your palm. Thin cutlets cook through in the time the outside takes to brown.",
     "Season both sides with 1 tsp salt and 1/2 tsp pepper. Put the 1/2 cup flour on a plate, press each cutlet into it and shake off the extra. A thin coat browns; a thick one turns gummy in the sauce.",
     "Heat 1 1/2 tbsp olive oil and 1 tbsp butter in a large skillet over medium-high. When the butter foams, lay in 2 cutlets and leave them alone 3 to 4 minutes, until golden underneath and they let go of the pan. Flip and cook 2 to 3 minutes more, to 165°F in the thickest part, then move them to a plate.",
     "Add the other 1 1/2 tbsp oil and 1 tbsp butter and cook the last 2 cutlets the same way.",
     "With the pan still on medium-high, pour in the 1/2 cup wine (or chicken broth). It'll hiss. Scrape up the brown bits, because that's where the sauce's flavor is, and let it bubble 1 minute, until reduced by about half.",
     "Add the 1/4 cup lemon juice, the capers and the last 2 tbsp butter. Swirl until the butter melts into a glossy sauce, then slide the chicken back in for 1 to 2 minutes, turning it once to coat.",
-    "Serve with the sauce spooned over and the lemon slices and parsley on top. Pasta or bread takes care of the extra sauce."
+    "Serve with the sauce spooned over and the parsley and any lemon slices on top. Pasta or bread takes care of the extra sauce."
    ],
    "method_notes": "All three split breasts into thin cutlets, dredge lightly in seasoned flour and sear in butter and oil over medium-high in two batches, 2-4 minutes a side to 165°F, then build the sauce in the same pan: white wine (or broth) to deglaze, lemon juice, capers, a last piece of butter swirled in off the boil. Natasha's uses 1/2 cup wine, 1/4 cup lemon juice and 3 tbsp capers for 6 cutlets and returns the chicken to the sauce for 2 minutes. RecipeTin Eats adds parmesan to the flour, reduces the wine by half before the lemon, swirls the butter in over low heat so it stays glossy, and says low-sodium broth stands in for the wine.",
    "sources": [
@@ -588,7 +588,7 @@
     "Pour in the 1/3 cup broth (or water). It'll bubble hard and cook off in under a minute, leaving the chicken glossy.",
     "Off the heat, stir in all the basil until it wilts, about 20 seconds. Serve over the rice with a fried egg on each plate."
    ],
-   "method_notes": "All three fry chilies and garlic (Woks of Life adds shallots) hot and fast, add coarsely ground chicken, season with fish sauce, soy and a little sugar, and stir the basil in off the heat; all serve it over jasmine rice with a crisp fried egg. Woks of Life uses 1 lb chicken, 2 tbsp soy, 1 tbsp fish sauce, 2 tsp sugar and deglazes with 1/3 cup broth, 10 minutes start to finish. Hot Thai Kitchen pounds the chilies and garlic into a rough paste and adds oyster sauce and dark soy; both say holy basil is the real thing and Thai basil is a fine stand-in (Hot Thai Kitchen prefers Italian basil as the closer match).",
+   "method_notes": "Both fry chilies and garlic (Woks of Life adds shallots) hot and fast, add coarsely ground chicken, season with fish sauce, soy and a little sugar, and stir the basil in off the heat; both serve it over jasmine rice with a crisp fried egg. Woks of Life uses 1 lb chicken, 2 tbsp soy, 1 tbsp fish sauce, 2 tsp sugar and deglazes with 1/3 cup broth, 10 minutes start to finish. Hot Thai Kitchen pounds the chilies and garlic into a rough paste and adds oyster sauce and dark soy; both say holy basil is the real thing and Thai basil is a fine stand-in (Hot Thai Kitchen prefers Italian basil as the closer match).",
    "sources": [
     {
      "name": "The Woks of Life",
@@ -604,14 +604,6 @@
      "url": "https://hot-thai-kitchen.com/holy-basil-stir-fry/",
      "rating": 5.0,
      "rating_count": 58,
-     "lead": false
-    },
-    {
-     "name": "Hungry in Thailand",
-     "title": "Easy Pad Kra Pao Recipe (Authentic Thai Basil Pork)",
-     "url": "https://hungryinthailand.com/pad-kra-pao/",
-     "rating": 4.96,
-     "rating_count": 21,
      "lead": false
     }
    ],

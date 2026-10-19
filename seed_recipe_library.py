@@ -27,12 +27,15 @@ A dish whose research or writing fails is logged and left out; the next run
 tries it again. --samples files the six reviewed samples
 (data/recipe_library_samples.json) as they stand, with no API calls.
 
-No household's recipes or research are touched: research is not saved into
-anyone's dish_research, and no recipes row is created. Two things DO run as
-household 1, because a script has no request and household_id() defaults to
-1: the AI-consent check every model call makes (household 1 must have said
-yes), and the api_calls usage rows, so this run's spend shows up under
-household 1 in observability_report.py. The run prints that, so the morning
+No household's recipes are touched and research is not saved into anyone's
+dish_research. Three things DO run as household 1, because a script has no
+request and household_id() defaults to 1: the AI-consent check every model
+call makes (household 1 must have said yes); the api_calls usage rows, so
+this run's spend shows up under household 1 in observability_report.py; and
+a dish whose research finds nothing usable is remembered as household 1's
+empty dish_research row (the app's own mark), so neither this script nor
+household 1 pays for that search again for EMPTY_RESEARCH_RETRY_DAYS
+(--retry-empty searches anyway). The run prints that, so the morning
 report's numbers for that day can be read for what they are.
 """
 from __future__ import annotations
@@ -61,6 +64,7 @@ It is for AFTER Emily approves the six samples in
 mockups/recipe-library-samples.html. Nothing has been read or written.
 
 To run it, add --i-mean-it (and check DB_PATH points at the database you mean).
+--i-mean-it --samples files only the six reviewed samples and makes no model calls.
 """
 
 logger = logging.getLogger("home_manager.seed_library")
@@ -74,10 +78,20 @@ def load_samples(path: Path = SAMPLES_FILE) -> list[dict]:
     return json.loads(Path(path).read_text())["samples"]
 
 
-def pending(dishes: list[dict]) -> list[dict]:
-    """The dishes the library has no written base for yet, in list order."""
-    from app.tools import recipe_library
-    return [d for d in dishes if not recipe_library.base_recipe(d["dish_name"])]
+def pending(dishes: list[dict], *, retry_empty: bool = False) -> list[dict]:
+    """The dishes the library has no written base for yet, in list order —
+    less those whose research ran to the end and found nothing usable in
+    the last EMPTY_RESEARCH_RETRY_DAYS, unless retry_empty: searching
+    again tomorrow finds the same nothing and bills it again."""
+    from app.tools import recipe_library, recipe_research
+    out = []
+    for d in dishes:
+        if recipe_library.base_recipe(d["dish_name"]):
+            continue
+        if not retry_empty and recipe_research.empty_recently(recipe_research.saved_research(d["dish_name"])):
+            continue
+        out.append(d)
+    return out
 
 
 def research(dish: dict) -> dict | None:
@@ -108,7 +122,14 @@ def research(dish: dict) -> dict | None:
                 found, sources, fallback = from_cooks, from_cooks["sources"], True
     ordered = recipe_research.pick_lead(sources, trusted if fallback else None)
     if not ordered:
-        return None
+        if found.get("incomplete") and not sources:
+            return None  # cut short (time, or no search ran): try again next run
+        # Ran to the end and found nothing usable: remembered the app's own
+        # way (agent._research_dish_new does the same), so the next run
+        # doesn't bill it again. It is household 1's dish_research row — the
+        # same finding stops household 1 paying for this search for a while.
+        recipe_research.note_empty_research(name)
+        return {"empty": True}
     return {"sources": ordered, "method_notes": found.get("method_notes") or "",
             "fallback_used": fallback, "new": True}
 
@@ -141,7 +162,13 @@ def write(dish: dict, found: dict | None) -> dict | None:
                    if isinstance(i, dict) and str(i.get("item") or "").strip()]
     if not ingredients or not detail.get("instructions"):
         return None
+    # The base is a recipe for SERVES; a household's copy scales from what
+    # default_servings says, so a recipe written for another number with
+    # SERVES on it would buy every amount wrong. Not filed; tried again.
     servings = detail.get("default_servings") or SERVES
+    if int(servings) != SERVES:
+        logger.warning("Recipe for %r came back for %s, not %s; not filed", dish["dish_name"], servings, SERVES)
+        return None
     ingredients = tools.complete_ingredient_list(ingredients, detail.get("instructions") or [], servings)
     instructions, ingredients, _ = agent._settle_recipe_amounts(
         dish["dish_name"], ingredients, detail.get("instructions") or [], servings,
@@ -165,7 +192,7 @@ def seed_one(dish: dict) -> dict:
     name = dish["dish_name"]
     try:
         found = research(dish)
-        if found is None:
+        if found is None or found.get("empty"):
             # No research is not no recipe — the app writes without it too —
             # but the library is meant to be researched dishes, so the dish
             # waits for a later run rather than going in unsourced.
@@ -206,11 +233,12 @@ def file_samples(samples: list[dict]) -> list[dict]:
 
 
 def run(dishes: list[dict], *, batch_size: int = 5, limit: int | None = None,
-        pause_seconds: float = 0.0, log=print) -> list[dict]:
-    todo = pending(dishes)
+        pause_seconds: float = 0.0, retry_empty: bool = False, log=print) -> list[dict]:
+    todo = pending(dishes, retry_empty=retry_empty)
+    waiting = len(todo)
     if limit is not None:
         todo = todo[:limit]
-    log(f"{len(dishes) - len(pending(dishes))} of {len(dishes)} dishes already in the library; "
+    log(f"{len(dishes) - waiting} of {len(dishes)} dishes in the library or recently found empty; "
         f"{len(todo)} to seed this run, {batch_size} at a time.")
     results: list[dict] = []
     for start in range(0, len(todo), batch_size):
@@ -227,7 +255,9 @@ def run(dishes: list[dict], *, batch_size: int = 5, limit: int | None = None,
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Seed the Shared Recipe Library from the starter list.")
+    # allow_abbrev=False: "--i" must not count as --i-mean-it (review, 2026-10-19).
+    parser = argparse.ArgumentParser(description="Seed the Shared Recipe Library from the starter list.",
+                                     allow_abbrev=False)
     parser.add_argument("--i-mean-it", action="store_true",
                         help="Required. This spends API money on research and recipe writing.")
     parser.add_argument("--samples", action="store_true",
@@ -236,6 +266,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=None, help="Stop after this many dishes this run.")
     parser.add_argument("--cuisine", default=None, help="Only dishes of this cuisine.")
     parser.add_argument("--pause", type=float, default=0.0, help="Seconds between batches.")
+    parser.add_argument("--retry-empty", action="store_true",
+                        help="Also search again for dishes whose research recently found nothing usable.")
     args = parser.parse_args(argv)
 
     if not args.i_mean_it:
@@ -265,7 +297,8 @@ def main(argv: list[str] | None = None) -> int:
     dishes = load_dishes()
     if args.cuisine:
         dishes = [d for d in dishes if d["cuisine"].lower() == args.cuisine.lower()]
-    results = run(dishes, batch_size=max(1, args.batch_size), limit=args.limit, pause_seconds=args.pause)
+    results = run(dishes, batch_size=max(1, args.batch_size), limit=args.limit, pause_seconds=args.pause,
+                  retry_empty=args.retry_empty)
     failed = [r for r in results if r["outcome"] != "filed"]
     print(f"Done: {len(results) - len(failed)} filed, {len(failed)} left for the next run.")
     return 0

@@ -37,6 +37,9 @@ def calls(monkeypatch):
     def _research(name, cuisine="", dish_note="", **k):
         with guard:
             seen["research"].append(name)
+        if name in seen["nothing"]:
+            return {"sources": [], "method_notes": "", "used": {"web_search": 1, "web_fetch": 2},
+                    "input_tokens": 9000, **({"incomplete": True} if seen["nothing"][name] == "cut" else {})}
         slug = name.lower().replace(" ", "-")
         return {
             "sources": [
@@ -59,7 +62,8 @@ def calls(monkeypatch):
         return {
             "ingredients": [{"item": "Rice", "qty": "1 cup", "category": "pantry"}],
             "instructions": ["Simmer the 1 cup rice in 2 cups water 18 minutes."],
-            "default_servings": 4, "prep_time_minutes": 5, "cook_time_minutes": 20,
+            "default_servings": seen["servings"].get(spec["name"], 4),
+            "prep_time_minutes": 5, "cook_time_minutes": 20,
         }
 
     monkeypatch.setattr(agent, "research_dish_llm", _research)
@@ -68,6 +72,8 @@ def calls(monkeypatch):
     # if it ever didn't, nothing may leave the machine.
     monkeypatch.setattr(agent, "_repair_recipe_amounts_llm", lambda *a, **k: {})
     seen["fail"] = fail
+    seen["nothing"] = {}   # dish -> "empty" (ran, found nothing) | "cut" (cut short)
+    seen["servings"] = {}  # dish -> what the writer says it serves
     return seen
 
 
@@ -87,18 +93,29 @@ def _count(table):
         conn.close()
 
 
-def test_refuses_without_i_mean_it_and_touches_nothing(tmp_path):
-    db = tmp_path / "never.db"
+def _cli(db, *args):
     # No key, and an API address that goes nowhere: if the refusal ever
-    # broke, this test must fail without a request leaving the machine.
+    # broke, the test must fail without a request leaving the machine.
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
     env.update(DB_PATH=str(db), DISABLE_BACKUPS="1", ANTHROPIC_BASE_URL="http://127.0.0.1:9")
-    out = subprocess.run([sys.executable, "seed_recipe_library.py"], cwd=ROOT, env=env,
-                         capture_output=True, text=True, timeout=60)
+    return subprocess.run([sys.executable, "seed_recipe_library.py", *args], cwd=ROOT, env=env,
+                          capture_output=True, text=True, timeout=60)
+
+
+def test_refuses_without_i_mean_it_and_touches_nothing(tmp_path):
+    db = tmp_path / "never.db"
+    out = _cli(db)
     assert out.returncode == 2
     assert "spends Anthropic API money" in out.stderr and "approves the six samples" in out.stderr
-    assert "--i-mean-it" in out.stderr
+    assert "--i-mean-it" in out.stderr and "--samples" in out.stderr
     assert not db.exists()
+
+
+@pytest.mark.parametrize("flag", ["--i", "--i-mean"])
+def test_an_abbreviation_is_not_i_mean_it(tmp_path, flag):
+    db = tmp_path / "never.db"
+    out = _cli(db, flag)
+    assert out.returncode == 2 and not db.exists()
 
 
 def test_seeds_in_batches_through_the_one_write_path(calls):
@@ -166,3 +183,27 @@ def test_samples_file_as_reviewed_with_no_model_call(calls):
     assert calls["research"] == calls["write"] == []
     # And the seed run then skips them.
     assert not {s["dish_name"] for s in samples} & {d["dish_name"] for d in seed.pending(DISHES)}
+
+
+def test_research_that_found_nothing_is_not_billed_again_until_asked(calls):
+    empty, cut = DISHES[0]["dish_name"], DISHES[1]["dish_name"]
+    calls["nothing"].update({empty: "empty", cut: "cut"})
+    first = seed.run(DISHES[:2], log=lambda *_: None)
+    assert [r["outcome"] for r in first] == ["no_research", "no_research"]
+    assert calls["write"] == []
+
+    calls["research"].clear()
+    seed.run(DISHES[:2], log=lambda *_: None)
+    # The one that ran to the end is remembered; the one cut short is tried again.
+    assert calls["research"] == [cut]
+
+    calls["research"].clear()
+    seed.run(DISHES[:2], retry_empty=True, log=lambda *_: None)
+    assert sorted(calls["research"]) == sorted([empty, cut])
+
+
+def test_a_recipe_written_for_another_table_size_is_not_filed(calls):
+    d = DISHES[0]
+    calls["servings"][d["dish_name"]] = 6
+    assert seed.run(DISHES[:1], log=lambda *_: None)[0]["outcome"] == "not_written"
+    assert lib.base_recipe(d["dish_name"]) is None

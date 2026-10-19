@@ -19,7 +19,7 @@ why*, not duplicating the diff.
   `overnight/research-input-budget`; tests `tests/test_recipe_library_seed.py`,
   `tests/test_seed_recipe_library.py`). `data/recipe_library_seed.json`: 500
   everyday dishes, the select's 15 cuisines split as the card proposed
-  (296 dinners / 83 lunches / 68 breakfasts / 53 snacks), keys =
+  (297 dinners / 83 lunches / 68 breakfasts / 52 snacks), keys =
   `recipe_research.dish_key`, names ASCII because dish_key doesn't fold
   accents. Six samples (`data/recipe_library_samples.json`, file_entry
   arguments; review page `mockups/recipe-library-samples.html`) were researched
@@ -28,8 +28,10 @@ why*, not duplicating the diff.
   through. `seed_recipe_library.py` refuses without `--i-mean-it` (it spends
   API money; for after the samples are approved), files through
   `file_entry(origin="seed")` in batches, skips any dish with a written base,
-  reuses filed research, touches no household's recipes or research (but
-  its model calls run as household 1: consent checked, spend logged there);
+  reuses filed research, touches no household's recipes (but runs as
+  household 1: consent checked, spend logged there, and a dish whose research
+  finds nothing gets household 1's empty dish_research mark, skipped until
+  `--retry-empty`); rejects a recipe not written for 4; no flag abbreviations;
   `--samples` files the six with no model call. Not run against any live DB.
 - **Shared Recipe Library, step 1: a dish researched once serves every household**
   (2026-10-19; branch `overnight/shared-recipe-library`, stacked on and
