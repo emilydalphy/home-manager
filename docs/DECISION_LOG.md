@@ -13,6 +13,31 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Spices this week totals the week in tsp/tbsp; a tick still buys one jar**
+  (2026-10-19; branch `overnight/spice-totals-for-the-week`, STACKED on
+  `overnight/realistic-week-amounts` (itself on `overnight/part-cups-read-as-cups`)
+  — merge after both; tests `tests/test_spice_totals_for_the_week.py`).
+  The row shows `total` ("Ground cumin · 2½ tsp", "Salt · about 1½ tsp",
+  "Olive oil · ⅔ cup") off a new per-meal `meal_plan_grocery_links.measure_tsp`
+  (+ `measure_about`) the ingest writes at that meal's scale, batch included
+  (`spices.spice_measure`: pinch 1/16, dash 1/8, smidgen 1/32 tsp; "to taste"
+  salt ¼ / pepper ⅛ tsp per serving; any other unmeasured amount or an old
+  recipe's package = "a little", ¼ tsp; all "about"). The LINE is now always
+  one store unit (`_rack_quantity` → `spices.store_unit`: jar ≈ ½ cup, oil
+  bottle / salt box ≈ 2 cups; 2 past that) — this replaces the base branch's
+  "package wins, measures sum" — so a Keep or a person's "1 jar" onto the
+  plan's spice is the same jar. Saving a recipe (`settle_cooking_quantities`)
+  swaps a package on a spice line for its measured cook_qty, else the Cook
+  screen's own `cooking_quantity` table amount, else "to taste" ("as needed"
+  for oil); writer prompts/schemas ask for measures; a spice's kitchen-stock
+  check asks for the store unit (a bottle at home covers). Old links
+  (NULL measure) are read for what their text says, no backfill.
+  Why: Emily, 2026-10-18 — "a total of tsp/TBSPs that are needed". Tests
+  pinned on the old line text ("to taste", "a pinch", "2 bottles", "1 tbsp +
+  1 jar", a saved "1 bottle" of oil) were updated to the store unit. Not done:
+  a person's "2 jars" typed onto the plan's spice line reads 1 jar;
+  `overnight/pantry-staples-assumed` also edits `_merge_target` /
+  `spices.py` — resolve hunk by hunk.
 - **Realistic week amounts: one box of salt, two bunches of parsley, loaves
   and pints** (2026-10-19; branch `overnight/realistic-week-amounts`, STACKED on
   `overnight/part-cups-read-as-cups` — merge after it; tests

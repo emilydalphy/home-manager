@@ -1168,6 +1168,14 @@ CREATE TABLE IF NOT EXISTS meal_plan_grocery_links (
     -- lossy — see recipes._ledger_share. Rows written before 2026-09-13
     -- carry an apportioned rounded share instead.
     quantity TEXT NOT NULL DEFAULT '',
+    -- A SPICE-RACK share's measure in teaspoons (spices.spice_measure:
+    -- pinch/dash/smidgen and "to taste" converted, headcount and batch
+    -- scaling applied), for the Spices section's week total; NULL for any
+    -- other line and for a share written before 2026-10-19. measure_about
+    -- is 1 when it was estimated rather than measured. `quantity` above
+    -- still drives the line's arithmetic.
+    measure_tsp REAL,
+    measure_about INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

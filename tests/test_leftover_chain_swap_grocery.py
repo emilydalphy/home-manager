@@ -101,7 +101,7 @@ def test_swapping_the_source_reingests_the_former_reheat_nights_own_ingredients(
     # The batch bought the doubled amount, and Thursday itself bought
     # nothing — the starting point this fix has to leave intact for the
     # source, and correct for the reheat night.
-    assert _grocery_by_item() == {"beef": "2 lbs", "lettuce": "2 heads", "salt": "to taste"}
+    assert _grocery_by_item() == {"beef": "2 lbs", "lettuce": "2 heads", "salt": "1 box"}
     assert _ledger_items_for(thu_entry) == {}
 
     tools.swap_meal_in_plan(plan_id, TUE, "Soup", slot="dinner")
@@ -115,7 +115,7 @@ def test_swapping_the_source_reingests_the_former_reheat_nights_own_ingredients(
     assert on_list["stock"] == "1 l"
     assert on_list["beef"] == "1 lb"
     assert on_list["lettuce"] == "1 head"
-    assert on_list["salt"] == "to taste"
+    assert on_list["salt"] == "1 box"
     assert "stock" in on_list and len(on_list) == 4
 
     # The ledger actually recorded Thursday's own contribution — not just a

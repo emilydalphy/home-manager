@@ -859,6 +859,11 @@ _MIGRATIONS = [
     # period it chose (2026-10-14) — see weekly_plan.remember_first_period.
     # '' on every existing household: nobody is owed an answer never given.
     ("households", "first_period_start", "TEXT NOT NULL DEFAULT ''"),
+    # Spices this week totals the week (2026-10-19): a spice share's measure
+    # in tsp, written by the ingest — see schema.sql. NULL on every existing
+    # row: nothing is backfilled that the recipe never said.
+    ("meal_plan_grocery_links", "measure_tsp", "REAL"),
+    ("meal_plan_grocery_links", "measure_about", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

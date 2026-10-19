@@ -41,12 +41,14 @@ counts, no jars to enter: the rack is inferred from what came home.
 """
 from __future__ import annotations
 
+import math
 import re
 from datetime import date, timedelta
 
 from ..db import get_conn
 from ._shared import household_id
 from . import grocery as _grocery
+from . import quantities as _quantities
 from . import staples as _staples
 
 # A spice staple's first cadence, before Pomona has seen the jar bought
@@ -220,6 +222,193 @@ _NOT_ALONE = {
 }
 
 
+# ---------- measures: how much of each spice the week needs ----------
+#
+# Loop Board, 2026-10-18 (Emily): "the recipe should be providing
+# measurements, and so we should have a total of tsp/TBSPs that are needed
+# for everything ... for the salt, even if it's a pinch, research how much
+# a pinch would be as a measurement." The row SHOWS the week's measured
+# total; what is BOUGHT on a tick stays one store unit (store_unit) — a
+# jar of cumin covers 2½ tsp as readily as it covers a pinch.
+#
+# The cook's small measures, in teaspoons (the standard measuring-spoon
+# set: dash ⅛, pinch 1/16, smidgen 1/32).
+_SMALL_MEASURES_TSP = {"dash": 1 / 8, "pinch": 1 / 16, "smidgen": 1 / 32}
+# "To taste" / "season with salt and pepper", per serving the recipe makes:
+# about ¼ tsp of salt and ⅛ tsp of pepper a portion. Always "about".
+_TO_TASTE_TSP_PER_SERVING = {"salt": 0.25, "pepper": 0.125}
+# What any other unmeasured amount counts as — "a little", "for
+# drizzling", an old recipe's "1 jar" (Emily: existing recipes with a
+# package unit read as "a little") — in the total, marked "about", and
+# never as a jar of cumin per meal.
+A_LITTLE_TSP = 0.25
+_ML_PER_TSP = 4.92892
+# How a recipe says "season it": these read as "to taste".
+_TO_TASTE_WORDS = ("to taste", "season", "as needed", "as desired")
+
+
+def _seasoning_kinds(item: str) -> list[str]:
+    """Which of salt / pepper a name is ("Salt and black pepper" is both),
+    for the to-taste rule. Celery salt and red pepper flakes are neither —
+    they are measured like any other spice."""
+    words = set(re.findall(r"[a-z]+", (item or "").lower()))
+    kinds = []
+    if "salt" in words and not ({"celery", "garlic", "onion", "seasoned"} & words):
+        kinds.append("salt")
+    if {"pepper", "peppercorn", "peppercorns"} & words and not (
+        {"flake", "flakes", "cayenne", "bell", "crushed", "red", "lemon", "chili", "chilli"} & words
+    ):
+        kinds.append("pepper")
+    return kinds
+
+
+def spice_measure(item: str, qty: str, servings: float | None = None) -> tuple[float | None, bool]:
+    """
+    One recipe's amount of a spice-rack thing as (teaspoons, about), or
+    (None, False) for a count or a weight with no honest teaspoon reading
+    ("2 bay leaves", "3 cardamom pods").
+
+    Measured volumes convert exactly (3 tsp = 1 tbsp, 48 tsp = 1 cup, ml);
+    a pinch, dash or smidgen by the table above; "to taste" or nothing at
+    all by the per-serving rule for salt and pepper when `servings` is
+    known; anything else unmeasured — an old recipe's package word
+    included — as "a little" (A_LITTLE_TSP). All but a plain measured
+    volume are `about`.
+    """
+    core = _quantities._strip_prep_descriptor(_quantities._split_quantity_note((qty or "").strip())[0])
+    text = " ".join(core.lower().split())
+    parsed = _quantities._parse_quantity(text) if text else None
+    if parsed and parsed[1]:
+        amount, unit = parsed
+        if unit in _quantities._VOLUME_TO_TSP:
+            return amount * _quantities._VOLUME_TO_TSP[unit], False
+        if unit in ("ml", "l"):
+            return amount * (1000 if unit == "l" else 1) / _ML_PER_TSP, False
+        small = _small_measure(unit)
+        if small:
+            return amount * small, True
+        if _quantities.rack_package(text):
+            return A_LITTLE_TSP, True
+        return None, False
+    if parsed:
+        return None, False  # a bare count: bay leaves, cinnamon sticks
+    small = next((v for k, v in _SMALL_MEASURES_TSP.items() if k in text), None)
+    if small:
+        return small, True
+    if not text or any(w in text for w in _TO_TASTE_WORDS):
+        per = sum(_TO_TASTE_TSP_PER_SERVING[k] for k in _seasoning_kinds(item))
+        if per and servings:
+            return per * servings, True
+    return A_LITTLE_TSP, True
+
+
+def _small_measure(unit: str) -> float | None:
+    word = (unit or "").lower()
+    for key, tsp in _SMALL_MEASURES_TSP.items():
+        if word in (key, key + "s", key + "es"):
+            return tsp
+    return None
+
+
+def _is_oil(item: str) -> bool:
+    words = re.findall(r"[a-z]+", (item or "").lower())
+    return "oil" in words or "spray" in words
+
+
+_GLYPHS = ((0.25, "¼"), (1 / 3, "⅓"), (0.5, "½"), (2 / 3, "⅔"), (0.75, "¾"))
+
+
+def _kitchen_text(amount: float, unit: str) -> str:
+    whole = int(amount + 1e-9)
+    glyph = next((g for v, g in _GLYPHS if abs(amount - whole - v) < 1e-6), "")
+    word = unit + "s" if unit == "cup" and amount > 1 + 1e-9 else unit
+    return f"{whole if whole else ''}{glyph} {word}"
+
+
+def measure_text(tsp: float, about: bool, item: str = "") -> str:
+    """
+    A week's total of one spice the way a cook reads it: "2½ tsp", "about
+    1½ tbsp", "⅔ cup". Quarter teaspoons below a tablespoon (one estimated
+    pinch reads "a pinch", anything else under ¼ tsp "⅛ tsp"); from 1 tbsp
+    up, half tablespoons; an oil past 4 tbsp in cups, on the measuring
+    cup's quarters and thirds.
+    """
+    if tsp <= 0:
+        return ""
+    prefix = "about " if about else ""
+    if about and tsp < 0.0625 + 1e-9:
+        return "a pinch"
+    quarters = round(tsp * 4) / 4
+    if quarters < 0.25:
+        return prefix + "⅛ tsp"
+    if quarters < 3 - 1e-9:
+        return prefix + _kitchen_text(quarters, "tsp")
+    if _is_oil(item) and tsp > 12 + 1e-9:
+        cups = tsp / 48
+        steps = [math.floor(cups) + s for s in (0, 0.25, 1 / 3, 0.5, 2 / 3, 0.75, 1)]
+        return prefix + _kitchen_text(min(steps, key=lambda s: abs(s - cups)), "cup")
+    return prefix + _kitchen_text(round(tsp / 3 * 2) / 2, "tbsp")
+
+
+# What one store unit of a rack thing is and roughly what it holds, in
+# teaspoons: a spice jar ≈ ½ cup ground, a bottle of oil ≈ 2 cups (500 ml),
+# a box of salt or baking soda ≈ 2 cups, a bottle of extract ≈ 2 fl oz.
+def _store_unit_kind(item: str) -> tuple[str, float]:
+    words = set(re.findall(r"[a-z]+", (item or "").lower()))
+    if words & {"oil", "spray"}:
+        return "bottle", 96.0
+    if words & {"extract", "vanilla"}:
+        return "bottle", 12.0
+    if "salt" in words and not words & {"celery", "garlic", "onion"}:
+        return "box", 96.0
+    if "baking" in words or words & {"bouillon", "cube", "cubes"}:
+        return "box", 96.0
+    return "jar", 24.0
+
+
+def store_unit(item: str, tsp: float) -> str:
+    """
+    What a tick buys: one store unit ("1 jar", "1 bottle", "1 box"),
+    whatever the week's total, unless the total is more than a typical
+    one holds: then two.
+    """
+    unit, holds = _store_unit_kind(item)
+    return _quantities._format_quantity(2 if tsp > holds + 1e-9 else 1, unit)
+
+
+def week_total(item: str, links: list) -> dict:
+    """
+    The measured total of one spice line off its ledger rows
+    (meal_plan_grocery_links): each meal's `measure_tsp` where the ingest
+    wrote one (headcount and batch scaling included there), otherwise the
+    row's own quantity read by spice_measure with no servings — a line
+    planned before measures were recorded is read for what it says and no
+    more. A line of counts only ("2 bay leaves") totals the count.
+    {"tsp", "about", "text"}.
+    """
+    tsp, about, count = 0.0, False, 0.0
+    for link in links:
+        if link["measure_tsp"] is not None:
+            tsp += link["measure_tsp"]
+            about = about or bool(link["measure_about"])
+            continue
+        m, approx = spice_measure(item, link["quantity"] or "")
+        if m is not None:
+            tsp += m
+            about = about or approx
+            continue
+        parsed = _quantities._parse_quantity(
+            _quantities._strip_prep_descriptor(_quantities._split_quantity_note((link["quantity"] or "").strip())[0])
+        )
+        if parsed and not parsed[1]:
+            count += parsed[0]
+    if tsp > 0:
+        text = measure_text(tsp, about, item)
+    else:
+        text = _quantities._plain_number(math.ceil(count - 1e-9)) if count > 0 else ""
+    return {"tsp": tsp, "about": about, "text": text}
+
+
 def _rack(conn) -> dict[str, dict]:
     """The spice rack as the staples know it: merge key -> the staple row,
     for every staple in the Spices section, seeding first so a spice bought
@@ -298,8 +487,17 @@ def list_spices_this_week() -> dict:
         # "Probably running low": Pomona's own tick (the line carries the
         # staple) while the rack still says due — an untick's plenty clears it.
         due = bool(ticked and linked and staple is not None and _due(staple, today))
+        # The week's measured amount, off the meals that put it here
+        # (week_total). `quantity` stays what the line buys — one store
+        # unit — and the row shows `total` where there is one.
+        links = conn.execute(
+            "SELECT quantity, measure_tsp, measure_about FROM meal_plan_grocery_links "
+            "WHERE household_id = ? AND grocery_item_id = ?",
+            (household_id(), r["id"]),
+        ).fetchall()
         items.append({
             "id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
+            "total": week_total(r["item"], links)["text"] if links else "",
             "category": r["category"], "store": r["store"] or "",
             "ticked": ticked, "due": due,
         })

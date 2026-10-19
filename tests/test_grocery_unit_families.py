@@ -197,11 +197,12 @@ def test_a_person_answering_a_pending_spice_still_ticks_it_and_next_weeks_remind
     _week(0, "Chili", nights=1)
     assert _lines("Ground cumin", "spice") and not _lines("Ground cumin")
     tools.add_grocery_item("ground cumin", "1 jar", category="pantry")
-    assert _lines("Ground cumin") == [{"quantity": "1 tbsp + 1 jar", "plan": None}], "ticked, the person's now"
+    # The plan's line already buys one jar (spice-totals-for-the-week).
+    assert _lines("Ground cumin") == [{"quantity": "1 jar", "plan": None}], "ticked, the person's now"
     assert not _lines("Ground cumin", "spice")
     week_b = _week(1, "Chili", nights=1)
-    assert _lines("Ground cumin") == [{"quantity": "1 tbsp + 1 jar", "plan": None}], "no third clause"
-    assert _lines("Ground cumin", "spice") == [{"quantity": "1 tbsp", "plan": week_b}]
+    assert _lines("Ground cumin") == [{"quantity": "1 jar", "plan": None}], "no third clause"
+    assert _lines("Ground cumin", "spice") == [{"quantity": "1 jar", "plan": week_b}]
 
 
 def test_consolidating_the_list_leaves_the_two_lines_apart(eggs_by_the_cup):

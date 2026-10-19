@@ -120,8 +120,10 @@ def test_a_recipes_spices_wait_unticked_and_off_the_to_buy_list(curry_week):
     section = _section()
     assert set(section) == {"Ground cumin", "Smoked paprika", "Olive oil", "Salt"}
     assert all(not sp["ticked"] for sp in section.values())
-    # Two recipes' cumin joined one line, in the section, not two.
-    assert section["Ground cumin"]["quantity"] == "1 tbsp"
+    # Two recipes' cumin joined one line, in the section, not two: the
+    # row shows the week's tablespoon, the line buys one jar.
+    assert section["Ground cumin"]["total"] == "1 tbsp"
+    assert section["Ground cumin"]["quantity"] == "1 jar"
     # The count the band shows is the needed list: three things.
     by_store = tools.get_grocery_list_by_store()
     assert sum(len(s["items"]) for st in by_store["stores"] for s in st["sections"]) == 3
@@ -130,8 +132,9 @@ def test_a_recipes_spices_wait_unticked_and_off_the_to_buy_list(curry_week):
 def test_a_tick_moves_the_spice_onto_the_list_and_an_untick_back(curry_week):
     cumin = _section()["Ground cumin"]
     tools.tick_spice(cumin["id"])
-    assert _needed()["Ground cumin"] == "1 tbsp"
+    assert _needed()["Ground cumin"] == "1 jar"
     assert _section()["Ground cumin"]["ticked"] is True, "still in the section, shown ticked"
+    assert _section()["Ground cumin"]["total"] == "1 tbsp", "the measured total stays on the row"
     tools.tick_spice(cumin["id"], ticked=False)
     assert "Ground cumin" not in _needed()
     assert _section()["Ground cumin"]["ticked"] is False
@@ -150,7 +153,7 @@ def test_a_person_asking_for_a_spice_ticks_it(curry_week):
     """A hand add is a want: it merges onto the pending line and puts it
     on the list, rather than starting a second cumin."""
     tools.add_grocery_item("ground cumin", "1 jar", category="pantry")
-    assert _needed()["Ground cumin"] == "1 tbsp + 1 jar", "one line (units honestly unreconciled), on the list"
+    assert _needed()["Ground cumin"] == "1 jar", "one line, the jar the plan's line already buys"
     assert [sp["item"] for sp in tools.list_spices_this_week()["items"] if "cumin" in sp["item"].lower()] == ["Ground cumin"]
     assert _section()["Ground cumin"]["ticked"] is True
 
@@ -320,7 +323,7 @@ def test_swapping_out_the_only_meal_that_wanted_a_spice_clears_its_line(curry_we
     tools.add_recipe("Plain rice", ingredients=[{"item": "Rice", "qty": "2 cups", "category": "pantry"}])
     tools.swap_meal_in_plan(curry_week, days[1], "Plain rice", slot="dinner")
     section = _section()
-    assert section["Ground cumin"]["quantity"] == "1 tsp", "the curry's teaspoon, the tacos' gone"
+    assert section["Ground cumin"]["total"] == "1 tsp", "the curry's teaspoon, the tacos' gone"
     assert "Rice" in _needed()
 
 
@@ -354,7 +357,7 @@ def test_a_ticked_spice_from_last_week_goes_through_keep_or_drop(curry_week):
     assert _section()["Ground cumin"]["ticked"] is False, "this week's own cumin, unticked"
     tools.keep_carried_over_item(carried["Ground cumin"]["item_id"])
     assert _section()["Ground cumin"]["ticked"] is True, "kept means buy it"
-    assert _needed()["Ground cumin"] == "2 tbsp"
+    assert _needed()["Ground cumin"] == "1 jar", "last week's unbought jar is this week's jar"
 
 
 def test_the_routes(signed_in, curry_week):
