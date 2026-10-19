@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An added prep day says why, in one line** (2026-10-19; branch
+  `overnight/prep-day-says-why`; tests `tests/test_weekday_lunches.py`
+  `TestTheAddedPrepDaySaysWhy`). Plan a week step 3: when `ensurePrepReach`
+  lights a prep day the household didn't pick, a `.lunch-note` under the
+  Prep day chips reads "Prepped food keeps 3 days, so Friday’s lunch needs a
+  Thursday prep." (several days, one sentence). The rule is unchanged. Why:
+  Emily's Sunday prep lit Thursday with no word (decided 2026-10-18).
+  `prepReachNeeds` + `prepReachSentence` are pure, for the re-plan lunch
+  screen to reuse. "Added" = a day the rule put in this visit, or on open a
+  saved/carried day not in `rhythm.prep_days`; a chip tap makes the day the
+  household's own (no line); a day no prepped lunch still needs gets none.
+  Onboarding doesn't run the rule, so it has no line.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

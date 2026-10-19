@@ -435,7 +435,7 @@ def _section(qid: str) -> str:
 _FUNCS = ("isoLocal", "addDaysIso", "isoWeekday", "titleDay", "isWeekdayIso", "prevIso", "prepDayFor",
           "lunchDates", "leftoversOk", "lunchCounts", "lunchLeaving", "lunchStep", "lunchCycle",
           "ensurePrepReach", "lunchPrefill", "lunchLine", "lunchesSentence", "joinWords", "sentence",
-          "lunchUsingLine")
+          "lunchUsingLine", "prepReachNeeds", "prepReachSentence", "joinClauses")
 
 
 def _node(script: str) -> object:
@@ -628,3 +628,64 @@ class TestTheScreen:
         assert _node(f"lunchUsingLine({json.dumps(wl)})") == \
             "3 lunches prepped Sunday, 1 from dinner and 1 cooked Friday."
         assert _node("lunchUsingLine({})") == ""
+
+
+class TestTheAddedPrepDaySaysWhy:
+    """Card "when Pomona adds a prep day it tells me why, in one line"
+    (Emily, 2026-10-18): Sunday prep, Mon–Wed and Fri prepped, Thursday
+    leftovers — Friday is five days from Sunday, so Thursday lit up with no
+    word. The rule stays; one quiet line under the Prep day chips says why."""
+
+    EMILY = {WEEK[0]: "prepped", WEEK[1]: "prepped", WEEK[2]: "prepped", WEEK[3]: "leftovers",
+             WEEK[4]: "prepped"}
+
+    def _why(self, prep_days, kinds, among):
+        return _node(f"prepReachSentence(prepReachNeeds({json.dumps(prep_days)}, {json.dumps(kinds)}, "
+                     f"{json.dumps(WEEK)}, {json.dumps(among)}))")
+
+    def test_the_line_sits_under_the_prep_day_chips_in_the_quiet_style(self):
+        q3 = _section("q3")
+        group = q3[q3.index('id="lunch-prep-group"'):q3.index("Taking it with you")]
+        assert group.index('id="lunch-prep-days"') < group.index(
+            '<p class="lunch-note" id="lunch-prep-why" hidden></p>')
+
+    @_needs_node
+    def test_an_added_day_names_the_lunch_and_the_prep_day(self):
+        script = (f"(function () {{ var data = {{rhythm_prep_days: ['sunday']}}; "
+                  f"var lunch = {{kinds: {json.dumps(self.EMILY)}, prepDays: ['sunday'], reachAdded: []}}; "
+                  f"{_extract('reachPrepDays')} reachPrepDays({json.dumps(WEEK)}); return lunch; }})()")
+        got = _node(script)
+        assert got["prepDays"] == ["sunday", "thursday"]   # the rule is unchanged
+        assert got["reachAdded"] == ["thursday"]
+        assert self._why(got["prepDays"], self.EMILY, got["reachAdded"]) == \
+            "Prepped food keeps 3 days, so Friday’s lunch needs a Thursday prep."
+
+    @_needs_node
+    def test_several_added_days_are_one_sentence(self):
+        # Only Monday chosen, all five prepped: Sunday (for Monday) and Thursday
+        # (for Friday) come in.
+        kinds = {d: "prepped" for d in WEEK}
+        assert self._why(["sunday", "monday", "thursday"], kinds, ["sunday", "thursday"]) == (
+            "Prepped food keeps 3 days, so Monday’s lunch needs a Sunday prep "
+            "and Friday’s lunch needs a Thursday prep.")
+
+    @_needs_node
+    def test_no_added_day_means_no_line(self):
+        in_reach = {WEEK[0]: "prepped", WEEK[1]: "prepped", WEEK[2]: "prepped",
+                    WEEK[3]: "cooked", WEEK[4]: "cooked"}
+        assert self._why(["sunday"], in_reach, []) == ""
+        # A day the household picked itself is never explained, even when needed.
+        assert self._why(["sunday", "thursday"], self.EMILY, []) == ""
+        # Tapped off: Thursday is gone, so is the line (Friday falls back to
+        # Sunday, from the freezer — today's rule).
+        assert self._why(["sunday"], self.EMILY, ["thursday"]) == ""
+        # Friday no longer prepped: Thursday stays on, but nothing needs it.
+        cooked_friday = dict(self.EMILY, **{WEEK[4]: "cooked"})
+        assert self._why(["sunday", "thursday"], cooked_friday, ["thursday"]) == ""
+
+    @_needs_node
+    def test_the_first_prep_day_of_an_empty_answer_is_not_the_reach_rule(self):
+        script = (f"(function () {{ var data = {{rhythm_prep_days: []}}; "
+                  f"var lunch = {{kinds: {json.dumps({WEEK[0]: 'prepped'})}, prepDays: [], reachAdded: []}}; "
+                  f"{_extract('reachPrepDays')} reachPrepDays({json.dumps(WEEK[:1])}); return lunch; }})()")
+        assert _node(script) == {"kinds": {WEEK[0]: "prepped"}, "prepDays": ["sunday"], "reachAdded": []}
