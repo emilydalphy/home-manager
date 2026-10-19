@@ -268,6 +268,9 @@ def clean_state():
         # row too, and steers Plan's default for a household with no week —
         # one test's answer must not become the next test's default.
         conn.execute("UPDATE households SET first_period_start = '' WHERE id = 1")
+        # The first-open tour's ending (2026-10-18) is on the row too, for a
+        # session with nobody picked: one test's skip mustn't end the next's.
+        conn.execute("UPDATE households SET tour_ended_how = '', tour_ended_at = '', first_approved_at = '' WHERE id = 1")
         # Household 1 has said yes to sharing with Claude, in every test —
         # see _database above for why, and for the tests that undo it.
         conn.execute(

@@ -9062,6 +9062,27 @@ def first_open_seen():
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# ---------- The first-open tour (Loop Board, Emily 2026-10-18) ----------
+# static/tour.js asks GET when a first draft is on Plan, and POSTs when the
+# tour is finished or skipped. "Show me around again" needs neither.
+
+
+class TourEndRequest(BaseModel):
+    skipped: bool = False
+
+
+@app.get("/api/tour")
+def get_tour_state():
+    """Should the tour start on this person's draft (tools.tour_state)."""
+    return tools.tour_state()
+
+
+@app.post("/api/tour/done")
+def end_tour(req: TourEndRequest):
+    """The tour was finished or skipped — never start it on its own again for this person."""
+    return tools.end_tour(req.skipped)
+
+
 # ---------- Invite the other adult (Loop Board, Emily 2026-09-25) ----------
 #
 # A one-time link that signs one adult in to this household without the

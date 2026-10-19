@@ -911,6 +911,10 @@
         weekState.data.weekly_plan_id && weekState.data.status !== 'approved' && scrollEl) {
       scrollEl.scrollTop = 0;
     }
+    // The first-open tour, checked on every showing of an already-built
+    // Plan as well as when it's built — see maybeStartFirstTour.
+    // (typeof: harnesses run activateTab sliced out of this file.)
+    if (tab.week && panel.dataset.built && weekState.data && typeof maybeStartFirstTour === 'function') maybeStartFirstTour();
 
     var pathIsAlreadyOurs = window.location.pathname.replace(/\/+$/, '') ===
       (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''));
@@ -15442,6 +15446,84 @@
       goGroceryList();
       showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));
     }
+    // The first-open tour (Emily, 2026-10-18): right after "Here's your
+    // week." on the household's first draft. Not on the approve hand-off —
+    // that household has an approved week, which the server says no to
+    // anyway — and see maybeStartFirstTour for everything else it waits on.
+    if (!afterApprove) maybeStartFirstTour();
+  }
+
+  // ---------- The first-open tour (static/tour.js) ----------
+  // Loop Board "Build the in-app tour (Option A)", Emily 2026-10-18. Six
+  // stops over the real screens, ending back on the draft. tour.js draws
+  // it; this is the shell's half: when it starts, the tab switching it
+  // borrows, and recording that it's over (GET/POST /api/tour — per adult,
+  // or per household with nobody picked; app/tools/tour.py).
+  //
+  // It starts only when nothing else is in front: a sheet (the ?tweak=1
+  // hand-off opens the chat), "Who's this?", the first-open welcome, the
+  // consent screen. Any of those and it waits for the next time Plan is
+  // built — it isn't recorded as seen until it is finished or skipped.
+  var tourHost = {
+    goTab: function (key) {
+      var panel = panels[key];
+      if (panel && panel.classList.contains('active')) return;
+      activateTab(key, false, { replaceHistory: true });
+    },
+    onEnd: function (skipped) {
+      Api.json('/api/tour/done', { method: 'POST', body: { skipped: !!skipped }, quiet: true })
+        .catch(function (err) {
+          // A dropped write means the tour is offered again next time, the
+          // safe direction: being shown around twice beats a toast now.
+          console.warn('Tour: couldn\'t record the ending:', err);
+        });
+    }
+  };
+
+  function tourBlocked() {
+    var open = document.querySelectorAll('[role="dialog"], #who-screen, .first-open-screen');
+    for (var i = 0; i < open.length; i++) {
+      var el = open[i];
+      if (el.id === 'tour-card' || el.hidden) continue;
+      if (el.getClientRects().length) return true;
+    }
+    return false;
+  }
+
+  // At most one start per page load, and one question in flight: this runs
+  // when Plan is built AND whenever Plan is shown (activateTab) — the
+  // second adult's first-open welcome holds it off at build time, and by
+  // the time they reach Plan the panel is already built. The tour's own
+  // tab switches land here too; the flag is what keeps the end of a tour
+  // (goTab('week') before the POST lands) from starting it again.
+  var tourStartedThisLoad = false;
+  var tourAsking = false;
+
+  function maybeStartFirstTour() {
+    if (!window.PomonaTour || window.PomonaTour.isOpen() || tourStartedThisLoad || tourAsking) return;
+    if (weekState.step !== 'week' || weekPlanState(weekState.data) !== 'draft') return;
+    tourAsking = true;
+    Api.json('/api/tour', { quiet: true }).then(function (st) {
+      if (!st || !st.show) { tourAsking = false; return; }
+      // A beat for "Here's your week." to land first.
+      setTimeout(function () {
+        tourAsking = false;
+        if (tourStartedThisLoad || window.PomonaTour.isOpen()) return;
+        if (tourBlocked() || weekState.step !== 'week' || !panels.week.classList.contains('active')) return;
+        tourStartedThisLoad = window.PomonaTour.start(tourHost, { replay: false });
+      }, 700);
+    }).catch(function () { tourAsking = false; /* no tour is the quiet failure */ });
+  }
+
+  // "Show me around again" (Preferences): any time, for anyone, from the
+  // first stop on Plan.
+  function replayTour() {
+    if (!window.PomonaTour) return;
+    tourStartedThisLoad = true;
+    closePrefsSheet();
+    tourHost.goTab('week');
+    if (scrollEl) scrollEl.scrollTop = 0;
+    window.PomonaTour.start(tourHost, { replay: true });
   }
 
   // Where this household's "this week" starts, from the planning_anchor
@@ -29054,6 +29136,15 @@
         '</span>' +
         ICONS.arrow +
       '</button>' +
+      // The first-open tour, again (Emily, 2026-10-18): replays it from
+      // stop 1 on Plan. See replayTour.
+      '<button type="button" class="prefs-row" data-prefs="tour">' +
+        '<span class="prefs-row-text">' +
+          '<span class="prefs-row-title">Show me around again</span>' +
+          '<span class="prefs-row-sub">Changing the plan, and each tab</span>' +
+        '</span>' +
+        ICONS.arrow +
+      '</button>' +
       // "Reach me before the moment" (2026-09-11): the morning text. Opens
       // its own sheet, like Helpful tips — one of the few places an input
       // is the honest control, since a phone number can't be tapped into
@@ -29466,6 +29557,7 @@
     if (!target) return;
     var what = target.getAttribute('data-prefs');
     if (what === 'open') return openPrefsSheet();
+    if (what === 'tour') return replayTour();
     if (what === 'section') {
       // What we know, opened with the section that owns this answer
       // expanded — the same Kitchen entry sheet the Inventory tile uses,

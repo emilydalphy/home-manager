@@ -318,6 +318,8 @@ from .first_open import (  # noqa: F401
     mark_first_open_seen,
     record_setup_adult,
 )
+# The first-open tour (2026-10-18): should it start, and "it's over". See tour.py.
+from .tour import end_tour, tour_state  # noqa: F401
 # The household's main person (2026-10-05) — one per household, a member
 # id, shown in Settings -> Who's here and movable to another adult. See
 # primary_member.py for why this is not set_up_by_member_id.

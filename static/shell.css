@@ -11764,3 +11764,77 @@ body.first-open-active { overflow: hidden; }
 @media (hover: hover) { .wk-move-day.is-off:hover { background: var(--surface); } }
 .wk-move-line { font-family: var(--font-body); font-size: 13px; line-height: 1.25; color: var(--ink-secondary); }
 .wk-move-line.is-note { color: var(--urgent-label); font-weight: 600; }
+
+/* ---------- The first-open tour (static/tour.js, Emily 2026-10-18) ----------
+   Six stops over the real screens. The dim is the ring's own box-shadow, so
+   there is one scrim and the ringed control stays lit; a stop whose target
+   isn't on screen dims the whole page and centres the card. The card is a
+   centred dialog's shape (--shadow-dialog, --radius-card) and its Next is
+   the apricot — the screen's own apricot is under the scrim, the same
+   exception every sheet here takes. Above the sheets, below "Who's this?"
+   (60) and the first-open welcome (61), which come first. No motion: the
+   tour isn't one of §4's five. */
+.tour { position: fixed; inset: 0; z-index: 58; }
+.tour[hidden] { display: none; }
+.tour.is-centred { background: var(--scrim); }
+.tour-hole {
+  position: fixed;
+  border-radius: var(--radius-control);
+  box-shadow: 0 0 0 2px var(--apricot), 0 0 0 9999px var(--scrim);
+  pointer-events: none;
+}
+.tour-hole.is-empty { display: none; }
+.tour-card {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-dialog);
+  padding: 16px 16px 8px;
+  color: var(--ink);
+}
+.tour-card.is-centred { top: 50%; transform: translateY(-50%); }
+.tour-count {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}
+.tour-title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+}
+.tour-body { margin: 6px 0 10px; font-size: 15px; line-height: 1.45; color: var(--ink); }
+.tour-acts { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tour-skip {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 4px;
+  background: none;
+  border: none;
+  font: 700 15px var(--font-body);
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.tour-next {
+  min-height: 44px;
+  padding: 0 22px;
+  border: none;
+  border-radius: var(--radius-action);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  font: 700 17px var(--font-display);
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.tour-skip:focus-visible, .tour-next:focus-visible { outline: 2px solid var(--ink-strong); outline-offset: 2px; }

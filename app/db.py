@@ -893,6 +893,20 @@ _MIGRATIONS = [
     # chat already reads those through get_household_memory. '{}' on every
     # existing household: a store with no hours behaves as it always has.
     ("meal_preferences", "store_hours_json", "TEXT NOT NULL DEFAULT '{}'"),
+    # The first-open tour (Loop Board "Build the in-app tour", 2026-10-18) —
+    # see app/tools/tour.py. '' = it hasn't ended for this person; 'done' /
+    # 'skipped' = it has. On the household too, for a session with nobody
+    # picked. '' on every existing row is safe: the tour also needs a
+    # household with no approved week, which every household in use has.
+    ("members", "tour_ended_how", "TEXT NOT NULL DEFAULT ''"),
+    ("members", "tour_ended_at", "TEXT NOT NULL DEFAULT ''"),
+    ("households", "tour_ended_how", "TEXT NOT NULL DEFAULT ''"),
+    ("households", "tour_ended_at", "TEXT NOT NULL DEFAULT ''"),
+    # When the household first approved a week (weekly_plan.approve_weekly_plan).
+    # Survives a reopen, which clears weekly_plans.approved_at — the tour's
+    # "never on a household that has approved a week" reads both. '' on
+    # existing rows; their approved plans still answer for them.
+    ("households", "first_approved_at", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
