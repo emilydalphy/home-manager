@@ -444,7 +444,11 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
     batches = _weekday_lunches.prepped_batches(
         weekly_plan_id, window=(dates[0], dates[-1])
     )
-    prep_days = _rhythm.get_household_rhythm()["prep_days"]
+    # This plan's own prep days when cook ahead was changed for its week
+    # only while re-planning (usual_week.for_plan).
+    from . import usual_week as _usual_week
+    with _usual_week.for_plan(weekly_plan_id):
+        prep_days = _rhythm.get_household_rhythm()["prep_days"]
     if not prep_days and not batches:
         return []
 

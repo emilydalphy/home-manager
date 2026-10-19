@@ -38,6 +38,9 @@ REPO = Path(__file__).resolve().parent.parent
 STATIC = REPO / "static"
 SHELL_JS = (STATIC / "shell.js").read_text(encoding="utf-8")
 ONBOARDING = (STATIC / "onboarding.html").read_text(encoding="utf-8")
+# The setup screens' code moved to setup-screens.js (re-plan Option B,
+# 2026-10-18); onboarding.html loads it, so it is part of the page.
+ONBOARDING += "\n" + (__import__("pathlib").Path(__file__).resolve().parent.parent / "static" / "setup-screens.js").read_text(encoding="utf-8")
 PLAN_WEEK = (STATIC / "plan-week.html").read_text(encoding="utf-8")
 
 

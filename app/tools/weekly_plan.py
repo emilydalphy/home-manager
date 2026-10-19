@@ -4954,7 +4954,7 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
     # An empty row of a meal switched off for the whole usual week says so
     # (2026-10-02), so the reveal's fallback can leave it out like the menu.
     from . import usual_week as _usual_week_mod
-    _switched_off = _usual_week_mod.switched_off_meals()
+    _switched_off = _usual_week_mod.switched_off_meals(sorted({d["date"] for d in meal_dicts if d.get("date")}))
     for _d in meal_dicts:
         if _d["slot_state"] == "planned_empty" and _d["slot"] in _switched_off:
             _d["meal_off"] = True
@@ -5862,7 +5862,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     usual_week_off = _usual_week.off_slots_on(sorted({r["date"] for r in rows if r["date"]}))
     # The meals switched off for the WHOLE usual week (2026-10-02): their
     # empty rows carry `meal_off` so no screen draws a row for them.
-    meals_switched_off = _usual_week.switched_off_meals()
+    meals_switched_off = _usual_week.switched_off_meals(sorted({r["date"] for r in rows if r["date"]}))
 
     def build_slot(row) -> dict | None:
         # The three states a slot can be in. Only a slot that is genuinely
@@ -6534,7 +6534,7 @@ def get_needs_you_items() -> list[dict]:
     # household that never answered the usual week.
     from . import usual_week as _usual_week
     _window = [(today + timedelta(days=o)).isoformat() for o in (0, 1)]
-    if "dinner" in _usual_week.switched_off_meals():
+    if "dinner" in _usual_week.switched_off_meals(_window):
         usual_week_off_dinners = set(_window)
     else:
         usual_week_off_dinners = {d for (d, s) in _usual_week.off_slots_on(_window) if s == "dinner"}
@@ -7273,8 +7273,12 @@ def approve_weekly_plan(
     # that could not be written is not a reason to un-approve the week.
     if not result["was_already_approved"]:
         from . import cook_ahead as _cook_ahead
+        from . import usual_week as _usual_week_scope
         try:
-            result["cook_ahead"] = _cook_ahead.apply_prep_day_batches(weekly_plan_id)
+            # The week's own prep days when cook ahead was changed for this
+            # week only while re-planning (usual_week.for_plan).
+            with _usual_week_scope.for_plan(weekly_plan_id):
+                result["cook_ahead"] = _cook_ahead.apply_prep_day_batches(weekly_plan_id)
         except Exception:
             logger.exception("Batching repeated dishes at approval failed for plan %s", weekly_plan_id)
     return result

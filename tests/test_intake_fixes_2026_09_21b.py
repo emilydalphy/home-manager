@@ -316,6 +316,9 @@ def _run_load(search: str, server_day_count, server_start: str = MONDAY) -> str:
         "return Promise.resolve({ ok: true, json: function () { return Promise.resolve({ days: [] }); } }); }\n"
         "var els = {}; function $(id) { return els[id] || (els[id] = { hidden: false, textContent: '', innerHTML: '', classList: { toggle: function () {} }, querySelectorAll: function () { return []; } }); }\n"
         + _var("weekStart") + _block("  var dayCount = (function () {", "  })();\n") + _var("horizon") + _var("who")
+        # Re-plan Option B (2026-10-19): load() reads whether the door named
+        # a length, and starts onboarding's screens loading.
+        + _var("DAYS_IN_ADDRESS") + "function loadSetupScreens() {}\n"
         + "var range = { start: '', end: '' }; var step = 1;\n"
         + _extract("clampStart") + "\n" + _extract("choosePeriod") + "\n" + _extract("openRange") + "\n"
         + _extract("loadHorizon") + "\n" + _extract("load") + "\n"
@@ -366,8 +369,14 @@ class TestSelectAllInTheAnythingElseBox:
         # back right after new days' prefill reset it (finishChange, only
         # when the period changed). Nothing writes it on input, on save,
         # or on a timer.
+        # UPDATED 2026-10-19 (re-plan Option B): two more, each a tap of
+        # the household's own — Done on onboarding's "Anything else I should
+        # know?" screen (takeSetupScreen copies its box in), and Undo
+        # (restoreState puts back what the box said before that change).
         writes = [m.start() for m in re.finditer(r"\$\('freeform'\)\.value = ", PAGE)]
-        assert len(writes) == 3
+        assert len(writes) == 5
+        assert "$('freeform').value = $('anything-else-note').value.trim();" in _extract("takeSetupScreen")
+        assert "$('freeform').value = st.freeform;" in _extract("restoreState")
         assert "$('freeform').value = '';" in _extract("fetchPeriod")
         assert "$('freeform').value = intake.freeform || '';" in _extract("takeAnswers")
         assert "$('freeform').value = kept.freeform;" in _extract("restoreAcrossPeriods")
@@ -397,12 +406,12 @@ class TestSelectAllInTheAnythingElseBox:
         assert got["staleWrote"] is False
 
     def test_back_and_continue_keep_the_text(self):
-        # Nothing between steps touches the box: Back only saves and shows
-        # the previous step, Continue saves the trimmed text and moves on.
-        back = _extract("goBack")
-        assert "freeform" not in back
-        assert "if (n === 5) return saveIntake({ freeform: $('freeform').value.trim() });" in _extract("saveStep")
+        # Nothing between screens touches the box. UPDATED 2026-10-19
+        # (re-plan Option B): there is no Back between steps any more, and
+        # every save sends the whole set, the trimmed text with it.
+        assert "freeform: $('freeform').value.trim()," in _extract("samePayload")
         assert "freeform" not in _extract("showStep")
+        assert "freeform" not in _extract("openSetupScreen")
 
 
 def _race_harness() -> str:

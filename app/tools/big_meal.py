@@ -1032,8 +1032,12 @@ def _prep_anchor(date_str: str) -> str | None:
     "the day before", because that IS the day they cook ahead. None when
     they have none, or none falls in the window.
     """
+    from . import usual_week as _usual_week
     try:
-        prep_days = _rhythm.get_household_rhythm().get("prep_days") or []
+        # The week's own prep days when cook ahead was changed for that week
+        # only while re-planning (usual_week.for_date).
+        with _usual_week.for_date(date_str):
+            prep_days = _rhythm.get_household_rhythm().get("prep_days") or []
     except Exception:
         return None
     weekdays = {(p.get("weekday") or "").lower() for p in prep_days if isinstance(p, dict)}

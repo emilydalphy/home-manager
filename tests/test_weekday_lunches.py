@@ -483,11 +483,12 @@ class TestTheScreen:
         assert '<span class="stepper" role="group"' in _extract("renderLunchStep")
 
     def test_step_three_saves_the_answer_and_a_period_without_weekday_lunches_skips_it(self):
-        save = _extract("saveStep")
-        assert "saveIntake({ packed_lunch_days: answers.packed_lunch_days, weekday_lunches: lunchPayload() })" in save
-        assert "return n === 3 && !!data && currentLunchDates().length === 0;" in _extract("skipsStep")
-        assert "if (skipsStep(to)) to += 1;" in _extract("advance")
-        assert "if (skipsStep(to)) to -= 1;" in _extract("goBack")
+        # UPDATED 2026-10-19 (re-plan Option B): every save is the whole set
+        # (samePayload), the lunches only for a period that has a weekday
+        # lunch; there are no steps in a row to skip any more.
+        same = _extract("samePayload")
+        assert "if (currentLunchDates().length) {" in same and "payload.weekday_lunches = lunchPayload();" in same
+        assert "packed_lunch_days: answers.packed_lunch_days.filter(" in same
         assert "if (lunch.ready) payload.weekday_lunches = lunchPayload();" in _extract("leavePayload")
 
     @_needs_node
@@ -591,7 +592,9 @@ class TestTheScreen:
     def test_the_days_say_what_each_one_gets(self):
         assert _node(f"lunchLine('{WEEK[0]}', 'prepped', ['sunday'])") == "Prepped Sunday"
         assert _node(f"lunchLine('{WEEK[3]}', 'prepped', ['sunday'])") == "Prepped Sunday, from the freezer"
-        assert _node(f"lunchLine('{WEEK[2]}', 'leftovers', [])") == "Leftovers from Tuesday’s dinner"
+        # UPDATED 2026-10-19 (re-plan Option B's copy list): onboarding's
+        # word for a leftovers lunch.
+        assert _node(f"lunchLine('{WEEK[2]}', 'leftovers', [])") == "Last night’s dinner"
         assert _node(f"lunchLine('{WEEK[4]}', 'cooked', [])") == "Cooked that day"
 
     @_needs_node

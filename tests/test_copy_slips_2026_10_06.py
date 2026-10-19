@@ -19,7 +19,8 @@ SWAP_IN_PLACE = (REPO / "app" / "tools" / "swap_in_place.py").read_text(encoding
 def test_us_spelling_in_user_facing_lines():
     assert "tap once for a favorite, twice to skip it" in SHELL_JS
     assert "tap once for a favourite" not in SHELL_JS
-    assert "you&rsquo;re traveling or gone" in PLAN_WEEK
+    # (The away card's "traveling" line went with re-plan Option B's copy
+    # list, 2026-10-19; the rule below still holds for the page.)
     assert "travelling" not in PLAN_WEEK
     assert "a favorite named in intake.freeform" in AGENT
 

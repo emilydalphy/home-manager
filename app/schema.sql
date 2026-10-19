@@ -557,6 +557,11 @@ CREATE TABLE IF NOT EXISTS week_intake (
     -- the first night it was planned for last week. The generator picks the
     -- night (bring_over.choose_nights). '[]' = nothing brought over.
     brought_over_json TEXT NOT NULL DEFAULT '[]',
+    -- Re-plan Option B (2026-10-18): the household-level answers changed
+    -- for THIS week only while re-planning — {"grid", "prep", "variety",
+    -- "lunch_needs"}, each present only when changed; written by
+    -- tools/usual_week.normalize_week_answers. '{}' = nothing changed.
+    week_answers_json TEXT NOT NULL DEFAULT '{}',
 
     -- Q2.
     moods_json TEXT NOT NULL DEFAULT '[]',

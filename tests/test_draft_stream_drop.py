@@ -583,6 +583,10 @@ def test_the_caller_waits_out_a_drop_and_alerts_only_on_a_real_failure():
 def test_the_crumb_still_leaves_while_the_page_waits():
     """`drafting` stays true through waitForDraft, so "‹ Plan" is leaveFlow."""
     tap = _extract("crumbTap")
-    assert "if (step === 1 || drafting) leaveFlow();" in tap
+    # UPDATED 2026-10-19 (re-plan Option B): every crumb that isn't a
+    # question's own is leaveFlow; a question's only while not drafting.
+    assert "else if (setupOpen && !drafting) setupCrumb();" in tap
+    assert "else if (editing && !drafting) advance();" in tap
+    assert tap.rstrip().endswith("else leaveFlow();\n  }")
     wait_fn = _extract("waitForDraft")
     assert "drafting = false" not in re.sub(r"//[^\n]*", "", wait_fn)

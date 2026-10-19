@@ -532,6 +532,12 @@ _MIGRATIONS = [
     # [{entry_ids, meal, recipe_id, slot, date}] — see tools/bring_over.py.
     # '[]' on every existing revision — nothing was brought over before.
     ("week_intake", "brought_over_json", "TEXT NOT NULL DEFAULT '[]'"),
+    # Re-plan Option B (Emily, 2026-10-18): the household-level answers
+    # changed while re-planning — who's eating, cook ahead, how many
+    # different breakfasts / lunches / dinners, each person's lunch needs —
+    # for THIS week only (tools/usual_week.normalize_week_answers). '{}' on
+    # every existing revision: nothing was changed for one week before.
+    ("week_intake", "week_answers_json", "TEXT NOT NULL DEFAULT '{}'"),
     # Loop Board "Cook: the real start time moves the clock" (Emily,
     # 2026-09-13): when "Start cooking" was actually tapped, on the
     # household's clock — see schema.sql. NULL on every existing row:

@@ -770,6 +770,7 @@ from .week_intake import (  # noqa: F401
     freeform_ingredient_requests,
     freeform_day_requests,
     clear_week_intake,
+    save_setup_week_answers,
     get_week_intake,
     get_week_intake_history,
     get_week_intake_prefill,

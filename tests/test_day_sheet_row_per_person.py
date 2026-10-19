@@ -130,7 +130,10 @@ class TestTheSheetIsARowPerPerson:
         for gone in (
             "'Nothing special'", "'Nobody home'", "'Hosting guests'", "'Got time tonight'",
             "stepSlotGuests", "guests-slot", "mealBlockHtml", "presenceHtml", "toggleAvatar",
-            "PRESENCE_QUESTION", "Is anyone out?", "Who’s eating", "offerToRemember", "Just this week?",
+            # "Who’s eating" left this list on 2026-10-19 (re-plan Option
+            # B): it is onboarding's question again, on the row and the
+            # screen "Same as last week?" opens — not the old sheet's.
+            "PRESENCE_QUESTION", "Is anyone out?", "offerToRemember", "Just this week?",
             "'Extra adults'", "'Extra children'",
         ):
             assert gone not in PAGE, gone

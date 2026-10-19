@@ -6471,7 +6471,7 @@ def _generate_weekly_plan_once(
                     week_start_date, done.get("plan_id"),
                 )
                 return tools.get_weekly_plan(done["plan_id"])
-        plan = _generate_weekly_plan(
+        plan = _generate_weekly_plan_as_changed(
             week_start_date,
             constraints_notes=constraints_notes,
             day_count=day_count,
@@ -6802,6 +6802,39 @@ def _honest_meal_names(items: list[dict]) -> None:
             taken.add(honest.strip().lower())
 
 
+def _generate_weekly_plan_as_changed(
+    week_start_date: str,
+    constraints_notes: str = "",
+    day_count: int = 7,
+    intake_id: int | None = None,
+    skip_days: int = 0,
+    period_start: str | None = None,
+) -> dict:
+    """
+    _generate_weekly_plan (below) with the week read as the household changed
+    it while re-planning (re-plan Option B, Emily 2026-10-18): a change made
+    on "Same as last week?" — who's eating, cook ahead, how many different
+    breakfasts / lunches / dinners, each person's lunch needs — applies to
+    THIS week only. It is held on the intake revision (week_answers) and
+    read through usual_week.this_week for the length of one draft, so every
+    reader of the usual week and of the lunch needs inside it sees this
+    week's answer while Settings keeps the usual one. The intake is the one
+    _generate_weekly_plan resolves (the revision asked for, else the week's
+    current one).
+    """
+    if intake_id is not None:
+        intake = next(
+            (i for i in tools.get_week_intake_history(week_start_date) if i["intake_id"] == intake_id), None,
+        )
+    else:
+        intake = tools.get_week_intake(week_start_date)
+    with _usual_week.this_week((intake or {}).get("week_answers") or None):
+        return _generate_weekly_plan(
+            week_start_date, constraints_notes=constraints_notes, day_count=day_count,
+            intake_id=intake_id, skip_days=skip_days, period_start=period_start,
+        )
+
+
 def _generate_weekly_plan(
     week_start_date: str,
     constraints_notes: str = "",
@@ -6911,6 +6944,14 @@ def _generate_weekly_plan(
     # told about it at all, in the prompt text or here in its context.
     effective_memory = dict(household_memory)
     effective_memory.pop("repeats_tolerance", None)
+    # Cook ahead, answered for THIS week only while re-planning (see
+    # _generate_weekly_plan): the prep days the prompt and the time caps
+    # read are this week's. Every prep day is up to 2 hours (onboarding).
+    week_prep = (((intake or {}).get("week_answers") or {}).get("prep"))
+    if week_prep is not None:
+        effective_memory["rhythm"] = dict(effective_memory.get("rhythm") or {}, prep_days=[
+            {"weekday": d, "minutes": 120} for d in (week_prep.get("days") or [])
+        ])
     # The days actually being planned: the period minus the days tapped off
     # "Which days?" (2026-09-21, board D1). A dropped day is not planned, so
     # it is not a day the counts scale to — Emily's rule is "per 7-day

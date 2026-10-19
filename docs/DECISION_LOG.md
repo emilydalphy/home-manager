@@ -358,6 +358,35 @@ why*, not duplicating the diff.
   Volumes on a household's line add within the family; the inventory stepper
   reads "2/3 cup". Not touched: Kitchen's "running low" count reads only the
   leading number, so "1/4 cup" counts as low.
+- **Re-plan Option B: "Same as last week?" in onboarding's look**
+  (2026-10-19; branch `overnight/replan-same-as-last-week`, stacked on and
+  merging AFTER `overnight/prep-day-says-why`; tests
+  `tests/test_replan_option_b.py`). Emily's call, 2026-10-18 (build gate
+  lifted for this card). (1) `/api/onboarding/answers` writes week 1's
+  intake once (`tools.save_setup_week_answers`) and the first draft attaches
+  it — the first re-plan had no `last_intake` and asked all five steps.
+  (2) Plan a week always opens on the summary: eight rows in onboarding's
+  order and words, "Draft my week", "Already drafted" notice; the five
+  steps' bars and "Plan this week" are gone; Days default to the
+  household's length, not last week's. (3) Each row opens ONBOARDING'S OWN
+  screen: its code moved verbatim to `static/setup-screens.js` (both pages
+  load it; test harnesses that lift it read both files), and plan-week
+  lifts the markup from `/static/onboarding.html` at run time with its
+  stylesheet scoped to `#setup-host` — one copy of each. A change is for
+  THIS week only: `week_intake.week_answers_json` (grid, prep, variety,
+  lunch_needs), read by the draft through `usual_week.this_week` and, outside
+  a draft, `week_answers_on`; Settings keep the usual answer. Changed rows
+  tint; the pop-up has Undo. (4) The mockup's copy list. Not done: q2-q5,
+  the day sheet and "Add a cuisine" are unreachable but still in the page
+  (follow-up to delete with their tests); the day sheet's "Leftovers" dinner
+  tag has no place on the new screens.
+  Review fixes: a this-week cook ahead / nut-free need / meal turned off now
+  holds AFTER the draft too — approval's batching and the plan's prep
+  sessions read the plan's week (`usual_week.for_plan`; `get_household_
+  rhythm` honours the scope), `lunch_packing` and `switched_off_meals` read
+  the dated week (`for_date`), and `nut_free_member_names` adds every live
+  plan's week (safety only adds). Cook ahead's Done no longer paints the
+  unlaid lunch screen; a saved week change stays tinted after a reload.
 - **An added prep day says why, in one line** (2026-10-19; branch
   `overnight/prep-day-says-why`; tests `tests/test_weekday_lunches.py`
   `TestTheAddedPrepDaySaysWhy`). Plan a week step 3: when `ensurePrepReach`

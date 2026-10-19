@@ -1668,10 +1668,19 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         # and a 500 would have the page re-post them (review, 2026-10-14) —
         # losing this only means Plan offers its ordinary default.
         try:
-            period_key, _, _ = _first_plan_window(req.first_plan_start == "next_week")
+            period_key, period_days, _ = _first_plan_window(req.first_plan_start == "next_week")
             tools.remember_first_period(period_key)
         except Exception:
             logger.exception("Onboarding first-period save failed")
+        else:
+            # The first period's week answers, so the first re-plan opens on
+            # "Same as last week?" (re-plan Option B, 2026-10-18) — see
+            # tools.save_setup_week_answers. Logged, not raised, for the
+            # same reason as above.
+            try:
+                tools.save_setup_week_answers(period_key, period_days, req.excited_about)
+            except Exception:
+                logger.exception("Onboarding first-week answers save failed")
     return memory
 
 
@@ -3764,6 +3773,10 @@ class WeekIntakeRequest(BaseModel):
     # prefill's last_week_uncooked, as [{"entry_ids": [...]}]; [] clears
     # it. See tools/bring_over.py.
     brought_over: list | None = None
+    # Re-plan Option B (2026-10-18): the household-level answers changed for
+    # THIS week only — {"grid", "prep", "variety", "lunch_needs"}, the
+    # whole set each time; {} clears it. See usual_week.normalize_week_answers.
+    week_answers: dict | None = None
 
 
 class WeekGenerateRequest(BaseModel):
@@ -3973,6 +3986,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             skipped_days=req.skipped_days,
             weekday_lunches=req.weekday_lunches,
             brought_over=req.brought_over,
+            week_answers=req.week_answers,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

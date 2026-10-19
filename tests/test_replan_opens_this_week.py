@@ -129,19 +129,21 @@ def test_the_page_uses_it_and_the_echo_copies_it():
     fetch = _extract("fetchPeriod")
     assert "joinedLine(data.intake.created_by, data.viewer || who," in fetch
     assert "I’ve carried on from where they got to" not in PAGE
-    show = _extract("showSame")
-    assert "$('same-joined').textContent = $('joined').textContent;" in show
+    # UPDATED 2026-10-19 (re-plan Option B): the line is the page's notice,
+    # said over the rows (renderNotice), with no label of its own.
+    assert "sameNotice = { label: '', text: $('joined').textContent };" in fetch
+    assert "renderNotice();" in _extract("showSame")
 
 
-@_needs_node
 def test_a_period_that_has_not_begun_names_its_dates():
-    out = _node(_extract("sameTitle") + """
-console.log(JSON.stringify({
-  next: sameTitle({ intake: {}, week_label: 'Oct 3–9' }, '2026-10-03', '2026-09-27'),
-  current: sameTitle({ plan_exists: true, week_label: 'Sep 27–Oct 2' }, '2026-09-27', '2026-09-27'),
-  first: sameTitle({ week_label: 'Oct 3–9' }, '2026-10-03', '2026-09-27')
-}));""")
-    assert out == {"next": "Oct 3–9 so far", "current": "This week so far", "first": "Same as last week?"}
+    # UPDATED 2026-10-19 (re-plan Option B, the approved mockup's B1): the
+    # page is "Same as last week?" whatever the week holds — the eyebrow
+    # names the dates ("Oct 19–25") and the "Already drafted" notice says
+    # when there's a draft, so "This week so far" / "Oct 3–9 so far" went.
+    show = _extract("showSame")
+    assert "$('same-title').textContent = SAME_COPY.title;" in show
+    assert "$('eyebrow').textContent = periodLabel();" in show
+    assert "sameTitle" not in PAGE
 
 
 def test_replan_opens_the_draft_on_screen_by_its_own_period():

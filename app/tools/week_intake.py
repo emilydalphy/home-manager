@@ -470,6 +470,9 @@ def _intake_row_to_dict(row) -> dict:
         # "Bring over from last week" (2026-09-25) — [] when nothing was.
         # The shape is tools/bring_over.resolve's; see that module.
         "brought_over": json.loads(row["brought_over_json"] or "[]"),
+        # Re-plan Option B (2026-10-18): what was changed for THIS week only
+        # — {} when nothing was. See usual_week.normalize_week_answers.
+        "week_answers": json.loads(row["week_answers_json"] or "{}"),
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
         "freeform": row["freeform"],
@@ -532,6 +535,7 @@ def save_week_intake(
     skipped_days: list | None = None,
     weekday_lunches: dict | None = None,
     brought_over: list | None = None,
+    week_answers: dict | None = None,
 ) -> dict:
     """
     Record the household's answers for a week, as a NEW REVISION.
@@ -580,10 +584,18 @@ def save_week_intake(
     get_week_intake_prefill's `last_week_uncooked` the household ticked,
     each naming its entry_ids. What is stored is rebuilt from that offer
     (tools/bring_over.resolve), never taken from the request; [] clears it.
+
+    week_answers is re-plan Option B's (2026-10-18): the household-level
+    answers changed while re-planning, for this week only — checked and
+    shaped by usual_week.normalize_week_answers; {} clears it. The usual
+    answers in Settings are never touched from here.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
     if brought_over is not None:
         brought_over = _bring_over.resolve(brought_over, week_start)
+    if week_answers is not None:
+        from . import usual_week as _usual_week
+        week_answers = _usual_week.normalize_week_answers(week_answers)
     period = period_dates(week_start, day_count)
     week_days = set(period)
     if weekday_lunches is not None:
@@ -647,7 +659,7 @@ def save_week_intake(
             base = _intake_row_to_dict(current) if current else {
                 "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],
                 "skipped_days": [], "moods": [], "cuisines": [], "freeform": "",
-                "weekday_lunches": {}, "brought_over": [],
+                "weekday_lunches": {}, "brought_over": [], "week_answers": {},
             }
 
             def pick(new, key, _base=base):
@@ -692,8 +704,8 @@ def save_week_intake(
                     night_tags_json, guest_counts_json, packed_lunch_days_json,
                     skipped_days_json, moods_json, cuisines_json, freeform,
                     household_snapshot_json, preferences_snapshot_json,
-                    weekday_lunches_json, brought_over_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    weekday_lunches_json, brought_over_json, week_answers_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     household_id(), week_start, revision,
@@ -712,6 +724,7 @@ def save_week_intake(
                     json.dumps(preferences_snapshot),
                     json.dumps(lunches_saved),
                     json.dumps(pick(brought_over, "brought_over")),
+                    json.dumps(pick(week_answers, "week_answers")),
                 ),
             )
             conn.commit()
@@ -731,6 +744,35 @@ def save_week_intake(
                 raise
         finally:
             conn.close()
+
+
+def save_setup_week_answers(week_start: str, day_count: int = 7, cuisines: list | None = None) -> dict | None:
+    """
+    Onboarding's answers, kept as the first period's week answers — the
+    "last week" Plan a week reads (_last_period_intake). Re-plan Option B
+    (Emily, 2026-10-18): the first re-plan after onboarding has to open on
+    "Same as last week?", and until this nothing wrote a week_intake row
+    for the first week (its plan was drafted with no intake at all), so
+    that re-plan asked all five questions of a household that had answered
+    them minutes before.
+
+    Only the one per-week answer onboarding asks — the cuisines it's
+    excited about — is written; everything else it asked is the household's
+    usual week (usual_week, member_needs, rhythm), which the summary page
+    reads from there. Written once: a week that already has answers keeps
+    them (a re-posted finish must not add a revision over the household's
+    own), and None is returned. The first plan's generation finds this row
+    (agent.generate_weekly_plan reads get_week_intake) and attaches it, so
+    the plan says how many days it ran.
+    """
+    date.fromisoformat(week_start)
+    conn = get_conn()
+    try:
+        if _current_intake_row(conn, week_start) is not None:
+            return None
+    finally:
+        conn.close()
+    return save_week_intake(week_start, cuisines=list(cuisines or []), day_count=day_count)
 
 
 def clear_week_intake(week_start: str) -> dict:
@@ -1027,6 +1069,36 @@ def _usual_week_off(week_start: str, day_count: int = 7) -> list[dict]:
         for d in dates for slot in ("lunch", "dinner")
         if slot in whole or (d, slot) in off
     ]
+
+
+def _week_prep_days(intake: dict | None) -> list[str]:
+    """The prep days a period's lunches lay out from: the household's
+    standing ones (rhythm.prep_days), or this week's when the week's own
+    answers changed cook ahead (usual_week.this_week). Week order from
+    Sunday."""
+    from . import usual_week as _usual_week
+
+    with _usual_week.this_week((intake or {}).get("week_answers") or None):
+        days = _rhythm.get_household_rhythm().get("prep_days") or []
+    names = {(p.get("weekday") if isinstance(p, dict) else str(p)).lower() for p in days}
+    return [d for d in _weekday_lunches.PREP_WEEKDAYS if d in names]
+
+
+def _usual_answers() -> dict:
+    """The usual week and each person's lunch needs, for the prefill's
+    `usual`. Never raises: a summary page with nothing to show still opens."""
+    from . import member_needs as _member_needs
+    from . import usual_week as _usual_week
+
+    try:
+        usual = _usual_week.get_usual_week()
+    except Exception:
+        usual = {"answered": False, "members": [], "grid": {}, "variety": {}, "prep": {"days": []}}
+    try:
+        needs = _member_needs.get_member_needs()
+    except Exception:
+        needs = []
+    return dict(usual, member_needs=needs)
 
 
 def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> list[dict]:
@@ -1338,11 +1410,9 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # (rhythm.prep_days, lowercase weekday names, in week order from
         # Sunday) — where the prep-day chips start when neither this week
         # nor last week has an answer.
-        "rhythm_prep_days": [
-            d for d in _weekday_lunches.PREP_WEEKDAYS
-            if d in {(p.get("weekday") if isinstance(p, dict) else str(p)).lower()
-                     for p in (_rhythm.get_household_rhythm().get("prep_days") or [])}
-        ],
+        # This week's own when cook ahead was changed for it while
+        # re-planning (re-plan Option B — _week_prep_days).
+        "rhythm_prep_days": _week_prep_days(intake),
         # Step 3's starting point for a week with no answer of its own and
         # none last week: the lunch variety the household chose ("A few in
         # rotation" …) and its number — {"choice": None, ...} when never
@@ -1353,6 +1423,13 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # step 3 neither counts nor asks about a lunch here, nor offers one
         # as leftovers of a dinner that won't be cooked. See _usual_week_off.
         "usual_week_off": _usual_week_off(week_start, day_count),
+        # Re-plan Option B (2026-10-18): the household's usual answers, which
+        # "Same as last week?" shows on its rows and opens onboarding's own
+        # screens on — the usual week (members, the who's-eating grid by
+        # member id, the variety per meal, the prep days) and each person's
+        # lunch needs. A change made there is this week's (the intake's
+        # week_answers); these stay as they are.
+        "usual": _usual_answers(),
         # What the mood screen opens already knowing: the moods and cuisines
         # the household chose for the period before this one, or None for a
         # first week. See _last_period_intake.
