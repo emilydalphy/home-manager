@@ -215,3 +215,65 @@ def test_a_pool_snack_never_echoes_that_days_meal(two_adults, stub_model):
     snacks = _snack_days(plan_id)
     assert "Carrot Sticks with Hummus" not in snacks
     assert max(len(d) for d in snacks.values()) <= 3, snacks
+
+
+# ---------- the pool protects itself (review, 2026-10-19) ----------
+
+def _pool_with(*words):
+    return {p["name"] for p in snack_variety.SNACK_POOL
+            if any(w in " ".join([l[0] for l in p["lines"]] + list(p.get("contains") or ())).lower()
+                   for w in words)}
+
+
+@pytest.mark.parametrize("restriction, words", [
+    ("milk allergy", ("milk", "cheese", "yogurt", "tzatziki")),
+    ("lactose intolerant", ("lactose", "cheese", "yogurt", "tzatziki")),
+    ("corn", ("corn",)),
+    ("citrus allergy", ("citrus",)),
+])
+def test_a_pool_snack_never_carries_what_someone_cant_have(two_adults, stub_model, restriction, words):
+    """CATCH: a "milk allergy" house was given Greek Yogurt and Apple Slices
+    with Cheddar — the shared matcher knew those only as "dairy"."""
+    tools.set_member_dietary_restrictions("Sam", [restriction])
+    week = _monday()
+    stub_model(_tester_home_week(week))
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+    names = set(_snack_days(plan_id))
+    held = _pool_with(*words)
+    assert held and not (names & held), (restriction, names & held)
+    assert all(len(s) == 2 for s in _per_day(plan_id).values())
+
+
+def test_a_saved_recipe_of_the_pool_name_is_checked_on_its_own_list(two_adults, stub_model, monkeypatch):
+    """Read off the pass itself: the allergen sweep at the foot of the week
+    would also catch it, later and with a model call."""
+    picked = []
+    real = snack_variety.enforce_snack_variety
+
+    def spy(*a, **k):
+        out = real(*a, **k)
+        picked.extend(r["with"] for r in out["replaced"])
+        return out
+    monkeypatch.setattr(agent._snack_variety, "enforce_snack_variety", spy)
+    tools.set_member_dietary_restrictions("Sam", ["peanut allergy"])
+    tools.add_recipe(name="Carrot Sticks with Hummus", default_servings=2, food_groups=["vegetable"],
+                     ingredients=[{"item": "carrots", "qty": "2"}, {"item": "peanut butter", "qty": "2 tbsp"}])
+    week = _monday()
+    stub_model(_tester_home_week(week))
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+    assert picked and "Carrot Sticks with Hummus" not in picked
+    assert "Carrot Sticks with Hummus" not in _snack_days(plan_id)
+
+
+def test_a_pool_recipe_from_a_smaller_table_is_written_again_for_this_one(two_adults, stub_model):
+    """Saved for one last time ("1 apples"); two adults now: "2"."""
+    from app.tools import recipes
+    pool = next(p for p in snack_variety.SNACK_POOL if p["name"] == "Apple Slices with Cheddar")
+    tools.add_recipe(name=pool["name"], ingredients=snack_variety.pool_ingredients(pool, 1),
+                     default_servings=1, food_groups=pool["groups"])
+    week = _monday()
+    stub_model(_tester_home_week(week))
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+    assert pool["name"] in _snack_days(plan_id)
+    apples = next(i for i in recipes.saved_ingredients(pool["name"]) if i["item"] == "apples")
+    assert apples["qty"] == "2"

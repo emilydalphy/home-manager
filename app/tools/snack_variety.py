@@ -95,35 +95,40 @@ def asks_for_same_snacks(*texts: str | None) -> bool:
 # (swap_in_place._hard_exclusions) and is not a matcher avoidance, so the
 # pool never needs it checked. Each line is (item, amount PER PERSON, unit,
 # category, key) — `key` is the word the week's own food is searched for;
-# `contains` is what a bought item is made of, matched for allergies only.
+# `contains` is what a bought item is made of, matched for allergies only —
+# and spelled the ways a restriction is written ("milk", "lactose", "corn",
+# "citrus", "legumes"), because the shared matcher knows some foods only
+# as a family word (review, 2026-10-19: a "milk allergy" house was offered
+# the yogurt and the cheddar). The pool protects itself rather than waiting
+# on the matcher.
 SNACK_POOL: list[dict] = [
     {"name": "Carrot Sticks with Hummus", "groups": ["vegetable", "protein"],
      "lines": [("carrots", 1, "", "produce", "carrot"), ("hummus", 3, "tbsp", "other", "hummus")],
-     "contains": ["chickpeas", "tahini", "sesame"]},
+     "contains": ["chickpeas", "legumes", "tahini", "sesame"]},
     {"name": "Apple Slices with Cheddar", "groups": ["protein"],
-     "lines": [("apples", 1, "", "produce", "apple"), ("cheddar cheese", 1, "oz", "dairy", "cheddar")]},
+     "lines": [("apples", 1, "", "produce", "apple"), ("cheddar cheese", 1, "oz", "dairy", "cheddar")], "contains": ["milk", "dairy", "lactose"]},
     {"name": "Greek Yogurt with Berries", "groups": ["protein"],
-     "lines": [("plain Greek yogurt", 0.75, "cup", "dairy", "yogurt"), ("berries", 0.5, "cup", "produce", "berr")]},
+     "lines": [("plain Greek yogurt", 0.75, "cup", "dairy", "yogurt"), ("berries", 0.5, "cup", "produce", "berr")], "contains": ["milk", "dairy", "lactose"]},
     {"name": "Hard-Boiled Egg with Cherry Tomatoes", "groups": ["protein", "vegetable"],
      "lines": [("eggs", 1, "", "dairy", "egg"), ("cherry tomatoes", 0.5, "cup", "produce", "tomato")]},
     {"name": "Cucumber Rounds with Tzatziki", "groups": ["vegetable"],
      "lines": [("cucumber", 0.5, "", "produce", "cucumber"), ("tzatziki", 3, "tbsp", "dairy", "tzatziki")],
-     "contains": ["yogurt", "milk"]},
+     "contains": ["yogurt", "milk", "dairy", "lactose"]},
     {"name": "Bell Pepper Strips with Hummus", "groups": ["vegetable", "protein"],
      "lines": [("bell pepper", 0.5, "", "produce", "pepper"), ("hummus", 3, "tbsp", "other", "hummus")],
-     "contains": ["chickpeas", "tahini", "sesame"]},
+     "contains": ["chickpeas", "legumes", "tahini", "sesame"]},
     {"name": "Cottage Cheese with Pear", "groups": ["protein"],
-     "lines": [("cottage cheese", 0.5, "cup", "dairy", "cottage"), ("pears", 1, "", "produce", "pear")]},
+     "lines": [("cottage cheese", 0.5, "cup", "dairy", "cottage"), ("pears", 1, "", "produce", "pear")], "contains": ["milk", "dairy", "lactose"]},
     {"name": "Banana with Sunflower Seed Butter", "groups": ["carb"],
      "lines": [("bananas", 1, "", "produce", "banana"), ("sunflower seed butter", 1, "tbsp", "pantry", "sunflower")]},
     {"name": "Grapes and Cheese Cubes", "groups": ["protein"],
-     "lines": [("grapes", 1, "cup", "produce", "grape"), ("cheddar cheese", 1, "oz", "dairy", "cheddar")]},
+     "lines": [("grapes", 1, "cup", "produce", "grape"), ("cheddar cheese", 1, "oz", "dairy", "cheddar")], "contains": ["milk", "dairy", "lactose"]},
     {"name": "Rice Cakes with Avocado", "groups": ["carb"],
      "lines": [("rice cakes", 2, "", "pantry", "rice cake"), ("avocado", 0.5, "", "produce", "avocado")]},
     {"name": "Air-Popped Popcorn", "groups": ["carb"],
-     "lines": [("popcorn kernels", 2, "tbsp", "pantry", "popcorn")]},
+     "lines": [("popcorn kernels", 2, "tbsp", "pantry", "popcorn")], "contains": ["corn"]},
     {"name": "Clementines", "groups": [],
-     "lines": [("clementines", 2, "", "produce", "clementine")]},
+     "lines": [("clementines", 2, "", "produce", "clementine")], "contains": ["citrus"]},
 ]
 
 
@@ -142,6 +147,27 @@ def pool_ingredients(pool: dict, serves: int) -> list[dict]:
         qty = _amount(value, serves)
         out.append({"item": item, "qty": f"{qty} {unit}".strip(), "category": category})
     return out
+
+
+def _rescale_pool_recipe(recipe_id: int, pool: dict, saved: list[dict], serves: int) -> None:
+    """
+    A pool recipe saved for last week's table is written again for this
+    one — but only while it is still exactly the pool's own list for the
+    table it was saved for. A count on a recipe is never multiplied up
+    (attendance.count_scale_factor), so "2 apples" saved for two would buy
+    two for a table of four. A list anyone has edited is theirs and is
+    left alone.
+    """
+    conn = get_conn()
+    row = conn.execute("SELECT default_servings FROM recipes WHERE id = ? AND household_id = ?",
+                       (recipe_id, household_id())).fetchone()
+    old = int(row["default_servings"] or 0) if row else 0
+    pairs = lambda lines: [((l.get("item") or "").strip().lower(), (l.get("qty") or "").strip()) for l in lines]
+    if row and old != serves and old > 0 and pairs(saved) == pairs(pool_ingredients(pool, old)):
+        conn.execute("UPDATE recipes SET ingredients_json = ?, default_servings = ? WHERE id = ? AND household_id = ?",
+                     (json.dumps(pool_ingredients(pool, serves)), serves, recipe_id, household_id()))
+        conn.commit()
+    conn.close()
 
 
 def _week_text(plan_id: int) -> str:
@@ -295,16 +321,24 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
                 hidden = [{"item": w, "qty": ""} for w in pool.get("contains") or ()]
                 candidate = {"meal_name": pool["name"], "ingredients": ingredients,
                              "food_groups": pool["groups"]}
-                if (_allergen_gate.hard_clashes(pool["name"], ingredients=ingredients + hidden,
+                # A recipe of that name already in their box is what the
+                # week will actually plan (and buy), so ITS list is checked
+                # too — a household's own "Carrot Sticks with Hummus" may
+                # be made with peanut butter.
+                existing = _recipes.existing_recipe_named(pool["name"])
+                saved = _recipes.saved_ingredients(pool["name"]) if existing else []
+                if (_allergen_gate.hard_clashes(pool["name"], ingredients=ingredients + hidden + saved,
                                                 avoidances=avoid_hard)
                         or _swap.pick_gate(candidate, {"date": date, "slot": "snack"})):
                     pool_refused.add(pool["name"].lower())
                     continue
-                if not _recipes.existing_recipe_named(pool["name"]):
+                if not existing:
                     _recipes.add_recipe(
                         name=pool["name"], ingredients=ingredients, food_groups=pool["groups"],
                         default_servings=serves, prep_time_minutes=5,
                     )
+                else:
+                    _rescale_pool_recipe(existing["id"], pool, saved, serves)
                 dish = {"name": pool["name"], "entries": [], "days": set(), "protected": False,
                         "food_groups": pool["groups"] or None}
                 dishes[pool["name"].lower()] = dish
