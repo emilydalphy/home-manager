@@ -45,7 +45,7 @@ import logging
 import math
 import re
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id
 
 logger = logging.getLogger("home_manager")
@@ -158,16 +158,15 @@ def _rescale_pool_recipe(recipe_id: int, pool: dict, saved: list[dict], serves: 
     two for a table of four. A list anyone has edited is theirs and is
     left alone.
     """
-    conn = get_conn()
-    row = conn.execute("SELECT default_servings FROM recipes WHERE id = ? AND household_id = ?",
-                       (recipe_id, household_id())).fetchone()
-    old = int(row["default_servings"] or 0) if row else 0
-    pairs = lambda lines: [((l.get("item") or "").strip().lower(), (l.get("qty") or "").strip()) for l in lines]
-    if row and old != serves and old > 0 and pairs(saved) == pairs(pool_ingredients(pool, old)):
-        conn.execute("UPDATE recipes SET ingredients_json = ?, default_servings = ? WHERE id = ? AND household_id = ?",
-                     (json.dumps(pool_ingredients(pool, serves)), serves, recipe_id, household_id()))
-        conn.commit()
-    conn.close()
+    with write() as conn:
+        row = conn.execute("SELECT default_servings FROM recipes WHERE id = ? AND household_id = ?",
+                           (recipe_id, household_id())).fetchone()
+        old = int(row["default_servings"] or 0) if row else 0
+        pairs = lambda lines: [((l.get("item") or "").strip().lower(), (l.get("qty") or "").strip()) for l in lines]
+        if row and old != serves and old > 0 and pairs(saved) == pairs(pool_ingredients(pool, old)):
+            conn.execute("UPDATE recipes SET ingredients_json = ?, default_servings = ? "
+                         "WHERE id = ? AND household_id = ?",
+                         (json.dumps(pool_ingredients(pool, serves)), serves, recipe_id, household_id()))
 
 
 def _week_text(plan_id: int) -> str:
