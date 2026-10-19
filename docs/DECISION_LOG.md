@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A nights swap can't make leftovers older than three days** (2026-10-19;
+  branch `overnight/swap-keeps-leftovers-fresh`; tests
+  `tests/test_swap_keeps_leftovers_fresh.py`). The Move sheet refused a
+  chain past `leftovers.MAX_LEFTOVER_DAYS`, but `swap_dinner_nights` (Plan's
+  drag, chat, Now's "Something else" dry-run) shares only the writer, which
+  checks order, not age: Mon stew → Tue leftovers dragged onto Fri was
+  "swapped" and Friday's Today served day-four leftovers. Now
+  `_leftovers_too_old_after_redate` refuses when the swap made a fridge
+  chain longer than three days (one it already had can still be shortened;
+  freezer portions and Undo are exempt).
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
