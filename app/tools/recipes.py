@@ -1609,8 +1609,9 @@ _HERB_WORDS = frozenset({
 _AROMATIC_CEILINGS = (
     ("bunch", _HERB_WORDS, 2.0),             # a bunch or two a pot
     ("clove", frozenset({"garlic"}), 10.0),  # a head of garlic
-    (None, frozenset({"lemon", "lemons", "lime", "limes"}), 3.0),
 )
+# Not lemons or limes: lemonade or lemon bars made three times over really
+# do want three times the lemons (review, 2026-10-19).
 
 
 def _aromatic_ceiling(item: str, unit: str | None) -> float | None:
@@ -1626,13 +1627,20 @@ def _aromatic_ceiling(item: str, unit: str | None) -> float | None:
     return None
 
 
-def _capped_share(item: str, written: float, scaled: float, unit: str | None) -> float:
-    """A meal's share with the aromatic ceiling on it: never past the ceiling
-    by scaling, never under what the recipe itself wrote."""
+def _capped_share(item: str, amount: float, factor: float, batch: float, unit: str | None) -> float:
+    """
+    A meal's share with the aromatic ceiling on its BATCH multiplier only.
+    `factor` is everything (headcount, the recipe's own table, the batch);
+    `batch` is the part of it that is cooking extra nights in one pot. The
+    pot for tonight's table — eight eaters off a recipe for four want its
+    12 cloves — is never capped; only the extra nights stop at the ceiling
+    (review, 2026-10-19: a normal 8-eater week lost a head of garlic).
+    """
+    scaled = amount * factor
     ceiling = _aromatic_ceiling(item, unit)
-    if ceiling is None:
+    if ceiling is None or batch <= 1:
         return scaled
-    return min(scaled, max(written, ceiling))
+    return min(scaled, max(scaled / batch, ceiling))
 
 
 # Words that say WHICH product to pick up — a cut, a kind — riding on a
@@ -4499,6 +4507,9 @@ def _add_recipe_ingredients_for_entries(
     # not, and asking attendance again per ingredient would be a
     # connection per ingredient per meal.
     count_scale_for_entry: dict[int, float] = {}
+    # The batch part of each factor, kept apart for the aromatic ceiling
+    # (_capped_share), which caps only that part.
+    batch_part: dict[int, float] = {}
     contributing_ids: list[int] = []
     chains_by_plan: dict[int, dict] = {}
     # "Bring over from last week" (Emily, 2026-09-25): a meal brought over
@@ -4591,6 +4602,7 @@ def _add_recipe_ingredients_for_entries(
                     # three. Only the RECIPE anchor is capped for a count,
                     # never this.
                     batch_factor = batch["servings"] / batch["cook_eaters"]
+                    batch_part[entry_id] = batch_factor
                     scale *= batch_factor
                     count_scale *= batch_factor
         contributing_ids.append(entry_id)
@@ -4718,14 +4730,14 @@ def _add_recipe_ingredients_for_entries(
         # than the aisles. One line to reverse if it reads as noise.
         if pack_share:
             need = (sum(
-                _capped_share(ing["item"], pack_share[0], pack_share[0] * factor_for_entry[e], pack_share[1])
+                _capped_share(ing["item"], pack_share[0], factor_for_entry[e], batch_part.get(e, 1.0), pack_share[1])
                 for e in contributing_ids
             ), pack_share[1])
         elif package:
             need = _quantities._parse_quantity(raw_qty)
         elif parsed_core:
             need = (sum(
-                _capped_share(ing["item"], parsed_core[0], parsed_core[0] * factor_for_entry[e], parsed_core[1])
+                _capped_share(ing["item"], parsed_core[0], factor_for_entry[e], batch_part.get(e, 1.0), parsed_core[1])
                 for e in contributing_ids
             ), parsed_core[1])
         else:
@@ -4744,7 +4756,7 @@ def _add_recipe_ingredients_for_entries(
             for entry_id in contributing_ids:
                 buffer.add(
                     entry_id, line_name, category,
-                    _capped_share(ing["item"], share, share * factor_for_entry[entry_id], small_unit), small_unit, note,
+                    _capped_share(ing["item"], share, factor_for_entry[entry_id], batch_part.get(entry_id, 1.0), small_unit), small_unit, note,
                 )
         elif package:
             if note != named_note:
@@ -4766,7 +4778,7 @@ def _add_recipe_ingredients_for_entries(
                 for entry_id in contributing_ids:
                     buffer.add(
                         entry_id, line_name, category,
-                        _capped_share(ing["item"], parsed[0], parsed[0] * factor_for_entry[entry_id], parsed[1]),
+                        _capped_share(ing["item"], parsed[0], factor_for_entry[entry_id], batch_part.get(entry_id, 1.0), parsed[1]),
                         parsed[1], note,
                     )
             else:

@@ -11,8 +11,8 @@ Built in slices:
   1. a spice-rack thing is at most ONE package a week, whatever recipes
      wrote (grocery._rack_quantity), and the names that are one purchase
      merge (grocery._SAME_PURCHASE); "Paprika (sweet)" is a spice too.
-  2. a batch doesn't multiply herbs, garlic and citrus past what one pot
-     needs (recipes._aromatic_ceiling).
+  2. a batch doesn't multiply herbs and garlic past what one pot needs
+     (recipes._aromatic_ceiling) — only the batch part is capped.
   3. store units: loaves, pints, tubs, bags; one store amount per item.
 
 Every test says whether it is a CATCH (red before this branch) or a GUARD.
@@ -175,7 +175,9 @@ def test_paprika_with_a_note_is_a_spice():
                  "Salt and black pepper", "Basil (dried)"):
         assert _spices.is_spice(name), name
     for name in ("Bell pepper", "Fresh parsley, for garnish", "Basil (fresh)", "Bread and butter pickles",
-                 "Garlic cloves", "Chicken (thighs)"):
+                 "Garlic cloves", "Chicken (thighs)",
+                 # review: brackets that name a different thing, or "fresh"
+                 "Oregano (fresh)", "Bay leaves (fresh)", "Pepper (bell)", "Cloves (garlic)"):
         assert not _spices.is_spice(name), name
 
 
@@ -216,7 +218,8 @@ def test_the_cards_week_buys_one_box_two_bunches_and_two_heads():
     assert _amount(lines["Garlic"], "head") <= 2
     # The thing the batch really is more of still scales: three nights of shrimp.
     assert lines["Shrimp"] == "3 lbs"
-    assert lines["Lemons"] == "3"
+    # Citrus is not capped: a batch of three nights squeezes three times.
+    assert lines["Lemons"] == "6"
 
 
 def test_the_ceiling_never_takes_what_the_recipe_wrote():
@@ -238,7 +241,7 @@ def test_dropping_the_batch_takes_its_capped_share_off():
     _plan_id, ids = _batch_week()
     _grocery._reverse_meal_grocery_contributions(ids[0])
     lines = _lines()
-    assert "Fresh parsley" not in lines and "Garlic" not in lines and "Lemons" not in lines
+    assert "Fresh parsley" not in lines and "Garlic" not in lines
 
 # ---------- slice 3: store units, one amount per item ----------
 
@@ -357,3 +360,51 @@ def test_a_households_edit_of_a_pints_line_survives_a_dropped_morning():
         bowls[0], [{"item": "Blueberries", "qty": "1 cup", "category": "produce"}], plan_id, default_servings=2,
     )
     assert _lines()["Blueberries"] == "1 pint"
+
+
+# ---------- review follow-ups (2026-10-19) ----------
+
+def test_a_big_table_without_a_batch_buys_all_its_garlic():
+    """CATCH. Eight eaters off a recipe for four with 6 cloves want 12 — the
+    ceiling is for a batch's extra nights, not tonight's pot."""
+    for name in ("A", "B", "C", "D", "E", "F", "G", "H"):
+        tools.add_member(name)
+    tools.add_recipe("Garlic Chicken", default_servings=4, ingredients=[
+        {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+    ])
+    plan_id = _plan()
+    tools.plan_meal(_d(0), "Garlic Chicken", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    assert _lines()["Garlic"] == "2 heads"
+
+
+def test_a_batched_lemon_recipe_buys_every_lemon():
+    """CATCH (of this branch's first cut, which capped citrus at 3). Lemon
+    bars made for three nights want three times the lemons."""
+    _two_adults()
+    tools.add_recipe("Lemon Bars", default_servings=2, ingredients=[
+        {"item": "Lemons", "qty": "2", "category": "produce"},
+    ])
+    plan_id = _plan()
+    ids = [tools.plan_meal(_d(n), "Lemon Bars", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+           for n in (0, 1, 2)]
+    tools.set_cook_ahead(ids[0], ids[1:])
+    tools.approve_weekly_plan(plan_id, "Emily")
+    assert _lines()["Lemons"] == "6"
+
+
+def test_measures_past_the_package_add_to_it():
+    """CATCH. A tub of butter and 3 cups is 2.5 lb (3 lbs bought), not the
+    larger alone; under the tub's size the tub still covers it."""
+    _two_adults()
+    tools.add_recipe("Baking", default_servings=2, ingredients=[
+        {"item": "Butter", "qty": "3 cups", "category": "dairy"},
+    ])
+    tools.add_recipe("Eggs", default_servings=2, ingredients=[
+        {"item": "Butter", "qty": "1 tub", "category": "dairy"},
+    ])
+    plan_id = _plan()
+    tools.plan_meal(_d(0), "Baking", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_d(1), "Eggs", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    assert _lines()["Butter"] == "3 lbs"

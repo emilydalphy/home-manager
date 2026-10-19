@@ -24,8 +24,9 @@ why*, not duplicating the diff.
   `_SAME_PURCHASE` key; `is_spice` reads "Paprika (sweet)", "…, optional",
   "salt and pepper". (2) Aromatics: a **per-ingredient ceiling per dish**, not
   sub-linear scaling (`recipes._AROMATIC_CEILINGS`: herbs 2 bunches, garlic
-  10 cloves, lemons/limes 3) — never below what the recipe wrote, so it only
-  stops batch scaling; the capped share is the ledger's unrounded share.
+  10 cloves) on the BATCH multiplier only — tonight's pot at its own
+  headcount is never capped, and citrus is not capped (lemon bars ×3 want
+  ×3); the capped share is the ledger's unrounded share.
   (3) Store units (`grocery._STORE_UNITS`: bread loaf=20 slices, berries/cherry
   tomatoes pint=2 cups, yogurt 750 g tub=3 cups, granola bag=4 cups, butter
   lb, feta 200 g block, baby spinach bag=5 cups) read off the WHOLE ledger and
@@ -40,6 +41,14 @@ why*, not duplicating the diff.
   Not done: butter by the stick stays sticks; ingredient amounts the card
   quotes as examples ("Feta · 2 blocks") are approximate, not matched; the
   pantry-staples branch owns sauces/pantry sections.
+  Review follow-up: `is_spice` drops a bracket only when every word in it
+  describes ("Pepper (bell)", "Cloves (garlic)" aren't spices) and "fresh"
+  anywhere is never a spice; a package covers measures only up to its size,
+  past it they add (tub + 3 cups butter = 3 lbs). **Merge overlap with
+  `overnight/pantry-staples-assumed`:** both edit `spices.is_spice` and its
+  surroundings (that branch adds `assumed_section`/`is_assumed`),
+  `grocery._merge_target` (its `is_assumed` beside this branch's rack merge)
+  and `add_grocery_item` (its `canonical_name`) — resolve hunk by hunk.
 - **Part cups read as cups on the list** (2026-10-19; branch
   `overnight/part-cups-read-as-cups`; tests `tests/test_part_cups_read_as_cups.py`).
   `_roll_up_unit` rolls into cups from ¼ cup (`_ROLL_UP_FROM`), cups round to

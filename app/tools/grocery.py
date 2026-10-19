@@ -567,8 +567,11 @@ def _store_amount(item: str, qtys: list[str]) -> str | None:
     # A sealed package is what the week draws on, so it covers measured
     # amounts up to its own size — "1 tub" of butter and 10 tbsp is the tub
     # (the package rule's generous-downward bet, recipes'
-    # _add_recipe_ingredients_for_entries); past it, the measures win.
-    return _quantities._format_quantity(max(1.0, float(math.ceil(max(packages, measured) - 1e-6))), unit)
+    # _add_recipe_ingredients_for_entries). Past its size the package was
+    # not enough for them, so the two add: a tub and 3 cups of butter is
+    # 2.5 lb, not the 1.5 the larger alone says (review, 2026-10-19).
+    total = packages if measured <= packages + 1e-9 else packages + measured
+    return _quantities._format_quantity(max(1.0, float(math.ceil(total - 1e-6))), unit)
 
 
 def _sum_volumes(existing_qty: str, new_qty: str, exact: bool, same_unit: bool = False) -> str | None:
