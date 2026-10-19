@@ -26,6 +26,7 @@ from app import tools
 from app.db import get_conn
 from app.tools import pre_shop as _pre_shop
 from conftest import household_today
+from conftest import approving_on
 
 
 @pytest.fixture
@@ -46,7 +47,9 @@ def _this_week_with_tacos(on: datetime.date) -> tuple[int, int]:
     today = household_today()
     plan = tools.create_weekly_plan((today - datetime.timedelta(days=1)).isoformat(), day_count=7)["weekly_plan_id"]
     entry = tools.plan_meal(on.isoformat(), "Tacos", slot="dinner", weekly_plan_id=plan)["entry_id"]
-    tools.approve_weekly_plan(plan, approved_by="Emily")
+    # Approved yesterday, as the plan began, so yesterday's tacos were bought.
+    with approving_on(today - datetime.timedelta(days=1)):
+        tools.approve_weekly_plan(plan, approved_by="Emily")
     return plan, entry
 
 

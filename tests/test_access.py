@@ -10,6 +10,10 @@ import datetime
 import pytest
 
 from app import ratelimit, security
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _week_start() -> str:
@@ -308,6 +312,7 @@ def test_approving_a_week_rejects_a_date_that_is_not_a_date(signed_in):
     assert signed_in.post("/api/week/not-a-date/approve", json={}).status_code == 400
 
 
+@ON_MONDAY
 def test_approving_a_week_builds_the_list_once(signed_in):
     """
     BUILD_ORDER.md stage 1's own acceptance test, end to end through the

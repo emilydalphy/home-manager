@@ -26,11 +26,16 @@ import datetime
 import pytest
 
 from app import agent, tools
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -196,6 +201,7 @@ def test_a_chain_nobody_validated_changes_nothing():
 
 # ---------- the grocery list ----------
 
+@ON_MONDAY
 def test_the_shop_buys_the_batch_once():
     _household("Alex", "Sam", "Rae")
     _wraps()

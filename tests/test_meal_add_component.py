@@ -24,11 +24,16 @@ import pytest
 
 from app import tools
 from app.tools import plates
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -251,6 +256,7 @@ def test_adding_the_same_thing_twice_adds_it_once():
     assert sum(1 for i in _card(plan_id, entry_id)["ingredients"] if i["item"] == "Yukon Gold potatoes") == 1
 
 
+@ON_MONDAY
 def test_a_draft_buys_nothing_until_the_week_is_approved():
     _members(2)
     _shrimp()
@@ -290,6 +296,7 @@ def test_swapping_the_dish_away_takes_the_addition_and_its_shopping_with_it():
     assert new_card["meal"] == "Chili" and new_card["sides"] == []
 
 
+@ON_MONDAY
 def test_undo_takes_only_the_additions_own_lines_off_the_list():
     """The sauce shares a lemon with the shrimp. Undoing the sauce leaves
     the shrimp's lemon on the list at the shrimp's own amount."""

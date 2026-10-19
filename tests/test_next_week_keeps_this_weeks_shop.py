@@ -31,6 +31,7 @@ from app import tools
 from app.db import get_conn
 from app.tools import grocery as _grocery
 from app.tools import recipes as _recipes
+from conftest import approving_on
 
 
 def _today() -> datetime.date:
@@ -224,7 +225,9 @@ def test_a_week_that_has_ended_is_still_asked_about(bolognese):
     today = _today()
     last_week = _plan(today - datetime.timedelta(days=7))
     tools.plan_meal((today - datetime.timedelta(days=1)).isoformat(), "Bolognese", slot="dinner", weekly_plan_id=last_week)
-    tools.approve_weekly_plan(last_week, approved_by="Emily")
+    # Approved as that week began, so its bolognese was bought for.
+    with approving_on(today - datetime.timedelta(days=7)):
+        tools.approve_weekly_plan(last_week, approved_by="Emily")
     result = _approve_next_week(today)
     assert result["carried_over_count"] >= 1
     old = [r for r in _rows("Ground turkey") if r["carried_from_plan_id"] == last_week]

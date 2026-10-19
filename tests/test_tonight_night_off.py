@@ -31,6 +31,10 @@ from app import tools
 from app.db import get_conn
 from app.tools import tonight as _tonight
 from app.tools import week_intake as _week_intake
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -300,6 +304,7 @@ def test_the_night_is_planned_empty_and_never_open():
 
 # ------------------------------------------------------------ the grocery list
 
+@ON_MONDAY
 def test_a_dropped_dish_puts_back_what_nobody_has_bought_yet():
     """CATCH. The week no longer needs tonight's share, so the still-needed
     lines come back down — through the plan's own ledger reversal, not a
@@ -336,6 +341,7 @@ def test_a_dish_that_moves_leaves_the_list_completely_alone():
 
 # --------------------------------------------------------------- "use soon"
 
+@ON_MONDAY
 def test_what_was_already_bought_and_wont_keep_is_flagged():
     """CATCH. The fresh things are in the house with nothing pointing at
     them now, so they are named — and the pantry ones, which keep, are
@@ -375,6 +381,7 @@ def test_nothing_bought_means_nothing_to_use_up():
     assert [i for i in tools.get_attention_items() if i["kind"] == _tonight.USE_SOON_KIND] == []
 
 
+@ON_MONDAY
 def test_the_use_soon_note_is_read_back_off_the_night_itself():
     """CATCH. The ledger it was derived from is gone by the time anything
     reads the card, so the night carries its own note."""
@@ -567,6 +574,7 @@ def test_an_open_dinner_tonight_is_settled_too():
     assert _dinner_rows_count(TONIGHT) == 1
 
 
+@ON_MONDAY
 def test_saying_it_twice_changes_nothing_and_keeps_the_note():
     """CATCH. A second tap, or the other phone: the answer stands, and the
     use-soon note is not torn down and rebuilt empty."""
@@ -655,6 +663,7 @@ def test_use_soon_never_names_food_another_planned_dinner_still_needs():
     assert _dinner_row(FRI)["meal"] == "Friday's dish"
 
 
+@ON_MONDAY
 def test_a_line_only_tonight_wanted_is_still_named():
     """CATCH. The guard above must not silence the whole note — a line no
     other meal holds is exactly what a dropped dinner frees."""
@@ -696,6 +705,7 @@ def test_the_preview_says_nothing_to_move_to_on_a_full_week():
     assert "night_off_blocked" not in out
 
 
+@ON_MONDAY
 def test_the_preview_says_what_the_tap_does_for_a_dinner_cooked_double():
     """CATCH. Rewritten 2026-09-22: this used to pin the preview and the tap
     agreeing on a REFUSAL. There is no refusal now — the card and the write

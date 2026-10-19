@@ -35,6 +35,10 @@ from conftest import household_today
 from app import tools
 from app.db import get_conn
 from app.tools import plates as _plates
+from conftest import approving_on, on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _monday() -> datetime.date:
@@ -108,6 +112,7 @@ def _links(entry_id: int) -> list[str]:
 
 # ---------- the reported bug ----------
 
+@ON_MONDAY
 def test_the_salad_beside_a_reheat_reaches_the_shopping_list():
     """CATCH — the whole report in one. On main the list comes back with
     the turkey and nothing else, so the household is shown a plate with a
@@ -123,6 +128,7 @@ def test_the_salad_beside_a_reheat_reaches_the_shopping_list():
     assert _list() == {"Ground turkey": "3 lbs", "Lettuce": "1 head"}
 
 
+@ON_MONDAY
 def test_the_reheated_dish_itself_is_still_bought_only_once():
     """GUARD — the half of the exclusion that was always right, and the
     thing a careless fix breaks: the chili is bought for the batch on the
@@ -147,6 +153,7 @@ def test_the_reheated_dish_itself_is_still_bought_only_once():
     assert _list()["Ground turkey"] == "3 lbs"
 
 
+@ON_MONDAY
 def test_the_reheats_side_is_bought_for_that_night_and_not_for_the_batch():
     """CATCH — and the reason the chain factor must not follow the side
     onto a reheat. One salad is eaten on Thursday; the batch behind the
@@ -165,6 +172,7 @@ def test_the_reheats_side_is_bought_for_that_night_and_not_for_the_batch():
 
 # ---------- the mirror case the card asks about ----------
 
+@ON_MONDAY
 def test_a_side_on_the_cook_night_is_still_bought_exactly_once():
     """GUARD — the mirror the card names: the fix must not make the cook
     night's side arrive twice. It is one line, at the batch amount it has
@@ -185,6 +193,7 @@ def test_a_side_on_the_cook_night_is_still_bought_exactly_once():
     assert _links(reheat) == []
 
 
+@ON_MONDAY
 def test_a_side_on_each_end_of_the_chain_buys_the_cooks_for_two_and_the_reheats_for_one():
     """CATCH — the two halves together, which is where a fix that shared
     one flag between the dish and the side would show up as either a
@@ -240,6 +249,7 @@ def test_adding_a_side_to_a_reheat_on_an_approved_week_puts_it_on_the_list():
     assert _links(reheat) == ["Lemon", "Mixed greens"]
 
 
+@ON_MONDAY
 def test_the_same_addition_on_the_cook_night_is_unchanged():
     """GUARD — the other end of the same control, measured against main
     rather than reasoned about: these three lines are byte-identical on
@@ -301,6 +311,7 @@ def test_a_big_meal_dish_on_a_reheat_night_still_buys_nothing():
     assert "Bread cubes" not in _list()
 
 
+@ON_MONDAY
 def test_a_reheat_night_buys_the_salad_beside_the_stuffing_and_not_the_stuffing():
     """CATCH — the two kinds of side on one reheat night, which is the
     only arrangement in which "whose side is this" is doing any work. On
@@ -316,6 +327,7 @@ def test_a_reheat_night_buys_the_salad_beside_the_stuffing_and_not_the_stuffing(
     assert _list() == {"Ground turkey": "3 lbs", "Lettuce": "1 head"}
 
 
+@ON_MONDAY
 def test_a_reheat_with_no_side_at_all_buys_nothing_and_links_nothing():
     """GUARD — the ordinary chain, which is most of them. A reheat night
     with nothing beside it is exactly as it was: no shop, and no ledger
@@ -333,6 +345,7 @@ def test_a_reheat_with_no_side_at_all_buys_nothing_and_links_nothing():
     assert _links(cook) == ["Ground turkey"]
 
 
+@ON_MONDAY
 def test_an_unchained_night_with_a_side_is_unchanged():
     """GUARD — a week with no chain in it at all must be byte-identical,
     and it is: none of the eight mutations run over this file reddens it,
@@ -352,6 +365,7 @@ def test_an_unchained_night_with_a_side_is_unchanged():
 
 # ---------- the line has to be removable again ----------
 
+@ON_MONDAY
 def test_clearing_the_reheat_takes_its_side_back_off_the_list():
     """CATCH — a line nothing can remove is worse than a missing one, and
     this is the half that says the new ledger row is real. Clearing the
@@ -371,6 +385,7 @@ def test_clearing_the_reheat_takes_its_side_back_off_the_list():
     assert _list() == {"Ground turkey": "1.5 lbs"}
 
 
+@ON_MONDAY
 def test_approving_twice_does_not_buy_the_reheats_side_twice():
     """CATCH — the new ledger row earns its keep here. A second approval
     re-runs the ingest over whatever has never contributed
@@ -544,7 +559,10 @@ def _reheat_tonight(shared: bool = False):
         later = (today + datetime.timedelta(days=2)).isoformat()
         other = tools.plan_meal(later, "Fish Tacos", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
         _plates.attach_sides(other, [GREENS], ["vegetable"])
-    tools.approve_weekly_plan(plan_id)
+    # Approved yesterday, before the cook: a week approved today would not
+    # buy for yesterday's cook, and would ask about tonight instead.
+    with approving_on(yesterday):
+        tools.approve_weekly_plan(plan_id)
     return plan_id, cook, reheat, other
 
 

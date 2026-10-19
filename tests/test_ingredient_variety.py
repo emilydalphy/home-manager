@@ -39,6 +39,10 @@ from app import agent, tools
 from app.tools import plan_quality, recipes
 from app.tools.plan_quality import check_week
 from conftest import prompt_literals
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _problem(item, qty, servings):
@@ -237,6 +241,7 @@ def _approve(*recipes_and_ingredients):
     return {g["item"]: g["quantity"] for g in tools.list_grocery_list()}
 
 
+@ON_MONDAY
 def test_the_grocery_list_keeps_the_kind_the_recipe_named():
     bought = _approve(("Shirazi Salad", [
         {"item": "Persian cucumbers", "qty": "6", "category": "produce"},
@@ -246,6 +251,7 @@ def test_the_grocery_list_keeps_the_kind_the_recipe_named():
     assert "Cucumbers" not in bought
 
 
+@ON_MONDAY
 def test_persian_cucumbers_and_cucumbers_from_two_recipes_stay_two_lines():
     """
     Decided, not an accident: a Persian cucumber and an English cucumber
@@ -261,6 +267,7 @@ def test_persian_cucumbers_and_cucumbers_from_two_recipes_stay_two_lines():
     assert bought["Cucumbers"] == "1"
 
 
+@ON_MONDAY
 def test_a_vague_count_is_recomputed_now_and_still_flagged_for_its_kind():
     """
     The other half of the 2026-10-05 tripwire. This asserted the list showed

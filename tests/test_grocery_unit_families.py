@@ -32,12 +32,17 @@ from app import tools
 from app.db import get_conn
 from app.tools import grocery as _grocery
 from conftest import _TABLES
+from conftest import on_the_weeks_monday
 
 
 def _monday(offset_weeks: int = 0) -> datetime.date:
     today = datetime.date.today()
     monday = today - datetime.timedelta(days=today.weekday())
     return monday + datetime.timedelta(days=7 * offset_weeks)
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _lines(item: str, status: str = "needed") -> list[dict]:
@@ -85,6 +90,7 @@ def eggs_by_the_cup():
 
 # ---------- the bug, deterministically ----------
 
+@ON_MONDAY
 def test_three_weeks_in_a_row_leave_the_hand_added_line_exactly_as_typed(eggs_by_the_cup):
     """Red on main: "1 + 4 cups + 4 cups + 4 cups" after three approvals,
     with or without the weeks' meals leaving in between."""
@@ -98,6 +104,7 @@ def test_three_weeks_in_a_row_leave_the_hand_added_line_exactly_as_typed(eggs_by
         assert _lines("Eggs") == [{"quantity": "1", "plan": None}], f"week {offset}: the week's line left with the week"
 
 
+@ON_MONDAY
 def test_the_plans_line_is_a_plan_line_and_a_swap_recomputes_it(eggs_by_the_cup):
     tools.add_recipe(
         "Carrot Soup", ingredients=[{"item": "Carrot", "qty": "3", "category": "produce"}],
@@ -109,6 +116,7 @@ def test_the_plans_line_is_a_plan_line_and_a_swap_recomputes_it(eggs_by_the_cup)
     assert _lines("Eggs") == [{"quantity": "1", "plan": None}, {"quantity": "2 cups", "plan": plan_id}]
 
 
+@ON_MONDAY
 def test_a_second_recipe_in_the_plans_unit_joins_the_plans_line_not_the_persons(eggs_by_the_cup):
     tools.add_recipe(
         "Omelette", ingredients=[{"item": "Eggs", "qty": "1 cup", "category": "dairy"}],
@@ -123,6 +131,7 @@ def test_a_second_recipe_in_the_plans_unit_joins_the_plans_line_not_the_persons(
     assert _lines("Eggs") == [{"quantity": "1", "plan": None}, {"quantity": "3 cups", "plan": plan_id}]
 
 
+@ON_MONDAY
 def test_a_persons_add_in_another_unit_stays_off_the_plans_line(eggs_by_the_cup):
     """The other direction: the plan's line is there first. The person's
     "1" is a standing want on its own line, and the plan's line is still
@@ -134,6 +143,7 @@ def test_a_persons_add_in_another_unit_stays_off_the_plans_line(eggs_by_the_cup)
     assert _lines("Eggs") == [{"quantity": "1", "plan": None}]
 
 
+@ON_MONDAY
 def test_a_persons_second_add_joins_the_persons_line(eggs_by_the_cup):
     plan_id = _week(0, "Egg Bake")
     tools.add_grocery_item("Eggs", quantity="1", category="dairy")
@@ -143,6 +153,7 @@ def test_a_persons_second_add_joins_the_persons_line(eggs_by_the_cup):
 
 # ---------- what did not change ----------
 
+@ON_MONDAY
 def test_a_standing_want_in_the_plans_own_unit_still_merges_as_before(eggs_by_the_cup):
     """The 2026-09-13 restate path is untouched: same family, one line,
     the plan's share added on and taken back off exactly."""
@@ -153,6 +164,7 @@ def test_a_standing_want_in_the_plans_own_unit_still_merges_as_before(eggs_by_th
     assert _lines("Eggs") == [{"quantity": "1 cup", "plan": None}]
 
 
+@ON_MONDAY
 def test_two_recipes_that_disagree_on_a_unit_still_share_one_plan_line(eggs_by_the_cup):
     """A plan's own disagreement is still reported on one line — that line
     is fully described by its ledger and recomputes correctly whatever it
@@ -184,6 +196,7 @@ def test_a_persons_two_unrelated_amounts_still_share_the_persons_line():
     assert _lines("Parsley") == [{"quantity": "a handful + 2 cups", "plan": None}]
 
 
+@ON_MONDAY
 def test_a_person_answering_a_pending_spice_still_ticks_it_and_next_weeks_reminder_starts_fresh():
     """The one line a person joins whatever it reads is a spice waiting
     unticked in the section: their add is the answer to it (spices.py,
@@ -204,6 +217,7 @@ def test_a_person_answering_a_pending_spice_still_ticks_it_and_next_weeks_remind
     assert _lines("Ground cumin", "spice") == [{"quantity": "1 tbsp", "plan": week_b}]
 
 
+@ON_MONDAY
 def test_consolidating_the_list_leaves_the_two_lines_apart(eggs_by_the_cup):
     plan_id = _week(0, "Egg Bake")
     tools.add_grocery_item("Eggs", quantity="1", category="dairy")
@@ -215,6 +229,7 @@ def test_consolidating_the_list_leaves_the_two_lines_apart(eggs_by_the_cup):
 
 # ---------- last week's leftovers (the CARRY step) ----------
 
+@ON_MONDAY
 def test_the_plans_line_is_set_aside_as_a_leftover_and_keep_joins_this_weeks_plan_line(eggs_by_the_cup):
     tools.add_grocery_item("Eggs", quantity="1", category="dairy")
     week_a = _week(0, "Egg Bake")
@@ -230,6 +245,7 @@ def test_the_plans_line_is_set_aside_as_a_leftover_and_keep_joins_this_weeks_pla
     assert _lines("Eggs", "carried") == [{"quantity": "4 cups", "plan": week_a}]
 
 
+@ON_MONDAY
 def test_keep_with_only_the_persons_line_this_week_restores_the_leftover_on_its_own(eggs_by_the_cup):
     """Keep must not glue "4 cups" back onto "1" — the carried line comes
     back as a standing want of its own, and undo puts it back to waiting."""
@@ -279,6 +295,7 @@ def _wipe():
     conn.close()
 
 
+@ON_MONDAY
 def test_randomised_weeks_never_grow_a_standing_want_in_another_unit_family():
     """Forty randomised approve-and-clear runs — a standing want in one
     family, a recipe in another, one to four nights, any household size —

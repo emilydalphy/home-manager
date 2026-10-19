@@ -35,6 +35,10 @@ from conftest import household_today
 
 from app import tools
 from app.tools import weekly_plan as _weekly_plan
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _monday() -> datetime.date:
@@ -309,6 +313,7 @@ def test_a_day_the_batch_covers_is_not_offered_its_own_picker(client):
     assert _cards(plan_id)[ids[TUE]]["cook_ahead"]["days"] == []
 
 
+@ON_MONDAY
 def test_the_shopping_list_is_left_alone_and_already_says_the_batch(client):
     """CATCH, for the second half only. Consolidating the COOKS doesn't
     change what has to be bought — the week still eats six portions — so
@@ -451,6 +456,7 @@ class TestALegacySnackChainOnDisk:
             assert _qty(cards[apple[day]])["Apples"] == "2"
 
     @pytest.mark.parametrize("chickpeas_first", [True, False], ids=["chickpeas-first", "apple-first"])
+    @ON_MONDAY
     def test_the_card_and_the_shopping_list_still_agree(self, client, chickpeas_first):
         """CATCH. The same seeding, read from the shopping side — the
         number on the card was five cans over a list of three, which is

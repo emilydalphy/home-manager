@@ -25,11 +25,16 @@ import datetime
 from app import tools
 from app.db import get_conn
 from app.tools import grocery, quantities
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -96,6 +101,7 @@ def test_cloves_round_up_to_heads_but_a_head_of_lettuce_is_untouched():
 # ---------- the week ----------
 
 
+@ON_MONDAY
 def test_four_meals_of_a_one_dozen_recipe_buy_one_carton():
     # Emily's exact list: Hard-Boiled Eggs (serves 2) twice, Hard-Boiled Eggs
     # and Avocado Toast (serves 2) twice, each saved as "1 dozen".
@@ -120,6 +126,7 @@ def test_four_meals_of_a_one_dozen_recipe_buy_one_carton():
     assert quantities._sum_ledger_quantities(ledger) == "1 dozen"
 
 
+@ON_MONDAY
 def test_eggs_written_as_counts_add_up_and_round_to_dozens_once():
     _household()
     tools.add_recipe("Frittata", ingredients=[{"item": "Eggs", "qty": "6"}], default_servings=2)
@@ -136,6 +143,7 @@ def test_eggs_written_as_counts_add_up_and_round_to_dozens_once():
     assert _row("Eggs")["quantity"] == "2 dozen"
 
 
+@ON_MONDAY
 def test_dropping_a_meal_recomputes_the_line_in_dozens():
     _household()
     tools.add_recipe("Frittata", ingredients=[{"item": "Eggs", "qty": "6"}], default_servings=2)
@@ -152,6 +160,7 @@ def test_dropping_a_meal_recomputes_the_line_in_dozens():
     assert _row("Eggs") is None
 
 
+@ON_MONDAY
 def test_garlic_by_the_head_and_by_the_clove_lands_on_one_line_in_heads():
     _household(4)  # four eaters, recipes for four: no attendance scaling
     tools.add_recipe("Garlic Shrimp", ingredients=[{"item": "Garlic", "qty": "1 head"}], default_servings=4)
@@ -167,6 +176,7 @@ def test_garlic_by_the_head_and_by_the_clove_lands_on_one_line_in_heads():
     assert _row("Garlic")["quantity"] == "2 heads"
 
 
+@ON_MONDAY
 def test_a_head_of_lettuce_still_buys_one_per_meal():
     _household()
     tools.add_recipe("Caesar Salad", ingredients=[{"item": "Romaine lettuce", "qty": "1 head"}], default_servings=2)
@@ -177,6 +187,7 @@ def test_a_head_of_lettuce_still_buys_one_per_meal():
     assert _row("Romaine lettuce")["quantity"] == "2 heads"
 
 
+@ON_MONDAY
 def test_a_measured_amount_of_a_pack_item_is_left_alone():
     # "2 tbsp minced garlic" and "1 cup egg whites" are measures, not counts.
     _household()
@@ -190,6 +201,7 @@ def test_a_measured_amount_of_a_pack_item_is_left_alone():
     assert _row("Garlic")["quantity"] == "2 tbsp"
 
 
+@ON_MONDAY
 def test_a_hand_added_dozen_and_a_plan_do_not_glue_together():
     # A person's own "1 dozen" is a standing want on its own line; the plan's
     # eggs are the plan's (see grocery._merge_target). Neither becomes
@@ -212,6 +224,7 @@ def test_a_hand_added_dozen_and_a_plan_do_not_glue_together():
     assert rows[0]["source_weekly_plan_id"] is None
 
 
+@ON_MONDAY
 def test_a_meal_added_after_approval_does_not_add_a_carton_to_a_carton():
     # Two ingest passes onto one line: the week's approval, then dinners
     # planned afterwards. Each pass rounds its own eggs up to a carton; the

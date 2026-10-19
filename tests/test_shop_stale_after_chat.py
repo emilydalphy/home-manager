@@ -79,6 +79,10 @@ import pytest
 from app import tools
 from app.main import _WEEK_TOOLS, _categorize_tool, summarize_chat_actions
 from conftest import household_date, household_today
+from conftest import approving_on, on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -155,6 +159,7 @@ def _seed_week(approve: bool = True) -> int:
 # list", and a fix for a claim nobody measured is a fix for a story. Run
 # against the real tools on a throwaway database, never a stub.
 
+@ON_MONDAY
 def test_approve_weekly_plan_writes_the_whole_list():
     """GUARD (green either way). Approval is the one thing that puts a
     week's ingredients on the list at all — nothing before it does."""
@@ -167,6 +172,7 @@ def test_approve_weekly_plan_writes_the_whole_list():
     assert ("Rice", "7 cups") in after
 
 
+@ON_MONDAY
 def test_swap_meal_in_plan_moves_lines_between_dishes():
     """GUARD (green either way). The outgoing dish's own line goes and the
     new dish's arrives — the list is a different list afterwards."""
@@ -179,6 +185,7 @@ def test_swap_meal_in_plan_moves_lines_between_dishes():
     assert ("Kale", "1 bag") not in before and ("Kale", "1 bag") in after
 
 
+@ON_MONDAY
 def test_take_the_night_off_puts_back_what_the_dropped_dinner_had_bought():
     """GUARD (green either way). A called-off night reverses whatever is
     still `needed` — its own line goes and the merged one is recomputed
@@ -400,7 +407,9 @@ def test_an_approval_that_adds_nothing_still_moves_rows_off_the_needed_list():
     _recipe("Old Dish", "Spinach")
     tools.plan_meal(tools._week_dates(prev_monday.isoformat())[0], "Old Dish",
                     slot="dinner", weekly_plan_id=prev)
-    tools.approve_weekly_plan(prev)
+    # Approved while it was still ahead, so its spinach was bought for.
+    with approving_on(prev_monday):
+        tools.approve_weekly_plan(prev)
     assert [r["status"] for r in tools.list_grocery_list("all")].count("needed") >= 1
 
     plan = tools.create_weekly_plan(WEEK)["weekly_plan_id"]

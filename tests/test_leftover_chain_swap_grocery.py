@@ -22,11 +22,16 @@ import datetime
 
 from app import tools
 from app.db import get_conn
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -92,6 +97,7 @@ def _ledger_items_for(entry_id):
     return {r["item"]: r["quantity"] for r in rows}
 
 
+@ON_MONDAY
 def test_swapping_the_source_reingests_the_former_reheat_nights_own_ingredients():
     _household()
     _wraps()

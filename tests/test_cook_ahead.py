@@ -25,6 +25,10 @@ import pytest
 from conftest import household_today
 
 from app import households, security, tools
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _monday() -> datetime.date:
@@ -315,6 +319,7 @@ def test_the_planners_own_leftovers_still_read_as_leftovers():
     assert "leftovers on Thursday" in cards[tue]["covers_note"]
 
 
+@ON_MONDAY
 def test_the_grocery_list_does_not_move():
     """
     The household still eats the same number of portions this week — only

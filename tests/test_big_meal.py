@@ -20,6 +20,10 @@ from app.db import get_conn
 from app.tools import big_meal as bm
 from app.tools import holidays as hol
 from tests.test_holidays import _full_week, _named, _shift, _thanksgiving, stub_model  # noqa: F401
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 # ---------- fixtures ----------
@@ -1023,6 +1027,7 @@ def test_a_misspelled_migration_table_still_fails_loudly():
 
 # ---------- verifier round 2 ----------
 
+@ON_MONDAY
 def test_an_ordinary_weeks_plate_side_still_follows_its_dish_through_the_chain(family):
     """Item 12 restricted: only a big-meal dish skips the batch scaling. A
     Tuesday cook + Thursday reheat with a rice side buys the rice for both

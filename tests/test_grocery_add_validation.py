@@ -36,6 +36,7 @@ from app import db, tools
 from app.db import get_conn
 from app.tools._shared import household_id
 from app.tools.grocery import MAX_ITEM_NAME_LENGTH, MAX_QUANTITY_LENGTH
+from conftest import on_the_weeks_monday
 
 
 # ---------------------------------------------------------------------------
@@ -194,6 +195,11 @@ def _monday(offset_weeks: int = 0) -> str:
     return (monday + datetime.timedelta(days=7 * offset_weeks)).isoformat()
 
 
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(datetime.date.fromisoformat(_monday()))
+
+
+@ON_MONDAY
 def test_recipe_with_one_blank_ingredient_still_adds_the_rest():
     # An AI-drafted recipe with one ingredient whose name came back blank
     # (or whitespace-only) -- approving the week must not raise, and the

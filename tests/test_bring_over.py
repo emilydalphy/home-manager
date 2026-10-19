@@ -34,6 +34,10 @@ from app import agent, tools
 from app.db import get_conn
 from app.tools import bring_over, draft_opener, meal_variety
 from app.tools import swap_in_place as sip
+from conftest import approving_on, on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 REPO = Path(__file__).resolve().parents[1]
 PAGE = (REPO / "static" / "plan-week.html").read_text(encoding="utf-8")
@@ -161,7 +165,9 @@ def last_week(stub_model):
     tools.save_week_intake(week, moods=["Comfort food"])
     stub_model(_week(week, LAST_DINNERS, snacks=["Fig bars"] * 7))
     plan = agent.generate_weekly_plan(week)
-    tools.approve_weekly_plan(plan["weekly_plan_id"])
+    # Approved back when last week was ahead, so its shop was bought for.
+    with approving_on(datetime.date.fromisoformat(week)):
+        tools.approve_weekly_plan(plan["weekly_plan_id"])
     return plan
 
 
@@ -478,6 +484,7 @@ class TestTheShopping:
         conn.commit()
         conn.close()
 
+    @ON_MONDAY
     def test_bought_last_week_is_not_on_the_new_list(self, last_week, stub_model, picker):
         plan_id = last_week["weekly_plan_id"]
         self._buy_last_weeks(plan_id, "Chicken tikka masala", only="Chicken tikka masala base")
@@ -492,6 +499,7 @@ class TestTheShopping:
         # Every other dinner shops as always.
         assert [r for r in _needed("Miso cod base") if r["source_weekly_plan_id"] == new]
 
+    @ON_MONDAY  # so Thursday's swap is still ahead and could buy
     def test_a_swap_later_does_not_buy_it_after_all(self, last_week, stub_model, picker):
         plan_id = last_week["weekly_plan_id"]
         self._buy_last_weeks(plan_id, "Chicken tikka masala")

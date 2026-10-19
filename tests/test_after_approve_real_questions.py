@@ -74,6 +74,10 @@ from conftest import household_today
 from app import agent, db, tools
 from app.tools import cook_ahead, defrost, inventory
 from tests import nodeharness
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -151,6 +155,7 @@ def test_the_rest_of_the_walks_nine_are_gone_too(dish):
     assert _dishes(plan_id) == []
 
 
+@ON_MONDAY
 def test_a_repeated_dish_that_is_actually_cooked_is_still_offered():
     """GUARD — main is right about this one, and the narrowing must not
     take it with the others. The whole ticket fails if this goes."""
@@ -163,6 +168,7 @@ def test_a_repeated_dish_that_is_actually_cooked_is_still_offered():
     assert [d["date"] for d in items[0]["later"]] == [THU]
 
 
+@ON_MONDAY
 def test_a_week_of_snacks_around_one_real_cook_asks_about_the_cook_alone():
     """CATCH — the reported shape end to end: eight questions become one."""
     _household()
@@ -181,6 +187,7 @@ def test_a_week_of_snacks_around_one_real_cook_asks_about_the_cook_alone():
     assert _dishes(plan_id) == ["Roasted Chickpeas"]
 
 
+@ON_MONDAY
 def test_a_written_method_with_no_times_on_it_is_still_a_cook():
     """CATCH by mutation rather than against main (main offers it either
     way). A recipe with steps and no minutes is somebody at a stove with a
@@ -194,6 +201,7 @@ def test_a_written_method_with_no_times_on_it_is_still_a_cook():
     assert _dishes(plan_id) == ["Braised Beans"]
 
 
+@ON_MONDAY
 def test_prep_time_alone_is_a_cook():
     """GUARD by mutation — a no-oven dish that still takes twenty minutes
     of somebody's hands is a batch worth making once."""
@@ -217,6 +225,7 @@ def test_a_repeated_freeform_meal_is_not_offered():
     assert _dishes(plan_id) == []
 
 
+@ON_MONDAY
 def test_the_route_asks_about_the_cook_and_nothing_else(signed_in):
     """CATCH — the same thing over the wire the All set screen uses."""
     _household()
@@ -257,6 +266,7 @@ def test_a_batch_already_made_on_a_no_cook_dish_can_still_be_undone():
     assert released == {"source_entry_id": ids[0], "covered_entry_ids": [], "make_double_for": []}
 
 
+@ON_MONDAY
 def test_another_households_repeat_is_never_offered_here():
     """GUARD by mutation — _plan_rows is household-scoped; drop that and
     this goes red. The read this branch narrowed is the one that decides

@@ -22,11 +22,16 @@ import datetime
 import pytest
 
 from app import db, households, security, tools
+from conftest import on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
     today = datetime.date.today()
     return today - datetime.timedelta(days=today.weekday())
+
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday(_monday())
 
 
 def _day(offset: int) -> str:
@@ -91,6 +96,7 @@ def _asked_at(plan_id):
 
 # ---------- what the ask offers ----------
 
+@ON_MONDAY
 def test_the_ask_lists_a_repeated_dish_with_its_later_days(signed_in):
     _household()
     _eggs()
@@ -127,6 +133,7 @@ def test_a_dish_planned_once_is_not_a_repeat(signed_in):
     assert signed_in.get(f"/api/week/{WEEK}/cook-ahead-items").json()["items"] == []
 
 
+@ON_MONDAY
 def test_the_same_dish_in_two_slots_is_two_separate_repeats(signed_in):
     """Breakfast eggs and dinner eggs are not one run of five — cooking a
     morning's batch for a dinner is a different claim, and cook_ahead_options

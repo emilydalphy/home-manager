@@ -19,6 +19,10 @@ import json
 from conftest import household_today
 from app import db, tools
 from app.tools import cook_ahead
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _monday() -> datetime.date:
@@ -75,6 +79,7 @@ def _sunday_prep():
 
 # ---------- the rule ----------
 
+@ON_MONDAY
 def test_a_repeated_dish_with_a_prep_day_is_batched_from_its_first_day():
     _household()
     _eggs()
@@ -133,6 +138,7 @@ def test_a_dish_planned_once_is_left_alone():
 
 # ---------- at approval ----------
 
+@ON_MONDAY
 def test_approval_applies_the_batch_and_never_returns_an_ask(signed_in):
     _household()
     _eggs()

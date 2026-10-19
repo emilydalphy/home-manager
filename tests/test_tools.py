@@ -12,6 +12,10 @@ import pytest
 
 from app import tools
 from conftest import household_today
+from conftest import on_the_weeks_monday
+
+# Approval buys only from the household's today on: run on the seeded week's Monday.
+ON_MONDAY = on_the_weeks_monday()
 
 
 def _today(offset_days: int = 0) -> str:
@@ -754,6 +758,7 @@ def test_re_approving_keeps_the_original_approver():
     assert tools.get_weekly_plan(plan_id)["approved_by"] == "Emily"
 
 
+@ON_MONDAY
 def test_the_draft_promise_matches_what_approval_actually_adds():
     """
     The number the draft screen promises ("22 items") and the number the
@@ -1436,6 +1441,7 @@ def test_settling_a_slot_in_an_approved_week_keeps_the_list_in_step():
     assert [i["item"] for i in tools.list_grocery_list()] == ["beans"]
 
 
+@ON_MONDAY
 def test_reopening_a_week_never_takes_anything_off_the_shopping_list():
     """
     DECISIONS.md #2. Removing items somebody may already have bought is
@@ -1458,6 +1464,7 @@ def test_reopening_a_week_never_takes_anything_off_the_shopping_list():
     assert tools.get_weekly_plan(plan_id)["approved_by"] == ""
 
 
+@ON_MONDAY
 def test_re_approving_after_a_reopen_adds_only_what_is_new():
     week = _week_start()
     plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
