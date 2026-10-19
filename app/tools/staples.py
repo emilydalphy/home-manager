@@ -200,12 +200,17 @@ def _default_cadence(category: str, item: str = "") -> int:
         # A regular typed by name alone (Before you shop's "Add a regular",
         # What we know's Regulars, a chat add) arrives as "other", and the
         # catch-all said "Milk — about every 3 weeks" (defect hunt
-        # 2026-10-19). The name says what it is, the same way the recipe
-        # import files an ingredient, so milk and eggs start weekly and
-        # chicken fortnightly; a name it doesn't know reads as pantry,
-        # which is the catch-all's 21 anyway.
-        from ..recipe_import import guess_category as _guess_category
-        cat = _guess_category(item)
+        # 2026-10-19). The name says what it is — read by the Staples
+        # card's own whole-word classifier, so the rhythm agrees with the
+        # section the card shows: milk and eggs (Fridge basics) start
+        # weekly, meat fortnightly, Peanut butter (Pantry basics) stays on
+        # 21. Not recipe_import.guess_category: it matches substrings, and
+        # read "Peanut butter" as dairy and "Hamburger buns" as ham.
+        food = _name_section_food(item)
+        if food == "fridge":
+            cat = "meat/seafood" if set(_name_words(item)) & _MEAT_WORDS else "dairy"
+        elif food == "pantry":
+            cat = "pantry"
     return DEFAULT_CADENCE_DAYS.get(cat, FALLBACK_CADENCE_DAYS)
 
 
@@ -261,6 +266,9 @@ _FRIDGE_WORDS = {
     "pork", "turkey", "fish", "salmon", "shrimp", "lettuce", "spinach", "berry",
     "apple", "banana", "carrot", "onion", "garlic", "lemon", "lime", "tomato",
 }
+# The fridge words that are meat or fish — a fortnight's default
+# (meat/seafood), where the rest of Fridge basics is weekly.
+_MEAT_WORDS = {"bacon", "ham", "sausage", "chicken", "beef", "pork", "turkey", "fish", "salmon", "shrimp"}
 _PANTRY_WORDS = {
     "coffee", "tea", "rice", "pasta", "noodle", "flour", "sugar", "oat", "oatmeal",
     "cereal", "granola", "cracker", "bean", "lentil", "chickpea", "honey", "syrup",

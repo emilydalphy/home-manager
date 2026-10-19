@@ -18,8 +18,11 @@ why*, not duplicating the diff.
   `tests/test_staple_cadence_from_the_name.py`). Before you shop's "Add a
   regular" and What we know's Regulars send only the name, so the staple is
   "other" and `_default_cadence` gave the catch-all 21: "Milk — about every
-  3 weeks". An "other" staple now takes its default from the name via
-  `recipe_import.guess_category` (milk/eggs 7, meat 14, unknown 21); an
+  3 weeks". An "other" staple now takes its default from the name via the
+  card's own whole-word `_name_section_food` (Fridge basics 7, its meat
+  words 14, Pantry/unknown 21), so the rhythm agrees with the section shown
+  — not `recipe_import.guess_category`, whose substrings made Peanut butter
+  weekly and Hamburger buns meat (review, same day); an
   explicit category or a told cadence still wins. Category is not stored —
   cadence only.
 - **A late-evening sign-up's reveal opens on the next day with meals**
