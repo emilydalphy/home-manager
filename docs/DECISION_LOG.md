@@ -28,7 +28,12 @@ why*, not duplicating the diff.
   Untagged list → first usual store. Shop-day line gains "· Farm Boy's
   closed Sundays". Chat reads `store_hours_summary` / `store_open_now` off
   get_household_memory (no new tool). Dropping a store drops its hours.
-  ASSUMPTION, Emily's to move: "late in the day" is 16:00.
+  ASSUMPTION, Emily's to move: "late in the day" is 16:00. Review
+  follow-up: windows are datetimes, so 08:00–01:00 runs into the next
+  morning and yesterday's spill-over counts; 00:00 is "midnight",
+  00:00–00:00 "Open 24 hours"; the editor starts blank (a pre-filled 8–9
+  was one tap from invented hours); hours only for a usual store, name
+  capped at 80; "Clear hours" in the editor.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

@@ -253,9 +253,10 @@ def _store_open_now(prefs) -> dict:
     except Exception:
         return {}
     out = {}
+    cache: dict = {}
     for name in hours:
         try:
-            state = _stores.open_now_said(name, now, hours)
+            state = _stores.open_now_said(name, now, hours, cache)
         except Exception:
             continue
         if state:

@@ -683,7 +683,8 @@ def _shop_stops(needed: list[dict], named: set[int] | None = None) -> list[dict]
 #   not open yet, and won't be  "Farm Boy's closed now — opens 8:00"
 #     before the deadline         (a long breakfast bake's 5:00 a.m. start)
 #   cook tomorrow, store shut   "by 9:00 · Farm Boy closes at 9:00"
-#     tomorrow before it          (tonight is the last chance)
+#     tomorrow before it          (tonight is the last chance — midnight
+#                                  and after-midnight closes included)
 #   late, still to do, open     "still to do · Farm Boy's open till 9:00"
 #
 # ASSUMPTION (Emily's to move in one line): "late in the day" for the last
@@ -694,7 +695,7 @@ LATE_IN_THE_DAY = time(16, 0)
 
 
 def _hours_line(store: str, now: datetime, deadline: datetime, overdue: bool,
-                all_hours: dict) -> dict | None:
+                all_hours: dict, cache: dict | None = None) -> dict | None:
     """
     What the store's hours add to one shop line, or None when they add
     nothing (see the table above):
@@ -705,47 +706,51 @@ def _hours_line(store: str, now: datetime, deadline: datetime, overdue: bool,
                  IS the store ("Farm Boy · 4 things"): "Closes at 5:30"
       "when"     the time_label it replaces
       "deadline" a new, earlier window_end, or None
+
+    ONE question underneath every case: is there an open window between now
+    and the deadline, and does it reach the deadline? Windows are
+    datetimes (stores.open_window), so a store open till 1 a.m. or till
+    midnight, and a cook tomorrow, need no case of their own.
     """
     today = now.date()
-    w = _stores.open_window(store, today, all_hours)
-    if w is None:
+    state, w = _stores.window_at(store, now, all_hours, cache)
+    if state == "unknown":
         return None
     named = _stores.possessive_is(store)
 
-    def closes(at: time) -> dict:
+    def closes(at: datetime) -> dict:
         clock = _stores.say_clock(at)
         return {"line": f"by {clock} · {store} closes at {clock}", "short": f"Closes at {clock}",
-                "when": f"by {clock}", "deadline": datetime.combine(today, at)}
+                "when": f"by {clock}", "deadline": at}
 
-    open_now = not w.get("closed") and w["opens"] <= now.time() < w["closes"]
-    if not open_now:
-        not_yet = not w.get("closed") and now.time() < w["opens"]
-        # Opens later today, in time for a deadline still ahead: nothing
-        # changes about "by 6:10" — except a close that comes first.
-        if not_yet and not overdue and deadline > datetime.combine(today, w["opens"]):
-            if deadline.date() == today and datetime.combine(today, w["closes"]) < deadline:
-                return closes(w["closes"])
+    def reopens_in_time(after: datetime) -> dict | None:
+        """The next window, if it opens before the deadline."""
+        nxt = _stores.next_opening(store, after, all_hours, cache)
+        return nxt if nxt and nxt["opens"] < deadline else None
+
+    if state != "open":
+        # Shut now. Opening again in time for a deadline still ahead
+        # changes nothing about "by 6:10" — except a close that comes
+        # first. Otherwise: closed now, and when it opens.
+        later = reopens_in_time(now) if not overdue else None
+        if later:
+            if later["closes"] < deadline and not reopens_in_time(later["closes"]):
+                return closes(later["closes"])
             return None
-        nxt = _stores.next_opening(store, now, all_hours)
-        opens = f" — {_stores.opens_said(nxt[0], nxt[1], today)}" if nxt else ""
+        nxt = _stores.next_opening(store, now, all_hours, cache)
+        opens = f" — {_stores.opens_said(nxt['opens'], today)}" if nxt else ""
         line = f"{named} closed now{opens}"
         return {"line": line, "short": f"Closed now{opens}", "when": line, "deadline": None}
     if overdue:
-        if now.time() >= LATE_IN_THE_DAY:
+        if now.time() >= LATE_IN_THE_DAY and not w["all_day"]:
             clock = _stores.say_clock(w["closes"])
             return {"line": f"still to do · {named} open till {clock}", "short": f"Open till {clock}",
                     "when": "still to do", "deadline": None}
         return None
-    if w["closes"] == time.max:
-        return None  # open till midnight: nothing closes before any deadline today
-    if deadline.date() == today:
-        return closes(w["closes"]) if datetime.combine(today, w["closes"]) < deadline else None
-    # The cook is tomorrow. Tonight is the last chance only when the store
-    # does not open tomorrow before the deadline.
-    tomorrow = _stores.open_window(store, deadline.date(), all_hours)
-    if tomorrow is None:
-        return None
-    if tomorrow.get("closed") or datetime.combine(deadline.date(), tomorrow["opens"]) >= deadline:
+    # Open now. It only matters if it closes before the deadline and does
+    # not open again before it — a cook tomorrow, a store that reopens at
+    # 8 a.m., is not tonight's last chance.
+    if w["closes"] < deadline and not reopens_in_time(w["closes"]):
         return closes(w["closes"])
     return None
 
@@ -966,9 +971,10 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     # and the headline stays the cook's deadline — no one store owns it.
     all_hours, first_store = _hours_context()
     if all_hours:
+        holiday_cache: dict = {}  # one holidays lookup per day for this whole line
         for stop in stop_rows:
             store = _hours_store_for(stop, stop_rows, first_store)
-            said = _hours_line(store, now, deadline, overdue, all_hours) if store else None
+            said = _hours_line(store, now, deadline, overdue, all_hours, holiday_cache) if store else None
             if said:
                 stop["hours_line"] = said["short"] if stop.get("store") else said["line"]
                 if len(stop_rows) == 1:

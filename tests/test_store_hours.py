@@ -15,9 +15,15 @@ nothing here depends on which weekday the suite runs on.
 from __future__ import annotations
 
 import datetime
+import json
+import re
+import shutil
 from datetime import time
+from pathlib import Path
 
 import pytest
+
+import nodeharness
 
 from app import tools
 from app.tools import digest as _digest
@@ -145,7 +151,7 @@ def test_closed_on_holidays_counts_as_closed_on_a_known_holiday(monkeypatch):
     tools.set_store_hours("Farm Boy", _hours("08:00", "21:00", closed_on_holidays=True))
     # Today is a holiday the holidays module knows (its own lookup is what
     # stores._is_holiday asks; stubbed so the test runs on any date).
-    monkeypatch.setattr(_stores, "_is_holiday", lambda d: d == TODAY)
+    monkeypatch.setattr(_stores, "_is_holiday", lambda d, cache=None: d == TODAY)
     shop = _shop(_at(9))
     assert shop["detail"] == "1 item · Farm Boy's closed now — opens 8:00 tomorrow"
     # Off by default: the same day, the box unticked, says nothing.
@@ -193,7 +199,7 @@ def test_the_hours_line_reads_the_way_the_card_wrote_it(days, said):
 def test_saving_validates_and_an_empty_editor_forgets():
     tools.add_usual_stores(["Farm Boy"])
     with pytest.raises(ValueError):
-        tools.set_store_hours("Farm Boy", {"days": {"mon": ["21:00", "08:00"]}})
+        tools.set_store_hours("Farm Boy", {"days": {"mon": ["08:00", "08:00"]}})  # only 00:00–00:00 is all day
     tools.set_store_hours("Farm Boy", _hours())
     assert "Farm Boy" in tools.get_store_hours()
     tools.set_store_hours("Farm Boy", {"days": {}, "closed_on_holidays": False})
@@ -227,7 +233,131 @@ def test_the_route_saves_and_hands_back_the_memory(signed_in):
 
 def test_closed_on_holidays_uses_the_holidays_module_real_dates():
     """No stub: Christmas is in the holidays module's own rule table."""
+    tools.add_usual_stores(["Farm Boy"])
     tools.set_store_hours("Farm Boy", _hours(closed_on_holidays=True))
     christmas = datetime.date(TODAY.year, 12, 25)
     assert _stores.open_window("Farm Boy", christmas) == {"closed": True, "holiday": True}
-    assert _stores.open_window("Farm Boy", datetime.date(TODAY.year, 12, 20))["opens"] == time(8, 0)
+    dec20 = datetime.date(TODAY.year, 12, 20)
+    assert _stores.open_window("Farm Boy", dec20)["opens"] == datetime.datetime.combine(dec20, time(8, 0))
+
+
+
+# ---------- review follow-ups (2026-10-19) ----------
+
+def test_a_close_after_midnight_is_the_next_morning():
+    """08:00–01:00 used to be refused as "has to close after it opens", and
+    yesterday's window was never asked about at 12:30 a.m."""
+    tools.add_usual_stores(["Farm Boy"])
+    tools.set_store_hours("Farm Boy", _hours("08:00", "01:00"))
+    assert _stores.hours_summary(tools.get_store_hours()["Farm Boy"]) == "8–1 every day"
+    after_midnight = _at(0, 30)
+    assert _stores.window_at("Farm Boy", after_midnight)[0] == "open"
+    assert _stores.open_now_said("Farm Boy", after_midnight) == "open till 1:00"
+    assert _stores.open_now_said("Farm Boy", _at(1, 30)) == "closed — opens 8:00"
+
+
+def test_midnight_and_24_hours_are_said_as_people_say_them():
+    tools.add_usual_stores(["Farm Boy", "Costco"])
+    tools.set_store_hours("Farm Boy", _hours("08:00", "00:00"))
+    tools.set_store_hours("Costco", _hours("00:00", "00:00"))
+    lines = tools.get_household_memory()["store_hours_summary"]
+    assert lines == {"Farm Boy": "8–midnight every day", "Costco": "Open 24 hours"}
+    assert _stores.open_now_said("Farm Boy", _at(22)) == "open till midnight"
+    assert _stores.open_now_said("Costco", _at(3)) == "open 24 hours"
+
+
+def test_a_24_hour_store_never_says_open_till():
+    _dinner_waiting_on_the_list()
+    tools.set_store_hours("Farm Boy", _hours("00:00", "00:00"))
+    assert _shop(_at(18, 40))["detail"] == "1 item · still to do"
+    assert _shop(_at(9))["detail"] == "1 item · by 6:35"
+
+
+def test_a_midnight_close_is_tonights_last_chance_for_a_cook_tomorrow():
+    """The early "closes at midnight → nothing to say" return used to run
+    before the cook-tomorrow check, so this said only "by tomorrow"."""
+    for n in ("Emily", "Vineeth"):
+        tools.add_member(n)
+    tools.add_usual_stores(["Farm Boy"])
+    tools.add_recipe("Overnight Oats", ingredients=[{"item": "Rolled oats", "qty": "1 lb", "category": "pantry"}],
+                     prep_time_minutes=10, cook_time_minutes=15, default_servings=2)
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tomorrow = (TODAY + datetime.timedelta(days=1)).isoformat()
+    tools.plan_meal(tomorrow, "Overnight Oats", slot="breakfast", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=True)
+    tools.set_store_hours("Farm Boy", _hours("09:00", "00:00"))  # opens after tomorrow's 7:35 start
+    shop = _shop(_at(20))
+    assert shop["detail"] == "1 item · by midnight · Farm Boy closes at midnight"
+    # Opening at 7:00 instead, it's in time tomorrow: nothing to say.
+    tools.set_store_hours("Farm Boy", _hours("07:00", "00:00"))
+    assert _shop(_at(20))["detail"] == "1 item · by tomorrow"
+
+
+def test_only_a_usual_store_gets_hours_and_names_are_capped(signed_in):
+    tools.add_usual_stores(["Farm Boy"])
+    with pytest.raises(ValueError):
+        tools.set_store_hours("Somewhere Else", _hours())
+    saved = tools.set_store_hours("farm boy", _hours())
+    assert saved["store"] == "Farm Boy", "saved under the usual-stores spelling"
+    res = signed_in.post("/api/memory/store-hours", json={"store": "x" * 5000, "hours": _hours()})
+    assert res.status_code == 422
+    res = signed_in.post("/api/memory/store-hours", json={"store": "Nowhere", "hours": _hours()})
+    assert res.status_code == 400
+
+
+def test_day_keys_are_days_and_holidays_must_be_true():
+    tools.add_usual_stores(["Farm Boy"])
+    with pytest.raises(ValueError):
+        tools.set_store_hours("Farm Boy", {"days": {"monkey": ["08:00", "21:00"]}})
+    saved = tools.set_store_hours("Farm Boy", {"days": {"Monday": ["08:00", "21:00"]}, "closed_on_holidays": "no"})
+    assert saved["hours"] == {"days": {"mon": ["08:00", "21:00"]}, "closed_on_holidays": False}
+
+
+# ---------- the editor starts blank (node harness over shell.js itself) ----------
+
+_SHELL = (Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text(encoding="utf-8")
+
+
+def _js_function(name: str) -> str:
+    start = _SHELL.index(f"function {name}(")
+    i, depth = _SHELL.index("{", start), 0
+    j = i
+    while True:
+        depth += {"{": 1, "}": -1}.get(_SHELL[j], 0)
+        if depth == 0:
+            return _SHELL[start:j + 1]
+        j += 1
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node runs the page's own functions")
+def test_the_hours_editor_opens_blank_and_copies_only_typed_hours():
+    """A pre-filled 8–9 was one tap from saving hours nobody gave, which
+    then moved Today's deadline. Blank instead; the seven rows copy the one
+    row only once both times are typed."""
+    var_lines = "\n".join(re.search(rf"  var {n} = [^\n]*\n", _SHELL).group(0) for n in ("WWK_HOURS_DAYS", "WWK_HOURS_SHORT"))
+    script = (
+        "var wwkState = {hoursEdit: null}; var MEM = {store_hours: {}, store_hours_summary: {}};\n"
+        "function wwkMem() { return MEM; } function wwkRenderSection() {}\n"
+        "function escapeHtml(s) { return String(s == null ? '' : s); }\n"
+        "var document = { querySelector: function () { return null; } };\n"
+        + var_lines
+        + "\n".join(_js_function(n) for n in ("wwkChip", "wwkStoreHours", "wwkHoursLine", "wwkHoursHtml",
+                                              "wwkHoursOpen", "wwkHoursSync", "wwkHoursMode"))
+        + """
+wwkHoursOpen('Costco');
+var out = {all: wwkState.hoursEdit.all, html: wwkHoursHtml(MEM, 'Costco')};
+wwkHoursMode(false);
+out.blankDays = WWK_HOURS_DAYS.map(function (d) { return wwkState.hoursEdit.days[d].o + '|' + wwkState.hoursEdit.days[d].c; });
+wwkHoursMode(true); wwkState.hoursEdit.all = {o: '07:00', c: '22:00'}; wwkHoursMode(false);
+out.typedMon = wwkState.hoursEdit.days.mon;
+console.log(JSON.stringify(out));
+"""
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    got = json.loads(res.stdout.strip().splitlines()[-1])
+    assert got["all"] == {"o": "", "c": ""}
+    assert "08:00" not in got["html"] and "21:00" not in got["html"]
+    assert "Clear hours" not in got["html"], "nothing saved, nothing to clear"
+    assert set(got["blankDays"]) == {"|"}
+    assert got["typedMon"] == {"o": "07:00", "c": "22:00", "closed": False}

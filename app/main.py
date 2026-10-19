@@ -2281,7 +2281,9 @@ def remove_memory_store_item(req: StoreTypicalItemRemoveRequest):
 
 
 class StoreHoursRequest(BaseModel):
-    store: str
+    # One of the household's usual stores (set_store_hours checks); capped
+    # because the name is read into the chat's context with the hours.
+    store: str = Field(min_length=1, max_length=80)
     # {"days": {"mon": ["08:00", "21:00"], "sun": "closed", ...},
     #  "closed_on_holidays": false} — or null / {} to forget them.
     hours: dict | None = None

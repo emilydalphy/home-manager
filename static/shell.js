@@ -13799,7 +13799,6 @@
   // markup; every switch reads the inputs into the draft first.
   var WWK_HOURS_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   var WWK_HOURS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  var WWK_HOURS_OPEN = '08:00', WWK_HOURS_CLOSE = '21:00';
 
   function wwkStoreHours(mem, store) {
     var all = (mem && mem.store_hours) || {};
@@ -13825,7 +13824,7 @@
     }
     var timeInput = function (day, which, value) {
       return '<input type="time" class="snw-input wwk-hours-time" data-hours-day="' + day + '" data-hours-which="' + which + '"' +
-        ' value="' + escapeHtml(value || '') + '"' +
+        ' value="' + escapeHtml(value || '') + '" placeholder="' + (which === 'o' ? '8:00' : '9:00 pm') + '"' +
         ' aria-label="' + escapeHtml((which === 'o' ? 'Opens' : 'Closes') + (day === 'all' ? '' : ' ' + WWK_HOURS_SHORT[WWK_HOURS_DAYS.indexOf(day)])) + '">';
     };
     var html = '<div class="wwk-hours-edit" data-store="' + s + '">' +
@@ -13855,6 +13854,7 @@
       '<div class="wwk-actions">' +
         '<button type="button" class="wwk-btn" data-wwk="hours-save" data-store="' + s + '">Use these hours</button>' +
         '<button type="button" class="wwk-link" data-wwk="hours-cancel" data-store="' + s + '">Never mind</button>' +
+        (wwkStoreHours(mem, store) ? '<button type="button" class="wwk-link" data-wwk="hours-clear" data-store="' + s + '">Clear hours</button>' : '') +
       '</div>' +
     '</div>';
     return html;
@@ -13865,7 +13865,9 @@
   function wwkHoursOpen(store) {
     var saved = wwkStoreHours(wwkMem(), store) || {};
     var days = saved.days || {};
-    var draft = { store: store, same: true, all: { o: WWK_HOURS_OPEN, c: WWK_HOURS_CLOSE }, days: {}, holidays: !!saved.closed_on_holidays };
+    // Blank, never pre-filled: one tap on a pre-filled 8–9 would save hours
+    // nobody gave, and those move Today's "by" (review, 2026-10-19).
+    var draft = { store: store, same: true, all: { o: '', c: '' }, days: {}, holidays: !!saved.closed_on_holidays };
     var seen = {};
     WWK_HOURS_DAYS.forEach(function (d) {
       var v = days[d];
@@ -13908,7 +13910,8 @@
     if (!ed) return;
     // Opening the seven rows starts each day at the one row's hours, so
     // "closed Sundays" is one tap, not fourteen.
-    if (!same && ed.same) WWK_HOURS_DAYS.forEach(function (d) { if (!ed.days[d].closed) ed.days[d] = { o: ed.all.o, c: ed.all.c, closed: false }; });
+    // Only once both are typed — a blank row copies nothing.
+    if (!same && ed.same && ed.all.o && ed.all.c) WWK_HOURS_DAYS.forEach(function (d) { if (!ed.days[d].closed) ed.days[d] = { o: ed.all.o, c: ed.all.c, closed: false }; });
     ed.same = same;
     wwkRenderSection('stores');
   }
@@ -13921,6 +13924,12 @@
     wwkRenderSection('stores');
   }
 
+  // Forget a store's hours: it goes back to behaving as it did before.
+  function wwkHoursClear(store) {
+    wwkHoursSync();
+    wwkHoursCommit(store, null, wwkState.hoursEdit);
+  }
+
   async function wwkHoursSave(store) {
     var ed = wwkHoursSync();
     if (!ed) return;
@@ -13931,12 +13940,16 @@
       if (v.closed) days[d] = 'closed';
       else if (v.o && v.c) days[d] = [v.o, v.c];
     });
-    var hours = { days: days, closed_on_holidays: !!ed.holidays };
+    return wwkHoursCommit(store, { days: days, closed_on_holidays: !!ed.holidays }, ed);
+  }
+
+  async function wwkHoursCommit(store, hours, ed) {
     var ok = await wwkCommit('stores', function () {
       wwkState.hoursEdit = null;
       var mem = wwkMem();
       mem.store_hours = mem.store_hours || {};
-      mem.store_hours[store] = hours;
+      if (hours) mem.store_hours[store] = hours;
+      else delete mem.store_hours[store];
     }, function () { return wwkPostSaying('/api/memory/store-hours', { store: store, hours: hours }); }, wwkAdoptMemory);
     if (ok) {
       // Today's shop line reads these hours ("by 5:30 · Farm Boy closes at 5:30").
@@ -14238,6 +14251,7 @@
         case 'hours-days': return wwkHoursMode(false);
         case 'hours-closed': return wwkHoursToggleClosed(value);
         case 'hours-save': return wwkHoursSave(store);
+        case 'hours-clear': return wwkHoursClear(store);
         case 'hours-cancel': wwkState.hoursEdit = null; return wwkRenderSection('stores');
         case 'cal-check': return wwkCalCheck();
         case 'cal-save': return wwkCalSave();
