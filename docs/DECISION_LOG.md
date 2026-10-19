@@ -26,6 +26,12 @@ why*, not duplicating the diff.
   it. Consequence worth knowing: onboarding's reveal "Approve the week"
   approves before Plan is ever seen, so that path gets no tour — only "or
   tweak it with me" and opening Plan before approving do. Emily's call.
+  Review fixes, same day: approve -> reopen clears `approved_at`, so a
+  once-only `households.first_approved_at` (stamped in approve_weekly_plan)
+  also counts; a target off to the side (Schedule's carousel) isn't ringed;
+  the check also runs when an already-built Plan is shown (the second
+  adult's welcome had held it off), one start per load; stop 3 / Cook copy
+  no longer promise a tap the overlay takes.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

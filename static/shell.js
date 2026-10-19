@@ -911,6 +911,9 @@
         weekState.data.weekly_plan_id && weekState.data.status !== 'approved' && scrollEl) {
       scrollEl.scrollTop = 0;
     }
+    // The first-open tour, checked on every showing of an already-built
+    // Plan as well as when it's built — see maybeStartFirstTour.
+    if (tab.week && panel.dataset.built && weekState.data) maybeStartFirstTour();
 
     var pathIsAlreadyOurs = window.location.pathname.replace(/\/+$/, '') ===
       (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''));
@@ -15063,23 +15066,36 @@
     return false;
   }
 
+  // At most one start per page load, and one question in flight: this runs
+  // when Plan is built AND whenever Plan is shown (activateTab) — the
+  // second adult's first-open welcome holds it off at build time, and by
+  // the time they reach Plan the panel is already built. The tour's own
+  // tab switches land here too; the flag is what keeps the end of a tour
+  // (goTab('week') before the POST lands) from starting it again.
+  var tourStartedThisLoad = false;
+  var tourAsking = false;
+
   function maybeStartFirstTour() {
-    if (!window.PomonaTour || window.PomonaTour.isOpen()) return;
+    if (!window.PomonaTour || window.PomonaTour.isOpen() || tourStartedThisLoad || tourAsking) return;
     if (weekState.step !== 'week' || weekPlanState(weekState.data) !== 'draft') return;
+    tourAsking = true;
     Api.json('/api/tour', { quiet: true }).then(function (st) {
-      if (!st || !st.show) return;
+      if (!st || !st.show) { tourAsking = false; return; }
       // A beat for "Here's your week." to land first.
       setTimeout(function () {
+        tourAsking = false;
+        if (tourStartedThisLoad || window.PomonaTour.isOpen()) return;
         if (tourBlocked() || weekState.step !== 'week' || !panels.week.classList.contains('active')) return;
-        window.PomonaTour.start(tourHost, { replay: false });
+        tourStartedThisLoad = window.PomonaTour.start(tourHost, { replay: false });
       }, 700);
-    }).catch(function () { /* no tour is the quiet failure */ });
+    }).catch(function () { tourAsking = false; /* no tour is the quiet failure */ });
   }
 
   // "Show me around again" (Preferences): any time, for anyone, from the
   // first stop on Plan.
   function replayTour() {
     if (!window.PomonaTour) return;
+    tourStartedThisLoad = true;
     closePrefsSheet();
     tourHost.goTab('week');
     if (scrollEl) scrollEl.scrollTop = 0;

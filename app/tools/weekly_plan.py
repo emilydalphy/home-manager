@@ -7241,6 +7241,16 @@ def _settle_weekly_plan_approval(
             "WHERE id = ? AND household_id = ? AND status != 'approved'",
             (approved_by.strip(), approved_by_member_id, weekly_plan_id, household_id()),
         ).rowcount
+        if flipped:
+            # The household has said yes to a week at least once — kept on
+            # the household because reopening a week clears approved_at, and
+            # the first-open tour must not come back after approve -> reopen
+            # (app/tools/tour.py). Written once, never cleared.
+            conn.execute(
+                "UPDATE households SET first_approved_at = datetime('now') "
+                "WHERE id = ? AND first_approved_at = ''",
+                (household_id(),),
+            )
         # A wiped list is the one re-approval that should NOT be a no-op.
         # "Start over" (main.py's /api/reset, tools.clear_grocery_list)
         # deletes every needed line and leaves the week approved, so the

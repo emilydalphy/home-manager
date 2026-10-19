@@ -37,7 +37,14 @@ def _has_approved_week(conn) -> bool:
         "AND (status = 'approved' OR approved_at IS NOT NULL) LIMIT 1",
         (household_id(),),
     ).fetchone()
-    return row is not None
+    if row is not None:
+        return True
+    # Reopening a week clears its approved_at, so the household's own
+    # once-only stamp is what remembers an approve -> reopen.
+    hh = conn.execute(
+        "SELECT first_approved_at FROM households WHERE id = ?", (household_id(),)
+    ).fetchone()
+    return bool(hh and hh["first_approved_at"])
 
 
 def tour_state() -> dict:

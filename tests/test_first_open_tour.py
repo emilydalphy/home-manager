@@ -110,6 +110,27 @@ def test_a_week_approved_then_retired_still_counts():
     assert _device().get("/api/tour").json()["show"] is False
 
 
+def test_approve_then_reopen_does_not_bring_it_back():
+    # Reopening clears weekly_plans.approved_at; the household's own
+    # first_approved_at is what remembers the yes.
+    _adult("Emily")
+    conn = get_conn()
+    plan_id = conn.execute(
+        "INSERT INTO weekly_plans (household_id, week_start_date, status) VALUES (1, '2026-10-19', 'draft')"
+    ).lastrowid
+    conn.commit()
+    conn.close()
+    c = _device()
+    assert c.get("/api/tour").json()["show"] is True
+    tools.approve_weekly_plan(plan_id)
+    tools.reopen_weekly_plan(plan_id)
+    conn = get_conn()
+    row = conn.execute("SELECT status, approved_at FROM weekly_plans WHERE id = ?", (plan_id,)).fetchone()
+    conn.close()
+    assert row["status"] == "draft" and row["approved_at"] is None
+    assert c.get("/api/tour").json() == {"show": False, "ended": "", "has_approved_week": True}
+
+
 # ---------- the shell's half ----------
 
 def test_the_shell_loads_it_and_starts_it_only_on_a_draft_off_the_approve_hand_off():
@@ -118,6 +139,15 @@ def test_the_shell_loads_it_and_starts_it_only_on_a_draft_off_the_approve_hand_o
     fn = SHELL_JS[SHELL_JS.index("function maybeStartFirstTour()"):SHELL_JS.index("function replayTour()")]
     assert "weekPlanState(weekState.data) !== 'draft'" in fn
     assert "Api.json('/api/tour'" in fn and "tourBlocked()" in fn
+
+
+def test_showing_an_already_built_plan_checks_too_but_only_one_start_per_load():
+    # The second adult's welcome holds the tour off while Plan is built;
+    # the check runs again whenever Plan is shown.
+    assert "if (tab.week && panel.dataset.built && weekState.data) maybeStartFirstTour();" in SHELL_JS
+    fn = SHELL_JS[SHELL_JS.index("function maybeStartFirstTour()"):SHELL_JS.index("function replayTour()")]
+    assert "tourStartedThisLoad || tourAsking" in fn
+    assert "tourStartedThisLoad = window.PomonaTour.start(" in fn
 
 
 def test_show_me_around_again_lives_in_preferences_and_replays_it():
@@ -161,7 +191,7 @@ var document = {
   addEventListener: function (t, f) { handlers[t] = f; },
   querySelectorAll: function (sel) { return targets[sel] ? [targets[sel]] : []; }
 };
-var window = { innerHeight: 844, addEventListener: function () {} };
+var window = { innerHeight: 844, innerWidth: 390, addEventListener: function () {} };
 function setTimeout(f) { f(); }
 """
 
@@ -231,3 +261,30 @@ def test_a_stop_with_nothing_to_ring_still_reads_as_a_centred_card():
     assert out["one"] == {"centred": True, "ring": False, "title": "Swap it or tweak it"}
     assert out["two"]["centred"] is False and out["two"]["ring"] is True
     assert out["two"]["holeTop"] == "396px" and out["two"]["top"] == "460px"
+
+
+def test_a_target_off_to_the_side_is_not_ringed_and_cook_reads_by_what_is_ringed():
+    # Schedule's carousel: Saturday's Pick is laid out at x=2070. Not on
+    # screen, so stop 2 rings Move instead. And Cook on a draft rings the
+    # tab and says so.
+    out = _run("""
+      var pick = new El('p');
+      pick._rect = { left: 2070, top: 400, bottom: 444, right: 2130, width: 60, height: 44 };
+      targets['[data-wk-pick]'] = pick;
+      var move = new El('m');
+      move._rect = { left: 300, top: 500, bottom: 544, right: 360, width: 60, height: 44 };
+      targets['[data-wk-move]'] = move;
+      var tab = new El('t');
+      tab._rect = { left: 290, top: 770, bottom: 840, right: 390, width: 100, height: 70 };
+      targets['.tab-btn[data-tab="kitchen"]'] = tab;
+      Tour.start({ goTab: function () {}, onEnd: function () {} });
+      var root = created[0], next = document.activeElement;
+      next.click();
+      var holeTop = root.querySelector('#tour-hole').style.top;
+      next.click(); next.click(); next.click();
+      console.log(JSON.stringify({ holeTop: holeTop, cook: root.querySelector('#tour-body').textContent,
+        ask: Tour.STOPS[2].body }));
+    """)
+    assert out["holeTop"] == "496px"
+    assert out["cook"].startswith("Once the week’s approved, tonight’s dinner lives here")
+    assert out["ask"].startswith("This is where you ask:") and "Tap here" not in out["ask"]

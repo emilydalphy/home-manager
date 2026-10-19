@@ -27,7 +27,11 @@
     var panel = el.closest('.tab-panel');
     if (panel && !panel.classList.contains('active')) return false;
     var r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0;
+    // Sideways too: Schedule's carousel keeps every day's card laid out
+    // beside the one in view, so Saturday's Pick has a real box at x=2070.
+    // Ringing that would ring nothing; the next candidate (or the centred
+    // card) reads better than scrolling the carousel to another day.
+    return r.width > 0 && r.height > 0 && r.right > 0 && r.left < global.innerWidth;
   }
   function first(selector, pick) {
     var all = document.querySelectorAll(selector);
@@ -59,20 +63,28 @@
     {
       tab: 'week',
       title: 'Or just tell me',
-      body: 'Tap here and say it your way: “No fish this week.” “Make Tuesday quicker.” I’ll show you what I’d change.',
+      // Not "Tap here": the overlay takes the tap, so the line points at
+      // the button rather than promising it works right now.
+      body: 'This is where you ask: “No fish this week.” “Make Tuesday quicker.” I’ll show you what I’d change.',
       target: function () { return first('#chat-fab'); }
     },
     {
       tab: 'grocery',
       title: 'Shop',
       body: 'Approve the week and your shopping list lands here. Before you shop, tick any spices, sauces or pantry staples you’re out of. I leave those off unless you say.',
-      target: function () { return first('[data-gro="goto-beforeshop"]') || tabButton('grocery'); }
+      target: function (late) { return first('[data-gro="goto-beforeshop"]') || (late ? tabButton('grocery') : null); }
     },
     {
       tab: 'kitchen',
       title: 'Cook',
-      body: 'Tonight’s dinner, when to start, and the recipe. Tap Start cooking and I’ll take you through it a step at a time.',
-      target: function () { return first('#kit-dock button') || tabButton('kitchen'); }
+      // Two ways to read, by what's ringed: Start cooking (tonight has a
+      // cook) or just the Cook tab (a draft nobody's approved yet).
+      body: function (el) {
+        return el && el.closest && el.closest('#kit-dock')
+          ? 'Tonight’s dinner, when to start, and the recipe. Start cooking takes you through it a step at a time.'
+          : 'Once the week’s approved, tonight’s dinner lives here, with when to start and the recipe. Start cooking takes you through it a step at a time.';
+      },
+      target: function (late) { return first('#kit-dock button') || (late ? tabButton('kitchen') : null); }
     },
     {
       tab: 'today',
@@ -82,6 +94,10 @@
     }
   ];
   var LAST_LABEL = 'Back to my week';
+
+  function bodyOf(stop, el) {
+    return typeof stop.body === 'function' ? stop.body(el) : stop.body;
+  }
 
   var root = null;
   var state = null; // { index, host, opts, returnFocus, target }
@@ -135,7 +151,10 @@
     (function look() {
       if (!state) return;
       var el = null;
-      try { el = stop.target(); } catch (err) { el = null; }
+      // `late`: the tab's own button is only the fallback once the screen
+      // has had ~0.8s to draw its real control — it is always there, so
+      // asking for it first would win before Shop or Cook had drawn.
+      try { el = stop.target(tries >= 8); } catch (err) { el = null; }
       if (el || tries++ >= 15) return cb(el);
       setTimeout(look, 100);
     })();
@@ -148,7 +167,7 @@
     try { state.host.goTab(stop.tab); } catch (err) { /* the card still reads */ }
     root.querySelector('#tour-count').textContent = (index + 1) + ' of ' + STOPS.length;
     root.querySelector('#tour-title').textContent = stop.title;
-    root.querySelector('#tour-body').textContent = stop.body;
+    root.querySelector('#tour-body').textContent = bodyOf(stop, null);
     root.querySelector('#tour-next').textContent = index === STOPS.length - 1 ? LAST_LABEL : 'Next';
     root.hidden = false;
     place();
@@ -156,6 +175,7 @@
     findTarget(stop, function (el) {
       if (!state || state.index !== index) return;
       state.target = el;
+      root.querySelector('#tour-body').textContent = bodyOf(stop, el);
       if (el) {
         var r = el.getBoundingClientRect();
         // Off screen (a row further down the week): bring it into view

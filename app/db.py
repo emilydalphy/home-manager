@@ -868,6 +868,11 @@ _MIGRATIONS = [
     ("members", "tour_ended_at", "TEXT NOT NULL DEFAULT ''"),
     ("households", "tour_ended_how", "TEXT NOT NULL DEFAULT ''"),
     ("households", "tour_ended_at", "TEXT NOT NULL DEFAULT ''"),
+    # When the household first approved a week (weekly_plan.approve_weekly_plan).
+    # Survives a reopen, which clears weekly_plans.approved_at — the tour's
+    # "never on a household that has approved a week" reads both. '' on
+    # existing rows; their approved plans still answer for them.
+    ("households", "first_approved_at", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
