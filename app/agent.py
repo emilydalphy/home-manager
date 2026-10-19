@@ -4762,10 +4762,11 @@ def _research_from_library(name: str) -> dict | None:
 def _research_dish_new(name: str, cuisine: str, dish_note: str, *, deadline: float | None) -> dict | None:
     """research_dish's web search, run once per dish across households:
     saved for this household and filed in the shared library."""
-    _recipe_library.record_use(name, "new")
     budget = _dish_research_budget()
     first_budget = {k: min(budget[k], _OPEN_SEARCH_SHARE[k]) for k in budget}
     found = research_dish_llm(name, cuisine, dish_note, budget=first_budget, deadline=deadline) or {}
+    # Counted once the call has run (and been billed) — not on the way in.
+    _recipe_library.record_use(name, "new")
     used = found.get("used") or {"web_search": 0, "web_fetch": 0}
     sources = found.get("sources") or []
     fallback = False
@@ -4910,13 +4911,10 @@ def rewrite_meal_recipe(entry_id: int, request_text: str) -> dict:
             return {"status": "blocked",
                     "said": f"I couldn’t write that one without {food} in it — "
                             f"somebody here can’t have it. Try asking for something else."}
-        result = tools.apply_rewrite(spec_base, detail, text)
-        if result.get("status") == "rewritten":
-            # A tweak of a library dish is its own library entry, a variant
-            # beside the base (2026-10-19) — the dish only, never the words
-            # they typed. Their copy stays theirs; the base is untouched.
-            _recipe_library.file_tweak(spec_base["recipe_id"])
-        return result
+        # Not filed in the shared library (review, 2026-10-19): a rewrite is
+        # written from the household's own words, which can name them. The
+        # card's tweak variants are a later step.
+        return tools.apply_rewrite(spec_base, detail, text)
     tools.record_recipe_change_request(
         name, text, meal_plan_entry_id=entry_id,
         recipe_id=spec_base["recipe_id"], outcome=tools.OUTCOME_FAILED,
@@ -5293,7 +5291,16 @@ def _research_capped(plain: str, recipe: dict, *, search: bool, weekly_plan_id=N
     return box.get("found")
 
 
-def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dict]) -> tuple[dict | None, bool]:
+# Facts about a household a library base was written without — the
+# writer would have shaped the recipe around them, so a household with any
+# of these gets its own write (from the library's research; nothing new is
+# billed) rather than a copy. eating_style for safety of a kind (vegetarian,
+# keto), kit and children for whether they can cook and eat it as written.
+_WRITE_INSTEAD_OF_COPY = ("eating_style", "kitchen_kit", "children_at_table")
+
+
+def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dict],
+                       shared: dict | None = None) -> tuple[dict | None, bool]:
     """
     Copy-on-use (Shared Recipe Library step 1, 2026-10-19): fill this
     household's pending recipe from the library's base for the dish, with
@@ -5305,10 +5312,17 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
     that can't have them. Returns (outcome or None, clashed).
     """
     try:
+        if any((shared or {}).get(k) for k in _WRITE_INSTEAD_OF_COPY):
+            return None, False
         entry = _recipe_library.base_recipe(plain)
         if not entry:
             return None, False
-        clashes = _allergen_gate.hard_clashes(plain, ingredients=entry["ingredients"], avoidances=avoidances)
+        # Judged on the list the copy will SAVE, steps' ingredients included
+        # (fill_recipe_details completes it the same way) — an egg only the
+        # method uses is a clash here, as it is on every written recipe.
+        judged = tools.complete_ingredient_list(entry["ingredients"], entry["instructions"],
+                                                entry.get("default_servings") or 4)
+        clashes = _allergen_gate.hard_clashes(plain, ingredients=judged, avoidances=avoidances)
         if clashes:
             logger.info("Library recipe for %r has %s; writing this household its own",
                         plain, _allergen_gate._food_word(clashes))
@@ -5375,7 +5389,7 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     # version knows nothing about. Either way it is then written for them.
     library_clash = False
     if not recipe.get("must_use"):
-        copied, library_clash = _copy_from_library(recipe, name, plain, avoidances)
+        copied, library_clash = _copy_from_library(recipe, name, plain, avoidances, shared)
         if copied:
             return copied
     spec = _recipe_details_spec(recipe, slot, shared)
@@ -5448,17 +5462,18 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 # sources only through this link, never by name.
                 research_id=(found or {}).get("id") if writer_research else None,
             )
-            if not recipe.get("must_use"):
+            if not library_clash:
                 # Into the shared library (2026-10-19): read back from the
-                # row just saved, so the entry is exactly the recipe. A
-                # version written around this household's must-avoids, or
-                # changed for them, is a variant — never the dish's base.
+                # row just saved, so the entry is exactly the recipe — and
+                # only when the writer was told nothing about this household
+                # (file_from_recipe checks the spec): a version written
+                # around their must-avoids or kit is never the dish's base.
                 try:
                     _recipe_library.file_from_recipe(
                         (saved or {}).get("id") or recipe.get("id"),
                         research=found if writer_research else None,
                         origin="research" if writer_research else "written",
-                        variant=library_clash,
+                        spec=spec,
                     )
                 except Exception:
                     logger.exception("Filing %r in the recipe library failed; the recipe is saved", plain)
