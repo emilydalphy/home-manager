@@ -1343,6 +1343,16 @@ def _print_human(report: list[dict], days: int, source: str) -> None:
                 f"{pre_shop.get('undone', 0)} put back"
             )
 
+        # The shared recipe library (2026-10-19): what it saved this
+        # household against what was researched new and billed. Counts only.
+        library = usage.get("recipe_library") or {}
+        if any(library.get(k) for k in ("recipe", "research", "new")):
+            print(
+                f"  Recipe library: {library.get('recipe', 0) + library.get('research', 0)} hits "
+                f"({library.get('recipe', 0)} whole recipe, {library.get('research', 0)} research only) · "
+                f"{library.get('new', 0)} new research"
+            )
+
         # What the week got wrong about the FOOD. Its own section, below
         # errors and usage and never folded into BROKEN: a dull dinner is a
         # real problem and it is not an outage, and the whole value of the

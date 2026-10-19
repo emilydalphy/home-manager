@@ -72,6 +72,13 @@ import sqlite3
 from .db import get_conn
 from .tools._shared import DEFAULT_HOUSEHOLD_ID
 
+# The tables that belong to no household, on purpose: the Shared Recipe
+# Library (2026-10-19). An entry is only a dish — never a household id, a
+# name, a note or a rating (tools/recipe_library.file_entry builds every
+# row from dish fields) — so there is nothing of a leaving household in it
+# to delete, and a dish they had researched stays for everyone else.
+SHARED_TABLES = frozenset({"recipe_library", "recipe_library_sources"})
+
 logger = logging.getLogger("home_manager")
 
 # The sentence the privacy policy can state. Kept beside the code it

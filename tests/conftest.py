@@ -122,6 +122,10 @@ _TABLES = [
     "recipe_change_requests",
     # Research-first writing (2026-10-06): sources reference their research.
     "recipe_sources", "dish_research",
+    # Shared Recipe Library (2026-10-19): not household-scoped, so nothing
+    # else clears it — a dish filed in one test must not be a library hit in
+    # the next.
+    "recipe_library_uses", "recipe_library_sources", "recipe_library",
     "shopping_trips", "stores", "meal_preferences", "pets", "members",
     "chat_turns", "chat_sessions", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
     "calendar_feeds", "staple_events", "staples", "morning_text_sends",

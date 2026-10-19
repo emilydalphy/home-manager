@@ -170,10 +170,14 @@ def test_every_table_in_the_schema_is_household_scoped():
         }
     finally:
         conn.close()
-    assert _schema_tables() - {"households"} == scoped
+    # The shared recipe library is the one deliberate exception — named in
+    # household_deletion.SHARED_TABLES, so adding to it is a decision too.
+    shared = household_deletion.SHARED_TABLES
+    assert _schema_tables() - {"households"} - shared == scoped
     # Nothing in the live database outside schema.sql, either (a table made
     # by a migration alone would dodge the line above).
-    assert live - {"households"} == scoped
+    assert live - {"households"} - shared == scoped
+    assert not scoped & shared
 
 
 def test_every_member_column_is_accounted_for_when_someone_leaves():

@@ -392,6 +392,12 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- this, never by name: a household's own "Chana Masala" was not based
     -- on anything Pomona read. NULL for every recipe written without it.
     research_id INTEGER,
+    -- The shared recipe library entry this recipe is (Shared Recipe
+    -- Library step 1, 2026-10-19): set when Pomona's recipe pass wrote it
+    -- (and filed it) or copied it from the library. Lineage only — the
+    -- household's servings, tweaks, ratings and exclusions stay on THIS row
+    -- and never flow back. NULL for anything typed in or imported.
+    library_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -2221,6 +2227,76 @@ CREATE TABLE IF NOT EXISTS recipe_sources (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_recipe_sources_research ON recipe_sources (household_id, research_id, position);
+
+-- Shared Recipe Library, step 1 (Emily, 2026-10-18): a dish researched or
+-- written once serves every household. The ONE pair of tables in this
+-- database with no household_id, on purpose — an entry is only the dish
+-- (name, ingredients, steps, servings, times, cuisine, protein, method
+-- notes, credited sources), never a household id, a member name, a note, a
+-- rating or anything typed about a household. Written only through
+-- tools/recipe_library.file_entry, which builds every row from a whitelist
+-- of dish fields. kind: 'base' is THE recipe for a dish_key, the one a
+-- household's plan copies from; 'variant' is a tweak of it, or a version
+-- written around one household's must-avoids, filed beside it and never
+-- copied in step 1. origin: research | written | tweak | seed. A base may be
+-- filed with sources only (research landed, recipe not yet written) and
+-- filled in later; file_entry only fills gaps, never overwrites.
+CREATE TABLE IF NOT EXISTS recipe_library (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dish_key TEXT NOT NULL,
+    dish_name TEXT NOT NULL DEFAULT '',
+    kind TEXT NOT NULL DEFAULT 'base',
+    variant_of INTEGER REFERENCES recipe_library(id),
+    origin TEXT NOT NULL DEFAULT 'research',
+    ingredients_json TEXT NOT NULL DEFAULT '[]',
+    instructions_json TEXT NOT NULL DEFAULT '[]',
+    default_servings INTEGER,
+    prep_time_minutes INTEGER,
+    cook_time_minutes INTEGER,
+    cuisine TEXT NOT NULL DEFAULT '',
+    main_protein TEXT NOT NULL DEFAULT '',
+    advance_prep_notes TEXT NOT NULL DEFAULT '',
+    advance_prep_step_indices_json TEXT NOT NULL DEFAULT '[]',
+    method_notes TEXT NOT NULL DEFAULT '',
+    fallback_used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_recipe_library_dish ON recipe_library (dish_key, kind, id);
+
+-- An entry's credited sources, lead first, exactly as recipe_sources holds
+-- a household's (ratings and link status). Copied into the household's own
+-- dish_research when a library dish is used, so the recipe page shows them
+-- as researched with no fresh lookup.
+CREATE TABLE IF NOT EXISTS recipe_library_sources (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    library_id INTEGER NOT NULL REFERENCES recipe_library(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 1,
+    name TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL DEFAULT '',
+    url TEXT NOT NULL,
+    rating REAL,
+    rating_count INTEGER,
+    is_lead INTEGER NOT NULL DEFAULT 0,
+    link_ok INTEGER NOT NULL DEFAULT 1,
+    link_checked_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_recipe_library_sources ON recipe_library_sources (library_id, position);
+
+-- What the library saved this household, for the morning report: one row
+-- per dish its recipe pass resolved. outcome: 'recipe' (the whole recipe
+-- copied from the library — no research, no writer call), 'research' (the
+-- library's sources reused, the recipe written for this table), 'new'
+-- (a research call ran and was billed). Counts only; dish_key is the
+-- shared dish, not anything the household typed.
+CREATE TABLE IF NOT EXISTS recipe_library_uses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    dish_key TEXT NOT NULL DEFAULT '',
+    outcome TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_recipe_library_uses ON recipe_library_uses (household_id, created_at);
 
 -- "Every move has an owner (slice 2)", 2026-10-07: "actually I've got
 -- tonight", one tap or one sentence. A row here says who is on ONE move on

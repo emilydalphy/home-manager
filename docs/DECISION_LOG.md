@@ -13,6 +13,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Shared Recipe Library, step 1: a dish researched once serves every household**
+  (2026-10-19; branch `overnight/shared-recipe-library`, stacked on and
+  merging AFTER `overnight/research-input-budget`; tests
+  `tests/test_shared_recipe_library.py`). New tables `recipe_library` +
+  `recipe_library_sources` (no household_id — `household_deletion.SHARED_TABLES`
+  names them) and `recipe_library_uses` (per household, report counts);
+  `recipes.library_id`. One write path, `recipe_library.file_entry`, built from
+  dish fields only. The recipe pass copies the library's base (no research, no
+  writer) after the allergen gate passes for THIS household; a clash, or a
+  `must_use` dish, is written for them (library research reused, nothing
+  billed) and filed as a variant. New research is filed the moment it lands;
+  a household planning a dish another is researching right now waits for it.
+  Never filed: typed/imported recipes, `must_use` dishes, anything naming a
+  member (the writer is told names via must_not_contain), household_changes,
+  change-request text. Written-for-the-household (household_changes) and Tell
+  Pomona tweaks are variants, never the base. Sources are copied into the
+  household's own dish_research on use, so the recipe page, rewrite and link
+  checks are unchanged. `RECIPE_LIBRARY=off` restores per-household. No data
+  migration: existing recipes/research are not backfilled into the library.
 - **Recipe research: ~134K input tokens a dish down to ~16K (est.)**
   (2026-10-18; branch `overnight/research-input-budget`; tests
   `tests/test_research_input_budget.py`). The page cap held; the bill was the

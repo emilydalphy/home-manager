@@ -338,11 +338,16 @@ def save_research(name: str, sources: list[dict], method_notes: str, fallback_us
                  1 if fallback_used else 0),
             ).lastrowid
             for pos, s in enumerate(sources, start=1):
+                # link_ok / link_checked_at come along when the sources are
+                # the shared library's (recipe_library): shown as researched,
+                # a link already found gone stays hidden.
                 conn.execute(
                     "INSERT INTO recipe_sources (household_id, research_id, position, name, title, url, "
-                    "rating, rating_count, is_lead) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "rating, rating_count, is_lead, link_ok, link_checked_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (household_id(), rid, pos, s.get("name") or "", s.get("title") or "", s["url"],
-                     s.get("rating"), s.get("rating_count"), 1 if s.get("lead") else 0),
+                     s.get("rating"), s.get("rating_count"), 1 if s.get("lead") else 0,
+                     0 if s.get("link_ok") is False else 1, s.get("link_checked_at")),
                 )
     return saved_research(name)
 
