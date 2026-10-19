@@ -19853,14 +19853,180 @@
     }).join('');
     var adds = parts.filter(function (p) { return p.missing; })
       .map(function (p) { return platePartChipHtml(p, slot); }).join('');
+    // The fourth row (Emily, 2026-10-18: "an option to select that's
+    // 'share something else' where it can be a free text place"): for a
+    // change that isn't a part — "less spicy", "no cilantro", "one pan".
+    // Its box opens in this sheet, under the rows; nothing else moves.
+    rows += '<div class="plate-row">' +
+        '<span class="plate-row-role" aria-hidden="true"></span>' +
+        '<span class="plate-row-name wk-tweak-else-name">Something else</span>' +
+        '<button type="button" class="plate-row-change" id="wk-tweak-else-open" aria-expanded="false" ' +
+          'aria-controls="wk-tweak-else" aria-label="Tell me something else to change">Tell me</button>' +
+      '</div>';
     return '<h2 class="wk-swap-title" id="wk-tweak-title">Tweak</h2>' +
       '<div class="wk-tweak-head">' +
         '<p class="wk-swap-eyebrow">' + escapeHtml(slotEyebrowLabel(day, slot) + ' · ' + dayName(day.date, { weekday: 'long' })) + '</p>' +
         '<p class="wk-tweak-dish">' + escapeHtml(mealDisplayName(entry)) + '</p>' +
       '</div>' +
-      (rows ? '<div class="plate-rows">' + rows + '</div>' : '') +
+      '<div class="plate-rows">' + rows + '</div>' +
       (adds ? '<div class="plate wk-tweak-adds">' + adds + '</div>' : '') +
+      tweakElseHtml() +
       '<button type="button" class="wk-swap-quiet" id="wk-tweak-leave">Leave it as it is</button>';
+  }
+
+  // "Something else", opened: the box, the button that says what it
+  // does, and two lines that only show when there's something to say —
+  // why it couldn't be done (the box keeps the words), and the offer to
+  // remember a standing rule ("we never want cilantro").
+  function tweakElseHtml() {
+    return '<div class="wk-tweak-else" id="wk-tweak-else" hidden>' +
+      '<label class="cr-ask-label" for="wk-tweak-text">Tell me what to change</label>' +
+      '<textarea class="snw-input cr-ask" id="wk-tweak-text" rows="3" maxlength="500" ' +
+        'placeholder="Less spicy, no cilantro, all in one pan"></textarea>' +
+      '<p class="cr-ask-note" id="wk-tweak-hint" role="status" hidden></p>' +
+      '<p class="cr-said" id="wk-tweak-said" role="status" hidden></p>' +
+      '<div class="wk-tweak-done-row" id="wk-tweak-done-row" hidden>' +
+        '<p class="wk-tweak-done" id="wk-tweak-done" role="status"></p>' +
+        '<button type="button" class="plate-row-change" id="wk-tweak-undo">Put it back</button>' +
+      '</div>' +
+      '<div class="wk-tweak-remember" id="wk-tweak-remember" hidden>' +
+        '<p class="wk-tweak-remember-q">Remember this for every week?</p>' +
+        '<button type="button" class="wk-swap-else" id="wk-tweak-remember-go">Remember it</button>' +
+      '</div>' +
+      '<button type="button" class="cr-go" id="wk-tweak-go">Change it</button>' +
+    '</div>';
+  }
+
+  // The typed change goes through "Tell Pomona what to change"'s own
+  // route (POST /api/meal-recipe/rewrite — agent.rewrite_meal_recipe):
+  // this meal only, the same dish rewritten the way they asked, its
+  // shopping redone in the same transaction, the allergy gate before
+  // anything is saved, and the words filed on the meal whether or not it
+  // lands. Nothing here decides what the change means.
+  var tweakElseState = null;
+
+  function tweakElseEl(id) { return tweakSheetEl ? tweakSheetEl.querySelector('#' + id) : null; }
+
+  function tweakElseSay(id, text) {
+    var el = tweakElseEl(id);
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+
+  function openTweakElse() {
+    var box = tweakElseEl('wk-tweak-else');
+    var btn = tweakElseEl('wk-tweak-else-open');
+    if (!box) return;
+    box.hidden = false;
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+    var input = tweakElseEl('wk-tweak-text');
+    if (input) input.focus();
+  }
+
+  async function runTweakElse() {
+    var st = tweakElseState;
+    if (!st || st.busy) return;
+    var input = tweakElseEl('wk-tweak-text');
+    var go = tweakElseEl('wk-tweak-go');
+    var text = input ? String(input.value || '').trim() : '';
+    var doneRow = tweakElseEl('wk-tweak-done-row');
+    if (doneRow) doneRow.hidden = true;
+    var remember = tweakElseEl('wk-tweak-remember');
+    if (remember) remember.hidden = true;
+    // An empty box is a nudge, not a problem: plain ink, not the
+    // refusal's tint.
+    tweakElseSay('wk-tweak-said', '');
+    if (!text) {
+      tweakElseSay('wk-tweak-hint', 'Say what you’d change first.');
+      if (input) input.focus();
+      return;
+    }
+    tweakElseSay('wk-tweak-hint', '');
+    st.busy = true;
+    st.text = text;
+    if (input) input.readOnly = true;
+    if (go) { go.disabled = true; go.textContent = 'Changing it…'; }
+    var data = null;
+    var failed = '';
+    try {
+      var res = await Api.fetch('/api/meal-recipe/rewrite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entry_id: st.entryId, text: text, this_meal_only: true })
+      });
+      data = await res.json().catch(function () { return {}; });
+      // A 400's detail is a sentence written for a reader; a 5xx's is a
+      // server error, never shown — the plain line instead.
+      if (!res.ok) {
+        failed = (res.status < 500 && data && typeof data.detail === 'string' && data.detail) ||
+          'That didn’t come together — try it again.';
+      }
+    } catch (err) {
+      console.warn('The typed change failed:', err);
+      failed = 'That didn’t come together — try it again.';
+    }
+    st.busy = false;
+    // A sheet closed (or opened on another meal) while this was out: the
+    // week is still re-read below, but nothing is drawn into a sheet
+    // that's no longer this one.
+    var current = tweakElseState === st && !!tweakSheetEl && tweakSheetEl.classList.contains('is-open');
+    if (current) {
+      if (input) input.readOnly = false;
+      if (go) { go.disabled = false; go.textContent = 'Change it'; }
+    }
+    if (!failed && data && data.status === 'rewritten') {
+      if (typeof markRecentlyChanged === 'function') markRecentlyChanged(st.date, st.slot);
+      var offer = !!(data.remember_offer && current);
+      if (!offer) closeTweakSheet();
+      else {
+        // Done, and one more question: the change is made, said here
+        // with its Put it back (a toast would sit over the offer), the box
+        // is put away, and remembering it is the sheet's one thing left.
+        st.requestId = data.request_id || null;
+        tweakElseSay('wk-tweak-done', data.said || 'Changed.');
+        if (doneRow) doneRow.hidden = false;
+        var undo = tweakElseEl('wk-tweak-undo');
+        if (undo) undo.hidden = !st.requestId;
+        if (input) input.hidden = true;
+        var label = tweakSheetEl.querySelector('label[for="wk-tweak-text"]');
+        if (label) label.hidden = true;
+        if (go) go.hidden = true;
+        if (remember) remember.hidden = false;
+        var leave = tweakElseEl('wk-tweak-leave');
+        if (leave) leave.textContent = 'Just this once';
+      }
+      await crAfterChange(data.said || 'Changed.', data.request_id, offer);
+      return;
+    }
+    // The dish itself couldn't stay (a draft dish found to clash while it
+    // was written up, and re-picked): this sheet is about a meal that is
+    // gone, so it closes and the line is a toast over the new week.
+    if (!failed && data && data.status === 'replaced') {
+      closeTweakSheet();
+      showToast(data.said || 'That dish changed — have another look.');
+      var panel = panels['week'];
+      if (panel && panel.dataset && panel.dataset.built) loadWeekMenu(panel);
+      return;
+    }
+    // Not done: the reason in one line, and the words stay in the box.
+    if (!current) {
+      showToast(failed || (data && data.said) || 'That didn’t come together — try it again.');
+      return;
+    }
+    tweakElseSay('wk-tweak-said', failed || (data && data.said) || 'That didn’t come together — try it again.');
+    if (remember && data && data.remember_offer) remember.hidden = false;
+  }
+
+  // "Remember it": the chat's own memory tools, the way a reason typed in
+  // chat is remembered today (a dislike, an allergy or a note — the chat
+  // picks which), with its Remembered chip and "Not quite".
+  function rememberTweakElse() {
+    var st = tweakElseState;
+    var text = (st && st.text) || '';
+    if (!text) return;
+    closeTweakSheet();
+    openAskSheet();
+    sendAskMessage('Remember this for every week: ' + text);
   }
 
   function openTweakSheet(panel, day, slot) {
@@ -19883,6 +20049,21 @@
     });
     var leave = document.getElementById('wk-tweak-leave');
     if (leave) leave.addEventListener('click', closeTweakSheet);
+    tweakElseState = { panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, busy: false, text: '' };
+    var elseOpen = document.getElementById('wk-tweak-else-open');
+    if (elseOpen) elseOpen.addEventListener('click', openTweakElse);
+    var elseGo = document.getElementById('wk-tweak-go');
+    if (elseGo) elseGo.addEventListener('click', runTweakElse);
+    var elseRemember = document.getElementById('wk-tweak-remember-go');
+    if (elseRemember) elseRemember.addEventListener('click', rememberTweakElse);
+    var elseUndo = document.getElementById('wk-tweak-undo');
+    if (elseUndo) {
+      elseUndo.addEventListener('click', function () {
+        var rid = tweakElseState && tweakElseState.requestId;
+        closeTweakSheet();
+        if (rid) crUndo(rid);
+      });
+    }
     openSheet(tweakSheetEl, tweakScrimEl);
   }
 
@@ -30232,10 +30413,12 @@
   // After any change: the recipe on screen, the week, the list and Today
   // are all readings of what just moved, so all four are re-read. The
   // sheet closes first, so nothing lands under it.
-  async function crAfterChange(said, requestId) {
+  // `quiet`: the caller says it on its own screen, with its own Put it
+  // back (the Tweak sheet's remember offer, which a toast would cover).
+  async function crAfterChange(said, requestId, quiet) {
     closeChangeRecipeSheet();
     crState.requestId = requestId || null;
-    showToast(said, requestId ? { label: 'Put it back', onClick: function () { crUndo(requestId); } } : null);
+    if (!quiet) showToast(said, requestId ? { label: 'Put it back', onClick: function () { crUndo(requestId); } } : null);
     var panel = panels['week'];
     if (panel && panel.dataset && panel.dataset.built) await loadWeekMenu(panel);
     refreshKitchenPanel();

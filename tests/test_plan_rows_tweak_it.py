@@ -53,6 +53,7 @@ def _plate_prelude() -> str:
         + _extract_var("PLATE_NO_NAME", SHELL_JS) + "\n"
         + _extract("platePartChipHtml", SHELL_JS) + "\n"
         + _extract("tweakSheetBodyHtml", SHELL_JS) + "\n"
+        + _extract("tweakElseHtml", SHELL_JS) + "\n"
     )
 
 

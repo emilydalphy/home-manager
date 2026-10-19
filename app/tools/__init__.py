@@ -362,12 +362,18 @@ from .recipe_change import (  # noqa: F401
     change_meal_recipe,
     count_recipe_change_requests,
     mark_recipe_change_request,
+    meal_for_request,
+    reads_as_lasting,
     recent_recipe_change_requests,
     recipe_change_blocked,
     record_recipe_change_request,
     request_theme,
     rewrite_spec,
     undo_recipe_change,
+    unwritten_recipe,
+    wont_eat_added,
+    wont_eat_list,
+    wont_eat_said,
 )
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,

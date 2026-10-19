@@ -465,6 +465,36 @@ why*, not duplicating the diff.
   reached the refusal — a single night never was gated. Salmon → shrimp
   via Tweak works on main for a single night; via "Change recipe" the name
   stays "Seared Salmon…" by design (rewrite keeps the dish) — not changed.
+- **Tweak has a fourth row: "Something else" — type the change**
+  (2026-10-19; branch `overnight/tweak-something-else`; tests
+  `tests/test_tweak_something_else.py`). Emily 2026-10-18 ("share something
+  else"). Under the carb, "Other · Something else · Tell me" opens a box in
+  the same sheet ("Tell me what to change" / "Change it"), sent through
+  Change recipe's own `POST /api/meal-recipe/rewrite` — this meal (and its
+  leftover chain) only, shopping redone in the same transaction, the
+  allergy gate before any save. Not done: the reason in one line, the
+  words stay in the box. Why that route and not the chat's change card: it
+  is the existing typed-change-for-one-meal path; the card swaps dishes.
+  Two changes on that path: every non-landing outcome (error, block, no
+  recipe, another household's id) is filed ONCE as 'failed' in
+  `agent.rewrite_meal_recipe` (errors and no-recipe used to go unfiled);
+  and a draft dish whose recipe isn't written yet (details_pending) is
+  written first via `fill_in_recipe`, then changed — refusing would have
+  refused most draft meals. A standing rule (`reads_as_lasting`, a word
+  list) answers `remember_offer`; the sheet then shows the result with its
+  Put it back and "Remember this for every week?", whose button sends
+  "Remember this for every week: <words>" to the chat's memory tools.
+  Review fixes (same branch): the route takes `this_meal_only` (only the
+  Tweak sheet sends it) — a recipe other meals share (Tue + Thu tacos,
+  another week) is copied as "Chicken Tacos (Tuesday)" for this chain
+  only, its shopping alone redone, and the undo repoints the chain and
+  deletes the copy; Change recipe's own rewrite still edits in place. On
+  that path the Won't eat list goes to the writer as `keep_out` and a
+  rewrite that ADDS one is refused ("Mushrooms are on your Won't eat
+  list…"), text kept and filed. The draft write-up takes the recipe
+  pass's claim (`_claim_recipes`) and waits on another writer. Not
+  changed: "make it shrimp instead" keeps the dish's name and
+  main_protein — swapping the main ingredient belongs on the protein row.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
