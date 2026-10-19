@@ -919,6 +919,7 @@
       <div id="lunch-prep-group" hidden>
         <p class="eyebrow group-eyebrow">Prep day</p>
         <div class="chip-row" id="lunch-prep-days"></div>
+        <p class="lunch-note" id="lunch-prep-why" hidden></p>
       </div>
       <div>
         <p class="eyebrow group-eyebrow">Taking it with you</p>
@@ -1558,7 +1559,7 @@
     loadedFor = key;
     awayRanges = [];
     answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], weekday_lunches: {}, moods: [], cuisines: [], brought_over: [] };
-    lunch = { kinds: {}, prepDays: [], ready: false };
+    lunch = { kinds: {}, prepDays: [], reachAdded: [], reachedFor: null, ready: false };
     // The dropped days saved for this period by the screen before
     // 2026-09-22 (a Re-plan of an intake made then). Not shown and not
     // kept: this step has no dropped days any more (droppedList), so
@@ -2733,7 +2734,7 @@
   // Week order from Sunday — the prep-day chips, and the server's
   // weekday_lunches.PREP_WEEKDAYS.
   var PREP_WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  var lunch = { kinds: {}, prepDays: [], ready: false };
+  var lunch = { kinds: {}, prepDays: [], reachAdded: [], reachedFor: null, ready: false };
 
   function isoWeekday(iso) {
     return PREP_WEEKDAYS[new Date(iso + 'T00:00:00').getDay()];
@@ -2859,6 +2860,50 @@
       }
     });
     return PREP_WEEKDAYS.filter(function (d) { return days.indexOf(d) !== -1; });
+  }
+
+  // The prep days a prepped lunch can't do without, and the lunches each
+  // one feeds: take that day away and the lunch is past LUNCH_KEEP_DAYS of
+  // every other prep day. `among` (optional) limits it to those days — the
+  // ones ensurePrepReach added, so a day the household picked itself is
+  // never "explained". The only prep day never is (it's the household's,
+  // or the fallback). [{day, lunches: [iso, …]}] in week order.
+  function prepReachNeeds(prepDays, kinds, dates, among) {
+    var out = [];
+    PREP_WEEKDAYS.forEach(function (day) {
+      if ((prepDays || []).indexOf(day) === -1) return;
+      if (among && among.indexOf(day) === -1) return;
+      var others = prepDays.filter(function (d) { return d !== day; });
+      if (!others.length) return;   // the only prep day is never a reach day
+      var lunches = dates.filter(function (iso) {
+        if (kinds[iso] !== 'prepped') return false;
+        var found = prepDayFor(iso, prepDays);
+        if (!found || found.day !== day || found.back > LUNCH_KEEP_DAYS) return false;
+        var without = prepDayFor(iso, others);
+        return !without || without.back > LUNCH_KEEP_DAYS;
+      }).sort();
+      if (lunches.length) out.push({ day: day, lunches: lunches });
+    });
+    return out;
+  }
+
+  // Why a prep day is there that the household didn't pick (Emily,
+  // 2026-10-18), one line for all of them: "Prepped food keeps 3 days, so
+  // Friday’s lunch needs a Thursday prep." · "…, so Monday’s lunch needs a
+  // Sunday prep and Friday’s lunch needs a Thursday prep." '' for none.
+  // Kept apart from the screen so the re-plan lunch screen can say it too.
+  function prepReachSentence(needs) {
+    if (!needs || !needs.length) return '';
+    var clauses = needs.map(function (n) {
+      var names = [];
+      n.lunches.forEach(function (iso) {
+        var w = titleDay(isoWeekday(iso)) + '’s';
+        if (names.indexOf(w) === -1) names.push(w);
+      });
+      var many = n.lunches.length > 1;
+      return joinWords(names) + (many ? ' lunches need' : ' lunch needs') + ' a ' + titleDay(n.day) + ' prep';
+    });
+    return 'Prepped food keeps ' + LUNCH_KEEP_DAYS + ' days, so ' + joinClauses(clauses) + '.';
   }
 
   // What the screen opens on, when this week has no answer of its own:
@@ -2998,8 +3043,9 @@
   // first time, it opens on this week's saved answer, else the prefill.
   function reconcileLunches() {
     var dates = currentLunchDates();
+    var opening = null, saved = [];
     if (!lunch.ready) {
-      var saved = (answers.weekday_lunches && answers.weekday_lunches.days) || [];
+      saved = (answers.weekday_lunches && answers.weekday_lunches.days) || [];
       if (saved.length) {
         lunch.kinds = {};
         saved.forEach(function (d) { lunch.kinds[d.date] = d.kind; });
@@ -3016,6 +3062,7 @@
         lunch.prepDays = pre.prepDays;
       }
       lunch.ready = true;
+      opening = saved.length ? 'saved' : 'prefill';
     }
     var kept = {};
     dates.forEach(function (d) {
@@ -3023,8 +3070,44 @@
       if (kind === 'leftovers' && !lunchOk(d)) kind = 'prepped';
       kept[d] = kind;
     });
+    var key = JSON.stringify(kept);
+    var changed = key !== lunch.reachedFor;
     lunch.kinds = kept;
-    lunch.prepDays = ensurePrepReach(lunch.prepDays, lunch.kinds, dates, (data.rhythm_prep_days || [])[0]);
+    if (opening) {
+      // On open, a prep day counts as the rule's only when it isn't one of
+      // the household's own (rhythm.prep_days) and the rule would light that
+      // same day again without it. A day picked by hand on an earlier visit
+      // can't be told apart from that; it reads the same.
+      var rhythm = data.rhythm_prep_days || [];
+      lunch.reachAdded = lunch.prepDays.filter(function (d) {
+        if (rhythm.indexOf(d) !== -1) return false;
+        var without = lunch.prepDays.filter(function (x) { return x !== d; });
+        return without.length && ensurePrepReach(without, kept, dates).indexOf(d) !== -1;
+      });
+      // A saved answer opens as it was saved: a prep day the household
+      // took off stays off. Only a lunch that changed underneath it (step 2
+      // took a day out) or no prep day at all runs the rule.
+      if (opening === 'saved' && dates.every(function (d) {
+        return saved.some(function (x) { return x.date === d && x.kind === kept[d]; });
+      })) changed = false;
+    }
+    lunch.reachedFor = key;
+    // The rule runs when the lunches change, never over an unchanged answer
+    // (re-render, Back, the Same page's payload): that would put back a
+    // prep day the household tapped off.
+    if (changed || !lunch.prepDays.length) reachPrepDays(dates);
+  }
+
+  // ensurePrepReach on the screen's answer, remembering the days it adds
+  // (never the fallback for "no prep day yet" — that's no reach of 3 days).
+  function reachPrepDays(dates) {
+    var before = lunch.prepDays;
+    var fallback = (data.rhythm_prep_days || [])[0];
+    lunch.prepDays = ensurePrepReach(before, lunch.kinds, dates, fallback);
+    var first = before.length ? null : (fallback || 'sunday');
+    lunch.prepDays.forEach(function (d) {
+      if (before.indexOf(d) === -1 && d !== first && lunch.reachAdded.indexOf(d) === -1) lunch.reachAdded.push(d);
+    });
   }
 
   function lunchChip(value, label, on) {
@@ -3073,6 +3156,8 @@
       chip.addEventListener('click', function () {
         var w = chip.dataset.value;
         var i = lunch.prepDays.indexOf(w);
+        // A tap makes the day the household's own, on or off: no line for it.
+        lunch.reachAdded = lunch.reachAdded.filter(function (x) { return x !== w; });
         if (i === -1) lunch.prepDays = PREP_WEEKDAYS.filter(function (x) { return x === w || lunch.prepDays.indexOf(x) !== -1; });
         else if (lunch.prepDays.length > 1) lunch.prepDays = lunch.prepDays.filter(function (x) { return x !== w; });
         paintLunchStep();
@@ -3111,7 +3196,8 @@
   // lunch is now out of reach of every prep day.
   function takeLunchKinds(next) {
     lunch.kinds = next;
-    lunch.prepDays = ensurePrepReach(lunch.prepDays, lunch.kinds, currentLunchDates(), (data.rhythm_prep_days || [])[0]);
+    reachPrepDays(currentLunchDates());
+    lunch.reachedFor = JSON.stringify(lunchKindsIn(currentLunchDates()));
     paintLunchStep();
   }
 
@@ -3128,6 +3214,9 @@
     $('lunch-prep-group').hidden = counts.prepped < 1;
     paintChipSet($('lunch-cook-days'), function (d) { return lunch.kinds[d] === 'cooked'; });
     paintChipSet($('lunch-prep-days'), function (w) { return lunch.prepDays.indexOf(w) !== -1; });
+    var why = prepReachSentence(prepReachNeeds(lunch.prepDays, lunch.kinds, dates, lunch.reachAdded));
+    $('lunch-prep-why').textContent = why;
+    $('lunch-prep-why').hidden = !why;
     paintChipSet($('lunch-days'), function (d) { return answers.packed_lunch_days.indexOf(d) !== -1; });
     $('lunch-week').querySelectorAll('.lunch-day').forEach(function (row) {
       var d = row.dataset.date;

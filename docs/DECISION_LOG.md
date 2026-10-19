@@ -358,6 +358,22 @@ why*, not duplicating the diff.
   Volumes on a household's line add within the family; the inventory stepper
   reads "2/3 cup". Not touched: Kitchen's "running low" count reads only the
   leading number, so "1/4 cup" counts as low.
+- **An added prep day says why, in one line** (2026-10-19; branch
+  `overnight/prep-day-says-why`; tests `tests/test_weekday_lunches.py`
+  `TestTheAddedPrepDaySaysWhy`). Plan a week step 3: when `ensurePrepReach`
+  lights a prep day the household didn't pick, a `.lunch-note` under the
+  Prep day chips reads "Prepped food keeps 3 days, so Friday’s lunch needs a
+  Thursday prep." (several days, one sentence). The rule is unchanged. Why:
+  Emily's Sunday prep lit Thursday with no word (decided 2026-10-18).
+  `prepReachNeeds` + `prepReachSentence` are pure, for the re-plan lunch
+  screen to reuse. "Added" = a day the rule put in this visit, or on open a
+  day not in `rhythm.prep_days` that the rule would light again without it
+  (the only prep day never is); a chip tap makes the day the household's own
+  (no line); a day no prepped lunch still needs gets none. Review fix: the
+  rule re-ran on every render of step 3 (‹ Back, reload, the Same page's
+  payload) and put a tapped-off day back; `reconcileLunches` now runs it
+  only when the lunches change (`lunch.reachedFor`) or on a fresh prefill,
+  never over a saved answer as saved. Onboarding doesn't run the rule.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

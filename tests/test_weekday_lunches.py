@@ -435,7 +435,7 @@ def _section(qid: str) -> str:
 _FUNCS = ("isoLocal", "addDaysIso", "isoWeekday", "titleDay", "isWeekdayIso", "prevIso", "prepDayFor",
           "lunchDates", "leftoversOk", "lunchCounts", "lunchLeaving", "lunchStep", "lunchCycle",
           "ensurePrepReach", "lunchPrefill", "lunchLine", "lunchesSentence", "joinWords", "sentence",
-          "lunchUsingLine")
+          "lunchUsingLine", "prepReachNeeds", "prepReachSentence", "joinClauses")
 
 
 def _node(script: str) -> object:
@@ -628,3 +628,114 @@ class TestTheScreen:
         assert _node(f"lunchUsingLine({json.dumps(wl)})") == \
             "3 lunches prepped Sunday, 1 from dinner and 1 cooked Friday."
         assert _node("lunchUsingLine({})") == ""
+
+
+class TestTheAddedPrepDaySaysWhy:
+    """Card "when Pomona adds a prep day it tells me why, in one line"
+    (Emily, 2026-10-18): Sunday prep, Mon–Wed and Fri prepped, Thursday
+    leftovers — Friday is five days from Sunday, so Thursday lit up with no
+    word. The rule stays; one quiet line under the Prep day chips says why."""
+
+    EMILY = {WEEK[0]: "prepped", WEEK[1]: "prepped", WEEK[2]: "prepped", WEEK[3]: "leftovers",
+             WEEK[4]: "prepped"}
+
+    def _why(self, prep_days, kinds, among):
+        return _node(f"prepReachSentence(prepReachNeeds({json.dumps(prep_days)}, {json.dumps(kinds)}, "
+                     f"{json.dumps(WEEK)}, {json.dumps(among)}))")
+
+    def test_the_line_sits_under_the_prep_day_chips_in_the_quiet_style(self):
+        q3 = _section("q3")
+        group = q3[q3.index('id="lunch-prep-group"'):q3.index("Taking it with you")]
+        assert group.index('id="lunch-prep-days"') < group.index(
+            '<p class="lunch-note" id="lunch-prep-why" hidden></p>')
+
+    @_needs_node
+    def test_an_added_day_names_the_lunch_and_the_prep_day(self):
+        script = (f"(function () {{ var data = {{rhythm_prep_days: ['sunday']}}; "
+                  f"var lunch = {{kinds: {json.dumps(self.EMILY)}, prepDays: ['sunday'], reachAdded: []}}; "
+                  f"{_extract('reachPrepDays')} reachPrepDays({json.dumps(WEEK)}); return lunch; }})()")
+        got = _node(script)
+        assert got["prepDays"] == ["sunday", "thursday"]   # the rule is unchanged
+        assert got["reachAdded"] == ["thursday"]
+        assert self._why(got["prepDays"], self.EMILY, got["reachAdded"]) == \
+            "Prepped food keeps 3 days, so Friday’s lunch needs a Thursday prep."
+
+    @_needs_node
+    def test_several_added_days_are_one_sentence(self):
+        # Only Monday chosen, all five prepped: Sunday (for Monday) and Thursday
+        # (for Friday) come in.
+        kinds = {d: "prepped" for d in WEEK}
+        assert self._why(["sunday", "monday", "thursday"], kinds, ["sunday", "thursday"]) == (
+            "Prepped food keeps 3 days, so Monday’s lunch needs a Sunday prep "
+            "and Friday’s lunch needs a Thursday prep.")
+
+    @_needs_node
+    def test_no_added_day_means_no_line(self):
+        in_reach = {WEEK[0]: "prepped", WEEK[1]: "prepped", WEEK[2]: "prepped",
+                    WEEK[3]: "cooked", WEEK[4]: "cooked"}
+        assert self._why(["sunday"], in_reach, []) == ""
+        # A day the household picked itself is never explained, even when needed.
+        assert self._why(["sunday", "thursday"], self.EMILY, []) == ""
+        # Tapped off: Thursday is gone, so is the line (Friday falls back to
+        # Sunday, from the freezer — today's rule).
+        assert self._why(["sunday"], self.EMILY, ["thursday"]) == ""
+        # Friday no longer prepped: Thursday stays on, but nothing needs it.
+        cooked_friday = dict(self.EMILY, **{WEEK[4]: "cooked"})
+        assert self._why(["sunday", "thursday"], cooked_friday, ["thursday"]) == ""
+
+    @_needs_node
+    def test_the_first_prep_day_of_an_empty_answer_is_not_the_reach_rule(self):
+        script = (f"(function () {{ var data = {{rhythm_prep_days: []}}; "
+                  f"var lunch = {{kinds: {json.dumps({WEEK[0]: 'prepped'})}, prepDays: [], reachAdded: []}}; "
+                  f"{_extract('reachPrepDays')} reachPrepDays({json.dumps(WEEK[:1])}); return lunch; }})()")
+        assert _node(script) == {"kinds": {WEEK[0]: "prepped"}, "prepDays": ["sunday"], "reachAdded": []}
+
+
+class TestATappedOffPrepDayStaysOff:
+    """Review of the prep-day line: the rule re-ran on every render of step 3
+    (and inside the Same page's payload), so a Wednesday tapped off came back
+    on ‹ Back, on reload, and from "Plan this week". It now runs only when the
+    lunches change; and on open, only a day the rule would light again counts
+    as its own (the only prep day never does)."""
+
+    def _open(self, saved_days, saved_prep, rhythm, carry=None, again=1):
+        days = [{"date": d, "kind": k} for d, k in saved_days.items()]
+        wl = {"days": days, "prep_days": saved_prep} if days else {}
+        script = (
+            "(function () {"
+            f" var data = {{rhythm_prep_days: {json.dumps(rhythm)}, usual_lunch: null,"
+            f"   last_intake: {{weekday_lunches: {json.dumps(carry)}}}}};"
+            f" var answers = {{weekday_lunches: {json.dumps(wl)}}};"
+            " var lunch = {kinds: {}, prepDays: [], reachAdded: [], reachedFor: null, ready: false};"
+            f" function currentLunchDates() {{ return {json.dumps(WEEK)}; }}"
+            f" function lunchOk(d) {{ return leftoversOk(d, {json.dumps(PERIOD)}, null); }}"
+            f" {_extract('reconcileLunches')} {_extract('reachPrepDays')}"
+            f" for (var i = 0; i <= {again}; i++) reconcileLunches();"
+            " return [lunch.prepDays, prepReachSentence(prepReachNeeds(lunch.prepDays, lunch.kinds,"
+            f"   {json.dumps(WEEK)}, lunch.reachAdded))]; }})()")
+        return _node(script)
+
+    EMILY = TestTheAddedPrepDaySaysWhy.EMILY
+
+    @_needs_node
+    def test_a_saved_answer_with_the_day_tapped_off_reopens_as_saved(self):
+        # Re-rendered three times (‹ Back, Same page payload): still off, no line.
+        assert self._open(self.EMILY, ["sunday"], ["sunday"], again=3) == [["sunday"], ""]
+
+    @_needs_node
+    def test_a_saved_rule_day_reopens_with_its_line(self):
+        assert self._open(self.EMILY, ["sunday", "thursday"], ["sunday"]) == [
+            ["sunday", "thursday"], "Prepped food keeps 3 days, so Friday’s lunch needs a Thursday prep."]
+
+    @_needs_node
+    def test_the_households_only_prep_day_is_never_explained(self):
+        three = {WEEK[0]: "prepped", WEEK[1]: "prepped", WEEK[2]: "prepped", WEEK[3]: "cooked", WEEK[4]: "cooked"}
+        # No rhythm, saved Sunday (once the fallback): no line.
+        assert self._open(three, ["sunday"], []) == [["sunday"], ""]
+        # Rhythm Wednesday, last week carried Sunday only, all prepped: the rule
+        # brings in Wednesday and says so; Sunday is never "added".
+        carry = {"prep_days": ["sunday"], "kinds": {w: "prepped" for w in
+                 ("monday", "tuesday", "wednesday", "thursday", "friday")}}
+        assert self._open({}, [], ["wednesday"], carry=carry) == [
+            ["sunday", "wednesday"],
+            "Prepped food keeps 3 days, so Thursday’s and Friday’s lunches need a Wednesday prep."]
