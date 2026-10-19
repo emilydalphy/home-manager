@@ -718,30 +718,18 @@ def edit_preference(field: str, value) -> dict:
     if field not in valid_fields:
         raise ValueError(f"Unknown preference field '{field}'. Valid fields: {sorted(valid_fields)}")
 
-    # Validated rather than trusted, because nothing else enforces the range
-    # and it genuinely matters: the floor is 0, not 1 — "none, thanks" is a
+    # Validated rather than trusted, because the range genuinely matters:
+    # the floor is 0, not 1 — "none, thanks" is a
     # real answer to the setup screen's stepper — and a value above 7 would
     # be a count of distinct meals larger than the week itself.
-    if field in ("dinners_per_week", "breakfasts_per_week", "lunches_per_week", "snacks_per_week"):
-        try:
-            count = int(value)
-        except (TypeError, ValueError):
-            raise ValueError(f"{field} must be a whole number from 0 to 7.")
-        if not 0 <= count <= 7:
-            raise ValueError(f"{field} must be from 0 to 7, not {count}.")
-        value = count
-    # Snacks a DAY, so the ceiling is a day's worth of sittings rather than
+    #
+    # Snacks a DAY has its own ceiling, a day's worth of sittings rather than
     # a week's worth of distinct recipes — a different range because it is
     # a different quantity. 6 is generous on purpose; the onboarding chips
-    # offer 0-3.
-    if field == "snacks_per_day":
-        try:
-            per_day = int(value)
-        except (TypeError, ValueError):
-            raise ValueError("snacks_per_day must be a whole number from 0 to 6.")
-        if not 0 <= per_day <= 6:
-            raise ValueError(f"snacks_per_day must be from 0 to 6, not {per_day}.")
-        value = per_day
+    # offer 0-3. Both ranges are preferences.MEAL_COUNT_MAX, which the write
+    # underneath checks again for the callers that don't come through here.
+    if field in _preferences.MEAL_COUNT_MAX:
+        value = _preferences.checked_meal_count(field, value)
     # Different snack DISHES a week (2026-09-27): at least one — "none" is
     # snacks_per_day's 0, not this — and no more than a week of them.
     if field == "snack_dishes_per_week":

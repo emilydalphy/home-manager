@@ -645,6 +645,16 @@ why*, not duplicating the diff.
   weekly and Hamburger buns meat (review, same day); an
   explicit category or a told cadence still wins. Category is not stored —
   cadence only.
+- **A meal count stays inside the week whichever door it comes in by**
+  (2026-10-19; branch `overnight/meal-counts-stay-in-the-week`; tests
+  `tests/test_meal_counts_stay_in_the_week.py`). The 0-7 (snacks a day 0-6)
+  range lived only in `edit_preference`; onboarding's answers and the chat
+  tool write through `set_household_meal_preferences`, which stored what
+  arrived — POST /api/onboarding/answers with dinners 50 / breakfasts -3 /
+  snacks a day 40 was a 200 and the usual week read back "50 dinners".
+  Now `preferences.checked_meal_count` guards that write (and
+  `edit_preference` calls it, same messages); onboarding refuses with a 400
+  before any member is written.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
