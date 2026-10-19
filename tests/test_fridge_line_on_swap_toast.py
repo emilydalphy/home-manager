@@ -77,7 +77,7 @@ def test_all_four_toasts_add_the_line_and_hold_it_longer():
                  "thawToast(said, out, 6000)",
                  "thawToast(tonightNightOffSaid(out), out, 6000)",
                  # A Tweak (a plate part changed) goes through apply_pick too.
-                 "thawToast(savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS)"):
+                 "thawToast(out.over_cap_said || savedLine(choice, 'swapped in'), out, SWAP_UNDO_MS)"):
         assert call in src, call
 
 

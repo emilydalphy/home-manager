@@ -686,7 +686,8 @@ sauce, its sides, its shape. The household liked this dish; they are changing on
 - Swap the protein ingredient for the new one at the amount the new one is bought in \
 (store-bought units, plain grocery names). Change a step only where the new protein needs it \
 (a different cooking time, a different doneness, no thawing).
-- Update prep and cook minutes honestly for the new protein.
+- Update prep and cook minutes honestly for the new protein. `current_minutes` is what the dish \
+takes now: keep it unless the new protein really cooks longer or shorter in this method.
 - Set main_protein to the new protein's plain word ('beef', 'pork', 'chicken', 'vegetarian').
 - Never use anything in must_not_contain or dislikes. If the requested protein is one of them, \
 still write it — the app checks and refuses; do not substitute something else silently.
@@ -704,7 +705,8 @@ a different cut, a different pan).
 - Update the dish's name only where the OLD vegetable is actually named in it (the word itself, \
 not the whole dish); leave the rest of the name exactly as it is.
 - Repeat main_protein back exactly as it already is in the dish — the protein does not change here.
-- Update prep and cook minutes honestly for the new vegetable.
+- Update prep and cook minutes honestly for the new vegetable. `current_minutes` is what the dish \
+takes now: keep it unless the new vegetable really cooks longer or shorter in this method.
 - Never use anything in must_not_contain or dislikes.
 - The reason line is for the card: what changed, in one plain sentence, under twelve words, no \
 exclamation mark.""",
@@ -720,7 +722,8 @@ new carb needs it.
 - Update the dish's name only where the OLD carb is actually named in it (the word itself, not the \
 whole dish); leave the rest of the name exactly as it is.
 - Repeat main_protein back exactly as it already is in the dish — the protein does not change here.
-- Update prep and cook minutes honestly for the new carb.
+- Update prep and cook minutes honestly for the new carb. `current_minutes` is what the dish \
+takes now: keep it unless the new carb really cooks longer or shorter in this method.
 - Never use anything in must_not_contain or dislikes.
 - The reason line is for the card: what changed, in one plain sentence, under twelve words, no \
 exclamation mark.""",
@@ -968,6 +971,60 @@ def _recipes_list() -> list[dict]:
         return []
 
 
+def _recipe_minutes(recipe: dict | None) -> int:
+    return int((recipe or {}).get("prep_time_minutes") or 0) + int((recipe or {}).get("cook_time_minutes") or 0)
+
+
+# A protein that cooks in minutes whatever it replaces: ground or minced
+# anything, shrimp, eggs, a sliced cut, a CAN of beans. Swapped into a
+# dish, it cannot make that dish SLOWER than it was — the method is the
+# dish's, and this protein is never the slow part of it. Dried legumes
+# (a soak, an hour's simmer) and tofu (pressed first) are not on it: they
+# really can add time (review, 2026-10-19).
+_QUICK_PROTEIN = re.compile(
+    r"\b(ground|mince|minced|shrimps?|prawns?|scallops?|eggs?|sliced|strips?|crab|canned)\b", re.I)
+# A choice that says it is cooked slowly is not a quick protein, whatever
+# else it names: "slow-cooked pork shoulder with beans", "braised short rib
+# strips". The household typed a longer dish; the model's longer time is
+# the honest one.
+_SLOW_WORDS = re.compile(
+    r"\b(braised?|braising|slow|roast(ed)?|bone[- ]?in|shoulder|shank|dried|soak(ed)?|stew(ed)?|"
+    r"confit|smoked|whole)\b", re.I)
+# Long enough for "ground chicken", "canned chickpeas", "thin-sliced
+# flank steak"; a typed sentence is a dish, not a protein.
+_QUICK_CHOICE_MAX_WORDS = 4
+
+
+def _is_quick_protein(choice: str) -> bool:
+    choice = (choice or "").strip()
+    if not choice or len(choice.split()) > _QUICK_CHOICE_MAX_WORDS or _SLOW_WORDS.search(choice):
+        return False
+    return bool(_QUICK_PROTEIN.search(choice))
+
+
+def _keep_quick_time(pick: dict, recipe: dict | None, choice: str) -> None:
+    """
+    A quick-cooking protein keeps the dish's own time when the rewrite
+    says longer (Emily, 2026-10-18: Thai Basil Beef Stir-Fry, 25 minutes,
+    changed to ground chicken, came back at 55 and was refused for it —
+    ground chicken in a stir-fry cooks exactly as fast as ground beef).
+    The prompt is told the dish's time too (`current_minutes`), but a
+    prompt is a request, not a guarantee, and the figure the model invents
+    is the one the time cap and the card read. A SLOWER protein (bone-in
+    thighs, a roast) keeps the model's longer figure; a quicker figure is
+    always kept.
+    """
+    was = _recipe_minutes(recipe)
+    now = _swap_mod()._pick_minutes(pick)
+    if not was or not now or now <= was or not _is_quick_protein(choice):
+        return
+    logger.info("plate_part_change kept %s's %d minutes for %r (the rewrite said %d)",
+                (recipe or {}).get("name"), was, choice, now)
+    pick.pop("minutes", None)
+    pick["prep_time_minutes"] = (recipe or {}).get("prep_time_minutes")
+    pick["cook_time_minutes"] = (recipe or {}).get("cook_time_minutes")
+
+
 # Calm and plain, paired with its way out, and it names the state of the
 # plan (DESIGN_SYSTEM §8) — the same shape as swap_in_place.REFUSAL.
 REFUSAL = "I couldn’t make that change — the dish is as it was. Try a different protein, or tell me in the chat."
@@ -1045,6 +1102,12 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     as_diff = _can_diff(recipe, serves)
     context = _options_context(entry, recipe, role, current, whole_recipe=True)
     context[f"new_{role}"] = choice
+    # The dish's own time, so "honestly" has something to be honest
+    # against. Without it the model estimated from scratch, and a 25-minute
+    # stir-fry came back at 55 for ground chicken (2026-10-18).
+    if _recipe_minutes(recipe):
+        context["current_minutes"] = {"prep": int((recipe or {}).get("prep_time_minutes") or 0),
+                                      "cook": int((recipe or {}).get("cook_time_minutes") or 0)}
     context["serves"] = serves
     context["serves_note"] = (
         f"Write every amount for {serves} servings — the whole batch this cook makes"
@@ -1073,6 +1136,7 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     if role == "protein":
         if not (pick.get("main_protein") or "").strip():
             pick["main_protein"] = choice.lower()
+        _keep_quick_time(pick, recipe, choice)
     else:
         # The protein doesn't change on a veg/carb edit — keep the dish's
         # own, whatever the model did or didn't repeat back.
@@ -1082,9 +1146,10 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     pick["default_servings"] = serves
     # Every day's table is its own gate (swap_options._gate_all) — the
     # Friday table can be different people from Thursday's.
+    # No time cap here: the household picked this part themselves, and
+    # their own pick is never refused for time (swap_in_place.over_cap_said
+    # — the write says a night it runs past instead).
     why = next((w for w in (_swap.pick_gate(pick, e) for e in group) if w), None)
-    if not why and len(group) > 1:
-        why = _swap.cap_gate(weekly_plan_id, pick, group)
     if why:
         logger.warning("plate_part_change refused %r: %s", name, why)
         return {"status": "refused", "message": f"I left it as it was — {choice} {why}."}
@@ -1101,14 +1166,14 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     # day back together (swap_group).
     if len(group) > 1:
         out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, carry_sides=True,
-                                       correct_title=False, serves=serves)
+                                       correct_title=False, serves=serves, own_pick=True)
     else:
         # `group` (its own chain_days answer, one meal here) rather than
         # leaving apply_pick to widen for itself: a Tweak has already read
         # the chains and asked the model under that group's serves, so a
         # second read would answer the same question twice.
         out = _swap.apply_pick(weekly_plan_id, entry, pick, carry_sides=True, correct_title=False,
-                               group=group)
+                               group=group, own_pick=True)
     out["status"] = "changed"
     out["role"] = role
     out["choice"] = choice

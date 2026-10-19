@@ -299,7 +299,9 @@ def public_view(proposal: dict) -> dict:
         "status": proposal["status"],
         "rows": rows,
         "applied": [
-            {"date": a["date"], "slot": a["slot"], "entry_id": a["entry_id"], "meal": a["meal"], "replaced": a["replaced"]}
+            {"date": a["date"], "slot": a["slot"], "entry_id": a["entry_id"], "meal": a["meal"], "replaced": a["replaced"],
+             **({"over_cap_said": a["over_cap_said"], "over_cap_note": a.get("over_cap_note") or ""}
+                if a.get("over_cap_said") else {})}
             for a in proposal["applied"]
         ],
     }
@@ -345,7 +347,13 @@ def another_for_row(proposal_id: str, row_index: int, picker=None) -> dict:
             logger.warning("proposal another came back with no dish (attempt %d)", attempt)
             break
         offered.append(cand["meal_name"])
-        why = _swap.pick_gate(cand, entry) or _offer_why(cand, _swap.offer_avoidances())
+        # "Another" is POMONA's pick, not the household's ask, so it is held
+        # to every meal's time cap like Swap's own three (swap_options._gated)
+        # — and marked, so Save holds it there too (apply_proposal). The
+        # household's avoidances hold as well (merge 2026-10-19: both gates).
+        cand["by_pomona"] = True
+        why = _swap.pick_gate(cand, entry) or _offer_why(cand, _swap.offer_avoidances()) or _swap.cap_gate(
+            proposal["weekly_plan_id"], cand, _swap.fed_days(proposal["weekly_plan_id"], entry["entry_id"]) or [entry])
         if why is None:
             row["candidates"] = (row["candidates"] + [cand])[-_MAX_CANDIDATES:]
             row["chosen"] = len(row["candidates"]) - 1
@@ -445,7 +453,11 @@ def apply_proposal(proposal_id: str) -> dict:
         if entry["meal"].strip().lower() == cand["meal_name"].strip().lower():
             continue
         try:
-            result = _swap.apply_pick(plan_id, entry, cand)
+            # own_pick: a chat change is the household asking for it, so a
+            # night it runs long on is never a refusal (over_cap_said). Not
+            # a dish "Another" put on the row: that one POMONA picked, and
+            # it is held to the cap like any pick of Pomona's.
+            result = _swap.apply_pick(plan_id, entry, cand, own_pick=not cand.get("by_pomona"))
         except _weekly_plan.SlotRefused as refusal:
             # apply_pick carries its own past-night backstop, and it reads
             # the clock for itself rather than taking the one resolved
@@ -463,6 +475,11 @@ def apply_proposal(proposal_id: str) -> dict:
             "date": row["date"], "slot": row["slot"], "entry_id": result["entry_id"],
             "meal": result["meal"], "replaced": result["replaced"],
         }
+        # A night the household's pick runs long on, said once in the
+        # card's toast (changeCardSavedLine) rather than refused.
+        if result.get("over_cap_said"):
+            landed["over_cap_said"] = result["over_cap_said"]
+            landed["over_cap_note"] = result.get("over_cap_note") or ""
         applied.append(dict(landed, day=result.get("day")))
         # Recorded as each row lands, not after the loop: if a later row
         # raises, the card's Undo can still put back the ones that did.

@@ -257,23 +257,24 @@ def test_the_weeknight_limit_counts_as_a_cap(home):
     assert ask.contexts[0]["max_minutes"] == (30 if on_a_weeknight else None)
 
 
-def test_a_pick_over_fridays_cap_is_refused_and_nothing_is_written(home):
+def test_a_pick_over_fridays_cap_goes_on_and_says_so(home):
+    # Was "…is refused and nothing is written" until 2026-10-18 (Emily: "If
+    # I ask for chicken it should let me do it"): the pick the household
+    # TAPPED is theirs, so a day it runs past is a line, not a refusal.
     _separate_cooks(home, slot="dinner")
     entry_id = _id(home, D1, "dinner")
     tools.swap_options(home, entry_id, asker=_asker(_long()), whole_dish=True)
     # The second day became a rush night after the sheet opened: the
-    # 35-minute pick is still on offer, and the tap holds every day to its
-    # own cap.
+    # 35-minute pick is still on offer.
     tools.save_week_intake(START, night_tags={D2: ["rush"]})
     out = tools.choose_swap_option(home, entry_id, 0, whole_dish=True)
     weekday = datetime.date.fromisoformat(D2).strftime("%A")
-    assert out["status"] == "refused"
-    assert out["message"] == f"I left it as it was — {NEW} takes 35 minutes, and {weekday} only has {_rush()}."
-    assert _meals(home, "dinner") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
-    assert NEW not in {r["name"] for r in tools.list_recipes()}, "no recipe saved either"
+    assert out["status"] == "swapped"
+    assert out["said"].endswith(f"It runs about 35 minutes, a bit over {weekday}’s {_rush()}.")
+    assert _meals(home, "dinner") == {PAST: SHRIMP, D1: NEW, D2: NEW}
 
 
-def test_a_written_out_recipe_that_runs_long_is_refused_too(home):
+def test_a_written_out_recipe_that_runs_long_goes_on_too(home):
     _separate_cooks(home, slot="dinner")
     tools.save_week_intake(START, night_tags={D2: ["rush"]})
     conn = get_conn()
@@ -286,8 +287,8 @@ def test_a_written_out_recipe_that_runs_long_is_refused_too(home):
     assert [o["meal"] for o in opened["options"]] == ["Quick Noodles"]
     long = dict(_long("Quick Noodles"), prep_time_minutes=15, cook_time_minutes=30)
     out = tools.choose_swap_option(home, entry_id, 0, whole_dish=True, writer=lambda ctx, pick: long)
-    assert out["status"] == "refused" and "takes 45 minutes" in out["message"]
-    assert _meals(home, "dinner") == {PAST: SHRIMP, D1: SHRIMP, D2: SHRIMP}
+    assert out["status"] == "swapped" and "runs about 45 minutes" in out["said"]
+    assert _meals(home, "dinner") == {PAST: SHRIMP, D1: "Quick Noodles", D2: "Quick Noodles"}
 
 
 def test_apply_pick_to_days_refuses_a_day_over_its_cap_as_the_backstop(home):

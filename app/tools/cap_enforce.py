@@ -10,6 +10,9 @@ enforced nowhere in between. The swap door has held it since 2026-09-22
 (swap_in_place.cap_gate refuses a pick in the app's own words — "I left it
 as it was — X takes 35 minutes, and Friday only has 20"); generation did
 not. One door held the household's constraint and the other did not.
+(Since 2026-10-18 cap_gate holds only what POMONA picks: a dish the
+household chose themselves goes on with a line instead —
+swap_in_place.over_cap_said.)
 
 This module is the enforcement. `time_caps` holds the RULE — what a cap is
 for one meal — and imports nothing from the app so every reader can use it;
