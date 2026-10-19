@@ -6508,6 +6508,82 @@ button.cook-ready-row { cursor: pointer; }
   margin-left: 8px;
 }
 
+/* A store's hours (2026-10-19): one quiet line under the name — the
+   store count's ink and size, with "Add" in the quiet-link apricot ink
+   (.wwk-invite-again's) — opening an editor in place. The line is the
+   whole tap target, at 44px (Rule 6). The editor is a two-column grid,
+   Opens | Closes, and in "Different on some days" a day label before and
+   the Closed chip after, so seven rows fit a phone without wrapping. */
+.wwk-hours-line {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: -8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-inactive);
+}
+.wwk-hours-label { font-weight: 700; }
+.wwk-hours-said { color: var(--ink); }
+.wwk-hours-add { font-weight: 700; color: var(--apricot-label); }
+.wwk-hours-line:hover .wwk-hours-add { color: var(--apricot-label-hover); }
+.wwk-hours-edit { display: flex; flex-direction: column; gap: 10px; }
+.wwk-hours-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+  align-items: center;
+}
+.wwk-hours-grid.is-days { grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) auto; }
+.wwk-hours-head {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-inactive);
+}
+.wwk-hours-day {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.wwk-hours-time {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 8px;
+  font-size: 14px;
+}
+/* Seven rows on a phone: the Closed chip and the time fields give up
+   their side padding, and the picker glyph goes (a tap on the field still
+   opens the picker on a phone) so "05:30 PM" is never clipped at 390px. */
+.wwk-hours-grid.is-days .wwk-hours-time { padding: 0 6px; }
+.wwk-hours-grid.is-days .wwk-hours-time::-webkit-calendar-picker-indicator { display: none; }
+.wwk-hours-grid.is-days .wwk-chip { padding-left: 10px; padding-right: 10px; }
+.wwk-hours-holidays {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.wwk-hours-holidays input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--ink-strong);
+  cursor: pointer;
+}
+
 /* Who's here's household-level "Anything else" (declutter, 2026-09-25):
    set off from the last person the same way one person is set off from
    the next (.wwk-person + .wwk-person), and labelled with the sheet's

@@ -581,6 +581,27 @@ why*, not duplicating the diff.
   "Vineeth made…"; NULL (nobody picked) is told to nobody. A PWA back after
   30+ min hidden is a new open (visibilitychange → `?look=1`); the stamp is
   MAX'd so it never moves back; "and N more" focuses the first new row.
+- **Store hours: a quiet "Hours · Add" line per store, used only when they
+  change the shop line** (2026-10-19; branch `overnight/store-hours`; tests
+  `tests/test_store_hours.py`). One fact per store in
+  `meal_preferences.store_hours_json` beside usual_stores (day absent =
+  unknown, never closed; `stores.open_window`, `hours_summary`). Today's
+  timed shop (`moves._hours_line`): closes first → "by 5:30 · Farm Boy
+  closes at 5:30" (window_end moves); shut → "Farm Boy's closed now — opens
+  8:00 tomorrow"; overdue after 4 pm → "still to do · … open till 9:00";
+  cook tomorrow and the store doesn't open in time → tonight's close. The
+  breakfast "by 5:00" card's option 3 is this same line (a 5 a.m. start
+  before opening reads "closed now — opens 8:00"). One stop: the move's
+  detail (so the morning text); two: each stop row ("Closes at 5:30").
+  Untagged list → first usual store. Shop-day line gains "· Farm Boy's
+  closed Sundays". Chat reads `store_hours_summary` / `store_open_now` off
+  get_household_memory (no new tool). Dropping a store drops its hours.
+  ASSUMPTION, Emily's to move: "late in the day" is 16:00. Review
+  follow-up: windows are datetimes, so 08:00–01:00 runs into the next
+  morning and yesterday's spill-over counts; 00:00 is "midnight",
+  00:00–00:00 "Open 24 hours"; the editor starts blank (a pre-filled 8–9
+  was one tap from invented hours); hours only for a usual store, name
+  capped at 80; "Clear hours" in the editor.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

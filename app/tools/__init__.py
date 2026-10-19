@@ -727,11 +727,15 @@ from .stores import (  # noqa: F401
     close_shopping_trip,
     get_grocery_list_by_store,
     get_item_store_preferences,
+    get_store_hours,
     get_stores,
+    hours_summary,
     is_multi_store_household,
+    open_window,
     set_grocery_item_store,
     set_grocery_items_stores,
     set_item_store,
+    set_store_hours,
 )
 from .taste_verdict import (  # noqa: F401
     conflict_sentence,

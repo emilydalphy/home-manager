@@ -2363,6 +2363,29 @@ def remove_memory_store_item(req: StoreTypicalItemRemoveRequest):
     return memory
 
 
+class StoreHoursRequest(BaseModel):
+    # One of the household's usual stores (set_store_hours checks); capped
+    # because the name is read into the chat's context with the hours.
+    store: str = Field(min_length=1, max_length=80)
+    # {"days": {"mon": ["08:00", "21:00"], "sun": "closed", ...},
+    #  "closed_on_holidays": false} — or null / {} to forget them.
+    hours: dict | None = None
+
+
+@app.post("/api/memory/store-hours")
+def set_memory_store_hours(req: StoreHoursRequest):
+    """Save one store's opening hours, from Preferences › Stores' "Hours" editor (see stores.set_store_hours)."""
+    try:
+        tools.set_store_hours(req.store, req.hours)
+        memory = tools.get_household_memory_for_display()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Saving store hours failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
 @app.post("/api/memory/stores-prompt-dismiss")
 def dismiss_stores_prompt_view():
     """Quietly persist a decline of the Grocery tab's 'Where do you usually shop?' first-visit card — see tools.dismiss_stores_prompt."""

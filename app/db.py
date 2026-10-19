@@ -883,6 +883,13 @@ _MIGRATIONS = [
     # Who tapped a credited tick, beside its owner — see schema.sql's
     # move_credits. NULL on every existing credit: nobody recorded it.
     ("move_credits", "ticked_by_member_id", "INTEGER"),
+    # Each usual store's opening hours (2026-10-19, "Shop: know the hours
+    # of my preferred stores") — {store name: hours}, see stores.py's
+    # "opening hours" section. Kept beside usual_stores_json and
+    # store_typical_items_json because it is the same kind of fact and the
+    # chat already reads those through get_household_memory. '{}' on every
+    # existing household: a store with no hours behaves as it always has.
+    ("meal_preferences", "store_hours_json", "TEXT NOT NULL DEFAULT '{}'"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

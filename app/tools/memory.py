@@ -213,6 +213,57 @@ def delete_fact(fact_id: int) -> dict:
     return {"id": fact_id, "deleted": True}
 
 
+def _store_hours_payload(prefs) -> dict:
+    try:
+        raw = json.loads(prefs["store_hours_json"]) if prefs else {}
+    except (TypeError, ValueError, IndexError, KeyError):
+        return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def _store_hours_lines(prefs) -> dict:
+    """{store: "8–9, closed Sun"} — Preferences › Stores' line under each
+    name (stores.hours_summary, the one implementation; the screen draws
+    what this says) and the chat's answer to "what are Costco's hours?"."""
+    from . import stores as _stores
+    out = {}
+    for name, h in _store_hours_payload(prefs).items():
+        try:
+            line = _stores.hours_summary(h)
+        except Exception:
+            continue
+        if line:
+            out[name] = line
+    return out
+
+
+def _store_open_now(prefs) -> dict:
+    """{store: "open till 9:00" | "closed — opens 8:00 tomorrow"} on the
+    household's clock, so the chat can answer "is Costco open?" off this
+    one read with no new tool. Read only when some store has hours — a
+    household that never set any pays nothing — and never raises: this is
+    inside the What we know read."""
+    from . import stores as _stores
+    from . import cooker as _cooker
+    hours = _store_hours_payload(prefs)
+    if not hours:
+        return {}
+    try:
+        now = _cooker.household_now()
+    except Exception:
+        return {}
+    out = {}
+    cache: dict = {}
+    for name in hours:
+        try:
+            state = _stores.open_now_said(name, now, hours, cache)
+        except Exception:
+            continue
+        if state:
+            out[name] = state
+    return out
+
+
 def get_household_memory_for_display() -> dict:
     """
     get_household_memory, for the screens that SHOW the household (What we
@@ -390,6 +441,13 @@ def get_household_memory() -> dict:
         "usual_stores": usual_stores,
         "stores_prompt_dismissed": stores_prompt_dismissed,
         "store_typical_items": json.loads(prefs["store_typical_items_json"]) if prefs else {},
+        # Opening hours (2026-10-19): the raw shape for Preferences › Stores'
+        # editor, and the said-aloud line per store — with whether it is
+        # open right now on the household's clock — so the chat can answer
+        # "is Costco open?" off this one read, no new tool.
+        "store_hours": _store_hours_payload(prefs),
+        "store_hours_summary": _store_hours_lines(prefs),
+        "store_open_now": _store_open_now(prefs),
         "eating_style": eating_style,
         "dinners_per_week": prefs["dinners_per_week"] if prefs else 7,
         "breakfasts_per_week": prefs["breakfasts_per_week"] if prefs else 7,
@@ -792,7 +850,7 @@ def edit_preference(field: str, value) -> dict:
     if field == "usual_stores":
         with write() as conn:
             before = conn.execute(
-                "SELECT usual_stores_json, store_typical_items_json FROM meal_preferences WHERE household_id = ?",
+                "SELECT usual_stores_json, store_typical_items_json, store_hours_json FROM meal_preferences WHERE household_id = ?",
                 (household_id(),),
             ).fetchone()
             conn.execute(
@@ -833,6 +891,14 @@ def edit_preference(field: str, value) -> dict:
                     conn.execute(
                         "UPDATE meal_preferences SET store_typical_items_json = ? WHERE household_id = ?",
                         (json.dumps(pruned), household_id()),
+                    )
+                # The dropped store's hours with it (see delete_preference).
+                store_hours = _store_hours_payload(before)
+                kept_hours = {k: v for k, v in store_hours.items() if k.strip().lower() not in dropped}
+                if kept_hours != store_hours:
+                    conn.execute(
+                        "UPDATE meal_preferences SET store_hours_json = ? WHERE household_id = ?",
+                        (json.dumps(kept_hours), household_id()),
                     )
         return {"usual_stores": value}
     if field == "cuisine_preferences":
@@ -933,9 +999,13 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             # grocery list for a store the household no longer shops at.
             store_items = json.loads(existing["store_typical_items_json"])
             store_items = {k: v for k, v in store_items.items() if k.lower() != (item or "").lower()}
+            # Its hours go too, for the same reason: a store nobody shops at
+            # must not keep putting "closes at 5:30" on Today.
+            store_hours = _store_hours_payload(existing)
+            store_hours = {k: v for k, v in store_hours.items() if k.lower() != (item or "").lower()}
             conn.execute(
-                "UPDATE meal_preferences SET usual_stores_json = ?, store_typical_items_json = ?, updated_at = datetime('now') WHERE household_id = ?",
-                (json.dumps(updated), json.dumps(store_items), household_id()),
+                "UPDATE meal_preferences SET usual_stores_json = ?, store_typical_items_json = ?, store_hours_json = ?, updated_at = datetime('now') WHERE household_id = ?",
+                (json.dumps(updated), json.dumps(store_items), json.dumps(store_hours), household_id()),
             )
         elif field == "protein_preferences":
             # Same reasoning as the _as_str_list guards just above: a legacy

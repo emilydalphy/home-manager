@@ -4,7 +4,8 @@ Stores, per-item store preferences, and shopping trips.
 from __future__ import annotations
 
 import json
-from ..db import get_conn
+from datetime import date, datetime, time, timedelta
+from ..db import get_conn, write
 from ._shared import household_id
 from .grocery import _merge_key
 from . import grocery as _grocery
@@ -464,3 +465,387 @@ def close_shopping_trip(store: str, item_count: int = 0) -> dict:
     conn.commit()
     conn.close()
     return {"store": store, "item_count": item_count}
+
+
+# ---------- opening hours ----------
+#
+# Loop Board "Shop: know the hours of my preferred stores when suggesting
+# when to shop" (Emily, 2026-10-18: "Yes to all"). One stored fact per
+# store, kept beside the household's other store facts (usual_stores,
+# store_typical_items) in meal_preferences.store_hours_json, keyed by the
+# store's name as it is on usual_stores:
+#
+#     {"Farm Boy": {"days": {"mon": ["08:00", "21:00"], ..., "sun": "closed"},
+#                   "closed_on_holidays": false}}
+#
+# A day that is absent is UNKNOWN, never closed — nothing in the editor is
+# required, and a store with no hours behaves exactly as it did before this
+# existed. Only an explicit "closed" is closed.
+#
+# A close at or before the open runs into the NEXT morning: "08:00"–"01:00"
+# is open till one a.m., "08:00"–"00:00" till midnight, and "00:00"–"00:00"
+# is open 24 hours. So a window is a pair of datetimes, not times, and
+# "is it open at 12:30 a.m. Tuesday?" asks Monday's window as well as
+# Tuesday's (window_at).
+
+HOURS_DAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+_DAY_SHORT = {"mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun"}
+_DAY_PLURAL = {"mon": "Mondays", "tue": "Tuesdays", "wed": "Wednesdays", "thu": "Thursdays",
+               "fri": "Fridays", "sat": "Saturdays", "sun": "Sundays"}
+# A day key as a person or a model might write it: "mon" or "monday", any
+# case. Nothing looser — "monkey" is not Monday.
+_DAY_KEYS = {**{d: d for d in HOURS_DAYS},
+             **{full: full[:3] for full in ("monday", "tuesday", "wednesday", "thursday",
+                                            "friday", "saturday", "sunday")}}
+MAX_STORE_NAME = 80
+
+
+def _hhmm(value) -> str:
+    """'8:00', '08:00', '20:30' -> 'HH:MM'; anything else raises ValueError."""
+    text = str(value or "").strip()
+    try:
+        parsed = datetime.strptime(text, "%H:%M").time()
+    except ValueError:
+        raise ValueError(f"'{value}' isn't a time — use 24-hour HH:MM, like 08:00 or 21:00.")
+    return f"{parsed.hour:02d}:{parsed.minute:02d}"
+
+
+def _clean_hours(hours) -> dict | None:
+    """The stored shape, validated. Empty (no day known, holidays off) is None:
+    a store with nothing set has no hours row at all, not an empty one."""
+    if not hours:
+        return None
+    if not isinstance(hours, dict):
+        raise ValueError("Hours must be an object with 'days'.")
+    days_in = hours.get("days") or {}
+    if not isinstance(days_in, dict):
+        raise ValueError("'days' must map mon..sun to [opens, closes] or 'closed'.")
+    days: dict = {}
+    for key, value in days_in.items():
+        day = _DAY_KEYS.get(str(key).strip().lower())
+        if day is None:
+            raise ValueError(f"'{key}' isn't a day of the week.")
+        if value in (None, "", []):
+            continue  # unknown, which is the same as not saying
+        if value == "closed":
+            days[day] = "closed"
+            continue
+        if not isinstance(value, (list, tuple)) or len(value) != 2:
+            raise ValueError(f"{_DAY_SHORT[day]}: give an opening and a closing time.")
+        opens, closes = _hhmm(value[0]), _hhmm(value[1])
+        # Equal times are only ever "open 24 hours", said as 00:00–00:00.
+        if opens == closes and opens != "00:00":
+            raise ValueError(f"{_DAY_SHORT[day]}: for open all day, use 00:00 to 00:00.")
+        days[day] = [opens, closes]
+    holidays = hours.get("closed_on_holidays") is True
+    if not days and not holidays:
+        return None
+    return {"days": {d: days[d] for d in HOURS_DAYS if d in days}, "closed_on_holidays": holidays}
+
+
+def _read_store_hours(conn) -> dict:
+    row = conn.execute(
+        "SELECT store_hours_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+    ).fetchone()
+    try:
+        raw = json.loads(row["store_hours_json"]) if row else {}
+    except (TypeError, ValueError):
+        raw = {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def _usual_stores(conn) -> list[str]:
+    row = conn.execute(
+        "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
+    ).fetchone()
+    try:
+        names = json.loads(row["usual_stores_json"]) if row else []
+    except (TypeError, ValueError):
+        names = []
+    if not isinstance(names, list):
+        return []
+    return [n.strip() for n in names if isinstance(n, str) and n.strip()]
+
+
+def get_store_hours() -> dict:
+    """Every store's saved hours, {name: hours} — see the shape above."""
+    conn = get_conn()
+    try:
+        return _read_store_hours(conn)
+    finally:
+        conn.close()
+
+
+def set_store_hours(store: str, hours: dict | None) -> dict:
+    """
+    Save (or, with nothing in it, forget) one store's opening hours.
+    Replaces that store's whole entry: the editor always sends all of it,
+    which is what lets "Different on some days" going back to "Same every
+    day" drop the day rows it no longer shows.
+
+    Only for one of the household's usual stores (matched any case, saved
+    under the usual-stores spelling). Hours are read into the chat's
+    context, so an arbitrary name of any length must not get in that way.
+    """
+    name = (store or "").strip()
+    if not name:
+        raise ValueError("Which store?")
+    if len(name) > MAX_STORE_NAME:
+        raise ValueError("That store name is too long.")
+    cleaned = _clean_hours(hours)
+    with write() as conn:
+        usual = {n.lower(): n for n in _usual_stores(conn)}
+        if name.lower() not in usual:
+            raise ValueError(f"{name} isn't one of your stores yet — add it first.")
+        name = usual[name.lower()]
+        current = _read_store_hours(conn)
+        # One entry per store, whatever case it was saved under — the same
+        # case-insensitive identity add_usual_stores merges on.
+        current = {k: v for k, v in current.items() if k.strip().lower() != name.lower()}
+        if cleaned:
+            current[name] = cleaned
+        conn.execute(
+            """
+            INSERT INTO meal_preferences (household_id, store_hours_json, updated_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(household_id) DO UPDATE SET store_hours_json = excluded.store_hours_json, updated_at = datetime('now')
+            """,
+            (household_id(), json.dumps(current)),
+        )
+    _household._log_preference_event("store_hours", "write" if cleaned else "delete")
+    return {"store": name, "hours": cleaned}
+
+
+def hours_for(store: str, all_hours: dict | None = None) -> dict | None:
+    """One store's hours, matched case-insensitively, or None."""
+    name = (store or "").strip().lower()
+    if not name:
+        return None
+    table = all_hours if all_hours is not None else get_store_hours()
+    for key, value in table.items():
+        if key.strip().lower() == name and isinstance(value, dict):
+            return value
+    return None
+
+
+def _is_holiday(day: date, cache: dict | None = None) -> bool:
+    """`cache` (a dict the caller keeps for one render) saves asking the
+    holidays module — region, rule table, calendar — once per day per store
+    per walk of next_opening."""
+    if cache is not None and day in cache:
+        return cache[day]
+    from . import holidays as _holidays  # call time: holidays reaches back into the plan
+    try:
+        found = _holidays.holiday_on(day.isoformat()) is not None
+    except Exception:
+        found = False
+    if cache is not None:
+        cache[day] = found
+    return found
+
+
+def open_window(store: str, day: date, all_hours: dict | None = None, cache: dict | None = None) -> dict | None:
+    """
+    The window that OPENS on `day`, as far as the household has said:
+
+      None                          — not known (no hours, or not that day):
+                                      every caller says what it said before
+      {"closed": True, "holiday": bool}
+      {"opens": datetime, "closes": datetime, "all_day": bool}
+                                    — closes may be the next calendar day
+                                      (after-midnight, midnight, 24 hours)
+
+    "Closed on holidays" counts on the dates the holidays module already
+    knows (its rule table for the household's region, plus holiday-looking
+    events on its calendar) — no real holiday hours in this slice.
+    """
+    hours = hours_for(store, all_hours)
+    if not hours:
+        return None
+    if hours.get("closed_on_holidays") is True and _is_holiday(day, cache):
+        return {"closed": True, "holiday": True}
+    value = (hours.get("days") or {}).get(HOURS_DAYS[day.weekday()])
+    if value == "closed":
+        return {"closed": True, "holiday": False}
+    if not isinstance(value, list) or len(value) != 2:
+        return None
+    try:
+        o = datetime.strptime(value[0], "%H:%M").time()
+        c = datetime.strptime(value[1], "%H:%M").time()
+    except (TypeError, ValueError):
+        return None
+    opens = datetime.combine(day, o)
+    closes = datetime.combine(day, c)
+    if closes <= opens:
+        closes += timedelta(days=1)
+    return {"opens": opens, "closes": closes, "all_day": o == c}
+
+
+def window_at(store: str, moment: datetime, all_hours: dict | None = None, cache: dict | None = None):
+    """
+    Is `store` open at `moment`? ("open", window) | ("closed", None) |
+    ("unknown", None). Yesterday's window counts: a store open till 1 a.m.
+    is open at 12:30 a.m. the next day.
+    """
+    today = open_window(store, moment.date(), all_hours, cache)
+    yesterday = open_window(store, moment.date() - timedelta(days=1), all_hours, cache)
+    for w in (yesterday, today):
+        if w and not w.get("closed") and w["opens"] <= moment < w["closes"]:
+            return "open", w
+    if today is None:
+        return "unknown", None
+    return "closed", None
+
+
+def closed_on_weekday(store: str, weekday: str, all_hours: dict | None = None) -> bool:
+    """True only when the household said the store is closed that weekday."""
+    hours = hours_for(store, all_hours)
+    return bool(hours) and (hours.get("days") or {}).get((weekday or "").strip().lower()[:3]) == "closed"
+
+
+def _short_clock(hhmm: str) -> str:
+    """'08:00' -> '8', '20:30' -> '8:30', '00:00' -> 'midnight' — the
+    editor's line and the chat's, where am/pm is plain from context ("8–9")."""
+    h, m = (int(x) for x in hhmm.split(":"))
+    if h == 0 and m == 0:
+        return "midnight"
+    hour = h % 12 or 12
+    return f"{hour}" if m == 0 else f"{hour}:{m:02d}"
+
+
+def _span(value) -> str:
+    if value[0] == value[1]:
+        return "24 hours"
+    return f"{_short_clock(value[0])}–{_short_clock(value[1])}"
+
+
+def _day_ranges(days: list[str]) -> str:
+    """['mon','tue','wed','sat'] -> 'Mon–Wed, Sat'."""
+    idx = sorted(HOURS_DAYS.index(d) for d in days)
+    runs, start, prev = [], None, None
+    for i in idx:
+        if start is None:
+            start = prev = i
+        elif i == prev + 1:
+            prev = i
+        else:
+            runs.append((start, prev)); start = prev = i
+    if start is not None:
+        runs.append((start, prev))
+    out = []
+    for a, b in runs:
+        if a == b:
+            out.append(_DAY_SHORT[HOURS_DAYS[a]])
+        elif b == a + 1:
+            out.append(f"{_DAY_SHORT[HOURS_DAYS[a]]}, {_DAY_SHORT[HOURS_DAYS[b]]}")
+        else:
+            out.append(f"{_DAY_SHORT[HOURS_DAYS[a]]}–{_DAY_SHORT[HOURS_DAYS[b]]}")
+    return ", ".join(out)
+
+
+def hours_summary(hours: dict | None) -> str:
+    """
+    The one quiet line under a store's name in Preferences, and what the
+    chat reads: "8–9 every day", "8–9, Sun 10–6", "8–9, closed Sun",
+    "8–midnight every day", "Open 24 hours". '' when nothing is set. The
+    most common hours are the base; every other day is said after it. The
+    only implementation: the screen draws what get_household_memory's
+    store_hours_summary carries.
+    """
+    if not hours:
+        return ""
+    days = hours.get("days") or {}
+    open_days = {d: tuple(v) for d, v in days.items() if isinstance(v, list)}
+    closed = [d for d in HOURS_DAYS if days.get(d) == "closed"]
+    parts: list[str] = []
+    if open_days:
+        counts: dict = {}
+        for d in HOURS_DAYS:
+            if d in open_days:
+                counts[open_days[d]] = counts.get(open_days[d], 0) + 1
+        base = max(counts, key=lambda k: counts[k])  # first-seen wins a tie (dict order)
+        base_days = [d for d in HOURS_DAYS if open_days.get(d) == base]
+        if len(base_days) == 7:
+            parts.append("Open 24 hours" if base[0] == base[1] else f"{_span(base)} every day")
+        elif len(base_days) + len(closed) + sum(1 for d in open_days if open_days[d] != base) == 7:
+            parts.append(_span(base))  # every day known: the base needs no days named
+        else:
+            parts.append(f"{_span(base)} {_day_ranges(base_days)}")
+        for d in HOURS_DAYS:
+            if d in open_days and open_days[d] != base:
+                parts.append(f"{_DAY_SHORT[d]} {_span(open_days[d])}")
+    if closed:
+        parts.append(f"closed {_day_ranges(closed)}" if open_days else f"Closed {_day_ranges(closed)}")
+    line = ", ".join(parts)
+    if hours.get("closed_on_holidays") is True:
+        line = f"{line} · closed on holidays" if line else "Closed on holidays"
+    return line
+
+
+def say_clock(t) -> str:
+    """"8:00", "5:30", "noon", "midnight" — moves._clock's way of saying a
+    time, plus the midnight close only a store has. Takes a time or a
+    datetime."""
+    if isinstance(t, datetime):
+        t = t.time()
+    if t.hour == 0 and t.minute == 0:
+        return "midnight"
+    if t.hour == 12 and t.minute == 0:
+        return "noon"
+    return f"{t.hour % 12 or 12}:{t.minute:02d}"
+
+
+def next_opening(store: str, after: datetime, all_hours: dict | None = None,
+                 cache: dict | None = None, days: int = 7) -> dict | None:
+    """The next window that opens after `after`, within a week — or None
+    when the hours on record can't say (an unknown day is never skipped
+    past to a known one)."""
+    for offset in range(0, days + 1):
+        w = open_window(store, after.date() + timedelta(days=offset), all_hours, cache)
+        if w is None:
+            return None
+        if w.get("closed") or w["opens"] <= after:
+            continue
+        return w
+
+
+def opens_said(opens: datetime, today: date) -> str:
+    """"opens 8:00", "opens 8:00 tomorrow", "opens 10:00 Monday"."""
+    when = say_clock(opens)
+    if opens.date() == today:
+        return f"opens {when}"
+    if opens.date() == today + timedelta(days=1):
+        return f"opens {when} tomorrow"
+    return f"opens {when} {opens.strftime('%A')}"
+
+
+def open_now_said(store: str, now: datetime, all_hours: dict | None = None, cache: dict | None = None) -> str:
+    """"open till 9:00", "open 24 hours", "closed — opens 8:00 tomorrow",
+    or '' when the hours on record don't cover now. The chat's answer to
+    "is it open?"."""
+    state, w = window_at(store, now, all_hours, cache)
+    if state == "unknown":
+        return ""
+    if state == "open":
+        return "open 24 hours" if w["all_day"] else f"open till {say_clock(w['closes'])}"
+    today = open_window(store, now.date(), all_hours, cache)
+    why = " for the holiday" if today and today.get("closed") and today.get("holiday") else ""
+    nxt = next_opening(store, now, all_hours, cache)
+    return f"closed{why} — {opens_said(nxt['opens'], now.date())}" if nxt else f"closed{why}"
+
+
+def first_usual_store() -> str | None:
+    """The household's first usual store — whose hours an untagged list
+    goes by (the card: "untagged list → household's first store")."""
+    conn = get_conn()
+    try:
+        names = _usual_stores(conn)
+    finally:
+        conn.close()
+    return names[0] if names else None
+
+
+def possessive_is(name: str) -> str:
+    """"Farm Boy's" for "Farm Boy is"; "Loblaws is" where an apostrophe-s
+    would read as a typo."""
+    return f"{name} is" if name.lower().endswith("s") else f"{name}'s"
