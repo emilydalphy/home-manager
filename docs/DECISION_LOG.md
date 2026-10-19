@@ -633,6 +633,18 @@ why*, not duplicating the diff.
   ("dairy, but oat milk is fine" then blocked nothing) and inside phrases
   ("no oat milk" held back oat pancakes with butter). Known gap, as on main:
   with "oat milk is fine", plain milk itself passes.
+- **A regular typed by name starts on its food's rhythm** (2026-10-19;
+  branch `overnight/milk-is-weekly`; tests
+  `tests/test_staple_cadence_from_the_name.py`). Before you shop's "Add a
+  regular" and What we know's Regulars send only the name, so the staple is
+  "other" and `_default_cadence` gave the catch-all 21: "Milk — about every
+  3 weeks". An "other" staple now takes its default from the name via the
+  card's own whole-word `_name_section_food` (Fridge basics 7, its meat
+  words 14, Pantry/unknown 21), so the rhythm agrees with the section shown
+  — not `recipe_import.guess_category`, whose substrings made Peanut butter
+  weekly and Hamburger buns meat (review, same day); an
+  explicit category or a told cadence still wins. Category is not stored —
+  cadence only.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
