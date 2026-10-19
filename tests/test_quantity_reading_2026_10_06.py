@@ -22,8 +22,8 @@ def test_count_items_round_up_to_whole_numbers(raw, expected):
 
 @pytest.mark.parametrize("raw,expected", [
     ("4.125 cups", "4 cups"),      # no eighths
-    ("4.4 cups", "4.33 cups"),     # thirds are allowed
-    ("2.5 cups", "2.5 cups"), ("0.75 cup", "0.75 cup"), ("2.1 cups", "2 cups"),
+    ("4.4 cups", "4 1/3 cups"),    # thirds are allowed; cups read as a measuring cup (2026-10-18)
+    ("2.5 cups", "2 1/2 cups"), ("0.75 cup", "3/4 cup"), ("2.1 cups", "2 cups"),
 ])
 def test_volumes_land_on_quarters_thirds_and_halves(raw, expected):
     assert q.tidy_display_quantity("beef broth", raw) == expected

@@ -676,18 +676,28 @@ def _pack_units(group: dict) -> tuple[str, str]:
 _NICE_FRACTIONS = (0.0, 0.25, 0.5, 0.75, 1.0)
 
 
+# The smallest amount of a unit a shopper still reads IN that unit, when it
+# isn't one whole of it. A cup is measured in parts — ¾ cup of parmesan is
+# what a recipe says and what a person scoops, and "12 tbsp" of it is a
+# number nobody measures out (Emily, 2026-10-18: "Yes" to cups down to ¼).
+# Under ¼ cup stays tbsp/tsp. Every other unit rolls up only at one whole.
+_ROLL_UP_FROM = {"cup": 0.25}
+
+
 def _roll_up_unit(amount: float, unit: str) -> tuple[float, str]:
     """
     Convert amount/unit up to the largest unit in its conversion group that
     it comfortably fits — e.g. 52 tbsp -> ~3.25 cups instead of staying in
-    a unit nobody actually measures a shopping quantity in.
+    a unit nobody actually measures a shopping quantity in. "Fits" is one
+    whole of it, except a cup, which fits from ¼ (_ROLL_UP_FROM): 12 tbsp
+    is ¾ cup.
     """
     for group in _UNIT_CONVERSION_GROUPS:
         if unit not in group:
             continue
         base_amount = amount * group[unit]
         for candidate_unit, factor in sorted(group.items(), key=lambda kv: -kv[1]):
-            if base_amount >= factor - 1e-9:
+            if base_amount >= factor * _ROLL_UP_FROM.get(candidate_unit, 1.0) - 1e-9:
                 return base_amount / factor, candidate_unit
         smallest_unit = min(group, key=group.get)
         return base_amount / group[smallest_unit], smallest_unit
@@ -751,6 +761,14 @@ def _round_in_unit(amount: float, unit: str | None) -> float:
     """
     if not _measurable_unit(unit):
         return float(math.ceil(amount - 1e-9))
+    if unit == "cup":
+        # Cups land on the steps a measuring cup has — thirds as well as
+        # quarters — so ⅔ cup of sour cream is ⅔ cup, not "0.75". UP to the
+        # next step, the way a pepper rounds: the steps are up to 4 tsp
+        # apart, and nearest bought 0.874 cup as ¾ and 0.416 as ⅓ (20%
+        # short). Within a teaspoon under a step is that step — a recipe's
+        # "0.34 cup" is ⅓, not ½. Never more than a step minus 1 tsp over.
+        return _cup_step_up(amount)
     nice = _round_to_nice_fraction(amount)
     if nice <= 0 and amount > 0:
         nice = 0.25  # never round a real quantity away to nothing
@@ -781,6 +799,14 @@ def _snap_to_unit_quantum(amount: float, unit: str | None) -> float:
     quarter of a unit and costs it in the direction this module always
     errs.
     """
+    if unit in _VOLUME_TO_TSP:
+        # A volume line is written EXACTLY wherever this is used
+        # (_exact_volume_text, on a household's own line), so there is no
+        # display drift to undo — only float noise. A quarter of a cup or a
+        # tablespoon would be wrong here: a household's own ⅓ cup is not on
+        # either, and snapping it moved it a twelfth of a cup every restate.
+        quantum = _FINE_TSP / _VOLUME_TO_TSP[unit]
+        return math.floor(amount / quantum + 0.5 + 1e-9) * quantum
     quantum = 0.25 if _measurable_unit(unit) else 1.0
     return math.floor(amount / quantum + 0.5 + 1e-9) * quantum
 
@@ -793,7 +819,9 @@ def _shopping_round(amount: float, unit: str | None) -> tuple[float, str | None]
     an extra onion costs an onion and a missing one costs the dinner
     (Emily, 2026-09-05). A measurable unit is rolled up to the largest
     sensible unit in its family and rounded to the nearest quarter, so "52
-    tbsp" becomes "3.25 cups" rather than a number nobody measures out.
+    tbsp" becomes "3.25 cups" rather than a number nobody measures out — a
+    cup from ¼ of one and UP to the next quarter or third, so ⅔ cup of sour
+    cream is "2/3 cup" (written by _cups_text), not "10.75 tbsp".
 
     recipes._week_bought_amount is a thin wrapper on this and
     _humanize_grocery_quantity is the display form of it. That is
@@ -815,7 +843,15 @@ def _shopping_round(amount: float, unit: str | None) -> tuple[float, str | None]
     if not _measurable_unit(unit):
         return _round_in_unit(amount, unit), unit
     rolled_amount, rolled_unit = _roll_up_unit(amount, unit)
-    return _round_in_unit(rolled_amount, rolled_unit), rolled_unit
+    rounded = _round_in_unit(rolled_amount, rolled_unit)
+    # Rounding can carry an amount up across the line it was rolled by —
+    # 3.9 tbsp rounds to 4 tbsp, which is ¼ cup — so roll the ROUNDED
+    # amount once more, or the list would say "4 tbsp" for what it says
+    # "¼ cup" for a crumb higher.
+    rerolled, rerolled_unit = _roll_up_unit(rounded, rolled_unit)
+    if rerolled_unit != rolled_unit:
+        return _round_in_unit(rerolled, rerolled_unit), rerolled_unit
+    return rounded, rolled_unit
 
 
 def _humanize_grocery_quantity(amount: float, unit: str | None) -> str:
@@ -827,7 +863,96 @@ def _humanize_grocery_quantity(amount: float, unit: str | None) -> str:
     rounded, rounded_unit = _shopping_round(amount, unit)
     if amount > 0 and rounded < 1 and not _measurable_unit(unit):
         rounded = 1.0
+    if rounded_unit == "cup":
+        return _cups_text(rounded)
     return _format_quantity(rounded, rounded_unit)
+
+
+# A cup on the list is written the way a measuring cup is marked: "3/4 cup",
+# "1 1/3 cups" — the card's own words, "3/4 cup parmesan reads as 3/4 cup".
+# A third has no short decimal ("0.666667 cup" is what _format_quantity
+# writes), and ASCII rather than "⅔" because the list draws the server's
+# text as it is (shell.js's humanQtyText is the Cook screen's) and
+# _parse_quantity reads "2/3" and "1 1/3" back exactly — the row's Save and
+# a merge's Undo send this text straight back, so it has to.
+_CUP_FRACTIONS = ((0.25, "1/4"), (1 / 3, "1/3"), (0.5, "1/2"), (2 / 3, "2/3"), (0.75, "3/4"))
+
+
+def _kitchen_number(amount: float) -> str | None:
+    """1.666… -> "1 2/3", 0.75 -> "3/4", 2.0 -> "2"; None when the amount is
+    not a whole number plus a measuring step."""
+    whole = math.floor(amount + 1e-6)
+    frac = amount - whole
+    if abs(frac) < 1e-6:
+        return str(whole)
+    label = next((text for value, text in _CUP_FRACTIONS if abs(value - frac) < 1e-6), None)
+    if label is None:
+        return None
+    return f"{whole} {label}" if whole else label
+
+
+def _cups_text(amount: float) -> str:
+    """An amount of cups on a measuring cup's steps, written as one
+    ("0.75" -> "3/4 cup"). An amount off the steps is written as a decimal,
+    as before, rather than rounded here — rounding is _shopping_round's."""
+    number = _kitchen_number(amount)
+    if number is None:
+        return _format_quantity(amount, "cup")
+    return f"{number} {'cup' if amount <= 1 + 1e-9 else 'cups'}"
+
+
+def _cup_step_up(amount: float) -> float:
+    """The next measuring-cup step at or above `amount`, counting anything
+    within a teaspoon under a step as that step (see _round_in_unit)."""
+    whole = math.floor(amount + 1e-9)
+    for step in _VOLUME_STEPS:
+        if whole + step >= amount - _CUP_STEP_GRACE - 1e-9:
+            return max(whole + step, 0.25)
+    return whole + 1.0
+
+
+# A teaspoon, in cups: how far under a step still counts as the step.
+_CUP_STEP_GRACE = 1 / 48
+
+# The grid a household's own volume line is kept on — a quarter teaspoon,
+# fine enough that every measuring-cup step (⅓ cup is 16 tsp), every
+# quarter tablespoon and every quarter teaspoon is on it, and any SUM of
+# them is too. That closure is the point: see _exact_volume_text.
+_FINE_TSP = 0.25
+
+
+def _exact_volume_text(amount: float, unit: str) -> str:
+    """
+    A volume written without rounding it to a shopping step — for a
+    household's own line once a plan's amount is on it
+    (grocery._restate_standing_want, and a plan's add joining such a line).
+
+    That line is re-read at every removal as "what is on it, less what the
+    plan put there"; a measuring cup's steps are not closed under addition
+    (⅓ + ¼ is no step), so rounding the sum and re-deriving from it moved
+    the household's own amount by up to a quarter cup (review 2026-10-19:
+    84 of 252 drop orders came back wrong). Written exactly, the
+    subtraction gives back what was added. In cups when the total is a
+    measuring-cup step from ¼ up; otherwise tablespoons (or teaspoons) —
+    "9 1/3 tbsp" — which _parse_quantity reads back exactly.
+    """
+    tsp = round(amount * _VOLUME_TO_TSP[unit] / _FINE_TSP) * _FINE_TSP
+    cups = tsp / _VOLUME_TO_TSP["cup"]
+    if cups >= 0.25 - 1e-9 and _kitchen_number(cups) is not None:
+        return _cups_text(cups)
+    tbsp = tsp / _VOLUME_TO_TSP["tbsp"]
+    if tbsp >= 1 - 1e-9:
+        return _spoon_text(tbsp, "tbsp")
+    return _spoon_text(tsp, "tsp")
+
+
+def _spoon_text(n: float, unit: str) -> str:
+    """Spoons as this module always wrote them ("1.5 tbsp"), except a third,
+    which has no short decimal: "9 1/3 tbsp", not "9.33333 tbsp"."""
+    number = _kitchen_number(n)
+    if number is not None and "/3" in number:
+        return f"{number} {unit}"
+    return _format_quantity(n, unit)
 
 
 def _ledger_buckets(qty_strings: list[str]) -> dict | None:
@@ -1028,15 +1153,54 @@ def _pounds_each(item: str) -> float | None:
 
 
 def _tidy_one(amount: float, unit: str | None) -> str:
+    if unit == "cup":
+        return _cups_text(_volume_step(amount))
     if unit in _VOLUME_UNITS:
-        value = round(_volume_step(amount), 2)
-        return _format_quantity(value, unit)
+        value = _volume_step(amount)
+        if _kitchen_number(value) is not None:
+            # Written the way it is stored ("9 1/3 tbsp", _exact_volume_text),
+            # so the row's Save sends back exactly what is on the line.
+            return _spoon_text(value, unit)
+        return _format_quantity(round(value, 2), unit)
     if _pack_group(unit) or (unit and _split_package_size(unit)[1]):
         return _format_quantity(amount, unit)  # packs are written as bought
     if _measurable_unit(unit):
         return _humanize_grocery_quantity(amount, unit)
     # A count of anything (lemons, onions, a bare number): whole ones, up.
     return _format_quantity(float(math.ceil(amount - 1e-9)) or 1.0, unit)
+
+
+def typed_back_quantity(qty: str) -> str:
+    """
+    A cup amount the household sent back from the screen, written the way
+    the list writes it.
+
+    The row's Save sends whatever is in the box, changed or not, and a
+    merge's Undo sends the phone's copy. A box that says "0.67 cup" (a line
+    shown before cups were written as fractions, or a person rounding ⅔ to
+    two places) is ⅔ cup — read as typed, the hair over ⅔ is filed as the
+    household's own edit (grocery._household_edit_columns) that nobody
+    made. A cup amount within two decimal places of a measuring-cup step IS
+    the step. Anything else comes back exactly as typed.
+    """
+    raw = (qty or "").strip()
+    core, note = _split_quantity_note(raw)
+    parsed = _parse_quantity(core)
+    if not parsed or parsed[1] != "cup":
+        return qty
+    amount = parsed[0]
+    whole = math.floor(amount + 1e-9)
+    for step in _VOLUME_STEPS:
+        exact = whole + step
+        if exact > 0 and round(exact, 2) == round(amount, 2):
+            return _with_note(_cups_text(exact), note)
+    return qty
+
+
+def same_shown_quantity(item: str, a: str, b: str) -> bool:
+    """True when two quantities read the same on the list — the test for
+    "Save with the box unchanged", which must change nothing."""
+    return tidy_display_quantity(item, a or "") == tidy_display_quantity(item, b or "")
 
 
 def tidy_display_quantity(item: str, qty: str) -> str:

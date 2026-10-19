@@ -389,6 +389,33 @@ def _try_consolidate_quantity(existing_qty: str, new_qty: str) -> tuple[str, boo
     return _repeat_or_concatenate(existing_qty, new_qty, sum_counts=True)
 
 
+def _sum_volumes(existing_qty: str, new_qty: str, exact: bool, same_unit: bool = False) -> str | None:
+    """
+    Two volumes (cup/tbsp/tsp) added as one amount, or None when either is
+    not a plain volume — the caller then merges the way it always did.
+
+    Part cups made this needed (2026-10-19): "1/4 cup" used to be stored as
+    "4 tbsp" and summed with "3 tbsp" as the same word; as "1/4 cup" it did
+    not, and the list read "3 tbsp + 1/4 cup". `exact` is for a plan's share
+    joining a household's line — see _quantities._exact_volume_text.
+    """
+    note = _quantities._merge_notes(
+        _quantities._quantity_note(existing_qty), _quantities._quantity_note(new_qty)
+    )
+    a = _quantities._parse_quantity(_quantities._strip_prep_descriptor((existing_qty or "").strip()))
+    b = _quantities._parse_quantity(_quantities._strip_prep_descriptor((new_qty or "").strip()))
+    if not a or not b or a[1] not in _quantities._VOLUME_TO_TSP or b[1] not in _quantities._VOLUME_TO_TSP:
+        return None
+    if same_unit and a[1] != b[1]:
+        return None
+    tsp = a[0] * _quantities._VOLUME_TO_TSP[a[1]] + b[0] * _quantities._VOLUME_TO_TSP[b[1]]
+    if exact:
+        text = _quantities._exact_volume_text(tsp, "tsp")
+    else:
+        text = _quantities._humanize_grocery_quantity(tsp, "tsp")
+    return _quantities._with_note(text, note)
+
+
 def _shared_package_unit(existing_parsed, new_parsed) -> str | None:
     """
     The unit two parsed quantities should merge under when their units
@@ -492,7 +519,21 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
             and row["status"] != "spice" and not _spices.is_spice(row["item"])
         ):
             continue
-        merged_qty, merged = consolidate(row["quantity"] or "", quantity)
+        households_line = row["source_weekly_plan_id"] is None and row["status"] == "needed"
+        merged_qty, merged = None, False
+        if households_line and consolidate is _try_consolidate_quantity:
+            # Onto a household's own line, the household's own second
+            # volume adds within its family ("3 tbsp" + "1/4 cup"),
+            # shopping-rounded like any add. A plan's share is added
+            # EXACTLY, so _restate_standing_want can take back what was put
+            # on — and only in the line's own unit word: a "2 tbsp" share
+            # beside "1 cup" still gets a plan line of its own (2026-10-07).
+            merged_qty = _sum_volumes(
+                row["quantity"] or "", quantity, exact=not standing, same_unit=not standing,
+            )
+            merged = merged_qty is not None
+        if not merged:
+            merged_qty, merged = consolidate(row["quantity"] or "", quantity)
         if merged:
             return row, merged_qty, True
         own_kind = (row["source_weekly_plan_id"] is None) == standing or (standing and row["status"] == "spice")
@@ -835,9 +876,14 @@ def _restate_standing_want(
     total = households_own + plan_after
     if total <= 0:
         return "", True
-    return _quantities._with_note(
-        _quantities._humanize_grocery_quantity(total, line_unit), note,
-    ), False
+    if line_unit in _quantities._VOLUME_TO_TSP:
+        # Written exactly, never re-rounded to a cup step: the next removal
+        # re-derives the household's own amount from this text, and cup
+        # steps are not closed under addition (see _exact_volume_text).
+        written = _quantities._exact_volume_text(total, line_unit)
+    else:
+        written = _quantities._humanize_grocery_quantity(total, line_unit)
+    return _quantities._with_note(written, note), False
 
 
 def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=None, only_link_ids=None) -> dict:
@@ -2861,6 +2907,17 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     if not row:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    if quantity is not None and _quantities.same_shown_quantity(
+        row["item"] or "", quantity.strip(), row["quantity"] or ""
+    ):
+        # The box sent back as it was shown (the row's Save sends it
+        # changed or not): nothing to record. Writing it would swap the
+        # stored amount for its two-place display ("0.67 cup" for ⅔) and
+        # file the difference as a household edit nobody made.
+        quantity = None
+    elif quantity is not None:
+        # A merge's Undo sends the phone's copy, which is the shown text.
+        quantity = _quantities.typed_back_quantity(quantity)
     new_quantity = quantity if quantity is not None else row["quantity"]
     new_category = category if category is not None else row["category"]
     # The household's number survives the plan changing (Emily,
