@@ -146,3 +146,68 @@ def test_undoing_a_merge_round_trips(signed_in):
     after = _line()
     assert after["quantity"] == "2/3 cup"
     assert _no_edit(after), after
+
+
+# ---------- review follow-ups (2026-10-19) ----------
+
+
+@pytest.mark.parametrize("raw,stored", [
+    ("0.874 cup", "1 cup"),      # nearest bought 3/4: two tbsp short
+    ("0.416 cup", "1/2 cup"),    # nearest bought 1/3: 20% short
+    ("0.34 cup", "1/3 cup"),     # within a teaspoon of a step IS the step
+    ("1.1 cups", "1 1/4 cups"),
+])
+def test_a_part_cup_rounds_up_to_the_next_step(raw, stored):
+    assert quantities._normalize_grocery_quantity(raw) == stored
+
+
+def _milk() -> list[str]:
+    return [i["quantity"] for i in tools.list_grocery_list() if i["item"] == "Milk"]
+
+
+@pytest.mark.parametrize("a,b,expected", [
+    ("3 tbsp", "1/4 cup", "1/2 cup"),   # 7 tbsp, up to the next step
+    ("2/3 cup", "1 tsp", "2/3 cup"),    # a teaspoon over stays 2/3
+    ("1/3 cup", "1/4 cup", "2/3 cup"),  # 7/12 cup, never down to 1/2
+])
+def test_two_household_volumes_add_up_on_one_line(a, b, expected):
+    tools.add_grocery_item("Milk", quantity=a, category="dairy")
+    tools.add_grocery_item("Milk", quantity=b, category="dairy")
+    assert _milk() == [expected]
+
+
+def _plan_onto_own(own: str, shares: list[str], order: list[int]) -> list[str]:
+    """A household's own line, a week whose dinners each add a share to it,
+    then the dinners dropped in `order` (the reviewer's probe, one case)."""
+    conn = get_conn()
+    conn.execute("DELETE FROM members WHERE household_id = ? AND name != 'Emily'", (tools.household_id(),))
+    conn.commit()
+    conn.close()
+    for i, share in enumerate(shares):
+        tools.add_recipe(f"R{i}", ingredients=[{"item": "Milk", "qty": share, "category": "dairy"}], default_servings=1)
+    tools.add_grocery_item("Milk", quantity=own, category="dairy")
+    today = household_today()
+    start = today - timedelta(days=today.weekday()) + timedelta(days=7)
+    plan_id = tools.create_weekly_plan(start.isoformat())["weekly_plan_id"]
+    for i in range(len(shares)):
+        tools.plan_meal((start + timedelta(days=i)).isoformat(), f"R{i}", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    for i in order:
+        tools.clear_plan_slot(plan_id, (start + timedelta(days=i)).isoformat(), "dinner")
+    return _milk()
+
+
+@pytest.mark.parametrize("own,shares,order", [
+    ("3/4 cup", ["1/6 cup", "1/6 cup", "1/6 cup"], [0, 1, 2]),   # was "1/2 cup"
+    ("1/3 cup", ["1/3 cup", "1/4 cup"], [1, 0]),
+    ("1 cup", ["2/3 cup", "1/4 cup", "2 tbsp"], [2, 0, 1]),       # two units, one rounding
+])
+def test_a_households_own_cups_come_back_exactly_when_the_meals_go(own, shares, order):
+    assert _plan_onto_own(own, shares, order) == [own]
+
+
+def test_an_inventory_step_reads_a_fraction():
+    from app.tools import inventory
+    assert inventory._step_quantity_text("2/3 cup", 1) == "1 2/3 cup"
+    assert inventory._step_quantity_text("1 1/3 cups", -1) == "1/3 cups"
+    assert inventory._step_quantity_text("3 gal", -1) == "2 gal"

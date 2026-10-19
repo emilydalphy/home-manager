@@ -4167,6 +4167,13 @@ class WeekGroceryBuffer:
         return self._stock
 
     def add(self, entry_id: int, item: str, category: str, amount: float, unit: str | None, note: str) -> None:
+        if unit in _quantities._VOLUME_TO_TSP:
+            # One volume line per item, however its recipes wrote it: "2/3
+            # cup" and "2 tbsp" are rounded ONCE on their sum, the way
+            # every removal re-rounds them (_ledger_totals sums the family).
+            # Two lines rounded apart came back a cup step out of step with
+            # the restate — part cups made the steps coarse enough to show.
+            amount, unit = amount * _quantities._VOLUME_TO_TSP[unit], "tsp"
         key = (_grocery._merge_key(item), unit, note)
         line = self._lines.get(key)
         if line is None:

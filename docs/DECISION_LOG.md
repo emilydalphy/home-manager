@@ -24,6 +24,14 @@ why*, not duplicating the diff.
   edits — `update_grocery_item` now ignores a box that reads the same as the
   line (`same_shown_quantity`) and puts an old "0.67 cup" back on the step
   (`typed_back_quantity`). Emily, 2026-10-18: "Yes."
+  Review follow-up: cup steps round UP (a teaspoon's grace), not nearest
+  (0.874 cup bought ¾). Cup steps aren't closed under addition, so a
+  household's own line with a plan share on it is written EXACTLY
+  (`_exact_volume_text`, "9 1/3 tbsp" when off a step) and the week buffer
+  rounds one volume family once — reviewer's probe 84/252 wrong → 0 (main 24).
+  Volumes on a household's line add within the family; the inventory stepper
+  reads "2/3 cup". Not touched: Kitchen's "running low" count reads only the
+  leading number, so "1/4 cup" counts as low.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

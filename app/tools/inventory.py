@@ -33,7 +33,7 @@ def _today() -> date:
     return household_today()
 
 
-_LEADING_NUM_RE = re.compile(r"^\s*([\d.]+)\s*(.*)$")
+_LEADING_NUM_RE = re.compile(r"^\s*(\d+\s+\d+/\d+|\d+/\d+|[\d.]+)\s*(.*)$")
 
 
 def _step_quantity_text(quantity: str, delta: float) -> str:
@@ -49,8 +49,11 @@ def _step_quantity_text(quantity: str, delta: float) -> str:
     quantity = (quantity or "").strip()
     m = _LEADING_NUM_RE.match(quantity)
     if m and m.group(1):
+        # A bought cup reads "2/3 cup" since 2026-10-19 (part cups read as
+        # cups); reading only the "2" stepped it to "1 /3 cup".
+        parsed = _quantities._parse_quantity(m.group(1)) if "/" in m.group(1) else None
         try:
-            amount = float(m.group(1))
+            amount = parsed[0] if parsed else float(m.group(1))
         except ValueError:
             amount = 0.0
         suffix = m.group(2).strip()
@@ -60,7 +63,7 @@ def _step_quantity_text(quantity: str, delta: float) -> str:
         amount = 0.0
         suffix = quantity
     amount = max(0.0, amount + delta)
-    amount_str = f"{amount:g}"
+    amount_str = (_quantities._kitchen_number(amount) if parsed else None) or f"{amount:g}"
     return f"{amount_str} {suffix}".strip() if suffix else amount_str
 
 

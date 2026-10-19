@@ -637,7 +637,12 @@ def test_the_snap_breaks_a_tie_upward_not_downward():
     """
     assert quantities._snap_to_unit_quantum(0.375, "lb") == 0.5
     assert quantities._snap_to_unit_quantum(0.625, "lb") == 0.75
-    assert quantities._snap_to_unit_quantum(2.078125, "cup") == 2.0
+    # A volume line on a household's own want is written exactly since part
+    # cups read as cups (2026-10-19, quantities._exact_volume_text), so its
+    # snap only cleans float noise, on a quarter-teaspoon grid — a quarter
+    # cup would move a household's own 1/3 cup.
+    assert quantities._snap_to_unit_quantum(2.078125, "cup") == 2.078125
+    assert quantities._snap_to_unit_quantum(1 / 3 + 1e-7, "cup") == 1 / 3
     assert quantities._snap_to_unit_quantum(2.5, None) == 3.0
     assert quantities._snap_to_unit_quantum(3.0, None) == 3.0
 
