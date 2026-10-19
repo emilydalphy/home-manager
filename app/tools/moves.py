@@ -84,6 +84,7 @@ from . import grocery as _grocery
 from . import move_owner as _move_owner
 from . import quantities as _quantities
 from . import rhythm as _rhythm
+from . import stores as _stores
 from . import usual_week as _usual_week
 from . import weekly_plan as _weekly_plan
 
@@ -669,6 +670,109 @@ def _shop_stops(needed: list[dict], named: set[int] | None = None) -> list[dict]
             for n in names]
 
 
+# ---------- the store's hours on the shop line ----------
+#
+# Loop Board "Shop: know the hours of my preferred stores" (Emily,
+# 2026-10-18, "Yes to all"). THE QUIET RULE: hours only show when they
+# change the answer. A store with no hours, a store open the whole way to
+# the deadline, and every morning that isn't a closed-now one say exactly
+# what the line said before.
+#
+#   closes before the deadline  "by 5:30 · Farm Boy closes at 5:30"
+#   shut for the rest of today  "Farm Boy's closed now — opens 8:00 tomorrow"
+#   not open yet, and won't be  "Farm Boy's closed now — opens 8:00"
+#     before the deadline         (a long breakfast bake's 5:00 a.m. start)
+#   cook tomorrow, store shut   "by 9:00 · Farm Boy closes at 9:00"
+#     tomorrow before it          (tonight is the last chance)
+#   late, still to do, open     "still to do · Farm Boy's open till 9:00"
+#
+# ASSUMPTION (Emily's to move in one line): "late in the day" for the last
+# of those is 4 p.m. — the card says "not in the morning", and an overdue
+# breakfast shop at 9 a.m. being told the store is open till 9 tonight is
+# the noise it meant.
+LATE_IN_THE_DAY = time(16, 0)
+
+
+def _hours_line(store: str, now: datetime, deadline: datetime, overdue: bool,
+                all_hours: dict) -> dict | None:
+    """
+    What the store's hours add to one shop line, or None when they add
+    nothing (see the table above):
+
+      "line"     the words after the count, naming the store — the move's
+                 detail, so the morning text reads it too
+      "short"    the same fact for a Today stop row, whose title already
+                 IS the store ("Farm Boy · 4 things"): "Closes at 5:30"
+      "when"     the time_label it replaces
+      "deadline" a new, earlier window_end, or None
+    """
+    today = now.date()
+    w = _stores.open_window(store, today, all_hours)
+    if w is None:
+        return None
+    named = _stores.possessive_is(store)
+
+    def closes(at: time) -> dict:
+        clock = _stores.say_clock(at)
+        return {"line": f"by {clock} · {store} closes at {clock}", "short": f"Closes at {clock}",
+                "when": f"by {clock}", "deadline": datetime.combine(today, at)}
+
+    open_now = not w.get("closed") and w["opens"] <= now.time() < w["closes"]
+    if not open_now:
+        not_yet = not w.get("closed") and now.time() < w["opens"]
+        # Opens later today, in time for a deadline still ahead: nothing
+        # changes about "by 6:10" — except a close that comes first.
+        if not_yet and not overdue and deadline > datetime.combine(today, w["opens"]):
+            if deadline.date() == today and datetime.combine(today, w["closes"]) < deadline:
+                return closes(w["closes"])
+            return None
+        nxt = _stores.next_opening(store, now, all_hours)
+        opens = f" — {_stores.opens_said(nxt[0], nxt[1], today)}" if nxt else ""
+        line = f"{named} closed now{opens}"
+        return {"line": line, "short": f"Closed now{opens}", "when": line, "deadline": None}
+    if overdue:
+        if now.time() >= LATE_IN_THE_DAY:
+            clock = _stores.say_clock(w["closes"])
+            return {"line": f"still to do · {named} open till {clock}", "short": f"Open till {clock}",
+                    "when": "still to do", "deadline": None}
+        return None
+    if w["closes"] == time.max:
+        return None  # open till midnight: nothing closes before any deadline today
+    if deadline.date() == today:
+        return closes(w["closes"]) if datetime.combine(today, w["closes"]) < deadline else None
+    # The cook is tomorrow. Tonight is the last chance only when the store
+    # does not open tomorrow before the deadline.
+    tomorrow = _stores.open_window(store, deadline.date(), all_hours)
+    if tomorrow is None:
+        return None
+    if tomorrow.get("closed") or datetime.combine(deadline.date(), tomorrow["opens"]) >= deadline:
+        return closes(w["closes"])
+    return None
+
+
+def _hours_store_for(stop: dict, stops: list[dict], first_store: str | None) -> str | None:
+    """Whose hours a stop goes by: its own store; an untagged list (one stop,
+    "Any store") the household's first store; an untagged pile beside
+    tagged stops nobody's — it can be bought anywhere."""
+    name = (stop.get("store") or "").strip()
+    if name:
+        return name
+    return first_store if len(stops) == 1 else None
+
+
+def _hours_context() -> tuple[dict, str | None]:
+    """The household's store hours and first store, read once per line.
+    Unreadable is no hours at all — the line as it was, never an error."""
+    try:
+        all_hours = _stores.get_store_hours()
+        if not all_hours:
+            return {}, None
+        return all_hours, _stores.first_usual_store()
+    except Exception:
+        logger.exception("Today's shop line could not read the store hours")
+        return {}, None
+
+
 def _shop_meta(stops: list[dict]) -> str:
     """"orzo, salmon, black beans…" — the first few things across the list."""
     items = [i for stop in stops for i in stop["items"]][:STOP_PREVIEW_ITEMS]
@@ -854,6 +958,23 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         logger.exception("Today's shop move could not read which lines are tonight's")
         tonights = set()
     stop_rows = _shop_stops(needed, named=tonights)
+    detail = f"{count} item{'' if count == 1 else 's'} · {when}"
+    window_end = deadline
+    # The store's hours, only where they change the answer (the table above
+    # _hours_line). One stop: the move's own line says it, so the morning
+    # text reads it too. Two or more: each stop row names its own store's,
+    # and the headline stays the cook's deadline — no one store owns it.
+    all_hours, first_store = _hours_context()
+    if all_hours:
+        for stop in stop_rows:
+            store = _hours_store_for(stop, stop_rows, first_store)
+            said = _hours_line(store, now, deadline, overdue, all_hours) if store else None
+            if said:
+                stop["hours_line"] = said["short"] if stop.get("store") else said["line"]
+                if len(stop_rows) == 1:
+                    detail = f"{count} item{'' if count == 1 else 's'} · {said['line']}"
+                    when = said["when"]
+                    window_end = said["deadline"] or deadline
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
@@ -861,7 +982,7 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
             _shop_title(soonest_meal.get("slot") or "dinner") if is_today
             else "Shop before tomorrow"
         ),
-        "detail": f"{count} item{'' if count == 1 else 's'} · {when}",
+        "detail": detail,
         "reason": "",
         "date": day.isoformat(),
         "slot": None,
@@ -874,7 +995,8 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         # (featured_move_id's urgency, the day strip) already treats it as
         # "whatever this move's real deadline is", so moving it earlier
         # here is enough; nothing else assumes it equals the slot time.
-        "window_end": deadline.isoformat(),
+        # A store that closes first moves it earlier again (_hours_line).
+        "window_end": window_end.isoformat(),
         "weight": WEIGHT_HIGH,
         "action": {"label": SHOP_ACTION_LABEL, "target": {"tab": "grocery"}},
         # Derived, like every other tick: the move exists only while the
@@ -920,14 +1042,41 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
 # — a count of nothing is a number where a sentence belongs (§8), and the
 # same call _standing_list_move's own title makes.
 
-def _shop_day_line(shop_day: str, count: int) -> str:
+def _shop_day_line(shop_day: str, count: int, closed: list[str] | None = None) -> str:
     """The celadon line's words. '' with no shop day on record — the caller
     says the other thing then, because an unanswered question is a real
-    state and "No shopping day set" is an offer, not a statement."""
+    state and "No shopping day set" is an offer, not a statement.
+
+    `closed`: the list's stores the household said are shut that weekday —
+    "You shop on Sunday · Farm Boy's closed Sundays." Only ever when true
+    (the store-hours card's quiet rule)."""
     if not shop_day:
         return ""
     things = f"{count} thing{'' if count == 1 else 's'} on the list so far." if count else "Nothing on the list yet."
-    return f"You shop on {shop_day.capitalize()}. {things}"
+    note = ""
+    if closed:
+        plural = _stores._DAY_PLURAL.get(shop_day[:3], shop_day.capitalize() + "s")
+        who = (f"{_stores.possessive_is(closed[0])} closed" if len(closed) == 1
+               else f"{' and '.join(closed)} are closed")
+        note = f" · {who} {plural}"
+    return f"You shop on {shop_day.capitalize()}{note}. {things}"
+
+
+def _stores_closed_on(shop_day: str, needed: list[dict]) -> list[str]:
+    """The list's stores (tagged lines; an untagged list goes by the first
+    usual store) that are closed every `shop_day`. [] when none said so."""
+    if not shop_day:
+        return []
+    all_hours, first_store = _hours_context()
+    if not all_hours:
+        return []
+    names = list(dict.fromkeys(
+        (r.get("store") or "").strip() for r in needed
+        if (r.get("store") or "").strip() not in ("", "Unassigned")
+    ))
+    if not names and first_store:
+        names = [first_store]
+    return [n for n in names if _stores.closed_on_weekday(n, shop_day, all_hours)]
 
 
 def _first_shop_is_now(day: date, shop_day: str) -> bool:
@@ -979,10 +1128,11 @@ def _shop_block(day: date, rhythm: dict) -> dict:
     shop_day = (rhythm.get("shop_day") or "").strip().lower()
     top_up = (rhythm.get("top_up_shop_day") or "").strip().lower()
     try:
-        count = len(_grocery.list_grocery_list(status="needed"))
+        needed = _grocery.list_grocery_list(status="needed")
     except Exception:
         logger.exception("Today's shop line could not read the grocery list")
-        count = 0
+        needed = []
+    count = len(needed)
     weekday = day.strftime("%A").lower()
     is_shop_day = bool(shop_day) and weekday in {shop_day, top_up} - {""}
     if shop_day and not is_shop_day and count:
@@ -992,7 +1142,7 @@ def _shop_block(day: date, rhythm: dict) -> dict:
         "top_up_shop_day": top_up or None,
         "is_shop_day": is_shop_day,
         "count": count,
-        "line": _shop_day_line(shop_day, count),
+        "line": _shop_day_line(shop_day, count, _stores_closed_on(shop_day, needed)),
         # The household's own sentence for the setting, for the row that
         # opens it (rhythm.shop_days_summary) — '' when never answered.
         "summary": rhythm.get("shop_days_summary") or "",

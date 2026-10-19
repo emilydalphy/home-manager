@@ -2259,7 +2259,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "get_household_memory",
-        "description": "Get a plain summary of everything saved about this household's meal preferences: member dietary restrictions, favorite proteins/cuisines, dislikes, cooking-time preference, eating style, dinners per week, notes, goals, usual stores. Use this when the user asks what the app knows/remembers, or before generating a plan.",
+        "description": "Get a plain summary of everything saved about this household's meal preferences: member dietary restrictions, favorite proteins/cuisines, dislikes, cooking-time preference, eating style, dinners per week, notes, goals, usual stores and their opening hours (store_hours_summary, and store_open_now — whether each is open right now on the household's clock: answer \"is Costco open?\" from it). Use this when the user asks what the app knows/remembers, or before generating a plan.",
         "input_schema": {"type": "object", "properties": {}},
     },
     {

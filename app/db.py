@@ -859,6 +859,13 @@ _MIGRATIONS = [
     # period it chose (2026-10-14) — see weekly_plan.remember_first_period.
     # '' on every existing household: nobody is owed an answer never given.
     ("households", "first_period_start", "TEXT NOT NULL DEFAULT ''"),
+    # Each usual store's opening hours (2026-10-19, "Shop: know the hours
+    # of my preferred stores") — {store name: hours}, see stores.py's
+    # "opening hours" section. Kept beside usual_stores_json and
+    # store_typical_items_json because it is the same kind of fact and the
+    # chat already reads those through get_household_memory. '{}' on every
+    # existing household: a store with no hours behaves as it always has.
+    ("meal_preferences", "store_hours_json", "TEXT NOT NULL DEFAULT '{}'"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
