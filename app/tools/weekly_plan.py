@@ -9369,6 +9369,68 @@ def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: st
     return moved
 
 
+def _leftovers_too_old_after_redate(rows: list, after: list[dict]) -> str | None:
+    """
+    The food-safety refusal for a nights swap: a fridge-leftovers night
+    that would now be eaten more than leftovers.MAX_LEFTOVER_DAYS after its
+    cook. Only where the swap made that gap LONGER — a chain the week
+    already had is not this move's to judge (meal_move's own rule, same
+    words). Freezer portions have an order but no age limit, so they are
+    skipped, as meal_move._chain_pairs skips them.
+
+    Why this exists: the Move sheet (meal_move._structural_refusal) has
+    refused "The Stew's leftovers would be 4 days old" since 2026-09-28,
+    but the nights swap — Plan's drag, the chat tool, Now's "Something
+    else" — shares only the WRITER with it, and the writer checks order,
+    not age. Dragging Tuesday's leftovers onto Friday was a 200: Monday's
+    stew, eaten on day four, a chain the generator and
+    repair_leftover_chains would never have written (overnight hunt,
+    2026-10-19).
+    """
+    _leftovers = _leftovers_mod()
+
+    def _pairs(pic: list[dict]) -> dict[int, dict]:
+        by_date_slot: dict = {}
+        for r in sorted(pic, key=lambda r: r["id"]):
+            by_date_slot.setdefault((r["date"], r["slot"]), r)
+        by_id = {r["id"]: r for r in pic}
+        out = {}
+        for r in pic:
+            if r["slot_state"] != "planned":
+                continue
+            derived = r["derived"]
+            links_to = (derived.get("links_to") or "").strip()
+            if not links_to or _leftovers.frozen_portion_on(derived):
+                continue
+            src = _resolve_leftover_source(links_to, by_date_slot, by_id)
+            if src is not None and src["id"] != r["id"]:
+                out[r["id"]] = src
+        return out
+
+    before = [
+        {"id": r["id"], "date": r["date"], "slot": r["slot"], "slot_state": r["slot_state"],
+         "meal": r["meal"], "derived": json.loads(r["derived_from_json"] or "{}")}
+        for r in rows
+    ]
+    by_id_before = {r["id"]: r for r in before}
+    pairs_before = _pairs(before)
+    by_id_after = {e["id"]: e for e in after}
+    for reheat_id, cook in _pairs(after).items():
+        reheat = by_id_after[reheat_id]
+        gap = _leftovers.days_apart(cook["date"], reheat["date"])
+        if gap <= _leftovers.MAX_LEFTOVER_DAYS:
+            continue
+        was_cook = pairs_before.get(reheat_id)
+        if was_cook is not None and was_cook["id"] == cook["id"]:
+            was = _leftovers.days_apart(was_cook["date"], by_id_before[reheat_id]["date"])
+            if gap <= was:
+                continue
+        dish = cook["meal"] or reheat["meal"] or "That dish"
+        return (f"{dish}’s leftovers would be {gap} days old by "
+                f"{_weekday_of(reheat['date'])} — I’ve left both nights as they are.")
+    return None
+
+
 def _apply_dinner_nights_swap(
     weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool, dry_run: bool = False,
     conn=None,
@@ -9471,6 +9533,12 @@ def _apply_dinner_nights_swap(
         done = _redate_plan_rows(
             conn, weekly_plan_id, rows, new_date, mapping=mapping,
             token_for=None if undo else (lambda r: {"date": r["date"], "at": now_iso}),
+            # An Undo is exempt: it puts back a week that was already
+            # standing, and refusing it would strand the household on the
+            # move they just tried to take back.
+            extra_check=None if undo else (
+                lambda after, by_date_slot, by_id: _leftovers_too_old_after_redate(rows, after)
+            ),
             dry_run=dry_run,
         )
         if "refused" in done:
