@@ -25853,11 +25853,16 @@
   // it would be a copy change nobody asked for.
   function changeCardSavedLine(applied) {
     applied = applied || [];
+    // A night the household's pick runs past its time limit goes on, with
+    // the server's one line about it (swap_in_place.over_cap_said).
+    var over = applied.filter(function (a) { return a.over_cap_note; });
+    if (applied.length === 1 && applied[0].over_cap_said) return applied[0].over_cap_said;
     if (applied.length === 1 && applied[0].meal && applied[0].date) {
       return savedLine(applied[0].meal, 'put on ' + dayName(applied[0].date, { weekday: 'long' }));
     }
     if (applied.length) {
-      return applied.length + (applied.length === 1 ? ' night was' : ' nights were') + ' changed';
+      return applied.length + (applied.length === 1 ? ' night was' : ' nights were') + ' changed' +
+        (over.length ? '. ' + over.map(function (a) { return a.over_cap_note; }).join(' ') : '');
     }
     return '';
   }

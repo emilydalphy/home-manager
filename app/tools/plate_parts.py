@@ -934,12 +934,30 @@ def _recipe_minutes(recipe: dict | None) -> int:
 
 
 # A protein that cooks in minutes whatever it replaces: ground or minced
-# anything, shrimp, tofu, eggs, a sliced cut, a can of beans. Swapped into
-# a dish, it cannot make that dish SLOWER than it was — the method is the
-# dish's, and this protein is never the slow part of it.
+# anything, shrimp, eggs, a sliced cut, a CAN of beans. Swapped into a
+# dish, it cannot make that dish SLOWER than it was — the method is the
+# dish's, and this protein is never the slow part of it. Dried legumes
+# (a soak, an hour's simmer) and tofu (pressed first) are not on it: they
+# really can add time (review, 2026-10-19).
 _QUICK_PROTEIN = re.compile(
-    r"\b(ground|mince|minced|shrimps?|prawns?|scallops?|tofu|tempeh|eggs?|sliced|strips?|"
-    r"chickpeas?|lentils?|beans?|crab)\b", re.I)
+    r"\b(ground|mince|minced|shrimps?|prawns?|scallops?|eggs?|sliced|strips?|crab|canned)\b", re.I)
+# A choice that says it is cooked slowly is not a quick protein, whatever
+# else it names: "slow-cooked pork shoulder with beans", "braised short rib
+# strips". The household typed a longer dish; the model's longer time is
+# the honest one.
+_SLOW_WORDS = re.compile(
+    r"\b(braised?|braising|slow|roast(ed)?|bone[- ]?in|shoulder|shank|dried|soak(ed)?|stew(ed)?|"
+    r"confit|smoked|whole)\b", re.I)
+# Long enough for "ground chicken", "canned chickpeas", "thin-sliced
+# flank steak"; a typed sentence is a dish, not a protein.
+_QUICK_CHOICE_MAX_WORDS = 4
+
+
+def _is_quick_protein(choice: str) -> bool:
+    choice = (choice or "").strip()
+    if not choice or len(choice.split()) > _QUICK_CHOICE_MAX_WORDS or _SLOW_WORDS.search(choice):
+        return False
+    return bool(_QUICK_PROTEIN.search(choice))
 
 
 def _keep_quick_time(pick: dict, recipe: dict | None, choice: str) -> None:
@@ -956,7 +974,7 @@ def _keep_quick_time(pick: dict, recipe: dict | None, choice: str) -> None:
     """
     was = _recipe_minutes(recipe)
     now = _swap_mod()._pick_minutes(pick)
-    if not was or not now or now <= was or not _QUICK_PROTEIN.search(choice or ""):
+    if not was or not now or now <= was or not _is_quick_protein(choice):
         return
     logger.info("plate_part_change kept %s's %d minutes for %r (the rewrite said %d)",
                 (recipe or {}).get("name"), was, choice, now)

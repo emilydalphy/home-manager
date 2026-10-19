@@ -230,3 +230,83 @@ def test_salmon_to_shrimp_on_an_approved_week_moves_the_shopping(signed_in):
     assert not any("salmon" in n for n in after), after
     shrimp = [g for g in tools.list_grocery_list("needed") if "shrimp" in (g["item"] or "").lower()]
     assert shrimp and shrimp[0]["quantity"], shrimp
+
+
+# ---------- review follow-ups, 2026-10-19 ----------
+
+def test_a_slow_typed_choice_keeps_the_models_longer_time(week):
+    plan_id, cook = week
+    name = "Slow-Cooked Pork Shoulder Stir-Fry"
+    pork = {"item": "Pork shoulder", "qty": "2 lbs", "category": "meat/seafood"}
+    out = pp.change_part(plan_id, cook, "protein", "slow-cooked pork shoulder with beans",
+                         asker=_rewrite(name, pork, 15, 40, protein="pork"))
+    assert out["status"] == "changed", out.get("message")
+    assert _total(out["meal"]) == 55, "a slow dish the household typed keeps its honest time"
+    assert out["over_cap_said"].startswith(f"Done — {name} runs about 55 minutes")
+
+
+def test_only_a_short_quick_choice_counts_as_quick():
+    for quick in ("Ground chicken", "shrimp", "canned chickpeas", "thin-sliced flank steak"):
+        assert pp._is_quick_protein(quick), quick
+    for slow in ("braised short rib strips", "dried chickpeas", "tofu", "lentils",
+                 "bone-in ground-style thighs", "slow-cooked pork shoulder with beans"):
+        assert not pp._is_quick_protein(slow), slow
+
+
+def test_the_chat_cards_own_pick_over_the_cap_goes_on_and_says_so(week):
+    plan_id, _cook = week
+    from app.tools import proposals as prop
+    prop._PROPOSALS.clear()
+    name = "Chicken Thigh Traybake"
+    card = tools.propose_plan_changes(plan_id, [
+        {"date": D1, "slot": "dinner", "action": "change",
+         "candidates": [_rewrite(name, THIGHS, 10, 30)({})]},
+    ])
+    applied = tools.apply_proposal(card["proposal_id"])
+    assert applied["status"] == "applied", applied
+    row = applied["proposal"]["applied"][0]
+    assert row["over_cap_said"] == f"Done — {name} runs about 40 minutes, a bit over {WEEKDAY}’s 30."
+    assert row["over_cap_note"] == f"{name} runs about 40 minutes, a bit over {WEEKDAY}’s 30."
+
+
+def test_the_chat_cards_toast_says_the_over_limit_line():
+    from pathlib import Path
+    shell = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+    i = shell.index("  function changeCardSavedLine(applied) {")
+    body = shell[i:shell.index("  function changeCardHtml(", i)]
+    assert "applied[0].over_cap_said" in body and "a.over_cap_note" in body
+
+
+def test_another_on_the_chat_card_is_pomonas_pick_and_held_to_the_cap(week):
+    plan_id, cook = week
+    _with_leftover_lunch(plan_id, cook)
+    from app.tools import proposals as prop
+    prop._PROPOSALS.clear()
+    card = tools.propose_plan_changes(plan_id, [
+        {"date": D1, "slot": "dinner", "action": "change",
+         "candidates": [_rewrite("Chicken Basil Bowls", GROUND_CHICKEN, 10, 15)({})]},
+    ])
+    picks = iter([_rewrite("Slow Chicken Braise", THIGHS, 15, 40)({}),
+                  _rewrite("Quick Chicken Lettuce Cups", GROUND_CHICKEN, 10, 10)({})])
+    again = prop.another_for_row(card["proposal_id"], 0, picker=lambda ctx: next(picks))
+    assert again["status"] == "picked"
+    names = [c["meal_name"] for c in again["proposal"]["rows"][0]["candidates"]]
+    assert names == ["Chicken Basil Bowls", "Quick Chicken Lettuce Cups"], "the slow one was not offered"
+    stored = prop.get_proposal(card["proposal_id"])["rows"][0]["candidates"]
+    assert stored[-1].get("by_pomona") is True and not stored[0].get("by_pomona")
+
+
+def test_a_pomona_pick_on_the_chat_card_is_not_let_through_save_uncapped(week):
+    """Belt and braces: a by_pomona candidate that runs long on a chained
+    dinner meets the write's own cap backstop — refused per row."""
+    plan_id, cook = week
+    _with_leftover_lunch(plan_id, cook)
+    from app.tools import proposals as prop
+    prop._PROPOSALS.clear()
+    card = tools.propose_plan_changes(plan_id, [
+        {"date": D1, "slot": "dinner", "action": "change",
+         "candidates": [_rewrite("Slow Chicken Braise", THIGHS, 15, 40)({})]},
+    ])
+    prop.get_proposal(card["proposal_id"])["rows"][0]["candidates"][0]["by_pomona"] = True
+    applied = tools.apply_proposal(card["proposal_id"])
+    assert applied["status"] == "refused" and "only has 30" in applied["refused"][0]["why"]

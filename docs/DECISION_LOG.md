@@ -24,7 +24,7 @@ why*, not duplicating the diff.
   bit over Thursday's 30."). The cap still filters Pomona's own picks
   (`_gated`, `swap_meal_in_place`'s backstop, cap_enforce, dinner_gaps).
   The 55 was the rewrite estimating from nothing: it is now told
-  `current_minutes`, and a quick protein (ground, shrimp, tofu…) can't make
+  `current_minutes`, and a short quick-protein choice (ground, shrimp, canned beans; no slow word) can't make
   the dish slower (`plate_parts._keep_quick_time`). Only a chained dinner
   reached the refusal — a single night never was gated. Salmon → shrimp
   via Tweak works on main for a single night; via "Change recipe" the name

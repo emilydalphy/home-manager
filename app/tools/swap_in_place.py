@@ -1072,6 +1072,7 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
         line = over_cap_said(weekly_plan_id, pick, [entry])
         if line:
             out["over_cap_said"] = out["said"] = line
+            out["over_cap_note"] = over_cap_note(weekly_plan_id, pick, [entry])
     return out
 
 
@@ -1533,6 +1534,23 @@ def over_cap_said(weekly_plan_id: int, pick: dict, entries: list[dict], said: st
     Thursday's 30." — or "" when it fits (or says no minutes at all).
     `said` is a sentence the write already has (swapped_said, for a dish
     on several meals); the time goes after it rather than replacing it."""
+    tail = _over_cap_tail(weekly_plan_id, pick, entries)
+    if not tail:
+        return ""
+    if said:
+        return f"{said.rstrip()} It {tail}"
+    return f"Done — {pick.get('meal_name') or 'this one'} {tail}"
+
+
+def over_cap_note(weekly_plan_id: int, pick: dict, entries: list[dict]) -> str:
+    """over_cap_said without the "Done —": "X runs about 40 minutes, a bit
+    over Thursday's 30." — for a toast that has already said what changed
+    (the chat card's "2 nights were changed")."""
+    tail = _over_cap_tail(weekly_plan_id, pick, entries)
+    return f"{pick.get('meal_name') or 'This one'} {tail}" if tail else ""
+
+
+def _over_cap_tail(weekly_plan_id: int, pick: dict, entries: list[dict]) -> str:
     minutes = _pick_minutes(pick)
     if not minutes:
         return ""
@@ -1541,10 +1559,7 @@ def over_cap_said(weekly_plan_id: int, pick: dict, entries: list[dict], said: st
             # "A bit over" only while it IS a bit — 90 minutes against 30
             # is not, and saying so would be the soft kind of wrong.
             over = "a bit over" if minutes - cap <= 15 else "over"
-            tail = f"runs about {minutes} minutes, {over} {_weekday(entry['date'])}’s {cap}."
-            if said:
-                return f"{said.rstrip()} It {tail}"
-            return f"Done — {pick.get('meal_name') or 'this one'} {tail}"
+            return f"runs about {minutes} minutes, {over} {_weekday(entry['date'])}’s {cap}."
     return ""
 
 
@@ -1815,10 +1830,11 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
     if result.get("thaw_now"):
         out["thaw_now"] = result["thaw_now"]
     if own_pick:
-        line = over_cap_said(weekly_plan_id, pick, [e for e in entries if e["entry_id"] not in instead],
-                             said=out.get("said") or "")
+        kept = [e for e in entries if e["entry_id"] not in instead]
+        line = over_cap_said(weekly_plan_id, pick, kept, said=out.get("said") or "")
         if line:
             out["over_cap_said"] = out["said"] = line
+            out["over_cap_note"] = over_cap_note(weekly_plan_id, pick, kept)
     return out
 
 
