@@ -73,7 +73,12 @@ def test_the_dish_pages_swap_replaces_every_day_the_row_lists(eggs):
     assert out["status"] == "swapped"
     assert _meals(eggs, "breakfast") == {MON: NEW, WED: NEW, FRI: NEW}, "no Friday copy of the old dish"
     assert out["dates"] == [MON, WED, FRI]
-    assert "Friday" in out["said"] and "Monday" in out["said"], "the toast says where it landed"
+    # The names come from the seeded dates, not the variable names: MON/FRI
+    # are "tomorrow" and "five days out", which are Monday and Friday only
+    # when the suite runs on a Sunday.
+    first = datetime.date.fromisoformat(MON).strftime("%A")
+    last = datetime.date.fromisoformat(FRI).strftime("%A")
+    assert first in out["said"] and last in out["said"], "the toast says where it landed"
     titles = {d["date"]: (d.get("breakfast") or {}).get("leftover_from", {}).get("meal")
               or (d.get("breakfast") or {}).get("title") for d in tools.get_week_menu(eggs)["days"]}
     assert OLD not in titles.values()
