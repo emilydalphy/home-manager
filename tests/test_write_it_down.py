@@ -349,3 +349,8 @@ def test_the_whole_action_never_shorthand():
 def test_food_and_pans_are_not_people():
     """Emily, 2026-10-19: "'and it won't wait for the rice' is weird"."""
     assert "so it's best to have the rice going first" in " ".join(agent.WRITE_IT_DOWN.split())
+
+
+def test_the_serving_line_names_the_side_and_stops():
+    """Emily, 2026-10-19: "don't add the 'to scoop it up'"."""
+    assert '"Serve with injera or over rice"' in " ".join(agent.WRITE_IT_DOWN.split())
