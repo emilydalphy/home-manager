@@ -908,7 +908,14 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             # without it, a bare string iterates as CHARACTERS ('c','i','l',...)
             # rather than throwing, so a bad row would silently get rewritten
             # into character-list garbage the next time anything was removed.
-            updated = [d for d in _as_str_list(json.loads(existing["dislikes_json"])) if d.lower() != (item or "").lower()]
+            # Matched on the whole entry or on its food alone, so "forget
+            # cauliflower" removes "cauliflower, except cauliflower rice".
+            from .coordination import _split_exception
+            want = (item or "").strip().lower()
+            before = _as_str_list(json.loads(existing["dislikes_json"]))
+            updated = [d for d in before if want not in (
+                d.strip().lower(), _split_exception(d.strip().lower())[0].strip(" ,"))]
+            removed_dislikes = len(updated) < len(before)
             conn.execute(
                 "UPDATE meal_preferences SET dislikes_json = ?, updated_at = datetime('now') WHERE household_id = ?",
                 (json.dumps(updated), household_id()),
@@ -1018,4 +1025,6 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         # Said back, so chat can't tell the household it forgot a rating
         # that was never there: `removed` names what actually went.
         return {"field": field, "item": item, "deleted": bool(removed_proteins), "removed": removed_proteins}
+    if field == "dislikes":
+        return {"field": field, "item": item, "deleted": removed_dislikes}
     return {"field": field, "item": item, "deleted": True}

@@ -31,6 +31,13 @@ why*, not duplicating the diff.
   cauliflower got through the option gate, banner and pick gates. Won't-eat
   entries are split on their exception too (`_rule_terms`); a different-food
   exception ("but peanuts are fine") subtracts exactly as before.
+  Review round: an exception ends at the next , / and / or unless what
+  follows still says "fine" ("avoid dairy only when baked, and eggs" still
+  avoids eggs), and never subtracts a word that is itself avoided; a
+  Won't-eat dish NAMED as the exception (Cauliflower Rice Bowl from a head
+  of cauliflower) is not held on its list — never for a must-avoid;
+  `delete_preference("dislikes", "cauliflower")` removes the rule with its
+  exception and says `deleted: False` when nothing matched.
 - **An option the household can't have never reaches a sheet** (2026-10-19;
   branch `overnight/excluded-options-filtered`; tests
   `tests/test_excluded_options_filtered.py`). Change the protein offered

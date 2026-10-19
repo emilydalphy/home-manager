@@ -158,3 +158,38 @@ def test_the_prompt_asks_for_the_exception_as_its_own_field(signed_in, monkeypat
     item = calls[0]["tools"][0]["input_schema"]["properties"]["wont_eat"]["items"]
     assert item["properties"]["except"] and item["required"] == ["food"]
     assert "unless" in calls[0]["messages"][0]["content"]
+
+
+# ---------- review round, 2026-10-19 ----------
+
+@pytest.mark.parametrize("rule,dish", [
+    ("Avoid dairy only when baked, and eggs", "Frittata"),
+    ("No shellfish only when Maya is here, or peanuts", "Peanut Noodles"),
+])
+def test_an_exception_never_swallows_the_rest_of_a_hard_list(rule, dish):
+    tools.add_fact("people", rule, hard=True)
+    assert _hits(dish, [{"item": "6 eggs"}, {"item": "peanuts"}]), "the exception ate the next avoidance"
+
+
+def test_an_exception_that_names_both_still_excepts_both():
+    tools.add_fact("people", "Allergic to tree nuts but peanuts and almonds are fine", hard=True)
+    assert _hits("Walnut Brownies")
+    assert _hits("Peanut Noodles") == [] and _hits("Almond Cake") == []
+
+
+def test_homemade_cauliflower_rice_is_the_exception_not_a_clash():
+    tools.add_food_dislikes(["cauliflower, except cauliflower rice"])
+    assert _hits("Cauliflower Rice Bowl", [{"item": "1 head cauliflower"}]) == []
+    assert _hits("Roasted Veg Bowl", [{"item": "1 head cauliflower"}])
+
+
+def test_an_allergy_is_still_judged_on_what_goes_in_even_under_its_exceptions_name():
+    tools.add_fact("people", "Allergic to peanuts except peanut oil", hard=True)
+    assert _hits("Peanut Oil Stir-Fry", [{"item": "2 tbsp peanut butter"}])
+
+
+def test_forgetting_the_food_removes_the_rule_with_its_exception_and_says_so_honestly():
+    tools.add_food_dislikes(["cauliflower, except cauliflower rice", "olives"])
+    assert tools.delete_preference("dislikes", "cauliflower")["deleted"] is True
+    assert tools.get_household_memory()["dislikes"] == ["olives"]
+    assert tools.delete_preference("dislikes", "anchovies")["deleted"] is False

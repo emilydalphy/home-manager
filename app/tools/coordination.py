@@ -544,7 +544,15 @@ def _split_exception(span: str) -> tuple[str, str]:
     """Split "tree nuts but peanuts are fine" into what to avoid and what not to."""
     m = _CONTRAST_RE.search(span)
     if m:
-        return span[:m.start()], span[m.end():]
+        tail = span[m.end():]
+        # The exception ends where the list goes on: "avoid dairy only when
+        # baked, and eggs" still avoids eggs (review, 2026-10-19). Unless
+        # the rest is still the exception — "but peanuts and almonds are
+        # fine" excepts both.
+        cut = re.search(r"[,;]|\band\b|\bor\b|\bplus\b", tail)
+        if cut and not _FINE_RE.search(tail[cut.start():]):
+            return span[:m.start()] + " " + tail[cut.start():], tail[:cut.start()]
+        return span[:m.start()], tail
     # The comma form: "no cow milk for Emily, oat milk is fine".
     for m in re.finditer(r",", span):
         tail = span[m.end():]
@@ -711,6 +719,10 @@ def _match_terms(
             carves.append(words)
             continue
         for word in words:
+            # Never a word that is itself one of the things avoided: an
+            # exception can narrow a rule, not delete another one.
+            if any(len(p) == 1 and _keyword_variants(p[0]) & _keyword_variants(word) for p in phrases):
+                continue
             excluded |= _keyword_variants(word)
             # "…but peanuts are fine" lifts the dishes that are peanut by
             # definition (satay) out of the "nut" family too.
@@ -1374,6 +1386,14 @@ def check_meal_conflicts(
         detail = _match_detail(avoidance["terms"], segments, gluten_free_segments,
                                label_segments, strict_segments, listed_segments)
         if not detail:
+            continue
+        # A Won't-eat dish that IS the household's exception — "Cauliflower
+        # Rice Bowl" made from a head of cauliflower — is what they asked to
+        # keep, so its list doesn't count against it. Never for a must-avoid:
+        # an allergy is judged on what goes in.
+        if avoidance["severity"] != "hard" and segments and any(
+                rx.search(segments[0]) for _, groups in avoidance["terms"]
+                for rx in getattr(groups, "carve_outs", ())):
             continue
         matched, matched_word = detail
         hits.append({
