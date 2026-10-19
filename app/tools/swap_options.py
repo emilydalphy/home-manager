@@ -310,6 +310,13 @@ def _gate(pick: dict, entry: dict) -> str | None:
     return _swap.pick_gate(pick, entry)
 
 
+def _offered_ingredients(pick: dict) -> list[dict]:
+    from . import recipes as _recipes
+    if _saved_dish(pick.get("meal_name") or ""):
+        return _recipes.saved_ingredients(pick["meal_name"])
+    return pick.get("ingredients") or []
+
+
 def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = None,
            weekly_plan_id: int | None = None) -> list[dict]:
     """The picks the household may actually have, in the order the model
@@ -328,6 +335,13 @@ def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = 
             continue
         pick = dict(pick, meal_name=name, ingredients=_as_ingredient_rows(pick.get("ingredients")))
         why = _gate_all(pick, days)
+        # Stricter than the tap's gate, on purpose (swap_in_place.offer_gate):
+        # a pick is the app's own suggestion, so the Won't eat list keeps it
+        # off the sheet, and so does a reason that says it's excluded.
+        # Judged on the saved recipe's list for a dish the house already
+        # has, the way _gate is — the short list is not what gets cooked.
+        if not why:
+            why = _swap.offer_gate(name, ingredients=_offered_ingredients(pick), note=pick.get("reason") or "")
         if not why and len(days) > 1:
             why = _swap.cap_gate(weekly_plan_id, pick, days)
         if why:

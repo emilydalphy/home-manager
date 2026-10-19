@@ -518,6 +518,16 @@ def _ask_options(context: dict, role: str = "protein") -> list[dict]:
 def _clean_options(raw: list, exclude: str) -> list[dict]:
     out = []
     seen = set()
+    # Read once for the whole list, not per option: every option is held to
+    # the same Won't eat list, allergies and hard facts (offer_gate).
+    _swap = _swap_mod()
+    try:
+        avoidances = _swap._coordination._avoidances()
+    except Exception:
+        # offer_gate reads them itself, and leaves every option off if
+        # that fails too — never a sheet of unchecked options.
+        logger.exception("Reading the household's avoidances failed; each option checks its own")
+        avoidances = None
     for o in raw or []:
         if not isinstance(o, dict):
             continue
@@ -530,6 +540,15 @@ def _clean_options(raw: list, exclude: str) -> list[dict]:
         low = name.lower()
         same = bool(exclude) and low in ((exclude or "").lower(), "ground " + (exclude or "").lower())
         if not name or low in seen or same:
+            continue
+        # The prompt hands the model must_not_contain and dislikes; this is
+        # what makes it so. "Ground pork" with the note "excluded, no pork"
+        # reached a no-pork house's sheet (2026-10-19). Dropped BEFORE the
+        # four are counted, so a dropped one makes room for the next; fewer
+        # than four left is fewer shown, never one put back.
+        why = _swap.offer_gate(name, note=o.get("note") or "", avoidances=avoidances)
+        if why:
+            logger.warning("plate part option %r dropped: %s", name, why)
             continue
         seen.add(name.lower())
         out.append({"name": name[:1].upper() + name[1:], "note": (o.get("note") or "").strip()[:40]})

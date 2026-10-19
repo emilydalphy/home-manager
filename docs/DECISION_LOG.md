@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An option the household can't have never reaches a sheet** (2026-10-19;
+  branch `overnight/excluded-options-filtered`; tests
+  `tests/test_excluded_options_filtered.py`). Change the protein offered
+  "Ground pork — excluded, no pork": the prompt said no, nothing in code did.
+  `swap_in_place.offer_gate` now drops, before the sheet counts its options,
+  any option that trips the Won't eat list (dislikes — where "we don't eat
+  pork" is saved), an allergy or a hard fact (the banner's own matcher,
+  `check_meal_conflicts`), or whose own note says it's excluded. Used by
+  plate_parts' option list (protein/veg/carb) and Swap's three picks. Fewer
+  left is fewer shown, never refilled. Stricter than pick_gate on dislikes
+  on purpose: an option is the app's suggestion, a typed choice is not.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

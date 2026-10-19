@@ -55,6 +55,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import re
 import uuid
 
 from ..db import get_conn
@@ -563,6 +564,54 @@ def _hard_clash(pick: dict) -> list[dict]:
         return [{"meal": pick.get("meal_name") or "", "severity": "hard", "member": None,
                  "restriction": "", "source": "check_failed", "matched": []}]
     return [h for h in hits if h.get("severity") == "hard"]
+
+
+# What a model writes on an option it knows the household can't have. The
+# card that brought this in (Loop Board, 2026-10-19): "Ground pork" offered
+# for a beef stir-fry with the note "excluded, no pork" — listed, flagged,
+# and shown. Only phrases that say THIS option is off; "lighter than pork"
+# or "no thawing" are ordinary notes and stay — and so is "Emily can't have
+# dairy, so it's oat milk", which is a SAFE pick saying why it's safe.
+_SELF_FLAGGED_RE = re.compile(
+    r"\b(?:excluded|not allowed|off[- ]limits|forbidden|not permitted|on the never list)\b",
+    re.IGNORECASE,
+)
+
+
+def offer_gate(name: str, ingredients: list[dict] | None = None, note: str = "",
+               avoidances: list[dict] | None = None) -> str | None:
+    """
+    Why an option the AI offers must stay off the sheet, or None when it
+    may be shown — for every option list a sheet draws (plate_parts'
+    Change the protein/veg/carb, swap_options' three picks). The prompt
+    already tells the model must_not_contain and dislikes; this is the code
+    that holds it to that, because a prompt instruction is a request.
+
+    Stricter than pick_gate on one point, deliberately: the household's
+    Won't eat list (dislikes — where "we don't eat pork" is saved,
+    memory.add_fact_from_chat) is a reason here. A dislike never refuses a
+    dish someone ASKED for (_hard_clash), but an option is the app's own
+    suggestion, and suggesting a food the house said it won't eat is the
+    one thing an option list must not do. Same matcher as the draft's
+    banner (coordination.check_meal_conflicts), so a conditional rule's
+    exception ("no cauliflower unless cauliflower rice") is honoured the
+    same way. A step-only hit is not a reason — options carry no steps.
+    """
+    name = (name or "").strip()
+    if _SELF_FLAGGED_RE.search(note or ""):
+        return "flagged as excluded by the model"
+    try:
+        hits = _coordination.check_meal_conflicts(name, ingredients=_clean_ingredients(ingredients),
+                                                  avoidances=avoidances)
+    except Exception:
+        logger.exception("Exclusion check failed for an option; leaving it off rather than guessing")
+        return "the exclusion check failed"
+    for hit in hits:
+        if hit.get("steps_only"):
+            continue
+        if hit.get("severity") == "hard" or hit.get("source") == "dislike":
+            return f"clashes with {hit.get('restriction') or 'something this house won’t eat'}"
+    return None
 
 
 # ---------- the swap ----------
