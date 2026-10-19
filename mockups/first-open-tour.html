@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First-open tour — mockup</title>
+<!-- Mockup for the Loop Board card "Build the in-app tour (Option A)"
+     (Emily, 2026-10-18). Every step of the tour as it is built on branch
+     overnight/first-open-tour, drawn over the real screens of a first
+     draft (Plan "Here's your week.", Shop, Cook, Today at 390px). Open it
+     straight from the repo: it reads the real tokens and fonts, so every
+     colour is a theme.css token (rule 9) and it follows light/dark like
+     the app. Built on the 2026-10-06 proposal's drawing
+     (mockups/first-look-tour.html on overnight/first-look-tour-proposal);
+     the offer sheet is gone — Option A starts on step 1, and "Skip the
+     tour" is on every card. -->
+<link rel="stylesheet" href="../static/fonts/fonts.css">
+<link rel="stylesheet" href="../static/theme.css">
+<style>
+  body { background: var(--ground); color: var(--ink); font-family: var(--font-body); margin: 0; padding: 24px 16px 48px; }
+  .intro { max-width: 760px; margin: 0 auto 24px; }
+  .intro h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
+  .intro p { margin: 0 0 6px; color: var(--ink-secondary); line-height: 1.45; }
+  .row { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+  figure { margin: 0; }
+  figcaption { max-width: 390px; margin-top: 10px; font-size: 14px; color: var(--ink-secondary); line-height: 1.4; }
+  figcaption b { color: var(--ink); }
+
+  /* ---------- a phone, drawn from the app's own pieces ---------- */
+  .phone { width: 390px; max-width: calc(100vw - 32px); height: 844px; position: relative; overflow: hidden;
+    border-radius: 34px; border: 1.5px solid var(--hairline); background: var(--ground); }
+  .band { background: var(--spruce); color: var(--ivory-ink); padding: 22px 20px 44px; }
+  .band-top { display: flex; justify-content: space-between; align-items: center; }
+  .brand { font-family: var(--font-display); font-weight: 700; color: var(--ivory-ink-muted); font-size: 15px; display: flex; gap: 8px; align-items: center; }
+  .chip { font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; background: var(--spruce-raised); color: var(--ivory-ink-muted); padding: 5px 9px; border-radius: var(--radius-badge-sm); }
+  .gear { width: 44px; height: 44px; border-radius: var(--radius-tile); background: var(--spruce-raised); }
+  .band h2 { color: var(--ivory-ink); font-family: var(--font-display); font-weight: 700; letter-spacing: -0.038em; font-size: 31px; margin: 12px 0 2px; }
+  .band .sub { color: var(--ivory-ink-muted); font-size: 15px; }
+  .pills { display: flex; gap: 8px; margin-top: 14px; }
+  .pill { height: 36px; padding: 0 14px; border-radius: var(--radius-pill); background: var(--spruce-raised); color: var(--ivory-ink); font-weight: 700; font-size: 14px; display: flex; align-items: center; }
+  .pill.re { background: var(--apricot-light); color: var(--on-accent-ink); }
+  .seg { display: flex; margin-top: 16px; background: var(--spruce-raised); border-radius: var(--radius-control); padding: 3px; }
+  .seg span { flex: 1; text-align: center; padding: 11px 0; font-weight: 700; font-size: 14px; color: var(--ivory-ink-muted); border-radius: 11px; }
+  .seg span.on { background: var(--surface); color: var(--ink-strong); }
+  .sheet { background: var(--ground); margin-top: -30px; border-radius: var(--radius-hero) var(--radius-hero) 0 0; padding: 20px; position: relative; }
+  .card { background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 14px 16px; margin-bottom: 12px; }
+  .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-muted); }
+  .dish { font-family: var(--font-display); font-weight: 700; font-size: 17px; margin-top: 10px; }
+  .meta { font-size: 14px; color: var(--ink-secondary); margin-top: 2px; }
+  .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .mini { min-height: 36px; padding: 0 12px; border-radius: var(--radius-control); background: var(--sand); color: var(--ink); font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; }
+  .quiet { color: var(--ink-secondary); }
+  .dock { position: absolute; left: 0; right: 0; bottom: 82px; padding: 10px 20px; display: flex; gap: 10px; align-items: center; border-top: 1.5px solid var(--hairline); background: var(--ground); }
+  .dock .primary { flex: 1; height: 54px; border-radius: var(--radius-action); background: var(--apricot); color: var(--on-accent-ink); font-family: var(--font-display); font-weight: 700; font-size: 17px; display: grid; place-items: center; }
+  .dock .outline { flex: 1; height: 48px; border-radius: var(--radius-action); border: 1.5px solid var(--hairline-strong); font-weight: 700; display: grid; place-items: center; }
+  .fab { width: 54px; height: 54px; border-radius: var(--radius-ask); background: var(--spruce); color: var(--apricot-light); display: grid; place-items: center; font-size: 9px; font-weight: 800; letter-spacing: .14em; }
+  .tabs { position: absolute; left: 0; right: 0; bottom: 0; height: 82px; display: flex; border-top: 1.5px solid var(--hairline); background: var(--ground); }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--ink-inactive); }
+  .tab.on { color: var(--ink-strong); }
+  .shelf { display: flex; gap: 6px; margin-bottom: 14px; }
+  .shelf div { width: 74px; height: 72px; border-radius: var(--radius-tile); background: var(--surface); border: 1.5px solid var(--hairline); }
+  .shelf div.on { background: var(--celadon-tint); border-color: var(--celadon-edge); }
+  .tonight { background: var(--spruce); color: var(--ivory-ink); border-radius: var(--radius-card); padding: 18px; }
+  .tonight .eyebrow { color: var(--apricot-light); }
+  .tonight .t { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: -0.034em; margin: 6px 0 12px; }
+  .tonight .tiles { display: flex; gap: 10px; }
+  .tonight .tiles span { flex: 1; background: var(--spruce-raised); border-radius: var(--radius-tile); padding: 10px 12px; font-weight: 700; }
+
+  /* ---------- the tour ----------
+     A stop: the screen dimmed, one hole cut round the real control, and
+     the card beside it. The dim is the hole's own box-shadow, so there is
+     one scrim, not four. No motion: the tour isn't one of the five. */
+  .hole { position: absolute; border-radius: var(--radius-control); box-shadow: 0 0 0 2px var(--apricot), 0 0 0 9999px var(--scrim); }
+  .scrim { position: absolute; inset: 0; background: var(--scrim); }
+  .tcard { position: absolute; left: 16px; right: 16px; background: var(--surface); border: 1.5px solid var(--hairline);
+    border-radius: var(--radius-card); box-shadow: var(--shadow-dialog); padding: 16px 16px 8px; }
+  .tcard.centred { top: 50%; transform: translateY(-50%); }
+  .tcard .count { font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--apricot-label); }
+  .tcard h3 { font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: -0.028em; margin: 4px 0 0; color: var(--ink); }
+  .tcard p { margin: 6px 0 10px; font-size: 15px; line-height: 1.45; color: var(--ink); }
+  .tcard .row2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tcard .skip { min-height: 44px; padding: 0 4px; background: none; border: none; font: 700 15px var(--font-body); color: var(--ink-secondary); }
+  .tcard .next { min-height: 44px; padding: 0 22px; border-radius: var(--radius-action); background: var(--apricot); color: var(--on-accent-ink); font: 700 17px var(--font-display); letter-spacing: -0.02em; border: none; }
+
+  .prefs { padding: 4px 20px; }
+  .prefs-row { display: flex; align-items: center; justify-content: space-between; min-height: 56px; background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 12px 16px; margin-bottom: 10px; }
+  .prefs-row .tt { font-weight: 700; }
+  .prefs-row .ss { font-size: 14px; color: var(--ink-secondary); }
+  .prefs-row.new { box-shadow: 0 0 0 2px var(--apricot); }
+  .sheetwrap { position: absolute; left: 0; right: 0; bottom: 0; top: 120px; background: var(--surface); border-radius: var(--radius-hero) var(--radius-hero) 0 0; box-shadow: var(--shadow-sheet); padding-top: 18px; }
+  .sheetwrap .title { font-family: var(--font-display); font-weight: 700; font-size: 21px; padding: 0 20px 6px; }
+  .sheetwrap .lead { padding: 0 20px 14px; font-size: 14px; color: var(--ink-secondary); }
+</style>
+</head>
+<body>
+<div class="intro">
+  <h1>First-open tour</h1>
+  <p>Six stops, starting on the household's first draft ("Here's your week.") and ending back on it. Each stop dims the real screen, rings one real control in apricot, and puts a card beside it. <b>Next</b> moves on; <b>Skip the tour</b> (or Esc) ends it for good. Done or skipped is saved for the person (the household when nobody's picked), on the server.</p>
+  <p>A stop whose control isn't on screen this week (no open meal to Pick, no list yet) still shows its card, centred, with no ring. Phones are 390px; switch your system to dark to see the dark tokens.</p>
+</div>
+
+<div class="row" id="phones"></div>
+
+<script>
+// Each phone is one stop. `screen` draws the real screen underneath;
+// `hole` is where the ring sits (the real control's box plus 4px);
+// `card` is "below:<y>" / "above:<bottom>" / "centred".
+var PLAN = function (opts) {
+  opts = opts || {};
+  return '<div class="band"><div class="band-top"><span class="brand">Pomona <span class="chip">Draft</span></span><span class="gear"></span></div>' +
+    '<div class="pills"><span class="pill re">Re-plan</span><span class="pill">Plan the week</span></div>' +
+    '<h2>Here’s your week.</h2><div class="sub">Oct 19–25 · your turn</div>' +
+    '<div class="seg"><span class="' + (opts.days ? '' : 'on') + '">Meals</span><span class="' + (opts.days ? 'on' : '') + '">Schedule</span></div></div>' +
+    '<div class="sheet"><div class="card"><div class="eyebrow">Dinners</div>' +
+    (opts.days
+      ? '<div class="dish">Chicken Stir Fry</div><div class="meta">25 min</div><div class="acts"><span class="mini">Swap</span><span class="mini">Tweak</span><span class="mini">Move</span></div>' +
+        '<div class="eyebrow" style="margin-top:14px">Lunch</div><div class="dish quiet">Your call</div><div class="acts"><span class="mini">Pick</span></div>'
+      : '<div class="dish">Chicken Stir Fry</div><div class="meta">Monday · 25 min</div><div class="acts"><span class="mini">Swap</span><span class="mini">Tweak</span><span class="mini">Move</span></div>' +
+        '<div class="dish">Tacos</div><div class="meta">Tuesday</div><div class="acts"><span class="mini">Swap</span><span class="mini">Tweak</span><span class="mini">Move</span></div>') +
+    '</div></div>' +
+    '<div class="dock"><span class="primary">Approve the week</span><span class="fab">ASK</span></div>' + TABS('Plan');
+};
+var TABS = function (on) {
+  return '<div class="tabs">' + ['Today', 'Plan', 'Shop', 'Cook'].map(function (t) {
+    return '<div class="tab' + (t === on ? ' on' : '') + '">' + t + '</div>';
+  }).join('') + '</div>';
+};
+var ROOT = function (title, sub) {
+  return '<div class="band"><div class="band-top"><span class="brand">Pomona</span><span class="gear"></span></div><h2>' + title + '</h2>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+};
+var SHOP = ROOT('Shop') + '<div class="sheet"><div class="card"><div class="dish" style="margin-top:0">Your list</div><div class="meta">Pantry · coffee · rice · soy sauce…</div></div></div>' +
+  '<div class="dock"><span class="primary">Before you shop</span><span class="fab">ASK</span></div>' + TABS('Shop');
+var COOK = ROOT('Cook', 'Monday, Oct 19 · 1 cook tonight') + '<div class="sheet"><div class="shelf"><div class="on"></div><div></div><div></div><div></div></div>' +
+  '<div class="tonight"><div class="eyebrow">Monday · Tonight</div><div class="t">Chicken Stir Fry</div><div class="tiles"><span>Start 6:05</span><span>On the table 6:30</span></div></div></div>' +
+  '<div class="dock"><span class="primary">Start cooking</span><span class="fab">ASK</span></div>' + TABS('Cook');
+var TODAY = ROOT('Today', 'Monday, Oct 19') + '<div class="sheet"><div class="card"><div class="dish" style="margin-top:0">Today’s meals</div><div class="meta">Dinner · Chicken Stir Fry</div></div>' +
+  '<div class="card"><div class="dish" style="margin-top:0">Cook</div><div class="meta">Chicken Stir Fry · 25 min · Start by 6:05</div></div></div>' +
+  '<div class="dock"><span class="primary">Go shopping</span><span class="fab">ASK</span></div>' + TABS('Today');
+
+var STOPS = [
+  { screen: PLAN(), hole: 'left:140px; top:360px; width:218px; height:46px', card: 'below:420',
+    title: 'Swap it or tweak it',
+    body: 'Swap gives you a few other dishes to choose from. Tweak changes one part, like the protein or a side. Not in the list? Type something else.',
+    caption: '<b>1 · Swap and Tweak</b>, on the first row that has both. Tweak opens the plate’s parts; each part’s sheet has a “Something else…” line to type in.' },
+  { screen: PLAN({ days: true }), hole: 'left:300px; top:466px; width:58px; height:46px', card: 'below:556',
+    title: 'Move it, or pick it',
+    body: 'Move puts a meal on another day. A meal that says “Your call” is yours to decide: tap Pick and choose from a few.',
+    caption: '<b>2 · Move and Pick.</b> Rings Pick when an open meal is on screen, else Move. (Drawn here on Schedule, where both sit; the tour itself stays on whichever view is up.)' },
+  { screen: PLAN(), hole: 'left:316px; top:690px; width:62px; height:62px; border-radius: var(--radius-ask)', card: 'above:162',
+    title: 'Or just tell me',
+    body: 'Tap here and say it your way: “No fish this week.” “Make Tuesday quicker.” I’ll show you what I’d change.',
+    caption: '<b>3 · The Pomona button.</b> The chat that changes the plan; it shows the change card before anything is saved.' },
+  { screen: SHOP, hole: 'left:16px; top:688px; width:294px; height:62px; border-radius: var(--radius-action)', card: 'above:162',
+    title: 'Shop',
+    body: 'Approve the week and your shopping list lands here. Before you shop, tick any spices, sauces or pantry staples you’re out of. I leave those off unless you say.',
+    caption: '<b>4 · Shop.</b> The tour switches tab. Rings “Before you shop” when the list has one; on a first draft there’s usually no list yet, so it rings the Shop tab instead.' },
+  { screen: COOK, hole: 'left:16px; top:688px; width:294px; height:62px; border-radius: var(--radius-action)', card: 'above:162',
+    title: 'Cook',
+    body: 'Tonight’s dinner, when to start, and the recipe. Tap Start cooking and I’ll take you through it a step at a time.',
+    caption: '<b>5 · Cook.</b> Rings Start cooking when tonight has a cook, else the Cook tab.' },
+  { screen: TODAY, hole: 'left:2px; top:764px; width:94px; height:78px', card: 'above:162', last: true,
+    title: 'Today',
+    body: 'What today needs: what to buy, what to cook, and when to start. Tick things off as you go.',
+    caption: '<b>6 · Today.</b> Rings the Today tab. <b>Back to my week</b> ends the tour on the draft, where it started.' },
+  { screen: PLAN(), centred: true,
+    title: 'Move it, or pick it',
+    body: 'Move puts a meal on another day. A meal that says “Your call” is yours to decide: tap Pick and choose from a few.',
+    caption: '<b>No target on screen.</b> Same card, centred, no ring — here stop 2 on a week with no Move or Pick showing.', count: 2 }
+];
+
+var html = STOPS.map(function (s, i) {
+  var n = s.count || (i + 1);
+  var pos = s.centred ? ' centred' : '';
+  var style = '';
+  if (!s.centred) {
+    var bits = s.card.split(':');
+    style = bits[0] === 'below' ? 'top:' + bits[1] + 'px' : 'bottom:' + bits[1] + 'px';
+  }
+  return '<figure><div class="phone">' + s.screen +
+    (s.centred ? '<div class="scrim"></div>' : '<div class="hole" style="' + s.hole + '"></div>') +
+    '<div class="tcard' + pos + '" style="' + style + '" role="dialog" aria-label="' + s.title + '">' +
+      '<div class="count">' + n + ' of 6</div><h3>' + s.title + '</h3><p>' + s.body + '</p>' +
+      '<div class="row2"><button class="skip">Skip the tour</button><button class="next">' + (s.last ? 'Back to my week' : 'Next') + '</button></div>' +
+    '</div></div><figcaption>' + s.caption + '</figcaption></figure>';
+}).join('');
+
+// Replay: a Preferences row under Helpful tips.
+html += '<figure><div class="phone">' + PLAN() + '<div class="scrim"></div><div class="sheetwrap">' +
+  '<div class="title">Preferences</div><div class="lead">What Pomona knows about your household</div><div class="prefs">' +
+  '<div class="prefs-row"><div><div class="tt">How you eat</div><div class="ss">Balanced, nothing restrictive</div></div></div>' +
+  '<div class="prefs-row"><div><div class="tt">Helpful tips</div><div class="ss">How to ask me for things</div></div></div>' +
+  '<div class="prefs-row new"><div><div class="tt">Show me around again</div><div class="ss">Changing the plan, and each tab</div></div></div>' +
+  '<div class="prefs-row"><div><div class="tt">Morning text</div><div class="ss">Off</div></div></div>' +
+  '</div></div></div><figcaption><b>Replay.</b> “Show me around again”, under Helpful tips in the gear’s sheet (ringed here only to point at it). Closes the sheet, opens Plan, starts at stop 1.</figcaption></figure>';
+
+document.getElementById('phones').innerHTML = html;
+</script>
+</body>
+</html>
