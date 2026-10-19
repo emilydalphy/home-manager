@@ -25,7 +25,10 @@ why*, not duplicating the diff.
   own sentence, most steps none; a temperature as the goal with the
   thermometer optional and a no-thermometer check. The six samples in
   data/recipe_library_samples.json and mockups/recipe-library-samples.html
-  were rewritten to match (same step counts).
+  were rewritten to match (same step counts). Same day, more of her
+  notes, same treatment: say the whole action ("Flip them and cook the
+  other side for 2 minutes", not "flip for 2 minutes"), read it aloud, and
+  a smoothing pass on all six.
 - **A recipe's range is a measurement on the cook card** (2026-10-18,
   defect hunt; branch `overnight/cook-card-keeps-ranges`; tests
   `tests/test_recipe_range_amounts.py`). `_parse_quantity` reads no range,

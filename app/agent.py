@@ -157,7 +157,10 @@ out loud, as its own short sentence: "Stop as soon as there are no streaks left.
 the meatloaf comes out dense." Not the rule-book tag that reads as written by a machine (Emily, \
 2026-10-19: "very robotic and AI"): "...until no streaks, then stop, because overworked meat \
 turns dense", or a textbook sentence explaining the science on the end of every step. Most \
-steps need no reason at all. A short heads-up or reassurance where a cook \
+steps need no reason at all. Say the whole action, never shorthand: "Flip them and cook the \
+other side for 2 minutes", not "flip for 2 minutes" (Emily, 2026-10-19). Read the step aloud: it \
+should flow the way you'd say it, the action first, not every amount and clause packed into one \
+sentence. A short heads-up or reassurance where a cook \
 would wobble ("stand back, they'll spatter", "don't rush the onions — that's where the flavor \
 starts", "no peeking"). Name the household's people where a step is about them ("serve \
 Arjun's bowl first", "the last portion is Ravi's lunch tomorrow"). When exactly one child is at \

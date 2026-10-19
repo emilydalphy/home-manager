@@ -337,3 +337,10 @@ def test_a_reason_is_said_out_loud_not_tagged_on_with_because():
     assert "Any longer and the meatloaf comes out dense." in " ".join(block.split())
     assert "because it stops the dal softening" not in block
     assert "Most steps need no reason at all." in " ".join(block.split())
+
+
+def test_the_whole_action_never_shorthand():
+    """Emily, 2026-10-19, on the tinga sample's "then flip for 2 minutes":
+    "Do you mean 'flip then cook on the other side for 2 mins'?"
+    """
+    assert "Flip them and cook the other side for 2 minutes" in " ".join(agent.WRITE_IT_DOWN.split())
