@@ -89,7 +89,7 @@ def validate_slot(slot: str) -> None:
         )
 
 
-def _household_today() -> date:
+def _household_today(conn=None) -> date:
     """
     Today where the household lives, not where the container runs.
 
@@ -121,11 +121,16 @@ def _household_today() -> date:
     test_sunday_next_week_span, …); reading the zone-converted datetime
     directly would have walked straight past every one of them, and the
     first version of this did.
+
+    `conn` rides through to household_now (and household_zone under it),
+    for a caller inside an open write transaction that must not open a
+    second connection — _plan_grocery_candidate_entries inside approval.
     """
     from . import cooker as _cooker
 
     try:
-        shift = (_cooker.household_now().date() - datetime.now().date()).days
+        now = _cooker.household_now() if conn is None else _cooker.household_now(conn=conn)
+        shift = (now.date() - datetime.now().date()).days
     except Exception:
         logger.exception("Couldn't read the household's clock; falling back to the server's date")
         return date.today()
@@ -853,7 +858,7 @@ def open_slot_question(open_reason: str | None, derived_from_json: str | None) -
     except (TypeError, ValueError):
         derived = {}
     constraint = derived.get("constraint") if isinstance(derived, dict) else None
-    if constraint in ("hosting", "holiday_answer_changed"):
+    if constraint in ("hosting", "holiday_answer_changed", COOK_NIGHT_GONE):
         return text
     if constraint == _allergen_gate.ALLERGEN_CONSTRAINT or _allergen_gate.is_open_reason(text):
         return _allergen_gate.question_of(text)
@@ -5568,7 +5573,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         approval["approving_adults"] = [
             p["name"] for p in _coordination.get_household_people()
         ]
-        approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"])
+        approval["grocery_preview"] = preview_plan_grocery_impact(plan["weekly_plan_id"], today=today_str)
         # How many new recipes approving will write up first (the recipe
         # pass, 2026-09-21) — so the Approve button can say what the wait
         # is for instead of "Approving…" for ten seconds. 0 for a week made
@@ -6612,7 +6617,7 @@ def _weekly_plan_is_approved(weekly_plan_id: int | None) -> bool:
     return bool(row) and row["status"] == "approved"
 
 
-def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
+def _plan_grocery_candidate_entries(conn, weekly_plan_id: int, today: str | None = None):
     """
     The plan's meal entries whose ingredients have NOT yet been recorded as
     contributing to the grocery list — i.e. exactly what an approval would
@@ -6626,21 +6631,113 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int):
     plates.py). Both callers read the combined list through
     _entry_shopping_ingredients below, so the number promised and the
     number delivered still come from one place.
+
+    Only meals ON OR AFTER the household's today (Emily, 2026-10-18: "don't
+    buy for anything that didn't/won't happen"). A week approved on a
+    Friday used to buy Monday's and Tuesday's dinners too, and the preview
+    promised them. Strictly before, so tonight is still bought for; the
+    household's clock, never the server's, read on `conn` because approval
+    calls this inside its write transaction. A component plan's rows carry
+    the period start as a placeholder date, not a day they are eaten, so
+    they are exempt. And a reheat of a gone, uncooked cook night is left
+    out too (_reheats_of_gone_cooks): approval hands that night back as a
+    question rather than buying its side, so the preview must not count it.
+    `today` is a caller's own one reading of that clock (get_week_menu's).
     """
-    return conn.execute(
+    today = today or _household_today(conn=conn).isoformat()
+    rows = conn.execute(
         """
         SELECT mpe.id, mpe.recipe_id, r.ingredients_json, r.default_servings, mpe.sides_json
         FROM meal_plan_entries mpe
         JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
+          AND (mpe.component_category IS NOT NULL OR mpe.date >= ?)
           AND NOT EXISTS (
               SELECT 1 FROM meal_plan_grocery_links mpgl
               WHERE mpgl.meal_plan_entry_id = mpe.id AND mpgl.household_id = mpe.household_id
           )
         ORDER BY mpe.date ASC, mpe.id ASC
         """,
-        (weekly_plan_id, household_id()),
+        (weekly_plan_id, household_id(), today),
     ).fetchall()
+    orphaned = {t["entry_id"] for t, _ in _reheats_of_gone_cooks(conn, weekly_plan_id, today)}
+    return [r for r in rows if r["id"] not in orphaned] if orphaned else rows
+
+
+# The constraint an open slot carries when its cook night went by uncooked
+# before the week was approved — open_slot_question says its sentence.
+COOK_NIGHT_GONE = "cook_night_gone"
+
+
+def _reheats_of_gone_cooks(conn, weekly_plan_id: int, today: str) -> list[tuple[dict, dict]]:
+    """
+    (target, source) for every leftovers night still ahead whose cook night
+    is before `today` and was never cooked, started or bought for — food
+    nobody made, so nothing to reheat. A cook ticked done keeps its
+    leftovers night (the leftovers are real), and so does one an earlier
+    approval of this week already shopped for (a reopened week approved
+    again): the food was in the house, so this is no reason to re-ask.
+    Read on `conn` (inside approval's transaction).
+    """
+    from . import leftovers as _leftovers
+
+    sources = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)["sources"]
+    gone = {sid: src for sid, src in sources.items() if src["date"] < today}
+    if not gone:
+        return []
+    marks = ",".join("?" * len(gone))
+    begun = {
+        r["id"]: cook_begun(r) or r["bought"]
+        for r in conn.execute(
+            f"SELECT id, cooked_status, cook_started_at, EXISTS ("
+            f"  SELECT 1 FROM meal_plan_grocery_links l WHERE l.meal_plan_entry_id = mpe.id"
+            f"  AND l.household_id = mpe.household_id) AS bought "
+            f"FROM meal_plan_entries mpe WHERE household_id = ? AND id IN ({marks})",
+            (household_id(), *gone),
+        ).fetchall()
+    }
+    return [
+        (target, src)
+        for sid, src in gone.items() if not begun.get(sid)
+        for target in src.get("targets") or [] if target["date"] >= today
+    ]
+
+
+def _reask_reheats_of_gone_cooks(conn, weekly_plan_id: int) -> list[int]:
+    """
+    Approval's half of the rule above: each leftovers night whose cook night
+    went by uncooked is handed back as an open question, the way the "−"
+    hands back a night (same steps, same order, on the caller's
+    transaction), instead of a reheat of a dinner nobody made. Nothing is
+    bought for it. Returns the ids of the reheat rows taken off.
+    """
+    today = _household_today(conn=conn).isoformat()
+    taken: list[int] = []
+    for target, source in _reheats_of_gone_cooks(conn, weekly_plan_id, today):
+        row = conn.execute(
+            "SELECT cooked_status, cook_started_at FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (target["entry_id"], household_id()),
+        ).fetchone()
+        if row is None or cook_begun(row):
+            continue
+        _unlink_leftover_target(weekly_plan_id, target["entry_id"], conn=conn)
+        _grocery._reverse_meal_grocery_contributions(target["entry_id"], conn=conn)
+        _release_prep_rows(conn, [target["entry_id"]])
+        _release_ready_made_recommendations(conn, [target["entry_id"]])
+        conn.execute(
+            "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (target["entry_id"], household_id()),
+        )
+        night, cook_day = _weekday_of(target["date"]), _weekday_of(source["date"])
+        plan_slot_open(
+            weekly_plan_id, target["date"], target["slot"],
+            f"{night} was going to be leftovers from {cook_day}’s {source['meal']}, "
+            f"and {cook_day}’s gone — what would you like instead?",
+            derived_from={"constraint": COOK_NIGHT_GONE, "dish": source["meal"]},
+            conn=conn,
+        )
+        taken.append(target["entry_id"])
+    return taken
 
 
 # What the household is told, once, the first time the app rounds a meal
@@ -6878,7 +6975,7 @@ def _entry_side_groups(row) -> list[tuple[list[dict], int | None, bool]]:
     return [(ings, servings, not big) for (servings, big), ings in groups.items() if ings]
 
 
-def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
+def preview_plan_grocery_impact(weekly_plan_id: int, today: str | None = None) -> dict:
     """
     What approving this plan WOULD put on the grocery list, without putting
     anything there. Writes nothing at all.
@@ -6934,7 +7031,7 @@ def preview_plan_grocery_impact(weekly_plan_id: int) -> dict:
     if not plan:
         conn.close()
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
-    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
+    entries = _plan_grocery_candidate_entries(conn, weekly_plan_id, today=today)
     have_names = {
         row["item"].strip().lower()
         for row in conn.execute(
@@ -7359,6 +7456,11 @@ def _settle_weekly_plan_approval(
                 ).fetchone()
                 period_start, period_days = plan_period(plan_row)
                 took_over = retire_overlapping_plans(weekly_plan_id, period_start, period_days, conn=conn)
+                # A leftovers night whose cook night went by uncooked becomes
+                # a question before anything is bought (Emily, 2026-10-18).
+                # Only on a real transition, like the takeover: a rebuild of
+                # a wiped list was already settled by the first yes.
+                _reask_reheats_of_gone_cooks(conn, weekly_plan_id)
             entries = _plan_grocery_candidate_entries(conn, weekly_plan_id)
             approved_at = conn.execute(
                 "SELECT approved_at FROM weekly_plans WHERE id = ? AND household_id = ?",

@@ -277,8 +277,17 @@ def cook_ahead_repeats(weekly_plan_id: int) -> list[dict]:
     Cook card the household is standing on one dish having chosen to look
     at it. The two are different questions: "is this worth asking about"
     and "what days can this row claim".
+
+    And a day already gone by is not part of a repeat (2026-10-18): a week
+    approved on Friday would otherwise batch Saturday onto Thursday's cook,
+    a dinner nobody made from this week, and buy nothing for Saturday —
+    approval buys only for the nights ahead
+    (weekly_plan._plan_grocery_candidate_entries). The household's today.
     """
-    rows = [r for r in _plan_rows(weekly_plan_id) if _is_a_cook(r)]
+    from . import weekly_plan as _weekly_plan  # lazy: the grocery/plan modules are circular
+
+    today = _weekly_plan._household_today().isoformat()
+    rows = [r for r in _plan_rows(weekly_plan_id) if _is_a_cook(r) and r["date"] >= today]
     options = cook_ahead_options(weekly_plan_id)
     chains = _leftovers.plan_leftover_chains(weekly_plan_id)
     chained = set(chains["leftovers"]) | set(chains["sources"])
