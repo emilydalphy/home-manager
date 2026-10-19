@@ -193,7 +193,7 @@ def test_every_way_of_tapping_a_meal_lands_on_the_meal_step():
     cook mode. (The root's list and its "Change" went on 2026-09-18; the
     rows' names are the one door now.)"""
     card = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):][:1200]
-    assert "goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back });" in card
+    assert "goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back," in card
     assert "openRecipeFor" not in card
     assert "data-rv-recipe" not in SHELL_JS
     # The dead second handler (no markup ever emitted it) is gone.
