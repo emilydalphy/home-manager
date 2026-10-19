@@ -7845,6 +7845,12 @@ def _finish_week_slots(
     # to answer.
     _complete_plates_pass(plan_id, household_memory, intake)
 
+    # A prepped batch's stored note says what the week now does, not what
+    # the answer asked for: every pass that can move a lunch has run by
+    # here. See weekday_lunches.sync_prep_notes; it swallows its own failures.
+    if lunches_answered:
+        _weekday_lunches.sync_prep_notes(plan_id)
+
     audit = tools.audit_plan_slots(plan_id, day_count=day_count, skip_days=skip_days)
     for gap in audit["missing"]:
         day_name = datetime.date.fromisoformat(gap["date"]).strftime("%A")

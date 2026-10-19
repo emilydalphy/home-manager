@@ -355,6 +355,31 @@ def _links_to_id(row: dict, cook_id: int) -> bool:
     return (row["derived"].get("links_to") or "") == f"entry_id:{cook_id}"
 
 
+def _gap_ids(lunches: dict, lunch_date: str) -> list[int] | None:
+    """
+    A prepped lunch the draft left with no planned row: the ids to replace
+    so the batch can be written onto it ([] when there is no row at all),
+    or None when the day is deliberately empty (planned_empty: nobody
+    home, a day left out), which no batch may fill.
+
+    Tester Home, 2026-10-19: the model sent no Friday lunch for a Friday
+    "prepped Thursday", the batch loop passed over the missing day, and
+    the end-of-generation audit opened it as a generation_gap ("Your
+    call") under a Thursday dinner whose note said it was cooked for
+    Friday's lunch. The household answered that lunch; it is never a
+    question.
+    """
+    rows = lunches.get(lunch_date) or []
+    if any(r["slot_state"] == "planned_empty" for r in rows):
+        return None
+    return [r["id"] for r in rows if r["slot_state"] == "open"]
+
+
+def _replaced(rows: list[dict]) -> dict:
+    """derived_from's `replaced`, only when there was a drafted dish to name."""
+    return {"replaced": rows[0]["meal"]} if rows else {}
+
+
 def _prep_day_cook(prep_date: str, first_lunch: str, lunches: dict, dinners: dict, chains: dict) -> dict | None:
     """
     The meal ON the prep day that can be a prepped batch's cook: the
@@ -1059,7 +1084,10 @@ def apply_to_plan(plan_id: int, intake: dict | None, budget=None, picker=None) -
                     _save_derived(cook_id, derived)
                 rest = members
             else:
-                if model_cook is None or not first_rows:
+                # A first lunch the draft never sent is still the batch's
+                # to cook on (see _gap_ids), unless the day is empty on purpose.
+                first_gap = None if first_rows else _gap_ids(lunches, first["date"])
+                if model_cook is None or (not first_rows and first_gap is None):
                     out["skipped"].append({"date": first["date"], "why": "no prepped lunch to build the batch from"})
                     continue
                 dish, groups = model_cook["meal"], _food_groups(model_cook)
@@ -1090,9 +1118,9 @@ def apply_to_plan(plan_id: int, intake: dict | None, budget=None, picker=None) -
                         out["skipped"].append({"date": first["date"], "why": "the lunch already feeds another meal"})
                         continue
                     row = _weekly_plan._replace_slot_entries(
-                        plan_id, _ids(first_rows), first["date"], "lunch", dish,
+                        plan_id, _ids(first_rows) or first_gap or [], first["date"], "lunch", dish,
                         food_groups=groups, reasoning=note,
-                        derived_from=dict(cook_derived, replaced=first_rows[0]["meal"]),
+                        derived_from=dict(cook_derived, **_replaced(first_rows)),
                     )
                     cook_id = row.get("entry_id")
                     if not cook_id:
@@ -1100,7 +1128,12 @@ def apply_to_plan(plan_id: int, intake: dict | None, budget=None, picker=None) -
                 rest = members[1:]
             for d in rest:
                 rows = rows_by_date[d["date"]]
-                if not rows:
+                # The ids the batch's write takes over: the drafted lunch,
+                # or — when the draft sent none, or it was reopened — the
+                # gap itself (_gap_ids). A day empty on purpose stays so.
+                ids = _ids(rows) if rows else _gap_ids(lunches, d["date"])
+                if ids is None:
+                    out["skipped"].append({"date": d["date"], "why": "nobody's lunch to plan that day"})
                     continue
                 if any(r["id"] in chains["sources"] for r in rows):
                     out["skipped"].append({"date": d["date"], "why": "the lunch already feeds another meal"})
@@ -1116,11 +1149,11 @@ def apply_to_plan(plan_id: int, intake: dict | None, budget=None, picker=None) -
                     # Past three days from the prep day: a portion frozen on
                     # the cook (the fold's freezer night, same row).
                     _weekly_plan._replace_slot_entries(
-                        plan_id, _ids(rows), d["date"], "lunch",
+                        plan_id, ids, d["date"], "lunch",
                         _leftovers.freezer_night_name(dish, cook_date), reasoning="",
                         derived_from={
                             _leftovers.FROM_FREEZER_KEY: {"cook": f"entry_id:{cook_id}", "dish": dish},
-                            "constraint": CONSTRAINT, "replaced": rows[0]["meal"],
+                            "constraint": CONSTRAINT, **_replaced(rows),
                         },
                     )
                     frozen.append((cook_id, d["date"], "lunch"))
@@ -1133,9 +1166,9 @@ def apply_to_plan(plan_id: int, intake: dict | None, budget=None, picker=None) -
                     _save_derived(rows[0]["id"], derived)
                 else:
                     _weekly_plan._replace_slot_entries(
-                        plan_id, _ids(rows), d["date"], "lunch", dish,
+                        plan_id, ids, d["date"], "lunch", dish,
                         food_groups=groups, reasoning="",
-                        derived_from=dict(link, replaced=rows[0]["meal"]),
+                        derived_from=dict(link, **_replaced(rows)),
                     )
                 targets.setdefault(cook_id, []).append(f"{d['date']}:lunch")
             taken.add(dish.strip().lower())
@@ -1316,6 +1349,83 @@ def batch_lunch_phrase(dates: list[str]) -> str:
     """
     names = [_title(_weekday(d)) for d in sorted(dates)]
     return f"{_join(names)}’s lunch{'es' if len(names) > 1 else ''}"
+
+
+def batch_note(prep_date: str, cook_date: str, slot: str, prep_day_cook: bool, lunch_dates) -> str:
+    """
+    The one sentence a prepped batch's cook says about its schedule, from
+    the lunches it ACTUALLY feeds — what get_week_menu hands out as
+    schedule_note and what sync_prep_notes keeps derived_from.prep_note to,
+    so the stored note and the plan cannot name different days. "" when it
+    feeds no lunch at all.
+    """
+    fed = sorted(set(lunch_dates or []))
+    if not fed:
+        return ""
+    if slot == "lunch" and cook_date == prep_date and not prep_day_cook:
+        # The cook IS this lunch, on its own prep day: say only what it
+        # makes besides itself (integration review, 2026-09-27).
+        later = [d for d in fed if d != cook_date]
+        return f"Makes {batch_lunch_phrase(later)} too." if later else ""
+    return f"Cook this {_title(_weekday(prep_date))} for {batch_lunch_phrase(fed)}."
+
+
+def sync_prep_notes(plan_id: int) -> list[dict]:
+    """
+    Make every prepped batch's stored note say what the plan now does —
+    run at the foot of generation, after every pass that can move a lunch.
+
+    apply_to_plan writes the note from the household's ANSWER ("Cook this
+    Thursday for Friday's lunch."), and a pass after it can still take a
+    lunch off the cook (Tester Home, 2026-10-19: the note named Friday and
+    the dinner's make_double_for did not). The note is rewritten from the
+    batch as it stands (prepped_batches); a prep-day DINNER that ends up
+    feeding no lunch at all is not a batch any more, so its prep stamps go
+    with the note — the prep session must not list it either. Never raises.
+    """
+    changed: list[dict] = []
+    try:
+        batches = prepped_batches(plan_id)
+    except Exception:
+        logger.exception("Prep notes not re-synced on plan %s; they stand as written", plan_id)
+        return changed
+    conn = get_conn()
+    try:
+        for b in batches:
+            row = conn.execute(
+                "SELECT derived_from_json, reasoning FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (b["cook_entry_id"], household_id()),
+            ).fetchone()
+            if row is None:
+                continue
+            derived = json.loads(row["derived_from_json"] or "{}") or {}
+            old = derived.get("prep_note")
+            new = batch_note(b["prep_date"], b["cook_date"], b["slot"], b["prep_day_cook"], b["lunch_dates"])
+            if b["prep_day_cook"] and not b["lunch_dates"]:
+                for key in ("prep_note", "prep_day_cook", "prep_date", "prep_day"):
+                    derived.pop(key, None)
+            elif old is None or old == new:
+                continue
+            else:
+                derived["prep_note"] = new
+            # The reasoning line repeats the note only where apply_to_plan
+            # put it there (a lunch cook); a dinner keeps its own line.
+            reasoning = new if (old and row["reasoning"] == old) else row["reasoning"]
+            conn.execute(
+                "UPDATE meal_plan_entries SET derived_from_json = ?, reasoning = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(derived), reasoning, b["cook_entry_id"], household_id()),
+            )
+            changed.append({"entry_id": b["cook_entry_id"], "was": old, "now": derived.get("prep_note")})
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        changed = []
+        logger.exception("Prep notes not re-synced on plan %s; they stand as written", plan_id)
+    finally:
+        conn.close()
+    if changed:
+        logger.info("Plan %s prep notes re-said to match the plan: %s", plan_id, changed)
+    return changed
 
 
 def _save_derived(entry_id: int, derived: dict, reasoning: str | None = None) -> None:
