@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Today's "Shall I put … together?" card answers itself when the dock is
+  taken** (2026-10-19; branch `overnight/plan-next-week-button`; tests
+  `tests/test_today_nudge_card_button.py`). With a featured move ("Go
+  shopping") owning the dock, the offer card showed with no way to answer it
+  on Today. Emily's Option A (2026-10-18): the card carries an outline
+  `.btn-secondary` "Plan next week" ("Plan this week" for the current
+  period), hidden whenever the dock draws `#plan-nudge-go`, so a free dock is
+  still the one answer. Both call `startPlanningFromNudge`, so they can't drift.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

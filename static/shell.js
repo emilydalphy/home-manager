@@ -1623,7 +1623,17 @@
         (nudge.shop_day_label
           ? '<div class="plan-nudge-body">You shop ' + escapeHtml(nudge.shop_day_label) + '. I’ll have the list ready the day before.</div>'
           : '') +
+        // The card's own way to answer, for when another action owns the
+        // dock ("Go shopping") and the question would otherwise sit there
+        // with nothing on Today to answer it (Emily, 2026-10-18, Option A).
+        // Built hidden; renderTodayDock shows it only while the dock is
+        // taken, so a free dock stays the one answer. Outline, never a
+        // second apricot (Rule 5).
+        '<button type="button" class="btn-secondary plan-nudge-card-go" id="plan-nudge-card-go" hidden>' +
+          (nudge.is_current_week ? 'Plan this week' : 'Plan next week') + '</button>' +
       '</div>';
+    var cardGo = wrap.querySelector('#plan-nudge-card-go');
+    if (cardGo) cardGo.addEventListener('click', function () { startPlanningFromNudge(nudge); });
     // On a day with nothing on it the empty moment asks this instead
     // (renderTodayEmpty) — the card is hidden there, not rebuilt.
     if (panel) { renderTodayEmpty(panel); renderTodayDock(panel); }
@@ -3174,6 +3184,16 @@
     return (data.tomorrow && data.tomorrow.id === id) ? data.tomorrow : null;
   }
 
+  // What "Let's plan the week" does, from the dock or from the offer card's
+  // own button: one function, so the two can't come to mean different
+  // things. nudge.day_count, not seven — see renderPlanWeekNudge. A
+  // dismissed offer carries only its week_start; the household's own
+  // period length (planningPeriodDefault) fills the gap.
+  function startPlanningFromNudge(nudge) {
+    var days = nudge.day_count || (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
+    startPlanningWeek(nudge.week_start, days);
+  }
+
   // The one action at the foot of Now. The featured move's action wins;
   // with nothing featured and the week unplanned, the offer to plan it
   // (renderPlanWeekNudge) is the one thing to do. Nothing else is a dock:
@@ -3212,6 +3232,13 @@
     }
     dock.innerHTML = html;
     dock.hidden = !html;
+    // A question on Today always has an answer on Today: while the offer
+    // card is up and the dock is doing something else, the card shows its
+    // own "Plan next week" (renderPlanWeekNudge). Read off what the dock
+    // actually drew, so every branch above is covered without a list.
+    var nudgeWrap = panel.querySelector('#plan-week-nudge');
+    var cardGo = nudgeWrap && nudgeWrap.querySelector('#plan-nudge-card-go');
+    if (cardGo) cardGo.hidden = html.indexOf('id="plan-nudge-go"') !== -1;
     if (!html) return;
     var go = dock.querySelector('[data-move-action]');
     if (go) {
@@ -3221,13 +3248,7 @@
     }
     var planGo = dock.querySelector('#plan-nudge-go');
     if (planGo) {
-      planGo.addEventListener('click', function () {
-        // nudge.day_count, not seven — see renderPlanWeekNudge. A
-        // dismissed offer carries only its week_start; the household's
-        // own period length (planningPeriodDefault) fills the gap.
-        var days = nudge.day_count || (planningPeriodDefault && planningPeriodDefault.day_count) || 7;
-        startPlanningWeek(nudge.week_start, days);
-      });
+      planGo.addEventListener('click', function () { startPlanningFromNudge(nudge); });
     }
     var dismiss = dock.querySelector('#plan-nudge-dismiss');
     if (dismiss) dismiss.addEventListener('click', function () { dismissPlanWeekNudge(panel); });
