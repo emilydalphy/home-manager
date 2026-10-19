@@ -163,6 +163,34 @@ why*, not duplicating the diff.
   edit down stands), only ever down. Not covered: a person's own line (the
   dropped share left with its ledger row), and a line whose meals ALL went
   while ticked (comes back as it was, like the set-aside case).
+- **Shared Recipe Library, step 1: a dish researched once serves every household**
+  (2026-10-19; branch `overnight/shared-recipe-library`, stacked on and
+  merging AFTER `overnight/research-input-budget`; tests
+  `tests/test_shared_recipe_library.py`). New tables `recipe_library` +
+  `recipe_library_sources` (no household_id — `household_deletion.SHARED_TABLES`
+  names them) and `recipe_library_uses` (per household, report counts);
+  `recipes.library_id`. One write path, `recipe_library.file_entry`, built from
+  dish fields only. The recipe pass copies the library's base (no research, no
+  writer) after the allergen gate passes for THIS household; a clash, or a
+  `must_use` dish, is written for them (library research reused, nothing
+  billed). New research is filed the moment it lands;
+  a household planning a dish another is researching right now waits for it.
+  Never filed: typed/imported recipes, `must_use` dishes, anything naming a
+  member (the writer is told names via must_not_contain), household_changes,
+  change-request text, Tell Pomona rewrites. Sources are copied into the
+  household's own dish_research on use, so the recipe page, rewrite and link
+  checks are unchanged. `RECIPE_LIBRARY=off` restores per-household. No data
+  migration: existing recipes/research are not backfilled into the library.
+  Review round (privacy): a recipe body is filed as the BASE only when the
+  writer's spec carried nothing about the household (no must_not_contain,
+  children, eating style, kit, must_use, inventory, no names in dish_note) —
+  otherwise nothing is filed (research still is); no variants or tweaks in
+  step 1. Names are checked word by word across members, pets, the household
+  name, hard facts and hosting guest notes; a dish named for family ("Nana's",
+  "Kevin's", but not "Shepherd's") or asked for by name is never filed. A
+  household with an eating style, kit or children at the table is written for
+  (from library research) instead of copied; the copy's allergen check runs on
+  the list completed from the steps.
 - **Recipe research: ~134K input tokens a dish down to ~16K (est.)**
   (2026-10-18; branch `overnight/research-input-budget`; tests
   `tests/test_research_input_budget.py`). The page cap held; the bill was the

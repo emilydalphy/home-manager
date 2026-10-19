@@ -33,6 +33,7 @@ import time
 
 from ..db import get_conn
 from ._shared import household_id
+from . import recipe_library as _recipe_library
 
 
 _TURN_FIELDS = ("rounds", "input_tokens", "cache_read_tokens",
@@ -728,6 +729,9 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
         # same window as everything above -- see _pre_shop_counts for what
         # each of the four honestly counts.
         "pre_shop": _pre_shop_counts(conn, hid, since),
+        # Shared Recipe Library (2026-10-19): dishes the library answered
+        # (whole recipe / research only) against new research billed.
+        "recipe_library": _recipe_library.use_counts(conn, hid, since),
     }
     # Tokens are what happened; this is what they cost. Derived here so the
     # figure always reflects today's rate table rather than whatever was

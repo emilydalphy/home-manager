@@ -25,6 +25,7 @@ from .tools import typed_requests as _typed_requests
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import recipe_research as _recipe_research
+from .tools import recipe_library as _recipe_library
 from .tools import meal_variety as _meal_variety
 from .tools import leftovers_spread as _leftovers_spread
 from .tools import leftovers as _leftovers_mod
@@ -4718,41 +4719,90 @@ def research_dish(name: str, cuisine: str = "", dish_note: str = "", *, search: 
         saved = _recipe_research.saved_research(name)
         if saved and saved["sources"]:
             return saved
+        # The shared library before the web (2026-10-19): another household
+        # has had this dish researched, so its sources are copied in and no
+        # research call is made — whether or not this pass may search.
+        from_library = _research_from_library(name)
+        if from_library:
+            return from_library
         if not search or _recipe_research.empty_recently(saved):
             return None
-        budget = _dish_research_budget()
-        first_budget = {k: min(budget[k], _OPEN_SEARCH_SHARE[k]) for k in budget}
-        found = research_dish_llm(name, cuisine, dish_note, budget=first_budget, deadline=deadline) or {}
-        used = found.get("used") or {"web_search": 0, "web_fetch": 0}
-        sources = found.get("sources") or []
-        fallback = False
-        trusted = _recipe_research.trusted_cooks_for(cuisine)
-        if _recipe_research.needs_trusted_cooks(sources):
-            left = {k: budget[k] - used.get(k, 0) for k in budget}
-            # The fallback shares the dish's input budget (2026-10-18), and
-            # needs a search of its own: it can only read what one finds.
-            tokens_left = _recipe_research.dish_input_tokens() - int(found.get("input_tokens") or 0)
-            in_time = deadline is None or time.monotonic() < deadline
-            if left["web_fetch"] > 0 and left["web_search"] > 0 and tokens_left > 0 and in_time:
-                from_cooks = research_dish_llm(name, cuisine, dish_note, trusted=trusted, budget=left,
-                                               deadline=deadline, input_tokens=tokens_left) or {}
-                if any(s.get("read") for s in from_cooks.get("sources") or []):
-                    found, sources, fallback = from_cooks, from_cooks["sources"], True
-        ordered = _recipe_research.pick_lead(sources, trusted if fallback else None)
-        if not ordered:
-            if found.get("incomplete") and not sources:
-                # Review, 2026-10-18: the pages were never read (time ran
-                # out) or no search ran — another week can try again, so
-                # this is not remembered as a dish with nothing to find.
-                logger.info("Research for %r didn't finish; writing without it, not marked empty", name)
-                return None
-            logger.info("Research for %r found nothing usable; writing without it", name)
-            _recipe_research.note_empty_research(name)
-            return None
-        return _recipe_research.save_research(name, ordered, found.get("method_notes") or "", fallback)
+        other = _recipe_library.claim_research(name)
+        if other is not None:
+            # Another household is researching this very dish right now:
+            # wait for it rather than pay twice, then take what it filed.
+            left = (deadline - time.monotonic()) if deadline is not None else None
+            wait = _recipe_library._WAIT_FOR_OTHER_RESEARCH_SECONDS
+            other.wait(max(0.0, min(wait, left)) if left is not None else wait)
+            return _research_from_library(name)
+        try:
+            return _research_dish_new(name, cuisine, dish_note, deadline=deadline)
+        finally:
+            _recipe_library.release_research(name)
     except Exception:
         logger.exception("Researching %r failed; writing the recipe without research", name)
         return None
+
+
+def _research_from_library(name: str) -> dict | None:
+    """The library's research for this dish, copied into this household's
+    own dish_research (so the recipe page, the rewrite and the link checks
+    read it exactly as they read research of its own), or None."""
+    entry = _recipe_library.research_for(name)
+    if not entry:
+        return None
+    copied = _recipe_research.save_research(name, entry["sources"], entry.get("method_notes") or "",
+                                            entry.get("fallback_used"))
+    if copied and copied.get("sources"):
+        _recipe_library.record_use(name, "research")
+        return copied
+    return None
+
+
+def _research_dish_new(name: str, cuisine: str, dish_note: str, *, deadline: float | None) -> dict | None:
+    """research_dish's web search, run once per dish across households:
+    saved for this household and filed in the shared library."""
+    budget = _dish_research_budget()
+    first_budget = {k: min(budget[k], _OPEN_SEARCH_SHARE[k]) for k in budget}
+    found = research_dish_llm(name, cuisine, dish_note, budget=first_budget, deadline=deadline) or {}
+    # Counted once the call has run (and been billed) — not on the way in.
+    _recipe_library.record_use(name, "new")
+    used = found.get("used") or {"web_search": 0, "web_fetch": 0}
+    sources = found.get("sources") or []
+    fallback = False
+    trusted = _recipe_research.trusted_cooks_for(cuisine)
+    if _recipe_research.needs_trusted_cooks(sources):
+        left = {k: budget[k] - used.get(k, 0) for k in budget}
+        # The fallback shares the dish's input budget (2026-10-18), and
+        # needs a search of its own: it can only read what one finds.
+        tokens_left = _recipe_research.dish_input_tokens() - int(found.get("input_tokens") or 0)
+        in_time = deadline is None or time.monotonic() < deadline
+        if left["web_fetch"] > 0 and left["web_search"] > 0 and tokens_left > 0 and in_time:
+            from_cooks = research_dish_llm(name, cuisine, dish_note, trusted=trusted, budget=left,
+                                           deadline=deadline, input_tokens=tokens_left) or {}
+            if any(s.get("read") for s in from_cooks.get("sources") or []):
+                found, sources, fallback = from_cooks, from_cooks["sources"], True
+    ordered = _recipe_research.pick_lead(sources, trusted if fallback else None)
+    if not ordered:
+        if found.get("incomplete") and not sources:
+            # Review, 2026-10-18: the pages were never read (time ran
+            # out) or no search ran — another week can try again, so
+            # this is not remembered as a dish with nothing to find.
+            logger.info("Research for %r didn't finish; writing without it, not marked empty", name)
+            return None
+        logger.info("Research for %r found nothing usable; writing without it", name)
+        _recipe_research.note_empty_research(name)
+        return None
+    saved = _recipe_research.save_research(name, ordered, found.get("method_notes") or "", fallback)
+    # Filed in the library the moment it lands, before any recipe is
+    # written from it: a household waiting on this research (above)
+    # reads it from there.
+    try:
+        _recipe_library.file_entry(name, sources=ordered, method_notes=found.get("method_notes") or "",
+                                   fallback_used=fallback, cuisine=cuisine, origin="research")
+    except Exception:
+        logger.exception("Filing the research for %r in the recipe library failed", name)
+    return saved
 
 
 # ---------- "Tell Pomona what to change" (2026-10-05) ----------
@@ -4861,6 +4911,9 @@ def rewrite_meal_recipe(entry_id: int, request_text: str) -> dict:
             return {"status": "blocked",
                     "said": f"I couldn’t write that one without {food} in it — "
                             f"somebody here can’t have it. Try asking for something else."}
+        # Not filed in the shared library (review, 2026-10-19): a rewrite is
+        # written from the household's own words, which can name them. The
+        # card's tweak variants are a later step.
         return tools.apply_rewrite(spec_base, detail, text)
     tools.record_recipe_change_request(
         name, text, meal_plan_entry_id=entry_id,
@@ -5238,6 +5291,70 @@ def _research_capped(plain: str, recipe: dict, *, search: bool, weekly_plan_id=N
     return box.get("found")
 
 
+# Facts about a household a library base was written without — the
+# writer would have shaped the recipe around them, so a household with any
+# of these gets its own write (from the library's research; nothing new is
+# billed) rather than a copy. eating_style for safety of a kind (vegetarian,
+# keto), kit and children for whether they can cook and eat it as written.
+_WRITE_INSTEAD_OF_COPY = ("eating_style", "kitchen_kit", "children_at_table")
+
+
+def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dict],
+                       shared: dict | None = None) -> tuple[dict | None, bool]:
+    """
+    Copy-on-use (Shared Recipe Library step 1, 2026-10-19): fill this
+    household's pending recipe from the library's base for the dish, with
+    no model call — no research, no writer. The household's own row from
+    here on; nothing it does to it reaches the library.
+
+    The allergen gate runs on the library's ingredients for THIS household
+    first — a library dish with peanuts is never copied for a household
+    that can't have them. Returns (outcome or None, clashed).
+    """
+    try:
+        if any((shared or {}).get(k) for k in _WRITE_INSTEAD_OF_COPY):
+            return None, False
+        entry = _recipe_library.base_recipe(plain)
+        if not entry:
+            return None, False
+        # Judged on the list the copy will SAVE, steps' ingredients included
+        # (fill_recipe_details completes it the same way) — an egg only the
+        # method uses is a clash here, as it is on every written recipe.
+        judged = tools.complete_ingredient_list(entry["ingredients"], entry["instructions"],
+                                                entry.get("default_servings") or 4)
+        clashes = _allergen_gate.hard_clashes(plain, ingredients=judged, avoidances=avoidances)
+        if clashes:
+            logger.info("Library recipe for %r has %s; writing this household its own",
+                        plain, _allergen_gate._food_word(clashes))
+            return None, True
+        research_id = None
+        if entry["sources"]:
+            # Its sources, as researched, into this household's own
+            # dish_research — what the recipe page reads (recipes.research_id).
+            copied = _recipe_research.save_research(plain, entry["sources"], entry.get("method_notes") or "",
+                                                    entry.get("fallback_used"))
+            research_id = (copied or {}).get("id")
+        tools.fill_recipe_details(
+            name,
+            ingredients=entry["ingredients"],
+            instructions=entry["instructions"],
+            default_servings=entry.get("default_servings") or 4,
+            prep_time_minutes=entry.get("prep_time_minutes"),
+            cook_time_minutes=entry.get("cook_time_minutes"),
+            advance_prep_notes=entry.get("advance_prep_notes") or "",
+            advance_prep_step_indices=entry.get("advance_prep_step_indices") or [],
+            new_name=plain if plain != name else None,
+            household_changes=[],
+            research_id=research_id,
+            library_id=entry["id"],
+        )
+        _recipe_library.record_use(plain, "recipe")
+        return {"name": plain, "ok": True, "clash": [], "was": name}, False
+    except Exception:
+        logger.exception("Copying %r from the recipe library failed; writing it instead", plain)
+        return None, False
+
+
 def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances: list[dict],
                               *, research: bool = True, weekly_plan_id=None) -> dict:
     """
@@ -5265,6 +5382,16 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
         logger.warning("Recipe pass: %r names %s on its own; not writing it, it is re-picked",
                        name, _allergen_gate._food_word(name_clash))
         return {"name": name, "ok": False, "clash": name_clash}
+    # The shared recipe library first (2026-10-19): a dish another household
+    # already has a recipe for is copied, not researched or written — unless
+    # it clashes with THIS household's must-avoids, or the dish was chosen
+    # to carry an ingredient they typed (must_use), which the library's
+    # version knows nothing about. Either way it is then written for them.
+    library_clash = False
+    if not recipe.get("must_use"):
+        copied, library_clash = _copy_from_library(recipe, name, plain, avoidances, shared)
+        if copied:
+            return copied
     spec = _recipe_details_spec(recipe, slot, shared)
     # Research first, then write (2026-10-06). Never in the way: no research
     # (switched off, failed, nothing usable found) writes the recipe the way
@@ -5319,7 +5446,7 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                     "Recipe %s quality [steps_match_ingredients/info]: %s",
                     name, plan_quality.steps_ingredients_message(consistency),
                 )
-            tools.fill_recipe_details(
+            saved = tools.fill_recipe_details(
                 name,
                 ingredients=ingredients,
                 instructions=instructions,
@@ -5335,6 +5462,21 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 # sources only through this link, never by name.
                 research_id=(found or {}).get("id") if writer_research else None,
             )
+            if not library_clash:
+                # Into the shared library (2026-10-19): read back from the
+                # row just saved, so the entry is exactly the recipe — and
+                # only when the writer was told nothing about this household
+                # (file_from_recipe checks the spec): a version written
+                # around their must-avoids or kit is never the dish's base.
+                try:
+                    _recipe_library.file_from_recipe(
+                        (saved or {}).get("id") or recipe.get("id"),
+                        research=found if writer_research else None,
+                        origin="research" if writer_research else "written",
+                        spec=spec,
+                    )
+                except Exception:
+                    logger.exception("Filing %r in the recipe library failed; the recipe is saved", plain)
             return {"name": plain, "ok": True, "clash": [], "was": name}
         return {"name": name, "ok": False, "clash": []}
     except Exception:
