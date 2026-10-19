@@ -185,8 +185,7 @@ says.
 on the list that no step uses (a whole roast chicken has no extra chicken breasts). When one \
 ingredient is split across steps, give each step its share and make the shares add up to the \
 list: "3 of the garlic cloves" in the marinade, then "the last clove" in the sauce. Say "the \
-rest of" or "the remaining" only when some really is left. A pinch or a splash still gets a \
-measured amount on the list ("1/4 tsp sugar"), never a package ("1 bag sugar").
+rest of" or "the remaining" only when some really is left.
   * STEPS ARE A TIMELINE. Order them the way a person stands at a stove, not the way the dish \
 is described: whatever takes longest starts first (oven on, water on, rice on, potatoes in), \
 the chopping happens while it goes (say "meanwhile"), the delicate thing goes in last, and \

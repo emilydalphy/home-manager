@@ -3337,6 +3337,9 @@ _STEP_ALIASES = {"eggs": ("egg",)}
 _NOT_AN_EGG_RE = re.compile(r"\begg\s+(?:whites?|yolks?)\b|\b(?:flax|chia)\s+eggs?\b")
 
 
+_SIDE_UP_RE = re.compile(r"\b(?:breast|skin|cut|fat|bone|flesh|seam)[- ]side\b")
+
+
 def _step_words_missing(used_text: str, listed: str) -> list[str]:
     """The vocabulary words `used_text` (steps, already read by
     steps_without_negations) uses and `listed` (the list's names) hasn't
@@ -3346,6 +3349,10 @@ def _step_words_missing(used_text: str, listed: str) -> list[str]:
     # key has to be found outside the allergy matcher's own compound
     # exceptions — the same table, so the two can't disagree. A two-word
     # key ("coconut milk", "peanut butter") is the compound itself.
+    # "Set the chicken breast-side up" is a whole bird the right way up, not
+    # chicken breasts to buy (2026-10-19: a roast chicken's list gained
+    # 1.5 lb of chicken breast this way).
+    used_text = _SIDE_UP_RE.sub(" side", used_text)
     plain = used_text
     for _words, pattern in _coordination._COMPOUND_EXCEPTIONS:
         plain = pattern.sub(" ", plain)

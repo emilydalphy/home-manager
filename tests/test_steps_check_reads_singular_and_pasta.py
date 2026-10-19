@@ -30,3 +30,14 @@ def test_pasta_water_over_spaghetti_is_not_missing_pasta():
 def test_an_unused_ingredient_is_still_found():
     r = _check(["Eggs", "Capers"], ["Whisk in the egg."])
     assert r["unused_ingredients"] == ["Capers"]
+
+
+def test_breast_side_up_buys_no_chicken_breasts():
+    """2026-10-19: "Set the chicken breast-side up" on a roast chicken put
+    1.5 lb of chicken breast on the list."""
+    from app import tools
+    base = [{"item": "Whole chicken", "qty": "1 (5 lb)", "category": "meat/seafood"}]
+    done = tools.complete_ingredient_list(base, ["Set the chicken breast-side up on the vegetables."], 4)
+    assert [i["item"] for i in done] == ["Whole chicken"]
+    r = recipes.check_steps_ingredients_consistency(base, ["Set the chicken breast-side up and roast."], 4)
+    assert r["missing_from_list"] == []
