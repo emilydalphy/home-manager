@@ -243,3 +243,65 @@ def test_one_line_is_a_sentence_several_are_rows_with_and_n_more():
     assert 'data-since-go="0"' in many                   # the pick is the tap
     opened = _card(lines, True)
     assert opened.count('class="since-row') == 5 and "more</button>" not in opened
+
+
+# ---------- review follow-ups (2026-10-19) ----------
+
+def test_a_tick_is_told_as_whoever_tapped_it_not_the_moves_owner():
+    """Vineeth is the standing cook; Emily ticks tonight's dinner. She did
+    not read "Vineeth made…" — he reads "Emily made…". And the other way."""
+    ids = _adults("Emily", "Vineeth")
+    _plan_id, entry = _plan_tonight()
+    tools.set_cooking_role("one_person", who="Vineeth")
+    _looked_long_ago(ids["Emily"])
+    _looked_long_ago(ids["Vineeth"])
+    with _shared.use_member(ids["Emily"]):
+        _moves.set_move_done(f"cook:{entry}", True)
+    assert _look_as(ids["Emily"]) == []
+    assert _texts(_look_as(ids["Vineeth"])) == ["Emily made the Chicken Skewers."]
+
+    _cooker.check_off_meal(entry, "pending")
+    tools.set_cooking_role("one_person", who="Emily")
+    _looked_long_ago(ids["Emily"])
+    _looked_long_ago(ids["Vineeth"])
+    with _shared.use_member(ids["Vineeth"]):
+        _moves.set_move_done(f"cook:{entry}", True)
+    assert _texts(_look_as(ids["Emily"])) == ["Vineeth made the Chicken Skewers."]
+    assert _look_as(ids["Vineeth"]) == []
+
+
+def test_a_tick_with_nobody_picked_is_nobodys_to_tell():
+    ids = _adults("Emily", "Vineeth")
+    _plan_id, entry = _plan_tonight()
+    tools.set_cooking_role("one_person", who="Vineeth")
+    _looked_long_ago(ids["Emily"])
+    with _shared.use_member(None):
+        _moves.set_move_done(f"cook:{entry}", True)
+    assert _look_as(ids["Emily"]) == []
+
+
+def test_the_stamp_never_moves_backwards():
+    ids = _adults("Emily", "Vineeth")
+    conn = get_conn()
+    conn.execute("UPDATE members SET last_looked_at = '2999-01-01 00:00:00' WHERE id = ?", (ids["Emily"],))
+    conn.commit()
+    conn.close()
+    _look_as(ids["Emily"])
+    assert _last_looked(ids["Emily"]) == "2999-01-01 00:00:00"
+
+
+def test_a_pwa_back_after_half_an_hour_is_a_new_open_a_glance_is_not():
+    start = SHELL_JS.index("  var SINCE_SHOWN_ROWS = 3;")
+    end = SHELL_JS.index("  function sinceLookedLineHtml(", start)
+    min_ = 60 * 1000
+    script = SHELL_JS[start:end] + (
+        "var out = [];\n"
+        "out.push(sinceLookedResumeIsOpen('visible', 0));\n"            # never hidden
+        f"sinceLookedResumeIsOpen('hidden', 0); out.push(sinceLookedResumeIsOpen('visible', {5 * min_}));\n"
+        f"sinceLookedResumeIsOpen('hidden', 0); out.push(sinceLookedResumeIsOpen('visible', {31 * min_}));\n"
+        f"out.push(sinceLookedResumeIsOpen('visible', {90 * min_}));\n"  # no second hide: no second open
+        "console.log(JSON.stringify(out));"
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    assert json.loads(res.stdout.strip().splitlines()[-1]) == [False, False, True, False]

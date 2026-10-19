@@ -26,6 +26,12 @@ why*, not duplicating the diff.
   carry no key, so the card stays put while the adult is on the page and is
   gone on the next open. Switching tabs and back is not an open (panels build
   once); the 5-minute/focus refetch is the bell's, not Today's.
+  Review follow-up: a tick line names who TAPPED it (new
+  `move_credits.ticked_by_member_id`, the device's picked adult), not the
+  owner it was credited to — Emily ticking Vineeth's standing cook read
+  "Vineeth made…"; NULL (nobody picked) is told to nobody. A PWA back after
+  30+ min hidden is a new open (visibilitychange → `?look=1`); the stamp is
+  MAX'd so it never moves back; "and N more" focuses the first new row.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

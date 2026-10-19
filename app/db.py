@@ -863,6 +863,9 @@ _MIGRATIONS = [
     # NULL on every existing adult: their next open of Today is a first look,
     # which stamps and shows nothing, so nobody gets a history dump.
     ("members", "last_looked_at", "TEXT"),
+    # Who tapped a credited tick, beside its owner — see schema.sql's
+    # move_credits. NULL on every existing credit: nobody recorded it.
+    ("move_credits", "ticked_by_member_id", "INTEGER"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

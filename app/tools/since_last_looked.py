@@ -19,9 +19,10 @@ records (who moved or swapped a dinner) is left out rather than guessed:
                            write a person's name there; Remove writes
                            'list', staples 'staple', the carry-over step
                            its own markers)
-  - a cook / fridge / prep move_credits (the one place a tick is credited —
-                           move_credits.py says so), counted only while its
-                           row still reads done, like credits() does
+  - a cook / fridge / prep move_credits.ticked_by_member_id (the one place
+                           a tick is recorded — move_credits.py says so; who
+                           TAPPED it, not the owner it was credited to),
+                           counted only while its row still reads done
   - "put you on"           move_owner_overrides.set_by / set_at, naming
                            THIS adult as member_id
 
@@ -192,14 +193,16 @@ def _lines_for(conn, other: dict, me: dict, since: str, today: date, name_ok: bo
     if approved and approved["at"]:
         line("approved the week.", approved["at"])
 
-    # Moves ticked and credited to them.
+    # Moves THEY ticked — ticked_by, never the credited owner: with Vineeth
+    # as the standing cook, a dinner Emily ticked is not one he made. A
+    # credit with nobody picked on the device (NULL) is no one's to tell.
     for r in conn.execute(
         "SELECT c.kind, c.credited_at, COALESCE(rc.name, e.freeform_meal, '') AS dish, t.description "
         "FROM move_credits c "
         "LEFT JOIN meal_plan_entries e ON e.id = c.meal_plan_entry_id AND e.household_id = c.household_id "
         "LEFT JOIN recipes rc ON rc.id = e.recipe_id "
         "LEFT JOIN prep_tasks t ON t.id = c.prep_task_id AND t.household_id = c.household_id "
-        "WHERE c.household_id = ? AND c.member_id = ? AND c.credited_at > ? "
+        "WHERE c.household_id = ? AND c.ticked_by_member_id = ? AND c.credited_at > ? "
         "AND c.kind IN ('cook', 'fridge', 'prep') "
         "AND (e.cooked_status = 'done' OR t.status = 'done') ORDER BY c.credited_at, c.id",
         (hid, other["id"], since),
@@ -285,8 +288,11 @@ def look(*, stamp: bool = True) -> list[dict]:
                 )
                 lines.extend(_lines_for(conn, other, me, since, today, name_ok))
         if stamp:
+            # MAX: two looks racing (two tabs, a resume and a reload) must
+            # never move the stamp backwards and show the same lines again.
             conn.execute(
-                "UPDATE members SET last_looked_at = ? WHERE id = ? AND household_id = ?",
+                "UPDATE members SET last_looked_at = MAX(COALESCE(last_looked_at, ''), ?) "
+                "WHERE id = ? AND household_id = ?",
                 (now, me["id"], household_id()),
             )
             conn.commit()

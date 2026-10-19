@@ -48,7 +48,7 @@ import logging
 from datetime import date, timedelta
 
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, member_id as _picked_adult
 from . import cooker as _cooker
 from . import moves as _moves
 
@@ -157,12 +157,14 @@ def record(conn, credit: dict | None) -> None:
     if not credit:
         return
     try:
+        # ticked_by is the device's picked adult — who tapped, as distinct
+        # from the owner credited above. "Since you last looked" reads it.
         conn.execute(
             "INSERT OR IGNORE INTO move_credits "
-            "(household_id, meal_plan_entry_id, prep_task_id, kind, move_date, member_id) "
-            "VALUES (?, ?, ?, ?, ?, ?)",
+            "(household_id, meal_plan_entry_id, prep_task_id, kind, move_date, member_id, "
+            "ticked_by_member_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (household_id(), credit.get("entry_id"), credit.get("task_id"),
-             credit["kind"], credit["move_date"], credit.get("member_id")),
+             credit["kind"], credit["move_date"], credit.get("member_id"), _picked_adult()),
         )
     except Exception:
         logger.exception("Couldn't record whose tick this was; the tick stands, uncredited")

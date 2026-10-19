@@ -3071,8 +3071,22 @@
   // on this page. It is gone on the next open (a reload, a fresh launch of
   // the app) unless something new happened. Switching tabs and back is not
   // an open: tab panels build once per page load, and this card is part of
-  // that build.
+  // that build. An installed PWA, though, resumes for days without a reload,
+  // so coming back after SINCE_RESUME_OPEN_MS hidden IS an open — the
+  // visibilitychange handler (by "Keeping the bell honest") asks
+  // sinceLookedResumeIsOpen and re-reads Today with ?look=1.
   var SINCE_SHOWN_ROWS = 3;
+  var SINCE_RESUME_OPEN_MS = 30 * 60 * 1000;
+  var sinceHiddenAt = null;
+
+  // Fed every visibility change; true only on the return from a long
+  // enough absence. A short glance away (a text, the timer) is not an open.
+  function sinceLookedResumeIsOpen(state, now) {
+    if (state === 'hidden') { sinceHiddenAt = now; return false; }
+    var away = sinceHiddenAt !== null && now - sinceHiddenAt >= SINCE_RESUME_OPEN_MS;
+    sinceHiddenAt = null;
+    return away;
+  }
   var SINCE_CHEVRON =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
 
@@ -3106,7 +3120,15 @@
     panel._sinceLooked = lines || [];
     slot.innerHTML = sinceLookedCardHtml(panel._sinceLooked, opened);
     var more = slot.querySelector('[data-since-more]');
-    if (more) more.addEventListener('click', function () { renderSinceLooked(panel, panel._sinceLooked, true); });
+    if (more) more.addEventListener('click', function () {
+      renderSinceLooked(panel, panel._sinceLooked, true);
+      // The button that had focus is gone; land on the first row it opened.
+      var row = slot.querySelectorAll('.since-list > *')[SINCE_SHOWN_ROWS];
+      if (row) {
+        if (row.tagName !== 'BUTTON') row.setAttribute('tabindex', '-1');
+        row.focus();
+      }
+    });
     slot.querySelectorAll('[data-since-go]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var line = panel._sinceLooked[Number(btn.getAttribute('data-since-go'))];
@@ -27092,6 +27114,12 @@
 
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') refreshNotificationsIfDue(false);
+    // "Since you last looked": a PWA back after a long absence is a new
+    // open of Today (sinceLookedResumeIsOpen), so it LOOKS again.
+    if (sinceLookedResumeIsOpen(document.visibilityState, Date.now()) &&
+        panels.today && panels.today.dataset.built) {
+      loadTodayMoves(panels.today, { look: true });
+    }
   });
   window.addEventListener('focus', function () { refreshNotificationsIfDue(false); });
   setInterval(function () { refreshNotificationsIfDue(false); }, NOTIF_REFRESH_INTERVAL_MS);
