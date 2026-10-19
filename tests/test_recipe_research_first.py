@@ -86,6 +86,24 @@ def _submit(sources, notes="Bloom whole spices, onion-tomato base, simmer 20 min
                input={"sources": sources, "method_notes": notes})
 
 
+def _pick(urls):
+    return _ns(type="tool_use", name="choose_pages_to_read", id="p1", input={"urls": list(urls)})
+
+
+def _pass(content, stop="tool_use"):
+    """One research pass as the model answers it since 2026-10-18: a FIND
+    request (the search, then choose_pages_to_read naming the pages it
+    goes on to fetch) and, when it named any, a READ request (the fetches,
+    then whatever else the old one-request turn ended on)."""
+    def is_search(b):
+        return b.type == "web_search_tool_result" or (b.type == "server_tool_use" and b.name == "web_search")
+    urls = [b.input["url"] for b in content if b.type == "server_tool_use" and b.name == "web_fetch"]
+    turns = [([b for b in content if is_search(b)] + [_pick(urls)], "tool_use")]
+    if urls:
+        turns.append(([b for b in content if not is_search(b)], stop))
+    return turns
+
+
 class _FakeClient:
     """Answers each messages.create with the next canned content list and
     records what it was asked."""
@@ -147,12 +165,12 @@ def test_a_version_with_few_ratings_cannot_lead_however_many_stars():
 
 def test_research_keeps_only_pages_it_saw_skips_a_refused_site_and_is_saved(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_search([A, B, C]) + _fetched([A, C]) + _fetch_refused(B) + [_submit([
+        *_pass(_search([A, B, C]) + _fetched([A, C]) + _fetch_refused(B) + [_submit([
             {"name": "Cook A", "title": "Chana Masala", "url": A, "rating": 4.9, "rating_count": 1200},
             {"name": "Cook B", "title": "Chana", "url": B, "rating": 5.0, "rating_count": 5000},
             {"name": "Cook C", "title": "Chole", "url": C, "rating": 4.6, "rating_count": 80},
             {"name": "Made up", "title": "?", "url": GONE, "rating": 5.0, "rating_count": 9999},
-        ])], "tool_use"),
+        ])]),
     ]))
 
     research = agent.research_dish("Chana Masala", "Indian", "")
@@ -163,30 +181,32 @@ def test_research_keeps_only_pages_it_saw_skips_a_refused_site_and_is_saved(monk
     assert names == ["Cook A", "Cook C"]
     assert research["sources"][0]["lead"] is True
     assert research["fallback_used"] is False
-    # The web tools were offered, open (no domain limit) on the first pass.
-    tool_types = [t.get("type") for t in client.calls[0]["tools"]]
-    assert "web_search_20260209" in tool_types and "web_fetch_20260209" in tool_types
+    # The web tools were offered, open (no domain limit) on the first pass:
+    # the search to find, then the reader for the pages it chose.
+    assert [t.get("type") for t in client.calls[0]["tools"]][0] == "web_search_20260209"
+    assert [t.get("type") for t in client.calls[1]["tools"]][0] == "web_fetch_20260209"
     assert "allowed_domains" not in client.calls[0]["tools"][0]
+    assert "allowed_domains" not in client.calls[1]["tools"][0]
 
 
 def test_a_dish_that_comes_back_is_not_researched_again(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
+        *_pass(_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])]),
     ]))
     first = agent.research_dish("Chana Masala", "Indian", "")
     again = agent.research_dish("chana  masala!", "Indian", "")
-    assert len(client.calls) == 1
+    assert len(client.calls) == 2, "one find and one read, the first time only"
     assert again["id"] == first["id"]
 
 
 def test_research_is_per_household(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
+        *_pass(_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])]),
     ]))
     agent.research_dish("Chana Masala", "Indian", "")
     with tools.use_household(2):
         assert rr.saved_research("Chana Masala") is None
-    assert len(client.calls) == 1
+    assert len(client.calls) == 2
 
 
 def test_nothing_well_rated_falls_back_to_the_trusted_cooks_for_the_cuisine(monkeypatch):
@@ -194,20 +214,21 @@ def test_nothing_well_rated_falls_back_to_the_trusted_cooks_for_the_cuisine(monk
     swasthi = "https://www.indianhealthyrecipes.com/chana-masala/"
     hebbar = "https://hebbarskitchen.com/chana-masala/"
     client = _use_client(monkeypatch, _FakeClient([
-        (_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 5.0, "rating_count": 2}])], "tool_use"),
-        (_read([hebbar, swasthi], tool_id="s2") + [_submit([
+        *_pass(_read([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 5.0, "rating_count": 2}])]),
+        *_pass(_read([hebbar, swasthi], tool_id="s2") + [_submit([
             {"name": "Hebbar's Kitchen", "url": hebbar, "rating": None, "rating_count": None},
             {"name": "Swasthi's Recipes", "url": swasthi, "rating": None, "rating_count": None},
-        ])], "tool_use"),
+        ])]),
     ]))
 
     research = agent.research_dish("Chana Masala", "North Indian", "")
 
-    assert len(client.calls) == 2
-    second_tools = {t.get("name"): t for t in client.calls[1]["tools"]}
-    allowed = second_tools["web_search"]["allowed_domains"]
+    assert len(client.calls) == 4, "a find and a read for each pass"
+    fallback_find = {t.get("name"): t for t in client.calls[2]["tools"]}
+    fallback_read = {t.get("name"): t for t in client.calls[3]["tools"]}
+    allowed = fallback_find["web_search"]["allowed_domains"]
     assert "indianhealthyrecipes.com" in allowed and "hebbarskitchen.com" in allowed
-    assert second_tools["web_fetch"]["allowed_domains"] == allowed
+    assert fallback_read["web_fetch"]["allowed_domains"] == allowed
     assert research["fallback_used"] is True
     # Neither is rated, so the earliest cook on the trusted list leads.
     assert research["sources"][0]["name"] == "Swasthi's Recipes"
@@ -215,11 +236,12 @@ def test_nothing_well_rated_falls_back_to_the_trusted_cooks_for_the_cuisine(monk
 
 def test_a_paused_search_turn_is_carried_on(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_read([A]), "pause_turn"),
-        ([_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
+        (_search([A]), "pause_turn"),
+        ([_pick([A])], "tool_use"),
+        (_fetched([A]) + [_submit([{"name": "Cook A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
     ]))
     research = agent.research_dish("Chana Masala", "Indian", "")
-    assert len(client.calls) == 2
+    assert len(client.calls) == 3
     assert client.calls[1]["messages"][-1]["role"] == "assistant"
     assert research["sources"][0]["url"] == A
 
@@ -257,10 +279,10 @@ def _written(spec):
 
 def test_the_writer_gets_the_research_and_the_page_gets_the_sources(monkeypatch, signed_in):
     _use_client(monkeypatch, _FakeClient([
-        (_read([A, C]) + [_submit([
+        *_pass(_read([A, C]) + [_submit([
             {"name": "Cook A", "title": "Chana Masala", "url": A, "rating": 4.9, "rating_count": 1200},
             {"name": "Cook C", "title": "Chole", "url": C, "rating": 4.6, "rating_count": 80},
-        ])], "tool_use"),
+        ])]),
     ]))
     seen_specs = []
 
@@ -346,10 +368,10 @@ def test_only_a_page_that_was_read_can_lead(monkeypatch):
     """A rating reported for a page only SEEN in a search snippet (or one
     injected into it) must not make it the lead: C was read, B was not."""
     _use_client(monkeypatch, _FakeClient([
-        (_search([B, C]) + _fetched([C]) + [_submit([
+        *_pass(_search([B, C]) + _fetched([C]) + [_submit([
             {"name": "Snippet only", "url": B, "rating": 5.0, "rating_count": 99999},
             {"name": "Read it", "url": C, "rating": 4.6, "rating_count": 300},
-        ])], "tool_use"),
+        ])]),
     ]))
     research = agent.research_dish("Chole", "Indian", "")
     assert research["sources"][0]["name"] == "Read it"
@@ -359,8 +381,8 @@ def test_only_a_page_that_was_read_can_lead(monkeypatch):
 
 def test_nothing_read_is_no_research_and_the_empty_result_is_remembered(monkeypatch):
     client = _use_client(monkeypatch, _FakeClient([
-        (_search([A]) + [_submit([{"name": "A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
-        (_search([B], tool_id="s2") + [_submit([{"name": "B", "url": B, "rating": None, "rating_count": None}])], "tool_use"),
+        *_pass(_search([A]) + [_submit([{"name": "A", "url": A, "rating": 4.9, "rating_count": 500}])]),
+        *_pass(_search([B], tool_id="s2") + [_submit([{"name": "B", "url": B, "rating": None, "rating_count": None}])]),
     ]))
     assert agent.research_dish("Chana Masala", "Indian", "") is None
     calls = len(client.calls)
@@ -370,32 +392,37 @@ def test_nothing_read_is_no_research_and_the_empty_result_is_remembered(monkeypa
 
 
 def test_the_per_dish_budget_holds_across_continuations_and_the_fallback(monkeypatch):
-    """Two searches and two fetches spent in the open pass (one paused round
-    and one more) leave the fallback only what the dish has left, and a
-    pass never runs more than _RESEARCH_MAX_ROUNDS rounds."""
+    """Two searches and one fetch spent in the open pass (a paused find
+    step, then a read that pauses past its last round) leave the fallback
+    only what the dish has left, and a step never runs more than
+    _RESEARCH_MAX_ROUNDS rounds."""
     _launch_budget(monkeypatch)
-    two_fetches = _fetched([A, B], prefix="x")
     client = _use_client(monkeypatch, _FakeClient([
         (_search([A], "s1") + _search([B], "s2"), "pause_turn"),
-        (two_fetches, "pause_turn"),      # second and last round: never submits
-        (_read([C], "s3") + [_submit([{"name": "C", "url": C, "rating": None, "rating_count": None}])], "tool_use"),
+        ([_pick([A, B])], "tool_use"),
+        (_fetched([A], prefix="x"), "pause_turn"),
+        ([], "pause_turn"),               # second and last round: never submits
+        *_pass(_read([C], "s3") + [_submit([{"name": "C", "url": C, "rating": None, "rating_count": None}])]),
     ]))
     agent.research_dish("Chana Masala", "Indian", "")
-    assert len(client.calls) == 3, "the open pass stops after its rounds; then one fallback call"
+    assert len(client.calls) == 6, "two rounds a step at most; then the fallback's find and read"
     first_tools = {t["name"]: t for t in client.calls[0]["tools"] if "max_uses" in t}
     assert first_tools["web_search"]["max_uses"] == agent._OPEN_SEARCH_SHARE["web_search"]
-    # After the open pass's first round spent both its searches, its second
-    # round is offered no search at all.
+    # The find step's first round spent both its searches: its second round
+    # is offered no search at all, and the read step never searches.
     assert "web_search" not in {t.get("name") for t in client.calls[1]["tools"]}
-    fallback_tools = {t["name"]: t for t in client.calls[2]["tools"] if "max_uses" in t}
-    assert fallback_tools["web_search"]["max_uses"] == agent._dish_research_budget()["web_search"] - 2
-    assert fallback_tools["web_fetch"]["max_uses"] == agent._dish_research_budget()["web_fetch"] - 2
+    # The read step may open only the pages chosen, then only what's left.
+    assert {t["name"]: t for t in client.calls[2]["tools"]}["web_fetch"]["max_uses"] == 2
+    assert {t["name"]: t for t in client.calls[3]["tools"]}["web_fetch"]["max_uses"] == 1
+    fallback_find = {t["name"]: t for t in client.calls[4]["tools"] if "max_uses" in t}
+    assert fallback_find["web_search"]["max_uses"] == agent._dish_research_budget()["web_search"] - 2
+    fallback_read = {t["name"]: t for t in client.calls[5]["tools"] if "max_uses" in t}
+    assert fallback_read["web_fetch"]["max_uses"] == 1, "one page chosen, one page read"
 
 
 def test_reported_sources_with_no_result_urls_are_logged_loudly(monkeypatch, caplog):
     _use_client(monkeypatch, _FakeClient([
-        ([_submit([{"name": "A", "url": A, "rating": 4.9, "rating_count": 500}])], "tool_use"),
-        ([_submit([])], "tool_use"),
+        ([_pick([A])], "tool_use"),
     ]))
     with caplog.at_level("WARNING", logger="home_manager"):
         agent.research_dish("Chana Masala", "Indian", "")

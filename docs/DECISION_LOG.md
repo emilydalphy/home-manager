@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Recipe research: ~134K input tokens a dish down to ~16K (est.)**
+  (2026-10-18; branch `overnight/research-input-budget`; tests
+  `tests/test_research_input_budget.py`). The page cap held; the bill was the
+  server-side loop re-billing the whole context at every step, multiplied by
+  dynamic filtering (the `_20260209` web tools' default code-execution layer)
+  and by one request that searched AND read. Now `allowed_callers: ["direct"]`,
+  and two requests a dish — find (search, then `choose_pages_to_read`) and read
+  (fetch only those URLs, then submit) — so the search results are billed once.
+  `RECIPE_RESEARCH_INPUT_TOKENS` (25,000) stops any further request once a dish
+  has spent it, fallback included; the test sums each request's worst case.
+  Not verified live: the ~6K a search's results cost is Anthropic's example.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

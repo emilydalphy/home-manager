@@ -175,7 +175,12 @@ def test_fetched_pages_are_trimmed_on_the_tool_and_when_sent_back(household, mon
     class _Client:
         def __init__(self):
             self.messages = self
-            self.turns = [([fetched], "pause_turn"), ([], "end_turn")]
+            found = [{"type": "web_search_tool_result", "tool_use_id": "s1",
+                      "content": [{"type": "web_search_result", "url": "https://a.example/r", "title": "R"}]},
+                     {"type": "tool_use", "name": "choose_pages_to_read", "id": "p1",
+                      "input": {"urls": ["https://a.example/r"]}}]
+            # The find step, then a read that pauses on a long page.
+            self.turns = [(found, "tool_use"), ([fetched], "pause_turn"), ([], "end_turn")]
 
         def create(self, **kwargs):
             calls.append(kwargs)
@@ -187,7 +192,7 @@ def test_fetched_pages_are_trimmed_on_the_tool_and_when_sent_back(household, mon
 
     monkeypatch.setattr(agent, "_client", lambda: _Client())
     agent.research_dish_llm("Chana Masala", budget={"web_search": 1, "web_fetch": 2})
-    fetch_tool = next(t for t in calls[0]["tools"] if t.get("name") == "web_fetch")
+    fetch_tool = next(t for t in calls[1]["tools"] if t.get("name") == "web_fetch")
     assert fetch_tool["max_content_tokens"] == 3000
-    resent = calls[1]["messages"][-1]["content"][0]
+    resent = calls[2]["messages"][-1]["content"][0]
     assert len(resent["content"]["content"]["source"]["data"]) == 3000 * 4
