@@ -622,6 +622,17 @@ why*, not duplicating the diff.
   eating style. Emily to confirm: unset default (was her 2026-09-27
   assumption of 2) and that a stepper at 2 means seven days each.
 
+- **A milk allergy is the dairy family** (2026-10-19; branch
+  `overnight/milk-allergy-is-dairy`; tests in `tests/test_allergy_safety.py`).
+  A "milk allergy" / "lactose intolerant" restriction matched the literal word
+  "milk", so cheddar, yogurt and butter passed every gate (found by the review
+  of the snack-variety pool, which offered Greek yogurt and cheddar to a
+  milk-allergic adult). A one-word "milk"/"lactose" avoidance now reads as
+  the dairy family through `_WHOLE_WORD_FAMILIES` — deliberately NOT
+  `_ALLERGEN_ALIASES`, which the review showed is also read for exceptions
+  ("dairy, but oat milk is fine" then blocked nothing) and inside phrases
+  ("no oat milk" held back oat pancakes with butter). Known gap, as on main:
+  with "oat milk is fine", plain milk itself passes.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

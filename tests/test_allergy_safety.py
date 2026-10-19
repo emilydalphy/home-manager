@@ -971,6 +971,49 @@ class TestCompoundFoodsThatAreNotTheAllergen:
 
         assert tools.check_plan_conflicts(self._plan_with("Soda Bread"))["conflicts"]
 
+    @pytest.mark.parametrize("restriction", ["milk allergy", "lactose intolerant", "allergic to milk"])
+    @pytest.mark.parametrize("dish, item", [
+        ("Apple Slices with Cheddar", "cheddar"),
+        ("Greek Yogurt with Berries", "greek yogurt"),
+        ("Garlic Butter Toast", "butter"),
+    ])
+    def test_a_milk_restriction_holds_back_what_milk_is_made_into(self, kitchen, restriction, dish, item):
+        """A "milk allergy" is the dairy family, not the word "milk": it used
+        to let cheddar and yogurt through because neither says milk."""
+        tools.add_recipe(dish, ingredients=[{"item": item, "qty": "1 cup"}])
+        tools.set_member_dietary_restrictions("Emily", [restriction])
+
+        assert tools.check_plan_conflicts(self._plan_with(dish))["conflicts"]
+
+    def test_a_dairy_allergy_with_an_oat_milk_exception_still_holds_back_cheese(self, kitchen):
+        """The exception lifts oat milk, not the family: aliasing "milk" in the
+        shared table made "dairy, but oat milk is fine" block nothing."""
+        tools.add_recipe("Apple Slices with Cheddar", ingredients=[{"item": "cheddar", "qty": "50g"}])
+        tools.add_fact("people", "Emily is allergic to dairy, but oat milk is fine", hard=True)
+
+        assert tools.check_plan_conflicts(self._plan_with("Apple Slices with Cheddar"))["conflicts"]
+
+    def test_a_milk_allergy_with_an_oat_milk_exception_still_holds_back_cheese(self, kitchen):
+        tools.add_recipe("Apple Slices with Cheddar", ingredients=[{"item": "cheddar", "qty": "50g"}])
+        tools.add_fact("people", "Emily is allergic to milk but oat milk is fine", hard=True)
+
+        assert tools.check_plan_conflicts(self._plan_with("Apple Slices with Cheddar"))["conflicts"]
+
+    def test_no_oat_milk_does_not_hold_back_oat_pancakes_with_butter(self, kitchen):
+        """A two-word plant milk stays a phrase: "milk" inside it is not the
+        dairy family, or oat-then-butter anywhere would read as oat milk."""
+        tools.add_recipe("Oat Pancakes with Butter",
+                         ingredients=[{"item": "oat flour", "qty": "1 cup"}, {"item": "butter", "qty": "2 tbsp"}])
+        tools.add_fact("people", "No oat milk for Emily", hard=True)
+
+        assert tools.check_plan_conflicts(self._plan_with("Oat Pancakes with Butter"))["conflicts"] == []
+
+    def test_a_milk_allergy_still_lets_coconut_milk_through(self, kitchen):
+        tools.add_recipe("Thai Curry", ingredients=[{"item": "coconut milk", "qty": "400ml"}])
+        tools.set_member_dietary_restrictions("Emily", ["milk allergy"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Thai Curry"))["conflicts"] == []
+
     def test_coconut_milk_is_not_dairy(self, kitchen):
         tools.add_recipe("Thai Curry", ingredients=[{"item": "coconut milk", "qty": "400ml"}])
         tools.set_member_dietary_restrictions("Emily", ["dairy free"])

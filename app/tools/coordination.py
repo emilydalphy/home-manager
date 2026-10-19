@@ -203,6 +203,15 @@ _VERBATIM_ALIASES: dict[str, set[str]] = {
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
 _ALLERGEN_ALIASES["peanuts"] = _ALLERGEN_ALIASES["peanut"]
 _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
+# A milk allergy is a dairy allergy: cheese, butter and yogurt are made of
+# milk. A "milk allergy" (or "lactose intolerant") restriction used to match
+# only the literal word "milk" and let a cheddar snack straight through.
+# This is NOT in _ALLERGEN_ALIASES on purpose: that table is also read for
+# an exception's words ("dairy, but oat milk is fine" would then lift the
+# whole family and block nothing) and for every word inside a phrase ("no
+# oat milk" would hold back oat pancakes with butter). _match_terms reads
+# this one only when the word IS the whole avoidance.
+_WHOLE_WORD_FAMILIES: dict[str, str] = {"milk": "dairy", "lactose": "dairy"}
 
 # The table as it stood before the 2026-09-30 widening, kept for ONE
 # reader: plan_quality's title rule builds its "known food word"
@@ -735,7 +744,10 @@ def _match_terms(
         kept: list[str] = []
         for word in phrase:
             variants: set[str] = set()
-            for base in {word} | _ALLERGEN_ALIASES.get(word, set()) | _MEAT_ALIASES.get(word, set()):
+            bases = {word} | _ALLERGEN_ALIASES.get(word, set()) | _MEAT_ALIASES.get(word, set())
+            if len(phrase) == 1 and word in _WHOLE_WORD_FAMILIES:
+                bases |= _ALLERGEN_ALIASES[_WHOLE_WORD_FAMILIES[word]]
+            for base in bases:
                 variants |= _keyword_variants(base)
             variants |= _VERBATIM_ALIASES.get(word, set())
             variants -= excluded
