@@ -562,6 +562,25 @@ why*, not duplicating the diff.
   `.btn-secondary` "Plan next week" ("Plan this week" for the current
   period), hidden whenever the dock draws `#plan-nudge-go`, so a free dock is
   still the one answer. Both call `startPlanningFromNudge`, so they can't drift.
+- **"Since you last looked" — Today's first card tells one adult what the
+  other did** (2026-10-19; Loop Board card, Emily's "Yes to all" 2026-10-18;
+  branch `overnight/since-you-last-looked`; `app/tools/since_last_looked.py`,
+  tests `tests/test_since_last_looked.py`). Reads only facts already
+  recorded — approved_by_member_id, week_intake/grocery added_by/removed_by
+  (names), move_credits, and move_owner_overrides.set_by (already written
+  since slice 2, so no new column for it) — after the new
+  `members.last_looked_at`; first look stamps and shows nothing; one adult or
+  no pick is no card. Only `/api/today/moves?look=1` (the Today panel's
+  build, once per page load) reads and stamps; re-reads after ticks/chat
+  carry no key, so the card stays put while the adult is on the page and is
+  gone on the next open. Switching tabs and back is not an open (panels build
+  once); the 5-minute/focus refetch is the bell's, not Today's.
+  Review follow-up: a tick line names who TAPPED it (new
+  `move_credits.ticked_by_member_id`, the device's picked adult), not the
+  owner it was credited to — Emily ticking Vineeth's standing cook read
+  "Vineeth made…"; NULL (nobody picked) is told to nobody. A PWA back after
+  30+ min hidden is a new open (visibilitychange → `?look=1`); the stamp is
+  MAX'd so it never moves back; "and N more" focuses the first new row.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
