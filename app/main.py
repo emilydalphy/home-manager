@@ -1666,10 +1666,19 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         # and a 500 would have the page re-post them (review, 2026-10-14) —
         # losing this only means Plan offers its ordinary default.
         try:
-            period_key, _, _ = _first_plan_window(req.first_plan_start == "next_week")
+            period_key, period_days, _ = _first_plan_window(req.first_plan_start == "next_week")
             tools.remember_first_period(period_key)
         except Exception:
             logger.exception("Onboarding first-period save failed")
+        else:
+            # The first period's week answers, so the first re-plan opens on
+            # "Same as last week?" (re-plan Option B, 2026-10-18) — see
+            # tools.save_setup_week_answers. Logged, not raised, for the
+            # same reason as above.
+            try:
+                tools.save_setup_week_answers(period_key, period_days, req.excited_about)
+            except Exception:
+                logger.exception("Onboarding first-week answers save failed")
     return memory
 
 

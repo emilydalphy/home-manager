@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Re-plan Option B: "Same as last week?" in onboarding's look**
+  (2026-10-19; branch `overnight/replan-same-as-last-week`, stacked on and
+  merging AFTER `overnight/prep-day-says-why`; tests
+  `tests/test_replan_option_b.py`). Slice 1: `/api/onboarding/answers` with
+  `first_plan_start` writes the first period's week_intake once
+  (`tools.save_setup_week_answers`, onboarding's cuisines), and the first
+  plan's generation attaches it. Why: nothing wrote an intake for week 1,
+  so the first re-plan after setup had no `last_intake` and asked all five
+  steps of a household that had just answered them.
 - **An added prep day says why, in one line** (2026-10-19; branch
   `overnight/prep-day-says-why`; tests `tests/test_weekday_lunches.py`
   `TestTheAddedPrepDaySaysWhy`). Plan a week step 3: when `ensurePrepReach`

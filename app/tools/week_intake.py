@@ -733,6 +733,35 @@ def save_week_intake(
             conn.close()
 
 
+def save_setup_week_answers(week_start: str, day_count: int = 7, cuisines: list | None = None) -> dict | None:
+    """
+    Onboarding's answers, kept as the first period's week answers — the
+    "last week" Plan a week reads (_last_period_intake). Re-plan Option B
+    (Emily, 2026-10-18): the first re-plan after onboarding has to open on
+    "Same as last week?", and until this nothing wrote a week_intake row
+    for the first week (its plan was drafted with no intake at all), so
+    that re-plan asked all five questions of a household that had answered
+    them minutes before.
+
+    Only the one per-week answer onboarding asks — the cuisines it's
+    excited about — is written; everything else it asked is the household's
+    usual week (usual_week, member_needs, rhythm), which the summary page
+    reads from there. Written once: a week that already has answers keeps
+    them (a re-posted finish must not add a revision over the household's
+    own), and None is returned. The first plan's generation finds this row
+    (agent.generate_weekly_plan reads get_week_intake) and attaches it, so
+    the plan says how many days it ran.
+    """
+    date.fromisoformat(week_start)
+    conn = get_conn()
+    try:
+        if _current_intake_row(conn, week_start) is not None:
+            return None
+    finally:
+        conn.close()
+    return save_week_intake(week_start, cuisines=list(cuisines or []), day_count=day_count)
+
+
 def clear_week_intake(week_start: str) -> dict:
     """
     "Start over"'s third option (app/tools/reset.py, POST /api/reset):
