@@ -2804,6 +2804,17 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     if not row:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    if quantity is not None and _quantities.same_shown_quantity(
+        row["item"] or "", quantity.strip(), row["quantity"] or ""
+    ):
+        # The box sent back as it was shown (the row's Save sends it
+        # changed or not): nothing to record. Writing it would swap the
+        # stored amount for its two-place display ("0.67 cup" for ⅔) and
+        # file the difference as a household edit nobody made.
+        quantity = None
+    elif quantity is not None:
+        # A merge's Undo sends the phone's copy, which is the shown text.
+        quantity = _quantities.typed_back_quantity(quantity)
     new_quantity = quantity if quantity is not None else row["quantity"]
     new_category = category if category is not None else row["category"]
     # The household's number survives the plan changing (Emily,

@@ -205,13 +205,16 @@ def test_broth_line_survives_a_cup_to_tablespoon_roll_in_either_order():
     plan_id, first, second = _broth_plan()
     row = _grocery_row("chicken broth")
     assert row is not None
-    assert row["quantity"] == "1.25 cups"
+    assert row["quantity"] == "1 1/4 cups"
 
     remaining_qty = _ledger_qtys(second)[0]
     grocery._reverse_meal_grocery_contributions(first)
     row = _grocery_row("chicken broth")
     assert row is not None
-    assert row["quantity"] == "9.5 tbsp"
+    # 0.6 cup is 2/3 cup on a shopping list since part cups read as cups
+    # (2026-10-18); until then this line rolled down to "9.5 tbsp", which is
+    # the roll this test was written for. Order-independence still holds.
+    assert row["quantity"] == "2/3 cup"
     assert row["quantity"] == quantities._sum_ledger_quantities([remaining_qty])
     grocery._reverse_meal_grocery_contributions(second)
     assert _grocery_row("chicken broth") is None

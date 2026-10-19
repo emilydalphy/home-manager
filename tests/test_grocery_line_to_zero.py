@@ -440,7 +440,7 @@ def test_a_countable_thing_rounds_UP_and_a_measurable_one_to_the_nearest_quarter
     assert quantities._humanize_grocery_quantity(12.25, None) == "13"
     # Measurable: rolled up to the unit that reads best, nearest quarter.
     assert quantities._shopping_round(1.2, "lb") == (1.25, "lb")
-    assert quantities._humanize_grocery_quantity(52, "tbsp") == "3.25 cups"
+    assert quantities._humanize_grocery_quantity(52, "tbsp") == "3 1/4 cups"
 
 
 def test_a_week_that_wants_a_hair_over_twelve_peppers_buys_thirteen(family_of_three):
@@ -547,7 +547,9 @@ def test_a_measurable_standing_want_does_not_creep_up_a_quarter_a_week(family_of
         for o in range(4)
     ]
     tools.approve_weekly_plan(plan_id, "Emily")
-    assert _qty("Milk") == "3.25 cups"
+    # A third of a cup a night is ⅓ cup on the list, and four of them are
+    # 1 ⅓ (part cups read as cups, 2026-10-18; it was 1.25 at quarters).
+    assert _qty("Milk") == "3 1/3 cups"
 
     # Every intermediate matters, not just the end: rounding each side in
     # its own rolled unit lands on 3 / 12.75 / 7.25 / 2 cups, which happens
@@ -557,7 +559,7 @@ def test_a_measurable_standing_want_does_not_creep_up_a_quarter_a_week(family_of
     for entry_id in entries:
         grocery._reverse_meal_grocery_contributions(entry_id)
         steps.append(_qty("Milk"))
-    assert steps == ["3 cups", "2.75 cups", "2.25 cups", "2 cups"]
+    assert steps == ["3 cups", "2 2/3 cups", "2 1/3 cups", "2 cups"]
 
 
 # ---------- the display unit rolling mid-sequence ----------
@@ -576,7 +578,7 @@ def test_a_measurable_standing_want_does_not_creep_up_a_quarter_a_week(family_of
     ("8 oz", "1 lb", 6, 2, 2, "8 oz"),        # was 6.75 oz; main 9.25 oz
     ("2 oz", "0.6 lb", 8, 4, 3, "1.5 oz"),    # was BLANK; main 1.5 oz
     ("500 ml", "1 l", 6, 1, 3, "500 ml"),     # was 416.75 ml and still falling
-    ("0.5 cup", "4 tbsp", 6, 3, 4, "8 tbsp"), # was 6 tbsp
+    ("0.5 cup", "4 tbsp", 6, 3, 4, "1/2 cup"), # was 6 tbsp; 8 tbsp before cups read as cups
 ])
 def test_a_rolling_display_unit_cannot_eat_the_households_own_amount(
     standing, recipe_qty, servings, household, nights, expected,

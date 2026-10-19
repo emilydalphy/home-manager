@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Part cups read as cups on the list** (2026-10-19; branch
+  `overnight/part-cups-read-as-cups`; tests `tests/test_part_cups_read_as_cups.py`).
+  `_roll_up_unit` rolls into cups from ¼ cup (`_ROLL_UP_FROM`), cups round to
+  the nearest quarter OR third, and a grocery cup is STORED as the list shows
+  it, ASCII: "3/4 cup", "2/3 cup", "1 1/3 cups" (`_cups_text`; `_parse_quantity`
+  reads it back exactly). Under ¼ cup stays tbsp/tsp; `scale_recipe` untouched.
+  Why stored, not display-only: the row's Save sends the box back unchanged and
+  a merge's Undo sends the phone's copy, so shown ≠ stored filed fake household
+  edits — `update_grocery_item` now ignores a box that reads the same as the
+  line (`same_shown_quantity`) and puts an old "0.67 cup" back on the step
+  (`typed_back_quantity`). Emily, 2026-10-18: "Yes."
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

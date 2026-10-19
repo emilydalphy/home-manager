@@ -64,11 +64,11 @@ def lentil_week():
 def test_a_swap_adds_up_and_undoing_it_restores_the_line(lentil_week):
     """CATCH. The card's repro, and its way back."""
     plan, tomorrow = lentil_week
-    assert _lentils() == [("1.5 cups", plan)]
+    assert _lentils() == [("1 1/2 cups", plan)]
     tools.swap_meal_in_plan(plan, tomorrow, "Lentil Soup", slot="dinner")
     assert _lentils() == [("2 cups", plan)]
     tools.swap_meal_in_plan(plan, tomorrow, "Toast", slot="dinner")
-    assert _lentils() == [("1.5 cups", plan)]
+    assert _lentils() == [("1 1/2 cups", plan)]
 
 
 def test_a_households_own_lentils_keep_their_own_line(lentil_week):
@@ -76,13 +76,30 @@ def test_a_households_own_lentils_keep_their_own_line(lentil_week):
     the household's standing line, on a plan line of its own, and goes
     when the meal goes — the household's "1 cup" is never re-rounded."""
     plan, tomorrow = lentil_week
+    tools.add_recipe("Lentil Garnish", ingredients=[{"item": "Red lentils", "qty": "2 tbsp", "category": "pantry"}])
+    conn = get_conn()
+    conn.execute("DELETE FROM grocery_items WHERE lower(item) = 'red lentils'")
+    conn.commit()
+    conn.close()
+    tools.add_grocery_item("Red lentils", quantity="1 cup", category="pantry")
+    tools.swap_meal_in_plan(plan, tomorrow, "Lentil Garnish", slot="dinner")
+    assert _lentils() == [("1 cup", None), ("2 tbsp", plan)]
+    tools.swap_meal_in_plan(plan, tomorrow, "Toast", slot="dinner")
+    assert _lentils() == [("1 cup", None)]
+
+
+def test_a_half_cup_share_joins_the_households_cup_and_leaves_it_whole(lentil_week):
+    """Since part cups read as cups (2026-10-18), Lentil Soup's 8 tbsp is
+    "1/2 cup" — the household line's own unit — so it joins that line like
+    any cup share, and taking the meal away puts back exactly "1 cup"."""
+    plan, tomorrow = lentil_week
     conn = get_conn()
     conn.execute("DELETE FROM grocery_items WHERE lower(item) = 'red lentils'")
     conn.commit()
     conn.close()
     tools.add_grocery_item("Red lentils", quantity="1 cup", category="pantry")
     tools.swap_meal_in_plan(plan, tomorrow, "Lentil Soup", slot="dinner")
-    assert _lentils() == [("1 cup", None), ("8 tbsp", plan)]
+    assert _lentils() == [("1 1/2 cups", None)]
     tools.swap_meal_in_plan(plan, tomorrow, "Toast", slot="dinner")
     assert _lentils() == [("1 cup", None)]
 
