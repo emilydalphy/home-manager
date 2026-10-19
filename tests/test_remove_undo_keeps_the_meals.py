@@ -238,15 +238,15 @@ def test_a_second_remove_is_a_no_op_and_the_first_undo_still_works(signed_in):
 def test_a_package_line_removed_and_undone_is_still_one_jar(signed_in):
     for name in ("Alex", "Sam", "Rae"):
         tools.add_member(name)
-    tools.add_recipe("Pasta", ingredients=[{"item": "marinara", "qty": "1 jar"}], default_servings=3)
+    tools.add_recipe("Pasta", ingredients=[{"item": "pesto", "qty": "1 jar"}], default_servings=3)
     plan_id = tools.create_weekly_plan(_next_week(0))["weekly_plan_id"]
     for d in (1, 3):
         tools.plan_meal(_next_week(d), "Pasta", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id, "Alex")
-    [line] = _live("marinara")
+    [line] = _live("pesto")
     signed_in.post(f"/api/grocery-list/{line['id']}/remove")
     assert signed_in.post(f"/api/grocery-list/{line['id']}/remove-undo").json()["restored"] is True
-    assert _live("marinara") == [line]
+    assert _live("pesto") == [line]
 
 
 def test_an_edited_amount_removed_and_undone_is_kept(signed_in):

@@ -4967,8 +4967,13 @@
     // through the aisles — the list assumes a spice rack (Emily,
     // 2026-09-13). Ticking one makes it an ordinary line in its store.
     // Closed by default: less scrolling was half the ask.
+    // Sauces and pantry staples (pantry.py, 2026-10-18) ride in the same
+    // payload, each row carrying its `section`; each section has its own
+    // fold.
     spices: { items: [], recently_bought: [] },
     spicesOpen: false,
+    saucesOpen: false,
+    pantryOpen: false,
     // This week's "Have it" / "Don't need" decisions and the things set
     // aside, for the two quiet foot sections (groNotNeededHtml,
     // groElsewhereHtml) that are the way back from either.
@@ -5414,10 +5419,10 @@
   // and as the card labels them (Emily's Costco mockup, 2026-09-22:
   // "Produce", "Meat & seafood", "Dairy & eggs"). "Other" is always the
   // last aisle in a card, whatever the walking order says.
-  var GRO_SECTION_ORDER = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
+  var GRO_SECTION_ORDER = ['produce', 'dairy', 'meat/seafood', 'pantry', 'canned', 'frozen', 'other'];
   var GRO_AISLE_LABELS = {
     produce: 'Produce', dairy: 'Dairy & eggs', 'meat/seafood': 'Meat & seafood',
-    pantry: 'Pantry', frozen: 'Frozen', other: 'Other'
+    pantry: 'Pantry', canned: 'Canned', frozen: 'Frozen', other: 'Other'
   };
   // A row's aisle: its category folded onto the taxonomy the way the
   // server folds it (meat and seafood are one aisle; anything it doesn't
@@ -5719,7 +5724,8 @@
       var res = await Api.fetch('/api/grocery-list/spices');
       if (!res.ok) { groceryState.spices = { items: [], recently_bought: [] }; return; }
       var got = await res.json();
-      groceryState.spices = { items: got.items || [], recently_bought: got.recently_bought || [] };
+      groceryState.spices = { items: got.items || [], recently_bought: got.recently_bought || [],
+        recently_bought_by_section: got.recently_bought_by_section || null };
     } catch (err) { groceryState.spices = { items: [], recently_bought: [] }; }
   }
 
@@ -6298,19 +6304,41 @@
       '<button type="button" class="gro-bs-none" data-gro="bs-next">None this week</button>';
   }
 
-  // ----- step 2: spices and oils -----
+  // ----- step 2: spices, oils, sauces and pantry staples -----
+  // One step for the list's three "assumed at home" sections (2026-10-18):
+  // the same chip and the same tick either way, so a step each would only
+  // be more taps. The chips sit in small groups under the section they
+  // come from, a sauce new to this kitchen first ("Check you have
+  // these"); a step with only one group shows no heading at all.
+  var BS_SPICE_GROUPS = [
+    { key: 'new', label: 'Check you have these' },
+    { key: 'spices', label: 'Spices and oils' },
+    { key: 'sauces', label: 'Sauces' },
+    { key: 'pantry', label: 'Pantry staples' }
+  ];
+  function bsSpiceChipHtml(c) {
+    var on = !!c.picked;
+    return '<button type="button" class="gro-pill gro-bs-chip' + (on ? ' gro-pill-on' : '') + '" ' +
+      'data-gro="bs-spice" data-id="' + String(c.item_id) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+      escapeHtml(c.name) + '</button>';
+  }
   function bsSpicesHtml() {
     var part = bsPart('spices');
-    var chips = part.choices.map(function (c) {
-      var on = !!c.picked;
-      return '<button type="button" class="gro-pill gro-bs-chip' + (on ? ' gro-pill-on' : '') + '" ' +
-        'data-gro="bs-spice" data-id="' + String(c.item_id) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
-        escapeHtml(c.name) + '</button>';
-    }).join('');
+    var groups = BS_SPICE_GROUPS.map(function (g) {
+      return { label: g.label, choices: part.choices.filter(function (c) {
+        return g.key === 'new' ? !!c.new : (!c.new && (c.section || 'spices') === g.key);
+      }) };
+    }).filter(function (g) { return g.choices.length; });
+    var chips = groups.length > 1
+      ? groups.map(function (g) {
+          return '<p class="gro-bs-eyebrow">' + escapeHtml(g.label) + '</p>' +
+            '<div class="gro-bs-chips">' + g.choices.map(bsSpiceChipHtml).join('') + '</div>';
+        }).join('')
+      : '<div class="gro-bs-chips">' + part.choices.map(bsSpiceChipHtml).join('') + '</div>';
     var said = groceryState.bsSaid
       ? '<p class="gro-bs-said" role="status">' + escapeHtml(groceryState.bsSaid) + '</p>'
       : '<p class="gro-bs-said" role="status" hidden></p>';
-    return '<div class="gro-bs-chips">' + chips + '</div>' + said + bsOnListHtml(part.on_list, 'spice');
+    return chips + said + bsOnListHtml(part.on_list, 'spice');
   }
 
   // ----- step 3: already have these? -----
@@ -6635,35 +6663,67 @@
     '</div>';
   }
 
-  // ---------- Spices this week ----------
-  // One section for every spice and dried herb the week's recipes call for
-  // (app/tools/spices.py decides which names). Unticked by default and off
-  // the to-buy count; a tick makes the line an ordinary one in its store
-  // (and back on the sort row if it has none yet), an untick puts it back
-  // here — the same box, so both answers live in the same place. Fresh
-  // herbs never come here: a bunch of cilantro is produce, bought weekly.
-  // The same card shape as Staples below, closed by default.
+  // ---------- Spices / Sauces / Pantry staples this week ----------
+  // One section each for the spices and dried herbs, the sauces, and the
+  // pantry staples the week's recipes call for (app/tools/spices.py and
+  // pantry.py decide which names; the server stamps each row's
+  // `section`). Unticked by default and off the to-buy count — assumed at
+  // home; a tick makes the line an ordinary one in its store (and back on
+  // the sort row if it has none yet), an untick puts it back here — the
+  // same box, so both answers live in the same place. Fresh food never
+  // comes here: a bunch of cilantro or a pack of fresh pasta is bought.
+  // The same card shape as Staples below, each closed by default.
+  var GRO_ASSUMED_SECTIONS = [
+    { key: 'spices', open: 'spicesOpen', title: 'Spices this week', one: 'spice', many: 'spices',
+      line: 'All the spices this week&rsquo;s recipes need.' },
+    { key: 'sauces', open: 'saucesOpen', title: 'Sauces this week', one: 'sauce', many: 'sauces',
+      line: 'Assumed at home. Tick any you&rsquo;re out of.',
+      fresh: 'A few of these are new to your kitchen: tick any you need.' },
+    { key: 'pantry', open: 'pantryOpen', title: 'Pantry staples this week', one: 'staple', many: 'staples',
+      line: 'Assumed in the cupboard. Tick any you&rsquo;re out of.' }
+  ];
+  function groAssumedItems(key) {
+    return (groceryState.spices.items || []).filter(function (sp) { return (sp.section || 'spices') === key; });
+  }
   function groSpicesHtml() {
+    return GRO_ASSUMED_SECTIONS.map(groAssumedSectionHtml).join('');
+  }
+  function groAssumedSectionHtml(sec) {
     var spices = groceryState.spices;
-    var items = spices.items;
-    if (!items.length && !spices.recently_bought.length) return '';
-    var open = groceryState.spicesOpen;
+    var items = groAssumedItems(sec.key);
+    var byKey = spices.recently_bought_by_section;
+    // An older server says only `recently_bought`, all of it spices.
+    var recent = byKey ? (byKey[sec.key] || []) : (sec.key === 'spices' ? (spices.recently_bought || []) : []);
+    if (!items.length && !recent.length) return '';
+    // The sauces new to this kitchen go first, so the one look they ask
+    // for is at the top of the section.
+    items = items.filter(function (sp) { return sp.new; }).concat(items.filter(function (sp) { return !sp.new; }));
+    var open = !!groceryState[sec.open];
     var ticked = items.filter(function (sp) { return sp.ticked; }).length;
-    var sub = groPlural(items.length, 'spice', 'spices') + (ticked ? ' · ' + ticked + ' to buy' : '');
-    var html = '<div class="gro-staples gro-spices">' +
-      '<button type="button" class="gro-ps-head" data-gro="spices-toggle" aria-expanded="' + open + '">' +
+    var anyNew = items.some(function (sp) { return sp.new; });
+    var sub = groPlural(items.length, sec.one, sec.many) + (ticked ? ' · ' + ticked + ' to buy' : '');
+    var html = '<div class="gro-staples gro-spices gro-assumed-' + sec.key + '">' +
+      '<button type="button" class="gro-ps-head" data-gro="spices-toggle" data-section="' + sec.key + '" aria-expanded="' + open + '">' +
         GRO_ICONS.basket +
         '<span class="gro-ps-text">' +
-          '<span class="gro-ps-title">Spices this week</span>' +
+          '<span class="gro-ps-title">' + escapeHtml(sec.title) + '</span>' +
           '<span class="gro-ps-sub">' + escapeHtml(sub) + '</span>' +
         '</span>' +
         '<span class="gro-ps-check">' + (open ? 'Hide' : 'See') + '</span>' +
       '</button>';
     if (open) {
       html += '<div class="gro-staples-body gro-spices-body">' +
-        '<p class="gro-spices-line">All the spices this week&rsquo;s recipes need.</p>' +
+        // The lines are this file's own copy, entities and all — not escaped.
+        '<p class="gro-spices-line">' + (anyNew && sec.fresh ? sec.fresh : sec.line) + '</p>' +
         items.map(function (sp) {
           var id = String(sp.id);
+          // One quiet line under the name, at most: the rack's "probably
+          // running low" (Pomona ticked it — unticking is the answer),
+          // a sauce this kitchen has never had through Pomona, or a week
+          // built on a lot of it.
+          var note = sp.due ? 'Probably running low'
+            : sp.new ? 'Check you have this'
+            : sp.a_lot ? 'A lot this week' : '';
           return '<div class="gro-row gro-spice-row" data-gro="spice-tick" data-id="' + id + '" data-ticked="' + (sp.ticked ? '1' : '0') + '">' +
             '<button type="button" class="gro-box' + (sp.ticked ? ' checked' : '') + '" role="checkbox" ' +
               'aria-checked="' + (sp.ticked ? 'true' : 'false') + '" data-gro="spice-tick" data-id="' + id + '" ' +
@@ -6671,16 +6731,13 @@
               'aria-label="' + escapeHtml((sp.ticked ? 'Don’t need to buy ' : 'Need to buy ') + sp.item) + '">' +
               (sp.ticked ? GRO_ICONS.tick : '') + '</button>' +
             '<p class="gro-name">' + escapeHtml(sp.item) +
-              // The rack's own "still got cumin?": Pomona ticked this one
-              // because the jar's cadence has run out. Unticking it is
-              // the answer ("we have plenty") — no second button.
-              (sp.due ? '<span class="gro-spice-due">Probably running low</span>' : '') +
+              (note ? '<span class="gro-spice-due">' + escapeHtml(note) + '</span>' : '') +
             '</p>' +
             (sp.quantity ? '<span class="gro-qty">' + escapeHtml(sp.quantity) + '</span>' : '') +
           '</div>';
         }).join('') +
-        (spices.recently_bought.length
-          ? '<p class="gro-spices-recent">Bought lately, so not listed: ' + escapeHtml(spices.recently_bought.join(', ')) + '</p>'
+        (recent.length
+          ? '<p class="gro-spices-recent">Bought lately, so not listed: ' + escapeHtml(recent.join(', ')) + '</p>'
           : '') +
       '</div>';
     }
@@ -9501,10 +9558,13 @@
       }
 
       // ----- Spices this week -----
-      case 'spices-toggle':
-        groceryState.spicesOpen = !groceryState.spicesOpen;
+      case 'spices-toggle': {
+        var secOpen = 'spicesOpen';
+        GRO_ASSUMED_SECTIONS.forEach(function (sec) { if (sec.key === el.dataset.section) secOpen = sec.open; });
+        groceryState[secOpen] = !groceryState[secOpen];
         renderGrocery();
         return;
+      }
 
       // The box is the whole answer, both ways: a tick puts the spice on
       // the list in its store, an untick takes it back into the section.
@@ -11539,10 +11599,11 @@
   // the existing /api/staples routes. This is where they are managed now;
   // the closed Staples card at the foot of Shop went with the same card,
   // and "Before you shop" step 1 is where they are ticked for a trip.
-  // The spice rack (the Spices section of staples) is not listed: those
-  // are kept by "Spices this week", not by a person.
+  // The rack (Spices, and the Sauces / Pantry staples the list keeps —
+  // the server's `rack`) is not listed: those are kept by the list's
+  // "... this week" sections, not by a person.
   function wwkRegulars() {
-    return (wwkState.regulars || []).filter(function (s) { return s.section !== 'spices'; });
+    return (wwkState.regulars || []).filter(function (s) { return !s.rack && s.section !== 'spices'; });
   }
   function wwkRegularsHtml() {
     var regs = wwkRegulars();
@@ -28230,7 +28291,7 @@
   // Guarded so the row reads its empty line before that copy exists.
   function prefsRegularsLine() {
     var all = (typeof wwkState !== 'undefined' && wwkState.regulars) || [];
-    var regs = all.filter(function (s) { return s.section !== 'spices'; });
+    var regs = all.filter(function (s) { return !s.rack && s.section !== 'spices'; });
     return regs.length ? regs.map(function (s) { return s.item; }).join(', ') : 'Things you buy most weeks';
   }
 

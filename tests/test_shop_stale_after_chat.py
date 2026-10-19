@@ -123,7 +123,7 @@ def _recipe(name: str, own: str) -> None:
     tools.add_recipe(
         name,
         ingredients=[
-            {"item": "Rice", "qty": "1 cup", "category": "pantry"},
+            {"item": "Frozen peas", "qty": "1 cup", "category": "pantry"},
             {"item": own, "qty": "1 bag", "category": "produce"},
         ],
         prep_time_minutes=5,
@@ -164,7 +164,7 @@ def test_approve_weekly_plan_writes_the_whole_list():
     after = _lines()
     assert before == [], "a draft must not have reached the list"
     assert len(after) == 8, after
-    assert ("Rice", "7 cups") in after
+    assert ("Frozen peas", "7 cups") in after
 
 
 def test_swap_meal_in_plan_moves_lines_between_dishes():
@@ -194,7 +194,7 @@ def test_take_the_night_off_puts_back_what_the_dropped_dinner_had_bought():
     after = _lines()
     assert ("Greens %d" % index, "1 bag") in before
     assert ("Greens %d" % index, "1 bag") not in after
-    assert ("Rice", "7 cups") in before and ("Rice", "6 cups") in after
+    assert ("Frozen peas", "7 cups") in before and ("Frozen peas", "6 cups") in after
 
 
 def test_discarding_a_draft_does_NOT_change_the_list_and_the_card_was_wrong():

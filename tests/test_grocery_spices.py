@@ -317,11 +317,11 @@ def test_the_sort_queue_and_the_trip_never_see_an_unticked_spice(curry_week):
 
 def test_swapping_out_the_only_meal_that_wanted_a_spice_clears_its_line(curry_week):
     days = tools._week_dates(_monday(0))
-    tools.add_recipe("Plain rice", ingredients=[{"item": "Rice", "qty": "2 cups", "category": "pantry"}])
-    tools.swap_meal_in_plan(curry_week, days[1], "Plain rice", slot="dinner")
+    tools.add_recipe("Plain potatoes", ingredients=[{"item": "Potatoes", "qty": "2 lbs", "category": "produce"}])
+    tools.swap_meal_in_plan(curry_week, days[1], "Plain potatoes", slot="dinner")
     section = _section()
     assert section["Ground cumin"]["quantity"] == "1 tsp", "the curry's teaspoon, the tacos' gone"
-    assert "Rice" in _needed()
+    assert "Potatoes" in _needed()
 
 
 def _approve_on_its_monday(plan_id: int) -> None:

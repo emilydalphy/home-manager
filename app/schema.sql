@@ -1246,7 +1246,25 @@ CREATE TABLE IF NOT EXISTS staples (
     skip_streak INTEGER NOT NULL DEFAULT 0, -- consecutive "not this trip" answers; three pauses it
     paused INTEGER NOT NULL DEFAULT 0, -- 1 = not suggested; shown in the Staples card with a one-tap resume
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    -- 1 = made by the list's "Sauces / Pantry staples this week" sections
+    -- when one came home (2026-10-18): kept the spice-rack way — never put
+    -- on the list on a rhythm, never a regular — instead of the way a
+    -- staple a person set up is. A spice needs no flag: its name says it.
+    kept_by_list INTEGER NOT NULL DEFAULT 0
+);
+
+-- The sauces a household has said it has, by doing rather than typing
+-- (2026-10-18): a sauce on "Sauces this week" carries "Check you have this"
+-- until it is ticked, bought, or left unticked through a shop. One row per
+-- name (the grocery merge key); `how` is ticked | had_it, for reading back.
+-- Bought needs no row: a sauce that came home is a staple.
+CREATE TABLE IF NOT EXISTS assumed_known (
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    item_key TEXT NOT NULL,
+    how TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (household_id, item_key)
 );
 
 -- One dated fact per row about a staple. 'bought' rows are what the

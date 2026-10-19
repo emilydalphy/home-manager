@@ -141,7 +141,7 @@ class TestApprovingIsTheTakeover:
         # The list holds three days of Chili and four of Katsu — never both
         # weeks' food for one night.
         needed = _needed()
-        assert "panko" in needed
+        assert "crackers" in needed
         assert "beans" in needed
         assert took["grocery_trimmed"] or took["grocery_removed"]
 
@@ -202,7 +202,7 @@ class TestWalkingAway:
         assert tools.plan_period(_plan_row(approved)) == (week, 7)
         assert _dates_on(approved) == set(days)
         assert "beans" in _needed()
-        assert "panko" not in _needed()
+        assert "crackers" not in _needed()
 
     def test_an_expired_draft_never_touched_the_approved_week(self, recipes, stub_model, monkeypatch):
         week, approved = _approved_week(stub_model)

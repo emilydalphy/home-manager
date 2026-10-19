@@ -44,7 +44,7 @@ def _week(frozen=("Salmon fillets",)):
         "Salmon Bowls",
         ingredients=[
             {"item": "Salmon fillets", "qty": "1 lb", "category": "seafood"},
-            {"item": "Rice", "qty": "2 cups", "category": "pantry"},
+            {"item": "Frozen peas", "qty": "2 cups", "category": "pantry"},
         ],
         instructions=["Cook the rice.", "Bake the salmon."],
     )
@@ -87,7 +87,7 @@ def test_stepping_the_reheat_night_down_buys_no_salmon(client):
     assert out["status"] == "dropped"
     assert _to_buy() == [], "the household said the salmon is in the freezer"
     assert _move_dates(plan_id) == [_day(1)], "Wednesday's move stands"
-    assert _to_buy("Rice") != [], "the rest of the list is untouched"
+    assert _to_buy("Frozen peas") != [], "the rest of the list is untouched"
 
 
 def test_stepping_the_cook_night_down_buys_no_salmon_and_moves_the_thaw(signed_in):

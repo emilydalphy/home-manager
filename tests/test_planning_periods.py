@@ -106,7 +106,7 @@ def _live_day_owners() -> dict:
 def recipes():
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}],
                      prep_time_minutes=10, cook_time_minutes=20)
-    tools.add_recipe("Katsu", ingredients=[{"item": "panko", "qty": "1 bag"}],
+    tools.add_recipe("Katsu", ingredients=[{"item": "crackers", "qty": "1 bag"}],
                      prep_time_minutes=10, cook_time_minutes=20)
 
 
@@ -1042,7 +1042,7 @@ class TestGroceryReconciliationOnTakeover:
 
         # The takeover reversed the surrendered Chili days before the new
         # period's own approval added anything, so what's left is honest.
-        assert "panko" in self._needed()
+        assert "crackers" in self._needed()
         assert new["took_over"]["grocery_removed"] or new["took_over"]["grocery_trimmed"]
 
     def test_a_line_already_bought_is_never_yanked_back(self, recipes, stub_model):
@@ -1312,7 +1312,7 @@ class TestTakeoverIsAtomic:
         ).fetchone()["n"] == 0
         conn.close()
         # Both surviving prefixes still shop for themselves.
-        assert {i["item"] for i in tools.list_grocery_list(status="needed")} == {"beans", "panko"}
+        assert {i["item"] for i in tools.list_grocery_list(status="needed")} == {"beans", "crackers"}
 
     def test_a_bought_line_survives_a_TWO_plan_takeover(self, recipes, stub_model):
         # The in_cart/purchased guarantee, exercised through the shared
@@ -1321,9 +1321,9 @@ class TestTakeoverIsAtomic:
         # a cart, however many plans it walks on the way.
         first_id, second_id, new_plan_id, days = self._two_plans_and_a_new_period(stub_model)
         needed = {i["item"]: i for i in tools.list_grocery_list(status="needed")}
-        beans, panko = needed["beans"], needed["panko"]
+        beans, crackers = needed["beans"], needed["crackers"]
         tools.mark_grocery_item(beans["id"], "purchased")
-        tools.mark_grocery_item(panko["id"], "in_cart")
+        tools.mark_grocery_item(crackers["id"], "in_cart")
 
         result = tools.retire_overlapping_plans(new_plan_id, days[2], 4)
 
@@ -1334,10 +1334,10 @@ class TestTakeoverIsAtomic:
         }
         conn.close()
         assert after[beans["id"]] == ("beans", beans["quantity"], "purchased")
-        assert after[panko["id"]] == ("panko", panko["quantity"], "in_cart")
+        assert after[crackers["id"]] == ("crackers", crackers["quantity"], "in_cart")
         # And the household is told, once per plan that gave up a meal
         # linked to it — the ledger is the only place that fact survives.
-        assert sorted(set(result["grocery_kept_bought"])) == ["beans", "panko"]
+        assert sorted(set(result["grocery_kept_bought"])) == ["beans", "crackers"]
 
     def test_a_single_plan_takeover_behaves_exactly_as_before(self, recipes, stub_model):
         # The ordinary case, and the one that was never broken: it must not

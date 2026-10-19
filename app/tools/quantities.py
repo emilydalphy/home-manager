@@ -10,8 +10,12 @@ from datetime import date, timedelta
 
 
 # Standard store sections, in a sensible shopping order. "meat" is an alias
-# kept for rows saved before "meat/seafood" was standardized.
-_GROCERY_SECTION_ORDER = ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]
+# kept for rows saved before "meat/seafood" was standardized. "canned" is
+# the tins' own aisle (Emily, 2026-10-18: canned tomatoes, beans, coconut
+# milk and tuna are bought as normal, grouped together) — set by the
+# grocery list from the name (pantry.is_canned), never asked of a model,
+# so the recipe/agent enums don't list it.
+_GROCERY_SECTION_ORDER = ["produce", "dairy", "meat/seafood", "pantry", "canned", "frozen", "other"]
 
 
 _GROCERY_CATEGORY_ALIASES = {"meat": "meat/seafood", "seafood": "meat/seafood"}
@@ -30,6 +34,7 @@ _DEFAULT_LOCATION_BY_CATEGORY = {
     "meat/seafood": "fridge",
     "frozen": "freezer",
     "pantry": "pantry",
+    "canned": "pantry",
     "other": "pantry",
 }
 
@@ -57,6 +62,7 @@ _DEFAULT_SHELF_LIFE_DAYS = {
     "dairy": 10,
     "meat/seafood": 3,
     "pantry": 180,
+    "canned": 365,
     "frozen": 90,
     "other": 14,
 }

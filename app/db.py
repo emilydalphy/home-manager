@@ -479,6 +479,9 @@ _MIGRATIONS = [
     # so an event from before this deploy is never removed by an untick.
     # See schema.sql's comment on staple_events.
     ("staple_events", "grocery_item_id", "INTEGER"),
+    # A sauce or pantry staple the list's sections made (2026-10-18) — see
+    # schema.sql's comment on staples.kept_by_list.
+    ("staples", "kept_by_list", "INTEGER NOT NULL DEFAULT 0"),
     ("staple_events", "receipt_json", "TEXT"),
     # Loop Board "First-class 'defrost' prep step" — see schema.sql's
     # comment on prep_tasks for what each of these four columns is for.

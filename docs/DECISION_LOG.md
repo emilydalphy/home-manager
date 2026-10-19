@@ -13,6 +13,30 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Sauces and pantry staples are assumed at home, like spices** (2026-10-18
+  card, Emily's list; branch `overnight/pantry-staples-assumed`; tests
+  `tests/test_pantry_staples_assumed.py`). `app/tools/pantry.py` is only the
+  name lists (one line each); everything else is the spices machinery: the
+  same `status='spice'` (now "assumed, waiting in its section"), the same
+  tick, read by `spices.assumed_section()` into "Sauces this week" /
+  "Pantry staples this week". Why one status: every count, merge, sort and
+  trip already ignores 'spice'. `is_spice` itself is unchanged — recipes
+  and plan_quality read it as "the rack", and widening it would change what
+  they report (the broth finding must live). Canned is NOT assumed: its own
+  `canned` aisle, set from the name at add time (models never see it).
+  A recipe's light/dark soy sauce and tamari land as one "Soy sauce" line.
+  Only a RECIPE's sauce/staple shows in the section; a hand-added "rice" is
+  an ordinary aisle line. Memory: one that came home becomes a staple with
+  `staples.kept_by_list=1` (sections Sauces / Pantry staples, `rack`),
+  first cadence 28 days, never synced on a rhythm or offered as a regular;
+  an explicit "Coffee" staple stays Pantry basics with its rhythm. Old
+  rack names now on Emily's pantry list (sesame, stock cubes, baking soda,
+  vanilla, coconut oil, chili oil) count as kept without the flag. "Check
+  you have this" is sauces-only, `assumed_known` table (ticked / left
+  unticked at the end of Before you shop or of the week); bought = a staple.
+  Before you shop: folded into step 2 (fewest taps), chips grouped, new
+  sauces first. ~25 existing tests renamed an incidental rice/stock/panko
+  fixture to a bought item; those tests were about other behaviour.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

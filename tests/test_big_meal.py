@@ -59,7 +59,7 @@ DISHES = [
      "ahead_days": 1, "ahead_step": "Make the stuffing"},
     {"name": "Maple Roasted Carrots", "role": "side", "covers": ["vegetable"],
      "ingredients": [{"item": "carrots", "qty": "3 lb", "category": "produce"},
-                     {"item": "maple syrup", "qty": "1 bottle", "category": "pantry"}],
+                     {"item": "cranberry sauce", "qty": "1 bottle", "category": "pantry"}],
      "instructions": ["Toss.", "Roast."], "minutes": 10, "cook_minutes": 25, "oven": True, "ahead_days": 0},
     {"name": "Green Beans with Lemon", "role": "side", "covers": ["vegetable"],
      "ingredients": [{"item": "green beans", "qty": "2 lb", "category": "produce"}],
@@ -250,7 +250,7 @@ def test_the_shopping_reads_in_two_trips_keeps_well_first(family, recipes, propo
     tools.answer_holiday(tg, "hosting", headcount=5)
 
     items = _list()
-    for name in ("whole chicken", "bread", "onions", "carrots", "maple syrup", "green beans", "pumpkin puree", "frozen pie shells"):
+    for name in ("whole chicken", "bread", "onions", "carrots", "cranberry sauce", "green beans", "pumpkin puree", "frozen pie shells"):
         assert name in items, f"{name} should be on the list"
     # Each dish was written for the table of seven, so it's bought ONCE for
     # seven — not scaled up again by the guests attendance already counts.
@@ -260,7 +260,7 @@ def test_the_shopping_reads_in_two_trips_keeps_well_first(family, recipes, propo
     by_id = {i["id"]: i["item"] for i in tools.list_grocery_list()}
     early = {by_id[i] for i in split["early"]["item_ids"]}
     fresh = {by_id[i] for i in split["fresh"]["item_ids"]}
-    assert early == {"bread", "maple syrup", "pumpkin puree", "frozen pie shells"}
+    assert early == {"bread", "cranberry sauce", "pumpkin puree", "frozen pie shells"}
     assert fresh == {"whole chicken", "onions", "carrots", "green beans"}
     assert split["early"]["date"] == _shift(tg, -3) and split["fresh"]["date"] == _shift(tg, -1)
     assert split["early"]["label"] == f"For Thanksgiving — buy by {date.fromisoformat(_shift(tg, -3)).strftime('%A')}"
@@ -1036,11 +1036,11 @@ def test_an_ordinary_weeks_plate_side_still_follows_its_dish_through_the_chain(f
     tools.repair_leftover_chains(plan_id)
     from app.tools import plates
     plates.attach_sides(cook["entry_id"], [{"name": "Steamed rice", "covers": ["carb"],
-                                            "ingredients": [{"item": "rice", "qty": "1 cup", "category": "pantry"}],
+                                            "ingredients": [{"item": "frozen peas", "qty": "1 cup", "category": "frozen"}],
                                             "instructions": ["Steam."], "minutes": 15}], ["carb"])
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
     items = _list()
-    assert items["rice"] == "2 cups", "the reheat night's rice is bought with the cook night's"
+    assert items["frozen peas"] == "2 cups", "the reheat night's peas are bought with the cook night's"
     assert items["chicken thighs"] == "2 lbs"
 
 

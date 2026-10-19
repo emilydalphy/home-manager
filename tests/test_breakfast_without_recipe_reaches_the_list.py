@@ -74,7 +74,7 @@ def test_a_breakfast_the_model_called_not_new_is_saved_and_shopped_for(stubbed, 
 
 def test_a_dish_carrying_its_own_ingredient_list_is_saved_whatever_its_flag(stubbed, monkeypatch):
     week = _week_start()
-    own = [{"item": "oats", "qty": "1 bag"}, {"item": "bananas", "qty": "1 bunch"}]
+    own = [{"item": "granola", "qty": "1 bag"}, {"item": "bananas", "qty": "1 bunch"}]
     days = _days(week, {"meal_name": "Banana Oats", "is_new_recipe": False, "ingredients": own,
                         "instructions": ["Stir."]})
     monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda context: days)
@@ -83,7 +83,7 @@ def test_a_dish_carrying_its_own_ingredient_list_is_saved_whatever_its_flag(stub
     tools.approve_weekly_plan(plan["weekly_plan_id"])
 
     names = _names()
-    assert "oats" in names and "bananas" in names, names
+    assert "granola" in names and "bananas" in names, names
 
 
 def test_a_leftovers_night_stays_freeform(stubbed, monkeypatch):

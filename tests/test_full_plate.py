@@ -643,7 +643,10 @@ def test_the_sides_ingredients_land_on_the_shopping_list_at_approval(
 
     after = {i["item"].lower() for i in tools.list_grocery_list()}
     assert "romaine" in after
-    assert "long grain rice" in after
+    # Rice is a pantry staple (2026-10-18): on the list's "Pantry staples
+    # this week", waiting unticked, rather than in an aisle.
+    assert "long grain rice" not in after
+    assert "long grain rice" in {sp["item"].lower() for sp in tools.list_spices_this_week()["items"]}
     assert "chicken thighs" in after
 
 
@@ -682,6 +685,7 @@ def test_clearing_the_week_takes_the_sides_shopping_back_off_again(
 
     assert "romaine" not in {i["item"].lower() for i in tools.list_grocery_list()}
     assert "long grain rice" not in {i["item"].lower() for i in tools.list_grocery_list()}
+    assert "long grain rice" not in {sp["item"].lower() for sp in tools.list_spices_this_week()["items"]}
 
 
 def test_the_cooker_shows_the_side_under_the_dishs_own_steps(recipes, stub_week, stub_sides):

@@ -26,10 +26,10 @@ APPLE = "Apple Slices with Almond Butter"
 RICE_CAKES = "Rice Cakes with Turkey Slices"
 
 DETAILS = {
-    APPLE: [{"item": "apples", "qty": "2"}, {"item": "almond butter", "qty": "4 tbsp"}],
+    APPLE: [{"item": "apples", "qty": "2"}, {"item": "hummus", "qty": "4 tbsp"}],
     RICE_CAKES: [{"item": "rice cakes", "qty": "4"}, {"item": "sliced turkey", "qty": "4 oz"}],
     "Cheese and Crackers": [{"item": "crackers", "qty": "1 box"}, {"item": "cheddar", "qty": "4 oz"}],
-    "Trail Mix Cups": [{"item": "cashews", "qty": "1 cup"}, {"item": "raisins", "qty": "1/2 cup"}],
+    "Trail Mix Cups": [{"item": "cheese strings", "qty": "1 cup"}, {"item": "grapes", "qty": "1/2 cup"}],
 }
 
 
@@ -128,7 +128,7 @@ def test_approving_the_week_puts_every_snacks_ingredients_on_the_list(chili, stu
     tools.approve_weekly_plan(plan["weekly_plan_id"])
 
     names = _names()
-    for item in ("apples", "almond butter", "rice cakes", "sliced turkey"):
+    for item in ("apples", "hummus", "rice cakes", "sliced turkey"):
         assert item in names, f"{item!r} missing from the list: {names}"
     # The recipe pass wrote each snack up once, not once per day.
     assert sorted(n for n in written if n in DETAILS) == sorted([APPLE, RICE_CAKES])
@@ -144,7 +144,7 @@ def test_a_snack_on_every_day_is_one_line_not_seven(chili, stub_models):
 
     names = _names()
     assert names.count("apples") == 1, names
-    assert names.count("almond butter") == 1, names
+    assert names.count("hummus") == 1, names
 
 
 def test_swapping_a_snack_takes_its_items_back_off(chili, stub_models):
@@ -237,7 +237,7 @@ def test_a_snack_on_a_day_everyone_is_away_is_not_planned_or_bought(chili, stub_
     assert _snacks_on(plan["weekly_plan_id"], wednesday) == []
     tools.approve_weekly_plan(plan["weekly_plan_id"])
     names = _names()
-    assert "cashews" not in names and "raisins" not in names, names
+    assert "cheese strings" not in names and "grapes" not in names, names
     assert "apples" in names, "the other days' snacks are still bought"
 
 
@@ -248,13 +248,13 @@ def test_marking_a_day_away_after_approval_takes_its_snacks_off_the_list(chili, 
     stub_week(_days(week, lambda d: [APPLE, "Trail Mix Cups"] if d == wednesday else [APPLE]))
     plan = agent.generate_weekly_plan(week)
     tools.approve_weekly_plan(plan["weekly_plan_id"])
-    assert "cashews" in _names()
+    assert "cheese strings" in _names()
 
     tools.set_away_stretch(wednesday, "breakfast", wednesday, "dinner")
 
     assert _snacks_on(plan["weekly_plan_id"], wednesday) == []
     names = _names()
-    assert "cashews" not in names and "raisins" not in names, names
+    assert "cheese strings" not in names and "grapes" not in names, names
     assert "apples" in names, "the apple snack on the other six days keeps its shopping"
 
 
@@ -269,7 +269,7 @@ def test_a_day_with_one_meal_away_keeps_its_snacks(chili, stub_models):
     tools.set_slot_need(wednesday, "dinner", "away")
 
     assert len(_snacks_on(plan["weekly_plan_id"], wednesday)) == 2
-    assert "cashews" in _names()
+    assert "cheese strings" in _names()
 
 
 def test_a_dinner_only_household_keeps_its_snacks_when_one_dinner_is_away(chili, stub_models):
@@ -284,9 +284,9 @@ def test_a_dinner_only_household_keeps_its_snacks_when_one_dinner_is_away(chili,
     plan = agent.generate_weekly_plan(week)
     tools.approve_weekly_plan(plan["weekly_plan_id"])
     assert len(_snacks_on(plan["weekly_plan_id"], wednesday)) == 2
-    assert "cashews" in _names()
+    assert "cheese strings" in _names()
 
     tools.set_slot_need(wednesday, "dinner", "away")
 
     assert len(_snacks_on(plan["weekly_plan_id"], wednesday)) == 2
-    assert "cashews" in _names()
+    assert "cheese strings" in _names()

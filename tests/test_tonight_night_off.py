@@ -71,12 +71,12 @@ def _recipe(name, ingredients=None):
     tools.add_recipe(
         name,
         ingredients=ingredients or [
-            # Shrimp and Rice are on every dish of the week, so the whole
+            # Shrimp and Peas are on every dish of the week, so the whole
             # week's lines merge and a drop has to recompute them. "Greens
             # for X" is this dish's alone, which is what a dropped dinner
             # can honestly free up.
             {"item": "Shrimp", "qty": "1 lb", "category": "meat"},
-            {"item": "Rice", "qty": "1 cup", "category": "pantry"},
+            {"item": "Frozen peas", "qty": "1 cup", "category": "frozen"},
             {"item": f"Greens for {name}", "qty": "1 bag", "category": "produce"},
         ],
         prep_time_minutes=10, cook_time_minutes=20, default_servings=4,

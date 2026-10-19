@@ -126,6 +126,8 @@ _TABLES = [
     "chat_turns", "chat_sessions", "api_calls", "error_events", "plan_quality_events", "feedback_reports",
     "calendar_feeds", "staple_events", "staples", "morning_text_sends",
     "holiday_answers", "held_things",
+    # The sauces a household has said it has (2026-10-18, pantry.py).
+    "assumed_known",
 ]
 
 

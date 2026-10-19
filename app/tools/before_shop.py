@@ -107,6 +107,15 @@ def mark_before_shop_done() -> dict:
             "WHERE id = ? AND household_id = ?",
             (int(row["id"]), household_id()),
         )
+        # Every sauce still unticked at the end of the pass has had its one
+        # look — the step showed it first, flagged — so it counts as "we
+        # have it" from here (Emily, 2026-10-18).
+        from . import spices as _spices
+        waiting = conn.execute(
+            "SELECT item FROM grocery_items WHERE household_id = ? AND status = 'spice' AND excluded_from_list = 0",
+            (household_id(),),
+        ).fetchall()
+        _spices.note_known(conn, [r["item"] for r in waiting], "had_it")
         conn.commit()
         return {"done": True, "weekly_plan_id": int(row["id"])}
     except Exception:
@@ -269,7 +278,7 @@ def before_shop_steps() -> dict:
 
       regulars: {choices: [{name, staple_id, ticked, reason}],
                  on_list: [{item_id, name, who}], starter: bool}
-      spices:   {choices: [{item_id, name}], on_list: [{item_id, name, who}]}
+      spices:   {choices: [{item_id, name, section, new}], on_list: [{item_id, name, who}]}
       have:     {rows: [{item_id, name, ticked, reason}]}
 
     A thing already on this week's list is never a choice — it goes to its
@@ -354,8 +363,10 @@ def before_shop_steps() -> dict:
             last_by_key[k] = d
 
     # ---- step 1: regulars ----
-    own = [s for s in staples if s["section"] != _staples.SECTION_SPICES and not s["paused"]]
-    starter = not [s for s in staples if s["section"] != _staples.SECTION_SPICES]
+    # The rack (spices, and the sauces and pantry staples the list keeps)
+    # is never a regular: those are asked about in step 2, by the recipes.
+    own = [s for s in staples if not s["rack"] and not s["paused"]]
+    starter = not [s for s in staples if not s["rack"]]
     candidates = (
         [(s["item"], s) for s in own] if not starter else [(n, None) for n in STARTER_REGULARS]
     )
@@ -391,11 +402,16 @@ def before_shop_steps() -> dict:
             "reason": reason,
         })
 
-    # ---- step 2: spices and oils ----
+    # ---- step 2: spices, oils, sauces and pantry staples ----
+    # One step for all three sections (2026-10-18): the same chip and the
+    # same tick, so folding them is fewer taps than a step each. A sauce
+    # new to this kitchen goes first — it is the one thing here asking for
+    # a look.
     sp_choices, sp_on_list = [], []
     for sp in spice_view.get("items", []):
         if not sp.get("ticked"):
-            sp_choices.append({"item_id": sp["id"], "name": sp["item"]})
+            sp_choices.append({"item_id": sp["id"], "name": sp["item"],
+                               "section": sp.get("section") or "spices", "new": bool(sp.get("new"))})
             continue
         row = live_by_id.get(sp["id"])
         # A spice line the week's recipes made carries the approval's
@@ -407,6 +423,8 @@ def before_shop_steps() -> dict:
             since = f"since {day_words}" if day_words and day_words not in ("today", "yesterday") else (
                 f"added {day_words}" if day_words else "")
         sp_on_list.append({"item_id": sp["id"], "name": sp["item"], "who": since})
+
+    sp_choices.sort(key=lambda c: not c["new"])  # stable: the rest keep their order
 
     # ---- step 3: already have these? ----
     have_rows = []

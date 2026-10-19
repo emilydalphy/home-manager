@@ -544,7 +544,7 @@ class TestNeedsYouSurfacesAnOpenDinner:
 def test_swapping_a_meal_in_an_unapproved_draft_leaves_the_list_alone():
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
-    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "milk", "qty": "1 L"}])
     tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
 
     tools.swap_meal_in_plan(plan_id, _today(), "Soup", slot="dinner")
@@ -555,14 +555,14 @@ def test_swapping_a_meal_in_an_unapproved_draft_leaves_the_list_alone():
 def test_swapping_a_meal_in_an_approved_plan_swaps_it_on_the_list_too():
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
-    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "milk", "qty": "1 L"}])
     tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id)
 
     tools.swap_meal_in_plan(plan_id, _today(), "Soup", slot="dinner")
 
     on_list = [i["item"] for i in tools.list_grocery_list()]
-    assert "stock" in on_list, "the new meal's ingredients should replace the old ones"
+    assert "milk" in on_list, "the new meal's ingredients should replace the old ones"
     assert "beans" not in on_list, "the swapped-out meal's ingredients should come off"
 
 
@@ -576,7 +576,7 @@ def test_planned_meal_shows_up_in_the_plan():
 def test_checking_a_meal_off_records_it_as_cooked():
     """Plan a week, cook one dinner, and see the plan's progress move."""
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
-    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "milk", "qty": "1 L"}])
     tools.plan_meal(_today(), "Soup", slot="dinner", weekly_plan_id=plan_id)
 
     entry = tools.get_cooker_view(plan_id)["meals"][0]
@@ -676,15 +676,15 @@ def test_clearing_the_week_keeps_the_plan_itself():
 def test_clearing_the_week_leaves_an_already_purchased_item_alone():
     """Reversal must not yank something the shopper has already bought."""
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
-    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 L"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "milk", "qty": "1 L"}])
     tools.plan_meal(_today(), "Soup", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id)
-    stock_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "stock")
+    stock_id = next(i["id"] for i in tools.list_grocery_list() if i["item"] == "milk")
     tools.mark_grocery_item(stock_id, status="purchased")
 
     tools.clear_weekly_plan()
 
-    assert [i["item"] for i in tools.list_grocery_list(status="purchased")] == ["stock"]
+    assert [i["item"] for i in tools.list_grocery_list(status="purchased")] == ["milk"]
 
 
 def test_clearing_the_week_with_no_plan_is_a_no_op():
@@ -763,12 +763,12 @@ def test_the_draft_promise_matches_what_approval_actually_adds():
     """
     plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}, {"item": "onions", "qty": "2"}])
-    tools.add_recipe("Soup", ingredients=[{"item": "onions", "qty": "1"}, {"item": "stock", "qty": "1 l"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "onions", "qty": "1"}, {"item": "milk", "qty": "1 l"}])
     tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
     tools.plan_meal(_another_day_this_week(), "Soup", slot="dinner", weekly_plan_id=plan_id)
 
     preview = tools.preview_plan_grocery_impact(plan_id)
-    assert preview["would_add_count"] == 3, "beans, onions, stock — onions counted once"
+    assert preview["would_add_count"] == 3, "beans, onions, milk — onions counted once"
 
     result = tools.approve_weekly_plan(plan_id, approved_by="Emily")
     assert result["groceries_added_count"] == preview["would_add_count"]
@@ -1462,7 +1462,7 @@ def test_re_approving_after_a_reopen_adds_only_what_is_new():
     week = _week_start()
     plan_id = tools.create_weekly_plan(week)["weekly_plan_id"]
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
-    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 l"}])
+    tools.add_recipe("Soup", ingredients=[{"item": "milk", "qty": "1 l"}])
     tools.plan_meal(week, "Chili", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
     tools.reopen_weekly_plan(plan_id)
@@ -1470,8 +1470,8 @@ def test_re_approving_after_a_reopen_adds_only_what_is_new():
 
     result = tools.approve_weekly_plan(plan_id, approved_by="Marcus")
 
-    assert result["groceries_added"] == ["stock"], "only the new meal's ingredients"
-    assert sorted(i["item"] for i in tools.list_grocery_list()) == ["beans", "stock"]
+    assert result["groceries_added"] == ["milk"], "only the new meal's ingredients"
+    assert sorted(i["item"] for i in tools.list_grocery_list()) == ["beans", "milk"]
     # A reopened week can be settled by the other adult — this IS a real
     # transition into approved, so the receipt names them.
     assert result["approved_by"] == "Marcus"

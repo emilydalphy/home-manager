@@ -265,9 +265,12 @@ def test_a_draft_buys_nothing_until_the_week_is_approved():
 
     tools.approve_weekly_plan(plan_id)
 
-    # Bought at approval with everything else — and scaled to the two
-    # eating (2 cups for four -> 1 cup for two), the recipe way.
-    assert _list()["long grain rice"]["quantity"] == "1 cup"
+    # Put on the list at approval with everything else — and scaled to the
+    # two eating (2 cups for four -> 1 cup for two), the recipe way. Rice
+    # is a pantry staple (2026-10-18): it waits, unticked, in "Pantry
+    # staples this week" rather than in an aisle.
+    rice = {sp["item"].lower(): sp for sp in tools.list_spices_this_week()["items"]}["long grain rice"]
+    assert rice["quantity"] == "1 cup" and rice["section"] == "pantry" and not rice["ticked"]
 
 
 def test_swapping_the_dish_away_takes_the_addition_and_its_shopping_with_it():

@@ -463,14 +463,14 @@ def test_the_ordinary_unlink_still_rescales_for_every_other_caller():
     no-regression guard, green on both sides by design.
     """
     plan_id, cook, reheat, late_reheat = _chain_plan()
-    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 l"}], default_servings=3)
+    tools.add_recipe("Soup", ingredients=[{"item": "milk", "qty": "1 l"}], default_servings=3)
 
     tools.swap_meal_in_plan(plan_id, REHEAT, "Soup", slot="dinner")
 
     on_list = _grocery_by_item()
     assert on_list["beef"] == "2 lbs"
     assert on_list["lettuce"] == "2 heads"
-    assert on_list["stock"] == "1 l"
+    assert on_list["milk"] == "1 l"
 
 
 # ------------------------------------------------------- the "+", recorded
@@ -490,7 +490,7 @@ def test_the_stepper_going_UP_had_the_same_seam_and_is_now_atomic_too():
     """
     _household()
     _wraps()
-    tools.add_recipe("Soup", ingredients=[{"item": "stock", "qty": "1 l"}], default_servings=3)
+    tools.add_recipe("Soup", ingredients=[{"item": "milk", "qty": "1 l"}], default_servings=3)
     plan_id = tools.create_weekly_plan(ADD_SRC)["weekly_plan_id"]
     source = tools.plan_meal(ADD_SRC, "Bulgogi Wraps", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
     target = tools.plan_meal(ADD_TGT, "Soup", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
