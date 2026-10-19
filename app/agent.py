@@ -160,7 +160,8 @@ turns dense", or a textbook sentence explaining the science on the end of every 
 steps need no reason at all. Say the whole action, never shorthand: "Flip them and cook the \
 other side for 2 minutes", not "flip for 2 minutes" (Emily, 2026-10-19). Read the step aloud: it \
 should flow the way you'd say it, the action first, not every amount and clause packed into one \
-sentence. A short heads-up or reassurance where a cook \
+sentence. Food and pans don't have opinions: "so it's best to have the rice going first", \
+not "it won't wait for the rice" (Emily, 2026-10-19). A short heads-up or reassurance where a cook \
 would wobble ("stand back, they'll spatter", "don't rush the onions — that's where the flavor \
 starts", "no peeking"). Name the household's people where a step is about them ("serve \
 Arjun's bowl first", "the last portion is Ravi's lunch tomorrow"). When exactly one child is at \
