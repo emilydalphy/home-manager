@@ -177,3 +177,65 @@ def test_paprika_with_a_note_is_a_spice():
     for name in ("Bell pepper", "Fresh parsley, for garnish", "Basil (fresh)", "Bread and butter pickles",
                  "Garlic cloves", "Chicken (thighs)"):
         assert not _spices.is_spice(name), name
+
+
+# ---------- slice 2: a batch doesn't multiply the aromatics ----------
+
+def _batch_week():
+    """The card's week: seven identical snacks and a Mon–Wed batch dinner
+    (one cook feeding three nights for two)."""
+    plan_id, _ids = _snack_week()
+    tools.add_recipe("Garlic Shrimp", default_servings=2, ingredients=[
+        {"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"},
+        {"item": "Fresh parsley", "qty": "2 bunches", "category": "produce"},
+        {"item": "Garlic", "qty": "8 cloves", "category": "produce"},
+        {"item": "Lemons", "qty": "2", "category": "produce"},
+        {"item": "Flaky salt", "qty": "1 box", "category": "pantry"},
+    ])
+    ids = [tools.plan_meal(_d(n), "Garlic Shrimp", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+           for n in (0, 1, 2)]
+    tools.set_cook_ahead(ids[0], ids[1:])
+    tools.approve_weekly_plan(plan_id, "Emily")
+    return plan_id, ids
+
+
+def _amount(qty: str, unit: str) -> float:
+    from app.tools import quantities
+    parsed = quantities._parse_quantity(qty)
+    assert parsed and parsed[1] == unit, qty
+    return parsed[0]
+
+
+def test_the_cards_week_buys_one_box_two_bunches_and_two_heads():
+    """CATCH. The card's acceptance: flaky salt <= 1 box, parsley <= 2
+    bunches, garlic <= 2 heads. Main: 8 boxes, 6 bunches, 3 heads."""
+    _batch_week()
+    lines = _lines()
+    assert _amount(lines["Flaky salt"], "box") <= 1
+    assert _amount(lines["Fresh parsley"], "bunch") <= 2
+    assert _amount(lines["Garlic"], "head") <= 2
+    # The thing the batch really is more of still scales: three nights of shrimp.
+    assert lines["Shrimp"] == "3 lbs"
+    assert lines["Lemons"] == "3"
+
+
+def test_the_ceiling_never_takes_what_the_recipe_wrote():
+    """GUARD. A pesto written for its own table with 3 bunches of basil
+    buys 3; the ceiling only stops scaling past what one pot needs."""
+    _two_adults()
+    tools.add_recipe("Pesto", default_servings=2, ingredients=[
+        {"item": "Basil", "qty": "3 bunches", "category": "produce"},
+    ])
+    plan_id = _plan()
+    tools.plan_meal(_d(0), "Pesto", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    assert _lines()["Basil"] == "3 bunches"
+
+
+def test_dropping_the_batch_takes_its_capped_share_off():
+    """GUARD (ledger). The capped share is the meal's real, unrounded share:
+    taking the cook night off takes the whole line with it."""
+    _plan_id, ids = _batch_week()
+    _grocery._reverse_meal_grocery_contributions(ids[0])
+    lines = _lines()
+    assert "Fresh parsley" not in lines and "Garlic" not in lines and "Lemons" not in lines

@@ -1593,6 +1593,48 @@ def _table_lookup(item: str) -> str | None:
 _COUNTED_PACK_ITEMS = {"eggs": _quantities._EGGS_TO_EACH, "garlic": _quantities._GARLIC_TO_CLOVE}
 
 
+# The most ONE pot of a dish takes of an aromatic, however many plates it
+# is scaled to (Loop Board, realistic week amounts, 2026-10-19: one Mon–Wed
+# Garlic Shrimp batch asked for 5 bunches of parsley, and the week for 6
+# heads of garlic and 12 lemons). Fresh herbs, garlic and citrus season a
+# pot; they don't grow with the plates the way shrimp does. A PER-INGREDIENT
+# CEILING, not sub-linear scaling: it never touches an amount the recipe
+# wrote for its own table (a pesto's 3 bunches stays 3), never changes a
+# dish scaled down, and is one number per thing that can be argued with.
+# (unit the share is counted in, name words, ceiling).
+_HERB_WORDS = frozenset({
+    "basil", "cilantro", "coriander", "parsley", "mint", "dill", "chive", "chives",
+    "rosemary", "thyme", "sage", "tarragon", "oregano", "lemongrass",
+})
+_AROMATIC_CEILINGS = (
+    ("bunch", _HERB_WORDS, 2.0),             # a bunch or two a pot
+    ("clove", frozenset({"garlic"}), 10.0),  # a head of garlic
+    (None, frozenset({"lemon", "lemons", "lime", "limes"}), 3.0),
+)
+
+
+def _aromatic_ceiling(item: str, unit: str | None) -> float | None:
+    """The per-dish ceiling for this ingredient in `unit`, or None."""
+    if _spices.is_spice(item):
+        return None  # dried oregano is the rack's
+    words = re.findall(r"[a-z]+", _clean_item(item))
+    if not words:
+        return None
+    for ceiling_unit, names, ceiling in _AROMATIC_CEILINGS:
+        if unit == ceiling_unit and words[-1] in names:
+            return ceiling
+    return None
+
+
+def _capped_share(item: str, written: float, scaled: float, unit: str | None) -> float:
+    """A meal's share with the aromatic ceiling on it: never past the ceiling
+    by scaling, never under what the recipe itself wrote."""
+    ceiling = _aromatic_ceiling(item, unit)
+    if ceiling is None:
+        return scaled
+    return min(scaled, max(written, ceiling))
+
+
 def _counted_pack_share(item: str, core_qty: str, default_servings: int | None) -> tuple[float, str] | None:
     """
     What ONE meal of this recipe, at the recipe's own table, uses of a
@@ -4622,9 +4664,9 @@ def _add_recipe_ingredients_for_entries(
         parsed_core = _quantities._parse_quantity(core)
         factor_for_entry = count_scale_for_entry if bare_count else scale_for_entry
         # Every meal in this group added together — the same sum the
-        # buffer arrives at one share at a time, so the kitchen is asked
-        # about the week's amount and not one night's.
-        week_scale = sum(factor_for_entry[e] for e in contributing_ids)
+        # buffer arrives at one share at a time (aromatic ceiling and all,
+        # _capped_share), so the kitchen is asked about the week's amount
+        # and not one night's.
         # What this whole recipe-week claims on the ingredient, written the
         # way the branches below write it into the buffer — so the kitchen
         # is asked about the amount that would actually be bought. A
@@ -4642,11 +4684,17 @@ def _add_recipe_ingredients_for_entries(
         # spice goes to the list's own spice section (spices.py) rather
         # than the aisles. One line to reverse if it reads as noise.
         if pack_share:
-            need = (pack_share[0] * week_scale, pack_share[1])
+            need = (sum(
+                _capped_share(ing["item"], pack_share[0], pack_share[0] * factor_for_entry[e], pack_share[1])
+                for e in contributing_ids
+            ), pack_share[1])
         elif package:
             need = _quantities._parse_quantity(raw_qty)
         elif parsed_core:
-            need = (parsed_core[0] * week_scale, parsed_core[1])
+            need = (sum(
+                _capped_share(ing["item"], parsed_core[0], parsed_core[0] * factor_for_entry[e], parsed_core[1])
+                for e in contributing_ids
+            ), parsed_core[1])
         else:
             need = None
         if stock.covers(ing["item"], need):
@@ -4663,7 +4711,7 @@ def _add_recipe_ingredients_for_entries(
             for entry_id in contributing_ids:
                 buffer.add(
                     entry_id, ing["item"], category,
-                    share * factor_for_entry[entry_id], small_unit, note,
+                    _capped_share(ing["item"], share, share * factor_for_entry[entry_id], small_unit), small_unit, note,
                 )
         elif package:
             add_result = _grocery.add_grocery_item(
@@ -4681,7 +4729,8 @@ def _add_recipe_ingredients_for_entries(
                 for entry_id in contributing_ids:
                     buffer.add(
                         entry_id, ing["item"], category,
-                        parsed[0] * factor_for_entry[entry_id], parsed[1], note,
+                        _capped_share(ing["item"], parsed[0], parsed[0] * factor_for_entry[entry_id], parsed[1]),
+                        parsed[1], note,
                     )
             else:
                 # "A bunch", "to taste", blank. No number to scale or sum,
