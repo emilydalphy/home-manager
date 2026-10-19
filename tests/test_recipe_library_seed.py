@@ -103,3 +103,12 @@ def test_each_sample_is_a_whole_recipe_with_its_lead_first():
         again = recipe_research.pick_lead([{k: v for k, v in x.items() if k != "lead"} for x in s["sources"]])
         assert [x["url"] for x in again] == [x["url"] for x in s["sources"]]
         assert all(x["url"].startswith("https://") and x["rating_count"] for x in s["sources"])
+
+
+def test_no_name_is_refused_as_a_households_own():
+    # The library refuses a name that reads as someone's ("Nana's dal",
+    # "Kevin's Chili"); the seed is filed in no household's name, so only
+    # the name is checked. Every possessive on the list is a known dish.
+    from app.tools.recipe_library import private_dish_name
+    names = [d["dish_name"] for d in DISHES] + [s["dish_name"] for s in SAMPLES]
+    assert [n for n in names if private_dish_name(n, household=False)] == []
