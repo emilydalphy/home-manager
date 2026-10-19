@@ -763,7 +763,9 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
         raise ValueError("That rewrite didn’t come back in one piece — try it again.")
     servings = int(detail.get("default_servings") or spec.get("default_servings") or 4)
     # What the steps use goes on the list, as on every save (2026-10-12).
-    ingredients = _recipes.complete_ingredient_list(ingredients, instructions, servings)
+    # A rewrite is the model's recipe even where it copied a line back
+    # from the household's (2026-10-18): the "as written" mark comes off.
+    ingredients = _recipes.complete_ingredient_list(_recipes.without_household_marks(ingredients), instructions, servings)
     settled = _recipes.settle_cooking_quantities(ingredients, servings)
     hid = household_id()
     conn = get_conn()

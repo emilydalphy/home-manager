@@ -1345,17 +1345,22 @@ def _mark_link_recipe_amounts_verbatim(conn):
     the page's "1 ¼ cups sugar" rather than the check's old guess (which
     stays in cook_qty, unread). A source_url or a kept page photo marks the
     review sheet's save; a cookbook credit alone does not, since a chat
-    recipe the model wrote from memory of the book carries one too. Runs
-    ONCE: a line the app adds later from a recipe's steps is its own guess
-    and must not be marked by a restart.
+    recipe the model wrote from memory of the book carries one too. Not
+    marked (review, 2026-10-19): a line the app added from the steps
+    (`added_from_steps`), and every line of a recipe Change recipe has
+    since rewritten and nobody undid — those are the model's now. Runs
+    ONCE: a restart must not mark lines the app writes later.
     """
     tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     if "recipes" not in tables:
         return
     photo = (" OR EXISTS (SELECT 1 FROM recipe_photos p WHERE p.recipe_id = recipes.id "
              "AND p.household_id = recipes.household_id)") if "recipe_photos" in tables else ""
+    rewritten = (" AND NOT EXISTS (SELECT 1 FROM recipe_change_requests r WHERE r.recipe_id = recipes.id "
+                 "AND r.household_id = recipes.household_id AND r.outcome = 'rewritten' "
+                 "AND r.previous_json IS NOT NULL)") if "recipe_change_requests" in tables else ""
     rows = conn.execute(
-        "SELECT id, household_id, ingredients_json FROM recipes WHERE source_url != ''" + photo
+        "SELECT id, household_id, ingredients_json FROM recipes WHERE (source_url != ''" + photo + ")" + rewritten
     ).fetchall()
     for row in rows:
         try:
@@ -1364,7 +1369,10 @@ def _mark_link_recipe_amounts_verbatim(conn):
             continue
         if not isinstance(lines, list):
             continue
-        marked = [{**ing, "verbatim": True} if isinstance(ing, dict) else ing for ing in lines]
+        marked = [
+            {**ing, "verbatim": True} if isinstance(ing, dict) and not ing.get("added_from_steps") else ing
+            for ing in lines
+        ]
         conn.execute("UPDATE recipes SET ingredients_json = ? WHERE id = ? AND household_id = ?",
                      (json.dumps(marked), row["id"], row["household_id"]))
 

@@ -2964,7 +2964,13 @@ def add_recipe_endpoint(req: AddRecipeRequest):
         if not item:
             continue
         category = ing.category if ing.category in tools._GROCERY_SECTION_ORDER else recipe_import.guess_category(item, ing.qty)
-        ingredients.append({"item": item, "qty": ing.qty.strip(), "category": category})
+        line = {"item": item, "qty": ing.qty.strip(), "category": category}
+        # "1/4 cup + 2 tbsp": the grocery list gets one amount it can add
+        # up ("6 tbsp"), the cook card the words as written.
+        summed = recipe_import.one_amount(line["qty"])
+        if summed:
+            line = {**line, "qty": summed, "qty_as_written": line["qty"]}
+        ingredients.append(line)
     instructions = [step.strip() for step in req.instructions if step and step.strip()]
     if not ingredients and not instructions:
         raise HTTPException(status_code=400, detail="A recipe needs at least its ingredients or its steps.")

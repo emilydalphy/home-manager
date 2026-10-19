@@ -28,9 +28,14 @@ why*, not duplicating the diff.
   which cannot tell a pasted recipe from one the model wrote), lines the app
   adds from the steps, and any cook_qty. A run-once migration (user_version
   5) marks existing recipes with a source_url or a kept photo; a cookbook
-  credit alone does not count. With it: "1/4 cup + 2 tbsp flour" imports as
-  flour, "6 tbsp" (`recipe_import._plus_one_amount`, page and model paths;
-  summed in the smaller unit; two families are left as written).
+  credit alone does not count, nor a line `added_from_steps`, nor a recipe
+  Change recipe rewrote and nobody undid. Every other door strips the mark
+  (`without_household_marks`: add_recipe, fill, rewrite; the rewrite prompt
+  never sees it), so a model handing a line back cannot carry it. With it:
+  "1/4 cup + 2 tbsp flour" imports as flour with the page's words; the save
+  (`recipe_import.one_amount`) stores qty "6 tbsp" for the grocery list and
+  `qty_as_written` for the cook card, which scales it as text. Same unit
+  sums as a fraction ("1 1/3 cups"); two families are left as written.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

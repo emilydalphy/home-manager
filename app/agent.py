@@ -4523,7 +4523,14 @@ def rewrite_meal_recipe(entry_id: int, request_text: str) -> dict:
         "note": _REWRITE_NOTE,
         "change_requested": text,
         "current_recipe": {
-            "ingredients": spec_base["ingredients"],
+            # The lines as amounts, without the app's bookkeeping on them
+            # (cook_qty, the "as written" marks): a model that sends a
+            # line back must not carry the household's mark with it.
+            "ingredients": [
+                {k: v for k, v in i.items() if k not in ("cook_qty", "verbatim", "qty_as_written")}
+                if isinstance(i, dict) else i
+                for i in spec_base["ingredients"] or []
+            ],
             "instructions": spec_base["instructions"],
         },
     }

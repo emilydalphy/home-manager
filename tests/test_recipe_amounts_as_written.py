@@ -129,12 +129,20 @@ def test_an_apple_pies_eight_apples_reach_the_grocery_list(signed_in):
 # ---------- recipes already saved from a link ----------
 
 def test_the_migration_marks_link_recipes_and_not_the_apps():
-    lines = json.dumps([{"item": "sugar", "qty": "1 1/4 cups", "cook_qty": "1/2 cup"}])
+    lines = json.dumps([{"item": "sugar", "qty": "1 1/4 cups", "cook_qty": "1/2 cup"},
+                        {"item": "butter", "qty": "2 tbsp", "added_from_steps": True}])
     conn = db.get_conn()
     try:
         conn.execute("INSERT INTO recipes (household_id, name, ingredients_json, source_url) "
                      "VALUES (1, 'Linked', ?, 'https://x.example/c')", (lines,))
         conn.execute("INSERT INTO recipes (household_id, name, ingredients_json) VALUES (1, 'Generated', ?)", (lines,))
+        # A link recipe Change recipe has since rewritten (and nobody undid)
+        # is the model's now; one whose rewrite was undone is the page's again.
+        for name, outcome in (("Rewritten", "rewritten"), ("Undone", "undone")):
+            rid = conn.execute("INSERT INTO recipes (household_id, name, ingredients_json, source_url) "
+                               "VALUES (1, ?, ?, 'https://x.example/r')", (name, lines)).lastrowid
+            conn.execute("INSERT INTO recipe_change_requests (household_id, recipe_id, outcome, previous_json) "
+                         "VALUES (1, ?, ?, '{}')", (rid, outcome))
         conn.execute("PRAGMA user_version = %d" % (db._DATA_VERSION_VERBATIM_AMOUNTS - 1))
         db._run_once_data_migrations(conn)
         conn.commit()
@@ -144,45 +152,65 @@ def test_the_migration_marks_link_recipes_and_not_the_apps():
         conn.rollback()
         conn.close()
     assert rows["Linked"][0]["verbatim"] is True
+    assert "verbatim" not in rows["Linked"][1], "the app's line from the steps stays the app's"
     assert "verbatim" not in rows["Generated"][0]
+    assert "verbatim" not in rows["Rewritten"][0]
+    assert rows["Undone"][0]["verbatim"] is True
     # And the cook card reads the page's amount over the app's old guess.
     assert recipes.cooking_ingredients(rows["Linked"], servings=4)[0]["qty"] == "1 1/4 cups"
 
 
 # ---------- criterion 3: "1/4 cup + 2 tbsp flour" ----------
+# The draft and the cook card keep the page's words; the save gives the
+# grocery list one amount it can add up (recipe_import.one_amount).
 
-@pytest.mark.parametrize("line, item, qty", [
-    ("1/4 cup + 2 tbsp flour", "flour", "6 tbsp"),
-    ("¼ cup plus 2 tablespoons all-purpose flour", "all-purpose flour", "6 tbsp"),
-    ("1 cup + 2 tbsp. sugar", "sugar", "18 tbsp"),
-    ("1 lb + 2 oz ground beef", "ground beef", "18 oz"),
-    ("1/2 cup + 1/4 cup milk", "milk", "3/4 cup"),
-    # Not one family: left for the household to fix in the review step.
-    ("1 cup + 2 eggs batter", "+ 2 eggs batter", "1 cup"),
+@pytest.mark.parametrize("line, item, written, summed", [
+    ("1/4 cup + 2 tbsp flour", "flour", "1/4 cup + 2 tbsp", "6 tbsp"),
+    ("¼ cup plus 2 tablespoons all-purpose flour", "all-purpose flour", "1/4 cup + 2 tablespoons", "6 tbsp"),
+    ("1 cup + 2 tbsp. sugar", "sugar", "1 cup + 2 tbsp", "18 tbsp"),
+    ("1 lb + 2 oz ground beef", "ground beef", "1 lb + 2 oz", "18 oz"),
+    ("1 1/2 cups plus 2 tablespoons flour", "flour", "1 1/2 cups + 2 tablespoons", "26 tbsp"),
+    # Same unit stays in it, as a cook writes it — not "1.333 cups".
+    ("1 cup + 1/3 cup sugar", "sugar", "1 cup + 1/3 cup", "1 1/3 cups"),
+    ("1/2 cup + 1/4 cup milk", "milk", "1/2 cup + 1/4 cup", "3/4 cup"),
+    # The bracketed grams after the second amount stay off the item too.
+    ("3/4 cup + 2 tbsp (105g) flour", "flour", "3/4 cup + 2 tbsp", "14 tbsp"),
 ])
-def test_two_amounts_joined_by_a_plus_are_one_amount(line, item, qty):
-    out = ri.split_ingredient_line(line)
-    assert out["item"] == item
-    assert tools._parse_quantity(out["qty"]) == tools._parse_quantity(qty)
+def test_two_amounts_joined_by_a_plus_are_one_amount(line, item, written, summed):
+    assert ri.split_ingredient_line(line) == {"item": item, "qty": written}
+    assert ri.one_amount(written) == summed
+
+
+def test_two_families_are_left_for_the_household_to_fix():
+    assert ri.split_ingredient_line("1 cup + 2 eggs batter") == {"item": "+ 2 eggs batter", "qty": "1 cup"}
+    assert ri.one_amount("1 cup + 2 eggs") is None
+    assert ri.one_amount("2 cups") is None
 
 
 def test_the_model_reads_plus_the_same_way():
-    assert tools._parse_quantity(ri.normalise_amount("1/4 cup + 2 tbsp")) == (6.0, "tbsp")
+    assert ri.normalise_amount("1/4 cup plus 2 tbsp.") == "1/4 cup + 2 tbsp"
+
+
+def _cook_card_text(name, servings=4):
+    return {i["item"]: i["qty"] for i in tools.scale_recipe(name, servings)["scaled_ingredients"]}
 
 
 def test_the_flour_merges_on_the_grocery_list_and_shows_as_written_on_the_card(signed_in, monkeypatch):
     page = json.dumps({
         "@type": "Recipe", "name": "Shortbread", "recipeYield": "4",
-        "recipeIngredient": ["1/4 cup + 2 tbsp flour", "10 tbsp butter"],
+        "recipeIngredient": ["1 1/2 cups plus 2 tablespoons flour", "10 tbsp butter"],
         "recipeInstructions": "Mix.\nBake.",
     })
     _wire(monkeypatch, {"/sb": _html_response(_page(page))})
     draft = signed_in.post("/api/recipes/import-url", json={"url": "https://bake.example.com/sb"}).json()["draft"]
-    assert ("flour", "6 tbsp") in [(i["item"], i["qty"]) for i in draft["ingredients"]]
+    assert ("flour", "1 1/2 cups + 2 tablespoons") in [(i["item"], i["qty"]) for i in draft["ingredients"]]
     assert signed_in.post("/api/recipes/add", json=draft).status_code == 200
-    assert _shown("Shortbread")["flour"] == (6.0, "tbsp")
-    # One amount in the cup family, so it adds into another meal's flour
-    # on the week's list — one line, not "flour" beside "+ 2 tbsp flour".
+    flour = next(i for i in tools.get_recipe("Shortbread")["ingredients"] if i["item"] == "flour")
+    assert (flour["qty"], flour["qty_as_written"]) == ("26 tbsp", "1 1/2 cups + 2 tablespoons")
+    # The cook card: the page's words, and scaled as words.
+    assert _cook_card_text("Shortbread")["flour"] == "1 1/2 cups + 2 tablespoons"
+    assert _cook_card_text("Shortbread", 8)["flour"] == "3 cups + 4 tablespoons"
+    # The grocery list: one flour line with another meal's flour, no "+".
     tools.add_recipe("Pancakes", ingredients=[{"item": "flour", "qty": "1 cup", "category": "pantry"}])
     today = datetime.date.fromisoformat(household_date(0))
     plan = tools.create_weekly_plan(today.isoformat(), day_count=3)["weekly_plan_id"]
@@ -195,3 +223,45 @@ def test_the_flour_merges_on_the_grocery_list_and_shows_as_written_on_the_card(s
     assert len(rows) == 1 and rows[0]["item"].lower() == "flour"
     assert tools._parse_quantity(rows[0]["quantity"])[1] in ("cup", "tbsp")
     assert "+" not in rows[0]["quantity"]
+
+
+# ---------- the mark never travels onto the model's lines (review, 2026-10-19) ----------
+
+def test_add_recipe_takes_the_mark_off_a_line_from_any_other_door():
+    tools.add_recipe("Copied Cake", [{"item": "Sugar", "qty": "1 1/4 cups", "verbatim": True,
+                                      "qty_as_written": "1 cup + 1/4 cup"}], instructions=["Bake."])
+    line = tools.get_recipe("Copied Cake")["ingredients"][0]
+    assert "verbatim" not in line and "qty_as_written" not in line
+
+
+def test_a_rewrite_handing_back_a_marked_line_saves_it_unmarked(signed_in):
+    from test_recipe_change import TUE, _entry, _plan
+
+    _save_through_the_sheet(signed_in)
+    plan = _plan("draft")
+    entry = _entry(plan, TUE, "Yellow Cake")
+    spec = tools.rewrite_spec(entry)
+    res = tools.apply_rewrite(spec, {
+        "ingredients": [{"item": "Granulated sugar", "qty": "1 1/4 cups", "verbatim": True}],
+        "instructions": ["Bake."], "default_servings": 4,
+    }, "Less butter")
+    assert res["status"] == "rewritten", res
+    assert not any(i.get("verbatim") for i in tools.get_recipe("Yellow Cake")["ingredients"])
+
+
+def test_the_rewrite_prompt_does_not_carry_the_marks(monkeypatch, signed_in):
+    from app import agent
+    from test_recipe_change import TUE, _entry, _plan
+
+    _save_through_the_sheet(signed_in)
+    entry = _entry(_plan("draft"), TUE, "Yellow Cake")
+    seen = {}
+
+    def fake(spec):
+        seen["spec"] = spec
+        return {"ingredients": [{"item": "Sugar", "qty": "1 cup"}], "instructions": ["Bake."], "default_servings": 4}
+
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", fake)
+    agent.rewrite_meal_recipe(entry, "Less sugar")
+    lines = seen["spec"]["current_recipe"]["ingredients"]
+    assert lines and not any(k in i for i in lines for k in ("verbatim", "cook_qty", "qty_as_written"))
