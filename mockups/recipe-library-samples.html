@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recipe library samples</title>
+<!--
+  Review page for the Loop Board card "Shared Recipe Library: the 500-dish
+  starter list, plus 6 researched samples for Emily to review" (2026-10-18).
+  Design only: the six recipes as the recipe page would show them —
+  ingredients, steps, servings, time and credited sources, Lead first.
+  Generated from data/recipe_library_samples.json (the same entries the
+  seed script files through recipe_library.file_entry). Self-contained:
+  the tokens below are copied value for value from static/theme.css (light
+  :root, the guarded dark media block and its forced-dark twin), so every
+  colour goes through a token (DESIGN_SYSTEM.md rule 9). Phone width first.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+/* ---------- tokens, copied from static/theme.css ---------- */
+:root {
+  color-scheme: light;
+  --ground: #FBF6EE; --surface: #FFFDF8; --surface-raised: #fff;
+  --spruce: #1B3328; --spruce-raised: #24402F; --spruce-hover: #2B4A37; --spruce-edge: transparent;
+  --field: #12211A; --celadon-tint: #E2EDE5; --ink-strong: #1B3328;
+  --ink: #23302A; --ink-on-celadon: #24362D; --ivory-ink: #F6EEE1; --ivory-ink-muted: rgba(246, 238, 225, .92);
+  --on-spruce-ink: #fff; --ink-secondary: #7C7161; --ink-muted: #7E7360; --ink-placeholder: #797060;
+  --ink-inactive: #948970; --ink-done: #7A705E;
+  --apricot: #E0915C; --apricot-light: #F2B98E; --apricot-deep: #C4703C; --apricot-label: #A2582F;
+  --apricot-rule: rgba(224, 145, 92, .34);
+  --celadon: #A9C4B0; --celadon-edge: #C7DACD; --celadon-label: #4F6B5B;
+  --on-accent-ink: #1B3328;
+  --hairline: #EEE3D0; --hairline-strong: #E6D9C4; --hairline-deep: #D9C9AF; --on-spruce-edge: #2E5240;
+  --sand: #F3EBDC; --sand-deep: #E6D9C4;
+  --urgent: #B23A22; --urgent-ink: #F6EEE1; --urgent-tint: #F7E6DE; --urgent-label: #8F2C17;
+  --font-display: "Bricolage Grotesque", "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-body: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-accent: "Newsreader", Georgia, "Times New Roman", Times, serif;
+  --radius-hero: 30px; --radius-card: 20px; --radius-ask: 18px; --radius-action: 17px; --radius-tile: 15px;
+  --radius-control: 14px; --radius-chip: 11px; --radius-badge: 10px; --radius-badge-sm: 9px; --radius-pill: 999px;
+  --shadow-hero: 0 26px 48px -30px rgba(18, 36, 25, .85);
+  --shadow-action: 0 16px 28px -18px rgba(224, 145, 92, .8);
+  --shadow-sheet: 0 -8px 30px rgba(35, 48, 42, .2);
+  --shadow-dialog: 0 18px 44px rgba(35, 48, 42, .28);
+  --shadow-toast: 0 6px 20px rgba(0, 0, 0, .18);
+  --scrim: rgba(35, 48, 42, .45);
+  --toast-bg: #23302A; --toast-ink: #fff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #101F19; --surface: #172C22; --spruce: #22422F; --spruce-raised: #2E5140; --celadon-tint: #1C3B2C;
+    --spruce-edge: #2C4B38; --field: #0B1712; --spruce-hover: #32573F; --surface-raised: #192F24;
+    --ink: #F3EBDD; --ink-on-celadon: #F3EBDD; --ivory-ink: #F3EBDD; --ivory-ink-muted: #E4DCCE;
+    --ink-secondary: #BFB6A5; --ink-muted: #BFB6A5; --ink-placeholder: #9C9384; --ink-inactive: #9C9384;
+    --ink-done: #A9A091; --ink-strong: #F3EBDD;
+    --apricot: #E9A16C; --apricot-light: #F2B98E; --apricot-deep: #E9A16C; --apricot-label: #F2B98E;
+    --apricot-rule: rgba(233, 161, 108, .30);
+    --celadon: #A9C4B0; --celadon-edge: #2E5240; --celadon-label: #97BDA4; --on-accent-ink: #14261D;
+    --hairline: #26382E; --hairline-strong: #33473B; --hairline-deep: #33473B; --sand: #223328; --sand-deep: #33473B;
+    --urgent: #E6705B; --urgent-ink: #14261D; --urgent-tint: #3B1D16; --urgent-label: #F0A594;
+    --shadow-hero: 0 26px 48px -30px rgba(0, 0, 0, .75);
+    --shadow-action: 0 16px 28px -18px rgba(233, 161, 108, .45);
+    --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, .55);
+    --shadow-dialog: 0 18px 44px rgba(0, 0, 0, .60);
+    --shadow-toast: 0 6px 20px rgba(0, 0, 0, .50);
+    --scrim: rgba(0, 0, 0, .66);
+    --toast-bg: #2E5140; --toast-ink: #F3EBDD;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #101F19; --surface: #172C22; --spruce: #22422F; --spruce-raised: #2E5140; --celadon-tint: #1C3B2C;
+  --spruce-edge: #2C4B38; --field: #0B1712; --spruce-hover: #32573F; --surface-raised: #192F24;
+  --ink: #F3EBDD; --ink-on-celadon: #F3EBDD; --ivory-ink: #F3EBDD; --ivory-ink-muted: #E4DCCE;
+  --ink-secondary: #BFB6A5; --ink-muted: #BFB6A5; --ink-placeholder: #9C9384; --ink-inactive: #9C9384;
+  --ink-done: #A9A091; --ink-strong: #F3EBDD;
+  --apricot: #E9A16C; --apricot-light: #F2B98E; --apricot-deep: #E9A16C; --apricot-label: #F2B98E;
+  --apricot-rule: rgba(233, 161, 108, .30);
+  --celadon: #A9C4B0; --celadon-edge: #2E5240; --celadon-label: #97BDA4; --on-accent-ink: #14261D;
+  --hairline: #26382E; --hairline-strong: #33473B; --hairline-deep: #33473B; --sand: #223328; --sand-deep: #33473B;
+  --urgent: #E6705B; --urgent-ink: #14261D; --urgent-tint: #3B1D16; --urgent-label: #F0A594;
+  --shadow-hero: 0 26px 48px -30px rgba(0, 0, 0, .75);
+  --shadow-action: 0 16px 28px -18px rgba(233, 161, 108, .45);
+  --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, .55);
+  --shadow-dialog: 0 18px 44px rgba(0, 0, 0, .60);
+  --shadow-toast: 0 6px 20px rgba(0, 0, 0, .50);
+  --scrim: rgba(0, 0, 0, .66);
+  --toast-bg: #2E5140; --toast-ink: #F3EBDD;
+}
+
+
+/* ---------- the page ---------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ground); color: var(--ink); }
+body { font-family: var(--font-body); font-size: 16px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+main { max-width: 480px; margin: 0 auto; padding: 24px 16px 64px; }
+.page-head h1 { font-family: var(--font-display); font-size: 28px; line-height: 1.1; letter-spacing: -0.03em; margin: 0 0 6px; }
+.page-head p { margin: 0; color: var(--ink-secondary); font-size: 15px; font-weight: 500; }
+.theme { margin-top: 12px; min-height: 44px; padding: 0 16px; border-radius: var(--radius-control);
+  border: 1.5px solid var(--hairline-strong); background: var(--surface); color: var(--ink);
+  font: 600 14px var(--font-body); cursor: pointer; }
+.jumps { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 18px 0 8px; }
+.jump { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: var(--radius-pill);
+  background: var(--surface); border: 1.5px solid var(--hairline); color: var(--ink); text-decoration: none;
+  font-weight: 600; font-size: 14px; }
+.recipe { padding-top: 28px; margin-top: 20px; border-top: 1.5px solid var(--hairline-strong); scroll-margin-top: 8px; }
+.eyebrow { margin: 0 0 6px; font-weight: 800; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
+.title { font-family: var(--font-display); font-size: 26px; line-height: 1.1; letter-spacing: -0.03em; margin: 0 0 6px; }
+.why { margin: 0 0 12px; color: var(--ink-secondary); font-size: 15px; font-weight: 500; }
+.chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0 0 14px; }
+.chip { padding: 5px 10px; border-radius: var(--radius-chip); background: var(--sand); color: var(--ink); font-size: 13px; font-weight: 600; }
+.card { background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-card); padding: 14px 16px 6px; margin-bottom: 12px; }
+.ings, .srcs { list-style: none; margin: 0; padding: 0; }
+.ing { padding: 10px 0; border-top: 1.5px solid var(--hairline); font-size: 15px; font-weight: 500; }
+.ing:first-child, .src:first-child { border-top: 0; }
+.ing-amt { font-weight: 700; }
+.ing-buy { color: var(--ink-secondary); font-size: 13px; white-space: nowrap; }
+.steps { margin: 0; padding: 0 0 6px 22px; }
+.step { padding: 8px 0 8px 4px; font-size: 15px; line-height: 1.5; }
+.step::marker { font-weight: 800; color: var(--apricot-label); }
+.src { border-top: 1.5px solid var(--hairline); }
+.src-link { min-height: 56px; padding: 10px 0; display: grid; grid-template-columns: 1fr auto; align-items: center;
+  column-gap: 10px; color: var(--ink); text-decoration: none; }
+.src-main { display: flex; align-items: center; gap: 8px; grid-column: 1; }
+.src-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+.src-lead { padding: 2px 8px; border-radius: var(--radius-badge-sm); background: var(--celadon-tint); color: var(--ink-on-celadon);
+  font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.src-title, .src-meta { grid-column: 1; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
+.src-go { grid-column: 2; grid-row: 1 / span 3; align-self: center; font-size: 18px; color: var(--apricot-label); }
+.line { margin: 0 0 8px; font-size: 14px; font-weight: 500; color: var(--ink-secondary); }
+.notes summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; font-size: 14px; color: var(--apricot-label); }
+.notes p { margin: 0 0 8px; font-size: 14px; color: var(--ink-secondary); }
+.foot { margin-top: 32px; font-size: 13px; color: var(--ink-secondary); }
+</style>
+<script>
+  try { var t = localStorage.getItem('recipe-samples-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<main>
+  <header class="page-head">
+    <h1>Six recipes to review</h1>
+    <p>One from each of six cuisines, researched the way the library will be. Say yes and the other 494 are done the same way.</p>
+    <button class="theme" type="button" id="theme">Switch to dark</button>
+  </header>
+  <nav aria-label="The six recipes"><ul class="jumps"><li><a class="jump" href="#meatloaf">Meatloaf</a></li><li><a class="jump" href="#chicken-piccata">Chicken Piccata</a></li><li><a class="jump" href="#chana-masala">Chana Masala</a></li><li><a class="jump" href="#chicken-tinga">Chicken Tinga</a></li><li><a class="jump" href="#thai-basil-chicken">Thai Basil Chicken</a></li><li><a class="jump" href="#misir-wat">Misir Wat</a></li></ul></nav>
+  
+<article class="recipe" id="meatloaf" aria-labelledby="meatloaf-t">
+  <p class="eyebrow">American · Dinner</p>
+  <h2 class="title" id="meatloaf-t">Meatloaf</h2>
+  <p class="why">Mixed in ten minutes, and cold slices make Monday&#x27;s sandwiches.</p>
+  <ul class="chips" aria-label="Servings and time">
+    <li class="chip">Serves 4</li>
+    <li class="chip">15 min prep</li>
+    <li class="chip">55 min cooking</li>
+    <li class="chip">1 hr 10 min in all</li>
+  </ul>
+  <section class="card" aria-label="Ingredients">
+    <p class="eyebrow">Ingredients · 4 servings</p>
+    <ul class="ings"><li class="ing"><span class="ing-amt">1.5 lb</span> <span class="ing-item">Ground beef</span></li><li class="ing"><span class="ing-amt">3/4 cup</span> <span class="ing-item">Panko breadcrumbs</span></li><li class="ing"><span class="ing-amt">1/2 cup</span> <span class="ing-item">Milk</span></li><li class="ing"><span class="ing-amt">2</span> <span class="ing-item">Eggs</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">Yellow onion</span></li><li class="ing"><span class="ing-amt">3 cloves</span> <span class="ing-item">Garlic</span></li><li class="ing"><span class="ing-amt">1/2 cup + 2 tbsp</span> <span class="ing-item">Ketchup</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">1 tbsp</span> <span class="ing-item">Worcestershire sauce</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">3 tbsp</span> <span class="ing-item">Brown sugar</span> <span class="ing-buy">buy 1 bag</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Apple cider vinegar</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Salt</span> <span class="ing-buy">buy 1 box</span></li><li class="ing"><span class="ing-amt">1/2 tsp</span> <span class="ing-item">Black pepper</span> <span class="ing-buy">buy 1 jar</span></li></ul>
+  </section>
+  <section class="card" aria-label="Steps">
+    <p class="eyebrow">Steps</p>
+    <ol class="steps"><li class="step">Heat the oven to 350°F and line a rimmed baking sheet with parchment. A loaf shaped on a sheet browns on every side; one in a loaf pan steams.</li><li class="step">In a large bowl, stir the 3/4 cup panko into the 1/2 cup milk and leave it 5 minutes. The soaked crumbs are what keep the loaf moist.</li><li class="step">Grate the onion on the large holes of a box grater straight into the bowl, juice and all, and mince the 3 cloves garlic in too. Grated onion melts into the meat, where chunks would fall out when you slice.</li><li class="step">Add the 2 eggs, 2 tbsp ketchup, 1 tbsp Worcestershire, 1 tsp salt and 1/2 tsp pepper and whisk them into the crumbs. Add the 1.5 lb ground beef and mix with your hands until there are no streaks, then stop, because overworked meat turns dense.</li><li class="step">Tip it onto the sheet and pat it into a loaf about 7 inches long and 3 inches tall. Bake 35 minutes.</li><li class="step">While it bakes, stir the glaze together: 1/2 cup ketchup, 3 tbsp brown sugar and 1 tsp vinegar.</li><li class="step">Spread the glaze over the top and sides and bake 15 to 20 minutes more, until the glaze is sticky and a thermometer in the middle reads 160°F. The glaze goes on late so the sugar doesn&#x27;t burn.</li><li class="step">Let it rest 10 minutes before slicing, so the juices settle and the slices hold together. Wrap any leftover slices for sandwiches tomorrow.</li></ol>
+  </section>
+  <section class="card" aria-label="Sources">
+    <p class="eyebrow">Sources</p>
+    <ul class="srcs"><li class="src"><a class="src-link" href="https://natashaskitchen.com/meatloaf-recipe/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Natasha&#x27;s Kitchen</span><span class="src-lead">Lead</span></span><span class="src-title">The Best Meatloaf Recipe</span><span class="src-meta">★ 5.0 · 9,801 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://www.spendwithpennies.com/best-meatloaf-recipe/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Spend With Pennies</span></span><span class="src-title">The BEST Meatloaf Recipe</span><span class="src-meta">★ 5.0 · 2,984 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://www.thewholesomedish.com/the-best-classic-meatloaf/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">The Wholesome Dish</span></span><span class="src-title">The Best Classic Meatloaf</span><span class="src-meta">★ 5.0 · 2,202 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li></ul>
+  </section>
+  <p class="line">Opens the original recipe on their site. Pomona’s version is adapted for your household.</p>
+  <details class="notes">
+    <summary>What the sources agree and differ on</summary>
+    <p>All three bind about 2 lb lean ground beef with breadcrumbs, milk, eggs and onion (The Wholesome Dish adds Worcestershire), shape a free-form loaf and bake at 350°F to 160°F inside, glazing only for the last 15-20 minutes so the sugar doesn&#x27;t burn. Natasha&#x27;s and The Wholesome Dish glaze with ketchup, brown sugar and vinegar (white and red wine); Spend With Pennies uses chili sauce and ketchup, brown sugar optional, and bakes 40 minutes before glazing. Natasha&#x27;s says a loaf pan needs 375°F. All rest it 10-15 minutes before slicing.</p>
+  </details>
+</article>
+<article class="recipe" id="chicken-piccata" aria-labelledby="chicken-piccata-t">
+  <p class="eyebrow">Italian · Dinner</p>
+  <h2 class="title" id="chicken-piccata-t">Chicken Piccata</h2>
+  <p class="why">Lemon and capers turn chicken breasts into something bright in 25 minutes.</p>
+  <ul class="chips" aria-label="Servings and time">
+    <li class="chip">Serves 4</li>
+    <li class="chip">15 min prep</li>
+    <li class="chip">20 min cooking</li>
+    <li class="chip">35 min in all</li>
+  </ul>
+  <section class="card" aria-label="Ingredients">
+    <p class="eyebrow">Ingredients · 4 servings</p>
+    <ul class="ings"><li class="ing"><span class="ing-amt">1.5 lb</span> <span class="ing-item">Boneless skinless chicken breasts</span></li><li class="ing"><span class="ing-amt">1/2 cup</span> <span class="ing-item">All-purpose flour</span></li><li class="ing"><span class="ing-amt">4 tbsp</span> <span class="ing-item">Unsalted butter</span></li><li class="ing"><span class="ing-amt">3 tbsp</span> <span class="ing-item">Olive oil</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">1/2 cup</span> <span class="ing-item">Dry white wine</span></li><li class="ing"><span class="ing-amt">2</span> <span class="ing-item">Lemons</span></li><li class="ing"><span class="ing-amt">3 tbsp</span> <span class="ing-item">Capers</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">2 tbsp chopped</span> <span class="ing-item">Fresh parsley</span> <span class="ing-buy">buy 1 bunch</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Salt</span> <span class="ing-buy">buy 1 box</span></li><li class="ing"><span class="ing-amt">1/2 tsp</span> <span class="ing-item">Black pepper</span> <span class="ing-buy">buy 1 jar</span></li></ul>
+  </section>
+  <section class="card" aria-label="Steps">
+    <p class="eyebrow">Steps</p>
+    <ol class="steps"><li class="step">Get the sauce things ready first, because the pan moves fast at the end: juice one lemon (you want 1/4 cup), slice the other thinly, rinse the 3 tbsp capers and chop 2 tbsp parsley.</li><li class="step">Slice each chicken breast in half through its thickness so you have 4 thin cutlets, then press them flat with your palm. Thin cutlets cook through in the time the outside takes to brown.</li><li class="step">Season both sides with 1 tsp salt and 1/2 tsp pepper. Put the 1/2 cup flour on a plate, press each cutlet into it and shake off the extra. A thin coat browns; a thick one turns gummy in the sauce.</li><li class="step">Heat 1 1/2 tbsp olive oil and 1 tbsp butter in a large skillet over medium-high. When the butter foams, lay in 2 cutlets and leave them alone 3 to 4 minutes, until golden underneath and they let go of the pan. Flip and cook 2 to 3 minutes more, to 165°F in the thickest part, then move them to a plate.</li><li class="step">Add the other 1 1/2 tbsp oil and 1 tbsp butter and cook the last 2 cutlets the same way.</li><li class="step">With the pan still on medium-high, pour in the 1/2 cup wine (or chicken broth). It&#x27;ll hiss. Scrape up the brown bits, because that&#x27;s where the sauce&#x27;s flavor is, and let it bubble 1 minute, until reduced by about half.</li><li class="step">Add the 1/4 cup lemon juice, the capers and the last 2 tbsp butter. Swirl until the butter melts into a glossy sauce, then slide the chicken back in for 1 to 2 minutes, turning it once to coat.</li><li class="step">Serve with the sauce spooned over and the lemon slices and parsley on top. Pasta or bread takes care of the extra sauce.</li></ol>
+  </section>
+  <section class="card" aria-label="Sources">
+    <p class="eyebrow">Sources</p>
+    <ul class="srcs"><li class="src"><a class="src-link" href="https://natashaskitchen.com/chicken-piccata-recipe/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Natasha&#x27;s Kitchen</span><span class="src-lead">Lead</span></span><span class="src-title">Chicken Piccata Recipe</span><span class="src-meta">★ 5.0 · 125 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://www.onceuponachef.com/recipes/chicken-piccata.html" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Once Upon a Chef</span></span><span class="src-title">Chicken Piccata</span><span class="src-meta">★ 4.9 · 177 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://www.recipetineats.com/chicken-piccata/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">RecipeTin Eats</span></span><span class="src-title">A better Chicken Piccata</span><span class="src-meta">★ 4.9 · 107 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li></ul>
+  </section>
+  <p class="line">Opens the original recipe on their site. Pomona’s version is adapted for your household.</p>
+  <details class="notes">
+    <summary>What the sources agree and differ on</summary>
+    <p>All three split breasts into thin cutlets, dredge lightly in seasoned flour and sear in butter and oil over medium-high in two batches, 2-4 minutes a side to 165°F, then build the sauce in the same pan: white wine (or broth) to deglaze, lemon juice, capers, a last piece of butter swirled in off the boil. Natasha&#x27;s uses 1/2 cup wine, 1/4 cup lemon juice and 3 tbsp capers for 6 cutlets and returns the chicken to the sauce for 2 minutes. RecipeTin Eats adds parmesan to the flour, reduces the wine by half before the lemon, swirls the butter in over low heat so it stays glossy, and says low-sodium broth stands in for the wine.</p>
+  </details>
+</article>
+<article class="recipe" id="chana-masala" aria-labelledby="chana-masala-t">
+  <p class="eyebrow">Indian · Dinner</p>
+  <h2 class="title" id="chana-masala-t">Chana Masala</h2>
+  <p class="why">Canned chickpeas make a weeknight curry in thirty minutes.</p>
+  <ul class="chips" aria-label="Servings and time">
+    <li class="chip">Serves 4</li>
+    <li class="chip">15 min prep</li>
+    <li class="chip">40 min cooking</li>
+    <li class="chip">55 min in all</li>
+  </ul>
+  <section class="card" aria-label="Ingredients">
+    <p class="eyebrow">Ingredients · 4 servings</p>
+    <ul class="ings"><li class="ing"><span class="ing-amt">2 cans (15 oz)</span> <span class="ing-item">Chickpeas</span></li><li class="ing"><span class="ing-amt">2</span> <span class="ing-item">Yellow onions</span></li><li class="ing"><span class="ing-amt">3</span> <span class="ing-item">Roma tomatoes</span></li><li class="ing"><span class="ing-amt">1 tbsp grated</span> <span class="ing-item">Ginger</span> <span class="ing-buy">buy 1 piece (2 inch)</span></li><li class="ing"><span class="ing-amt">4 cloves</span> <span class="ing-item">Garlic</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">Green chili</span></li><li class="ing"><span class="ing-amt">3 tbsp</span> <span class="ing-item">Vegetable oil</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Cumin seeds</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">Bay leaves</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">1/2 tsp</span> <span class="ing-item">Ground turmeric</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Kashmiri chili powder</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">2 tsp</span> <span class="ing-item">Ground coriander</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Garam masala</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Kasuri methi</span> <span class="ing-buy">buy 1 bag</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">Lemon</span></li><li class="ing"><span class="ing-amt">2 tbsp chopped</span> <span class="ing-item">Cilantro</span> <span class="ing-buy">buy 1 bunch</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Salt</span> <span class="ing-buy">buy 1 box</span></li></ul>
+  </section>
+  <section class="card" aria-label="Steps">
+    <p class="eyebrow">Steps</p>
+    <ol class="steps"><li class="step">Finely chop the 2 onions and the 3 tomatoes, grate 1 tbsp ginger, mince the 4 cloves garlic and slit the green chili down one side. Drain and rinse the 2 cans chickpeas.</li><li class="step">Heat 3 tbsp oil in a heavy pot over medium. Add the 1 tsp cumin seeds and the bay leaf. In about 20 seconds the seeds will sizzle and smell toasty, and that&#x27;s your cue for the onions.</li><li class="step">Add the onions with 1/2 tsp of the salt and cook, stirring now and then, 10 to 12 minutes, until deep golden. Don&#x27;t rush this step: the onions are where the gravy&#x27;s body and sweetness come from.</li><li class="step">Stir in the ginger, garlic and green chili for 1 minute, until the raw smell is gone.</li><li class="step">Turn the heat to low and add 1/2 tsp turmeric, 1 tsp Kashmiri chili powder and 2 tsp coriander. Stir 30 seconds so they bloom in the oil, with a splash of water if they start to catch.</li><li class="step">Add the tomatoes and cook 6 to 8 minutes over medium, mashing with the spoon, until they collapse and the oil shows at the edges.</li><li class="step">Add the chickpeas, the other 1/2 tsp salt and 1 1/2 cups water. Mash a few chickpeas against the side of the pot, which thickens the gravy. Cover and simmer 15 minutes.</li><li class="step">Rub 1 tsp kasuri methi between your palms over the pot and stir in 1 tsp garam masala. Simmer 2 minutes more, then turn off the heat.</li><li class="step">Squeeze in the juice of half the lemon, taste, and add the rest if it wants more brightness. Scatter the 2 tbsp cilantro and serve with rice or roti.</li></ol>
+  </section>
+  <section class="card" aria-label="Sources">
+    <p class="eyebrow">Sources</p>
+    <ul class="srcs"><li class="src"><a class="src-link" href="https://www.indianhealthyrecipes.com/chana-masala/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Swasthi&#x27;s Recipes</span><span class="src-lead">Lead</span></span><span class="src-title">Authentic Chana Masala Recipe (Chickpea Masala)</span><span class="src-meta">★ 5.0 · 732 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://www.teaforturmeric.com/chana-masala/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Tea for Turmeric</span></span><span class="src-title">Authentic Chana Masala (Indian Chickpea Curry)</span><span class="src-meta">★ 4.9 · 224 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://pipingpotcurry.com/punjabi-chole-instant-pot/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Piping Pot Curry</span></span><span class="src-title">Instant Pot Chana Masala</span><span class="src-meta">★ 4.9 · 314 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li></ul>
+  </section>
+  <p class="line">Opens the original recipe on their site. Pomona’s version is adapted for your household.</p>
+  <details class="notes">
+    <summary>What the sources agree and differ on</summary>
+    <p>All three build an onion-tomato masala: whole spices or cumin seeds in oil, onions cooked golden (the step they all say not to rush), ginger-garlic, then ground spices bloomed briefly before chopped tomatoes cook down until the oil separates. Chickpeas (canned, or soaked and pressure-cooked) simmer in it with water 15 minutes, partly mashed to thicken. Swasthi&#x27;s uses Kashmiri chili, turmeric, coriander and garam masala and finishes with kasuri methi and optional amchur; Tea for Turmeric starts from 3/4 cup dried chickpeas soaked overnight and simmers 25-30 minutes; Piping Pot Curry soaks them and pressure-cooks everything in one pot with 1.5 cups water (1 cup for canned).</p>
+  </details>
+</article>
+<article class="recipe" id="chicken-tinga" aria-labelledby="chicken-tinga-t">
+  <p class="eyebrow">Mexican · Dinner</p>
+  <h2 class="title" id="chicken-tinga-t">Chicken Tinga</h2>
+  <p class="why">Smoky shredded chicken for tostadas or tacos.</p>
+  <ul class="chips" aria-label="Servings and time">
+    <li class="chip">Serves 4</li>
+    <li class="chip">10 min prep</li>
+    <li class="chip">40 min cooking</li>
+    <li class="chip">50 min in all</li>
+  </ul>
+  <section class="card" aria-label="Ingredients">
+    <p class="eyebrow">Ingredients · 4 servings</p>
+    <ul class="ings"><li class="ing"><span class="ing-amt">1.5 lb</span> <span class="ing-item">Boneless skinless chicken thighs</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">White onion</span></li><li class="ing"><span class="ing-amt">3 cloves</span> <span class="ing-item">Garlic</span></li><li class="ing"><span class="ing-amt">1 can (15 oz)</span> <span class="ing-item">Tomato sauce</span></li><li class="ing"><span class="ing-amt">2 chipotles + 2 tbsp adobo</span> <span class="ing-item">Chipotles in adobo</span> <span class="ing-buy">buy 1 can (7 oz)</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Mexican oregano</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">1/2 tsp</span> <span class="ing-item">Ground cumin</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">2 tbsp</span> <span class="ing-item">Olive oil</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Salt</span> <span class="ing-buy">buy 1 box</span></li><li class="ing"><span class="ing-amt">1/2 tsp</span> <span class="ing-item">Black pepper</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">12</span> <span class="ing-item">Corn tortillas</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">Avocado</span></li><li class="ing"><span class="ing-amt">1/2 cup</span> <span class="ing-item">Mexican crema</span> <span class="ing-buy">buy 1 tub</span></li><li class="ing"><span class="ing-amt">4 oz</span> <span class="ing-item">Queso fresco</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">Lime</span></li></ul>
+  </section>
+  <section class="card" aria-label="Steps">
+    <p class="eyebrow">Steps</p>
+    <ol class="steps"><li class="step">Pat the 1.5 lb chicken thighs dry and season with 1 tsp salt and 1/2 tsp pepper. Slice the onion thinly and mince the 3 cloves garlic.</li><li class="step">Heat 2 tbsp olive oil in a large deep skillet over medium-high. Lay in the thighs and leave them 3 minutes, until they brown and release, then flip for 2 minutes. They finish in the sauce, so move them to a plate.</li><li class="step">Turn the heat to medium and add the onion to the same pan. Cook 5 minutes, scraping up the browned bits, until soft and gold at the edges. Add the garlic, 1 tsp oregano and 1/2 tsp cumin for 30 seconds, until fragrant.</li><li class="step">Blend the can of tomato sauce with 2 chipotles and 2 tbsp adobo from the can until smooth. Start with 2: heat is easy to add at the end and impossible to take out. The rest of the can keeps in the fridge.</li><li class="step">Pour the sauce over the onions, bring it to a bubble, then return the chicken and its juices. Cover, turn to low and simmer 25 minutes, until the chicken pulls apart with a fork.</li><li class="step">Shred the chicken in the pan with two forks and stir it through the sauce. Simmer uncovered 5 minutes so the sauce clings instead of running. Taste now, and chop in another chipotle if you want more heat.</li><li class="step">Warm the 12 tortillas in a dry pan. Serve the tinga on them with sliced avocado, the 1/2 cup crema, the 4 oz queso fresco crumbled over and lime wedges.</li></ol>
+  </section>
+  <section class="card" aria-label="Sources">
+    <p class="eyebrow">Sources</p>
+    <ul class="srcs"><li class="src"><a class="src-link" href="https://www.chilipeppermadness.com/recipes/chicken-tinga/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Chili Pepper Madness</span><span class="src-lead">Lead</span></span><span class="src-title">Chicken Tinga Recipe (Mexican Chipotle Shredded Chicken)</span><span class="src-meta">★ 5.0 · 41 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://www.mexicoinmykitchen.com/chicken-tinga-recipe/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Mexico in My Kitchen</span></span><span class="src-title">Chicken Tinga Recipe</span><span class="src-meta">★ 4.9 · 61 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://www.isabeleats.com/chicken-tinga/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Isabel Eats</span></span><span class="src-title">Chicken Tinga Recipe</span><span class="src-meta">★ 5.0 · 13 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li></ul>
+  </section>
+  <p class="line">Opens the original recipe on their site. Pomona’s version is adapted for your household.</p>
+  <details class="notes">
+    <summary>What the sources agree and differ on</summary>
+    <p>All three cook onion (and garlic) soft, add chicken, and simmer it in a tomato and chipotle-in-adobo sauce until it shreds, then return the shredded meat to the sauce to soak it up. Chili Pepper Madness sears 2 lb thighs, blends a 15 oz can of tomato sauce with the chipotles and simmers 30 minutes, seasoning with Mexican oregano, cumin and chili powder; it suggests half the can of chipotles for less heat. Mexico in My Kitchen chops fresh tomatoes and chipotles rather than blending and starts from poached shredded chicken. Reviewers on every page say to adjust the chipotles for heat.</p>
+  </details>
+</article>
+<article class="recipe" id="thai-basil-chicken" aria-labelledby="thai-basil-chicken-t">
+  <p class="eyebrow">Thai · Dinner</p>
+  <h2 class="title" id="thai-basil-chicken-t">Thai Basil Chicken</h2>
+  <p class="why">A fifteen-minute stir-fry with a fried egg on top.</p>
+  <ul class="chips" aria-label="Servings and time">
+    <li class="chip">Serves 4</li>
+    <li class="chip">10 min prep</li>
+    <li class="chip">15 min cooking</li>
+    <li class="chip">25 min in all</li>
+  </ul>
+  <section class="card" aria-label="Ingredients">
+    <p class="eyebrow">Ingredients · 4 servings</p>
+    <ul class="ings"><li class="ing"><span class="ing-amt">1 lb</span> <span class="ing-item">Ground chicken</span></li><li class="ing"><span class="ing-amt">3</span> <span class="ing-item">Thai bird chilies</span> <span class="ing-buy">buy 1 package</span></li><li class="ing"><span class="ing-amt">3</span> <span class="ing-item">Shallots</span></li><li class="ing"><span class="ing-amt">5 cloves</span> <span class="ing-item">Garlic</span></li><li class="ing"><span class="ing-amt">1 bunch</span> <span class="ing-item">Thai basil</span></li><li class="ing"><span class="ing-amt">4</span> <span class="ing-item">Eggs</span></li><li class="ing"><span class="ing-amt">5 tbsp</span> <span class="ing-item">Vegetable oil</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">2 tsp</span> <span class="ing-item">Sugar</span> <span class="ing-buy">buy 1 bag</span></li><li class="ing"><span class="ing-amt">2 tbsp</span> <span class="ing-item">Soy sauce</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">1 tbsp</span> <span class="ing-item">Fish sauce</span> <span class="ing-buy">buy 1 bottle</span></li><li class="ing"><span class="ing-amt">1/3 cup</span> <span class="ing-item">Low-sodium chicken broth</span></li><li class="ing"><span class="ing-amt">1 1/2 cups</span> <span class="ing-item">Jasmine rice</span></li></ul>
+  </section>
+  <section class="card" aria-label="Steps">
+    <p class="eyebrow">Steps</p>
+    <ol class="steps"><li class="step">Rinse the 1 1/2 cups jasmine rice and get it cooking first. The stir-fry takes ten minutes and won&#x27;t wait for it.</li><li class="step">Thinly slice the 3 shallots, the 5 cloves garlic and 3 Thai chilies (1 is plenty if anyone at the table is wary of heat). Pick the leaves off the basil. Everything goes in fast, so have it all by the stove.</li><li class="step">Fry the eggs first. Heat 2 tbsp oil in a wok or large skillet over medium-high and fry the 4 eggs two at a time, spooning the hot oil over the whites, about 2 minutes, until the edges are brown and lacy and the yolks still soft. Set them aside.</li><li class="step">Turn the heat to high and add the other 3 tbsp oil with the chilies, shallots and garlic. Stir 1 to 2 minutes, until soft and just browning at the edges. Stand back a little, because the chilies catch in your throat.</li><li class="step">Add the 1 lb ground chicken and stir-fry 2 minutes, breaking it into small bits, until no pink is left.</li><li class="step">Add 2 tsp sugar, 2 tbsp soy sauce and 1 tbsp fish sauce and toss for 1 minute.</li><li class="step">Pour in the 1/3 cup broth (or water). It&#x27;ll bubble hard and cook off in under a minute, leaving the chicken glossy.</li><li class="step">Off the heat, stir in all the basil until it wilts, about 20 seconds. Serve over the rice with a fried egg on each plate.</li></ol>
+  </section>
+  <section class="card" aria-label="Sources">
+    <p class="eyebrow">Sources</p>
+    <ul class="srcs"><li class="src"><a class="src-link" href="https://thewoksoflife.com/thai-basil-chicken-pad-krapow/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">The Woks of Life</span><span class="src-lead">Lead</span></span><span class="src-title">10-Minute Thai Basil Chicken (Easy Gai Pad Krapow)</span><span class="src-meta">★ 5.0 · 192 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://hot-thai-kitchen.com/holy-basil-stir-fry/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Hot Thai Kitchen</span></span><span class="src-title">Pad Kra Pao (Pad Gaprao) - Holy Basil Chicken Stir-Fry</span><span class="src-meta">★ 5.0 · 58 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://hungryinthailand.com/pad-kra-pao/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Hungry in Thailand</span></span><span class="src-title">Easy Pad Kra Pao Recipe (Authentic Thai Basil Pork)</span><span class="src-meta">★ 5.0 · 21 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li></ul>
+  </section>
+  <p class="line">Opens the original recipe on their site. Pomona’s version is adapted for your household.</p>
+  <details class="notes">
+    <summary>What the sources agree and differ on</summary>
+    <p>All three fry chilies and garlic (Woks of Life adds shallots) hot and fast, add coarsely ground chicken, season with fish sauce, soy and a little sugar, and stir the basil in off the heat; all serve it over jasmine rice with a crisp fried egg. Woks of Life uses 1 lb chicken, 2 tbsp soy, 1 tbsp fish sauce, 2 tsp sugar and deglazes with 1/3 cup broth, 10 minutes start to finish. Hot Thai Kitchen pounds the chilies and garlic into a rough paste and adds oyster sauce and dark soy; both say holy basil is the real thing and Thai basil is a fine stand-in (Hot Thai Kitchen prefers Italian basil as the closer match).</p>
+  </details>
+</article>
+<article class="recipe" id="misir-wat" aria-labelledby="misir-wat-t">
+  <p class="eyebrow">Ethiopian · Dinner</p>
+  <h2 class="title" id="misir-wat-t">Misir Wat</h2>
+  <p class="why">Red lentils in berbere, cheap and ready in under an hour.</p>
+  <ul class="chips" aria-label="Servings and time">
+    <li class="chip">Serves 4</li>
+    <li class="chip">10 min prep</li>
+    <li class="chip">55 min cooking</li>
+    <li class="chip">1 hr 5 min in all</li>
+  </ul>
+  <section class="card" aria-label="Ingredients">
+    <p class="eyebrow">Ingredients · 4 servings</p>
+    <ul class="ings"><li class="ing"><span class="ing-amt">1 cup</span> <span class="ing-item">Red lentils</span></li><li class="ing"><span class="ing-amt">4 tbsp</span> <span class="ing-item">Ghee</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">Yellow onion</span></li><li class="ing"><span class="ing-amt">4 cloves</span> <span class="ing-item">Garlic</span></li><li class="ing"><span class="ing-amt">1</span> <span class="ing-item">Roma tomato</span></li><li class="ing"><span class="ing-amt">2 tbsp</span> <span class="ing-item">Tomato paste</span> <span class="ing-buy">buy 1 can (6 oz)</span></li><li class="ing"><span class="ing-amt">2 tbsp</span> <span class="ing-item">Berbere</span> <span class="ing-buy">buy 1 jar</span></li><li class="ing"><span class="ing-amt">2 1/2 cups</span> <span class="ing-item">Vegetable broth</span></li><li class="ing"><span class="ing-amt">1 tsp</span> <span class="ing-item">Salt</span> <span class="ing-buy">buy 1 box</span></li><li class="ing"><span class="ing-amt">1 package</span> <span class="ing-item">Injera</span></li></ul>
+  </section>
+  <section class="card" aria-label="Steps">
+    <p class="eyebrow">Steps</p>
+    <ol class="steps"><li class="step">Finely chop the onion, mince the 4 cloves garlic and dice the tomato. Rinse the 1 cup lentils in a sieve until the water runs mostly clear, so the stew doesn&#x27;t foam.</li><li class="step">Melt 2 tbsp of the ghee (niter kibbeh, if you have it) in a heavy pot over medium-high. Cook the onion 8 to 10 minutes, stirring often, until golden. Give it the time, because the onions are the base of the stew.</li><li class="step">Add the garlic, tomato, 2 tbsp tomato paste and 1 tbsp of the berbere. Cook 3 to 4 minutes, stirring, until the paste darkens and it smells toasty. Turn the heat down if the berbere starts to stick, because burnt berbere turns bitter.</li><li class="step">Add the lentils, the 2 1/2 cups broth and 1 tsp salt. Bring to a boil, then cover and simmer on low 35 to 40 minutes, stirring now and then, until the lentils break down into a thick stew. If it gets stiff before then, add a splash of water.</li><li class="step">Stir in the last 2 tbsp ghee and 1 tbsp berbere and simmer 2 minutes more. The second spoon of berbere is what gives it its fresh heat. Taste for salt.</li><li class="step">Serve with injera to scoop it up, or over rice.</li></ol>
+  </section>
+  <section class="card" aria-label="Sources">
+    <p class="eyebrow">Sources</p>
+    <ul class="srcs"><li class="src"><a class="src-link" href="https://www.daringgourmet.com/misir-wat-ethiopian-spiced-red-lentils/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">The Daring Gourmet</span><span class="src-lead">Lead</span></span><span class="src-title">Misir Wat (Ethiopian Spiced Red Lentils)</span><span class="src-meta">★ 5.0 · 96 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://www.africanbites.com/ethiopian-lentil-stew/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Immaculate Bites</span></span><span class="src-title">Ethiopian Lentil Stew</span><span class="src-meta">★ 4.9 · 72 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li><li class="src"><a class="src-link" href="https://urbanfarmie.com/misir-wot/" target="_blank" rel="noopener"><span class="src-main"><span class="src-name">Urban Farmie</span></span><span class="src-title">Misir Wat (Misir Wot) Ethiopian Red Lentil Stew Recipe</span><span class="src-meta">★ 5.0 · 63 ratings</span><span class="src-go" aria-hidden="true">&nearr;</span></a></li></ul>
+  </section>
+  <p class="line">Opens the original recipe on their site. Pomona’s version is adapted for your household.</p>
+  <details class="notes">
+    <summary>What the sources agree and differ on</summary>
+    <p>All three cook a lot of onion slowly in spiced butter (niter kibbeh) or oil until golden, fry garlic, tomato or tomato paste and berbere in it, then simmer red lentils in broth until they collapse into a thick stew. The Daring Gourmet uses 1 cup lentils to 2 1/2 cups broth, splits both the niter kibbeh and the berbere, and stirs the second half in at the end, simmering about 40 minutes covered. Immaculate Bites adds ginger, coriander or cumin and smoked paprika; Urban Farmie makes it vegan with oil in about 45 minutes, simmering 20-25 minutes with the rest of the berbere added late, and offers paprika, coriander and chili powder if there&#x27;s no berbere.</p>
+  </details>
+</article>
+  <p class="foot">Ratings and rating counts as each site showed them on 2026-10-19. The Lead is the app's own rule: the top rating to one decimal among versions with 20 or more ratings, most ratings breaking a tie.</p>
+</main>
+<script>
+  (function () {
+    var root = document.documentElement, btn = document.getElementById('theme');
+    function dark() { return root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; }
+    function label() { btn.textContent = dark() ? 'Switch to light' : 'Switch to dark'; }
+    btn.addEventListener('click', function () {
+      root.dataset.theme = dark() ? 'light' : 'dark';
+      try { localStorage.setItem('recipe-samples-theme', root.dataset.theme); } catch (e) {}
+      label();
+    });
+    label();
+  })();
+</script>
+</body>
+</html>

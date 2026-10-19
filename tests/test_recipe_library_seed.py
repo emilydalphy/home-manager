@@ -74,3 +74,32 @@ def test_every_dish_says_meal_protein_and_why():
         why = d["why"]
         assert why and len(why) <= 100 and "!" not in why, d
         assert not re.search(r"\b(delicious|simply|amazing)\b", why, re.I), d
+
+
+# ---------- the six samples Emily reviews first ----------
+
+SAMPLES = json.loads((ROOT / "data" / "recipe_library_samples.json").read_text())["samples"]
+
+
+def test_six_samples_one_per_named_cuisine_each_on_the_list():
+    assert sorted(s["cuisine"] for s in SAMPLES) == sorted(
+        ["American", "Italian", "Indian", "Mexican", "Thai", "Ethiopian"])
+    keys = {d["dish_key"]: d for d in DISHES}
+    for s in SAMPLES:
+        listed = keys[dish_key(s["dish_name"])]
+        assert (listed["cuisine"], listed["main_protein"]) == (s["cuisine"], s["main_protein"])
+
+
+def test_each_sample_is_a_whole_recipe_with_its_lead_first():
+    from app.tools import recipe_library, recipe_research
+    allowed = set(recipe_library.file_entry.__kwdefaults__) | {"dish_name"}
+    for s in SAMPLES:
+        assert set(s) <= allowed, set(s) - allowed
+        assert s["origin"] == "seed" and s["ingredients"] and s["instructions"]
+        assert s["default_servings"] and s["prep_time_minutes"] and s["cook_time_minutes"]
+        # The lead is the app's own rule, not a hand pick: re-running it on
+        # the sources as they stand changes nothing.
+        assert len(s["sources"]) >= 3 and s["sources"][0]["lead"]
+        again = recipe_research.pick_lead([{k: v for k, v in x.items() if k != "lead"} for x in s["sources"]])
+        assert [x["url"] for x in again] == [x["url"] for x in s["sources"]]
+        assert all(x["url"].startswith("https://") and x["rating_count"] for x in s["sources"])
