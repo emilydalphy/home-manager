@@ -239,3 +239,121 @@ def test_dropping_the_batch_takes_its_capped_share_off():
     _grocery._reverse_meal_grocery_contributions(ids[0])
     lines = _lines()
     assert "Fresh parsley" not in lines and "Garlic" not in lines and "Lemons" not in lines
+
+# ---------- slice 3: store units, one amount per item ----------
+
+def _breakfast_week():
+    _two_adults()
+    tools.add_recipe("Yogurt Bowl", default_servings=2, ingredients=[
+        {"item": "Greek yogurt", "qty": "1 cup", "category": "dairy"},
+        {"item": "Granola", "qty": "0.5 cup", "category": "pantry"},
+        {"item": "Blueberries", "qty": "1 cup", "category": "produce"},
+    ])
+    tools.add_recipe("Toast", default_servings=2, ingredients=[
+        {"item": "Multigrain bread", "qty": "2 slices", "category": "pantry"},
+        {"item": "Cherry tomatoes", "qty": "1 cup", "category": "produce"},
+    ])
+    tools.add_recipe("Other Toast", default_servings=2, ingredients=[
+        {"item": "Whole grain bread", "qty": "2 slices", "category": "pantry"},
+    ])
+    plan_id = _plan()
+    bowls = [tools.plan_meal(_d(n), "Yogurt Bowl", slot="breakfast", weekly_plan_id=plan_id)["entry_id"]
+             for n in range(5)]
+    for n in range(4):
+        tools.plan_meal(_d(n), "Toast", slot="lunch", weekly_plan_id=plan_id)
+    tools.plan_meal(_d(4), "Other Toast", slot="lunch", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    return plan_id, bowls
+
+
+def test_a_week_of_breakfasts_reads_in_store_units():
+    """CATCH. Main: Greek yogurt "5 cups", Granola "2 1/2 cups", Blueberries
+    "5 cups", Cherry tomatoes "4 cups", and the two breads as "8 slices" and
+    "2 slices" on two lines."""
+    _breakfast_week()
+    lines = _lines()
+    assert lines["Greek yogurt"] == "2 tubs (750 g)"
+    assert lines["Granola"] == "1 bag"
+    assert lines["Blueberries"] == "3 pints"
+    assert lines["Cherry tomatoes"] == "2 pints"
+    bread = {k: v for k, v in lines.items() if k.endswith("bread")}
+    assert list(bread.values()) == ["1 loaf"]
+
+
+def test_dropping_breakfasts_rereads_the_ledger_in_store_units():
+    """CATCH (ledger). The ledger keeps each morning's unrounded cup; the
+    line is re-read from it in tubs and pints, rounded once."""
+    _plan_id, bowls = _breakfast_week()
+    for entry in bowls[:3]:
+        _grocery._reverse_meal_grocery_contributions(entry)
+    lines = _lines()
+    assert lines["Greek yogurt"] == "1 tub (750 g)"
+    assert lines["Blueberries"] == "1 pint"
+    conn = get_conn()
+    ledger = [r["quantity"] for r in conn.execute(
+        "SELECT l.quantity FROM meal_plan_grocery_links l JOIN grocery_items g ON g.id = l.grocery_item_id "
+        "WHERE g.item = 'Greek yogurt'"
+    )]
+    conn.close()
+    assert ledger == ["1 cup", "1 cup"]
+
+
+def test_a_package_and_a_measure_are_one_store_amount():
+    """CATCH. Main: Butter "1 tub + 3/4 cup", Feta "1 cup crumbled + 12 oz",
+    Baby spinach "1 bag + 2 cups"."""
+    _two_adults()
+    tools.add_recipe("Shrimp", default_servings=2, ingredients=[
+        {"item": "Butter", "qty": "4 tbsp", "category": "dairy"},
+        {"item": "Feta", "qty": "1 cup crumbled", "category": "dairy"},
+        {"item": "Baby spinach", "qty": "1 bag", "category": "produce"},
+    ])
+    tools.add_recipe("Eggs", default_servings=2, ingredients=[
+        {"item": "Butter", "qty": "1 tub", "category": "dairy"},
+        {"item": "Feta", "qty": "12 oz", "category": "dairy"},
+        {"item": "Baby spinach", "qty": "2 cups", "category": "produce"},
+    ])
+    plan_id = _plan()
+    for n in range(3):
+        tools.plan_meal(_d(n), "Shrimp", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_d(3), "Eggs", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    lines = _lines()
+    assert lines["Butter"] == "1 lb"
+    assert lines["Baby spinach"] == "1 bag"
+    # 3 cups crumbled (~450 g) + 12 oz (~340 g) is four 200 g blocks.
+    assert lines["Feta"] == "4 blocks (200 g)"
+
+
+def test_a_cut_goes_in_the_name_not_the_quantity():
+    """CATCH. Main: Chicken thighs "12 oz, boneless, skinless"."""
+    _two_adults()
+    tools.add_recipe("Thai Basil Chicken", default_servings=2, ingredients=[
+        {"item": "Chicken thighs", "qty": "12 oz, boneless, skinless", "category": "meat/seafood"},
+        {"item": "Onions", "qty": "2, large", "category": "produce"},
+    ])
+    plan_id = _plan()
+    tools.plan_meal(_d(0), "Thai Basil Chicken", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    lines = _lines()
+    assert lines["Boneless skinless chicken thighs"] == "12 oz"
+    # A size word stays the quantity's note, as it always has.
+    assert lines["Onions"] == "2, large"
+
+
+def test_a_households_edit_of_a_pints_line_survives_a_dropped_morning():
+    """CATCH. "3 pints" edited to 1 is measured against the meals in pints,
+    so the edit stands when a morning goes (grocery._with_household_edit);
+    read in cups, it had nothing to be measured against and was forgotten."""
+    plan_id, bowls = _breakfast_week()
+    conn = get_conn()
+    item_id = conn.execute("SELECT id FROM grocery_items WHERE item = 'Blueberries'").fetchone()["id"]
+    conn.close()
+    tools.update_grocery_item(item_id, quantity="1 pint")
+    # A morning swapped out and back in: the line is re-read off its whole
+    # ledger in pints, and the household's edit goes back on top.
+    _grocery._reverse_meal_grocery_contributions(bowls[0])
+    from app.tools import recipes
+    recipes._add_recipe_ingredients_to_grocery_list(
+        bowls[0], [{"item": "Blueberries", "qty": "1 cup", "category": "produce"}], plan_id, default_servings=2,
+    )
+    assert _lines()["Blueberries"] == "1 pint"

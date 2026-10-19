@@ -318,6 +318,18 @@ _DESCRIPTOR_WORDS = {
 }
 
 
+# How the cook prepares it, written after the unit — "1 cup crumbled",
+# "2 cups chopped". Neither the product nor the amount bought: left in, it
+# read as the unit "cup crumbled", which adds up with nothing ("Feta · 12 oz
+# + 1 cup crumbled", Loop Board, realistic week amounts, 2026-10-19). After
+# a comma it was already dropped (_strip_prep_descriptor); this is the same
+# thing without the comma.
+_PREP_WORDS = {
+    "crumbled", "chopped", "shredded", "grated", "diced", "sliced", "minced",
+    "cubed", "halved", "quartered", "torn", "julienned", "drained", "rinsed",
+}
+
+
 def _looks_like_package_size(text: str) -> bool:
     """
     True for the parenthetical that states the SIZE of one package — "(2
@@ -386,6 +398,8 @@ def _split_quantity_note(qty: str) -> tuple[str, str]:
         if token.strip().lower() in _DESCRIPTOR_WORDS:
             notes.append(token.strip().lower())
             continue
+        if token.strip().lower() in _PREP_WORDS:
+            continue  # how it is cut, not what is bought: dropped
         kept.append(token)
     core = re.sub(r"\s+", " ", "".join(kept)).strip().strip(" ,")
     return core, _merge_notes(notes)

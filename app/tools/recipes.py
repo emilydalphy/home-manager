@@ -1635,6 +1635,32 @@ def _capped_share(item: str, written: float, scaled: float, unit: str | None) ->
     return min(scaled, max(written, ceiling))
 
 
+# Words that say WHICH product to pick up — a cut, a kind — riding on a
+# recipe's quantity: "12 oz, boneless, skinless" (Loop Board, realistic
+# week amounts, 2026-10-19: "descriptors go in the name or a note, never
+# the quantity"). The list has no note of its own, so they move into the
+# NAME, where a shopper reads which pack to take: "Boneless skinless
+# chicken thighs · 12 oz". Size and state words (large, frozen…) stay the
+# quantity's note, as quantities._DESCRIPTOR_WORDS has always kept them.
+_NAME_WORDS_IN_QTY = ("boneless", "skinless", "unsalted", "unsweetened", "seedless")
+
+
+def _name_takes_descriptors(item: str, note: str) -> tuple[str, str]:
+    """(name, note) with the product words of `note` moved into the name."""
+    parts = [p.strip() for p in (note or "").split(",") if p.strip()]
+    words = [p for p in parts if p.lower() in _NAME_WORDS_IN_QTY]
+    if not words:
+        return item, note
+    rest = ", ".join(p for p in parts if p.lower() not in _NAME_WORDS_IN_QTY)
+    have = (item or "").lower()
+    new = [w.lower() for w in words if not re.search(rf"\b{w.lower()}\b", have)]
+    if not new:
+        return item, rest
+    body = item[:1].lower() + item[1:] if item[:1].isupper() and not item[:2].isupper() else item
+    name = " ".join(new + [body])
+    return name[:1].upper() + name[1:], rest
+
+
 def _counted_pack_share(item: str, core_qty: str, default_servings: int | None) -> tuple[float, str] | None:
     """
     What ONE meal of this recipe, at the recipe's own table, uses of a
@@ -4262,7 +4288,12 @@ class WeekGroceryBuffer:
             # PLAN-owned line is re-read; a household's standing want never
             # takes a different-unit plan share in the first place
             # (_merge_target), so its own amount is never re-rounded.
-            if add_result["merged"] and (
+            if _grocery._store_kind(line["item"]):
+                # Bread, berries, yogurt…: the line is written in the
+                # store's unit, read off the whole ledger once
+                # (grocery._store_amount) — merged or new alike.
+                _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
+            elif add_result["merged"] and (
                 _quantities._pack_group(unit)
                 or (_quantities._measurable_unit(unit) and not add_result.get("units_reconciled", True))
             ):
@@ -4628,6 +4659,8 @@ def _add_recipe_ingredients_for_entries(
         # come apart the same on both sides of the list. _parse_quantity
         # strips a prep descriptor ("3, diced") itself.
         core, note = _quantities._split_quantity_note(raw_qty.strip())
+        named_note = note
+        line_name, note = _name_takes_descriptors(ing["item"], note)
         pack_share = _counted_pack_share(ing["item"], core, default_servings)
         package = _quantities.package_unit(raw_qty)
         if not package and not pack_share and _quantities.rack_package(core) and _spices.is_spice(ing["item"]):
@@ -4710,16 +4743,20 @@ def _add_recipe_ingredients_for_entries(
             share, small_unit = pack_share
             for entry_id in contributing_ids:
                 buffer.add(
-                    entry_id, ing["item"], category,
+                    entry_id, line_name, category,
                     _capped_share(ing["item"], share, share * factor_for_entry[entry_id], small_unit), small_unit, note,
                 )
         elif package:
+            if note != named_note:
+                raw_qty = _quantities._with_note(core, note)
             add_result = _grocery.add_grocery_item(
-                ing["item"], quantity=raw_qty, category=category, added_by="ai",
+                line_name, quantity=raw_qty, category=category, added_by="ai",
                 source_weekly_plan_id=weekly_plan_id, quantity_mode="max", conn=conn,
             )
             for entry_id in contributing_ids:
-                _record_grocery_link(entry_id, ing["item"], add_result["item_id"], raw_qty, conn=conn)
+                _record_grocery_link(entry_id, line_name, add_result["item_id"], raw_qty, conn=conn)
+            if _grocery._store_kind(line_name):
+                _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=conn)
         else:
             parsed = parsed_core
             if parsed:
@@ -4728,7 +4765,7 @@ def _add_recipe_ingredients_for_entries(
                 # added its claim on the same item.
                 for entry_id in contributing_ids:
                     buffer.add(
-                        entry_id, ing["item"], category,
+                        entry_id, line_name, category,
                         _capped_share(ing["item"], parsed[0], parsed[0] * factor_for_entry[entry_id], parsed[1]),
                         parsed[1], note,
                     )
