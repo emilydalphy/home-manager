@@ -15021,6 +15021,9 @@
     // Where the Meal step's crumb goes: 'day' (Week → Day → Meal, the
     // tiles' way in) or 'week' (a dish name tapped on the root's list).
     mealBack: 'day',
+    // The Meal step was opened from a menu row that is a whole dish
+    // (wkMenuRowHtml's data-wk-meal-dish): its Swap is the row's Swap.
+    mealWholeDish: false,
     // The draft's toggle: 'menu' (What we're eating) or 'days' (Which
     // days), remembered for this page session and reset for a new draft
     // (draftView; draftViewPlanId is the plan it was last set for).
@@ -16749,7 +16752,11 @@
       '<div class="wk-row-main">' +
         '<div class="wk-row-text">' +
           (changed ? '<span class="wk-row-eyebrow"><span class="wk-changed">Changed</span></span>' : '') +
-          '<button type="button" class="wk-row-name dish-link" data-wk-meal="' + first.key + '">' +
+          // The name opens the dish's Meal step; where the row's Swap means
+          // the whole dish, so does that page's (data-wk-meal-dish, Emily
+          // 2026-10-18 — swapped from there, Friday's own cook stayed on).
+          '<button type="button" class="wk-row-name dish-link"' +
+            (dishAttr && !dish.isLeftover ? ' data-wk-meal-dish="1"' : '') + ' data-wk-meal="' + first.key + '">' +
             escapeHtml(dish.name) + WK_ICONS.titleChev + '</button>' +
           // "From last week" (2026-09-25) — see wkMealRowHtml.
           (dish.days.some(function (d) { return d.entry && d.entry.brought_over; })
@@ -19108,7 +19115,8 @@
       mealsStep: weekState.step,
       mealsDay: weekState.selectedIndex,
       mealsSlot: weekState.mealSlot,
-      mealsBack: weekState.mealBack
+      mealsBack: weekState.mealBack,
+      mealsWholeDish: !!weekState.mealWholeDish
     };
   }
 
@@ -19130,6 +19138,10 @@
     // Which way the Meal step's crumb goes (mealStepHtml): the root's list
     // says 'week'; a Day step card says nothing and gets 'day'.
     if (step === 'meal') weekState.mealBack = (opts.back === 'week' || opts.back === 'review') ? opts.back : 'day';
+    // Whether this Meal step is a whole dish (a "What we're eating" row
+    // standing for several days) — its Swap then changes every one of
+    // them (runSwapInPlace). Any other way in is the one meal.
+    if (step === 'meal') weekState.mealWholeDish = !!opts.wholeDish;
     // Opening a meal or a day afresh is the retry for a recipe read that
     // failed (ensureCookDataForMeals holds a failure rather than asking on
     // every render).
@@ -19162,6 +19174,7 @@
     }
     if (state && state.mealsSlot) weekState.mealSlot = state.mealsSlot;
     if (state && state.mealsBack) weekState.mealBack = state.mealsBack;
+    weekState.mealWholeDish = !!(state && state.mealsWholeDish);
     weekState.step = step;
     renderMealsStep(panel);
     if (weekState.step === 'chores') loadPlanChores(panel);
@@ -19330,7 +19343,8 @@
         var back = weekState.step === 'review' || (weekState.step === 'week' && draft) ? 'review'
           : (weekState.step === 'week' ? 'week' : 'day');
         wkDayForTap(btn);
-        goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back });
+        goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back,
+          wholeDish: btn.hasAttribute('data-wk-meal-dish') });
       });
     });
     // "See Thursday's recipe" on a reheat night (mealSourceLinkHtml): the
@@ -19610,7 +19624,11 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-in-place', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: entry.entry_id, avoid: carried })
+        // On a Meal step opened as a whole dish, every day the row stood
+        // for (the server works them out, swap_in_place.batch_days).
+        body: JSON.stringify(weekState.step === 'meal' && weekState.mealWholeDish
+          ? { entry_id: entry.entry_id, avoid: carried, whole_dish: true }
+          : { entry_id: entry.entry_id, avoid: carried })
       });
       if (!res.ok) throw new Error('swap failed');
       var data = await res.json();

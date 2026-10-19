@@ -681,6 +681,7 @@ def swap_meal_in_place(
     entry_id: int,
     avoid: list[str] | None = None,
     picker=None,
+    whole_dish: bool = False,
 ) -> dict:
     """
     Replace the dish on one slot with one model call, and hand back the
@@ -694,6 +695,13 @@ def swap_meal_in_place(
 
     `picker` is the model call, injectable so tests never touch the real
     API.
+
+    `whole_dish` is the Meal step opened from a "What we're eating" row
+    (Emily, 2026-10-18): the page is the DISH, so its Swap is the row's —
+    every day the row stands for (batch_days), separate cooks included,
+    not only the tapped cook and what it feeds. Breakfast on Mon, Wed
+    (made ahead from Monday) and Fri swapped from that page changed Mon
+    and Wed and left Friday's own cook of the old dish on the week.
     """
     pick_one = picker or _pick_replacement
     entry = _entry(weekly_plan_id, entry_id)
@@ -740,7 +748,9 @@ def swap_meal_in_place(
     # or a dinner swapped for tomorrow's lunch too would be chosen and
     # written for one table (build_dish_swap_context, batch_serves — the
     # same two the whole-dish Swap already asks under).
-    group = fed_days(weekly_plan_id, entry_id)
+    group = batch_days(weekly_plan_id, entry_id) if whole_dish else fed_days(weekly_plan_id, entry_id)
+    if len(group) < 2:
+        group = [entry]
     for attempt in range(1, MAX_PICK_ATTEMPTS + 1):
         if len(group) > 1:
             context = build_dish_swap_context(weekly_plan_id, group, tried)
@@ -1747,8 +1757,21 @@ def instead_of_the_leftovers(weekly_plan_id: int, entry: dict, group: list[dict]
 
     if _leftovers.keeps_as_leftovers(pick):
         return {}
+    # Only a meal eating out of a cook (a chain's reheat) is a fed meal. A
+    # whole-dish group (batch_days) also holds separate cooks of the same
+    # dish — Friday's own scrambled eggs beside Monday's batch — and those
+    # are fresh cooks: they take the new dish like the tapped one, whether
+    # it keeps or not (Emily, 2026-10-18: a separate cook must not be
+    # left on, or handed something else, by a Swap of the whole dish).
+    try:
+        reheats = _leftovers.plan_leftover_chains(weekly_plan_id)["leftovers"]
+    except Exception:
+        logger.exception("Could not read the leftover chains; treating every other meal as fed")
+        reheats = None
+    fed = [m for m in group if m["entry_id"] != entry["entry_id"]
+           and (reheats is None or m["entry_id"] in reheats)]
     out: dict[int, dict] = {}
-    for member, cap in day_caps(weekly_plan_id, [m for m in group if m["entry_id"] != entry["entry_id"]]):
+    for member, cap in day_caps(weekly_plan_id, fed):
         repeat = None
         if member["slot"] in _meal_variety.NEVER_OPEN_SLOTS:
             # Its own cap as a FRESH cook: _minutes_cap lifts a weekday

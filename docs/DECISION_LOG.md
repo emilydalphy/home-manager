@@ -515,6 +515,22 @@ why*, not duplicating the diff.
   an open lunch row still shows a bare "Your call" (shell.js, and
   decision C cut the reason line). Old branch
   `overnight/prepped-lunch-on-prep-day` was display-side; not touched.
+- **Swapping a dish from the Meals list reaches every day the row lists**
+  (2026-10-19; branch `overnight/swap-replaces-every-day`; tests
+  `tests/test_swap_row_replaces_every_cook.py`). Emily 2026-10-18: "Veggie and
+  Feta … · Mon, Wed, Fri" (Mon cook, Wed made ahead from it, Fri its own cook)
+  swapped, and Friday kept the old dish. The row's Swap sheet was already
+  whole-dish; the door that wasn't was the dish's Meal step (tap the row's
+  name), whose "Swap · I'll pick" used fed_days (Mon + Wed). That page, opened
+  from a row standing for several days (`data-wk-meal-dish` ->
+  `weekState.mealWholeDish`), now sends `whole_dish` to /swap-in-place ->
+  batch_days -> apply_pick_to_days (one transaction, groceries reversed and
+  re-added once). Schedule / Day doors are unchanged. Also: a whole-dish swap
+  to a dish that won't keep treated a separate cook as a "fed" meal
+  (instead_of_the_leftovers) and opened it or refilled it with another dish;
+  only a chain's reheat is fed now. Repro was inferred (the row's own Swap
+  worked against a throwaway DB; the Meal step path gave exactly Emily's
+  result), not taken from her data. Toast is the existing swapped_said line.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

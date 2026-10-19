@@ -4298,6 +4298,11 @@ class SwapInPlaceRequest(BaseModel):
     """
     entry_id: int
     avoid: list[str] | None = None
+    # The Meal step opened from a "What we're eating" row standing for
+    # several days (Emily, 2026-10-18): its Swap means the whole dish, as
+    # the row's own Swap does. The server works the days out
+    # (swap_in_place.batch_days); the client never names them.
+    whole_dish: bool = False
 
 
 class SwapUndoRequest(BaseModel):
@@ -4318,6 +4323,8 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
     """
     plan_id = _plan_id_for_week(week_start)
     try:
+        if req.whole_dish:
+            return tools.swap_meal_in_place(plan_id, req.entry_id, avoid=req.avoid, whole_dish=True)
         return tools.swap_meal_in_place(plan_id, req.entry_id, avoid=req.avoid)
     except tools.SlotRefused as e:
         # The backstop in apply_pick / apply_pick_to_days (a night gone by,
