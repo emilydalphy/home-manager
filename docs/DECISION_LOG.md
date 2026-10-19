@@ -495,6 +495,26 @@ why*, not duplicating the diff.
   pass's claim (`_claim_recipes`) and waits on another writer. Not
   changed: "make it shrimp instead" keeps the dish's name and
   main_protein — swapping the main ingredient belongs on the protein row.
+- **A prepped weekday lunch is always planned from its prep day's cook**
+  (2026-10-19; branch `overnight/prepped-lunch-from-prep-day`; tests
+  `tests/test_prepped_lunch_from_prep_day.py`). Tester Home: Friday
+  "prepped Thursday" came back LUNCH · Your call (generation_gap) under a
+  Thursday dinner whose note claimed Friday. The draft sent no Friday lunch
+  and `weekday_lunches.apply_to_plan` skipped a batch day with no planned
+  row after writing the note; the repeat fill's 20-minute fresh-cook cap
+  can't take a batch lunch, so the audit opened it. Now a missing or open
+  batch day is written as the batch (`_gap_ids`; planned_empty stays
+  empty), and `sync_prep_notes` (foot of `_finish_week_slots`) rewrites
+  each stored `prep_note` from the plan as it stands, dropping a prep-day
+  dinner's stamps when it feeds no lunch. `batch_note` +
+  `confirmed_fed_dates` (confirmed chains, the set that sizes the batch)
+  serve both that and `get_week_menu`'s schedule_note. Review follow-up: a
+  prep day with no cook of its own and no batch lunch drafted cooks one of
+  the week's own dishes on the first lunch (`_week_dish_for_gap`); the note
+  sync runs after the allergen sweep and the last dinner fill. Not done:
+  an open lunch row still shows a bare "Your call" (shell.js, and
+  decision C cut the reason line). Old branch
+  `overnight/prepped-lunch-on-prep-day` was display-side; not touched.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
