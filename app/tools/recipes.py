@@ -3370,11 +3370,34 @@ def _step_words_missing(used_text: str, listed: str) -> list[str]:
         and used(key)
         and not _item_matches(listed, key)
         and not any(_item_matches(listed, a) for a in _STEP_ALIASES.get(key, ()))
+        # "the pasta water" over a list with Spaghetti is the spaghetti's
+        # water: the same generic-word table the save's completion pass
+        # reads (2026-10-19, a false "pasta isn't on the list").
+        and not any(_item_matches(listed, a) for a in _GENERIC_STEP_WORDS.get(key, ()))
         and not _spices.is_spice(key)
     ]
     # Report the longest name for a thing, not every fragment of it:
     # "heavy cream", never "heavy cream" and "cream".
     return sorted(m for m in matched if not any(m != other and m in other for other in matched))
+
+
+def _singular_forms(word: str) -> list[str]:
+    """A list word and its singular, so a list's "Eggs" is the step's "the
+    egg" and "Lemons" is "juice of 1 lemon" (2026-10-19: the recipe writer's
+    check called eggs, lemons and limes unused, and paid for a repair
+    call that could not fix what wasn't wrong). _item_matches already reads
+    the step's plural of a singular name; this is the other direction."""
+    forms = [word]
+    for suffix in ("oes", "es", "s"):
+        if word.endswith(suffix) and len(word) - len(suffix) > 2:
+            if suffix == "oes":
+                forms.append(word[:-2])  # tomatoes -> tomato
+            elif suffix == "es":
+                forms.append(word[:-1])  # limes -> lime
+            else:
+                forms.append(word[:-1])  # eggs -> egg
+            break
+    return forms
 
 
 def check_steps_ingredients_consistency(
@@ -3454,7 +3477,7 @@ def check_steps_ingredients_consistency(
         # Any word of the name is enough: "Baby spinach" is "the spinach"
         # in step 3, and "Boneless chicken thighs" is "the chicken".
         words = [w for w in re.findall(r"[a-z]+", _clean_item(name)) if len(w) > 2]
-        if words and not any(_item_matches(text, w) for w in words):
+        if words and not any(_item_matches(text, f) for w in words for f in _singular_forms(w)):
             unused.append(name)
 
     listed = " ".join(_clean_item(n) for n in names)

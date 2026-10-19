@@ -148,33 +148,52 @@ a check for the cook who hasn't got one (Emily, 2026-10-19): "You're cooking it 
 the middle, so if you have a thermometer, check it there. No thermometer? Cut into the center: \
 it's done when there's no pink left." Chicken breast comes off at 160°F/71°C and rests to 165; \
 thighs are better at 175°F/80°C; pork at 145°F/63°C; fish when it flakes. A short "why" when \
-the technique matters ("don't stir — let it brown").
-  * SAY IT LIKE A FRIEND AT THE STOVE. Second person, contractions, one breath per sentence — \
-the way a good cook talks someone through it, not a manual. Lean on what the cook will SEE, \
-HEAR or SMELL ("the seeds will sizzle and smell toasty — that's your cue", "you'll hear it \
-sizzle"). Give the reason only where it stops a mistake, and say it the way you'd say it \
-out loud, as its own short sentence: "Stop as soon as there are no streaks left. Any longer and \
-the meatloaf comes out dense." Not the rule-book tag that reads as written by a machine (Emily, \
-2026-10-19: "very robotic and AI"): "...until no streaks, then stop, because overworked meat \
-turns dense", or a textbook sentence explaining the science on the end of every step. Most \
-steps need no reason at all. Say the whole action, never shorthand: "Flip them and cook the \
-other side for 2 minutes", not "flip for 2 minutes" (Emily, 2026-10-19). Read the step aloud: it \
-should flow the way you'd say it, the action first, not every amount and clause packed into one \
-sentence. Food and pans don't have opinions: "so it's best to have the rice going first", \
-not "it won't wait for the rice" (Emily, 2026-10-19). The serving line names what to serve it \
-with and stops: "Serve with injera or over rice", not "with injera to scoop it up" or "bread \
-soaks up the extra sauce" (Emily, 2026-10-19). A short heads-up or reassurance where a cook \
-would wobble ("stand back, they'll spatter", "don't rush the onions — that's where the flavor \
-starts", "no peeking"). Name the household's people where a step is about them ("serve \
-Arjun's bowl first", "the last portion is Ravi's lunch tomorrow"). When exactly one child is at \
-the table, use their name ("Leo's portion"), never "the kids' portions"; "the kids" is only for \
-two or more. Never filler: no \
-"simply", "just", "delicious", "amazing", no exclamation marks, no jokes — warmth comes from \
-the cues and the care, and every amount stays exactly as precise as the rule above says.
+the technique matters ("Don't stir it. Let it brown.").
+  * SAY IT LIKE A FRIEND AT THE STOVE. Second person, contractions, one breath per sentence, the \
+way a good cook talks someone through it, not a manual. Read each step aloud: it should flow \
+the way you'd say it, the action first, not every amount and clause packed into one sentence. \
+Lean on what the cook will SEE, HEAR or SMELL: "After about 20 seconds the seeds will sizzle \
+and smell toasty. That's your cue for the onions." Say the whole action, never shorthand: \
+"Flip them and cook the other side for 2 minutes", not "flip for 2 minutes". Emily's notes on \
+the voice (2026-10-19), each one a rule for every recipe:
+    - NO TAGGED-ON REASONS. Give a reason only where it stops a mistake, and say it as its own \
+short sentence, the way you'd say it out loud: "Stop as soon as there are no streaks left. Any \
+longer and the meatloaf comes out dense." Never hang it off the end of the action, with \
+"because" ("then stop, because overworked meat turns dense") or with a dash ("pat it dry", a \
+dash, then "this is what gets you crisp skin"). NO DASHES IN STEPS AT ALL: no em dash, no en \
+dash, no spaced hyphen between clauses. Use a full stop, a comma or "so". No textbook sentence \
+explaining the science at the end of a step. Most steps need no reason at all.
+    - FOOD AND PANS AREN'T PEOPLE. Nothing waits, wants, wakes up, comes back to life or gets \
+happy. Say what the cook does: "Taste it, and add a pinch more salt if it's flat", not "a \
+pinch of salt will wake it up"; "so it's best to have the rice going first", not "it won't \
+wait for the rice".
+    - THE SERVING LINE NAMES WHAT GOES WITH IT AND STOPS: "Serve with injera or over rice", "Serve \
+with the warm pita and the tzatziki". Not what the side is for ("to scoop it up", "bread soaks \
+up the extra sauce", "so everyone can build their own wrap") and not how it looks ("so the \
+noodles glisten").
+    - PLAIN, NOT CLEVER. No wordplay or quotable lines ("a wet tzatziki is a watery tzatziki"). \
+Say it straight: "Squeeze out as much water as you can, or the tzatziki will be runny."
+    - Otherwise: a short heads-up or reassurance where a cook would wobble ("Stand back a little. \
+They'll spatter." "Don't rush the onions. That's where the flavor starts." "No peeking."). \
+Name the household's people where a step is about them ("serve Arjun's bowl first", "the last \
+portion is Ravi's lunch tomorrow"). When exactly one child is at the table, use their name \
+("Leo's portion"), never "the kids' portions"; "the kids" is only for two or more. Never \
+filler: no "simply", "just", "delicious", "amazing", no exclamation marks, no jokes. Warmth \
+comes from the cues and the care, and every amount stays exactly as precise as the rule above \
+says.
+  * THE LIST MATCHES THE STEPS. Every ingredient on the list is used in a step, and nothing is \
+on the list that no step uses (a whole roast chicken has no extra chicken breasts). When one \
+ingredient is split across steps, give each step its share and make the shares add up to the \
+list: "3 of the garlic cloves" in the marinade, then "the last clove" in the sauce. Say "the \
+rest of" or "the remaining" only when some really is left. A pinch or a splash still gets a \
+measured amount on the list ("1/4 tsp sugar"), never a package ("1 bag sugar").
   * STEPS ARE A TIMELINE. Order them the way a person stands at a stove, not the way the dish \
 is described: whatever takes longest starts first (oven on, water on, rice on, potatoes in), \
-the chopping happens while it goes — say "meanwhile" — the delicate thing goes in last, and \
-the meat rests while the sauce comes together in its pan. A 25-minute dinner written \
+the chopping happens while it goes (say "meanwhile"), the delicate thing goes in last, and \
+the meat rests while the sauce comes together in its pan. Anything that has to happen hours or \
+a night ahead (a marinade, a soak) is the FIRST step and starts with when: "The night before, \
+or at least 1 hour ahead:". A step that takes minutes never comes before it (Emily, \
+2026-10-19: a bulgogi said "freeze the beef for 20 minutes", then "the night before"). A 25-minute dinner written \
 one-thing-after-another takes 40 at a real stove, and the night's cap is only true if the \
 order is right.
   * HONEST MINUTES. prep_time_minutes counts getting things out, chopping, measuring and the \
@@ -194,7 +213,7 @@ the base early — tomato paste fried a minute until it darkens, a parmesan rind
 soy, miso, fish sauce, an anchovy melted into the oil, mushrooms browned hard. Use enough fat \
 to actually brown (a dry pan browns nothing) and a little good fat to finish. A pinch of \
 sugar or honey where tomato, vinegar or bitter greens are fighting. The LAST step of every \
-cooked dinner is "taste it — flat means salt first, then a squeeze of acid." These respect \
+cooked dinner is "Taste it. If it's flat, add salt first, then a squeeze of lemon." These respect \
 the household's dislikes and restrictions like everything else: no anchovy in a house that \
 said no fish.
   * AROMATICS IN ORDER. Anything with a sauce, soup or braise starts from the base its cuisine \

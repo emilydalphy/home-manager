@@ -354,3 +354,25 @@ def test_food_and_pans_are_not_people():
 def test_the_serving_line_names_the_side_and_stops():
     """Emily, 2026-10-19: "don't add the 'to scoop it up'"."""
     assert '"Serve with injera or over rice"' in " ".join(agent.WRITE_IT_DOWN.split())
+
+
+def test_the_round_two_voice_rules():
+    """Emily, 2026-10-19, after the five-recipe test batch: rules for the
+    dash tags, personifying and serving lines, and the recipe bugs."""
+    flat = " ".join(agent.WRITE_IT_DOWN.split())
+    assert "NO DASHES IN STEPS AT ALL" in flat
+    assert "FOOD AND PANS AREN'T PEOPLE" in flat
+    assert "THE SERVING LINE NAMES WHAT GOES WITH IT AND STOPS" in flat
+    assert "PLAIN, NOT CLEVER" in flat
+    assert "THE LIST MATCHES THE STEPS" in flat
+    assert "is the FIRST step and starts with when" in flat
+
+
+def test_no_step_example_teaches_a_dash():
+    """The writer copies the guide's own examples: a quoted step with a dash
+    in it taught the dash tag the rule now forbids."""
+    import re
+    for name in ("WRITE_IT_DOWN", "COOK_DONT_ASSEMBLE"):
+        for quote in re.findall(r'"([^"]{3,200})"', getattr(agent, name)):
+            if quote.strip() and quote[0].isalpha() and " — " in quote:
+                assert quote.startswith(("looks, sounds",)), f"{name}: {quote}"
