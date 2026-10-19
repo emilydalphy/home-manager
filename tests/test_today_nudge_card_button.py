@@ -56,6 +56,7 @@ _PRELUDE = (
     + _function("todayNeedsPlan")
     + _function("tonightIsOff")
     + _function("renderTodayEmpty")
+    + _function("planEntryLabel")
     + _function("startPlanningFromNudge")
     + _function("renderTodayDock")
     + _function("renderPlanWeekNudge")
@@ -148,9 +149,9 @@ def test_dock_free_answers_the_offer_and_the_card_has_no_button():
 @_needs_node
 def test_this_weeks_offer_names_this_week_and_uses_its_own_length():
     """Edge: the offer is for the CURRENT period (a five-day one). The card's
-    button says so and passes the nudge's own day_count, as the dock does."""
+    button names it the way the Plan tab does and passes the nudge's own day_count, as the dock does."""
     nudge = dict(_NEXT_WEEK, is_current_week=True, week_start="2026-10-12", day_count=5)
     out = _run(_day([_SHOP], week_state="none"), nudge, _SHOP)
     assert out["cardGo"]["hidden"] is False
-    assert out["cardGo"]["text"] == "Plan this week"
+    assert out["cardGo"]["text"] == "Plan the next 5 days", "the Plan tab's name for the same tap"
     assert out["calls"] == [["plan", "2026-10-12", 5]]

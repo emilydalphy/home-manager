@@ -1630,7 +1630,9 @@
         // taken, so a free dock stays the one answer. Outline, never a
         // second apricot (Rule 5).
         '<button type="button" class="btn-secondary plan-nudge-card-go" id="plan-nudge-card-go" hidden>' +
-          (nudge.is_current_week ? 'Plan this week' : 'Plan next week') + '</button>' +
+          // The Plan tab's own name for this tap, so a five-day household
+          // reads "Plan the next 5 days" here too, not "this week".
+          planEntryLabel(nudge.day_count || 7, nudge.is_current_week ? 'current' : 'next', false) + '</button>' +
       '</div>';
     var cardGo = wrap.querySelector('#plan-nudge-card-go');
     if (cardGo) cardGo.addEventListener('click', function () { startPlanningFromNudge(nudge); });
