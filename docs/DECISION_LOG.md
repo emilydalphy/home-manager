@@ -37,6 +37,11 @@ why*, not duplicating the diff.
   Before you shop: folded into step 2 (fewest taps), chips grouped, new
   sauces first. ~25 existing tests renamed an incidental rice/stock/panko
   fixture to a bought item; those tests were about other behaviour.
+  Review (2026-10-19): a big amount is never left out as "bought lately";
+  unticking a line the household added to themselves is refused with a
+  line (it would take their amount off too); `pantry._NOT_ASSUMED` keeps
+  specialty kinds (almond flour, arborio, icing sugar, nutritional yeast,
+  hot honey...) bought. Left for Emily: "cooked/leftover rice" is assumed.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

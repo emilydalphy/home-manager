@@ -365,8 +365,13 @@ def list_spices_this_week() -> dict:
         # knowing (a list word removed) stays where it was put.
         section = section or SECTION_SPICES
         ticked, linked = r["status"] != "spice", bool(r["staple_id"])
+        a_lot = _a_lot(section, r["quantity"] or "")
         if not ticked and staple is not None:
-            if _bought_lately(staple, today):
+            # A big amount is never left out on "bought lately" (review,
+            # 2026-10-19): one bottle of soy sauce last week does not cover
+            # a recipe built on two cups of it. It shows, unticked, with
+            # "A lot this week", so the one that runs out gets its look.
+            if _bought_lately(staple, today) and not a_lot:
                 left_out.append(r["item"])
                 by_section[section].append(r["item"])
                 continue
@@ -386,7 +391,7 @@ def list_spices_this_week() -> dict:
             "id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
             "category": r["category"], "store": r["store"] or "",
             "ticked": ticked, "due": due, "section": section,
-            "a_lot": _a_lot(section, r["quantity"] or ""),
+            "a_lot": a_lot,
             # "Check you have this": a sauce this kitchen has never ticked,
             # bought or kept through a shop. It only asks for a look — it
             # adds nothing to the list.
@@ -407,12 +412,27 @@ def tick_spice(item_id: int, ticked: bool = True) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, status, staple_id FROM grocery_items WHERE id = ? AND household_id = ?",
+        "SELECT id, item, status, staple_id, source_weekly_plan_id FROM grocery_items "
+        "WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
     if row is None:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    # A line a person added to themselves and a recipe's amount joined is
+    # theirs (no plan behind it — grocery's keep_standing). Unticking it
+    # back into the section would take THEIR amount off the list with the
+    # recipe's, and a pending row with no plan never clears (review,
+    # 2026-10-19: ticked rice 2 cups + a typed 3 cups = 5 cups, untick, all
+    # gone). So it stays on the list and says why; the amount is edited on
+    # the list's own row.
+    if not ticked and row["status"] == "needed" and row["source_weekly_plan_id"] is None and conn.execute(
+        "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
+        (household_id(), item_id),
+    ).fetchone():
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "ticked": True, "unchanged": True,
+                "said": "You added some of this yourself, so it stays on the list. Change the amount there."}
     if ticked and row["status"] == "spice":
         conn.execute(
             "UPDATE grocery_items SET status = 'needed' WHERE id = ? AND household_id = ?",

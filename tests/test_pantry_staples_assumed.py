@@ -324,6 +324,45 @@ def test_a_week_ended_with_the_sauce_unticked_counts_as_we_have_it(dal_week):
     assert _sections()["Fish sauce"]["new"] is True, "a sauce never seen is still asked about"
 
 
+# ---------- review, 2026-10-19 ----------
+
+@pytest.mark.parametrize("name", [
+    "Almond flour", "chickpea flour", "Self-raising flour", "Arborio rice", "Wild rice", "Sushi rice",
+    "Icing sugar", "Coconut sugar", "Powdered sugar", "Lentil pasta", "Iced tea", "Cold brew coffee",
+    "Nutritional yeast", "Hot honey",
+])
+def test_specialty_versions_are_bought(name):
+    assert spices.assumed_section(name) is None
+
+
+def test_the_everyday_kinds_are_still_assumed():
+    for name in ("All-purpose flour", "Brown sugar", "Jasmine rice", "Penne", "Black tea", "Honey"):
+        assert spices.assumed_section(name) == "pantry", name
+    assert pantry.is_canned("Ahi tuna") is False and pantry.is_canned("Canned tuna") is True
+
+
+def test_bought_lately_never_hides_a_big_amount(dal_week):
+    _buy("Soy sauce")
+    tools.add_recipe("Braise", ingredients=[{"item": "Soy sauce", "qty": "2 cups", "category": "pantry"}])
+    plan_b = tools.create_weekly_plan(_monday(1))["weekly_plan_id"]
+    tools.plan_meal(tools._week_dates(_monday(1))[0], "Braise", slot="dinner", weekly_plan_id=plan_b)
+    tools.approve_weekly_plan(plan_b, approved_by="Emily")
+    soy = _sections()["Soy sauce"]
+    assert soy["a_lot"] is True and soy["ticked"] is False
+    assert "Soy sauce" not in tools.list_spices_this_week()["recently_bought_by_section"]["sauces"]
+
+
+def test_an_untick_never_takes_a_households_own_amount_off(dal_week):
+    rice = _sections()["Basmati rice"]
+    tools.tick_spice(rice["id"])
+    tools.add_grocery_item("Basmati rice", "3 cups", category="pantry")
+    line = _needed()["Basmati rice"]
+    assert line["quantity"] == "5 cups"
+    got = tools.tick_spice(line["id"], ticked=False)
+    assert got.get("unchanged") is True and got["said"]
+    assert _needed()["Basmati rice"]["quantity"] == "5 cups", "still on the list, the household's amount with it"
+
+
 # ---------- the screen ----------
 
 _needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node runs the shell's own functions")

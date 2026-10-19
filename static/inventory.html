@@ -673,8 +673,8 @@ document.getElementById('inv-add-btn').addEventListener('click', async () => {
 // scope. Nothing here is trusted silently: every scan comes back as a
 // draft list in a review sheet — editable, removable — before anything is
 // written to inventory_items via confirm-scan.
-const SCAN_CATEGORIES = ['produce', 'dairy', 'meat/seafood', 'pantry', 'frozen', 'other'];
-const CATEGORY_LABELS_SCAN = { 'produce': 'Produce', 'dairy': 'Dairy', 'meat/seafood': 'Meat/Seafood', 'pantry': 'Pantry', 'frozen': 'Frozen', 'other': 'Other' };
+const SCAN_CATEGORIES = ['produce', 'dairy', 'meat/seafood', 'pantry', 'canned', 'frozen', 'other'];
+const CATEGORY_LABELS_SCAN = { 'produce': 'Produce', 'dairy': 'Dairy', 'meat/seafood': 'Meat/Seafood', 'pantry': 'Pantry', 'canned': 'Canned', 'frozen': 'Frozen', 'other': 'Other' };
 let scanDraftItems = [];
 let scanKind = null; // 'receipt' | 'fridge' | 'pantry'
 

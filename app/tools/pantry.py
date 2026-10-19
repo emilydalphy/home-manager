@@ -203,6 +203,31 @@ _PANTRY = [
     "tea",
 ]
 
+# Not assumed, though the last word is on a list above (review,
+# 2026-10-19): a specialty version a kitchen does not just have. Emily's
+# list names the everyday kind — white and brown sugar, all-purpose flour,
+# everyday rice — so these are bought as normal. Matched the same way (the
+# name ends with one of these).
+_NOT_ASSUMED = [
+    # flours
+    "almond flour", "coconut flour", "chickpea flour", "gram flour", "besan", "oat flour",
+    "rice flour", "self raising flour", "self rising flour", "cake flour", "tapioca flour",
+    "buckwheat flour", "spelt flour", "gluten free flour",
+    # rice
+    "arborio rice", "wild rice", "sushi rice", "black rice", "glutinous rice", "sticky rice",
+    "paella rice", "carnaroli rice",
+    # sugar
+    "coconut sugar", "caster sugar", "superfine sugar", "powdered sugar", "icing sugar",
+    "confectioner sugar", "confectioners sugar", "pearl sugar", "sanding sugar", "demerara sugar",
+    "turbinado sugar",
+    # pasta
+    "lentil pasta", "chickpea pasta", "gluten free pasta", "bean pasta",
+    # drinks
+    "iced tea", "cold brew", "cold brew coffee", "bubble tea", "chai concentrate",
+    # baking & sweeteners
+    "nutritional yeast", "hot honey", "honeycomb",
+]
+
 # ------------------------------------------------------------- canned ----
 # Bought as normal, in their own aisle. A bare "chickpeas" or "black beans"
 # in a recipe is the tin (a dried one says "dried" — _PANTRY above).
@@ -227,6 +252,9 @@ _CANNED = [
     "baked bean",
     "refried bean",
 ]
+
+# A tuna the tin never held: sashimi-grade, a steak. Bought, not canned.
+_FRESH_FISH = ["ahi tuna", "yellowfin tuna", "bluefin tuna", "sashimi tuna", "sushi grade tuna"]
 
 # Words that make anything a real purchase, whatever list its name is on:
 # fresh, chilled or frozen food is bought every time ("fresh pasta",
@@ -266,7 +294,8 @@ _KEYS: dict[str, list[tuple]] = {}
 
 def _keys(kind: str) -> list[tuple]:
     if kind not in _KEYS:
-        names = {"sauce": _SAUCES, "pantry": _PANTRY, "canned": _CANNED}[kind]
+        names = {"sauce": _SAUCES, "pantry": _PANTRY, "canned": _CANNED, "not": _NOT_ASSUMED,
+                 "fresh_fish": _FRESH_FISH}[kind]
         _KEYS[kind] = [tuple(_words(n)) for n in names]
     return _KEYS[kind]
 
@@ -277,7 +306,9 @@ def _ends_with_any(words: list[str], keys) -> bool:
 
 def _never(name: str) -> bool:
     every = set(_words(name))
-    return bool(every & _FRESH_WORDS) or bool(every & _TIN_WORDS)
+    if every & _FRESH_WORDS or every & _TIN_WORDS:
+        return True
+    return _ends_with_any(_head(name), _keys("not"))
 
 
 def is_sauce(name: str) -> bool:
@@ -302,7 +333,7 @@ def is_canned(name: str) -> bool:
     if every & _TIN_WORDS:
         return True
     words = _head(name)
-    return bool(words) and _ends_with_any(words, _keys("canned"))
+    return bool(words) and _ends_with_any(words, _keys("canned")) and not _ends_with_any(words, _keys("fresh_fish"))
 
 
 # Spellings that are one thing on the list: "light soy sauce", "dark soy

@@ -6677,10 +6677,10 @@
     { key: 'spices', open: 'spicesOpen', title: 'Spices this week', one: 'spice', many: 'spices',
       line: 'All the spices this week&rsquo;s recipes need.' },
     { key: 'sauces', open: 'saucesOpen', title: 'Sauces this week', one: 'sauce', many: 'sauces',
-      line: 'Assumed at home. Tick any you&rsquo;re out of.',
+      line: 'You&rsquo;ve probably got these. Tick any you&rsquo;re out of.',
       fresh: 'A few of these are new to your kitchen: tick any you need.' },
     { key: 'pantry', open: 'pantryOpen', title: 'Pantry staples this week', one: 'staple', many: 'staples',
-      line: 'Assumed in the cupboard. Tick any you&rsquo;re out of.' }
+      line: 'You&rsquo;ve probably got these. Tick any you&rsquo;re out of.' }
   ];
   function groAssumedItems(key) {
     return (groceryState.spices.items || []).filter(function (sp) { return (sp.section || 'spices') === key; });
@@ -9573,7 +9573,11 @@
         var wasTicked = el.dataset.ticked === '1';
         el.disabled = true;
         groDo(function () {
-          return groPost('/api/grocery-list/' + id + '/spice', { ticked: !wasTicked });
+          // A line partly the household's own stays on the list, and the
+          // answer says why (spices.tick_spice).
+          return groPost('/api/grocery-list/' + id + '/spice', { ticked: !wasTicked }).then(function (got) {
+            if (got && got.said) showToast(got.said);
+          });
         }, "Couldn't save that — try again.");
         return;
       }
