@@ -9812,8 +9812,15 @@ _READ_SETUP_NOTE_TOOL = {
             },
             "wont_eat": {
                 "type": "array",
-                "items": {"type": "string"},
-                "description": "Foods the household never wants recommended at all, one food per entry, two or three words at most.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "food": {"type": "string", "description": "The food, lower case, two or three words at most: 'cauliflower', 'olives'."},
+                        "except": {"type": "string", "description": "Only when the note gives an exception to the rule ('unless it's cauliflower rice', 'except salmon', 'only if it's kalamata'): the allowed form, as the note words it, two or three words at most: 'cauliflower rice'. Absent otherwise."},
+                    },
+                    "required": ["food"],
+                },
+                "description": "Foods the household never wants recommended, one food per entry. Keep any exception the note gives in `except`; never drop it.",
             },
             "cuisines": {
                 "type": "array",
@@ -9880,6 +9887,8 @@ Be careful about two things in particular:
 that person. "Arjun's school is nut-free" is a rule about a place, so it is a restriction with allergy \
 false. "Arjun is allergic to nuts" is allergy true.
 - a food the note mentions in passing, or says they LIKE, is not a restriction and not a won't-eat.
+- a rule with an exception keeps it: "don't suggest cauliflower unless it's cauliflower rice" is wont_eat food "cauliflower" with except "cauliflower rice", never a plain "cauliflower". The same for "except", "only if" and "but ... is fine".
+- write foods in lower case unless the note itself capitalises one mid-sentence.
 
 ---
 {note[:4000]}

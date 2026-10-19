@@ -488,9 +488,10 @@ _ALLERGY_ADJ_RE = re.compile(r"\bintoleran(?:t|ce)\b|(?<=[a-z])-free\b")
 # also cancels anything the alias table above expanded into it.
 _CONTRAST_RE = re.compile(
     r"\b(?:but|except|excepting|unless|though|although|apart\s+from|"
-    r"other\s+than|aside\s+from)\b"
+    r"other\s+than|aside\s+from|only\s+if|only\s+when)\b"
 )
 _FINE_RE = re.compile(r"\b(?:fine|ok|okay|alright|allowed|welcome)\b")
+_FINE_WORDS = frozenset({"fine", "ok", "okay", "alright", "allowed", "welcome"})
 
 
 def _conflict_keywords(phrase: str, drop: set[str] | None = None) -> list[str]:
@@ -543,7 +544,15 @@ def _split_exception(span: str) -> tuple[str, str]:
     """Split "tree nuts but peanuts are fine" into what to avoid and what not to."""
     m = _CONTRAST_RE.search(span)
     if m:
-        return span[:m.start()], span[m.end():]
+        tail = span[m.end():]
+        # The exception ends where the list goes on: "avoid dairy only when
+        # baked, and eggs" still avoids eggs (review, 2026-10-19). Unless
+        # the rest is still the exception — "but peanuts and almonds are
+        # fine" excepts both.
+        cut = re.search(r"[,;]|\band\b|\bor\b|\bplus\b", tail)
+        if cut and not _FINE_RE.search(tail[cut.start():]):
+            return span[:m.start()] + " " + tail[cut.start():], tail[:cut.start()]
+        return span[:m.start()], tail
     # The comma form: "no cow milk for Emily, oat milk is fine".
     for m in re.finditer(r",", span):
         tail = span[m.end():]
@@ -597,8 +606,49 @@ def _fact_keywords(text: str, drop: set[str]) -> tuple[list[list[str]], list[str
             if key not in seen:
                 seen.add(key)
                 phrases.append(words)
-    excepted = [w for span in exception_spans for w in _conflict_keywords(span, drop=drop)]
-    return phrases, excepted
+    return phrases, _exception_phrases(exception_spans, drop=drop)
+
+
+def _exception_phrases(spans: list[str], drop: set[str] | None = None) -> list[str]:
+    """
+    What a rule's exception names, one entry per PHRASE ("cauliflower
+    rice"), not per loose word. _match_terms needs the phrase whole: a
+    narrower form of the avoided food is a carve-out, and word by word it
+    is indistinguishable from the food itself. The words that only say
+    "fine" are left out, so "oat milk is fine" is "oat milk".
+    """
+    out: list[str] = []
+    for span in spans:
+        for words in _conflict_phrases(span, drop=drop):
+            words = [w for w in words if w not in _FINE_WORDS]
+            if words and " ".join(words) not in out:
+                out.append(" ".join(words))
+    return out
+
+
+def _rule_terms(text: str) -> list[tuple[str, list[set[str]]]]:
+    """A Won't eat entry's match terms, its exception honoured: "cauliflower,
+    except cauliflower rice" (what setup saves) or "cauliflower unless it's
+    cauliflower rice" (typed). Without the split, "except cauliflower rice"
+    became a phrase of its own that matched nothing."""
+    avoid, exception = _split_exception((text or "").lower().replace("’", "'"))
+    return _match_terms(_conflict_phrases(avoid), _exception_phrases([exception] if exception else []))
+
+
+class _Groups(list):
+    """One avoidance phrase's per-word spellings, plus the carve-outs the
+    household excepted from it: compiled phrases ("cauliflower rice")
+    inside which the food does not count. A list, so every reader that
+    walks the groups is unchanged."""
+    carve_outs: tuple = ()
+
+
+def _carve_out_re(words: list[str]) -> re.Pattern:
+    """The exception's words in order, each in any of its spellings,
+    joined by spaces or a hyphen: "cauliflower rice", "cauliflower-rice"."""
+    parts = ["(?:" + "|".join(re.escape(v) for v in sorted(_keyword_variants(w), key=len, reverse=True)) + ")"
+             for w in words]
+    return re.compile(r"\b" + r"[\s-]+".join(parts) + r"\b")
 
 
 def _keyword_variants(keyword: str) -> set[str]:
@@ -646,17 +696,42 @@ def _match_terms(
     are fine" still catch walnuts. A word whose every spelling was excepted
     drops out of the phrase rather than killing it: "no cow milk for Emily,
     oat milk is fine" is left looking for "cow".
+
+    An exception that is a NARROWER FORM of an avoided phrase — every word
+    of the phrase is in it, plus more: "no cauliflower unless cauliflower
+    rice" — is a carve-out instead, and is never subtracted. Subtracting
+    its words took "cauliflower" out of the rule and left nothing, so
+    roasted cauliflower went through with the rice (review, 2026-10-19).
+    Now the food is still found everywhere except inside the exception's
+    own words. `excepted` entries may be phrases ("cauliflower rice"); a
+    single word reads exactly as it always did.
     """
+    def _covers(exception: list[str], phrase: list[str]) -> bool:
+        spelled = [_keyword_variants(w) for w in exception]
+        return len(exception) > len(phrase) and all(
+            any(_keyword_variants(p) & s for s in spelled) for p in phrase)
+
     excluded: set[str] = set()
-    for word in excepted or []:
-        excluded |= _keyword_variants(word)
-        # "…but peanuts are fine" lifts the dishes that are peanut by
-        # definition (satay) out of the "nut" family too.
-        for base in _ALLERGEN_ALIASES.get(word, set()):
-            excluded |= _keyword_variants(base)
+    carves: list[list[str]] = []
+    for entry in excepted or []:
+        words = entry.split()
+        if any(_covers(words, phrase) for phrase in phrases):
+            carves.append(words)
+            continue
+        for word in words:
+            # Never a word that is itself one of the things avoided: an
+            # exception can narrow a rule, not delete another one.
+            if any(len(p) == 1 and _keyword_variants(p[0]) & _keyword_variants(word) for p in phrases):
+                continue
+            excluded |= _keyword_variants(word)
+            # "…but peanuts are fine" lifts the dishes that are peanut by
+            # definition (satay) out of the "nut" family too.
+            for base in _ALLERGEN_ALIASES.get(word, set()):
+                excluded |= _keyword_variants(base)
     out: list[tuple[str, list[set[str]]]] = []
     for phrase in phrases:
-        groups: list[set[str]] = []
+        groups = _Groups()
+        groups.carve_outs = tuple(_carve_out_re(c) for c in carves if _covers(c, phrase))
         kept: list[str] = []
         for word in phrase:
             variants: set[str] = set()
@@ -704,11 +779,16 @@ _STYLE_AFTER_RE = re.compile(r"[\s-]style(?![-a-z0-9])")
 
 def _find_variant(
     variant: str, text: str, start: int, discountable: bool, mode: str = "line", label: str = "",
+    carved: list[tuple[int, int]] = (),
 ) -> re.Match | None:
     """The first whole-word occurrence at or after `start` that actually
-    counts. Only a draft "label" segment reads negations (see _negated)."""
+    counts. Only a draft "label" segment reads negations (see _negated).
+    `carved` are the spans of the household's own exception ("cauliflower
+    rice"): in every kind of segment, since they said it themselves."""
     for m in re.finditer(r"\b" + re.escape(variant) + r"\b", text):
         if m.start() < start:
+            continue
+        if any(a <= m.start() and m.end() <= b for a, b in carved):
             continue
         if discountable and _discounted(variant, m, text, mode, label):
             continue
@@ -734,11 +814,12 @@ def _phrase_in(groups: list[set[str]], text: str, mode: str = "line", label: str
     """
     pos = 0
     discountable = len(groups) == 1
+    carved = [f.span() for rx in getattr(groups, "carve_outs", ()) for f in rx.finditer(text)]
     found: list[str] = []
     for variants in groups:
         best: re.Match | None = None
         for variant in variants:
-            m = _find_variant(variant, text, pos, discountable, mode, label)
+            m = _find_variant(variant, text, pos, discountable, mode, label, carved)
             if m and (best is None or m.start() < best.start()):
                 best = m
         if best is None:
@@ -904,11 +985,15 @@ def _avoidances() -> list[dict]:
     # Standing dislikes are not a safety matter, so they ride along at a
     # lower severity — worth mentioning, never worth alarming about.
     for dislike in _memory.get_household_memory().get("dislikes") or []:
-        terms = _match_terms(_conflict_phrases(dislike))
+        terms = _rule_terms(dislike)
         if not terms:
             continue
+        # Labelled by the food alone ("cauliflower", not the whole rule):
+        # it is what the banner names, and what offer_gate's "they asked
+        # for it" compares with the person's own words.
+        avoid = _split_exception(dislike.strip().lower().replace("’", "'"))[0].strip(" ,")
         out.append({
-            "member": None, "label": dislike.strip().lower(), "source": "dislike",
+            "member": None, "label": avoid or dislike.strip().lower(), "source": "dislike",
             "severity": "soft", "terms": terms,
         })
     return out
@@ -1301,6 +1386,14 @@ def check_meal_conflicts(
         detail = _match_detail(avoidance["terms"], segments, gluten_free_segments,
                                label_segments, strict_segments, listed_segments)
         if not detail:
+            continue
+        # A Won't-eat dish that IS the household's exception — "Cauliflower
+        # Rice Bowl" made from a head of cauliflower — is what they asked to
+        # keep, so its list doesn't count against it. Never for a must-avoid:
+        # an allergy is judged on what goes in.
+        if avoidance["severity"] != "hard" and segments and any(
+                rx.search(segments[0]) for _, groups in avoidance["terms"]
+                for rx in getattr(groups, "carve_outs", ())):
             continue
         matched, matched_word = detail
         hits.append({

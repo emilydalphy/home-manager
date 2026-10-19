@@ -3851,7 +3851,10 @@ function anythingElseConfirmLines(reading) {
   });
   (r.wont_eat || []).forEach(food => {
     const f = (food || '').trim();
-    if (f) lines.push('Never recommend ' + f);
+    // A rule with an exception is read back with it — the stored string
+    // itself ("cauliflower, except cauliflower rice", built server-side by
+    // _wont_eat_as_said), so the line is still exactly what is saved.
+    if (f) lines.push(/, except /.test(f) ? 'No ' + f : 'Never recommend ' + f);
   });
   (r.cuisines || []).forEach(c => {
     const name = (c || '').trim();

@@ -226,6 +226,31 @@ why*, not duplicating the diff.
   whose reading never finished isn't marked empty); chosen URLs match loosely;
   the reader may open only the chosen sites and only a chosen page can lead;
   the read step is cut to fit the budget before it starts (+400 a step re-billed).
+- **A rule with an exception keeps it, read back and saved** (2026-10-19;
+  branch `overnight/rule-keeps-its-exception`, STACKED on
+  `overnight/excluded-options-filtered` — merge after it; tests
+  `tests/test_rule_keeps_its_exception.py`). Setup's "Anything else" read
+  "don't suggest any cauliflower unless it's cauliflower rice" back as
+  "Never recommend Cauliflower" and would have saved plain "cauliflower".
+  The reading's `wont_eat` items now carry `except`; `main._wont_eat_as_said`
+  turns them into the string that is SAVED ("cauliflower, except
+  cauliflower rice"), puts back an exception the model dropped from the
+  note's own words (unless / except / only if / "but … is fine"; never a
+  condition like "unless I ask"), and lower-cases the food unless the note
+  capitalises it mid-sentence. The card reads "No cauliflower, except
+  cauliflower rice". Matcher: an exception that is a narrower form of the
+  food is now a carve-out (`coordination._Groups.carve_outs`), not
+  subtracted — subtracting its words cancelled the whole rule, so roasted
+  cauliflower got through the option gate, banner and pick gates. Won't-eat
+  entries are split on their exception too (`_rule_terms`); a different-food
+  exception ("but peanuts are fine") subtracts exactly as before.
+  Review round: an exception ends at the next , / and / or unless what
+  follows still says "fine" ("avoid dairy only when baked, and eggs" still
+  avoids eggs), and never subtracts a word that is itself avoided; a
+  Won't-eat dish NAMED as the exception (Cauliflower Rice Bowl from a head
+  of cauliflower) is not held on its list — never for a must-avoid;
+  `delete_preference("dislikes", "cauliflower")` removes the rule with its
+  exception and says `deleted: False` when nothing matched.
 - **An option the household can't have never reaches a sheet** (2026-10-19;
   branch `overnight/excluded-options-filtered`; tests
   `tests/test_excluded_options_filtered.py`). Change the protein offered
