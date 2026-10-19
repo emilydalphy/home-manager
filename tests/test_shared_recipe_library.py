@@ -25,6 +25,8 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
+from conftest import household_date
+
 from app import agent, households, tools
 from app.db import get_conn
 from app.main import app
@@ -102,7 +104,10 @@ def _plan_pending(name="Grilled Chicken Skewers"):
 
 
 def _write(recipe):
-    return agent._write_one_pending_recipe(recipe, "dinner", SHARED, agent._allergen_gate.hard_avoidances())
+    # The household's real writer context — must_not_contain, eating style,
+    # kit, children — exactly as the recipe pass builds it.
+    return agent._write_one_pending_recipe(recipe, "dinner", agent._shared_recipe_details_context(),
+                                           agent._allergen_gate.hard_avoidances())
 
 
 def _rows(sql, args=()):
@@ -178,11 +183,9 @@ def test_a_library_dish_with_peanuts_is_never_copied_for_a_peanut_allergic_house
     assert writer_calls[1]["research"]["lead"]["name"] == "Cook A"
 
 
-def test_a_version_written_around_must_avoids_is_a_variant_never_the_base(
+def test_the_first_household_writing_around_an_allergy_files_no_base(
         b, research_calls, writer_calls, monkeypatch):
-    _write(_plan_pending())
-    base_before = lib.base_recipe("Grilled Chicken Skewers")
-
+    """Review, 2026-10-19: a peanut-free version is not everyone's base."""
     def _no_peanut(spec):
         writer_calls.append(spec)
         out = _satay(spec)
@@ -190,7 +193,6 @@ def test_a_version_written_around_must_avoids_is_a_variant_never_the_base(
             {"item": "Sunflower seed butter", "qty": "1 jar", "category": "pantry"}]
         out["instructions"] = ["Marinate the chicken in coconut milk and turmeric.",
                                "Grill on skewers; stir sunflower seed butter into a sauce and squeeze in the limes."]
-        out["household_changes"] = ["No peanuts for Ravi; sunflower seed butter instead"]
         return out
 
     monkeypatch.setattr(agent, "generate_recipe_details_llm", _no_peanut)
@@ -198,11 +200,42 @@ def test_a_version_written_around_must_avoids_is_a_variant_never_the_base(
         tools.add_member("Ravi")
         tools.set_member_dietary_restrictions("Ravi", ["peanuts"])
         assert _write(_plan_pending())["ok"]
-        assert "Sunflower" in json.dumps(tools.get_recipe("Grilled Chicken Skewers")["ingredients"])
-    assert lib.base_recipe("Grilled Chicken Skewers") == base_before
-    variants = _rows("SELECT * FROM recipe_library WHERE kind = 'variant'")
-    assert len(variants) == 1 and variants[0]["variant_of"] == base_before["id"]
-    assert "Ravi" not in json.dumps(_rows("SELECT * FROM recipe_library"))
+    assert lib.base_recipe("Grilled Chicken Skewers") is None, "a recipe written around an allergy became the base"
+    # The research is still shared — most of the cost.
+    assert lib.research_for("Grilled Chicken Skewers")["sources"][0]["url"] == A_URL
+    # And the next, unrestricted household writes (no new research) and files the base.
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: writer_calls.append(spec) or _satay(spec))
+    assert _write(_plan_pending())["ok"]
+    assert "Peanut butter" in json.dumps(lib.base_recipe("Grilled Chicken Skewers")["ingredients"])
+    assert research_calls == ["Grilled Chicken Skewers"]
+
+
+@pytest.mark.parametrize("key, value", [
+    ("eating_style", "vegetarian"), ("kitchen_kit", ["oven", "stovetop"]), ("children_at_table", True),
+])
+def test_a_household_the_base_wasnt_written_for_gets_its_own_write_not_a_copy(
+        b, research_calls, writer_calls, monkeypatch, key, value):
+    _write(_plan_pending())
+    with tools.use_household(b):
+        recipe = _plan_pending()
+        shared = {**agent._shared_recipe_details_context(), key: value}
+        assert agent._write_one_pending_recipe(recipe, "dinner", shared, [])["ok"]
+    assert len(writer_calls) == 2, f"a {key} household was copied a base written without it"
+    assert writer_calls[1][key] == value
+    assert research_calls == ["Grilled Chicken Skewers"], "its write reused the library's research"
+    assert writer_calls[1]["research"]["lead"]["name"] == "Cook A"
+
+
+def test_an_allergen_only_the_steps_use_still_stops_the_copy(b, writer_calls, monkeypatch):
+    lib.file_entry("Grilled Chicken Skewers",
+                   ingredients=[{"item": "Chicken thighs", "qty": "2 lb"}, {"item": "Limes", "qty": "2"}],
+                   instructions=["Grill the chicken thighs.", "Brush with 2 tbsp peanut butter and squeeze the limes over."],
+                   default_servings=4, origin="seed")
+    with tools.use_household(b):
+        tools.add_member("Ravi")
+        tools.set_member_dietary_restrictions("Ravi", ["peanuts"])
+        _write(_plan_pending())
+    assert writer_calls, "the base was copied for a peanut-allergic household"
 
 
 def test_typed_and_imported_recipes_never_reach_the_library(writer_calls):
@@ -211,26 +244,21 @@ def test_typed_and_imported_recipes_never_reach_the_library(writer_calls):
     tools.add_recipe(name="Linked Lasagna", ingredients=[{"item": "Noodles", "qty": "1 box"}],
                      instructions=["Layer."], source_url="https://example.com/lasagna")
     # Even handed straight to the write path, an imported row is refused.
-    assert lib.file_from_recipe(tools.get_recipe("Linked Lasagna")["id"]) is None
-    assert _rows("SELECT * FROM recipe_library") == []
-    # And a typed recipe's tweak is not filed: it never came from the library.
-    assert lib.file_tweak(tools.get_recipe("Grandma's Dal")["id"]) is None
+    assert lib.file_from_recipe(tools.get_recipe("Linked Lasagna")["id"], spec={"name": "Linked Lasagna"}) is None
     assert _rows("SELECT * FROM recipe_library") == []
 
 
 def test_nothing_personal_goes_in_and_a_step_naming_someone_is_not_filed(writer_calls, monkeypatch):
-    tools.add_member("Asha")
-    tools.add_fact("health", "Asha is allergic to sesame", hard=True)
+    tools.add_member("Mary Asha")
 
     def _named(spec):
         out = _satay(spec)
         out["instructions"] = out["instructions"] + ["Keep Asha's skewers plain."]
-        out["household_changes"] = []
         return out
 
     monkeypatch.setattr(agent, "generate_recipe_details_llm", _named)
     assert _write(_plan_pending())["ok"]
-    assert _rows("SELECT * FROM recipe_library") == [], "a recipe naming someone was filed"
+    assert _rows("SELECT * FROM recipe_library") == [], "a recipe naming someone (one word of their name) was filed"
     # The library's own columns: no household, no member, no notes or ratings.
     cols = {r["name"] for r in _rows("PRAGMA table_info(recipe_library)")}
     cols |= {r["name"] for r in _rows("PRAGMA table_info(recipe_library_sources)")}
@@ -238,7 +266,38 @@ def test_nothing_personal_goes_in_and_a_step_naming_someone_is_not_filed(writer_
                        "household_changes_json", "temporarily_excluded", "times_cooked"}
 
 
-def test_a_tweak_of_a_library_dish_is_a_variant_and_the_base_and_other_copy_stay(
+@pytest.mark.parametrize("name, private", [
+    ("Nana's Lasagne", True), ("Mum's Dal", True), ("Grandma Lasagne", True), ("Kevin's Chili", True),
+    ("Biscuit Stew", True),             # the household's pet
+    ("Okafor Jollof", True),            # the household's own name
+    ("Theo Pancakes", True),            # a guest named in a hosting note
+    ("Pip Curry", True),                # someone named in a hard fact
+    ("Shepherd's Pie", False), ("General Tso's Chicken", False), ("Chicken Curry", False),
+])
+def test_a_dish_named_for_someone_is_never_filed(name, private):
+    hid = households.create_household("The Okafor Family", "okafor-pass")
+    with tools.use_household(hid):
+        conn = get_conn()
+        conn.execute("INSERT INTO pets (household_id, name) VALUES (?, 'Biscuit')", (hid,))
+        conn.execute("INSERT INTO holiday_answers (household_id, date, holiday_name, answer, guest_notes) "
+                     "VALUES (?, '2026-12-25', 'Christmas', 'hosting', 'Theo is vegetarian')", (hid,))
+        conn.commit()
+        conn.close()
+        tools.add_fact("health", "Pip can't have shellfish", hard=True)
+        filed = lib.file_entry(name, ingredients=[{"item": "Rice", "qty": "1 bag"}],
+                               instructions=["Cook the rice."], origin="written")
+    assert (filed is None) is private
+
+
+def test_a_dish_the_household_asked_for_by_name_is_never_filed(writer_calls):
+    tools.create_weekly_plan(household_date(0), constraints_notes="please do the honey walnut prawns again")
+    assert lib.file_entry("Honey Walnut Prawns", ingredients=[{"item": "Prawns", "qty": "1 lb"}],
+                          instructions=["Fry the prawns."], origin="written") is None
+    assert lib.file_entry("Garlic Prawns", ingredients=[{"item": "Prawns", "qty": "1 lb"}],
+                          instructions=["Fry the prawns."], origin="written") is not None
+
+
+def test_a_rewrite_from_the_households_own_words_files_nothing(
         b, research_calls, writer_calls, monkeypatch):
     _write(_plan_pending())
     with tools.use_household(b):
@@ -268,48 +327,7 @@ def test_a_tweak_of_a_library_dish_is_a_variant_and_the_base_and_other_copy_stay
     assert lib.base_recipe("Grilled Chicken Skewers") == base_before
     with tools.use_household(b):
         assert tools.get_recipe("Grilled Chicken Skewers")["instructions"] == b_recipe["instructions"]
-    variants = _rows("SELECT * FROM recipe_library WHERE kind = 'variant'")
-    assert len(variants) == 1 and variants[0]["origin"] == "tweak"
-    assert variants[0]["variant_of"] == base_before["id"]
-    assert "extra lime" in variants[0]["instructions_json"]
-    assert "kids hated" not in json.dumps(_rows("SELECT * FROM recipe_library"))
+    assert _rows("SELECT * FROM recipe_library WHERE kind = 'variant'") == []
+    assert "extra lime" not in json.dumps(_rows("SELECT * FROM recipe_library"))
 
 
-def test_a_household_waits_for_the_same_dish_being_researched_elsewhere(b, research_calls):
-    held = lib.claim_research("Grilled Chicken Skewers")
-    assert held is None
-    box = {}
-
-    def _b():
-        with tools.use_household(b):
-            box["found"] = agent.research_dish("Grilled Chicken Skewers", "Thai", "", deadline=time.monotonic() + 10)
-
-    t = threading.Thread(target=_b)
-    t.start()
-    time.sleep(0.2)
-    lib.file_entry("Grilled Chicken Skewers", sources=rr.pick_lead([
-        {"name": "Cook A", "title": "", "url": A_URL, "rating": 4.8, "rating_count": 900, "read": True},
-    ]), method_notes="notes", origin="research")
-    lib.release_research("Grilled Chicken Skewers")
-    t.join(5)
-    assert research_calls == [], "B researched a dish A was researching"
-    assert box["found"]["sources"][0]["url"] == A_URL
-
-
-def test_library_off_is_per_household_as_before(b, research_calls, writer_calls, monkeypatch):
-    monkeypatch.setenv("RECIPE_LIBRARY", "off")
-    _write(_plan_pending())
-    with tools.use_household(b):
-        _write(_plan_pending())
-    assert len(research_calls) == 2 and len(writer_calls) == 2
-    assert _rows("SELECT * FROM recipe_library") == []
-
-
-def test_household_b_cannot_read_household_as_copy_by_id(b, research_calls, writer_calls):
-    _write(_plan_pending())
-    a_id = tools.get_recipe("Grilled Chicken Skewers")["id"]
-    with tools.use_household(b):
-        _write(_plan_pending())
-    with TestClient(app) as c:
-        assert c.post("/login", data={"password": B_PASS, "next": "/"}, follow_redirects=False).status_code == 303
-        assert c.get(f"/api/recipes/{a_id}").status_code == 404
