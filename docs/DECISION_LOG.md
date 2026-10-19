@@ -32,8 +32,17 @@ why*, not duplicating the diff.
   list) answers `remember_offer`; the sheet then shows the result with its
   Put it back and "Remember this for every week?", whose button sends
   "Remember this for every week: <words>" to the chat's memory tools.
-  Won't-eat dislikes stay soft (Change recipe's own rule); allergies and
-  hard facts are enforced.
+  Review fixes (same branch): the route takes `this_meal_only` (only the
+  Tweak sheet sends it) — a recipe other meals share (Tue + Thu tacos,
+  another week) is copied as "Chicken Tacos (Tuesday)" for this chain
+  only, its shopping alone redone, and the undo repoints the chain and
+  deletes the copy; Change recipe's own rewrite still edits in place. On
+  that path the Won't eat list goes to the writer as `keep_out` and a
+  rewrite that ADDS one is refused ("Mushrooms are on your Won't eat
+  list…"), text kept and filed. The draft write-up takes the recipe
+  pass's claim (`_claim_recipes`) and waits on another writer. Not
+  changed: "make it shrimp instead" keeps the dish's name and
+  main_protein — swapping the main ingredient belongs on the protein row.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

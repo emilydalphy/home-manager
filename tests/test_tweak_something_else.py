@@ -68,6 +68,18 @@ def _meal(plan, date, name, buy=False):
                            add_ingredients_to_grocery_list=buy)["entry_id"]
 
 
+def _post(client, entry, text):
+    return client.post("/api/meal-recipe/rewrite", json={"entry_id": entry, "text": text, "this_meal_only": True})
+
+
+def _entry_recipe_id(entry):
+    conn = get_conn()
+    try:
+        return conn.execute("SELECT recipe_id FROM meal_plan_entries WHERE id = ?", (entry,)).fetchone()[0]
+    finally:
+        conn.close()
+
+
 def _ingredients(recipe_id):
     conn = get_conn()
     try:
@@ -287,7 +299,7 @@ def test_the_fourth_row_sits_under_the_carb_and_its_box_is_closed_until_tapped()
     assert html.endswith('id="wk-tweak-leave">Leave it as it is</button>')
 
 
-def _drive(answer: dict, ok: bool = True) -> dict:
+def _drive(answer: dict, ok: bool = True, status: int = 400) -> dict:
     """runTweakElse under node, with the sheet's elements as plain objects
     and the route answering `answer`."""
     prelude = """
@@ -295,7 +307,7 @@ function el() { return { hidden: false, textContent: '', value: '', readOnly: fa
   focus: function () {}, setAttribute: function () {} }; }
 var els = { 'wk-tweak-else': el(), 'wk-tweak-text': el(), 'wk-tweak-go': el(), 'wk-tweak-said': el(),
   'wk-tweak-done': el(), 'wk-tweak-done-row': el(), 'wk-tweak-undo': el(), 'wk-tweak-remember': el(),
-  'wk-tweak-leave': el() };
+  'wk-tweak-leave': el(), 'wk-tweak-hint': el() };
 els['wk-tweak-done-row'].hidden = true;
 els['wk-tweak-said'].hidden = true; els['wk-tweak-done'].hidden = true; els['wk-tweak-remember'].hidden = true;
 var label = el();
@@ -309,10 +321,10 @@ async function crAfterChange(said, rid, quiet) { log.after = [said, rid, !!quiet
 function showToast(t) { log.toasts.push(t); }
 function loadWeekMenu() {}
 var Api = { fetch: async function (url, init) { log.sent = [url, JSON.parse(init.body)];
-  return { ok: OK, json: async function () { return ANSWER; } }; } };
+  return { ok: OK, status: STATUS, json: async function () { return ANSWER; } }; } };
 var tweakElseState = { panel: {}, date: '2026-10-20', slot: 'dinner', entryId: 41, busy: false, text: '' };
 els['wk-tweak-text'].value = 'We never want cilantro';
-""".replace("OK", "true" if ok else "false").replace("ANSWER", json.dumps(answer))
+""".replace("STATUS", str(200 if ok else status)).replace("OK", "true" if ok else "false").replace("ANSWER", json.dumps(answer))
     harness = (prelude + _extract("tweakElseEl", SHELL_JS) + _extract("tweakElseSay", SHELL_JS)
                + "async " + _extract("runTweakElse", SHELL_JS)
                + "runTweakElse().then(function () { console.log(JSON.stringify({ log: log, els: els })); });\n")
@@ -324,7 +336,8 @@ els['wk-tweak-text'].value = 'We never want cilantro';
 @_needs_node
 def test_the_box_sends_this_meal_and_a_change_closes_the_sheet_with_put_it_back():
     out = _drive({"status": "rewritten", "said": "Chicken Tacos is rewritten.", "request_id": 7})
-    assert out["log"]["sent"] == ["/api/meal-recipe/rewrite", {"entry_id": 41, "text": "We never want cilantro"}]
+    assert out["log"]["sent"] == ["/api/meal-recipe/rewrite",
+                                  {"entry_id": 41, "text": "We never want cilantro", "this_meal_only": True}]
     assert out["log"]["closed"] == 1
     assert out["log"]["after"] == ["Chicken Tacos is rewritten.", 7, False]
     assert out["log"]["marked"] == ["2026-10-20", "dinner"]
@@ -367,3 +380,138 @@ def test_an_error_keeps_the_words_too():
 def test_remember_it_goes_through_the_chat():
     body = _extract("rememberTweakElse", SHELL_JS)
     assert "sendAskMessage('Remember this for every week: ' + text);" in body
+
+
+# ---------- review, 2026-10-19 ----------
+
+def test_a_dish_that_repeats_changes_on_this_night_only(signed_in, monkeypatch):
+    """Tacos Tuesday and Thursday on one recipe: a typed change on Tuesday
+    goes on a copy only Tuesday points at; Thursday, and its shopping,
+    keep the original. Putting it back puts Tuesday on the original and
+    the copy is gone."""
+    plan = _plan("approved")
+    tacos = _recipe("Chicken Tacos", [("Chicken thighs", "1 lb"), ("Cilantro", "1 bunch")])
+    tue = _meal(plan, TUE, "Chicken Tacos", buy=True)
+    thu = _meal(plan, WED, "Chicken Tacos", buy=True)
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _writer(_NO_CILANTRO))
+
+    body = _post(signed_in, tue, "No cilantro").json()
+
+    assert body["status"] == "rewritten" and body["forked"] is True, body
+    fork = _entry_recipe_id(tue)
+    assert fork != tacos and _entry_recipe_id(thu) == tacos
+    assert body["entry_ids"] == [tue]
+    assert "Cilantro" in {i["item"] for i in _ingredients(tacos)}
+    assert "Cilantro" not in {i["item"] for i in _ingredients(fork)}
+    assert {"Cilantro", "Lime"} <= _needed(), "Thursday still needs its cilantro; Tuesday needs lime"
+
+    undone = signed_in.post("/api/meal-recipe/undo", json={"request_id": body["request_id"]}).json()
+
+    assert undone["status"] == "undone", undone
+    assert _entry_recipe_id(tue) == tacos
+    conn = get_conn()
+    try:
+        assert conn.execute("SELECT COUNT(*) FROM recipes WHERE id = ?", (fork,)).fetchone()[0] == 0
+    finally:
+        conn.close()
+    assert "Lime" not in _needed()
+
+
+def test_change_recipes_own_rewrite_still_changes_the_row_in_place(signed_in, monkeypatch):
+    plan = _plan("draft")
+    tacos = _recipe("Chicken Tacos", [("Chicken thighs", "1 lb"), ("Cilantro", "1 bunch")])
+    tue = _meal(plan, TUE, "Chicken Tacos")
+    thu = _meal(plan, WED, "Chicken Tacos")
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _writer(_NO_CILANTRO))
+
+    body = signed_in.post("/api/meal-recipe/rewrite", json={"entry_id": tue, "text": "No cilantro"}).json()
+
+    assert body["status"] == "rewritten" and body["forked"] is False
+    assert _entry_recipe_id(tue) == _entry_recipe_id(thu) == tacos
+
+
+def test_a_wont_eat_food_is_refused_kept_and_filed(signed_in, monkeypatch):
+    tools.add_food_dislikes(["mushrooms"])
+    plan = _plan("draft")
+    tacos = _recipe("Chicken Tacos", [("Chicken thighs", "1 lb")])
+    entry = _meal(plan, TUE, "Chicken Tacos")
+    shroomy = {"ingredients": [{"item": "Chicken thighs", "qty": "1 lb"}, {"item": "Mushrooms", "qty": "8 oz"}],
+               "instructions": ["Cook it with mushrooms."]}
+    writer = _writer(shroomy)
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", writer)
+
+    body = _post(signed_in, entry, "Add mushrooms").json()
+
+    assert body["status"] == "blocked"
+    assert body["said"].startswith("Mushrooms are on your Won’t eat list")
+    assert len(writer.calls) == 1, "asked for by name: no second write"
+    assert writer.calls[0]["keep_out"] == ["mushrooms"]
+    assert {i["item"] for i in _ingredients(tacos)} == {"Chicken thighs"}
+    assert [r["outcome"] for r in _requests()] == ["failed"]
+
+
+def test_a_wont_eat_food_the_recipe_already_had_is_not_a_refusal(signed_in, monkeypatch):
+    tools.add_food_dislikes(["mushrooms"])
+    plan = _plan("draft")
+    _recipe("Mushroom Risotto", [("Arborio rice", "300 g"), ("Mushrooms", "8 oz")])
+    entry = _meal(plan, TUE, "Mushroom Risotto")
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _writer(
+        {"ingredients": [{"item": "Arborio rice", "qty": "300 g"}, {"item": "Mushrooms", "qty": "8 oz"}],
+         "instructions": ["Stir.", "Serve."]}))
+
+    assert _post(signed_in, entry, "Less butter").json()["status"] == "rewritten"
+
+
+def test_a_draft_dish_someone_else_is_writing_is_waited_on_not_written_twice(signed_in, monkeypatch):
+    plan = _plan("draft")
+    rid = tools.add_recipe("Chicken Tacos", [], details_pending=True)["recipe_id"]
+    entry = _meal(plan, TUE, "Chicken Tacos")
+    writer = _writer(_NO_CILANTRO)
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", writer)
+    monkeypatch.setattr(agent, "_RECIPE_WAIT_SECONDS", 0.05)
+    mine, _ = agent._claim_recipes([{"id": rid, "name": "Chicken Tacos"}])
+    try:
+        res = _post(signed_in, entry, "No cilantro")
+    finally:
+        agent._release_recipes(mine)
+
+    assert res.status_code == 400
+    assert res.json()["detail"] == agent.REWRITE_STILL_WRITING
+    assert writer.calls == []
+    assert [r["outcome"] for r in _requests()] == ["failed"]
+
+
+def test_a_re_picked_draft_dish_is_filed_on_the_meal_that_was_asked_about(signed_in, monkeypatch):
+    plan = _plan("draft")
+    tools.add_recipe("Peanut Noodles", [], details_pending=True)
+    entry = _meal(plan, TUE, "Peanut Noodles")
+
+    def replaced(name):
+        conn = get_conn()
+        try:
+            conn.execute("DELETE FROM meal_plan_entries WHERE id = ?", (entry,))
+            conn.commit()
+        finally:
+            conn.close()
+        return {"status": "replaced", "name": name}
+    monkeypatch.setattr(agent, "fill_in_recipe", replaced)
+
+    body = _post(signed_in, entry, "Less spicy").json()
+
+    assert body["status"] == "replaced"
+    assert _requests() == [{"dish_name": "Peanut Noodles", "request_text": "Less spicy",
+                            "outcome": "failed", "meal_plan_entry_id": entry}]
+
+
+@_needs_node
+def test_a_replaced_dish_closes_the_sheet_and_says_it_as_a_toast():
+    out = _drive({"status": "replaced", "said": "That dish had something in it somebody here can’t have."})
+    assert out["log"]["closed"] == 1
+    assert out["log"]["toasts"] == ["That dish had something in it somebody here can’t have."]
+
+
+@_needs_node
+def test_a_server_error_is_the_plain_line_not_its_detail():
+    out = _drive({"detail": "Server error: boom"}, ok=False, status=500)
+    assert out["els"]["wk-tweak-said"]["textContent"] == "That didn’t come together — try it again."
+    assert out["els"]["wk-tweak-text"]["value"] == "We never want cilantro"

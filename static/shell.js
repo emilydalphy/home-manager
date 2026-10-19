@@ -19759,7 +19759,7 @@
     // change that isn't a part — "less spicy", "no cilantro", "one pan".
     // Its box opens in this sheet, under the rows; nothing else moves.
     rows += '<div class="plate-row">' +
-        '<span class="plate-row-role">Other</span>' +
+        '<span class="plate-row-role" aria-hidden="true"></span>' +
         '<span class="plate-row-name wk-tweak-else-name">Something else</span>' +
         '<button type="button" class="plate-row-change" id="wk-tweak-else-open" aria-expanded="false" ' +
           'aria-controls="wk-tweak-else" aria-label="Tell me something else to change">Tell me</button>' +
@@ -19784,6 +19784,7 @@
       '<label class="cr-ask-label" for="wk-tweak-text">Tell me what to change</label>' +
       '<textarea class="snw-input cr-ask" id="wk-tweak-text" rows="3" maxlength="500" ' +
         'placeholder="Less spicy, no cilantro, all in one pan"></textarea>' +
+      '<p class="cr-ask-note" id="wk-tweak-hint" role="status" hidden></p>' +
       '<p class="cr-said" id="wk-tweak-said" role="status" hidden></p>' +
       '<div class="wk-tweak-done-row" id="wk-tweak-done-row" hidden>' +
         '<p class="wk-tweak-done" id="wk-tweak-done" role="status"></p>' +
@@ -19834,14 +19835,17 @@
     if (doneRow) doneRow.hidden = true;
     var remember = tweakElseEl('wk-tweak-remember');
     if (remember) remember.hidden = true;
+    // An empty box is a nudge, not a problem: plain ink, not the
+    // refusal's tint.
+    tweakElseSay('wk-tweak-said', '');
     if (!text) {
-      tweakElseSay('wk-tweak-said', 'Say what you’d change first.');
+      tweakElseSay('wk-tweak-hint', 'Say what you’d change first.');
       if (input) input.focus();
       return;
     }
+    tweakElseSay('wk-tweak-hint', '');
     st.busy = true;
     st.text = text;
-    tweakElseSay('wk-tweak-said', '');
     if (input) input.readOnly = true;
     if (go) { go.disabled = true; go.textContent = 'Changing it…'; }
     var data = null;
@@ -19849,10 +19853,15 @@
     try {
       var res = await Api.fetch('/api/meal-recipe/rewrite', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, text: text })
+        body: JSON.stringify({ entry_id: st.entryId, text: text, this_meal_only: true })
       });
       data = await res.json().catch(function () { return {}; });
-      if (!res.ok) failed = (data && typeof data.detail === 'string' && data.detail) || 'That didn’t come together — try it again.';
+      // A 400's detail is a sentence written for a reader; a 5xx's is a
+      // server error, never shown — the plain line instead.
+      if (!res.ok) {
+        failed = (res.status < 500 && data && typeof data.detail === 'string' && data.detail) ||
+          'That didn’t come together — try it again.';
+      }
     } catch (err) {
       console.warn('The typed change failed:', err);
       failed = 'That didn’t come together — try it again.';
@@ -19890,11 +19899,17 @@
       await crAfterChange(data.said || 'Changed.', data.request_id, offer);
       return;
     }
-    // Not done: the reason in one line, and the words stay in the box.
-    if (data && data.status === 'replaced') {
+    // The dish itself couldn't stay (a draft dish found to clash while it
+    // was written up, and re-picked): this sheet is about a meal that is
+    // gone, so it closes and the line is a toast over the new week.
+    if (!failed && data && data.status === 'replaced') {
+      closeTweakSheet();
+      showToast(data.said || 'That dish changed — have another look.');
       var panel = panels['week'];
       if (panel && panel.dataset && panel.dataset.built) loadWeekMenu(panel);
+      return;
     }
+    // Not done: the reason in one line, and the words stay in the box.
     if (!current) {
       showToast(failed || (data && data.said) || 'That didn’t come together — try it again.');
       return;

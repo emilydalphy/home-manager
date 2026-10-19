@@ -684,9 +684,9 @@ def meal_for_request(entry_id: int) -> dict | None:
             "recipe_id": int(entry["recipe_id"]) if entry["recipe_id"] else None}
 
 
-def unwritten_recipe_name(entry_id: int) -> str | None:
+def unwritten_recipe(entry_id: int) -> dict | None:
     """
-    The recipe's name when this meal is a draft dish whose recipe has not
+    {"id", "name"} of the recipe when this meal is a draft dish whose recipe has not
     been written yet (details_pending — the recipe pass writes it at
     approval), else None. The Tweak sheet's "Something else" reaches these
     where the Change recipe button never does (that only shows on a
@@ -700,12 +700,52 @@ def unwritten_recipe_name(entry_id: int) -> str | None:
                 or _is_reheat(conn, entry)):
             return None
         recipe = conn.execute(
-            "SELECT name, details_pending FROM recipes WHERE id = ? AND household_id = ?",
+            "SELECT id, name, details_pending FROM recipes WHERE id = ? AND household_id = ?",
             (int(entry["recipe_id"]), household_id()),
         ).fetchone()
     finally:
         conn.close()
-    return recipe["name"] if recipe and recipe["details_pending"] else None
+    if not recipe or not recipe["details_pending"]:
+        return None
+    return {"id": int(recipe["id"]), "name": recipe["name"]}
+
+
+# The Won't eat list against a rewrite (the Tweak sheet's "Something
+# else", review 2026-10-19). A dislike is soft everywhere else — the draft
+# mentions it, Change recipe's own pick ignores it — because there the
+# household chose a whole recipe by name. A TYPED change is different: it
+# is the app writing ingredients, and chat files "we don't eat pork" on
+# this list, so a rewrite may not bring one in. Only foods the current
+# recipe did not already have: a household that planned mushroom risotto
+# knowingly is not refused for leaving the mushrooms in.
+def wont_eat_list() -> list[str]:
+    try:
+        from . import memory as _memory
+        return [str(d).strip() for d in (_memory.get_household_memory().get("dislikes") or [])
+                if str(d).strip()]
+    except Exception:
+        logger.exception("Reading the Won't eat list failed; rewriting without it")
+        return []
+
+
+def wont_eat_added(name: str, old_ingredients, new_ingredients) -> str | None:
+    """The first Won't eat food the new ingredients bring in that the old
+    ones did not have, as the household wrote it, or None."""
+    soft = [a for a in _coordination._avoidances() if a.get("source") == "dislike"]
+    if not soft:
+        return None
+
+    def labels(ings):
+        return {c.get("restriction") or c.get("label") or "" for c in _coordination.check_meal_conflicts(
+            name, ingredients=list(ings or []), avoidances=soft)}
+    added = sorted(labels(new_ingredients) - labels(old_ingredients) - {""})
+    return added[0] if added else None
+
+
+def wont_eat_said(food: str) -> str:
+    food = (food or "").strip()
+    verb = "are" if food.lower().endswith("s") else "is"
+    return f"{food[:1].upper()}{food[1:]} {verb} on your Won’t eat list, so I left it as it was."
 
 
 # What makes a typed change read as a standing rule rather than one
@@ -795,7 +835,41 @@ _SNAPSHOT_COLUMNS = (
 )
 
 
-def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
+def _fork_name(conn, name: str, date: str) -> str:
+    """A name of its own for this meal's copy of a shared recipe, so a
+    lookup by name (the Cook screen, get_recipe) never finds two."""
+    import datetime as _dt
+    try:
+        day = _dt.date.fromisoformat(str(date)[:10]).strftime("%A")
+    except ValueError:
+        day = "this one"
+    taken = {str(r["name"] or "").strip().lower() for r in conn.execute(
+        "SELECT name FROM recipes WHERE household_id = ?", (household_id(),))}
+    base = f"{name} ({day})"
+    candidate, n = base, 2
+    while candidate.lower() in taken:
+        candidate, n = f"{base} {n}", n + 1
+    return candidate
+
+
+def _fork_recipe(conn, recipe_id: int, name: str) -> int:
+    """A copy of the recipe row under `name`, history reset (it has never
+    been cooked), for apply_rewrite's this-meal-only change."""
+    cols = [r["name"] for r in conn.execute("PRAGMA table_info(recipes)") if r["name"] != "id"]
+    fresh = {"name": name, "times_cooked": 0, "last_cooked_date": None, "rating": "", "feedback_notes": ""}
+    row = dict(conn.execute(
+        f"SELECT {', '.join(cols)} FROM recipes WHERE id = ? AND household_id = ?",
+        (int(recipe_id), household_id()),
+    ).fetchone())
+    row.update({k: v for k, v in fresh.items() if k in row})
+    cur = conn.execute(
+        f"INSERT INTO recipes ({', '.join(cols)}) VALUES ({', '.join('?' * len(cols))})",
+        [row[c] for c in cols],
+    )
+    return int(cur.lastrowid)
+
+
+def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: bool = False) -> dict:
     """
     Save a rewrite of one meal's recipe IN PLACE, keeping the dish's name,
     and redo its shopping.
@@ -815,6 +889,14 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
     change_meal_recipe's reason: the ingredients come off the list and the
     new ones go on, and a failure between those two is a week holding a
     dish nobody bought for.
+
+    `this_meal_only` (the Tweak sheet's "Something else"): when any meal
+    outside this one's leftover chain also cooks this recipe — Tuesday's
+    and Thursday's tacos, or the same dish in another week — the change
+    goes on a COPY of the recipe that only this chain is pointed at, and
+    only this chain's shopping is redone. The others keep theirs. Change
+    recipe's own rewrite still edits the row in place (every night on it),
+    which is that sheet's established answer.
     """
     ingredients = [
         i for i in (detail.get("ingredients") or [])
@@ -845,16 +927,37 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
         plan_id = int(entry["weekly_plan_id"])
         approved = entry["plan_status"] == "approved"
         ids = _chain_entry_ids(conn, entry)
-        # Every approved night on this recipe row, not only this chain: the
-        # row is edited in place, so they all change (_approved_users_of).
-        users = _approved_users_of(conn, spec["recipe_id"])
-        approved = approved or bool(users)
-        before = _needed_lines(conn) if approved else {}
+        target_id = int(spec["recipe_id"])
+        shared_elsewhere = this_meal_only and conn.execute(
+            f"SELECT 1 FROM meal_plan_entries WHERE recipe_id = ? AND household_id = ? "
+            f"AND id NOT IN ({','.join('?' * len(ids))}) LIMIT 1",
+            [target_id, hid, *ids],
+        ).fetchone() is not None
         snapshot = dict(conn.execute(
             f"SELECT {', '.join(_SNAPSHOT_COLUMNS)} FROM recipes WHERE id = ? AND household_id = ?",
-            (int(spec["recipe_id"]), hid),
+            (target_id, hid),
         ).fetchone())
-        _unbuy_users(conn, users)
+        if shared_elsewhere:
+            # Only this chain's nights still ahead have shopping to move.
+            users = {plan_id: _live_ids(conn, ids)} if approved else {}
+            users = {k: v for k, v in users.items() if v}
+            before = _needed_lines(conn) if approved else {}
+            _unbuy_users(conn, users)
+            target_id = _fork_recipe(conn, target_id, _fork_name(conn, spec.get("name") or "", entry["date"]))
+            conn.execute(
+                "UPDATE meal_plan_entries SET recipe_id = ? "
+                f"WHERE id IN ({','.join('?' * len(ids))}) AND household_id = ?",
+                [target_id, *ids, hid],
+            )
+            # The undo puts the chain back on the recipe it came from.
+            snapshot = {"forked_from": int(spec["recipe_id"]), "chain": ids}
+        else:
+            # Every approved night on this recipe row, not only this chain: the
+            # row is edited in place, so they all change (_approved_users_of).
+            users = _approved_users_of(conn, target_id)
+            approved = approved or bool(users)
+            before = _needed_lines(conn) if approved else {}
+            _unbuy_users(conn, users)
         conn.execute(
             "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
@@ -865,7 +968,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
              detail.get("prep_time_minutes"), detail.get("cook_time_minutes"),
              detail.get("advance_prep_notes") or "",
              json.dumps(detail.get("advance_prep_step_indices") or []),
-             int(spec["recipe_id"]), hid),
+             target_id, hid),
         )
         after = _rebuy_users(conn, users) if users else before
         conn.commit()
@@ -878,7 +981,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
     changed = _lines_changed(before, after)
     request_id = record_recipe_change_request(
         spec.get("name") or "", request_text,
-        meal_plan_entry_id=int(spec["entry_id"]), recipe_id=int(spec["recipe_id"]),
+        meal_plan_entry_id=int(spec["entry_id"]), recipe_id=target_id,
         outcome=OUTCOME_REWRITTEN,
     )
     if request_id:
@@ -888,8 +991,8 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str) -> dict:
         said += f" {changed} thing{'' if changed == 1 else 's'} changed on the list."
     return {
         "status": "rewritten", "said": said, "request_id": request_id,
-        "recipe_id": int(spec["recipe_id"]), "name": spec.get("name") or "",
-        "entry_ids": ids, "lines_changed": changed, "approved": approved,
+        "recipe_id": target_id, "name": spec.get("name") or "",
+        "entry_ids": ids, "forked": bool(shared_elsewhere), "lines_changed": changed, "approved": approved,
     }
 
 
@@ -909,6 +1012,48 @@ def _store_snapshot(request_id: int, snapshot: dict) -> None:
             conn.close()
     except Exception:
         logger.exception("Storing what a recipe rewrite replaced failed; the rewrite itself stands")
+
+
+def _undo_fork(conn, req, entry, snapshot: dict) -> dict:
+    """
+    Put back a this-meal-only rewrite (apply_rewrite's fork): the chain
+    goes back onto the recipe it was copied from, its shopping with it, and
+    the copy — now planned nowhere — is deleted. Runs inside the caller's
+    open transaction and finishes it.
+    """
+    hid = household_id()
+    try:
+        original = int(snapshot["forked_from"])
+        fork = int(req["recipe_id"])
+        if not conn.execute("SELECT 1 FROM recipes WHERE id = ? AND household_id = ?",
+                            (original, hid)).fetchone():
+            conn.rollback()
+            return {"status": "refused", "said": UNDO_NOTHING}
+        ids = [int(r["id"]) for r in conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE recipe_id = ? AND household_id = ?", (fork, hid))]
+        approved = entry["plan_status"] == "approved"
+        live = _live_ids(conn, ids) if (approved and ids) else []
+        before = _needed_lines(conn) if approved else {}
+        _unbuy(conn, live)
+        conn.execute(
+            "UPDATE meal_plan_entries SET recipe_id = ? WHERE recipe_id = ? AND household_id = ?",
+            (original, fork, hid),
+        )
+        after = _rebuy(conn, int(entry["weekly_plan_id"]), live) if live else before
+        conn.execute("DELETE FROM recipes WHERE id = ? AND household_id = ?", (fork, hid))
+        conn.execute(
+            "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
+            (OUTCOME_UNDONE, int(req["id"]), hid),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    changed = _lines_changed(before, after)
+    said = (req["dish_name"] or "That one") + " is back to the recipe it had."
+    if approved and changed:
+        said += f" {changed} thing{'' if changed == 1 else 's'} changed on the list."
+    return {"status": "undone", "said": said, "lines_changed": changed}
 
 
 UNDO_GONE = "That one’s already been put back."
@@ -955,6 +1100,8 @@ def undo_recipe_change(request_id: int) -> dict:
             # edit a recipe the meal no longer uses, on other nights' food.
             conn.rollback()
             return {"status": "refused", "said": UNDO_MOVED_ON}
+        if snapshot.get("forked_from"):
+            return _undo_fork(conn, req, entry, snapshot)
         newer = conn.execute(
             "SELECT 1 FROM recipe_change_requests WHERE household_id = ? AND recipe_id = ? "
             "AND id > ? AND outcome = ? LIMIT 1",

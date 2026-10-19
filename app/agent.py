@@ -4487,7 +4487,15 @@ _REWRITE_NOTE = (
 )
 
 
-def rewrite_meal_recipe(entry_id: int, request_text: str) -> dict:
+# The Won't eat list rides in the spec on the Tweak sheet's path
+# (`keep_out`), and the save checks it (recipe_change.wont_eat_added).
+_KEEP_OUT_NOTE = (
+    " `keep_out` is the household's Won't eat list: don't add any of those "
+    "foods unless the current recipe already has it."
+)
+
+
+def rewrite_meal_recipe(entry_id: int, request_text: str, this_meal_only: bool = False) -> dict:
     """
     Rewrite one meal's recipe the way the household asked, keeping the
     dish, the slot, the day, who is eating and the leftover chain.
@@ -4511,24 +4519,32 @@ def rewrite_meal_recipe(entry_id: int, request_text: str) -> dict:
     `remember_offer` rides on the answer when the words read as a standing
     rule ("we never want cilantro"): the screen then offers to remember it,
     which it does through the chat's own memory tools.
+
+    `this_meal_only` is the Tweak sheet's: the change lands on this meal and
+    its leftover chain and nowhere else (apply_rewrite forks a recipe other
+    meals share), and the Won't eat list is held as well as the allergies
+    (recipe_change.wont_eat_added). Change recipe's own sheet leaves it off.
     """
     text = str(request_text or "").strip()
     if not text:
         raise ValueError("Say what you would change first.")
+    # Read BEFORE anything runs: a draft dish found to clash while it is
+    # written up is re-picked (its entry deleted and re-inserted), and the
+    # request still belongs on the meal that was asked about.
+    meal = tools.meal_for_request(entry_id) or {}
     try:
-        out = _rewrite_meal_recipe(entry_id, text)
+        out = _rewrite_meal_recipe(entry_id, text, this_meal_only)
     except Exception:
-        _file_unanswered_change(entry_id, text)
+        _file_unanswered_change(meal, text)
         raise
     if out.get("status") != "rewritten":
-        _file_unanswered_change(entry_id, text)
+        _file_unanswered_change(meal, text)
     if tools.reads_as_lasting(text):
         out["remember_offer"] = True
     return out
 
 
-def _file_unanswered_change(entry_id: int, text: str) -> None:
-    meal = tools.meal_for_request(entry_id) or {}
+def _file_unanswered_change(meal: dict, text: str) -> None:
     tools.record_recipe_change_request(
         meal.get("dish") or "", text, meal_plan_entry_id=meal.get("entry_id"),
         recipe_id=meal.get("recipe_id"), outcome=tools.OUTCOME_FAILED,
@@ -4543,16 +4559,48 @@ REWRITE_DISH_REPLACED = (
 )
 
 
-def _rewrite_meal_recipe(entry_id: int, text: str) -> dict:
-    # A draft dish whose recipe isn't written yet (details_pending) is
-    # written now, exactly as the Cook screen writes one sooner than
-    # approval would — then changed the way they asked. Two calls, only
-    # for this case; the alternative is refusing nearly every draft meal.
-    unwritten = tools.unwritten_recipe_name(entry_id)
-    if unwritten:
-        written = fill_in_recipe(unwritten)
-        if isinstance(written, dict) and written.get("status") == "replaced":
-            return {"status": "replaced", "said": REWRITE_DISH_REPLACED}
+REWRITE_STILL_WRITING = "That recipe is still being written — try again in a moment."
+
+
+def _write_unwritten_for_change(entry_id: int) -> dict | None:
+    """
+    A draft dish whose recipe isn't written yet (details_pending) is
+    written now, exactly as the Cook screen writes one sooner than
+    approval would — then the caller changes it the way they asked. Two
+    calls, only for this case; the alternative is refusing nearly every
+    draft meal.
+
+    Under the recipe pass's own claim (_claim_recipes): the draft's
+    background pass or an Approve may be writing this very recipe, and a
+    second writer is the double spend the claims exist to prevent. When
+    someone else holds it, this waits for them and uses what they wrote.
+    Returns fill_in_recipe's answer when this call wrote it, else None.
+    """
+    deadline = time.monotonic() + _RECIPE_WAIT_SECONDS
+    while True:
+        rec = tools.unwritten_recipe(entry_id)
+        if not rec:
+            return None
+        mine, theirs = _claim_recipes([rec])
+        if mine:
+            try:
+                # Re-read under the claim: a writer that let go between the
+                # read above and the claim has already written it.
+                if not tools.unwritten_recipe(entry_id):
+                    return None
+                return fill_in_recipe(rec["name"])
+            finally:
+                _release_recipes(mine)
+        for held in theirs:
+            held.wait(max(0.0, deadline - time.monotonic()))
+        if time.monotonic() >= deadline:
+            raise ValueError(REWRITE_STILL_WRITING)
+
+
+def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False) -> dict:
+    written = _write_unwritten_for_change(entry_id)
+    if isinstance(written, dict) and written.get("status") == "replaced":
+        return {"status": "replaced", "said": REWRITE_DISH_REPLACED}
     spec_base = tools.rewrite_spec(entry_id)
     shared = _shared_recipe_details_context()
     avoidances = _allergen_gate.hard_avoidances()
@@ -4575,6 +4623,11 @@ def _rewrite_meal_recipe(entry_id: int, text: str) -> dict:
         },
     }
     spec.update(shared)
+    if this_meal_only:
+        keep_out = tools.wont_eat_list()
+        if keep_out:
+            spec["keep_out"] = keep_out
+            spec["note"] = _REWRITE_NOTE + _KEEP_OUT_NOTE
     # The research this dish was first written from, when there is some —
     # read, never searched again: a change request is about this
     # household's version, and the versions it was based on haven't moved.
@@ -4610,7 +4663,17 @@ def _rewrite_meal_recipe(entry_id: int, text: str) -> dict:
             return {"status": "blocked",
                     "said": f"I couldn’t write that one without {food} in it — "
                             f"somebody here can’t have it. Try asking for something else."}
-        return tools.apply_rewrite(spec_base, detail, text)
+        if this_meal_only:
+            disliked = tools.wont_eat_added(name, spec_base["ingredients"], ingredients)
+            if disliked:
+                # Asked for by name: a second write would only put it back.
+                # Otherwise the writer reached for it on its own — once more.
+                if attempt == 1 and disliked.lower() not in text.lower():
+                    spec = {**spec, "note": spec["note"] + f" Your previous attempt added {disliked}, "
+                            "which is on keep_out. Write it again without it."}
+                    continue
+                return {"status": "blocked", "said": tools.wont_eat_said(disliked)}
+        return tools.apply_rewrite(spec_base, detail, text, this_meal_only=this_meal_only)
     raise ValueError("That rewrite didn’t come together — try it again.")
 
 

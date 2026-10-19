@@ -2619,6 +2619,10 @@ class MealRecipeRewriteRequest(BaseModel):
     """
     entry_id: int
     text: str
+    # The Tweak sheet's "Something else": this meal and its leftover chain
+    # only (a recipe other meals share is copied for it) and the Won't eat
+    # list held — see agent.rewrite_meal_recipe. Change recipe sends none.
+    this_meal_only: bool = False
 
 
 class MealRecipeUndoRequest(BaseModel):
@@ -2647,7 +2651,7 @@ def rewrite_meal_recipe(req: MealRecipeRewriteRequest):
     agent.rewrite_meal_recipe.
     """
     try:
-        return agent.rewrite_meal_recipe(req.entry_id, req.text)
+        return agent.rewrite_meal_recipe(req.entry_id, req.text, this_meal_only=req.this_meal_only)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except AssistantUnavailableError as e:

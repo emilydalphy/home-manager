@@ -370,7 +370,10 @@ from .recipe_change import (  # noqa: F401
     request_theme,
     rewrite_spec,
     undo_recipe_change,
-    unwritten_recipe_name,
+    unwritten_recipe,
+    wont_eat_added,
+    wont_eat_list,
+    wont_eat_said,
 )
 from .household import (  # noqa: F401
     _NON_RESTRICTION_VALUES,
