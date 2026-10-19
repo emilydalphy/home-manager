@@ -69,3 +69,96 @@ def test_swap_picks_drop_the_won_t_eat_list_and_self_flagged_picks(week):
                  _pick("Fish Tacos", protein="cod"))
     out = tools.swap_options(week, _entry_id(week, DAY1), asker=ask)
     assert [o["meal"] for o in out["options"]] == ["Lemon Chicken Traybake", "Fish Tacos"]
+
+
+# ---------- review round, 2026-10-19 ----------
+
+def test_bacon_ham_and_chorizo_are_pork_and_a_hamburger_is_not(week):
+    tools.add_fact_from_chat("people", "We don't eat pork")
+    raw = [{"name": "Bacon lardons", "note": ""}, {"name": "Ham", "note": ""}, {"name": "Chorizo", "note": ""},
+           {"name": "Hamburger patties", "note": ""}, {"name": "Ground chicken", "note": ""}]
+    assert _protein_names(week, raw) == ["Hamburger patties", "Ground chicken"]
+    sop._OPTIONS_CACHE.clear()
+    ask = _asker(_pick("Ham and Pea Pasta", protein="ham"), _pick("Bacon Carbonara", protein="bacon"),
+                 _pick("Lemon Chicken Traybake"))
+    out = tools.swap_options(week, _entry_id(week, DAY1), asker=ask)
+    assert [o["meal"] for o in out["options"]] == ["Lemon Chicken Traybake"]
+
+
+def test_a_note_that_only_mentions_excluded_stays(week):
+    raw = [{"name": "Ground chicken", "note": "not excluded"},
+           {"name": "Ground beef", "note": "excluded the cilantro"},
+           {"name": "Chickpeas", "note": "nothing off-limits here"},
+           {"name": "Tofu", "note": "Keeps clear of the excluded pork"},
+           {"name": "Ground lamb", "note": "Lamb — excluded"}]
+    assert _protein_names(week, raw) == ["Ground chicken", "Ground beef", "Chickpeas", "Tofu"]
+
+
+def test_a_cached_sheet_is_checked_again_when_served(week):
+    entry_id = _dinner(week, DAY2)["entry_id"]
+    raw = [{"name": "Ground pork", "note": ""}, {"name": "Ground chicken", "note": ""}]
+    assert [o["name"] for o in pp.part_options(week, entry_id, asker=lambda c: raw)["options"]] == \
+        ["Ground pork", "Ground chicken"]
+    tools.add_food_dislikes(["pork"])
+    again = pp.part_options(week, entry_id, asker=lambda c: (_ for _ in ()).throw(AssertionError("asked again")))
+    assert [o["name"] for o in again["options"]] == ["Ground chicken"]
+
+    sop._OPTIONS_CACHE.clear()
+    swap_entry = _entry_id(week, DAY1)
+    first = tools.swap_options(week, swap_entry, asker=_asker(_pick("Lemon Chicken Traybake"),
+                                                              _pick("Fish Tacos", protein="cod")))
+    assert [o["meal"] for o in first["options"]] == ["Lemon Chicken Traybake", "Fish Tacos"]
+    tools.add_food_dislikes(["chicken"])
+    served = tools.swap_options(week, swap_entry, asker=lambda c: (_ for _ in ()).throw(AssertionError("asked again")))
+    assert [o["meal"] for o in served["options"]] == ["Fish Tacos"]
+    # The index a tap sends names the pick the sheet drew.
+    assert served["options"][0]["index"] == 0
+    assert [p["meal_name"] for p in sop._OPTIONS_CACHE[(1, swap_entry)]["options"]] == ["Fish Tacos"]
+
+
+def test_a_check_that_cannot_run_shows_nothing_says_so_and_caches_nothing(week, monkeypatch):
+    from app.tools import coordination
+    entry_id = _dinner(week, DAY2)["entry_id"]
+
+    def broken():
+        raise RuntimeError("db gone")
+
+    monkeypatch.setattr(coordination, "_avoidances", broken)
+    out = pp.part_options(week, entry_id, asker=lambda c: [{"name": "Ground chicken", "note": ""}])
+    assert out["options"] == [] and out["options_unavailable"] is True
+    monkeypatch.undo()
+    asked = []
+    again = pp.part_options(week, entry_id, asker=lambda c: asked.append(1) or [{"name": "Ground chicken", "note": ""}])
+    assert asked == [1], "nothing was cached, so the next open asks again"
+    assert [o["name"] for o in again["options"]] == ["Ground chicken"]
+
+
+def _card_cand(name, protein):
+    return {"meal_name": name, "reason": "Quick.", "main_protein": protein,
+            "ingredients": [{"item": protein.title(), "qty": "1 lb", "category": "meat/seafood"}],
+            "instructions": ["Cook it."], "food_groups": ["protein"],
+            "prep_time_minutes": 5, "cook_time_minutes": 20}
+
+
+def test_the_change_card_keeps_won_t_eat_off_unless_they_asked_for_it(week):
+    from app.tools import allergen_gate, proposals
+    tools.add_fact_from_chat("people", "We don't eat pork")
+    rows = [{"date": DAY2, "slot": "dinner", "action": "change",
+             "candidates": [_card_cand("Pulled Pork Tacos", "pork"), _card_cand("Chicken Tacos", "chicken")]}]
+    allergen_gate.begin_chat_turn()
+    allergen_gate.set_chat_message("something else for that night")
+    card = proposals.propose_plan_changes(week, rows)
+    assert [c["meal_name"] for c in card["rows"][0]["candidates"]] == ["Chicken Tacos"]
+    # Their own words naming it: theirs to have.
+    allergen_gate.begin_chat_turn()
+    allergen_gate.set_chat_message("make it pulled pork tacos")
+    card = proposals.propose_plan_changes(week, rows)
+    assert [c["meal_name"] for c in card["rows"][0]["candidates"]] == ["Pulled Pork Tacos", "Chicken Tacos"]
+    # Another (a tap, no words) never offers it.
+    allergen_gate.begin_chat_turn()
+    picks = iter([dict(_card_cand("Bacon Mac", "bacon"), is_new_recipe=True),
+                  dict(_card_cand("Fish Tacos", "cod"), is_new_recipe=True)])
+    out = proposals.another_for_row(card["proposal_id"], 0, picker=lambda ctx: next(picks))
+    assert out["status"] == "picked"
+    row = out["proposal"]["rows"][0]
+    assert row["candidates"][row["chosen"]]["meal_name"] == "Fish Tacos"

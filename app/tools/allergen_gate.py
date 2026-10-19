@@ -379,11 +379,28 @@ _CHAT_TURN: contextvars.ContextVar[int | None] = contextvars.ContextVar("allerge
 _TURN_COUNTER = itertools.count(1)
 
 
+# The person's own words this turn, for the one reader that needs them:
+# swap_in_place.offer_gate lets a Won't-eat food through on the chat's
+# change card only when the household named it themselves ("make it pork").
+_CHAT_MESSAGE: contextvars.ContextVar[str] = contextvars.ContextVar("allergen_chat_message", default="")
+
+
 def begin_chat_turn() -> int:
     """Mark the start of one chat turn (one message from the person)."""
     turn = next(_TURN_COUNTER)
     _CHAT_TURN.set(turn)
+    _CHAT_MESSAGE.set("")
     return turn
+
+
+def set_chat_message(message: str) -> None:
+    """Remember this turn's message (run_agent_turn, after begin_chat_turn)."""
+    _CHAT_MESSAGE.set(message if isinstance(message, str) else "")
+
+
+def chat_turn_message() -> str:
+    """What the person said this turn, or "" outside a chat turn."""
+    return _CHAT_MESSAGE.get()
 
 
 def _lines(ingredients) -> list[dict]:

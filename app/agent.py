@@ -10675,6 +10675,9 @@ def run_agent_turn(
     # One person's message = one turn: an allergen override is only ever
     # honoured in a turn after the refusal it answers (allergen_gate).
     _allergen_gate.begin_chat_turn()
+    # ...and what they said, so the change card can tell a Won't-eat food
+    # they named themselves from one the model suggested (offer_gate).
+    _allergen_gate.set_chat_message(user_message)
     # Where this turn's own entries begin, so the reply can be checked
     # against what the turn actually did — see verify_change_claim.
     turn_start = len(conversation)

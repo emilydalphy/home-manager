@@ -24,6 +24,13 @@ why*, not duplicating the diff.
   plate_parts' option list (protein/veg/carb) and Swap's three picks. Fewer
   left is fewer shown, never refilled. Stricter than pick_gate on dislikes
   on purpose: an option is the app's suggestion, a typed choice is not.
+  Review round: "pork" now reaches bacon/ham/chorizo/prosciutto/… (and beef
+  its unambiguous cuts) via `coordination._MEAT_ALIASES`, a table of its own
+  so plan_quality's title words don't move; a note only counts when it calls
+  the option itself excluded ("excluded the cilantro" stays); the chat change
+  card and its Another are gated too, a Won't-eat food passing only when the
+  person named it this turn; cached sheets are re-checked when served; a
+  check that can't run shows nothing, says `options_unavailable`, caches nothing.
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a
