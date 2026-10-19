@@ -308,6 +308,8 @@ from .held import (  # noqa: F401
     resolve_held_thing,
     restore_held_thing,
 )
+# What the other adult did since this one last opened Today. See since_last_looked.py.
+from .since_last_looked import look as look_since_last  # noqa: F401
 # The other adult's first open (2026-09-25): the once-per-adult welcome,
 # who set the household up, and the preview it shows. See first_open.py.
 from .first_open import (  # noqa: F401

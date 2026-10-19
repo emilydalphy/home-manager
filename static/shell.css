@@ -491,6 +491,64 @@ html, body {
 
 .today-area-nudge { padding: 0 20px; }
 .today-area-nudge:not(:empty) { padding-bottom: 14px; }
+/* "Since you last looked" (renderSinceLooked, 2026-10-18): the needs-you
+   card's shape — kicker, then the lines — first on Today, in the nudge's
+   gutter. A celadon dot, not apricot: it tells, it asks nothing (Rule 5).
+   One change is a sentence at the Yesterday card's 17px; several are 15px
+   rows with a hairline between. A row left for you is a 44px button with a
+   chevron; "and N more" is a quiet 44px text button. Tokens only. */
+.today-area-since { padding: 0 20px; }
+.today-area-since:not(:empty) { padding-bottom: 14px; }
+.today-area-since:empty { display: none; }
+.since-card .ny-kicker::before { background: var(--celadon); }
+.since-one {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.since-list { display: flex; flex-direction: column; }
+.since-row {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+  padding: 8px 0;
+}
+.since-row + .since-row { border-top: 1.5px solid var(--hairline); }
+.since-list > .since-row:first-child { padding-top: 0; }
+.since-go {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+}
+.since-one.since-go { font-family: var(--font-display); font-weight: 700; font-size: 17px; padding: 0; }
+.since-go svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--apricot-label); }
+.since-more {
+  align-self: flex-start;
+  min-height: 44px;
+  margin: -6px 0 -10px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
 
 .today-body {
   display: flex;

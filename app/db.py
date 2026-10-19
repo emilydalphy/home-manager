@@ -859,6 +859,10 @@ _MIGRATIONS = [
     # period it chose (2026-10-14) — see weekly_plan.remember_first_period.
     # '' on every existing household: nobody is owed an answer never given.
     ("households", "first_period_start", "TEXT NOT NULL DEFAULT ''"),
+    # "Since you last looked" (2026-10-18) — see app/tools/since_last_looked.py.
+    # NULL on every existing adult: their next open of Today is a first look,
+    # which stamps and shows nothing, so nobody gets a history dump.
+    ("members", "last_looked_at", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

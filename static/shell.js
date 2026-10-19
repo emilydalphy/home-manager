@@ -1158,6 +1158,12 @@
         // The holiday, when today is one — name and answer in the neutral
         // pill, first thing under the band. Hidden on an ordinary day.
         '<span class="today-holiday pill pill-neutral" id="today-holiday" hidden></span>' +
+        // "Since you last looked" (renderSinceLooked): what the other
+        // adult did since this one last opened Today. First, above the
+        // plan-week offer and Yesterday — it is the household catching up
+        // with itself before the day starts. Empty, and so display:none,
+        // whenever there is nothing new.
+        '<div id="since-looked" class="today-area-since"></div>' +
         // The offer to plan a week. Outside .today-body, not inside it:
         // .today-body is a named-area grid on desktop, and an area whose
         // only child is display:none still leaves its row's gap behind.
@@ -1255,7 +1261,10 @@
       loadNeedsYou(panel),
       loadTonightAsk(panel),
       loadYesterdayCheck(panel),
-      loadTodayMoves(panel),
+      // The one LOOK of this page load (?look=1): it is what stamps
+      // "Since you last looked" as seen. Every later re-read
+      // (refreshTodayMoves) is not a look.
+      loadTodayMoves(panel, { look: true }),
       loadHolding(panel),
       loadUseSoon(panel),
       // The Chores switch again: skip the call, not just the render — no
@@ -3042,6 +3051,75 @@
     '</div>';
   }
 
+  // ---------- Since you last looked ----------
+  // Loop Board 'Household: "Since you last looked"' (Emily, 2026-10-18,
+  // "Yes to all"): the first card on Today, for the adult picked on "Who's
+  // this?", when the OTHER adult did something since this one last opened
+  // Today. Every word is the server's (app/tools/since_last_looked.py) —
+  // this composes no sentence and decides nothing about what counts.
+  //
+  // One change reads as a sentence; two or more as a short list, three rows
+  // and then a quiet "and N more" that opens the rest in place. A line left
+  // FOR you ("Vineeth put you on Friday's dinner.") comes first and is a
+  // tap: it opens that move on Cook. No badge, no count, no "all caught up":
+  // nothing new is no card at all.
+  //
+  // WHEN IT GOES. The server stamps the look on Today's first read of the
+  // page load (?look=1) and never on the re-reads after a tick, a chat turn
+  // or a change of who's on it — those re-reads carry no since_last_looked
+  // at all, so the card the look drew stays up for as long as the adult is
+  // on this page. It is gone on the next open (a reload, a fresh launch of
+  // the app) unless something new happened. Switching tabs and back is not
+  // an open: tab panels build once per page load, and this card is part of
+  // that build.
+  var SINCE_SHOWN_ROWS = 3;
+  var SINCE_CHEVRON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+
+  function sinceLookedLineHtml(line, i, cls) {
+    var text = escapeHtml(line.text);
+    if (!line.target) return '<div class="' + cls + '">' + text + '</div>';
+    return '<button type="button" class="' + cls + ' since-go" data-since-go="' + i + '">' +
+      '<span>' + text + '</span>' + SINCE_CHEVRON + '</button>';
+  }
+
+  function sinceLookedCardHtml(lines, opened) {
+    if (!lines || !lines.length) return '';
+    var body;
+    if (lines.length === 1) {
+      body = sinceLookedLineHtml(lines[0], 0, 'since-one');
+    } else {
+      var shown = opened ? lines : lines.slice(0, SINCE_SHOWN_ROWS);
+      var rest = lines.length - shown.length;
+      body = '<div class="since-list">' +
+        shown.map(function (l, i) { return sinceLookedLineHtml(l, i, 'since-row'); }).join('') +
+      '</div>' +
+      (rest > 0 ? '<button type="button" class="since-more" data-since-more>and ' + rest + ' more</button>' : '');
+    }
+    return '<div class="shell-card needs-you-card since-card" data-card-type="since_last_looked">' +
+      '<div class="ny-kicker">Since you last looked</div>' + body + '</div>';
+  }
+
+  function renderSinceLooked(panel, lines, opened) {
+    var slot = panel.querySelector('#since-looked');
+    if (!slot) return;
+    panel._sinceLooked = lines || [];
+    slot.innerHTML = sinceLookedCardHtml(panel._sinceLooked, opened);
+    var more = slot.querySelector('[data-since-more]');
+    if (more) more.addEventListener('click', function () { renderSinceLooked(panel, panel._sinceLooked, true); });
+    slot.querySelectorAll('[data-since-go]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var line = panel._sinceLooked[Number(btn.getAttribute('data-since-go'))];
+        var target = line && line.target;
+        if (!target) return;
+        if (target.tab === 'kitchen' && target.cookFocus) {
+          return openRecipeFor(target.cookFocus, { label: 'Today', tab: 'today' });
+        }
+        if (target.tab) activateTab(target.tab, true);
+      });
+    });
+  }
+
   // The band's chip says the state of the plan behind the day. No plan is
   // no chip: with nothing planned the empty moment already says so, and
   // a chip reading "nothing planned" over it would say it twice. A plan
@@ -3984,11 +4062,16 @@
     renderTodayEmpty(panel);
   }
 
-  async function loadTodayMoves(panel) {
+  async function loadTodayMoves(panel, opts) {
+    var look = !!(opts && opts.look);
     try {
-      var res = await Api.fetch('/api/today/moves');
+      var res = await Api.fetch('/api/today/moves' + (look ? '?look=1' : ''));
       if (!res.ok) throw new Error('today moves lookup failed');
-      renderTodayMoves(panel, await res.json());
+      var data = await res.json();
+      // Only a look carries since_last_looked; a re-read leaves the card
+      // the look drew exactly as it is (see renderSinceLooked).
+      if (look) renderSinceLooked(panel, data.since_last_looked);
+      renderTodayMoves(panel, data);
     } catch (err) {
       console.warn('Today lookup failed:', err);
       renderTodayMovesError(panel);

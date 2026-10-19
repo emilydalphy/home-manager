@@ -69,7 +69,11 @@ CREATE TABLE IF NOT EXISTS members (
     -- whether this person is counted in meals — 0 only for an infant the
     -- parents left out ("Include in meals?"). _shared.EATS_HERE_SQL reads it.
     age_years REAL,
-    include_in_meals INTEGER NOT NULL DEFAULT 1
+    include_in_meals INTEGER NOT NULL DEFAULT 1,
+    -- When this adult last opened Today ("Since you last looked", 2026-10-18;
+    -- app/tools/since_last_looked.py). UTC, datetime('now') shape. NULL =
+    -- never looked, so the first open stamps it and shows nothing.
+    last_looked_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS pets (

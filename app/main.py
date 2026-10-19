@@ -3392,7 +3392,7 @@ def _ask_about_ended_weeks() -> None:
 
 
 @app.get("/api/today/moves")
-def today_moves(date: str | None = None):
+def today_moves(date: str | None = None, look: int = 0):
     """
     Today's timeline — every move for the day, which one is the "Next up"
     card, the done count, the week-state badge, and tomorrow's first move
@@ -3412,6 +3412,18 @@ def today_moves(date: str | None = None):
     except Exception as e:
         logger.exception("Today's-moves lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    # "Since you last looked" (tools/since_last_looked.py): only on a LOOK —
+    # the shell sends ?look=1 when it opens Today, never on the re-reads
+    # after a tick or a chat turn, because a look stamps members.
+    # last_looked_at and a stamp on every re-read would take the card away
+    # while the adult is still reading it. Absent (not []) on a re-read, so
+    # the shell keeps the card it already has. Never the reason Today fails.
+    if look:
+        try:
+            payload["since_last_looked"] = tools.look_since_last()
+        except Exception:
+            logger.exception("Since-you-last-looked lookup failed; Today loads without it")
+            payload["since_last_looked"] = []
     return payload
 
 
