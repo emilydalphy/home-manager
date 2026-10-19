@@ -24,8 +24,12 @@ why*, not duplicating the diff.
   batch day is written as the batch (`_gap_ids`; planned_empty stays
   empty), and `sync_prep_notes` (foot of `_finish_week_slots`) rewrites
   each stored `prep_note` from the plan as it stands, dropping a prep-day
-  dinner's stamps when it feeds no lunch. `batch_note` is the one
-  sentence-maker for that and `get_week_menu`'s schedule_note. Not done:
+  dinner's stamps when it feeds no lunch. `batch_note` +
+  `confirmed_fed_dates` (confirmed chains, the set that sizes the batch)
+  serve both that and `get_week_menu`'s schedule_note. Review follow-up: a
+  prep day with no cook of its own and no batch lunch drafted cooks one of
+  the week's own dishes on the first lunch (`_week_dish_for_gap`); the note
+  sync runs after the allergen sweep and the last dinner fill. Not done:
   an open lunch row still shows a bare "Your call" (shell.js, and
   decision C cut the reason line). Old branch
   `overnight/prepped-lunch-on-prep-day` was display-side; not touched.

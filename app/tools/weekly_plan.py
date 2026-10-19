@@ -5990,11 +5990,8 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             return ""
         if not on_prep_day and (derived.get("constraint") != _weekday_lunches.CONSTRAINT or row["slot"] != "lunch"):
             return ""
-        fed = set() if on_prep_day else {row["date"]}
-        for t in (chains["sources"].get(row["id"]) or {}).get("targets") or []:
-            if t.get("slot") == "lunch":
-                fed.add(t["date"])
-        fed.update(frozen_off.get(f"entry_id:{row['id']}", []))
+        fed = _weekday_lunches.confirmed_fed_dates(row["id"], row["date"], row["slot"], on_prep_day,
+                                                   chains, frozen_off)
         # One sentence-maker for this and the stored note
         # (weekday_lunches.sync_prep_notes), so the two never disagree.
         return _weekday_lunches.batch_note(prep_date, row["date"], row["slot"], on_prep_day, fed)

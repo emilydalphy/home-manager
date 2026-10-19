@@ -7845,12 +7845,6 @@ def _finish_week_slots(
     # to answer.
     _complete_plates_pass(plan_id, household_memory, intake)
 
-    # A prepped batch's stored note says what the week now does, not what
-    # the answer asked for: every pass that can move a lunch has run by
-    # here. See weekday_lunches.sync_prep_notes; it swallows its own failures.
-    if lunches_answered:
-        _weekday_lunches.sync_prep_notes(plan_id)
-
     audit = tools.audit_plan_slots(plan_id, day_count=day_count, skip_days=skip_days)
     for gap in audit["missing"]:
         day_name = datetime.date.fromisoformat(gap["date"]).strftime("%A")
@@ -7906,6 +7900,15 @@ def _finish_week_slots(
     # without …") keeps its words: dinner_gaps.keeps_its_question.
     _dinner_gaps.fill_open_dinners(plan_id, dates, caps=fill_caps, budget=repick_budget, reserve=0,
                                    targets=count_targets)
+
+    # A prepped batch's stored note says what the week now does, not what
+    # the answer asked for. AFTER the allergen sweep and the last dinner
+    # fill, which can still re-pick a lunch cook or a prep-day dinner; it
+    # writes no rows, only the note and stamps on the cooks, so nothing
+    # below needs to run again. See weekday_lunches.sync_prep_notes; it
+    # swallows its own failures.
+    if lunches_answered:
+        _weekday_lunches.sync_prep_notes(plan_id)
 
     # A week whose lunches are last night's leftovers can end up cooking
     # more dinner dishes than the household's number (one pot can't be every

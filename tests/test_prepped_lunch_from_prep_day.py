@@ -61,8 +61,7 @@ def _rows(plan_id: int, slot: str) -> dict[str, dict]:
     return {r["date"]: dict(r, derived=json.loads(r["derived_from_json"] or "{}")) for r in rows}
 
 
-@pytest.fixture
-def tester_home(monkeypatch):
+def _draft(monkeypatch, thursday_reheats_wednesday=False):
     """The Tester Home shape, with the draft sending no Friday lunch."""
     for name in ("Emily", "Vineeth"):
         tools.add_member(name)
@@ -83,12 +82,21 @@ def tester_home(monkeypatch):
     days = []
     for i, d in enumerate(dates):
         days.append(_slot(d, "breakfast", "Oats"))
-        days.append(_slot(d, "dinner", dinners[i]))
+        dinner = _slot(d, "dinner", dinners[i])
+        if thursday_reheats_wednesday and i == 3:
+            dinner = _slot(d, "dinner", dinners[2])
+            dinner["derived_from"] = {"links_to": f"{dates[2]}:dinner"}
+        days.append(dinner)
         if lunches[i]:
             days.append(_slot(d, "lunch", lunches[i]))
     monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: days)
     plan_id = agent.generate_weekly_plan(mon.isoformat())["weekly_plan_id"]
     return plan_id, dates
+
+
+@pytest.fixture
+def tester_home(monkeypatch):
+    return _draft(monkeypatch)
 
 
 def test_fridays_prepped_lunch_is_planned_from_thursdays_dinner(tester_home):
@@ -149,6 +157,29 @@ def test_a_lunch_cook_whose_batch_shrank_names_only_what_it_still_feeds(tester_h
     mon = _rows(plan_id, "lunch")[dates[0]]
     assert mon["derived"]["prep_note"] == "Cook this Sunday for Monday and Tuesday’s lunches."
     assert mon["reasoning"] == mon["derived"]["prep_note"]
+
+
+def test_a_prep_day_with_nothing_to_cook_on_still_plans_fridays_lunch(monkeypatch):
+    """CATCH (review, 2026-10-19): Thursday's dinner is itself Wednesday's
+    leftovers, so the prep day has no cook of its own, and the draft sent
+    no Friday lunch: the batch had nothing to build from and Friday was a
+    generation_gap. One of the week's own cooks is cooked on Friday's lunch,
+    stamped with Thursday's prep."""
+    plan_id, dates = _draft(monkeypatch, thursday_reheats_wednesday=True)
+    thu, fri = dates[3], dates[4]
+    dinner = _rows(plan_id, "dinner")
+    assert dinner[thu]["derived"].get("links_to"), "the shape: Thursday's dinner is a reheat"
+    assert not dinner[thu]["derived"].get("prep_day_cook")
+    lunch = _rows(plan_id, "lunch")[fri]
+    assert lunch["slot_state"] == "planned" and lunch["meal"]
+    assert lunch["derived"].get("constraint") != "generation_gap"
+    assert lunch["derived"].get("prep_date") == thu
+    batches = {b["prep_date"]: b for b in weekday_lunches.prepped_batches(plan_id)}
+    assert batches[thu]["lunch_dates"] == [fri]
+    # Its schedule line and its stored note say the same thing.
+    menu = tools.get_week_menu(plan_id)
+    row = next(d for d in menu["days"] if d["date"] == fri)["lunch"]
+    assert row["schedule_note"] == lunch["derived"]["prep_note"] == "Cook this Thursday for Friday’s lunch."
 
 
 def test_a_lunch_empty_on_purpose_is_never_a_batch_day():
