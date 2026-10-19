@@ -166,6 +166,13 @@ CREATE TABLE IF NOT EXISTS meal_preferences (
     -- dishes (meal_variety.enforce_snack_dishes); snacks_per_day still
     -- says how many land on each day.
     snack_dishes_per_week INTEGER NOT NULL DEFAULT 2,
+    -- Whether snack_dishes_per_week is the household's own number
+    -- (2026-10-19, "not the same orange snack 7 days running"): set by
+    -- edit_preference, the stepper's and chat's one door. Until it is,
+    -- get_household_memory reads the count as
+    -- snack_variety.default_snack_dishes, because the default 2 at two
+    -- snacks a day is every snack on every day.
+    snack_dishes_per_week_set INTEGER NOT NULL DEFAULT 0,
     -- Whether dinners/breakfasts/lunches_per_week are ANSWERS or column
     -- defaults (Emily, 2026-09-21: the counts are targets, not caps, and
     -- the pass that re-picks a repeat into a new dish to reach one spends

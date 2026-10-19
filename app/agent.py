@@ -27,6 +27,7 @@ from .tools import plan_quality
 from .tools import recipe_research as _recipe_research
 from .tools import recipe_library as _recipe_library
 from .tools import meal_variety as _meal_variety
+from .tools import snack_variety as _snack_variety
 from .tools import leftovers_spread as _leftovers_spread
 from .tools import leftovers as _leftovers_mod
 from .tools import weekday_lunches as _weekday_lunches
@@ -8246,6 +8247,16 @@ def _finish_week_slots(
             plan_id, household_memory.get("snack_dishes_per_week"), [d for d in period if d not in skipped_days and d not in snackless_days],
             asks=count_asks,
         )
+        # And no one snack on more than three days unless they asked for it
+        # (Tester Home, plan 72: oranges and edamame, seven days each). After
+        # the fold, so it spreads the dishes the count kept; on both runs,
+        # because it makes no model call. Same gate as snacks a day: a
+        # household that answered how they snack. See tools/snack_variety.py.
+        if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
+            _snack_variety.enforce_snack_variety(
+                plan_id, [d for d in period if d not in skipped_days and d not in snackless_days],
+                household_memory, period_start=week_start_date, asks=count_asks,
+            )
     _hold_counts(first=True)
 
     # An ingredient they typed ("I have some corn") is in at least one

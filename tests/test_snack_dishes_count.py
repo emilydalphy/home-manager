@@ -72,8 +72,14 @@ def _snacks(plan_id) -> dict[str, list[str]]:
     return out
 
 
-def test_every_household_starts_at_two():
-    assert tools.get_household_memory()["snack_dishes_per_week"] == 2
+def test_every_household_starts_at_enough_for_three_days_each():
+    """Was "starts at two" until 2026-10-19 (Loop Board "not the same orange
+    snack 7 days running"): the column's default 2 at two snacks a day is
+    every snack on every day, so an unset count now reads as
+    snack_variety.default_snack_dishes — five at two a day."""
+    memory = tools.get_household_memory()
+    assert memory["snack_dishes_per_week"] == 5
+    assert memory["snack_dishes_per_week_set"] is False
 
 
 def test_the_count_is_a_whole_number_from_one_to_seven():
@@ -85,9 +91,11 @@ def test_the_count_is_a_whole_number_from_one_to_seven():
 
 
 def test_the_draft_folds_fourteen_snacks_to_two_and_every_day_keeps_two(stub_model):
-    """CATCH: on main the week keeps all fourteen."""
+    """CATCH: on main the week keeps all fourteen. Two is now a number they
+    SET (the stepper); unset, the week folds to five (below)."""
     week = _monday()
     tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
+    tools.edit_preference("snack_dishes_per_week", 2)
     stub_model(_week(week))
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
 
@@ -116,7 +124,7 @@ def test_one_dish_a_week_never_makes_a_day_eat_the_same_snack_twice(stub_model):
     week = _monday()
     tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
     conn = get_conn()
-    conn.execute("UPDATE meal_preferences SET snack_dishes_per_week = 1")
+    conn.execute("UPDATE meal_preferences SET snack_dishes_per_week = 1, snack_dishes_per_week_set = 1")
     conn.commit()
     conn.close()
     stub_model(_week(week))
@@ -136,7 +144,17 @@ def test_a_snack_they_asked_for_is_kept(stub_model):
 
     names = {s for day in _snacks(plan_id).values() for s in day}
     assert "Popcorn" in names
-    assert len(names) == 2
+    assert len(names) == 5
+
+
+def test_unset_the_draft_folds_fourteen_snacks_to_five(stub_model):
+    week = _monday()
+    tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
+    stub_model(_week(week))
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+    by_day = _snacks(plan_id)
+    assert len({s.lower() for day in by_day.values() for s in day}) == 5
+    assert all(len(day) == 2 and len(set(day)) == 2 for day in by_day.values()), by_day
 
 
 def test_a_week_that_names_its_own_snack_count_is_left_alone():
@@ -176,7 +194,8 @@ def test_snacks_never_goes_below_snacks_a_day_and_rises_with_it():
     with pytest.raises(ValueError):
         tools.edit_preference("snack_dishes_per_week", 1)
     tools.edit_preference("snacks_per_day", 4)
-    assert tools.get_household_memory()["snack_dishes_per_week"] == 4
+    # Unset, four a day reads as seven (snack_variety.default_snack_dishes).
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 7
     tools.edit_preference("snack_dishes_per_week", 6)
     tools.edit_preference("snacks_per_day", 3)
     assert tools.get_household_memory()["snack_dishes_per_week"] == 6, "lowering a day's snacks leaves it"
@@ -191,6 +210,7 @@ def test_the_prompt_has_one_distinct_snack_count():
 def test_every_write_path_keeps_snacks_at_least_snacks_a_day():
     """Onboarding and the setup screens write through
     set_household_meal_preferences, not edit_preference (review round 2)."""
+    tools.edit_preference("snack_dishes_per_week", 3)
     tools.set_household_meal_preferences(snacks_per_day=4, mark_complete=False)
     assert tools.get_household_memory()["snack_dishes_per_week"] == 4
     tools.save_onboarding_answers(["Emily"], {}, "", [], [], 4, snacks_per_day=5)

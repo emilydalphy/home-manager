@@ -602,6 +602,26 @@ why*, not duplicating the diff.
   00:00–00:00 "Open 24 hours"; the editor starts blank (a pre-filled 8–9
   was one tap from invented hours); hours only for a usual store, name
   capped at 80; "Clear hours" in the editor.
+- **A week's snacks have variety: no snack on more than three days unless
+  asked** (2026-10-19; branch `overnight/snacks-mix-it-up`; tests
+  `tests/test_snack_variety.py`). Tester Home plan 72 was two snacks, seven
+  days each — and the app helped: `enforce_snack_dishes` folded the week to
+  `snack_dishes_per_week`'s column DEFAULT 2, which at two a day is every
+  snack every day. That count is now an answer only once set
+  (`snack_dishes_per_week_set`, stamped by edit_preference; backfilled from
+  `preference_events`); unset it reads as `snack_variety.default_snack_dishes`
+  (2 a day -> 5), which the stepper shows and the draft folds to. Then
+  `snack_variety.enforce_snack_variety` (both `_hold_counts` runs, no model
+  call) caps each snack at 3 days, spread across the week, re-picking from the
+  week's own snacks then a nut-free code-side pool with per-person amounts,
+  held to pick_gate + hidden ingredients (tahini in hummus), dislikes, the
+  two-week window, and plan_quality's same-day echo; it leans toward
+  ingredients the week already buys. Stands down for a set count (cap is what
+  their number needs), "same snack every day is fine"-type words (week or
+  standing notes), a snack they asked for, and no pool at all under an
+  eating style. Emily to confirm: unset default (was her 2026-09-27
+  assumption of 2) and that a stepper at 2 means seven days each.
+
 - **A late-evening sign-up's reveal opens on the next day with meals**
   (2026-10-17; branch `overnight/late-signup-reveal-starts-tomorrow`; tests
   `tests/test_late_signup_reveal.py`). The plan still starts today (a

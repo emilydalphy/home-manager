@@ -188,7 +188,8 @@ console.log(JSON.stringify(saves));
 
 
 def test_the_snacks_count_saves_and_reads_back(signed_in):
-    assert signed_in.get("/api/memory").json()["snack_dishes_per_week"] == 2
+    # Unset reads as enough for three days each (2026-10-19): five at two a day.
+    assert signed_in.get("/api/memory").json()["snack_dishes_per_week"] == 5
     res = signed_in.post("/api/memory/edit", json={"field": "snack_dishes_per_week", "value": 3})
     assert res.status_code == 200, res.text
     assert signed_in.get("/api/memory").json()["snack_dishes_per_week"] == 3

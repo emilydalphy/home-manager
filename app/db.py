@@ -596,6 +596,9 @@ _MIGRATIONS = [
     # Different snack dishes a week (2026-09-27) — see schema.sql. Every
     # existing household gets the default 2, the same as a new one.
     ("meal_preferences", "snack_dishes_per_week", "INTEGER NOT NULL DEFAULT 2"),
+    # Whether that count is an answer (2026-10-19) — see schema.sql and
+    # _backfill_snack_dishes_set below.
+    ("meal_preferences", "snack_dishes_per_week_set", "INTEGER NOT NULL DEFAULT 0"),
     # Whether the three per-week counts are answers (Emily, 2026-09-21,
     # "Each week I plan" numbers are targets, not caps) — see schema.sql
     # and _backfill_meal_counts_set below.
@@ -1260,6 +1263,22 @@ def _backfill_snack_dishes(conn):
     )
 
 
+def _backfill_snack_dishes_set(conn):
+    """
+    A household that already set the "Snacks" stepper keeps its number as
+    an answer (2026-10-19): the one door that writes it, edit_preference,
+    has always logged a preference_events row for it, so that row is the
+    evidence. Everyone else reads snack_variety.default_snack_dishes.
+    Idempotent — it only ever sets the flag.
+    """
+    conn.execute(
+        "UPDATE meal_preferences SET snack_dishes_per_week_set = 1 "
+        "WHERE snack_dishes_per_week_set = 0 AND household_id IN ("
+        "SELECT household_id FROM preference_events "
+        "WHERE field = 'snack_dishes_per_week' AND action = 'write')"
+    )
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -1289,6 +1308,7 @@ def _run_migrations(conn):
     _backfill_snacks_per_week_set(conn)
     _backfill_meal_counts_set(conn)
     _backfill_snack_dishes(conn)
+    _backfill_snack_dishes_set(conn)
     _backfill_timezone_set(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
