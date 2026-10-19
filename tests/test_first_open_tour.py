@@ -144,7 +144,7 @@ def test_the_shell_loads_it_and_starts_it_only_on_a_draft_off_the_approve_hand_o
 def test_showing_an_already_built_plan_checks_too_but_only_one_start_per_load():
     # The second adult's welcome holds the tour off while Plan is built;
     # the check runs again whenever Plan is shown.
-    assert "if (tab.week && panel.dataset.built && weekState.data) maybeStartFirstTour();" in SHELL_JS
+    assert "if (tab.week && panel.dataset.built && weekState.data && typeof maybeStartFirstTour === 'function') maybeStartFirstTour();" in SHELL_JS
     fn = SHELL_JS[SHELL_JS.index("function maybeStartFirstTour()"):SHELL_JS.index("function replayTour()")]
     assert "tourStartedThisLoad || tourAsking" in fn
     assert "tourStartedThisLoad = window.PomonaTour.start(" in fn

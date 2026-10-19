@@ -913,7 +913,8 @@
     }
     // The first-open tour, checked on every showing of an already-built
     // Plan as well as when it's built — see maybeStartFirstTour.
-    if (tab.week && panel.dataset.built && weekState.data) maybeStartFirstTour();
+    // (typeof: harnesses run activateTab sliced out of this file.)
+    if (tab.week && panel.dataset.built && weekState.data && typeof maybeStartFirstTour === 'function') maybeStartFirstTour();
 
     var pathIsAlreadyOurs = window.location.pathname.replace(/\/+$/, '') ===
       (tab.path === '/' ? '/' : tab.path.replace(/\/+$/, ''));
