@@ -58,12 +58,15 @@ def test_the_question_screens_carry_one_named_crumb_out_of_the_flow():
     assert flow.index('id="leave"') < flow.index('<section id="q1">')
     assert "$('leave').hidden" not in PAGE, "nothing ever hides the way out"
     # Since 2026-09-21 (the onboarding motion) the one crumb is "‹ Plan" on
-    # the first step and while drafting, and the stepper's own "‹ Back" on
-    # the steps between — one way back per screen, never two.
+    # the first screen and while drafting — one way back per screen, never
+    # two. UPDATED 2026-10-19 (re-plan Option B): the first screen is "Same
+    # as last week?", and a question opened from it says "‹ Same as last
+    # week?" (back to the page, keeping what was said).
     assert "$('leave').addEventListener('click', crumbTap);" in PAGE
     tap = _extract("crumbTap", PAGE)
-    assert "if (step === 1 || drafting) leaveFlow();" in tap and "else goBack();" in tap
-    assert "$('leave').innerHTML = n === 1 ? '&lsaquo; Plan' : '&lsaquo; Back';" in PAGE
+    assert "else if (editing && !drafting) advance();" in tap and tap.rstrip().endswith("else leaveFlow();\n  }")
+    assert "$('leave').innerHTML = '&lsaquo; Plan';" in _extract("showSame", PAGE)
+    assert "$('leave').innerHTML = esc(SAME_COPY.crumb);" in _extract("showStep", PAGE)
     assert "$('leave').innerHTML = '&lsaquo; Plan';" in _extract("showDraftProgress", PAGE)
     assert 'id="back"' not in flow, "no second back beside the crumb"
 

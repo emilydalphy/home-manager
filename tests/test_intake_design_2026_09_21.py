@@ -113,12 +113,10 @@ class TestWhichDays:
         # this step sends none, and writes only when an older screen had
         # saved some — the empty set over them.
         assert "function droppedList() { return []; }" in PAGE
-        save = _extract("saveStep")
-        assert "if (n === 1) {" in save
-        assert "if (skipped.join(',') === skippedAtLoad) return null;" in save
-        assert "saveIntake({ skipped_days: skipped })" in save
-        adv = _extract("advance")
-        assert "await saveStep(1);" in adv
+        # UPDATED 2026-10-19 (re-plan Option B): no step saves on its own
+        # any more — every save is the whole set (samePayload), the empty
+        # set of dropped days with it.
+        assert "skipped_days: droppedList()," in _extract("samePayload")
         # Leaving carries them too (the empty set), and Back never loses them.
         assert "skipped_days: droppedList()" in _extract("leavePayload")
         assert "droppedList().join(',')" in _extract("answersSnapshot")
@@ -136,21 +134,25 @@ class TestWhichDays:
         assert "plannedDays().forEach(function (day) {" in _extract("paintTiles")
         # Step 3 (weekday lunches since 2026-09-25) reads the period's
         # weekdays off plannedDays.
-        assert "function currentLunchDates() { return lunchDates(plannedDays(), nobodyHomeFor); }" in PAGE
+        # (Since 2026-10-19 a lunch the week's who's-eating grid has off is
+        # out too — re-plan Option B.)
+        assert "return lunchDates(plannedDays(), function (iso, slot) { return nobodyHomeFor(iso, slot) || gridOffFor(iso, slot); });" in _extract("currentLunchDates")
         assert "var days = plannedDays().map(function (d) { return d.date; });" in _extract("openAwaySheet")
         assert "var days = plannedDays();" in _extract("buildAwaySheet")
         assert "host.innerHTML = ((data && data.holidays) || []).map(holidayBlockHtml).join('');" in _extract("renderHolidayBlocks")
-        assert "plannedDays().filter(function (day) { return !!dayNoteFor(day, true); })" in _extract("paintCta")
         show = _extract("showDraftProgress")
         assert "var kept = plannedDays().map(function (d) { return d.date; });" in show
         assert "dayLine = draftDayLine(kept, EXPECTED_DRAFT_MS, paintDraftStatus);" in show
-        # Continue on step 1 repaints them for the days just chosen.
-        adv = _extract("advance")
-        assert adv.index("await saveStep(1);") < adv.index("renderDays();") < adv.index("showStep(2);")
-        # Step 3 lays itself out as it opens, from the days as they are then.
-        assert "if (to === 3) renderLunchStep();" in adv
+        # UPDATED 2026-10-19 (re-plan Option B): Done on "Which days?"
+        # fetches the new days' prefill (fetchPeriod lays the days out from
+        # it) before the page's rows are drawn again.
+        finish = _extract("finishChange")
+        assert finish.index("ensureLoaded()") < finish.index("showSame();")
+        # The lunches lay themselves out as their screen opens, from the
+        # days as they are then (openLunchVarietyScreen since 2026-10-19).
+        assert "renderLunchStep();" in _extract("openLunchVarietyScreen")
         # A lunch ticked on a day since dropped is not saved.
-        assert "answers.packed_lunch_days = answers.packed_lunch_days.filter(function (d) { return kept.indexOf(d) !== -1; });" in _extract("saveStep")
+        assert "packed_lunch_days: answers.packed_lunch_days.filter(function (d) { return kept.indexOf(d) !== -1; })," in _extract("samePayload")
 
     def test_no_yesterday_line_and_no_five_day_assumption_anywhere(self):
         q1 = _section("q1")

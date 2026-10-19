@@ -43,6 +43,9 @@ import pytest
 
 
 ONBOARDING = (Path(__file__).resolve().parent.parent / "static" / "onboarding.html").read_text()
+# The setup screens' code moved to setup-screens.js (re-plan Option B,
+# 2026-10-18); onboarding.html loads it, so it is part of the page.
+ONBOARDING += "\n" + (__import__("pathlib").Path(__file__).resolve().parent.parent / "static" / "setup-screens.js").read_text(encoding="utf-8")
 
 
 def _click_handler_body(element_id: str) -> str:

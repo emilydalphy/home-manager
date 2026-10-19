@@ -17,8 +17,10 @@ def test_five_screens_one_question_each():
     # Five since 2026-09-21 ("Starting when?" first — Loop Board "The week
     # intake in the onboarding motion"); the questions lost their "this
     # week" now that the first screen settles which days.
+    # UPDATED 2026-10-19 (re-plan Option B): the five bars went with the
+    # steps-in-a-row; a question is opened from "Same as last week?".
     for i in range(1, 6):
-        assert 'id="q%d"' % i in PAGE and 'id="bar-%d"' % i in PAGE
+        assert 'id="q%d"' % i in PAGE and 'id="bar-%d"' % i not in PAGE
     assert "var STEP_COUNT = 5;" in PAGE
     # "Which days?" and the step-5 title are Emily's words (2026-09-21,
     # boards D1 / her pick) — tests/test_intake_design_2026_09_21.py.
@@ -41,7 +43,8 @@ def test_the_skippable_screens_have_a_quiet_line_and_the_last_drafts():
     # The quiet line advances — except while "Add a cuisine" is open, when
     # it is that screen's "Never mind" (2026-09-21, board B4a).
     assert "$('skip').addEventListener('click', function () { if (cuisineOpen) closeCuisineScreen(); else advance(); });" in PAGE
-    assert "$('cta').textContent = 'Draft my week';" in PAGE
+    # "Draft my week" is the page's one button now (re-plan Option B).
+    assert "go: 'Draft my week'," in PAGE and "$('cta').textContent = SAME_COPY.go;" in PAGE
 
 
 def test_the_days_are_tiles_that_open_a_day_sheet_with_every_meal():

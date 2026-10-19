@@ -227,3 +227,259 @@ class TestThisWeekOnly:
         with usual_week.this_week({"lunch_needs": {"Vineeth": {"needs": ["nut_free"], "days": {}}}}):
             assert member_needs.nut_free_member_names() == ["Vineeth"]
         assert member_needs.nut_free_member_names() == []
+
+
+# ==========================================================================
+# Slices 2-4 (the page): "Same as last week?" in onboarding's look, each row
+# opening onboarding's own screen, the mockup's words.
+# ==========================================================================
+
+import json  # noqa: E402
+import re  # noqa: E402
+import shutil  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+import nodeharness  # noqa: E402
+
+STATIC = Path(__file__).resolve().parent.parent / "static"
+PAGE = (STATIC / "plan-week.html").read_text(encoding="utf-8")
+ONBOARDING = (STATIC / "onboarding.html").read_text(encoding="utf-8")
+SCREENS = (STATIC / "setup-screens.js").read_text(encoding="utf-8")
+
+_needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node runs the page's own functions")
+
+
+def _extract(name: str, source: str = PAGE) -> str:
+    start = source.index(f"function {name}(")
+    if source[start - len("async "):start] == "async ":
+        start -= len("async ")
+    i = source.index("{", start)
+    depth, j = 0, i
+    while True:
+        if source[j] == "{":
+            depth += 1
+        elif source[j] == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        j += 1
+    return source[start:j + 1]
+
+
+def _var(name: str, source: str = PAGE) -> str:
+    m = re.search(rf"(?m)^  var {name} = [\s\S]*?;\n", source)
+    assert m, name
+    return m.group(0)
+
+
+def _const(name: str) -> str:
+    m = re.search(rf"(?m)^const {name} = [\s\S]*?;\n", SCREENS)
+    assert m, name
+    return m.group(0)
+
+
+def _node(script: str):
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip().splitlines()[-1])
+
+
+class TestThePage:
+    def test_every_visit_opens_on_same_as_last_week(self):
+        """The first re-plan after onboarding included: only a prefill that
+        failed keeps the page shut — no first week of five steps."""
+        load = _extract("load")
+        assert "var same = await sameAsLastWeek();" in load
+        assert "if (!same) { $('failed').hidden = false; return; }" in load
+        assert load.rstrip().endswith("showSame();\n  }")
+        assert "last_intake" not in _extract("sameAsLastWeek")
+        # The household's own length when the door named none — never last
+        # week's (a part-week first plan would carry its three days).
+        assert "} else if (!DAYS_IN_ADDRESS) {" in load and "dayCount = horizon;" in load
+
+    def test_the_mockups_words_and_order(self):
+        same = PAGE[PAGE.index('<section id="same"'):PAGE.index("</section>", PAGE.index('<section id="same"'))]
+        assert '<h1 id="same-title">Same as last week?</h1>' in same
+        assert '<p class="step-sub">Tap anything that&rsquo;s different.</p>' in same
+        order = ['id="same-joined"', 'id="same-rows"', 'id="bring-over"']
+        assert [same.index(x) for x in order] == sorted(same.index(x) for x in order)
+        rows = _var("SAME_ROWS")
+        labels = re.findall(r"label: '([^']+)'", rows)
+        assert labels == ["Days", "Who’s eating", "Cook ahead", "Breakfast", "Weekday lunches",
+                          "Dinner", "Cuisines and mood", "Anything else"]
+        copy = _var("SAME_COPY")
+        for line in ("go: 'Draft my week'", "crumb: '‹ Same as last week?'", "drafted: 'Already drafted'",
+                     "done: 'Done'", "change: 'Change'", "changed: 'Changed'", "undo: 'Undo'",
+                     "whoLine: 'Everyone starts on every meal. Tap a day to change who’s eating it.'",
+                     "anythingLine: 'Just for this week. It starts blank next time.'",
+                     "leanToward: 'This week, lean toward'",
+                     "nothingAdded: 'Nothing yet. Starts fresh each week.'"):
+            assert line in copy, line
+        assert "' already has a draft. Drafting again replaces it. ' +\n            'Nothing’s on your shopping list yet.'" in _extract("fetchPeriod")
+        # Gone: option A's button and the five steps' line and bars.
+        shown = re.sub(r"//[^\n]*|/\*[\s\S]*?\*/|<!--[\s\S]*?-->", "", PAGE)
+        assert "Plan this week" not in shown
+        assert 'id="progress"' not in PAGE and "' of ' + STEP_COUNT" not in PAGE
+
+    def test_a_change_says_so_with_undo(self):
+        finish = _extract("finishChange")
+        assert "await saveIntake(samePayload());" in finish
+        assert "showToast(row.label + (row.were ? ' were ' : ' was ') + 'changed', {" in finish
+        assert "run: function () { undoChange(before.state); }" in finish
+        undo = _extract("undoChange")
+        assert "restoreState(state);" in undo and "await saveIntake(samePayload());" in undo
+        assert "week_answers: weekAnswers" in _extract("samePayload")
+        assert "week_answers: weekAnswers" in _extract("leavePayload")
+
+
+class TestTheScreensAreOnboardings:
+    """One copy of each screen: the markup is onboarding.html's, lifted at
+    run time; the code is setup-screens.js, which both pages load."""
+
+    def test_both_pages_load_the_shared_code_and_onboarding_keeps_no_copy(self):
+        assert '<script src="/static/setup-screens.js"></script>' in ONBOARDING
+        assert '<script src="/static/setup-screens.js"></script>' in PAGE
+        assert "wireSetupScreens();" in ONBOARDING
+        for fn in ("renderMealsDays", "uwMealCardHtml", "buildPrepStep", "buildVarietyStep",
+                   "buildLunchNeedsStep", "lunchNeedsPayload", "currentExcitedAbout", "chipWithCustom"):
+            assert f"function {fn}(" in SCREENS, fn
+            assert f"function {fn}(" not in ONBOARDING, fn
+            assert f"function {fn}(" not in PAGE, fn
+
+    def test_each_row_opens_a_screen_onboarding_has(self):
+        screens = re.findall(r"screen: '([^']+)'", _var("SAME_ROWS"))
+        assert screens == ["meals-days", "prep", "variety-breakfast", "lunch-needs", "variety-dinner",
+                           "excited-about", "anything-else"]
+        lifted = _var("SETUP_SCREENS")
+        for name in screens + ["variety-lunch"]:
+            assert f'<div id="step-{name}"' in ONBOARDING, name
+            assert f"'{name}'" in lifted, name
+        loader = _extract("loadSetupScreens")
+        assert "Api.fetch('/static/onboarding.html'" in loader
+        assert "doc.getElementById('step-' + name)" in loader
+        assert "wireSetupScreens();" in loader
+        # Onboarding's own titles reach the page through its markup.
+        for title in ("Who&rsquo;s eating, and when?", "Do you like to cook ahead?",
+                      "How many different lunches in a week?", "What does each person need for weekday lunches?",
+                      "What are you excited to eat more of lately?", "Anything else I should know?"):
+            assert title in ONBOARDING, title
+
+    @_needs_node
+    def test_onboardings_stylesheet_is_scoped_to_the_host(self):
+        script = "\n".join(_extract(n) for n in ("topLevel", "scopeSelector")) + """
+var S = '#setup-host';
+console.log(JSON.stringify([
+  scopeSelector('.uw-day.is-some', S),
+  scopeSelector(':where(:root:not([data-theme="light"])) .uw-day.is-some', S),
+  scopeSelector('body', S),
+  scopeSelector('body.reveal-active .reveal-days', S),
+  scopeSelector(':root', S),
+  topLevel('.a, :is(.b, .c) .d', ','),
+]));"""
+        assert _node(script) == [
+            "#setup-host .uw-day.is-some",
+            ':where(:root:not([data-theme="light"])) #setup-host .uw-day.is-some',
+            None, None, None,
+            [".a", " :is(.b, .c) .d"],
+        ]
+
+    def test_the_hooks_leave_onboarding_as_it_was(self):
+        """Plan a week's hooks are optional: without them the grid is
+        Monday to Sunday, the picker says the weekday and there is no extra
+        row — onboarding defines none."""
+        card = _extract("uwMealCardHtml", SCREENS)
+        assert "typeof uwExtraRowHtml === 'function'" in card
+        assert "typeof uwColumnOrder === 'function'" in _extract("uwColumns", SCREENS)
+        for hook in ("uwColumnOrder", "uwPickerLabel", "uwExtraRowHtml", "uwSummaryLine"):
+            assert hook not in ONBOARDING, hook
+            assert f"window.{hook} = function" in PAGE, hook
+
+
+class TestTheRowsWords:
+    def _harness(self, body: str) -> object:
+        script = (
+            "function esc(s) { return String(s); }\n"
+            + _const("UW_MEALS") + _extract("uwCleanCell", SCREENS) + "\n"
+            + _var("SAME_COPY") + _var("EXTRA_TAGS")
+            + "\n".join(_extract(n) for n in ("isoLocal", "addDaysIso", "weekdayName", "joinWords", "capitalize",
+                                               "titleDay", "weekdayIndex", "daysValue", "whoValue", "cookValue",
+                                               "cuisinesValue"))
+            + "\nvar answers = { night_tags: {}, guest_counts: {} }; var awayRanges = []; var names = ['Emily', 'Vineeth'];\n"
+            "function memberNames() { return names; }\n"
+            "var DATES = ['2026-10-19','2026-10-20','2026-10-21','2026-10-22','2026-10-23','2026-10-24','2026-10-25'];\n"
+            "function periodDates() { return DATES; }\n"
+            "function all() { return ['all','all','all','all','all','all','all']; }\n"
+            + body
+        )
+        return _node(script)
+
+    @_needs_node
+    def test_the_mockups_rows(self):
+        got = self._harness("""
+var cells = { breakfast: all(), lunch: all(), dinner: all() };
+var plain = whoValue(cells);
+cells.dinner[4] = ['Emily'];
+answers.night_tags['2026-10-23'] = ['rush'];
+answers.guest_counts['2026-10-24'] = { adults: 2, children: 0 };
+var changed = whoValue(cells);
+names = ['Emily']; answers = { night_tags: {}, guest_counts: {} }; var one = whoValue({ breakfast: all(), lunch: all(), dinner: all() });
+names = ['A', 'B', 'C']; answers = { night_tags: {}, guest_counts: {} };
+var off = { breakfast: all(), lunch: all(), dinner: all() };
+[0, 1, 2, 3, 4].forEach(function (i) { off.breakfast[i] = 'off'; });
+console.log(JSON.stringify({
+  days: daysValue('2026-10-19', 7), one: daysValue('2026-10-23', 1),
+  plain: plain, changed: changed, single: one, offDays: whoValue(off),
+  cook: cookValue(['sunday']), twoCook: cookValue(['sunday', 'wednesday']), noCook: cookValue([]),
+  cuisines: cuisinesValue(['Thai', 'Italian', 'Mexican'], ['Something warm']),
+  many: cuisinesValue(['Thai', 'Italian', 'Mexican', 'Greek'], []), none: cuisinesValue([], [])
+}));""")
+        assert got == {
+            "days": "Mon Oct 19 → Sun Oct 25 · 7 days",
+            "one": "Fri Oct 23 · 1 day",
+            "plain": "Both of you, every meal",
+            "changed": "Fri dinner: just Emily · Fri short on time · Sat +2 guests",
+            "single": "Every meal",
+            "offDays": "Breakfast: Sat and Sun",
+            "cook": "Sunday, up to 2 hours",
+            "twoCook": "Sunday and Wednesday, up to 2 hours",
+            "noCook": "No, I cook as I go",
+            "cuisines": "Thai, Italian, Mexican · Something warm",
+            "many": "Thai, Italian, Mexican +1",
+            "none": "Nothing picked",
+        }
+
+    @_needs_node
+    def test_a_changed_row_is_tinted_and_says_so(self):
+        values = [
+            {"days": "d", "who": "Both of you, every meal", "cook": "Sunday, up to 2 hours", "breakfast": "b",
+             "lunches": "l", "dinner": "A few in rotation", "cuisines": "c", "anything": "a"},
+            {"days": "d", "who": "Both of you, every meal", "cook": "Sunday, up to 2 hours", "breakfast": "b",
+             "lunches": "Both packed · Meal prep ahead · Thursday prep for Friday", "dinner": "A few in rotation",
+             "cuisines": "c", "anything": "a"},
+        ]
+        script = (
+            "var els = {}; function $(id) { return els[id] || (els[id] = { innerHTML: '', querySelectorAll: function () { return []; } }); }\n"
+            "function esc(s) { return String(s); }\n"
+            "var sameBaseline = null; var seq = " + json.dumps(values) + "; var n = 0;\n"
+            "function sameValues() { return seq[n++]; }\n"
+            + _var("SAME_ROWS") + _var("SAME_COPY") + _extract("renderSame") + "\n"
+            "renderSame(); var first = $('same-rows').innerHTML; renderSame();\n"
+            "console.log(JSON.stringify({ first: first, second: $('same-rows').innerHTML }));\n"
+        )
+        got = _node(script)
+        assert got["first"].count('class="same-row"') == 8
+        assert got["second"].count("same-row changed") == 1
+        assert 'class="same-row changed" data-row="lunches"' in got["second"]
+        assert "Weekday lunches · Changed" in got["second"]
+
+    @_needs_node
+    def test_changed_back_is_no_change(self):
+        """A household-level answer is kept for this week only while it
+        differs from the usual one."""
+        script = (
+            "var weekAnswers = {};\n" + _extract("keepWeek") + """
+keepWeek('prep', { days: [] }, { days: ['sunday'] });
+var changed = JSON.stringify(weekAnswers);
+keepWeek('prep', { days: ['sunday'] }, { days: ['sunday'] });
+console.log(JSON.stringify({ changed: changed, back: weekAnswers }));""")
+        assert _node(script) == {"changed": '{"prep":{"days":[]}}', "back": {}}

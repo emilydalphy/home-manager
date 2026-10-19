@@ -35,6 +35,9 @@ import nodeharness
 
 
 ONBOARDING = (Path(__file__).resolve().parent.parent / "static" / "onboarding.html").read_text()
+# The setup screens' code moved to setup-screens.js (re-plan Option B,
+# 2026-10-18); onboarding.html loads it ahead of its own script.
+SETUP_SCREENS = (Path(__file__).resolve().parent.parent / "static" / "setup-screens.js").read_text(encoding="utf-8")
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node runs the page's own script")
 
@@ -50,7 +53,7 @@ def _markup() -> str:
 
 def _script() -> str:
     start = ONBOARDING.rindex("<script>") + len("<script>")
-    return ONBOARDING[start:ONBOARDING.rindex("</script>")]
+    return SETUP_SCREENS + "\n" + ONBOARDING[start:ONBOARDING.rindex("</script>")]
 
 
 _HARNESS = r"""

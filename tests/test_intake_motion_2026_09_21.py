@@ -124,13 +124,16 @@ class TestOneQuestionAScreen:
             assert "this week" not in h
 
     def test_the_bones_are_onboardings(self):
-        # One crumb above the steps, the "Plan a week · n of 5" eyebrow, five
-        # bars, a full-width Continue, one quiet italic line under it.
+        # One crumb above the steps, onboarding's eyebrow, a full-width
+        # button, one quiet italic line under it. UPDATED 2026-10-19
+        # (re-plan Option B): "Plan a week · n of 5" and the five bars went
+        # with the steps-in-a-row; the eyebrow is onboarding's — the week,
+        # then the section ("Oct 19–25 · Days") — and the button is Done.
         flow = _flow()
         assert flow.count('class="crumb"') == 1
-        assert "$('eyebrow').textContent = 'Plan a week · ' + n + ' of ' + STEP_COUNT;" in PAGE
-        assert flow.count('class="bar"') == 5
-        assert "$('cta').textContent = 'Continue';" in PAGE
+        assert "$('eyebrow').textContent = periodLabel() + ' · Days';" in PAGE
+        assert flow.count('class="bar"') == 0
+        assert "$('cta').textContent = SAME_COPY.done;" in PAGE
         foot = PAGE[PAGE.index('<div class="footer"'):PAGE.index("</div>", PAGE.index('<div class="footer"')) + 6]
         assert 'class="cta" id="cta"' in foot and 'class="skip" id="skip"' in foot
         assert foot.index('id="cta"') < foot.index('id="skip"'), "the quiet line sits UNDER Continue"
@@ -138,7 +141,10 @@ class TestOneQuestionAScreen:
         assert "font-family: var(--font-accent); font-style: italic;" in skip_css
         assert "min-height: 44px" in skip_css
         # The crumb reads "‹ Plan" only on the first step.
-        assert "$('leave').innerHTML = n === 1 ? '&lsaquo; Plan' : '&lsaquo; Back';" in PAGE
+        # UPDATED 2026-10-19 (re-plan Option B): "‹ Plan" on the page,
+        # "‹ Same as last week?" on a question opened from it.
+        assert "$('leave').innerHTML = '&lsaquo; Plan';" in _extract("showSame")
+        assert "$('leave').innerHTML = esc(SAME_COPY.crumb);" in _extract("showStep")
 
     def test_ivory_everywhere_and_the_ivory_chip(self):
         body = PAGE[PAGE.index("  body {"):PAGE.index("  body.drafting")]
@@ -178,11 +184,11 @@ class TestOneQuestionAScreen:
         assert "tile.addEventListener('click', function () { openDaySheet(tile.dataset.date); });" in PAGE
 
     def test_back_never_loses_an_answer_and_leaving_keeps_them(self):
-        back = _extract("goBack")
-        # One step back — two when step 3 has no weekday lunch to ask
-        # about (2026-09-25).
-        assert "saveStep(step)" in back and "var to = step - 1;" in back and "showStep(to);" in back
-        assert "if (n === 5) return saveIntake({ freeform: $('freeform').value.trim() });" in PAGE
+        # UPDATED 2026-10-19 (re-plan Option B): no Back between steps;
+        # Done on a question saves the whole set (finishChange →
+        # samePayload), and leaving keeps every answer.
+        assert "await saveIntake(samePayload());" in _extract("finishChange")
+        assert "freeform: $('freeform').value.trim()," in _extract("samePayload")
         leave = _extract("leavePayload")
         assert "moods: answers.moods" in leave and "night_tags: answers.night_tags" in leave
 
@@ -282,8 +288,9 @@ class TestStartingWhen:
         assert "if (range.end) choosePeriod(range.start, daysBetween(range.start, range.end) + 1);" in _extract("tapRangeDay")
 
     def test_the_period_chosen_is_the_one_every_later_step_asks_about(self):
-        # Leaving step 1 fetches the prefill for the chosen period (once).
-        assert "if (!(await ensureLoaded())) return;" in _extract("advance")
+        # Done on "Which days?" fetches the prefill for the chosen period
+        # (once) — finishChange since re-plan Option B (2026-10-19).
+        assert "if (!(await ensureLoaded())) return;" in _extract("finishChange")
         load = _extract("loadPeriod")
         assert "var key = weekStart + '|' + dayCount;" in load and "if (data && loadedFor === key) return true;" in load
         assert "history.replaceState(null, '', url);" in _extract("choosePeriod")
@@ -475,12 +482,16 @@ class TestBuildingYourWeek:
         assert adv.startswith("function advance() {\n    if (drafting) return;") or "if (drafting) return;" in adv
         assert "drafting = true;" in adv
         show = _extract("showDraftProgress")
-        assert "$('footer').hidden = true;" in show and "$('progress').hidden = true;" in show
-        # A failed draft comes back to the last step, tappable again.
+        # (No bars to hide since re-plan Option B, 2026-10-19.)
+        assert "$('footer').hidden = true;" in show and "progress').hidden" not in show.replace("draft-progress", "")
+        # A failed draft comes back to the page, tappable again.
         assert "drafting = false;" in adv and "hideDraftProgress();" in adv
 
     def test_leaving_while_drafting_is_the_crumb_and_the_draft_still_lands(self):
-        assert "if (step === 1 || drafting) leaveFlow();" in _extract("crumbTap")
+        # UPDATED 2026-10-19 (re-plan Option B): a question's crumb only
+        # while not drafting; everything else leaves.
+        tap = _extract("crumbTap")
+        assert "else if (setupOpen && !drafting) setupCrumb();" in tap and tap.rstrip().endswith("else leaveFlow();\n  }")
         assert "location.href = '/week';" in _extract("leaveFlow")
 
     def test_the_server_says_whether_there_was_a_last_week(self):

@@ -92,9 +92,11 @@ class TestThePillAndTheScreen:
         assert '<div class="chip-row" id="did-you-mean"></div>' in q
         # The field is the screen: focused on open, so the keyboard is up.
         assert "setTimeout(function () { $('cuisine-field').focus(); }, 0);" in _extract("openCuisineScreen")
-        # Not a step: no eyebrow, no bars, and ‹ Back closes it.
+        # Not a step: no eyebrow, and ‹ Back closes it. (UPDATED 2026-10-19,
+        # re-plan Option B: the step bars are gone from the page, so there
+        # are none to hide.)
         opener = _extract("openCuisineScreen")
-        assert "$('progress').hidden = true;" in opener and "$('eyebrow').textContent = '';" in opener
+        assert "$('eyebrow').textContent = '';" in opener
         assert "if (cuisineOpen) closeCuisineScreen();" in _extract("crumbTap")
         # The field's type is 16px+ so a phone doesn't zoom on focus.
         field = PAGE[PAGE.index("  .field {"):PAGE.index("  .field:focus")]

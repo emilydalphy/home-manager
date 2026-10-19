@@ -27,6 +27,9 @@ _needs_node, _fn, _const, _run = _go_back._needs_node, _go_back._fn, _go_back._c
 _step_markup = _go_back._step_markup
 
 ONBOARDING = (_HERE.parent / "static" / "onboarding.html").read_text()
+# The setup screens' code moved to setup-screens.js (re-plan Option B,
+# 2026-10-18); onboarding.html loads it, so it is part of the page.
+ONBOARDING += "\n" + (__import__("pathlib").Path(__file__).resolve().parent.parent / "static" / "setup-screens.js").read_text(encoding="utf-8")
 
 
 def _steps():

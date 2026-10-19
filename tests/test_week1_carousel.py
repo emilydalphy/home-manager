@@ -42,6 +42,9 @@ sop = importlib.import_module("app.tools.swap_options")
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
 ONBOARDING = (STATIC / "onboarding.html").read_text()
+# The setup screens' code moved to setup-screens.js (re-plan Option B,
+# 2026-10-18); onboarding.html loads it, so it is part of the page.
+ONBOARDING += "\n" + (__import__("pathlib").Path(__file__).resolve().parent.parent / "static" / "setup-screens.js").read_text(encoding="utf-8")
 SHELL_JS = (STATIC / "shell.js").read_text()
 
 # The same source with HTML comments and full-line JS comments removed —

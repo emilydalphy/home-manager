@@ -49,6 +49,9 @@ from app import tools
 
 ONBOARDING_PATH = Path(__file__).resolve().parent.parent / "static" / "onboarding.html"
 ONBOARDING = ONBOARDING_PATH.read_text()
+# The setup screens' code moved to setup-screens.js (re-plan Option B,
+# 2026-10-18); onboarding.html loads it, so it is part of the page.
+ONBOARDING += "\n" + (__import__("pathlib").Path(__file__).resolve().parent.parent / "static" / "setup-screens.js").read_text(encoding="utf-8")
 
 _needs_node = pytest.mark.skipif(
     shutil.which("node") is None,
