@@ -166,10 +166,9 @@ class TestOneQuestionAScreen:
     def test_the_away_card_carries_emilys_words_and_opens_the_existing_sheet(self):
         q2 = _section("q2")
         assert '<span class="card-btn-title">Away for a few nights?</span>' in q2
-        assert (
-            "Tell me when you&rsquo;re traveling or gone for a stretch &mdash; "
-            "I&rsquo;ll skip those meals altogether." in q2
-        )
+        # UPDATED 2026-10-19 (re-plan Option B's copy list): the title
+        # already asks about being away, so the line is the promise alone.
+        assert '<span class="card-btn-line">I&rsquo;ll skip those meals altogether.</span>' in q2
         assert 'id="away-gate"' in q2
         assert "$('away-gate').addEventListener('click', openAwaySheet);" in PAGE
         assert "Anyone away this week?" not in PAGE

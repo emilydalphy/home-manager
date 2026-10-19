@@ -483,3 +483,18 @@ var changed = JSON.stringify(weekAnswers);
 keepWeek('prep', { days: ['sunday'] }, { days: ['sunday'] });
 console.log(JSON.stringify({ changed: changed, back: weekAnswers }));""")
         assert _node(script) == {"changed": '{"prep":{"days":[]}}', "back": {}}
+
+
+def test_the_copy_lists_other_lines():
+    """Slice 4: the mockup's "Exact copy changes" not pinned above."""
+    gate = PAGE[PAGE.index('id="away-gate"'):PAGE.index("</button>", PAGE.index('id="away-gate"'))]
+    assert '<span class="card-btn-title">Away for a few nights?</span>' in gate
+    assert '<span class="card-btn-line">I&rsquo;ll skip those meals altogether.</span>' in gate
+    assert "if (kind === 'leftovers') return 'Last night’s dinner';" in _extract("lunchLine")
+    # "Fri 23 · who's eating?" over the picker; Short on time / Got time /
+    # + Guests under it, for this week only.
+    assert "window.uwPickerLabel = function (i) { var d = firstDateFor(i); return d ? dayLabel(d)" in PAGE
+    assert "var EXTRA_TAGS = [{ key: 'rush', label: 'Short on time' }, { key: 'unrushed', label: 'Got time' }];" in PAGE
+    assert "var GUESTS_ADD = '+ Guests';" in PAGE
+    # "Surprise me" is the first mood chip, under "This week, lean toward".
+    assert "chipWithCustom(moods, [SURPRISE_MOOD].concat(MOODS), true);" in _extract("openCuisinesScreen")

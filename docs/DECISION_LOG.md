@@ -16,12 +16,25 @@ why*, not duplicating the diff.
 - **Re-plan Option B: "Same as last week?" in onboarding's look**
   (2026-10-19; branch `overnight/replan-same-as-last-week`, stacked on and
   merging AFTER `overnight/prep-day-says-why`; tests
-  `tests/test_replan_option_b.py`). Slice 1: `/api/onboarding/answers` with
-  `first_plan_start` writes the first period's week_intake once
-  (`tools.save_setup_week_answers`, onboarding's cuisines), and the first
-  plan's generation attaches it. Why: nothing wrote an intake for week 1,
-  so the first re-plan after setup had no `last_intake` and asked all five
-  steps of a household that had just answered them.
+  `tests/test_replan_option_b.py`). Emily's call, 2026-10-18 (build gate
+  lifted for this card). (1) `/api/onboarding/answers` writes week 1's
+  intake once (`tools.save_setup_week_answers`) and the first draft attaches
+  it — the first re-plan had no `last_intake` and asked all five steps.
+  (2) Plan a week always opens on the summary: eight rows in onboarding's
+  order and words, "Draft my week", "Already drafted" notice; the five
+  steps' bars and "Plan this week" are gone; Days default to the
+  household's length, not last week's. (3) Each row opens ONBOARDING'S OWN
+  screen: its code moved verbatim to `static/setup-screens.js` (both pages
+  load it; test harnesses that lift it read both files), and plan-week
+  lifts the markup from `/static/onboarding.html` at run time with its
+  stylesheet scoped to `#setup-host` — one copy of each. A change is for
+  THIS week only: `week_intake.week_answers_json` (grid, prep, variety,
+  lunch_needs), read by the draft through `usual_week.this_week` and, outside
+  a draft, `week_answers_on`; Settings keep the usual answer. Changed rows
+  tint; the pop-up has Undo. (4) The mockup's copy list. Not done: q2-q5,
+  the day sheet and "Add a cuisine" are unreachable but still in the page
+  (follow-up to delete with their tests); the day sheet's "Leftovers" dinner
+  tag has no place on the new screens.
 - **An added prep day says why, in one line** (2026-10-19; branch
   `overnight/prep-day-says-why`; tests `tests/test_weekday_lunches.py`
   `TestTheAddedPrepDaySaysWhy`). Plan a week step 3: when `ensurePrepReach`

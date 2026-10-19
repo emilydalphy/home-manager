@@ -914,6 +914,16 @@
     </div>
   </section>
 
+  <!-- ---------- NOT SHOWN since re-plan Option B (2026-10-19) ----------
+       q2 to q5 and "Add a cuisine" below were the steps in a row. "Same as
+       last week?" opens onboarding's screens instead (#setup-host), and
+       moves in from here what is still this page's: #holiday-blocks,
+       #away-gate and #away-set (Who's eating), #lunch-week and
+       #lunch-prep-why (the lunch day list); #freeform is still where the
+       week's note is kept, and renderLunchStep still lays the lunches out
+       here. The rest — the day tiles and day sheet, the counts and chips
+       of step 3, the mood screen, "Add a cuisine" — is unreachable and is
+       left for a follow-up card to delete with its tests. -->
   <!-- ---------- 2 of 5 · Any days that are different? (board B0) ----------
        The days as a strip of tiles; tapping one opens the day sheet, where
        every meal that day can be tagged. What was said about a day is the
@@ -940,7 +950,7 @@
         </span>
         <span class="card-btn-text">
           <span class="card-btn-title">Away for a few nights?</span>
-          <span class="card-btn-line">Tell me when you&rsquo;re traveling or gone for a stretch &mdash; I&rsquo;ll skip those meals altogether.</span>
+          <span class="card-btn-line">I&rsquo;ll skip those meals altogether.</span>
         </span>
         <span class="card-btn-chevron">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
@@ -3039,15 +3049,16 @@
     return { kinds: kinds, prepDays: prepDays };
   }
 
-  // "Prepped Sunday" · "Prepped Sunday, from the freezer" · "Leftovers
-  // from Tuesday’s dinner" · "Cooked that day".
+  // "Prepped Sunday" · "Prepped Sunday, from the freezer" · "Last night’s
+  // dinner" (onboarding's word for it — re-plan Option B's copy list,
+  // 2026-10-18; it was "Leftovers from Tuesday’s dinner") · "Cooked that day".
   // `kinds` (date → kind, optional) lets a line see the rest of its batch:
   // when a batch's FIRST lunch is past the three-day reach of its prep day
   // (last week's prep — a lone Wednesday prep and a Monday lunch), the
   // batch is cooked on that lunch, and the rest of it reheats that lunch.
   // weekday_lunches.apply_to_plan's `stale` batch, line for line.
   function lunchLine(iso, kind, prepDays, kinds) {
-    if (kind === 'leftovers') return 'Leftovers from ' + titleDay(isoWeekday(prevIso(iso))) + '’s dinner';
+    if (kind === 'leftovers') return 'Last night’s dinner';
     if (kind === 'cooked') return 'Cooked that day';
     var found = prepDayFor(iso, prepDays);
     if (!found) return 'Prepped';
@@ -3904,7 +3915,7 @@
   function captureState() {
     return {
       answers: clone(answers), lunch: clone(lunch), weekAnswers: clone(weekAnswers),
-      freeform: $('freeform').value
+      freeform: $('freeform').value, start: weekStart, count: dayCount
     };
   }
   function restoreState(st) {
@@ -3967,6 +3978,13 @@
   // Undo: the week as it was before that row opened, saved again (a new
   // revision — week_intake never changes in place).
   async function undoChange(state) {
+    // Undoing "Days" goes back to those days first: their prefill, then
+    // the answers as they were on them.
+    if (state.start !== weekStart || state.count !== dayCount) {
+      choosePeriod(state.start, state.count);
+      openRange();
+      if (!(await ensureLoaded())) return;
+    }
     restoreState(state);
     try { await saveIntake(samePayload()); } catch (err) { console.warn('Undo save failed:', err); }
     showSame();

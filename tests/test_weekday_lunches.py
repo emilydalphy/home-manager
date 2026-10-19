@@ -592,7 +592,9 @@ class TestTheScreen:
     def test_the_days_say_what_each_one_gets(self):
         assert _node(f"lunchLine('{WEEK[0]}', 'prepped', ['sunday'])") == "Prepped Sunday"
         assert _node(f"lunchLine('{WEEK[3]}', 'prepped', ['sunday'])") == "Prepped Sunday, from the freezer"
-        assert _node(f"lunchLine('{WEEK[2]}', 'leftovers', [])") == "Leftovers from Tuesday’s dinner"
+        # UPDATED 2026-10-19 (re-plan Option B's copy list): onboarding's
+        # word for a leftovers lunch.
+        assert _node(f"lunchLine('{WEEK[2]}', 'leftovers', [])") == "Last night’s dinner"
         assert _node(f"lunchLine('{WEEK[4]}', 'cooked', [])") == "Cooked that day"
 
     @_needs_node
