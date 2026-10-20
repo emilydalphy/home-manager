@@ -215,6 +215,20 @@ why*, not duplicating the diff.
   person). Still open for Emily: nobody can take a helper OUT of the
   household (remove-me is self-only), and Preferences' "Invite another
   adult" always adds an eater.
+- **Settings' age chip stores a real age group and keeps one adult**
+  (2026-10-20, overnight defect hunt; branch `overnight/age-group-guards`;
+  tests `tests/test_age_group_route_guards.py`). POST
+  /api/memory/member/age-group stored anything ("banana") and let the
+  household's only adult become Teen/Child, leaving /api/whoami with no
+  adults and nobody to pick or credit. Now: Adult/Teen/Child (plus the
+  little-one words the tool folds into Child), trimmed and lowercased,
+  else 400 "Pick Adult, Teen or Child."; the last adult (current_member's
+  LOWER(TRIM) test) gets 400 "<Name> is the only adult here. Add another
+  adult before changing this." The chip now shows that sentence
+  (wwkPostSaying). Route only — chat's set_member_age_group stays freeform.
+  Open for Emily: with two adults, an adult marking THEMSELVES Teen makes
+  their phone silently act as the other adult (current_member falls back
+  to the sole remaining adult by design) — refuse, re-ask, or allow?
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a

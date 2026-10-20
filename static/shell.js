@@ -12692,7 +12692,7 @@
         if (key !== 'child') m.in_meals = true;
       });
     }, function () {
-      return wwkPost('/api/memory/member/age-group', { name: name, age_group: key });
+      return wwkPostSaying('/api/memory/member/age-group', { name: name, age_group: key });
     }, function (result) { wwkAdoptMemory(result); wwkAfterAgeChange(); });
   }
 

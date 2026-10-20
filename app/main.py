@@ -41,6 +41,7 @@ from . import db
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
+from .tools import household as _household_tools
 from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
@@ -2465,13 +2466,56 @@ def _require_member_here(name: str | None) -> None:
         raise HTTPException(status_code=404, detail=f"{name.strip()} isn't someone in this household.")
 
 
+# The age groups Settings' chips send, plus the little-one words the tool
+# itself folds into "child". The column is freeform for chat's sake; this
+# route is not (defect hunt 2026-10-20: it stored "banana", which reads as
+# no age stage anywhere and drops the person out of every adult check).
+_SETTINGS_AGE_GROUPS = frozenset({"adult", "teen", "child"}) | _household_tools.LITTLE_ONE_WORDS
+
+
+def _refuse_last_adult_leaving(name: str, age_group: str) -> None:
+    """
+    A household always keeps one adult (defect hunt 2026-10-20). Marking
+    the only adult Teen or Child left "Who's this?", sign-in's member pick,
+    approval credit and the main person with nobody to name — and the
+    phone that did it went on as no one. Re-marking an adult as an adult,
+    or anyone else as anything, is untouched. Same adult test as
+    current_member (LOWER(TRIM(age_group)) = 'adult').
+    """
+    if age_group == "adult":
+        return
+    conn = get_conn()
+    try:
+        # Matched by SQLite's LOWER, the same lookup _require_member_here
+        # and the tool use, so the person checked is the row written.
+        row = conn.execute(
+            "SELECT COUNT(*) AS adults, "
+            "SUM(CASE WHEN LOWER(name) = LOWER(?) THEN 1 ELSE 0 END) AS is_them "
+            "FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
+            (name, tools.household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row["adults"] == 1 and row["is_them"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{name.strip()} is the only adult here. Add another adult before changing this.",
+        )
+
+
 @app.post("/api/memory/member/age-group")
 def set_memory_member_age_group(req: MemberAgeGroupRequest):
     """Set one member's age group — What We Know's People tab. No route onto
-    set_member_age_group existed before this (see MemberAgeGroupRequest)."""
+    set_member_age_group existed before this (see MemberAgeGroupRequest).
+    Only a real age group is stored, and never one that leaves the
+    household without an adult — both a 400 with a sentence to show."""
     _require_member_here(req.name)
+    age_group = (req.age_group or "").strip().lower()
+    if age_group not in _SETTINGS_AGE_GROUPS:
+        raise HTTPException(status_code=400, detail="Pick Adult, Teen or Child.")
+    _refuse_last_adult_leaving(req.name, age_group)
     try:
-        tools.set_member_age_group(req.name, req.age_group)
+        tools.set_member_age_group(req.name, age_group)
         memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Setting member age group failed")
