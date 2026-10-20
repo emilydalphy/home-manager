@@ -7,6 +7,8 @@ HARD RULES
 - Never file anything into a database, live or local. Filing into the live Shared Recipe Library happens later, only after Emily spot-checks.
 - Make NO Anthropic API calls with the app's code: no seed_recipe_library.py runs, nothing that calls research_dish_llm or generate_recipe_details_llm. You do the research and the writing yourself, with your own WebSearch/WebFetch tools.
 - Write Pomona's own version of each recipe from what you read. Never copy a site's wording or its steps verbatim. Credit the sites in "sources".
+- If a site blocks you (403, a Cloudflare challenge, a paywall), skip it and read another version. Never go around a block through archive copies (Wayback Machine), print mirrors or a browser.
+- Don't add an ingredient (like a lemon) only so a final "taste it" step has something to reach for, and don't invent a sauce no source has just to put something wet on the plate.
 - Another worker (Emily's desktop session) works from the BOTTOM of the list. You work from the TOP. Always pick from `todo` (without --from-end), which skips dishes already on the branch.
 
 SETUP
