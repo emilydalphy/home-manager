@@ -1,0 +1,52 @@
+{
+ "dish_name": "Fish Moilee",
+ "cuisine": "Indian",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Firm white fish fillets", "qty": "1 1/2 lb", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Coconut oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Cumin seeds", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Curry leaves", "qty": "1 bag", "category": "produce", "cook_qty": "12 leaves"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce", "cook_qty": "1 tbsp minced"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Kashmiri chili powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Coconut milk", "qty": "1 can (13.5 oz)", "category": "pantry"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "White vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Basmati rice", "qty": "1 1/2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice and get it cooking the way you usually do, so it's ready when the curry is.",
+  "Meanwhile, pat the fish dry with paper towels and cut it into 2 inch pieces. Sprinkle 1/2 tsp of the salt and 1/4 tsp of the turmeric over them and rub it in on all sides.",
+  "Thinly slice the onion. Mince 1 tbsp of the ginger and the 3 garlic cloves. Chop the 2 tomatoes. Thinly slice the green chili into a small bowl for the table.",
+  "Heat 1 tbsp of the coconut oil in a large, wide skillet over medium high until it shimmers. Add the fish in a single layer and cook for about 1 minute, until the underside turns light golden. Flip the pieces and cook the other side for 1 minute. They won't be cooked through yet. Move them to a plate.",
+  "Turn the heat down to medium and add the remaining 2 tbsp coconut oil, the 1/2 tsp cumin seeds and 12 of the curry leaves. Stand back a little. The leaves will spatter. After about 20 seconds the seeds will sizzle and smell toasty.",
+  "Add the onion and 1/4 tsp of the salt. Cook for 5 to 6 minutes, stirring now and then, until it's soft and see through but not brown.",
+  "Add the ginger and garlic and stir for about a minute, until they stop smelling raw.",
+  "Add the tomatoes and cook for 3 to 4 minutes, stirring, until they're soft and mushy and the oil starts to show at the edges.",
+  "Turn the heat to low and stir in the remaining 1/4 tsp turmeric and the 1/2 tsp Kashmiri chili powder for 30 seconds.",
+  "Pour in 1/2 cup water and bring it to a simmer. Shake the can of coconut milk well, then stir in the whole can with the remaining 1/2 tsp salt. Bring it back to a gentle simmer over medium low. Don't let it boil hard, or the coconut milk can split.",
+  "Slide the fish back into the sauce with any juices from the plate and spoon the sauce over the top. Cover and simmer gently for 5 to 6 minutes, until the fish flakes when you press it with a fork. Swirl the pan instead of stirring so the pieces stay whole.",
+  "Take the pan off the heat. Squeeze in the juice of half the lime and add the 1/2 tsp vinegar, then swirl the pan to mix them in.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a squeeze of the rest of the lime.",
+  "Serve over the rice, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions simmer firm white fish in a mild sauce of onion, ginger, garlic, turmeric and coconut milk and serve it with rice. Archana's Kitchen (the lead) blooms cumin seeds, cooks the onion, ginger, garlic and tomatoes down before turmeric and a little red chili, simmers the fish in water with coconut milk and finishes it off the heat with lime juice and a few drops of vinegar. Yummy Tummy sears the turmeric fish in coconut oil first and uses a full mix of thin and thick coconut milk with curry leaves and green chilies, and Olive Magazine (Maunika Gowardhan) blends the aromatics to a paste, adds mustard seeds and cardamom and finishes with tamarind. This follows the lead's order and its lime and vinegar finish, but uses a whole can of coconut milk and the quick coconut oil sear from Yummy Tummy so it reads as a moilee, with the green chili moved to the table.",
+ "sources": [
+  {"name": "Archana's Kitchen", "title": "Fish Molee Recipe - Kerala Style Fish Curry", "url": "https://www.archanaskitchen.com/fish-molee-recipe", "rating": 4.9, "rating_count": 2186, "read": true, "lead": true},
+  {"name": "Yummy Tummy Aarthi", "title": "Fish Molee Recipe | Fish Molly Recipe", "url": "https://www.yummytummyaarthi.com/meen-moleefish-cooked-in-coconut-milk/", "rating": 4.25, "rating_count": 4, "read": true, "lead": false},
+  {"name": "Olive Magazine", "title": "Kerala fish moilee", "url": "https://www.olivemagazine.com/recipes/fish-and-seafood/kerala-fish-moilee/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

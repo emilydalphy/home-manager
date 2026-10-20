@@ -1,0 +1,80 @@
+{
+ "dish_name": "Atole de Avena",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "Cinnamon sticks",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Old-fashioned oats",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 quart",
+   "category": "dairy",
+   "cook_qty": "2 2/3 cups"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups water and the cinnamon stick in a medium saucepan, cover it and bring it to a boil over high heat. Turn the heat down to low and simmer for 5 minutes, until the water turns pale brown and smells of cinnamon.",
+  "Meanwhile, put the 1/3 cup oats and 2 cups of the milk in a blender and blend for about 1 minute, until smooth.",
+  "Pour the oat milk into the saucepan, then add the remaining 2/3 cup milk and the 1/3 cup sugar. Stir well.",
+  "Turn the heat to medium and cook for 12 to 15 minutes, stirring often and scraping the bottom, until it's thick enough to coat the back of a spoon. Keep stirring the whole time, or it'll catch and scorch on the bottom.",
+  "Take the pan off the heat and stir in the 1 tsp vanilla. Taste it, and add a little more sugar if you'd like it sweeter.",
+  "Fish out the cinnamon stick. Pour the atole into 4 mugs and serve it hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three steep a cinnamon stick in simmering water for about 5 minutes, blend old-fashioned oats with part of the milk, then cook the two together with sugar, stirring, until the drink coats a spoon, and finish with vanilla. In Mama Maggie's Kitchen uses plain milk and white sugar and cooks it for 15 minutes; Camila Made swaps in evaporated milk and brown sugar, and Maricruz Avalos uses twice the oats for a thicker atole and sprinkles cinnamon on top. This follows In Mama Maggie's Kitchen, scaled from 6 mugs to 4.",
+ "sources": [
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Atole de Avena (Mexican Oatmeal Drink)",
+   "url": "https://inmamamaggieskitchen.com/atole-de-avena/",
+   "rating": 5.0,
+   "rating_count": 49,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Atole de Avena",
+   "url": "https://www.maricruzavalos.com/oatmeal-atole/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Camila Made",
+   "title": "Atole de Avena",
+   "url": "https://camilamade.com/atole-de-avena/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

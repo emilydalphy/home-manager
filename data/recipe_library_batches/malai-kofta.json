@@ -1,0 +1,197 @@
+{
+ "dish_name": "Malai Kofta",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {
+   "item": "Russet potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Paneer",
+   "qty": "1 block (7 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 1 tbsp chopped"
+  },
+  {
+   "item": "Golden raisins",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 1/2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/4 cup + 1 tbsp"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon sticks",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the potato, whole and unpeeled, in a small saucepan and cover it with cold water. Bring it to a boil over high heat, then turn it down to medium and boil for 20 to 25 minutes, until a knife slides in easily. Drain it and leave it to cool completely.",
+  "Meanwhile, slice the onion and roughly chop the 4 tomatoes. Peel 1 inch of the ginger and slice it, and peel the 5 garlic cloves.",
+  "Heat the 1 1/2 tbsp ghee in a large frying pan over medium. Lightly crush the 3 cardamom pods and add them with the bay leaf, cinnamon stick, 2 cloves and 3/4 tsp cumin seeds. After about 30 seconds the cumin will sizzle and smell toasty.",
+  "Add the onion and cook for 6 to 8 minutes, stirring now and then, until it's soft and light golden.",
+  "Add the sliced ginger and the garlic and cook for 1 minute, until they smell fragrant.",
+  "Add the tomatoes, 1/4 cup of the cashews and 3/4 tsp of the salt. Cover and cook for 8 minutes, until the tomatoes are soft and mushy.",
+  "Uncover and stir in the 3/4 tsp chili powder, the 1 tsp coriander and 3/4 tsp of the garam masala. Cook for 2 to 3 minutes, stirring, until it smells warm and spiced.",
+  "Take the pan off the heat and let it cool for 10 minutes. Fish out the bay leaf. Transfer everything into a blender with 1 cup cold water and blend until it's completely smooth.",
+  "Melt the 2 tbsp butter in the same pan over medium. Pour the puree through a sieve into the pan, pressing it through with a spoon, then stir in 1/2 cup water.",
+  "Bring it to a gentle bubble, then cover, turn the heat to low and simmer for 10 minutes, stirring every few minutes, until it's thick and creamy.",
+  "Crush the 1 1/2 tsp kasuri methi between your palms into the sauce, and stir in the 1 tsp sugar and 1/4 cup of the cream. Take it off the heat and cover it.",
+  "Peel the cooled potato and grate it finely into a large bowl. That should be about 1/2 cup. Pat the paneer dry with paper towels and grate it finely into the bowl. That should be about 1 1/2 cups.",
+  "Finely chop enough of the remaining cashews to make 1 tbsp, and chop the 1 tbsp raisins. Grate 1 tsp of the remaining ginger and chop 2 tbsp of the cilantro.",
+  "Add the chopped cashews, raisins, grated ginger and 1 tbsp of the chopped cilantro to the bowl, with the 2 1/2 tbsp cornstarch, the remaining 1/2 tsp salt, the remaining 1/2 tsp garam masala and the 1/4 tsp black pepper. Knead it with your hands for 2 to 3 minutes, until it comes together into a smooth dough that doesn't stick to your fingers.",
+  "Divide the dough into 12 even pieces and roll each one between your palms into a smooth ball with no cracks.",
+  "Heat the 2 cups oil in a small, deep saucepan over medium until a pinch of the dough sizzles and rises straight to the top. Fry one kofta first as a test. If it falls apart, knead a little more cornstarch into the dough.",
+  "Gently lower in 4 or 5 koftas at a time. Leave them alone for 2 minutes, then turn them and fry for 3 to 4 minutes, until they're crisp and golden all over. Lift them onto a rack or paper towels and fry the rest the same way.",
+  "Warm the sauce over low heat until it's steaming. Taste it. If it's flat, add a pinch more salt.",
+  "Pour the sauce into a serving dish and set the koftas in it right before you eat. If they sit in the sauce too long, they'll soften and break up. Drizzle the last 1 tbsp cream over the top and scatter the rest of the chopped cilantro.",
+  "Slice the green chili into a small bowl for the table. Serve with naan or basmati rice, with the green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both make the sauce the same way: whole spices bloomed in fat, onion, ginger and garlic, then tomatoes cooked down with raw cashews, blended smooth, strained and finished with butter, kasuri methi and cream. The koftas in both are grated paneer and boiled potato bound with cornstarch, flecked with chopped cashews and raisins, and deep fried until golden. Swasthi's Recipes browns the onion and cooks the ground spices into the tomatoes before blending, and adds a little jaggery or sugar; Cook with Manali keeps the onion pale, adds the spices after blending and seasons the koftas with white pepper and cardamom. This follows Swasthi's Recipes for 12 koftas, with black pepper in place of the green chili in the dough so the base stays mild.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Malai Kofta Recipe (Restaurant Style)",
+   "url": "https://www.indianhealthyrecipes.com/malai-kofta-recipe/",
+   "rating": 4.98,
+   "rating_count": 491,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Malai Kofta",
+   "url": "https://www.cookwithmanali.com/malai-kofta/",
+   "rating": 5.0,
+   "rating_count": 19,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

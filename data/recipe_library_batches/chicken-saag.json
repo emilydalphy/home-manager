@@ -1,0 +1,168 @@
+{
+ "dish_name": "Chicken Saag",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "2 bags (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon sticks",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the 1 1/4 lb chicken into 1 1/2 inch pieces and pat them dry with paper towels. Squeeze 1 tbsp of juice from half the lemon. In a bowl, toss the chicken with the lemon juice, the 1/4 tsp black pepper, the 1/4 tsp chili powder and 1/4 tsp of the salt. Leave it on the counter while you make the spinach.",
+  "Heat 1 tsp of the oil in a large frying pan over high. Add the 1/4 cup cashews and stir for about 1 minute, until they're lightly golden.",
+  "Turn the heat to medium and add the spinach a few handfuls at a time, stirring each lot until it collapses before you add the next. Cook for about 6 minutes in all, until it's completely wilted. Take the pan off the heat and let it cool for 5 minutes.",
+  "While the spinach cools, finely chop the onion. Seed and finely chop the 2 tomatoes. Peel and grate the ginger, and mince the 4 garlic cloves.",
+  "Transfer the spinach and cashews into a blender with 1/2 cup cold water and blend until smooth. Wipe out the pan.",
+  "Heat the rest of the oil in the same pan over medium. Add the bay leaf, 1/2 tsp cumin seeds, 3 cardamom pods, 3 cloves and the cinnamon stick. After about 20 seconds the cumin will sizzle and smell toasty.",
+  "Add the onion and cook for 8 to 10 minutes, stirring now and then, until it's light brown and very soft. Don't rush the onion. That's where the flavor starts.",
+  "Add the ginger and garlic and cook for 1 minute, until they smell fragrant.",
+  "Add the tomatoes and 3/4 tsp of the salt. Cover and cook for 5 minutes, until the tomatoes have broken down and lost their raw smell.",
+  "Turn the heat up to medium high and add the chicken. Spread it out and cook for 5 to 6 minutes, stirring now and then, until it's pale all over with a few golden spots. Stir in the 3/4 tsp garam masala and cook for 30 seconds.",
+  "Pour in 1/2 cup hot water and scrape up the browned bits from the bottom. Cover, turn the heat to medium and cook for 10 to 12 minutes. You're cooking it to 175°F in the middle, so if you have a thermometer, check a thick piece. No thermometer? Cut into the biggest piece: it's done when there's no pink left.",
+  "Stir in the spinach puree. If it's as thick as paste, add a splash of hot water. Simmer it uncovered for 3 to 4 minutes, until it's bubbling all over.",
+  "Crush the 1 tbsp kasuri methi between your palms into the pan and stir it in. Take the pan off the heat and fish out the bay leaf and the cinnamon stick.",
+  "Taste it. If it's flat, add the last 1/4 tsp salt, or a squeeze of the other lemon half.",
+  "Drizzle the 2 tbsp cream over the top. Slice the green chili into a small bowl for the table. Serve with basmati rice or naan, with the green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bloom cumin in fat, cook onion, ginger and garlic with tomato into a base, cook the chicken in it and finish with spinach, kasuri methi and a little cream. Swasthi's Recipes marinates the chicken briefly in lemon, pepper and chili, wilts the spinach with cashews and green chilies and blends it to a smooth puree that goes in at the end; Ministry of Curry blanches and blends the spinach, and Tea for Turmeric chops it and simmers bone-in chicken with it for 35 to 40 minutes. This follows Swasthi's Recipes with thighs instead of breast, and the green chili moved out of the puree and onto the table.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Palak Chicken (Chicken Saag Recipe)",
+   "url": "https://www.indianhealthyrecipes.com/palak-spinach-chicken/",
+   "rating": 5.0,
+   "rating_count": 49,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tea for Turmeric",
+   "title": "Palak Chicken (Chicken Saag)",
+   "url": "https://www.teaforturmeric.com/palak-chicken-saag-chicken/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Ministry of Curry",
+   "title": "Saag Chicken {Classic Spinach and Chicken Curry}",
+   "url": "https://ministryofcurry.com/saag-chicken/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,53 @@
+{
+ "dish_name": "Lamb Keema",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Ground lamb", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "1 cup"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "1", "category": "pantry"},
+  {"item": "Cinnamon stick", "qty": "1 (2 inch)", "category": "pantry"},
+  {"item": "Whole cloves", "qty": "3", "category": "pantry"},
+  {"item": "Green cardamom pods", "qty": "3", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1 large", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce", "cook_qty": "2 tsp minced"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce", "cook_qty": "3 tbsp chopped"},
+  {"item": "Tomato sauce", "qty": "1 can (8 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "3 tbsp chopped"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Green chili", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Finely chop the onion. Mince 2 tsp of the ginger and the 3 garlic cloves. Chop 3 tbsp of the mint and 3 tbsp of the cilantro. Thinly slice the green chili into a small bowl for the table and cut the lemon into wedges.",
+  "Heat the 2 tbsp oil in a large, deep skillet over medium. Add the bay leaf, cinnamon stick, 3 cloves and 3 cardamom pods. After about 20 seconds they'll sizzle and smell warm and sweet. That's your cue for the onion.",
+  "Add the onion and cook for 8 to 10 minutes, stirring now and then, until it's evenly golden. Don't rush the onion. That's where the flavor starts.",
+  "Add the ginger and garlic and stir for about a minute, until they stop smelling raw.",
+  "Turn the heat to medium high and add the 1 lb lamb. Break it into small crumbs with a wooden spoon and cook for 3 to 4 minutes, stirring, until there's no pink left. If a lot of fat pools in the pan, spoon some of it off.",
+  "Turn the heat to low. Sprinkle in the 3/4 tsp salt, 1/4 tsp turmeric, 1 tsp Kashmiri chili powder and 1 tsp of the garam masala, then add the chopped mint. Stir for 3 to 4 minutes, until the spices smell toasty and coat the meat.",
+  "Cover the pan and cook on the lowest heat for 8 minutes, until the lamb has let out some juices and looks moist.",
+  "Uncover, add the 1/2 cup tomato sauce and turn the heat to medium. Cook for 5 minutes, stirring, until the tomato no longer smells raw and the mixture looks thick and glossy.",
+  "Stir in the 1 cup peas and 1/3 cup hot water, scraping the bottom of the pan. Cover and cook over medium low for 8 to 10 minutes, until the lamb is tender and the peas are soft. If it starts to stick, add a splash of water.",
+  "Uncover and cook for 2 minutes, stirring, until most of the liquid has cooked off and the keema is moist but not soupy.",
+  "Take the pan off the heat. Stir in the remaining 1/2 tsp garam masala and the chopped cilantro. Fish out the bay leaf and cinnamon stick if you can find them.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of one of the lemon wedges.",
+  "Serve with roti, paratha or basmati rice, with the lemon wedges and the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions soften onion with ginger and garlic, cook ground meat into it with turmeric, chili and garam masala, add tomato and a little water and simmer it covered until tender. Swasthi's Recipes (the lead) starts from whole spices in oil, browns the onions to golden, cooks the spices and mint into the meat and steams it covered before the tomato goes in, then dries it to a semi dry keema and finishes with cilantro and lemon. Skinnytaste uses ghee and adds cinnamon, cayenne and a bay leaf with the tomato sauce, simmers it for 15 minutes and stirs in a cup of frozen peas for the last 5. This follows the lead's order and spice ratios scaled to 1 lb of lamb, with the peas from Skinnytaste, and the green chili goes on the side.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Keema Recipe (Mutton Keema Curry)", "url": "https://www.indianhealthyrecipes.com/keema-recipe-mutton-keema/", "rating": 5.0, "rating_count": 345, "read": true, "lead": true},
+  {"name": "Skinnytaste", "title": "Lamb Keema with Peas", "url": "https://www.skinnytaste.com/lamb-kheema-with-peas/", "rating": 4.87, "rating_count": 36, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

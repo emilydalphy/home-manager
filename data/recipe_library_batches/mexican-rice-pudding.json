@@ -1,0 +1,90 @@
+{
+ "dish_name": "Mexican Rice Pudding",
+ "cuisine": "Mexican",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon sticks",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweetened condensed milk",
+   "qty": "1 can (14 oz)",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Evaporated milk",
+   "qty": "1 can (12 oz)",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 quart",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 1/2 cup rice, 3 1/2 cups water and the cinnamon stick in a medium saucepan over medium high heat. Bring it to a boil and cook it uncovered for 16 to 18 minutes, stirring now and then, until the rice is soft.",
+  "Pour it through a sieve to drain off any water that's left, and take out the cinnamon stick. Return the rice to the pan.",
+  "Add 2/3 cup of the condensed milk, 3/4 cup of the evaporated milk, the 1/2 cup whole milk and a pinch of salt. Bring it to a boil over medium high, stirring.",
+  "Turn the heat to low and cook for about 20 minutes, stirring often and scraping the bottom, until it's thick and creamy, like loose oatmeal. Stay close and keep stirring, or the milk will catch and burn on the bottom.",
+  "Take it off the heat while it still looks a little runny. It keeps thickening as it cools.",
+  "Spoon it into 4 bowls and sprinkle the 1/2 tsp ground cinnamon over the top. Serve it warm, or chill it in the fridge and serve it cold. Cover the leftover condensed and evaporated milk and keep them in the fridge for another batch."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three simmer long-grain or medium-grain rice with cinnamon, then cook it slowly in a mix of milks until it's creamy, and all say to stir often so the milk doesn't scorch. Lil' Luna boils the rice in plenty of water, drains it and then adds sweetened condensed, evaporated and whole milk; Camila Made uses the same three milks with lime peel and raisins, and Pati Jinich adds orange rind, vanilla and a little sugar with mostly whole milk. This follows Lil' Luna, halved for 4 snack bowls.",
+ "sources": [
+  {
+   "name": "Lil' Luna",
+   "title": "Arroz con Leche Recipe",
+   "url": "https://lilluna.com/arroz-con-leche/",
+   "rating": 5.0,
+   "rating_count": 429,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pati Jinich",
+   "title": "Mexican-Style Rice Pudding",
+   "url": "https://patijinich.com/mexican-style-rice-pudding/",
+   "rating": 4.69,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Camila Made",
+   "title": "Mexican Arroz con Leche Recipe",
+   "url": "https://camilamade.com/arroz-con-leche-mexicano/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

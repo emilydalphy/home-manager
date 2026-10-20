@@ -1,0 +1,95 @@
+{
+ "dish_name": "Pico de Gallo with Chips",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tortilla chips",
+   "qty": "1 bag",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Halve the 4 tomatoes and scoop out the seeds and watery middles with a teaspoon. Cut the flesh into small dice, about 1/3 inch. That should be about 1 1/2 cups. Transfer them into a sieve set over a bowl to drain while you chop the rest.",
+  "Finely chop half the onion and mince the garlic clove.",
+  "Halve the jalapeño, scrape out the seeds and ribs, and dice it fine. Put half of it in a small bowl for the table.",
+  "Chop 1/3 cup of the cilantro leaves.",
+  "Squeeze the lime into a small cup. That should be about 2 tbsp.",
+  "In a medium bowl, stir together the drained tomatoes, onion, garlic, cilantro, the other half of the jalapeño, the lime juice and the 1/2 tsp salt. If you'd like it ready ahead, mix everything but the lime juice and salt up to a day before, cover it and keep it in the fridge. Drain off any liquid and stir in the lime and salt just before serving.",
+  "Let it sit on the counter for 10 to 15 minutes.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Serve with the tortilla chips, with the extra jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three dice tomatoes, onion, jalapeño and cilantro small, dress them with lime juice and salt and let the bowl sit for 15 to 20 minutes before serving. Love and Lemons adds a little garlic and uses a generous 1/4 cup of lime juice; RecipeTin Eats scoops the seeds out of the tomatoes and keeps the lime and salt back until serving when it's made ahead, and Spend With Pennies drains the diced tomatoes in a sieve instead. This follows Love and Lemons' ratios for 4, with the seeded, drained tomatoes from the other two so the salsa isn't watery.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Pico De Gallo",
+   "url": "https://www.loveandlemons.com/pico-de-gallo/",
+   "rating": 5.0,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pico de Gallo (Authentic)",
+   "url": "https://www.recipetineats.com/pico-de-gallo/",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Pico de Gallo",
+   "url": "https://www.spendwithpennies.com/pico-de-gallo/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
