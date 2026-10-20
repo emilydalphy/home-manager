@@ -9180,6 +9180,24 @@ def move_cook_onto_fed_night(conn, weekly_plan_id: int, entry_id: int,
                 "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
                 (json.dumps(derived), r["id"], household_id()),
             )
+    # A night eating a portion this cook freezes names the cook's DAY
+    # ("Leftovers from the freezer — Monday’s Turkey Chili") and names the
+    # cook by entry id, not by date, so the rewrite above never reaches it.
+    # The "−", the night off and an away night all land here, and all three
+    # left Friday saying "Monday’s" over a Monday cooking nothing (overnight
+    # 2026-10-20). The Move sheet's and the swap's own re-say, so the name is
+    # written by one rule; the cook is read at the night it moved OFF.
+    from . import meal_move as _meal_move  # lazy: meal_move imports us
+    rows = [dict(r) for r in conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL",
+        (weekly_plan_id, household_id()),
+    ).fetchall()]
+    for r in rows:
+        if r["id"] == entry_id:
+            r["date"] = old_date
+    _meal_move._resay_freezer_nights(conn, {"rows": rows}, {entry_id: target["date"]})
     _shift_defrost_tasks(conn, weekly_plan_id, entry_id, old_date, target["date"])
     # The cook now lands on a later night: a "first meal back" suggestion
     # to double it may now name a dinner after the meal it covers.

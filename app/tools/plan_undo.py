@@ -51,8 +51,14 @@ def touched_ids(rows_all, direct: set[int], refs: list[str]) -> set[int]:
     has to be able to put those back too. Over-inclusion is harmless (a
     snapshot of a row that didn't change restores to itself);
     under-inclusion is an Undo that leaves a chain pointing at the wrong
-    night."""
+    night.
+
+    A row naming one of the DIRECT rows by id ("entry_id:12") counts too:
+    a freezer night names its cook that way and carries the cook's weekday
+    in its own name, which the move re-says (move_cook_onto_fed_night,
+    2026-10-20) — so Undo has to be able to say it back."""
     touched = set(direct)
+    refs = [*refs, *(f"entry_id:{i}" for i in direct)]
     for r in rows_all:
         text = r["derived_from_json"] or ""
         if any(f'"{ref}"' in text for ref in refs):

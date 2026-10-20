@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A freezer night follows its cook through the "−", an away night and a
+  night off** (2026-10-20, overnight; branch
+  `overnight/freezer-night-follows-its-cook`, stacked on the swap branch below;
+  tests `tests/test_freezer_night_follows_its_cook.py`). All three move a cook
+  onto its first fed night via `move_cook_onto_fed_night`, which re-pointed
+  `links_to` by date but never touched the freezer night (it names its cook by
+  entry id), so Friday kept "Monday's Turkey Chili". The move now re-says it
+  through `meal_move._resay_freezer_nights`, and `plan_undo.touched_ids` also
+  snapshots rows naming a direct row by `entry_id:N`, so Undo says it back even
+  for freezer nights without the repair's `original_links_to`. Not changed: a
+  cook whose ONLY later night is a freezer night is dropped by all three paths,
+  leaving that night reheating a portion nobody cooks (same before and after).
 - **The nights swap never cooks a dish after its frozen portion** (2026-10-20,
   defect hunt; branch `overnight/swap-keeps-the-freezer-cook-first`; tests
   `tests/test_swap_keeps_the_freezer_cook_first.py`). `_redate_plan_rows`
