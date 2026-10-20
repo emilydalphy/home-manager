@@ -351,6 +351,17 @@ why*, not duplicating the diff.
   rule, `recipes.positive_servings`: the chat's add_recipe refuses a bad
   count in update_recipe_details' words; a model's bad count is dropped for
   the household's table / the recipe's own / 4. Library filing uses it too.
+- **A staple answer from the other phone's stale screen changes nothing
+  once the line is bought** (2026-10-20, overnight hunt over HTTP, two
+  phones; branch `overnight/stale-staple-answer-after-tick`; tests
+  `tests/test_stale_staple_answer.py`). `decide_staple_line` never read the
+  line's status: phone A ticked a 3-week staple, phone B's "Not this trip"
+  pulled it to "ask again next week" and counted a skip (two phones, two
+  skips; three pauses it), and B's toast Undo made it due today — a second
+  line beside the one just bought. Now an answer on a line not `needed`
+  returns `unchanged` and writes nothing, and `undo_staple_decision` does
+  nothing once a 'bought' event is newer than the last answer. Not fixed
+  (shell.js): the client still toasts "off the list" on an `unchanged`.
 
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",

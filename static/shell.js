@@ -9171,11 +9171,19 @@
         var carryRow = el.closest('.gro-carry-row');
         if (carryRow) carryRow.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
         el.disabled = true;
+        var carryAnswer = null;
         groDo(function () {
-          return groPost('/api/grocery-list/' + carryId + '/carried-over', { decision: carryDecision });
+          return groPost('/api/grocery-list/' + carryId + '/carried-over', { decision: carryDecision })
+            .then(function (r) { carryAnswer = r; return r; });
         }, "Couldn't save that — try again.").then(function (ok) {
           if (!ok) return;
           groAdvanceCarry();
+          // Answered on another phone first: saying "off the list" while
+          // the kept line is still there would be untrue.
+          if (carryAnswer && carryAnswer.unchanged) {
+            showToast(carryName + ' was already answered');
+            return;
+          }
           showToast(carryDecision === 'keep' ? carryName + ' kept' : carryName + ' off the list', {
             label: 'Undo',
             onClick: function () {
@@ -9669,6 +9677,12 @@
             .then(function (r) { stResult = r; });
         }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok || !stResult) return;
+          // Ticked or answered on another phone first: nothing changed,
+          // so no "off the list — I'll ask again" and no Undo to offer.
+          if (stResult.unchanged) {
+            showToast(stName + ' was already taken care of');
+            return;
+          }
           var line;
           // A line this week's meals had added to stays, cut back to what
           // they need (staples._trim_to_the_weeks_part) — "off the list"
