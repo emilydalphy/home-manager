@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A two-week plan is not nudged about the next period on its fifth day**
+  (2026-10-20, defect hunt; branch `overnight/fortnight-not-nudged-early`;
+  tests `tests/test_fortnight_not_nudged_early.py`). Driven: approved
+  Oct 16–29, Tue Oct 20 — Today said NEXT WEEK "Shall I put Oct 30–Nov 5
+  together?" with nine days still planned. `_attention_moves_on` now also
+  needs no more than two days left (a week's Friday) for its fifth-day
+  clause; identical for any period of 7 days or fewer. The shop-day
+  reminder still opens that nudge on a fortnight's first week (not changed).
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
