@@ -671,8 +671,16 @@ def test_a_prep_cut_dated_after_its_meal_is_refused_and_writes_nothing():
     with pytest.raises(ValueError) as e:
         tools.add_prep_cut(plan_id, SAT, "Cut up romaine", [entry_id])
 
-    assert str(e.value) == "Chicken Bowls is on Wednesday, so I can only put its prep on Wednesday or before."
+    assert str(e.value) == "Chicken Bowls is on Wednesday, so prep needs to be on or before Wednesday."
     assert _prep_cut_rows(plan_id) == []
+
+
+def test_the_copy_rule_behind_the_refusal_is_written_down():
+    """Emily 2026-10-20: a limit states the rule about the thing, never
+    Pomona's own ability. The refusal above is the rule's own example."""
+    skill = open(".claude/skills/pomona-copywriter/SKILL.md", encoding="utf-8").read()
+    assert "16. **A limit states the rule about the thing, never what I can do.**" in skill
+    assert "Chicken Bowls is on Wednesday, so prep needs to be on or before Wednesday." in skill
 
 
 def test_prep_on_the_day_of_the_meal_is_still_fine():
@@ -715,7 +723,7 @@ def test_the_prep_cut_route_says_why_it_refused(signed_in):
     })
 
     assert res.status_code == 400
-    assert res.json()["detail"] == "Chicken Bowls is on Wednesday, so I can only put its prep on Wednesday or before."
+    assert res.json()["detail"] == "Chicken Bowls is on Wednesday, so prep needs to be on or before Wednesday."
     assert _prep_cut_rows(plan_id) == []
 
 
