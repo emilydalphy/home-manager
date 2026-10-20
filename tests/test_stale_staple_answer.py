@@ -115,3 +115,17 @@ def test_an_unticked_line_answers_normally_again(signed_in):
     u = signed_in.post(f"/api/staples/{sid}/undo").json()
     assert u["undone"] is True
     assert [it["id"] for it in _needed(signed_in) if it["staple_id"] == sid] == [line_id]
+
+
+def test_the_screen_does_not_promise_an_undo_for_an_answer_that_changed_nothing():
+    """The stale phone's toast: with the server's `unchanged`, no "off the
+    list — I'll ask again" and no Undo, for a staple or a carried-over line."""
+    import re
+    from pathlib import Path
+    shell = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+    staple = shell[shell.index("case 'staple-decide':"):shell.index("case 'row-staple':")]
+    assert re.search(r"if \(stResult\.unchanged\) \{\s*showToast\(stName \+ ' was already taken care of'\);\s*return;", staple)
+    assert staple.index("stResult.unchanged") < staple.index("label: 'Undo'")
+    carry = shell[shell.index("case 'carry-decide':"):shell.index("case 'goto-plan':")]
+    assert re.search(r"if \(carryAnswer && carryAnswer\.unchanged\) \{\s*showToast\(carryName \+ ' was already answered'\);\s*return;", carry)
+    assert carry.index("carryAnswer.unchanged") < carry.index("label: 'Undo'")
