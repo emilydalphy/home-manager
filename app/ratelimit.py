@@ -47,6 +47,12 @@ LIMITS = {
     # capping. Generous enough for someone sending two or three notes
     # about the same bad evening.
     "feedback": [(5, 60), (40, 3600)],
+    # A member's self-service link writing a note or a restriction
+    # (/api/member-share/{token}/...). Public, and the link is texted to
+    # people, so it gets forwarded; each note is read into the chat agent's
+    # prompt and each restriction is planned around. One bucket for both.
+    # Room for someone adding a handful of allergies and a note in a row.
+    "member_share_write": [(10, 60), (60, 3600)],
     # Email sign-in codes (app/account_email.py). The card's numbers: at
     # most 5 codes per address an hour — counted per (address, IP), so a
     # stranger asking from their own IP can't use up YOUR five (review,

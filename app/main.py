@@ -7098,7 +7098,9 @@ def get_member_share(token: str):
 # free text a person types to us, feedback.MAX_WHAT_HAPPENED (2000); a
 # restriction is a short phrase, capped like an invited adult's name (200).
 # Refused with a sentence rather than cut short: a cut note says something
-# the person did not write. Rate limiting is app/ratelimit.py's, not here.
+# the person did not write. Rate limiting is app/ratelimit.py's
+# "member_share_write" bucket — which this line claimed before the bucket
+# existed (2026-10-20), so one forwarded link could write as fast as a loop.
 MEMBER_SHARE_NOTE_MAX = 2000
 MEMBER_SHARE_RESTRICTION_MAX = 200
 
@@ -7115,8 +7117,9 @@ def _member_share_text(value: str | None, limit: int, what: str) -> str:
 
 
 @app.post("/api/member-share/{token}/restriction")
-def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
+def add_member_share_restriction(token: str, req: MemberRestrictionRequest, request: Request):
     """Public: add a dietary restriction as the member behind this token — merges with their existing list."""
+    _enforce_rate_limit(request, "member_share_write")
     restriction = _member_share_text(req.restriction, MEMBER_SHARE_RESTRICTION_MAX, "restriction")
     try:
         tools.eater_add_dietary_restriction(token, [restriction])
@@ -7130,8 +7133,9 @@ def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
 
 
 @app.post("/api/member-share/{token}/note")
-def add_member_share_note(token: str, req: MemberNoteRequest):
+def add_member_share_note(token: str, req: MemberNoteRequest, request: Request):
     """Public: leave a freeform preference/feedback note as the member behind this token."""
+    _enforce_rate_limit(request, "member_share_write")
     note = _member_share_text(req.note, MEMBER_SHARE_NOTE_MAX, "note")
     try:
         tools.eater_add_note(token, note)
@@ -9660,7 +9664,12 @@ def health_report(request: Request, days: int = 1):
     # compare_digest on both arms so a wrong-length token takes the same
     # time as a wrong-value one. The empty-token check comes first because
     # comparing against "" would otherwise let any caller in.
-    if not token or not supplied or not secrets.compare_digest(supplied, token):
+    # Bytes, not str: compare_digest raises TypeError on a str holding any
+    # non-ASCII character, so one "café" header was a 500 — telling a
+    # stranger the route exists, the one thing the 404 is for (2026-10-20).
+    if not token or not supplied or not secrets.compare_digest(
+        supplied.encode("utf-8", "surrogateescape"), token.encode("utf-8", "surrogateescape")
+    ):
         raise HTTPException(status_code=404, detail="Not found")
 
     _enforce_rate_limit(request, "health_report")

@@ -104,6 +104,15 @@ why*, not duplicating the diff.
   names the one item and `tools.remove_member_dietary_restriction` edits the
   stored list under BEGIN IMMEDIATE; the add merge holds the lock from its read
   too, and restrictions are trimmed on write. The sheet redraws from the answer.
+- **A member's self-service link is rate-limited; a non-ASCII report token
+  is a 404** (2026-10-20, overnight defect hunt on public routes; branch
+  `overnight/public-writes-rate-limited`; tests
+  `tests/test_public_writes_are_limited.py`). The two public member-share
+  writes had no bucket despite a comment saying ratelimit.py covered them —
+  one forwarded link could post notes into the agent's prompt as fast as a
+  loop; now `member_share_write` (10/min, 60/hr, shared). And
+  /api/health-report's compare_digest on str raised TypeError on any
+  non-ASCII header (a 500 that confirmed the route exists); it compares bytes.
 
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
