@@ -1930,6 +1930,9 @@ def _measure_before_a_word(parsed: tuple) -> tuple:
     first, _, second = unit.partition(" ")
     canon = _quantities._UNIT_ALIASES.get(first, first)
     containers = set(_quantities._CONTAINER_UNIT_PLURALS) | set(_quantities._CONTAINER_UNIT_PLURALS.values())
+    # "8 oz package" sizes a package just as "1 lb bag" sizes a bag; read as
+    # "8 oz", it scaled to "4 oz package" — a smaller package to buy.
+    containers |= {"package", "packages", "packet", "packets", "pkg", "pkgs"}
     if canon in _measured_units() and second not in containers:
         return amount, canon
     return parsed

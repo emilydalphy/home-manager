@@ -12,6 +12,7 @@ lost what a recipe wrote beside its amounts (defect hunt, 2026-10-20):
     replaced by the table's guess the same way.
 """
 from app import tools
+from app.tools import recipes
 
 
 def _bake(**over):
@@ -79,3 +80,10 @@ def test_the_recipes_own_eighth_cup_is_not_turned_into_spoons():
     tools.add_recipe("Test Dressing", ingredients=[{"item": "olive oil", "qty": "1/8 cup"}], default_servings=4)
     assert _qtys(tools.scale_recipe("Test Dressing", 4))["olive oil"] == "0.125 cup"
     assert _qtys(tools.scale_recipe("Test Dressing", 2))["olive oil"] == "1 tbsp"
+
+
+def test_a_sized_package_is_still_a_package_not_a_measure():
+    """'8 oz package' names the package to buy; scaling must not turn it
+    into '4 oz package'."""
+    assert recipes._measure_before_a_word((8.0, "oz package")) == (8.0, "oz package")
+    assert recipes._measure_before_a_word((1.0, "cup packed")) == (1.0, "cup")
