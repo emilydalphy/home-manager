@@ -137,7 +137,9 @@ def get_coaching_state() -> dict:
 
 
 def add_member(name: str) -> dict:
-    """Add a household member (person who can be assigned chores)."""
+    """Add a household member (person who can be assigned chores). A blank name is refused."""
+    if not (name or "").strip():
+        raise ValueError(BLANK_MEMBER_NAME)
     conn = get_conn()
     member_id = _get_or_create_member(conn, name)
     conn.close()
@@ -193,6 +195,10 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     """
     conn = get_conn()
     member_id = _get_or_create_member(conn, name)
+    # The reply names them as stored ("Theo"), not as typed ("theo").
+    name = conn.execute(
+        "SELECT name FROM members WHERE id = ? AND household_id = ?", (member_id, household_id()),
+    ).fetchone()["name"]
     # Placeholder non-answers (an LLM occasionally writes "None" instead of
     # an empty list when someone says they have no restrictions) should
     # never actually get stored as a restriction — filtered out on both
@@ -491,7 +497,11 @@ def count_preference_events_this_month() -> int:
 
 
 def add_pet(name: str, pet_type: str) -> dict:
-    """Add a household pet. pet_type is freeform, e.g. 'dog', 'cat', 'rabbit'. Pets can influence chores (litter box, walks) and grocery/household shopping lists (food, litter, etc.)."""
+    """Add a household pet. pet_type is freeform, e.g. 'dog', 'cat', 'rabbit'. Pets can influence chores (litter box, walks) and grocery/household shopping lists (food, litter, etc.). A blank name is refused."""
+    # Same rule as a person (2026-10-20): a blank name was saved as an
+    # empty pet row.
+    if not (name or "").strip():
+        raise ValueError(BLANK_PET_NAME)
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO pets (household_id, name, pet_type) VALUES (?, ?, ?)",
@@ -513,12 +523,23 @@ def list_pets() -> list[dict]:
     return [dict(r) for r in rows]
 
 
+BLANK_MEMBER_NAME = "I need their name first — who is this about?"
+BLANK_PET_NAME = "I need the pet's name first — what are they called?"
+
+
 def _get_or_create_member(conn, name: str) -> int:
     # Case-insensitive lookup, matching the pattern used for recipes and
     # grocery items elsewhere in this file — an exact-match lookup here let
     # something like "my partner" vs. the saved name "Alex" (or even just
     # "alex" vs. "Alex") silently create a duplicate member row instead of
     # attaching to the existing person (Phase 4, §4.1 Fix 1).
+    #
+    # A blank name is refused before anything is read or written (found
+    # 2026-10-20): chat's add_member(""), or a restriction / age said
+    # about "", made a nameless person — an empty row in Who's here who
+    # was counted at every meal. Every member write by name comes here.
+    if not (name or "").strip():
+        raise ValueError(BLANK_MEMBER_NAME)
     row = conn.execute(
         "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)", (household_id(), name)
     ).fetchone()
