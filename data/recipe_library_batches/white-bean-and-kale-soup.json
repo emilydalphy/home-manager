@@ -1,0 +1,48 @@
+{
+ "dish_name": "White Bean and Kale Soup",
+ "cuisine": "Italian",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Cannellini beans", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Lacinato kale", "qty": "1 bunch", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 ribs"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tbsp leaves"},
+  {"item": "Fresh rosemary", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tsp chopped"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "4 cups"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Parmesan", "qty": "2 oz", "category": "dairy"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "a pinch", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Drain the 2 cans of beans into a colander and rinse them under cold water.",
+  "Chop the onion, the 2 carrots and 2 ribs of the celery into small pieces. Mince the 3 garlic cloves. Strip 1 tbsp of thyme leaves from the stems and chop 1 tsp of the rosemary.",
+  "Pull the kale leaves off their stems and chop them into bite-size pieces.",
+  "Heat the 2 tbsp olive oil in a large pot over medium heat. Add the onion, carrots, celery, 1/2 tsp of the salt and the 1/4 tsp pepper. Cook for 6 to 8 minutes, stirring now and then, until the vegetables are soft.",
+  "Stir in the 1 tbsp tomato paste, the garlic, thyme, rosemary and the pinch of red pepper flakes. Cook for 1 minute, stirring, until the paste turns a shade darker and the garlic smells fragrant.",
+  "Pour in the 4 cups broth and add the beans. Bring it to a boil, then turn the heat down and simmer it uncovered for 20 minutes.",
+  "Add the kale and the remaining 1/4 tsp salt. Cook for 3 to 5 minutes, stirring now and then, until the kale is dark green and tender.",
+  "Take the pot off the heat. Cut the lemon in half and squeeze in 1 tbsp of juice from one half.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the other lemon half.",
+  "Finely grate the Parmesan. Serve the soup with the Parmesan over the top.",
+  "It keeps for 4 days in the fridge and tastes better the next day. The beans thicken it overnight, so add a splash of water when you reheat it over medium low."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both soften onion in olive oil, add garlic and a little chili, simmer white beans in vegetable broth and finish with kale. Love and Lemons starts from onion, carrot and celery, cooks tomato paste, thyme and rosemary into the base, simmers canned cannellini for 20 minutes, wilts in the kale and brightens it with lemon juice and Parmesan. Food and Spice soaks and cooks dried cannellini, blanches a full pound of kale, seasons with fennel seed and crumbled dried chilies, and serves it over toasted bread. This follows Love and Lemons with canned beans and a whole bunch of lacinato kale, closer to Food and Spice's amount.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "White Bean Soup", "url": "https://www.loveandlemons.com/white-bean-soup/", "rating": 4.93, "rating_count": 124, "read": true, "lead": true},
+  {"name": "Food and Spice", "title": "Italian White Bean and Kale Soup", "url": "https://www.foodandspice.com/2008/02/italian-white-bean-and-kale-soup.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,43 @@
+{
+ "dish_name": "Muffuletta-Style Focaccia Sandwich",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Pimiento-stuffed green olives", "qty": "1 jar", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Sliced black olives", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Mild giardiniera", "qty": "1 jar (16 oz)", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Pepperoncini", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp chopped"},
+  {"item": "Cocktail onions", "qty": "1 jar", "category": "pantry", "cook_qty": "5"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Focaccia", "qty": "1 large loaf (about 1 1/2 lb)", "category": "other"},
+  {"item": "Sliced mortadella", "qty": "1/2 lb", "category": "meat/seafood"},
+  {"item": "Sliced soppressata", "qty": "1/2 lb", "category": "meat/seafood"},
+  {"item": "Sliced provolone", "qty": "8 slices", "category": "dairy"},
+  {"item": "Sliced deli ham", "qty": "1/2 lb", "category": "meat/seafood"}
+ ],
+ "instructions": [
+  "Drain 1 cup of the green olives, 1/4 cup of the black olives and 1/4 cup of the giardiniera, and pat them dry on paper towel. Chop 2 tbsp of the pepperoncini and roughly chop the garlic clove.",
+  "Put the olives, giardiniera, pepperoncini, garlic and 5 of the cocktail onions in a food processor with the 2 tbsp olive oil and the 1 tbsp oregano. Pulse 8 to 10 times, until it's finely chopped but still has some texture. That should be about 1 1/2 cups. No food processor? Chop everything finely by hand and stir it together with the oil and oregano.",
+  "Cut the focaccia in half horizontally with a long bread knife and lay both halves on a board, cut side up.",
+  "Spread half the olive salad over the bottom half, all the way to the edges.",
+  "Layer the 1/2 lb mortadella over the olive salad, then the 1/2 lb soppressata, the 8 slices of provolone and the 1/2 lb ham.",
+  "Spread the rest of the olive salad over the cut side of the top half. Set it on the sandwich, olive side down, and press down firmly with both hands.",
+  "Wrap the whole sandwich tightly in plastic wrap or foil and set it on a baking sheet. Put a heavy pan or a few cans on top and leave it on the counter for 30 minutes, until the bread has soaked up some of the oil. If you'd like it ready ahead, wrap it and keep it weighted in the fridge for up to 1 day.",
+  "Unwrap it and cut it into 8 pieces with a serrated knife. This makes 8 pieces, two for each person. Serve it at room temperature."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version builds the sandwich on an olive salad of chopped green olives, giardiniera and pickled vegetables in oil with oregano, layered with mortadella, salami-type cured meats and provolone. Tasting Table (the lead) pulses the olive salad with pepperoncini and cocktail onions, uses mortadella, soppressata, ham and provolone, and spreads the salad on both halves of the bread. Delish uses capicola instead of ham, adds roasted peppers and parsley to the salad and presses the sandwich under a weight for 30 minutes, while 2 Foodtrippers builds a party version on focaccia and warms it in the oven to melt the cheese. This follows the lead's salad and layers on one large focaccia, with Delish's press, and uses mild giardiniera so the base isn't hot.",
+ "sources": [
+  {"name": "Tasting Table", "title": "Classic Muffuletta Recipe", "url": "https://www.tastingtable.com/687355/how-to-make-muffuletta-sandwich/", "rating": 4.6, "rating_count": 41, "read": true, "lead": true},
+  {"name": "Delish", "title": "Muffuletta", "url": "https://www.delish.com/cooking/recipe-ideas/a28838283/muffuletta-sandwich-recipe/", "rating": 5.0, "rating_count": null, "read": true, "lead": false},
+  {"name": "2 Foodtrippers", "title": "Mini Muffuletta Sandwich Recipe", "url": "https://www.2foodtrippers.com/mini-muffuletta-sandwich-recipe/", "rating": 4.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,91 @@
+{
+ "dish_name": "Uova al Forno",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mozzarella",
+   "qty": "1 ball (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F (190°C) with a rack in the middle.",
+  "Thinly slice the 2 garlic cloves. Tear the mozzarella into small pieces.",
+  "Off the heat, add 2 tbsp of the olive oil and the garlic to a 12 inch ovenproof skillet. Set it over medium low and cook for 1 to 2 minutes, until the garlic sizzles and turns pale gold. Don't let it brown.",
+  "Add the passata, 2 sprigs of the rosemary and 1/2 tsp of the salt. Bring it to a simmer and cook for 8 to 10 minutes, stirring now and then, until it's a little thicker. Turn off the heat.",
+  "Make 8 wells in the sauce with the back of a spoon. Crack each egg into a small cup first, then slide it into a well. Sprinkle the eggs with the last 1/4 tsp salt and the 1/4 tsp pepper, and scatter the mozzarella around them.",
+  "Bake for 10 to 14 minutes, until the whites are set and the yolks are still soft. Give the pan a gentle shake: the whites shouldn't wobble. If you like firm yolks, give it 3 to 4 minutes longer.",
+  "Meanwhile, slice the bread and toast it.",
+  "Pull out the rosemary sprigs and drizzle the last 1 tbsp olive oil over the top. Serve from the pan with the toasted bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both bake whole eggs in a bed of plain tomato and serve them hot with bread. GialloZafferano (the lead) spreads uncooked passata in a dish with a little oil, nests the eggs in it, adds cubes of soft tomino cheese and rosemary sprigs and bakes at 350°F for 20 to 25 minutes. Ferrari-Carano blends tomato sauce with dried herbs, garlic powder and chili flakes, bakes 8 eggs at 450°F for 5 to 6 minutes and finishes with ricotta salata, fresh herbs and olive oil, with ciabatta on the side. This keeps the lead's passata, rosemary and soft cheese, uses fresh mozzarella because tomino is hard to find, simmers the passata with garlic first so the sauce is cooked, and uses 2 eggs each as Ferrari-Carano does.",
+ "sources": [
+  {
+   "name": "GialloZafferano",
+   "title": "Uova alla contadina (Baked eggs in tomato sauce)",
+   "url": "https://www.giallozafferano.com/recipes/Uova-alla-contadina-Baked-eggs-in-tomato-sauce.html",
+   "rating": 4.2,
+   "rating_count": 226,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ferrari-Carano",
+   "title": "Uova al Forno (Baked Eggs in Tomato Sauce with Ciabatta Bread)",
+   "url": "https://ferrari-carano.com/?p=1639",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,105 @@
+{
+ "dish_name": "Tiramisu",
+ "cuisine": "Italian",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Instant espresso powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Dark rum",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Mascarpone",
+   "qty": "1 tub (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 half-pint",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Ladyfingers",
+   "qty": "1 package (7 oz)",
+   "category": "pantry",
+   "cook_qty": "24"
+  },
+  {
+   "item": "Unsweetened cocoa powder",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 8 hours ahead: stir the 1 1/2 tbsp espresso powder into 3/4 cup hot water in a shallow bowl. Stir in 1 1/2 tbsp of the rum and let it cool to room temperature.",
+  "Bring about 1 inch of water to a gentle simmer in a saucepan. Separate the 3 eggs and put the yolks in a heatproof bowl that sits on the pan without touching the water. Keep the whites for another use.",
+  "Add the 6 tbsp sugar to the yolks. Set the bowl over the pan and whisk constantly for 8 to 10 minutes, until the mixture is pale and a little thick. You're cooking it to 160°F, so if you have a thermometer, check it there. No thermometer? Rub a drop between your fingers: it's ready when there's no grit and it falls from the whisk in a ribbon that sits on top for a second.",
+  "Take the bowl off the pan and keep whisking for 2 minutes, so it cools a little.",
+  "In a large bowl, beat the cold mascarpone with the remaining 1 1/2 tbsp rum on medium speed until smooth, about 30 seconds. Beat in the yolk mixture until there are no streaks.",
+  "In another bowl, whip the 1 cup cold cream to stiff peaks, 2 to 3 minutes. Fold half of it into the mascarpone, then fold in the rest. Stop as soon as there are no streaks. Any longer and the cream turns grainy.",
+  "Dip 12 of the ladyfingers into the coffee one at a time, about 1 second on each side, and lay them in a single layer in an 8 inch square dish. Break a few to fill the gaps. Don't soak them, or the tiramisu will be soggy.",
+  "Spread half the cream over the ladyfingers.",
+  "Dip the last 12 ladyfingers the same way and lay them over the cream. Spread the rest of the cream on top and smooth it out.",
+  "Cover the dish and chill for at least 8 hours, or overnight.",
+  "Right before serving, dust the 1 1/2 tbsp cocoa over the top through a small strainer. Cut it into squares. This makes 8 pieces."
+ ],
+ "advance_prep_notes": "Make the tiramisu the day before, or at least 8 hours ahead, so it sets in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "Both layer quickly dipped ladyfingers with a mascarpone cream, finish with cocoa and chill before serving. Natasha's Kitchen (the lead) cooks the yolks and sugar over simmering water to 160°F, beats them into mascarpone with rum, folds in whipped cream and adds rum to the coffee, then chills it at least 8 hours. GialloZafferano uses raw yolks and whites beaten with sugar instead of cream, with no alcohol, and advises pasteurized eggs. This is half the lead in an 8 inch square dish, with instant espresso for the coffee and dark rum where the lead uses golden rum.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Tiramisu",
+   "url": "https://natashaskitchen.com/tiramisu-recipe/",
+   "rating": 4.99,
+   "rating_count": 709,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "GialloZafferano",
+   "title": "Tiramisù",
+   "url": "https://www.giallozafferano.com/recipes/Tiramisu.html",
+   "rating": 4.2,
+   "rating_count": 3212,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

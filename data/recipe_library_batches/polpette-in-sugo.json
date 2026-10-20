@@ -1,0 +1,48 @@
+{
+ "dish_name": "Polpette in Sugo",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Ground beef", "qty": "1.25 lb", "category": "meat/seafood"},
+  {"item": "White sandwich bread", "qty": "1 loaf", "category": "pantry", "cook_qty": "2 slices"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup + 2 tbsp chopped"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Parmesan", "qty": "3 oz", "category": "dairy"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "2 1/2 tbsp", "category": "pantry"},
+  {"item": "Tomato passata", "qty": "1 jar (24 oz)", "category": "pantry"},
+  {"item": "Italian seasoning", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Spaghetti", "qty": "12 oz", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with water, salt it well and set it over high heat for the spaghetti.",
+  "Grate 1 of the onions into a large bowl on the big holes of a box grater, juice and all. That should be about 1/2 cup. Cut the crusts off the 2 slices of bread, tear the bread into small pieces and stir it into the onion. Leave it for 5 minutes, until the bread is soft.",
+  "Meanwhile, finely chop the second onion and mince the 4 garlic cloves. Chop 1/4 cup plus 2 tbsp of the parsley and finely grate the Parmesan.",
+  "Add the 1.25 lb beef, the egg, 1/4 cup of the parsley, half the garlic, 1/4 cup of the Parmesan, 3/4 tsp of the salt and 1/4 tsp of the pepper to the bread. Mix it with your hands until it looks even. Stop as soon as it's combined. Any longer and the meatballs turn out tough.",
+  "Roll heaped tablespoons of the mix into balls between your palms. That should make about 24.",
+  "Heat 1 1/2 tbsp of the olive oil in a large, deep skillet over medium high. Add the meatballs and brown them for 3 to 4 minutes, turning them, until they're brown on most sides. They'll still be raw in the middle. Transfer them onto a plate.",
+  "Turn the heat down to medium and add the remaining 1 tbsp olive oil and the chopped onion. Cook for 3 minutes, stirring, until it's soft and see-through. Add the rest of the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Pour in the 24 oz passata and 1/2 cup water. Stir in the 1 tbsp Italian seasoning and the remaining 1/2 tsp salt and 1/4 tsp pepper. Bring it to a simmer, then turn the heat down to medium low so it bubbles gently.",
+  "Add the meatballs back in with any juices from the plate. Simmer for 10 minutes, turning them now and then. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Meanwhile, add the 12 oz spaghetti to the boiling water and cook it until it's tender with a little bite, following the package time. Drain it.",
+  "Put the 1/2 tsp red pepper flakes in a small bowl for the table.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve the meatballs and sauce over the spaghetti with the rest of the Parmesan and the 2 tbsp parsley on top, and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soften bread for a tender beef meatball, brown the meatballs in olive oil and finish cooking them in a garlicky tomato sauce for about 10 minutes, served with Parmesan. RecipeTin Eats grates the onion straight onto the bread, mixes in beef and pork with egg, parsley, garlic and Parmesan, then builds the sauce in the same pan from onion, garlic, passata, water, dried herbs and chili flakes, and serves it on pasta. Alice Zaslavsky on SBS soaks the bread in water, uses beef and chicken, simmers a separate sauce of whole canned tomatoes and basil, and serves it with crusty bread. This follows RecipeTin Eats with all beef, which Nagi gives as a swap for the pork, and moves the chili flakes to the table.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Italian Meatballs (Extra Soft and Juicy!)", "url": "https://www.recipetineats.com/classic-italian-meatballs-extra-soft-and-juicy/", "rating": 4.96, "rating_count": 356, "read": true, "lead": true},
+  {"name": "SBS Food (Alice Zaslavsky)", "title": "Alice's meatballs (Polpettine di Alice)", "url": "https://www.sbs.com.au/food/recipe/alices-meatballs-polpettine-di-alice/98ivbt8rs", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,46 @@
+{
+ "dish_name": "Chicken alla Diavola",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {"item": "Whole chicken", "qty": "1 (about 4 lb)", "category": "meat/seafood"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Fresh rosemary", "qty": "1 bunch", "category": "produce", "cook_qty": "2 sprigs"},
+  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce", "cook_qty": "4 sprigs"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Paprika", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "6 tbsp", "category": "pantry"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "1/3 cup"}
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: flatten the chicken. Set it breast side down on a board and cut along both sides of the backbone with kitchen shears. Pull the backbone out, turn the chicken over and press down hard on the breastbone with the heel of your hand until it cracks and the bird lies flat.",
+  "Make the marinade in a small bowl. Finely grate in the zest of 1 lemon and squeeze in its juice. Mince the 3 garlic cloves. Strip the leaves from 2 rosemary sprigs and 4 thyme sprigs and chop them. Add the garlic and herbs, crumble in the 2 bay leaves, and stir in the 1 tbsp paprika, 1/2 tsp of the red pepper flakes, the 2 tsp salt, the 1 tsp pepper and 3 tbsp of the olive oil.",
+  "Pat the chicken dry with paper towels. Rub the marinade all over both sides and push some under the breast skin with your fingers. Lay it skin side up in a dish, cover it and refrigerate for at least 2 hours, or overnight.",
+  "Take the chicken out of the fridge 30 minutes before you cook. Heat the oven to 450°F with a rack in the middle.",
+  "Set the chicken skin side up in a roasting pan that can also go on the stove, with the legs turned in toward the middle. Pick any bits of bay off the skin. They burn in a hot oven. Cut the second lemon in half and set the halves cut side down in the pan beside the chicken.",
+  "Roast for 40 to 50 minutes, until the skin is deep golden brown and crisp. You're cooking it to 160°F in the thickest part of the breast and 175°F in the thigh, so if you have a thermometer, check both. No thermometer? Pierce the thigh where it meets the body: it's done when the juices run clear with no pink.",
+  "Meanwhile, make the hot oil for the table. Off the heat, stir the remaining 1 tsp red pepper flakes into the remaining 3 tbsp olive oil in a small saucepan. Set it over low heat for 2 to 3 minutes, until it sizzles gently and turns orange. Transfer it into a small bowl.",
+  "Lift the chicken onto a board and let it rest for 10 minutes. Set the roasted lemon halves on the board too.",
+  "Spoon off most of the clear fat from the pan, leaving the browned juices behind. Set the pan over medium heat on the stove, holding it with an oven mitt. The handles are hot. Add the 1/3 cup wine and scrape up the browned bits. Let it bubble for 2 to 3 minutes, until it has cooked down by about half.",
+  "Squeeze the roasted lemon halves into the pan, pour in any juices from the board and stir.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Cut the chicken into 8 pieces: 2 drumsticks, 2 thighs, and each breast cut in half with a wing on one piece. Spoon the pan sauce over it. Serve with the hot oil on the side."
+ ],
+ "advance_prep_notes": "Flatten and marinate the chicken at least 2 hours ahead, or the night before.",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "All three flatten a whole chicken, coat it in a chili and herb mix with plenty of olive oil and cook it hot until the skin is charred and crisp. Stefano Faita marinates it for at least 2 hours in fresh chilies, garlic, lemon zest and juice, thyme, rosemary, bay and paprika, grills it about 45 minutes and squeezes grilled lemon halves over it. Silvia Colloca on SBS roasts it at 220°C with white wine, bird's eye chilies and lemon slices in the pan, and Great Italian Chefs uses a dry rub of salt, pepper, garlic powder, cayenne and paprika, then finishes it in a covered barbecue or the oven. None had 20 ratings and RecipeTin Eats has no version, so this follows Stefano Faita's marinade, roasts it in the oven at 450°F with the lemon halves beside it as SBS does, makes a wine pan sauce from the drippings, and puts most of the chili in a hot oil at the table.",
+ "sources": [
+  {"name": "Stefano Faita", "title": "Chicken alla Diavola", "url": "https://www.stefanofaita.com/en/recipes/chicken-alla-diavola/", "rating": 5.0, "rating_count": 1, "read": true, "lead": true},
+  {"name": "SBS Food (Silvia Colloca)", "title": "Chicken Diavola with Mediterranean potatoes", "url": "https://www.sbs.com.au/food/recipe/chicken-diavola-with-mediterranean-potatoes/kn55mtjwv", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Great Italian Chefs", "title": "Pollo alla diavola", "url": "https://www.greatitalianchefs.com/recipes/pollo-alla-diavola-recipe", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

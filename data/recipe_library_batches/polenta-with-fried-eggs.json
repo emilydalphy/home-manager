@@ -1,0 +1,76 @@
+{
+ "dish_name": "Polenta with Fried Eggs",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Polenta",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring 3 cups of water to a strong simmer in a medium pot over high heat. Meanwhile, finely grate 1/2 cup of the Parmesan.",
+  "Pour in the 1 cup polenta in a slow stream, whisking the whole time so no lumps form.",
+  "Add 1 cup of water and turn the heat down to low so it bubbles gently. Cook for 15 minutes, stirring every minute or two with a wooden spoon, until the grains are soft and it's thick and creamy. Stand back a little when you stir. It spatters. If it gets too stiff, whisk in up to 1/2 cup of water.",
+  "Turn off the heat and stir in 2 tbsp of the olive oil, 1/2 tsp of the salt and half the Parmesan. Put the lid on.",
+  "Heat the last 2 tbsp olive oil in a large nonstick skillet over medium high until it shimmers. Crack in the 4 eggs. Stand back a little. They'll spatter.",
+  "Fry them for 2 to 3 minutes, tilting the pan and spooning the hot oil over the whites, until the edges are crisp and brown and the whites are set but the yolks are still runny. Sprinkle them with the last 1/4 tsp salt and the 1/4 tsp pepper.",
+  "Taste the polenta. If it's flat, add a pinch more salt. If it's thickened up, stir in a splash of hot water.",
+  "Spoon the polenta into 4 bowls and slide an egg on top of each. Scatter the rest of the Parmesan over and serve."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Love and Lemons (the lead) cooks 1 cup of stone ground polenta in about 4 cups of water, whisking it in slowly and simmering it for 15 minutes before finishing with olive oil and salt, and suggests Parmesan on top. The Melissa Clark recipe reprinted by the Santa Fe Farmers' Market Institute cooks more polenta in broth or water, finishes it with butter and pepper, and tops each bowl with shaved Parmesan and 2 eggs fried in very hot olive oil until the edges crisp. This follows the lead for the polenta, adds Parmesan into it and on top, and fries 1 egg each in olive oil the way the second version does. The lead is a plain polenta recipe, since no rated polenta and egg recipe turned up.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Creamy Polenta",
+   "url": "https://www.loveandlemons.com/polenta/",
+   "rating": 4.78,
+   "rating_count": 67,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Santa Fe Farmers' Market Institute",
+   "title": "Polenta and Fried Eggs",
+   "url": "https://farmersmarketinstitute.org/?p=24828",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

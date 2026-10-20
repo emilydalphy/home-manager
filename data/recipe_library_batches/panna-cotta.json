@@ -1,0 +1,98 @@
+{
+ "dish_name": "Panna Cotta",
+ "cuisine": "Italian",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Unflavored gelatin",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 3/4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 half-pint",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Raspberries",
+   "qty": "1 package (6 oz)",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 6 hours ahead: off the heat, pour 1/3 cup of the milk into a small saucepan. Sprinkle the 1 3/4 tsp gelatin over it and leave it for 5 minutes, until it swells.",
+  "Set the pan over medium low and stir for 1 to 2 minutes, until the gelatin has melted and the milk is smooth. Don't let it simmer. Boiling stops gelatin from setting.",
+  "Add the remaining 2/3 cup milk, 3 tbsp of the sugar and the pinch of salt. Stir over low heat for about 1 minute, until the sugar dissolves. Take it off the heat before it steams, and stir in the 1 tsp vanilla.",
+  "Stir in the 1 cup cream.",
+  "Rub the inside of four 1/2 cup ramekins with the 1 tsp oil and wipe out the extra with a paper towel. Pour the mixture through a fine strainer into a jug. That should be about 2 cups. Divide it among the ramekins.",
+  "Cover them and chill for at least 6 hours, or overnight, until the panna cotta is set and the middle jiggles as one piece when you tilt a ramekin.",
+  "For the sauce, add the raspberries and the last 2 tbsp sugar to a small saucepan over medium heat. Once the juices bubble, cook for 5 minutes, mashing the berries with a fork. Press them through the fine strainer into a bowl, leaving the seeds behind. Let it cool, then cover and chill.",
+  "To unmold, run a small knife around the edge of each ramekin. Dip the bottom in warm water for 2 to 3 seconds and wipe it dry. Turn it over onto a plate and give it a firm shake until the panna cotta drops out.",
+  "Spoon the raspberry sauce over and around each one and serve."
+ ],
+ "advance_prep_notes": "Make the panna cotta and the raspberry sauce the day before, or at least 6 hours ahead, so it sets.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "Both set sweetened cream with gelatin, take care never to boil it once the gelatin is in, and chill it in small molds before turning it out with a quick dip in warm water. RecipeTin Eats (the lead) blooms powdered gelatin in milk, uses milk and cream in roughly equal parts with vanilla and a pinch of salt, chills it at least 6 hours and serves it with a strained raspberry sauce. GialloZafferano uses all cream with a vanilla bean and gelatin sheets, brings it just to a boil before the gelatin goes in and sets it for 5 hours. This follows the lead scaled to four 1/2 cup ramekins, with vanilla extract, so the hour of thickening the lead uses to keep vanilla seeds suspended isn't needed.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Panna Cotta",
+   "url": "https://www.recipetineats.com/panna-cotta/",
+   "rating": 4.96,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "GialloZafferano",
+   "title": "Panna cotta",
+   "url": "https://www.giallozafferano.com/recipes/Panna-cotta.html",
+   "rating": 4.3,
+   "rating_count": 400,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

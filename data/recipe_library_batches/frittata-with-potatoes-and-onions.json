@@ -1,0 +1,89 @@
+{
+ "dish_name": "Frittata with Potatoes and Onions",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1.5 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tsp leaves + a few for the top"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the 1.5 lb potatoes and cut them into 3/4 inch pieces. Halve the onion and slice it thinly.",
+  "Heat the 3 tbsp olive oil in a 10 inch nonstick skillet over medium. Add the onion and cook for 5 minutes, stirring often, until it's soft.",
+  "Add the potatoes and 1/2 tsp of the salt. Cook for 5 minutes, stirring, until the potatoes start to turn golden at the edges.",
+  "Put the lid on and cook for 20 minutes, turning the potatoes every 5 minutes or so, until a knife slides into a piece easily and they're browned in spots.",
+  "Meanwhile, finely grate 1/2 cup of the Parmesan and strip 1 tsp of leaves from the thyme. In a large bowl, whisk the 8 eggs with the Parmesan, the thyme leaves, the last 1/2 tsp salt and the 1/4 tsp pepper until there are no streaks of white.",
+  "Spread the potatoes and onion out evenly and turn the heat down to medium low. Pour the eggs over them.",
+  "Put the lid back on and cook for 10 minutes, running a spatula around the edge now and then, until the bottom is set and the top is still a little wet.",
+  "Lay a large plate upside down over the pan. With oven mitts on, hold the plate and the handle together and turn the whole thing over in one quick move, so the frittata lands on the plate.",
+  "Slide it back into the pan, cooked side up, and cook for 2 to 3 minutes with the lid off. You're cooking it to 160°F in the center, so if you have a thermometer, check it there. No thermometer? Cut a small slit in the middle: it's done when there's no runny egg.",
+  "Slide the frittata onto a board and let it rest for 5 minutes. Scatter a few thyme leaves over the top and cut it into wedges. Serve it warm or at room temperature."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soften onion in olive oil, cook diced potato in the same pan until tender, then pour over eggs beaten with grated hard cheese and finish on the stove. GialloZafferano (the lead) uses red onion, covers the potatoes for about 20 minutes so they soften and brown, seasons the eggs with Grana Padano and thyme, cooks them covered over medium low and flips the frittata with a plate. Billy Parisi adds pancetta, uses a whole cup of Parmigiano for 10 eggs and offers a short bake at 375°F as an alternative to flipping. This follows the lead for 4, with Parmesan in place of Grana Padano.",
+ "sources": [
+  {
+   "name": "GialloZafferano",
+   "title": "Onion and potato frittata",
+   "url": "https://www.giallozafferano.com/recipes/Onion-and-potato-frittata.html",
+   "rating": 4.3,
+   "rating_count": 63,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Billy Parisi",
+   "title": "Italian Frittata Recipe",
+   "url": "https://www.billyparisi.com/frittata-recipe/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
