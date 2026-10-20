@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Start over" → the grocery list stays cleared; staples don't come
+  straight back** (2026-10-20, defect hunt; branch
+  `overnight/start-over-keeps-staples-off`; tests
+  `tests/test_start_over_keeps_staples_off.py`). `clear_grocery_list`
+  hard-deleted a staple's line, and the next list read
+  (`sync_due_staples`) put every still-due staple back — the dialog said
+  "Removes 2 items", Shop showed the same 2; chat's "wipe the list" too.
+  Now a staple's needed/in-cart line is soft-removed (removed today = sync
+  leaves it until tomorrow). Deliberately NOT a "not this trip": a wipe
+  moves no rhythm and counts no skip toward the auto-pause.
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
