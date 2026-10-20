@@ -45,6 +45,11 @@ from ._shared import EATS_HERE_SQL, household_id
 # top result with a handful of ratings.
 MIN_RATINGS_TO_LEAD = 20
 
+# A version rated below this never leads, however many ratings it has
+# (Emily, 2026-10-20: "have at least a 4 to lead"; Pepperoni Pizza had led
+# with a 3.3). It can still be listed as another version.
+MIN_RATING_TO_LEAD = 4.0
+
 # The fallback, by cuisine (Emily's examples on the card, 2026-10-05). A
 # plain editable table: (the cook's name as the page shows it, their site).
 # "*" is every cuisine the table doesn't name. Matched on the dish's own
@@ -165,14 +170,20 @@ def _norm_url(url: str) -> str:
 def is_well_rated(source: dict) -> bool:
     """A read page whose stars rest on enough ratings to mean something."""
     return (bool(source.get("read", True)) and source.get("rating") is not None
+            and source["rating"] >= MIN_RATING_TO_LEAD
             and (source.get("rating_count") or 0) >= MIN_RATINGS_TO_LEAD)
+
+
+def _rated_low(source: dict) -> bool:
+    return source.get("rating") is not None and source["rating"] < MIN_RATING_TO_LEAD
 
 
 def pick_lead(sources: list[dict], trusted: list[tuple[str, str]] | None = None) -> list[dict]:
     """
     The same sources, lead first, each with "lead" set.
 
-    The lead is the well-rated version (MIN_RATINGS_TO_LEAD or more) with
+    The lead is the well-rated version (MIN_RATINGS_TO_LEAD or more ratings,
+    rated MIN_RATING_TO_LEAD or higher) with
     the top rating, and among equal ratings (to one decimal, which is how
     sites print stars) the most ratings. With no well-rated version and a
     trusted-cooks list, the first source from the earliest cook on that
@@ -190,12 +201,15 @@ def pick_lead(sources: list[dict], trusted: list[tuple[str, str]] | None = None)
     if rated:
         lead = max(rated, key=lambda s: (round(s["rating"], 1), s["rating_count"] or 0))
     else:
+        # A version rated under MIN_RATING_TO_LEAD only leads when nothing
+        # else was read at all.
+        ok = [s for s in readable if not _rated_low(s)] or readable
         lead = None
         for _, site in trusted or []:
-            lead = next((s for s in readable if _host(s["url"]).endswith(site)), None)
+            lead = next((s for s in ok if _host(s["url"]).endswith(site)), None)
             if lead:
                 break
-        lead = lead or readable[0]
+        lead = lead or ok[0]
     rest = [s for s in sources if s is not lead]
     return [{**lead, "lead": True}] + [{**s, "lead": False} for s in rest]
 
