@@ -66,3 +66,25 @@ def test_an_entry_already_saved_as_a_number_reads_as_no_guests():
     ctx = agent._intake_generation_context(intake)
     assert ctx["guest_totals"] == {"2026-10-28": {"adults": 3, "children": 0}}
     assert ctx["guest_extras"] == {"2026-10-28": {"adults": 1, "children": 0}}
+
+
+def test_an_old_bad_entry_does_not_block_the_weeks_next_save(signed_in):
+    """Plan the Week posts the stored guest map back on every save; an entry
+    saved before the check must read clean, not refuse every later save."""
+    import json
+    from app.db import get_conn
+    week, tuesday = "2026-10-26", "2026-10-27"
+    tools.save_week_intake(week, guest_counts={"2026-10-28": {"adults": 1, "children": 0}})
+    conn = get_conn()
+    conn.execute(
+        "UPDATE week_intake SET guest_counts_json = ? WHERE week_start = ? AND superseded_at IS NULL",
+        (json.dumps({tuesday: 2, "2026-10-28": {"adults": "1", "children": 0}}), week),
+    )
+    conn.commit()
+    conn.close()
+
+    stored = signed_in.get(f"/api/week/{week}/intake").json()
+    stored = stored.get("intake", stored)
+    assert stored["guest_counts"] == {"2026-10-28": {"adults": 1, "children": 0}}
+    res = signed_in.post(f"/api/week/{week}/intake", json={"guest_counts": stored["guest_counts"], "moods": ["quick"]})
+    assert res.status_code == 200, res.text

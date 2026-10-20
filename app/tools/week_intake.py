@@ -453,6 +453,30 @@ def _build_preferences_snapshot(conn) -> dict:
     }
 
 
+def _readable_guest_counts(raw) -> dict:
+    """
+    The stored guest counts, as every reader expects them: {date:
+    {"adults": n, "children": n}} with whole numbers. A revision saved
+    before save_week_intake checked the shape can hold a bare number or a
+    "2" — read as it was, it 500'd every generate for the week, and since
+    Plan the Week posts the whole map back on each save, it would then have
+    refused every later save too. An entry that can't be read is dropped
+    (no guests), never guessed at.
+    """
+    clean = {}
+    for day, extras in (raw if isinstance(raw, dict) else {}).items():
+        if not isinstance(extras, dict):
+            continue
+        try:
+            clean[day] = {
+                "adults": max(0, int(extras.get("adults", 0) or 0)),
+                "children": max(0, int(extras.get("children", 0) or 0)),
+            }
+        except (TypeError, ValueError):
+            continue
+    return clean
+
+
 def _intake_row_to_dict(row) -> dict:
     return {
         "intake_id": row["id"],
@@ -461,7 +485,7 @@ def _intake_row_to_dict(row) -> dict:
         "created_by": row["created_by"],
         "created_at": row["created_at"],
         "night_tags": json.loads(row["night_tags_json"]),
-        "guest_counts": json.loads(row["guest_counts_json"]),
+        "guest_counts": _readable_guest_counts(json.loads(row["guest_counts_json"])),
         "packed_lunch_days": json.loads(row["packed_lunch_days_json"]),
         "skipped_days": json.loads(row["skipped_days_json"] or "[]"),
         # Step 3, "Weekday lunches" — {} when not answered. The shape is
@@ -649,22 +673,22 @@ def save_week_intake(
     # (agent._intake_generation_context calls .get on it).
     if guest_counts is not None:
         if not isinstance(guest_counts, dict):
-            raise ValueError("guest_counts must be an object keyed by ISO date.")
+            raise ValueError("I couldn't read the guest numbers — try setting them again.")
         for day, extras in guest_counts.items():
             try:
                 date.fromisoformat(day)
             except (TypeError, ValueError):
-                raise ValueError(f"Guest counts are keyed by ISO date, not {day!r}.")
+                raise ValueError(f"I couldn't tell which night {day!r} is for the guests — try setting them again.")
             if not isinstance(extras, dict):
                 raise ValueError(
-                    f'Guests for {day} must be {{"adults": n, "children": n}}, not {extras!r}.'
+                    f"I couldn't read the guest numbers for {day} — set how many adults and children again."
                 )
             unknown = sorted(set(extras) - {"adults", "children"})
             if unknown:
-                raise ValueError(f"Guests for {day} can only count adults and children, not {', '.join(unknown)}.")
+                raise ValueError(f"Guests for {day} are counted as adults and children — I don't know {', '.join(unknown)}.")
             for key, n in extras.items():
                 if isinstance(n, bool) or not isinstance(n, int) or n < 0:
-                    raise ValueError(f"Guests for {day}: {key} must be a whole number, 0 or more.")
+                    raise ValueError(f"Guests for {day} need a whole number of {key}, 0 or more.")
 
     # Read-modify-write, retried. Two adults saving at the same moment both
     # read the same current revision and both try to write revision+1; the
