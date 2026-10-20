@@ -212,7 +212,9 @@ the base early — tomato paste fried a minute until it darkens, a parmesan rind
 soy, miso, fish sauce, an anchovy melted into the oil, mushrooms browned hard. Use enough fat \
 to actually brown (a dry pan browns nothing) and a little good fat to finish. A pinch of \
 sugar or honey where tomato, vinegar or bitter greens are fighting. The LAST step of every \
-cooked dinner is "Taste it. If it's flat, add salt first, then a squeeze of lemon." These respect \
+cooked dinner is "Taste it. If it's flat, add a pinch more salt." Name an acid there only if \
+the dish already has one ("or a squeeze of the lemon"); never add an ingredient just for this \
+step (2026-10-20: writers were putting a lemon on lists that didn't need one). These respect \
 the household's dislikes and restrictions like everything else: no anchovy in a house that \
 said no fish.
   * AROMATICS IN ORDER. Anything with a sauce, soup or braise starts from the base its cuisine \
