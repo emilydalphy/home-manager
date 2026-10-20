@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The holiday and big-meal chat tools take the date they ask for**
+  (2026-10-20, overnight defect hunt; branch
+  `overnight/holiday-chat-tools-take-their-date`; tests
+  `tests/test_chat_tool_schemas_match.py`). `answer_holiday`, `get_big_meal`,
+  `set_big_meal_dish`, `remove_big_meal_dish`, `set_big_meal_prep_day` and
+  `propose_big_meal` advertised `date` in their schemas while the functions
+  take `date_str`; the loop runs `fn(**block.input)`, so every one died as a
+  TypeError before running — "just us for Thanksgiving" was never recorded.
+  Schemas renamed to `date_str`; a test now walks every tool and fails on
+  any schema property its function can't take or required param it omits.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
