@@ -298,6 +298,18 @@ why*, not duplicating the diff.
   set_big_meal_prep_day. The Cook screen's toast says the refusal's own
   sentence. NOT covered: a swap that moves a dinner earlier leaves its
   prep-cut where it was (weekly_plan.py's swap note, on purpose).
+- **A chat tool's arguments are read as its schema declares** (2026-10-20,
+  defect hunt; branch `overnight/tool-args-read-as-their-schema`; tests
+  `tests/test_tool_args_read_as_schema.py`). Every non-chores,
+  non-inventory tool driven with plausible model quirks: a null optional
+  or "7" crashed get_meal_plan / get_defrost_schedule / scale_recipe,
+  a null weekday hit NOT NULL in set_lunch_location, and — silently — a
+  bare string for an array was stored one LETTER per item
+  (restrictions="nut allergy" lost the allergy) and "false" marked a
+  person home. `agent.read_tool_input` at the one dispatch: optional null
+  dropped, int/bool strings converted, a string for an array is its JSON
+  list or a one-item list (never comma-split). Top level only; anything
+  else reaches the tool's own validation untouched.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a

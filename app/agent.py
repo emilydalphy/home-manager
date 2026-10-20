@@ -10214,6 +10214,101 @@ def _chores_off_result() -> dict:
     }
 
 
+# What each chat tool's arguments are declared to be, by tool name. Read
+# once at import (it is the static catalogue, nothing per-household).
+_TOOL_INPUT_SCHEMAS = {d["name"]: d.get("input_schema") or {} for d in TOOL_DEFINITIONS}
+
+_INT_STRING = re.compile(r"\s*-?\d+\s*")
+
+
+def read_tool_input(tool_name: str, tool_input):
+    """
+    The model's arguments for a chat tool, read as that tool's own schema
+    declares them — before the tool sees them.
+
+    The schema is a request to the model, not a guarantee (the same lesson
+    as "telling the generator something is not the same as preventing
+    it"). Driving every non-chores, non-inventory tool with the shapes a
+    model plausibly sends (2026-10-20) found two kinds of harm:
+
+    - CRASHES. `"days_ahead": null` (an optional field sent as null rather
+      than left out) and `"days_ahead": "7"` both raised a TypeError in
+      get_meal_plan; the same in get_defrost_schedule's `days` and
+      scale_recipe's `target_servings`; `"weekday": null` hit a NOT NULL
+      constraint in set_lunch_location. The household gets an apology for
+      "what's for dinner this week?".
+    - SILENT WRONG DATA, which is worse. A bare string where the schema
+      says array was iterated letter by letter:
+      set_member_dietary_restrictions(restrictions="nut allergy") stored
+      one restriction per LETTER — the allergy the meal gates read was
+      gone, and the reply said it was saved. Same for add_food_dislikes,
+      add_grocery_items and every other list. And `"present": "false"` is
+      a truthy string, so set_member_attendance marked the person HOME.
+
+    Only what the schema itself says is used, and only at the top level:
+    - an OPTIONAL property sent as null is left out, so the function's
+      own default applies (a required one is left alone — the tool's own
+      error is the right answer);
+    - integer + a whole-number string -> int;
+    - boolean + "true"/"false" (any case) -> bool;
+    - array + a string -> the list it spells when it is a JSON array (the
+      stringified-array habit), otherwise a one-item list. Not
+      comma-split: "salt, kosher" is one thing, and a single item is
+      never letters;
+    - object + a string that is a JSON object -> that object.
+    Anything else is passed through untouched, so a tool's own validation
+    still sees the odd cases and answers them in its own words. Returns a
+    new dict; the model's block (which stays in the conversation) is not
+    changed.
+    """
+    if not isinstance(tool_input, dict):
+        return tool_input
+    schema = _TOOL_INPUT_SCHEMAS.get(tool_name) or {}
+    props = schema.get("properties") or {}
+    required = set(schema.get("required") or [])
+    out = {}
+    for key, value in tool_input.items():
+        spec = props.get(key)
+        if not isinstance(spec, dict):
+            out[key] = value
+            continue
+        if value is None:
+            if key not in required:
+                continue
+            out[key] = value
+            continue
+        kind = spec.get("type")
+        if kind == "integer" and isinstance(value, str) and _INT_STRING.fullmatch(value):
+            value = int(value)
+        elif kind == "boolean" and isinstance(value, str) and value.strip().lower() in ("true", "false"):
+            value = value.strip().lower() == "true"
+        elif kind == "array" and isinstance(value, str):
+            parsed = None
+            if value.strip()[:1] in ("[", "{"):
+                try:
+                    parsed = json.loads(value)
+                except ValueError:
+                    parsed = None
+            item_kind = (spec.get("items") or {}).get("type")
+            if isinstance(parsed, list):
+                value = parsed
+            elif isinstance(parsed, dict) and item_kind == "object":
+                # One ingredient sent as JSON text: a list of that one
+                # object, not an ingredient named '{"item": ...}'.
+                value = [parsed]
+            else:
+                value = [value]
+        elif kind == "object" and isinstance(value, str) and value.strip().startswith("{"):
+            try:
+                parsed = json.loads(value)
+            except ValueError:
+                parsed = None
+            if isinstance(parsed, dict):
+                value = parsed
+        out[key] = value
+    return out
+
+
 def tools_for_request() -> list[dict]:
     """
     The tool definitions THIS request carries — the whole catalogue, less
@@ -11679,7 +11774,14 @@ def run_agent_turn(
                 )
                 continue
             try:
-                result = fn(**block.input) if fn else {"error": f"Unknown tool {block.name}"}
+                # Read as the tool's schema declares (read_tool_input):
+                # a null optional, "7" for 7, "false" for false and a bare
+                # string for a list were crashing tools or, worse, saving
+                # an allergy one letter at a time.
+                result = (
+                    fn(**read_tool_input(block.name, block.input)) if fn
+                    else {"error": f"Unknown tool {block.name}"}
+                )
                 content = json.dumps(result, default=str)
                 is_error = False
             except REFUSALS_OWED_TO_A_PERSON as refusal:
