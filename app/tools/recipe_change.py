@@ -905,7 +905,8 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
     instructions = list(detail.get("instructions") or [])
     if not ingredients or not instructions:
         raise ValueError("That rewrite didn’t come back in one piece — try it again.")
-    servings = int(detail.get("default_servings") or spec.get("default_servings") or 4)
+    servings = (_recipes.positive_servings(detail.get("default_servings"))
+                or _recipes.positive_servings(spec.get("default_servings")) or 4)
     # What the steps use goes on the list, as on every save (2026-10-12).
     # A rewrite is the model's recipe even where it copied a line back
     # from the household's (2026-10-18): the "as written" mark comes off.

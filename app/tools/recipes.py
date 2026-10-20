@@ -19,6 +19,22 @@ from . import spices as _spices
 logger = logging.getLogger("home_manager")
 
 
+def positive_servings(value) -> int | None:
+    """A serving count as a whole number of at least 1, or None when it
+    isn't one — 0, a negative, 2.5, True, "lots". "6" and 6.0 count (the
+    model sometimes sends a number as text). For the doors that take a
+    count from the model: a bad one is dropped for the caller's own
+    default rather than saved, because a recipe "serving -2" is scaled by
+    every reader as if it served 4 while its card says -2 (2026-10-20)."""
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        value = int(value.strip())
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        return None
+    return value
+
+
 def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
     """
     add_recipe with the one refusal a person is owed in front of it: a
@@ -33,6 +49,13 @@ def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
     allergen_gate.refuse_recipe_if_clashing for why this raises.
     """
     from . import allergen_gate as _allergen_gate
+    # The chat names a count on purpose (the household said it), so a bad
+    # one is refused with update_recipe_details' words, not quietly made 4.
+    servings = kwargs.get("default_servings")
+    if servings is not None and positive_servings(servings) is None:
+        raise ValueError(
+            f"A recipe has to serve at least 1 — {servings!r} isn't a number of servings."
+        )
     name = kwargs.get("name")
     if name is None and args:
         name = args[0]
@@ -143,7 +166,9 @@ def add_recipe(
     cuisine = cuisine or ""
     main_protein = main_protein or ""
     advance_prep_notes = advance_prep_notes or ""
-    default_servings = default_servings or 4
+    # Every model door (the week, a swap, a big meal) passes its count
+    # straight here: a 0 or a negative keeps the default, never saves.
+    default_servings = positive_servings(default_servings) or 4
     # Marked BEFORE the list is completed from the steps: a line the app
     # adds there is the app's own guess and keeps the check. Any other door
     # has the mark taken OFF: a model handed a saved recipe (get_recipe in
@@ -519,6 +544,9 @@ def fill_recipe_details(
     returned as is — two approvals racing, or Cook's fill-in landing after
     the approval's, must not overwrite a good recipe with a second draft.
     """
+    # The model's count (or the library's): a 0 or a negative is dropped
+    # for 4, as add_recipe does, never saved (2026-10-20).
+    default_servings = positive_servings(default_servings) or 4
     # The steps' ingredients on the list, as add_recipe does (2026-10-12).
     # The model wrote these lines, so none is the household's own.
     ingredients = complete_ingredient_list(without_household_marks(ingredients or []), instructions or [], default_servings)
@@ -559,7 +587,7 @@ def fill_recipe_details(
             "library_id = COALESCE(?, library_id) "
             "WHERE id = ? AND household_id = ?",
             (
-                json.dumps(settled), json.dumps(instructions or []), int(default_servings or 4),
+                json.dumps(settled), json.dumps(instructions or []), default_servings,
                 prep_time_minutes, cook_time_minutes, advance_prep_notes or "",
                 json.dumps(advance_prep_step_indices or []),
                 json.dumps([str(c) for c in (household_changes or []) if str(c).strip()]),

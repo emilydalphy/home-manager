@@ -40,6 +40,7 @@ import re
 import threading
 
 from ..db import get_conn, write
+from . import recipes as _recipes
 from ._shared import household_id
 from .recipe_research import dish_key
 
@@ -275,7 +276,7 @@ def file_entry(dish_name: str, *, ingredients=None, instructions=None, default_s
     if _names_someone([method_notes], words):
         method_notes = ""
     body = (
-        json.dumps(ingredients), json.dumps(instructions), _int_or_none(default_servings),
+        json.dumps(ingredients), json.dumps(instructions), _recipes.positive_servings(default_servings),
         _int_or_none(prep_time_minutes), _int_or_none(cook_time_minutes),
         str(cuisine or "").strip(), str(main_protein or "").strip(), advance_prep_notes,
         json.dumps([i for i in (advance_prep_step_indices or []) if isinstance(i, int)]),

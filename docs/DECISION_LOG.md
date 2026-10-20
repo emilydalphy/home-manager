@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **No other door saves a recipe serving 0 or fewer either** (2026-10-20,
+  overnight hunt; branch `overnight/servings-positive-everywhere`, follow-on
+  to `overnight/recipe-serves-at-least-one`; tests
+  `tests/test_servings_positive_everywhere.py`). add_recipe (`x or 4` lets
+  -2 through), fill_recipe_details and the Tweak rewrite (`int(x or 4)`)
+  saved a model's negative count: the card said -2, scaling used 4. One
+  rule, `recipes.positive_servings`: the chat's add_recipe refuses a bad
+  count in update_recipe_details' words; a model's bad count is dropped for
+  the household's table / the recipe's own / 4. Library filing uses it too.
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
