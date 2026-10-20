@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An add that merges onto a grocery line keeps that line's aisle**
+  (2026-10-20; branch `overnight/merge-keeps-the-aisle`; tests
+  `tests/test_merge_keeps_the_aisle.py`). `add_grocery_item` overwrote the
+  merged row's category with the incoming one — usually a guess (Shop's
+  `groGuessCategory`, or chat's bare-name 'other') — so the recipe's
+  "Orzo · pantry" moved to Other when someone typed "orzo", and Put back
+  could not move it home (the open defect `test_put_back_merged_line.py`
+  characterised; inverted). Now a merge only fills in an aisle where the
+  line had 'other'; changing one on purpose stays `update_grocery_item`'s.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a

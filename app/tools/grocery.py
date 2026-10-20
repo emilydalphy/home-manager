@@ -1594,8 +1594,17 @@ def add_grocery_item(
         line_name = existing["item"]
         if not keep_standing and source_weekly_plan_id is not None:
             line_name = _more_specific_name(existing["item"], item)
+        # The aisle a line is already filed under stays: an add joining it
+        # only fills one in where the line had none ('other'). The incoming
+        # category is usually a guess — the shop sheet's groGuessCategory,
+        # or chat's add_grocery_items default of 'other' for a bare name —
+        # and overwriting with it moved a recipe's "Orzo · pantry" to Other
+        # the moment someone typed "orzo", where Put back could not move it
+        # home (tests/test_merge_keeps_the_aisle.py). Changing a line's
+        # aisle on purpose is update_grocery_item's job, not a merge's.
         conn.execute(
-            "UPDATE grocery_items SET item = ?, quantity = ?, category = ?, "
+            "UPDATE grocery_items SET item = ?, quantity = ?, "
+            "category = CASE WHEN COALESCE(category, '') IN ('', 'other') THEN ? ELSE category END, "
             "source_weekly_plan_id = CASE WHEN ? THEN NULL ELSE ? END, "
             # Fills in a store the row doesn't have yet, without
             # overwriting one already chosen for this line.
