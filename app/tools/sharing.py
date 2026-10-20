@@ -69,19 +69,33 @@ def get_shared_weekly_plan(token: str) -> dict | None:
     if not row:
         return None
     with use_household(row["household_id"]):
-        plan = _weekly_plan.get_weekly_plan()
-        # A week that has ENDED is not this week (defect hunt, 2026-10-20).
-        # With nothing covering today, get_weekly_plan falls back to the
-        # newest plan, approved and long over included, and this page
-        # titled it "<name>'s meals this week" and opened on its Monday as
-        # "Monday's Table" — a babysitter reading last week's dinners as
-        # tonight's. Cook and Now already treat such a plan as no plan
-        # (cooker.get_cooker_view's staleness check); this is the same rule,
-        # on the household's clock, so the page says no plan yet instead.
-        # A plan that hasn't STARTED is left alone: it names its own week.
-        end = plan.get("period_end_date")
-        if plan.get("weekly_plan_id") is not None and end and end < _cooker.household_today().isoformat():
-            plan = {"weekly_plan_id": None, "meals": []}
+        # Only an APPROVED week is ever shared (Emily, 2026-10-20). A draft
+        # nobody has said yes to is the household's working copy, not
+        # something to hand a babysitter. get_weekly_plan() would resolve to
+        # a draft (when it covers today and no approved week does, or when
+        # it is the newest), so the week is picked here from approved
+        # plans only: the one covering today, else the next one to start.
+        # No approved week covering or following today — an ended one
+        # included, which is not "this week" (defect hunt, 2026-10-20; the
+        # household's clock, as cooker.get_cooker_view's staleness check) —
+        # means the page says no plan yet.
+        plan = {"weekly_plan_id": None, "meals": []}
+        today = _cooker.household_today().isoformat()
+        conn = get_conn()
+        try:
+            current = _weekly_plan._live_plan_covering(conn, today, approved_only=True)
+            if current is None:
+                upcoming = conn.execute(
+                    "SELECT id FROM weekly_plans WHERE household_id = ? AND status = 'approved' "
+                    f"AND date({_weekly_plan._SQL_PERIOD_START}) > date(?) "
+                    f"ORDER BY date({_weekly_plan._SQL_PERIOD_START}) ASC, id ASC LIMIT 1",
+                    (household_id(), today),
+                ).fetchone()
+                current = upcoming
+        finally:
+            conn.close()
+        if current is not None:
+            plan = _weekly_plan.get_weekly_plan(current["id"])
     shared = {key: plan[key] for key in _SHARED_PLAN_KEYS if key in plan}
     shared["meals"] = [
         {key: meal.get(key) for key in _SHARED_MEAL_KEYS} for meal in plan.get("meals") or []
@@ -102,10 +116,13 @@ def get_shared_weekly_plan(token: str) -> dict | None:
 # planner's reason for each meal ("nut-free for Maya"), an open slot's
 # sentence, every ingredient. A lunch's packing lines (`packed_as`, a
 # child's needs) were the one field stripped. An allowlist fails closed: a
-# new field is private until someone adds it here on purpose.
+# new field is private until someone adds it here on purpose. No line
+# written to the household goes out either (2026-10-20): `is_first_plan` and
+# `new_recipe_count` fed "Here's your first week" and "N new recipes this
+# week", which are notes to the household, not part of a shared menu.
 _SHARED_PLAN_KEYS = (
-    "weekly_plan_id", "week_start_date", "planning_mode", "is_first_plan",
-    "new_recipe_count", "menu_is_suggested", "components",
+    "weekly_plan_id", "week_start_date", "planning_mode",
+    "menu_is_suggested", "components",
 )
 _SHARED_MEAL_KEYS = ("date", "slot", "meal")
 _SHARED_MENU_DAY_KEYS = ("date", "breakfast", "lunch", "dinner", "snack")

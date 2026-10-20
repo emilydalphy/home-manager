@@ -37,7 +37,7 @@ def _shared_week():
         (plan_id,),
     )
     conn.execute(
-        "UPDATE weekly_plans SET approved_by = 'Vineeth', approved_at = datetime('now') WHERE id = ?",
+        "UPDATE weekly_plans SET status = 'approved', approved_by = 'Vineeth', approved_at = datetime('now') WHERE id = ?",
         (plan_id,),
     )
     conn.commit()
@@ -58,8 +58,8 @@ def test_the_public_link_shows_the_menu(client):
     day = next(d for d in plan["menu"] if d["date"] == ws)
     assert day["dinner"] == "Peanut Noodles"
     assert plan["menu_is_suggested"] is False
-    assert plan["new_recipe_count"] == 1
-    assert plan["is_first_plan"] is True
+    # No line written to the household goes out (2026-10-20).
+    assert "new_recipe_count" not in plan and "is_first_plan" not in plan
 
 
 def test_the_public_link_carries_nothing_about_the_household(client):
