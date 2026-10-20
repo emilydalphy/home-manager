@@ -6215,8 +6215,14 @@ def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> 
     base_children = household.get("children", 0)
     night_tags = intake.get("night_tags") or {}
 
+    # A malformed entry (a bare number saved before save_week_intake
+    # checked the shape) is read as no guests rather than 500ing every
+    # generate for the week.
+    guest_extras = {
+        d: c for d, c in (intake.get("guest_counts") or {}).items() if isinstance(c, dict)
+    }
     guest_totals = {}
-    for day, extras in (intake.get("guest_counts") or {}).items():
+    for day, extras in guest_extras.items():
         guest_totals[day] = {
             "adults": base_adults + extras.get("adults", 0),
             "children": base_children + extras.get("children", 0),
@@ -6225,7 +6231,7 @@ def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> 
         "night_tags": {d: t for d, t in night_tags.items() if "out" not in t},
         "skip_dinner_dates": sorted(d for d, t in night_tags.items() if "out" in t),
         "skipped_days": skipped_days,
-        "guest_extras": intake.get("guest_counts") or {},
+        "guest_extras": guest_extras,
         "guest_totals": guest_totals,
         "packed_lunch_days": intake.get("packed_lunch_days") or [],
         # Step 3, "Weekday lunches" (2026-09-25): how each Monday-Friday

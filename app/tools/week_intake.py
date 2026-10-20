@@ -643,6 +643,28 @@ def save_week_intake(
         # break, and the household was shown both.
         if "rush" in tags and "unrushed" in tags:
             raise ValueError("A night can't be both short on time and unrushed — pick one.")
+    # Guest counts are {date: {"adults": n, "children": n}}, the shape the
+    # guests stepper sends and every reader assumes. A bare number used to
+    # land as a revision and then 500 every generate for the week
+    # (agent._intake_generation_context calls .get on it).
+    if guest_counts is not None:
+        if not isinstance(guest_counts, dict):
+            raise ValueError("guest_counts must be an object keyed by ISO date.")
+        for day, extras in guest_counts.items():
+            try:
+                date.fromisoformat(day)
+            except (TypeError, ValueError):
+                raise ValueError(f"Guest counts are keyed by ISO date, not {day!r}.")
+            if not isinstance(extras, dict):
+                raise ValueError(
+                    f'Guests for {day} must be {{"adults": n, "children": n}}, not {extras!r}.'
+                )
+            unknown = sorted(set(extras) - {"adults", "children"})
+            if unknown:
+                raise ValueError(f"Guests for {day} can only count adults and children, not {', '.join(unknown)}.")
+            for key, n in extras.items():
+                if isinstance(n, bool) or not isinstance(n, int) or n < 0:
+                    raise ValueError(f"Guests for {day}: {key} must be a whole number, 0 or more.")
 
     # Read-modify-write, retried. Two adults saving at the same moment both
     # read the same current revision and both try to write revision+1; the

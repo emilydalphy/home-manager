@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A guest count saved as a bare number is refused, not saved** (2026-10-20,
+  overnight hunt; branch `overnight/guest-count-checked-at-save`; tests
+  `tests/test_guest_count_shape_checked.py`). `save_week_intake` took
+  `guest_counts {"<date>": 2}` and every generate for that week then 500'd
+  (`agent._intake_generation_context` calls `.get` on each entry). Now each
+  entry must be `{"adults": n, "children": n}` (ISO date key, whole numbers
+  >= 0) or the save is a 400; the generator also skips a non-dict entry
+  already saved, so an old bad row reads as no guests instead of crashing.
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
