@@ -2651,14 +2651,14 @@ TOOL_DEFINITIONS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "date": {"type": "string", "description": "The holiday's ISO date (YYYY-MM-DD)."},
+                "date_str": {"type": "string", "description": "The holiday's ISO date (YYYY-MM-DD)."},
                 "answer": {"type": "string", "enum": ["hosting", "out", "just_us", "unsure"]},
                 "headcount": {"type": "integer", "description": "EXTRA people beyond the household, when hosting. Omit to keep what's recorded."},
                 "bring_dish": {"type": "string", "description": "The dish they're bringing, when out. '' to say nothing after all. Omit to keep what's recorded."},
                 "on_table_at": {"type": "string", "description": "When hosting: the time they want the big meal on the table ('5pm', '17:30'). Omit to keep what's recorded; '' to fall back to their usual dinner time."},
                 "guest_notes": {"type": "string", "description": "When hosting: what the guests can't eat, in the host's words ('Sam's vegetarian; no nuts for the Wongs'), under 160 characters. Omit to keep what's recorded; '' to clear."},
             },
-            "required": ["date", "answer"],
+            "required": ["date_str", "answer"],
         },
     },
     {
@@ -2666,8 +2666,8 @@ TOOL_DEFINITIONS = [
         "description": "The big meal for a holiday the household is hosting: the menu (main, sides, something sweet), what's made ahead on which day, the shop in two trips, the prep already on the days before, and the day-of timeline working back from the time it's on the table — with `spoken`, the whole thing in plain sentences. Use for 'what's the plan for Thanksgiving', 'what am I making ahead', 'when do I start on the day', 'read me the timeline'. Read `timeline.steps` back as times a person says ('4:15 — turkey into the oven'), never as a table.",
         "input_schema": {
             "type": "object",
-            "properties": {"date": {"type": "string", "description": "The holiday's ISO date."}},
-            "required": ["date"],
+            "properties": {"date_str": {"type": "string", "description": "The holiday's ISO date."}},
+            "required": ["date_str"],
         },
     },
     {
@@ -2676,7 +2676,7 @@ TOOL_DEFINITIONS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "date": {"type": "string"},
+                "date_str": {"type": "string"},
                 "name": {"type": "string"},
                 "role": {"type": "string", "enum": ["main", "side", "sweet"]},
                 "ingredients": {"type": "array", "items": {"type": "object", "properties": {"item": {"type": "string"}, "qty": {"type": "string"}, "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]}}, "required": ["item", "qty"]}},
@@ -2687,7 +2687,7 @@ TOOL_DEFINITIONS = [
                 "ahead_days": {"type": "integer", "description": "0 = the day, 1 = the day before, 2 = two days before."},
                 "replaces": {"type": "string", "description": "The dish this takes the place of, by name."},
             },
-            "required": ["date", "name", "role"],
+            "required": ["date_str", "name", "role"],
         },
     },
     {
@@ -2695,8 +2695,8 @@ TOOL_DEFINITIONS = [
         "description": "Take a side or the sweet off the big meal ('drop the brussels sprouts'), its shopping and prep with it. The main is swapped with set_big_meal_dish, never removed.",
         "input_schema": {
             "type": "object",
-            "properties": {"date": {"type": "string"}, "name": {"type": "string"}},
-            "required": ["date", "name"],
+            "properties": {"date_str": {"type": "string"}, "name": {"type": "string"}},
+            "required": ["date_str", "name"],
         },
     },
     {
@@ -2704,8 +2704,8 @@ TOOL_DEFINITIONS = [
         "description": "When a dish on the big meal gets made: 'make the stuffing the day before', 'do the pie two days out', 'the potatoes on the day'. `when` is day_of, day_before, two_days_before or an ISO date up to two days before. The prep on Now and the Cook screen moves with it.",
         "input_schema": {
             "type": "object",
-            "properties": {"date": {"type": "string"}, "dish": {"type": "string"}, "when": {"type": "string"}},
-            "required": ["date", "dish", "when"],
+            "properties": {"date_str": {"type": "string"}, "dish": {"type": "string"}, "when": {"type": "string"}},
+            "required": ["date_str", "dish", "when"],
         },
     },
     {
@@ -2713,8 +2713,8 @@ TOOL_DEFINITIONS = [
         "description": "Propose the big meal's menu again — 'start the sides over', 'give me a different menu'. Keeps the main unless keep_main is false. Only for a hosted holiday whose week is planned.",
         "input_schema": {
             "type": "object",
-            "properties": {"date": {"type": "string"}, "keep_main": {"type": "boolean", "description": "Default true."}},
-            "required": ["date"],
+            "properties": {"date_str": {"type": "string"}, "keep_main": {"type": "boolean", "description": "Default true."}},
+            "required": ["date_str"],
         },
     },
     {
@@ -5567,6 +5567,9 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     try:
         for attempt in (1, 2):
             detail = generate_recipe_details_llm(spec)
+            # A 0 or negative count from the model is dropped, so the
+            # household's own table (shared serves) is used instead.
+            detail["default_servings"] = tools.positive_servings(detail.get("default_servings"))
             ingredients = [
                 i for i in (detail.get("ingredients") or [])
                 if isinstance(i, dict) and (i.get("item") or "").strip()
@@ -6229,8 +6232,14 @@ def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> 
     base_children = household.get("children", 0)
     night_tags = intake.get("night_tags") or {}
 
+    # A malformed entry (a bare number saved before save_week_intake
+    # checked the shape) is read as no guests rather than 500ing every
+    # generate for the week.
+    guest_extras = {
+        d: c for d, c in (intake.get("guest_counts") or {}).items() if isinstance(c, dict)
+    }
     guest_totals = {}
-    for day, extras in (intake.get("guest_counts") or {}).items():
+    for day, extras in guest_extras.items():
         guest_totals[day] = {
             "adults": base_adults + extras.get("adults", 0),
             "children": base_children + extras.get("children", 0),
@@ -6239,7 +6248,7 @@ def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> 
         "night_tags": {d: t for d, t in night_tags.items() if "out" not in t},
         "skip_dinner_dates": sorted(d for d, t in night_tags.items() if "out" in t),
         "skipped_days": skipped_days,
-        "guest_extras": intake.get("guest_counts") or {},
+        "guest_extras": guest_extras,
         "guest_totals": guest_totals,
         "packed_lunch_days": intake.get("packed_lunch_days") or [],
         # Step 3, "Weekday lunches" (2026-09-25): how each Monday-Friday
@@ -9280,7 +9289,7 @@ _COOKING_QUANTITIES_PROPERTY = {
         "type": "object",
         "properties": {
             "item": {"type": "string"},
-            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count — and sensible for that many people (a soup for two takes 1-2 tbsp of butter, not a stick). Never a package word (bottle/jar/bag/box/tub); a sized can is fine."},
+            "cook_qty": {"type": "string", "description": "Amount at default_servings — 2 tbsp, 1.5 cups, 400 g, 3 cloves, or a count — and sensible for that many people (a soup for two takes 1-2 tbsp of butter, not a stick). Never a package word (bottle/jar/bag/box/tub); a sized can is fine. Where the steps only use a pinch, a splash or a dash, write that ('a pinch')."},
         },
         "required": ["item", "cook_qty"],
     },
@@ -9567,7 +9576,14 @@ def fill_in_recipe(recipe_name: str) -> dict:
     detail = generate_recipe_detail_llm(recipe)
     if not detail.get("instructions"):
         raise ValueError("Couldn't generate instructions for this recipe — try again.")
-    servings = detail.get("default_servings") or recipe.get("default_servings") or 4
+    # The model's servings, only when it is a real count: a 0 or a negative
+    # would be refused by update_recipe_details and lose the steps with it.
+    model_servings = detail.get("default_servings")
+    if isinstance(model_servings, float) and model_servings.is_integer():
+        model_servings = int(model_servings)
+    if isinstance(model_servings, bool) or not isinstance(model_servings, int) or model_servings < 1:
+        model_servings = None
+    servings = model_servings or recipe.get("default_servings") or 4
     measured = {}
     try:
         measured = measured_cooking_quantities(recipe, detail.get("cooking_quantities"), servings)
@@ -9607,7 +9623,7 @@ def fill_in_recipe(recipe_name: str) -> dict:
     return tools.update_recipe_details(
         recipe_name,
         instructions=instructions,
-        default_servings=detail.get("default_servings"),
+        default_servings=model_servings,
         prep_time_minutes=detail.get("prep_time_minutes"),
         cook_time_minutes=detail.get("cook_time_minutes"),
         advance_prep_notes=detail.get("advance_prep_notes"),
@@ -10213,6 +10229,101 @@ def _chores_off_result() -> dict:
             "say this one sentence plainly and move on; if they didn't, don't bring it up."
         ),
     }
+
+
+# What each chat tool's arguments are declared to be, by tool name. Read
+# once at import (it is the static catalogue, nothing per-household).
+_TOOL_INPUT_SCHEMAS = {d["name"]: d.get("input_schema") or {} for d in TOOL_DEFINITIONS}
+
+_INT_STRING = re.compile(r"\s*-?\d+\s*")
+
+
+def read_tool_input(tool_name: str, tool_input):
+    """
+    The model's arguments for a chat tool, read as that tool's own schema
+    declares them — before the tool sees them.
+
+    The schema is a request to the model, not a guarantee (the same lesson
+    as "telling the generator something is not the same as preventing
+    it"). Driving every non-chores, non-inventory tool with the shapes a
+    model plausibly sends (2026-10-20) found two kinds of harm:
+
+    - CRASHES. `"days_ahead": null` (an optional field sent as null rather
+      than left out) and `"days_ahead": "7"` both raised a TypeError in
+      get_meal_plan; the same in get_defrost_schedule's `days` and
+      scale_recipe's `target_servings`; `"weekday": null` hit a NOT NULL
+      constraint in set_lunch_location. The household gets an apology for
+      "what's for dinner this week?".
+    - SILENT WRONG DATA, which is worse. A bare string where the schema
+      says array was iterated letter by letter:
+      set_member_dietary_restrictions(restrictions="nut allergy") stored
+      one restriction per LETTER — the allergy the meal gates read was
+      gone, and the reply said it was saved. Same for add_food_dislikes,
+      add_grocery_items and every other list. And `"present": "false"` is
+      a truthy string, so set_member_attendance marked the person HOME.
+
+    Only what the schema itself says is used, and only at the top level:
+    - an OPTIONAL property sent as null is left out, so the function's
+      own default applies (a required one is left alone — the tool's own
+      error is the right answer);
+    - integer + a whole-number string -> int;
+    - boolean + "true"/"false" (any case) -> bool;
+    - array + a string -> the list it spells when it is a JSON array (the
+      stringified-array habit), otherwise a one-item list. Not
+      comma-split: "salt, kosher" is one thing, and a single item is
+      never letters;
+    - object + a string that is a JSON object -> that object.
+    Anything else is passed through untouched, so a tool's own validation
+    still sees the odd cases and answers them in its own words. Returns a
+    new dict; the model's block (which stays in the conversation) is not
+    changed.
+    """
+    if not isinstance(tool_input, dict):
+        return tool_input
+    schema = _TOOL_INPUT_SCHEMAS.get(tool_name) or {}
+    props = schema.get("properties") or {}
+    required = set(schema.get("required") or [])
+    out = {}
+    for key, value in tool_input.items():
+        spec = props.get(key)
+        if not isinstance(spec, dict):
+            out[key] = value
+            continue
+        if value is None:
+            if key not in required:
+                continue
+            out[key] = value
+            continue
+        kind = spec.get("type")
+        if kind == "integer" and isinstance(value, str) and _INT_STRING.fullmatch(value):
+            value = int(value)
+        elif kind == "boolean" and isinstance(value, str) and value.strip().lower() in ("true", "false"):
+            value = value.strip().lower() == "true"
+        elif kind == "array" and isinstance(value, str):
+            parsed = None
+            if value.strip()[:1] in ("[", "{"):
+                try:
+                    parsed = json.loads(value)
+                except ValueError:
+                    parsed = None
+            item_kind = (spec.get("items") or {}).get("type")
+            if isinstance(parsed, list):
+                value = parsed
+            elif isinstance(parsed, dict) and item_kind == "object":
+                # One ingredient sent as JSON text: a list of that one
+                # object, not an ingredient named '{"item": ...}'.
+                value = [parsed]
+            else:
+                value = [value]
+        elif kind == "object" and isinstance(value, str) and value.strip().startswith("{"):
+            try:
+                parsed = json.loads(value)
+            except ValueError:
+                parsed = None
+            if isinstance(parsed, dict):
+                value = parsed
+        out[key] = value
+    return out
 
 
 def tools_for_request() -> list[dict]:
@@ -11680,7 +11791,14 @@ def run_agent_turn(
                 )
                 continue
             try:
-                result = fn(**block.input) if fn else {"error": f"Unknown tool {block.name}"}
+                # Read as the tool's schema declares (read_tool_input):
+                # a null optional, "7" for 7, "false" for false and a bare
+                # string for a list were crashing tools or, worse, saving
+                # an allergy one letter at a time.
+                result = (
+                    fn(**read_tool_input(block.name, block.input)) if fn
+                    else {"error": f"Unknown tool {block.name}"}
+                )
                 content = json.dumps(result, default=str)
                 is_error = False
             except REFUSALS_OWED_TO_A_PERSON as refusal:

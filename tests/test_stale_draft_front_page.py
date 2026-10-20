@@ -307,6 +307,10 @@ class TestFromFridayThisWeekMeansNextWeek:
         suggestion = tools.suggest_planning_period()
         assert (suggestion["start_date"], suggestion["day_count"]) == ("2026-09-21", 7)
         assert suggestion["is_current_period"] is False
+        # The nudge waits for the fortnight's own last days (2026-10-20):
+        # on its fifth day nine days are still planned.
+        assert tools.get_week_planning_nudge()["show"] is False
+        pin_today("2026-09-18")
         assert tools.get_week_planning_nudge()["week_start"] == "2026-09-21"
 
     def test_an_approved_week_is_not_nudged_about_next_week_on_thursday(self, pin_today):

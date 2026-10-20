@@ -804,7 +804,13 @@ def next_opening(store: str, after: datetime, all_hours: dict | None = None,
         w = open_window(store, after.date() + timedelta(days=offset), all_hours, cache)
         if w is None:
             return None
-        if w.get("closed") or w["opens"] <= after:
+        # A window opening AT `after` counts: asked at the moment one closes,
+        # a store whose next day opens then (a 24-hour store at midnight)
+        # never shut. `<=` skipped it, and a 24-hour store read as closing
+        # at midnight with tomorrow's cook still to buy for. Every other
+        # caller asks while it is shut, where window_at already calls a
+        # window opening at that instant open.
+        if w.get("closed") or w["opens"] < after:
             continue
         return w
 

@@ -651,3 +651,80 @@ def test_skipping_prep_on_someone_elses_plan_reports_no_change():
         res = tools.set_skip_prep_this_week(True, weekly_plan_id=plan_id)
     assert res["changed"] is False and res["skip_prep_this_week"] is None
     assert len(tools.prep_sessions_for_plan(plan_id)) == 1
+
+
+# ---------- Prep comes before the meal it feeds (2026-10-20) ----------
+
+def _prep_cut_rows(plan_id):
+    return [t for t in tools.get_prep_schedule(plan_id) if t["task_type"] == "prep_cut"]
+
+
+def test_a_prep_cut_dated_after_its_meal_is_refused_and_writes_nothing():
+    """The reported defect: Saturday's "Cut up romaine" filed against a
+    Wednesday dinner, so the household is told to prep it after eating it.
+    Mutation: drop the date check in add_prep_cut."""
+    _household()
+    _bowls()
+    plan_id = _sunday_start_plan()
+    entry_id = tools.plan_meal(WED, "Chicken Bowls", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+
+    with pytest.raises(ValueError) as e:
+        tools.add_prep_cut(plan_id, SAT, "Cut up romaine", [entry_id])
+
+    assert str(e.value) == "Chicken Bowls is on Wednesday, so I can only put its prep on Wednesday or before."
+    assert _prep_cut_rows(plan_id) == []
+
+
+def test_prep_on_the_day_of_the_meal_is_still_fine():
+    """EDGE: prep in the morning, eat that night — the boundary is the
+    meal's own day, not the day before."""
+    _household()
+    _bowls()
+    plan_id = _sunday_start_plan()
+    entry_id = tools.plan_meal(WED, "Chicken Bowls", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+
+    tools.add_prep_cut(plan_id, WED, "Cut up romaine", [entry_id])
+
+    assert [t["task_date"] for t in _prep_cut_rows(plan_id)] == [WED]
+
+
+def test_one_meal_before_the_prep_day_refuses_the_whole_cut():
+    """EDGE: a cut naming two meals, one Friday and one Monday, on a
+    Wednesday — the Monday one would be prepped after it's eaten, so
+    nothing is filed for either (no half-written tick)."""
+    _household()
+    _bowls()
+    plan_id = _sunday_start_plan()
+    fri = tools.plan_meal(FRI, "Chicken Bowls", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    mon = tools.plan_meal(MON, "Chicken Bowls", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+
+    with pytest.raises(ValueError, match="on Monday"):
+        tools.add_prep_cut(plan_id, WED, "Cut up romaine", [fri, mon])
+
+    assert _prep_cut_rows(plan_id) == []
+
+
+def test_the_prep_cut_route_says_why_it_refused(signed_in):
+    _household()
+    _bowls()
+    plan_id = _sunday_start_plan()
+    entry_id = tools.plan_meal(WED, "Chicken Bowls", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+
+    res = signed_in.post("/api/prep-cut", json={
+        "prep_date": SAT, "description": "Cut up romaine", "entry_ids": [entry_id], "weekly_plan_id": plan_id,
+    })
+
+    assert res.status_code == 400
+    assert res.json()["detail"] == "Chicken Bowls is on Wednesday, so I can only put its prep on Wednesday or before."
+    assert _prep_cut_rows(plan_id) == []
+
+
+def test_the_cook_screen_toasts_the_refusal_in_its_own_words():
+    """The Cook screen's prep-cut save shows the server's sentence, not a
+    generic "try again" that would just fail the same way."""
+    src = open("static/shell.js", encoding="utf-8").read()
+    start = src.index("async function cookAddPrepCuts(el)")
+    body = src[start:src.index("\n  }\n", start)]
+    assert "showToast(err && err.status === 400 && err.detail ? err.detail : 'That didn’t save — try again.')" in body
+    post = src[src.index("async function cookPost(url, body)"):]
+    assert "err.status = res.status;" in post[:post.index("\n  }\n")]

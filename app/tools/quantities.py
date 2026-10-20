@@ -172,6 +172,9 @@ _UNIT_ALIASES = {
     "kg": "kg", "kilogram": "kg", "kilograms": "kg",
     "ml": "ml", "milliliter": "ml", "milliliters": "ml",
     "l": "l", "liter": "l", "liters": "l",
+    # The Canadian/British spelling — "1 litre" read as no unit at all, so
+    # the cook card put the table's guess in its place (2026-10-20).
+    "millilitre": "ml", "millilitres": "ml", "litre": "l", "litres": "l",
     # Size descriptors ("1 large" onion) aren't real units of measure — map
     # them to "" (normalized to None below) so "1 large" and "1/2" (no
     # unit) are recognized as the same kind of quantity and merge into a

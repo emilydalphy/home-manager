@@ -39,8 +39,10 @@ asserts WHICH requests the tap puts on the wire. Section 2 drives the real
 `add_grocery_item` and the real routes' tools, so the household-visible
 before/after is measured rather than reasoned about.
 
-A SECOND, NARROWER THING THE SAME UNDO GETS WRONG is NOT fixed here, and
-is characterised at the end of this file so nobody reports it as new:
+A SECOND, NARROWER THING THE SAME UNDO GOT WRONG was NOT fixed here; it
+was fixed at its root on 2026-10-20 (overnight/merge-keeps-the-aisle — the
+merge no longer moves a line's aisle) and the test at the end of this file
+is inverted to match. What it was:
 `add_grocery_item` also overwrites the merged row's CATEGORY with the one
 groGuessCategory picked for the words that were typed, and Put back
 restores the amount and the store only — so a line can come back at the
@@ -515,22 +517,21 @@ def test_what_the_household_saw_before_the_fix_and_what_they_see_now():
     assert [(r["item"], r["quantity"]) for r in tools.list_grocery_list()] == [("Bell peppers", "3")]
 
 
-def test_the_aisle_does_NOT_come_back_with_the_amount_and_that_is_not_fixed_here():
-    """CHARACTERISATION of what this branch deliberately leaves, so nobody
-    reports it as new. The add overwrites the merged row's category with
-    groGuessCategory's reading of the words that were typed, and Put back
-    sends the quantity and the store only — so the line returns at the
-    right number under the wrong section heading. Pre-existing and
-    unchanged here. INVERT THIS TEST when it is fixed; the reasons it was
-    not are in the comment at the /update call and in this file's own
-    docstring."""
+def test_the_aisle_comes_back_with_the_amount_because_the_merge_never_moved_it():
+    """INVERTED 2026-10-20 (branch overnight/merge-keeps-the-aisle). This
+    was the characterisation of an open defect: the add overwrote the
+    merged row's category with groGuessCategory's reading of the typed
+    words, and Put back sends the quantity and the store only, so the line
+    returned under the wrong section heading. The merge now keeps a line's
+    aisle (tests/test_merge_keeps_the_aisle.py), so there is nothing for
+    Put back to restore."""
     tools.add_grocery_item("Bell peppers", "3", "produce")
     merged = tools.add_grocery_item("Bell pepper", "2", "other")
     assert [(r["item"], r["quantity"], r["category"]) for r in tools.list_grocery_list()] == [
-        ("Bell peppers", "5", "other")
+        ("Bell peppers", "5", "produce")
     ]
     tools.update_grocery_item(merged["item_id"], quantity="3")
     tools.set_grocery_item_store(merged["item_id"], "", remember=False)
     assert [(r["item"], r["quantity"], r["category"]) for r in tools.list_grocery_list()] == [
-        ("Bell peppers", "3", "other")
+        ("Bell peppers", "3", "produce")
     ]

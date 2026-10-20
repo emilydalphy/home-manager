@@ -173,7 +173,7 @@ def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> 
     """Add one freeform fact to a What We Know tab. An empty/whitespace-only text is refused — the UI's own rule is that an abandoned empty fact never persists."""
     text = (text or "").strip()
     if not text:
-        return {"added": False}
+        return {"added": False, "reason": "There's nothing to add — the text was empty."}
     with write() as conn:
         cur = conn.execute(
             "INSERT INTO facts (household_id, category, text, hard, author) VALUES (?, ?, ?, ?, ?)",

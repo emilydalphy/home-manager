@@ -137,7 +137,9 @@ def get_coaching_state() -> dict:
 
 
 def add_member(name: str) -> dict:
-    """Add a household member (person who can be assigned chores)."""
+    """Add a household member (person who can be assigned chores). A blank name is refused."""
+    if not (name or "").strip():
+        raise ValueError(BLANK_MEMBER_NAME)
     conn = get_conn()
     member_id = _get_or_create_member(conn, name)
     conn.close()
@@ -193,14 +195,23 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     """
     conn = get_conn()
     member_id = _get_or_create_member(conn, name)
+    # The reply names them as stored ("Theo"), not as typed ("theo").
+    name = conn.execute(
+        "SELECT name FROM members WHERE id = ? AND household_id = ?", (member_id, household_id()),
+    ).fetchone()["name"]
     # Placeholder non-answers (an LLM occasionally writes "None" instead of
     # an empty list when someone says they have no restrictions) should
     # never actually get stored as a restriction — filtered out on both
     # merge and replace so this can't silently accumulate as real entries.
-    restrictions = [r for r in restrictions if r.strip().lower() not in _NON_RESTRICTION_VALUES]
+    # Trimmed on the way in: " Sesame " was being stored as typed.
+    restrictions = [r.strip() for r in restrictions if r.strip().lower() not in _NON_RESTRICTION_VALUES]
     if replace:
         merged = list(restrictions)
     else:
+        # The merge reads the stored list and writes it back, so it holds the
+        # write lock from the read: two adds landing together (the member's
+        # own share link, the other adult's Settings) must both survive.
+        conn.execute("BEGIN IMMEDIATE")
         existing_row = conn.execute(
             "SELECT dietary_restrictions_json FROM members WHERE id = ? AND household_id = ?",
             (member_id, household_id()),
@@ -221,6 +232,42 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     conn.close()
     _log_preference_event(f"member:{name}:dietary_restrictions", "write")
     return {"name": name, "dietary_restrictions": merged}
+
+
+def remove_member_dietary_restriction(name: str, restriction: str) -> dict:
+    """
+    Take ONE restriction off a member's STORED list — Settings' chip
+    remove. Matched trimmed and case-blind; everything else on the list is
+    left exactly as stored.
+
+    Settings used to remove a chip by resending its own copy of the whole
+    list under replace=True. Found 2026-10-20: an allergy added after the
+    sheet opened (the member through their share link, the other adult on
+    another phone) was not in that copy, so removing any OTHER chip erased
+    it — and the planner's hard gate stopped holding that food back. This
+    edits the list as it is now, read and written under one write lock.
+    Looks the person up, never creates them (the route has already refused
+    a stranger); someone not found is a no-op.
+    """
+    target = (restriction or "").strip().lower()
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT id, dietary_restrictions_json FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            (household_id(), name),
+        ).fetchone()
+        if row is None:
+            return {"name": name, "dietary_restrictions": []}
+        current = json.loads(row["dietary_restrictions_json"] or "[]")
+        kept = [r for r in current if r.strip().lower() != target]
+        if kept != current:
+            conn.execute(
+                "UPDATE members SET dietary_restrictions_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(kept), row["id"], household_id()),
+            )
+    if kept != current:
+        _log_preference_event(f"member:{name}:dietary_restrictions", "write")
+    return {"name": name, "dietary_restrictions": kept}
 
 
 LITTLE_ONE_WORDS = frozenset({"toddler", "little one", "baby", "infant"})
@@ -450,7 +497,11 @@ def count_preference_events_this_month() -> int:
 
 
 def add_pet(name: str, pet_type: str) -> dict:
-    """Add a household pet. pet_type is freeform, e.g. 'dog', 'cat', 'rabbit'. Pets can influence chores (litter box, walks) and grocery/household shopping lists (food, litter, etc.)."""
+    """Add a household pet. pet_type is freeform, e.g. 'dog', 'cat', 'rabbit'. Pets can influence chores (litter box, walks) and grocery/household shopping lists (food, litter, etc.). A blank name is refused."""
+    # Same rule as a person (2026-10-20): a blank name was saved as an
+    # empty pet row.
+    if not (name or "").strip():
+        raise ValueError(BLANK_PET_NAME)
     conn = get_conn()
     cur = conn.execute(
         "INSERT INTO pets (household_id, name, pet_type) VALUES (?, ?, ?)",
@@ -472,12 +523,23 @@ def list_pets() -> list[dict]:
     return [dict(r) for r in rows]
 
 
+BLANK_MEMBER_NAME = "I need their name first — who is this about?"
+BLANK_PET_NAME = "I need the pet's name first — what are they called?"
+
+
 def _get_or_create_member(conn, name: str) -> int:
     # Case-insensitive lookup, matching the pattern used for recipes and
     # grocery items elsewhere in this file — an exact-match lookup here let
     # something like "my partner" vs. the saved name "Alex" (or even just
     # "alex" vs. "Alex") silently create a duplicate member row instead of
     # attaching to the existing person (Phase 4, §4.1 Fix 1).
+    #
+    # A blank name is refused before anything is read or written (found
+    # 2026-10-20): chat's add_member(""), or a restriction / age said
+    # about "", made a nameless person — an empty row in Who's here who
+    # was counted at every meal. Every member write by name comes here.
+    if not (name or "").strip():
+        raise ValueError(BLANK_MEMBER_NAME)
     row = conn.execute(
         "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)", (household_id(), name)
     ).fetchone()

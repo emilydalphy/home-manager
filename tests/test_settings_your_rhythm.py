@@ -442,3 +442,25 @@ def test_the_some_of_you_cell_reads_light_beside_the_dark_everyone_cell_in_dark_
     # The shared token itself is untouched.
     theme = (_HERE.parent / "static" / "theme.css").read_text()
     assert "--celadon-tint:   #1C3B2C;" in theme and "--celadon-tint:   #E2EDE5;" in theme
+
+
+def _day_keys(var_name: str) -> list[str]:
+    import re
+    start = SHELL_JS.index(f"  var {var_name} = [")
+    block = SHELL_JS[start: SHELL_JS.index("];", start)]
+    return [k for k in re.findall(r"key: '([a-z_]+)'", block) if k != "as_we_go"]
+
+
+def test_every_day_row_in_your_rhythm_starts_on_monday():
+    """Emily's report, 2026-10-20: Grocery shop listed Sun–Sat right under
+    Plan ready by's Mon–Sun, and onboarding asks every day row Mon–Sun
+    (UW_WEEKDAYS). Prep days, Grocery shop and Top-up shop all read
+    WWK_PREP_DAYS, so it carries the same order as the others.
+    Mutation: put Sunday back at the front of WWK_PREP_DAYS."""
+    import re
+    monday_first = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    uw = re.search(r"var UW_WEEKDAYS = \[([^\]]*)\]", SHELL_JS).group(1)
+    assert re.findall(r"'([a-z]+)'", uw) == monday_first
+    assert _day_keys("WWK_PLANNING_ANCHOR") == monday_first
+    assert _day_keys("WWK_PREP_DAYS") == monday_first
+    assert "  var WWK_SHOP_DAYS = WWK_PREP_DAYS;" in SHELL_JS

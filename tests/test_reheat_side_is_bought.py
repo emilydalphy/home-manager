@@ -228,6 +228,7 @@ def test_a_side_on_each_end_of_the_chain_buys_the_cooks_for_two_and_the_reheats_
 
 # ---------- the route a household actually reaches today ----------
 
+@ON_MONDAY
 def test_adding_a_side_to_a_reheat_on_an_approved_week_puts_it_on_the_list():
     """CATCH — and the reachable one. The plate pass deliberately never
     attaches a side to a reheat (agent._complete_plates_pass), so a side
@@ -270,6 +271,7 @@ def test_the_same_addition_on_the_cook_night_is_unchanged():
     assert _list() == {"Ground turkey": "3 lbs", "Mixed greens": "1 bag", "Lemon": "1"}
 
 
+@ON_MONDAY
 def test_a_cook_nights_addition_is_still_bought_for_the_whole_batch():
     """GUARD — four eaters, where the batch factor is visible: the salad
     added to the night that cooks covers the night it feeds, which is the

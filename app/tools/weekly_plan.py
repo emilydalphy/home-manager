@@ -2076,12 +2076,22 @@ def _attention_moves_on(today: date, start_date: str, day_count: int) -> bool:
     the nudge for what follows it still has to open before it ends (the
     old "from Saturday" rule, which this generalises rather than replaces).
     Before the period starts, never — a future period has no "days left".
+
+    The first clause also waits until no more days are left than a week
+    has after its Friday (two). Without that, a two-week plan reached its
+    "fifth day" with nine days still planned, and Today asked "Shall I put
+    Oct 30–Nov 5 together?" under a NEXT WEEK eyebrow on Oct 20 (defect
+    hunt 2026-10-20). For any period of seven days or fewer the two
+    conditions are the same day, so only longer periods move.
     """
     start = date.fromisoformat(start_date)
     if today < start:
         return False
     end = date.fromisoformat(period_end_date(start_date, day_count))
-    return (today - start).days >= PLAN_AHEAD_FROM_WEEKDAY or (end - today).days <= 1
+    days_in, days_left = (today - start).days, (end - today).days
+    return (
+        days_in >= PLAN_AHEAD_FROM_WEEKDAY and days_left <= 6 - PLAN_AHEAD_FROM_WEEKDAY
+    ) or days_left <= 1
 
 
 def _plan_before_shop_day(today: date) -> dict | None:
@@ -9180,6 +9190,24 @@ def move_cook_onto_fed_night(conn, weekly_plan_id: int, entry_id: int,
                 "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
                 (json.dumps(derived), r["id"], household_id()),
             )
+    # A night eating a portion this cook freezes names the cook's DAY
+    # ("Leftovers from the freezer — Monday’s Turkey Chili") and names the
+    # cook by entry id, not by date, so the rewrite above never reaches it.
+    # The "−", the night off and an away night all land here, and all three
+    # left Friday saying "Monday’s" over a Monday cooking nothing (overnight
+    # 2026-10-20). The Move sheet's and the swap's own re-say, so the name is
+    # written by one rule; the cook is read at the night it moved OFF.
+    from . import meal_move as _meal_move  # lazy: meal_move imports us
+    rows = [dict(r) for r in conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL",
+        (weekly_plan_id, household_id()),
+    ).fetchall()]
+    for r in rows:
+        if r["id"] == entry_id:
+            r["date"] = old_date
+    _meal_move._resay_freezer_nights(conn, {"rows": rows}, {entry_id: target["date"]})
     _shift_defrost_tasks(conn, weekly_plan_id, entry_id, old_date, target["date"])
     # The cook now lands on a later night: a "first meal back" suggestion
     # to double it may now name a dinner after the meal it covers.
@@ -9301,6 +9329,27 @@ def _redate_plan_rows(
             return {"refused":
                     f"{dish} on {_weekday_of(now_date[source['id']])} feeds "
                     f"{_weekday_of(now_date[e['id']])}’s {e['slot']} — it can’t move past that night."}
+    # The same rule for a night eating a portion this week's cook FREEZES.
+    # That night carries from_freezer (cook named by entry id), not
+    # links_to, so the check above never saw it: the nights swap put
+    # Monday's chili on Saturday under Friday's "Leftovers from the
+    # freezer", thaw reminder and all (defect hunt, 2026-10-20). The Move
+    # sheet has refused it all along (meal_move._structural_refusal); this
+    # is the writer's own copy, only where this move touches the pair.
+    for e in after:
+        if e["slot_state"] != "planned":
+            continue
+        cook_id = _frozen_portion_cook_id(e["derived"])
+        source = by_id.get(cook_id) if cook_id is not None else None
+        if source is None or source["id"] == e["id"]:
+            continue
+        if source["id"] not in new_date and e["id"] not in new_date:
+            continue
+        if _eaten_at(source) >= _eaten_at(e):
+            dish = source["meal"] or "That one"
+            return {"refused":
+                    f"{dish} on {_weekday_of(now_date[source['id']])} feeds "
+                    f"{_weekday_of(now_date[e['id']])}’s {e['slot']} — it can’t move past that night."}
     if extra_check is not None:
         said = extra_check(after, by_date_slot, by_id)
         if said:
@@ -9346,6 +9395,20 @@ def _redate_plan_rows(
     # meal it covers is recomputed — keyed by entry id, it rode along.
     _recheck_ready_made_after_redate(conn, [r["id"] for r in moving])
     return {"prep_moved": prep_moved, "thaw": thaw, "after": after}
+
+
+def _frozen_portion_cook_id(derived: dict) -> int | None:
+    """The entry id of the cook whose frozen portion this row eats
+    (from_freezer.cook = "entry_id:N"), or None — a portion frozen by a
+    night off names no cook on this plan, and has no order to keep."""
+    frozen = derived.get(_leftovers_mod().FROM_FREEZER_KEY)
+    ref = str(frozen.get("cook") or "") if isinstance(frozen, dict) else ""
+    if not ref.startswith("entry_id:"):
+        return None
+    try:
+        return int(ref.split(":", 1)[1])
+    except ValueError:
+        return None
 
 
 def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: str, new_date: str) -> int:
@@ -9443,7 +9506,7 @@ def _leftovers_too_old_after_redate(rows: list, after: list[dict]) -> str | None
 
 def _apply_dinner_nights_swap(
     weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool, dry_run: bool = False,
-    conn=None,
+    conn=None, today: str | None = None,
 ) -> dict:
     """
     The one write behind swap_dinner_nights and undo_dinner_nights_swap.
@@ -9469,6 +9532,11 @@ def _apply_dinner_nights_swap(
     `taste_verdicts` are reads, and a read on a second connection inside
     an open write transaction sees the world as it was BEFORE it — so they
     are the caller's to take after its commit, if it wants them at all.
+
+    `today` (the household's, ISO) refuses a night before it — see
+    swap_dinner_nights. A parameter rather than read here because reading
+    the household clock opens a connection, and this may be running inside
+    a caller's write transaction.
     """
     for d in (date_a, date_b):
         try:
@@ -9498,6 +9566,12 @@ def _apply_dinner_nights_swap(
         for d in (date_a, date_b):
             if not (start <= d <= end):
                 raise ValueError(f"{_weekday_of(d)} ({d}) isn't on this plan.")
+        if today:
+            for d in sorted((date_a, date_b)):
+                if d < today:
+                    return _nights_swap_refusal(
+                        f"{_weekday_of(d)} has already gone by — I’ve left both dinners where they are.",
+                        date_a, date_b)
 
         rows = conn.execute(
             """
@@ -9560,6 +9634,11 @@ def _apply_dinner_nights_swap(
             if own_conn:
                 conn.rollback()
             return {"status": "ok", "date_a": date_a, "date_b": date_b}
+        # A freezer night names its cook's day ("— Monday’s Turkey Chili");
+        # the Move sheet re-says it when the cook moves, and so does this
+        # (an Undo re-says it back). Lazy import: meal_move imports us.
+        from . import meal_move as _meal_move
+        _meal_move._resay_freezer_nights(conn, {"rows": [dict(r) for r in rows]}, new_date)
         prep_moved = done["prep_moved"]
         if own_conn:
             conn.commit()
@@ -9650,8 +9729,19 @@ def swap_dinner_nights(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
     or a leftover chain that would end up running backwards. Raises
     ValueError for a night that isn't on this plan, two identical nights,
     a component-based plan, or nights with no dinner at all.
+
+    A night that has GONE BY on the household's clock is refused too
+    (overnight hunt, 2026-10-20): trading Monday with Thursday on a
+    Wednesday put Thursday's dish on a night nobody can cook it, with its
+    groceries still on the list. Move (meal_move.plan_move) and the swap
+    doors already said no (night_has_gone); this one read no clock. Every
+    caller here is a person's door — the route, chat, a draft flag's fix —
+    or cap_enforce.rearrange, which reads a refusal as "try the next
+    trade". The undo is exempt, as undo_meal_swap is: it only puts back a
+    week that was standing.
     """
-    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False)
+    today = _household_today().isoformat()
+    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False, today=today)
 
 
 def undo_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str) -> dict:

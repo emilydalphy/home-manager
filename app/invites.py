@@ -295,7 +295,8 @@ def household_adults_status(household_id: int, you_id: int | None) -> list[dict]
     conn = get_conn()
     try:
         rows = conn.execute(
-            f"SELECT id, name, joined_at FROM members WHERE household_id = ? AND {_ADULT_SQL} "
+            f"SELECT id, name, joined_at, COALESCE(eats_here, 1) AS eats_here "
+            f"FROM members WHERE household_id = ? AND {_ADULT_SQL} "
             "AND TRIM(name) != '' ORDER BY id ASC",
             (int(household_id),),
         ).fetchall()
@@ -310,6 +311,11 @@ def household_adults_status(household_id: int, you_id: int | None) -> list[dict]
             "is_you": r["id"] == you_id,
             "joined": r["joined_at"] is not None,
             "joined_label": _joined_label(r["joined_at"], household_id),
+            # False for a helper added as "Someone not eating here": Who's
+            # here lists the people meals are planned for, so this is the
+            # only read that can show them at all (their invite, whether
+            # they've joined) — they were invisible there before 2026-10-20.
+            "eats_here": bool(r["eats_here"]),
         }
         for r in rows
     ]

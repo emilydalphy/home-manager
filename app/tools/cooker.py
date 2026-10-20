@@ -2017,6 +2017,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     for m in meals:
         m["ingredients"] = _recipes.cooking_ingredients(
             m["ingredients"], servings=m.get("default_servings") or m.get("servings"),
+            instructions=m.get("instructions"),
         )
 
     # The component batches the household said yes to at approval

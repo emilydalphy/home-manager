@@ -395,6 +395,7 @@ from .household import (  # noqa: F401
     set_member_age,
     age_stage,
     set_member_dietary_restrictions,
+    remove_member_dietary_restriction,
 )
 from .inventory import (  # noqa: F401
     _LEADING_NUM_RE,
@@ -583,6 +584,7 @@ from .recipes import (  # noqa: F401
     _maybe_auto_attribute_solo_night,
     add_recipe,
     add_recipe_for_chat,
+    positive_servings,
     attribute_recipe_feedback,
     check_steps_ingredients_consistency,
     complete_ingredient_list,

@@ -41,6 +41,7 @@ from . import db
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
+from .tools import household as _household_tools
 from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
@@ -1024,6 +1025,14 @@ class MemberRestrictionsRequest(BaseModel):
     name: str
     restrictions: list[str]
     replace: bool = False
+
+
+class MemberRestrictionRemoveRequest(BaseModel):
+    """Settings' chip remove: the one restriction to take off, by name —
+    never the screen's copy of the rest of the list (see
+    tools.remove_member_dietary_restriction)."""
+    name: str
+    restriction: str
 
 
 class StoreTypicalItemAddRequest(BaseModel):
@@ -2457,13 +2466,56 @@ def _require_member_here(name: str | None) -> None:
         raise HTTPException(status_code=404, detail=f"{name.strip()} isn't someone in this household.")
 
 
+# The age groups Settings' chips send, plus the little-one words the tool
+# itself folds into "child". The column is freeform for chat's sake; this
+# route is not (defect hunt 2026-10-20: it stored "banana", which reads as
+# no age stage anywhere and drops the person out of every adult check).
+_SETTINGS_AGE_GROUPS = frozenset({"adult", "teen", "child"}) | _household_tools.LITTLE_ONE_WORDS
+
+
+def _refuse_last_adult_leaving(name: str, age_group: str) -> None:
+    """
+    A household always keeps one adult (defect hunt 2026-10-20). Marking
+    the only adult Teen or Child left "Who's this?", sign-in's member pick,
+    approval credit and the main person with nobody to name — and the
+    phone that did it went on as no one. Re-marking an adult as an adult,
+    or anyone else as anything, is untouched. Same adult test as
+    current_member (LOWER(TRIM(age_group)) = 'adult').
+    """
+    if age_group == "adult":
+        return
+    conn = get_conn()
+    try:
+        # Matched by SQLite's LOWER, the same lookup _require_member_here
+        # and the tool use, so the person checked is the row written.
+        row = conn.execute(
+            "SELECT COUNT(*) AS adults, "
+            "SUM(CASE WHEN LOWER(name) = LOWER(?) THEN 1 ELSE 0 END) AS is_them "
+            "FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
+            (name, tools.household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row["adults"] == 1 and row["is_them"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{name.strip()} is the only adult here. Add another adult before changing this.",
+        )
+
+
 @app.post("/api/memory/member/age-group")
 def set_memory_member_age_group(req: MemberAgeGroupRequest):
     """Set one member's age group — What We Know's People tab. No route onto
-    set_member_age_group existed before this (see MemberAgeGroupRequest)."""
+    set_member_age_group existed before this (see MemberAgeGroupRequest).
+    Only a real age group is stored, and never one that leaves the
+    household without an adult — both a 400 with a sentence to show."""
     _require_member_here(req.name)
+    age_group = (req.age_group or "").strip().lower()
+    if age_group not in _SETTINGS_AGE_GROUPS:
+        raise HTTPException(status_code=400, detail="Pick Adult, Teen or Child.")
+    _refuse_last_adult_leaving(req.name, age_group)
     try:
-        tools.set_member_age_group(req.name, req.age_group)
+        tools.set_member_age_group(req.name, age_group)
         memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Setting member age group failed")
@@ -2482,6 +2534,24 @@ def set_memory_member_restrictions(req: MemberRestrictionsRequest):
         memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Setting member dietary restrictions failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
+@app.post("/api/memory/member/restrictions/remove")
+def remove_memory_member_restriction(req: MemberRestrictionRemoveRequest):
+    """Take one restriction off one member, against the list as it is
+    stored NOW — so an allergy added elsewhere after Settings opened
+    survives. Answers the whole memory payload, so the sheet redraws from
+    the server's list and the newer allergy appears."""
+    _require_member_here(req.name)
+    if not (req.restriction or "").strip():
+        raise HTTPException(status_code=400, detail="Say which one to take off.")
+    try:
+        tools.remove_member_dietary_restriction(req.name, req.restriction)
+        memory = tools.get_household_memory_for_display()
+    except Exception as e:
+        logger.exception("Removing a member dietary restriction failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
 
@@ -7072,7 +7142,9 @@ def get_member_share(token: str):
 # free text a person types to us, feedback.MAX_WHAT_HAPPENED (2000); a
 # restriction is a short phrase, capped like an invited adult's name (200).
 # Refused with a sentence rather than cut short: a cut note says something
-# the person did not write. Rate limiting is app/ratelimit.py's, not here.
+# the person did not write. Rate limiting is app/ratelimit.py's
+# "member_share_write" bucket — which this line claimed before the bucket
+# existed (2026-10-20), so one forwarded link could write as fast as a loop.
 MEMBER_SHARE_NOTE_MAX = 2000
 MEMBER_SHARE_RESTRICTION_MAX = 200
 
@@ -7089,8 +7161,9 @@ def _member_share_text(value: str | None, limit: int, what: str) -> str:
 
 
 @app.post("/api/member-share/{token}/restriction")
-def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
+def add_member_share_restriction(token: str, req: MemberRestrictionRequest, request: Request):
     """Public: add a dietary restriction as the member behind this token — merges with their existing list."""
+    _enforce_rate_limit(request, "member_share_write")
     restriction = _member_share_text(req.restriction, MEMBER_SHARE_RESTRICTION_MAX, "restriction")
     try:
         tools.eater_add_dietary_restriction(token, [restriction])
@@ -7104,8 +7177,9 @@ def add_member_share_restriction(token: str, req: MemberRestrictionRequest):
 
 
 @app.post("/api/member-share/{token}/note")
-def add_member_share_note(token: str, req: MemberNoteRequest):
+def add_member_share_note(token: str, req: MemberNoteRequest, request: Request):
     """Public: leave a freeform preference/feedback note as the member behind this token."""
+    _enforce_rate_limit(request, "member_share_write")
     note = _member_share_text(req.note, MEMBER_SHARE_NOTE_MAX, "note")
     try:
         tools.eater_add_note(token, note)
@@ -7357,7 +7431,9 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             args = getattr(block, "input", None)
             if args is None and isinstance(block, dict):
                 args = block.get("input")
-            tool_names_by_id[block_id] = (name, args or {})
+            # The card describes what was saved, so it reads the arguments
+            # the way the tool did — not '["milk","eggs"]' as text.
+            tool_names_by_id[block_id] = (name, agent.read_tool_input(name, args or {}))
 
     by_category: dict[str, ChatAction] = {}
     # Every day/slot a week write touched this turn, in call order — see
@@ -9634,7 +9710,12 @@ def health_report(request: Request, days: int = 1):
     # compare_digest on both arms so a wrong-length token takes the same
     # time as a wrong-value one. The empty-token check comes first because
     # comparing against "" would otherwise let any caller in.
-    if not token or not supplied or not secrets.compare_digest(supplied, token):
+    # Bytes, not str: compare_digest raises TypeError on a str holding any
+    # non-ASCII character, so one "café" header was a 500 — telling a
+    # stranger the route exists, the one thing the 404 is for (2026-10-20).
+    if not token or not supplied or not secrets.compare_digest(
+        supplied.encode("utf-8", "surrogateescape"), token.encode("utf-8", "surrogateescape")
+    ):
         raise HTTPException(status_code=404, detail="Not found")
 
     _enforce_rate_limit(request, "health_report")

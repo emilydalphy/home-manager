@@ -13,6 +13,356 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Trading two nights' dinners refuses a night that has gone by**
+  (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
+  tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`
+  (chat's "move Thursday's dinner to Monday", POST /swap-nights, a draft
+  flag's Move) read no clock, so on a Wednesday it put Thursday's dish on
+  Monday, never to be cooked, groceries still listed. Now refused on the
+  household clock, the door the 2026-09-17 set missed; tonight still trades,
+  the undo is exempt.
+- **A step's "a pinch of sugar" is the cook card's amount, not "1 bag"**
+  (2026-10-20; branch `overnight/cook-card-pinch-not-bag`; tests
+  `tests/test_cook_card_pinch_not_bag.py`). A package line with no measured
+  cook_qty whose steps only say "a pinch/splash/dash of" it now shows that
+  (`recipes.cook_amounts_from_steps`, read in `cooking_ingredients` when
+  handed the steps — the Cook screen and scale_recipe), instead of the bag
+  or the table's half cup. Read, not stored, so saved recipes get it; the
+  qty the list buys is untouched; a line a step also numbers is skipped.
+  The phrase after "of" must BE the line's name (review: "a splash of red
+  wine with the tomato paste" gave the paste a splash; "Sauce" took "hot
+  sauce"'s dash) — a partial match misses to the table's guess instead.
+  The fill tool's cook_qty description now asks for "a pinch" too.
+  The Settings → Recipes sheet still shows the stored shopping qty.
+- **An add that merges onto a grocery line keeps that line's aisle**
+  (2026-10-20; branch `overnight/merge-keeps-the-aisle`; tests
+  `tests/test_merge_keeps_the_aisle.py`). `add_grocery_item` overwrote the
+  merged row's category with the incoming one — usually a guess (Shop's
+  `groGuessCategory`, or chat's bare-name 'other') — so the recipe's
+  "Orzo · pantry" moved to Other when someone typed "orzo", and Put back
+  could not move it home (the open defect `test_put_back_merged_line.py`
+  characterised; inverted). Now a merge only fills in an aisle where the
+  line had 'other'; changing one on purpose stays `update_grocery_item`'s.
+  A line SHOWN under Other by a word no section knows ("bakery") counts
+  as having no aisle and takes the add's (review, same night).
+- **The tour's replay doesn't ask you to approve an approved week**
+  (2026-10-20, defect hunt; branch `overnight/tour-knows-an-approved-week`;
+  test in `tests/test_first_open_tour.py`). "Show me around again" is
+  mostly tapped on an approved week, and Shop said "Approve the week and
+  your shopping list lands here" (Cook: "Once the week's approved") under
+  an Approved badge. The shell now tells tour.js (`host.weekApproved`,
+  Plan's own `weekPlanState`) and those two stops drop the "approve" half;
+  the first-draft tour reads exactly as before.
+- **"No red meat" holds back lamb** (2026-10-20, defect hunt, branch
+  `overnight/no-red-meat-holds-back-lamb`, stacked on
+  `overnight/mustard-holds-back-dijon`; tests
+  `tests/test_no_red_meat_holds_back_lamb.py`). "red meat" was matched as
+  the words "red" then "meat", so Lamb Kofta passed the hard gate. Now
+  `coordination._PHRASE_FAMILIES[("red","meat")]` = beef, lamb, mutton,
+  veal, venison, goat, bison, elk, PORK + the beef/pork cut tables (no
+  "steak", "burger", "buffalo"); goat cheese and lamb's lettuce are
+  compound exceptions. Pork counts: WHO/IARC, Canada's Food Guide and USDA
+  file it as red meat, and over-safe is the right way for a hard gate to be
+  wrong. Retired `test_beef_is_a_known_miss_for_red_meat`. Still open: a
+  hard note "Maya doesn't eat X" avoids nothing — "doesn't eat" is no
+  trigger in `_AVOIDANCE_TRIGGER_RE` (any food, not just red meat).
+
+- **A mustard allergy holds back Dijon** (2026-10-20, defect hunt, branch
+  `overnight/mustard-holds-back-dijon`, stacked on
+  `overnight/celiac-holds-back-gluten`; tests
+  `tests/test_mustard_holds_back_dijon.py`). "mustard" had no family, so a
+  "Dijon" line passed the hard gate. Now `_ALLERGEN_ALIASES["mustard"]` =
+  dijon, piccalilli. Why: a Canadian priority allergen, and the jar is
+  named for the town. ("No red meat" reaching lamb: the entry above.)
+
+- **"Celiac" on someone's restrictions holds back gluten** (2026-10-20,
+  defect hunt, branch `overnight/celiac-holds-back-gluten`, tests
+  `tests/test_celiac_is_gluten.py`). The allergy matcher read "Celiac" /
+  "coeliac disease" as the literal word, so spaghetti, sourdough and
+  teriyaki passed the hard gate that "gluten" stops. Now celiac/coeliac
+  are the gluten family (`coordination._WHOLE_WORD_FAMILIES`), a
+  gluten-free line is believed for them, and "disease", "strict", "sprue",
+  "severe" are stopwords. Why: people write the condition, not the
+  protein. A NOTE that only mentions celiac still holds nothing back:
+  reading bare "celiac" in notes was tried and dropped in review — "Maya's
+  friend Lily is celiac" became Maya's restriction, and the startup
+  backfill (`db._backfill_allergy_notes_from_facts`) re-added it after
+  every delete. Still prompt-only, untouched here: "vegetarian", "halal",
+  "kosher", "pescatarian" — the matcher holds no meat back for them.
+
+- **A long cook's evening nudge goes when Today says to start it**
+  (2026-10-20, overnight defect hunt; branch
+  `overnight/long-cook-nudged-at-its-start`; tests at the foot of
+  `tests/test_evening_nudge.py`). The nudge went at the dinner window's
+  start, which is ahead of the cook only while it fits before dinner lands
+  (30 min for "5_6ish", an hour otherwise): a 1 hr 50 min roast for 5:30
+  showed "Start by 3:40" and got "Tap to start" at 5:00. Now it goes at the
+  earlier of the window's start and the cook move's own `planned_start`
+  (today only), late window counted from whichever it was.
+- **The holiday and big-meal chat tools take the date they ask for**
+  (2026-10-20, overnight defect hunt; branch
+  `overnight/holiday-chat-tools-take-their-date`; tests
+  `tests/test_chat_tool_schemas_match.py`). `answer_holiday`, `get_big_meal`,
+  `set_big_meal_dish`, `remove_big_meal_dish`, `set_big_meal_prep_day` and
+  `propose_big_meal` advertised `date` in their schemas while the functions
+  take `date_str`; the loop runs `fn(**block.input)`, so every one died as a
+  TypeError before running — "just us for Thanksgiving" was never recorded.
+  Schemas renamed to `date_str`; a test now walks every tool and fails on
+  any schema property its function can't take or required param it omits.
+- **Removing one allergy in Settings removes only that one** (2026-10-20,
+  overnight defect hunt; branch `overnight/restriction-remove-one`; tests
+  `tests/test_restriction_remove_one.py`). The chip remove used to resend the
+  sheet's copy of the whole list with replace=True, erasing an allergy added
+  meanwhile via the member's share link or the other adult's phone — and the
+  planner's hard gate with it. Now `POST /api/memory/member/restrictions/remove`
+  names the one item and `tools.remove_member_dietary_restriction` edits the
+  stored list under BEGIN IMMEDIATE; the add merge holds the lock from its read
+  too, and restrictions are trimmed on write. The sheet redraws from the answer.
+- **A member's self-service link is rate-limited; a non-ASCII report token
+  is a 404** (2026-10-20, overnight defect hunt on public routes; branch
+  `overnight/public-writes-rate-limited`; tests
+  `tests/test_public_writes_are_limited.py`). The two public member-share
+  writes had no bucket despite a comment saying ratelimit.py covered them —
+  one forwarded link could post notes into the agent's prompt as fast as a
+  loop; now `member_share_write` (10/min, 60/hr, shared). And
+  /api/health-report's compare_digest on str raised TypeError on any
+  non-ASCII header (a 500 that confirmed the route exists); it compares bytes.
+
+- **A freezer night follows its cook through the "−", an away night and a
+  night off** (2026-10-20, overnight; branch
+  `overnight/freezer-night-follows-its-cook`, stacked on the swap branch below;
+  tests `tests/test_freezer_night_follows_its_cook.py`). All three move a cook
+  onto its first fed night via `move_cook_onto_fed_night`, which re-pointed
+  `links_to` by date but never touched the freezer night (it names its cook by
+  entry id), so Friday kept "Monday's Turkey Chili". The move now re-says it
+  through `meal_move._resay_freezer_nights`, and `plan_undo.touched_ids` also
+  snapshots rows naming a direct row by `entry_id:N`, so Undo says it back even
+  for freezer nights without the repair's `original_links_to`. Not changed: a
+  cook whose ONLY later night is a freezer night is dropped by all three paths,
+  leaving that night reheating a portion nobody cooks (same before and after).
+- **The nights swap never cooks a dish after its frozen portion** (2026-10-20,
+  defect hunt; branch `overnight/swap-keeps-the-freezer-cook-first`; tests
+  `tests/test_swap_keeps_the_freezer_cook_first.py`). `_redate_plan_rows`
+  checked chain order by `links_to` only; a freezer night carries
+  `from_freezer`, so dragging Monday's chili to Saturday was `swapped` under
+  Friday's "Leftovers from the freezer — Monday's Turkey Chili" and its thaw.
+  Now refused with the writer's own "feeds Friday's dinner" sentence, as the
+  Move sheet already did. The allowed swap also re-says the freezer night's
+  weekday (`meal_move._resay_freezer_nights`); Undo says it back. Not done:
+  the "−" / away / night-off path (`move_cook_onto_fed_night`) leaves the old
+  weekday on the freezer night too — its undo snapshot needs a look first.
+- **"Shop before tomorrow" is only for tomorrow** (2026-10-20; branch
+  `overnight/shop-before-tomorrow-means-tomorrow`; tests
+  `tests/test_shop_before_tomorrow_means_tomorrow.py`). From noon on the
+  shop move's 36-hour horizon reached the day after tomorrow, so on an
+  evening with nothing tomorrow Now featured "Shop before tomorrow · by
+  tomorrow" for the next day's breakfast. `moves._shop_move` now clips the
+  horizon at the end of tomorrow; mornings (and the 07:00 text) unchanged.
+- **A 24-hour store never "closes at midnight"** (2026-10-20; branch
+  `overnight/a-24-hour-store-never-closes`; test in `tests/test_store_hours.py`).
+  `stores.next_opening` skipped a window opening AT the moment asked, so at a
+  24-hour store's midnight seam the next day's window was missed and Today
+  told a household with tomorrow's breakfast to buy "by midnight · Farm Boy
+  closes at midnight". Now `<`, not `<=`: a window opening then counts.
+
+- **Eleven tests that went red overnight were the tests, not the app**
+  (2026-10-20; branch `overnight/date-dependent-tests-green`). Ten seeded
+  this week's Monday, approved it, and expected Monday bought — false from
+  Tuesday since approval buys only meals still ahead (2026-10-18); they
+  missed `on_the_weeks_monday()` (pantry staples file-wide, five others
+  per test). The eleventh compared the cook note's "tonight" with
+  `date.today()`, the server's day, a day ahead of a Toronto evening on
+  UTC; now `household_today()`. Why: each reproduced under `--today` on
+  clean main and passes at Mon 01:00, Mon 22:30, Tue 00:30, Wed 18:00,
+  Fri, Sun 23:30 under TZ=UTC and Toronto. No assertion changed.
+- **An adult who removes themselves stops being "who cooks"** (2026-10-20,
+  defect hunt; branch `overnight/leaver-is-not-the-cook`; tests
+  `tests/test_leaver_is_not_the_cook.py`). The `cooking_role` row names its
+  cook by free-text `who` on a household-level row, which `remove_member`'s
+  member_name delete never reached — Kitchen, Today's moves and What we know
+  kept naming the leaver as the cook. Now that row goes too (unanswered,
+  never reassigned to whoever is left).
+- **"How did it go?" stops once someone answered it by name** (2026-10-20,
+  overnight hunt; branch `overnight/answered-by-name-stops-asking`; tests
+  `tests/test_feedback_nudge_answered_by_name.py`). `get_feedback_nudge`
+  counted only `recipes.rating`, but the chat records "Sam loved it, I
+  wasn't keen" per person (`attribute_recipe_feedback`) and leaves that
+  empty, so the question stayed on Kitchen's card and came back in each
+  new chat for 7 days. A per-person verdict on the recipe now counts as
+  answered; the next unrated dish is asked instead.
+
+- **A household's own grams add up to kilos on the list** (2026-10-20; branch
+  `overnight/hand-adds-sum-weights`; `tests/test_hand_adds_sum_weights.py`).
+  Typing "500 g" flour then "1 kg" read "500 g + 1 kg"; "8 oz" beef then
+  "1 lb" read "8 oz + 1 lb". Plan lines already summed these (ledger), and
+  household lines summed only volumes (part cups, 2026-10-19).
+  `grocery._sum_measures` (was `_sum_volumes`) now adds a household's own
+  second amount in any `_UNIT_CONVERSION_GROUPS` family (oz/lb, g/kg, ml/l);
+  grams never become pounds, and a plan's share in another unit word still
+  gets its own line. A sum that would round back to the line's own amount
+  ("1 lb" + "2 oz") keeps both, as before. A line already stored
+  "500 g + 1 kg" folds on its next hand add (`_refold_quantity_segments`).
+  Not touched: a bare "12" eggs beside "1 dozen" still reads "12 + 1 dozen".
+- **A helper has a row in Who's here** (2026-10-20, defect hunt; branch
+  `overnight/helper-shows-in-whos-here`; tests
+  `tests/test_helper_in_whos_here.py`). An adult added as "Someone not
+  eating here" (`members.eats_here = 0`) signs in, but Who's here lists only
+  the people meals are planned for, so a helper appeared nowhere in
+  Preferences: no "Invite Maria", no "Joined", no way to send a new link
+  after the first one's week ran out. `/api/household/invites` now carries
+  `eats_here` per adult and `inviteHelpersHtml` draws each helper (name,
+  "Helps out", the ordinary invite row; no age chips, restrictions or main
+  person). Still open for Emily: nobody can take a helper OUT of the
+  household (remove-me is self-only), and Preferences' "Invite another
+  adult" always adds an eater.
+- **Settings' age chip stores a real age group and keeps one adult**
+  (2026-10-20, overnight defect hunt; branch `overnight/age-group-guards`;
+  tests `tests/test_age_group_route_guards.py`). POST
+  /api/memory/member/age-group stored anything ("banana") and let the
+  household's only adult become Teen/Child, leaving /api/whoami with no
+  adults and nobody to pick or credit. Now: Adult/Teen/Child (plus the
+  little-one words the tool folds into Child), trimmed and lowercased,
+  else 400 "Pick Adult, Teen or Child."; the last adult (current_member's
+  LOWER(TRIM) test) gets 400 "<Name> is the only adult here. Add another
+  adult before changing this." The chip now shows that sentence
+  (wwkPostSaying). Route only — chat's set_member_age_group stays freeform.
+  Open for Emily: with two adults, an adult marking THEMSELVES Teen makes
+  their phone silently act as the other adult (current_member falls back
+  to the sole remaining adult by design) — refuse, re-ask, or allow?
+- **Guests taken off a night come off the table** (2026-10-20; branch
+  `overnight/guests-taken-off-reach-the-table`; tests
+  `tests/test_guests_taken_off_reach_attendance.py`). `save_week_intake`'s
+  `_sync_guest_attendance` only walked dates still in `guest_counts`, and
+  screens drop guests by deleting the date (re-plan grid stepper at 0, a day
+  taken off "Which days?") — so attendance kept "Dinner for 4 — 2 guests" and
+  the draft, list and morning text fed four. Now a date the replaced revision
+  had guests for is zeroed, only while attendance still holds that number (a
+  count set since by chat or the day sheet is kept).
+- **A guest count saved as a bare number is refused, not saved** (2026-10-20,
+  overnight hunt; branch `overnight/guest-count-checked-at-save`; tests
+  `tests/test_guest_count_shape_checked.py`). `save_week_intake` took
+  `guest_counts {"<date>": 2}` and every generate for that week then 500'd
+  (`agent._intake_generation_context` calls `.get` on each entry). Now each
+  entry must be `{"adults": n, "children": n}` (ISO date key, whole numbers
+  >= 0) or the save is a 400; the generator also skips a non-dict entry
+  already saved, so an old bad row reads as no guests instead of crashing.
+- **A recipe serves at least 1** (2026-10-20, overnight hunt; branch
+  `overnight/recipe-serves-at-least-one`; tests
+  `tests/test_servings_must_be_positive.py`). `update_recipe_details` (chat
+  tool and "Fill in this recipe") saved `default_servings` of 0 or negative;
+  the card then said 0 while `scale_recipe` quietly scaled from 4. The save
+  now raises a ValueError the chat relays; `fill_in_recipe` drops a model's
+  non-positive count (keeps the recipe's own) rather than losing the steps.
+- **"Start over" → the grocery list stays cleared; staples don't come
+  straight back** (2026-10-20, defect hunt; branch
+  `overnight/start-over-keeps-staples-off`; tests
+  `tests/test_start_over_keeps_staples_off.py`). `clear_grocery_list`
+  hard-deleted a staple's line, and the next list read
+  (`sync_due_staples`) put every still-due staple back — the dialog said
+  "Removes 2 items", Shop showed the same 2; chat's "wipe the list" too.
+  Now a staple's needed/in-cart line is soft-removed (removed today = sync
+  leaves it until tomorrow). Deliberately NOT a "not this trip": a wipe
+  moves no rhythm and counts no skip toward the auto-pause.
+
+- **Your rhythm's day rows start on Monday** (2026-10-20, defect hunt;
+  branch `overnight/rhythm-days-start-monday`; test
+  `tests/test_settings_your_rhythm.py`). WWK_PREP_DAYS (which Grocery shop
+  and Top-up shop alias) ran Sun–Sat right under Plan ready by's Mon–Sun,
+  while onboarding asks every day row Mon–Sun (UW_WEEKDAYS). Reordered to
+  Mon–Sun; Prep days now also saves in the same week order onboarding does.
+  The stored order was never read as meaning anything (set_prep_days keeps
+  what it's sent), so old answers are unaffected.
+- **The servings stepper keeps a recipe's words and its parts** (2026-10-20,
+  overnight defect hunt; branch `overnight/scaled-amounts-keep-their-words`;
+  tests `tests/test_scaled_amounts_keep_their_words.py`). scale_recipe read
+  amounts through the shopping parser, which drops prep words, so "1/3 cup
+  grated" halved said "0.166667 cup" (shown as ⅛ cup); "litre" was no unit
+  and "1 cup packed" read "cup packed" as one, so both were called
+  unmeasured and replaced by the table's guess ("1 litre" stock -> "1.5
+  lb"); "1/4 bunch" rounded to "1 bunch" at every size. Now: the words
+  after the amount ride along, litre/millilitre are units, a word after a
+  measure is not part of the unit (cook-side `_parse_cook_qty` only — the
+  grocery parser only learns the litre spelling), a part of a whole-only thing scales as a
+  part (floor ⅛), and under ¼ cup is tablespoons — in `_step_scaled`, so
+  steps and chips agree. Kept the plain-decimal qty ("0.5 cup"): every
+  reader parses it and shell.js humanQtyText draws "½".
+- **A prep-cut can't be dated after the meal it feeds** (2026-10-20,
+  defect hunt; branch `overnight/prep-cut-not-after-the-meal`; tests
+  `tests/test_prep_days.py`). `add_prep_cut` checked only that the date was
+  ISO, so POST /api/prep-cut filed Saturday's "Cut up romaine" against a
+  Wednesday dinner (200). The Cook screen only offers prep days on or
+  before the meal, so a stale screen or any direct caller was the way in.
+  Now refused in words ("Chicken Bowls is on Wednesday, so I can only put
+  its prep on Wednesday or before."), nothing written for any named meal;
+  the same day is still fine. Refused, not clamped, like
+  set_big_meal_prep_day. The Cook screen's toast says the refusal's own
+  sentence. NOT covered: a swap that moves a dinner earlier leaves its
+  prep-cut where it was (weekly_plan.py's swap note, on purpose).
+- **A chat tool's arguments are read as its schema declares** (2026-10-20,
+  defect hunt; branch `overnight/tool-args-read-as-their-schema`; tests
+  `tests/test_tool_args_read_as_schema.py`). Every non-chores,
+  non-inventory tool driven with plausible model quirks: a null optional
+  or "7" crashed get_meal_plan / get_defrost_schedule / scale_recipe,
+  a null weekday hit NOT NULL in set_lunch_location, and — silently — a
+  bare string for an array was stored one LETTER per item
+  (restrictions="nut allergy" lost the allergy) and "false" marked a
+  person home. `agent.read_tool_input` at the one dispatch: optional null
+  dropped, int/bool strings converted, a string for an array is its JSON
+  list or a one-item list (never comma-split). Top level only; anything
+  else reaches the tool's own validation untouched.
+- **The public share link no longer shows a week that has ended as "this
+  week"** (2026-10-20, overnight defect hunt; branch
+  `overnight/share-link-drops-an-ended-week`; tests
+  `tests/test_share_link_drops_an_ended_week.py`). With nothing covering
+  today, `get_weekly_plan` falls back to the newest plan, an approved week
+  long over included, and `/share/<token>` read "<name>'s meals this week",
+  "Week of Monday, Oct 12", "Monday's Table — Lentil Soup" on Tuesday Oct 20.
+  `sharing.get_shared_weekly_plan` now applies Cook's staleness rule
+  (`period_end_date` before `cooker.household_today()` → no plan), so the
+  page says "No plan has been made for this week yet". A plan that hasn't
+  started is still shown (it names its own week). Left for Emily: the link
+  also shows a DRAFT nobody approved (and next week's draft when the
+  current week has ended) exactly like an approved week — the payload
+  carries no status on purpose.
+- **A two-week plan is not nudged about the next period on its fifth day**
+  (2026-10-20, defect hunt; branch `overnight/fortnight-not-nudged-early`;
+  tests `tests/test_fortnight_not_nudged_early.py`). Driven: approved
+  Oct 16–29, Tue Oct 20 — Today said NEXT WEEK "Shall I put Oct 30–Nov 5
+  together?" with nine days still planned. `_attention_moves_on` now also
+  needs no more than two days left (a week's Friday) for its fifth-day
+  clause; identical for any period of 7 days or fewer. The shop-day
+  reminder still opens that nudge on a fortnight's first week (not changed).
+- **A blank name makes nobody** (2026-10-20, overnight defect hunt;
+  branch `overnight/blank-names-refused`; tests
+  `tests/test_blank_names_refused.py`). Chat's `add_member("")`,
+  `add_pet("", …)` and a restriction/age said about "" saved empty
+  rows — a nameless person counted at every meal. The routes already
+  refused a blank name; the tools didn't. Now `add_member`, `add_pet` and
+  `_get_or_create_member` (every member write by name) raise a ValueError
+  sentence the chat relays. `add_fact`/`hold_thing` already refused (fact
+  now says why); `set_member_dietary_restrictions` replies with the
+  stored spelling ("Theo", not "theo").
+- **No other door saves a recipe serving 0 or fewer either** (2026-10-20,
+  overnight hunt; branch `overnight/servings-positive-everywhere`, follow-on
+  to `overnight/recipe-serves-at-least-one`; tests
+  `tests/test_servings_positive_everywhere.py`). add_recipe (`x or 4` lets
+  -2 through), fill_recipe_details and the Tweak rewrite (`int(x or 4)`)
+  saved a model's negative count: the card said -2, scaling used 4. One
+  rule, `recipes.positive_servings`: the chat's add_recipe refuses a bad
+  count in update_recipe_details' words; a model's bad count is dropped for
+  the household's table / the recipe's own / 4. Library filing uses it too.
+- **A staple answer from the other phone's stale screen changes nothing
+  once the line is bought** (2026-10-20, overnight hunt over HTTP, two
+  phones; branch `overnight/stale-staple-answer-after-tick`; tests
+  `tests/test_stale_staple_answer.py`). `decide_staple_line` never read the
+  line's status: phone A ticked a 3-week staple, phone B's "Not this trip"
+  pulled it to "ask again next week" and counted a skip (two phones, two
+  skips; three pauses it), and B's toast Undo made it due today — a second
+  line beside the one just bought. Now an answer on a line not `needed`
+  returns `unchanged` and writes nothing, and `undo_staple_decision` does
+  nothing once a 'bought' event is newer than the last answer. Not fixed
+  (shell.js): the client still toasts "off the list" on an `unchanged`.
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a

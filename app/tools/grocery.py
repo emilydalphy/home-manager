@@ -284,7 +284,7 @@ def _names_the_variety(name: str) -> bool:
     return _plain_name_key(name) in _SAME_PURCHASE
 
 
-def _refold_quantity_segments(qty: str) -> str:
+def _refold_quantity_segments(qty: str, families: bool = False) -> str:
     """
     Re-sum the same-unit segments of an already-"+"-joined quantity, so a
     third amount joining a line that could not reconcile the first two
@@ -301,6 +301,11 @@ def _refold_quantity_segments(qty: str) -> str:
     Segments that genuinely do not reconcile (mass against volume, "a
     bunch") are left joined exactly as the fallback would write them, so
     this is idempotent and never guesses a conversion.
+
+    `families` is for a household's own line taking the household's own
+    add: segments in one measurable family fold too (_sum_measures), so a
+    line written "500 g + 1 kg" before 2026-10-20 reads "2 kg" after
+    another "500 g" rather than "1 kg + 1 kg".
     """
     if " + " not in (qty or ""):
         return qty
@@ -316,6 +321,9 @@ def _refold_quantity_segments(qty: str) -> str:
             # segment just lengthened it. Each segment is offered to each
             # one already kept instead, and the flag is what says whether
             # the units actually met.
+            if not reconciled and families:
+                summed = _sum_measures(already, seg, exact=False)
+                candidate, reconciled = (summed, True) if summed is not None else (candidate, False)
             if reconciled:
                 kept[i] = candidate
                 break
@@ -588,30 +596,62 @@ def _store_amount(item: str, qtys: list[str]) -> str | None:
     return _quantities._format_quantity(max(1.0, float(math.ceil(total - 1e-6))), unit)
 
 
-def _sum_volumes(existing_qty: str, new_qty: str, exact: bool, same_unit: bool = False) -> str | None:
+def _sum_measures(existing_qty: str, new_qty: str, exact: bool, same_unit: bool = False) -> str | None:
     """
-    Two volumes (cup/tbsp/tsp) added as one amount, or None when either is
-    not a plain volume — the caller then merges the way it always did.
+    Two amounts in one measurable family added as one amount, or None when
+    they are not — the caller then merges the way it always did.
 
     Part cups made this needed (2026-10-19): "1/4 cup" used to be stored as
     "4 tbsp" and summed with "3 tbsp" as the same word; as "1/4 cup" it did
     not, and the list read "3 tbsp + 1/4 cup". `exact` is for a plan's share
     joining a household's line — see _quantities._exact_volume_text.
+
+    A household's own second amount (not `exact`, not `same_unit`) adds in
+    ANY of the measurable families, not just volumes: "500 g" of flour and
+    then "1 kg" is "1.5 kg", "8 oz" of beef and then "1 lb" is "1.5 lbs",
+    "500 ml" and "1 l" is "1.5 l" (2026-10-20). It used to read
+    "500 g + 1 kg" — two numbers to add up in the aisle, on a line nothing
+    else will ever recompute. Families only (quantities._UNIT_CONVERSION_
+    GROUPS): grams never turn into pounds here, the same "nothing guessed"
+    line _convert_to_unit draws.
     """
     note = _quantities._merge_notes(
         _quantities._quantity_note(existing_qty), _quantities._quantity_note(new_qty)
     )
     a = _quantities._parse_quantity(_quantities._strip_prep_descriptor((existing_qty or "").strip()))
     b = _quantities._parse_quantity(_quantities._strip_prep_descriptor((new_qty or "").strip()))
-    if not a or not b or a[1] not in _quantities._VOLUME_TO_TSP or b[1] not in _quantities._VOLUME_TO_TSP:
+    if not a or not b or not a[1] or not b[1]:
         return None
     if same_unit and a[1] != b[1]:
         return None
-    tsp = a[0] * _quantities._VOLUME_TO_TSP[a[1]] + b[0] * _quantities._VOLUME_TO_TSP[b[1]]
-    if exact:
-        text = _quantities._exact_volume_text(tsp, "tsp")
-    else:
-        text = _quantities._humanize_grocery_quantity(tsp, "tsp")
+    if a[1] in _quantities._VOLUME_TO_TSP and b[1] in _quantities._VOLUME_TO_TSP:
+        tsp = a[0] * _quantities._VOLUME_TO_TSP[a[1]] + b[0] * _quantities._VOLUME_TO_TSP[b[1]]
+        if exact:
+            text = _quantities._exact_volume_text(tsp, "tsp")
+        else:
+            text = _quantities._humanize_grocery_quantity(tsp, "tsp")
+        return _quantities._with_note(text, note)
+    if exact or a[1] == b[1]:
+        # A plan's share outside volumes, or one unit word: the ordinary
+        # arithmetic already does this, exactly as before.
+        return None
+    family = next(
+        (g for g in _quantities._UNIT_CONVERSION_GROUPS if a[1] in g and b[1] in g), None
+    )
+    if family is None:
+        return None
+    smallest = min(family, key=family.get)
+    total = a[0] * family[a[1]] + b[0] * family[b[1]]
+    text = _quantities._humanize_grocery_quantity(total, smallest)
+    # The list rounds a weight to the nearest quarter of its unit, so a
+    # small amount can round away ("1 lb" + "2 oz" is "1 lb", either way
+    # round). A sum that reads no more than the larger of the two would
+    # swallow the smaller: both amounts stay on the line instead, as before.
+    summed = _quantities._parse_quantity(text)
+    if not summed or summed[1] not in family:
+        return None
+    if summed[0] * family[summed[1]] <= max(a[0] * family[a[1]], b[0] * family[b[1]]) + 1e-9:
+        return None
     return _quantities._with_note(text, note)
 
 
@@ -742,12 +782,13 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
         merged_qty, merged = None, False
         if households_line and consolidate is _try_consolidate_quantity:
             # Onto a household's own line, the household's own second
-            # volume adds within its family ("3 tbsp" + "1/4 cup"),
+            # amount adds within its family ("3 tbsp" + "1/4 cup",
+            # "500 g" + "1 kg"),
             # shopping-rounded like any add. A plan's share is added
             # EXACTLY, so _restate_standing_want can take back what was put
             # on — and only in the line's own unit word: a "2 tbsp" share
             # beside "1 cup" still gets a plan line of its own (2026-10-07).
-            merged_qty = _sum_volumes(
+            merged_qty = _sum_measures(
                 row["quantity"] or "", quantity, exact=not standing, same_unit=not standing,
             )
             merged = merged_qty is not None
@@ -1551,7 +1592,7 @@ def add_grocery_item(
     # line of its own and the set-aside line stays exactly as it was —
     # the same rule consolidate_grocery_list keeps.
     candidates = conn.execute(
-        "SELECT id, item, quantity, source_weekly_plan_id, status, added_by FROM grocery_items "
+        "SELECT id, item, quantity, category, source_weekly_plan_id, status, added_by FROM grocery_items "
         "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall()
@@ -1577,7 +1618,13 @@ def add_grocery_item(
         # A third amount joining a line the first two could not
         # reconcile still has to find its own unit; see
         # _refold_quantity_segments.
-        merged_qty = _refold_quantity_segments(merged_qty)
+        merged_qty = _refold_quantity_segments(
+            merged_qty,
+            families=(
+                source_weekly_plan_id is None and existing["source_weekly_plan_id"] is None
+                and existing["status"] == "needed" and quantity_mode != "max"
+            ),
+        )
         # A row with no source_weekly_plan_id is something a person asked
         # for directly, and clear_stale_grocery_items is required to leave
         # those alone forever. Stamping this week's plan id onto it during
@@ -1594,6 +1641,23 @@ def add_grocery_item(
         line_name = existing["item"]
         if not keep_standing and source_weekly_plan_id is not None:
             line_name = _more_specific_name(existing["item"], item)
+        # The aisle a line is already filed under stays: an add joining it
+        # only fills one in where the line had none ('other'). The incoming
+        # category is usually a guess — the shop sheet's groGuessCategory,
+        # or chat's add_grocery_items default of 'other' for a bare name —
+        # and overwriting with it moved a recipe's "Orzo · pantry" to Other
+        # the moment someone typed "orzo", where Put back could not move it
+        # home (tests/test_merge_keeps_the_aisle.py). Changing a line's
+        # aisle on purpose is update_grocery_item's job, not a merge's.
+        # "None" means what the list shows as Other: '', 'other', or a word
+        # no section knows ("bakery" off a recipe) — get_grocery_list_by_
+        # section's own fallback, so a line SHOWN under Other still takes
+        # the real aisle an add brings.
+        filed = _quantities._GROCERY_CATEGORY_ALIASES.get(existing["category"], existing["category"])
+        if filed not in _quantities._GROCERY_SECTION_ORDER or filed == "other":
+            filed = category
+        else:
+            filed = existing["category"]
         conn.execute(
             "UPDATE grocery_items SET item = ?, quantity = ?, category = ?, "
             "source_weekly_plan_id = CASE WHEN ? THEN NULL ELSE ? END, "
@@ -1601,7 +1665,7 @@ def add_grocery_item(
             # overwriting one already chosen for this line.
             "store = CASE WHEN store = '' THEN ? ELSE store END "
             "WHERE id = ? AND household_id = ?",
-            (line_name, merged_qty, category, 1 if keep_standing else 0, source_weekly_plan_id,
+            (line_name, merged_qty, filed, 1 if keep_standing else 0, source_weekly_plan_id,
              preferred_store, existing["id"], household_id()),
         )
         # A person asking for a spice by name wants it bought: their add
@@ -2874,16 +2938,41 @@ def clear_grocery_list(status: str = "needed") -> dict:
     plan leftovers) instead — this one has no way to know what's still
     actually needed.
     """
+    from . import staples as _staples
+
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
+        "SELECT id, staple_id, status FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
         (household_id(), status, status),
     ).fetchall()
     count = len(rows)
-    conn.execute(
-        "DELETE FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
-        (household_id(), status, status),
-    )
+    # A staple's line still to buy is soft-removed, not deleted (defect
+    # hunt, 2026-10-20). Deleted, the very next read of the list ran
+    # staples.sync_due_staples, found the staple still due and nothing by
+    # its name on the list, and put it straight back: "Start over" said it
+    # removed 2 items and Shop showed the same 2. A line removed TODAY is
+    # the one thing sync leaves alone (and tidies away tomorrow), so this
+    # keeps them off for the rest of the household's day — and a staple
+    # line already removed today is kept for the same reason. Unlike
+    # ⋯ → Remove this is not "not this trip": a wipe is no answer about
+    # any one staple, so no rhythm moves and no skip counts toward the
+    # auto-pause. A bought staple line is deleted like anything else.
+    held = {r["id"] for r in rows if r["staple_id"] and r["status"] in ("needed", "in_cart", "removed")}
+    gone = [r["id"] for r in rows if r["id"] not in held]
+    held = sorted(held)
+    for i in range(0, len(held), 500):
+        chunk = held[i:i + 500]
+        conn.execute(
+            f"UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            f"WHERE household_id = ? AND status != 'removed' AND id IN ({','.join('?' * len(chunk))})",
+            (_staples.ADDED_BY_STAPLE, household_id(), *chunk),
+        )
+    for i in range(0, len(gone), 500):
+        chunk = gone[i:i + 500]
+        conn.execute(
+            f"DELETE FROM grocery_items WHERE household_id = ? AND id IN ({','.join('?' * len(chunk))})",
+            (household_id(), *chunk),
+        )
     conn.commit()
     conn.close()
     return {"removed_count": count}

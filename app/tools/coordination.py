@@ -60,6 +60,14 @@ _CONFLICT_STOPWORDS = frozenset({
     # "red meat" unmatchable as written. Time words that can appear before
     # the trigger are already above; this one comes after it.
     "during", "throughout", "while",
+    # "Celiac disease" is the condition said in full; "disease" is no food,
+    # and left in it made a two-word phrase that _WHOLE_WORD_FAMILIES (which
+    # reads only a one-word avoidance) never turned into gluten.
+    "disease",
+    # "Celiac (strict)", "celiac sprue", "severe nut allergy": a word about
+    # how much, or the condition's other name, left in made the phrase
+    # "celiac strict" — which matched nothing, so spaghetti went through.
+    "strict", "sprue", "severe",
 })
 
 
@@ -172,6 +180,10 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso", "tamari", "shoyu",
             "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara"},
     "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne"},
+    # Mustard is one of Canada's priority allergens, and the jar on the line
+    # is usually named for the town: "mustard allergy" let "Dijon" through
+    # (defect hunt, 2026-10-20). Only words that are mustard by definition.
+    "mustard": {"dijon", "piccalilli"},
 }
 # Meats said the household's way ("we don't eat pork") reach the cuts and
 # cures that ARE that meat. A no-pork house was offered Bacon lardons,
@@ -190,6 +202,23 @@ _MEAT_ALIASES: dict[str, set[str]] = {
              "jamon"},
     "beef": {"sirloin", "ribeye", "rib eye", "bresaola", "filet mignon", "ground chuck",
              "chuck roast"},
+}
+# "No red meat" is a category, not a word any ingredient line says: read
+# as the phrase "red" + "meat" it found only a line that literally said
+# "red meat", and let Lamb Kofta, beef stew and veal through the hard gate
+# (defect hunt, 2026-10-20). Keyed by the whole phrase, so it is reached
+# only when "red meat" IS the avoidance — "red" and "meat" on their own
+# still mean only themselves, which is what keeps red peppers, red wine and
+# red lentils out. Pork counts: nutrition guidance (WHO/IARC, Canada's Food
+# Guide, USDA) files it as red meat, and for a hard gate the over-safe
+# reading is the right way to be wrong. Only words that are the meat by
+# definition, as above: no "steak" (salmon, cauliflower), "burger" or
+# "buffalo" (buffalo wings are chicken). "goat" and "lamb" have food names
+# that aren't the animal — see _COMPOUND_EXCEPTIONS.
+_PHRASE_FAMILIES: dict[tuple[str, ...], set[str]] = {
+    ("red", "meat"): {"red meat", "beef", "lamb", "mutton", "veal", "venison", "goat",
+                      "bison", "elk", "pork"}
+                     | _MEAT_ALIASES["beef"] | _MEAT_ALIASES["pork"],
 }
 # Aliases matched exactly as written, with no singular/plural twin: an
 # egg-white line says "3 whites", and the singular would reach "white
@@ -211,7 +240,15 @@ _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
 # whole family and block nothing) and for every word inside a phrase ("no
 # oat milk" would hold back oat pancakes with butter). _match_terms reads
 # this one only when the word IS the whole avoidance.
-_WHOLE_WORD_FAMILIES: dict[str, str] = {"milk": "dairy", "lactose": "dairy"}
+#
+# Celiac / coeliac (defect hunt, 2026-10-20): a household writes the
+# condition, not the protein — "Celiac" on a child in Settings. Matched as
+# the literal word, which no ingredient line says, it let spaghetti and
+# sourdough through the hard gate while "gluten" held both back.
+_WHOLE_WORD_FAMILIES: dict[str, str] = {
+    "milk": "dairy", "lactose": "dairy",
+    "celiac": "gluten", "coeliac": "gluten",
+}
 
 # The table as it stood before the 2026-09-30 widening, kept for ONE
 # reader: plan_quality's title rule builds its "known food word"
@@ -285,7 +322,7 @@ _PLANT_MOD = (
     r"coconut|oat|soy|soya|almond|cashew|rice|chocolate|vanilla)"
 )
 
-_COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
+_COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     (frozenset({"butter", "butters"}), re.compile(
         r"\b(?:peanut|almond|cashew|hazelnut|pistachio|pecan|walnut|macadamia|"
         r"sunflower|pumpkin|sesame|seed|nut|apple|cocoa|cacao|shea|coconut)s?\s+butters?\b"
@@ -332,6 +369,14 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     # That is the failure this whole check exists to prevent, so the false
     # positive matters more here than the rarity of the restriction.
     (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
+    # Red meat's (2026-10-20): goat's cheese and milk are dairy, not the
+    # animal; lamb's lettuce and lamb's quarters are greens. Matched on the
+    # folded text, where "goat's" is "goat s". Not for an avoidance of
+    # goat itself, which may well be its milk.
+    (frozenset({"goat", "goats"}), re.compile(
+        r"\bgoat(?:\s?s)?\s+(?:cheeses?|milks?|yogh?urts?|butters?|kefirs?|feta|cheddar|brie)\b"
+    ), frozenset({"goat", "goats"})),
+    (frozenset({"lamb", "lambs"}), re.compile(r"\blamb(?:\s?s)?\s+(?:lettuces?|quarters)\b")),
     # Gluten/wheat's own false positive: a naturally gluten-free flour,
     # noodle or pasta still contains the word that means "gluten" to the
     # alias table above. "Gluten-Free Pasta" made with rice flour flagged a
@@ -405,7 +450,9 @@ _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
 # untouched, so "Almond Flour Cake" is still a clash for a nut allergy even
 # though it is none for gluten.
 _GLUTEN_FREE_SEGMENT_RE = re.compile(r"\bgluten[\s-]?free\b|\bgf\b")
-_GLUTEN_WHEAT_LABELS = frozenset({"gluten", "wheat"})
+# Celiac too: it is a gluten avoidance (_WHOLE_WORD_FAMILIES), so a line
+# that says it is gluten-free is believed for it the same way.
+_GLUTEN_WHEAT_LABELS = frozenset({"gluten", "wheat", "celiac", "coeliac"})
 
 
 # A dish's NAME and the planner's dish_note are labels: they say what the
@@ -691,6 +738,15 @@ def _keyword_variants(keyword: str) -> set[str]:
     return variants
 
 
+def _phrase_family(phrase: list[str]) -> set[str] | None:
+    """The _PHRASE_FAMILIES entry this whole phrase names ("red meats" too), or None."""
+    for key, family in _PHRASE_FAMILIES.items():
+        if len(key) == len(phrase) and all(
+                _keyword_variants(k) & _keyword_variants(w) for k, w in zip(key, phrase)):
+            return family
+    return None
+
+
 def _match_terms(
     phrases: list[list[str]], excepted: list[str] | None = None,
 ) -> list[tuple[str, list[set[str]]]]:
@@ -741,6 +797,15 @@ def _match_terms(
     for phrase in phrases:
         groups = _Groups()
         groups.carve_outs = tuple(_carve_out_re(c) for c in carves if _covers(c, phrase))
+        family = _phrase_family(phrase)
+        if family is not None:
+            # One group, not one per word: any single member of the family
+            # on a line is the clash ("ground lamb"), not "red" then "meat".
+            variants = set().union(*(_keyword_variants(b) for b in family)) - excluded
+            if variants:
+                groups.append(variants)
+                out.append((" ".join(phrase), groups))
+            continue
         kept: list[str] = []
         for word in phrase:
             variants: set[str] = set()
@@ -1024,7 +1089,7 @@ _APPROVED_CLOSING = "worth a look before you shop"
 # "a clash with Emily's shellfish" is not a sentence anyone would say.
 _SELF_DESCRIBING_LABEL_RE = re.compile(
     r"\b(?:allerg\w*|intoleran\w*|sensitivit\w*|free|diet|vegan|vegetarian|"
-    r"pescatarian|halal|kosher)\b"
+    r"pescatarian|halal|kosher|celiac|coeliac)\b"
 )
 
 _NUMBER_WORDS = {
@@ -1433,7 +1498,7 @@ def check_meal_conflicts(
         # oat milk: when the LIST names a compound exception, the steps'
         # bare word is that compound, not the allergen (review, 2026-10-13).
         listed_text = " ".join(segments[1:])
-        for words, pattern in _COMPOUND_EXCEPTIONS:
+        for words, pattern, *_ in _COMPOUND_EXCEPTIONS:
             if pattern.search(listed_text):
                 bare = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(words))) + r")\b")
                 step_segments = [bare.sub(" ", s) for s in step_segments]
@@ -1652,6 +1717,13 @@ def get_feedback_nudge() -> dict:
     Only surfaces a meal that's been checked off as cooked (check_off_meal)
     in the last 7 days AND whose recipe has never been rated — once a
     recipe has any rating this stops nudging about it.
+
+    "Rated" means EITHER verdict the app keeps: the household's own
+    (recipes.rating) or anyone's by name (member_recipe_feedback). "Sam
+    loved it, I wasn't keen" is an answer to "How did it go?" — the chat
+    records it per person and leaves the household rating empty, and the
+    question used to keep coming back on Kitchen and in every new chat
+    for a week after it had been answered.
     """
     conn = get_conn()
     row = conn.execute(
@@ -1663,6 +1735,10 @@ def get_feedback_nudge() -> dict:
           AND mpe.cooked_at >= datetime('now', '-7 days')
           AND mpe.recipe_id IS NOT NULL
           AND (SELECT rating FROM recipes WHERE id = mpe.recipe_id) = ''
+          AND NOT EXISTS (
+              SELECT 1 FROM member_recipe_feedback mrf
+              WHERE mrf.household_id = mpe.household_id AND mrf.recipe_id = mpe.recipe_id
+          )
         ORDER BY mpe.cooked_at DESC LIMIT 1
         """,
         (household_id(),),

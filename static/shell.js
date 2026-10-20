@@ -9171,11 +9171,19 @@
         var carryRow = el.closest('.gro-carry-row');
         if (carryRow) carryRow.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
         el.disabled = true;
+        var carryAnswer = null;
         groDo(function () {
-          return groPost('/api/grocery-list/' + carryId + '/carried-over', { decision: carryDecision });
+          return groPost('/api/grocery-list/' + carryId + '/carried-over', { decision: carryDecision })
+            .then(function (r) { carryAnswer = r; return r; });
         }, "Couldn't save that — try again.").then(function (ok) {
           if (!ok) return;
           groAdvanceCarry();
+          // Answered on another phone first: saying "off the list" while
+          // the kept line is still there would be untrue.
+          if (carryAnswer && carryAnswer.unchanged) {
+            showToast(carryName + ' was already answered');
+            return;
+          }
           showToast(carryDecision === 'keep' ? carryName + ' kept' : carryName + ' off the list', {
             label: 'Undo',
             onClick: function () {
@@ -9669,6 +9677,12 @@
             .then(function (r) { stResult = r; });
         }, "Couldn't update that — try again.").then(function (ok) {
           if (!ok || !stResult) return;
+          // Ticked or answered on another phone first: nothing changed,
+          // so no "off the list — I'll ask again" and no Undo to offer.
+          if (stResult.unchanged) {
+            showToast(stName + ' was already taken care of');
+            return;
+          }
           var line;
           // A line this week's meals had added to stays, cut back to what
           // they need (staples._trim_to_the_weeks_part) — "off the list"
@@ -11669,10 +11683,13 @@
     { key: 'fine_sometimes', label: 'Fine now and then' },
     { key: 'fresh_each_night', label: 'Fresh every night' }
   ];
+  // Monday first, like Plan ready by above and every day row in onboarding
+  // (UW_WEEKDAYS). It led with Sunday until 2026-10-20, so Prep days, Grocery
+  // shop and Top-up shop read Sun–Sat right under a Mon–Sun row.
   var WWK_PREP_DAYS = [
-    { key: 'sunday', label: 'Sun' }, { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' },
-    { key: 'wednesday', label: 'Wed' }, { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' },
-    { key: 'saturday', label: 'Sat' }
+    { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' }, { key: 'wednesday', label: 'Wed' },
+    { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' }, { key: 'saturday', label: 'Sat' },
+    { key: 'sunday', label: 'Sun' }
   ];
   // "How long?" left Cook ahead (Onboarding regrouped, Emily 2026-10-05):
   // every prep day is planned for up to 2 hours, so every prep day this
@@ -12349,7 +12366,7 @@
       '</div>';
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
-    else html += inviteNewHtml();
+    else html += inviteHelpersHtml() + inviteNewHtml();
     html += wwkFactsHtml('people', { household: true, lead: 'Anything else for the household' });
     if (mem.notes && String(mem.notes).trim()) html += wwkNote('From setup: ' + String(mem.notes).trim());
     return html;
@@ -12521,6 +12538,27 @@
     '</div>';
   }
 
+  // The helpers (2026-10-20): an adult added as "Someone not eating here"
+  // (a nanny, a grandparent who helps with dinners — members.eats_here = 0)
+  // signs in like anyone, but the people above are the ones meals are
+  // planned for, so a helper had no row anywhere in Preferences: nobody
+  // could see whether they'd joined, or send them a new link once the
+  // first ran out after its week. Each gets one here — their name, what
+  // they are, and the same invite row an adult above carries. No age
+  // chips, restrictions or "Make main person": they don't eat here.
+  function inviteHelpersHtml() {
+    return (inviteState.adults || []).filter(function (a) {
+      return a.eats_here === false;
+    }).map(function (a) {
+      return '<div class="wwk-person wwk-helper">' +
+        '<p class="wwk-person-name">' + escapeHtml(a.name) +
+          ' <span class="pill pill-neutral wwk-person-main">Helps out</span></p>' +
+        '<p class="wwk-note">Sees the plan and the list. I don’t plan meals for them.</p>' +
+        inviteRowHtml(a) +
+      '</div>';
+    }).join('');
+  }
+
   function inviteNewHtml() {
     if (inviteState.adults === null) return '';
     if (!inviteState.newOpen) {
@@ -12671,7 +12709,7 @@
         if (key !== 'child') m.in_meals = true;
       });
     }, function () {
-      return wwkPost('/api/memory/member/age-group', { name: name, age_group: key });
+      return wwkPostSaying('/api/memory/member/age-group', { name: name, age_group: key });
     }, function (result) { wwkAdoptMemory(result); wwkAfterAgeChange(); });
   }
 
@@ -12698,14 +12736,17 @@
     return m ? (m.dietary_restrictions || []).slice() : [];
   }
 
-  // Removal resends the member's remaining list under replace=true
-  // (set_member_dietary_restrictions' removal mechanism); an add merges.
+  // Removal names the ONE chip; the server takes it off the list as stored
+  // now. It used to resend this screen's copy of the rest under
+  // replace=true, which erased an allergy added elsewhere (share link,
+  // the other adult's phone) since the sheet opened (2026-10-20). Both
+  // paths adopt the server's answer, so that newer allergy then appears.
   function wwkRemoveRestriction(name, value) {
     var next = wwkMemberRestrictions(name).filter(function (r) { return r !== value; });
     wwkCommit('people', function () {
       (wwkMem().members || []).forEach(function (m) { if (m.name === name) m.dietary_restrictions = next; });
     }, function () {
-      return wwkPost('/api/memory/member/restrictions', { name: name, restrictions: next, replace: true });
+      return wwkPost('/api/memory/member/restrictions/remove', { name: name, restriction: value });
     }, wwkAdoptMemory);
   }
 
@@ -15465,6 +15506,10 @@
   // consent screen. Any of those and it waits for the next time Plan is
   // built — it isn't recorded as seen until it is finished or skipped.
   var tourHost = {
+    // Whether the week Plan shows is approved: Shop and Cook say "once
+    // it's approved" only while it isn't (a replay from Preferences is
+    // usually on an approved week).
+    weekApproved: function () { return weekPlanState(weekState.data) === 'set'; },
     goTab: function (key) {
       var panel = panels[key];
       if (panel && panel.classList.contains('active')) return;
@@ -23328,7 +23373,10 @@
       showToast('Added to your ' + dayName(prepDate, { weekday: 'long' }) + ' prep.');
     } catch (err) {
       el.disabled = false;
-      showToast('That didn’t save — try again.');
+      // A refusal (400) carries its own sentence (add_prep_cut: prep can't
+      // land after the meal it feeds) — say that, not "try again". A 500's
+      // detail is an exception string, never shown.
+      showToast(err && err.status === 400 && err.detail ? err.detail : 'That didn’t save — try again.');
     }
   }
 
@@ -24467,6 +24515,7 @@
       // (see /api/cooker/cook-ahead) rather than with a failure to
       // explain — carry it on the error so the caller can say it out loud.
       var err = new Error('request failed');
+      err.status = res.status;
       var payload = await res.json().catch(function () { return {}; });
       if (typeof (payload || {}).detail === 'string') err.detail = payload.detail;
       throw err;

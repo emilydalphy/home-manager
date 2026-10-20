@@ -693,3 +693,42 @@ def test_a_general_prep_step_for_a_later_meal_names_that_meal(link):
     conn.close()
     assert tools.build_evening_nudge(_at(17, 0), link=False) == \
         "Soak the beans for Chili. Tonight: Chicken Skewers — 35 min."
+
+
+# ---------- a cook longer than the gap: nudged when Today says start ----------
+#
+# Overnight hunt, 2026-10-20. The nudge went at the START of the dinner
+# window, which is ahead of the cook only while the cook fits between the
+# window opening and dinner landing (30 minutes for "5 to 6ish", an hour
+# otherwise). A 1 hr 50 min roast for a 5:30 dinner showed "Start by 3:40"
+# on Today and in the morning text ("Start cooking at 3:40."), and the text
+# saying "Tap to start" came at 5:00 — eighty minutes after the cook should
+# have begun.
+
+def test_a_long_cook_is_nudged_when_it_should_start_not_at_the_window(link):
+    _adults("Emily")
+    _seed_long_dinner(20, 90)  # 1 hr 50 min, landing 5:30 -> start 3:40
+    _opt_in("Emily")
+    tools.set_dinner_window("5_6ish")
+    cook = next(m for m in tools.today_moves(day=TODAY, now=_at(12, 0))["moves"] if m["kind"] == "cook")
+    assert cook["planned_start"].endswith("T15:40:00")  # the premise: Today's own start
+
+    sender = _Sender()
+    assert tools.run_evening_nudges_once(now_utc=_local(15, 35), send=sender) == []
+    assert [r["status"] for r in tools.run_evening_nudges_once(now_utc=_local(15, 40), send=sender)] == ["ok"]
+    assert sender.calls[0][1] == f"Tonight: Roast Chicken — 1 hr 50 min. Tap to start. {LINK}/kitchen"
+    # Once a night: the window opening at 5:00 does not nudge again.
+    assert tools.run_evening_nudges_once(now_utc=_local(17, 0), send=sender) == []
+    assert len(sender.calls) == 1
+
+
+def test_a_cook_that_fits_after_the_window_opens_still_waits_for_the_window():
+    """No regression: a 35-minute dinner landing at 6:30 starts at 5:55, so
+    the window's 5:30 is still the earlier and the nudge goes then, not
+    before."""
+    _adults("Emily")
+    _seed_dinner()
+    _opt_in("Emily")
+    sender = _Sender()
+    assert tools.run_evening_nudges_once(now_utc=_local(17, 25), send=sender) == []
+    assert [r["status"] for r in tools.run_evening_nudges_once(now_utc=_local(17, 30), send=sender)] == ["ok"]

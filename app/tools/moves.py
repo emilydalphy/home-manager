@@ -905,7 +905,14 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         logger.exception("Today's shop move could not read the grocery ledger")
         waiting = set()
 
-    horizon = now + timedelta(hours=SHOP_HORIZON_HOURS)
+    # Never past the end of TOMORROW. From noon on, 36 hours reaches into
+    # the day after, and every not-today cook is said as "Shop before
+    # tomorrow · by tomorrow" — so on a Tuesday evening Now featured that,
+    # with "Go shopping", for Thursday's breakfast while Wednesday needed
+    # nothing (overnight hunt, 2026-10-20). A cook the day after has a whole
+    # day in front of it: it is not today's shop.
+    horizon = min(now + timedelta(hours=SHOP_HORIZON_HOURS),
+                  datetime.combine(now.date() + timedelta(days=1), time.max))
     a_cook_at_all = False
     soonest = None
     soonest_meal = None

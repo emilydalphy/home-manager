@@ -19,6 +19,22 @@ from . import spices as _spices
 logger = logging.getLogger("home_manager")
 
 
+def positive_servings(value) -> int | None:
+    """A serving count as a whole number of at least 1, or None when it
+    isn't one — 0, a negative, 2.5, True, "lots". "6" and 6.0 count (the
+    model sometimes sends a number as text). For the doors that take a
+    count from the model: a bad one is dropped for the caller's own
+    default rather than saved, because a recipe "serving -2" is scaled by
+    every reader as if it served 4 while its card says -2 (2026-10-20)."""
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        value = int(value.strip())
+    if isinstance(value, float) and value.is_integer():
+        value = int(value)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        return None
+    return value
+
+
 def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
     """
     add_recipe with the one refusal a person is owed in front of it: a
@@ -33,6 +49,13 @@ def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
     allergen_gate.refuse_recipe_if_clashing for why this raises.
     """
     from . import allergen_gate as _allergen_gate
+    # The chat names a count on purpose (the household said it), so a bad
+    # one is refused with update_recipe_details' words, not quietly made 4.
+    servings = kwargs.get("default_servings")
+    if servings is not None and positive_servings(servings) is None:
+        raise ValueError(
+            f"A recipe has to serve at least 1 — {servings!r} isn't a number of servings."
+        )
     name = kwargs.get("name")
     if name is None and args:
         name = args[0]
@@ -143,7 +166,9 @@ def add_recipe(
     cuisine = cuisine or ""
     main_protein = main_protein or ""
     advance_prep_notes = advance_prep_notes or ""
-    default_servings = default_servings or 4
+    # Every model door (the week, a swap, a big meal) passes its count
+    # straight here: a 0 or a negative keeps the default, never saves.
+    default_servings = positive_servings(default_servings) or 4
     # Marked BEFORE the list is completed from the steps: a line the app
     # adds there is the app's own guess and keeps the check. Any other door
     # has the mark taken OFF: a model handed a saved recipe (get_recipe in
@@ -396,6 +421,24 @@ def update_recipe_details(
     listing everything flat. Only pass the fields you're actually setting;
     anything left as None is untouched.
     """
+    if default_servings is not None:
+        # 0 or a negative used to save as is, and every reader then quietly
+        # scaled the recipe as if it served 4 (scale_recipe's fallback) while
+        # the recipe card said 0. A recipe serves at least one person.
+        # "4" from the model saved fine before this check (SQLite takes it
+        # as a number), so a whole number written as text still counts.
+        if isinstance(default_servings, str) and default_servings.strip().lstrip("-").isdigit():
+            default_servings = int(default_servings.strip())
+        if isinstance(default_servings, float) and default_servings.is_integer():
+            default_servings = int(default_servings)
+        if isinstance(default_servings, bool) or not isinstance(default_servings, int):
+            raise ValueError(
+                f"Servings has to be a whole number of people — {default_servings!r} isn't one."
+            )
+        if default_servings < 1:
+            raise ValueError(
+                f"A recipe has to serve at least 1 — {default_servings} isn't a number of servings."
+            )
     conn = get_conn()
     existing = conn.execute(
         "SELECT id, instructions_json, advance_prep_step_indices_json, ingredients_json, default_servings FROM recipes "
@@ -519,6 +562,9 @@ def fill_recipe_details(
     returned as is — two approvals racing, or Cook's fill-in landing after
     the approval's, must not overwrite a good recipe with a second draft.
     """
+    # The model's count (or the library's): a 0 or a negative is dropped
+    # for 4, as add_recipe does, never saved (2026-10-20).
+    default_servings = positive_servings(default_servings) or 4
     # The steps' ingredients on the list, as add_recipe does (2026-10-12).
     # The model wrote these lines, so none is the household's own.
     ingredients = complete_ingredient_list(without_household_marks(ingredients or []), instructions or [], default_servings)
@@ -559,7 +605,7 @@ def fill_recipe_details(
             "library_id = COALESCE(?, library_id) "
             "WHERE id = ? AND household_id = ?",
             (
-                json.dumps(settled), json.dumps(instructions or []), int(default_servings or 4),
+                json.dumps(settled), json.dumps(instructions or []), default_servings,
                 prep_time_minutes, cook_time_minutes, advance_prep_notes or "",
                 json.dumps(advance_prep_step_indices or []),
                 json.dumps([str(c) for c in (household_changes or []) if str(c).strip()]),
@@ -945,6 +991,26 @@ def _scaled_count_range(qty_text: str, ratio: float) -> str | None:
     return amount + (m.group("rest") or "")
 
 
+def _qty_words_after_amount(qty_text: str, parsed: tuple) -> str:
+    """The words a qty carries after its amount and unit, as written —
+    "grated" in "1/3 cup grated", "small" in "1 small". _parse_quantity
+    reads the amount by dropping them (a grocery list buys parmesan, not
+    "grated"), which is right for a shopping line and lost the cook's words
+    on the stepper (defect hunt, 2026-10-20). The shortest lead of words
+    that parses to the same amount and unit is the amount; the rest is
+    returned. "" when nothing follows or the lead can't be found."""
+    m = re.match(r"^\s*(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)(.*)$", qty_text or "")
+    if not m:
+        return ""
+    tokens = m.group(2).split()
+    for k in range(0, min(len(tokens), 3) + 1):
+        lead = (m.group(1) + " " + " ".join(tokens[:k])).strip()
+        got = _parse_cook_qty(lead)
+        if got and got[1] == parsed[1] and abs(got[0] - parsed[0]) < 1e-9:
+            return " ".join(tokens[k:]).lstrip(", ").strip()
+    return ""
+
+
 def scale_recipe(recipe_name: str, target_servings: int) -> dict:
     """
     Scale a saved recipe's ingredient quantities from its default_servings
@@ -969,7 +1035,9 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
 
     scaled_ingredients = []
     unscaled_items = []
-    for ing in cooking_ingredients(recipe["ingredients"], servings=base_servings):
+    for ing in cooking_ingredients(
+        recipe["ingredients"], servings=base_servings, instructions=recipe.get("instructions"),
+    ):
         # cook_qty is the amount at base_servings and has already been read
         # into qty above; carrying it further would let a second pass scale
         # from the baseline again.
@@ -986,21 +1054,19 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 unscaled_items.append(ing["item"])
             continue
-        parsed = _quantities._parse_quantity(qty_text)
+        parsed = _parse_cook_qty(qty_text)
         if parsed:
             amount, unit = parsed
-            scaled = amount * ratio
-            if unit == "stick" and abs(scaled - round(scaled)) > 1e-9:
-                # A stick of butter cut to a fraction is measured in
-                # tablespoons, not rounded back up to a whole stick — which
-                # is how a four-person stick stayed a stick for two.
-                scaled, unit = scaled * _STICK_TBSP, "tbsp"
-            elif unit in _DISCRETE_UNITS:
-                # "0.5 heads of garlic" is not an amount anyone measures.
-                # Same rounding cooking_quantity applies, so the two agree
-                # about a thing that only comes whole.
-                scaled = max(1.0, round(scaled))
-            scaled_ingredients.append(_with_item_label({**ing, "qty": _quantities._format_quantity(scaled, unit)}))
+            # The step scaler's arithmetic (_step_scaled): a stick of butter
+            # cut to a fraction is tablespoons, a clove stays whole, a
+            # "1/4 bunch" stays a part, under a quarter cup is spoons.
+            scaled, unit = _step_scaled(amount, ratio, unit)
+            words = _qty_words_after_amount(qty_text, parsed)
+            # Written as a plain number ("0.5 cup"), which every reader of
+            # this list parses and the Cook screen shows as "½ cup"
+            # (shell.js humanQtyText) — the words after it ride along.
+            text = _quantities._format_quantity(scaled, unit) + (" " + words if words else "")
+            scaled_ingredients.append(_with_item_label({**ing, "qty": text}))
         else:
             scaled_ingredients.append(dict(ing))
             if (ing.get("qty") or "").strip():
@@ -1076,6 +1142,8 @@ for _canon, _sing, _plur in (
     ("kg", "kilogram", "kilograms"),
     ("ml", "milliliter", "milliliters"),
     ("l", "liter", "liters"),
+    ("l", "litre", "litres"),
+    ("ml", "millilitre", "millilitres"),
     ("clove", "clove", "cloves"),
     ("can", "can", "cans"),
     ("stick", "stick", "sticks"),
@@ -1178,19 +1246,37 @@ def _step_amount_text(amount: float) -> str:
     return f"{whole} {best}" if whole else best
 
 
-def _step_scaled(amount: float, ratio: float, unit: str | None, butter: bool = True) -> tuple[float, str | None]:
+def _step_scaled(
+    amount: float, ratio: float, unit: str | None, butter: bool = True, to_spoons: bool = True,
+) -> tuple[float, str | None]:
     """scale_recipe's arithmetic for one amount, so the step and the chip
     agree: a stick of butter cut to a fraction becomes tablespoons, and a
     thing that only comes whole stays whole. A stick of anything else
-    (celery, cinnamon) is just counted."""
+    (celery, cinnamon) is just counted.
+
+    A part of one the recipe itself wrote ("1/4 bunch", "1/2 head") is not
+    a thing that only comes whole: it scales as a part, never up to a
+    whole bunch at every size. Less than a quarter cup is measured in
+    tablespoons ("1/3 cup" halved is 2 ⅔ tbsp, not "0.166667 cup", and
+    not the ⅛ cup the nearest fraction would round it to) — unless
+    `to_spoons` is off, which a range asks so its two ends keep one unit.
+    (Defect hunt, 2026-10-20.)"""
     scaled = amount * ratio
     if unit == "stick" and not butter:
         return max(1.0, float(round(scaled))), unit
     if unit == "stick" and abs(scaled - round(scaled)) > 1e-9:
         return scaled * _STICK_TBSP, "tbsp"
     if unit in _DISCRETE_UNITS:
+        if abs(amount - round(amount)) > 1e-9:
+            return max(0.125, scaled), unit   # never less than an eighth of one
         return max(1.0, float(round(scaled))), unit
+    if unit == "cup" and to_spoons and abs(ratio - 1) > 1e-9 and 0 < scaled < 0.25 - 1e-9:
+        # Only a scaled amount: the recipe's own "1/8 cup" stays its words.
+        return scaled * _CUP_TBSP, "tbsp"
     return scaled, unit
+
+
+_CUP_TBSP = 16.0
 
 
 def _step_ingredient_forms(items: list[str]) -> list[str]:
@@ -1362,8 +1448,8 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
                     re.match(r"\s*(?:of\s+)?(?:[a-z]+\s+)?butter\b", after.lower())
                     or (has_butter and re.match(r"\s*(?:[.,;:)]|$)", after))
                 )
-                new_a, new_unit = _step_scaled(a, ratio, canon, butter)
-                new_b = _step_scaled(b, ratio, canon, butter)[0] if b is not None else None
+                new_a, new_unit = _step_scaled(a, ratio, canon, butter, to_spoons=b is None)
+                new_b = _step_scaled(b, ratio, canon, butter, to_spoons=False)[0] if b is not None else None
                 biggest = new_b if new_b is not None else new_a
                 if new_unit != canon:
                     unit_text = new_unit  # a stick cut to tablespoons
@@ -1866,9 +1952,38 @@ def _parse_cook_qty(text: str):
     ascii_text = _ascii_fractions(text)
     parsed = _quantities._parse_quantity(ascii_text)
     if parsed:
-        return parsed
+        return _measure_before_a_word(parsed)
     m = _RANGE_RE.match(ascii_text or "")
-    return _quantities._parse_quantity(m.group(1) + (m.group(2) or "")) if m else None
+    if m:
+        return _quantities._parse_quantity(m.group(1) + (m.group(2) or ""))
+    # "1 cup loosely packed": a measure, then words the parser can't hold.
+    lead = re.match(r"^\s*(" + _NUM + r")\s*([a-z]+)\b", ascii_text or "", re.IGNORECASE)
+    if lead:
+        got = _quantities._parse_quantity(lead.group(1) + " " + lead.group(2))
+        if got and got[1] in _measured_units():
+            return got
+    return None
+
+
+def _measure_before_a_word(parsed: tuple) -> tuple:
+    """(1, "cup") for a parse of "1 cup packed" / "2 tbsp softened". The
+    parser takes a second word as part of the unit so "1 lb bag" sizes a
+    bag; any other word after a measure is the cook's ("packed",
+    "softened", "heaping"), not a unit — read as one, the line was called
+    unmeasured and the cook card put the table's guess in its place
+    (defect hunt, 2026-10-20)."""
+    amount, unit = parsed
+    if not unit or " " not in unit or "(" in unit:
+        return parsed
+    first, _, second = unit.partition(" ")
+    canon = _quantities._UNIT_ALIASES.get(first, first)
+    containers = set(_quantities._CONTAINER_UNIT_PLURALS) | set(_quantities._CONTAINER_UNIT_PLURALS.values())
+    # "8 oz package" sizes a package just as "1 lb bag" sizes a bag; read as
+    # "8 oz", it scaled to "4 oz package" — a smaller package to buy.
+    containers |= {"package", "packages", "packet", "packets", "pkg", "pkgs"}
+    if canon in _measured_units() and second not in containers:
+        return amount, canon
+    return parsed
 
 
 def _quantity_problem(item: str, qty: str) -> str | None:
@@ -2859,7 +2974,9 @@ def validate_measured_quantities(ingredients: list[dict], field: str = "qty", se
     return {"ok": not problems, "problems": problems}
 
 
-def cooking_ingredients(ingredients: list[dict], servings: int | None = None) -> list[dict]:
+def cooking_ingredients(
+    ingredients: list[dict], servings: int | None = None, instructions: list[str] | None = None,
+) -> list[dict]:
     """
     The same ingredient list rewritten so every quantity is one a cook can
     act on — what the Cooker view and scale_recipe show.
@@ -2879,7 +2996,14 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
 
     Never invents an amount it has no basis for: an unknown item with a
     blank qty comes back blank rather than guessed at.
+
+    With `instructions` (the Cook screen and the recipe page's stepper), a
+    package line the steps only use "a pinch" / "a splash" / "a dash" of
+    shows that (cook_amounts_from_steps) — read here rather than stored,
+    so every recipe already saved gets it too.
     """
+    if instructions:
+        ingredients = cook_amounts_from_steps(ingredients, instructions)
     out = []
     for ing in ingredients or []:
         if not isinstance(ing, dict):
@@ -2910,6 +3034,89 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
     # Every row says its thing in the number its amount is ("2 onions") —
     # see _with_item_label; `item` stays exactly as stored.
     return [_with_item_label(r) if isinstance(r, dict) else r for r in out]
+
+
+# "a pinch of sugar", "a splash of soy sauce", "a dash of hot sauce" — the
+# three word amounts _FREEFORM_COOKING_OK already reads as an amount. The
+# words after "of" run to the next comma/full stop/"and"/"with", so "a
+# pinch of salt and the sugar" is the salt's pinch and nobody else's, and
+# "a splash of red wine with the tomato paste" is the wine's.
+_STEP_WORD_AMOUNT_RE = re.compile(
+    r"\b(?:a|one)\s+(pinch|dash|splash)\s+of\s+(?:the\s+)?([a-z][a-z' -]*?)(?=\s+(?:and|or|to|into|over|in|on|with|until|for|then|at|from)\b|[,.;:)!]|$)"
+)
+
+
+def cook_amounts_from_steps(ingredients: list[dict], instructions: list[str] | None) -> list[dict]:
+    """
+    The same lines with a cook_qty of "a pinch" / "a splash" / "a dash"
+    written onto a line BOUGHT as a package that the steps only ever use
+    that much of (2026-10-19 recipe batch: Spaghetti and Meatballs' steps
+    added "a pinch of sugar", the line said "1 bag", and with no cook_qty
+    the cook view showed the bag, or the table's per-4 guess of half a
+    cup). The recipe writer's qty is the shopping line by design; the
+    measured cook_qty it writes beside it normally fills this, and an
+    unmeasured pinch is the one it leaves blank.
+
+    Only a line whose qty can't be cooked from (a package word, a blank)
+    and that has no measured cook_qty of its own; never the household's
+    own amount; never a line some step ALSO gives a number for ("2 tsp
+    sugar" elsewhere means the pinch is not the whole of it). The qty —
+    what the list buys — is never touched.
+    """
+    steps = [_normalized_step(s) for s in instructions or [] if isinstance(s, str) and s.strip()]
+    if not steps or not ingredients:
+        return ingredients
+    said: dict[str, str] = {}
+    for text in steps:
+        for m in _STEP_WORD_AMOUNT_RE.finditer(text):
+            said.setdefault(" ".join(re.findall(r"[a-z]+", m.group(2))), f"a {m.group(1)}")
+    if not said:
+        return ingredients
+    # The steps with every "a pinch of ..." taken out: a line still named
+    # in what is left ("heat the olive oil", then "a splash of olive oil"
+    # to finish) is used for more than the splash, and keeps the table's.
+    rest = " | ".join(_STEP_WORD_AMOUNT_RE.sub(" ", text) for text in steps)
+    item_words = [
+        [w for w in re.findall(r"[a-z]+", _clean_item(ing.get("item") or "")) if len(w) > 2]
+        if isinstance(ing, dict) else []
+        for ing in ingredients
+    ]
+    numbered: set[int] = set()
+    for text in steps:
+        for index, _amount, _unit in _amounts_in_one_step(text, item_words)[0]:
+            numbered.add(index)
+    out, changed = [], False
+    for index, ing in enumerate(ingredients):
+        words = item_words[index]
+        if (
+            not isinstance(ing, dict) or not words or index in numbered or _households_own_amount(ing)
+            or all(_item_matches(rest, w) for w in words)
+        ):
+            out.append(ing)
+            continue
+        item, qty = (ing.get("item") or "").strip(), (ing.get("qty") or "").strip()
+        stored = (ing.get("cook_qty") or "").strip()
+        if (stored and not _quantity_problem(item, stored)) or not _quantity_problem(item, qty):
+            out.append(ing)
+            continue
+        # What followed "of" IS the line's name, plural or not: "Sugar" in
+        # "a pinch of sugar", "Red pepper flakes" in "a pinch of red pepper
+        # flakes" — and "Brown sugar" NOT in "a pinch of sugar", nor
+        # "Sauce" in "a dash of hot sauce" or "Lemon" in "a splash of
+        # lemon juice": a phrase with more in it than the line is about
+        # something else, and the table's guess is the safer miss.
+        amount = next(
+            (said_amount for phrase, said_amount in said.items()
+             if len([w for w in phrase.split() if len(w) > 2]) == len(words)
+             and all(_item_matches(phrase, w) for w in words)),
+            None,
+        )
+        if not amount:
+            out.append(ing)
+            continue
+        changed = True
+        out.append({**ing, "cook_qty": amount})
+    return out if changed else ingredients
 
 
 def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -> dict:
@@ -3354,7 +3561,7 @@ def _step_words_missing(used_text: str, listed: str) -> list[str]:
     # 1.5 lb of chicken breast this way).
     used_text = _SIDE_UP_RE.sub(" side", used_text)
     plain = used_text
-    for _words, pattern in _coordination._COMPOUND_EXCEPTIONS:
+    for _words, pattern, *_ in _coordination._COMPOUND_EXCEPTIONS:
         plain = pattern.sub(" ", plain)
     no_egg_words = _NOT_AN_EGG_RE.sub(" ", plain)
 
