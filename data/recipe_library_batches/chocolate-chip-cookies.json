@@ -6,16 +6,61 @@
  "prep_time_minutes": 45,
  "cook_time_minutes": 22,
  "ingredients": [
-  {"item": "Unsalted butter", "qty": "1 cup (2 sticks)", "category": "dairy"},
-  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/4 cups"},
-  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
-  {"item": "Eggs", "qty": "2", "category": "dairy"},
-  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tsp"},
-  {"item": "All-purpose flour", "qty": "2 3/4 cups", "category": "pantry"},
-  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "2 tsp"},
-  {"item": "Baking soda", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
-  {"item": "Semi-sweet chocolate chips", "qty": "1 bag (12 oz)", "category": "pantry", "cook_qty": "2 cups"}
+  {
+   "item": "Unsalted butter",
+   "qty": "1 cup (2 sticks)",
+   "category": "dairy"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 3/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Semi-sweet chocolate chips",
+   "qty": "1 bag (12 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  }
  ],
  "instructions": [
   "Melt the 1 cup butter in a small saucepan over low heat, or in the microwave in 30 second bursts. Pour it into a large bowl and leave it for 10 minutes to cool a little.",
@@ -23,21 +68,45 @@
   "Crack 1 of the eggs into the bowl. Separate the other egg and add only the yolk. Keep the white in the fridge for another dish. Add the 1 1/2 tsp vanilla and stir until it's all one color.",
   "In another bowl, whisk together the 2 3/4 cups flour, the 2 tsp cornstarch, the 1 tsp baking soda and the 3/4 tsp salt.",
   "Tip the flour mixture into the butter mixture and stir until there's no dry flour left. The dough will be thick. Stir in 1 3/4 cups of the chocolate chips.",
-  "Cover the bowl and chill the dough in the fridge for 30 minutes, so the cookies hold their shape in the oven.",
+  "Cover the bowl and chill the dough in the fridge for 30 minutes.",
   "About 10 minutes before the dough is ready, heat the oven to 350°F with a rack in the middle, and line 2 baking sheets with parchment paper.",
   "Scoop the dough into balls of a rounded 1 1/2 tbsp each and set 12 on each sheet, about 2 inches apart. They spread as they bake.",
   "Bake one sheet at a time for 11 minutes, until the edges are light golden and the middles still look a little soft. Don't leave them in longer, or they'll bake up hard. They finish setting on the hot sheet.",
   "While the cookies are still warm, press the last 1/4 cup of chocolate chips into the tops.",
   "Leave the cookies on the sheets until they're cool. Keep them in an airtight container for up to 5 days.",
-  "While the first sheet bakes, roll the rest of the dough into balls the same size and set them close together on a plate or tray lined with parchment. Freeze them for about 1 hour, until firm, then move them to a freezer bag. They keep for up to 2 months. Bake them straight from the freezer at 350°F, adding 1 to 2 minutes to the time."
+  "Roll the rest of the dough into balls the same size and set them close together on a plate or tray lined with parchment. Freeze them for about 1 hour, until firm, then move them to a freezer bag. They keep for up to 2 months. Bake them straight from the freezer at 350°F, adding 1 to 2 minutes to the time."
  ],
  "advance_prep_notes": "",
  "advance_prep_step_indices": [],
  "method_notes": "All three stir melted butter with brown and white sugar by hand rather than creaming it, then add egg, vanilla and the dry ingredients, and pull the cookies at 350°F while the middles still look soft. Spend With Pennies (the lead) adds an extra yolk and a little cornstarch for a chewier cookie and chills the dough for 30 minutes. RecipeTin Eats also uses an egg plus a yolk but rests the batter only 5 minutes, and The Kiwi Country Girl uses a single egg, much less chocolate and no chilling. This one follows the lead's full batch of about 45 cookies, bakes two sheets and freezes the rest as dough balls to bake from frozen.",
  "sources": [
-  {"name": "Spend With Pennies", "title": "Perfect Chocolate Chip Cookies", "url": "https://www.spendwithpennies.com/chocolate-chip-cookies/", "rating": 4.9, "rating_count": 419, "read": true, "lead": true},
-  {"name": "RecipeTin Eats", "title": "Soft Easy Chocolate Chip Cookies", "url": "https://www.recipetineats.com/chocolate-chip-cookies/", "rating": 4.9, "rating_count": 223, "read": true, "lead": false},
-  {"name": "The Kiwi Country Girl", "title": "The Best Chewy Chocolate Chip Cookies (ever)", "url": "https://www.thekiwicountrygirl.com/the-best-chewy-chocolate-chip-cookies/", "rating": 4.9, "rating_count": 103, "read": true, "lead": false}
+  {
+   "name": "Spend With Pennies",
+   "title": "Perfect Chocolate Chip Cookies",
+   "url": "https://www.spendwithpennies.com/chocolate-chip-cookies/",
+   "rating": 4.9,
+   "rating_count": 419,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Soft Easy Chocolate Chip Cookies",
+   "url": "https://www.recipetineats.com/chocolate-chip-cookies/",
+   "rating": 4.9,
+   "rating_count": 223,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Kiwi Country Girl",
+   "title": "The Best Chewy Chocolate Chip Cookies (ever)",
+   "url": "https://www.thekiwicountrygirl.com/the-best-chewy-chocolate-chip-cookies/",
+   "rating": 4.9,
+   "rating_count": 103,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

@@ -1,0 +1,132 @@
+{
+ "dish_name": "Baked Ziti",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Ziti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp plus 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ricotta",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (about 4 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Rub a little of the olive oil over the inside of an 11x7 inch baking dish.",
+  "Bring a large pot of water to a boil with 1 tbsp of the salt.",
+  "Meanwhile, finely chop the onion and mince the 2 garlic cloves. Chop 3 tbsp of the parsley leaves and grate 1/4 cup plus 2 tbsp of the Parmesan.",
+  "Heat the rest of the olive oil in a large skillet over medium. Add the onion and cook for 7 to 8 minutes, stirring now and then, until it's soft and golden at the edges.",
+  "Add the garlic and the 1 1/2 tsp Italian seasoning and stir for about 30 seconds, until it smells fragrant.",
+  "Pour in the jar of marinara and the can of diced tomatoes with their juice. Pour 1/4 cup water into the empty can, swirl it around and add it to the pan. Stir in 1/2 tsp of the salt and the 1/4 tsp pepper.",
+  "Let the sauce bubble gently, uncovered, for 12 minutes, stirring now and then, until it's a little thicker.",
+  "While the sauce simmers, add the 12 oz ziti to the boiling water. Cook it for 2 minutes less than the package says, so it's still a little firm in the middle. It finishes cooking in the oven. Drain it well.",
+  "In a bowl, stir together the ricotta, the egg, 1 cup of the mozzarella, the 1/4 cup Parmesan, 2 tbsp of the chopped parsley and the last 1/4 tsp of salt until it's evenly mixed.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Spread about 1 cup of the sauce over the bottom of the dish. Add half the ziti in an even layer. Drop spoonfuls of the ricotta mixture over the ziti and spread it out gently, then spoon over half of the sauce that's left.",
+  "Add the rest of the ziti and the rest of the sauce. Scatter the other 1 cup of mozzarella and the 2 tbsp Parmesan over the top.",
+  "Bake it uncovered for 25 to 30 minutes, until the cheese is golden in spots and the sauce is bubbling at the edges.",
+  "Let it sit for 10 minutes before you spoon it out. Any sooner and it slides apart. Scatter the last 1 tbsp of chopped parsley over the top.",
+  "Serve it hot from the dish, with a green salad."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions simmer a tomato sauce, boil the ziti until it's still firm, and bake it under mozzarella with ricotta through the middle. Spend With Pennies (the lead) layers the ziti with a ricotta, egg, mozzarella and Parmesan mixture between two layers of sauce made from jarred pasta sauce, diced tomatoes and Italian seasoning, and bakes it uncovered at 375°F. Natasha's Kitchen stirs the ricotta straight into the sauce with the pasta, and RecipeTin Eats dollops it on top and bakes under foil first. All three put sausage or ground beef in the sauce. This one is the meatless version Spend With Pennies suggests, built on onion browned in olive oil with garlic, and sized for four.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Baked Ziti",
+   "url": "https://www.spendwithpennies.com/baked-ziti/",
+   "rating": 4.97,
+   "rating_count": 609,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Baked Ziti (Easy Pasta Casserole)",
+   "url": "https://natashaskitchen.com/baked-ziti/",
+   "rating": 4.98,
+   "rating_count": 269,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Baked Ziti",
+   "url": "https://www.recipetineats.com/baked-ziti/",
+   "rating": 4.97,
+   "rating_count": 179,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
