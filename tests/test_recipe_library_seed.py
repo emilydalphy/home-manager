@@ -39,8 +39,11 @@ def _select_cuisines(path: str, var: str) -> list[str]:
 
 
 def test_five_hundred_dishes_split_as_proposed():
-    assert len(DISHES) == 500
-    assert Counter(d["cuisine"] for d in DISHES) == PROPOSED
+    # 500 to start, split as proposed; 200 more on 2026-10-20 (Emily: "add
+    # another 200 recipes"), still only the cuisines a household can pick.
+    assert len(DISHES) == 700
+    assert Counter(d["cuisine"] for d in DISHES[:500]) == PROPOSED
+    assert set(d["cuisine"] for d in DISHES[500:]) <= set(PROPOSED)
 
 
 def test_cuisines_are_exactly_the_ones_a_household_can_pick():
