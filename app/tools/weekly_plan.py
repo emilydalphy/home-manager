@@ -9443,7 +9443,7 @@ def _leftovers_too_old_after_redate(rows: list, after: list[dict]) -> str | None
 
 def _apply_dinner_nights_swap(
     weekly_plan_id: int, date_a: str, date_b: str, *, undo: bool, dry_run: bool = False,
-    conn=None,
+    conn=None, today: str | None = None,
 ) -> dict:
     """
     The one write behind swap_dinner_nights and undo_dinner_nights_swap.
@@ -9469,6 +9469,11 @@ def _apply_dinner_nights_swap(
     `taste_verdicts` are reads, and a read on a second connection inside
     an open write transaction sees the world as it was BEFORE it — so they
     are the caller's to take after its commit, if it wants them at all.
+
+    `today` (the household's, ISO) refuses a night before it — see
+    swap_dinner_nights. A parameter rather than read here because reading
+    the household clock opens a connection, and this may be running inside
+    a caller's write transaction.
     """
     for d in (date_a, date_b):
         try:
@@ -9498,6 +9503,12 @@ def _apply_dinner_nights_swap(
         for d in (date_a, date_b):
             if not (start <= d <= end):
                 raise ValueError(f"{_weekday_of(d)} ({d}) isn't on this plan.")
+        if today:
+            for d in sorted((date_a, date_b)):
+                if d < today:
+                    return _nights_swap_refusal(
+                        f"{_weekday_of(d)} has already gone by — I’ve left both dinners where they are.",
+                        date_a, date_b)
 
         rows = conn.execute(
             """
@@ -9650,8 +9661,19 @@ def swap_dinner_nights(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
     or a leftover chain that would end up running backwards. Raises
     ValueError for a night that isn't on this plan, two identical nights,
     a component-based plan, or nights with no dinner at all.
+
+    A night that has GONE BY on the household's clock is refused too
+    (overnight hunt, 2026-10-20): trading Monday with Thursday on a
+    Wednesday put Thursday's dish on a night nobody can cook it, with its
+    groceries still on the list. Move (meal_move.plan_move) and the swap
+    doors already said no (night_has_gone); this one read no clock. Every
+    caller here is a person's door — the route, chat, a draft flag's fix —
+    or cap_enforce.rearrange, which reads a refusal as "try the next
+    trade". The undo is exempt, as undo_meal_swap is: it only puts back a
+    week that was standing.
     """
-    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False)
+    today = _household_today().isoformat()
+    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False, today=today)
 
 
 def undo_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
