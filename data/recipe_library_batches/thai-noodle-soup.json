@@ -1,0 +1,47 @@
+{
+ "dish_name": "Thai Noodle Soup",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Ground pork", "qty": "12 oz", "category": "meat/seafood"},
+  {"item": "Low-sodium chicken broth", "qty": "8 cups", "category": "pantry"},
+  {"item": "Thin rice noodles", "qty": "8 oz", "category": "pantry"},
+  {"item": "Napa cabbage", "qty": "1 small head", "category": "produce"},
+  {"item": "Bean sprouts", "qty": "1 bag", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Garlic", "qty": "9 cloves", "category": "produce"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Ground white pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Roasted peanuts", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil for the noodles. In a second pot, bring the 8 cups broth to a simmer over medium heat with the lid on.",
+  "Meanwhile, mince 3 of the garlic cloves into a bowl. Add the 12 oz ground pork, 1 tbsp of the fish sauce, the 1 tbsp soy sauce and the 1/2 tsp white pepper. Mix with your hand for about 1 minute, until it turns sticky.",
+  "Wet your hands and roll the pork into about 24 small balls. Set them on a plate.",
+  "Finely chop the last 6 garlic cloves. Put them in a small pan with the 1/4 cup oil over medium low and stir for 3 to 4 minutes, until they're light golden. Take them off as soon as they get there. They darken a little more in the hot oil.",
+  "Pour the garlic and oil through a small sieve into a heatproof bowl. Spread the crispy garlic on a paper towel and keep the garlic oil.",
+  "Thinly slice the napa cabbage until you have about 3 cups. Slice 3 green onions and chop a small handful of cilantro. Crush the 1/4 cup peanuts roughly and put them in a small bowl with the 1 tsp pepper flakes next to it.",
+  "Drop the 8 oz noodles into the boiling water and cook them as the package says, usually 4 to 5 minutes, until they're tender with a little chew. Drain, rinse under cold water and toss them with 1 tbsp of the garlic oil.",
+  "Stir the remaining 2 tbsp fish sauce into the simmering broth. Drop the pork balls in one at a time and let them simmer gently for about 5 minutes, until they float. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Add the cabbage and cook for 2 minutes, until it's just wilted and still bright.",
+  "Taste the broth. If it's flat, add a splash more fish sauce.",
+  "Divide the noodles between 4 big bowls and add a small handful of bean sprouts to each. Ladle the pork balls, cabbage and hot broth over the top.",
+  "Scatter over the green onions, cilantro and crispy garlic, and drizzle each bowl with the rest of the garlic oil. Serve with the crushed peanuts, the pepper flakes and the fish sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions serve a clear, lightly seasoned broth over noodles with seasoned minced pork, fresh greens and herbs, with chili, peanuts or sugar and fish sauce at the table. Import Food mixes ground pork with fish sauce, Maggi, garlic and Thai pepper, rolls it into small meatballs and poaches them in stock with cabbage or kale, then pours it over bean thread noodles. Rachel Cooks Thai simmers pork bones for over 2 hours, tops rice noodles with roast pork, blanched minced pork, bean sprouts and cilantro, and finishes with fried garlic and its oil. This one follows Import Food's quick meatballs in stock without the long marinade, uses soy in place of Maggi, and takes the rice noodles, bean sprouts and fried garlic from Rachel Cooks Thai. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no version, so the first read version leads.",
+ "sources": [
+  {"name": "Import Food", "title": "Thai Noodle Soup with Pork, 'Yum Wunsen Sai Mu'", "url": "https://importfood.com/recipes/recipe/187-thai-noodle-soup-with-pork-yum-wunsen-sai-mu", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Rachel Cooks Thai", "title": "Pork Noodle Soup (Guay Teow Moo)", "url": "https://rachelcooksthai.com/pork-noodle-soup/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

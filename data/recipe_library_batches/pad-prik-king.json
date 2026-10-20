@@ -1,0 +1,43 @@
+{
+ "dish_name": "Pad Prik King",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless pork loin", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Green beans", "qty": "3/4 lb", "category": "produce"},
+  {"item": "Red curry paste", "qty": "1 jar", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Low-sodium chicken broth", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Makrut lime leaves", "qty": "1 package", "category": "produce", "cook_qty": "4"},
+  {"item": "Red jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice and get it cooking before anything else. The stir fry itself takes about 10 minutes.",
+  "Bring a medium pot of water to a boil. Meanwhile, trim the 3/4 lb green beans and cut them into 2 inch lengths.",
+  "Pat the 1 lb pork dry and slice it very thinly across the grain into strips about 2 inches long.",
+  "Tear the 4 lime leaves in half and pull out the stem down the middle. Thinly slice the jalapeño and put it in a small bowl for the table.",
+  "Drop the beans into the boiling water for 3 minutes, until they're bright green and still crisp. Drain them and run cold water over them until they're cool, then shake them dry.",
+  "Heat 3 tbsp oil in a wok or large skillet over medium low. Add 3 tbsp curry paste (2 tbsp if you like it milder) and stir it into the oil, pressing it with the back of the spoon. Cook for 2 to 3 minutes, until it darkens a shade, the oil turns red and it smells toasty. Keep the heat low. The paste scorches easily.",
+  "Turn the heat up to medium high and add the pork. Stir fry for about 2 minutes, until every strip is coated in paste and there's no raw pink on the outside.",
+  "Add the 1/2 cup broth, 2 tbsp fish sauce, 1 tbsp brown sugar and the lime leaves. Let it bubble for 2 to 3 minutes, stirring, until the liquid cooks down to a thick coating that clings to the pork. Cut into a thick piece. It's done when there's no pink left in the middle.",
+  "Add the beans and stir fry for about 3 minutes, until they're hot and glazed with the paste but still have some snap.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Serve over the jasmine rice, with the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fry red curry paste in oil until fragrant, cook thin pork in it, season with fish sauce and sugar and toss in green or long beans with makrut lime leaves, with no coconut milk, and serve it with jasmine rice. The Wanderlust Kitchen blanches the beans first and uses pork loin, 3 tbsp paste, a little broth and palm or brown sugar; Hungry in Thailand uses pork belly with oyster and soy sauce added, and Rachel Cooks Thai uses fatty pork and steams the beans in the pan with splashes of water, adding red chili at the end. Prik king paste is hard to find, so this one uses red curry paste as the lead suggests. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no version, so the version with the most ratings leads.",
+ "sources": [
+  {"name": "The Wanderlust Kitchen", "title": "Thai Pork and Green Beans Recipe", "url": "https://thewanderlustkitchen.com/thai-pork-with-spicy-green-beans/", "rating": 4.62, "rating_count": 18, "read": true, "lead": true},
+  {"name": "Rachel Cooks Thai", "title": "Stir Fried Pork with Chili Paste | Pad Prik Khing", "url": "https://rachelcooksthai.com/stir-fried-pork-with-chili-paste/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false},
+  {"name": "Hungry in Thailand", "title": "Pad Prik King Recipe (Thai Red Curry Stir-Fry)", "url": "https://hungryinthailand.com/pad-prik-king/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

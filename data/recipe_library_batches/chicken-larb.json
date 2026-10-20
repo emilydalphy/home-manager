@@ -1,0 +1,49 @@
+{
+ "dish_name": "Chicken Larb",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Ground chicken", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Lemongrass", "qty": "2 stalks", "category": "produce"},
+  {"item": "Ginger", "qty": "1 small piece", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce"},
+  {"item": "Limes", "qty": "3", "category": "produce"},
+  {"item": "Thai bird chilies", "qty": "1 package", "category": "produce", "cook_qty": "2"},
+  {"item": "Romaine hearts", "qty": "2", "category": "produce"},
+  {"item": "Roasted peanuts", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Peanut oil", "qty": "3 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse 1 1/4 cups of the jasmine rice until the water runs mostly clear, and cook it on the stove or in a rice cooker. It takes about 20 minutes and the larb takes about 10, so start the rice first.",
+  "Put the other 1/4 cup of rice in a dry skillet over medium. Stir it often for 6 to 8 minutes, until it's deep golden and smells like popcorn. Tip it onto a plate to cool.",
+  "Meanwhile, trim the 2 lemongrass stalks, peel off the tough outer layers and finely chop the pale bottom part. Peel and finely grate 1 1/2 tbsp of the ginger. Mince the 3 garlic cloves.",
+  "Thinly slice the red onion. Pick 1/2 cup cilantro leaves and 1/2 cup mint leaves, plus a few extra of each for the top.",
+  "Grind the cooled toasted rice in a spice grinder or a mortar until it's like coarse sand. No grinder? Seal it in a zip bag and crush it with a rolling pin.",
+  "Juice 2 of the limes to get 1/4 cup. In a small bowl, stir together 1/4 cup water, the 1/4 cup lime juice, 3 tbsp fish sauce, 1 tbsp brown sugar and half the ground rice.",
+  "Cut the last lime into wedges. Thinly slice 2 chilies into a small bowl for the table. Separate about 12 leaves from the romaine hearts, wash and dry them. Roughly crush the 1/3 cup peanuts.",
+  "Heat the 3 tbsp peanut oil in a wok or large skillet over medium high. Add the lemongrass, ginger and garlic and stir for 45 seconds to 1 minute, until they smell fragrant. Don't let the garlic brown.",
+  "Turn the heat up to high and add the 1.5 lb ground chicken. Stir and break it into small bits for 4 to 5 minutes, until there's no pink left.",
+  "Stir the sauce, since the rice sinks to the bottom, and pour it in. Cook for about 1 minute, stirring, until it thickens and coats the chicken.",
+  "Take the pan off the heat. Stir in the onion, cilantro and mint, then sprinkle the rest of the ground rice over the top with the extra leaves.",
+  "Taste it. If it's flat, add a splash more fish sauce or a squeeze of the lime.",
+  "Serve with the rice, the romaine leaves, the crushed peanuts, the lime wedges and the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions season minced chicken with fish sauce, lime juice and a little sugar, and stir in raw red onion or shallot, mint and cilantro at the end, served with rice and raw vegetables or lettuce. RecipeTin Eats fries ginger, garlic, lemongrass and chilli first, browns the chicken on high and thickens the sauce with a slurry of cornflour or ground toasted rice. Hungry in Thailand poaches the chicken in a splash of water with no aromatics, dresses it off the heat with chili flakes and toasted rice powder, and adds culantro and green onions. This one follows RecipeTin Eats with the toasted rice option, keeps half the rice for the top and puts the chilies on the side.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Thai Lettuce Wraps (Larb Gai, Laab Gai)", "url": "https://www.recipetineats.com/thai-chicken-lettuce-cups-larb-gai-laab-gai/", "rating": 4.98, "rating_count": 76, "read": true, "lead": true},
+  {"name": "Hungry in Thailand", "title": "Authentic Larb Gai Recipe (Thai Minced Chicken Salad)", "url": "https://hungryinthailand.com/larb-gai/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

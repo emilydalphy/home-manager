@@ -1,0 +1,53 @@
+{
+ "dish_name": "Glass Noodle Salad",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Large shrimp", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Bean thread noodles", "qty": "7 oz", "category": "pantry"},
+  {"item": "Dried shrimp", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Raw peanuts", "qty": "1 cup", "category": "pantry"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Limes", "qty": "4", "category": "produce"},
+  {"item": "Thai bird chilies", "qty": "1 package", "category": "produce", "cook_qty": "2"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "5 tbsp"},
+  {"item": "Palm sugar", "qty": "1 tub", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Bring a full kettle or a pot of water to a boil for the noodles.",
+  "Meanwhile, make the dressing. Juice the 4 limes to get 5 tbsp. In a small bowl, stir the lime juice with 5 tbsp fish sauce and 2 tbsp palm sugar until the sugar dissolves. If your palm sugar is a hard block, shave it thinly with a knife first.",
+  "Mince the 6 garlic cloves. Set 1 tsp aside for the shrimp and stir the rest into the dressing.",
+  "Thinly slice the red onion and stir it into the dressing to soak while you do the rest.",
+  "Halve about half the pint of cherry tomatoes, about 1 cup. Slice the bell pepper into thin strips. Finely slice 2 inner celery stalks, leaves and all. Chop the cilantro leaves and tender stems. Put all of it in a large bowl.",
+  "Soak the 1/2 cup dried shrimp in warm water for 1 minute and drain. Pound them in a mortar until they break into small bits, or chop them finely, and add them to the bowl.",
+  "Put the 1 cup peanuts in a dry skillet over medium low. Shake the pan often for 5 to 6 minutes, until they're golden brown and smell toasty. Tip them onto a plate to cool, then crush them roughly.",
+  "Put the 7 oz noodles in a heatproof bowl and pour over enough boiling water to cover. Soak for 4 minutes, until they turn clear and soft.",
+  "Drain the noodles, rinse them under cold water and drain well. Snip them into 3 inch lengths with kitchen scissors and add them to the big bowl.",
+  "Peel and devein the 1 lb shrimp, pat them dry and sprinkle them with a pinch of salt.",
+  "Wipe out the skillet and heat the 2 tbsp oil over low. Add the 1 tsp of garlic you set aside and stir for about 1 minute, until it's pale golden and smells nutty.",
+  "Turn the heat to medium and add the shrimp in a single layer. Cook for 2 minutes, until they're pink underneath. Flip them and cook the other side for 2 minutes, until they're pink all over and opaque in the middle. Tip the shrimp and the garlic oil onto a plate and let them cool for 5 minutes.",
+  "Add the shrimp, every bit of the garlic oil, the dressing with its onions and the peanuts to the big bowl. Toss with your hands or tongs until every noodle is coated.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Thinly slice 2 chilies into a small bowl. Serve the salad at room temperature, with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions soak bean thread noodles briefly, cook shrimp, and toss them with tomatoes, onion or shallot, cilantro and peanuts in a dressing of lime juice, fish sauce, palm sugar, garlic and bird's eye chili. Pups with Chopsticks fries the shrimp in garlic oil and adds Chinese celery, red pepper, pounded dried shrimp and dry roasted peanuts. CiCi Li and Beyond Kimchee poach the shrimp and add minced pork, and CiCi Li also fries the dried shrimp until crisp. This one follows Pups with Chopsticks, uses ordinary celery in place of Chinese celery and puts the chili on the side. No version had 20 or more ratings (the lead has 19) and RecipeTin Eats (the trusted cook for Thai) has no yum woon sen, so the first read version leads.",
+ "sources": [
+  {"name": "Pups with Chopsticks", "title": "Yum Woon Sen (Thai Glass Noodle Salad)", "url": "https://pupswithchopsticks.com/yum-woon-sen-thai-glass-noodle-salad/", "rating": 5.0, "rating_count": 19, "read": true, "lead": true},
+  {"name": "CiCi Li", "title": "Thai Glass Noodle Salad Recipe, Yum Woon Sen", "url": "https://cicili.tv/thai-glass-noodles-salad-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Beyond Kimchee", "title": "Thai Glass Noodle Salad (Yum Woon Sen)", "url": "https://www.beyondkimchee.com/thai-glass-noodle-salad/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

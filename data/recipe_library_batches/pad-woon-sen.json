@@ -1,0 +1,48 @@
+{
+ "dish_name": "Pad Woon Sen",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Bean thread noodles", "qty": "8 oz", "category": "pantry"},
+  {"item": "Eggs", "qty": "6", "category": "dairy"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "1", "category": "produce"},
+  {"item": "Chinese broccoli", "qty": "1 bunch", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp + 2 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 8 oz noodles in a big bowl and cover them with warm tap water. Soak them for about 10 minutes, until they're soft and bendy but still a little springy.",
+  "Meanwhile, cut the onion into thin wedges and the carrot into thin matchsticks. Mince the 4 garlic cloves. Cut 4 of the green onions into 2 inch pieces.",
+  "Cut the leaves off the Chinese broccoli. Slice the stems thinly on an angle and cut the leaves into 2 inch pieces. Keep the stems and leaves in separate piles. Choy sum works the same way if that's what you found.",
+  "Stir the sauce together in a small bowl: 2 tbsp oyster sauce, 1 tbsp fish sauce, 1 tbsp soy sauce, 1 tbsp oil, 1 tsp sugar and the 1/4 tsp white pepper. It looks like too little for all those noodles, but it's enough.",
+  "Crack the 6 eggs into a bowl, add the other 2 tsp soy sauce and beat them with a fork until there are no streaks of white.",
+  "Drain the noodles well and snip them a few times with kitchen scissors into shorter lengths.",
+  "Heat 2 tbsp oil in a wok or your largest nonstick skillet over high until it shimmers. Add the onion, carrot and broccoli stems and stir fry for about 2 minutes, until the onion is browning at the edges and the carrot bends.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Push the vegetables to one side and pour the last 1 tbsp oil into the space. Pour in the eggs and leave them for about 20 seconds, until the edges set. Stir them gently into big soft curds for about a minute, then fold them through the vegetables while they still look a little wet.",
+  "Add the broccoli leaves and the cut green onions, pile the noodles on top and pour the sauce over the noodles.",
+  "Toss everything with two spatulas or tongs for about 2 minutes, until the noodles are evenly tinted brown, the leaves have wilted and there's no water left in the pan.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Thinly slice 2 more green onions and scatter them over the top. Serve it hot, straight from the pan."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soak the glass noodles until just pliable, stir fry onion and garlic, scramble egg in the pan and toss the noodles through a small amount of salty, slightly sweet sauce. RecipeTin Eats (adapted from Hot Thai Kitchen) uses chicken thigh and Chinese broccoli, scrambles the egg in a cleared space in the pan and seasons with oyster sauce, fish sauce, Maggi or soy, sugar and white pepper, warning that the sauce looks too small but is enough. Rachel Cooks Thai fries pickled garlic with the garlic and uses carrot and green onion; Hungry in Thailand makes it meat free with cabbage, carrot and onion. This one follows the lead's sauce and egg method with egg as the protein and carrot and green onion alongside the Chinese broccoli.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Thai Glass Noodle Stir Fry (Pad Woon Sen)", "url": "https://www.recipetineats.com/thai-glass-noodles-pad-woon-sen/", "rating": 4.92, "rating_count": 24, "read": true, "lead": true},
+  {"name": "Rachel Cooks Thai", "title": "Glass Noodle Stir Fry | Pad Woon Sen", "url": "https://rachelcooksthai.com/pad-woonsen/", "rating": 5.0, "rating_count": 7, "read": true, "lead": false},
+  {"name": "Hungry in Thailand", "title": "Pad Woon Sen Recipe (Thai Glass Noodle Stir-Fry)", "url": "https://hungryinthailand.com/pad-woon-sen-recipe/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
