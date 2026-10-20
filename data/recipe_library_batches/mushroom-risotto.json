@@ -6,19 +6,74 @@
  "prep_time_minutes": 15,
  "cook_time_minutes": 40,
  "ingredients": [
-  {"item": "Cremini mushrooms", "qty": "1.5 lb", "category": "produce"},
-  {"item": "Arborio rice", "qty": "1 1/4 cups", "category": "pantry"},
-  {"item": "Vegetable broth", "qty": "5 cups", "category": "pantry"},
-  {"item": "Shallots", "qty": "2", "category": "produce"},
-  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
-  {"item": "Dry white wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
-  {"item": "Unsalted butter", "qty": "1 package", "category": "dairy", "cook_qty": "6 tbsp"},
-  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
-  {"item": "Heavy cream", "qty": "1 carton (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
-  {"item": "Parmesan", "qty": "3 oz", "category": "dairy"},
-  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
-  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1.5 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Arborio rice",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "Pour the 5 cups broth into a saucepan and set it over low heat so it's warm when you need it.",
@@ -42,8 +97,24 @@
  "advance_prep_step_indices": [],
  "method_notes": "RecipeTin Eats (the lead) browns the mushrooms hard in two batches with butter and garlic, makes the risotto in the same pot with shallot, wine and broth added in big ladlefuls without constant stirring, then finishes it with cream, butter and Parmesan and folds in half the mushrooms, keeping the rest for the top. Love and Lemons browns the mushrooms the same way but uses onion, thyme, more wine and olive oil only, adds broth 3/4 cup at a time with constant stirring, and finishes with pecorino or Parmesan. Both keep a third to a half of the mushrooms back for the top. This one follows the lead with vegetable broth in place of chicken stock so it stays vegetarian.",
  "sources": [
-  {"name": "RecipeTin Eats", "title": "Mushroom Risotto", "url": "https://www.recipetineats.com/mushroom-risotto/", "rating": 4.99, "rating_count": 185, "read": true, "lead": true},
-  {"name": "Love and Lemons", "title": "Mushroom Risotto", "url": "https://www.loveandlemons.com/mushroom-risotto/", "rating": 4.88, "rating_count": 140, "read": true, "lead": false}
+  {
+   "name": "RecipeTin Eats",
+   "title": "Mushroom Risotto",
+   "url": "https://www.recipetineats.com/mushroom-risotto/",
+   "rating": 4.99,
+   "rating_count": 185,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Mushroom Risotto",
+   "url": "https://www.loveandlemons.com/mushroom-risotto/",
+   "rating": 4.88,
+   "rating_count": 140,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

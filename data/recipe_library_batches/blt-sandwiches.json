@@ -19,9 +19,8 @@
   },
   {
    "item": "Butter",
-   "qty": "1 package",
-   "category": "dairy",
-   "cook_qty": "1 1/2 tbsp"
+   "qty": "1 1/2 tbsp",
+   "category": "dairy"
   },
   {
    "item": "Tomatoes",

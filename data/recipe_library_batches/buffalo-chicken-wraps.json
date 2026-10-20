@@ -20,9 +20,8 @@
   },
   {
    "item": "Butter",
-   "qty": "1 package",
-   "category": "dairy",
-   "cook_qty": "2 tbsp"
+   "qty": "2 tbsp",
+   "category": "dairy"
   },
   {
    "item": "Large flour tortillas",

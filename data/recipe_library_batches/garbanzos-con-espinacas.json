@@ -29,9 +29,8 @@
   },
   {
    "item": "Olive oil",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "6 tbsp"
+   "qty": "6 tbsp",
+   "category": "pantry"
   },
   {
    "item": "Garlic",

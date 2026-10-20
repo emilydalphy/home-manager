@@ -2,7 +2,7 @@
  "dish_name": "Gateau au Yaourt",
  "cuisine": "French",
  "main_protein": "eggs",
- "default_servings": 4,
+ "default_servings": 8,
  "prep_time_minutes": 15,
  "cook_time_minutes": 55,
  "ingredients": [
@@ -70,7 +70,7 @@
   "Transfer the flour mix into the wet bowl and fold it in with a spatula. Stop as soon as you can't see any dry flour. Overmixing makes the cake tough.",
   "Scrape the batter into the pan and smooth the top. Bake for 50 to 55 minutes, until the top is golden and cracked and a skewer pushed into the middle comes out clean.",
   "Let it cool in the pan for 10 minutes, then lift it out by the parchment and cool it on a rack for at least 20 minutes before you slice it.",
-  "Serve it in thick slices. Wrap what's left and keep it at room temperature for up to 3 days."
+  "This makes 8 slices. Serve it in thick slices. Wrap what's left and keep it at room temperature for up to 3 days."
  ],
  "advance_prep_notes": "",
  "advance_prep_step_indices": [],

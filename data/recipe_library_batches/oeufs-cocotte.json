@@ -8,9 +8,8 @@
  "ingredients": [
   {
    "item": "Unsalted butter",
-   "qty": "1 package",
-   "category": "dairy",
-   "cook_qty": "2 tbsp, plus a little for the ramekins"
+   "qty": "2 tbsp",
+   "category": "dairy"
   },
   {
    "item": "Cremini mushrooms",

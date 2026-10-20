@@ -6,27 +6,119 @@
  "prep_time_minutes": 15,
  "cook_time_minutes": 55,
  "ingredients": [
-  {"item": "Mild Italian sausage", "qty": "1 lb", "category": "meat/seafood"},
-  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
-  {"item": "Yellow onion", "qty": "1 small", "category": "produce"},
-  {"item": "Carrot", "qty": "1", "category": "produce"},
-  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 stalks"},
-  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
-  {"item": "Fennel seeds", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
-  {"item": "Dry red wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 cup"},
-  {"item": "Low-sodium chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 cup"},
-  {"item": "Crushed tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
-  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce", "cook_qty": "3 sprigs"},
-  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
-  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
-  {"item": "Red pepper flakes", "qty": "1/4 tsp", "category": "pantry"},
-  {"item": "Whole milk", "qty": "1 quart", "category": "dairy", "cook_qty": "3 cups"},
-  {"item": "Instant polenta", "qty": "1 cup", "category": "pantry"},
-  {"item": "Unsalted butter", "qty": "1 stick", "category": "dairy", "cook_qty": "3 tbsp"},
-  {"item": "Parmesan", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "1 cup grated"},
-  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"}
+  {
+   "item": "Mild Italian sausage",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 sprigs"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 quart",
+   "category": "dairy",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Instant polenta",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (4 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup grated"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
  ],
  "instructions": [
   "Finely chop the onion. Grate the carrot and 2 stalks of the celery on the big holes of a box grater, and mince the 3 garlic cloves. Squeeze the 1 lb sausage out of its casings into a bowl.",
@@ -48,9 +140,33 @@
  "advance_prep_step_indices": [],
  "method_notes": "No version that pairs the two had 20 or more ratings, so this leads with RecipeTin Eats (the trusted cook for Italian), whose sausage ragu softens onion, carrot, celery and fennel seed, cooks the sausage meat out of its casings, darkens tomato paste, reduces red wine and simmers it with stock, crushed tomatoes, thyme and bay, mashing the meat finer partway. RecipeTin Eats braises it in the oven for nearly 2 hours and serves it with pappardelle; The Mountain Kitchen browns the sausage first, sweats onion and carrot for 20 minutes, simmers it on the stove with tomato sauce for 30 to 45 minutes and spoons it over polenta finished with Parmesan. This one follows RecipeTin Eats' ragu on the stovetop for 35 minutes, the way The Mountain Kitchen does, over Once Upon a Chef's quick instant polenta cooked in milk and finished with butter and Parmesan.",
  "sources": [
-  {"name": "RecipeTin Eats", "title": "Sausage ragu with pappardelle pasta", "url": "https://www.recipetineats.com/sausage-ragu/", "rating": 4.92, "rating_count": 93, "read": true, "lead": true},
-  {"name": "The Mountain Kitchen", "title": "Italian Sausage Ragu Over Polenta", "url": "https://www.themountainkitchen.com/italian-sausage-ragu-over-polenta/", "rating": null, "rating_count": null, "read": true, "lead": false},
-  {"name": "Once Upon a Chef", "title": "Creamy Polenta (Ready in 10 Minutes)", "url": "https://www.onceuponachef.com/recipes/quick-easy-polenta.html", "rating": 4.93, "rating_count": 14, "read": true, "lead": false}
+  {
+   "name": "RecipeTin Eats",
+   "title": "Sausage ragu with pappardelle pasta",
+   "url": "https://www.recipetineats.com/sausage-ragu/",
+   "rating": 4.92,
+   "rating_count": 93,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Mountain Kitchen",
+   "title": "Italian Sausage Ragu Over Polenta",
+   "url": "https://www.themountainkitchen.com/italian-sausage-ragu-over-polenta/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Creamy Polenta (Ready in 10 Minutes)",
+   "url": "https://www.onceuponachef.com/recipes/quick-easy-polenta.html",
+   "rating": 4.93,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": true,
  "origin": "seed"

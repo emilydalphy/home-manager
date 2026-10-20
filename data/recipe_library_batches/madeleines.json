@@ -6,14 +6,50 @@
  "prep_time_minutes": 15,
  "cook_time_minutes": 20,
  "ingredients": [
-  {"item": "Eggs", "qty": "2", "category": "dairy"},
-  {"item": "Granulated sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
-  {"item": "Unsalted butter", "qty": "1 package", "category": "dairy", "cook_qty": "1/2 cup"},
-  {"item": "All-purpose flour", "qty": "3/4 cup + 1 tbsp", "category": "pantry"},
-  {"item": "Baking powder", "qty": "1 can", "category": "pantry", "cook_qty": "3/4 tsp"},
-  {"item": "Honey", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tsp"},
-  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
-  {"item": "Lemon", "qty": "1", "category": "produce"}
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3/4 cup + 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
  ],
  "instructions": [
   "The night before: melt 7 tbsp of the butter in a small pan over low heat. Take it off the heat and let it cool for about 10 minutes, until it's warm but no longer hot.",
@@ -30,12 +66,42 @@
   "Serve warm or at room temperature."
  ],
  "advance_prep_notes": "Make the batter the night before so it chills overnight.",
- "advance_prep_step_indices": [1, 2, 3, 4, 5],
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
  "method_notes": "All three whisk eggs and sugar, fold in flour and melted butter that has cooled, flavor the batter with lemon zest and bake in a buttered tin until the edges are golden and the tops have a bump. Baking Like a Chef (from Alain Ducasse's cooking school) uses equal weights of egg, sugar, butter and flour with honey, vanilla and baking powder, chills the batter overnight or a full day, and starts the bake at 425°F before switching the oven off for the bump. RecipeTin Eats whips the eggs harder, adds milk and oil, chills the batter at least 6 hours and bakes at 390°F for 10 minutes; Not Quite Nigella makes a small batch with cake flour and no chilling step. This one follows Ducasse's ratios and bake, scaled to one 12 cavity pan.",
  "sources": [
-  {"name": "Baking Like a Chef", "title": "Classic French Madeleines (Madeleine Cookies)", "url": "https://www.bakinglikeachef.com/madeleines-by-lecole-de-cuisine-dalain-ducasse/", "rating": 5, "rating_count": 118, "read": true, "lead": true},
-  {"name": "Not Quite Nigella", "title": "Madeleines", "url": "https://www.notquitenigella.com/2025/05/19/madeleines/", "rating": 5, "rating_count": 66, "read": true, "lead": false},
-  {"name": "RecipeTin Eats", "title": "Madeleines", "url": "https://www.recipetineats.com/madeleines/", "rating": 4.92, "rating_count": 46, "read": true, "lead": false}
+  {
+   "name": "Baking Like a Chef",
+   "title": "Classic French Madeleines (Madeleine Cookies)",
+   "url": "https://www.bakinglikeachef.com/madeleines-by-lecole-de-cuisine-dalain-ducasse/",
+   "rating": 5,
+   "rating_count": 118,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Not Quite Nigella",
+   "title": "Madeleines",
+   "url": "https://www.notquitenigella.com/2025/05/19/madeleines/",
+   "rating": 5,
+   "rating_count": 66,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Madeleines",
+   "url": "https://www.recipetineats.com/madeleines/",
+   "rating": 4.92,
+   "rating_count": 46,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

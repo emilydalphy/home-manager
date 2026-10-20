@@ -97,11 +97,6 @@
    "item": "Flat-leaf parsley",
    "qty": "1 bunch",
    "category": "produce"
-  },
-  {
-   "item": "Lemon",
-   "qty": "1",
-   "category": "produce"
   }
  ],
  "instructions": [
@@ -118,8 +113,8 @@
   "Heat the 1/4 cup vegetable oil in a large skillet over medium. Fry the potatoes in two batches, turning them now and then, until they're golden and crisp on all sides and tender inside, 8 to 10 minutes a batch. Lift them onto a paper towel lined plate with a slotted spoon and sprinkle them with the last 1/4 tsp salt.",
   "Add the peppers to the same skillet and cook for 3 to 4 minutes, stirring, until they soften and blister in spots. Lift them onto the plate with the potatoes.",
   "Fish the bay leaves out of the stew. Chop a small handful of the parsley and stir it in.",
-  "Taste it. If it's flat, add salt first, then a squeeze of lemon. Cut the rest of the lemon into wedges.",
-  "Serve the stew over the rice with the potatoes and peppers on top and the lemon wedges on the side."
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve the stew over the rice with the potatoes and peppers on top."
  ],
  "advance_prep_notes": "",
  "advance_prep_step_indices": [],

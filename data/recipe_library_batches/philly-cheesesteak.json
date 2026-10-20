@@ -6,16 +6,58 @@
  "prep_time_minutes": 10,
  "cook_time_minutes": 20,
  "ingredients": [
-  {"item": "Ribeye steak", "qty": "1.5 lb", "category": "meat/seafood"},
-  {"item": "Sweet onion", "qty": "1", "category": "produce"},
-  {"item": "Provolone cheese", "qty": "1 package (8 slices)", "category": "dairy", "cook_qty": "8 slices"},
-  {"item": "Hoagie rolls", "qty": "4", "category": "other"},
-  {"item": "Butter", "qty": "1 package", "category": "dairy", "cook_qty": "2 tbsp"},
-  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
-  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "3 tbsp"},
-  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
-  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+  {
+   "item": "Ribeye steak",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sweet onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Provolone cheese",
+   "qty": "1 package (8 slices)",
+   "category": "dairy",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Hoagie rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "If your steak isn't already shaved, put it in the freezer for 30 minutes first. It's much easier to slice thin when it's firm.",
@@ -35,8 +77,24 @@
  "advance_prep_step_indices": [],
  "method_notes": "Both read versions slice ribeye very thin (Once Upon a Chef freezes it for 35 to 45 minutes first, and also allows sirloin), brown the onion separately, sear the steak hard over high heat and melt the cheese over the beef in the pan before it goes into toasted rolls. Natasha's Kitchen toasts the rolls in garlic butter, uses mild provolone and spreads the rolls with mayo. Once Upon a Chef adds a bell pepper and a splash of cider vinegar to the onions, sears in two batches and melts American cheese through the meat before shingling provolone on top. This follows Natasha's method but uses Once Upon a Chef's 1.5 lb of steak for four, since Natasha's 1 lb makes a light sandwich.",
  "sources": [
-  {"name": "Natasha's Kitchen", "title": "Philly Cheesesteak", "url": "https://natashaskitchen.com/philly-cheesesteak/", "rating": 4.97, "rating_count": 755, "read": true, "lead": true},
-  {"name": "Once Upon a Chef", "title": "Philly Cheesesteaks", "url": "https://www.onceuponachef.com/recipes/philly-cheesesteaks.html", "rating": 5.0, "rating_count": 13, "read": true, "lead": false}
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Philly Cheesesteak",
+   "url": "https://natashaskitchen.com/philly-cheesesteak/",
+   "rating": 4.97,
+   "rating_count": 755,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Philly Cheesesteaks",
+   "url": "https://www.onceuponachef.com/recipes/philly-cheesesteaks.html",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

@@ -56,9 +56,8 @@
   },
   {
    "item": "Olive oil",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "3 tbsp"
+   "qty": "3 tbsp",
+   "category": "pantry"
   },
   {
    "item": "Yellow onion",
@@ -91,11 +90,6 @@
    "category": "pantry"
   },
   {
-   "item": "Lemon",
-   "qty": "1",
-   "category": "produce"
-  },
-  {
    "item": "Crusty bread",
    "qty": "1 loaf",
    "category": "other"
@@ -112,7 +106,7 @@
   "Pour in the 2 cans of tomatoes with their juice, add the 2 bay leaves and the remaining 1/4 tsp salt, and scrape up the browned bits from the bottom of the pan. Bring it to a bubble, then turn the heat to medium low and simmer for 20 minutes, stirring now and then, until it has thickened a little.",
   "Nestle the meatballs into the sauce with any juices from the plate. Cover and simmer for 8 to 10 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one in half: it's done when there's no pink left.",
   "Take the pan off the heat, pull out the bay leaves and scatter over the rest of the parsley. Put the 1/2 tsp red pepper flakes in a small bowl for the table.",
-  "Taste the sauce. If it's flat, add salt first, then a squeeze of lemon.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
   "Serve with the crusty bread, with the red pepper flakes on the side.",
   "To freeze the leftovers, let them cool in their sauce, then pack them into a lidded container. They keep in the freezer for up to 3 months. Thaw them in the fridge overnight and warm them over low heat with a splash of water."
  ],

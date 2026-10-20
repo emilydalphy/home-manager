@@ -6,14 +6,47 @@
  "prep_time_minutes": 15,
  "cook_time_minutes": 25,
  "ingredients": [
-  {"item": "Eggs", "qty": "2", "category": "dairy"},
-  {"item": "All-purpose flour", "qty": "1/2 cup", "category": "pantry"},
-  {"item": "Milk", "qty": "1/4 cup", "category": "dairy"},
-  {"item": "Unsalted butter", "qty": "1 stick", "category": "dairy", "cook_qty": "4 tbsp"},
-  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup + 1/2 tsp"},
-  {"item": "Ground cinnamon", "qty": "1/2 tsp", "category": "pantry"},
-  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
-  {"item": "Vegetable oil", "qty": "6 cups", "category": "pantry"}
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 1/2 tsp"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 cups",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "Stir the 1/4 cup sugar and the 1/2 tsp cinnamon together in a shallow dish. Line a plate with paper towels and fit a piping bag with a large open star tip.",
@@ -34,8 +67,24 @@
  "advance_prep_step_indices": [],
  "method_notes": "Both versions cook a choux style dough of water, butter, sugar, salt and flour on the stove, beat in eggs, pipe it through a large star tip into hot oil and roll the churros in cinnamon sugar. Natasha's Kitchen (the lead) adds milk and more butter for a richer dough, fries at 350 to 370°F and flips them halfway. Jo Cooks uses water only, less butter and more sugar in the dough, fries at 375°F and serves them with a dark chocolate dipping sauce, left out here. This one is Natasha's recipe halved for four.",
  "sources": [
-  {"name": "Natasha's Kitchen", "title": "Churros Recipe", "url": "https://natashaskitchen.com/churros-recipe/", "rating": 4.9, "rating_count": 149, "read": true, "lead": true},
-  {"name": "Jo Cooks", "title": "Homemade Churros Recipe", "url": "https://www.jocooks.com/recipes/homemade-churros-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Churros Recipe",
+   "url": "https://natashaskitchen.com/churros-recipe/",
+   "rating": 4.9,
+   "rating_count": 149,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Homemade Churros Recipe",
+   "url": "https://www.jocooks.com/recipes/homemade-churros-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

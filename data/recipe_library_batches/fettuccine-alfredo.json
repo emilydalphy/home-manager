@@ -13,9 +13,8 @@
   },
   {
    "item": "Butter",
-   "qty": "1 package",
-   "category": "dairy",
-   "cook_qty": "4 tbsp"
+   "qty": "4 tbsp",
+   "category": "dairy"
   },
   {
    "item": "Shallot",

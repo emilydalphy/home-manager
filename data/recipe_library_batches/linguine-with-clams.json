@@ -6,17 +6,63 @@
  "prep_time_minutes": 15,
  "cook_time_minutes": 20,
  "ingredients": [
-  {"item": "Littleneck clams", "qty": "2 lb", "category": "meat/seafood"},
-  {"item": "Linguine", "qty": "1 lb", "category": "pantry"},
-  {"item": "Shallots", "qty": "2", "category": "produce"},
-  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
-  {"item": "Dry white wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 cup"},
-  {"item": "Olive oil", "qty": "6 tbsp", "category": "pantry"},
-  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "6 tbsp chopped"},
-  {"item": "Unsalted butter", "qty": "1 package", "category": "dairy", "cook_qty": "3 tbsp"},
-  {"item": "Lemon", "qty": "1", "category": "produce"},
-  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"},
-  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"}
+  {
+   "item": "Littleneck clams",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Linguine",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "6 tbsp chopped"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "Scrub the 2 lb clams under cold running water. Throw out any with cracked shells, and any open ones that don't close when you tap them.",
@@ -37,9 +83,33 @@
  "advance_prep_step_indices": [],
  "method_notes": "Once Upon a Chef (the lead, and the only version with 20 or more ratings) steams fresh littlenecks open in white wine over shallot, garlic and chili flakes, finishes the linguine in the pan, and adds butter, lemon zest and juice off the heat. Spend With Pennies makes it from three cans of chopped clams: it simmers the clam juice with wine, onion, celery and basil, then stirs the clams in for the last 2 to 3 minutes. Cooking My Dreams soaks fresh clams in salted water to purge the sand and lifts most of the shells out before serving. This one follows the lead and puts the chili flakes on the side. For a pantry night, three 6.5 oz cans of chopped clams can stand in: simmer their juice with the wine and add the clams at the very end.",
  "sources": [
-  {"name": "Once Upon a Chef", "title": "Linguine with Clams", "url": "https://www.onceuponachef.com/recipes/linguini-with-clams.html", "rating": 4.84, "rating_count": 242, "read": true, "lead": true},
-  {"name": "Spend With Pennies", "title": "Linguine with Clam Sauce", "url": "https://www.spendwithpennies.com/linguine-with-clam-sauce/", "rating": 4.6, "rating_count": 5, "read": true, "lead": false},
-  {"name": "Cooking My Dreams", "title": "Linguine alle Vongole (Pasta with Clams)", "url": "https://cookingmydreams.com/?p=14930", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+  {
+   "name": "Once Upon a Chef",
+   "title": "Linguine with Clams",
+   "url": "https://www.onceuponachef.com/recipes/linguini-with-clams.html",
+   "rating": 4.84,
+   "rating_count": 242,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Linguine with Clam Sauce",
+   "url": "https://www.spendwithpennies.com/linguine-with-clam-sauce/",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking My Dreams",
+   "title": "Linguine alle Vongole (Pasta with Clams)",
+   "url": "https://cookingmydreams.com/?p=14930",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

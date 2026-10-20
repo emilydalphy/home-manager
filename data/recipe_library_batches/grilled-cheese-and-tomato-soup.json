@@ -6,20 +6,82 @@
  "prep_time_minutes": 15,
  "cook_time_minutes": 40,
  "ingredients": [
-  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
-  {"item": "Yellow onion", "qty": "1", "category": "produce"},
-  {"item": "Carrots", "qty": "1 lb", "category": "produce", "cook_qty": "1 carrot"},
-  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "1 stalk"},
-  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
-  {"item": "Crushed tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
-  {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3 cups"},
-  {"item": "Unsalted butter", "qty": "1 package", "category": "dairy", "cook_qty": "9 tbsp"},
-  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
-  {"item": "Fresh chives", "qty": "1 package", "category": "produce"},
-  {"item": "Potato bread", "qty": "1 loaf", "category": "other", "cook_qty": "8 slices"},
-  {"item": "Sharp cheddar", "qty": "1 block (8 oz)", "category": "dairy", "cook_qty": "4 oz"},
-  {"item": "Gouda", "qty": "1 wedge (about 7 oz)", "category": "dairy", "cook_qty": "4 oz"}
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce",
+   "cook_qty": "1 carrot"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 stalk"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "9 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh chives",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Potato bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Sharp cheddar",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "4 oz"
+  },
+  {
+   "item": "Gouda",
+   "qty": "1 wedge (about 7 oz)",
+   "category": "dairy",
+   "cook_qty": "4 oz"
+  }
  ],
  "instructions": [
   "Roughly chop the onion, 1 carrot and 1 celery stalk. Mince the 2 garlic cloves.",
@@ -39,8 +101,24 @@
  "advance_prep_step_indices": [],
  "method_notes": "Both read versions build the soup on onion, celery and garlic softened in olive oil, then canned tomatoes and stock, and finish it with chives. Tasting Table browns carrot with the base, adds chile flakes, simmers it for 20 minutes, blends it smooth and stirs in butter at the end, then fries Comté and Gouda sandwiches on potato bread in butter under a weight. Cozymeal leaves its soup unblended with milk and cream, and spreads its Gruyère and cheddar sandwiches with Dijon. This one follows Tasting Table, leaves out the chile flakes, swaps the Comté for sharp cheddar and makes four sandwiches. Natasha's Kitchen has a very well rated tomato soup, but it isn't the pair, so only versions that make both were weighed for the lead.",
  "sources": [
-  {"name": "Tasting Table", "title": "Grilled Cheese and Tomato Soup Recipe", "url": "https://www.tastingtable.com/686813/tomato-soup-grilled-cheese-comte-gouda-hot-soups/", "rating": 4.7, "rating_count": 35, "read": true, "lead": true},
-  {"name": "Cozymeal", "title": "Grilled Cheese and Tomato Soup", "url": "https://cozymeal.com/recipes/r/grilled-cheese-and-tomato-soup", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+  {
+   "name": "Tasting Table",
+   "title": "Grilled Cheese and Tomato Soup Recipe",
+   "url": "https://www.tastingtable.com/686813/tomato-soup-grilled-cheese-comte-gouda-hot-soups/",
+   "rating": 4.7,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cozymeal",
+   "title": "Grilled Cheese and Tomato Soup",
+   "url": "https://cozymeal.com/recipes/r/grilled-cheese-and-tomato-soup",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

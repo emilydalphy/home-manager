@@ -6,29 +6,125 @@
  "prep_time_minutes": 25,
  "cook_time_minutes": 50,
  "ingredients": [
-  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lb", "category": "meat/seafood"},
-  {"item": "Greek yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1/2 cup"},
-  {"item": "Lemon", "qty": "1", "category": "produce"},
-  {"item": "Roma tomatoes", "qty": "6", "category": "produce"},
-  {"item": "Yellow onion", "qty": "1", "category": "produce"},
-  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
-  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce", "cook_qty": "4 tsp grated"},
-  {"item": "Raw cashews", "qty": "1/3 cup", "category": "pantry"},
-  {"item": "Unsalted butter", "qty": "1 stick", "category": "dairy", "cook_qty": "5 tbsp"},
-  {"item": "Heavy cream", "qty": "1 small carton (1 cup)", "category": "dairy", "cook_qty": "1/3 cup"},
-  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
-  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
-  {"item": "Cinnamon stick", "qty": "1", "category": "pantry"},
-  {"item": "Green cardamom pods", "qty": "3", "category": "pantry"},
-  {"item": "Whole cloves", "qty": "3", "category": "pantry"},
-  {"item": "Kashmiri chili powder", "qty": "1 3/4 tsp", "category": "pantry"},
-  {"item": "Garam masala", "qty": "2 tsp", "category": "pantry"},
-  {"item": "Ground coriander", "qty": "2 tsp", "category": "pantry"},
-  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Ground turmeric", "qty": "1/4 tsp", "category": "pantry"},
-  {"item": "Kasuri methi", "qty": "2 1/2 tsp", "category": "pantry"},
-  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
-  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"}
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce",
+   "cook_qty": "4 tsp grated"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "5 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 small carton (1 cup)",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "The night before, or at least 1 hour ahead: cut the chicken into 1 inch pieces and pat them dry with paper towels. Toss them in a large bowl with 1 tbsp juice squeezed from half the lemon, 3/4 tsp of the chili powder and 1/2 tsp of the salt, and leave them for 20 minutes.",
@@ -52,12 +148,39 @@
   "Serve with basmati rice or naan."
  ],
  "advance_prep_notes": "marinate the chicken overnight, the night before (at least 1 hour ahead)",
- "advance_prep_step_indices": [1, 2],
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
  "method_notes": "All three versions marinate chicken in yogurt and spices and finish it in a tomato sauce with cream. Swasthi's (the lead) marinates in two stages, blends fresh tomatoes with sauteed onion and soaked cashews, simmers the puree with whole spices in butter, and browns the chicken separately before it goes in. Cafe Delites browns the chicken first and blends onion, spices and crushed tomatoes in the same pan. RecipeTin Eats is the quickest, simmering the marinated chicken straight in passata and cream. This one follows Swasthi's method with a little more chicken.",
  "sources": [
-  {"name": "Swasthi's Recipes", "title": "Butter Chicken Recipe (Indian Chicken Makhani)", "url": "https://www.indianhealthyrecipes.com/butter-chicken/", "rating": 5.0, "rating_count": 1761, "read": true, "lead": true},
-  {"name": "RecipeTin Eats", "title": "Butter Chicken", "url": "https://www.recipetineats.com/butter-chicken/", "rating": 5.0, "rating_count": 1106, "read": true, "lead": false},
-  {"name": "Cafe Delites", "title": "Butter Chicken Recipe", "url": "https://cafedelites.com/butter-chicken/", "rating": 5.0, "rating_count": 590, "read": true, "lead": false}
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Butter Chicken Recipe (Indian Chicken Makhani)",
+   "url": "https://www.indianhealthyrecipes.com/butter-chicken/",
+   "rating": 5.0,
+   "rating_count": 1761,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Butter Chicken",
+   "url": "https://www.recipetineats.com/butter-chicken/",
+   "rating": 5.0,
+   "rating_count": 1106,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cafe Delites",
+   "title": "Butter Chicken Recipe",
+   "url": "https://cafedelites.com/butter-chicken/",
+   "rating": 5.0,
+   "rating_count": 590,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

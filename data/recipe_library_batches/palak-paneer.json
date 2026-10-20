@@ -6,24 +6,98 @@
  "prep_time_minutes": 20,
  "cook_time_minutes": 35,
  "ingredients": [
-  {"item": "Paneer", "qty": "1 block (12 oz)", "category": "dairy"},
-  {"item": "Baby spinach", "qty": "1 bag (10 oz)", "category": "produce"},
-  {"item": "Yellow onion", "qty": "1", "category": "produce"},
-  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
-  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
-  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "1 tsp grated"},
-  {"item": "Green chili", "qty": "1", "category": "produce"},
-  {"item": "Raw cashews", "qty": "1/4 cup", "category": "pantry"},
-  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
-  {"item": "Unsalted butter", "qty": "1 stick", "category": "dairy", "cook_qty": "2 tbsp"},
-  {"item": "Cumin seeds", "qty": "1/4 tsp", "category": "pantry"},
-  {"item": "Green cardamom pods", "qty": "2", "category": "pantry"},
-  {"item": "Whole cloves", "qty": "2", "category": "pantry"},
-  {"item": "Cinnamon stick", "qty": "1", "category": "pantry"},
-  {"item": "Garam masala", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Kasuri methi", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Heavy cream", "qty": "1 small carton (1 cup)", "category": "dairy", "cook_qty": "1/4 cup"},
-  {"item": "Salt", "qty": "1 tsp", "category": "pantry"}
+  {
+   "item": "Paneer",
+   "qty": "1 block (12 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (10 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 small carton (1 cup)",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "Rinse the spinach in a big bowl of cold water and lift it into a colander. Shake it well and leave it to drain while you chop. Wet spinach turns the curry watery.",
@@ -46,9 +120,33 @@
  "advance_prep_step_indices": [],
  "method_notes": "All three versions cook an onion, ginger, garlic and tomato masala and stir in a spinach puree and paneer at the end, finished with cream and kasuri methi. Swasthi's (the lead) sautes the spinach with cashews and green chilies before blending and blooms cinnamon, cardamom, cloves and cumin in butter first. Cook with Manali blanches the spinach and blends it raw with tomato, garlic and ginger, then adds turmeric, chili powder and a squeeze of lemon. RecipeTin Eats blends only half the spinach and pan fries the paneer until golden. This one follows Swasthi's method with a little more spinach, browns the paneer the RecipeTin way, and moves the green chili to the table to keep the pot mild.",
  "sources": [
-  {"name": "Swasthi's Recipes", "title": "Palak Paneer Recipe (Spinach Paneer)", "url": "https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/", "rating": 5.0, "rating_count": 1537, "read": true, "lead": true},
-  {"name": "Cook with Manali", "title": "Palak Paneer Recipe (From Scratch)", "url": "https://www.cookwithmanali.com/palak-paneer/", "rating": 4.9, "rating_count": 223, "read": true, "lead": false},
-  {"name": "RecipeTin Eats", "title": "Palak Paneer", "url": "https://www.recipetineats.com/palak-paneer/", "rating": 4.9, "rating_count": 49, "read": true, "lead": false}
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Palak Paneer Recipe (Spinach Paneer)",
+   "url": "https://www.indianhealthyrecipes.com/palak-paneer-recipe-easy-paneer-recipes-step-by-step-pics/",
+   "rating": 5.0,
+   "rating_count": 1537,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Palak Paneer Recipe (From Scratch)",
+   "url": "https://www.cookwithmanali.com/palak-paneer/",
+   "rating": 4.9,
+   "rating_count": 223,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Palak Paneer",
+   "url": "https://www.recipetineats.com/palak-paneer/",
+   "rating": 4.9,
+   "rating_count": 49,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

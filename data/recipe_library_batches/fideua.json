@@ -59,9 +59,8 @@
   },
   {
    "item": "Olive oil",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "5 tbsp"
+   "qty": "5 tbsp",
+   "category": "pantry"
   },
   {
    "item": "Salt",

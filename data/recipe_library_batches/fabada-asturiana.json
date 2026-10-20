@@ -53,20 +53,14 @@
   },
   {
    "item": "Olive oil",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "1/4 cup"
+   "qty": "1/4 cup",
+   "category": "pantry"
   },
   {
    "item": "Salt",
    "qty": "1 box",
    "category": "pantry",
    "cook_qty": "1/2 tsp"
-  },
-  {
-   "item": "Lemon",
-   "qty": "1",
-   "category": "produce"
   },
   {
    "item": "Crusty bread",
@@ -86,7 +80,7 @@
   "Lift the chorizo, morcilla and bacon out onto a board and cut them into thick slices.",
   "If the broth looks thin, scoop out about 1/2 cup of the beans, mash them with a fork and stir them back in. Stir in the 1/2 tsp salt.",
   "Put the sliced meat back in the pot, take it off the heat, cover it and leave it to sit for 20 minutes.",
-  "Taste it. If it's flat, add salt first, then a squeeze of lemon.",
+  "Taste it. If it's flat, add a pinch more salt.",
   "Ladle the beans into bowls, top each with the chorizo, morcilla and bacon, and serve with the crusty bread."
  ],
  "advance_prep_notes": "Soak the beans overnight, the night before.",

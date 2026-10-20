@@ -6,26 +6,109 @@
  "prep_time_minutes": 20,
  "cook_time_minutes": 35,
  "ingredients": [
-  {"item": "Russet potatoes", "qty": "2", "category": "produce"},
-  {"item": "Carrot", "qty": "1", "category": "produce"},
-  {"item": "Cauliflower", "qty": "1 head", "category": "produce"},
-  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "3/4 cup"},
-  {"item": "Yellow onions", "qty": "2", "category": "produce"},
-  {"item": "Green bell pepper", "qty": "1", "category": "produce"},
-  {"item": "Tomatoes", "qty": "2", "category": "produce"},
-  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
-  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
-  {"item": "Green chili", "qty": "1", "category": "produce"},
-  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
-  {"item": "Lemon", "qty": "1", "category": "produce"},
-  {"item": "Unsalted butter", "qty": "1 stick", "category": "dairy", "cook_qty": "6 tbsp"},
-  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
-  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Kashmiri chili powder", "qty": "1 1/2 tsp", "category": "pantry"},
-  {"item": "Ground turmeric", "qty": "1/4 tsp", "category": "pantry"},
-  {"item": "Pav bhaji masala", "qty": "1 1/2 tbsp", "category": "pantry"},
-  {"item": "Kasuri methi", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
-  {"item": "Soft dinner rolls", "qty": "8", "category": "other"}
+  {
+   "item": "Russet potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pav bhaji masala",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Soft dinner rolls",
+   "qty": "8",
+   "category": "other"
+  }
  ],
  "instructions": [
   "Peel the 2 potatoes and cut them into 1 inch cubes. Peel and slice the carrot. Cut 2 cups of small florets from the cauliflower.",
@@ -47,8 +130,24 @@
  "advance_prep_step_indices": [],
  "method_notes": "Both boil potatoes, cauliflower, peas and carrot or green pepper until very soft and mash them into a masala of onion, ginger, garlic and tomato cooked in butter and oil with Kashmiri chili, turmeric and pav bhaji masala, finish with kasuri methi, cilantro, lemon and more butter, and toast the rolls in butter with a sprinkle of the masala. Swasthi's cooks the bell pepper into the masala, uses about 1 1/2 tbsp masala and simmers only 3 to 5 minutes once the vegetables go in. Cook with Manali starts with cumin seeds, adds tomato puree and a little hot chili powder, uses more garlic and simmers the bhaji 15 minutes. This one follows Swasthi's, boils the vegetables in a pot rather than a pressure cooker and keeps the green chili on the side.",
  "sources": [
-  {"name": "Swasthi's Recipes", "title": "Pav Bhaji Recipe (Mumbai Street Style)", "url": "https://www.indianhealthyrecipes.com/pav-bhaji-recipe-how-to-make-pav-bhaji-step-by-step-pictures/", "rating": 4.99, "rating_count": 748, "read": true, "lead": true},
-  {"name": "Cook with Manali", "title": "Pav Bhaji Recipe (Mumbai Style)", "url": "https://www.cookwithmanali.com/pav-bhaji/", "rating": 4.89, "rating_count": 53, "read": true, "lead": false}
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Pav Bhaji Recipe (Mumbai Street Style)",
+   "url": "https://www.indianhealthyrecipes.com/pav-bhaji-recipe-how-to-make-pav-bhaji-step-by-step-pictures/",
+   "rating": 4.99,
+   "rating_count": 748,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Pav Bhaji Recipe (Mumbai Style)",
+   "url": "https://www.cookwithmanali.com/pav-bhaji/",
+   "rating": 4.89,
+   "rating_count": 53,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

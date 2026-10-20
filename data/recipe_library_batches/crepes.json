@@ -6,14 +6,47 @@
  "prep_time_minutes": 15,
  "cook_time_minutes": 25,
  "ingredients": [
-  {"item": "All-purpose flour", "qty": "1 2/3 cups", "category": "pantry"},
-  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp + 1/4 cup"},
-  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
-  {"item": "Eggs", "qty": "3", "category": "dairy"},
-  {"item": "Milk", "qty": "2 cups", "category": "dairy"},
-  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
-  {"item": "Butter", "qty": "1 package", "category": "dairy", "cook_qty": "3 tbsp"},
-  {"item": "Lemons", "qty": "1", "category": "produce"}
+  {
+   "item": "All-purpose flour",
+   "qty": "1 2/3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp + 1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  }
  ],
  "instructions": [
   "The night before, or at least 1 hour ahead: whisk the 1 2/3 cups flour, 3 tbsp of the sugar and the 1/4 tsp salt together in a large bowl.",
@@ -30,12 +63,41 @@
   "Fold the crepes into quarters or roll them up, and serve warm with the lemon wedges and sugar. Stack any leftovers with parchment between them and keep them in the fridge for up to 3 days."
  ],
  "advance_prep_notes": "Make the batter the night before, or at least 1 hour ahead, so it can rest.",
- "advance_prep_step_indices": [1, 2, 3, 4],
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
  "method_notes": "All three make a thin batter of flour, eggs, milk, a little sugar and salt plus fat, and cook about 1/4 cup at a time in a lightly buttered nonstick pan, swirled thin, about a minute on the first side and under 30 seconds on the second. RecipeTin Eats (JB's crêpes) whisks it by hand with water and oil and rests it 1 hour or overnight; Once Upon a Chef blends it with melted butter and vanilla and rests it 30 minutes to 24 hours; Natasha's Kitchen blends it and skips the rest. Lemon and sugar is the plain French way to serve them. For savory fillings like ham and cheese, cut the sugar in the batter to 1 tbsp.",
  "sources": [
-  {"name": "RecipeTin Eats", "title": "JB's Crêpes", "url": "https://www.recipetineats.com/crepes/", "rating": 5.0, "rating_count": 47, "read": true, "lead": true},
-  {"name": "Natasha's Kitchen", "title": "Crepes with Greek Yogurt Cream", "url": "https://natashaskitchen.com/crepes/", "rating": 5.0, "rating_count": 25, "read": true, "lead": false},
-  {"name": "Once Upon a Chef", "title": "Crepes", "url": "https://www.onceuponachef.com/recipes/crepes.html", "rating": 5.0, "rating_count": 23, "read": true, "lead": false}
+  {
+   "name": "RecipeTin Eats",
+   "title": "JB's Crêpes",
+   "url": "https://www.recipetineats.com/crepes/",
+   "rating": 5.0,
+   "rating_count": 47,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Crepes with Greek Yogurt Cream",
+   "url": "https://natashaskitchen.com/crepes/",
+   "rating": 5.0,
+   "rating_count": 25,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Crepes",
+   "url": "https://www.onceuponachef.com/recipes/crepes.html",
+   "rating": 5.0,
+   "rating_count": 23,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

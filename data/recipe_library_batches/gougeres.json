@@ -2,7 +2,7 @@
  "dish_name": "Gougeres",
  "cuisine": "French",
  "main_protein": "cheese",
- "default_servings": 4,
+ "default_servings": 7,
  "prep_time_minutes": 25,
  "cook_time_minutes": 32,
  "ingredients": [
@@ -13,9 +13,8 @@
   },
   {
    "item": "Unsalted butter",
-   "qty": "1 package",
-   "category": "dairy",
-   "cook_qty": "1/2 cup"
+   "qty": "1/2 cup",
+   "category": "dairy"
   },
   {
    "item": "Salt",
@@ -58,7 +57,7 @@
   "If you're freezing some, put one sheet straight into the freezer. Once the mounds are hard, after about 1 hour, pack them into a freezer bag.",
   "Slide the other sheet into the oven and turn the heat down to 375°F right away. Bake for 15 minutes, then turn the sheet front to back.",
   "Bake for another 15 to 17 minutes, until they're puffed, deep golden and firm enough to pick up. Keep the oven door shut until the first 15 minutes are up, or they can sink.",
-  "Serve them warm, straight from the oven. To bake the frozen ones, put them on a lined sheet straight from the freezer and bake them the same way, giving them a few minutes longer, until they're puffed and golden."
+  "Serve them warm, straight from the oven. To bake the frozen ones, put them on a lined sheet straight from the freezer and bake them the same way, giving them a few minutes longer, until they're puffed and golden. This makes about 28 puffs."
  ],
  "advance_prep_notes": "",
  "advance_prep_step_indices": [],

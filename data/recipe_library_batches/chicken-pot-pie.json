@@ -6,21 +6,86 @@
  "prep_time_minutes": 20,
  "cook_time_minutes": 75,
  "ingredients": [
-  {"item": "Cooked chicken", "qty": "3 cups", "category": "meat/seafood"},
-  {"item": "Refrigerated pie crusts", "qty": "1 package (2 crusts)", "category": "dairy"},
-  {"item": "Unsalted butter", "qty": "1 stick", "category": "dairy", "cook_qty": "4 tbsp"},
-  {"item": "Yellow onion", "qty": "1", "category": "produce"},
-  {"item": "Carrots", "qty": "2", "category": "produce"},
-  {"item": "White mushrooms", "qty": "8 oz", "category": "produce"},
-  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
-  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"},
-  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
-  {"item": "Heavy cream", "qty": "1 carton (8 oz)", "category": "dairy", "cook_qty": "1/3 cup"},
-  {"item": "Frozen peas", "qty": "1 bag (10 oz)", "category": "frozen", "cook_qty": "3/4 cup"},
-  {"item": "Parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "3 tbsp chopped"},
-  {"item": "Eggs", "qty": "1", "category": "dairy"},
-  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"}
+  {
+   "item": "Cooked chicken",
+   "qty": "3 cups",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Refrigerated pie crusts",
+   "qty": "1 package (2 crusts)",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "White mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag (10 oz)",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "Heat the oven to 425°F. Take the pie crusts out of the fridge so they soften while you make the filling.",
@@ -42,8 +107,24 @@
  "advance_prep_step_indices": [],
  "method_notes": "Natasha's Kitchen leads: soften onion and carrots in butter, add mushrooms and garlic, cook flour into it, then stock and cream to a thick gravy before the chicken, frozen peas and parsley go in, all under a double crust baked at 425°F and rested 15 minutes. RecipeTin Eats poaches raw chicken in milk and broth and uses that liquid for the sauce, adds celery, wine and Parmesan, and tops individual pots with puff pastry at 350°F. This one cuts Natasha's deep-dish pie for 8 down to a standard 9-inch pie for 4, uses leftover cooked chicken and store-bought crusts in place of her homemade dough, and swaps her fine sea salt one for one with table salt.",
  "sources": [
-  {"name": "Natasha's Kitchen", "title": "Chicken Pot Pie", "url": "https://natashaskitchen.com/chicken-pot-pie-recipe/", "rating": 4.99, "rating_count": 1916, "read": true, "lead": true},
-  {"name": "RecipeTin Eats", "title": "Chicken Pot Pie", "url": "https://www.recipetineats.com/chicken-pot-pie/", "rating": 4.93, "rating_count": 179, "read": true, "lead": false}
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Chicken Pot Pie",
+   "url": "https://natashaskitchen.com/chicken-pot-pie-recipe/",
+   "rating": 4.99,
+   "rating_count": 1916,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chicken Pot Pie",
+   "url": "https://www.recipetineats.com/chicken-pot-pie/",
+   "rating": 4.93,
+   "rating_count": 179,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

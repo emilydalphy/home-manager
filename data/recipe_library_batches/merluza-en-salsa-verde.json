@@ -41,9 +41,8 @@
   },
   {
    "item": "Olive oil",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "1/4 cup"
+   "qty": "1/4 cup",
+   "category": "pantry"
   },
   {
    "item": "Lemon",

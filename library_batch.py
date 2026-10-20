@@ -93,8 +93,11 @@ def check_one(path: Path) -> list[str]:
         return problems
     if path.stem != dish_key(e["dish_name"]):
         problems.append(f"file should be named {dish_key(e['dish_name'])}.json")
-    if int(e["default_servings"]) != SERVES:
-        problems.append(f"default_servings must be {SERVES}")
+    # A whole batch (a cake, a tray of puffs) keeps what it really makes and
+    # says so in a step ("This makes 8 slices."); everything else is for 4.
+    batch = any("This makes" in s for s in e.get("instructions") or [])
+    if int(e["default_servings"]) != SERVES and not batch:
+        problems.append(f"default_servings must be {SERVES} (or a step saying \"This makes ...\" for a whole batch)")
     srcs = e["sources"]
     if not any(s.get("url") for s in srcs):
         problems.append("no source with a url")

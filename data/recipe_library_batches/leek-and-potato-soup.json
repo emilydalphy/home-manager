@@ -6,16 +6,59 @@
  "prep_time_minutes": 15,
  "cook_time_minutes": 35,
  "ingredients": [
-  {"item": "Leeks", "qty": "3", "category": "produce"},
-  {"item": "Russet potatoes", "qty": "1.5 lb", "category": "produce"},
-  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
-  {"item": "Butter", "qty": "1 package", "category": "dairy", "cook_qty": "3 tbsp"},
-  {"item": "Vegetable broth", "qty": "1 carton (48 oz)", "category": "pantry", "cook_qty": "5 cups"},
-  {"item": "Heavy cream", "qty": "1 carton (8 oz)", "category": "dairy", "cook_qty": "2/3 cup"},
-  {"item": "Crusty bread", "qty": "1 loaf", "category": "other", "cook_qty": "2 thick slices"},
-  {"item": "Chives", "qty": "1 bunch", "category": "produce"},
-  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+  {
+   "item": "Leeks",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "1.5 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (48 oz)",
+   "category": "pantry",
+   "cook_qty": "5 cups"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "2 thick slices"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "Heat the oven to 350°F for the croutons.",
@@ -35,9 +78,33 @@
  "advance_prep_step_indices": [],
  "method_notes": "All three soften the leeks in butter without browning, simmer them with potatoes in about 6 cups of stock until the potatoes fall apart, blend it smooth and stir in cream at the end with chives on top. RecipeTin Eats cooks the garlic with the leeks, simmers 25 minutes, warns that over-blending makes it gluey and adds buttered croutons; Love and Lemons uses unpeeled Yukon Golds, a thyme bundle and a homemade leek-top broth with an optional squeeze of lemon; Once Upon a Chef adds bay and thyme and simmers only 15 minutes. This follows the lead with vegetable broth, and the garlic goes in after the leeks so it doesn't burn.",
  "sources": [
-  {"name": "RecipeTin Eats", "title": "Leek and Potato Soup", "url": "https://www.recipetineats.com/leek-and-potato-soup/", "rating": 4.98, "rating_count": 151, "read": true, "lead": true},
-  {"name": "Love and Lemons", "title": "Potato Leek Soup", "url": "https://www.loveandlemons.com/potato-leek-soup/", "rating": 4.91, "rating_count": 193, "read": true, "lead": false},
-  {"name": "Once Upon a Chef", "title": "Potato Leek Soup (Extra Creamy)", "url": "https://www.onceuponachef.com/recipes/potato-leek-soup.html", "rating": 4.84, "rating_count": 1229, "read": true, "lead": false}
+  {
+   "name": "RecipeTin Eats",
+   "title": "Leek and Potato Soup",
+   "url": "https://www.recipetineats.com/leek-and-potato-soup/",
+   "rating": 4.98,
+   "rating_count": 151,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Potato Leek Soup",
+   "url": "https://www.loveandlemons.com/potato-leek-soup/",
+   "rating": 4.91,
+   "rating_count": 193,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Potato Leek Soup (Extra Creamy)",
+   "url": "https://www.onceuponachef.com/recipes/potato-leek-soup.html",
+   "rating": 4.84,
+   "rating_count": 1229,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

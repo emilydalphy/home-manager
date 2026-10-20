@@ -6,22 +6,92 @@
  "prep_time_minutes": 40,
  "cook_time_minutes": 30,
  "ingredients": [
-  {"item": "Phyllo dough", "qty": "1 box (1 lb)", "category": "frozen", "cook_qty": "16 sheets"},
-  {"item": "Baby spinach", "qty": "1 bag (10 oz)", "category": "produce"},
-  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
-  {"item": "Feta cheese", "qty": "6 oz", "category": "dairy"},
-  {"item": "Greek yogurt", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
-  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
-  {"item": "Fresh mint", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
-  {"item": "Fresh dill", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tbsp chopped"},
-  {"item": "Lemon", "qty": "1", "category": "produce"},
-  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
-  {"item": "Ground nutmeg", "qty": "1/2 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
-  {"item": "Eggs", "qty": "1", "category": "dairy"},
-  {"item": "Unsalted butter", "qty": "1 package", "category": "dairy", "cook_qty": "8 tbsp"},
-  {"item": "Parmesan", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "2/3 cup grated"},
-  {"item": "Sesame seeds", "qty": "1 tsp", "category": "pantry"}
+  {
+   "item": "Phyllo dough",
+   "qty": "1 box (1 lb)",
+   "category": "frozen",
+   "cook_qty": "16 sheets"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (10 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "8 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (4 oz)",
+   "category": "dairy",
+   "cook_qty": "2/3 cup grated"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "The night before, move the box of phyllo from the freezer to the fridge to thaw.",
@@ -44,11 +114,29 @@
   "Serve it hot, straight from the oven."
  ],
  "advance_prep_notes": "Thaw the phyllo in the fridge overnight, the night before.",
- "advance_prep_step_indices": [1],
+ "advance_prep_step_indices": [
+  1
+ ],
  "method_notes": "Both versions fill layered phyllo with spinach, feta, green onions and herbs bound with egg. RecipeTin Eats salts raw spinach to sweat it, wrings it dry and adds Greek yogurt, mint, dill, lemon, garlic and nutmeg, then builds a free-form pie on a tray with buttered sheets and kefalotyri scattered between the top layers. Dimitras Dishes uses ricotta as well as feta, brushes with olive oil instead of butter, crumples the top sheets and bakes a big tray for an hour at a lower heat. This one follows RecipeTin Eats at 4 servings, with parmesan in place of kefalotyri.",
  "sources": [
-  {"name": "RecipeTin Eats", "title": "Spanakopita", "url": "https://www.recipetineats.com/spanakopita-greek-spinach-pie/", "rating": 4.93, "rating_count": 84, "read": true, "lead": true},
-  {"name": "Dimitras Dishes", "title": "Greek Spinach Pie: Spanakopita", "url": "https://www.dimitrasdishes.com/greek-spinach-pie-entree-serving-spanakopita/", "rating": 4.4, "rating_count": 185, "read": true, "lead": false}
+  {
+   "name": "RecipeTin Eats",
+   "title": "Spanakopita",
+   "url": "https://www.recipetineats.com/spanakopita-greek-spinach-pie/",
+   "rating": 4.93,
+   "rating_count": 84,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitras Dishes",
+   "title": "Greek Spinach Pie: Spanakopita",
+   "url": "https://www.dimitrasdishes.com/greek-spinach-pie-entree-serving-spanakopita/",
+   "rating": 4.4,
+   "rating_count": 185,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

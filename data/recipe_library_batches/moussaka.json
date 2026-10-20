@@ -87,9 +87,8 @@
   },
   {
    "item": "Butter",
-   "qty": "1 package",
-   "category": "dairy",
-   "cook_qty": "3 tbsp"
+   "qty": "3 tbsp",
+   "category": "dairy"
   },
   {
    "item": "All-purpose flour",

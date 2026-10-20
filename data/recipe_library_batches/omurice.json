@@ -45,9 +45,8 @@
   },
   {
    "item": "Unsalted butter",
-   "qty": "1 lb",
-   "category": "dairy",
-   "cook_qty": "5 tbsp"
+   "qty": "5 tbsp",
+   "category": "dairy"
   },
   {
    "item": "Salt",
@@ -79,7 +78,9 @@
   "Squeeze a line of ketchup over each one and serve with a green salad."
  ],
  "advance_prep_notes": "Cook the rice the night before, or use leftover rice.",
- "advance_prep_step_indices": [1],
+ "advance_prep_step_indices": [
+  1
+ ],
  "method_notes": "All the read versions soften onion in butter, cook small pieces of chicken, cook the ketchup in the pan before the rice goes in, and wrap one portion of ketchup rice at a time in a thin, soft omelette. Just One Cookbook and RecipeTin Japan add Worcestershire to the ketchup, and Just One Cookbook strains the eggs and stirs them into soft custardy curds before folding them around the rice. Chopstick Chronicles adds carrot and peas and drapes a flat omelette over the rice. This one follows Just One Cookbook with day-old rice, peas and a stirred omelette for each plate.",
  "sources": [
   {

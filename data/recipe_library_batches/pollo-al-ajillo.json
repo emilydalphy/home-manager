@@ -17,9 +17,8 @@
   },
   {
    "item": "Olive oil",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "3 tbsp"
+   "qty": "3 tbsp",
+   "category": "pantry"
   },
   {
    "item": "Dry white wine",

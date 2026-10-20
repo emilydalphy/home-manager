@@ -8,9 +8,8 @@
  "ingredients": [
   {
    "item": "Butter",
-   "qty": "1 package",
-   "category": "dairy",
-   "cook_qty": "1 tbsp"
+   "qty": "1 tbsp",
+   "category": "dairy"
   },
   {
    "item": "Yellow onion",

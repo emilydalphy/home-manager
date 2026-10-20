@@ -6,11 +6,31 @@
  "prep_time_minutes": 5,
  "cook_time_minutes": 15,
  "ingredients": [
-  {"item": "Eggs", "qty": "12", "category": "dairy"},
-  {"item": "Butter", "qty": "1 package", "category": "dairy", "cook_qty": "8 tsp"},
-  {"item": "Chives", "qty": "1 bunch", "category": "produce"},
-  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
-  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"}
+  {
+   "item": "Eggs",
+   "qty": "12",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "8 tsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "Set the 12 eggs on the counter about 20 minutes before you start. Fridge-cold eggs brown underneath before the top sets.",
@@ -29,9 +49,33 @@
  "advance_prep_step_indices": [],
  "method_notes": "Both French versions keep it to eggs, butter and salt in a small nonstick pan over gentle heat, stirring to soft curds before the omelette is rolled and turned out seam side down with a little butter on top, pale with no browning. Not Quite Nigella sieves the eggs, adds chives and white pepper, and covers the pan for under a minute to set the top; Le Cordon Bleu uses clarified butter, folds it with a fork and shapes it into a torpedo under a towel. RecipeTin Eats' omelette is a softer folded, cheese-filled style with cream in the eggs, so this follows the lead's rolled method. Written as four 3-egg omelettes made one after another.",
  "sources": [
-  {"name": "Not Quite Nigella", "title": "French Omelette Recipe", "url": "https://www.notquitenigella.com/2025/09/21/french-omelette-recipe/", "rating": 5.0, "rating_count": 62, "read": true, "lead": true},
-  {"name": "RecipeTin Eats", "title": "Omelette", "url": "https://www.recipetineats.com/omelette/", "rating": 4.98, "rating_count": 48, "read": true, "lead": false},
-  {"name": "Le Cordon Bleu", "title": "Classic Omelette", "url": "https://www.cordonbleu.edu/news/classic-omelette-recipe/en", "rating": null, "rating_count": null, "read": true, "lead": false}
+  {
+   "name": "Not Quite Nigella",
+   "title": "French Omelette Recipe",
+   "url": "https://www.notquitenigella.com/2025/09/21/french-omelette-recipe/",
+   "rating": 5.0,
+   "rating_count": 62,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Omelette",
+   "url": "https://www.recipetineats.com/omelette/",
+   "rating": 4.98,
+   "rating_count": 48,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Le Cordon Bleu",
+   "title": "Classic Omelette",
+   "url": "https://www.cordonbleu.edu/news/classic-omelette-recipe/en",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"
