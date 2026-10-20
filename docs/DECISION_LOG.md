@@ -20,6 +20,13 @@ why*, not duplicating the diff.
   On a plan longer than 7 days it now opens the card only with two days or
   fewer left (same rule as `_attention_moves_on`); 7-day and shorter plans
   unchanged.
+- **A note-only answer to "How did it go?" counts as answered**
+  (2026-10-20, Emily's call; branch `fix/note-only-answer-counts`; tests
+  `tests/test_feedback_nudge_note_only.py`). `get_feedback_nudge` (Kitchen,
+  chat, morning text) now also stops on a non-blank `recipes.feedback_notes`
+  or a `recipe_notes` feedback row for that dish. Per-person notes ride on
+  `member_recipe_feedback` rows, whose rating is NOT NULL, so they already
+  counted; deviation notes (what changed) are not an answer.
 
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
