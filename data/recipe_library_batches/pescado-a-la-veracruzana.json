@@ -1,0 +1,141 @@
+{
+ "dish_name": "Pescado a la Veracruzana",
+ "cuisine": "Mexican",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Pitted green olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Mexican oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried marjoram",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Serrano pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Get the rice going first. Rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and 1/2 tsp of the salt and bring it to a boil. Cover, turn the heat to low and cook for 18 minutes, then take it off the heat and leave the lid on.",
+  "Heat the oven to 400°F.",
+  "Meanwhile, chop the onion and mince the 4 garlic cloves. Dice the 3 tomatoes. Cut 1/2 cup of the olives in half and drain 1/3 cup of the capers.",
+  "Pat the 1.5 lb cod fillets dry with paper towels. Cut them into 4 pieces and season both sides with 1/2 tsp of the salt and the 1/4 tsp pepper.",
+  "Heat 1 tbsp of the oil in a large oven-safe skillet over medium-high until it shimmers. Lay the fish in, rounded side down, and leave it for 2 to 3 minutes, until the underside is golden and lets go of the pan. Move it to a plate, browned side up. It's still raw in the middle, and that's fine.",
+  "Turn the heat to medium and add the remaining 2 tbsp oil and the onion. Cook for about 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the garlic and stir for 30 seconds, until you can smell it.",
+  "Add the tomatoes, olives, capers, 1/2 tsp oregano, 1/4 tsp marjoram, the bay leaf and the last 1/2 tsp salt. Simmer for 10 to 12 minutes, stirring now and then, until the tomatoes have broken down into a chunky sauce. If it starts to look dry, add a splash of water.",
+  "While it simmers, thinly slice the serrano and put it in a small bowl for the table. Cut the lime into wedges and chop about 2 tbsp of the cilantro.",
+  "Nestle the fish into the sauce, browned side up, and spoon a little sauce around it. Put the skillet in the oven for 8 to 10 minutes. The fish is done when the thickest piece flakes easily with a fork and is white all the way through.",
+  "Use an oven mitt to take the skillet out. The handle stays hot for a while. Pull out the bay leaf and scatter the chopped cilantro over the top.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Fluff the rice with a fork. Serve the fish and sauce over the rice, with the lime wedges and the sliced serrano on the side."
+ ],
+ "method_notes": "All three cook onion and garlic in olive oil, then simmer tomatoes with green olives, capers, oregano and bay into a chunky sauce for white fish. Norecipes uses fresh tomatoes, a serrano, Mexican oregano and marjoram, sears the fish hard in cast iron and spoons the sauce over. Mama Latina Tips marinates the fish in lime first, adds bell peppers and crushed tomatoes and finishes the browned fish in the sauce, while Food.com bakes the fish in the sauce at 425°F. This one follows Norecipes's sauce, browns the fish on one side, then bakes it in the sauce as the dish's name promises, with the serrano on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Mexican) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Norecipes",
+   "title": "Fish Veracruz (Pescado Veracruzana)",
+   "url": "https://norecipes.com/fish-veracruz-recipe-pescado-veracruzana/",
+   "rating": 4.8,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mama Latina Tips",
+   "title": "Fish Veracruz",
+   "url": "https://www.mamalatinatips.com/fish-veracruz/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Red Snapper Veracruz",
+   "url": "https://www.food.com/recipe/red-snapper-veracruz-59105",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

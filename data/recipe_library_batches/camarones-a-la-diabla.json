@@ -1,0 +1,133 @@
+{
+ "dish_name": "Camarones a la Diabla",
+ "cuisine": "Mexican",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried guajillo chiles",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Dried chiles de árbol",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Chipotle peppers in adobo",
+   "qty": "1 can (7 oz)",
+   "category": "pantry",
+   "cook_qty": "1 pepper + 1 tbsp sauce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pull the stems off the 3 guajillo chiles and shake out the seeds. Put them in a small saucepan with 1 cup water and bring it to a boil over medium. Turn the heat to low and simmer for 10 minutes, until the chiles are soft and floppy.",
+  "Meanwhile, set a large skillet over medium with nothing in it. Toast the 4 chiles de árbol for 30 to 60 seconds, turning them, until they darken a shade and smell toasty. Take them out before they blacken. Stand back a little, as the smoke can make you cough.",
+  "Let the árbol chiles cool on a plate, then crumble them into a small bowl for the table.",
+  "Peel the onion and cut it into quarters. Peel the 4 garlic cloves.",
+  "Pat the 1 1/2 lbs shrimp dry with paper towels and toss them with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Put the guajillos and their cooking water in a blender with the onion, garlic, 1 chipotle and 1 tbsp of the adobo sauce, the 1/2 tsp cumin, the remaining 1/2 tsp salt and the last 1/4 tsp pepper. Blend for about a minute, until it's completely smooth. Add a splash of water if the blades won't catch.",
+  "Heat 1 tbsp of the oil in the skillet over medium-high until it shimmers. Add half the shrimp in one layer and cook for 1 minute, until they're pink underneath. Flip them and cook the other side for 30 seconds, then move them to a plate. They'll finish in the sauce.",
+  "Add another 1 tbsp oil and cook the rest of the shrimp the same way.",
+  "Turn the heat to medium and add the last 1 tbsp oil. Pour in the chile purée. Stand back, as it will spatter. Cook it for 3 minutes, stirring, until it turns a shade darker and thickens.",
+  "Stir in the can of tomato sauce and simmer for 5 minutes, until the sauce coats the back of a spoon.",
+  "While it simmers, wrap the 8 tortillas in a damp kitchen towel and microwave them for 1 minute. Cut the lime into wedges and chop about 1/4 cup of the cilantro.",
+  "Put the shrimp and their juices back in the pan and simmer for 2 minutes, until they're pink and opaque all the way through and curled into a loose C. Don't let them go longer, or they'll turn rubbery.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Scatter the chopped cilantro over the shrimp. Serve with the warm tortillas, the lime wedges and the crumbled chiles de árbol on the side."
+ ],
+ "method_notes": "All three blend dried red chiles with garlic and onion into a sauce and finish the shrimp in it for a few minutes. Tasting Table softens guajillo and árbol chiles in water, blends them with raw onion, garlic, chipotle in adobo and cumin, then simmers the purée with tomato sauce and the shrimp. Maricruz Avalos boils fresh tomatoes and soaks the chiles in that water, and cooks the shrimp in butter; Billy Parisi roasts tomatoes, onion and three kinds of chile in the oven and finishes with lime. This one follows Tasting Table's sauce with a little less chipotle, sears the shrimp first so they don't overcook, and puts the toasted árbol chiles on the side so each person sets their own heat.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Camarones a la Diabla (Mexican Shrimp in Red Sauce) Recipe",
+   "url": "https://www.tastingtable.com/1602134/camarones-a-la-diabla-mexican-shrimp-in-red-sauce-recipe/",
+   "rating": 4.9,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Mexican Camarones a la Diabla",
+   "url": "https://www.maricruzavalos.com/camarones-a-la-diabla/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Billy Parisi",
+   "title": "Camarones a la Diabla Recipe (Deviled Shrimp)",
+   "url": "https://billyparisi.com/camarones-a-la-diabla-recipe-deviled-shrimp/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
