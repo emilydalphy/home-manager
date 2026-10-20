@@ -1,0 +1,133 @@
+{
+ "dish_name": "Kerala Egg Roast",
+ "cuisine": "Indian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Red onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Green chili",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 8 eggs in a saucepan and cover them with cold water by about an inch. Bring it to a boil over high heat, then turn off the heat, put the lid on and leave them for 10 minutes.",
+  "Meanwhile, slice the 3 onions as thinly as you can. Finely chop the ginger, crush the 6 garlic cloves with the side of your knife and chop the 4 tomatoes.",
+  "Thinly slice the 2 green chilies into a small bowl for the table.",
+  "Transfer the eggs into a bowl of cold water and leave them for 5 minutes. Peel them, then cut 3 or 4 shallow slits down the sides of each egg with a small knife.",
+  "Heat 2 tbsp of the coconut oil in a wide, heavy pan over medium heat. Add the 1 tsp mustard seeds. Within about 30 seconds they'll start to pop. Stand back a little.",
+  "Add the onions, ginger and garlic with 1/2 tsp of the salt. Cook for 12 to 15 minutes, stirring often, until the onions are soft and deep golden. Don't rush the onions. They're most of the masala.",
+  "Turn the heat to low. Add the 2 sprigs of curry leaves, the 1/4 tsp turmeric, 1 tsp Kashmiri chili powder, 1 1/2 tsp coriander, 1 1/2 tsp garam masala and 1/2 tsp pepper. Stir for 30 to 60 seconds, until the curry leaves crackle and the spices smell toasty.",
+  "Add the tomatoes and the remaining 3/4 tsp salt and turn the heat back to medium. Cook for 6 to 8 minutes, mashing the tomatoes with the spoon, until they've broken down into a thick masala with oil showing at the edges. If it starts to stick, add a splash of water.",
+  "Stir in the last 1 tbsp coconut oil and 1/4 cup water. Add the eggs and spoon the masala over them. Simmer on low for 4 to 5 minutes, turning the eggs now and then so the masala gets into the slits.",
+  "Taste the masala. If it's flat, add a pinch more salt.",
+  "Serve with appam, chapati or rice, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook hard boiled eggs, slit so the masala gets in, in a thick masala of sliced onion cooked golden with ginger and garlic, curry leaves, tomato, coriander, chili and garam masala. Archana's Kitchen pops mustard seeds in coconut oil first, pressure cooks its tomatoes before chopping them and adds a spoon more coconut oil at the end, with a generous amount of garam masala and black pepper. Swasthi's adds fennel with the mustard seeds and fries the eggs in the masala for 10 minutes, and Sailu's simmers them covered with a little water and finishes with a pinch of garam masala. This follows Archana's Kitchen with chopped tomatoes cooked straight in the pan, 8 eggs for 4, a little less garam masala, and the green chilies on the side instead of in the pot.",
+ "sources": [
+  {
+   "name": "Archana's Kitchen",
+   "title": "Kerala Egg Roast Masala Recipe",
+   "url": "https://www.archanaskitchen.com/egg-roast-kerala-style",
+   "rating": 4.9,
+   "rating_count": 43819,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sailu's Food",
+   "title": "Kerala Egg Roast",
+   "url": "https://www.sailusfood.com/egg-roast-nadan-kerala-style/",
+   "rating": 4.4,
+   "rating_count": 268,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Egg Roast (Spicy Roasted Eggs)",
+   "url": "https://www.indianhealthyrecipes.com/egg-roast/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

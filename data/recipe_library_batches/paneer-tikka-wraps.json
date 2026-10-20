@@ -1,0 +1,151 @@
+{
+ "dish_name": "Paneer Tikka Wraps",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Paneer",
+   "qty": "1 package (12 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Frozen parathas",
+   "qty": "1 package",
+   "category": "frozen",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Cilantro chutney",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a bowl, stir together the 1/2 cup Greek yogurt, 1 tsp Kashmiri chili powder, 1/2 tsp cumin, 1 tsp garam masala, the 3/4 tsp salt and 1 tbsp of the oil. Crush the 2 tsp kasuri methi between your palms over the bowl and stir it in. Cut the paneer into 3/4 inch cubes and fold them in gently so they're coated. Leave it for 20 minutes. If you'd like it ready to go, do this the night before and keep it covered in the fridge.",
+  "Meanwhile, finely chop the ginger and the 3 garlic cloves. Thinly slice half the onion for the pan and cut the other half into thin rings for the wraps. Thinly slice the bell pepper and the tomato.",
+  "Chop 1/4 cup of the cilantro.",
+  "Heat the remaining 1 tbsp oil in a large skillet over medium high. Add the ginger and garlic and stir for about 30 seconds, until they smell fragrant.",
+  "Add the sliced onion, pepper and tomato and stir fry for 3 to 4 minutes, until they soften at the edges but still have a little bite.",
+  "Add the paneer with all of its marinade and spread it out. Leave it alone for 2 minutes so the underside browns, then stir and cook for 3 to 4 minutes, until the marinade clings to the paneer, no longer smells raw and you can see oil at the edges.",
+  "Taste the filling. If it's flat, add a pinch more salt. Transfer it to a plate.",
+  "Wipe out the skillet and set it over medium heat. Cook the 4 parathas one at a time for 1 to 2 minutes, until golden underneath. Flip each one and cook the other side for 1 to 2 minutes.",
+  "Lay a paratha flat and spread 1 tbsp of the cilantro chutney down the middle. Spoon a quarter of the paneer over it, then add some onion rings, a pinch of the chaat masala, a little ketchup and some of the chopped cilantro. Do the same with the other three.",
+  "Fold in the bottom, roll each one up tightly and wrap the lower half in parchment or foil.",
+  "If you're packing them for lunch, let the filling cool for 10 minutes before you roll them, then wrap each one fully in foil and keep them in the fridge. They're good cold or warmed through in a dry skillet."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both marinate paneer in thick yogurt with chili, garam masala and kasuri methi, cook it in a hot pan with onion and bell pepper until the marinade clings, and roll it in a paratha with green chutney and sliced onion. Hebbar's makes layered maida parathas from scratch, fries ginger, garlic, onion, capsicum and tomato before the paneer goes in, and tops the filling with cabbage, tomato sauce and chaat masala. Swasthi's adds lemon, coriander and cumin to the marinade, stir fries carrot with the peppers, and says the marinade can sit up to a day in the fridge. This follows Hebbar's filling and toppings for a 12 oz block of paneer, with store bought frozen parathas so it fits a lunch, and leaves out the green chilies so the wraps stay mild.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Paneer Frankie Recipe | Paneer Kathi Roll - Street Style",
+   "url": "https://hebbarskitchen.com/paneer-frankie-recipe-paneer-kathi-roll/",
+   "rating": 4.99,
+   "rating_count": 240,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Paneer Kathi Roll Recipe",
+   "url": "https://www.indianhealthyrecipes.com/paneer-kathi-roll/",
+   "rating": 5.0,
+   "rating_count": 20,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Paneer Kathi Roll",
+   "url": "https://www.cookwithmanali.com/paneer-kathi-roll/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

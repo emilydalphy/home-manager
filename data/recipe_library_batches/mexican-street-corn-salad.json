@@ -1,0 +1,110 @@
+{
+ "dish_name": "Mexican Street Corn Salad",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Corn on the cob",
+   "qty": "4 ears",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Cotija cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Shuck the 4 ears of corn and pull off the silk. Stand each ear up in a wide bowl and cut the kernels off with a sharp knife. That should be about 4 cups.",
+  "Heat the 1 tbsp oil in a large skillet, cast iron if you have one, over medium high until it shimmers. Add the corn and 1/4 tsp of the salt and spread it out.",
+  "Cook for 6 to 9 minutes, stirring only every 2 minutes or so, until plenty of the kernels have charred brown spots. Stand back a little. A few kernels may pop.",
+  "Transfer the corn into a large bowl and let it cool for 10 minutes. If it goes in hot, the mayonnaise turns oily.",
+  "Meanwhile, finely chop 1/4 cup of the red onion, rinse it under cold water and drain it well. Chop 1/4 cup of the cilantro, mince the garlic clove and crumble the 4 oz cotija.",
+  "Stem and seed the jalapeño, chop it fine and transfer it into a small bowl for the table.",
+  "Squeeze the lime into a small bowl. That should be about 2 tbsp. Stir 1 1/2 tbsp of it with the 3 tbsp mayonnaise, the garlic, the 1/2 tsp chili powder and the remaining 1/4 tsp salt.",
+  "Add the onion, the cilantro, the cotija and the dressing to the corn and toss until everything is coated.",
+  "Halve, pit and dice the avocado. Fold it in gently so it keeps its shape.",
+  "Taste it. If it's flat, add a pinch more salt or the last of the lime juice.",
+  "Serve with the jalapeño on the side. If you're packing it for lunch, it keeps in a sealed container in the fridge until the next day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions char fresh corn, cut from the cob, then toss it with mayonnaise, lime, cotija, red onion, cilantro and jalapeño. Cooking Classy, the lead, chars the kernels in a hot oiled skillet for 6 to 9 minutes, adds a clove of raw garlic, chili powder and diced avocado, and serves it right away. Sue Bee Homemaker grills the whole ears instead, adds lime zest, cumin and garlic powder, and leaves out the avocado. This follows the lead, scaled from 5 servings to 4, with the corn cooled before the dressing goes on and the jalapeño moved to the side.",
+ "sources": [
+  {
+   "name": "Cooking Classy",
+   "title": "Mexican Street Corn Salad with Avocado",
+   "url": "https://www.cookingclassy.com/mexican-street-corn-salad-with-avocado/",
+   "rating": 5.0,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sue Bee Homemaker",
+   "title": "Mexican Street Corn Salad Recipe",
+   "url": "https://suebeehomemaker.com/mexican-street-corn-salad-recipe/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

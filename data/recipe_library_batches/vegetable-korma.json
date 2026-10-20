@@ -1,0 +1,169 @@
+{
+ "dish_name": "Vegetable Korma",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "2 cups florets"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag (10 oz)",
+   "category": "frozen",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen grated coconut",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "10"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup + 2 tbsp chopped"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch piece",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the 2 potatoes and cut them into 1/2 inch cubes. Keep them in a bowl of cold water until you need them.",
+  "Peel the carrot and cut it into 1/2 inch pieces. Cut half the cauliflower into small florets. That should be about 2 cups. Cut the 1/4 lb green beans into 1 inch pieces. Finely chop the onion and the 2 tomatoes.",
+  "Roughly chop 1/4 cup of the cilantro. Put it in a blender with the 1 cup coconut (thawed), the 10 cashews, the ginger, the garlic clove, 1 tsp coriander seeds, 1/2 tsp fennel seeds and 1/4 cup water. Blend until it's a smooth paste. If the blades won't catch, add another spoonful of water.",
+  "Thinly slice the green chili into a small bowl for the table.",
+  "Heat the 1 1/2 tbsp oil in a large pot over medium heat. Add the bay leaf, the cinnamon, the 2 cardamom pods and the 3 cloves. Stir for 20 to 30 seconds, until they sizzle and smell warm.",
+  "Add the onion with 1/4 tsp of the salt. Cook for 5 to 6 minutes, stirring now and then, until it's soft and light golden.",
+  "Add the tomatoes and cook for 3 to 4 minutes, mashing them with the spoon, until they're soft and mushy.",
+  "Drain the potatoes and add them with the carrot, cauliflower, green beans and the remaining 1 tsp salt. Stir for 2 minutes, so everything is coated.",
+  "Pour in 2 cups water and bring it to a boil. Cover, turn the heat to medium low and simmer for 10 minutes, until a knife goes into a potato cube with a little push.",
+  "Stir in the coconut paste and cook it uncovered for 2 minutes, stirring.",
+  "Add 1 1/2 cups water and 1/2 cup of the frozen peas. Cover and simmer for 8 to 10 minutes, stirring now and then so the paste doesn't catch on the bottom, until the potatoes are soft all the way through and the sauce is creamy. If it's thicker than you like, add a splash of water.",
+  "Fish out the bay leaf and the cinnamon. Chop 2 tbsp of the cilantro and stir it in. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with chapati, poori or rice, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both are South Indian style kurmas: whole bay leaf, cinnamon, cardamom and cloves in oil, onion and tomato cooked soft, mixed vegetables simmered in water, and a blended paste of coconut, cashews and fennel that makes the sauce creamy. Hebbar's grinds ginger, garlic, green chilies, coriander seeds, poppy seeds and fresh cilantro into the paste and adds it after the vegetables are almost cooked. Swasthi's adds roasted chana dal to the paste, fries ginger garlic paste and ground chili, turmeric and garam masala into the base, and cooks the paste before the vegetables go in. This follows Hebbar's order with a little more vegetable for a dinner for four, skips the poppy seeds, and keeps the chili out of the pot so it stays mild for children, with a sliced green chili on the side.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "veg kurma recipe | vegetable kurma | veg korma | vegetable korma",
+   "url": "https://hebbarskitchen.com/veg-kurma-recipe-vegetable-kurma/",
+   "rating": 4.99,
+   "rating_count": 302,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Veg Kurma Recipe (Vegetable Korma Recipe)",
+   "url": "https://www.indianhealthyrecipes.com/veg-kurma-recipe-vegetable-korma-recipe/",
+   "rating": 4.99,
+   "rating_count": 281,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Allotment Garden",
+   "title": "Vegetable Korma Recipe",
+   "url": "https://www.allotment-garden.org/recipe/5865/vegetable-korma-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

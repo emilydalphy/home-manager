@@ -1,0 +1,43 @@
+{
+ "dish_name": "Rava Dosa",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Fine semolina (rava)", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Rice flour", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cumin seeds", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Curry leaves", "qty": "1 package", "category": "produce", "cook_qty": "1 sprig"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"}
+ ],
+ "instructions": [
+  "Finely chop the onion. Seed and finely chop the green chili, and grate the ginger. Finely chop the leaves from 1 sprig of curry leaves and 2 tbsp of the cilantro. Coarsely grind or crush the 1/2 tsp black pepper.",
+  "In a large bowl, whisk the 1/2 cup semolina, 1/2 cup rice flour and 1/4 cup all-purpose flour with the 1 tbsp yogurt, the 1 tsp salt and 2 1/2 cups water until there are no lumps.",
+  "Stir in the chili, ginger, pepper, 1 tsp cumin seeds, curry leaves, cilantro and onion. Whisk in 1 1/2 cups more water. The batter should be thin and watery, much thinner than pancake batter.",
+  "Leave it to rest for 20 minutes so the semolina can soak up some of the water.",
+  "Heat a large cast iron pan, nonstick pan or tawa over high until it's very hot. Rub it with a few drops of the oil on a paper towel.",
+  "Stir the batter well from the bottom, since the flour settles. Scoop up about 1/3 cup and pour it from a few inches up, starting at the outer edge of the pan and circling in toward the middle. Fill any big gaps with a little more. Don't spread it. The holes are what make it lacy.",
+  "Turn the heat down to medium. Drizzle about 1 tsp oil around the edge and a few drops over the top. Cook it for 3 to 4 minutes, until the underside is golden and crisp and the edge lifts from the pan on its own. Don't pull at it before then.",
+  "Fold it in half and slide it onto a plate. Turn the heat back up to high and let the pan get very hot again before the next one. Make the rest the same way, stirring the batter each time. You'll get about 10.",
+  "Serve hot with coconut chutney."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions whisk semolina, rice flour and a little all-purpose flour into a thin, watery batter with onion, green chili, ginger, cumin, crushed pepper, curry leaves and cilantro, rest it 20 minutes, and pour it onto a very hot pan from the outside in before turning the heat down until it's golden and crisp. Hebbar's Kitchen adds a spoonful of yogurt and uses 4 cups water and a whole onion. Swasthi's uses fine semolina, only a few spoonfuls of onion and 2 1/2 cups water, and says to let the dosa come away from the pan on its own. This follows Hebbar's amounts for about 10 dosas, with one seeded chili.",
+ "sources": [
+  {"name": "Hebbar's Kitchen", "title": "Rava Dosa Recipe | Instant Crispy Suji Ka Dosa", "url": "https://hebbarskitchen.com/instant-rava-dosa-recipe-suji-ka-dosa/", "rating": 4.95, "rating_count": 396, "read": true, "lead": true},
+  {"name": "Swasthi's Recipes", "title": "Rava Dosa Recipe", "url": "https://www.indianhealthyrecipes.com/rava-dosa/", "rating": 5.0, "rating_count": 180, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

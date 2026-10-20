@@ -1,0 +1,136 @@
+{
+ "dish_name": "Mexican Rice and Beans Bowls",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Pinto beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shredded Monterey Jack cheese",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Tortilla chips",
+   "qty": "1 bag",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the red onion and mince the 3 garlic cloves. Drain the 2 cans of beans in a colander and rinse them under cold water.",
+  "Heat the 2 tbsp oil in a large pot or Dutch oven over medium. Add the onion and 1/4 tsp of the salt. Cook for 3 to 4 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Add the garlic, 1 tbsp tomato paste, 1 tsp chili powder and 1 tsp oregano. Stir constantly for 1 minute, until the paste turns a shade darker and it smells toasty.",
+  "Pour in the 2 cups broth, turn the heat to high and bring it to a rolling boil, scraping up anything stuck to the bottom.",
+  "Stir in the beans, the 1 cup rice and the remaining 1 1/4 tsp salt. Put the lid on, turn the heat to low and simmer gently for 15 to 18 minutes, until the rice is tender and the broth is absorbed. No peeking for the first 15 minutes.",
+  "Take the pot off the heat and leave it covered for 5 minutes.",
+  "Meanwhile, chop 1/4 cup of the cilantro. Squeeze 1 tbsp of juice from half the lime and cut the other half into 4 wedges.",
+  "Take the lid off. Add the 1 tbsp lime juice and the cilantro and fluff the rice and beans with a fork.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of one of the lime wedges.",
+  "Divide the rice and beans among 4 bowls or containers and scatter the 1 cup cheese over them while they're warm.",
+  "Serve with the salsa, the tortilla chips and the lime wedges. If you're packing it for lunch, let the containers cool, close them and keep them in the fridge for up to 4 days, with the chips and salsa packed separately."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cook long-grain rice and canned beans in one pot over a base of onion and garlic, then finish with lime and cilantro. Real Food Whole Life, the lead, fries tomato paste, chili powder and oregano with the garlic, boils the stock before the rice and pinto beans go in and rests the pot 5 minutes before the lime. Sue Bee Homemaker toasts the rice with cumin and simmers it in chicken broth with fire-roasted tomatoes and two kinds of beans, and Amanda's Cookin' adds poblano, corn and the tomatoes at the end. This follows the lead's full pot of 1 cup rice and 2 cans of beans as 4 lunch bowls, with cheese, salsa and chips as the toppings its readers suggest. The lead's kosher salt brand isn't given, so the salt here is about 1 1/2 tsp of table salt.",
+ "sources": [
+  {
+   "name": "Real Food Whole Life",
+   "title": "Quick Pinto Beans & Rice (One-Pot)",
+   "url": "https://realfoodwholelife.com/recipes/pinto-beans-and-rice/",
+   "rating": 4.93,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sue Bee Homemaker",
+   "title": "Mexican Rice and Beans Recipe",
+   "url": "https://suebeehomemaker.com/spanish-rice-with-beans/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Amanda's Cookin'",
+   "title": "Mexican Rice and Beans",
+   "url": "https://amandascookin.com/mexican-rice-and-beans/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

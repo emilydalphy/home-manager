@@ -1,0 +1,143 @@
+{
+ "dish_name": "Huevos con Chorizo",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped + a few leaves"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 carton",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Mexican chorizo",
+   "qty": "10 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cotija cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Core the 2 tomatoes, scoop out the seeds and dice them small. Finely dice half the red onion. Chop 1/4 cup of the cilantro and keep a few whole leaves for the top.",
+  "For the pico de gallo, squeeze the lime. That should be about 2 tbsp. Stir the tomatoes, red onion, chopped cilantro, the 2 tbsp lime juice and 1 tbsp of the oil together in a bowl. Leave the salt out for now. If it goes in early, the pico turns watery.",
+  "Stem and seed the jalapeño, chop it fine and transfer it into a small bowl for the table.",
+  "Dice the yellow onion and mince the 2 garlic cloves.",
+  "Crack the 8 eggs into a bowl. Add the 2 tbsp milk, 3/4 tsp of the salt and the 1/4 tsp pepper and whisk until no streaks of white are left.",
+  "Warm the 8 tortillas in a large dry nonstick skillet over medium, about 30 seconds a side, and stack them in a clean kitchen towel.",
+  "Add the remaining 1 tbsp oil to the same skillet and turn the heat to medium high. Squeeze the 10 oz chorizo out of its casings into the pan. Break it up with a wooden spoon and cook for 6 to 8 minutes, stirring now and then, until it's browned and a little crisp at the edges.",
+  "Lift the chorizo into a bowl with a slotted spoon. Spoon out all but about 1 tbsp of the fat left in the pan.",
+  "Turn the heat down to medium. Add the yellow onion and cook for 2 to 3 minutes, until it's see-through and golden at the edges. Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Pour in the eggs. Stir slowly, pushing the cooked egg in from the edges, for 2 to 3 minutes, until they're mostly set but still look a little wet. Take the pan off the heat.",
+  "Fold the chorizo back into the eggs.",
+  "Stir the last 1/2 tsp salt into the pico de gallo. Halve, pit and dice the avocado and crumble the 4 oz cotija.",
+  "Taste the eggs. If they're flat, add a pinch more salt.",
+  "Spoon the eggs into the warm tortillas and top them with the pico de gallo, the avocado, the cotija and the cilantro leaves.",
+  "Serve with the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version browns fresh Mexican chorizo out of its casing first, then scrambles the eggs in the same pan with some of the chorizo fat. No version found had 20 or more ratings, so RecipeTin Eats, the trusted cook for Mexican, leads: it lifts the chorizo out, softens onion, garlic and chilies in the fat, scrambles the eggs with a splash of milk and pulls them off the heat while still wet, then fills tortillas with eggs, chorizo, pico de gallo, cotija and avocado. Mama Maggie's Kitchen drains the fat and scrambles the eggs straight into the chorizo with green onion and cilantro on top, and Maricruz Avalos keeps it to chorizo, eggs, oil and salt. This follows the lead at 8 eggs and 10 oz chorizo for 4, since the lead's 4 eggs make one small taco each, with the chilies moved out of the eggs to a jalapeño on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Mexican Breakfast Tacos (Chorizo and Egg)",
+   "url": "https://www.recipetineats.com/mexican-breakfast-tacos-chorizo-and-egg/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mama Maggie's Kitchen",
+   "title": "Chorizo con Huevos, or Mexican Chorizo with Eggs",
+   "url": "https://inmamamaggieskitchen.com/easy-breakfast-chorizo-con-huevos/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Huevos con chorizo (chorizo and eggs)",
+   "url": "https://www.maricruzavalos.com/huevos-con-chorizo-chorizo-and-eggs/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

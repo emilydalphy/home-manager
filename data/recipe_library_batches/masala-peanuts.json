@@ -1,0 +1,43 @@
+{
+ "dish_name": "Masala Peanuts",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Besan (chickpea flour)", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Rice flour", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp + 1 tsp"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Ground turmeric", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ginger garlic paste", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 tsp"},
+  {"item": "Baking soda", "qty": "a pinch", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Raw skinless peanuts", "qty": "1 cup (175 g)", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 cups + 1 tsp", "category": "pantry"},
+  {"item": "Chaat masala", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "In a large bowl, mix the 1/4 cup besan, 1 tbsp of the rice flour, 1 tbsp cornstarch, 1/8 tsp turmeric, 1/2 tsp Kashmiri chili powder, 1/4 tsp ginger garlic paste, the pinch of baking soda and 1/4 tsp salt.",
+  "Add the 1 cup peanuts and 1 tsp of the oil, and toss them with your hand until they're coated in the spice mix.",
+  "Sprinkle 1 tbsp water over them and mix. Add 1 to 2 tsp more water, a little at a time, until the flour clings to every peanut. Stop there. Too much water turns it into a paste.",
+  "Sprinkle the last 1 tsp rice flour over them and toss so the peanuts separate.",
+  "Pour the remaining 3 cups oil into a heavy saucepan and heat it over medium to 325°F. If you have a thermometer, check it there. No thermometer? Drop in one peanut. It should sizzle gently and rise to the top, without darkening straight away.",
+  "Add half the peanuts, scattering them in so they don't land in clumps. Leave them alone for about 1 minute, until the coating sets.",
+  "Stir them and fry for 4 to 5 minutes over medium low, stirring now and then, until they're golden and the bubbling has slowed. Keep the heat low. Hot oil browns the coating before the peanuts inside are cooked.",
+  "Lift them out with a slotted spoon onto paper towels. Fry the rest the same way.",
+  "Sprinkle the 1/4 tsp chaat masala over the warm peanuts and toss. Let them cool completely. They get crunchier as they cool.",
+  "Serve with tea. Keep the rest in an airtight jar for up to a month."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions coat raw peanuts in a dry mix of besan, rice flour, turmeric, chili powder, ginger garlic paste and salt, sprinkle in just enough water for it to cling, and deep fry them on low to medium heat until golden and crunchy. Hebbar's Kitchen adds cornstarch and a pinch of baking soda, tosses the peanuts with a little oil first, adds a spoonful of rice flour to separate them and finishes with chaat masala. My Ginger Garlic Kitchen rinses the peanuts first and finishes them with a spice mix of black salt, amchur, chaat masala and dried mint. This follows Hebbar's at half the amount, about 1 cup of peanuts.",
+ "sources": [
+  {"name": "Hebbar's Kitchen", "title": "peanut masala recipe | masala groundnut | besan masala peanuts", "url": "https://hebbarskitchen.com/peanut-masala-recipe-masala-groundnut/", "rating": 4.99, "rating_count": 256, "read": true, "lead": true},
+  {"name": "My Ginger Garlic Kitchen", "title": "Masala Peanuts (Air Fryer, Baked and Fried Recipe)", "url": "https://mygingergarlickitchen.com/masala-peanuts/", "rating": 5.0, "rating_count": 70, "read": true, "lead": false},
+  {"name": "Swasthi's Recipes", "title": "Peanut Masala (Spicy Roasted Peanuts)", "url": "https://www.indianhealthyrecipes.com/masala-peanuts/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,212 @@
+{
+ "dish_name": "Chole Bhature",
+ "cuisine": "Indian",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 110,
+ "ingredients": [
+  {
+   "item": "Dried chickpeas",
+   "qty": "1 bag (1 lb)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Black tea bags",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fine semolina",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups + 1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Black cardamom pods",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 (1 inch)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1/2 tsp minced"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Amchur",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato puree",
+   "qty": "1 can (15 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before: rinse the 1 cup chickpeas in a strainer, put them in a large bowl and cover them with about 4 inches of cold water. Leave them on the counter to soak overnight. They'll swell to about three times their size.",
+  "At least 2 hours before dinner: make the bhatura dough. In a large bowl, mix the 2 cups flour, 2 tbsp semolina, 1 tsp sugar, 1/4 tsp of the baking soda, 1/2 tsp of the salt and 2 tbsp of the oil with your fingers until it looks like damp sand. Stir in the 1/4 cup yogurt.",
+  "Add about 1/2 cup water a little at a time and knead for 5 to 6 minutes, until you have a smooth, soft dough that springs back slowly when you press it. Don't press too hard as you knead. Rub a few drops of oil over it, cover the bowl and leave it on the counter for 2 hours.",
+  "Drain and rinse the chickpeas and put them in a large pot with the 2 tea bags, the remaining 1/4 tsp baking soda, 1 tsp of the salt and 6 cups water. Bring it to a boil over high, then turn it down to a gentle simmer. Partly cover and cook for 1 hour to 1 1/2 hours, until a chickpea mashes easily between your fingers. If the water drops below the chickpeas, add a splash more. If you have a pressure cooker, use 3 cups water and cook them for 5 whistles instead.",
+  "Meanwhile, finely chop the yellow onion. Mince 1/2 tsp of the ginger and the 2 garlic cloves. Chop 2 tbsp of the cilantro. Slice the red onion into thin rings and the green chilies into thin rounds and put them in a small bowl for the table.",
+  "When the chickpeas are soft, fish out the tea bags and throw them away. Keep the chickpeas in their dark cooking water.",
+  "Heat 2 tbsp of the oil in a large, deep skillet over low. Add the bay leaf, black cardamom, 2 green cardamom pods, cinnamon stick, 1 tsp cumin seeds and 1/2 tsp kasuri methi. Stir for about 30 seconds, until the seeds sizzle and it smells toasty.",
+  "Add the yellow onion, turn the heat to medium and cook for 8 to 10 minutes, stirring now and then, until it's golden brown. Add the ginger and garlic and stir for about a minute, until they stop smelling raw.",
+  "Turn the heat to low and stir in 1/4 tsp of the turmeric, 1 tsp of the Kashmiri chili powder, the 1 tsp coriander, 1/2 tsp ground cumin, 1/2 tsp of the garam masala, the 1 tsp amchur and the remaining 1/4 tsp salt. Stir for 30 seconds, until fragrant.",
+  "Add the 1 1/2 cups tomato puree. Turn the heat to medium and cook for 6 to 8 minutes, stirring, until it's thick and the oil separates at the edges.",
+  "Add the chickpeas with about 1 1/2 cups of their cooking water and stir. Cover and simmer over medium low for 10 minutes, until the gravy is thick enough to coat a spoon. If it's too thick, add a splash more of the cooking water. Mash a few of the chickpeas against the side of the pan to thicken it.",
+  "Meanwhile, pour the remaining 4 cups oil into a heavy pot or wok, at least 2 inches deep, and heat it over medium high. You're heating it to 350°F, so if you have a thermometer, check it there. No thermometer? Drop in a small pinch of dough: it's ready when it rises to the top within a few seconds with lots of bubbles around it.",
+  "While the oil heats, knead the dough for a minute and divide it into 8 balls. Roll each one into an oval about 6 inches long and a little thicker than a tortilla, rubbing a drop of oil on the counter so it doesn't stick.",
+  "Slide one bhatura gently into the hot oil. Stand back a little. It can spatter. Press it down lightly with a slotted spoon and spoon oil over the top until it puffs up, about 20 seconds.",
+  "Flip it and fry the other side for 30 to 40 seconds, until both sides are golden. Lift it out onto a plate lined with paper towels. Fry the rest the same way, one at a time. This makes 8 bhature.",
+  "Just before serving, melt the 1 tbsp ghee in a small pan over low. Take the pan off the heat and stir in the remaining 1/4 tsp turmeric, 1/4 tsp Kashmiri chili powder and 1/4 tsp garam masala for a few seconds, then pour it over the chole and stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve the chole with the hot bhature, with the sliced red onion and green chilies on the side."
+ ],
+ "advance_prep_notes": "Soak the chickpeas the night before, and make the bhatura dough at least 2 hours before dinner.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Both read versions soak dried chickpeas overnight, cook them soft with a tea bag and a pinch of baking soda for the dark Punjabi color, and simmer them in a tomato masala with cumin seeds, coriander, red chili and garam masala, served with a fried yogurt and semolina dough. Hebbar's Kitchen (the lead) blooms whole spices and kasuri methi, browns the onion with ginger and garlic, adds amchur with the ground spices, simmers the chickpeas in the masala for 10 minutes and pours a ghee tempering over the top, and rests the baking soda bhatura dough for 2 hours. Nisha Madhulika skips the onion, blends tomatoes with green chilies and ginger, adds anardana for tang and leavens the dough with baking powder. Its page shows a 5.0 from a single review (reviewCount only, no ratingCount). This follows the lead for 4, with a stovetop pot for the chickpeas in place of the pressure cooker, mild Kashmiri chili throughout and the green chilies moved from the tempering to the table.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "chole bhature recipe | chhole bhature | chana bhatura | chola batura",
+   "url": "https://hebbarskitchen.com/chole-bhature-recipe/",
+   "rating": 4.99,
+   "rating_count": 318,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nisha Madhulika",
+   "title": "Chole Bhature Recipe",
+   "url": "https://nishamadhulika.com/en/64-chole_bhature_recipe.html",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

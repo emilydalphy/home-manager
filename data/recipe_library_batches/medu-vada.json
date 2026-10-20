@@ -1,0 +1,44 @@
+{
+ "dish_name": "Medu Vada",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Urad dal", "qty": "1 cup", "category": "pantry"},
+  {"item": "Chana dal", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Curry leaves", "qty": "1 package", "category": "produce", "cook_qty": "1 sprig"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tbsp chopped"},
+  {"item": "Unsweetened shredded coconut", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Rice flour", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Asafoetida (hing)", "qty": "a pinch", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "4 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 2 hours ahead: rinse the 1 cup urad dal and 1/4 cup chana dal together a few times, until the water runs mostly clear. Cover them with about 3 cups fresh water and leave them to soak for at least 2 hours. If they're soaking overnight, keep the bowl in the fridge.",
+  "Seed and finely chop the green chili and finely chop the ginger. Finely chop the leaves from 1 sprig of curry leaves and 1 tbsp of the cilantro.",
+  "Drain the dals in a sieve and shake off as much water as you can. Put them in a blender with 2 tbsp cold water. Blend, stopping often to scrape down the sides, and add more cold water only a teaspoon at a time if the blades stall. Stop when the batter is smooth and very thick. A runny batter won't hold a ring shape.",
+  "Transfer the batter into a bowl and beat it with your hand in one direction for about 1 minute, until it looks lighter. Drop a small blob into a cup of water. If it floats, it's ready. If it sinks, beat it for another minute.",
+  "Stir in the chili, ginger, curry leaves, cilantro, 3 tbsp of the coconut, 2 tsp of the rice flour, the pinch of hing and the 3/4 tsp salt.",
+  "Pour the 4 cups oil into a heavy pot. It should be about 2 inches deep. Heat it over medium to 350°F. If you have a thermometer, check it there. No thermometer? Drop in a pea of batter. It should rise to the top steadily with small bubbles around it, without browning straight away.",
+  "Set a bowl of water next to you and wet your hands. Take a lump of batter about the size of a golf ball, set it on your wet palm and flatten it a little. Wet your thumb and push a hole through the middle.",
+  "Slide it gently off your fingers into the oil, close to the surface. Stand back a little. It can spatter. Shape and add 2 or 3 more, without crowding the pot.",
+  "Fry them for 2 to 3 minutes, until the undersides are golden. Flip them and cook the other side for 2 to 3 minutes, until they're deep golden and crisp. If they brown faster than that, turn the heat down a touch, or the middles stay raw.",
+  "Lift them out with a slotted spoon onto paper towels. Fry the rest the same way, wetting your hands each time. You'll get about 12.",
+  "Serve hot with coconut chutney or sambar."
+ ],
+ "advance_prep_notes": "Soak the dals at least 2 hours ahead, or overnight in the fridge.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Both versions soak urad dal for a few hours, grind it to a thick batter with as little water as possible, stir in green chili, ginger and curry leaves, shape wet-handed rings with a hole in the middle and fry them golden in oil that's hot but not fierce. Hebbar's Kitchen grinds a little chana dal in with the urad and adds dried coconut, cilantro, rice flour for crispness and a pinch of hing. Swasthi's uses urad dal alone with cumin and crushed pepper, grinds it with ice cold water, and beats the batter until a blob floats in water. This follows Hebbar's batter and amounts, about 12 vadas, with Swasthi's beating and float test, and one seeded chili so it stays mild.",
+ "sources": [
+  {"name": "Hebbar's Kitchen", "title": "medu vada recipe | uddina vada recipe | urad dal vada recipe", "url": "https://hebbarskitchen.com/medu-vada-uddina-vada-urad-dal-vada-recipe/", "rating": 5.0, "rating_count": 248, "read": true, "lead": true},
+  {"name": "Swasthi's Recipes", "title": "Medu Vada Recipe (Garelu)", "url": "https://www.indianhealthyrecipes.com/garelu-medhu-vadai-recipe/", "rating": 5.0, "rating_count": 219, "read": true, "lead": false},
+  {"name": "My Food Story", "title": "Medu Vada", "url": "https://myfoodstory.com/medu-vada/", "rating": 4.75, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

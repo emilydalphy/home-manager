@@ -1,0 +1,46 @@
+{
+ "dish_name": "Methi Thepla",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Fresh fenugreek leaves (methi)", "qty": "1 bunch", "category": "produce", "cook_qty": "1 cup chopped"},
+  {"item": "Whole wheat flour (atta)", "qty": "1 3/4 cups", "category": "pantry"},
+  {"item": "Besan (chickpea flour)", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "1 tsp grated"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1/4 cup + more for serving"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Pick the leaves off the fenugreek stems. Rinse them well in a big bowl of water, lift them out and drain them. Chop them finely. That should be about 1 cup.",
+  "Grate 1 tsp of the ginger. Seed and finely chop the green chili.",
+  "In a large bowl, mix the fenugreek, 1 1/2 cups of the flour, the 1/4 cup besan, the ginger, the chili, 1/2 tsp salt, 1/2 tsp Kashmiri chili powder, 1/2 tsp garam masala, 1/4 tsp turmeric and 1/4 cup of the yogurt. Squeeze it together with your hand for a minute. The leaves give off water as you go.",
+  "Sprinkle in water a tablespoon at a time, kneading, until it comes together into a soft dough that isn't sticky. You'll need only a little, maybe 2 to 4 tbsp.",
+  "Add 1 tbsp of the oil and knead for 2 minutes, until the dough is smooth. Cover it and leave it to rest for 20 minutes.",
+  "Divide the dough into 8 balls and keep them covered.",
+  "Dust a ball with some of the remaining 1/4 cup flour and roll it out into an 8 inch round, a little thicker than a tortilla. Dust it again if it sticks. Roll out 3 or 4 before you start cooking.",
+  "Heat a cast iron pan or tawa over medium high until it's hot, then turn it down to medium. Lay a thepla in the dry pan and cook it for about 1 minute, until small bubbles show on top and the underside has a few pale spots.",
+  "Flip it and cook the other side for about 1 minute, pressing it down with a spatula so it cooks evenly.",
+  "Drizzle about 3/4 tsp of the remaining oil over the top and spread it out. Flip it again and cook for about 30 seconds on each side, until both sides have golden spots.",
+  "Stack it on a clean towel and fold the towel over to keep it soft. Cook the rest the same way, rolling out the next ones while each one cooks.",
+  "Serve warm or at room temperature with the rest of the yogurt.",
+  "To keep them, let them cool completely, stack them in a container with a lid, and keep them at room temperature for up to 2 days or in the fridge for up to 5 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions mix finely chopped fenugreek leaves into whole wheat flour and besan with yogurt, ginger, green chili, turmeric and chili powder, knead it with very little water because the leaves give off their own, rest the dough 20 minutes and cook thin rounds on a hot tawa with oil until spotted gold. Swasthi's adds garam masala and a little millet flour and makes 8 rounds of medium thickness. Hebbar's Kitchen uses twice the yogurt, adds sesame seeds, ajwain, cumin, kasuri methi and hing, and rolls them as thin as possible. This follows Swasthi's amounts for 8 theplas, without the optional millet flour and with one seeded chili.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Thepla Recipe (Methi Thepla)", "url": "https://www.indianhealthyrecipes.com/methi-thepla-recipe/", "rating": 4.99, "rating_count": 67, "read": true, "lead": true},
+  {"name": "Hebbar's Kitchen", "title": "Thepla Recipe | Gujarati Methi Na Thepla", "url": "https://hebbarskitchen.com/methi-thepla-recipe-methi-ka-thepla/", "rating": 4.75, "rating_count": 4, "read": true, "lead": false},
+  {"name": "Simple Indian Recipes", "title": "Methi Thepla", "url": "https://simpleindianrecipes.com/thepla.aspx", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

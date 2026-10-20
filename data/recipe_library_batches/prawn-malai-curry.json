@@ -1,0 +1,140 @@
+{
+ "dish_name": "Prawn Malai Curry",
+ "cuisine": "Indian",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Green chili",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 inch piece",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel and devein the 1.5 lb shrimp if they aren't already, and pat them dry with paper towels. Toss them in a bowl with 1/4 tsp of the turmeric and 1/2 tsp of the salt, and set them aside while you make the paste.",
+  "Cut the onion into chunks and blend it with 2 tbsp water to a smooth paste. Grate 1 tbsp of the ginger.",
+  "Thinly slice the 2 green chilies into a small bowl for the table.",
+  "Shake the can of coconut milk and open it. Stir 1/2 cup of it with 1/2 cup water in a measuring cup. This is your thin coconut milk. Keep the rest in the can. That should be about 1 1/4 cups.",
+  "Whisk the 1/4 cup yogurt in a small bowl until it's smooth with no lumps.",
+  "Heat the 3 tbsp oil in a wide pan over medium high until it shimmers. Add half the shrimp in a single layer and cook for about 45 seconds, until they turn pink underneath. Flip them and cook the other side for 45 seconds. Transfer them to a plate and cook the rest the same way. They'll still be a little raw in the middle, and that's fine.",
+  "Turn the heat to medium. Add the 2 tsp ghee to the oil left in the pan, then the 2 bay leaves, 3 cardamom pods, 3 cloves and the cinnamon. Stir for 20 to 30 seconds, until they smell warm and the cloves puff a little.",
+  "Add the onion paste and the 1 tbsp sugar. Cook for 8 to 10 minutes, stirring often, until the paste has dried out and turned light golden brown. Stand back a little. It'll spatter.",
+  "Add the ginger and cook for 2 to 3 minutes, stirring. Stir in the remaining 1/2 tsp turmeric, the 1/2 tsp Kashmiri chili powder and the remaining 1 1/4 tsp salt, and cook for 1 minute. If it starts to stick, add a splash of the thin coconut milk.",
+  "When you can see oil at the edges, turn the heat to low and add the yogurt. Stir hard and keep stirring for 3 minutes. If you stop, the yogurt can split.",
+  "Pour in the thin coconut milk and simmer for 2 minutes. Add the rest of the coconut milk from the can and bring it up to a gentle boil over medium heat.",
+  "Add the shrimp and any juices from the plate. Cover and simmer for 3 to 4 minutes, until the shrimp are pink all the way through and curled into a loose C. Don't go past 5 minutes. Any longer and they turn rubbery.",
+  "Turn off the heat and sprinkle the 1/2 tsp garam masala over the top. Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve with steamed basmati rice, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both rub the prawns with turmeric and salt, fry them briefly and set them aside, temper whole bay leaf, cardamom, cloves and cinnamon in oil and ghee, cook a blended onion paste until browned, add ginger, turmeric and chili, then simmer coconut milk and return the prawns for a few minutes, finishing with Bengali garam masala. Bong Eats browns the onion paste with a good amount of sugar, stirs in whisked yogurt before the coconut milk, and adds the thin second press milk before the thick first press. Kitchen of Debjani uses mustard oil, a tomato paste and garlic, more water and no yogurt. This follows Bong Eats for 1.5 lb shrimp, with one can of coconut milk split into thin and thick, less sugar, and the green chilies on the side instead of slit into the pot. Bong Eats' recipe data rates it 96.1 out of 100 from 51,015 ratings, recorded here as 4.8 out of 5.",
+ "sources": [
+  {
+   "name": "Bong Eats",
+   "title": "Chingri Malaikari",
+   "url": "https://bongeats.com/recipe/chingri-malaikari",
+   "rating": 4.8,
+   "rating_count": 51015,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kitchen of Debjani",
+   "title": "Chingri Malai Curry | Prawn Malaikari Recipe",
+   "url": "https://kitchenofdebjani.com/2015/04/chingri-malai-curry-bengali-prawn-malai-curry/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

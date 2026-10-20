@@ -1,0 +1,149 @@
+{
+ "dish_name": "Rajma Chawal Bowls",
+ "cuisine": "Indian",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Red kidney beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve under cold water until it runs mostly clear. Put it in a saucepan with 2 1/4 cups water and 1/2 tsp of the salt and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Turn off the heat and leave the lid on for 5 minutes.",
+  "Meanwhile, drain and rinse the 2 cans of kidney beans. Finely chop the yellow onion. Grate 1 tsp of the ginger and mince the 3 garlic cloves.",
+  "Roughly chop the 3 tomatoes and blend them until smooth. That should be about 1 1/2 cups.",
+  "Melt the 2 tbsp ghee in a heavy pot over medium heat. Add the bay leaf and the 1/2 tsp cumin seeds. After about 20 seconds the seeds will sizzle and smell toasty. That's your cue for the onion.",
+  "Add the yellow onion with 1/4 tsp of the salt. Cook for 6 to 8 minutes, stirring now and then, until it's golden.",
+  "Add the ginger and garlic and stir for about 1 minute, until they stop smelling raw.",
+  "Pour in the tomato puree and cook for 3 to 4 minutes, stirring, until it thickens.",
+  "Turn the heat to low. Add the 1/4 tsp turmeric, 1/2 tsp Kashmiri chili powder, 1 1/2 tsp coriander, 3/4 tsp ground cumin and 1/2 tsp of the garam masala. Stir for 2 to 3 minutes, until it smells fragrant. If it starts to stick, add a splash of water.",
+  "Add the beans, 1 1/2 cups hot water and the remaining 1/2 tsp salt. Turn the heat to medium and simmer for 12 to 15 minutes, stirring now and then, until the gravy is a little thick.",
+  "Mash about 1 tbsp of the beans against the side of the pot and stir them back in. Add the last 1/4 tsp garam masala and crush the 2 tsp kasuri methi between your palms over the pot. Simmer for 2 minutes, then turn off the heat.",
+  "While it simmers, thinly slice the red onion and chop 1/4 cup of the cilantro. Cut the lemon in half and cut one half into wedges.",
+  "Squeeze the juice of the other lemon half into the rajma. Taste it. If it's flat, add a pinch more salt or a squeeze from a wedge.",
+  "Fluff the rice with a fork and divide it among 4 bowls or lunch containers. Spoon the rajma next to it and top with the red onion and cilantro, with a lemon wedge on the side.",
+  "To pack it ahead, let the rice and rajma cool, then keep them covered in the fridge for up to 3 days. Warm them until steaming, with a splash of water on the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both build a Punjabi onion and tomato masala with cumin seeds, ginger and garlic and ground coriander, cumin and chili, simmer the kidney beans in it until the gravy thickens, mash a few beans to thicken it more, and serve it over plain rice. Swasthi's soaks and pressure cooks dried beans or uses two cans, blends the tomatoes, starts with a bay leaf in ghee and finishes with kasuri methi, garam masala and lemon. Cook's Hideout uses tomato paste and amchur for the sourness and finishes with cilantro over steamed rice. This follows Swasthi's canned bean route so it fits a lunch, cooks the basmati alongside, and tops the bowls with sliced red onion and lemon.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Rajma Recipe (Rajma Masala)",
+   "url": "https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala/",
+   "rating": 4.99,
+   "rating_count": 653,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook's Hideout",
+   "title": "Rajma Chawal (Red Kidney Bean Curry with Rice)",
+   "url": "https://www.cookshideout.com/rajma-chawal-red-kidney-bean-curry-with-rice",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

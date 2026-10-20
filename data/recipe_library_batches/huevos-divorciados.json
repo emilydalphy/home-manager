@@ -1,0 +1,122 @@
+{
+ "dish_name": "Huevos Divorciados",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Tomatillos",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup leaves + 2 tbsp chopped"
+  },
+  {
+   "item": "Queso fresco",
+   "qty": "4 oz",
+   "category": "dairy",
+   "cook_qty": "1/4 cup crumbled"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Refried beans",
+   "qty": "1 can (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Pull the husks off the 5 tomatillos and rinse off the sticky coating. Core the 4 tomatoes. Cut a quarter off the onion and cut that quarter in half. Stem and seed the jalapeño and cut it in half.",
+  "Put the tomatillos, tomatoes, the 2 onion pieces, the jalapeño halves and the 2 garlic cloves in a medium saucepan and cover them with water. Bring it to a boil over high, then cover, turn the heat to low and simmer for 5 minutes, until the tomatillos turn olive green and soft. Drain them.",
+  "While they simmer, crumble 1/4 cup of the queso fresco and chop 2 tbsp of the cilantro.",
+  "For the red sauce, put the tomatoes in a blender with 1 onion piece, 1 jalapeño half, 1 garlic clove and 1/2 tsp of the salt. Blend until smooth.",
+  "Heat 1 1/2 tsp of the oil in a small saucepan over medium. Stand back a little and add the red sauce. It'll spatter. Simmer it for 2 minutes, stirring, until it's a shade darker. Transfer it into a bowl and cover it.",
+  "Rinse the blender. For the green sauce, blend the tomatillos with the other onion piece, the other jalapeño half, the other garlic clove, 1/4 cup cilantro leaves and 1/2 tsp of the salt until smooth.",
+  "Wipe out the saucepan and heat 1 1/2 tsp of the oil in it over medium. Add the green sauce and simmer it for 2 minutes, stirring. Transfer it into a second bowl and cover it.",
+  "Taste both sauces. If either is flat, add a pinch more salt.",
+  "Add the refried beans and 2 tbsp water to the same saucepan over medium low. Stir now and then for 4 to 5 minutes, until they're hot and loose. Turn the heat to its lowest and cover them.",
+  "Warm the 8 tortillas in a large dry skillet over medium, about 30 seconds a side, until they have a few toasty spots. Stack them in a clean kitchen towel.",
+  "Add 1 tbsp of the oil to the same skillet over medium. Crack in 4 of the eggs and sprinkle 1/8 tsp of the salt over them. Cook for 3 to 4 minutes, until the whites are set and the edges are lightly crisp but the yolks are still runny. If the tops of the whites still look clear, cover the pan for 30 seconds. Move them to a plate.",
+  "Cook the last 4 eggs the same way with the last 1 tbsp oil and the last 1/8 tsp salt.",
+  "Lay 2 tortillas on each plate and set 2 eggs on top. Spoon the red sauce over one egg and the green sauce over the other.",
+  "Scatter the queso fresco and the chopped cilantro over the top. Serve with the refried beans on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version puts two fried eggs on warm corn tortillas, covers one with a red tomato salsa and the other with a green tomatillo salsa, and serves refried beans on the side with a little fresh cheese. No version found had 20 or more ratings and RecipeTin Eats (the trusted cook for Mexican) has no version, so Pati Jinich leads: she fries or toasts 8 tortillas, fries 8 eggs two at a time and uses 2 cups of each salsa with queso fresco on top. Diversivore toasts the tortillas dry and fries the eggs hot with a lid on to set the whites, and Vallarta Supermarkets makes both salsas from one pot of boiled tomatillos, tomatoes, onion, jalapeño and garlic, blended separately and fried a minute in oil. This follows the lead's plate, with the two salsas made from scratch Vallarta's way, the tortillas toasted rather than fried, and one seeded jalapeño split between the salsas to keep them mild.",
+ "sources": [
+  {
+   "name": "Pati Jinich",
+   "title": "Huevos Divorciados",
+   "url": "https://patijinich.com/divorced-eggs/",
+   "rating": 4.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Diversivore",
+   "title": "Huevos Divorciados",
+   "url": "https://www.diversivore.com/huevos-divorciados-divorced-eggs/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Vallarta Supermarkets",
+   "title": "Huevos Divorciados (Divorced Eggs)",
+   "url": "https://vallartasupermarkets.com/recipes/huevos-divorciados-divorced-eggs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
