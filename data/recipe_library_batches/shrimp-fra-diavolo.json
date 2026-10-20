@@ -1,0 +1,145 @@
+{
+ "dish_name": "Shrimp Fra Diavolo",
+ "cuisine": "Italian",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Large shrimp",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp + 1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Whole peeled tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 small carton",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Red Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil over high heat.",
+  "Meanwhile, peel and devein the 1.5 lb shrimp if they aren't already. Pat them dry with paper towels and toss them in a bowl with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Finely chop the onion and mince the 6 garlic cloves. Transfer the tomatoes and their juice into a bowl and crush them with your hand into small pieces.",
+  "Thinly slice the 2 chilies into a small bowl for the table and cut the lemon into wedges.",
+  "Heat 1 tbsp of the olive oil and 1 tbsp of the butter in a large, deep skillet over medium high. When the butter foams, add half the shrimp in a single layer. Cook for 1 minute, until the underside is pink with golden spots.",
+  "Flip them and cook the other side for 1 minute. Move them to a plate. Cook the rest of the shrimp the same way with another 1 tbsp of the olive oil and 1 tbsp of the butter. They'll still be a little underdone in the middle.",
+  "Turn the heat down to medium and add the remaining 2 tbsp butter and the onion. Cook for 5 to 6 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Add the garlic and 1 tsp of the red pepper flakes. Stir for 30 seconds, until it smells fragrant.",
+  "Stir in the 2 tbsp tomato paste and cook for 1 minute, until it turns a shade darker.",
+  "Pour in the 1/2 cup wine and scrape up the browned bits from the bottom of the pan. Let it bubble for about 2 minutes, until it has mostly cooked away.",
+  "Add the tomatoes you crushed, the remaining 1/2 tsp salt, the 1/2 tsp oregano and the remaining 1/4 tsp pepper. Bring it to a simmer, cover the pan with the lid slightly open and cook for 15 minutes, stirring now and then, until the sauce is thick.",
+  "When the sauce has about 10 minutes left, add the 1 tbsp salt and the 1 lb spaghetti to the boiling water. Cook it for 1 minute less than the package says. Scoop out 1 cup of the pasta water before you drain it.",
+  "Stir the 3 tbsp cream into the sauce. Add the shrimp and any juices from the plate and simmer for 1 to 2 minutes, until the shrimp are opaque all the way through and curled into a loose C.",
+  "Lift the spaghetti into the sauce with tongs and add 1/2 cup of the pasta water. Toss it over medium heat for about 1 minute, until the sauce clings to the strands. If it's too thick, add a splash more of the pasta water.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with the lemon wedges, the sliced chilies and the remaining 1/2 tsp red pepper flakes at the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three sear the shrimp quickly first, take them out, build a garlicky tomato and white wine sauce with chili in the same pan and return the shrimp only for the last minute or two. Not Quite Nigella softens onion in butter, adds tomato paste, crushed tomatoes, oregano, chili flakes and fresh bird's eye chilies, simmers 15 minutes and stirs in a splash of cream at the end; it also adds baking soda only if the tomatoes taste sour, and sets whole head-on king prawns on top. RecipeTin Eats makes a much faster version with passata, anchovies and parmesan in about 10 minutes, and Slender Kitchen uses fire-roasted diced tomatoes and Calabrian chili with a 10 minute simmer. This follows Not Quite Nigella with peeled shrimp only, a gentler amount of chili in the pot and the fresh chilies and extra flakes at the table.",
+ "sources": [
+  {
+   "name": "Not Quite Nigella",
+   "title": "Fra Diavolo Pasta Recipe",
+   "url": "https://www.notquitenigella.com/2026/04/27/fra-diavolo/",
+   "rating": 5.0,
+   "rating_count": 63,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Spicy Chilli Prawn Pasta (Shrimp)",
+   "url": "https://www.recipetineats.com/spicy-chilli-prawn-pasta/",
+   "rating": 5.0,
+   "rating_count": 48,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Slender Kitchen",
+   "title": "Shrimp Fra Diavolo",
+   "url": "https://www.slenderkitchen.com/recipe/shrimp-fra-diavolo",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

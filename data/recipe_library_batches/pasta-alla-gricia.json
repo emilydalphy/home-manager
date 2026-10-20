@@ -1,0 +1,88 @@
+{
+ "dish_name": "Pasta alla Gricia",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Rigatoni",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Guanciale",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pecorino Romano",
+   "qty": "5 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil over high heat.",
+  "Meanwhile, cut the 8 oz guanciale into strips about 1/4 inch thick and 1 inch long. Finely grate the 5 oz pecorino and put about 1/2 cup of it aside for the table.",
+  "Put the guanciale and the 1 tbsp olive oil in a large skillet over medium low. Cook for 10 to 12 minutes, stirring often, until the fat has melted out and the strips are golden and crisp at the edges. Don't rush it. Too hot and it burns before the fat renders.",
+  "Lift the guanciale into a small bowl with a slotted spoon and leave the fat in the skillet. Turn off the heat.",
+  "Add the 2 tsp salt and the 1 lb rigatoni to the boiling water. Cook it for 2 minutes less than the package says. Scoop out 1 1/2 cups of the pasta water before you drain it.",
+  "Set the skillet back over medium heat and add the 2 tsp pepper. Stir it in the fat for about 30 seconds, until it smells toasty.",
+  "Pour in 3/4 cup of the pasta water and swirl the pan. Let it bubble for about 1 minute, until the fat and water come together and look cloudy.",
+  "Add the rigatoni and cook for 2 to 3 minutes, tossing often and adding a splash of the pasta water when it looks dry, until the pasta is tender with a little bite and coated in a glossy sauce.",
+  "Take the skillet off the heat and wait about 30 seconds. Add the rest of the pecorino and toss hard until it melts into a creamy sauce. If it tightens up, add a splash more of the pasta water. If the pan is too hot, the cheese clumps.",
+  "Stir the guanciale back in.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve right away with the pecorino you kept over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three render guanciale slowly with little or no added fat, make a sauce from that fat and starchy pasta water in the skillet, and melt in Pecorino Romano with black pepper. The Pasta Project fries the guanciale in a little olive oil, stirs a third of a cup of pasta water into the fat, tosses in al dente pasta and adds half the cheese off the heat with the rest on top. Bon Appétit pulls the pasta halfway cooked so it finishes in the pan and leans hard on coarse pepper; Vincenzo's Plate toasts the pepper in the dry pan first and whisks the pecorino with pasta water into a cream before it goes in. This follows The Pasta Project's ratios with rigatoni, and takes the toasted pepper and the shorter boil from the other two.",
+ "sources": [
+  {
+   "name": "The Pasta Project",
+   "title": "Pasta alla Gricia (Authentic Roman Recipe)",
+   "url": "https://www.the-pasta-project.com/pasta-alla-gricia/",
+   "rating": 5.0,
+   "rating_count": 70,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bon Appétit",
+   "title": "Pasta alla Gricia",
+   "url": "https://www.bonappetit.com/recipe/pasta-alla-gricia",
+   "rating": 4.1,
+   "rating_count": 86,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Vincenzo's Plate",
+   "title": "Pasta alla Gricia Recipe",
+   "url": "https://www.vincenzosplate.com/pasta-alla-gricia-recipe/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

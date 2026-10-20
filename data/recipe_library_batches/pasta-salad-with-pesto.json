@@ -1,0 +1,41 @@
+{
+ "dish_name": "Pasta Salad with Pesto",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Rotini pasta", "qty": "1 box (16 oz)", "category": "pantry", "cook_qty": "12 oz"},
+  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Grape tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Sun-dried tomatoes", "qty": "1 jar", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Mozzarella pearls", "qty": "1 container (8 oz)", "category": "dairy", "cook_qty": "3/4 cup"},
+  {"item": "Pitted kalamata olives", "qty": "1 jar", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Basil pesto", "qty": "1 jar (6 oz)", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Fresh basil", "qty": "1 bunch", "category": "produce", "cook_qty": "1/3 cup chopped"}
+ ],
+ "instructions": [
+  "Fill a large pot with water, add the 1 tbsp salt and bring it to a boil over high heat.",
+  "Meanwhile, halve the pint of grape tomatoes. Drain 1/3 cup of the sun-dried tomatoes and chop them. Halve 3/4 cup of the mozzarella pearls and 3/4 cup of the olives.",
+  "Add 12 oz of the rotini to the boiling water and stir for the first minute so it doesn't stick. Cook it for the time on the package, until it's tender but still has a little bite.",
+  "Drain the pasta in a colander and rinse it under cold water until it feels cool. Shake the colander hard and leave it to drain for a few minutes. Wet pasta makes a thin, watery dressing.",
+  "In a large bowl, whisk 3/4 cup of the pesto with 1/3 cup of the mayonnaise, 1 1/2 tbsp of the vinegar and the 1/4 tsp pepper until smooth.",
+  "Add the pasta to the bowl and toss until every piece is coated. Add the grape tomatoes, sun-dried tomatoes, mozzarella and olives and fold them through gently.",
+  "Taste it. If it's flat, add a pinch of salt or a few more drops of the vinegar.",
+  "Chop 1/3 cup of the basil and scatter it over the top. Serve it at room temperature or cold. If you'd like it ready for lunch, make it the night before, keep it covered in the fridge and add the basil just before serving."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cook a spiral pasta, rinse or cool it, and toss it with pesto, cherry or grape tomatoes and small mozzarella balls. Spend With Pennies (the lead) loosens store-bought pesto with mayonnaise and red wine vinegar, adds sun-dried tomatoes and kalamata olives, and chills the salad for 2 hours. RecipeTin Eats blends its own pesto, adds a spoonful of mayonnaise and finishes with arugula, while Well Plated stirs Greek yogurt into a basil and spinach pesto and adds peas. This follows the lead for 12 oz of pasta so it works as a lunch for 4, and leaves the chilling as an option.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Pesto Pasta Salad", "url": "https://www.spendwithpennies.com/pesto-pasta-salad/", "rating": 5.0, "rating_count": 35, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Pesto pasta salad", "url": "https://www.recipetineats.com/pesto-pasta-salad/", "rating": 4.93, "rating_count": 27, "read": true, "lead": false},
+  {"name": "Well Plated", "title": "Pesto Pasta Salad", "url": "https://www.wellplated.com/pesto-pasta-salad/", "rating": 5.0, "rating_count": 9, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,116 @@
+{
+ "dish_name": "Sicilian Swordfish",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Swordfish steaks",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "2 pints",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pitted green olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Pat the 1.5 lb swordfish dry with paper towels. Sprinkle 1/2 tsp of the salt and 1/4 tsp of the pepper over both sides and leave it on a plate while you prep.",
+  "Meanwhile, halve the 2 pints cherry tomatoes and thinly slice the 2 garlic cloves. Slice 1/2 cup of the olives into rings. Rinse and drain 2 tbsp of the capers, and chop 2 tbsp of the parsley.",
+  "Set a large skillet over medium heat with no oil and add the 1/4 cup pine nuts. Toast them for 2 to 3 minutes, shaking the pan often, until they're golden and smell toasty. Transfer them to a small bowl. They burn fast, so stay with them.",
+  "Turn the heat up to medium high and add 2 tbsp of the olive oil. When it shimmers, lay the swordfish in the pan. Leave it alone for 2 to 3 minutes, until the underside is golden and lets go of the pan.",
+  "Flip the steaks and cook the other side for 1 minute. Move them back to the plate. They'll finish cooking in the sauce.",
+  "Turn the heat down to medium and add the remaining 2 tbsp olive oil and the garlic. Stir for about 30 seconds, until it smells fragrant but hasn't browned.",
+  "Add the tomatoes, the remaining 1/2 tsp salt and the 1 tsp oregano. Cook for 8 to 10 minutes, stirring now and then, until the tomatoes have slumped and their juice has turned into a loose sauce.",
+  "Stir in the olives and capers. Nestle the swordfish back into the pan with any juices from the plate and spoon some of the tomatoes over the top.",
+  "Cover the pan, turn the heat to medium low and cook for 3 to 5 minutes, until the fish is done. You're cooking it to 140°F in the middle, so if you have a thermometer, check it there. No thermometer? Push a fork into the thickest part: it's done when it's opaque all the way through and flakes.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Scatter the parsley, the toasted pine nuts and the remaining 1/4 tsp pepper over the top. Serve each steak with the tomatoes and olives spooned over it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook the swordfish in a quick pan sauce of tomatoes, olives and olive oil rather than baking it. GialloZafferano fries a garlic clove in oil, cooks halved cherry tomatoes with oregano for about 10 minutes, adds sliced green olives, then cooks the fish right in the sauce under a lid and tops it with toasted pine nuts. Vincenzo's Plate uses kalamata olives, capers, parsley and chili and steams the steaks in the sauce about 3 1/2 minutes a side; Stefan's Gourmet Blog flours and browns the fish first and builds a canned tomato sauce with onion, anchovy, white wine, capers and black olives. This follows GialloZafferano's sauce and timing, adds the capers the other two use, and gives the fish a short sear first as Stefan does.",
+ "sources": [
+  {
+   "name": "GialloZafferano",
+   "title": "Sicilian-style swordfish",
+   "url": "https://www.giallozafferano.com/recipes/sicilian-style-swordfish.html",
+   "rating": 4.3,
+   "rating_count": 284,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vincenzo's Plate",
+   "title": "Spicy Swordfish Recipe",
+   "url": "https://www.vincenzosplate.com/spicy-swordfish-recipe/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Stefan's Gourmet Blog",
+   "title": "Swordfish Sicilian Style (Pesce Spada alla Siciliana)",
+   "url": "https://stefangourmet.com/2013/06/09/swordfish-sicilian-style-pesce-spada-alla-siciliana/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

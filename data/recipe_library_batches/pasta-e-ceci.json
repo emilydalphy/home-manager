@@ -1,0 +1,43 @@
+{
+ "dish_name": "Pasta e Ceci",
+ "cuisine": "Italian",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Chickpeas", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Fresh rosemary", "qty": "1 bunch", "category": "produce", "cook_qty": "1 sprig"},
+  {"item": "Marinara sauce", "qty": "1 jar (24 oz)", "category": "pantry", "cook_qty": "2 cups"},
+  {"item": "Ditalini pasta", "qty": "1 box (16 oz)", "category": "pantry", "cook_qty": "1 cup (4 oz)"},
+  {"item": "Parmesan cheese", "qty": "1 wedge with rind (about 4 oz)", "category": "dairy", "cook_qty": "the rind plus 1/2 cup grated"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"}
+ ],
+ "instructions": [
+  "Set a sieve over a large measuring cup and drain both cans of chickpeas into it, keeping the liquid. Add water to the liquid until you have 4 cups.",
+  "Finely chop the onion and mince the 4 garlic cloves. Cut the rind off the Parmesan.",
+  "Heat 3 tbsp of the olive oil in a Dutch oven or large saucepan over medium. Add the onion and 1/2 tsp of the salt and cook for 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the chickpeas and cook for 3 to 4 minutes, stirring every minute or so, until some of them pop and turn golden. Stand back a little. They'll spatter.",
+  "Add the garlic, 1 sprig of the rosemary, the remaining 1/2 tsp salt and the 1/2 tsp pepper. Cook for 30 seconds, stirring, until the garlic smells fragrant.",
+  "Stir in 2 cups of the marinara, then pour in the 4 cups of chickpea liquid and scrape up anything stuck to the bottom. Turn the heat up to high and bring it to a simmer.",
+  "When it's bubbling all around the edges, add 1 cup of the ditalini and the Parmesan rind. Turn the heat down to low and simmer for 12 to 15 minutes, stirring often so the pasta doesn't stick, until the pasta is tender and the soup is thick. If it gets thicker than you like, add a splash of water.",
+  "While it simmers, grate 1/2 cup of the Parmesan and chop 2 tbsp of the parsley.",
+  "Fish out the rosemary stem and what's left of the rind. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and top each one with the grated Parmesan, the parsley and a drizzle of the last 1 tbsp olive oil. Serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version found had 20 or more ratings, and RecipeTin Eats (the trusted cook for Italian) has no pasta e ceci, so this leads with Well Plated, the most rated of the versions read. All three cook small pasta right in the pot with canned chickpeas, garlic, a tomato base and a Parmesan rind, and finish with grated cheese and olive oil. Well Plated fries the chickpeas until they pop, uses jarred marinara and the chickpea liquid topped up with water, while Sandra Valvassori starts with onion and celery, fries tomato paste and adds rosemary, and A Simple Palate simmers the chickpeas with sage and rosemary and blends 2 cups of the soup for body. This follows the lead doubled for 4, with the onion and rosemary from Sandra Valvassori.",
+ "sources": [
+  {"name": "Well Plated", "title": "Pasta e Ceci", "url": "https://www.wellplated.com/pasta-e-ceci/", "rating": 4.86, "rating_count": 14, "read": true, "lead": true},
+  {"name": "Sandra Valvassori", "title": "Pasta e Ceci (Italian Pasta and Chickpea Stew)", "url": "https://www.sandravalvassori.com/pasta-e-ceci-italian-pasta-and-chickpea-stew/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "A Simple Palate", "title": "Pasta e Ceci (Italian Pasta and Chickpeas)", "url": "https://asimplepalate.com/blog/pasta-e-ceci-pasta-and-chickpeas/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

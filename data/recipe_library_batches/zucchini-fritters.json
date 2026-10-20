@@ -1,0 +1,44 @@
+{
+ "dish_name": "Zucchini Fritters",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Zucchini", "qty": "2 medium (about 1 1/2 lb)", "category": "produce"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Parmesan cheese", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "2 tbsp grated"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Shredded mozzarella", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Italian seasoned bread crumbs", "qty": "1 container (15 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "All-purpose flour", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Baking powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Sour cream", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"}
+ ],
+ "instructions": [
+  "Trim the ends off the 2 zucchini. If they're big, halve them lengthwise and scoop out the seeds with a spoon. Grate them on the large holes of a box grater.",
+  "Transfer the zucchini to a colander set in the sink, toss it with the 1 tsp salt and leave it for 10 minutes.",
+  "Meanwhile, heat the oven to 200°F and set a wire rack on a baking sheet inside. Thinly slice 2 of the green onions and grate 2 tbsp of the Parmesan.",
+  "Bundle the zucchini up in a clean kitchen towel and twist it hard over the sink. Squeeze out as much water as you can, or the fritters will be soggy and fall apart. That should be about 2 1/2 cups.",
+  "Beat the 2 eggs in a large bowl. Add the zucchini, 1 cup of the mozzarella, 1/2 cup of the bread crumbs, the green onions, the 2 tbsp flour, the Parmesan, the 1 tsp baking powder and the pinch of pepper. Mix until it's evenly combined.",
+  "Divide the mixture into 8 portions and shape each one into a patty about 3 inches across and 1/2 inch thick.",
+  "Heat 1 1/2 tbsp of the oil in a large nonstick skillet over medium until it shimmers. Add 4 of the patties and cook for 3 to 4 minutes, until the underside is deep golden.",
+  "Flip them and cook the other side for 3 to 4 minutes, until it's golden and the fritters feel firm. Move them to the rack in the oven.",
+  "Add the remaining 1 1/2 tbsp oil to the pan and cook the other 4 patties the same way.",
+  "This makes 8 fritters, two for each person. Serve them hot or cold with 1/2 cup of the sour cream."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three salt grated zucchini for 10 minutes, wring out the water, bind it with egg and flour and fry the fritters in a skillet until golden on both sides. Spend With Pennies (the lead) adds shredded mozzarella, seasoned bread crumbs, a little Parmesan and baking powder and shapes the mixture into patties. RecipeTin Eats uses more flour with Parmesan, garlic and green onions and keeps the fritters warm in a low oven, while Natasha's Kitchen keeps it to egg, flour, baking powder and green onions and serves them with sour cream. This follows the lead doubled for 4, with the warm oven from RecipeTin Eats and the sour cream from Natasha's Kitchen.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Zucchini Fritters", "url": "https://www.spendwithpennies.com/zucchini-fritters/", "rating": 4.98, "rating_count": 47, "read": true, "lead": true},
+  {"name": "Natasha's Kitchen", "title": "Zucchini Fritters", "url": "https://natashaskitchen.com/zucchini-fritters-recipe/", "rating": 4.94, "rating_count": 351, "read": true, "lead": false},
+  {"name": "RecipeTin Eats", "title": "Crispy Zucchini Fritters", "url": "https://www.recipetineats.com/crispy-zucchini-fritters/", "rating": 4.92, "rating_count": 133, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

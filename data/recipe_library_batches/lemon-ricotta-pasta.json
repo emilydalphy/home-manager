@@ -1,0 +1,95 @@
+{
+ "dish_name": "Lemon Ricotta Pasta",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk ricotta",
+   "qty": "15 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp + 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil over high heat.",
+  "Meanwhile, pour off any liquid sitting on top of the 15 oz ricotta and transfer it into a large serving bowl. Mash it with a fork until smooth.",
+  "Finely grate all the zest from the lemon over the ricotta. Tear in most of the basil leaves, keeping a small handful for the top. Add the 2 tbsp olive oil, 1/2 tsp of the salt and 1/4 tsp of the pepper and stir it together.",
+  "Finely grate the 4 oz parmesan. Stir half of it into the ricotta and keep the other half for the table.",
+  "Add the 1 tbsp salt and the 1 lb spaghetti to the boiling water. Cook it for the time on the package, stirring now and then, until it's tender with a little bite.",
+  "When the spaghetti has about 2 minutes left, scoop out 1 1/2 cups of the pasta water. Stir 1/2 cup of it into the ricotta until it's smooth and loose, like thick cream.",
+  "Drain the spaghetti and transfer it straight into the bowl. Toss it with tongs for about 1 minute, adding a splash of the pasta water at a time, until a smooth sauce coats every strand.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of juice from the lemon.",
+  "Serve right away with the rest of the parmesan, the remaining 1/4 tsp pepper and the basil leaves you kept over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three make the sauce without a stove: ricotta, a hard grating cheese and lemon stirred together, then loosened with hot starchy pasta water and tossed through the drained pasta. The Pasta Project mashes drained ricotta with lemon zest, torn basil and half the Parmigiano, tosses it with spaghetti and finishes with the rest of the cheese and more basil. The Burnt Butter Table uses lemon juice and raw garlic instead of zest and warms the sauce briefly in a skillet; It Is a Keeper cooks garlic in olive oil and stirs the ricotta through in the pan. This follows The Pasta Project with whole milk ricotta, a little olive oil in the sauce, and the pasta water stirred in before the toss as The Burnt Butter Table does.",
+ "sources": [
+  {
+   "name": "The Pasta Project",
+   "title": "Lemon Ricotta Pasta (Pasta al Limone)",
+   "url": "https://www.the-pasta-project.com/spaghetti-al-limone-ricotta-basil-lemon/",
+   "rating": 5.0,
+   "rating_count": 67,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "It Is a Keeper",
+   "title": "Pasta with Ricotta and Lemon",
+   "url": "https://www.itisakeeper.com/96485/lemony-ricotta-pasta/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Burnt Butter Table",
+   "title": "Creamy Lemon Ricotta Pasta (15 minutes!)",
+   "url": "https://www.theburntbuttertable.com/lemon-ricotta-pasta/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

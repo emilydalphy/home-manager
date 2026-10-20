@@ -32,10 +32,10 @@
  ],
  "advance_prep_notes": "",
  "advance_prep_step_indices": [],
- "method_notes": "Every version builds the sandwich on an olive salad of chopped green olives, giardiniera and pickled vegetables in oil with oregano, layered with mortadella, salami-type cured meats and provolone. Tasting Table (the lead) pulses the olive salad with pepperoncini and cocktail onions, uses mortadella, soppressata, ham and provolone, and spreads the salad on both halves of the bread. Delish uses capicola instead of ham, adds roasted peppers and parsley to the salad and presses the sandwich under a weight for 30 minutes, while 2 Foodtrippers builds a party version on focaccia and warms it in the oven to melt the cheese. This follows the lead's salad and layers on one large focaccia, with Delish's press, and uses mild giardiniera so the base isn't hot.",
+ "method_notes": "Every version builds the sandwich on an olive salad of chopped green olives, giardiniera and pickled vegetables in oil with oregano, layered with mortadella, salami-type cured meats and provolone. Tasting Table (the lead) pulses the olive salad with pepperoncini and cocktail onions, uses mortadella, soppressata, ham and provolone, and spreads the salad on both halves of the bread. Delish uses capicola instead of ham, adds roasted peppers and parsley to the salad and presses the sandwich under a weight for 30 minutes, while 2 Foodtrippers builds a party version on focaccia and warms it in the oven to melt the cheese. This follows the lead's salad and layers on one large focaccia, with Delish's press, and uses mild giardiniera so the base isn't hot. Delish's page gives only a review count (2), recorded as its rating count.",
  "sources": [
   {"name": "Tasting Table", "title": "Classic Muffuletta Recipe", "url": "https://www.tastingtable.com/687355/how-to-make-muffuletta-sandwich/", "rating": 4.6, "rating_count": 41, "read": true, "lead": true},
-  {"name": "Delish", "title": "Muffuletta", "url": "https://www.delish.com/cooking/recipe-ideas/a28838283/muffuletta-sandwich-recipe/", "rating": 5.0, "rating_count": null, "read": true, "lead": false},
+  {"name": "Delish", "title": "Muffuletta", "url": "https://www.delish.com/cooking/recipe-ideas/a28838283/muffuletta-sandwich-recipe/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
   {"name": "2 Foodtrippers", "title": "Mini Muffuletta Sandwich Recipe", "url": "https://www.2foodtrippers.com/mini-muffuletta-sandwich-recipe/", "rating": 4.0, "rating_count": 1, "read": true, "lead": false}
  ],
  "fallback_used": false,
