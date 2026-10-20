@@ -1,0 +1,44 @@
+{
+ "dish_name": "Biscuits and Sausage Gravy",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Unsalted butter", "qty": "6 tbsp", "category": "dairy"},
+  {"item": "Whole milk", "qty": "3 1/4 cups", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "2 1/2 cups", "category": "pantry"},
+  {"item": "Baking powder", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Breakfast sausage", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Black pepper", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the 6 tbsp butter into small cubes and put them in the freezer for 15 minutes. Measure 3/4 cup of the milk and keep it in the fridge until you need it.",
+  "Meanwhile, heat the oven to 425°F and line a baking sheet with parchment.",
+  "In a large bowl, whisk together 2 cups of the flour, the 1 tbsp baking powder, 1 tbsp sugar and 1 tsp salt.",
+  "Add the cold butter and cut it in with a pastry cutter or two forks until the mixture looks like coarse crumbs with some pea sized bits of butter left.",
+  "Pour in the cold milk you measured and stir with a spoon until it just comes together into a shaggy dough. Don't keep stirring once the flour is wet.",
+  "Sprinkle 1/4 cup of the flour over the counter and turn the dough out onto it. Press it together gently with your hands.",
+  "Fold the dough in half and pat it flat. Turn it a quarter turn and fold it again. Do this 5 or 6 times in all, working gently.",
+  "Pat the dough out about 1 inch thick. Cut straight down with a 2 1/2 inch cutter, without twisting, and set the biscuits on the sheet almost touching. Press the scraps together and cut again until you have 8.",
+  "Bake for 10 to 12 minutes, until the tops are just turning golden.",
+  "While they bake, put the 1 lb sausage in a large skillet over medium high heat. Cook it for 6 to 8 minutes, breaking it into small crumbles with a spatula, until it's browned and there's no pink left. Leave the fat in the pan.",
+  "Sprinkle the last 1/4 cup flour over the sausage and stir for 1 to 2 minutes, until you can't see any dry flour.",
+  "Pour in the remaining 2 1/2 cups milk slowly, stirring as you pour so no lumps form. Stir in the 1 tsp pepper.",
+  "Turn the heat down to medium and let it bubble gently for 5 to 7 minutes, stirring often, until the gravy is thick enough to coat a spoon. It thickens a little more as it sits.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Split the warm biscuits in half, put two on each plate and spoon the gravy over them. Serve straight away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both make a quick baking powder biscuit with very cold butter and milk, then brown a pound of breakfast sausage, cook flour into its fat and whisk in about 2 1/2 cups of milk until thick. Spend With Pennies (the lead) folds the biscuit dough over itself 5 or 6 times for layers, bakes at 425°F and leaves the gravy unseasoned apart from optional red pepper flakes. Natasha's uses half and half in the biscuits, adds 2 tbsp butter to the sausage pan, cooks the flour for 3 minutes and seasons the gravy with plenty of coarse black pepper. This one follows the lead's biscuits and adds the black pepper from Natasha's. The lead says 7 servings, and this serves four at two biscuits each.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Biscuits and Gravy", "url": "https://www.spendwithpennies.com/biscuits-and-gravy/", "rating": 4.95, "rating_count": 37, "read": true, "lead": true},
+  {"name": "Natasha's Kitchen", "title": "Biscuits and Gravy Recipe", "url": "https://natashaskitchen.com/biscuits-and-gravy/", "rating": 4.97, "rating_count": 32, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

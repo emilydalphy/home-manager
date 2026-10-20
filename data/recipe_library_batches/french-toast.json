@@ -1,0 +1,104 @@
+{
+ "dish_name": "French Toast",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Challah",
+   "qty": "1 loaf",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 275°F and set a wire rack on a baking sheet.",
+  "Cut 8 slices from the challah, each about 3/4 inch thick. Day-old challah is best here. If the loaf is very fresh, lay the slices out on the rack while you make the custard.",
+  "Warm the 1 tbsp honey in the microwave for about 10 seconds so it's runny.",
+  "Crack 6 of the eggs into a wide, shallow dish. Separate the last 2 eggs and add only the yolks.",
+  "Add the 1 cup milk, the warm honey, 2 tsp vanilla, 1 tsp cinnamon and 1/4 tsp salt. Whisk until the honey has dissolved and there are no streaks of egg white left.",
+  "Heat a large nonstick skillet over medium low and melt 1 1/2 tbsp of the butter in it.",
+  "Lay 4 slices in the custard and let them soak for 30 to 40 seconds. Turn them over and soak the other side for the same time. Lift each one out and let the extra drip back into the dish.",
+  "Put the 4 slices in the skillet and cook for 3 to 4 minutes, until the underside is deep golden. Flip them and cook the other side for 3 to 4 minutes.",
+  "Move them to the rack on the baking sheet and slide it into the oven. Melt the remaining 1 1/2 tbsp butter in the skillet and soak and cook the last 4 slices the same way.",
+  "Add those to the oven and leave them all in for 10 minutes. The middles are set when you press one and no wet custard comes out.",
+  "Serve with the maple syrup."
+ ],
+ "method_notes": "All three soak thick, slightly stale bread in an egg and milk custard with vanilla and cinnamon and cook it in butter over medium low to medium heat, 2 1/2 to 4 minutes a side. Natasha's Kitchen makes the richest custard, with 6 eggs plus 2 yolks, warm honey and a 30 to 40 second soak a side, and finishes the slices in a 275°F oven so the centers set. Spend With Pennies uses 4 whole eggs and a spoon of sugar with a quick dip, and RecipeTin Eats a lighter 2 egg custard for brioche or sandwich bread. This follows Natasha's custard and oven finish for 8 slices of challah.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Easy French Toast Recipe",
+   "url": "https://natashaskitchen.com/french-toast-recipe/",
+   "rating": 5.0,
+   "rating_count": 132,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "French Toast Recipe",
+   "url": "https://www.spendwithpennies.com/french-toast/",
+   "rating": 4.99,
+   "rating_count": 119,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "French Toast",
+   "url": "https://www.recipetineats.com/french-toast/",
+   "rating": 4.95,
+   "rating_count": 72,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed",
+ "fallback_used": false
+}

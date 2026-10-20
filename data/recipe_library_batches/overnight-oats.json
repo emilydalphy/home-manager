@@ -1,0 +1,38 @@
+{
+ "dish_name": "Overnight Oats",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {"item": "Rolled oats", "qty": "2 cups", "category": "pantry"},
+  {"item": "Milk", "qty": "2 cups", "category": "dairy"},
+  {"item": "Greek yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Chia seeds", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Maple syrup", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Ground cinnamon", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
+  {"item": "Blueberries", "qty": "1 pint", "category": "produce"},
+  {"item": "Walnuts", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"}
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: in a large bowl, stir together the 2 cups oats, 2 cups milk, 1 cup Greek yogurt, 1/4 cup chia seeds, 1/4 cup maple syrup, 2 tsp vanilla, 1 tsp cinnamon and a pinch of salt. Keep stirring until there are no dry pockets of oats or lumps of yogurt left.",
+  "Spoon it into 4 jars or containers with lids, about 1 cup in each. Seal them and put them in the fridge.",
+  "In the morning, put the 1/2 cup walnuts in a dry skillet over medium heat. Toast them for 3 to 4 minutes, shaking the pan now and then, until they smell toasty and turn a shade darker. Tip them onto a board and chop them roughly.",
+  "Open the jars and give each one a good stir. The oats will have soaked up the milk and gone thick and soft.",
+  "Split the blueberries between the jars and scatter the walnuts over the top.",
+  "Serve cold, straight from the jar. Any jars you don't eat keep in the fridge for up to 3 days."
+ ],
+ "advance_prep_notes": "Mix the oats and put them in jars the night before (at least 4 hours ahead).",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "All three soak rolled oats in about an equal volume of milk with yogurt, chia seeds and a little maple syrup or honey, then chill them. Downshiftology (the lead) uses 1/2 cup each of oats and milk per jar with 1/4 cup Greek yogurt and 1 tbsp chia, and says at least 2 hours but overnight is creamier; its classic flavor adds vanilla, cinnamon and walnuts. Once Upon a Chef uses less yogurt, adds a pinch of salt and cinnamon and chills at least 4 hours, and Spend With Pennies layers fruit under and over the oats in the jars. This one follows the lead's base for four jars with blueberries and toasted walnuts on top.",
+ "sources": [
+  {"name": "Downshiftology", "title": "Easy Overnight Oats (6 Amazing Flavors)", "url": "https://downshiftology.com/recipes/overnight-oats/", "rating": 4.96, "rating_count": 310, "read": true, "lead": true},
+  {"name": "Spend With Pennies", "title": "Overnight Oats", "url": "https://www.spendwithpennies.com/overnight-oats/", "rating": 5.0, "rating_count": 32, "read": true, "lead": false},
+  {"name": "Once Upon a Chef", "title": "Overnight Oats", "url": "https://www.onceuponachef.com/recipes/overnight-oats.html", "rating": 5.0, "rating_count": 15, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,35 @@
+{
+ "dish_name": "Scrambled Eggs and Toast",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Milk", "qty": "1/4 cup", "category": "dairy"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "to taste", "category": "pantry"},
+  {"item": "Butter", "qty": "4 tbsp", "category": "dairy"},
+  {"item": "Sandwich bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Crack the 8 eggs into a bowl and add the 1/4 cup milk, the 1/2 tsp salt and a few grinds of pepper. Whisk with a fork until there are no streaks of white left.",
+  "Start the toast first so it's ready when the eggs are. Toast 8 slices of the bread, spread them with 2 tbsp of the butter while they're hot and put two slices on each plate.",
+  "Melt 1 tbsp of the butter in a 10 inch nonstick skillet over medium heat until it foams. Pour in half of the eggs.",
+  "Leave them for 5 seconds. Then push a rubber spatula slowly across the pan in long strokes and around the edges, so the runny egg flows onto the hot pan. After about 30 seconds, start folding the set egg over as well.",
+  "After about 1 minute in all, when you have soft folds of egg and no runny egg at the edges, take the pan off the heat. They should look a little softer than you like. Fold them for another 10 seconds off the heat. They finish cooking in the warm pan.",
+  "Slide them onto the toast on 2 of the plates.",
+  "Wipe out the pan and cook the rest of the eggs the same way in the last 1 tbsp of the butter. Slide them onto the other 2 plates.",
+  "Grind a little more pepper over the top and serve straight away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both whisk the eggs with a little milk, cook them over medium heat in a nonstick pan with a rubber spatula, pull long soft curds across the pan and take it off the heat while the eggs are still slightly wet. RecipeTin Eats (the lead) seasons the eggs before they go in, cooks 4 eggs in about a minute in butter and serves them on hot buttered toast. Love and Lemons uses only a teaspoon of milk or water, cooks a little longer on medium low with olive oil or butter, seasons at the end and adds chives. This one follows the lead, cooking 8 eggs in two batches so they stay soft.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Scrambled eggs - soft and creamy, just as they should be!", "url": "https://www.recipetineats.com/scrambled-eggs/", "rating": 5.0, "rating_count": 36, "read": true, "lead": true},
+  {"name": "Love and Lemons", "title": "How to Make Scrambled Eggs", "url": "https://www.loveandlemons.com/scrambled-eggs/", "rating": 4.93, "rating_count": 101, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

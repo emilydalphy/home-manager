@@ -1,0 +1,43 @@
+{
+ "dish_name": "Baked Oatmeal",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {"item": "Coconut oil", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup + 1 tsp"},
+  {"item": "Banana", "qty": "1", "category": "produce"},
+  {"item": "Unsweetened almond milk", "qty": "1 carton", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Almond butter", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Maple syrup", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Baking powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cinnamon", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Old-fashioned rolled oats", "qty": "2 cups", "category": "pantry"},
+  {"item": "Pecans", "qty": "1 bag (8 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Blueberries", "qty": "1 pint", "category": "produce", "cook_qty": "1 cup"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Unsweetened coconut flakes", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"}
+ ],
+ "instructions": [
+  "Take the almond milk out of the fridge first. Cold milk makes the coconut oil go solid in lumps.",
+  "Heat the oven to 350°F. Rub 1 tsp of the coconut oil around the inside of an 8 by 8 inch baking dish.",
+  "Melt 1/4 cup coconut oil in a small bowl in the microwave, 30 to 60 seconds.",
+  "Mash the banana in a large bowl with a fork until it's smooth, with only small lumps left.",
+  "Add 1 cup almond milk, 1/4 cup almond butter, 1/4 cup maple syrup and the melted coconut oil, and whisk until smooth. Whisk in the 1 tsp baking powder, 1 tsp cinnamon and 1/2 tsp salt.",
+  "Roughly chop 1 cup of the pecans. Fold the 2 cups oats, 3/4 cup of the chopped pecans and 1/2 cup of the blueberries into the bowl, then spread it evenly in the dish.",
+  "Scatter the remaining 1/2 cup blueberries and 1/4 cup pecans over the top, then the 2 tbsp brown sugar and 2 tbsp coconut flakes.",
+  "Bake for 40 to 50 minutes, until the top is golden and crisp and the middle doesn't wobble when you shake the dish.",
+  "Let it cool for 10 minutes, then cut it into 4 squares and serve it warm. Any squares you don't eat keep covered in the fridge for up to 4 days. Reheat one in the microwave for about 1 minute."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both stir oats into a sweetened, cinnamon spiced milk base with baking powder, fold in blueberries and nuts, and bake until the middle is set. Love and Lemons (the lead) is vegan: mashed banana, almond milk, almond butter, maple syrup and coconut oil in an 8 by 8 dish at 350°F, with extra berries, pecans, brown sugar and coconut on top for a crisp crust. Well Plated binds it with eggs and applesauce instead, uses milk and butter, toasts the almonds first and bakes it at 375°F. This one follows the lead's pan and ratios, which give four hearty squares.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Baked Oatmeal", "url": "https://www.loveandlemons.com/baked-oatmeal/", "rating": 4.98, "rating_count": 273, "read": true, "lead": true},
+  {"name": "Well Plated", "title": "Baked Oatmeal", "url": "https://www.wellplated.com/baked-oatmeal/", "rating": 4.92, "rating_count": 46, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

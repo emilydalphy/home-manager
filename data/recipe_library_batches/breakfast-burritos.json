@@ -1,0 +1,42 @@
+{
+ "dish_name": "Breakfast Burritos",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Bacon", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Shredded cheddar cheese", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Flour tortillas", "qty": "4 (10 inch)", "category": "other"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Lay the bacon in a large nonstick skillet and set it over medium heat. Cook it for 8 to 10 minutes, turning the slices now and then, until they're crisp. Move them to a plate lined with paper towel.",
+  "Meanwhile, thinly slice 3 of the scallions and dice half of the red bell pepper.",
+  "Crack the 8 eggs into a bowl, add the 1/2 tsp salt and beat them with a fork until there are no streaks of white left. Stir in the scallions and pepper.",
+  "Pour off all but about 1 tsp of the bacon fat. Turn the heat down to medium low and pour in the eggs.",
+  "Leave them for about 20 seconds, until they start to set on the bottom. Then stir slowly with a spatula for 2 to 3 minutes, pushing the set egg from the edges into the middle.",
+  "Take the pan off the heat while the eggs are just set and still look a little moist, and tip them onto a plate. Wipe out the pan.",
+  "Set the pan over medium high heat and lay in a tortilla. Warm it for about 20 seconds, flip it and warm the other side for 20 seconds, until it's soft and has a few toasty spots. Do the same with the other 3.",
+  "Spoon a quarter of the eggs onto the bottom third of each tortilla. Break the bacon over the eggs, splitting it evenly, and split the 1 cup cheddar between them.",
+  "Fold the bottom of the tortilla up over the filling, fold in both sides and roll it up tight. Set it seam side down.",
+  "To eat them now, put the burritos seam side down in the skillet over medium heat. Cover and cook for 2 minutes, until the bottoms are golden. Flip them and cook the other side, covered, for 2 minutes.",
+  "Serve with the hot sauce on the side.",
+  "To freeze them, let the burritos cool for 10 minutes. Wrap each one tightly in a sheet of heavy foil, put them in a freezer bag and write the date on it. They keep for up to 1 month.",
+  "To reheat one from frozen, bake it in its foil at 425°F for 45 minutes, turning it halfway, then unwrap it and bake for 5 more minutes. In a hurry, take off the foil, wrap it in a paper towel and microwave it for 1 minute. Turn it over and microwave it for another 1 to 1 1/2 minutes, then let it stand for 2 minutes. It's hot enough when the middle is steaming."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both scramble eggs in the fat left from browning the meat, then roll them into flour tortillas with cheese and toast the burritos seam side down in a covered pan. Skinnytaste (the lead) uses bacon, folds scallions and red pepper into the eggs, chars the tortillas first, and gives foil wrapping and oven, microwave and air fryer reheating for the freezer. Once Upon a Chef uses spicy sausage, smoked paprika in the eggs, Monterey Jack and an avocado and tomato salsa inside, and is meant to be eaten fresh. This one follows the lead, keeps the eggs mild and puts the hot sauce on the side.",
+ "sources": [
+  {"name": "Skinnytaste", "title": "Breakfast Burritos", "url": "https://www.skinnytaste.com/freezer-breakfast-burritos/", "rating": 4.96, "rating_count": 64, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Breakfast Burritos", "url": "https://www.onceuponachef.com/recipes/breakfast-burritos.html", "rating": 4.92, "rating_count": 170, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

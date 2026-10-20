@@ -1,0 +1,41 @@
+{
+ "dish_name": "Breakfast Casserole",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {"item": "White sandwich bread", "qty": "1 loaf", "category": "other", "cook_qty": "7 slices"},
+  {"item": "Mild Italian sausage", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Shredded Italian cheese blend", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "2 cups"},
+  {"item": "Unsalted butter", "qty": "1 tbsp", "category": "dairy"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Milk", "qty": "1 1/2 cups", "category": "dairy"},
+  {"item": "Italian seasoning", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 3 hours ahead, heat the oven to 300°F. Cut 7 slices of the bread into 1-inch cubes, spread them on a baking sheet and bake for 10 to 15 minutes, until they feel dry on the outside but haven't browned. Turn the oven off.",
+  "While the bread dries, squeeze the 8 oz sausage out of its casings into a large skillet over medium high heat. Break it into small crumbles with a spatula and cook for 6 to 8 minutes, until it's browned and there's no pink left. Spoon off the fat.",
+  "Finely dice the red pepper and thinly slice 2 of the green onions. Rub the 1 tbsp butter over the inside of an 8 by 8 inch baking dish.",
+  "Spread half the bread cubes in the dish. Scatter over half the sausage, half the pepper, half the green onions and 1 cup of the cheese. Repeat with the rest of the bread, sausage, pepper and green onions, and finish with the last 1 cup cheese.",
+  "In a bowl, whisk the 4 eggs, 1 1/2 cups milk, 1/2 tsp Italian seasoning, 1/4 tsp salt and 1/4 tsp pepper until there are no streaks of white. Pour it evenly over the dish and press the bread down with a spatula so every cube gets wet. Cover with foil and refrigerate overnight.",
+  "In the morning, put the covered dish straight into the cold oven and heat it to 350°F. Bake for 45 minutes.",
+  "Take the foil off and bake another 10 to 20 minutes, until it's puffed and golden on top. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Push a knife into the center: it's done when it comes out clean, with no runny egg.",
+  "Let it rest for 10 minutes. Cut it any sooner and it falls apart. Cut it into 4 squares and serve it warm."
+ ],
+ "advance_prep_notes": "Assemble it the night before, or at least 3 hours ahead, and refrigerate it overnight.",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5],
+ "method_notes": "Spend With Pennies (the lead) and Little Sweet Baker both layer dried bread cubes with cooked meat, peppers, green onion and cheese in a greased dish, pour over an egg and milk custard and chill it at least a few hours or overnight before baking at 350°F. Spend With Pennies uses Italian sausage, an Italian cheese blend and Italian seasoning and starts it in a cold oven under foil; Little Sweet Baker uses ham, cheddar, smoked gouda and Dijon. Natasha's Kitchen is a same-morning skillet version with grated potato, bacon and sour cream instead of bread. This one halves the lead into an 8 by 8 dish, keeps the crusts on, adds one more egg for a firmer set and takes the foil off for the end so the top browns.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Overnight Sausage Breakfast Casserole", "url": "https://www.spendwithpennies.com/overnight-breakfast-casserole-with-sausage/", "rating": 4.9, "rating_count": 39, "read": true, "lead": true},
+  {"name": "Natasha's Kitchen", "title": "Breakfast Casserole Recipe", "url": "https://natashaskitchen.com/breakfast-casserole/", "rating": 4.94, "rating_count": 31, "read": true, "lead": false},
+  {"name": "Little Sweet Baker", "title": "Overnight Breakfast Casserole", "url": "https://www.littlesweetbaker.com/overnight-breakfast-casserole/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
