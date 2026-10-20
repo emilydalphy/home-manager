@@ -1,0 +1,135 @@
+{
+ "dish_name": "Tom Kha Gai",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Straw mushrooms",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "8"
+  },
+  {
+   "item": "Galangal",
+   "qty": "1 piece (about 2 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "10"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice and get it cooking the way you usually do. The soup only takes about 15 minutes, so start the rice first.",
+  "Cut the 1 lb chicken thighs into bite-size pieces, about 1 inch. Toss them with 1/2 tsp of the salt.",
+  "Peel the tough outer layer off the 2 lemongrass stalks and cut each one into 3 pieces. Bash them with the flat of a knife or a rolling pin until they split open. Slice the galangal into thin coins.",
+  "Cut the onion into thin wedges. Drain the 2 cans of straw mushrooms and cut them in half. Halve 8 cherry tomatoes.",
+  "Tear 10 lime leaves into a few pieces each, pulling out the center stem. Juice the 2 limes. You want about 3 tbsp, with a little left over. Pick a small handful of cilantro leaves.",
+  "Thinly slice 2 Thai chilies and put them in a small bowl for the table.",
+  "Pour 1 cup of the coconut milk into a large pot over medium-high heat and bring it to a gentle boil. Add the chicken and stir. Turn the heat down to medium and simmer for 2 to 3 minutes, until the outside of the chicken has turned white.",
+  "Pour in 2 cups of water and bring it back to a boil.",
+  "Add the lemongrass, galangal, onion, 2 tsp sugar and the remaining 1 1/2 tsp salt. Stir and bring it back to a boil. Within a minute or two you'll smell the lemongrass.",
+  "Add the mushrooms and boil for 2 minutes. Cut open the biggest piece of chicken to check it. It's done when there's no pink left in the middle (175°F, if you have a thermometer).",
+  "Add the tomatoes and lime leaves and cook for 30 seconds, then take the pot off the heat.",
+  "Stir in 3 tbsp of the lime juice and the cilantro leaves.",
+  "Taste it. If it's flat, add a pinch more salt or the rest of the lime juice.",
+  "Ladle it into bowls, leaving the lemongrass and galangal pieces behind. They're too tough to eat. Serve with the jasmine rice, with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three simmer chicken in coconut milk with bruised lemongrass, galangal and lime leaves, add mushrooms, and finish off the heat with lime juice and cilantro. Thai Cookbook keeps it light, heating a little coconut milk with the chicken before adding water, seasons it with salt and sugar rather than fish sauce, and adds cherry tomatoes and culantro at the very end. The Woks of Life fries the mushrooms first, uses 3 cups chicken stock to a full can of coconut milk and seasons with fish sauce, and the Food.com version is richer still, with two cans of coconut milk. This one follows Thai Cookbook's order and ratios for 4, with the chilies on the side.",
+ "sources": [
+  {
+   "name": "Thai Cookbook",
+   "title": "Tom Kha Gai: Chicken and Galangal Coconut Soup",
+   "url": "https://thaicookbook.tv/thai-recipes/soups/tom-kha-gai-chicken-and-galangal-soup-with-mushrooms",
+   "rating": 4.5,
+   "rating_count": 5268,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Tom Kha Gai (Thai Coconut Chicken Soup)",
+   "url": "https://thewoksoflife.com/tom-kha-gai-thai-coconut-chicken-soup/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Tom Kha Gai (Chicken Galangal Soup)",
+   "url": "https://www.food.com/recipe/tom-kha-gai-chicken-galangal-soup-467916",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

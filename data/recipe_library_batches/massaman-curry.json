@@ -1,0 +1,151 @@
+{
+ "dish_name": "Massaman Curry",
+ "cuisine": "Thai",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 140,
+ "ingredients": [
+  {
+   "item": "Beef chuck",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Low-sodium beef broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "1 stalk",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Massaman curry paste",
+   "qty": "1 can (4 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the papery outer layers off the lemongrass and cut off the root end. Finely grate 1 tbsp from the pale bottom part and set it aside. Keep the trimmings and the green top for the beef.",
+  "Cut the 1.5 lb beef chuck into 1 1/2 inch cubes. Put them in a medium saucepan with the 2 cups broth, the 2 bay leaves, 1/2 tsp salt and the lemongrass trimmings. The liquid should almost cover the beef. Add a splash of water if it doesn't.",
+  "Bring it to a boil over high heat, then turn it down to low so it bubbles gently. Partly cover and simmer for 1 1/2 to 2 hours, until a fork slides into the beef easily.",
+  "About 30 minutes before the beef is done, rinse the 1 1/2 cups jasmine rice and get it cooking.",
+  "Meanwhile, peel the 2 potatoes and cut them into 1 inch pieces. Mince the 2 garlic cloves and finely grate 2 tsp of the ginger. Roughly chop 1/3 cup peanuts. Thinly slice the 2 chilies into a small bowl for the table.",
+  "When the beef is tender, lift it out onto a plate with a slotted spoon. Fish out the bay leaves and lemongrass. You want about 1 1/2 cups of liquid in the pan. If there's a lot more, boil it for a few minutes to bring it down.",
+  "Heat the 1/4 cup oil in a large pot or deep skillet over medium high. Add the whole can of curry paste with the garlic, ginger and grated lemongrass. Cook for about 3 minutes, stirring all the time, until it's thick, a shade darker and smells fragrant. Stand back a little. It spatters.",
+  "Stir in the can of coconut milk until the paste dissolves. Add the cinnamon stick, the star anise and the beef cooking liquid. Turn the heat to medium and simmer for 3 minutes.",
+  "Stir in 1 tbsp fish sauce, 1 tsp tamarind and 1 tbsp sugar.",
+  "Add the potatoes and simmer for 8 to 10 minutes, turning them now and then, until a knife goes through them easily.",
+  "Put the beef back in and simmer for 2 to 3 minutes, until the sauce has thickened a little and the beef is hot. If it looks too thick, stir in a splash of water.",
+  "Taste it. If it's flat, add a pinch more salt, or a little more tamarind if it needs more sour.",
+  "Serve over the rice with the peanuts scattered on top and the chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both cook the beef low and slow in large chunks with potatoes, tamarind, fish sauce, sugar, cinnamon and peanuts and serve it with jasmine rice. RecipeTin Eats simmers the chuck on its own in broth with bay and lemongrass for 1 1/2 to 2 hours, then fries the curry paste hard, builds the sauce with coconut milk, star anise and the braising liquid, and cooks the potatoes in it before the beef goes back. It makes the paste from scratch, but its notes say a whole 4 oz can of Maesri massaman paste with extra garlic, ginger and lemongrass works, which is the route taken here. BBC Good Food fries the paste in coconut cream, adds onion and lime leaves, and braises everything together in the oven for 2 hours.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Massaman Curry",
+   "url": "https://www.recipetineats.com/massaman-curry/",
+   "rating": 4.94,
+   "rating_count": 188,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "BBC Good Food",
+   "title": "Beef massaman curry",
+   "url": "https://www.bbcgoodfood.com/recipes/beef-massaman-curry",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,52 @@
+{
+ "dish_name": "Thai Grilled Chicken",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Glutinous rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Boneless skinless chicken thighs", "qty": "1.75 lb", "category": "meat/seafood"},
+  {"item": "Lemongrass", "qty": "1 stalk", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp + 2 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tsp"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp + 2 tbsp"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Tamarind paste", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Shallot", "qty": "1", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Red pepper flakes", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead, soak the rice. Rinse the 2 cups glutinous rice in a bowl of cold water, swishing it with your hand, and pour the water off. Do it three or four times, until the water is nearly clear. Cover the rice with a few inches of fresh water and leave it to soak.",
+  "At the same time, make the marinade. Peel the tough outer layers off the lemongrass and thinly slice the pale part. Chop the stems from half the cilantro. Put both in a tall jug with 4 of the garlic cloves, 2 tbsp of the fish sauce, 2 tsp soy sauce, 1 1/2 tsp dark soy sauce, 2 tbsp of the brown sugar and the 1/2 tsp pepper. Blend with a stick blender until smooth. No stick blender? Finely grate the lemongrass and garlic, chop the stems very fine and stir it all together.",
+  "Stir 2 tbsp of the oil into the marinade. Put the 1.75 lb chicken thighs in a bowl, pour the marinade over and toss until every piece is coated. Cover and refrigerate overnight, or for at least 3 hours.",
+  "On the day, about 45 minutes before you eat, drain the rice. Bring 2 inches of water to a boil in a pot that a fine mesh sieve or steamer basket can sit on without touching the water.",
+  "Spread the rice in the sieve, set it over the boiling water and cover it with the lid. Steam for 20 to 25 minutes, flipping the rice over once halfway, until the grains are glossy, sticky and soft all the way through with no hard white center. Check the water now and then and top it up if it runs low.",
+  "Meanwhile, make the dipping sauce. Finely mince the last garlic clove, about 1 tbsp of the shallot and 2 of the green onions. Juice 1 lime. You want about 2 tbsp.",
+  "In a small bowl, stir the other 2 tbsp brown sugar into 1 tbsp hot water until it dissolves. Stir in 1 tbsp tamarind paste, the other 2 tbsp fish sauce, the lime juice, the garlic, shallot and green onions. Put the 1 tsp pepper flakes in a separate small bowl for the table.",
+  "Heat a grill to high, or heat a large nonstick skillet over high with the last 1 tbsp oil. Lift the chicken out of the marinade and let the extra drip off. Throw the leftover marinade away.",
+  "Lay the chicken on the grill or in the pan and turn the heat down to medium. Cook for 5 to 6 minutes, until the underside is deep golden brown with dark edges. Watch it closely. If the marinade starts to blacken, flip it right away.",
+  "Flip the pieces and cook the other side for 5 to 6 minutes. You're cooking them to 175°F, so if you have a thermometer, check the thickest piece. No thermometer? Cut into it: it's done when the juices run clear and there's no pink left.",
+  "Move the chicken to a board and let it rest for 3 minutes, then slice it. Cut the other lime into wedges and pick the cilantro leaves.",
+  "Taste the dipping sauce. If it's flat, add a pinch of salt or a squeeze of lime.",
+  "Serve with the sticky rice, the dipping sauce, the lime wedges and cilantro, and the pepper flakes on the side."
+ ],
+ "advance_prep_notes": "Soak the sticky rice and marinate the chicken the night before, or at least 4 hours ahead.",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "Both versions blend a marinade of lemongrass, garlic, fish sauce, thin and dark soy and palm or brown sugar, marinate the chicken overnight and grill it, serving it with lime and a tamarind and fish sauce dipping sauce. RecipeTin Eats uses boneless thighs, marinates them for at least 3 hours, and cooks them over medium heat for 5 to 6 minutes a side, flipping early if the sugar catches; its nam jim jaew adds lime juice, garlic, green onion and shallot. The Woks of Life pounds cilantro, shallot, turmeric and pepper into the paste, marinates a whole cut up chicken for 12 hours, grills it over charcoal and adds toasted rice powder and chili flakes to the sauce. Both serve coconut rice; this one serves sticky rice and puts the chili flakes on the side.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Thai Grilled Chicken (Gai Yang)", "url": "https://www.recipetineats.com/thai-grilled-chicken-gai-yang/", "rating": 4.97, "rating_count": 87, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Thai Grilled Chicken (Gai Yang)", "url": "https://thewoksoflife.com/thai-grilled-chicken-gai-yang/", "rating": 4.91, "rating_count": 10, "read": true, "lead": false},
+  {"name": "RecipeTin Eats", "title": "Thai Dipping Sauce - Nam Jim Jaew", "url": "https://www.recipetineats.com/thai-dipping-sauce-nam-jim-jaew/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

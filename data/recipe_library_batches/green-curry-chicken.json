@@ -1,0 +1,145 @@
+{
+ "dish_name": "Green Curry Chicken",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green curry paste",
+   "qty": "1 can (4 oz)",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Lemongrass paste",
+   "qty": "1 tube",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "6"
+  },
+  {
+   "item": "Japanese eggplants",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "6 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fried shallots",
+   "qty": "1 container",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice and get it cooking first.",
+  "Slice the 1 lb chicken thighs into thin, bite size strips. Cut the 2 eggplants into 1/2 inch rounds and trim the snow peas.",
+  "Mince the 2 garlic cloves and finely grate 2 tsp of the ginger. Tear the 6 lime leaves in half. Pick about 20 leaves off the basil. Thinly slice the 2 chilies into a small bowl for the table.",
+  "Heat the 2 tbsp oil in a heavy skillet or pot over medium high. Add 3 tbsp curry paste with the garlic, ginger and 1 tbsp lemongrass paste. Cook for 2 to 3 minutes, stirring, until the paste looks drier and smells fragrant. Stand back a little. The fumes can make you cough.",
+  "Pour in the 1 cup broth and the can of coconut milk and stir until the paste dissolves. Add 1 tsp fish sauce, 1 tsp sugar and the lime leaves, and bring it to a simmer.",
+  "Add the chicken, stir, and turn the heat to medium so it bubbles gently. Cook for 7 minutes.",
+  "Add the eggplant and cook for about 5 minutes, until it's soft.",
+  "Add the snow peas and cook for 2 minutes, until they're bright green and a little softer. You're cooking the chicken to 175°F, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Take the pan off the heat and stir in the basil and the juice of half the lime. The sauce should still be fairly thin. If it keeps simmering, it turns dark.",
+  "Taste it. If it's flat, add a splash more fish sauce or a squeeze from the rest of the lime.",
+  "Serve over the rice with the fried shallots on top and the chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both fry green curry paste in hot oil until fragrant, add coconut milk, season lightly with fish sauce and sugar, simmer bite size chicken in it and finish with basil off the heat. RecipeTin Eats uses jarred Maesri paste freshened with garlic, ginger and lemongrass, thins the sauce with a cup of broth, adds lime leaves, eggplant and snow peas, and stops the moment the basil and lime go in so the sauce stays green; it recommends thighs and fried shallots on top. BBC Good Food parboils potatoes and green beans, uses about half the paste and no broth, and covers the pan while the chicken cooks. This uses 3 tbsp paste, below the lead's 4 to 6, to keep the pot mild, with fresh chilies at the table.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Green Curry",
+   "url": "https://www.recipetineats.com/thai-green-curry/",
+   "rating": 4.96,
+   "rating_count": 281,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "BBC Good Food",
+   "title": "Thai green chicken curry",
+   "url": "https://www.bbcgoodfood.com/recipes/thai-green-chicken-curry",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

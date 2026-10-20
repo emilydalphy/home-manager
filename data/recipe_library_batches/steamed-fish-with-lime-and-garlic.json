@@ -1,0 +1,44 @@
+{
+ "dish_name": "Steamed Fish with Lime and Garlic",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "White fish fillets", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Lemongrass", "qty": "2 stalks", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Limes", "qty": "4", "category": "produce"},
+  {"item": "Low-sodium chicken broth", "qty": "1 can (14.5 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Thai chilies", "qty": "3", "category": "produce"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, start the sauce. Pick the cilantro leaves off the stems and set the leaves aside for the top. Put 2 tbsp of the stems, the 6 garlic cloves and 1/2 tsp of the salt on a board and chop them together, pressing with the flat of the knife now and then, until you have a rough paste. A mortar and pestle works too. Scrape it into a bowl.",
+  "Juice 3 of the limes. You want about 1/4 cup. Thinly slice the last lime.",
+  "Stir the lime juice, 1/2 cup broth, 3 tbsp fish sauce and 2 tsp sugar into the garlic paste until the sugar dissolves.",
+  "Thinly slice the 3 chilies and put them in a small bowl for the table.",
+  "Peel the tough outer layer off the 2 lemongrass stalks, cut them in half and bash them with the back of a knife until they split. Lay them on a heatproof plate or shallow dish that fits inside your wok or widest lidded pan.",
+  "Pat the 1.5 lb fish dry, sprinkle it with the other 1/2 tsp salt and lay it on the lemongrass in a single layer. If it won't all fit, use two plates and steam them one after the other, splitting the sauce between them.",
+  "Set a steaming rack, or a ring of scrunched up foil, in the wok and pour in water to just below the plate. Bring it to a simmer over medium-high, lower the plate onto the rack, cover and steam for 5 minutes.",
+  "Lift the lid and pour the sauce over the fish. Cover and steam for another 5 to 7 minutes. It's done when the thickest part flakes apart with a fork and there's no glassy center left.",
+  "Taste the sauce on the plate. If it's flat, add a pinch more salt.",
+  "Lift the plate out with oven mitts. The steam is very hot. Scatter the cilantro leaves and lime slices over the fish.",
+  "Serve with the jasmine rice and the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions steam white fish over aromatics (lemongrass in both, with ginger and cilantro stems in Nomadette's) and dress it with a sauce of garlic, chili, fish sauce, lime juice, a little sugar and chicken or fish stock. Marion's Kitchen pounds garlic, chili and cilantro root with salt, steams fillets on a plate in a wok for 5 minutes, then pours the sauce over and steams 6 to 7 minutes more. Nomadette warms the sauce in a pan just to melt the sugar, adds the lime off the heat and pours it over a whole fish after 15 to 20 minutes of steaming. This one follows Marion's Kitchen for 4, with the chilies moved to a bowl at the table. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no Thai steamed fish, so the best rated read version leads.",
+ "sources": [
+  {"name": "Marion's Kitchen", "title": "Thai Lime and Garlic Steamed Fish", "url": "https://www.marionskitchen.com/thai-lime-garlic-steamed-fish/", "rating": 4.7, "rating_count": 15, "read": true, "lead": true},
+  {"name": "Nomadette", "title": "Thai Steamed Fish (Pla Neung Manao)", "url": "https://nomadette.com/thai-steamed-fish/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,124 @@
+{
+ "dish_name": "Pad See Ew",
+ "cuisine": "Thai",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Wide dried rice noodles",
+   "qty": "1 package (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chinese broccoli",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the 12 oz flank steak as thin as you can across the grain. Toss it in a bowl with 1 tbsp of the light soy sauce and 2 tsp cornstarch and leave it while you get everything else ready.",
+  "Trim the ends off the Chinese broccoli and cut it into 3 inch pieces, keeping the leaves and stems in separate piles. Cut any stems thicker than a pencil in half lengthwise. Finely chop the 4 garlic cloves.",
+  "Make the sauce. Stir together 4 tsp dark soy sauce, 3 tbsp oyster sauce, the other 2 tbsp light soy sauce, 4 tsp vinegar and 4 tsp sugar until the sugar dissolves.",
+  "Cook the 14 oz noodles the way the package says, until they're soft but still a little chewy. Drain them and rinse under cold water. Do this last, right before you start cooking. Cooked rice noodles left sitting break apart in the wok.",
+  "Heat 2 tbsp oil in a wok or your biggest skillet over high heat until it shimmers. Add the garlic and stir for 15 seconds, then add the beef in a single layer. Leave it for 1 minute to brown, then stir fry for another minute, until it's no longer red.",
+  "Add the broccoli stems and stir fry for 1 minute. Add the leaves and toss for about 30 seconds, until they've just wilted.",
+  "Push everything to one side, crack the 2 eggs into the empty space and scramble them until just set. Tip everything onto a plate and scrape the wok clean.",
+  "Put the wok back over high heat with 2 tbsp oil and heat it until it just starts to smoke. Add half the noodles and half the sauce. Toss as few times as you can for 1 to 1 1/2 minutes, letting the noodles sit between tosses so the edges char in spots.",
+  "Add half the beef and broccoli, toss for 30 seconds until it's hot, and tip it onto a serving platter.",
+  "Do the same with the last 2 tbsp oil, the rest of the noodles, the rest of the sauce and the rest of the beef and broccoli.",
+  "Taste a noodle. If it's flat, add a splash more light soy sauce.",
+  "Serve right away, straight from the wok."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three stir fry the protein and garlic first, add Chinese broccoli, scramble egg in the pan and finish with wide rice noodles in a sweet, salty oyster and soy sauce. RecipeTin Eats (chicken in the original, beef fine as a swap) clears the wok after the egg and chars the noodles alone in smoking hot oil with dark soy, oyster sauce, light soy, a little vinegar and sugar, tossing as little as possible. Khin's Kitchen marinates sliced beef in soy and cornstarch for 10 to 15 minutes, which this version borrows, and adds fish sauce; Hungry in Thailand coats fresh noodles in dark soy first and adds white pepper and seasoning powder. The lead serves 2 to 3, so this doubles it and chars the noodles in two batches so the wok isn't crowded.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pad See Ew - Thai Stir Fried Noodles",
+   "url": "https://www.recipetineats.com/thai-stir-fried-noodles-pad-see-ew/",
+   "rating": 4.88,
+   "rating_count": 380,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Khin's Kitchen",
+   "title": "Easy Beef Pad See Ew ( Stir Fried Thai Rice Noodles )",
+   "url": "https://khinskitchen.com/pad-see-eww/",
+   "rating": 4.94,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Beef Pad See Ew Recipe (Thai Rice Noodles)",
+   "url": "https://hungryinthailand.com/beef-pad-see-ew/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

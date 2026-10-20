@@ -1,0 +1,47 @@
+{
+ "dish_name": "Thai Cashew Chicken",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Boneless skinless chicken thighs", "qty": "1.25 lb", "category": "meat/seafood"},
+  {"item": "Raw cashews", "qty": "1 bag", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Bell peppers", "qty": "2", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Fresno chili", "qty": "1", "category": "produce"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 1/2 tbsp"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, slice the 1.25 lb chicken thighs into strips about 1/3 inch thick and sprinkle them with the 1/4 tsp salt.",
+  "Cut the onion into thin wedges and the 2 bell peppers into 1 inch pieces. Mince the 3 garlic cloves. Cut 4 of the green onions into 1 inch lengths, keeping the white and green parts in separate piles. Thinly slice the chili and put it in a small bowl for the table.",
+  "In a small bowl, stir together 2 1/2 tbsp oyster sauce, 2 tsp dark soy sauce, 1 1/2 tbsp fish sauce, 2 tsp sugar and 6 tbsp water until the sugar dissolves.",
+  "Heat 3 tbsp of the oil in a wok or large skillet over medium. Add the 1 cup cashews and stir for 4 to 5 minutes, until they're deep golden and crunchy. Watch them closely near the end. They go from golden to burnt fast. Lift them out with a slotted spoon and leave the oil in the pan.",
+  "Turn the heat to high. Add half the chicken, spread it out and cook for 2 to 3 minutes, stirring now and then, until it's white all over and browned in spots. Move it to a plate and cook the other half the same way.",
+  "Add the last 1 tbsp oil, then the onion and peppers. Stir-fry for 2 minutes, until the edges start to char but the peppers are still crisp.",
+  "Add the garlic and the white parts of the green onions and stir for 30 seconds, until fragrant.",
+  "Put the chicken and its juices back in and pour in the sauce. Toss for 1 to 2 minutes, until the sauce cooks down to a glossy syrup that coats everything. You're cooking the chicken to 175°F, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Take the pan off the heat and toss in the green parts of the green onions and the cashews.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the jasmine rice, with the sliced chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions stir-fry chicken with onion, garlic, cashews and green onions in a sauce of oyster sauce, soy, sugar and a little water, and serve it over jasmine rice. RecipeTin Eats fries raw cashews in the oil until dark golden first, then cooks thin strips of thigh on high heat with fresh red chili and adds dark soy and fish sauce, all in about 8 minutes. Hungry in Thailand coats the chicken in tempura flour and deep fries it, fries dried chilies, adds Thai chili paste to the sauce and puts in two bell peppers. This one follows RecipeTin Eats, scaled to 4 and cooked in two batches, with the bell peppers from Hungry in Thailand and the chili moved to the table.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Thai Cashew Chicken Stir Fry", "url": "https://www.recipetineats.com/thai-cashew-chicken-stir-fry/", "rating": 4.96, "rating_count": 129, "read": true, "lead": true},
+  {"name": "Hungry in Thailand", "title": "Gai Pad Med Mamuang (Thai Cashew Chicken Recipe)", "url": "https://hungryinthailand.com/gai-pad-med-mamuang/", "rating": 5.0, "rating_count": 22, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
