@@ -1,0 +1,48 @@
+{
+ "dish_name": "Sausage and Lentil Stew",
+ "cuisine": "Italian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Mild Italian sausages", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "French green lentils", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3 cups"},
+  {"item": "Shallots", "qty": "4", "category": "produce"},
+  {"item": "Carrots", "qty": "3", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle. You'll need a wide pan that can go on the burner and into the oven, like a braiser or a 9 by 13 inch metal roasting pan.",
+  "Meanwhile, halve the 4 shallots and slice them thin. Mince the 3 garlic cloves. Peel the 3 carrots and cut them into small cubes, about 1/3 inch.",
+  "Tip the 1 1/2 cups lentils into a sieve, rinse them under the tap and pick out any little stones.",
+  "Set the pan over medium-high heat with the 3 tbsp olive oil. Add the shallots and cook for about 3 minutes, stirring, until they're soft and starting to color at the edges.",
+  "Stir in 2 tbsp tomato paste and the 1 tsp oregano and cook for 1 minute, stirring, until the paste turns a shade darker. Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Add the lentils, the carrots, 3 cups broth, the 3/4 tsp salt and the 1/2 tsp pepper. Bring it to a simmer and scrape up anything stuck to the bottom of the pan.",
+  "Turn off the heat. Lay the 1.5 lb sausages on top of the lentils in a single layer. Don't push them under the liquid.",
+  "Cover the pan with foil and poke 4 or 5 small holes in it with a knife. Bake for 25 minutes.",
+  "Take off the foil and bake for another 20 to 25 minutes, until the sausages are browned on top and the lentils are tender and have soaked up most of the liquid. If the lentils are still firm, add a splash of water and give it 5 more minutes.",
+  "You're cooking the sausages to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Let it stand for 5 minutes. Meanwhile, chop about 1/4 cup of the parsley and scatter it over the top.",
+  "Taste the lentils. If they're flat, add a pinch more salt.",
+  "Serve with crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions build the stew on onion or shallot, garlic, broth and green or brown lentils with pork sausage. RecipeTin Eats does it in one wide pan: shallots and garlic on the stove, lentils, diced carrot and stock in, sausages laid on top, then baked covered and uncovered so the sausages brown while the lentils cook. Donal Skehan browns the sausages first and simmers them on the stove with tomato paste, oregano, red wine, tomatoes and kale, and An Oregon Cottage simmers browned sausage with lentils and canned tomatoes for over an hour. This one follows RecipeTin's one-pan bake and ratios, swaps its cumin for the tomato paste and oregano the Italian versions use, and finishes with parsley.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "One-pan baked sausage & lentils", "url": "https://www.recipetineats.com/one-pan-baked-sausage-and-lentils/", "rating": 4.9, "rating_count": 58, "read": true, "lead": true},
+  {"name": "Donal Skehan", "title": "Italian Sausage & Lentil Stew with Kale & Chilli Oil", "url": "https://donalskehan.com/?p=23231", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "An Oregon Cottage", "title": "The Best Sausage and Lentil Stew", "url": "https://anoregoncottage.com/wprm_print/the-best-sausage-and-lentil-stew-recipe", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

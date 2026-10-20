@@ -1,0 +1,49 @@
+{
+ "dish_name": "Calzones",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Pizza dough", "qty": "2 lb", "category": "other"},
+  {"item": "Shredded mozzarella", "qty": "8 oz", "category": "dairy"},
+  {"item": "Whole milk ricotta", "qty": "1 tub (15 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Parmesan", "qty": "1 wedge", "category": "dairy", "cook_qty": "1/4 cup grated"},
+  {"item": "Sliced pepperoni", "qty": "3 oz", "category": "meat/seafood"},
+  {"item": "Marinara sauce", "qty": "1 jar (24 oz)", "category": "pantry"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "a little for rolling"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "If the dough is in the fridge, take it out at least 30 minutes ahead and leave it covered on the counter. Cold dough keeps shrinking back when you roll it.",
+  "Heat the oven to 450°F with a rack in the lowest position. Spread the 2 tbsp olive oil over a large rimmed baking sheet.",
+  "Finely grate 1/4 cup of the Parmesan. In a medium bowl, stir it together with the 8 oz mozzarella, 1 cup ricotta, the 1/2 tsp oregano, 1/2 tsp salt and 1/4 tsp pepper.",
+  "Put the 1 tsp red pepper flakes in a small bowl for the table.",
+  "Dust the counter with a little of the flour. Cut the dough into 4 equal pieces and roll each one into a circle about 8 inches across and a bit under 1/4 inch thick. If it keeps springing back, leave it for 5 minutes and try again.",
+  "Spread 1 tbsp of the marinara over one half of each circle, leaving a 1 inch border bare. Lay a quarter of the pepperoni over the sauce, then spoon a quarter of the cheese mixture on top in a mound. Don't spread it out.",
+  "Wet the bare border with a fingertip dipped in water. Fold the empty half over the filling to make a half moon and press the edges together with a fork. Roll the edge up over itself and press it again all the way around. Any gap and the cheese leaks out in the oven.",
+  "Move the calzones to the oiled sheet. Beat the egg with a fork and brush it over the tops, then prick each top 5 times with the fork.",
+  "Bake for 20 to 25 minutes, until they're puffed and deep golden brown all over.",
+  "While they bake, warm the rest of the marinara in a small saucepan over low heat for about 5 minutes, stirring now and then.",
+  "Let the calzones cool on the sheet for 10 minutes before you cut into them. The filling is very hot.",
+  "Serve with the warm marinara and the red pepper flakes.",
+  "To freeze any extras, let them cool completely, wrap each one in foil and freeze for up to 2 months. Reheat them from frozen on a baking sheet at 350°F for 15 to 20 minutes, until they're hot all the way through."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every read version fills one half of a round of pizza dough with a ricotta and mozzarella mix plus a grated hard cheese, seals it with water and a crimped or forked edge, cuts or pricks steam vents and bakes it hot until deep golden. Once Upon a Chef keeps the filling small and simple (a spoon of sauce, pepperoni, the cheese mix), bakes at 450°F on the lowest rack and freezes them baked or unbaked; Carlsbad Cravings bakes four larger ones at 475°F with pesto and cream cheese in the ricotta, Baker Bettie makes her own dough and sauce, and The Slow Roasted Italian fills them with sausage and herbs. None had 20 or more ratings and RecipeTin Eats (the trusted cook for Italian) has no calzone, so the first read version leads, doubled to four calzones.",
+ "sources": [
+  {"name": "Once Upon a Chef", "title": "Easy Homemade Calzone Recipe", "url": "https://www.onceuponachef.com/recipes/calzones.html", "rating": 5.0, "rating_count": 8, "read": true, "lead": true},
+  {"name": "Carlsbad Cravings", "title": "Homemade Calzone Recipe", "url": "https://carlsbadcravings.com/calzone/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Baker Bettie", "title": "How to Make Homemade Calzones", "url": "https://bakerbettie.com/?p=47969", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "The Slow Roasted Italian", "title": "Best Ever Homemade Italian Calzone (Family Recipe)", "url": "https://www.theslowroasteditalian.com/calzone-recipe/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

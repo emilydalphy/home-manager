@@ -1,0 +1,124 @@
+{
+ "dish_name": "Italian Sub Sandwiches",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 2,
+ "ingredients": [
+  {
+   "item": "Hoagie rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sliced provolone",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Sliced deli ham",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mortadella",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Genoa salami",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Capicola",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "3 cups shredded"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Italian dressing",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Banana peppers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the morning you pack them, slice the 2 tomatoes about 1/4 inch thick. Lay the slices on a double layer of paper towel and sprinkle them with the 1/4 tsp salt.",
+  "Leave the tomatoes for 10 minutes. Meanwhile, thinly slice the red onion and shred about 3 cups of the romaine.",
+  "Split the 4 rolls lengthwise, leaving one long side joined. If you like them toasted, set them cut side up under the broiler for 1 to 2 minutes, until the edges turn light gold. Watch them closely. They go from gold to burnt fast.",
+  "Spread 1 tbsp mayonnaise inside each roll, 1/4 cup in all.",
+  "Lay 1 oz provolone along the bottom of each roll, 4 oz in all. Fold 1 oz each of the ham, mortadella, salami and capicola on top of each one, so 4 oz of each meat goes in.",
+  "Blot the tops of the tomato slices dry and lay them over the meat. Pile the onion and lettuce on top, so the tomato sits in the middle of the filling and away from the bread.",
+  "Drizzle 1 tbsp Italian dressing over the filling in each roll and scatter 2 tbsp banana peppers over each one.",
+  "Close the subs and press down firmly along their length. Wrap each one tightly in plastic wrap and put them in the fridge for at least 1 hour, or until lunch.",
+  "Cut each sub in half through the wrap and serve them cold."
+ ],
+ "advance_prep_notes": "make and wrap the subs at least 1 hour ahead, or the morning you pack them",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+ ],
+ "method_notes": "Both read versions layer provolone and several Italian cold cuts on a sturdy roll with shredded lettuce, tomato and a red wine vinegar dressing. Spend With Pennies (the lead) spreads the rolls with mayonnaise, uses ham, mortadella, Genoa salami and capicola with romaine, red onion, Italian dressing and banana peppers, and says to salt the tomatoes, keep them away from the bread, and wrap and chill the subs for about an hour. Tasting Table (a Curtis Stone recipe) toasts the roll, adds a pickled cherry pepper spread, a homemade red wine vinaigrette, prosciutto and fresh herbs, and serves it straight away. This one follows the lead, with toasting the rolls optional. Sip and Feast's highly rated version blocked the reader, so it was skipped.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Italian Sub Sandwich",
+   "url": "https://www.spendwithpennies.com/italian-sub-sandwich/",
+   "rating": 4.87,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tasting Table",
+   "title": "Italian Sub Sandwich Recipe",
+   "url": "https://www.tastingtable.com/cook/recipes/italian-sandwich-meat-cheese-recipe",
+   "rating": 4.8,
+   "rating_count": 112,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

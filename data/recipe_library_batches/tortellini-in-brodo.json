@@ -1,0 +1,37 @@
+{
+ "dish_name": "Tortellini in Brodo",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Cheese tortellini", "qty": "1 package (20 oz)", "category": "dairy"},
+  {"item": "Low-sodium chicken broth", "qty": "2 cartons (32 oz)", "category": "pantry", "cook_qty": "8 cups"},
+  {"item": "Parmesan", "qty": "1 wedge with rind", "category": "dairy", "cook_qty": "the rind + 1 cup grated"},
+  {"item": "Baby spinach", "qty": "1 bag (5 oz)", "category": "produce"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Black pepper", "qty": "to taste", "category": "pantry"}
+ ],
+ "instructions": [
+  "Pour the 8 cups broth into a large pot. Cut the rind off the Parmesan and drop it in. Bring it to a boil over medium-high heat, then turn it down so it barely bubbles and let it simmer uncovered for 15 minutes.",
+  "Meanwhile, finely grate about 1 cup of the Parmesan.",
+  "Lift the rind out of the broth with tongs. Taste the broth, and add a pinch of salt if it's flat.",
+  "Bring the broth back to a boil and add the tortellini. Turn it down to a steady simmer and cook for as long as the package says, usually 3 to 7 minutes, until they float and are tender when you bite one. Stir gently once or twice so they don't stick to the bottom.",
+  "Turn off the heat and stir in the spinach. It wilts in about a minute.",
+  "Taste the broth again. If it's flat, add a pinch more salt.",
+  "Ladle the tortellini into bowls with plenty of broth. Grind some black pepper over each bowl and scatter on half the grated Parmesan.",
+  "Serve with the rest of the Parmesan on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the read versions simmer cheese tortellini straight in the broth and top it with Parmigiano. Plating Pairings keeps it to boxed bone or chicken broth and store-bought tortellini, cooked until they float; PureWow and 2 Sisters Recipes simmer a Parmesan rind in the broth for depth, and PureWow wilts in greens at the end. 2 Sisters also softens onion, carrot and celery first, and Pasta Grammar makes a beef and vegetable broth over two hours. None had 20 or more ratings and RecipeTin Eats (the trusted cook for Italian) has no version, so the first read version leads, with the rind and greens from the others.",
+ "sources": [
+  {"name": "Platings + Pairings", "title": "Tortellini in Brodo", "url": "https://www.platingsandpairings.com/tortellini-en-brodo-recipe/", "rating": 5.0, "rating_count": 8, "read": true, "lead": true},
+  {"name": "2 Sisters Recipes", "title": "Tortellini in Brodo (in broth)", "url": "https://2sistersrecipes.com/tortellini-in-brodo-in-broth/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "PureWow", "title": "Cheater's Tortellini en Brodo", "url": "https://www.purewow.com/recipes/cheaters-tortellini-en-brodo", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Pasta Grammar", "title": "Tortellini in Brodo", "url": "https://pastagrammar.com/blogs/recipes/tortellini-in-brodo-authentic-italian-recipe", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
