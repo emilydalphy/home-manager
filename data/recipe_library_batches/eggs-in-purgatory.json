@@ -1,0 +1,116 @@
+{
+ "dish_name": "Eggs in Purgatory",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop a quarter of the onion. Mince 4 of the garlic cloves and cut the last clove in half. Chop 1/4 cup of the parsley and tear 1/4 cup of the basil leaves, keeping a few of each for the top.",
+  "Heat 3 tbsp of the olive oil in a 12-inch skillet that has a lid, over medium. Add the onion and cook for 3 to 4 minutes, stirring now and then, until it's soft and see-through.",
+  "Turn the heat to low and add the minced garlic and 1/2 tsp of the pepper flakes. Stir for about 1 minute, until the garlic smells sweet and only just starts to turn pale gold. Don't let it brown.",
+  "Pour in the crushed tomatoes and add 3/4 tsp of the salt, the chopped parsley and the torn basil. Bring it to a gentle bubble over medium, then turn it down to medium low.",
+  "Simmer for 12 to 15 minutes, stirring now and then, until the sauce is thick. Drag a spoon through it: it's ready when the gap holds for a few seconds. Taste it, and add a pinch more salt if it's flat.",
+  "Meanwhile, slice 8 pieces of the bread, brush them with the rest of the olive oil and toast them in a dry pan or under the broiler until golden. Rub the cut side of the garlic half over each warm slice.",
+  "Make 8 wells in the sauce with the back of a spoon. Crack each egg into a small cup and tip it into a well, then sprinkle the last 1/4 tsp salt over the eggs.",
+  "Cover the pan and cook on medium low for 4 to 6 minutes, until the whites are white all the way through and the yolks still wobble when you shake the pan. Give it a minute or two more if you like firmer yolks.",
+  "Take the pan off the heat. Grate a little Parmesan over the top, scatter on the last of the parsley and basil and grind on some black pepper.",
+  "Serve from the pan with the garlic toast, with the rest of the pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three simmer a tomato sauce in olive oil until thick, make wells for the eggs and cook them gently until the whites set and the yolks stay runny. Little Spice Jar (the lead) warms garlic and chilli flakes slowly in the oil, adds a little onion, a big can of crushed tomatoes with parsley and basil, simmers it 12 to 14 minutes and covers the eggs for 2 to 3 minutes, serving it with grilled bread rubbed with garlic. Pasta Grammar starts from a plain tomato sauce, cooks the eggs covered on low and finishes with basil and plenty of Parmigiano. Ciao Florentina's Sicilian take uses arrabbiata sauce, parsley pesto and pine nuts and serves it with bruschetta or polenta. This one softens the onion before the garlic, keeps half the chilli at the table and adds a little Parmesan at the end.",
+ "sources": [
+  {
+   "name": "Little Spice Jar",
+   "title": "Eggs in Purgatory (or Basically, Italian Shakshuka!)",
+   "url": "https://littlespicejar.com/eggs-in-purgatory/",
+   "rating": 4.89,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pasta Grammar",
+   "title": "Uova in Purgatorio (Italian Eggs in Purgatory)",
+   "url": "https://pastagrammar.com/blogs/recipes/uova-in-purgatorio-italian-eggs-in-purgatory-shakshouka-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Ciao Florentina",
+   "title": "Sicilian Eggs In Purgatory (Uova in Purgatorio)",
+   "url": "https://ciaoflorentina.com/sicilian-eggs-in-hell-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

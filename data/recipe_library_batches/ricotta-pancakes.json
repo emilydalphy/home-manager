@@ -1,0 +1,115 @@
+{
+ "dish_name": "Ricotta Pancakes",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Whole milk ricotta",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Buttermilk",
+   "qty": "1 pint",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Crack the 3 eggs into a large bowl, add the 2 tbsp sugar and whisk until they're well mixed and a little frothy.",
+  "Add the 1 1/4 cups ricotta, the 3/4 cup buttermilk and the 1/4 tsp salt. Whisk until it's smooth apart from a few small bits of ricotta.",
+  "In a second bowl, whisk the 1 1/4 cups flour with the 1 tbsp baking powder. Tip it into the ricotta mixture and stir with a spatula until there's no dry flour left. A few lumps are fine.",
+  "Grate the zest of the lemon straight into the batter and fold it through. Let the batter sit for 10 minutes while the pan heats.",
+  "Rinse the blueberries and put them in a bowl for the table.",
+  "Heat a large nonstick skillet over medium for 2 minutes. Melt about 1 tsp of the butter in it and swirl it around.",
+  "Drop in the batter about 1/4 cup at a time, leaving room between them. Cook for 2 to 3 minutes, until bubbles open on top and stay open and the underside is golden.",
+  "Flip them and cook the other side for 2 minutes, until golden and springy when you press the middle. Move them to a plate and cover it with a clean towel.",
+  "Cook the rest of the batter the same way, adding a little more of the butter to the pan between batches. Turn the heat down a notch if they brown before the middles cook. You'll get about 12 pancakes.",
+  "Serve with the blueberries and maple syrup."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both rated versions mix ricotta, eggs and milk first, add the flour and leavening, and cook the batter in a lightly greased pan over medium heat. Natasha's Kitchen (the lead) uses buttermilk and lemon zest, rests the batter 10 to 30 minutes for a fluffier pancake and cooks them 2 to 3 minutes a side. RecipeTin Eats (after Bill Granger's hotcakes) uses regular milk with a teaspoon of vinegar and a little baking soda, makes a slightly thicker batter and serves them with sugared strawberries. Little Broken separates the eggs and folds in whipped whites for a lighter, airier hotcake. This one follows the lead's batch, which makes about 12 larger pancakes for four.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Fluffy Lemon Ricotta Pancakes",
+   "url": "https://natashaskitchen.com/lemon-ricotta-pancakes/",
+   "rating": 4.98,
+   "rating_count": 92,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Fluffy Ricotta Pancakes",
+   "url": "https://www.recipetineats.com/fluffy-ricotta-pancakes/",
+   "rating": 4.96,
+   "rating_count": 61,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Little Broken",
+   "title": "Ricotta Hotcakes",
+   "url": "https://www.littlebroken.com/ricotta-hotcakes/",
+   "rating": 4.7,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
