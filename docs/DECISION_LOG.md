@@ -21,6 +21,19 @@ why*, not duplicating the diff.
   Monday, never to be cooked, groceries still listed. Now refused on the
   household clock, the door the 2026-09-17 set missed; tonight still trades,
   the undo is exempt.
+- **A step's "a pinch of sugar" is the cook card's amount, not "1 bag"**
+  (2026-10-20; branch `overnight/cook-card-pinch-not-bag`; tests
+  `tests/test_cook_card_pinch_not_bag.py`). A package line with no measured
+  cook_qty whose steps only say "a pinch/splash/dash of" it now shows that
+  (`recipes.cook_amounts_from_steps`, read in `cooking_ingredients` when
+  handed the steps — the Cook screen and scale_recipe), instead of the bag
+  or the table's half cup. Read, not stored, so saved recipes get it; the
+  qty the list buys is untouched; a line a step also numbers is skipped.
+  The phrase after "of" must BE the line's name (review: "a splash of red
+  wine with the tomato paste" gave the paste a splash; "Sauce" took "hot
+  sauce"'s dash) — a partial match misses to the table's guess instead.
+  The fill tool's cook_qty description now asks for "a pinch" too.
+  The Settings → Recipes sheet still shows the stored shopping qty.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
