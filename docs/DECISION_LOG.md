@@ -125,6 +125,13 @@ why*, not duplicating the diff.
   weekday (`meal_move._resay_freezer_nights`); Undo says it back. Not done:
   the "−" / away / night-off path (`move_cook_onto_fed_night`) leaves the old
   weekday on the freezer night too — its undo snapshot needs a look first.
+- **"Shop before tomorrow" is only for tomorrow** (2026-10-20; branch
+  `overnight/shop-before-tomorrow-means-tomorrow`; tests
+  `tests/test_shop_before_tomorrow_means_tomorrow.py`). From noon on the
+  shop move's 36-hour horizon reached the day after tomorrow, so on an
+  evening with nothing tomorrow Now featured "Shop before tomorrow · by
+  tomorrow" for the next day's breakfast. `moves._shop_move` now clips the
+  horizon at the end of tomorrow; mornings (and the 07:00 text) unchanged.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
