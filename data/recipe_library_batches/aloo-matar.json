@@ -1,0 +1,53 @@
+{
+ "dish_name": "Aloo Matar",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Yukon Gold potatoes", "qty": "1.5 lbs", "category": "produce"},
+  {"item": "Frozen peas", "qty": "1 bag (10 oz)", "category": "frozen", "cook_qty": "1 cup"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "3", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "1 tsp grated"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Cumin seeds", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Cinnamon stick", "qty": "1/2 inch piece", "category": "pantry"},
+  {"item": "Green cardamom pods", "qty": "2", "category": "pantry"},
+  {"item": "Kasuri methi", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground coriander", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1 inch cubes. Keep them in a bowl of cold water until you need them.",
+  "Finely chop the onion and the 3 tomatoes. Grate 1 tsp of the ginger and mince the 2 garlic cloves.",
+  "Slice the green chili thinly and put it in a small bowl for the table.",
+  "Heat the 2 tbsp oil in a heavy pot with a lid over medium heat. Add the 3/4 tsp cumin seeds, the cinnamon and the 2 cardamom pods, and crush the 1 tsp kasuri methi between your palms into the pot. After about 30 seconds the cumin will sizzle and smell toasty.",
+  "Turn the heat to low and stir in the 1/2 tsp turmeric, 1 tsp chili powder and 1 tsp ground coriander for 30 seconds. Don't let them darken.",
+  "Add the onion with 1/4 tsp of the salt and turn the heat back to medium. Cook for 6 to 8 minutes, stirring now and then, until it's soft and golden. If the spices start to stick, add a splash of water.",
+  "Stir in the ginger and garlic and cook for about a minute, until they stop smelling raw.",
+  "Add the tomatoes and cook for 6 to 8 minutes, mashing them with the spoon, until they're soft and mushy and you can see oil at the edges.",
+  "Drain the potatoes and add them to the pot with the remaining 1 tsp salt. Stir for 2 minutes, so every piece is coated in the masala.",
+  "Add 1 cup of the frozen peas and 1 1/2 cups water. Bring it to a boil, then cover, turn the heat to low and simmer for 15 to 20 minutes, stirring a couple of times. The potatoes are done when a knife slides through a cube with no push.",
+  "Mash a few potato cubes against the side of the pot to thicken the gravy. If it's thicker than you like, stir in a splash of water.",
+  "Stir in the 1/2 tsp garam masala and 2 tbsp chopped cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with roti or rice, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook cubed potatoes and peas in an onion, ginger garlic and tomato masala with cumin, turmeric, chili and coriander, then finish with kasuri methi or garam masala and cilantro. Hebbar's blooms cinnamon, cardamom, cumin and the kasuri methi in oil first, cooks the ground spices before the onion, and pressure cooks it for 3 whistles before mashing a little to thicken. Swasthi's adds the ground spices after the tomatoes and simmers it covered on the stove; Cook with Manali browns the potatoes in oil first and adds a little tomato paste. This one follows Hebbar's order and ratios, simmered on the stove, with more potatoes for a dinner for four and the chili on the side.",
+ "sources": [
+  {"name": "Hebbar's Kitchen", "title": "aloo matar recipe | aloo mutter recipe | alu matar recipe", "url": "https://hebbarskitchen.com/aloo-matar-recipe-aloo-mutter/", "rating": 5.0, "rating_count": 280, "read": true, "lead": true},
+  {"name": "Swasthi's Recipes", "title": "Aloo Matar Recipe | Aloo Mutter", "url": "https://www.indianhealthyrecipes.com/aloo-matar/", "rating": 5.0, "rating_count": 156, "read": true, "lead": false},
+  {"name": "Cook with Manali", "title": "Aloo Matar", "url": "https://www.cookwithmanali.com/aloo-matar/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
