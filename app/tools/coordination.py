@@ -64,6 +64,10 @@ _CONFLICT_STOPWORDS = frozenset({
     # and left in it made a two-word phrase that _WHOLE_WORD_FAMILIES (which
     # reads only a one-word avoidance) never turned into gluten.
     "disease",
+    # "Celiac (strict)", "celiac sprue", "severe nut allergy": a word about
+    # how much, or the condition's other name, left in made the phrase
+    # "celiac strict" — which matched nothing, so spaghetti went through.
+    "strict", "sprue", "severe",
 })
 
 
@@ -503,11 +507,6 @@ _AVOIDANCE_TRIGGER_RE = re.compile(
 # is sentence, not food.
 _ALLERGY_NOUN_RE = re.compile(r"\ballerg(?:y|ies|ic)\b")
 _ALLERGY_ADJ_RE = re.compile(r"\bintoleran(?:t|ce)\b|(?<=[a-z])-free\b")
-# A condition that IS its avoidance (2026-10-20): "Maya is celiac", "Sam
-# has coeliac disease" name no trigger and no food, yet say gluten as
-# plainly as "allergic to gluten" does — _WHOLE_WORD_FAMILIES reads the
-# word as the family.
-_CONDITION_RE = re.compile(r"\b(?:celiac|coeliac)\b")
 
 # A stated exception. "allergic to tree nuts but peanuts are fine" says two
 # things, and reading only the first half is how a household gets warned
@@ -625,7 +624,6 @@ def _fact_keywords(text: str, drop: set[str]) -> tuple[list[list[str]], list[str
             before = re.split(r"[.,;!?]", lowered[:m.start()])[-1]
             before = re.split(r"\b(?:and|or|but|with)\b", before)[-1]
             spans.append(" ".join(before.split()[-window:]))
-    spans.extend(m.group(0) for m in _CONDITION_RE.finditer(lowered))
 
     phrases: list[list[str]] = []
     seen: set[tuple[str, ...]] = set()

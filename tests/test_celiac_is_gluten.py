@@ -19,7 +19,7 @@ def maya():
     tools.add_member("Maya")
 
 
-@pytest.mark.parametrize("restriction", ["Celiac", "coeliac", "Celiac disease", "coeliac's disease"])
+@pytest.mark.parametrize("restriction", ["Celiac", "coeliac", "Celiac disease", "coeliac's disease", "Celiac (strict)", "celiac sprue"])
 @pytest.mark.parametrize("dish, item", [
     ("Spaghetti Bolognese", "spaghetti"),
     ("Cheese Toast", "sourdough bread"),
@@ -42,13 +42,15 @@ def test_a_gluten_free_line_is_not_held_back_for_celiac(maya):
     assert allergen_gate.hard_clashes("Veggie Primavera", [{"item": "gluten-free penne", "qty": "1 lb"}]) == []
 
 
-@pytest.mark.parametrize("fact", ["Maya is celiac", "Maya has coeliac disease"])
-def test_a_celiac_fact_on_what_we_know_holds_back_bread_too(maya, fact):
-    """Written as a must-avoid note rather than a restriction chip: no
-    "allergic to", no food named, and still a gluten avoidance."""
+@pytest.mark.parametrize("fact", ["Maya's friend Lily is celiac", "Maya is not celiac"])
+def test_a_note_that_only_mentions_celiac_holds_nothing_back(maya, fact):
+    """Review 2026-10-20: reading a bare "celiac" in a note as an avoidance
+    turned these into a restriction on Maya — and the startup backfill
+    copied it onto her record, where deleting it didn't stick. A note
+    still needs "allergic to", "no", "avoid"... as it always has."""
     tools.add_fact("people", fact, hard=True)
 
-    assert allergen_gate.hard_clashes("Garlic Bread", [{"item": "baguette bread", "qty": "1"}])
+    assert allergen_gate.hard_clashes("Garlic Bread", [{"item": "baguette bread", "qty": "1"}]) == []
 
 
 def test_the_warning_names_her_condition_the_way_people_say_it(maya):
