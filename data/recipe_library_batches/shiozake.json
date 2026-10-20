@@ -4,7 +4,7 @@
  "main_protein": "fish",
  "default_servings": 4,
  "prep_time_minutes": 10,
- "cook_time_minutes": 15,
+ "cook_time_minutes": 45,
  "ingredients": [
   {
    "item": "Skin-on salmon fillets",
@@ -42,19 +42,18 @@
   "Two days before, or at least the night before: cut the 1 lb salmon into 4 pieces if it's one big fillet. Put the pieces in a dish, sprinkle the 1 tbsp sake over them and turn them to coat. Leave them for 10 minutes, then pat them dry with paper towels.",
   "Weigh the salmon. The salt is 5% of the fish's weight, so for 1 lb (454 g) that's 23 g, or 4 tsp of table salt. Sprinkle the 4 tsp salt over all sides of the salmon, starting with the skin, and press on any that falls off.",
   "Line an airtight container with a paper towel. Lay the salmon in skin side up and put another paper towel on top. Cover it and refrigerate for 2 days, or at least overnight. The fish turns darker and firmer.",
-  "The night before you cook it, rinse the 1.5 cups rice in a bowl of cold water, swirling and draining until the water runs almost clear. Put it in your rice cooker with water to the 1.5 cup line and set the timer for the morning.",
-  "In the morning, set an oven rack about 9 inches below the broiler and heat the broiler on high for 5 minutes. Line a baking sheet with foil and rub it with the 1 tsp oil.",
+  "Rinse the 1.5 cups rice in a bowl of cold water, swirling and draining until the water runs almost clear. Put it in your rice cooker with water to the 1.5 cup line and start it. It takes about 45 minutes. If you'd like the rice ready when you wake up, do this the night before and set the cooker's timer.",
+  "About 15 minutes before the rice is done, set an oven rack about 9 inches below the broiler and heat the broiler on high for 5 minutes. Line a baking sheet with foil and rub it with the 1 tsp oil.",
   "Throw out the wet paper towels and pat the salmon dry. Lay it on the foil skin side up.",
   "Broil it for 8 to 10 minutes without flipping, until the skin is crisp and blistered. You're cooking it to 145°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Press it with a fork: it's done when it flakes and is opaque all the way through.",
   "Meanwhile, peel a 2 inch piece of the daikon and grate it finely. Squeeze out most of the liquid, leaving it a little moist.",
   "Serve the salmon with the rice and a small mound of the grated daikon."
  ],
- "advance_prep_notes": "cure the salmon 2 days ahead (at least the night before), and set the rice cooker timer the night before",
+ "advance_prep_notes": "cure the salmon 2 days ahead (at least the night before)",
  "advance_prep_step_indices": [
   1,
   2,
-  3,
-  4
+  3
  ],
  "method_notes": "All three read versions coat skin-on salmon in salt (two rub it with sake first), cure it in the fridge for anywhere from overnight to 2 days, then broil or pan-fry it until the skin crisps. Just One Cookbook uses salt at 5% of the fish's weight, cures it 2 days between paper towels, broils it skin side up for 8 to 10 minutes without flipping and serves it with grated daikon. No Recipes cures it overnight in a salt and mirin brine and pan-fries it skin side down, and Pickled Plum salts it for 12 to 36 hours and broils both sides. This one follows Just One Cookbook. The salt follows Just One Cookbook's 5% of the fish's weight, measured as table salt.",
  "sources": [

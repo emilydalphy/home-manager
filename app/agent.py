@@ -4148,7 +4148,10 @@ actual step(s) that are the advance prep (e.g. instructions = ["Preheat oven..."
 marinade and coat chicken...", "Bake..."] with advance_prep_notes "marinate at least 4 hours \
 ahead" should set advance_prep_step_indices to [2]) — this lets the Cook screen show a clear \
 "do ahead" vs "day of" split instead of one flat numbered list. Leave it empty whenever \
-advance_prep_notes is empty.
+advance_prep_notes is empty. Only what the dish NEEDS done ahead is advance prep. A step that \
+merely CAN be done ahead (setting the rice cooker timer the night before) stays a day-of step, \
+with the option as its last line: "If you'd like the rice ready when you wake up, do this the \
+night before and set the cooker's timer."
 - KEEP THE STEP THAT MAKES THE DISH. When the real version of a dish depends on an overnight \
 step — tikka masala's yogurt marinade, soaked dried chickpeas, a dough that rests, a brine — \
 keep it rather than shortening it to fit the night's time cap. Write it as its own first step \
