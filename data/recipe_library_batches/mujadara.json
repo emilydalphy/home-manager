@@ -1,0 +1,45 @@
+{
+ "dish_name": "Mujadara",
+ "cuisine": "Lebanese",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Brown lentils", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Short-grain brown rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Yellow onions", "qty": "3", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/2 cup + 2 tbsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Plain yogurt", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Dried mint", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Pick through the 3/4 cup lentils for any small stones. Tip them into a sieve with the 1 1/2 cups rice and rinse them together under cold water.",
+  "Heat 2 tbsp of the olive oil in a medium saucepan with a lid over medium heat. Add the 1 tsp cumin and stir for about 30 seconds, until it sizzles and smells toasty.",
+  "Pour in 3 3/4 cups water, add 1 tsp of the salt and bring it to a boil over high heat.",
+  "Stir in the lentils and rice and bring it back to a boil. Turn the heat to low, cover the pan and simmer for 40 to 45 minutes, until the rice and lentils are tender and the water is gone. Leave the lid on for the first 30 minutes.",
+  "Meanwhile, cut the 3 onions in half and slice them into thin half moons.",
+  "Heat the remaining 1/2 cup olive oil in a large skillet over medium high. Add the onions and 1/4 tsp of the salt and spread them out in the pan.",
+  "Cook the onions for 25 to 30 minutes, stirring every few minutes, until they're deep brown and crisp at the edges. If they start to scorch before the middles go soft, turn the heat down to medium.",
+  "Take the skillet off the heat and stir the 1/2 tsp paprika through the onions.",
+  "In a small bowl, stir together 1 cup of the yogurt, the 1 tsp dried mint, the juice of half the lemon and the last 1/4 tsp salt. Cut the other half of the lemon into wedges.",
+  "When the rice and lentils are done, turn off the heat and leave the lid on for 5 minutes. Then fluff them with a fork.",
+  "Taste it. If it's flat, add a pinch of salt first, then a squeeze from one of the lemon wedges.",
+  "Spoon the rice and lentils onto a platter and pile the crispy onions and a spoonful of their oil on top.",
+  "Serve with the mint yogurt and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions pair brown lentils with rice and top them with onions cooked slowly in olive oil until deep brown. A Family Feast simmers the lentils and short-grain brown rice together in one pot for 40 to 45 minutes, about twice as much rice as lentils, and seasons the onions with paprika. Alpha Foodie flips the ratio (twice the lentils to white basmati), fries the onions in more oil until crisp and adds cumin to the pot. May I Have That Recipe cooks the lentils and rice separately and serves it with a minty yogurt. This one follows A Family Feast's pot and onions, blooms cumin in the pot oil as Alpha Foodie does, and adds a mint yogurt on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Lebanese) has no mujadara, so the most rated read version leads.",
+ "sources": [
+  {"name": "A Family Feast", "title": "Mujadarra", "url": "https://www.afamilyfeast.com/mujadarra/", "rating": 4.9, "rating_count": 19, "read": true, "lead": true},
+  {"name": "Alpha Foodie", "title": "Lebanese Mujadara (Lentils and Rice)", "url": "https://www.alphafoodie.com/mujadara-lentils-and-rice/", "rating": 5, "rating_count": 12, "read": true, "lead": false},
+  {"name": "May I Have That Recipe", "title": "Mujadara - Rice and Lentils with Caramelized Onions", "url": "https://mayihavethatrecipe.com/rice-and-lentils-mjadra/", "rating": 5, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

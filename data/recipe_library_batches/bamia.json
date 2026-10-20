@@ -1,0 +1,139 @@
+{
+ "dish_name": "Bamia",
+ "cuisine": "Lebanese",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 100,
+ "ingredients": [
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lebanese 7 spice",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen baby okra",
+   "qty": "1 1/2 lb",
+   "category": "frozen"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vermicelli",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the 1 1/4 lb lamb into 1 inch cubes, pat them dry with paper towels, and toss them with 1/2 tsp of the salt.",
+  "Dice the onion, mince the 4 garlic cloves and chop the 3 tomatoes. Chop about 1/2 cup of the cilantro, stems and all, and keep the rest of the bunch for the end.",
+  "Heat 1 tbsp of the olive oil in a Dutch oven over medium high. Add half the lamb and leave it until the underside is browned and lets go of the pot, about 3 minutes. Turn the pieces and brown the other sides for 2 to 3 minutes more. Lift them onto a plate and brown the rest the same way.",
+  "Turn the heat down to medium and add the remaining 2 tbsp olive oil and the onion. Cook for 5 minutes, stirring and scraping up the browned bits, until the onion is soft.",
+  "Add the garlic and the chopped cilantro and cook for 1 minute, until it smells fragrant.",
+  "Stir in the 1/4 cup tomato paste, 2 tsp seven spice and 1/2 tsp black pepper. Cook for 1 minute, stirring, until the paste turns a shade darker.",
+  "Add the tomatoes, the lamb and any juices on the plate, 3 cups water and another 1/2 tsp of the salt. Bring it to a boil, then cover the pot, turn the heat to low and simmer for 1 hour, stirring now and then, until the lamb is tender when you press a piece with a spoon.",
+  "About 30 minutes before the lamb is done, start the rice. Rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear and leave it to drain.",
+  "Melt 2 tbsp butter in a medium saucepan over medium. Add 1/2 cup vermicelli and stir for 2 to 3 minutes, until it's a deep golden brown. Keep stirring. It darkens fast at the end.",
+  "Add the rice and stir for 1 minute, until every grain is coated. Pour in 2 1/2 cups water and the last 1/2 tsp salt and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes. No peeking.",
+  "When the lamb is tender, add the frozen okra straight from the bag and 1 cup water. Simmer uncovered for 15 to 20 minutes, until the okra is tender and the sauce has thickened. Stir gently, only once or twice, so the okra keeps its shape.",
+  "Take the pot off the heat and squeeze in the juice of half the lemon. Cut the other half into wedges. Chop a small handful of the remaining cilantro and scatter it over the stew.",
+  "Taste it. If it's flat, add salt first, then a squeeze of lemon.",
+  "Serve over the vermicelli rice, with the lemon wedges.",
+  "The stew is even better the next day. Keep it and the rice in separate containers in the fridge for up to 3 days. Reheat the stew over low with a splash of water, then scatter on the last of the cilantro."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three build the stew on onion, garlic, tomato and coriander leaf, and add the okra late so it holds its shape. Feel Good Foodie sears beef tips, softens garlic, cilantro and onion in the same pan, cooks frozen baby okra with lemon juice and seven spice, then simmers it all with tomato paste, fresh tomatoes and water for 15 minutes. Zaatar & Zaytoun uses lamb and finishes with pomegranate molasses instead of lemon, and The Elegant Economist braises lamb with baharat for hours before the okra goes in. This one follows Feel Good Foodie's base and spices, simmers the lamb for an hour first so it turns tender, and adds the lemon at the end.",
+ "sources": [
+  {
+   "name": "Feel Good Foodie",
+   "title": "Okra Stew",
+   "url": "https://feelgoodfoodie.net/recipe/mediterranean-okra-beef-tomato-stew/",
+   "rating": 5.0,
+   "rating_count": 249,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Zaatar & Zaytoun",
+   "title": "Lebanese Okra Stew with Meat (Bamia bi Lahme)",
+   "url": "https://zaatarandzaytoun.com/okra/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Elegant Economist",
+   "title": "Bamieh bil Lahme (Syrian Okra Stew)",
+   "url": "https://theeleganteconomist.com/?p=2046",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

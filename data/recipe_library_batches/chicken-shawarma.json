@@ -1,0 +1,49 @@
+{
+ "dish_name": "Chicken Shawarma",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "2 lb", "category": "meat/seafood"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Ground coriander", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Ground cardamom", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Smoked paprika", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Greek yogurt", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Romaine lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 3 hours ahead: mince 2 of the garlic cloves into a large bowl. Add 3 tbsp of the olive oil, the juice of 1 lemon, the 1 tbsp coriander, 1 tbsp cumin, 1 tbsp cardamom, 2 tsp smoked paprika, 2 tsp of the salt and the 1/2 tsp pepper, and stir it into a loose paste.",
+  "Pat the 2 lb chicken thighs dry with paper towels. Add them to the bowl and rub the paste into every piece. Cover and refrigerate.",
+  "Heat the oven to 425°F with a rack in the upper third. Brush a rimmed baking sheet with the last 1 tbsp olive oil.",
+  "Lay the thighs flat on the sheet with space between them. Roast for 20 minutes, until they're sizzling and browned at the edges.",
+  "Take the pan out and carefully pour off any liquid in it. Switch the oven to broil and broil the chicken for 3 to 5 minutes, until it chars in spots. Watch it closely. You're cooking it to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest thigh: it's done when the juices run clear and there's no pink left.",
+  "Meanwhile, grate the last garlic clove into a bowl and stir in the 1 cup Greek yogurt, the juice of half the second lemon and the last 1/4 tsp salt. Cut the other half of the lemon into wedges.",
+  "Shred half the head of lettuce, slice the 2 tomatoes and thinly slice the onion.",
+  "Move the chicken to a board and let it rest for 5 minutes. Then slice it into thin strips.",
+  "While it rests, wrap the pitas in foil and put them in the oven, turned off, for 5 minutes to warm.",
+  "Taste a strip of chicken. If it's flat, add a pinch of salt first, then a squeeze from one of the lemon wedges.",
+  "Serve the chicken in the warm pitas with the yogurt sauce, lettuce, tomato and onion, with the lemon wedges and hot sauce on the side."
+ ],
+ "advance_prep_notes": "Marinate the chicken the night before, or at least 3 hours ahead.",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "All three rub chicken in olive oil, lemon and warm spices ahead of time and cook it hot until it chars, then slice it for pitas with a yogurt or tahini sauce. RecipeTin Eats uses thighs and a dry marinade heavy on coriander, cumin and cardamom with smoked paprika and cayenne, marinates 3 to 24 hours and cooks them in a skillet or on the barbecue. Bon Appeteach slices the chicken into strips with Greek yogurt in the marinade, roasts it at 425°F for 15 minutes, drains the pan and broils it to crisp the edges; Veena Azmanov roasts thighs with potatoes and onions on one pan at 400°F. This one keeps RecipeTin's spice ratio, leaves out the cayenne so the base stays mild with hot sauce at the table, and uses Bon Appeteach's roast, drain and broil sheet pan method.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Chicken Shawarma (Middle Eastern)", "url": "https://www.recipetineats.com/chicken-sharwama-middle-eastern/", "rating": 4.99, "rating_count": 591, "read": true, "lead": true},
+  {"name": "Bon Appeteach", "title": "Sheet Pan Chicken Shawarma Recipe", "url": "https://www.bonappeteach.com/easy-30-minute-oven-roasted-chicken-shawarma/", "rating": 5, "rating_count": 26, "read": true, "lead": false},
+  {"name": "Veena Azmanov", "title": "Sheet Pan Shawarma Chicken", "url": "https://veenaazmanov.com/sheet-pan-shawarma-chicken-potatoes/", "rating": 5, "rating_count": 18, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

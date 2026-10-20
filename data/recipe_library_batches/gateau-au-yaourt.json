@@ -1,0 +1,109 @@
+{
+ "dish_name": "Gateau au Yaourt",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Plain yogurt",
+   "qty": "2 small pots (125 g each)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F with a rack in the middle. Brush a 9 by 5 inch loaf pan with a little oil and line it with a strip of parchment that hangs over the two long sides.",
+  "Empty both pots of yogurt into a big bowl, about 1 cup. Rinse one pot and dry it well. It's your measuring cup from here on.",
+  "Add the 2 eggs, 2 pots of sugar (1 cup), 1 pot of oil (1/2 cup) and the 1 tsp vanilla. Finely grate in the zest of the lemon. Whisk until it's smooth and pale.",
+  "In a second bowl, stir together 4 pots of flour (2 cups), the 1 1/2 tsp baking powder, 1/2 tsp baking soda and 1/2 tsp salt.",
+  "Tip the flour mix into the wet bowl and fold it in with a spatula. Stop as soon as you can't see any dry flour. Overmixing makes the cake tough.",
+  "Scrape the batter into the pan and smooth the top. Bake for 50 to 55 minutes, until the top is golden and cracked and a skewer pushed into the middle comes out clean.",
+  "Let it cool in the pan for 10 minutes, then lift it out by the parchment and cool it on a rack for at least 20 minutes before you slice it.",
+  "Serve it in thick slices. Wrap what's left and keep it at room temperature for up to 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three are one-bowl oil cakes with plain yogurt, eggs, sugar and flour, lifted with baking powder, mixed only until the flour disappears and baked at about 350°F until a skewer comes out clean. Sundaybaker bakes a loaf for 50 to 55 minutes with 1 cup each of yogurt and sugar, 1/2 cup oil and 2 cups flour, which is exactly the classic pot ratio when the pot holds 1/2 cup, so this one measures by the pot. Baking Like a Chef keeps the traditional 1 pot yogurt, 2 pots sugar, 1 pot oil and 3 pots flour with vanilla sugar in a round pan. Chocolate & Zucchini cuts the sugar and oil, adds a spoon of rum and bakes a round cake for 30 to 35 minutes.",
+ "sources": [
+  {
+   "name": "Sundaybaker",
+   "title": "Gâteau au Yaourt: French Yogurt Cake",
+   "url": "https://sundaybaker.co/recipes/french-yogurt-cake/",
+   "rating": 4.5,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Baking Like a Chef",
+   "title": "Gâteau au Yaourt (Easy French Yogurt Cake)",
+   "url": "https://www.bakinglikeachef.com/gateau-au-yaourt-french-yogurt-cake/",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Chocolate & Zucchini",
+   "title": "Yogurt Cake (Gâteau au Yaourt)",
+   "url": "https://cnz.to/recipes/cakes-tarts/yogurt-cake-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,115 @@
+{
+ "dish_name": "Baked Kibbeh",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Fine bulgur",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Extra-lean ground beef",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lebanese 7 spice",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Put the 3/4 cup bulgur in a bowl and stir in 6 tbsp water. Leave it for 10 minutes, then fluff it with a fork.",
+  "Meanwhile, heat the oven to 400°F and brush an 8 inch square baking dish with 1 tbsp of the olive oil.",
+  "Dice one onion for the filling. Cut the other into quarters.",
+  "Heat 1 tbsp of the olive oil in a large skillet over medium. Add the diced onion and cook for 5 minutes, stirring now and then, until it's soft.",
+  "Turn the heat up to medium high and add 3/4 lb of the beef. Break it up with a spoon and leave it alone for a minute between stirs. After 6 to 8 minutes there's no pink left and the bits are starting to brown.",
+  "Stir in 1 1/2 tsp of the seven spice and 1/2 tsp of the salt and cook for 1 minute, until it smells fragrant. Take the pan off the heat and stir in 2 tbsp of the pine nuts. Taste the filling, and add a pinch more salt if it's flat.",
+  "Pick about 1/4 cup of the mint leaves. Put them in a food processor with the soaked bulgur, the quartered onion, the 1 tsp cumin, the last 1 tsp seven spice and 1 1/2 tsp of the salt. Blend for about 30 seconds, until the onion is finely ground.",
+  "Add the remaining 3/4 lb beef and blend for about 1 minute, scraping down the sides once, until it's a smooth, sticky paste.",
+  "Wet your hands. Press half the paste into the dish in an even layer, right into the corners.",
+  "Spread the filling over it and press it down with the back of a spoon.",
+  "Flatten the rest of the paste into thin patties between wet palms and lay them over the filling. Press the edges together and smooth the top with wet hands until there are no gaps.",
+  "Cut it into squares or diamonds with a sharp knife, all the way to the bottom. Press the last 1 tbsp pine nuts lightly into the top and drizzle on the last 2 tbsp olive oil.",
+  "Bake for 35 to 40 minutes, until the top is deep golden brown and the edges pull away from the dish. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Lift out a center piece: it's done when there's no pink left in the top layer.",
+  "While it bakes, chop 2 tbsp of the mint and stir it into 1 cup of the yogurt with the last 1/4 tsp salt. Taste it, and add a pinch more salt if it's flat.",
+  "Let the kibbeh rest for 10 minutes before you lift out the pieces. Straight from the oven they crumble.",
+  "Serve with the mint yogurt.",
+  "Leftover pieces keep in the fridge for up to 3 days. They're good cold or at room temperature in a lunchbox."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three press a paste of fine bulgur, onion and very lean beef into a pan, spread a cooked filling of ground beef and onion over it, cover it with a second layer, score it into pieces and bake it with oil brushed on top. Feel Good Foodie soaks the bulgur, blends it with onion, fresh basil or mint, kamouneh and seven spice before the beef goes in, puts pine nuts in the filling and bakes at 400°F for 40 to 45 minutes. Salt & Sweet uses walnuts and pomegranate molasses in the filling and bakes at 350°F, and The Matbakh adds pomegranate molasses and butter to the filling and blends the paste with ice to keep it cold. This one follows Feel Good Foodie at half the size, with cumin and fresh mint standing in for the kamouneh blend.",
+ "sources": [
+  {
+   "name": "Feel Good Foodie",
+   "title": "Baked Kibbeh",
+   "url": "https://feelgoodfoodie.net/recipe/baked-kibbeh/",
+   "rating": 4.98,
+   "rating_count": 346,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Salt & Sweet",
+   "title": "Kibbeh bil Sanieh (Baked Kibbeh)",
+   "url": "https://thesaltandsweet.com/lebanese-kibbeh-bil-sanieh-baked-kibbeh/",
+   "rating": 5.0,
+   "rating_count": 48,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Lebanese Baked Stuffed Kibbeh",
+   "url": "https://thematbakh.com/baked-stuffed-kibbeh/",
+   "rating": 4.92,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
