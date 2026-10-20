@@ -7,8 +7,8 @@
  "cook_time_minutes": 15,
  "ingredients": [
   {
-   "item": "Kosher salt",
-   "qty": "6 tbsp",
+   "item": "Salt",
+   "qty": "3 tbsp",
    "category": "pantry"
   },
   {
@@ -18,16 +18,16 @@
   }
  ],
  "instructions": [
-  "Bring 6 cups of water to a boil in a large pot over high heat. Set 3/4 tsp of the salt aside in a small dish and stir the rest into the water.",
+  "Bring 6 cups of water to a boil in a large pot over high heat. Set 1/2 tsp of the salt aside in a small dish and stir the rest into the water.",
   "Check the edamame bag. If it says they're already cooked, they only need 1 minute in the water.",
   "Add the frozen edamame straight from the bag and stir. Once the water is back at a boil, cook them for 4 to 5 minutes, stirring once or twice, until a bean you pop out is tender with a little bite.",
   "Skim off any foam with a slotted spoon, then drain them in a colander. Don't rinse them, or the salt washes off.",
-  "Sprinkle the 3/4 tsp salt you set aside over the hot pods and toss. Leave them for a few minutes to cool down a little.",
+  "Sprinkle the 1/2 tsp salt you set aside over the hot pods and toss. Leave them for a few minutes to cool down a little.",
   "Serve warm or at room temperature, with an empty bowl for the pods."
  ],
  "advance_prep_notes": "",
  "advance_prep_step_indices": [],
- "method_notes": "All three read versions boil frozen pods in well salted water for a few minutes and salt them again once drained. Just One Cookbook uses a lot of salt in the water (4 tbsp Diamond Crystal kosher per quart), cooks them 4 to 5 minutes, skims the foam and says not to rinse, and notes that edamame imported from Japan are precooked and need only a minute. America's Test Kitchen simmers them 3 to 4 minutes and cools them in cold water, and My Everyday Table cooks them in 2 cups of water in a skillet. This one follows Just One Cookbook's ratio for a 16 oz bag. The salt amount is for Diamond Crystal; with Morton kosher salt, use about half.",
+ "method_notes": "All three read versions boil frozen pods in well salted water for a few minutes and salt them again once drained. Just One Cookbook uses a lot of salt in the water (4 tbsp Diamond Crystal kosher per quart), cooks them 4 to 5 minutes, skims the foam and says not to rinse, and notes that edamame imported from Japan are precooked and need only a minute. America's Test Kitchen simmers them 3 to 4 minutes and cools them in cold water, and My Everyday Table cooks them in 2 cups of water in a skillet. This one follows Just One Cookbook's ratio for a 16 oz bag. The salt is Just One Cookbook's amount converted to table salt (about half the volume of Diamond Crystal).",
  "sources": [
   {
    "name": "Just One Cookbook",

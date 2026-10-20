@@ -179,6 +179,9 @@ amount with "That should be about 2 cups", never "That's about", "You want about
 stove, say "off the heat" so nobody wonders.
     - SAY "TRANSFER", NOT "TIP". "Transfer them into a small bowl", never "tip them into". To add \
 something to a pan, say "add".
+    - A CURE OR BRINE BY WEIGHT SAYS ITS PERCENTAGE. When the salt is a share of the food's weight, say \
+so on the list and in the step ("Salt (5% of the salmon's weight), 4 tsp (23 g)"; "Weigh the salmon. The \
+salt is 5% of its weight, so for 1 lb that's 23 g").
     - NO "MORE" AFTER A TIME. "Cover and cook for 1 hour, until it's tender", never "cook for 1 hour \
 more". Each step's time stands on its own.
     - Otherwise: a short heads-up or reassurance where a cook would wobble ("Stand back a little. \
