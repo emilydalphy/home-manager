@@ -1,0 +1,165 @@
+{
+ "dish_name": "Pork Ragu with Pappardelle",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 230,
+ "ingredients": [
+  {
+   "item": "Boneless pork shoulder",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp + 1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 stalk"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "3 sprigs"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "6 sprigs"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Dried pappardelle",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (1 cup)",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (4 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup grated"
+  }
+ ],
+ "instructions": [
+  "Trim any thick fat from the 2 lb pork and cut it into 6 large pieces. Pat them dry and sprinkle 1 tsp of the salt and 3/4 tsp of the pepper all over.",
+  "Finely dice the 2 carrots, the onion and 1 stalk of the celery. Mince the 6 garlic cloves.",
+  "Heat 2 tbsp of the olive oil in a large Dutch oven over medium high until it shimmers. Add the pork with room between the pieces, working in two batches if it's crowded. Brown it for 4 to 5 minutes a side, until each side is deep brown. Move it to a plate.",
+  "Turn the heat down to medium and add the remaining 1 tbsp oil. Add the onion, carrots and celery with 1/4 tsp of the salt and the remaining 1/4 tsp pepper. Cook for 15 minutes, stirring now and then, until they're soft and well browned. Don't rush this. That's where the flavor starts.",
+  "Add the garlic and cook for 1 minute, until it smells fragrant. Stir in the 2 tbsp tomato paste and cook for 2 minutes, until it turns a shade darker.",
+  "Turn the heat up to medium high and add the 3/4 cup wine. Scrape up the browned bits from the bottom and cook for 4 minutes, until the wine is almost gone.",
+  "Tie 3 sprigs of the sage, 1 sprig of the rosemary and 6 sprigs of the thyme together with kitchen string, or leave them loose. Add them to the pot with the 2 bay leaves, the crushed tomatoes and the 1 1/2 cups broth. Put the pork back in with any juices from the plate and bring it to a boil.",
+  "Turn the heat to low, put the lid on and simmer gently for 2 1/2 hours, stirring now and then, until the pork falls apart when you press it with a spoon. If the sauce gets too thick, add a splash of water.",
+  "About 20 minutes before the pork is done, bring a large pot of water to a boil and add the remaining 1 tbsp salt.",
+  "Lift the pork onto a board and fish out the herbs and bay leaves. Shred the pork with two forks, pulling out any fatty bits, and stir it back into the sauce. If you'd like the ragu ready ahead, make it up to here the day before and keep it covered in the fridge.",
+  "Add the 12 oz pappardelle to the boiling water and cook it until al dente, following the package time. Scoop out 1 cup of the cooking water, then drain the pappardelle.",
+  "Meanwhile, grate the parmesan. That should be about 1 cup. Bring the ragu to a gentle simmer over low and stir in the 1/3 cup cream and 1/2 cup of the parmesan.",
+  "Add the pappardelle to the pot and toss it over medium heat for 1 to 2 minutes, until the sauce coats every ribbon. If it's too thick, add a splash of the cooking water.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls with the remaining 1/2 cup parmesan on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown big pieces of pork shoulder, build the sauce on onion, carrot, celery, garlic and tomato paste, add wine and tomatoes and braise until the pork shreds, then serve it on wide noodles with parmesan. Plays Well With Butter browns the soffritto hard for 15 to 20 minutes, uses white wine, crushed tomatoes, water or broth and a bundle of sage, rosemary and thyme, simmers on the stove for 2 1/2 to 3 hours and finishes with cream and parmesan. The Modern Proper braises in the oven at 350°F with 3 cups white wine and tomato sauce, and Whitney Bond uses red wine, beef broth and a slow cooker. This follows Plays Well With Butter for 2 lb pork for 4; its page lists 28 as reviewCount and gives no ratingCount, so that number is recorded as the rating count.",
+ "sources": [
+  {
+   "name": "Plays Well With Butter",
+   "title": "Slowly Braised Pork Ragu with Pappardelle",
+   "url": "https://playswellwithbutter.com/pork-ragu-recipe/",
+   "rating": 5.0,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Modern Proper",
+   "title": "Braised Pork Ragu Pappardelle",
+   "url": "https://themodernproper.com/pork-ragu-recipe",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Whitney Bond",
+   "title": "Pork Ragu",
+   "url": "https://whitneybond.com/slow-cooked-pork-ragu/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
