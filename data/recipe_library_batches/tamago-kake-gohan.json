@@ -1,0 +1,81 @@
+{
+ "dish_name": "Tamago Kake Gohan",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 2,
+ "cook_time_minutes": 3,
+ "ingredients": [
+  {
+   "item": "Japanese short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Furikake",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or with the rice cooker timer set for the morning: rinse the 1 1/2 cups rice in a bowl of cold water, swishing it with your hand and pouring off the cloudy water, until the water runs almost clear. Cook it in a rice cooker or pot with the water the package calls for. You'll get about 4 1/2 cups of cooked rice. If you cook it the night before, cover it and keep it in the fridge.",
+  "If the rice is from the fridge, put it in a covered bowl with a splash of water and microwave it for 2 to 3 minutes, until it's steaming all the way through. It has to be very hot, or the egg stays slippery and cold.",
+  "Meanwhile, thinly slice 1 of the green onions.",
+  "Divide the hot rice between 4 bowls. Press a small well into the middle of each one with the back of a spoon or your chopsticks.",
+  "Crack 1 egg into each well. Use the freshest eggs you can find, or pasteurized ones. The egg isn't cooked beyond the heat of the rice.",
+  "Drizzle 1 tsp soy sauce over each egg.",
+  "Stir each bowl hard with chopsticks for about 30 seconds, until the egg disappears into the rice and the rice turns pale yellow and a little fluffy.",
+  "Taste a bite, and add a few more drops of soy sauce if it's flat.",
+  "Scatter the green onion over the bowls and serve right away, with the furikake on the table."
+ ],
+ "advance_prep_notes": "Cook the rice the night before, or set the rice cooker timer so it's ready in the morning.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Every version is hot rice, a raw egg and soy sauce, stirred together in the bowl. Just One Cookbook cracks the whole egg into a well in the rice, adds a little soy sauce and a topping like bonito flakes, then stirs until the egg turns the rice pale yellow; Onolicious Hawaii whips it for a full minute until frothy, and Norecipes stirs in only the white and sets the yolk on top. All three say the rice must be steaming hot, and leftover rice is fine once it's reheated. This one follows Just One Cookbook with green onion and furikake as the toppings. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Japanese) has no version, so the most-rated version leads.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Tamago Kake Gohan (TKG)",
+   "url": "https://www.justonecookbook.com/tamago-kake-gohan/",
+   "rating": 4.9,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Onolicious Hawaii",
+   "title": "Tamago Kake Gohan",
+   "url": "https://onolicioushawaii.com/tamago-kake-gohan/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Norecipes",
+   "title": "Tamago Kake Gohan (Raw Egg on Rice)",
+   "url": "https://norecipes.com/tamago-kake-gohan-egg-rice/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

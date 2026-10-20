@@ -1,0 +1,72 @@
+{
+ "dish_name": "Gyoza",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Frozen pork gyoza",
+   "qty": "1 bag (about 24)",
+   "category": "frozen"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Stir 3 tbsp soy sauce and 3 tbsp rice vinegar together in a small bowl for dipping. Put the chili oil on the table for anyone who wants heat.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet that has a lid, over medium high. Set 12 of the gyoza in the pan straight from the freezer, flat side down, in rows that just touch.",
+  "Cook them for 2 to 3 minutes without moving them, until the bottoms are light golden.",
+  "Pour 1/2 cup of water around the gyoza and put the lid on straight away. Stand back a little. It'll spatter.",
+  "Cook for 5 to 6 minutes, until the water is gone and the wrappers look a little see-through on top. You're cooking the filling to 160°F, so if you have a thermometer, check one in the middle. No thermometer? Cut one open: it's done when the filling is firm and there's no pink.",
+  "Take the lid off and cook for 1 more minute, until the bottoms are crisp again. Lift them out with a spatula onto a plate, golden side up.",
+  "Add the remaining 1 tbsp oil to the pan and cook the other 12 gyoza the same way.",
+  "Serve hot with the dipping sauce and the chili oil."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions brown the flat bottoms in a little oil, pour water around the dumplings, cover them to steam until the water is gone, then let the bottoms crisp again. RecipeTin Eats cooks about 12 at a time with 1/3 cup water for 3 to 4 minutes, and says to add a splash more water and about 2 more minutes when they go in frozen. Just One Cookbook uses 4 tbsp water, adds 1 to 2 minutes for frozen ones and drizzles sesame oil in at the end. Both serve soy and vinegar in about equal parts with chili oil on the side. This one cooks a bag of frozen pork gyoza (bought or home made) the RecipeTin Eats way and leaves the filling and folding out, so it stays a quick snack.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Japanese GYOZA (Dumplings)",
+   "url": "https://www.recipetineats.com/gyoza-japanese-dumplings-potstickers/",
+   "rating": 4.97,
+   "rating_count": 173,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Gyoza (Japanese Potstickers)",
+   "url": "https://www.justonecookbook.com/gyoza/",
+   "rating": 4.69,
+   "rating_count": 505,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
