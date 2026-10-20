@@ -129,3 +129,36 @@ def test_the_screen_does_not_promise_an_undo_for_an_answer_that_changed_nothing(
     carry = shell[shell.index("case 'carry-decide':"):shell.index("case 'goto-plan':")]
     assert re.search(r"if \(carryAnswer && carryAnswer\.unchanged\) \{\s*showToast\(carryName \+ ' was already answered'\);\s*return;", carry)
     assert carry.index("carryAnswer.unchanged") < carry.index("label: 'Undo'")
+
+
+def test_undo_after_a_second_same_day_purchase_puts_no_second_line(signed_in):
+    """Bought once today (the day's one 'bought' event), back on the list,
+    skipped on one phone, then ticked on the other's stale screen: no new
+    'bought' event is written, so the undo must notice the answered line was
+    ticked rather than make the staple due and add a line."""
+    sid, first = _soap_on_the_list(signed_in)
+    assert signed_in.post(f"/api/grocery-list/{first}/status", json={"status": "purchased"}).status_code == 200
+    again = signed_in.post("/api/staples/add", json={
+        "item": "Dish soap", "category": "household", "every_days": 21, "running_low": True,
+    })
+    assert again.status_code == 200, again.text
+    line = [it for it in _needed(signed_in) if it["staple_id"] == sid]
+    assert len(line) == 1, line
+    second = line[0]["id"]
+    assert signed_in.post(f"/api/grocery-list/{second}/staple", json={"decision": "skip"}).json().get("unchanged") is not True
+    # The other phone still shows the line and ticks it.
+    assert signed_in.post(f"/api/grocery-list/{second}/status", json={"status": "purchased"}).status_code == 200
+
+    r = signed_in.post(f"/api/staples/{sid}/undo")
+    assert r.status_code == 200
+    assert r.json()["undone"] is False
+    assert [it for it in _needed(signed_in) if it["staple_id"] == sid] == []
+
+
+def test_a_plain_answer_still_undoes_and_puts_the_same_line_back(signed_in):
+    sid, line_id = _soap_on_the_list(signed_in)
+    signed_in.post(f"/api/grocery-list/{line_id}/staple", json={"decision": "skip"})
+    assert [it for it in _needed(signed_in) if it["staple_id"] == sid] == []
+    r = signed_in.post(f"/api/staples/{sid}/undo")
+    assert r.json()["undone"] is True
+    assert [it["id"] for it in _needed(signed_in) if it["staple_id"] == sid] == [line_id]

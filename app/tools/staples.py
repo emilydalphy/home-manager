@@ -1163,7 +1163,8 @@ def undo_staple_decision(staple_id: int) -> dict:
         "AND kind IN ('plenty', 'skipped') ORDER BY id DESC LIMIT 1",
         (household_id(), staple_id),
     ).fetchone()
-    if _bought_since_last_answer(conn, staple_id) or not reverse_last_answer(conn, staple_id):
+    if (_bought_since_last_answer(conn, staple_id) or _answered_line_was_ticked(conn, staple_id, last)
+            or not reverse_last_answer(conn, staple_id)):
         # Nothing to undo: say so, change nothing. (A raw call used to
         # force the staple due — the 2026-09-11 verifier's case g.) Nor
         # once it has been BOUGHT since that answer: a purchase overtook
@@ -1217,6 +1218,31 @@ def _bought_since_last_answer(conn, staple_id: int) -> bool:
         (household_id(), staple_id),
     ).fetchone()
     return row is not None and row["kind"] == "bought"
+
+
+def _answered_line_was_ticked(conn, staple_id: int, last) -> bool:
+    """True when the line the last answer took off has since been ticked:
+    no removed row is left to put back, and this staple has a line in the
+    cart or bought. A second purchase the same day writes no new 'bought'
+    event (one per day), so _bought_since_last_answer can't see it — and
+    the ordinary path would then make the staple due today and put a
+    second line on the list for the thing just bought. An answer that only
+    trimmed a shared line left no removed row by design; it is not this."""
+    try:
+        if json.loads((last and last["receipt_json"]) or "{}").get("trimmed"):
+            return False
+    except (TypeError, ValueError, AttributeError):
+        pass
+    hid = household_id()
+    if conn.execute(
+        "SELECT 1 FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status = 'removed'",
+        (hid, staple_id),
+    ).fetchone():
+        return False
+    return conn.execute(
+        "SELECT 1 FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status IN ('in_cart', 'purchased')",
+        (hid, staple_id),
+    ).fetchone() is not None
 
 
 def _untrim(conn, staple_id: int, trimmed: dict) -> bool:
