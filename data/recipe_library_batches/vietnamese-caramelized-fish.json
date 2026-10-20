@@ -1,0 +1,49 @@
+{
+ "dish_name": "Vietnamese Caramelized Fish",
+ "cuisine": "Vietnamese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Catfish fillets", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Garlic", "qty": "7 cloves", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Coconut water", "qty": "1 can (11 oz)", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Thai chilies", "qty": "2", "category": "produce"},
+  {"item": "English cucumber", "qty": "1", "category": "produce"},
+  {"item": "Jasmine rice", "qty": "1.5 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1.5 cups rice until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave the lid on.",
+  "Rub 1 tsp of the salt all over the 1.5 lb catfish, then rinse it under cold water. Pat it very dry and cut it into pieces about 3 inches long.",
+  "Mince the 7 garlic cloves. Peel the onion and slice it thinly. Cut 3 of the green onions into 2 inch lengths.",
+  "Slice the 2 chilies into a small bowl for the table. Cut the cucumber into thin rounds.",
+  "In a measuring jug, stir together the 3/4 cup coconut water, 3/4 cup water, the 2 tbsp fish sauce and the remaining 1 tsp salt.",
+  "Put the 3 tbsp oil and the 1 tbsp sugar in a large heavy skillet or a clay pot over medium. Stir until the sugar melts and turns dark amber, the color of strong tea, 2 to 3 minutes. Don't let it go black, or it will taste bitter.",
+  "Add the garlic right away and stir for about 30 seconds, until it's light golden and smells toasty.",
+  "Take the pan off the heat. Spread the onion over the bottom and lay the fish on top in a single layer.",
+  "Pour in the coconut water mixture and put the pan back over high heat. When it boils, spoon some of the sauce over the fish.",
+  "Turn the heat down so it simmers and cook for 20 minutes, spooning the sauce over the fish now and then.",
+  "Gently flip each piece of fish with a spatula. Partly cover the pan and simmer for about 10 minutes more, until the fish flakes when you press it with a fork and the sauce has cooked down to a dark, sticky glaze. Stay by the stove for these last minutes and keep spooning the sauce over. It can catch and burn quickly once it's thick.",
+  "Scatter the green onions over the fish for the last 2 minutes so they wilt, then grind the 1/2 tsp black pepper over the top.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve with the jasmine rice and the cucumber, with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three braise catfish or an oily fish with fish sauce in a little liquid until the sauce cooks down to a dark, salty glaze, and serve it with plenty of rice. Hungry Huy browns garlic in oil, layers onion and then fish fillets in the pan, braises in coconut juice and water for about 30 minutes, gets its color from a little thick soy sauce (and suggests caramel instead), and serves it with cucumber. Takes Two Eggs marinates and pan fries catfish steaks before braising them in coconut soda with caramel sauce, and Delightful Plate braises mackerel on galangal, shallot and tomato for nearly 2 hours. This one follows the lead's layering and liquid and makes the caramel in the pan oil in place of the thick soy sauce.",
+ "sources": [
+  {"name": "Hungry Huy", "title": "Cá Kho Tộ Recipe - Vietnamese Caramelized & Braised Fish", "url": "https://www.hungryhuy.com/ca-kho-to/", "rating": 5.0, "rating_count": 40, "read": true, "lead": true},
+  {"name": "Takes Two Eggs", "title": "Ca Kho To (Vietnamese Braised Fish)", "url": "https://takestwoeggs.com/?p=20116", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Delightful Plate", "title": "Cá Kho (Vietnamese Caramelized Fish)", "url": "https://delightfulplate.com/ca-kho-vietnamese-caramelized-fish/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

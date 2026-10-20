@@ -1,0 +1,105 @@
+{
+ "dish_name": "Kimbap",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted seaweed sheets (gim)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4 sheets"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Spinach",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Pickled radish strips (danmuji)",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "4 strips"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a few changes of cold water, swishing it with your hand, until the water runs mostly clear. Drain it well.",
+  "Cook the rice with a little less water than usual, about 1 3/4 cups. In a rice cooker, start it now. In a pot, bring it to a boil, cover, turn the heat to the lowest setting and cook for 15 minutes, then take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, bring a medium pot of water to a boil for the spinach and fill a bowl with cold water.",
+  "Crack the 6 eggs into a bowl, add 1/4 tsp of the salt and beat them with a fork until there are no streaks of white left.",
+  "Heat 1 tsp of the vegetable oil in a small nonstick pan over medium low. Pour in half the eggs. When the bottom has set but the top is still a little runny, about 2 minutes, fold one third over with a spatula, then fold it over again into a thick flat omelette.",
+  "Cook the omelette for 1 minute, flip it and cook the other side for 1 minute, until it's set all the way through. Slide it onto a cutting board. Make a second one the same way with another 1 tsp of the oil and the rest of the eggs.",
+  "Peel the 2 carrots and cut them into thin matchsticks. Heat the last 1 tsp of oil in the same pan over medium high and stir fry the carrots for 2 to 3 minutes, until they bend but still have some crunch. Sprinkle with 1/8 tsp of the salt and move them to a plate.",
+  "Trim the roots off the spinach and wash it well. Drop it into the boiling water for 30 seconds, until it just wilts, then move it into the cold water.",
+  "Squeeze the spinach in your fists to get out as much water as you can, or the rolls will turn soggy. Toss it with 1 tsp of the sesame oil, 1/8 tsp of the salt and the 1 tsp sesame seeds.",
+  "Once the omelettes have cooled a little, cut them lengthwise into strips about 1/2 inch wide. Drain 4 strips of the pickled radish and pat them dry.",
+  "Spoon the hot rice into a large bowl. Add 1 tbsp of the sesame oil and the last 1/2 tsp of salt and fold it through gently with a spatula until it's evenly seasoned.",
+  "Lay a seaweed sheet shiny side down on a bamboo mat or a cutting board, long side toward you. Wet your fingers and spread a quarter of the rice, about 3/4 cup, in a thin even layer, leaving about 1 1/2 inches bare at the top edge.",
+  "Lay a quarter of the egg strips, carrots and spinach and 1 radish strip in lines across the rice, about a third of the way up from the bottom.",
+  "Lift the bottom edge with both hands and roll it up over the filling, tucking the filling in with your fingertips. Squeeze the roll firmly, then keep rolling to the end and press along the seam to seal it. Make 3 more rolls with the rest of the seaweed, rice and filling.",
+  "Brush the rolls with the remaining 2 tsp sesame oil and rub the last bit onto a sharp knife. Cut each roll into slices about 1/2 inch thick, wiping the knife with a damp towel when the rice starts to stick.",
+  "Serve at room temperature. To pack it for lunch, let the slices cool, pack them snugly in a container and eat them the same day. The rice turns hard in the fridge."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions roll warm rice seasoned while hot (sesame oil and salt at Korean Bapsang, plum extract and salt at Beyond Kimchee) around strips of egg omelette, blanched and squeezed spinach, stir fried carrot and pickled radish. Korean Bapsang cooks the rice with a little less water than usual and adds seasoned beef, fish cake and burdock, and Beyond Kimchee adds crab stick, fish cake and burdock. Korean Bapsang notes that the filling is flexible. This one leads with a thicker egg filling and leaves out the beef, fish cake and burdock to keep the shopping short, and brushes the rolls with sesame oil as the lead does.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Kimbap (Seaweed rice rolls)",
+   "url": "https://www.koreanbapsang.com/gimbapkimbap-korean-dried-seaweed-rolls/",
+   "rating": 4.79,
+   "rating_count": 88,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Kimbap (Korean Seaweed Rice Rolls)",
+   "url": "https://www.beyondkimchee.com/kimbap/",
+   "rating": 5,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,119 @@
+{
+ "dish_name": "Bibim Guksu",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Somyeon noodles",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Kimchi",
+   "qty": "1 jar (16 oz)",
+   "category": "other",
+   "cook_qty": "1 1/2 cups, plus the juice"
+  },
+  {
+   "item": "Gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil for the noodles and a small pot of water to a boil for the eggs. Fill a bowl with cold water and a handful of ice.",
+  "Lower the 4 eggs into the small pot with a spoon and boil them for 9 minutes.",
+  "Meanwhile, thinly slice 1 1/2 cups of the kimchi and put it in a large bowl. Pour in the juice from the jar, up to about 1/2 cup.",
+  "Add 2 tbsp gochujang, 2 tbsp soy sauce, 1/4 cup rice vinegar, 3 tbsp sugar and the 2 tbsp sesame oil to the kimchi. Stir until the gochujang is smooth and the sugar has dissolved. If there wasn't much juice in the jar, add another splash of soy sauce and vinegar.",
+  "Lift the eggs into the ice water and leave them for 5 minutes.",
+  "Cut the 2 cucumbers into thin matchsticks.",
+  "Add the noodles to the large pot and stir so they don't clump. Cook them by the package time, usually 3 to 4 minutes, until they're soft with a little chew left.",
+  "Drain the noodles in a colander and rinse them under cold running water, rubbing them with your hands, until they're completely cold. Shake the colander hard to get the water off. Wet noodles make a thin, watery sauce.",
+  "Add the noodles to the kimchi sauce and toss with your hands or tongs until every strand is red and coated.",
+  "Taste a strand. If it's flat, add a little more soy sauce or a splash of the rice vinegar.",
+  "Peel the eggs and cut them in half.",
+  "Divide the noodles between 4 bowls. Top each with cucumber and two egg halves, and crush the 1 tbsp sesame seeds between your fingers over the top.",
+  "Serve cold, with the 1 tsp gochugaru in a small bowl on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions boil thin wheat somyeon, chill it hard in cold water, then toss it in a gochujang sauce sweetened with sugar or honey and sharpened with vinegar, topped with a boiled egg and cucumber. Korean Bapsang builds the sauce on sliced fermented kimchi and its juice and leaves out chili flakes for a milder bowl. Beyond Kimchee and Takes Two Eggs add gochugaru, and Takes Two Eggs adds raw garlic. This one follows the kimchi sauce, uses sugar in place of the corn syrup, and puts the gochugaru on the side.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Kimchi Bibim Guksu (Spicy Cold Noodles with Kimchi)",
+   "url": "https://www.koreanbapsang.com/kimchi-bibim-guksu-spicy-cold-noodles/",
+   "rating": 4.67,
+   "rating_count": 36,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Easy Bibim Guksu (Korean Cold Kimchi Noodles)",
+   "url": "https://www.beyondkimchee.com/bibim-guksu/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Bibim Guksu (Korean Spicy Cold Noodles)",
+   "url": "https://takestwoeggs.com/bibim-guksu-korean-spicy-cold-noodles/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

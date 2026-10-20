@@ -1,0 +1,47 @@
+{
+ "dish_name": "Thit Kho",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 130,
+ "ingredients": [
+  {"item": "Pork belly", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Boneless pork shoulder", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Coconut soda", "qty": "1 can", "category": "pantry", "cook_qty": "2/3 cup"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 1/2 tbsp"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Eggs", "qty": "6", "category": "dairy"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Pickled mustard greens", "qty": "1 jar", "category": "pantry"},
+  {"item": "Jasmine rice", "qty": "1.5 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the pork belly and the pork shoulder into 1 1/2 inch cubes.",
+  "Bring a large pot of water to a boil over high heat. Add the pork and boil it for 1 to 2 minutes. Drain it, then rinse the pork under running water until the water runs clear. Rinse out the pot.",
+  "Put the pork back in the pot and add the 2/3 cup coconut soda, the 2 1/2 tbsp fish sauce and the 1 1/2 tsp salt. Pour in water until the pork is just covered, about 3 cups.",
+  "Bring it to a boil over high heat, then turn it down so it keeps a low bubble. Cover and simmer for 40 minutes, stirring every 20 minutes.",
+  "Meanwhile, make the caramel. Put the 3 tbsp sugar and 1 tbsp water in a small saucepan over medium. Swirl the pan now and then, without stirring, until the sugar turns dark amber, the color of strong tea, 5 to 8 minutes. Don't let it go black, or it will taste bitter.",
+  "Take the caramel off the heat and carefully pour in 3 tbsp hot water. Stand back. It will spit and bubble up. Swirl the pan until the caramel is smooth and runny.",
+  "Also meanwhile, put the 6 eggs in a saucepan and cover them with cold water by 1 inch. Bring it to a boil over medium high, then take it off the heat, cover, and leave the eggs for 8 minutes. Cool them under cold running water and peel them.",
+  "When the pork has had its 40 minutes, take the lid off and stir in the caramel. Keep simmering it uncovered, stirring every 20 minutes, so the liquid cooks down.",
+  "Peel the onion and cut it into 8 big chunks.",
+  "After the pork has simmered for about 1 hour 20 minutes in total, add the eggs and the onion. Spoon the sauce over the eggs.",
+  "Simmer it uncovered for another 30 to 40 minutes, turning the eggs now and then so they color evenly. It's done when a fork slides easily into the pork and the liquid has cooked down to about a third of where it started.",
+  "About 30 minutes before it's done, rinse the 1.5 cups rice until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave the lid on.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a splash more fish sauce. It should taste a little salty on its own. It gets eaten with plenty of plain rice.",
+  "Serve over the jasmine rice with the pickled mustard greens on the side.",
+  "Leftovers keep for up to 4 days in the fridge. Scrape off the fat that sets on top, then reheat it gently in a pot with a splash of water."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three blanch or brown the pork, braise it with fish sauce in a sweet liquid with a dark caramel, and add peeled hard boiled eggs for the last part of the cook. Hungry Huy mixes belly and shoulder, braises in coconut soda with fish sauce and salt for up to 2 hours, adds a separately made caramel, and puts the eggs and onion in for the last 30 to 40 minutes. Cooking Therapy uses only belly with shallot, garlic, soy sauce and coconut water for about an hour, and Wok and Kin makes the caramel in the pot, rolls the eggs through it and braises in coconut water with bouillon. This one follows the lead and serves it with pickled mustard greens, as Hungry Huy does.",
+ "sources": [
+  {"name": "Hungry Huy", "title": "Thịt Kho - Vietnamese Braised Pork with Eggs", "url": "https://www.hungryhuy.com/how-to-make-thit-heo-kho-voi-trung-vietnamese-braised-pork-with-hard-boiled-eggs/", "rating": 5.0, "rating_count": 53, "read": true, "lead": true},
+  {"name": "Cooking Therapy", "title": "Authentic Thit Kho (Vietnamese Braised Pork Belly with Eggs)", "url": "https://www.cooking-therapy.com/thit-kho/", "rating": 4.81, "rating_count": 51, "read": true, "lead": false},
+  {"name": "Wok and Kin", "title": "Thit Kho (Vietnamese Braised Pork Belly and Eggs in Coconut Water)", "url": "https://www.wokandkin.com/thit-kho/", "rating": 5.0, "rating_count": 18, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

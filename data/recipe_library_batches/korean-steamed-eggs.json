@@ -1,0 +1,84 @@
+{
+ "dish_name": "Korean Steamed Eggs",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Crack the 6 eggs into a bowl and beat them with a fork until there are no streaks of white left. Pour them through a fine sieve into a second bowl, pushing them through with a spoon. No sieve? Beat them for another minute instead.",
+  "Whisk in the 1 1/2 cups broth and the 1/2 tsp salt. Thinly slice 2 of the scallions.",
+  "Brush the inside of a small heavy pot, about 2 quarts, with 1/2 tsp of the sesame oil and set it over medium.",
+  "Pour in the egg mixture, cover the pot and cook for about 3 minutes, until the eggs start to set on the bottom.",
+  "Stir gently in slow circles with a spoon, scraping the bottom, then turn the heat down to low. Cover and cook for 6 to 8 minutes, stirring gently once or twice, until the middle is set and wobbles like a soft custard.",
+  "Scatter most of the scallions over the top in the last 2 minutes, then cover again to finish.",
+  "Turn off the heat. Drizzle over the remaining 1 tsp sesame oil and scatter on the rest of the scallions and the 1/2 tsp sesame seeds.",
+  "Serve hot, straight from the pot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three thin beaten eggs with broth or water, season them, and cook them gently covered until puffed and just set, finishing with scallion and sesame. Korean Bapsang (the lead) strains the eggs for a silky texture, uses about a quarter cup of liquid per egg, seasons with salted shrimp or salt, and cooks it in a pot on the stove with a couple of gentle stirs. Beyond Kimchee and The Subversive Table stir the eggs into large curds in a very hot pot first and cover with a dome for a tall, fluffy rise, and Beyond Kimchee adds baking powder. This one follows the lead's ratio and stovetop method with chicken broth and salt, scaled up for four.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Gyeranjjim (Korean Steamed Eggs)",
+   "url": "https://www.koreanbapsang.com/gyeranjjim-korean-steamed-eggs/",
+   "rating": 4.7,
+   "rating_count": 152,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Korean Steamed Eggs (Gyeran Jjim)",
+   "url": "https://www.beyondkimchee.com/steamed-egg-pudding",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Subversive Table",
+   "title": "Fluffy Korean Steamed Egg (Gyeran Jjim) recipe",
+   "url": "https://thesubversivetable.com/korean-steamed-eggs-gyeran-jjim/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
