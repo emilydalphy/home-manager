@@ -9301,6 +9301,27 @@ def _redate_plan_rows(
             return {"refused":
                     f"{dish} on {_weekday_of(now_date[source['id']])} feeds "
                     f"{_weekday_of(now_date[e['id']])}’s {e['slot']} — it can’t move past that night."}
+    # The same rule for a night eating a portion this week's cook FREEZES.
+    # That night carries from_freezer (cook named by entry id), not
+    # links_to, so the check above never saw it: the nights swap put
+    # Monday's chili on Saturday under Friday's "Leftovers from the
+    # freezer", thaw reminder and all (defect hunt, 2026-10-20). The Move
+    # sheet has refused it all along (meal_move._structural_refusal); this
+    # is the writer's own copy, only where this move touches the pair.
+    for e in after:
+        if e["slot_state"] != "planned":
+            continue
+        cook_id = _frozen_portion_cook_id(e["derived"])
+        source = by_id.get(cook_id) if cook_id is not None else None
+        if source is None or source["id"] == e["id"]:
+            continue
+        if source["id"] not in new_date and e["id"] not in new_date:
+            continue
+        if _eaten_at(source) >= _eaten_at(e):
+            dish = source["meal"] or "That one"
+            return {"refused":
+                    f"{dish} on {_weekday_of(now_date[source['id']])} feeds "
+                    f"{_weekday_of(now_date[e['id']])}’s {e['slot']} — it can’t move past that night."}
     if extra_check is not None:
         said = extra_check(after, by_date_slot, by_id)
         if said:
@@ -9346,6 +9367,20 @@ def _redate_plan_rows(
     # meal it covers is recomputed — keyed by entry id, it rode along.
     _recheck_ready_made_after_redate(conn, [r["id"] for r in moving])
     return {"prep_moved": prep_moved, "thaw": thaw, "after": after}
+
+
+def _frozen_portion_cook_id(derived: dict) -> int | None:
+    """The entry id of the cook whose frozen portion this row eats
+    (from_freezer.cook = "entry_id:N"), or None — a portion frozen by a
+    night off names no cook on this plan, and has no order to keep."""
+    frozen = derived.get(_leftovers_mod().FROM_FREEZER_KEY)
+    ref = str(frozen.get("cook") or "") if isinstance(frozen, dict) else ""
+    if not ref.startswith("entry_id:"):
+        return None
+    try:
+        return int(ref.split(":", 1)[1])
+    except ValueError:
+        return None
 
 
 def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: str, new_date: str) -> int:
@@ -9560,6 +9595,11 @@ def _apply_dinner_nights_swap(
             if own_conn:
                 conn.rollback()
             return {"status": "ok", "date_a": date_a, "date_b": date_b}
+        # A freezer night names its cook's day ("— Monday’s Turkey Chili");
+        # the Move sheet re-says it when the cook moves, and so does this
+        # (an Undo re-says it back). Lazy import: meal_move imports us.
+        from . import meal_move as _meal_move
+        _meal_move._resay_freezer_nights(conn, {"rows": [dict(r) for r in rows]}, new_date)
         prep_moved = done["prep_moved"]
         if own_conn:
             conn.commit()
