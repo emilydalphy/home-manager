@@ -53,6 +53,21 @@ why*, not duplicating the diff.
   an Approved badge. The shell now tells tour.js (`host.weekApproved`,
   Plan's own `weekPlanState`) and those two stops drop the "approve" half;
   the first-draft tour reads exactly as before.
+- **"Celiac" on someone's restrictions holds back gluten** (2026-10-20,
+  defect hunt, branch `overnight/celiac-holds-back-gluten`, tests
+  `tests/test_celiac_is_gluten.py`). The allergy matcher read "Celiac" /
+  "coeliac disease" as the literal word, so spaghetti, sourdough and
+  teriyaki passed the hard gate that "gluten" stops. Now celiac/coeliac
+  are the gluten family (`coordination._WHOLE_WORD_FAMILIES`), a
+  gluten-free line is believed for them, and "disease", "strict", "sprue",
+  "severe" are stopwords. Why: people write the condition, not the
+  protein. A NOTE that only mentions celiac still holds nothing back:
+  reading bare "celiac" in notes was tried and dropped in review — "Maya's
+  friend Lily is celiac" became Maya's restriction, and the startup
+  backfill (`db._backfill_allergy_notes_from_facts`) re-added it after
+  every delete. Still prompt-only, untouched here: "vegetarian", "halal",
+  "kosher", "pescatarian" — the matcher holds no meat back for them.
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
