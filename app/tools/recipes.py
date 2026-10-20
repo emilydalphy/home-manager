@@ -963,6 +963,26 @@ def _scaled_count_range(qty_text: str, ratio: float) -> str | None:
     return amount + (m.group("rest") or "")
 
 
+def _qty_words_after_amount(qty_text: str, parsed: tuple) -> str:
+    """The words a qty carries after its amount and unit, as written —
+    "grated" in "1/3 cup grated", "small" in "1 small". _parse_quantity
+    reads the amount by dropping them (a grocery list buys parmesan, not
+    "grated"), which is right for a shopping line and lost the cook's words
+    on the stepper (defect hunt, 2026-10-20). The shortest lead of words
+    that parses to the same amount and unit is the amount; the rest is
+    returned. "" when nothing follows or the lead can't be found."""
+    m = re.match(r"^\s*(\d+\s+\d+/\d+|\d+/\d+|\d*\.?\d+)(.*)$", qty_text or "")
+    if not m:
+        return ""
+    tokens = m.group(2).split()
+    for k in range(0, min(len(tokens), 3) + 1):
+        lead = (m.group(1) + " " + " ".join(tokens[:k])).strip()
+        got = _parse_cook_qty(lead)
+        if got and got[1] == parsed[1] and abs(got[0] - parsed[0]) < 1e-9:
+            return " ".join(tokens[k:]).lstrip(", ").strip()
+    return ""
+
+
 def scale_recipe(recipe_name: str, target_servings: int) -> dict:
     """
     Scale a saved recipe's ingredient quantities from its default_servings
@@ -1006,21 +1026,19 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 unscaled_items.append(ing["item"])
             continue
-        parsed = _quantities._parse_quantity(qty_text)
+        parsed = _parse_cook_qty(qty_text)
         if parsed:
             amount, unit = parsed
-            scaled = amount * ratio
-            if unit == "stick" and abs(scaled - round(scaled)) > 1e-9:
-                # A stick of butter cut to a fraction is measured in
-                # tablespoons, not rounded back up to a whole stick — which
-                # is how a four-person stick stayed a stick for two.
-                scaled, unit = scaled * _STICK_TBSP, "tbsp"
-            elif unit in _DISCRETE_UNITS:
-                # "0.5 heads of garlic" is not an amount anyone measures.
-                # Same rounding cooking_quantity applies, so the two agree
-                # about a thing that only comes whole.
-                scaled = max(1.0, round(scaled))
-            scaled_ingredients.append(_with_item_label({**ing, "qty": _quantities._format_quantity(scaled, unit)}))
+            # The step scaler's arithmetic (_step_scaled): a stick of butter
+            # cut to a fraction is tablespoons, a clove stays whole, a
+            # "1/4 bunch" stays a part, under a quarter cup is spoons.
+            scaled, unit = _step_scaled(amount, ratio, unit)
+            words = _qty_words_after_amount(qty_text, parsed)
+            # Written as a plain number ("0.5 cup"), which every reader of
+            # this list parses and the Cook screen shows as "½ cup"
+            # (shell.js humanQtyText) — the words after it ride along.
+            text = _quantities._format_quantity(scaled, unit) + (" " + words if words else "")
+            scaled_ingredients.append(_with_item_label({**ing, "qty": text}))
         else:
             scaled_ingredients.append(dict(ing))
             if (ing.get("qty") or "").strip():
@@ -1096,6 +1114,8 @@ for _canon, _sing, _plur in (
     ("kg", "kilogram", "kilograms"),
     ("ml", "milliliter", "milliliters"),
     ("l", "liter", "liters"),
+    ("l", "litre", "litres"),
+    ("ml", "millilitre", "millilitres"),
     ("clove", "clove", "cloves"),
     ("can", "can", "cans"),
     ("stick", "stick", "sticks"),
@@ -1198,19 +1218,37 @@ def _step_amount_text(amount: float) -> str:
     return f"{whole} {best}" if whole else best
 
 
-def _step_scaled(amount: float, ratio: float, unit: str | None, butter: bool = True) -> tuple[float, str | None]:
+def _step_scaled(
+    amount: float, ratio: float, unit: str | None, butter: bool = True, to_spoons: bool = True,
+) -> tuple[float, str | None]:
     """scale_recipe's arithmetic for one amount, so the step and the chip
     agree: a stick of butter cut to a fraction becomes tablespoons, and a
     thing that only comes whole stays whole. A stick of anything else
-    (celery, cinnamon) is just counted."""
+    (celery, cinnamon) is just counted.
+
+    A part of one the recipe itself wrote ("1/4 bunch", "1/2 head") is not
+    a thing that only comes whole: it scales as a part, never up to a
+    whole bunch at every size. Less than a quarter cup is measured in
+    tablespoons ("1/3 cup" halved is 2 ⅔ tbsp, not "0.166667 cup", and
+    not the ⅛ cup the nearest fraction would round it to) — unless
+    `to_spoons` is off, which a range asks so its two ends keep one unit.
+    (Defect hunt, 2026-10-20.)"""
     scaled = amount * ratio
     if unit == "stick" and not butter:
         return max(1.0, float(round(scaled))), unit
     if unit == "stick" and abs(scaled - round(scaled)) > 1e-9:
         return scaled * _STICK_TBSP, "tbsp"
     if unit in _DISCRETE_UNITS:
+        if abs(amount - round(amount)) > 1e-9:
+            return max(0.125, scaled), unit   # never less than an eighth of one
         return max(1.0, float(round(scaled))), unit
+    if unit == "cup" and to_spoons and abs(ratio - 1) > 1e-9 and 0 < scaled < 0.25 - 1e-9:
+        # Only a scaled amount: the recipe's own "1/8 cup" stays its words.
+        return scaled * _CUP_TBSP, "tbsp"
     return scaled, unit
+
+
+_CUP_TBSP = 16.0
 
 
 def _step_ingredient_forms(items: list[str]) -> list[str]:
@@ -1382,8 +1420,8 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
                     re.match(r"\s*(?:of\s+)?(?:[a-z]+\s+)?butter\b", after.lower())
                     or (has_butter and re.match(r"\s*(?:[.,;:)]|$)", after))
                 )
-                new_a, new_unit = _step_scaled(a, ratio, canon, butter)
-                new_b = _step_scaled(b, ratio, canon, butter)[0] if b is not None else None
+                new_a, new_unit = _step_scaled(a, ratio, canon, butter, to_spoons=b is None)
+                new_b = _step_scaled(b, ratio, canon, butter, to_spoons=False)[0] if b is not None else None
                 biggest = new_b if new_b is not None else new_a
                 if new_unit != canon:
                     unit_text = new_unit  # a stick cut to tablespoons
@@ -1886,9 +1924,38 @@ def _parse_cook_qty(text: str):
     ascii_text = _ascii_fractions(text)
     parsed = _quantities._parse_quantity(ascii_text)
     if parsed:
-        return parsed
+        return _measure_before_a_word(parsed)
     m = _RANGE_RE.match(ascii_text or "")
-    return _quantities._parse_quantity(m.group(1) + (m.group(2) or "")) if m else None
+    if m:
+        return _quantities._parse_quantity(m.group(1) + (m.group(2) or ""))
+    # "1 cup loosely packed": a measure, then words the parser can't hold.
+    lead = re.match(r"^\s*(" + _NUM + r")\s*([a-z]+)\b", ascii_text or "", re.IGNORECASE)
+    if lead:
+        got = _quantities._parse_quantity(lead.group(1) + " " + lead.group(2))
+        if got and got[1] in _measured_units():
+            return got
+    return None
+
+
+def _measure_before_a_word(parsed: tuple) -> tuple:
+    """(1, "cup") for a parse of "1 cup packed" / "2 tbsp softened". The
+    parser takes a second word as part of the unit so "1 lb bag" sizes a
+    bag; any other word after a measure is the cook's ("packed",
+    "softened", "heaping"), not a unit — read as one, the line was called
+    unmeasured and the cook card put the table's guess in its place
+    (defect hunt, 2026-10-20)."""
+    amount, unit = parsed
+    if not unit or " " not in unit or "(" in unit:
+        return parsed
+    first, _, second = unit.partition(" ")
+    canon = _quantities._UNIT_ALIASES.get(first, first)
+    containers = set(_quantities._CONTAINER_UNIT_PLURALS) | set(_quantities._CONTAINER_UNIT_PLURALS.values())
+    # "8 oz package" sizes a package just as "1 lb bag" sizes a bag; read as
+    # "8 oz", it scaled to "4 oz package" — a smaller package to buy.
+    containers |= {"package", "packages", "packet", "packets", "pkg", "pkgs"}
+    if canon in _measured_units() and second not in containers:
+        return amount, canon
+    return parsed
 
 
 def _quantity_problem(item: str, qty: str) -> str | None:

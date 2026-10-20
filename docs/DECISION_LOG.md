@@ -272,6 +272,20 @@ why*, not duplicating the diff.
   Mon–Sun; Prep days now also saves in the same week order onboarding does.
   The stored order was never read as meaning anything (set_prep_days keeps
   what it's sent), so old answers are unaffected.
+- **The servings stepper keeps a recipe's words and its parts** (2026-10-20,
+  overnight defect hunt; branch `overnight/scaled-amounts-keep-their-words`;
+  tests `tests/test_scaled_amounts_keep_their_words.py`). scale_recipe read
+  amounts through the shopping parser, which drops prep words, so "1/3 cup
+  grated" halved said "0.166667 cup" (shown as ⅛ cup); "litre" was no unit
+  and "1 cup packed" read "cup packed" as one, so both were called
+  unmeasured and replaced by the table's guess ("1 litre" stock -> "1.5
+  lb"); "1/4 bunch" rounded to "1 bunch" at every size. Now: the words
+  after the amount ride along, litre/millilitre are units, a word after a
+  measure is not part of the unit (cook-side `_parse_cook_qty` only — the
+  grocery parser only learns the litre spelling), a part of a whole-only thing scales as a
+  part (floor ⅛), and under ¼ cup is tablespoons — in `_step_scaled`, so
+  steps and chips agree. Kept the plain-decimal qty ("0.5 cup"): every
+  reader parses it and shell.js humanQtyText draws "½".
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
