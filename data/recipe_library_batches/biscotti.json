@@ -1,0 +1,42 @@
+{
+ "dish_name": "Biscotti",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3/4 cup + 2 tbsp"},
+  {"item": "All-purpose flour", "qty": "2 cups + 2 tbsp", "category": "pantry"},
+  {"item": "Baking powder", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "Whole almonds", "qty": "1 bag (8 oz)", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Oranges", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Take the 2 tbsp butter out of the fridge so it softens. Heat the oven to 400°F with a rack in the middle, and line a large baking sheet with parchment paper.",
+  "Crack 2 of the eggs into a large bowl and add the 3/4 cup + 2 tbsp sugar. Stir them together with a spatula for about a minute, until the sugar has mostly dissolved. There's no need to whip it.",
+  "In another bowl, whisk together the 2 cups + 2 tbsp flour, the 1 1/2 tsp baking powder and the pinch of salt.",
+  "Tip the flour mixture into the egg mixture and stir until it starts to clump. Add the soft butter and knead it all together with your hands until you have a smooth, slightly sticky dough.",
+  "Grate the zest of half the orange over the dough. Add the 3/4 cup almonds and the 1 tsp vanilla, and knead until the almonds are spread through the dough.",
+  "Cut the dough in half. With lightly wet hands, roll each half into a log about 12 inches long and 1 1/2 inches wide. Set them on the baking sheet with plenty of room between them. They spread as they bake.",
+  "Separate the last egg and beat the yolk with a fork. Brush it over the tops and sides of the logs. You won't need the white here, so keep it in the fridge for another dish.",
+  "Bake the logs for 20 minutes, until they're golden on top and feel firm when you press them. Take them out and leave them on the sheet for 5 minutes.",
+  "Turn the oven down to 350°F. Move the logs to a cutting board and cut them on a slight angle into slices about 1/2 inch thick, using a serrated knife with a gentle sawing motion.",
+  "Lay the slices cut side down on the baking sheet and bake for 15 minutes, until they look dry and light golden at the edges. They'll still feel a little soft but crisp up as they cool.",
+  "Move them to a wire rack and let them cool completely. Keep them in an airtight jar for up to 3 weeks."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bake the dough in logs, slice them and bake the slices again until crisp. GialloZafferano's cantucci (the lead) stirs eggs and sugar together without whipping, uses a little soft butter, raw whole almonds, orange zest and a splash of Marsala, brushes the logs with egg yolk and bakes them at 200°C and then 180°C. RecipeTin Eats toasts the almonds first and uses melted butter, vanilla and almond extract, and Natasha's Kitchen creams a whole stick of butter with the sugar for a softer cookie. This one follows the lead's ratios, with baking powder in place of baker's ammonia and vanilla in place of the Marsala. One batch makes about 30 biscotti, which covers several snacks for four.",
+ "sources": [
+  {"name": "GialloZafferano", "title": "Cantucci", "url": "https://ricette.giallozafferano.it/Cantucci.html", "rating": 4.1, "rating_count": 395, "read": true, "lead": true},
+  {"name": "Natasha's Kitchen", "title": "Biscotti Recipe", "url": "https://natashaskitchen.com/biscotti-recipe/", "rating": 5.0, "rating_count": 14, "read": true, "lead": false},
+  {"name": "RecipeTin Eats", "title": "Biscotti", "url": "https://www.recipetineats.com/biscotti/", "rating": 5.0, "rating_count": 13, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

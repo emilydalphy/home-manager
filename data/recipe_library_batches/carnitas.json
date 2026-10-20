@@ -1,0 +1,49 @@
+{
+ "dish_name": "Carnitas",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 510,
+ "ingredients": [
+  {"item": "Boneless pork shoulder", "qty": "2.5 lb", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Oranges", "qty": "2", "category": "produce"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Corn tortillas", "qty": "1 package", "category": "pantry"}
+ ],
+ "instructions": [
+  "In the morning, 8 to 10 hours before dinner: pat the 2.5 lb pork dry with paper towels and rub the 1 1/2 tsp salt and 1/2 tsp pepper all over it.",
+  "Stir the 2 tsp oregano and 1 1/4 tsp cumin into 1 tbsp of the olive oil. Rub it all over the pork and set the pork in the slow cooker, fat side up.",
+  "Chop the onion and mince the 3 garlic cloves, then scatter them over the pork. Halve the 2 oranges and squeeze all their juice over the top.",
+  "Cover and cook on low for 8 to 10 hours, or on high for 6, until the pork pulls apart with two forks. You're cooking it to about 195°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Push a fork in and twist it: the meat should fall apart with no effort.",
+  "About 30 minutes before dinner, lift the pork onto a board and let it cool for 5 minutes. Shred it with two forks and pull out any big pieces of fat.",
+  "Spoon the fat off the top of the juices in the slow cooker. If there's much more than 1 1/2 cups of juice, boil it in a small saucepan for 5 to 10 minutes until it's down to about that. It tastes salty. That's what seasons the pork.",
+  "Meanwhile, cut the 2 limes into wedges, roughly chop a handful of the cilantro and thinly slice the jalapeño. Put the jalapeño in a small bowl for the table.",
+  "Heat 1/2 tbsp of the olive oil in a large nonstick or cast iron skillet over high heat. Spread half the pork in the pan and spoon about 1/4 cup of the juices over it.",
+  "Leave it alone until the juice has cooked off and the underside is golden and crisp, 4 to 5 minutes. Turn it and sear the other side for about 1 minute. Stop there, so you keep some soft, juicy bits.",
+  "Tip it onto a platter. Crisp the second half the same way with the last 1/2 tbsp of the olive oil and another 1/4 cup of the juices.",
+  "Warm the tortillas one at a time in a dry skillet over medium heat for about 30 seconds a side, then stack them in a clean towel.",
+  "Spoon a little more of the juices over the pork. Taste it. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Pack any pork you're keeping for later into a container with a few spoonfuls of the juices. It keeps in the fridge for 4 days, and you crisp it in a hot pan the same way.",
+  "Serve with the warm tortillas, cilantro and lime wedges, with the jalapeño on the side."
+ ],
+ "advance_prep_notes": "Start the pork in the slow cooker in the morning, 8 to 10 hours before dinner.",
+ "advance_prep_step_indices": [1, 2, 3, 4],
+ "method_notes": "All three slow cook a boneless pork shoulder with salt, cumin, oregano, onion, garlic and orange juice, shred it, then crisp it. RecipeTin Eats rubs the pork with the spices in oil, adds jalapeño to the pot, reduces the juices to about 2 cups and crisps the pork in batches in a hot skillet, browning one side hard and the other only briefly. Spend With Pennies browns chunks first, adds lime, chili powder, a bay leaf and chicken broth, and crisps the pork under the broiler; Cafe Delites adds lime, Coca-Cola and bay leaves and both broils and pan fries. This one follows RecipeTin Eats, sized for 4, with the jalapeño moved to the table.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Carnitas (Mexican Slow Cooker Pulled Pork)", "url": "https://www.recipetineats.com/pork-carnitas/", "rating": 4.96, "rating_count": 1137, "read": true, "lead": true},
+  {"name": "Spend With Pennies", "title": "Pork Carnitas Recipe", "url": "https://www.spendwithpennies.com/pork-carnitas/", "rating": 4.96, "rating_count": 94, "read": true, "lead": false},
+  {"name": "Cafe Delites", "title": "Pork Carnitas (Mexican Slow Cooker Pulled Pork)", "url": "https://cafedelites.com/pork-carnitas/", "rating": 4.84, "rating_count": 208, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,44 @@
+{
+ "dish_name": "Pasta Frittata",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Spaghetti", "qty": "8 oz", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Pancetta", "qty": "1 package (4 oz)", "category": "meat/seafood", "cook_qty": "2 oz"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Whole milk", "qty": "1/3 cup", "category": "dairy"},
+  {"item": "Parmesan", "qty": "1 wedge", "category": "dairy", "cook_qty": "1/3 cup grated"},
+  {"item": "Smoked mozzarella", "qty": "1 ball (8 oz)", "category": "dairy", "cook_qty": "4 oz"},
+  {"item": "Fresh thyme", "qty": "1 package", "category": "produce", "cook_qty": "1 sprig"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"}
+ ],
+ "instructions": [
+  "The night before, or whenever you're cooking pasta anyway, bring a large pot of water to a boil and add 1 1/2 tsp of the salt. Cook the 8 oz spaghetti for 2 minutes less than the package says, so it's still quite firm.",
+  "Drain it, toss it with 1 tbsp of the olive oil so the strands don't stick, and let it cool. Cover it and keep it in the fridge. About 4 cups of leftover plain spaghetti works the same way.",
+  "In the morning, dice half the package of pancetta. Cook it in a 10 inch nonstick skillet over medium for 4 to 5 minutes, stirring now and then, until it's crisp and golden. Lift it out with a slotted spoon into a large bowl and wipe out the pan.",
+  "Grate 1/3 cup of the parmesan and cut half the smoked mozzarella into small cubes. Strip the leaves off 1 sprig of thyme.",
+  "Add the 4 eggs, the 1/3 cup milk, the parmesan, the thyme, the last 1/2 tsp salt and the pinch of pepper to the pancetta. Whisk with a fork until there are no streaks of white left, then stir in the mozzarella.",
+  "Add the cold spaghetti and toss it with your hands or tongs until every strand is coated in egg.",
+  "Smash the garlic clove with the side of a knife. Heat the other 1 tbsp olive oil in the skillet over medium, add the garlic and cook it for 1 to 2 minutes, turning it, until it's golden. Lift it out and throw it away.",
+  "Tip the spaghetti mixture into the pan and press it into an even layer with a spatula. Cook it over medium high for 1 minute to set the bottom.",
+  "Turn the heat down to low, cover the pan and cook for 12 to 15 minutes, until the edges are set and only the very middle of the top still looks a little wet.",
+  "Shake the pan to check the frittata slides freely. Put a large plate over the pan, hold the two together with oven mitts and flip them over so the frittata lands on the plate. Slide it back into the pan, cooked side up.",
+  "Cook it uncovered for 5 minutes more, until the bottom is golden and the middle feels firm when you press it.",
+  "Slide it onto a board, let it sit for 2 minutes and cut it into wedges. Serve it warm or at room temperature."
+ ],
+ "advance_prep_notes": "cook and chill the spaghetti the night before (or use leftover plain spaghetti)",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "Both read versions mix cooked pasta into beaten eggs with grated hard cheese and cook it in an oiled skillet until it sets with a golden crust underneath. GialloZafferano (the lead) cooks the spaghetti very firm, adds milk, thyme, smoked scamorza and smoked pancetta to the eggs, browns a garlic clove in the oil first, cooks it covered on low for 15 minutes and flips it onto a plate to finish. Lidia Bastianich's leftover version reheats pasta still in its sauce, pours eggs and basil over it and finishes it in a 425°F oven with Grana Padano on top. This one follows the lead with the pancetta crisped first, smoked mozzarella standing in for the scamorza, and the spaghetti cooked the night before.",
+ "sources": [
+  {"name": "GialloZafferano", "title": "Frittata di spaghetti", "url": "https://ricette.giallozafferano.it/Frittata-di-spaghetti.html", "rating": 4.3, "rating_count": 375, "read": true, "lead": true},
+  {"name": "NBC Philadelphia (Lidia Bastianich)", "title": "Leftover Pasta Frittata", "url": "https://www.nbcphiladelphia.com/local/leftover-pasta-frittata/1905213/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

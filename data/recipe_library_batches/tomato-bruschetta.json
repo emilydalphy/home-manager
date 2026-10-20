@@ -1,0 +1,39 @@
+{
+ "dish_name": "Tomato Bruschetta",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Tomatoes", "qty": "1.5 lb", "category": "produce"},
+  {"item": "Kalamata olives", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Fresh basil", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Balsamic vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Olive oil", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Baguette", "qty": "1", "category": "other"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle.",
+  "Core the tomatoes and cut them into 1/2 inch pieces. Put them in a medium bowl with any juice from the board.",
+  "Finely chop 1/4 cup of the olives and 1/4 cup of the basil, keeping a few small basil leaves whole for the top.",
+  "Add the chopped olives and basil to the tomatoes with the 2 tsp balsamic, the 1/4 tsp salt, the pinch of pepper and 1/4 cup of the olive oil. Toss it gently.",
+  "Slice the baguette on an angle into slices about 1/2 inch thick and lay them on a baking sheet. Brush both sides with the other 1/4 cup olive oil.",
+  "Bake for about 10 minutes, until the bread is crisp and golden underneath.",
+  "Turn the slices over with tongs so the golden side faces up. Cut the garlic clove in half and rub the cut side once across the top of each slice.",
+  "Taste the tomatoes. If they're flat, add a pinch more salt or a few more drops of the balsamic.",
+  "Spoon the tomatoes onto the toasts and tear the whole basil leaves over the top. Serve them within 10 minutes. After that the bread goes soft."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions toss diced ripe tomatoes with basil, olive oil and salt, toast slices of bread until crisp and spoon the tomatoes on just before serving. Once Upon a Chef (the lead) adds chopped Kalamata olives and a little balsamic to the tomatoes, brushes baguette slices with oil, bakes them at 425°F and rubs them with a cut garlic clove. GialloZafferano seasons the tomatoes with oregano instead, lets them sit for 30 minutes and grills plain slices of bread, adding more oil at the end. This one follows the lead.",
+ "sources": [
+  {"name": "Once Upon a Chef", "title": "Bruschetta", "url": "https://www.onceuponachef.com/recipes/bruschetta.html", "rating": 4.88, "rating_count": 25, "read": true, "lead": true},
+  {"name": "GialloZafferano", "title": "Tomato bruschetta", "url": "https://www.giallozafferano.com/recipes/Tomato-bruschetta.html", "rating": 4.7, "rating_count": 63, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
