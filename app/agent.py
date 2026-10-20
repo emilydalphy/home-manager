@@ -9553,7 +9553,14 @@ def fill_in_recipe(recipe_name: str) -> dict:
     detail = generate_recipe_detail_llm(recipe)
     if not detail.get("instructions"):
         raise ValueError("Couldn't generate instructions for this recipe — try again.")
-    servings = detail.get("default_servings") or recipe.get("default_servings") or 4
+    # The model's servings, only when it is a real count: a 0 or a negative
+    # would be refused by update_recipe_details and lose the steps with it.
+    model_servings = detail.get("default_servings")
+    if isinstance(model_servings, float) and model_servings.is_integer():
+        model_servings = int(model_servings)
+    if isinstance(model_servings, bool) or not isinstance(model_servings, int) or model_servings < 1:
+        model_servings = None
+    servings = model_servings or recipe.get("default_servings") or 4
     measured = {}
     try:
         measured = measured_cooking_quantities(recipe, detail.get("cooking_quantities"), servings)
@@ -9593,7 +9600,7 @@ def fill_in_recipe(recipe_name: str) -> dict:
     return tools.update_recipe_details(
         recipe_name,
         instructions=instructions,
-        default_servings=detail.get("default_servings"),
+        default_servings=model_servings,
         prep_time_minutes=detail.get("prep_time_minutes"),
         cook_time_minutes=detail.get("cook_time_minutes"),
         advance_prep_notes=detail.get("advance_prep_notes"),
