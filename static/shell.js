@@ -11669,10 +11669,13 @@
     { key: 'fine_sometimes', label: 'Fine now and then' },
     { key: 'fresh_each_night', label: 'Fresh every night' }
   ];
+  // Monday first, like Plan ready by above and every day row in onboarding
+  // (UW_WEEKDAYS). It led with Sunday until 2026-10-20, so Prep days, Grocery
+  // shop and Top-up shop read Sun–Sat right under a Mon–Sun row.
   var WWK_PREP_DAYS = [
-    { key: 'sunday', label: 'Sun' }, { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' },
-    { key: 'wednesday', label: 'Wed' }, { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' },
-    { key: 'saturday', label: 'Sat' }
+    { key: 'monday', label: 'Mon' }, { key: 'tuesday', label: 'Tue' }, { key: 'wednesday', label: 'Wed' },
+    { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' }, { key: 'saturday', label: 'Sat' },
+    { key: 'sunday', label: 'Sun' }
   ];
   // "How long?" left Cook ahead (Onboarding regrouped, Emily 2026-10-05):
   // every prep day is planned for up to 2 hours, so every prep day this

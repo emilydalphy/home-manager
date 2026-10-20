@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Your rhythm's day rows start on Monday** (2026-10-20, defect hunt;
+  branch `overnight/rhythm-days-start-monday`; test
+  `tests/test_settings_your_rhythm.py`). WWK_PREP_DAYS (which Grocery shop
+  and Top-up shop alias) ran Sun–Sat right under Plan ready by's Mon–Sun,
+  while onboarding asks every day row Mon–Sun (UW_WEEKDAYS). Reordered to
+  Mon–Sun; Prep days now also saves in the same week order onboarding does.
+  The stored order was never read as meaning anything (set_prep_days keeps
+  what it's sent), so old answers are unaffected.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
