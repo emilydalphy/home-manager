@@ -1,0 +1,50 @@
+{
+ "dish_name": "Dal Makhani",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 165,
+ "ingredients": [
+  {"item": "Whole urad dal", "qty": "1 cup", "category": "pantry"},
+  {"item": "Dried red kidney beans", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "2 tsp grated"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Tomato puree", "qty": "1 can (15 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Ghee", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "Unsalted butter", "qty": "1 stick", "category": "dairy", "cook_qty": "3 tbsp"},
+  {"item": "Heavy cream", "qty": "1 small carton (1 cup)", "category": "dairy", "cook_qty": "1/3 cup"},
+  {"item": "Bay leaves", "qty": "1", "category": "pantry"},
+  {"item": "Green cardamom pods", "qty": "2", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Kasuri methi", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before: put the 1 cup urad dal and 1/4 cup kidney beans in a large bowl, cover them with water and rub them between your hands. Drain and repeat until the water runs almost clear, about 3 times. Cover them with 4 cups fresh water and leave them to soak overnight.",
+  "Drain and rinse the soaked dal and beans and put them in a large heavy pot with 6 cups fresh water. Bring it to a boil over high heat and scoop off any foam. Let it boil hard for 10 minutes. Kidney beans need that hard boil to be safe to eat.",
+  "Turn the heat down to a gentle simmer, partly cover the pot and cook for 75 to 90 minutes, stirring now and then. Add a cup of hot water whenever the liquid drops below the dal. They're ready when a kidney bean and a little of the dal mash easily against the side of the pot with a spoon.",
+  "Meanwhile, finely chop the onion. Grate 2 tsp of the ginger and mince the 3 garlic cloves.",
+  "When the dal is soft, mash it lightly with a potato masher or the back of a ladle, leaving most of the grains whole. Keep all the cooking liquid in the pot.",
+  "Heat the 2 tbsp ghee in a large skillet over medium heat. Add the bay leaf and the 2 cardamom pods and let them sizzle for about a minute.",
+  "Add the onion and cook for about 7 minutes, stirring now and then, until it's golden.",
+  "Stir in the ginger and garlic and cook for about a minute, until they smell fragrant.",
+  "Pour in 1 cup of the tomato puree and cook for 3 to 4 minutes, stirring.",
+  "Add the 1 tsp salt, 1 tsp chili powder and 1 tsp garam masala. Cook for 4 to 5 minutes, stirring often, until the masala is thick, smells toasty and you can see oil at the edges.",
+  "Scrape the masala into the pot of dal and stir in 1 cup hot water. Simmer uncovered on low for 45 to 60 minutes, stirring every 10 minutes and scraping the bottom so it doesn't catch. Add a splash of hot water whenever it gets thicker than porridge.",
+  "Crush the 1 tbsp kasuri methi between your palms over the pot and stir in the 1/3 cup cream. Simmer for 6 to 8 minutes, stirring, until it's thick and creamy.",
+  "Take the pot off the heat and stir in 3 tbsp of the butter until it melts. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with basmati rice or naan."
+ ],
+ "advance_prep_notes": "soak the urad dal and kidney beans overnight, the night before",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Both versions soak whole urad dal with a little rajma overnight, cook them until they mash easily, then simmer them slowly with a ghee and butter masala of onion, ginger garlic and tomato puree, finishing with cream and butter. Swasthi's uses a little more dal and tomato, blooms bay leaf and cardamom in ghee, adds kasuri methi at the end and simmers about 90 minutes after the masala goes in. Cook with Manali uses grated onion, a pinch of sugar and a 45 minute simmer. Both offer an optional charcoal smoke at the end, left out here. Both pressure cook the lentils; this one boils them on the stove, which takes longer.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Dal Makhani Recipe (Restaurant Style)", "url": "https://www.indianhealthyrecipes.com/dal-makhani/", "rating": 5.0, "rating_count": 633, "read": true, "lead": true},
+  {"name": "Cook with Manali", "title": "Dal Makhani", "url": "https://www.cookwithmanali.com/dal-makhani/", "rating": 5.0, "rating_count": 177, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
