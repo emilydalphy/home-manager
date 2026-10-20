@@ -1,0 +1,76 @@
+{
+ "dish_name": "Taco Salad",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Ground beef", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Black beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Chili powder", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Smoked paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Romaine hearts", "qty": "3", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Shredded cheddar cheese", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Tortilla chips", "qty": "1 bag", "category": "pantry", "cook_qty": "2 cups"},
+  {"item": "Salsa", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Sour cream", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Pickled jalapeños", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the red onion and cut it in half. Finely chop one half and thinly slice the other. Mince the 2 garlic cloves. Drain and rinse the beans.",
+  "Heat the 1 tbsp oil in a large skillet over medium high. Add the 1 lb beef, sprinkle it with the 3/4 tsp salt and 1/4 tsp pepper and break it into a few big pieces. Leave it alone for about 3 minutes, until the underside is browned.",
+  "Break it up with a spoon and cook for 3 to 4 minutes more, stirring now and then, until there's no pink left and you see crisp brown bits.",
+  "If there's a lot of fat, spoon off all but about 1 tbsp. Add the chopped onion and cook for 3 minutes, until it softens.",
+  "Add the garlic, 1 tbsp chili powder, 1 1/2 tsp cumin, 1/2 tsp smoked paprika and 1/2 tsp oregano. Stir for about 30 seconds, until the spices darken and smell toasty.",
+  "Pour in 1/2 cup water and scrape up the brown bits on the bottom of the pan. Simmer for about 5 minutes, until the water has cooked down and the meat looks thick and saucy.",
+  "Stir in the beans and cook for 2 minutes, until they're hot. Taste it, and add a pinch more salt if it's flat. Take the pan off the heat.",
+  "Meanwhile, chop the 3 romaine hearts into bite-size pieces. Halve the cherry tomatoes and dice the avocado. Lightly crush 2 cups of the tortilla chips with your hands.",
+  "Divide the romaine among 4 bowls and spoon the warm beef and beans over it. Top with the tomatoes, 1 cup cheddar, the avocado and the sliced onion.",
+  "Add 2 tbsp salsa and 2 tbsp sour cream to each bowl, then scatter the crushed chips over the top.",
+  "Serve with the pickled jalapeños on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown ground beef with taco seasoning and pile it over crisp lettuce with tomatoes, cheese and crushed tortilla chips. Spend With Pennies, the lead, simmers the beef with seasoning and a little water until thick, stirs in black beans and tops each bowl with avocado, salsa and sour cream. Food Republic cooks red onion and garlic first and adds pickled jalapeños and green chiles, and Taste of Home tosses a big potluck bowl in a sweet Thousand Island and salsa dressing. This one follows the lead, makes the seasoning from spices bloomed in the beef fat with the onion and garlic, and puts the jalapeños on the side. Leftover taco meat from taco night can go straight in with the beans.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Easy Taco Salad",
+   "url": "https://www.spendwithpennies.com/easy-taco-salad/",
+   "rating": 4.98,
+   "rating_count": 116,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Taco Salad for a Large Crowd",
+   "url": "https://www.tasteofhome.com/recipes/crowd-pleasing-taco-salad/",
+   "rating": 4.68,
+   "rating_count": 65,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Republic",
+   "title": "How To Make A Taco Salad, Fully Loaded",
+   "url": "https://www.foodrepublic.com/recipes/how-to-make-a-taco-salad-fully-loaded/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

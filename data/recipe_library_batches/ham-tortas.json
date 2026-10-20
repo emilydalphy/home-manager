@@ -1,0 +1,58 @@
+{
+ "dish_name": "Ham Tortas",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Telera rolls", "qty": "4", "category": "other"},
+  {"item": "Sliced ham", "qty": "12 oz", "category": "meat/seafood"},
+  {"item": "Sliced Monterey Jack cheese", "qty": "8 oz", "category": "dairy"},
+  {"item": "Black beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Mexican crema", "qty": "1 tub", "category": "dairy", "cook_qty": "1/3 cup"},
+  {"item": "Tomato", "qty": "1", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Pickled jalapeños", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F.",
+  "Drain the beans over a cup, keeping about 1/4 cup of the liquid from the can.",
+  "Heat the 1 tbsp oil in a medium skillet over medium. Add the beans, the 1/4 cup bean liquid and the 1/4 tsp salt. Mash them with a potato masher or fork as they heat, for 5 to 6 minutes, until they're a thick paste that holds its shape. Take the pan off the heat.",
+  "Stir 1/3 cup mayonnaise and 1/3 cup crema together in a small bowl.",
+  "Split the 4 rolls and lay them cut side up on a sheet pan. Spread the beans over the bottom halves. Divide the 12 oz ham among them, then cover the ham with the cheese.",
+  "Bake for 6 to 8 minutes, until the cheese has melted and the edges of the bread are crisp.",
+  "Meanwhile, slice the tomato and the avocado. Put a few of the pickled jalapeños in a small bowl for the table.",
+  "Spread the crema mix over the cut side of the top halves. Lay the tomato and avocado over the melted cheese and close the tortas.",
+  "Press each one down gently and cut it in half.",
+  "Serve warm, with the pickled jalapeños on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions layer ham and cheese on a split bolillo or telera with refried beans, avocado and tomato, with pickled jalapeños and a little Mexican cream. Rick Bayless, the lead, blends cooked beans with lard or oil into a smooth spread, stirs mayonnaise into crema for the top half and bakes the open bottoms with ham and melting cheese at 400°F until crisp. Pati Jinich keeps it cold, mashing avocado onto one half and using queso fresco and a drizzle of crema. This one follows the lead with canned black beans mashed in the skillet and the jalapeños on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Mexican) has no version, so Rick Bayless's version leads.",
+ "sources": [
+  {
+   "name": "Rick Bayless",
+   "title": "Torta de Jamón con Todo",
+   "url": "https://rickbayless.com/recipe/torta-de-jamon-con-todo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pati Jinich",
+   "title": "Ham and Cheese Tortas",
+   "url": "https://patijinich.com/ham-and-cheese-torta-sandwiches/",
+   "rating": 4.67,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

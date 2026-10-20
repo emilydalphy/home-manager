@@ -1,0 +1,65 @@
+{
+ "dish_name": "Black Bean Soup",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Black beans", "qty": "3 cans (15 oz)", "category": "pantry"},
+  {"item": "Vegetable broth", "qty": "2 cups", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 ribs"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce", "cook_qty": "1 medium"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Chipotle peppers in adobo", "qty": "1 can (7 oz)", "category": "pantry", "cook_qty": "1 pepper + 1 tbsp sauce"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground coriander", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Chili powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Sour cream", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Pepitas", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"}
+ ],
+ "instructions": [
+  "Dice the onion and 2 ribs of the celery. Peel and dice the carrot. Mince the 3 garlic cloves and finely chop 1 chipotle pepper from the can.",
+  "Heat the 2 tbsp olive oil in a large pot over medium. Add the onion, celery and carrot with the 3/4 tsp salt and 1/4 tsp pepper. Cook for 10 to 12 minutes, stirring now and then, until everything is soft and the onion is turning golden. Don't rush this part. It's where the flavor starts.",
+  "Add the garlic, 1 tsp cumin, 1 tsp coriander and 1/2 tsp chili powder. Stir for about 30 seconds, until it smells fragrant.",
+  "Pour in the 3 cans of beans with their liquid, the chopped chipotle, 1 tbsp of the adobo sauce from the can and the 2 cups vegetable broth. Bring it to a boil, then turn it down to a gentle simmer. Cook for 25 minutes, stirring now and then, until the vegetables are very soft and the soup has thickened a little.",
+  "Meanwhile, toast 1/4 cup pepitas in a small dry skillet over medium for 3 to 4 minutes, shaking the pan, until they start to pop and smell toasty. Tip them into a bowl.",
+  "Dice the avocado and chop a handful of the cilantro. Cut the lime in half and cut one half into wedges.",
+  "Take the pot off the heat. Blend about half the soup with an immersion blender right in the pot, until it's thick and creamy with plenty of whole beans left. With a regular blender, ladle half the soup in, take the small cap out of the lid, hold a folded towel over the hole and blend until smooth, then pour it back into the pot.",
+  "Squeeze in the juice from the other lime half, about 1 tbsp, and stir. Taste it, and add a pinch more salt or another squeeze of lime if it's flat.",
+  "Ladle it into bowls and top each one with 2 tbsp sour cream, some avocado, cilantro and the toasted pepitas.",
+  "Serve with the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions soften onion and carrot in olive oil, add cumin and coriander, simmer canned black beans in broth and finish with lime juice. Love and Lemons, the lead, adds celery, chili powder and chipotles in adobo, keeps the bean liquid, simmers 30 minutes and blends only half so whole beans stay in the bowl. Once Upon a Chef drains the beans, thickens with cornmeal, adds oregano and cayenne and purees all of it until very smooth, topped with sour cream and cilantro. This one follows the lead with a third can of beans for a filling lunch, one chipotle so the pot stays mild, and toasted pepitas on top for crunch.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Black Bean Soup",
+   "url": "https://www.loveandlemons.com/black-bean-soup/",
+   "rating": 4.98,
+   "rating_count": 76,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Black Bean Soup",
+   "url": "https://www.onceuponachef.com/recipes/black-bean-soup.html",
+   "rating": 4.8,
+   "rating_count": 123,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
