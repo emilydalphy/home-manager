@@ -1,0 +1,160 @@
+{
+ "dish_name": "Pepper Steak",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 1 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the 1 lb flank steak against the grain into strips about 3 inches long and 1/4 inch thick. If it's too soft to slice neatly, 15 minutes in the freezer firms it up.",
+  "Put the beef in a bowl with 2 tbsp water, 1 tbsp of the cornstarch, 1 tbsp of the oil, 1 tbsp of the oyster sauce, 1 tbsp of the Shaoxing wine and the 1/4 tsp baking soda. Mix with your hands until the liquid is absorbed, and leave it for 30 minutes while you do everything else.",
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes. No peeking.",
+  "Meanwhile, whisk the sauce in a small bowl: the 2/3 cup broth, the last 1 tbsp + 1 tsp cornstarch, the last 2 tbsp oyster sauce, the last 1 tbsp Shaoxing wine, the 1 1/2 tbsp soy sauce, 1 tsp dark soy sauce, 3/4 tsp sugar, the 1/2 tsp sesame oil and the 1/8 tsp white pepper.",
+  "Cut both peppers and the onion into 1-inch pieces. Mince 1 tsp of the ginger and the 3 garlic cloves.",
+  "Heat a wok or your largest skillet over high heat until it smokes. Add 1 tbsp of the oil and spread half the beef in one layer. Leave it for 30 to 40 seconds, until the underside is browned. Flip the pieces and cook the other side for 30 seconds. It should still be a little pink. Put it back in the bowl.",
+  "Add another 1 tbsp oil and sear the rest of the beef the same way.",
+  "Turn the heat to medium high and add the last 1 tbsp oil, the peppers and the onion. Stir-fry for 2 minutes, until the edges char a little and they're still crisp. Add the ginger and garlic and stir for 30 seconds, until fragrant.",
+  "Tip in the beef and its juices and stir for 15 seconds. Turn the heat to high, stir the sauce again and pour it in. Stir until it bubbles and thickens into a glossy coat, about 1 minute. If it's too thick, add a splash more broth.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three slice flank or round steak thin across the grain, sear it hard in batches, cook the peppers and onion in the same pan, and finish with a soy-based sauce thickened with cornstarch over rice. The Woks of Life tenderizes the beef with baking soda, cornstarch and oyster sauce for 30 minutes and builds its sauce on chicken stock, oyster sauce, Shaoxing wine and light and dark soy. Spend With Pennies marinates the beef for at least 2 hours in a honey, soy and Worcestershire mix that becomes the sauce, and Jo Cooks skips the marinade and uses soy, rice vinegar and brown sugar. This one follows The Woks of Life, scaled up to 1 lb of beef.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Pepper Steak",
+   "url": "https://thewoksoflife.com/pepper-steak-recipe/",
+   "rating": 5.0,
+   "rating_count": 62,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Pepper Steak",
+   "url": "https://www.spendwithpennies.com/easy-pepper-steak/",
+   "rating": 4.92,
+   "rating_count": 193,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Easy Pepper Steak",
+   "url": "https://www.jocooks.com/recipes/easy-pepper-steak/",
+   "rating": 4.57,
+   "rating_count": 53,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

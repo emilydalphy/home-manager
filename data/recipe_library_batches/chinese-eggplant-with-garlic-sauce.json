@@ -1,0 +1,141 @@
+{
+ "dish_name": "Chinese Eggplant with Garlic Sauce",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Chinese eggplants",
+   "qty": "2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Vegetarian oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes. No peeking.",
+  "Meanwhile, make the sauce. Stir the 1 1/2 tbsp sugar into 3/4 cup hot water until it dissolves. Whisk in the 1 1/2 tbsp cornstarch, 2 tbsp vegetarian oyster sauce, 1 1/2 tbsp rice vinegar, 1 1/2 tbsp Shaoxing wine, 1 1/2 tbsp soy sauce, the 1 1/2 tsp sesame oil, 3/4 tsp dark soy sauce and the 1/4 tsp white pepper.",
+  "Mince the 8 garlic cloves and stir half of them into the sauce. Mince 1 tbsp of the ginger. Snip the 4 dried chilies open, shake out the seeds and cut them into small pieces. Chop 3 of the green onions.",
+  "Trim the ends off the eggplants and cut them into bite-size wedges, turning the eggplant a quarter turn between cuts.",
+  "Heat a wok or your largest skillet over medium high until you see a wisp of smoke. Add 3 tbsp of the oil and spread half the eggplant in one layer. Sprinkle it with 1/4 tsp of the salt and turn the heat to medium.",
+  "Cook for 7 to 8 minutes, turning the pieces now and then, until they're soft all the way through and browned in spots. Move them to a plate.",
+  "Add another 3 tbsp oil and cook the rest of the eggplant the same way with the last 1/4 tsp salt. Move it to the plate.",
+  "Turn the heat to high and add the last 2 tbsp oil, the ginger and the chilies. Stir for 20 seconds, then add the rest of the garlic and stir for 30 seconds more, until it smells fragrant but hasn't browned.",
+  "Put all the eggplant back in the wok. Stir the sauce again, since the cornstarch settles, and pour it in. Stir gently for 1 to 2 minutes, until it bubbles and turns thick and glossy enough to coat a spoon.",
+  "Take it off the heat and stir in the chopped green onions. Taste it. If it's flat, add a pinch more salt or a splash more of the rice vinegar.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions skip deep frying and pan sear Chinese eggplant in a few tablespoons of oil until soft and browned, then toss it with garlic and ginger and a cornstarch-thickened soy sauce. The Woks of Life's sauce is sweet, sour and savory (sugar, rice vinegar, Shaoxing wine, oyster sauce or vegetarian oyster sauce, light and dark soy, sesame oil), adds dried red chilies and optional ground pork, and finishes with scallions. Omnivore's Cookbook soaks the eggplant in salted water and dusts it with cornstarch before searing, and keeps the sauce to soy, sugar and garlic with no vinegar or chili. This one follows The Woks of Life without the pork, with vegetarian oyster sauce, a few seeded chilies for warmth rather than heat, and enough eggplant to make a main over rice.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Chinese Eggplant with Garlic Sauce",
+   "url": "https://thewoksoflife.com/chinese-eggplant-garlic-sauce/",
+   "rating": 4.97,
+   "rating_count": 114,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Chinese Eggplant with Garlic Sauce (红烧茄子)",
+   "url": "https://omnivorescookbook.com/chinese-eggplant-with-garlic-sauce/",
+   "rating": 4.88,
+   "rating_count": 273,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

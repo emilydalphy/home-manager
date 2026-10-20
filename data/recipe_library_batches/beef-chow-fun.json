@@ -1,0 +1,136 @@
+{
+ "dish_name": "Beef Chow Fun",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh wide rice noodles",
+   "qty": "1 lb",
+   "category": "other"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp + 1 tsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the 12 oz flank steak against the grain into thin slices, about 1/8 inch thick. If it's too soft to slice neatly, 15 minutes in the freezer firms it up.",
+  "Put the beef in a bowl with 2 tbsp water, the 1/4 tsp baking soda, the 1 tsp cornstarch, the 2 tsp oyster sauce, 2 tsp of the Shaoxing wine and 1 tsp of the soy sauce. Mix with your hands until the liquid is absorbed, and leave it for 30 minutes while you do everything else.",
+  "If the noodles come as whole sheets, cut them into strips about 1 inch wide. If they're stiff from the fridge, bring a pot of water to a boil, dunk them for 30 seconds until they loosen, then drain them well and rinse under cold water. Gently pull the strands apart by hand.",
+  "Halve the green onions lengthwise and cut them into 3-inch pieces, keeping the white parts and the green parts in separate piles. Cut 4 thin slices of the ginger.",
+  "In a small bowl, stir together the rest of the soy sauce (2 1/2 tbsp), the 1 tbsp dark soy sauce, the 1/2 tsp sugar and the 1/2 tsp sesame oil.",
+  "Heat a wok or your largest skillet over high heat until it smokes. Add 1 1/2 tbsp of the oil and spread the beef in one layer. Leave it for about 1 minute, until the underside is browned. Flip the slices and cook the other side for 30 seconds, then move them to a plate.",
+  "Add the last 2 1/2 tbsp oil and the ginger and stir for 15 seconds. Add the green onion whites and stir for 30 seconds.",
+  "Add the noodles and spread them out. Leave them for 30 seconds, then toss them gently with tongs for about 1 minute, until they're hot and a few edges have browned. Pour the last 2 tbsp Shaoxing wine around the edge of the wok.",
+  "Add the soy mixture and the beef with its juices. Toss gently, lifting from the bottom, until the noodles are evenly brown, about 1 minute. Go easy. The noodles break if you stir hard.",
+  "Add the bean sprouts and the green onion greens and toss for 1 minute, until the sprouts just soften but still crunch.",
+  "Taste a noodle. If it's flat, add a pinch of salt and the pinch of white pepper.",
+  "Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions marinate thin slices of flank steak with soy, Shaoxing wine and cornstarch, sear them hard and set them aside, then stir-fry wide rice noodles with scallion and bean sprouts in light and dark soy, with the beef going back in at the end. The Woks of Life adds baking soda and oyster sauce to the marinade, fries ginger and scallion whites before the noodles, splashes Shaoxing wine around the wok and keeps the sauce to soy, sugar and sesame oil. Omnivore's Cookbook adds garlic and sliced onion to the aromatics and a little chicken broth to the sauce. This one follows The Woks of Life, with a little more noodle and beef for four.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Beef Chow Fun",
+   "url": "https://thewoksoflife.com/beef-chow-fun/",
+   "rating": 4.95,
+   "rating_count": 106,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Beef Chow Fun (干炒牛河)",
+   "url": "https://omnivorescookbook.com/beef-chow-fun/",
+   "rating": 4.9,
+   "rating_count": 29,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
