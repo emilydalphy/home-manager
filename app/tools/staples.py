@@ -1112,7 +1112,8 @@ def decide_staple_line(item_id: int, decision: str) -> dict:
         raise ValueError("decision must be 'plenty' or 'skip'.")
     conn = get_conn()
     line = conn.execute(
-        "SELECT id, item, staple_id FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        "SELECT id, item, staple_id, status FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
     ).fetchone()
     if line is None:
         conn.close()
@@ -1121,6 +1122,20 @@ def decide_staple_line(item_id: int, decision: str) -> dict:
     if staple is None:
         conn.close()
         raise ValueError(f"{line['item']} isn't a staple.")
+    if line["status"] != "needed":
+        # The answer is about a line still on the list to buy. Two phones
+        # hold one list: the other adult ticked it (or already answered)
+        # while this screen still showed the buttons. Answering anyway
+        # pulled a just-bought 3-week staple back to "ask again next week",
+        # counted a skip toward the auto-pause (twice for two phones), and
+        # the toast's Undo then made it due today — a second line for the
+        # thing just bought. Nothing changes; the result says why.
+        out = _shape(staple)
+        conn.close()
+        out["decision"] = decision
+        out["unchanged"] = True
+        out["line_status"] = line["status"]
+        return out
     out = _plenty(conn, staple["id"], "tap") if decision == "plenty" else _skip(conn, staple["id"], "tap")
     conn.commit()
     conn.close()
@@ -1148,9 +1163,12 @@ def undo_staple_decision(staple_id: int) -> dict:
         "AND kind IN ('plenty', 'skipped') ORDER BY id DESC LIMIT 1",
         (household_id(), staple_id),
     ).fetchone()
-    if not reverse_last_answer(conn, staple_id):
+    if _bought_since_last_answer(conn, staple_id) or not reverse_last_answer(conn, staple_id):
         # Nothing to undo: say so, change nothing. (A raw call used to
-        # force the staple due — the 2026-09-11 verifier's case g.)
+        # force the staple due — the 2026-09-11 verifier's case g.) Nor
+        # once it has been BOUGHT since that answer: a purchase overtook
+        # it, and making it due today would put a second line on the list
+        # for the thing just bought (the other phone's stale toast).
         out = _shape(r)
         conn.close()
         out["undone"] = False
@@ -1188,6 +1206,17 @@ def undo_staple_decision(staple_id: int) -> dict:
     conn.close()
     out["undone"] = True
     return out
+
+
+def _bought_since_last_answer(conn, staple_id: int) -> bool:
+    """True when a 'bought' event is newer than the staple's last
+    plenty/skip — that answer has been overtaken by a purchase."""
+    row = conn.execute(
+        "SELECT kind FROM staple_events WHERE household_id = ? AND staple_id = ? "
+        "AND kind IN ('plenty', 'skipped', 'bought') ORDER BY id DESC LIMIT 1",
+        (household_id(), staple_id),
+    ).fetchone()
+    return row is not None and row["kind"] == "bought"
 
 
 def _untrim(conn, staple_id: int, trimmed: dict) -> bool:
