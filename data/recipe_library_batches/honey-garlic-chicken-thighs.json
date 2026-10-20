@@ -1,0 +1,110 @@
+{
+ "dish_name": "Honey Garlic Chicken Thighs",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Bone-in skin-on chicken thighs",
+   "qty": "2.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Low-sodium soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle.",
+  "Pat the chicken thighs dry with paper towels. Sprinkle 1/2 tsp of the salt and the 1/4 tsp pepper over both sides. Lay them skin side down in a 9 by 13 inch baking dish.",
+  "Mince the 4 garlic cloves. In a bowl, whisk them with the 1/2 cup honey, 1/4 cup water, the 1/4 cup soy sauce and the 3 tbsp vinegar until the honey has dissolved.",
+  "Pour the honey mixture over the chicken and bake for 25 minutes.",
+  "Meanwhile, rinse the 1 1/2 cups rice in a sieve under cold water until the water runs mostly clear. Add it to a medium saucepan with 2 1/4 cups water and the remaining 1/2 tsp salt.",
+  "Bring the rice to a boil over high heat. Cover it, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on until you serve.",
+  "When the chicken has had 25 minutes, turn the thighs skin side up with tongs. Bake for 20 minutes, until the skin is golden and the sauce is bubbling around them.",
+  "You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest one without touching the bone. No thermometer? Cut into the thickest one next to the bone: it's done when the juices run clear and there's no pink left.",
+  "Hold the chicken back with the tongs and pour the juices from the dish into a small saucepan. Leave the chicken in the dish.",
+  "Stir the 1 tbsp cornstarch with 1 tbsp cold water in a small cup until smooth. Bring the juices to a boil over medium high, whisk in the cornstarch mix and let it bubble for 1 minute, until the sauce is glossy and thick enough to coat a spoon.",
+  "Turn on the broiler. Spoon a few spoonfuls of the sauce over the chicken skin and broil for 2 to 3 minutes, until it's sticky and dark in spots. Watch it closely. Honey burns fast.",
+  "Meanwhile, thinly slice 2 of the green onions.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a small splash of the vinegar.",
+  "Serve the chicken over the rice with the rest of the sauce spooned over, and the green onions and 1 tsp sesame seeds scattered on top."
+ ],
+ "method_notes": "Both read versions glaze chicken thighs with honey, soy sauce and plenty of garlic, then thicken the sauce with a little cornstarch. Spend With Pennies, the lead, bakes bone-in skin-on thighs at 425°F in a sauce of honey, water, soy and apple cider vinegar, skin side down for 25 minutes and skin side up for 20, then boils the pan juices with cornstarch and pours them over. Simple Home Edit sears boneless thighs in a pan, adds brown sugar, rice vinegar and sesame oil to the sauce, simmers it in the same pan, and serves it over rice with greens and chili oil. This one follows the lead's bake and sauce, salts the chicken first, adds a quick broil with the sauce brushed on, and serves it over rice with sesame seeds as Simple Home Edit does.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Honey Garlic Chicken Thighs",
+   "url": "https://www.spendwithpennies.com/honey-garlic-chicken/",
+   "rating": 4.98,
+   "rating_count": 43,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simple Home Edit",
+   "title": "Honey Garlic Chicken Thighs",
+   "url": "https://simplehomeedit.com/recipe/honey-garlic-chicken-thighs/",
+   "rating": 4.91,
+   "rating_count": 31,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

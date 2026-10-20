@@ -1,0 +1,104 @@
+{
+ "dish_name": "Lemon Pepper Chicken",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon pepper seasoning",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Lay the chicken breasts flat and slice each one in half horizontally, so you have 4 thinner cutlets. If the thick end is still much thicker than the thin end, press it flat with the heel of your hand.",
+  "In a small bowl, stir together the 1 tbsp flour, 2 tsp of the lemon pepper seasoning, the 1 tsp garlic powder and the 1/2 tsp salt.",
+  "Pat the cutlets dry with paper towels. Sprinkle the flour mix over both sides and press it in with your fingers.",
+  "Finely grate the zest of the lemon. That should be about 1 tsp. Cut the lemon in half, squeeze 2 tsp of juice from one half and cut the other half into wedges. Chop 2 tbsp of the parsley.",
+  "Heat the 2 tbsp olive oil in a large skillet over medium until it shimmers. Add the cutlets and cook for 4 to 5 minutes, until the underside is golden and lets go of the pan.",
+  "Flip them and cook the other side for 4 to 5 minutes.",
+  "You're cooking the chicken to 160°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left and the juices run clear.",
+  "Move the chicken to a plate and let it rest for 5 minutes. It'll come up to 165°F as it sits.",
+  "Turn off the heat. Add the 4 tbsp butter to the hot pan and scrape up the browned bits as it melts.",
+  "Stir in the lemon zest, the 2 tsp lemon juice, the last 1 tsp lemon pepper seasoning and 1 tbsp of the chopped parsley.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a squeeze of one of the lemon wedges.",
+  "Put the chicken back in the pan with any juices from the plate and turn it to coat in the sauce. Scatter the last 1 tbsp parsley over the top.",
+  "Serve with the lemon wedges and the sauce from the pan spooned over."
+ ],
+ "method_notes": "Both read versions coat thin chicken breasts in flour and lemon pepper seasoning, brown them in olive oil, take them out and make a quick sauce in the same pan. Natasha's Kitchen, the lead, halves the breasts into cutlets, adds garlic powder and salt to the coating, cooks them over medium and makes the sauce off the heat with butter, lemon zest, a little juice, more lemon pepper and parsley. The Endless Meal pounds whole breasts, cooks them longer and makes a cream sauce with garlic, chicken stock, cream and lemon juice. This one follows the lead's cutlets and butter sauce, with the chicken weighed out for four and a 5 minute rest before it goes back in the pan.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Lemon Pepper Chicken",
+   "url": "https://natashaskitchen.com/lemon-pepper-chicken/",
+   "rating": 4.94,
+   "rating_count": 33,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Endless Meal",
+   "title": "Lemon Pepper Chicken Recipe",
+   "url": "https://www.theendlessmeal.com/lemon-pepper-chicken/",
+   "rating": 4.84,
+   "rating_count": 37,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Lemon Pepper Chicken",
+   "url": "https://www.spendwithpennies.com/lemon-pepper-chicken/",
+   "rating": 4.94,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

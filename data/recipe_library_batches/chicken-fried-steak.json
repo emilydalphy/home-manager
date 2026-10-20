@@ -1,0 +1,107 @@
+{
+ "dish_name": "Chicken Fried Steak",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Beef cube steaks",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 quart",
+   "category": "dairy",
+   "cook_qty": "3 1/2 cups"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 3/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Seasoned salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 200°F. Set a wire rack inside a sheet pan and put it in the oven.",
+  "Pat the 4 cube steaks dry with paper towels and sprinkle 1/2 tsp of the salt over both sides.",
+  "In a shallow dish, whisk the egg with 1/2 cup of the milk. In a second shallow dish, stir together 1 1/2 cups of the flour, the 1 tbsp seasoned salt and 1 1/2 tsp of the pepper.",
+  "Coat one steak in the flour, then dip it in the egg so both sides are wet, then press it into the flour again until it's well covered, edges too. Set it on a plate and do the same with the other three. Leave them for 5 minutes so the coating sets.",
+  "Pour the 1 1/2 cups oil into a large heavy skillet, about 1/4 inch deep. Heat it over medium high to 350°F. No thermometer? Drop in a pinch of the flour. It should sizzle right away.",
+  "Lay two of the steaks in the oil, laying them away from you. Stand back a little. They'll spatter. Fry for 3 to 4 minutes, until the underside is deep golden brown.",
+  "Flip them and cook the other side for 3 to 4 minutes.",
+  "You're cooking the steak to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest steak: it's done when there's no pink left.",
+  "Move the steaks to the rack in the oven. Fry the other two the same way and add them to the rack.",
+  "Turn off the heat. Carefully pour the oil into a heatproof bowl, leaving about 3 tbsp in the skillet with the browned bits.",
+  "Set the skillet over medium heat. Sprinkle in the last 1/4 cup flour and whisk for 2 to 3 minutes, until it's golden and smells nutty.",
+  "Pour in 3 cups of the milk a splash at a time at first, whisking all the while so no lumps form. Add the remaining 1/2 tsp salt and the last 1 tsp pepper.",
+  "Let the gravy simmer for 4 to 5 minutes, whisking often, until it's thick enough to coat a spoon. If it gets too thick, whisk in a splash of water.",
+  "Taste the gravy. If it's flat, add a pinch more salt.",
+  "Serve the steaks with the gravy spooned over and the hot sauce on the side."
+ ],
+ "method_notes": "Both read versions season flour, dip the steak in flour, then egg and milk, then flour again, shallow fry it until golden and make a milk gravy on fat and flour browned in the pan. Miss in the Kitchen, the lead, cuts cube steak into pieces, seasons the flour with seasoned salt and a lot of coarse pepper, fries at 350°F and makes the gravy in bacon grease with whole milk. Taste of Home keeps the steaks whole, fries them in 1/4 inch of oil to 160°F and builds the gravy in the same pan's drippings with milk and water. This one follows the lead's coating and peppery milk gravy with whole steaks and the same pan drippings from Taste of Home. The Taste of Home page gives only a review count (29), not a rating count.",
+ "sources": [
+  {
+   "name": "Miss in the Kitchen",
+   "title": "Chicken Fried Steak with Country Gravy",
+   "url": "https://www.missinthekitchen.com/chicken-fried-steak/",
+   "rating": 4.5,
+   "rating_count": 48,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Chicken-Fried Steak",
+   "url": "https://www.tasteofhome.com/recipes/chicken-fried-steak-gravy/",
+   "rating": 4.0,
+   "rating_count": 29,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Savory Thoughts",
+   "title": "The Best Chicken Fried Steak with Gravy",
+   "url": "https://www.savorythoughts.com/the-best-chicken-fried-steak-with-gravy/",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

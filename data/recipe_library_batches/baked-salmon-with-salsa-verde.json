@@ -1,0 +1,129 @@
+{
+ "dish_name": "Baked Salmon with Salsa Verde",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Skin-on salmon fillets",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood",
+   "cook_qty": "4 fillets, about 6 oz each"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cup leaves, packed"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3/4 cup leaves, packed"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup leaves, packed"
+  },
+  {
+   "item": "Gherkins",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Anchovy fillets",
+   "qty": "1 tin (2 oz)",
+   "category": "pantry",
+   "cook_qty": "2 fillets"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce",
+   "cook_qty": "half a clove"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle. Line a sheet pan with parchment.",
+  "Meanwhile, start the green sauce. Pick 1 cup of the basil leaves, 3/4 cup of the parsley leaves and 1/2 cup of the mint leaves, packing them into the cup. Put them in a tall container for a stick blender or in a small food processor.",
+  "Roughly chop 2 tbsp of the gherkins and roughly chop half the garlic clove. Add them to the herbs with 1/2 tbsp of the capers, 1 tsp Dijon, 1/2 tbsp red wine vinegar, 2 anchovy fillets, 1/4 tsp of the salt, 4 tbsp of the olive oil and 1 tbsp cold water.",
+  "Blend until it's a fairly smooth, bright green sauce, scraping down the sides once or twice. Transfer it to a small bowl.",
+  "Pat the salmon dry. Rub the remaining 1 tbsp oil over the fillets and sprinkle the remaining 1/2 tsp salt and the 1/4 tsp pepper over the tops. Set them skin side down on the pan with space between them.",
+  "Bake for 12 to 15 minutes, until the thickest part flakes easily when you press it with a fork and is opaque nearly all the way through.",
+  "Taste the green sauce. If it's flat, add a pinch more salt or a few drops of the vinegar.",
+  "Serve the salmon with the green sauce spooned over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version bakes plain seasoned salmon in a hot oven for 10 to 15 minutes and tops it with a sharp green sauce of soft herbs, capers and oil, and none of the salmon pages had 20 ratings, so this leads with RecipeTin Eats' salsa verde. RecipeTin Eats blends basil, parsley and mint with gherkins, capers, Dijon, red wine vinegar, anchovy, a little garlic and olive oil, with an ice cube to keep it green. The Delicious Life chops parsley, green olives, anchovy, capers and lemon by hand and roasts the salmon at 375°F, and BBC Good Food blends dill, mint, parsley, chives, mustard, capers, pine nuts and olives with lemon. This uses RecipeTin Eats' sauce as written and bakes the salmon at 425°F, with cold water in place of the ice cube.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Salsa Verde recipe",
+   "url": "https://www.recipetineats.com/salsa-verde/",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Delicious Life",
+   "title": "Salmon with Green Olive Salsa Verde Recipe",
+   "url": "https://thedeliciouslife.com/salmon-with-green-olive-salsa-verde-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "BBC Good Food",
+   "title": "Salmon with salsa verde",
+   "url": "https://www.bbcgoodfood.com/recipes/salmon-salsa-verde",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

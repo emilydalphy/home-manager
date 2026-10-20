@@ -1,0 +1,147 @@
+{
+ "dish_name": "Osso Buco",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 195,
+ "ingredients": [
+  {
+   "item": "Beef shank cross cuts",
+   "qty": "3 lb",
+   "category": "meat/seafood",
+   "cook_qty": "4 pieces, about 1 1/2 inches thick"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 stalk"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 sprigs"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 cup leaves"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "2 tsp zest"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion, the carrot and 1 stalk of the celery. Mince 3 of the garlic cloves.",
+  "Pat the shanks dry and sprinkle 1 1/4 tsp of the salt and the 3/4 tsp pepper over both sides. If you have kitchen string, tie a loop around the outside of each one so it holds its shape in the pot.",
+  "Heat 2 tbsp of the olive oil in a large heavy pot or Dutch oven over high heat until it shimmers. Add 2 shanks and sear them for 3 to 4 minutes, until the underside has a deep brown crust. Flip them and sear the other side for 3 to 4 minutes. Stand back a little. They'll spatter.",
+  "Move them to a plate and sear the other 2 shanks the same way.",
+  "Turn the heat down to medium low and add the remaining 1 tbsp oil. Add the onion and cook for 3 minutes, stirring, until it starts to soften. Add the carrot and celery and cook for 8 minutes, until they're soft and sweet.",
+  "Add the garlic and cook for 30 seconds, until it smells fragrant. Stir in the 2 tbsp tomato paste and cook for 1 minute, until it turns a shade darker.",
+  "Add the 1 cup wine and scrape up the browned bits from the bottom. Stir in the crushed tomatoes, the 1 cup broth, 3 sprigs of the thyme and the 2 bay leaves.",
+  "Put the shanks back in with any juices from the plate, pushing them down into the sauce. Bring it to a simmer, put the lid on and turn the heat to low so it bubbles gently. Cook for 2 1/2 hours, turning the shanks over halfway, until the meat pulls away from the bone with a fork. If it's still firm, check it every 15 minutes.",
+  "About 30 minutes before the shanks are done, make the gremolata. Finely grate 2 tsp zest from the lemon. Pile 1 cup of the parsley leaves on a board, add the zest and the last garlic clove, and chop them together finely. Transfer it to a small bowl.",
+  "Lift the shanks onto a plate and cover them loosely with foil. Fish out the thyme stems and bay leaves and skim off any fat pooled on top.",
+  "Simmer the sauce uncovered over medium for 10 to 15 minutes, stirring now and then, until it's thick enough to coat a spoon.",
+  "Taste the sauce. If it's flat, add the remaining 1/4 tsp salt or a squeeze of juice from the zested lemon.",
+  "Snip off the string. Put a shank on each plate, spoon the sauce over and scatter the gremolata on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three season and sear the shanks, soften onion, carrot and celery in the same pot, add white wine and tomatoes, braise covered until the meat falls from the bone and finish with a gremolata of parsley, citrus zest and garlic. RecipeTin Eats writes for veal with beef as the swap, simmers on the stove with crushed tomatoes, chicken broth, tomato paste, thyme and bay, then reduces the sauce after the meat comes out. Taste of Home flours beef shanks and slow cooks them for 7 hours with dried herbs, using both lemon and orange zest, and the Beef Checkoff recipe uses orange zest and braises 2 to 3 hours. This follows RecipeTin Eats with beef shanks for 4, braised longer than veal needs.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Osso Buco",
+   "url": "https://www.recipetineats.com/osso-buco/",
+   "rating": 4.94,
+   "rating_count": 58,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Beef Osso Buco",
+   "url": "https://www.tasteofhome.com/recipes/beef-osso-bucco/",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Minnesota Beef Council",
+   "title": "Beef Osso Buco",
+   "url": "https://mnbeef.org/recipes/recipe/4608/beef-osso-buco",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,101 @@
+{
+ "dish_name": "Apple Crisp",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Honeycrisp apples",
+   "qty": "2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 tbsp juice"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Light brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Old-fashioned rolled oats",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1/2 cup + 1 tsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F with a rack in the middle. Rub 1 tsp of the butter over the inside of an 8 inch square baking dish.",
+  "Peel and core the apples and slice them about 1/4 inch thick. That should be about 6 cups. Put them in a large bowl, squeeze 1 tbsp juice from the lemon over them and toss.",
+  "In a small bowl, stir together 6 tbsp of the granulated sugar, 2 tbsp of the flour and 3/4 tsp of the cinnamon. Sprinkle it over the apples and toss until every slice is coated. Spread the apples evenly in the dish.",
+  "For the topping, cut the 1/2 cup cold butter into small cubes. In another bowl, mix the remaining 3/4 cup plus 2 tbsp flour, the 1/2 cup oats, the 1/4 cup brown sugar, the remaining 2 tbsp granulated sugar, the remaining 1/4 tsp cinnamon and a pinch of salt.",
+  "Add the butter cubes and rub them into the dry mix with your fingertips until it clumps into small, coarse crumbs. Scatter the crumbs evenly over the apples.",
+  "Bake for 40 to 45 minutes, until the topping is golden and crisp, the juices bubble thickly at the edges and a knife slides into the apples easily. If the top is brown before the apples are soft, lay a sheet of foil loosely over it.",
+  "Let it cool for 10 minutes, then serve it warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three toss sliced apples with lemon juice, sugar, cinnamon and a spoonful of flour, then cover them with a rubbed together topping of flour, oats, brown sugar, salt and cold butter and bake until the juices bubble. Natasha's Kitchen bakes a 9x13 dish of 4 lb apples at 375°F for 45 to 50 minutes, with more flour than oats in the topping. Cooking Classy coats the apples in a melted butter, water and vanilla mix and adds baking powder to the topping, and Somewhat Simple adds nutmeg and optional pecans and bakes at 350°F. This follows Natasha's Kitchen's ratios at half size in an 8 inch dish for 4.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Apple Crisp",
+   "url": "https://natashaskitchen.com/apple-crisp/",
+   "rating": 4.98,
+   "rating_count": 318,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Easy Apple Crisp Recipe",
+   "url": "https://www.cookingclassy.com/apple-crisp/",
+   "rating": 4.96,
+   "rating_count": 228,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Somewhat Simple",
+   "title": "Apple Crisp Recipe",
+   "url": "https://www.somewhatsimple.com/apple-crisp-recipe/",
+   "rating": 3.28,
+   "rating_count": 47,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,129 @@
+{
+ "dish_name": "Salisbury Steak",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "5 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground beef (85% lean)",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Celery salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium beef broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Finely dice one of the onions. Peel the other, cut it in half and slice it into thin half rings.",
+  "Melt 1 tbsp of the butter in a large skillet over medium. Add the diced onion on one side of the pan and the sliced onion on the other. Cook for 5 to 6 minutes, stirring each side now and then, until they're soft and golden at the edges.",
+  "Transfer the diced onion and the sliced onion into two separate bowls. Let the diced onion cool for a few minutes.",
+  "In a large bowl, add the 1.5 lbs beef, half of the diced onion, the 2 eggs, the 1/2 cup breadcrumbs, the pinch of celery salt, 1 tsp of the garlic powder, 1 tsp of the onion powder, the 1 tsp salt and 3/4 tsp of the pepper.",
+  "Mix it gently with your hands. Stop as soon as there are no streaks left. Any longer and the patties come out dense.",
+  "Shape the mix into 4 oval patties about 3/4 inch thick.",
+  "In a bowl, whisk the 3 cups broth with the 5 tbsp flour until there are no lumps.",
+  "Melt 1 tbsp of the butter in the same skillet over medium high. Add the patties and leave them for 3 minutes, until the underside is deep brown and lets go of the pan.",
+  "Flip them and brown the other side for 2 to 3 minutes. They'll finish cooking in the gravy. Move them to a plate and pour off any extra fat from the pan.",
+  "Turn the heat to medium. Melt the last 3 tbsp butter in the pan, add the rest of the diced onion and stir for 1 minute, scraping up the browned bits.",
+  "Slowly pour in the broth mixture, whisking as you go. Stir in the 1 1/2 tbsp Worcestershire and let it simmer for 2 to 3 minutes, stirring often, until it starts to thicken.",
+  "Put the patties back in with any juices from the plate and add the sliced onion. Sprinkle in the last 1/4 tsp garlic powder, 1/4 tsp onion powder and 1/4 tsp pepper.",
+  "Turn the heat to medium low and simmer for 10 minutes, spooning the gravy over the patties and turning them once, until the gravy is thick and glossy.",
+  "You're cooking the patties to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the middle of one: it's done when there's no pink left.",
+  "Taste the gravy. If it's flat, add a pinch more salt.",
+  "Serve the patties with the onion gravy spooned over the top."
+ ],
+ "method_notes": "Both read versions bind ground beef with breadcrumbs, egg and seasoning, brown oval patties in a skillet, build a broth gravy with Worcestershire in the same pan and finish the patties in it. Whisk It Real Gud, the lead, softens diced and sliced onion in butter first, puts half the diced onion into the patties with garlic powder, onion powder and a pinch of celery salt, whisks the flour into cold broth before it goes in and simmers the patties with the onion rings until cooked through. Jo Cooks cooks the patties through first, then softens a sliced onion with mushrooms and thickens a broth of tomato paste, soy and Worcestershire with cornstarch. This one follows the lead for 1 1/2 lbs of beef as 4 patties, and leaves out its optional cream and red pepper flakes.",
+ "sources": [
+  {
+   "name": "Whisk It Real Gud",
+   "title": "Easy Salisbury Steak Recipe",
+   "url": "https://whiskitrealgud.com/salisbury-steak-recipe-with-onion-gravy-6/",
+   "rating": 4.98,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Salisbury Steak",
+   "url": "https://www.jocooks.com/recipes/salisbury-steak/",
+   "rating": 4.53,
+   "rating_count": 108,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Salisbury Steak",
+   "url": "https://www.tasteofhome.com/recipes/salisbury-steak-with-onion-gravy/",
+   "rating": 4.79,
+   "rating_count": 34,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

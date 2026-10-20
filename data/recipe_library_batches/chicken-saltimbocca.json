@@ -1,0 +1,114 @@
+{
+ "dish_name": "Chicken Saltimbocca",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Prosciutto",
+   "qty": "3 oz",
+   "category": "meat/seafood",
+   "cook_qty": "8 thin slices"
+  },
+  {
+   "item": "Fresh sage",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "8 large leaves"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut each chicken breast in half through its thickness, then cut each piece in half crosswise so you have 8 cutlets. Lay them between two sheets of plastic wrap and pound them with a meat mallet or the bottom of a heavy pan to an even 1/4 inch.",
+  "Sprinkle the 1/2 tsp pepper over both sides of the chicken. Skip the salt for now. The prosciutto is salty.",
+  "Lay a slice of prosciutto on each cutlet, folding it to fit, and put a sage leaf on top. Push a toothpick up through the chicken, prosciutto and sage to hold them flat.",
+  "Spread the 1/4 cup flour on a plate. Press the bare side of each cutlet into it and shake off the extra. Keep the flour off the prosciutto side.",
+  "Heat 1 1/2 tbsp of the olive oil in a large skillet over medium high until it shimmers. Add half the cutlets, prosciutto side down, and leave them alone for about 2 minutes, until the prosciutto is golden and crisp.",
+  "Turn them over and cook the floured side for 2 to 3 minutes. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut into the thickest piece: it's done when there's no pink left. Move them to a warm plate and cover loosely with foil.",
+  "Add the remaining 1 1/2 tbsp oil and cook the second batch the same way.",
+  "Pour off all but a thin film of fat, leaving the browned bits in the pan. Set it back over medium high and add the 1/2 cup wine and a pinch of salt. Scrape up the browned bits and let it bubble for 1 to 2 minutes, until it has cooked down by half.",
+  "Turn off the heat. Cut the 4 tbsp cold butter into cubes, add them to the pan and swirl until they melt into a glossy sauce.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Pull out the toothpicks. Serve the chicken with the sauce spooned over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version pounds the meat thin, tops it with prosciutto and a sage leaf, flours it lightly, browns it prosciutto side first in oil or butter and makes a quick white wine pan sauce finished with butter. RecipeTin Eats writes its recipe for veal and gives chicken breast as the swap; it floured only the bare side, pins the sage with a toothpick and swirls cold butter into the reduced wine off the heat. Well Plated and Coley Cooks add chicken broth to the sauce, and Caroline's Cooking adds broth and a little lemon. This follows RecipeTin Eats for chicken cutlets for 4, cooked in two batches to 160°F.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Saltimbocca",
+   "url": "https://www.recipetineats.com/saltimbocca/",
+   "rating": 5.0,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Chicken Saltimbocca",
+   "url": "https://www.wellplated.com/chicken-saltimbocca/",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Caroline's Cooking",
+   "title": "Chicken saltimbocca",
+   "url": "https://www.carolinescooking.com/chicken-saltimbocca/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Coley Cooks",
+   "title": "Chicken Saltimbocca",
+   "url": "https://coleycooks.com/chicken-saltimbocca/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
