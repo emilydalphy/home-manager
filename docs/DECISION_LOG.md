@@ -114,6 +114,17 @@ why*, not duplicating the diff.
   /api/health-report's compare_digest on str raised TypeError on any
   non-ASCII header (a 500 that confirmed the route exists); it compares bytes.
 
+- **The nights swap never cooks a dish after its frozen portion** (2026-10-20,
+  defect hunt; branch `overnight/swap-keeps-the-freezer-cook-first`; tests
+  `tests/test_swap_keeps_the_freezer_cook_first.py`). `_redate_plan_rows`
+  checked chain order by `links_to` only; a freezer night carries
+  `from_freezer`, so dragging Monday's chili to Saturday was `swapped` under
+  Friday's "Leftovers from the freezer — Monday's Turkey Chili" and its thaw.
+  Now refused with the writer's own "feeds Friday's dinner" sentence, as the
+  Move sheet already did. The allowed swap also re-says the freezer night's
+  weekday (`meal_move._resay_freezer_nights`); Undo says it back. Not done:
+  the "−" / away / night-off path (`move_cook_onto_fed_night`) leaves the old
+  weekday on the freezer night too — its undo snapshot needs a look first.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
