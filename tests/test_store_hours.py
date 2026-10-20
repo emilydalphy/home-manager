@@ -361,3 +361,25 @@ console.log(JSON.stringify(out));
     assert "Clear hours" not in got["html"], "nothing saved, nothing to clear"
     assert set(got["blankDays"]) == {"|"}
     assert got["typedMon"] == {"o": "07:00", "c": "22:00", "closed": False}
+
+
+def test_a_24_hour_store_is_never_tonights_last_chance_for_a_cook_tomorrow():
+    """A 24-hour store's window "closes" at midnight only because the next
+    day's opens then. next_opening skipped a window opening AT the moment
+    asked about, so a 24-hour store read as shut till the day after
+    tomorrow and Today said "Farm Boy closes at midnight"."""
+    for n in ("Emily", "Vineeth"):
+        tools.add_member(n)
+    tools.add_usual_stores(["Farm Boy"])
+    tools.add_recipe("Overnight Oats", ingredients=[{"item": "Blueberries", "qty": "1 pint", "category": "produce"}],
+                     prep_time_minutes=10, cook_time_minutes=15, default_servings=2)
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    tomorrow = (TODAY + datetime.timedelta(days=1)).isoformat()
+    tools.plan_meal(tomorrow, "Overnight Oats", slot="breakfast", weekly_plan_id=plan_id,
+                    add_ingredients_to_grocery_list=True)
+    tools.set_store_hours("Farm Boy", _hours("00:00", "00:00"))
+    assert _shop(_at(20))["detail"] == "1 item · by tomorrow"
+    # The same seam, said plainly: the next window after tonight's midnight
+    # is tomorrow's, opening at that midnight.
+    midnight = datetime.datetime.combine(TODAY + datetime.timedelta(days=1), time(0, 0))
+    assert _stores.next_opening("Farm Boy", midnight)["opens"] == midnight

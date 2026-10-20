@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A 24-hour store never "closes at midnight"** (2026-10-20; branch
+  `overnight/a-24-hour-store-never-closes`; test in `tests/test_store_hours.py`).
+  `stores.next_opening` skipped a window opening AT the moment asked, so at a
+  24-hour store's midnight seam the next day's window was missed and Today
+  told a household with tomorrow's breakfast to buy "by midnight · Farm Boy
+  closes at midnight". Now `<`, not `<=`: a window opening then counts.
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
