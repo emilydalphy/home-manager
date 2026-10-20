@@ -60,12 +60,16 @@ def test_a_recipe_on_several_days_is_one_new_recipe():
     assert plan["repeat_recipe_count"] == 1
 
 
-def test_the_share_page_number_is_the_recipe_count(client):
+def test_the_share_page_carries_no_new_recipe_count(client):
+    """The "N new recipes this week" tag was written to the household, and a
+    babysitter reads the share page, so it no longer goes there (Emily,
+    2026-10-20). The count itself is still right on the household's own plan,
+    above."""
     _week_with_repeats()
     token = tools.get_or_create_share_link()["token"]
     client.cookies.clear()
     plan = client.get(f"/api/share/{token}").json()
-    assert plan["new_recipe_count"] == 2
+    assert "new_recipe_count" not in plan
 
 
 def test_a_week_of_saved_dishes_and_takeout_has_nothing_new():
