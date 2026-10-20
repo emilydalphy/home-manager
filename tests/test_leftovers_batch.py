@@ -26,7 +26,7 @@ import datetime
 import pytest
 
 from app import agent, tools
-from conftest import on_the_weeks_monday
+from conftest import household_today, on_the_weeks_monday
 
 
 def _monday() -> datetime.date:
@@ -113,8 +113,10 @@ def test_the_cook_nights_note_names_the_nights_it_covers():
     assert "for 6" in note
     assert "Thursday" in note
     # "tonight" only when the cook night really is today — read on Sunday
-    # this card still has to be honest about which night it means.
-    assert ("tonight" in note) == (TUE == datetime.date.today().isoformat())
+    # this card still has to be honest about which night it means. The
+    # HOUSEHOLD's today, which is what the note reads: the process's is a
+    # day ahead of a Toronto evening on a UTC box.
+    assert ("tonight" in note) == (TUE == household_today().isoformat())
 
 
 def test_the_leftover_night_is_a_reheat_not_a_cook():

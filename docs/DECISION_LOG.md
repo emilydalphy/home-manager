@@ -139,6 +139,16 @@ why*, not duplicating the diff.
   told a household with tomorrow's breakfast to buy "by midnight · Farm Boy
   closes at midnight". Now `<`, not `<=`: a window opening then counts.
 
+- **Eleven tests that went red overnight were the tests, not the app**
+  (2026-10-20; branch `overnight/date-dependent-tests-green`). Ten seeded
+  this week's Monday, approved it, and expected Monday bought — false from
+  Tuesday since approval buys only meals still ahead (2026-10-18); they
+  missed `on_the_weeks_monday()` (pantry staples file-wide, five others
+  per test). The eleventh compared the cook note's "tonight" with
+  `date.today()`, the server's day, a day ahead of a Toronto evening on
+  UTC; now `household_today()`. Why: each reproduced under `--today` on
+  clean main and passes at Mon 01:00, Mon 22:30, Tue 00:30, Wed 18:00,
+  Fri, Sun 23:30 under TZ=UTC and Toronto. No assertion changed.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
