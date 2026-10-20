@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Guests taken off a night come off the table** (2026-10-20; branch
+  `overnight/guests-taken-off-reach-the-table`; tests
+  `tests/test_guests_taken_off_reach_attendance.py`). `save_week_intake`'s
+  `_sync_guest_attendance` only walked dates still in `guest_counts`, and
+  screens drop guests by deleting the date (re-plan grid stepper at 0, a day
+  taken off "Which days?") — so attendance kept "Dinner for 4 — 2 guests" and
+  the draft, list and morning text fed four. Now a date the replaced revision
+  had guests for is zeroed, only while attendance still holds that number (a
+  count set since by chat or the day sheet is kept).
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
