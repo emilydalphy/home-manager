@@ -1,0 +1,106 @@
+{
+ "dish_name": "Gyudon",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Shaved ribeye",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Pickled red ginger",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover the pan and cook for 15 minutes. Take it off the heat and keep the lid on until you're ready to serve.",
+  "Meanwhile, cut the 1 lb shaved ribeye into pieces about 3 inches long. Thinly slice the onion and cut 2 of the green onions on a slant.",
+  "In a large skillet with a lid, stir together 1 cup water, the 1/2 tsp dashi granules, 1/4 cup sake, 1/4 cup mirin, 6 tbsp soy sauce and the 2 tbsp sugar until the sugar dissolves. Keep the heat off.",
+  "Separate the onion slices and spread them through the sauce. Lay the beef over the top so it covers the onion.",
+  "Cover the pan, set it over medium and bring it to a simmer. Turn the heat down to keep a gentle simmer and cook for 3 to 4 minutes, lifting the lid once or twice to skim off the foam and fat with a spoon. Stop as soon as there's no pink left in the beef. Any longer and it turns chewy.",
+  "Scatter the green onions over the beef, cover and cook for 1 more minute. Turn off the heat.",
+  "Taste the sauce. If it's flat, add a pinch of salt.",
+  "Fluff the rice and divide it among 4 bowls. Spoon a little of the sauce over the rice, then pile the beef and onion on top.",
+  "Serve with the pickled red ginger."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both simmer thinly sliced beef and onion in a sweet soy and dashi broth and serve it over rice. Just One Cookbook mixes dashi, sake, mirin, soy sauce and sugar in a cold pan, lays the beef over the onion and simmers it covered for only 3 to 4 minutes so it stays tender, finishing with green onion and pickled red ginger. Pickled Plum sautés ginger, onion and mushrooms in oil first, uses a much larger amount of broth and simmers the beef for about 10 minutes. This one follows Just One Cookbook's short simmer, doubled for four, with instant dashi.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Gyudon (Japanese Beef Rice Bowl)",
+   "url": "https://www.justonecookbook.com/gyudon/",
+   "rating": 4.74,
+   "rating_count": 537,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Gyudon (Japanese beef bowl)",
+   "url": "https://pickledplum.com/recipe-gyudon-japanese-beef-bowl/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

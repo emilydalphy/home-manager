@@ -1,0 +1,114 @@
+{
+ "dish_name": "Tonkatsu",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Boneless pork loin chops",
+   "qty": "4 (about 1.25 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tonkatsu sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover the pan and cook for 15 minutes. Take it off the heat and keep the lid on until you're ready to serve.",
+  "Meanwhile, shred half the cabbage as thin as you can with a sharp knife. Put it in a bowl and keep it in the fridge.",
+  "Crush the 2 tbsp sesame seeds in a mortar, or in a zip bag with a rolling pin, leaving some whole. Divide them among 4 small dishes. Cut the lemon into wedges.",
+  "Trim any thick fat off the 4 boneless pork loin chops. Make small cuts every inch through the band of connective tissue between the fat and the meat, on both sides, so the pork stays flat in the oil.",
+  "Pound the chops with a meat mallet or rolling pin to an even 1/2 inch, then push them back into shape. Sprinkle both sides with the 1 tsp salt and 1/4 tsp pepper.",
+  "Set out three plates: the 1/4 cup flour on one, the 2 eggs beaten with 1 tbsp of the oil on the next, and the 1 1/2 cups panko on the last.",
+  "Coat each chop in flour and shake off the extra. Dip it in the egg, then lay it in the panko and press so the crumbs stick on both sides. Set them on a tray for 5 minutes so the coating holds.",
+  "Pour the rest of the oil into a heavy pot. It should be about 2 inches deep. Heat it over medium to 340°F. No thermometer? Drop in a crumb of panko: it should sink a little and float straight back up, sizzling.",
+  "Lower 2 of the cutlets in, laying them away from you. Stand back a little. They'll spatter. Fry them for 1 1/2 minutes without touching them, flip them and cook the other side for 1 1/2 minutes, until light golden.",
+  "Lift them out, hold them over the pot for a few seconds to drip, and set them on a wire rack for 4 minutes. Skim out any loose crumbs, then fry the other 2 cutlets the same way.",
+  "Turn the heat up a little to bring the oil to 355°F, where a crumb of panko sizzles hard as soon as it goes in. Fry the cutlets again, 2 at a time, for 30 seconds on each side, until deep golden brown. Set them back on the rack for 2 minutes.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check the thickest part. No thermometer? Cut into the center of one: the juices should run clear, with the middle just barely pink.",
+  "Slice each cutlet across into strips about 3/4 inch wide.",
+  "Spoon 2 tbsp of the tonkatsu sauce into each sesame dish and stir it through.",
+  "Taste a strip. If it's flat, sprinkle a pinch more salt over the cutlets.",
+  "Serve with the rice, the shredded cabbage, the lemon wedges and the sesame sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both cut through the connective tissue so the cutlet stays flat, pound it, season it and coat it in flour, egg and panko before frying at about 340°F. Just One Cookbook fries thinner chops twice, a minute a side, then a rest, then 30 seconds a side at 355°F, and serves them with crushed sesame stirred into tonkatsu sauce; it also moistens dry panko with water first. RecipeTin Japan fries thicker loin in one go for about 5 minutes and serves it with lemon wedges and Bulldog sauce or a homemade Worcestershire and ketchup sauce. This one follows Just One Cookbook's double fry and sesame sauce, with RecipeTin Japan's lemon wedges.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Tonkatsu (Japanese Pork Cutlet)",
+   "url": "https://www.justonecookbook.com/tonkatsu/",
+   "rating": 4.67,
+   "rating_count": 311,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Tonkatsu (Japanese Fried Pork Cutlet)",
+   "url": "https://japan.recipetineats.com/tonkatsu-japanese-fried-pork-cutlet/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
