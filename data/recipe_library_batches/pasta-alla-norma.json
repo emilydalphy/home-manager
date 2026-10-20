@@ -1,0 +1,47 @@
+{
+ "dish_name": "Pasta alla Norma",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Eggplants", "qty": "2 (about 1.75 lb)", "category": "produce"},
+  {"item": "Extra virgin olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tbsp + 1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1 small", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Tomato passata", "qty": "24 oz", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Rigatoni", "qty": "12 oz", "category": "pantry"},
+  {"item": "Basil", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup leaves"},
+  {"item": "Ricotta salata", "qty": "4 oz", "category": "dairy"}
+ ],
+ "instructions": [
+  "Heat the oven to 450°F and line a large rimmed baking sheet with parchment.",
+  "Cut the 2 eggplants into 1 inch cubes. Toss them on the sheet with 2 tbsp of the olive oil, 1/2 tsp of the salt and 1/4 tsp of the pepper, then spread them out in a single layer with room between the pieces. Use a second sheet if they're crowded.",
+  "Roast for 20 minutes. Flip the cubes with a spatula and roast the other side for 5 minutes more, until they're golden brown and soft all the way through. Leave them on the sheet to cool a little. They hold their shape better when you toss them in later.",
+  "Meanwhile, fill a large pot with water, add 1 tbsp of the salt and bring it to a boil over high heat. Finely chop the onion, mince the 2 garlic cloves and grate the 4 oz ricotta salata.",
+  "Heat the remaining 2 tbsp olive oil in a very large skillet over medium. Add the onion and cook for 4 to 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Turn the heat up to medium high and pour in the 1/4 cup wine. Let it bubble for about 1 minute, scraping the bottom of the pan, until most of it has cooked off.",
+  "Pour in the 24 oz passata. Add 1/4 cup water to the empty jar, swirl it and pour that in too. Stir in the 1 tsp oregano, the remaining 1/2 tsp salt and the last 1/4 tsp pepper.",
+  "Turn the heat down to medium low and simmer the sauce for 10 minutes, stirring now and then, until it's a little thicker.",
+  "While the sauce simmers, add the 12 oz rigatoni to the boiling water and cook it until al dente, following the package time. Scoop out 1 cup of the cooking water, then drain the pasta.",
+  "Stir the roasted eggplant into the sauce, then add the rigatoni. Toss it gently so the eggplant stays in pieces. If the sauce looks thick, loosen it with a splash of the pasta water.",
+  "Take the pan off the heat. Tear in 1/2 cup of the basil leaves and stir. Taste it. If it's flat, add a pinch more salt.",
+  "Serve topped with the grated ricotta salata, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both roast the eggplant in the oven instead of frying it, toss it into a garlicky tomato sauce with oregano and red pepper flakes, and finish with basil and a salty cheese. RecipeTin Eats roasts 1 inch cubes at 450°F for 25 minutes, builds the sauce on onion, garlic and a splash of white wine with tomato passata, and says ricotta salata is more traditional than its Parmesan. Love and Lemons roasts thin half moons at 425°F, uses hand crushed whole tomatoes with tomato paste and no onion or wine, and melts the cheese into the sauce. This one follows RecipeTin Eats with ricotta salata on top, the onion going in before the garlic, a little more pasta for a dinner and the chili flakes on the side.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Pasta alla Norma (Eggplant pasta)", "url": "https://www.recipetineats.com/pasta-alla-norma-eggplant-pasta/", "rating": 4.99, "rating_count": 77, "read": true, "lead": true},
+  {"name": "Love and Lemons", "title": "Pasta alla Norma", "url": "https://www.loveandlemons.com/pasta-alla-norma/", "rating": 4.79, "rating_count": 38, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,43 @@
+{
+ "dish_name": "Bucatini all'Amatriciana",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Bucatini", "qty": "1 lb", "category": "pantry"},
+  {"item": "Guanciale", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Whole peeled San Marzano tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "1/2 cup"},
+  {"item": "Pecorino Romano", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "1 cup grated"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with about 4 quarts of water, cover it and bring it to a boil over high heat.",
+  "Meanwhile, slice the hard skin off the guanciale and cut it into strips about 1/4 inch thick and 1 inch long.",
+  "Tip the tomatoes and their juice into a bowl and squeeze them through your fingers until they're in small pieces. Keep them low in the bowl. They squirt.",
+  "Finely grate all of the Pecorino, about 1 cup. Put the 1 tsp red pepper flakes in a small bowl for the table.",
+  "Heat the 1 tbsp olive oil in a large skillet over medium heat and add the guanciale. Cook it for 6 to 8 minutes, stirring now and then, until most of the fat has melted out and the edges are golden and crisp. Stand back a little. It spatters.",
+  "Pour in 1/2 cup wine and scrape up the browned bits from the bottom of the pan. Let it bubble for about 2 minutes, until it's almost gone.",
+  "Add the tomatoes, 1/2 tsp of the salt and the 1 tsp black pepper. Bring it to a simmer, then turn the heat to medium-low and cook for about 15 minutes, stirring now and then, until the sauce is thick and you can see the fat pooling at the edges.",
+  "Once the sauce is simmering, add the other 2 tsp salt to the boiling water and drop in the 1 lb bucatini. Stir for the first minute so the strands don't stick together, then cook it 1 minute less than the package says.",
+  "Before you drain it, scoop out 1 cup of the cooking water. Drain the bucatini.",
+  "Add the bucatini to the skillet and toss it over low heat for 1 to 2 minutes, adding the cooking water a splash at a time, until the sauce coats every strand.",
+  "Take the pan off the heat and toss in 1/2 cup of the Pecorino until it melts into the sauce.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rest of the Pecorino and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions render the guanciale in a little olive oil until crisp, cook off a splash of white wine, simmer whole San Marzano tomatoes into the fat, then toss in al dente pasta and Pecorino with reserved pasta water. Tasting Table leaves the guanciale in the pan and seasons with Calabrian chiles and a full teaspoon of cracked pepper; The Pasta Project lifts the guanciale out while the sauce cooks, uses fresh or dried chili and puts half the cheese in and half on top. This one follows Tasting Table's ratios and keeps the chili at the table.",
+ "sources": [
+  {"name": "Tasting Table", "title": "Traditional Bucatini all'Amatriciana Recipe", "url": "https://www.tastingtable.com/1243770/traditional-bucatini-allamatriciana-recipe/", "rating": 5.0, "rating_count": 39, "read": true, "lead": true},
+  {"name": "The Pasta Project", "title": "Pasta all'Amatriciana", "url": "https://www.the-pasta-project.com/wprm_print/pasta-allamatriciana", "rating": 5.0, "rating_count": 37, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
