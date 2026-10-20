@@ -284,7 +284,7 @@ def _names_the_variety(name: str) -> bool:
     return _plain_name_key(name) in _SAME_PURCHASE
 
 
-def _refold_quantity_segments(qty: str) -> str:
+def _refold_quantity_segments(qty: str, families: bool = False) -> str:
     """
     Re-sum the same-unit segments of an already-"+"-joined quantity, so a
     third amount joining a line that could not reconcile the first two
@@ -301,6 +301,11 @@ def _refold_quantity_segments(qty: str) -> str:
     Segments that genuinely do not reconcile (mass against volume, "a
     bunch") are left joined exactly as the fallback would write them, so
     this is idempotent and never guesses a conversion.
+
+    `families` is for a household's own line taking the household's own
+    add: segments in one measurable family fold too (_sum_measures), so a
+    line written "500 g + 1 kg" before 2026-10-20 reads "2 kg" after
+    another "500 g" rather than "1 kg + 1 kg".
     """
     if " + " not in (qty or ""):
         return qty
@@ -316,6 +321,9 @@ def _refold_quantity_segments(qty: str) -> str:
             # segment just lengthened it. Each segment is offered to each
             # one already kept instead, and the flag is what says whether
             # the units actually met.
+            if not reconciled and families:
+                summed = _sum_measures(already, seg, exact=False)
+                candidate, reconciled = (summed, True) if summed is not None else (candidate, False)
             if reconciled:
                 kept[i] = candidate
                 break
@@ -588,30 +596,62 @@ def _store_amount(item: str, qtys: list[str]) -> str | None:
     return _quantities._format_quantity(max(1.0, float(math.ceil(total - 1e-6))), unit)
 
 
-def _sum_volumes(existing_qty: str, new_qty: str, exact: bool, same_unit: bool = False) -> str | None:
+def _sum_measures(existing_qty: str, new_qty: str, exact: bool, same_unit: bool = False) -> str | None:
     """
-    Two volumes (cup/tbsp/tsp) added as one amount, or None when either is
-    not a plain volume — the caller then merges the way it always did.
+    Two amounts in one measurable family added as one amount, or None when
+    they are not — the caller then merges the way it always did.
 
     Part cups made this needed (2026-10-19): "1/4 cup" used to be stored as
     "4 tbsp" and summed with "3 tbsp" as the same word; as "1/4 cup" it did
     not, and the list read "3 tbsp + 1/4 cup". `exact` is for a plan's share
     joining a household's line — see _quantities._exact_volume_text.
+
+    A household's own second amount (not `exact`, not `same_unit`) adds in
+    ANY of the measurable families, not just volumes: "500 g" of flour and
+    then "1 kg" is "1.5 kg", "8 oz" of beef and then "1 lb" is "1.5 lbs",
+    "500 ml" and "1 l" is "1.5 l" (2026-10-20). It used to read
+    "500 g + 1 kg" — two numbers to add up in the aisle, on a line nothing
+    else will ever recompute. Families only (quantities._UNIT_CONVERSION_
+    GROUPS): grams never turn into pounds here, the same "nothing guessed"
+    line _convert_to_unit draws.
     """
     note = _quantities._merge_notes(
         _quantities._quantity_note(existing_qty), _quantities._quantity_note(new_qty)
     )
     a = _quantities._parse_quantity(_quantities._strip_prep_descriptor((existing_qty or "").strip()))
     b = _quantities._parse_quantity(_quantities._strip_prep_descriptor((new_qty or "").strip()))
-    if not a or not b or a[1] not in _quantities._VOLUME_TO_TSP or b[1] not in _quantities._VOLUME_TO_TSP:
+    if not a or not b or not a[1] or not b[1]:
         return None
     if same_unit and a[1] != b[1]:
         return None
-    tsp = a[0] * _quantities._VOLUME_TO_TSP[a[1]] + b[0] * _quantities._VOLUME_TO_TSP[b[1]]
-    if exact:
-        text = _quantities._exact_volume_text(tsp, "tsp")
-    else:
-        text = _quantities._humanize_grocery_quantity(tsp, "tsp")
+    if a[1] in _quantities._VOLUME_TO_TSP and b[1] in _quantities._VOLUME_TO_TSP:
+        tsp = a[0] * _quantities._VOLUME_TO_TSP[a[1]] + b[0] * _quantities._VOLUME_TO_TSP[b[1]]
+        if exact:
+            text = _quantities._exact_volume_text(tsp, "tsp")
+        else:
+            text = _quantities._humanize_grocery_quantity(tsp, "tsp")
+        return _quantities._with_note(text, note)
+    if exact or a[1] == b[1]:
+        # A plan's share outside volumes, or one unit word: the ordinary
+        # arithmetic already does this, exactly as before.
+        return None
+    family = next(
+        (g for g in _quantities._UNIT_CONVERSION_GROUPS if a[1] in g and b[1] in g), None
+    )
+    if family is None:
+        return None
+    smallest = min(family, key=family.get)
+    total = a[0] * family[a[1]] + b[0] * family[b[1]]
+    text = _quantities._humanize_grocery_quantity(total, smallest)
+    # The list rounds a weight to the nearest quarter of its unit, so a
+    # small amount can round away ("1 lb" + "2 oz" is "1 lb", either way
+    # round). A sum that reads no more than the larger of the two would
+    # swallow the smaller: both amounts stay on the line instead, as before.
+    summed = _quantities._parse_quantity(text)
+    if not summed or summed[1] not in family:
+        return None
+    if summed[0] * family[summed[1]] <= max(a[0] * family[a[1]], b[0] * family[b[1]]) + 1e-9:
+        return None
     return _quantities._with_note(text, note)
 
 
@@ -742,12 +782,13 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
         merged_qty, merged = None, False
         if households_line and consolidate is _try_consolidate_quantity:
             # Onto a household's own line, the household's own second
-            # volume adds within its family ("3 tbsp" + "1/4 cup"),
+            # amount adds within its family ("3 tbsp" + "1/4 cup",
+            # "500 g" + "1 kg"),
             # shopping-rounded like any add. A plan's share is added
             # EXACTLY, so _restate_standing_want can take back what was put
             # on — and only in the line's own unit word: a "2 tbsp" share
             # beside "1 cup" still gets a plan line of its own (2026-10-07).
-            merged_qty = _sum_volumes(
+            merged_qty = _sum_measures(
                 row["quantity"] or "", quantity, exact=not standing, same_unit=not standing,
             )
             merged = merged_qty is not None
@@ -1577,7 +1618,13 @@ def add_grocery_item(
         # A third amount joining a line the first two could not
         # reconcile still has to find its own unit; see
         # _refold_quantity_segments.
-        merged_qty = _refold_quantity_segments(merged_qty)
+        merged_qty = _refold_quantity_segments(
+            merged_qty,
+            families=(
+                source_weekly_plan_id is None and existing["source_weekly_plan_id"] is None
+                and existing["status"] == "needed" and quantity_mode != "max"
+            ),
+        )
         # A row with no source_weekly_plan_id is something a person asked
         # for directly, and clear_stale_grocery_items is required to leave
         # those alone forever. Stamping this week's plan id onto it during
