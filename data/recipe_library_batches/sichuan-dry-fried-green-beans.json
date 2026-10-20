@@ -1,0 +1,120 @@
+{
+ "dish_name": "Sichuan Dry-Fried Green Beans",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Green beans",
+   "qty": "2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Sichuan preserved mustard greens (sui mi ya cai)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground Sichuan pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a pot, swishing it with your fingers and pouring off the water two or three times, until the water is only a little cloudy. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, trim the ends off the 2 lb green beans. Pat them completely dry with a towel, or they'll spatter in the oil.",
+  "Mince the 6 garlic cloves and 2 tsp of the ginger. Snip the 4 dried chilies in half and shake out most of the seeds.",
+  "In a small bowl, stir together 1/4 cup Shaoxing wine, 2 tbsp light soy sauce and 2 tsp sugar.",
+  "Heat 2 tbsp of the vegetable oil in a large nonstick skillet over medium high until it shimmers. Add half the beans and a pinch of salt and spread them out so they don't overlap.",
+  "Cook for 7 to 8 minutes, stirring every 20 seconds or so, until the beans are blistered brown in spots, a little wrinkled and just tender when you bite one. If the pan smokes hard, turn it down to medium. Move them to a plate.",
+  "Add 2 tbsp more oil and cook the second half of the beans the same way. Move them to the plate.",
+  "Turn the heat to medium and add the last 1 tbsp oil, the 1/4 cup mustard greens and the 1/2 tsp ground Sichuan pepper. Stir for about 1 minute, until it sizzles and smells savory.",
+  "Add the chilies, garlic and ginger and stir for 30 seconds, until they smell fragrant. Don't let the garlic brown.",
+  "Put all the beans back in the pan and pour in the sauce. Toss for 1 to 2 minutes, until the liquid has mostly cooked off and the beans are glossy.",
+  "Take the pan off the heat, drizzle over the 1 tsp sesame oil and toss once more.",
+  "Taste a bean. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cook the beans until wrinkled and tender, then toss them with dried chilies, Sichuan pepper, garlic, ginger and preserved vegetable. Omnivore's Cookbook pan fries dry beans in a little oil until blistered, then adds ground pork, sui mi ya cai, Shaoxing wine, soy and sugar. Fuchsia Dunlop's version on loveFOOD blanches the beans instead, keeps it vegetarian with ya cai and spring onion, and finishes with sesame oil. This one follows Omnivore's Cookbook's pan frying and sauce without the pork, cooks the beans in two batches for four people, and adds Dunlop's sesame oil at the end.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Sichuan Dry Fried Green Beans (干煸四季豆)",
+   "url": "https://omnivorescookbook.com/szechuan-dry-fried-green-beans/",
+   "rating": 4.88,
+   "rating_count": 48,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "loveFOOD (Fuchsia Dunlop)",
+   "title": "Sichuanese 'dry-fried' green beans",
+   "url": "https://www.lovefood.com/recipes/59893/sichuanese-dryfried-green-beans-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
