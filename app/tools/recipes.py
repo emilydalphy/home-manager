@@ -969,7 +969,9 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
 
     scaled_ingredients = []
     unscaled_items = []
-    for ing in cooking_ingredients(recipe["ingredients"], servings=base_servings):
+    for ing in cooking_ingredients(
+        recipe["ingredients"], servings=base_servings, instructions=recipe.get("instructions"),
+    ):
         # cook_qty is the amount at base_servings and has already been read
         # into qty above; carrying it further would let a second pass scale
         # from the baseline again.
@@ -2859,7 +2861,9 @@ def validate_measured_quantities(ingredients: list[dict], field: str = "qty", se
     return {"ok": not problems, "problems": problems}
 
 
-def cooking_ingredients(ingredients: list[dict], servings: int | None = None) -> list[dict]:
+def cooking_ingredients(
+    ingredients: list[dict], servings: int | None = None, instructions: list[str] | None = None,
+) -> list[dict]:
     """
     The same ingredient list rewritten so every quantity is one a cook can
     act on — what the Cooker view and scale_recipe show.
@@ -2879,7 +2883,14 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
 
     Never invents an amount it has no basis for: an unknown item with a
     blank qty comes back blank rather than guessed at.
+
+    With `instructions` (the Cook screen and the recipe page's stepper), a
+    package line the steps only use "a pinch" / "a splash" / "a dash" of
+    shows that (cook_amounts_from_steps) — read here rather than stored,
+    so every recipe already saved gets it too.
     """
+    if instructions:
+        ingredients = cook_amounts_from_steps(ingredients, instructions)
     out = []
     for ing in ingredients or []:
         if not isinstance(ing, dict):
@@ -2910,6 +2921,85 @@ def cooking_ingredients(ingredients: list[dict], servings: int | None = None) ->
     # Every row says its thing in the number its amount is ("2 onions") —
     # see _with_item_label; `item` stays exactly as stored.
     return [_with_item_label(r) if isinstance(r, dict) else r for r in out]
+
+
+# "a pinch of sugar", "a splash of soy sauce", "a dash of hot sauce" — the
+# three word amounts _FREEFORM_COOKING_OK already reads as an amount. The
+# words after "of" run to the next comma/full stop/"and", so "a pinch of
+# salt and the sugar" is the salt's pinch and nobody else's.
+_STEP_WORD_AMOUNT_RE = re.compile(
+    r"\b(?:a|one)\s+(pinch|dash|splash)\s+of\s+(?:the\s+)?([a-z][a-z' -]*?)(?=\s+(?:and|or|to|into|over|in|on)\b|[,.;:)!]|$)"
+)
+
+
+def cook_amounts_from_steps(ingredients: list[dict], instructions: list[str] | None) -> list[dict]:
+    """
+    The same lines with a cook_qty of "a pinch" / "a splash" / "a dash"
+    written onto a line BOUGHT as a package that the steps only ever use
+    that much of (2026-10-19 recipe batch: Spaghetti and Meatballs' steps
+    added "a pinch of sugar", the line said "1 bag", and with no cook_qty
+    the cook view showed the bag, or the table's per-4 guess of half a
+    cup). The recipe writer's qty is the shopping line by design; the
+    measured cook_qty it writes beside it normally fills this, and an
+    unmeasured pinch is the one it leaves blank.
+
+    Only a line whose qty can't be cooked from (a package word, a blank)
+    and that has no measured cook_qty of its own; never the household's
+    own amount; never a line some step ALSO gives a number for ("2 tsp
+    sugar" elsewhere means the pinch is not the whole of it). The qty —
+    what the list buys — is never touched.
+    """
+    steps = [_normalized_step(s) for s in instructions or [] if isinstance(s, str) and s.strip()]
+    if not steps or not ingredients:
+        return ingredients
+    said: dict[str, str] = {}
+    for text in steps:
+        for m in _STEP_WORD_AMOUNT_RE.finditer(text):
+            said.setdefault(" ".join(re.findall(r"[a-z]+", m.group(2))), f"a {m.group(1)}")
+    if not said:
+        return ingredients
+    # The steps with every "a pinch of ..." taken out: a line still named
+    # in what is left ("heat the olive oil", then "a splash of olive oil"
+    # to finish) is used for more than the splash, and keeps the table's.
+    rest = " | ".join(_STEP_WORD_AMOUNT_RE.sub(" ", text) for text in steps)
+    item_words = [
+        [w for w in re.findall(r"[a-z]+", _clean_item(ing.get("item") or "")) if len(w) > 2]
+        if isinstance(ing, dict) else []
+        for ing in ingredients
+    ]
+    numbered: set[int] = set()
+    for text in steps:
+        for index, _amount, _unit in _amounts_in_one_step(text, item_words)[0]:
+            numbered.add(index)
+    out, changed = [], False
+    for index, ing in enumerate(ingredients):
+        words = item_words[index]
+        if (
+            not isinstance(ing, dict) or not words or index in numbered or _households_own_amount(ing)
+            or all(_item_matches(rest, w) for w in words)
+        ):
+            out.append(ing)
+            continue
+        item, qty = (ing.get("item") or "").strip(), (ing.get("qty") or "").strip()
+        stored = (ing.get("cook_qty") or "").strip()
+        if (stored and not _quantity_problem(item, stored)) or not _quantity_problem(item, qty):
+            out.append(ing)
+            continue
+        # Every word of the line's name in what followed "of", plural or
+        # not: "Sugar" in "a pinch of sugar", "Red pepper flakes" in "a
+        # pinch of red pepper flakes" — and "Brown sugar" NOT in "a pinch
+        # of sugar", which may be another line's.
+        amount = next(
+            (said_amount for phrase, said_amount in said.items()
+             if all(_item_matches(phrase, w) for w in words)),
+            None,
+        )
+        if not amount:
+            out.append(ing)
+            continue
+        changed = True
+        out.append({**ing, "cook_qty": amount})
+    return out if changed else ingredients
 
 
 def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -> dict:
