@@ -1,0 +1,174 @@
+{
+ "dish_name": "Chicken Mole",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 85,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "2.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dried ancho chiles",
+   "qty": "2 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2 1/4 cups"
+  },
+  {
+   "item": "Raisins",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chipotle chiles in adobo",
+   "qty": "1 can (7 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tsp minced"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sliced almonds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "White sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "1 slice"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened chocolate",
+   "qty": "1 bar (4 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/4 oz"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 325°F with a rack in the middle. Lay the 2 oz anchos on a baking sheet and toast them in the oven for about 5 minutes, until they puff a little and smell toasty. Let them cool for 5 minutes. Leave the oven on.",
+  "Meanwhile, cut the onion into 1 inch pieces and peel the 3 garlic cloves. Tear the slice of bread into small pieces, mince 1 tsp of the chipotle chiles and chop 1 1/4 oz of the chocolate.",
+  "Pull the stems off the anchos, shake out the seeds and tear the chiles into pieces. Put them in a microwave safe bowl with 1 1/4 cups of the broth and the 1/3 cup raisins. Microwave for 2 minutes, then let them sit for 5 minutes, until the chiles are soft.",
+  "Drain the chiles and raisins in a sieve set over a bowl, and keep the soaking liquid.",
+  "Put the chiles and raisins in a food processor or blender with the onion, garlic, chipotle, the 1 tbsp tomato paste and 1 1/2 tbsp of the oil. Blend for about 5 minutes, scraping down the sides now and then, until it's a smooth paste.",
+  "Add the 1/2 cup almonds, the bread, 1 tbsp of the sesame seeds, 1 tsp of the salt, the 1/2 tsp oregano, the 1/4 tsp each of thyme, cinnamon, cumin and coriander, the 1/4 tsp pepper and 1/4 cup of the soaking liquid. Blend for about 3 minutes, until it's smooth. If it's too thick to turn over, add another splash of the soaking liquid.",
+  "Heat the remaining 1 1/2 tbsp oil in a Dutch oven over medium high until it shimmers. Add the paste and cook it for about 3 minutes, stirring all the time, until it's steaming and a shade darker. Stand back a little. It'll spatter.",
+  "Stir in the chopped chocolate until it melts. Move the pot to the oven, uncovered, and bake for 30 minutes, stirring twice, until the paste is thick and dark brick red.",
+  "Meanwhile, pull the skin off the chicken thighs and pat them dry with paper towels. Sprinkle the remaining 1/2 tsp salt all over them.",
+  "Set the pot on the stove over medium high. Whisk in the rest of the soaking liquid and 1 cup of the broth until smooth, and bring it to a simmer.",
+  "Lay the chicken in the sauce in one layer and turn the pieces to coat them. Turn the heat to low, put the lid on and cook for 25 to 30 minutes, turning the pieces halfway through, until the meat is tender at the bone. Stir the bottom of the pot when you turn them so the sauce doesn't catch.",
+  "You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest one near the bone. No thermometer? Cut into one at the bone: it's done when there's no pink left and the juices run clear.",
+  "While the chicken finishes, wrap the 12 tortillas in a damp paper towel and microwave them for 45 seconds to 1 minute, until they're warm and soft. Keep them wrapped in a clean kitchen towel.",
+  "Taste the sauce. If it's flat, add a pinch more salt. If it's too thick to pour, stir in a splash of water.",
+  "Spoon the sauce over the chicken and scatter the last 1 tbsp sesame seeds on top. Serve with the warm tortillas."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three build a sauce from dried chiles, nuts, sesame, dried fruit, spices and chocolate, fry it in hot fat until it darkens, then cook chicken in it. America's Test Kitchen, the lead, toasts anchos with a little chipotle, purees them with raisins, almonds, bread and ground spices, cooks the paste in the oven for 30 minutes and then stews bone-in chicken in it for about half an hour. Rick Bayless uses three chiles (ancho, mulato, pasilla), fries each puree separately and simmers the sauce for an hour, and Hola Jalapeño sears and poaches the chicken first and uses that broth for the sauce. This follows the lead scaled to 4, with the skin pulled off so the sauce clings, and the lead's optional cayenne left out to keep it mild. The lead's 28 is a reviewCount; the page doesn't label a separate ratingCount.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Chicken Mole Poblano",
+   "url": "https://www.americastestkitchen.com/recipes/9064-chicken-mole-poblano",
+   "rating": 4.5,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rick Bayless",
+   "title": "Mole Mastery: A First Recipe (Mole para Principiantes)",
+   "url": "https://www.rickbayless.com/recipe/beginners-mole/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "¡Hola! Jalapeño",
+   "title": "Chicken Mole",
+   "url": "https://www.holajalapeno.com/chicken-mole",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

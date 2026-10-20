@@ -1,0 +1,52 @@
+{
+ "dish_name": "Caldo de Res",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 170,
+ "ingredients": [
+  {"item": "Crosscut beef shanks", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Stewed tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "3", "category": "pantry"},
+  {"item": "Low-sodium beef broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3 cups"},
+  {"item": "Green cabbage", "qty": "1 small head", "category": "produce"},
+  {"item": "Corn on the cob", "qty": "2 ears", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Zucchini", "qty": "1", "category": "produce"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Radishes", "qty": "1 bunch", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"}
+ ],
+ "instructions": [
+  "Pat the 2 lbs beef shanks dry with paper towels and sprinkle 3/4 tsp of the salt over both sides. Meanwhile, dice the onion and peel the 4 garlic cloves.",
+  "Heat the 1 tbsp oil in a large Dutch oven over medium high until it shimmers. Add the shanks in a single layer and leave them alone for 5 minutes, until the underside is deep brown and lets go of the pot. Flip them and brown the other side for 5 minutes. Stand back a little. They'll spatter. Transfer them to a plate.",
+  "Add the onion to the pot and cook for 5 minutes, stirring now and then, until it's soft and starting to brown.",
+  "Add the garlic and the 1 1/2 tbsp tomato paste and stir for 1 minute, until the paste turns a shade darker and rusty.",
+  "Pour in the stewed tomatoes, the 3 bay leaves, 3 cups of the broth and 4 cups water and scrape up the browned bits from the bottom. Bring it to a boil over high heat.",
+  "Put the shanks back in with any juices from the plate. Turn the heat to low, cover and simmer gently for 2 hours, until the meat is very tender and coming off the bones.",
+  "Meanwhile, cut half the cabbage into 4 wedges, keeping a bit of the core on each so they hold together. Cut each ear of corn into 3 pieces. Peel the 2 carrots and cut them into 1/2 inch rounds. Cut the zucchini into 1 inch rounds.",
+  "Add the cabbage, corn, carrots and zucchini to the pot, pushing them down into the broth. Cover and simmer on low for 30 minutes, until the vegetables are tender.",
+  "Meanwhile, chop a handful of the cilantro, thinly slice 4 or 5 of the radishes and thinly slice the jalapeño. Put them in small bowls for the table. Cut 1 lime into wedges.",
+  "Fish out the bay leaves. Pull the meat off the bones in big pieces and put it back in the pot. Stir in the remaining 3/4 tsp salt and the juice of the other lime.",
+  "Warm the 12 tortillas in a dry skillet over medium for about 30 seconds a side and wrap them in a clean towel.",
+  "Taste the broth. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve in wide bowls with the cilantro, radishes, jalapeño, lime wedges and the warm tortillas."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both brown bone-in beef shank, soften onion in the pot, simmer the meat in beef broth with tomatoes until it's tender, then add carrots, corn and cabbage wedges for the last stretch and serve it with cilantro, jalapeño and lime. Chowhound, the lead, cooks garlic and tomato paste until rusty, simmers the shanks in water, broth, stewed tomatoes and bay leaves for 2 hours, adds the cabbage, corn, carrots and Mexican squash for 30 minutes and finishes with lime juice. Fine Dining Lovers cuts the meat off the bone first, simmers it for an hour with diced tomatoes and gives the vegetables only 10 to 20 minutes. This follows the lead at two thirds its size, with half the cabbage and the jalapeño on the side.",
+ "sources": [
+  {"name": "Chowhound", "title": "Caldo de Res (Mexican Beef Soup) Recipe", "url": "https://www.chowhound.com/2004489/caldo-de-res-mexican-beef-soup-recipe/", "rating": 4.9, "rating_count": 31, "read": true, "lead": true},
+  {"name": "Fine Dining Lovers", "title": "Caldo de Res", "url": "https://www.finedininglovers.com/explore/recipes/caldo-de-res", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

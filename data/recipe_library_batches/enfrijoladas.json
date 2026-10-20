@@ -1,0 +1,44 @@
+{
+ "dish_name": "Enfrijoladas",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Black beans", "qty": "3 cans (15 oz)", "category": "pantry"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Mexican oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Chipotle peppers in adobo", "qty": "1 can (7 oz)", "category": "pantry", "cook_qty": "2 peppers + 1 tbsp sauce"},
+  {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "2 cups"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "12 (6 inch)", "category": "other"},
+  {"item": "Monterey Jack cheese", "qty": "8 oz", "category": "dairy", "cook_qty": "2 cups shredded"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Mexican crema", "qty": "1 tub", "category": "dairy"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle. Meanwhile, cut the onion in half. Chop one half and finely dice the other half for the filling. Thinly slice the 3 garlic cloves.",
+  "Heat 1 tbsp of the oil in a large skillet over medium. Add the chopped onion half and cook for 5 minutes, stirring now and then, until it's soft and golden at the edges. Add the garlic and the 1 tsp oregano and cook for 30 seconds, until it smells fragrant.",
+  "Drain and rinse the 3 cans of beans. Transfer them to a blender with the cooked onion and garlic, the 2 chipotle peppers, 1 tbsp of the adobo sauce, the 2 cups broth and the 1 tsp salt. Blend on high for about 1 minute, until it's completely smooth. Add a third chipotle if you like it hotter.",
+  "Pour the bean sauce back into the skillet and set it over medium low. Simmer for 5 minutes, stirring often, until it's about as thick as a creamy soup. If it gets too thick to coat a tortilla thinly, stir in a splash of water.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Meanwhile, brush one side of each of the 12 tortillas with the remaining 2 tbsp oil and lay them on a baking sheet, overlapping a little. Warm them in the oven for 3 to 4 minutes, until they're soft and bendy but not crisp. Shred the cheese. That should be about 2 cups.",
+  "Spread a thin layer of the bean sauce over the bottom of a 9x13 inch baking dish. Working one at a time, dip a tortilla into the sauce in the skillet so both sides are coated. Lay it on a plate, put a spoonful of the diced onion and a little of the cheese down the middle, and roll it up. Set it seam side down in the dish. Repeat with the rest of the tortillas, keeping 1/2 cup of the cheese for the top.",
+  "Pour the rest of the sauce over the rolls and scatter the 1/2 cup cheese on top. Bake for 8 to 10 minutes, until the cheese has melted and the sauce is bubbling at the edges.",
+  "Meanwhile, dice the avocado and chop a handful of the cilantro.",
+  "Serve with the avocado, cilantro and a drizzle of the crema on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both blend black beans with chipotle or dried chiles into a pourable sauce, coat warm corn tortillas in it and top them with cheese, crema, herbs and avocado. Mexican Please, the lead, blends canned beans raw with chipotles, garlic, salt and stock, fills each sauced tortilla with onion and Monterey Jack, rolls them and bakes them at 425°F for 8 to 10 minutes. Salt & Wind cooks dried beans from scratch, softens onion and garlic with oregano before they go in, blends in toasted pasilla or ancho chiles, warms oiled tortillas in the oven and folds them into quarters without baking. This follows the lead at twice its size, adds Salt & Wind's softened onion, garlic and oregano and its oven-warmed tortillas, and uses 2 chipotles instead of 6 so the sauce stays mild.",
+ "sources": [
+  {"name": "Mexican Please", "title": "Enfrijoladas Recipe", "url": "https://www.mexicanplease.com/enfrijoladas-recipe-what-to-do-with-all-those-mexican-beans/", "rating": 4.75, "rating_count": 31, "read": true, "lead": true},
+  {"name": "Salt & Wind", "title": "{Enfrijoladas} Black Bean-Smothered Enchiladas Recipe", "url": "https://saltandwind.com/enfrijoladas-black-bean-smothered-enchiladas-recipe/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

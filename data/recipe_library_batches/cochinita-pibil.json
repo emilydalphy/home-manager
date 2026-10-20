@@ -1,0 +1,149 @@
+{
+ "dish_name": "Cochinita Pibil",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 210,
+ "ingredients": [
+  {
+   "item": "Boneless pork shoulder",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Oranges",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Achiote paste",
+   "qty": "1 box (3.5 oz)",
+   "category": "pantry",
+   "cook_qty": "2 oz"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cotija cheese",
+   "qty": "1 package",
+   "category": "dairy"
+  },
+  {
+   "item": "Habanero",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 8 hours ahead: cut the pork into 1 1/2 inch chunks and put them in a large zip top bag. Squeeze the 2 oranges and 3 of the limes. That should be about 2/3 cup orange juice and 1/3 cup lime juice.",
+  "Put both juices in a blender with 2 oz of the achiote paste (a little over half the box), the 2 garlic cloves, 3/4 tsp of the salt, the 1/4 tsp pepper, the 1/2 tsp oregano, the 1/4 tsp cumin and the 1/8 tsp cinnamon. Blend until it's smooth. Pour it over the pork, press the air out of the bag, seal it and squish the marinade all over the meat. Refrigerate it. Rinse the blender right away, since achiote stains.",
+  "On the day, heat the oven to 300°F. Line an 8 inch square baking dish with a long sheet of foil, leaving enough hanging over the sides to fold over the top.",
+  "Transfer the pork and all of its marinade into the dish. Fold the foil over the pork, then lay a second sheet over the top and crimp it tight around the edges of the dish.",
+  "Roast for 3 1/2 hours, until the pork shreds easily with a fork. If it still feels firm, wrap it back up and roast it for 30 minutes.",
+  "Meanwhile, slice the red onion thin and put it in a heatproof jar or bowl. In a small saucepan, bring the 1/2 cup vinegar, 1/2 cup water, the 1/4 cup sugar and the remaining 1/2 tsp salt to a simmer, stirring until the sugar dissolves. Pour it over the onion.",
+  "Let the onions cool on the counter, then put them in the fridge until you eat. They'll turn bright pink. If you'd like them ready ahead, make them the night before.",
+  "When the pork is done, open the foil and shred the meat with two forks right in the dish. Stir it through the juices and let it sit for 10 minutes.",
+  "Meanwhile, wrap the 12 tortillas in a damp paper towel and microwave them for 45 seconds to 1 minute, until they're warm and soft. Keep them wrapped in a clean kitchen towel.",
+  "Chop a handful of the cilantro, crumble the cotija and cut the last lime into wedges. Mince the habanero into a small bowl for anyone who wants heat, and wash your hands after.",
+  "Taste the pork. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve the pork with the warm tortillas, pickled onions, cilantro, cotija, lime wedges and the habanero."
+ ],
+ "advance_prep_notes": "marinate the pork at least 8 hours, ideally the night before",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "All three marinate pork shoulder in achiote with orange and lime juice and garlic, wrap it tightly and cook it low for about 4 hours until it shreds, then serve it in tortillas with pickled red onions. Blackberry Babe, the lead, blends a boxed achiote paste with orange and lime juice, cumin, cinnamon and pepper, marinates cubed pork for 8 to 24 hours and roasts it sealed in foil at 300°F. Rick Bayless grinds his own achiote with oregano and cloves, wraps the pork in banana leaves and pickles the onions in citrus, and Hola Jalapeño roasts a whole shoulder in banana leaves and quick pickles the onions in sweetened vinegar. This follows the lead for 2 lb, with Bayless's oregano in the marinade, Hola Jalapeño's vinegar onions, and the habanero at the table.",
+ "sources": [
+  {
+   "name": "Blackberry Babe",
+   "title": "Mexican Cochinita Pibil (Roasted Yucatan Style Pork)",
+   "url": "https://blackberrybabe.com/2022/03/09/cochinita-pibil/",
+   "rating": 4.95,
+   "rating_count": 55,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Rick Bayless",
+   "title": "Cochinita Pibil on the Grill (for a Crowd)",
+   "url": "https://www.rickbayless.com/recipe/cochinita-pibil/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "¡Hola! Jalapeño",
+   "title": "Cochinita Pibil",
+   "url": "https://www.holajalapeno.com/cochinita-pibil",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

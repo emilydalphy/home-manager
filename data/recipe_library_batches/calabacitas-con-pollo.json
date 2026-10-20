@@ -1,0 +1,47 @@
+{
+ "dish_name": "Calabacitas con Pollo",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Zucchini", "qty": "2", "category": "produce"},
+  {"item": "Yellow squash", "qty": "1", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Tomato sauce", "qty": "1 can (8 oz)", "category": "pantry"},
+  {"item": "Whole kernel corn", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"}
+ ],
+ "instructions": [
+  "Cut the 1.5 lbs chicken thighs into 1 inch pieces and pat them dry with paper towels. Toss them in a bowl with 3/4 tsp of the salt, the 1/2 tsp pepper and 1/2 tsp of the cumin.",
+  "Meanwhile, chop the onion and mince the 3 garlic cloves. Cut the 2 zucchini and the yellow squash into 1/2 inch cubes and chop the 2 tomatoes. Drain the corn.",
+  "Heat 1 tbsp of the oil in a large deep skillet over medium high until it shimmers. Add half the chicken in a single layer and leave it alone for 3 minutes, until the underside is golden and lets go of the pan. Stir and cook for 2 minutes, then transfer it to a plate. Brown the rest of the chicken the same way.",
+  "Turn the heat down to medium and add the remaining 1 tbsp oil and the onion. Cook for 4 minutes, scraping up the browned bits, until the onion is soft.",
+  "Add the zucchini, the yellow squash and 1/2 tsp of the salt. Cook for 5 minutes, stirring now and then, until the squash has a few golden spots but still has some bite.",
+  "Add the garlic and the remaining 1 tsp cumin and stir for 30 seconds, until it smells fragrant.",
+  "Stir in the tomatoes and cook for 2 minutes, until they start to break down. Add the tomato sauce, the corn, 1 cup of the broth and the last 1/4 tsp salt.",
+  "Put the chicken back in with any juices from the plate and bring it to a simmer. Cover and cook on low for 15 minutes, until the squash is tender and the sauce has thickened a little. It should still be a little soupy. You're cooking the chicken to 175°F, so if you have a thermometer, check a thick piece. No thermometer? Cut into one. It's done when there's no pink left.",
+  "Meanwhile, warm the 12 tortillas in a dry skillet over medium for about 30 seconds a side and wrap them in a clean towel.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls with the warm tortillas."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook chicken with zucchini or other summer squash, onion, tomato and corn into a loose, slightly soupy stew. Food.com, the lead, boils chicken thighs first, sautés the squash, tomato and onion, then simmers everything with canned corn, tomato sauce, cumin, garlic powder and the reserved broth for 20 to 30 minutes; its page shows a 4.5 average from 15 reviews (a review count, not a rating count). Mazola browns cubed breast covered in oil, adds onion, serranos and tomato and simmers the squash and corn in a blended tomato, garlic and bouillon sauce, while Just A Pinch browns the chicken with garlic powder and keeps the corn's liquid. None reached 20 ratings and RecipeTin Eats (the trusted cook for Mexican) has no version, so this follows the lead's ingredients and simmer but browns the thighs instead of boiling them, uses fresh garlic and leaves the serranos out so it stays mild.",
+ "sources": [
+  {"name": "Food.com", "title": "Calabaza Con Pollo", "url": "https://www.food.com/recipe/calabaza-con-pollo-363808", "rating": 4.5, "rating_count": 15, "read": true, "lead": true},
+  {"name": "Mazola", "title": "Pollo con Calabacitas", "url": "https://mazola.com/recipe-detail/pollo-con-calabacitas/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Just A Pinch", "title": "Calabaza con Pollo", "url": "https://www.justapinch.com/recipes/main-course/main-course-chicken/calabaza-con-pollo.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
