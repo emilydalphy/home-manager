@@ -5553,6 +5553,9 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     try:
         for attempt in (1, 2):
             detail = generate_recipe_details_llm(spec)
+            # A 0 or negative count from the model is dropped, so the
+            # household's own table (shared serves) is used instead.
+            detail["default_servings"] = tools.positive_servings(detail.get("default_servings"))
             ingredients = [
                 i for i in (detail.get("ingredients") or [])
                 if isinstance(i, dict) and (i.get("item") or "").strip()
