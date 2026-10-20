@@ -1,0 +1,97 @@
+{
+ "dish_name": "Tzatziki with Pita",
+ "cuisine": "Greek",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "4"
+  }
+ ],
+ "instructions": [
+  "Grate the cucumber on the coarse side of a box grater. You want about 1/2 cup.",
+  "Pile it in the middle of a clean kitchen towel, gather the towel up and squeeze out as much water as you can, or the tzatziki will be runny.",
+  "Squeeze 1 tbsp juice from the lemon. Grate the garlic clove and chop 1 tbsp of the dill.",
+  "Put 1 cup of the yogurt in a bowl. Stir in the cucumber, lemon juice, garlic, dill, the 1 1/2 tsp olive oil and the 1/4 tsp salt until it's evenly mixed.",
+  "Taste it, and add a pinch more salt or a squeeze of the lemon if it's flat.",
+  "Cover it and chill it for at least 20 minutes. It keeps in the fridge for up to 3 days.",
+  "Heat a dry skillet over medium. Warm the 4 pitas one at a time for about 30 seconds a side, until they're soft and have a few toasted spots.",
+  "Cut each pita into 6 wedges.",
+  "Serve the tzatziki with the warm pita."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions stir grated, squeezed cucumber into thick Greek yogurt with raw garlic, olive oil and salt. Love and Lemons uses lemon juice, dill and optional mint and chills it until it's needed. RecipeTin Eats seeds the cucumber and squeezes it hard in a tea towel, and Real Greek Recipes uses more garlic and olive oil, red wine vinegar in place of lemon and no herbs, salting the cucumber first and chilling the dip for at least 3 hours. This one follows the lead's ratios with dill and squeezes the cucumber well.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Tzatziki Sauce",
+   "url": "https://www.loveandlemons.com/tzatziki-sauce/",
+   "rating": 5.0,
+   "rating_count": 869,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Real Greek Recipes",
+   "title": "Tzatziki Recipe As Made In Greece",
+   "url": "https://realgreekrecipes.com/tzatziki/",
+   "rating": 4.3,
+   "rating_count": 85,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Tzatziki",
+   "url": "https://www.recipetineats.com/tzatziki/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

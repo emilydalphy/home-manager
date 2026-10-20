@@ -1,0 +1,114 @@
+{
+ "dish_name": "Tiropita",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Phyllo dough",
+   "qty": "1 box (1 lb)",
+   "category": "frozen",
+   "cook_qty": "8 sheets"
+  },
+  {
+   "item": "Whole milk ricotta",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Feta",
+   "qty": "1 block (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 stick",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before: move the box of phyllo from the freezer to the fridge to thaw.",
+  "About an hour before you start, take the phyllo out of the fridge and leave it on the counter in its packaging.",
+  "Heat the oven to 350°F and butter a large baking sheet lightly. Melt the rest of the stick of butter in a small pan over low.",
+  "Put 1 1/2 cups of the ricotta in a bowl and crumble the feta over it. Add 1/2 cup grated parmesan, the 1 tbsp olive oil and the 1/4 tsp pepper. Chop 1 tbsp of the mint and add it, then mix everything together.",
+  "Taste the filling. The feta is salty, so it rarely needs salt. Beat the egg in a cup and stir it in.",
+  "Unroll the phyllo and take out 8 sheets. Wrap the rest tightly and put it back in the fridge or freezer. Cut the stack into 3 long strips and cover them with a damp towel so they don't dry out.",
+  "Lay 2 strips on top of each other on the counter and brush the top one with melted butter. Put about 1/4 cup of the filling at the bottom end.",
+  "Fold one bottom corner over the filling to make a triangle. Keep folding the triangle up the strip, like folding a flag, until you reach the end.",
+  "Set it seam side down on the baking sheet. Keep going with the rest of the strips and filling. You should have about 12.",
+  "Brush the tops with the rest of the melted butter.",
+  "Bake them on the middle rack for 35 to 40 minutes, until they're deep golden and crisp.",
+  "Let them cool on the sheet for 5 minutes. Leftovers keep in the fridge for up to 3 days for lunchboxes.",
+  "Serve warm or at room temperature, with honey on the side."
+ ],
+ "advance_prep_notes": "Thaw the phyllo in the fridge the night before.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All three versions make a feta filling bound with egg, wrap it in buttered phyllo and bake it until golden. Dimitra's Dishes mixes ricotta, feta and parmesan with olive oil, pepper and mint, folds two buttered strips at a time into triangles and serves them warm with honey. Souvlaki for the Soul uses ricotta, feta and kefalotyri in triangles cut from a three sheet stack, and Real Greek Recipes makes one big pie with a feta béchamel filling and sesame seeds on top. This one follows the lead's filling and triangles at half the batch.",
+ "sources": [
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Greek Cheese Pies: Tiropitakia",
+   "url": "https://www.dimitrasdishes.com/tiropita/",
+   "rating": 4.6,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Real Greek Recipes",
+   "title": "Greek Cheese Pie With Phyllo And Feta Cheese",
+   "url": "https://realgreekrecipes.com/greek-cheese-pie/",
+   "rating": 4.5,
+   "rating_count": 21,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Souvlaki for the Soul",
+   "title": "Tiropitakia (Greek Cheese Pies)",
+   "url": "https://souvlakiforthesoul.com/tyropitakia-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

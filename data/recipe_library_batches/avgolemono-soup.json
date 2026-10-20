@@ -1,0 +1,41 @@
+{
+ "dish_name": "Avgolemono Soup",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Chicken tenderloins", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "2 cartons (32 oz)", "category": "pantry", "cook_qty": "8 cups"},
+  {"item": "Long grain white rice", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Dill", "qty": "1 bunch", "category": "produce"},
+  {"item": "Bay leaves", "qty": "1", "category": "pantry"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Black pepper", "qty": "to taste", "category": "pantry"}
+ ],
+ "instructions": [
+  "Lay the 1 lb chicken tenderloins on a plate and sprinkle the 1 1/4 tsp salt over both sides. Leave them while the broth heats.",
+  "Pour the 8 cups broth into a large pot and add the 3/4 cup rice, 3 sprigs of the dill and the bay leaf. Bring it to a boil over high heat.",
+  "Turn the heat to low, cover the pot and simmer for 5 minutes. The rice will still be a little firm.",
+  "Take the pot off the heat, slide in the chicken, cover it again and leave it for 15 minutes. You're cooking it to 160°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Meanwhile, squeeze the 2 lemons and measure out 5 tbsp juice. Separate 2 of the eggs and keep the yolks. Finely chop 2 tsp of the dill.",
+  "Lift out the dill sprigs and the bay leaf and throw them away. Move the chicken to a board, let it cool for a few minutes, then cut it into bite-size pieces.",
+  "With a slotted spoon, scoop about 3/4 cup of the rice into a blender. Add the lemon juice, the 2 whole eggs and the 2 yolks and blend until smooth, about 30 seconds.",
+  "Ladle about 3/4 cup of the hot broth into the blender and blend for 10 seconds with the cap out of the lid and a towel held over the top. Add one more ladle of broth and blend again.",
+  "Pour the egg mixture slowly into the pot, stirring the whole time. Set the pot over low heat and bring it up to a gentle simmer, stirring often, for 3 to 5 minutes, until the rice is tender and the soup has thickened. Don't let it boil, or the eggs will curdle.",
+  "Take it off the heat and stir in the chicken and the chopped dill.",
+  "Taste it. If it's flat, add a pinch more salt. Grind black pepper over each bowl and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cook the rice in chicken broth, cook the chicken in it, and thicken the soup at the end with eggs beaten with lemon juice and warmed with hot broth so they don't scramble. Once Upon a Chef poaches salted tenderloins off the heat in the broth and blends some of the cooked rice with the lemon, whole eggs and yolks for a thicker, smoother soup, with dill throughout and optional cream. Super Golden Bakes starts with shallot, leek and carrot, uses thighs and arborio rice, and whisks whole eggs with less lemon by hand. This one follows Once Upon a Chef and leaves out the optional cream.",
+ "sources": [
+  {"name": "Once Upon a Chef", "title": "Avgolemono Chicken Soup with Rice", "url": "https://www.onceuponachef.com/recipes/avgolemono-chicken-soup-with-rice.html", "rating": 4.86, "rating_count": 149, "read": true, "lead": true},
+  {"name": "Super Golden Bakes", "title": "Avgolemono Soup (Greek Lemon Chicken and Rice Soup)", "url": "https://www.supergoldenbakes.com/avgolemono-soup-recipe/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

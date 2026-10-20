@@ -1,0 +1,51 @@
+{
+ "dish_name": "Beef Stifado",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 135,
+ "ingredients": [
+  {"item": "Beef chuck", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Pearl onions", "qty": "1.5 lbs", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Cinnamon stick", "qty": "1", "category": "pantry"},
+  {"item": "Whole allspice", "qty": "4 berries", "category": "pantry"},
+  {"item": "Whole cloves", "qty": "3", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Dry red wine", "qty": "3/4 cup", "category": "other"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Diced tomatoes", "qty": "1 can (14 oz)", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Orzo", "qty": "1 box (16 oz)", "category": "pantry", "cook_qty": "12 oz"}
+ ],
+ "instructions": [
+  "Bring a medium pot of water to a boil for the onions.",
+  "Meanwhile, cut the 2 lbs beef chuck into 1 1/2 inch chunks. Pat them dry with paper towels and sprinkle 1 tsp of the salt over them.",
+  "Tip the 1.5 lbs pearl onions into the boiling water and leave them for 1 minute. Drain them and run cold water over them until you can handle them. Trim off the root end of each one and squeeze it, and the skin slips off. Leave them whole.",
+  "Heat 2 tbsp of the olive oil in a large heavy pot or Dutch oven over medium high. Add half the beef in a single layer and leave it alone for 3 to 4 minutes, until the underside is deep brown and lets go of the pot. Turn the pieces and brown the other sides, about 5 minutes more. Move them to a plate and brown the second batch the same way.",
+  "Turn the heat down to medium and add another 1 tbsp olive oil to the pot. Add the peeled onions and cook them for 8 to 10 minutes, stirring now and then, until they're golden in spots.",
+  "Mince the 3 garlic cloves and stir them in for 30 seconds, until they smell fragrant. Add 1 tbsp tomato paste and cook it for 1 minute, stirring, until it turns a shade darker.",
+  "Add the cinnamon stick, the 4 allspice berries and the 3 whole cloves and stir for 30 seconds.",
+  "Pour in the 3/4 cup red wine and 3 tbsp red wine vinegar. Scrape up the browned bits from the bottom of the pot and let it bubble for 3 minutes.",
+  "Return the beef and any juices on the plate to the pot. Add the can of diced tomatoes, the 2 bay leaves, 1/2 tsp of the salt and the 1/2 tsp black pepper. Pour in enough water to just cover the beef, about 1 1/2 cups.",
+  "Bring it to a boil, then turn the heat down to low, cover the pot and simmer gently for 1 1/2 to 2 hours. Stir it every 30 minutes, and add 1/2 cup water if the sauce looks like it's catching on the bottom. It's ready when a piece of beef breaks apart with a fork.",
+  "Take the lid off for the last 15 minutes so the sauce cooks down until it's thick and glossy and coats the onions.",
+  "About 20 minutes before the stew is done, bring a large pot of water to a boil with the last 1/2 tsp salt. Cook 12 oz of the orzo for 8 to 9 minutes, until tender. Drain it and toss it with the last 1 tbsp olive oil.",
+  "Fish out the cinnamon stick and the bay leaves. Taste the sauce. If it's flat, add a pinch more salt or a small splash more of the vinegar.",
+  "Serve the stifado over the orzo."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the beef in batches, cook the small onions whole in the same pot, and simmer everything in red wine, vinegar and tomato for 1 1/2 to 2 hours until the beef falls apart. My Greek Dish adds cognac, allspice and a pinch of nutmeg and skips cinnamon; Souvlaki For The Soul and the Hairy Bikers marinate the beef overnight in wine with cinnamon, cloves, allspice and bay, and the Hairy Bikers sweeten with honey and thicken with cornflour. This one follows My Greek Dish's same-day method and ratios, leaves out the cognac, and blooms the cinnamon, allspice and cloves in the pot. Orzo or potatoes are the usual sides.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Beef Stifado recipe (Greek beef stew)", "url": "https://www.mygreekdish.com/recipe/beef-stifado/", "rating": 4.8, "rating_count": 1070, "read": true, "lead": true},
+  {"name": "Souvlaki For The Soul", "title": "Beef Stifado (Greek Beef Stew)", "url": "https://souvlakiforthesoul.com/beef-stifado/", "rating": 5.0, "rating_count": 7, "read": true, "lead": false},
+  {"name": "lovefood (The Hairy Bikers)", "title": "The Hairy Bikers' beef stifado recipe", "url": "https://www.lovefood.com/recipes/56631/hairy-bikers-beef-stifado-recipe", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

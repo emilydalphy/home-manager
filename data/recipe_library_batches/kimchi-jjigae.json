@@ -1,0 +1,107 @@
+{
+ "dish_name": "Kimchi Jjigae",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Kimchi",
+   "qty": "1 jar (32 oz)",
+   "category": "other",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Pork belly",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 1 3/4 cups water and bring it to a boil over high heat.",
+  "Turn the heat to low, cover the pan and cook the rice for 15 minutes. Take it off the heat and leave the lid on for another 10 minutes. No peeking.",
+  "Meanwhile, tip the kimchi into a strainer set over a bowl to catch the juice. You want about 1 cup of juice, so top it up with water if there's less.",
+  "Cut 4 cups of the kimchi into bite size pieces. Cut the pork belly into thin bite size slices. Mince the 2 garlic cloves.",
+  "Cut the tofu into squares about 1/2 inch thick. Cut 4 of the green onions into 1 inch lengths.",
+  "Heat the 1 tbsp oil in a medium pot over medium high. Add the pork belly and cook for about 3 minutes, stirring now and then, until the fat starts to run and the edges turn golden.",
+  "Add the kimchi and cook for 5 to 7 minutes, stirring often, until it's soft and the edges look a little browned.",
+  "Stir in the garlic and 1 tsp of the gochugaru and cook for 30 seconds, until it smells fragrant.",
+  "Pour in the kimchi juice and 4 cups water. Bring it to a boil and let it boil for 5 minutes.",
+  "Turn the heat down to medium, cover the pot and cook for 15 minutes, until the kimchi is very tender. Add a splash more water if it's getting too thick.",
+  "Lay the tofu over the top and scatter the green onions over it. Cook uncovered for about 5 minutes, until the tofu is hot all the way through.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Put the last 1 tsp gochugaru in a small bowl for the table.",
+  "Serve with the rice, with the gochugaru on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cook sour, well fermented kimchi with fatty pork, add water and the kimchi brine, simmer it until the kimchi is tender, and finish with tofu and green onion. Korean Bapsang fries the kimchi, pork, garlic and gochugaru together, then boils it with the kimchi juice for about 20 minutes and rarely needs salt. Bon Appétit renders the pork belly first, adds onion and stirs in gochujang for a thicker, hotter stew, and BBC Good Food adds a little sugar. This one follows the lead's ratios, renders the pork for a few minutes before the kimchi goes in, keeps the gochugaru in the pot light and puts the rest on the side.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Kimchi Jjigae (Kimchi Stew)",
+   "url": "https://www.koreanbapsang.com/kimchi-jjigae-kimchi-stew/",
+   "rating": 4.7,
+   "rating_count": 225,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bon Appétit",
+   "title": "Kimchi Jjigae",
+   "url": "https://www.bonappetit.com/recipe/kimchi-jjigae",
+   "rating": 4.0,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "BBC Good Food",
+   "title": "Kimchi jjigae",
+   "url": "https://www.bbcgoodfood.com/recipes/kimchi-jjigae",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
