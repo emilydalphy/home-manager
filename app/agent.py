@@ -173,6 +173,8 @@ up the extra sauce", "so everyone can build their own wrap") and not how it look
 noodles glisten").
     - PLAIN, NOT CLEVER. No wordplay or quotable lines ("a wet tzatziki is a watery tzatziki"). \
 Say it straight: "Squeeze out as much water as you can, or the tzatziki will be runny."
+    - NO "MORE" AFTER A TIME. "Cover and cook for 1 hour, until it's tender", never "cook for 1 hour \
+more". Each step's time stands on its own.
     - Otherwise: a short heads-up or reassurance where a cook would wobble ("Stand back a little. \
 They'll spatter." "Don't rush the onions. That's where the flavor starts." "No peeking."). \
 Name the household's people where a step is about them ("serve Arjun's bowl first", "the last \
