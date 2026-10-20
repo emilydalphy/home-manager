@@ -1,0 +1,144 @@
+{
+ "dish_name": "Italian Wedding Soup",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "2 slices"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (about 4 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried parsley",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "2 cartons (32 oz)",
+   "category": "pantry",
+   "cook_qty": "8 cups"
+  },
+  {
+   "item": "Acini di pepe",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Escarole",
+   "qty": "1 head",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Tear the 2 slices of bread into small pieces into a large bowl and pour the 1/4 cup milk over them. Leave them to soak for 5 minutes, then mash them into a paste with a fork.",
+  "Meanwhile, finely chop the onion, the 2 carrots and 2 stalks of the celery. Cut the core off the escarole, wash the leaves well in a sink of cold water, and chop them into bite-size pieces. Grit hides near the base, so swish them around.",
+  "Grate 1/2 cup of the Parmesan into the bread paste. Add 1 of the eggs, the 1 tsp onion powder, 1 tsp garlic powder, 1 tsp dried parsley, 1/2 tsp of the salt and 1/2 tsp of the pepper and stir them together.",
+  "Add the 1/2 lb beef and 1/2 lb pork and mix with your hands. Stop as soon as it's evenly combined. Overworked meatballs turn out tough.",
+  "Roll the mixture into small balls about 1 inch across. You'll get about 40. Wet hands keep it from sticking.",
+  "Heat 1 tbsp of the olive oil in a large soup pot over medium high. Add half the meatballs in one layer and cook for 4 to 5 minutes, turning them now and then, until they're browned on most sides. They don't need to be cooked through yet. Move them to a plate, add another 1 tbsp of the oil and brown the second batch the same way.",
+  "Turn the heat down to medium and add the last 1 tbsp of oil, the onion, carrots, celery and the remaining 1/4 tsp salt. Cook for 6 to 8 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Pour in the 8 cups broth and add the remaining 1/4 tsp pepper. Scrape up the browned bits from the bottom of the pot with a wooden spoon. If your Parmesan wedge has a rind, cut off a 2 inch piece and drop it in. Bring it to a boil.",
+  "Stir in the 3/4 cup acini di pepe and slide in the meatballs. Turn it down to a lively simmer and cook for 8 to 10 minutes, stirring now and then so the acini di pepe don't stick to the bottom, until they're tender.",
+  "Check the meatballs. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one in half: it's done when there's no pink left.",
+  "Stir in the escarole and cook for 2 to 3 minutes, until it wilts and turns bright green. Fish out the Parmesan rind.",
+  "Beat the last egg in a small bowl with 2 tbsp of the Parmesan, grated. Turn the heat down to medium low and stir the soup slowly in a circle. Drizzle the egg in a thin stream while you stir, and keep stirring for about 1 minute, until it sets into thin strands.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rest of the Parmesan for grating over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions build the soup on onion, carrot and celery softened in oil, then add small meatballs, a tiny pasta and greens to the broth. The Kitchen Whisperer (the lead) binds beef and pork with milk-soaked bread and Parmesan, drops the meatballs in raw with a Parmesan rind, acini di pepe and escarole, and drizzles in egg beaten with Parmesan at the end. Once Upon a Chef bakes beef and sausage meatballs with fresh herbs, uses chicken and beef broth with white wine, ditalini and spinach. This one follows the lead but browns the meatballs in the pot first, and is sized as a dinner, with more meatballs per bowl than the lead's 8 to 10 starter servings.",
+ "sources": [
+  {
+   "name": "The Kitchen Whisperer",
+   "title": "Italian Wedding Soup Recipe",
+   "url": "https://www.thekitchenwhisperer.net/2019/12/05/nonna-approved-authentic-italian-wedding-soup/",
+   "rating": 5.0,
+   "rating_count": 63,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Italian Wedding Soup",
+   "url": "https://www.onceuponachef.com/recipes/italian-wedding-soup.html",
+   "rating": 4.92,
+   "rating_count": 281,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

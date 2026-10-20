@@ -1,0 +1,97 @@
+{
+ "dish_name": "Pasta with Pesto",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "2 large bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (about 4 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp plus 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil with 1 tbsp of the salt.",
+  "Meanwhile, put 1/4 cup of the pine nuts in a dry small skillet over medium. Toast them for 3 to 4 minutes, shaking the pan often, until they're light golden and smell toasty. Tip them onto a plate right away. They burn fast once they start to color.",
+  "Pick 3 packed cups of basil leaves off the stems. Grate 3/4 cup of the Parmesan.",
+  "Put 3 tbsp of the toasted pine nuts in a food processor with the basil, the 3/4 cup Parmesan, the 2 garlic cloves, 1/2 tsp of the salt and the 1/4 tsp pepper. Pulse until it's all finely chopped, scraping down the sides once.",
+  "With the motor running, pour the 2/3 cup olive oil slowly through the feed tube and blend until it's smooth and loose. If it won't blend, add a tablespoon of water.",
+  "Add the 1 lb spaghetti to the boiling water and cook it for the time on the package for al dente, stirring now and then so it doesn't stick.",
+  "Just before the pasta is done, give the pot a stir and scoop out 1 cup of the cooking water. Drain the spaghetti and leave it in the colander for a minute.",
+  "Tip the spaghetti into a large serving bowl, not the hot pot. Scrape in everything from the food processor with 1/4 cup of the pasta water and toss with tongs until every strand is coated. Add more of the water a splash at a time until the pasta is silky and saucy, not sticky.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the last 1 tbsp of pine nuts scattered over and the rest of the Parmesan for grating."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions blend basil, garlic, nuts, Parmesan, salt and pepper in a food processor, then stream in the olive oil, and toss the pesto with the drained pasta and some of its cooking water. RecipeTin Eats (the lead, its pesto recipe with its pesto pasta method) uses toasted pine nuts and one small garlic clove, makes about 1 cup of pesto for 10 to 12 oz of pasta, and tosses it in a bowl rather than the hot pot. Once Upon a Chef uses toasted walnuts and two large garlic cloves for a full pound of pasta. This one scales the lead's pesto up for a pound of pasta and keeps a few toasted pine nuts for the top. Covered in the fridge, the pesto keeps for a few days, so it can be made ahead.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pesto",
+   "url": "https://www.recipetineats.com/pesto/",
+   "rating": 4.96,
+   "rating_count": 67,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "JUICY Pesto Pasta!",
+   "url": "https://www.recipetineats.com/pesto-pasta/",
+   "rating": 4.96,
+   "rating_count": 45,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Pesto Pasta",
+   "url": "https://www.onceuponachef.com/recipes/pesto-pasta.html",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
