@@ -7,6 +7,7 @@ import json
 import secrets
 from ..db import get_conn
 from ._shared import household_id, use_household, _absolute_url
+from . import cooker as _cooker
 from . import household as _household
 from . import weekly_plan as _weekly_plan
 
@@ -69,6 +70,18 @@ def get_shared_weekly_plan(token: str) -> dict | None:
         return None
     with use_household(row["household_id"]):
         plan = _weekly_plan.get_weekly_plan()
+        # A week that has ENDED is not this week (defect hunt, 2026-10-20).
+        # With nothing covering today, get_weekly_plan falls back to the
+        # newest plan, approved and long over included, and this page
+        # titled it "<name>'s meals this week" and opened on its Monday as
+        # "Monday's Table" — a babysitter reading last week's dinners as
+        # tonight's. Cook and Now already treat such a plan as no plan
+        # (cooker.get_cooker_view's staleness check); this is the same rule,
+        # on the household's clock, so the page says no plan yet instead.
+        # A plan that hasn't STARTED is left alone: it names its own week.
+        end = plan.get("period_end_date")
+        if plan.get("weekly_plan_id") is not None and end and end < _cooker.household_today().isoformat():
+            plan = {"weekly_plan_id": None, "meals": []}
     shared = {key: plan[key] for key in _SHARED_PLAN_KEYS if key in plan}
     shared["meals"] = [
         {key: meal.get(key) for key in _SHARED_MEAL_KEYS} for meal in plan.get("meals") or []

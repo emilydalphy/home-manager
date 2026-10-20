@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The public share link no longer shows a week that has ended as "this
+  week"** (2026-10-20, overnight defect hunt; branch
+  `overnight/share-link-drops-an-ended-week`; tests
+  `tests/test_share_link_drops_an_ended_week.py`). With nothing covering
+  today, `get_weekly_plan` falls back to the newest plan, an approved week
+  long over included, and `/share/<token>` read "<name>'s meals this week",
+  "Week of Monday, Oct 12", "Monday's Table — Lentil Soup" on Tuesday Oct 20.
+  `sharing.get_shared_weekly_plan` now applies Cook's staleness rule
+  (`period_end_date` before `cooker.household_today()` → no plan), so the
+  page says "No plan has been made for this week yet". A plan that hasn't
+  started is still shown (it names its own week). Left for Emily: the link
+  also shows a DRAFT nobody approved (and next week's draft when the
+  current week has ended) exactly like an approved week — the payload
+  carries no status on purpose.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
