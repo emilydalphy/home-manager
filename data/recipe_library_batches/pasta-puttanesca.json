@@ -1,0 +1,46 @@
+{
+ "dish_name": "Pasta Puttanesca",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Spaghetti", "qty": "1 lb", "category": "pantry"},
+  {"item": "Crushed tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Anchovy fillets", "qty": "1 tin (2 oz)", "category": "pantry", "cook_qty": "6 fillets"},
+  {"item": "Pitted kalamata olives", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Capers", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tbsp plus 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Fresh basil", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil with 1 tbsp of the salt.",
+  "Meanwhile, finely mince the 4 garlic cloves and the 6 anchovy fillets. Quarter 1/2 cup of the olives. Drain 2 tbsp of the capers. Put 1/4 tsp of the red pepper flakes in a small bowl for the table.",
+  "Heat 3 tbsp of the olive oil in a large skillet over medium high. Add the garlic and stir for about 15 seconds, until it just starts to turn golden.",
+  "Add the anchovies, capers, olives and the other 1/4 tsp of red pepper flakes. Cook for 1 minute, stirring and pressing the anchovies with a wooden spoon until they melt into the oil.",
+  "Pour in the crushed tomatoes. Add 1 cup water to the empty can, swirl it around and pour it into the pan. Stir in the 1/2 tsp oregano, 1/4 tsp of the salt and the 1/4 tsp pepper.",
+  "Bring it to a simmer, then turn it down to medium low and cook for 10 minutes, stirring now and then, until the tomato has broken down into a thick sauce.",
+  "While the sauce simmers, add the 1 lb spaghetti to the boiling water. Cook it for the time on the package for al dente, stirring now and then so it doesn't stick.",
+  "Taste the sauce. If it tastes sharp or sour, stir in 1/2 tsp sugar.",
+  "Just before the pasta is done, scoop out 1 cup of the cooking water. Drain the spaghetti.",
+  "Add the spaghetti to the sauce with 1/4 cup of the pasta water. Toss it with tongs over low heat for about 1 minute, until the sauce clings to the strands and is no longer pooling in the pan. If it gets dry, add a splash more of the water.",
+  "Take the pan off the heat. Roughly chop 1/4 cup of the basil and scatter it over, then drizzle on the last 1 tbsp of olive oil. Taste it. If it's flat, add a pinch more salt.",
+  "Serve right away, with the bowl of red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions cook garlic in olive oil first, then add capers, olives and chili flakes before canned tomatoes, simmer about 10 minutes and toss the pasta in the pan with some of its cooking water. RecipeTin Eats (the lead) melts anchovies into the oil, adds oregano and a little sugar only if the tomatoes are sour, and finishes with basil and a drizzle of oil. Love and Lemons leaves out the anchovies, softens a shallot first, uses whole San Marzano tomatoes crushed by hand and finishes with parsley. This one doubles the lead's two servings and keeps half the chili flakes for the table.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Spaghetti alla Puttanesca", "url": "https://www.recipetineats.com/spaghetti-alla-puttanesca/", "rating": 4.95, "rating_count": 60, "read": true, "lead": true},
+  {"name": "Love and Lemons", "title": "Pasta Puttanesca", "url": "https://www.loveandlemons.com/pasta-puttanesca/", "rating": 5.0, "rating_count": 15, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
