@@ -1,0 +1,120 @@
+{
+ "dish_name": "Jianbing",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Wonton wrappers",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "8"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Sweet bean sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Chili bean sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: stir the 1 1/3 cups flour and 1/4 tsp of the salt together in a bowl. Pour in 1/2 cup warm water and mix with a spatula until it comes together into a soft dough. Rub it with a little of the oil, cover the bowl and leave it for 1 hour on the counter, or overnight in the fridge.",
+  "Pour 1/2 cup of the oil into a large skillet and heat it over medium high until a corner of a wonton wrapper sizzles as soon as it touches. Fry the 8 wonton wrappers 2 or 3 at a time for 30 to 45 seconds, turning once, until they're golden and bubbly. Lift them onto paper towels.",
+  "Pour the hot oil into a heatproof bowl and wipe out the skillet. When the wontons are cool, break them into big pieces.",
+  "Meanwhile, thinly slice 2 of the green onions and chop 1/4 cup of the cilantro.",
+  "Stir the 1 tbsp chili bean sauce and 1 tbsp chili oil together in a small bowl for the table.",
+  "Oil the counter, cut the dough into 4 pieces and roll one out as thin as you can, into a round about the size of your skillet. Keep the others covered.",
+  "Heat 1 tbsp of the saved oil in the skillet over medium. Lay in the round of dough. Crack an egg into the middle, sprinkle a pinch of the salt over it, and break the yolk with a spatula. Spread the egg out to the edges.",
+  "Scatter a quarter of the green onions, cilantro and sesame seeds over the egg. Cook it for 2 to 3 minutes, until the underside is golden brown and the egg has mostly set.",
+  "Drizzle 1 tsp of the saved oil over the top, flip it, and cook the egg side for about 1 minute, until it's set and lightly golden.",
+  "Flip it back so the egg is on top and spread 1 tbsp of the sweet bean sauce over it. Lay a quarter of the wonton crackers across the middle, fold both sides over them and fold it in half. Roll out and cook the other 3 the same way.",
+  "Serve them hot, with the chili bean sauce mix on the side."
+ ],
+ "advance_prep_notes": "Make the dough at least 1 hour ahead, or the night before and keep it in the fridge.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All three read versions lay a thin wheat crepe in a hot pan, spread an egg over it, flip it, brush it with sauce, add green onions and cilantro and fold it around something crisp. Asian Inspirations makes a rested flour and water dough rolled paper thin, cooks the egg on it in oil and spreads sweet bean sauce, chili bean sauce and chili oil over it, with a lettuce leaf in place of a cracker. Tasting Table (the Mr. Bing recipe) uses a runny batter of wheat and mung bean flour with hoisin, chile paste, black sesame and fried wonton chips, and Joshua Weissman uses a milk and egg batter with fried egg roll wrappers, pickled mustard root and Chinese sausage. This one follows Asian Inspirations' dough and sauces, adds the fried wonton crackers the other two use, and keeps the chili sauces on the side.",
+ "sources": [
+  {
+   "name": "Asian Inspirations",
+   "title": "Homemade Jian Bing (Chinese Egg Pancake)",
+   "url": "https://asianinspirations.com.au/recipes/homemade-jian-bing-chinese-egg-pancake/",
+   "rating": 3.71,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tasting Table",
+   "title": "Jianbing (Chinese Breakfast Crepes)",
+   "url": "https://www.tastingtable.com/cook/recipes/chinese-breakfast-crepes-jianbing-recipe-mr-bing-nyc",
+   "rating": 2.9,
+   "rating_count": 63,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Joshua Weissman",
+   "title": "Authentic Chinese Breakfast At Home (Jianbing)",
+   "url": "https://joshuaweissman.com/recipes/jianbing-chinese-breakfast-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,114 @@
+{
+ "dish_name": "Smashed Cucumber Salad",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Persian cucumbers",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 1/2 tsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Chili crisp",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Lay a cucumber on the board and press down hard on it with the flat side of a big knife or a rolling pin, until the skin splits open along the sides. Do the same with all 5 cucumbers. Don't pound them to mush. One or two firm hits each is enough.",
+  "Cut the cracked cucumbers into 1 inch chunks and put them in a bowl. Sprinkle the 3/4 tsp salt over them, toss, and leave them for 20 minutes.",
+  "Meanwhile, peel and finely grate 1 1/2 tsp of the ginger and mince the garlic clove into a small bowl. Add 1 1/2 tbsp rice vinegar, 2 tsp soy sauce, 2 tsp sesame oil and 1/2 tsp sugar, and stir until the sugar dissolves.",
+  "Roughly chop 2 tbsp of the cilantro and thinly slice 2 of the green onions.",
+  "When the 20 minutes are up, there'll be a puddle of water in the bowl. Tip it out, holding the cucumbers back with your hand.",
+  "Pour the dressing over the cucumbers, add the cilantro and green onions, and toss until every piece is coated. Serve it right away, with the chili crisp on the side. Once it sits, the cucumbers lose their crunch."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions crack the cucumbers with something heavy, cut them into bite-sized pieces, salt them and pour off the water before dressing. RecipeTin Eats salts for 20 minutes and dresses them in rice vinegar, soy, sesame oil, ginger and a little sugar with cilantro and green onions, and serves them straight away. The Daring Gourmet uses black vinegar, garlic, chili oil and sesame seeds and chills the salad for an hour, and Andy Cooks salts for only 10 minutes and dresses it with black vinegar, grated garlic and sugar, with chili crisp on top. This one follows RecipeTin Eats' ratios, adds one clove of garlic as the other two do, and puts the chili crisp on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Smashed Cucumber Salad",
+   "url": "https://www.recipetineats.com/smashed-cucumber-salad/",
+   "rating": 4.98,
+   "rating_count": 49,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Daring Gourmet",
+   "title": "Smashed Cucumber Salad",
+   "url": "https://www.daringgourmet.com/smashed-cucumber-salad/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Andy Cooks",
+   "title": "Smacked cucumber salad (pai huang gua)",
+   "url": "https://www.andy-cooks.com/blogs/recipes/smacked-cucumber-salad-pai-huang-gua",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

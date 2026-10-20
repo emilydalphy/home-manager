@@ -1,0 +1,100 @@
+{
+ "dish_name": "Scallion Pancakes",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "5"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chinkiang vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  }
+ ],
+ "instructions": [
+  "Stir 1 1/3 cups of the flour and 1/4 tsp of the salt together in a big bowl. Slowly pour in 1/3 cup boiling water, stirring with chopsticks or a fork the whole time.",
+  "Drizzle in 3 tbsp cool water and keep stirring until the dough turns into lots of shaggy flakes. Press it together with your hands. If there's still dry flour in the bowl, add a few more drops of water.",
+  "Knead it for about 5 minutes, until it's a firm, smooth ball. Cover the bowl and leave it for 20 minutes.",
+  "Meanwhile, stir the rest of the flour (about 3 tbsp), 2 tbsp of the oil and the remaining 1/2 tsp salt together in a small bowl until it's a smooth paste.",
+  "Thinly slice 5 of the green onions.",
+  "Make the dipping sauce. Stir the 1 tbsp soy sauce, 2 tsp vinegar, the pinch of sugar and 2 tsp water together in a small bowl until the sugar dissolves.",
+  "Knead the dough for 1 more minute, cut it into 4 even pieces and roll each into a ball. Keep the ones you aren't working on covered so they don't dry out.",
+  "Roll one ball out into a thin rectangle about 6 by 10 inches. Spread a quarter of the paste over it with the back of a spoon, leaving a 1 inch strip bare along the top and one short end. Scatter a quarter of the green onions over the paste, mostly toward the long edge nearest you.",
+  "Starting from that long edge, roll the dough up into a tight tube. Flatten it lightly and pinch the ends closed. Coil the tube into a snail shape, tuck the loose end underneath and press the coil down flat with your hand. Cover it and make the other 3 the same way.",
+  "Roll each coil out into a round about 7 inches wide. It's fine if a few green onions poke through. If you're freezing some, stack them between squares of parchment in a zip top bag. Cook them from frozen after they've sat out for 10 minutes.",
+  "Heat about 1 1/2 tbsp of the oil in a 9 inch cast iron or nonstick skillet over medium high until it shimmers. Lay a pancake in and swirl it around for a few seconds so it's coated in oil. Cover the pan, turn the heat down to medium and cook for 1 minute.",
+  "Flip the pancake, cover the pan again and cook the other side for 1 minute.",
+  "Take the lid off. Press the pancake down with a spatula and keep cooking, flipping it every 30 seconds or so, until both sides are crisp and deep golden, about 3 minutes. Turn the heat down a little if it's browning too fast.",
+  "Move it to a rack or a board and cook the other 3 the same way, adding the rest of the oil as you go.",
+  "Cut each pancake into 6 wedges and serve hot with the dipping sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions make a plain flour and water dough, rest it, roll it thin, brush it with fat, scatter green onions over it, roll it into a tube and coil it into a snail before rolling it flat and pan frying it. Omnivore's Cookbook starts the dough with boiling water then cool water, spreads an oil and flour paste for flakier layers, and cooks each pancake covered at first and then uncovered until crisp, with a soy and black vinegar dip. RecipeTin Eats sprays the dough with oil and coils it twice, and Tara's Multicultural Table brushes it with sesame oil and fries each side for about a minute. This one follows Omnivore's Cookbook, sized to 4 pancakes.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Chinese Scallion Pancakes",
+   "url": "https://omnivorescookbook.com/chinese-scallion-pancakes/",
+   "rating": 4.9,
+   "rating_count": 122,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Scallion Pancakes (Shallot Pancakes)",
+   "url": "https://www.recipetineats.com/scallion-pancakes/",
+   "rating": 4.92,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Cong You Bing (Chinese Scallion Pancakes)",
+   "url": "https://tarasmulticulturaltable.com/cong-you-bing-chinese-scallion-pancakes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

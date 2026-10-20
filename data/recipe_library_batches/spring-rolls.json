@@ -1,0 +1,133 @@
+{
+ "dish_name": "Spring Rolls",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Spring roll wrappers",
+   "qty": "1 package",
+   "category": "frozen",
+   "cook_qty": "12 sheets (8 inch squares)"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "5"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp + 2 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp + 2 tsp + 2 tsp"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the spring roll wrappers out of the freezer and leave them in their package on the counter to thaw while you make the filling.",
+  "Put 5 of the dried shiitake mushrooms in a bowl and cover them with boiling water. Leave them for 20 minutes, until they're soft all the way through.",
+  "Meanwhile, peel and grate the carrot on the big holes of a box grater. Finely shred enough of the cabbage to fill 1 1/4 cups, packed. Measure out 1 1/4 cups of the bean sprouts. Mince the 2 garlic cloves.",
+  "Squeeze the water out of the mushrooms, cut off the tough stems and slice the caps thinly.",
+  "Heat 1 tbsp of the oil in a wok or large skillet over high heat. Add the garlic and stir for a few seconds, then add the 3/4 lb pork. Cook it for 3 to 4 minutes, breaking it up with a spoon, until no pink is left.",
+  "Add the carrot, cabbage, bean sprouts and mushrooms and stir fry for 3 minutes, until the vegetables have wilted.",
+  "Sprinkle 1 tsp cornstarch over the filling, then add 1 tbsp oyster sauce and 2 tsp of the soy sauce. Stir for about 1 minute, until there's no liquid left in the pan and the filling looks sticky. A wet filling makes soggy rolls.",
+  "Spread the filling out on a tray and put it in the fridge for 10 minutes, until it's cool to the touch. Hot filling can burst the wrappers.",
+  "Meanwhile, make the sweet and sour sauce. Stir 2 tsp cornstarch into 2 tbsp water in a small saucepan, then add the 1/2 cup vinegar, 1/3 cup brown sugar, 2 tbsp ketchup and the remaining 2 tsp soy sauce. Bring it to a simmer over medium heat, stirring, and let it bubble for 3 to 5 minutes, until it's thick enough to coat a spoon. Pour it into a bowl.",
+  "Stir the last 2 tsp cornstarch into 1 tbsp water in a small bowl to make the glue for sealing.",
+  "Peel off one wrapper and lay it smooth side down like a diamond, with a corner pointing at you. Keep the rest under a damp towel so they don't dry out.",
+  "Put a heaped tablespoon of filling near the bottom corner. Roll it up halfway, fold in both sides, then keep rolling tightly to the top. Brush the last corner with a little of the glue and press it closed. Keep going until you've made 12 rolls.",
+  "If you're freezing some, set them on a tray so they're not touching and freeze until firm, about 2 hours, then move them to a freezer bag. Fry them straight from frozen and give them 1 to 2 minutes longer.",
+  "Pour the rest of the oil into a wok or heavy pot so it's about 2 inches deep and heat it over medium high to 350°F. If you have a thermometer, clip it to the side. No thermometer? Dip the end of a wooden chopstick in: lots of fast little bubbles around it mean it's ready.",
+  "Lower in 4 or 5 rolls so they're not crowded. Fry them for 1 1/2 to 2 minutes, turning them now and then, until they're deep golden all over. Stand back a little. They spatter.",
+  "Lift them onto paper towels to drain and fry the rest the same way.",
+  "Serve them hot with the sweet and sour sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions stir fry ground pork with garlic, cabbage and carrot, season it with oyster and soy sauce, thicken it with a little cornstarch until it's dry and sticky, cool it, then roll it in thin wheat wrappers sealed with a cornstarch paste and deep fry. RecipeTin Eats adds bean sprouts and soaked shiitake, fries the rolls for under 2 minutes and serves them with a quick sweet and sour sauce, and also gives a baked option. Mama Loves to Cook adds white pepper and sugar to the filling and chills it for about 30 minutes before rolling. This one follows RecipeTin Eats, sized to 12 rolls, with a tray freeze for any you're saving.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Spring Roll recipe",
+   "url": "https://www.recipetineats.com/spring-rolls/",
+   "rating": 4.9,
+   "rating_count": 139,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mama Loves to Cook",
+   "title": "Chinese Spring Rolls",
+   "url": "https://mamalovestocook.com/chinese-spring-rolls/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

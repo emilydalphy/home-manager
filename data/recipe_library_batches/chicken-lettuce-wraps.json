@@ -1,0 +1,48 @@
+{
+ "dish_name": "Chicken Lettuce Wraps",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Ground chicken", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Hoisin sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 piece", "category": "produce", "cook_qty": "2 tsp grated"},
+  {"item": "Water chestnuts", "qty": "1 can (8 oz)", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Butter lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Sriracha", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Whisk the sauce together in a small bowl: 1/4 cup hoisin, 2 tbsp soy sauce, 2 tbsp water, 1 1/2 tbsp rice vinegar and the 1 tsp sesame oil. Set it next to the stove.",
+  "Dice the onion. Mince the 2 garlic cloves and grate 2 tsp of the ginger.",
+  "Drain the water chestnuts and chop them into pieces about the size of a pea. Thinly slice the green onions.",
+  "Separate the lettuce leaves, rinse them and pat them dry. Pile them on a plate.",
+  "Heat the 1 tbsp oil in a large skillet over medium high until it shimmers. Add the 1 lb chicken, sprinkle the 1/4 tsp salt over it and press it flat with a spatula. Leave it alone for 2 minutes, until the underside is golden.",
+  "Break it up and keep cooking for 2 more minutes, stirring now and then, until there's no pink left.",
+  "Add the onion and cook for 3 to 4 minutes, stirring now and then, until it's soft and the chicken has browned in spots.",
+  "Add the garlic and ginger and stir for 30 seconds, until they smell fragrant.",
+  "Pour in the sauce and stir for 1 minute, until it coats the chicken and looks glossy.",
+  "Stir in the water chestnuts and half the green onions and cook for 1 more minute.",
+  "Taste it. If it's flat, add a pinch more salt or a splash of the rice vinegar.",
+  "Spoon the filling into a bowl and scatter the rest of the green onions over it. Serve with the lettuce cups and the sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown ground chicken with onion, garlic and ginger, then glaze it in a short sauce and spoon it into soft lettuce cups. Natasha's Kitchen builds the sauce on hoisin, soy and rice vinegar and stirs in chopped water chestnuts and green onion at the end; Kitchen Dreaming is close but adds mushrooms and chili sauce. The Woks of Life uses less hoisin, adds dark soy, Shaoxing wine and preserved mustard greens, and thickens with a cornstarch slurry. This one follows Natasha's and puts the sriracha on the side.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Chicken Lettuce Wraps", "url": "https://natashaskitchen.com/chicken-lettuce-wraps/", "rating": 4.99, "rating_count": 52, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Chicken Lettuce Wraps", "url": "https://thewoksoflife.com/chicken-lettuce-wraps/", "rating": 5.0, "rating_count": 8, "read": true, "lead": false},
+  {"name": "Kitchen Dreaming", "title": "Ground Chicken Lettuce Wraps", "url": "https://kitchendreaming.com/ground-chicken-lettuce-wraps/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

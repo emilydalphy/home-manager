@@ -1,0 +1,166 @@
+{
+ "dish_name": "Steamed Pork Buns",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Active dry yeast",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sweet bean sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground bean sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground white pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Up to a month ahead, make the dough: stir the 1 tsp yeast and 1 tsp of the sugar into 3/4 cup plus 2 tbsp lukewarm water, warm to the touch but not hot. Leave it for 10 to 15 minutes, until it's foamy on top.",
+  "Add 2 3/4 cups of the flour to the yeast water about 1/2 cup at a time, stirring with chopsticks or a spoon until it's shaggy. Turn it out and knead for about 15 minutes, until the dough is smooth and soft and springs back when you poke it. If it's sticky, knead in a little of the last 1/4 cup flour.",
+  "Shape the dough into a ball, put it in a bowl and cover it with a damp towel. Leave it somewhere warm for about 1 hour, until it has roughly doubled.",
+  "While the dough rises, make the filling. Mix the 1 lb pork with 2 tbsp water in a bowl until the water is soaked up. Mince 1 tbsp of the ginger and finely chop the onion.",
+  "Heat a wok or large skillet over medium high until it just starts to smoke. Add the 2 tbsp oil, then the ginger and onion. Turn the heat to medium and cook for about 3 minutes, stirring, until the onion is soft and see-through.",
+  "Turn the heat up to high and add the pork. Break it up with a spatula and cook for about 4 minutes, until it's pale all over with no pink left. Don't let it brown.",
+  "Stir in the 1 tbsp Shaoxing wine, the 2 tsp dark soy sauce, the 2 tsp sweet bean sauce, the 4 tsp ground bean sauce, the 2 tsp oyster sauce, the remaining 1/2 tsp sugar, the 1/4 tsp white pepper and the 1 tsp sesame oil. Cook for 2 to 3 minutes, stirring, until most of the liquid has cooked off.",
+  "Stir the 1 tsp cornstarch into 2 tsp cold water, pour it into the pan and stir for about 30 seconds, until the juices turn glossy and cling to the meat. Take it off the heat and tip it into a wide bowl to cool.",
+  "Finely chop 3 of the scallions. Once the filling is cool, stir them in.",
+  "Knead the risen dough for 2 minutes to push out the air. Dust the counter with a little of the last 1/4 cup flour, roll the dough into a log and cut it into 12 equal pieces, about 1 3/4 oz each. Cut 12 squares of parchment, about 3 inches across.",
+  "Roll one piece into a round about 4 inches wide, keeping the middle thicker than the edges. Put a heaped tablespoon of filling in the center. Pleat the edge up around it, pinching each fold to the last, then twist the top to seal. Set it on a parchment square and do the rest the same way.",
+  "Cover them loosely with a towel and leave them for 15 minutes, until they look a little puffy.",
+  "Set them on their parchment in a steamer, about 1 inch apart, over a pot of cold water. Bring it up to a steam over medium heat and steam for 15 minutes. You may need two batches.",
+  "Turn off the heat and leave the lid on for 5 minutes before you open it. Open it too soon and they can collapse.",
+  "Let them cool completely on a rack. Freeze them in a single layer on a tray until hard, then pack them into a freezer bag. They keep for up to a month.",
+  "On the morning: set them, still frozen, on their parchment in the steamer, 1 inch apart, over boiling water. Cover and steam on medium high for about 10 minutes, until they're soft and hot all the way through. No thawing needed.",
+  "Serve hot."
+ ],
+ "advance_prep_notes": "Make, steam and freeze the buns up to a month ahead (about 3 hours, mostly rising time); in the morning they steam straight from frozen in 10 minutes.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15
+ ],
+ "method_notes": "All three wrap a seasoned pork filling in a soft yeasted dough, pleat or pinch the buns shut, let them rise briefly and steam them for about 15 to 25 minutes. The Woks of Life (the lead) cooks the filling first with onion, ginger, Shaoxing wine, two bean sauces, oyster sauce and dark soy, thickens it with cornstarch, and rests the steamed buns with the lid on for 5 minutes so they don't collapse; it says frozen buns steam in about 8 minutes with no thawing. Omnivore's Cookbook uses a raw filling of pork, ginger water and Chinese chives and serves the buns with vinegar; Tara's Multicultural Table uses a raw filling with mushrooms and spinach. This one follows the lead's dough and cooked filling at 12 buns, three each, and writes it as a make-ahead batch that steams straight from the freezer.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Steamed Pork Buns (Baozi)",
+   "url": "https://thewoksoflife.com/steamed-pork-buns-baozi/",
+   "rating": 4.92,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Steamed Pork Buns with Chive (猪肉韭菜包子)",
+   "url": "https://omnivorescookbook.com/steamed-pork-buns/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Baozi (Chinese Steamed Pork Buns)",
+   "url": "https://tarasmulticulturaltable.com/baozi-chinese-steamed-pork-buns/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
