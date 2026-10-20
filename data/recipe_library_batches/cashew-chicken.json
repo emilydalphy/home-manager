@@ -1,0 +1,50 @@
+{
+ "dish_name": "Cashew Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Roasted unsalted cashews", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Red bell peppers", "qty": "2", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 1/2 tbsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 tbsp + 1 1/2 tsp"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Light soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Chinese black vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Chicken broth", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Granulated sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sesame oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Ground white pepper", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the 1.5 lb chicken into 3/4 inch pieces and put them in a bowl. Add 1 1/2 tbsp of the Shaoxing wine, the 1/2 tsp salt and 1 tbsp of the cornstarch and mix until every piece has a thin coating. Leave it while you get everything else ready.",
+  "Whisk the sauce together in a small bowl: the 1/4 cup oyster sauce, the remaining 1 tbsp Shaoxing wine, 2 tsp soy sauce, 1 1/2 tbsp black vinegar, 1/2 cup broth, 1 tbsp sugar, the remaining 1 1/2 tsp cornstarch, 1 tbsp sesame oil and 1/8 tsp white pepper.",
+  "Thinly slice the 5 garlic cloves and finely chop 1 tbsp of the ginger. Chop 3 of the scallions. Seed the 2 peppers and cut them into 3/4 inch pieces.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over medium high until it shimmers. Add half the chicken in a single layer and leave it alone for 1 to 2 minutes, until the underside is light golden. Flip the pieces and cook the other side for 1 to 2 minutes, until golden. Move them to a plate.",
+  "Add another 1 tbsp oil and cook the rest of the chicken the same way. It will finish cooking in the sauce.",
+  "Add the last 1 tbsp oil to the pan with the garlic, ginger and scallions. Stir for about 30 seconds, until they smell fragrant.",
+  "Add the peppers and stir fry for about 2 minutes, until they're bright and just tender.",
+  "Stir the sauce again to pick up the cornstarch from the bottom of the bowl, then pour it into the pan. Stir until it bubbles and turns thick and glossy, about 1 minute.",
+  "Tip the chicken and its juices back in and cook for 2 to 3 minutes, stirring, until the chicken is cooked through. You're cooking it to 175°F, so if you have a thermometer, check the biggest piece. No thermometer? Cut the biggest piece open: it's done when there's no pink left.",
+  "Take the pan off the heat and stir in the 3/4 cup cashews.",
+  "Taste it. If it's flat, add a pinch more salt, or a few drops more of the black vinegar.",
+  "Serve with steamed rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both coat bite size chicken in a little cornstarch, sear it briefly and set it aside, fry garlic, ginger and scallion, add bell pepper, then pour in an oyster sauce and stock sauce thickened with cornstarch and stir the cashews through at the end. Omnivore's Cookbook (the lead) seasons the sauce with Shaoxing wine, light soy, a spoon of Chinkiang vinegar, sugar and sesame oil and cooks everything in about five minutes. The Woks of Life sweetens its sauce with honey and a little hoisin, adds water chestnuts and thickens with a separate slurry at the end. This one follows the lead's sauce scaled to 1.5 lb chicken for 4, uses thighs instead of breast as the lead allows, and sears the chicken in two batches so it browns.",
+ "sources": [
+  {"name": "Omnivore's Cookbook", "title": "Cashew Chicken (腰果鸡丁)", "url": "https://omnivorescookbook.com/cashew-chicken/", "rating": 5.0, "rating_count": 35, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Cashew Chicken", "url": "https://thewoksoflife.com/cashew-chicken/", "rating": 4.91, "rating_count": 75, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
