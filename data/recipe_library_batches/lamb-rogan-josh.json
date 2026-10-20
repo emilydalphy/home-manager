@@ -1,0 +1,171 @@
+{
+ "dish_name": "Lamb Rogan Josh",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 150,
+ "ingredients": [
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Paprika",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground fennel",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "6",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Trim off any big pieces of fat from the 1.5 lb lamb, leaving a little on, and cut it into 1 1/4 inch cubes. Pat them dry with paper towels and toss them with 1/2 tsp of the salt.",
+  "Finely chop the onion and mince the 3 garlic cloves. Grate 1 tbsp of the ginger, then cut the rest of the piece into very thin matchsticks and set them aside for the top.",
+  "In a small bowl, mix the 2 tbsp paprika, 3/4 tsp Kashmiri chili powder, 4 tsp coriander, 4 tsp cumin, 2 tsp turmeric, 1/4 tsp nutmeg, 1 tsp of the garam masala and 1/2 tsp of the fennel.",
+  "Melt 2 tbsp of the ghee in a large heavy pot over medium high. Add half the lamb in one layer and leave it alone for 2 to 3 minutes, until it's browned underneath. Turn the pieces and brown another side for 2 minutes. Lift them onto a plate. It doesn't need to be cooked through.",
+  "Brown the rest of the lamb the same way and add it to the plate.",
+  "Turn the heat to medium and add the other 2 tbsp ghee. Lightly crush the 6 cardamom pods with the flat of a knife and add them with the cinnamon stick and the 4 cloves. Stir for 1 minute, until they smell fragrant.",
+  "Add the onion and cook for about 7 minutes, stirring often and scraping up the brown bits from the lamb, until it's golden and browning at the edges.",
+  "Add the garlic and grated ginger and stir for 1 minute, until they stop smelling raw.",
+  "Add the spice mix and stir for 30 seconds. If it starts to stick, add a splash of the broth.",
+  "Stir in 5 tbsp passata and the remaining 1/4 tsp salt, then pour in 1 1/2 cups broth. Put the lamb back in with any juices from the plate and bring it to a simmer.",
+  "Cover the pot, turn the heat to low and simmer gently for 1 hour 45 minutes, stirring now and then, until the lamb pulls apart easily with two forks.",
+  "Take the lid off and simmer for 15 minutes more, until the sauce has thickened a little.",
+  "Turn the heat to low and stir in 1/2 cup of the yogurt a spoonful at a time. Add the other 1/2 tsp garam masala and 1/2 tsp fennel and cook for 3 minutes. Don't let it boil hard, or the yogurt can split.",
+  "Chop 2 tbsp of the cilantro. Taste the curry. If it's flat, add a pinch more salt.",
+  "Serve over basmati rice, topped with the cilantro and the ginger matchsticks, with the rest of the yogurt on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats blooms cinnamon, cardamom and cloves in ghee, cooks the onion golden, toasts a big mix of ground spices (paprika for the red, plus coriander, cumin, turmeric, nutmeg, fennel and garam masala), then braises boneless lamb shoulder in passata and stock for about 2 hours and finishes with yogurt, fennel and garam masala. Piping Pot Curry and Headbanger's Kitchen go the Kashmiri way: lamb seared in mustard oil, cooked in yogurt beaten with Kashmiri chili, fennel and dry ginger, with Headbanger's using no onion or tomato at all. This one follows RecipeTin's braise, sears the lamb first as the other two do, and uses mild Kashmiri chili for the heat. All three say it tastes better the next day, so it can be cooked a day ahead and reheated gently with a splash of water.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Rogan Josh (Indian Lamb Curry)",
+   "url": "https://www.recipetineats.com/rogan-josh/",
+   "rating": 4.97,
+   "rating_count": 260,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Piping Pot Curry",
+   "title": "Rogan Josh (Kashmiri Lamb Curry)",
+   "url": "https://pipingpotcurry.com/rogan-josh/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Headbanger's Kitchen",
+   "title": "Traditional Rogan Josh (Kashmiri Recipe)",
+   "url": "https://headbangerskitchen.com/rogan-josh/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

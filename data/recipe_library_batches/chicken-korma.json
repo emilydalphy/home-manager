@@ -1,0 +1,146 @@
+{
+ "dish_name": "Chicken Korma",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "12"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Cut the 1.5 lb chicken into 1 1/2 inch pieces. Grate 2 tsp of the ginger and mince the 4 garlic cloves.",
+  "In a bowl, mix the chicken with 1/4 cup of the yogurt, the ginger, the garlic, 1/4 tsp turmeric, 1/2 tsp Kashmiri chili powder, 3/4 tsp of the garam masala and 1/2 tsp of the salt. Cover it and leave it on the counter while you make the paste.",
+  "Thinly slice the 2 onions.",
+  "Melt 1 1/2 tbsp of the ghee in a large heavy pan over medium. Add 2 of the cardamom pods and the onions. Cook for 10 to 12 minutes, stirring often, until they're golden brown all over. Turn the heat down a little if the edges start to scorch. Don't rush the onions. They give the sauce most of its flavor.",
+  "Take the pan off the heat and stir in the 12 cashews. Scrape it all into a blender and leave it to cool for 10 minutes.",
+  "Add the other 1/4 cup yogurt and 1/4 cup water to the blender and blend until the paste is completely smooth, with no bits of nut left.",
+  "Put the same pan back over medium and melt the remaining 1 1/2 tbsp ghee. Add the bay leaf, the 4 cloves, the cinnamon stick and the last cardamom pod. Stir for about 30 seconds, until they sizzle and smell fragrant.",
+  "Add the chicken with all of its marinade. Cook for 5 to 7 minutes, stirring now and then, until the chicken is pale all over and the garlic no longer smells raw.",
+  "Stir in the onion paste, 2 tsp coriander, the remaining 3/4 tsp garam masala, the other 1/2 tsp salt and 1/2 cup hot water. Bring it to a bubble.",
+  "Cover the pan, turn the heat to medium low and cook for 15 to 20 minutes, stirring now and then, until the chicken is tender and you see small pools of oil on the surface. If the sauce gets too thick to pour easily, stir in a splash of hot water.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut into the biggest piece: it's done when there's no pink left.",
+  "Meanwhile, thinly slice the green chili and put it in a small bowl for the table.",
+  "Chop 2 tbsp of the cilantro and scatter it over the korma. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with basmati rice or naan, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's builds the sauce from onions fried slowly to golden with cardamom, then blended smooth with cashews and yogurt. The chicken is marinated in yogurt, ginger-garlic, turmeric, Kashmiri chili and garam masala, cooked in ghee with whole spices, then simmered covered in the paste until oil shows on top. She uses no tomato, so the tang comes from the yogurt. Natasha's is quicker and creamier: no blended paste, but tomato paste, Greek yogurt, coconut cream, almond flour, a little sugar and heavy cream. This one follows Swasthi's paste method with thighs, keeps the chili low for younger eaters and puts the green chili on the side.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Chicken Korma Recipe",
+   "url": "https://www.indianhealthyrecipes.com/chicken-korma-recipe/",
+   "rating": 5,
+   "rating_count": 680,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Chicken Korma Recipe",
+   "url": "https://natashaskitchen.com/chicken-korma/",
+   "rating": 4.98,
+   "rating_count": 41,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

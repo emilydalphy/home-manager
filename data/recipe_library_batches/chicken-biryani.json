@@ -1,0 +1,175 @@
+{
+ "dish_name": "Chicken Biryani",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Saffron",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "6",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Crispy fried onions",
+   "qty": "1 container",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead: cut the 1.25 lb chicken into large pieces, about 2 inches, and make a couple of shallow cuts in each one. Grate the ginger and mince the 4 garlic cloves. Squeeze 1 tbsp juice from half the lemon. In a bowl, mix 1/4 cup of the yogurt with the ginger, garlic, lemon juice, 3/4 tsp of the salt, 1/4 tsp turmeric, 1/2 tsp Kashmiri chili powder and 2 tsp of the garam masala. Add the chicken, turn it to coat, cover and put it in the fridge.",
+  "Put the 2 cups rice in a bowl of cold water, swish it with your hand and pour off the cloudy water. Do this 3 times, then cover it with fresh cold water and leave it to soak for 30 minutes.",
+  "Meanwhile, thinly slice the onion and chop 1/2 cup of the mint leaves. Put the pinch of saffron in a small cup with 2 tbsp hot water. Thinly slice the green chili into a small bowl for the table.",
+  "Make the raita. Stir 2 tbsp of the chopped mint and 1/4 tsp of the salt into 1 cup of the yogurt with a splash of water. Put it in the fridge.",
+  "Melt 2 tbsp ghee in a wide heavy pot with a tight lid over medium. Add the bay leaf, 4 cardamom pods, 6 cloves, cinnamon stick and star anise. Stir for about 30 seconds, until they sizzle.",
+  "Add the onion and cook for 8 to 10 minutes, stirring often, until it's evenly light brown. Turn the heat down if dark spots appear. Burnt onions taste bitter.",
+  "Add the chicken with all of its marinade and cook for 5 minutes, stirring, until it's pale all over.",
+  "Cover the pot, turn the heat to low and cook for 12 to 15 minutes, stirring once or twice, until the chicken is tender. You're cooking it to 175°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut into the biggest piece: it's done when there's no pink left.",
+  "While the chicken cooks, bring 3 1/2 cups water and the remaining 3/4 tsp salt to a rolling boil in a separate pot. Taste it. It should taste a little salty. Drain the rice well in a sieve.",
+  "Take the lid off the chicken and cook for 2 to 3 minutes over medium, stirring, until most of the liquid has cooked off and the masala is thick.",
+  "Stir in the remaining 1/4 cup yogurt, 3 tbsp of the chopped mint and the other 1 tsp garam masala. Spread the chicken in an even layer over the bottom of the pot.",
+  "Spread the drained rice evenly over the chicken. Don't stir it.",
+  "Pour about 2 cups of the boiling water gently down the inside of the pot, then pour the rest slowly over the rice. Level the rice with a spoon so all of it is under the water.",
+  "Scatter the last 3 tbsp chopped mint and 1/4 cup fried onions over the rice, then drizzle over the saffron water.",
+  "Cover the pot tightly and cook over medium for about 15 minutes, until the water is gone and a grain from the top is tender. If the rice is still firm and there's no water left, sprinkle over 1/4 cup boiling water, cover and cook for 5 minutes more.",
+  "Turn off the heat and leave the lid on for 10 minutes. No peeking.",
+  "Cut the other half of the lemon into wedges. Taste a few grains from the top. If it's flat, sprinkle over a pinch more salt.",
+  "Spoon it out from the side, going all the way down so each plate gets rice and chicken. Serve with the mint raita, the lemon wedges and the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "marinate the chicken overnight, the night before (or at least 1 hour ahead)",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All three marinate the chicken in yogurt, ginger, garlic and spices (Swasthi's says at least an hour, overnight is better), soak or rinse aged basmati, and finish with mint, fried onions and saffron. Swasthi's is a one-pot method: whole spices and onions in ghee, the chicken cooked down to a thick masala, soaked raw rice layered on top, then boiling salted water poured over and cooked about 15 minutes. RecipeTin Eats and Tea for Turmeric parboil the rice separately in heavily salted water and steam it over the chicken on low (dum) for 20 to 25 minutes, with Tea for Turmeric adding dried plums, tomato and kewra. This one follows Swasthi's one-pot method, keeps the chili low and serves a simple mint raita like RecipeTin's.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Chicken Biryani Recipe",
+   "url": "https://www.indianhealthyrecipes.com/chicken-biryani-recipe/",
+   "rating": 4.99,
+   "rating_count": 1672,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chicken Biryani",
+   "url": "https://www.recipetineats.com/biryani/",
+   "rating": 4.96,
+   "rating_count": 315,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tea for Turmeric",
+   "title": "Pakistani Chicken Biryani (The BEST!)",
+   "url": "https://www.teaforturmeric.com/chicken-biryani/",
+   "rating": 4.93,
+   "rating_count": 265,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

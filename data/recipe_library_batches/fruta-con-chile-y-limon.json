@@ -1,0 +1,89 @@
+{
+ "dish_name": "Fruta con Chile y Limon",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Mangoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jicama",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Seedless watermelon",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tajín",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chamoy",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the jicama. Cut half of it into sticks about 1/2 inch thick and 3 inches long, and wrap the other half for the fridge.",
+  "Peel the cucumber and cut it into spears the same length as the jicama.",
+  "Peel the 2 mangoes and slice the flesh off the pit in long strips.",
+  "Cut a quarter of the watermelon into spears and trim off the rind. Wrap the rest of the melon for the fridge.",
+  "Divide the fruit and the cucumber among 4 cups, standing the spears upright, or lay it all out on a platter.",
+  "Cut the 2 limes into quarters. Squeeze 4 of the wedges over the fruit.",
+  "Sprinkle the 2 tsp Tajín evenly over the top.",
+  "Serve right away with the other lime wedges, with the chamoy on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cut firm fruit into pieces, squeeze fresh lime over it and dust it with Tajín or a homemade chile, lime and salt mix right before serving. Mexican Food Journal mixes watermelon, pineapple and jicama in a bowl and adds chia seeds; Yvette Marquez (for AARP en Español) stands long spears of watermelon, cucumber, jicama, mango, papaya and pineapple in cups, street-cart style, with chamoy as an option. Directo al Paladar keeps it to mango with chile, salt and grated lime zest. This one uses the cup-style spears and puts the chamoy on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Mexican) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Mexican Food Journal",
+   "title": "Spicy Mexican Fruit Salad with Tajin and Chia",
+   "url": "https://mexicanfoodjournal.com/spicy-mexican-fruit-salad/",
+   "rating": 4.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "AARP en Español",
+   "title": "Frutas frescas con chamoy y Tajín",
+   "url": "https://www.aarp.org/espanol/cocina/recetas/info-2023/frutas-frescas-con-chamoy-tajin-yvette-marquez.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Directo al Paladar",
+   "title": "Mango picante con especias tajín",
+   "url": "https://www.directoalpaladar.com/recetas-de-aperitivos/mango-picante-especias-tajin-caseras-receta-rapidisima-clasico-comida-callejera-mexicana",
+   "rating": 4.41,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
