@@ -1,0 +1,102 @@
+{
+ "dish_name": "BLT Sandwiches",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Bacon",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sourdough bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Yellow mustard",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Line a rimmed baking sheet with foil and lay the bacon on it in a single layer, about 12 strips.",
+  "Bake the bacon for 15 to 20 minutes, until it's browned and crisp. Move it to a plate lined with paper towels.",
+  "Meanwhile, stir together 1/2 cup mayonnaise, 2 tbsp sour cream and 2 tsp mustard in a small bowl.",
+  "Slice the 2 tomatoes about 1/2 inch thick and lay the slices on a double layer of paper towel. Sprinkle them with the 1/4 tsp salt and 1/4 tsp pepper.",
+  "Wash 4 leaves of the lettuce and pat them dry.",
+  "Cut 8 slices of the bread about 1/2 inch thick and spread the 1 1/2 tbsp butter thinly over both sides of each slice.",
+  "Heat a large skillet over medium high. Toast the bread in batches for 1 to 2 minutes, until the underside is golden, then flip each slice and toast the other side for about 1 minute.",
+  "Spread the sauce over one side of all 8 slices.",
+  "On 4 of the slices, lay a lettuce leaf, then the tomato slices blotted dry, then 3 strips of bacon. Top each with one of the other slices, sauce side down.",
+  "Cut each sandwich in half and serve while the toast is warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions bake the bacon on a foil-lined sheet until crisp, toast the bread, and layer lettuce, thick tomato and bacon between slices spread with a mayonnaise sauce. Natasha's Kitchen (the lead) bakes at 400°F, butters and griddles the bread, mixes the mayonnaise with sour cream and yellow mustard, and adds avocado. Coley Cooks bakes at 350°F, salts the tomato, and stirs garlic, lemon and fresh herbs into the mayonnaise. This one follows the lead's sauce and toast, salts the tomatoes the way Coley Cooks does, and leaves out the avocado to keep it a classic BLT.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "BLT Sandwich with the Best Sauce",
+   "url": "https://natashaskitchen.com/blt-sandwich/",
+   "rating": 5.0,
+   "rating_count": 107,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Coley Cooks",
+   "title": "Best BLT Recipe",
+   "url": "https://coleycooks.com/best-blts/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

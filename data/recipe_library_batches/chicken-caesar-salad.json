@@ -1,0 +1,51 @@
+{
+ "dish_name": "Chicken Caesar Salad",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless skinless chicken breasts", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Romaine lettuce", "qty": "2 heads", "category": "produce"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Anchovy fillets", "qty": "1 tin", "category": "pantry", "cook_qty": "2 fillets"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Worcestershire sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Parmesan", "qty": "1 wedge", "category": "dairy", "cook_qty": "3/4 cup grated"},
+  {"item": "Milk", "qty": "1 carton", "category": "dairy", "cook_qty": "3 tbsp"},
+  {"item": "Sourdough bread", "qty": "1 loaf", "category": "other", "cook_qty": "3 thick slices"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "3/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 375°F.",
+  "Make the dressing first. Peel both garlic cloves. Finely mince 1 of them, then chop 2 anchovy fillets and mash them into the garlic with the flat of your knife until you have a rough paste.",
+  "Scrape the paste into a bowl. Add 1 cup mayonnaise, 2 tbsp juice from the lemon, 1 tsp Dijon, 1 tsp Worcestershire, 1/8 tsp salt and 1/4 tsp pepper.",
+  "Grate 1/2 cup of the Parmesan into the bowl and whisk it all together. Whisk in the 3 tbsp milk a spoonful at a time, until it pours like thick cream. Put it in the fridge while you do the rest.",
+  "Toast 3 thick slices of bread in the toaster for about a minute, until the outside feels dry but hasn't browned. Cut the other garlic clove in half and rub the cut side over both sides of each slice.",
+  "Cut the bread into 3/4 inch cubes. Toss them on a baking sheet with 2 tbsp olive oil and 1/8 tsp salt and spread them out in one layer.",
+  "Bake the croutons for 10 to 15 minutes, shaking the pan once halfway, until they're golden and crisp. Leave them on the pan to cool.",
+  "Meanwhile, cut each chicken breast in half through the side so you have thin cutlets of even thickness. Pat them dry and sprinkle both sides with 3/4 tsp salt and 1/2 tsp pepper.",
+  "Heat the last 1 tbsp olive oil in a large skillet over medium high until it shimmers. Add the cutlets with room between them, in two batches if they don't all fit. Leave them alone for 4 to 5 minutes, until the underside is golden and they let go of the pan.",
+  "Flip them and cook the other side for 2 to 3 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check the thickest one. No thermometer? Cut into it: it's done when there's no pink left and the juices run clear.",
+  "Move the chicken to a board, cover it loosely with foil and let it rest for 5 minutes.",
+  "While it rests, cut the romaine into bite size pieces, wash it and dry it well in a salad spinner or a clean towel. Wet leaves make a watery dressing.",
+  "Put the romaine in a big bowl, pour in half the dressing and toss until every leaf is coated. Taste a leaf, and add more dressing if you'd like.",
+  "Slice the chicken and lay it over the salad. Scatter on the croutons and grate the last 1/4 cup of Parmesan over the top.",
+  "Serve with the rest of the dressing on the side. Any dressing you don't use keeps in a jar in the fridge for up to 5 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats and Spend With Pennies both build the dressing on mayonnaise with anchovy, garlic, lemon, Dijon, Worcestershire and Parmesan, and Cooking Classy lightens the same base with Greek yogurt. RecipeTin Eats thins its dressing with milk, makes garlic rubbed croutons from barely toasted bread, and cooks thin chicken cutlets in a hot pan, adding bacon and boiled eggs as extras. Spend With Pennies blackens whole breasts in Cajun seasoning and uses bought croutons. This one follows RecipeTin Eats without the bacon and eggs, seasons the chicken with salt and pepper only, and keeps the extra dressing for the week.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Caesar Salad - with homemade Caesar Salad Dressing", "url": "https://www.recipetineats.com/chicken-caesar-salad/", "rating": 4.99, "rating_count": 138, "read": true, "lead": true},
+  {"name": "Spend With Pennies", "title": "Chicken Caesar Salad", "url": "https://www.spendwithpennies.com/chicken-caesar-salad/", "rating": 5, "rating_count": 61, "read": true, "lead": false},
+  {"name": "Cooking Classy", "title": "Chicken Caesar Salad Recipe {Homemade Caesar Dressing}", "url": "https://www.cookingclassy.com/chicken-caesar-salad/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,44 @@
+{
+ "dish_name": "Split Pea Soup with Ham",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 135,
+ "ingredients": [
+  {"item": "Ham bone", "qty": "1 meaty", "category": "meat/seafood"},
+  {"item": "Green split peas", "qty": "1 bag (1 lb)", "category": "pantry", "cook_qty": "1 1/3 cups"},
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3 cups"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce"},
+  {"item": "Butter", "qty": "1 package", "category": "dairy", "cook_qty": "1 tbsp"},
+  {"item": "Dried parsley", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Bay leaf", "qty": "1", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Measure 1 1/3 cups of the split peas into a sieve. Pick out any small stones or shrivelled peas, then rinse them under cold water and let them drain.",
+  "Dice the onion. Dice the 2 carrots and 2 celery ribs, and keep them in a separate pile.",
+  "Melt 1 tbsp butter in a large soup pot over medium. Add the onion and 1/4 tsp of the salt and cook, stirring now and then, for about 5 minutes, until it's soft and see-through.",
+  "Add the peas, the ham bone, 3 cups chicken broth, 3 cups water, the 1 1/2 tsp dried parsley and the bay leaf. Turn the heat up and bring it to a boil, stirring so the peas don't stick to the bottom.",
+  "Turn the heat down to low, cover the pot and simmer gently for 1 hour, stirring now and then.",
+  "Stir in the carrots and celery, the 1/2 tsp thyme and the 1/4 tsp pepper. Cover and simmer for 45 minutes more, until the vegetables are soft and the peas are starting to fall apart.",
+  "Lift out the ham bone onto a cutting board. When it's cool enough to touch, pull off all the meat, chop it into bite size pieces and throw away the bone, fat and skin.",
+  "Put the ham back in the pot and simmer it uncovered for about 20 minutes, stirring now and then, until the soup is thick and the peas have broken down. If it gets thicker than you like, stir in a splash of water.",
+  "Fish out the bay leaf. Taste the soup. The ham is salty, so add the remaining 1/4 tsp salt only if it's flat.",
+  "Serve hot with the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions simmer green split peas in broth and water with smoked ham for about two hours in all, add the carrots and celery partway through so they stay in pieces, then shred the ham back into the soup and season with salt only at the end because the ham is salty. Spend With Pennies puts a meaty ham bone (or 2 cups diced ham) in from the start with dried parsley and a bay leaf, and adds the onion raw with the vegetables. Once Upon a Chef softens the onion and garlic in butter first and uses ham steak and bacon in place of a bone, with fresh thyme. This follows Spend With Pennies, scaled from 6 servings to 4, with the onion softened in butter first as Once Upon a Chef does. Diced leftover ham works in place of the bone. The soup keeps 4 days and thickens in the fridge, so reheat it with a splash of water.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Split Pea Soup", "url": "https://www.spendwithpennies.com/split-pea-soup/", "rating": 4.98, "rating_count": 135, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Split Pea Soup with Ham", "url": "https://www.onceuponachef.com/recipes/split-pea-soup.html", "rating": 4.9, "rating_count": 103, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

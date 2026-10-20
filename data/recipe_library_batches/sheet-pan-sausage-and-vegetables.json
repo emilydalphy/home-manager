@@ -1,0 +1,41 @@
+{
+ "dish_name": "Sheet Pan Sausage and Vegetables",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Sweet Italian sausage", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Brussels sprouts", "qty": "1 lb", "category": "produce"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Red pepper flakes", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle. Line a large rimmed baking sheet with foil if you like.",
+  "Meanwhile, trim the Brussels sprouts and cut them in half, leaving any small ones whole. Peel the carrots and slice them on an angle about 1/2 inch thick. Halve the red onion and slice it 1/4 inch thick.",
+  "Put the vegetables straight onto the baking sheet. Add 3 tbsp olive oil, the 1 tsp thyme, 1 tsp salt and 1/2 tsp pepper and toss with your hands until everything is shiny.",
+  "Tuck the sausage links in between the vegetables with space around each one, and spread the vegetables into a single layer as best you can. Turn the Brussels sprouts cut side down.",
+  "Roast for 25 minutes without stirring, until the sausages are browned and the vegetables are tender with dark edges. You're cooking the sausage to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Meanwhile, chop a small handful of the parsley.",
+  "Drizzle the 2 tsp red wine vinegar over the hot vegetables and toss them on the pan. Scatter the parsley over everything.",
+  "Taste a sprout. If it's flat, add a pinch more salt or another splash of the vinegar.",
+  "Serve with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions toss the vegetables with oil, salt, pepper and dried herbs right on the sheet, spread them in a single layer around whole sausage links and roast until the sausage is cooked and the vegetables are browned. Once Upon a Chef uses red onion, carrots and Brussels sprouts with thyme at 425°F for 25 minutes without stirring; Girl Heart Food uses bell peppers and baby potatoes with garlic powder, paprika, oregano and cayenne at 400°F, stirs and flips halfway, and finishes with red wine vinegar, parsley and red pepper flakes. This follows Once Upon a Chef with sweet sausage for a mild pan, and borrows Girl Heart Food's vinegar and parsley finish with the pepper flakes on the side.",
+ "sources": [
+  {"name": "Once Upon a Chef", "title": "Sheet Pan Sausage and Veggies", "url": "https://www.onceuponachef.com/recipes/sheet-pan-sausage-and-vegetables.html", "rating": 4.95, "rating_count": 150, "read": true, "lead": true},
+  {"name": "Girl Heart Food", "title": "Sheet Pan Sausage and Veggies", "url": "https://girlheartfood.com/sheet-pan-sausage-and-veggies/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

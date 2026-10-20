@@ -1,0 +1,108 @@
+{
+ "dish_name": "Turkey Club Sandwiches",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Bacon",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sliced deli turkey",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "12 slices"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Butter lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Line a rimmed baking sheet with foil and lay the bacon on it in a single layer, about 12 strips.",
+  "Bake the bacon for 15 to 20 minutes, until it's browned and crisp. Move it to a plate lined with paper towels.",
+  "Meanwhile, slice the 2 tomatoes about 1/4 inch thick and lay the slices on a double layer of paper towel. Sprinkle them with the 1/4 tsp salt and 1/4 tsp pepper.",
+  "Wash 8 leaves of the lettuce and pat them dry.",
+  "Break each bacon strip in half once it's cool enough to touch.",
+  "Toast the 12 slices of bread until they're golden and firm.",
+  "Spread 2 tsp mayonnaise over one side of each slice of toast, 1/2 cup in all.",
+  "For each sandwich, lay a lettuce leaf on a slice of toast, mayonnaise side up. Blot the tops of the tomato slices dry and lay a quarter of them on the lettuce, then 3 oz turkey, 12 oz across the 4 sandwiches.",
+  "Cover the turkey with a second slice of toast, mayonnaise side up. Lay 6 of the bacon halves on it, then a second lettuce leaf, then a third slice of toast, mayonnaise side down.",
+  "Press each sandwich down gently. Push a toothpick into each corner about an inch in, and cut the sandwich into 4 triangles.",
+  "If you're packing them, leave out the toothpicks, cut each sandwich in half and wrap the halves tightly in plastic wrap. Keep them cold until lunch."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All four read versions stack sliced turkey, crisp bacon, lettuce and tomato with mayonnaise on toasted bread, and three of them use three slices per sandwich cut into quarters. Claudia's Table (the lead) toasts each slice in butter in a skillet, puts the lettuce and salted tomato in the bottom layer and the turkey and bacon in the top. Simply Whisked makes a garlic aioli and adds red onion; Taste of Home uses two slices and thick applewood bacon; Food Republic piles on half a pound of turkey per sandwich. This one follows the lead's layers, bakes the bacon and uses a toaster to do 12 slices at once. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for American) has no version, so the one rated version leads.",
+ "sources": [
+  {
+   "name": "Claudia's Table",
+   "title": "Classic Turkey Club Sandwich",
+   "url": "https://claudiastable.com/classic-turkey-club-sandwich/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Whisked",
+   "title": "Turkey Club Sandwich Recipe",
+   "url": "https://www.simplywhisked.com/turkey-club-sandwich-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Turkey Club Sandwich",
+   "url": "https://www.tasteofhome.com/recipes/turkey-club-sandwich/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Republic",
+   "title": "Turkey Club Sandwich Recipe",
+   "url": "https://www.foodrepublic.com/recipes/turkey-club-sandwich-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

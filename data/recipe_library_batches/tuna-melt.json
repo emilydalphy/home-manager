@@ -1,0 +1,124 @@
+{
+ "dish_name": "Tuna Melt",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Tuna in water",
+   "qty": "3 cans (5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Dill pickles",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup chopped"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 1/2 tbsp chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Grainy mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sourdough bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Sliced sharp cheddar",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "4 slices"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  }
+ ],
+ "instructions": [
+  "Take 4 tbsp butter out of the fridge so it softens while you make the filling.",
+  "Open the 3 cans of tuna and press the lids down hard over the sink to squeeze out as much water as you can. Tip the tuna into a bowl and break it into flakes with a fork.",
+  "Finely chop enough pickles to fill 1/3 cup and enough red onion to fill about 3 tbsp. Chop 1 1/2 tbsp of the parsley leaves.",
+  "Add the pickles, onion and parsley to the tuna with 1/2 cup Greek yogurt, 1 tsp mustard, 1/4 tsp salt and 1/8 tsp pepper. Squeeze in 1 tbsp of juice from the lemon.",
+  "Stir it all together with the fork. Taste it, and add a pinch more salt or a squeeze more lemon if it's flat.",
+  "Lay out 4 of the 8 slices of bread. Spread a quarter of the tuna over each one, right to the edges. Lay a slice of cheddar on top and close each one with one of the other 4 slices.",
+  "Spread 1/2 tbsp of the soft butter over the top of each sandwich.",
+  "Heat a large nonstick skillet over medium low for 2 minutes. Put 2 sandwiches in, buttered side down, and spread 1/2 tbsp butter over each top.",
+  "Cover the pan and cook for 3 to 4 minutes, until the underside is golden brown. Keep the heat low. If the bread browns too fast, the cheese won't have melted.",
+  "Flip them and cook the other side for about 3 minutes, until it's golden and the cheese has melted. Move them to a board and cook the other 2 sandwiches the same way.",
+  "Cut each melt in half and serve."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions mix drained canned tuna with a creamy binder, red onion and something sharp, layer it with cheddar in buttered bread and cook it slowly over medium low so the cheese melts before the bread burns. Well Plated binds the tuna with Greek yogurt, cornichons, lemon, grainy mustard and parsley and uses one slice of cheddar per melt. Jessica Gavin and Cooking Classy use mayonnaise, add sliced tomato, and Jessica Gavin covers the pan while it cooks. This one follows Well Plated's filling and covers the pan for the first side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for American) has no tuna melt, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Tuna Melt Recipe",
+   "url": "https://www.wellplated.com/tuna-melt/",
+   "rating": 5,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jessica Gavin",
+   "title": "Tuna Melt",
+   "url": "https://www.jessicagavin.com/tuna-melt/",
+   "rating": 4.75,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Tuna Melt",
+   "url": "https://www.cookingclassy.com/tuna-melt/",
+   "rating": 5,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

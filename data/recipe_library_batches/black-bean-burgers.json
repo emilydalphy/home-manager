@@ -1,0 +1,50 @@
+{
+ "dish_name": "Black Bean Burgers",
+ "cuisine": "American",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Black beans", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Chipotle peppers in adobo", "qty": "1 can (7 oz)", "category": "pantry", "cook_qty": "1 pepper + 2 tbsp sauce"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Balsamic vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Panko breadcrumbs", "qty": "1 cup", "category": "pantry"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Hamburger buns", "qty": "4", "category": "other"},
+  {"item": "Butter lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Tomatoes", "qty": "1", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Ketchup", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Drain and rinse the 2 cans of black beans. Spread them on a clean towel or a few paper towels and pat them as dry as you can. Wet beans make burgers that fall apart.",
+  "Grate half the onion on the big holes of a box grater. Mince the 2 garlic cloves. Take 1 chipotle pepper out of the can and chop it fine.",
+  "Put the beans in a big bowl with the grated onion, garlic, chopped chipotle, 2 tbsp of the adobo sauce from the can, 1 tbsp soy sauce, 1 tbsp balsamic vinegar, the 1 tsp cumin, 1/2 tsp salt and 1/2 tsp pepper.",
+  "Mash it all with a potato masher or a fork until it sticks together but you can still see some whole beans.",
+  "Crack in the egg and fold it through with a spatula. Fold in the 1 cup panko until there are no dry crumbs left.",
+  "Shape the mixture into 4 patties about 3/4 inch thick. They should hold their shape and feel a little damp. If they're too soft to pick up, mash the mixture a bit more, or chill the patties for 20 minutes.",
+  "Meanwhile, wash a few lettuce leaves, slice the tomato and slice the avocado.",
+  "Heat a large cast iron or nonstick skillet over medium and add 2 tbsp olive oil. When it shimmers, lay in the patties and cook them for 5 to 6 minutes without moving them, until the underside is dark brown and crisp.",
+  "Flip them carefully with a wide spatula and cook the other side for 5 to 6 minutes, until it's browned too and the middle feels firm when you press it. Turn the heat down a little if they're darkening too fast.",
+  "While the second side cooks, toast the 4 buns cut side down in a dry pan or under the broiler for a minute or two, until golden.",
+  "Taste a corner of one patty. If it's flat, sprinkle a pinch more salt over the hot burgers.",
+  "Serve on the toasted buns with the lettuce, tomato, avocado and ketchup. Put the rest of the chipotles on the table for anyone who wants more heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions mash canned black beans with garlic, an egg and panko, leaving some beans whole, and cook the patties in an oiled skillet over medium about 5 minutes a side until browned. Love and Lemons seasons them with chipotle, adobo, tamari, balsamic and cumin and chills the patties for 20 minutes if the mixture is too wet; Kristine's Kitchen pats the beans dry first, adds red pepper, green onion, ketchup and smoked paprika, and says the patties can also bake at 375°F. This follows Love and Lemons' mix (its 6 patties made into 4 larger ones) with Kristine's step of drying the beans, uses one chipotle so the patties stay mild, and puts the rest of the can on the table.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Best Black Bean Burger", "url": "https://www.loveandlemons.com/black-bean-burger/", "rating": 4.96, "rating_count": 258, "read": true, "lead": true},
+  {"name": "Kristine's Kitchen", "title": "Black Bean Burger Recipe", "url": "https://kristineskitchenblog.com/black-bean-burger-recipe/", "rating": 4.6, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

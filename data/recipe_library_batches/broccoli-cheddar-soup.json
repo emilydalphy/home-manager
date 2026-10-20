@@ -1,0 +1,135 @@
+{
+ "dish_name": "Broccoli Cheddar Soup",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 lb",
+   "category": "produce",
+   "cook_qty": "3 cups florets"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cream cheese",
+   "qty": "1 package (8 oz)",
+   "category": "dairy",
+   "cook_qty": "3 oz"
+  },
+  {
+   "item": "Half-and-half",
+   "qty": "1 pint",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sharp cheddar cheese",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups shredded"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/4 cup grated"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut 3 oz of the cream cheese into cubes and leave it on the counter to soften while you prep.",
+  "Dice the onion and mince the garlic clove. Cut the broccoli into small florets until you have 3 cups.",
+  "Shred 1 1/2 cups of the cheddar and grate 1/4 cup of the parmesan. Bagged shredded cheese doesn't melt as smoothly.",
+  "Melt 1 tbsp butter in a medium pot over medium heat. Add the onion and 1/4 tsp of the salt and cook for about 4 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Add the garlic and stir for 30 seconds, until you can smell it.",
+  "Add the broccoli, 1 1/2 cups broth and the 1/4 tsp thyme. Turn the heat up to medium high and bring it to a boil.",
+  "Turn the heat down to a simmer and cook it uncovered for about 6 minutes, until a fork slides easily into the broccoli.",
+  "Stir in the cream cheese and simmer for 2 more minutes, until it's soft and melting into the broth.",
+  "Lift out about 3/4 cup of the broccoli with a slotted spoon, chop it roughly and set it aside.",
+  "Blend the rest of the soup smooth with an immersion blender. If you're using a regular blender, work in two batches with the lid cracked open and a towel held over the top, or the steam can push the lid off.",
+  "In a small bowl, whisk the 2 tsp cornstarch into 1 cup half-and-half until there are no lumps.",
+  "Bring the soup back to a boil over medium heat and whisk in the half-and-half mixture. Simmer for 3 to 4 minutes, whisking now and then, until it's thick enough to coat the back of a spoon.",
+  "Take the pot off the heat. Stir in 1 1/4 cups of the cheddar a handful at a time, letting each handful melt before the next goes in.",
+  "Stir in the parmesan, the chopped broccoli, the 1/4 tsp pepper and the remaining 1/4 tsp salt.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and scatter the last 1/4 cup cheddar over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions soften onion and garlic in butter, simmer broccoli in broth until tender, and melt in sharp cheddar off the heat. Spend With Pennies (the lead) adds cream cheese and thyme, blends most of the soup while keeping some broccoli back for texture, thickens it with half-and-half and cornstarch, and stirs in parmesan with the cheddar. Once Upon a Chef (a Panera copy) and Love and Lemons thicken with a butter and flour roux instead, add carrot, and keep the broccoli in pieces; Once Upon a Chef uses heavy cream and nutmeg, Love and Lemons milk and Dijon. This one follows the lead, scaled from 6 servings to 4.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Broccoli Cheddar Soup",
+   "url": "https://www.spendwithpennies.com/broccoli-cheddar-soup/",
+   "rating": 4.98,
+   "rating_count": 73,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Panera's Broccoli Cheddar Soup",
+   "url": "https://www.onceuponachef.com/recipes/broccoli-cheddar-soup.html",
+   "rating": 4.9,
+   "rating_count": 68,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Broccoli Cheddar Soup",
+   "url": "https://www.loveandlemons.com/broccoli-cheddar-soup/",
+   "rating": 4.86,
+   "rating_count": 914,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
