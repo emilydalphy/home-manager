@@ -1,0 +1,42 @@
+{
+ "dish_name": "Foul Mdammas",
+ "cuisine": "Lebanese",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {"item": "Canned fava beans", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Canned chickpeas", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Tahini", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Roma tomato", "qty": "1", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Tip the 2 cans of fava beans into a medium pot, liquid and all. Warm them over medium for 6 to 8 minutes, stirring now and then, until they're steaming hot right through.",
+  "Meanwhile, drain and rinse the chickpeas. Warm them in a small pot with a splash of water over medium for about 5 minutes, then drain them.",
+  "While the beans warm, crush the 3 garlic cloves with the 1 tsp salt in a mortar and pestle, or mince them and mash them with the salt on the board with the flat of a knife, until it's a paste. Scrape it into a wide serving bowl.",
+  "Squeeze the juice from the lemon into the bowl and stir in the 1/2 tsp cumin.",
+  "Spoon the hot fava beans into the bowl with a few spoonfuls of their liquid. Mash about half of them into the garlic and lemon with a fork or potato masher and leave the rest whole. It should be loose and spoonable, so add a little more of the liquid if it looks dry.",
+  "Stir in the 2 tbsp tahini until it's evenly mixed through. Taste it, and add a pinch more salt if it's flat.",
+  "Dice the tomato and chop a small handful of the parsley.",
+  "Spoon the warm chickpeas over the top, drizzle with the 3 tbsp olive oil and scatter the tomato and parsley over it.",
+  "Serve warm with the pita."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three warm canned fava beans, mash part of them with garlic crushed with salt and lemon juice, and finish the bowl with olive oil. Plant Based Folk warms the beans in their liquid, mashes tahini through and tops each bowl with warm whole chickpeas. Simply Lebanese warms the chickpeas in the pot with the beans, adds cumin and tahini, and tops it with parsley and tomato, and Zaatar & Zaytoun rinses the beans, skips the tahini and seasons with cumin, serving pickles and fresh vegetables alongside. This one follows the lead's method and ratios, with the cumin and the parsley and tomato topping from the other two.",
+ "sources": [
+  {"name": "Plant Based Folk", "title": "Foul Moudamas", "url": "https://plantbasedfolk.com/foul-moudamas/", "rating": 5, "rating_count": 58, "read": true, "lead": true},
+  {"name": "Simply Lebanese", "title": "Foul (Ful)", "url": "https://www.simplyleb.com/recipe/foul-ful/", "rating": 4.72, "rating_count": 32, "read": true, "lead": false},
+  {"name": "Zaatar & Zaytoun", "title": "Foul Mudamas (Fava beans)", "url": "https://zaatarandzaytoun.com/foul-mdamas-fava-beans/", "rating": 4.91, "rating_count": 10, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

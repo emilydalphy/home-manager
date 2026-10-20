@@ -1,0 +1,42 @@
+{
+ "dish_name": "Manakish Zaatar",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 24,
+ "ingredients": [
+  {"item": "Active dry yeast", "qty": "1 packet", "category": "pantry", "cook_qty": "1 1/2 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Bread flour", "qty": "3 1/4 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Za'atar", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Persian cucumbers", "qty": "2", "category": "produce"},
+  {"item": "Fresh mint", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "At least 2 hours before you want to eat: stir the 1 1/2 tsp yeast and 1 tbsp sugar into 1/2 cup warm water in a large bowl. The water should feel warm on your wrist, not hot. Leave it for about 10 minutes, until it's foamy on top.",
+  "Add 3 cups of the flour, another 1/2 cup warm water and the 1 tsp salt. Mix it on low with a stand mixer's dough hook, pouring in the 1/3 cup vegetable oil as it goes, or stir it with a wooden spoon. Knead it for about 6 minutes in the mixer, or 8 to 10 by hand on the counter, until it's smooth and springs back when you poke it. If it's sticky, add a spoonful of the remaining flour.",
+  "Dust the bowl with a little flour, put the dough back in and cover it with a kitchen towel. Leave it somewhere warm for about 1 hour, until it's doubled in size.",
+  "Cut the dough into 8 equal pieces and roll each one into a ball. Cover them with the towel and let them rise for another 30 minutes.",
+  "Meanwhile, heat the oven to 425°F and line a baking sheet with parchment. Stir the 1/2 cup za'atar and 1/2 cup olive oil together in a small bowl until it's a loose paste.",
+  "Dust the counter with a little of the remaining flour. Roll 4 of the balls into rounds about 6 inches across and lay them on the sheet.",
+  "Stir the za'atar paste, then spread 1 tbsp of it over each round with the back of a spoon, leaving a thin bare edge. Press your fingertips into the dough all over to make little dimples.",
+  "Bake for 10 to 12 minutes, until the edges are golden and the bottoms are browned when you lift one with a spatula.",
+  "Move them to a board and roll, top and bake the other 4 the same way.",
+  "While they bake, slice the 2 tomatoes and cut the 2 cucumbers into spears. Pull a handful of leaves off the mint.",
+  "Serve warm with the tomatoes, cucumbers and mint leaves."
+ ],
+ "advance_prep_notes": "Make the dough at least 2 hours ahead so it can rise",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "Both make a yeasted bread flour dough, let it rise twice, and top thin rounds with za'atar stirred into olive oil before a hot bake. Simply Lebanese proofs active dry yeast with sugar, adds vegetable oil to the dough, rises it for an hour and again for 30 to 45 minutes as balls, and bakes the rounds at 425°F for 10 to 12 minutes, with half topped with cheese. King Arthur's version from Maureen Abood uses less oil in the dough, rolls it thinner and bakes it on a steel at 550°F for 3 to 4 minutes, and serves it with fresh mint. This one follows the lead's dough and bake, makes all of them za'atar, and uses 8 larger rounds instead of 12.",
+ "sources": [
+  {"name": "Simply Lebanese", "title": "Manakeesh (Zaatar and Cheese)", "url": "https://www.simplyleb.com/recipe/manakeesh/", "rating": 4.69, "rating_count": 64, "read": true, "lead": true},
+  {"name": "King Arthur Baking", "title": "Za'atar Manakeesh", "url": "https://www.kingarthurbaking.com/recipes/zaatar-manakeesh-recipe", "rating": 4.4, "rating_count": 14, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,35 @@
+{
+ "dish_name": "Bayd bi Banadoura",
+ "cuisine": "Lebanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Roma tomatoes", "qty": "4", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Chop the 4 tomatoes into small pieces, keeping all their juice.",
+  "Heat the 1/4 cup olive oil in a large nonstick skillet over medium high until it shimmers. Add the tomatoes, 1/2 tsp of the salt and the 1/2 tsp pepper. Stand back a little. They'll spatter.",
+  "Cook for 5 to 6 minutes, pressing the tomatoes down with the back of a wooden spoon now and then, until they've broken down into a thick, jammy sauce and the oil looks red at the edges.",
+  "Turn the heat down to medium. Make 8 small hollows in the sauce with the spoon and crack an egg into each one. Sprinkle the remaining 1/4 tsp salt over the eggs.",
+  "Let them cook undisturbed for about 1 minute, until the whites start to turn opaque at the edges.",
+  "Stir gently through about half of the eggs, folding the set white into the tomato, and leave the rest whole. Cook for 2 to 3 minutes more, until the whites are set and the yolks are as firm as you like them.",
+  "Meanwhile, warm the pita in a dry pan or straight over a low gas flame for a few seconds a side.",
+  "Serve straight from the pan with the warm pita."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both cook the eggs right into a tomato base and serve them with Lebanese flatbread. Zaatar & Zaytoun fries chopped tomatoes hard in a generous amount of olive oil with salt and black pepper, cracks the eggs into hollows and stirs some of them through, and says black pepper is the main seasoning. Food Heritage Foundation fries onion first, cooks peeled tomatoes for 15 minutes, then pours in beaten eggs and covers the pan until they set, finishing with parsley. Neither had 20 or more ratings and RecipeTin Eats (the trusted cook for Lebanese) has no version, so the first read version leads and this one follows its quick, onion free method.",
+ "sources": [
+  {"name": "Zaatar & Zaytoun", "title": "Lebanese breakfast egg and tomatoes", "url": "https://zaatarandzaytoun.com/eggs-and-tomatoes/", "rating": 5, "rating_count": 1, "read": true, "lead": true},
+  {"name": "Food Heritage Foundation", "title": "Eggs with tomato – Bayd b banadoura", "url": "https://food-heritage.org/eggs-with-tomato-bayd-b-banadoura/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
