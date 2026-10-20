@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Celiac" on someone's restrictions holds back gluten** (2026-10-20,
+  defect hunt, branch `overnight/celiac-holds-back-gluten`, tests
+  `tests/test_celiac_is_gluten.py`). The allergy matcher read "Celiac" /
+  "coeliac disease" as the literal word, so spaghetti, sourdough and
+  teriyaki passed the hard gate that "gluten" stops. Now celiac/coeliac
+  are the gluten family (`coordination._WHOLE_WORD_FAMILIES`), a
+  gluten-free line is believed for them, "disease" is a stopword, and a
+  hard fact "Maya is celiac" counts. Why: people write the condition, not
+  the protein. Still prompt-only, untouched here: "vegetarian", "halal",
+  "kosher", "pescatarian" — the matcher holds no meat back for them.
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a

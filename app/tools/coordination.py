@@ -60,6 +60,10 @@ _CONFLICT_STOPWORDS = frozenset({
     # "red meat" unmatchable as written. Time words that can appear before
     # the trigger are already above; this one comes after it.
     "during", "throughout", "while",
+    # "Celiac disease" is the condition said in full; "disease" is no food,
+    # and left in it made a two-word phrase that _WHOLE_WORD_FAMILIES (which
+    # reads only a one-word avoidance) never turned into gluten.
+    "disease",
 })
 
 
@@ -211,7 +215,15 @@ _ALLERGEN_ALIASES["eggs"] = _ALLERGEN_ALIASES["egg"]
 # whole family and block nothing) and for every word inside a phrase ("no
 # oat milk" would hold back oat pancakes with butter). _match_terms reads
 # this one only when the word IS the whole avoidance.
-_WHOLE_WORD_FAMILIES: dict[str, str] = {"milk": "dairy", "lactose": "dairy"}
+#
+# Celiac / coeliac (defect hunt, 2026-10-20): a household writes the
+# condition, not the protein — "Celiac" on a child in Settings. Matched as
+# the literal word, which no ingredient line says, it let spaghetti and
+# sourdough through the hard gate while "gluten" held both back.
+_WHOLE_WORD_FAMILIES: dict[str, str] = {
+    "milk": "dairy", "lactose": "dairy",
+    "celiac": "gluten", "coeliac": "gluten",
+}
 
 # The table as it stood before the 2026-09-30 widening, kept for ONE
 # reader: plan_quality's title rule builds its "known food word"
@@ -405,7 +417,9 @@ _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
 # untouched, so "Almond Flour Cake" is still a clash for a nut allergy even
 # though it is none for gluten.
 _GLUTEN_FREE_SEGMENT_RE = re.compile(r"\bgluten[\s-]?free\b|\bgf\b")
-_GLUTEN_WHEAT_LABELS = frozenset({"gluten", "wheat"})
+# Celiac too: it is a gluten avoidance (_WHOLE_WORD_FAMILIES), so a line
+# that says it is gluten-free is believed for it the same way.
+_GLUTEN_WHEAT_LABELS = frozenset({"gluten", "wheat", "celiac", "coeliac"})
 
 
 # A dish's NAME and the planner's dish_note are labels: they say what the
@@ -489,6 +503,11 @@ _AVOIDANCE_TRIGGER_RE = re.compile(
 # is sentence, not food.
 _ALLERGY_NOUN_RE = re.compile(r"\ballerg(?:y|ies|ic)\b")
 _ALLERGY_ADJ_RE = re.compile(r"\bintoleran(?:t|ce)\b|(?<=[a-z])-free\b")
+# A condition that IS its avoidance (2026-10-20): "Maya is celiac", "Sam
+# has coeliac disease" name no trigger and no food, yet say gluten as
+# plainly as "allergic to gluten" does — _WHOLE_WORD_FAMILIES reads the
+# word as the family.
+_CONDITION_RE = re.compile(r"\b(?:celiac|coeliac)\b")
 
 # A stated exception. "allergic to tree nuts but peanuts are fine" says two
 # things, and reading only the first half is how a household gets warned
@@ -606,6 +625,7 @@ def _fact_keywords(text: str, drop: set[str]) -> tuple[list[list[str]], list[str
             before = re.split(r"[.,;!?]", lowered[:m.start()])[-1]
             before = re.split(r"\b(?:and|or|but|with)\b", before)[-1]
             spans.append(" ".join(before.split()[-window:]))
+    spans.extend(m.group(0) for m in _CONDITION_RE.finditer(lowered))
 
     phrases: list[list[str]] = []
     seen: set[tuple[str, ...]] = set()
@@ -1024,7 +1044,7 @@ _APPROVED_CLOSING = "worth a look before you shop"
 # "a clash with Emily's shellfish" is not a sentence anyone would say.
 _SELF_DESCRIBING_LABEL_RE = re.compile(
     r"\b(?:allerg\w*|intoleran\w*|sensitivit\w*|free|diet|vegan|vegetarian|"
-    r"pescatarian|halal|kosher)\b"
+    r"pescatarian|halal|kosher|celiac|coeliac)\b"
 )
 
 _NUMBER_WORDS = {
