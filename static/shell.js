@@ -23328,7 +23328,10 @@
       showToast('Added to your ' + dayName(prepDate, { weekday: 'long' }) + ' prep.');
     } catch (err) {
       el.disabled = false;
-      showToast('That didn’t save — try again.');
+      // A refusal (400) carries its own sentence (add_prep_cut: prep can't
+      // land after the meal it feeds) — say that, not "try again". A 500's
+      // detail is an exception string, never shown.
+      showToast(err && err.status === 400 && err.detail ? err.detail : 'That didn’t save — try again.');
     }
   }
 
@@ -24467,6 +24470,7 @@
       // (see /api/cooker/cook-ahead) rather than with a failure to
       // explain — carry it on the error so the caller can say it out loud.
       var err = new Error('request failed');
+      err.status = res.status;
       var payload = await res.json().catch(function () { return {}; });
       if (typeof (payload || {}).detail === 'string') err.detail = payload.detail;
       throw err;

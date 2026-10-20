@@ -171,6 +171,24 @@ def add_prep_cut(weekly_plan_id: int, prep_date: str, description: str, entry_id
         conn.close()
         return {"prep_task_id": None, "entry_id": None, "added": False, "dropped": True}
 
+    # Prep comes before the meal it feeds, never after (2026-10-20). The
+    # Cook screen only offers prep days on or before the meal, but nothing
+    # here held that rule: a screen left open while the plan moved, or any
+    # direct caller, could file "Cut up romaine" for Saturday against a
+    # Wednesday dinner. The same day is fine (prep in the morning, eat that
+    # night). Refused rather than clamped, as big_meal.set_big_meal_prep_day
+    # refuses a day outside its range, and nothing is written for any of
+    # the meals named.
+    prep_day = date.fromisoformat(prep_date)
+    for entry in chosen:
+        if entry["date"] and prep_day > date.fromisoformat(entry["date"]):
+            conn.close()
+            meal = (entry["meal"] or "").strip() or "That meal"
+            meal_day = date.fromisoformat(entry["date"]).strftime("%A")
+            raise ValueError(
+                f"{meal} is on {meal_day}, so I can only put its prep on {meal_day} or before."
+            )
+
     created: list[dict] = []
     # No entries named at all is still a real prep-cut ("cut the onions"),
     # it just isn't attached to a meal.

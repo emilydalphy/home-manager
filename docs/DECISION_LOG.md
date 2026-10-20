@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A prep-cut can't be dated after the meal it feeds** (2026-10-20,
+  defect hunt; branch `overnight/prep-cut-not-after-the-meal`; tests
+  `tests/test_prep_days.py`). `add_prep_cut` checked only that the date was
+  ISO, so POST /api/prep-cut filed Saturday's "Cut up romaine" against a
+  Wednesday dinner (200). The Cook screen only offers prep days on or
+  before the meal, so a stale screen or any direct caller was the way in.
+  Now refused in words ("Chicken Bowls is on Wednesday, so I can only put
+  its prep on Wednesday or before."), nothing written for any named meal;
+  the same day is still fine. Refused, not clamped, like
+  set_big_meal_prep_day. The Cook screen's toast says the refusal's own
+  sentence. NOT covered: a swap that moves a dinner earlier leaves its
+  prep-cut where it was (weekly_plan.py's swap note, on purpose).
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
