@@ -1043,6 +1043,15 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
         # from the baseline again.
         ing.pop("cook_qty", None)
         qty_text = ing.get("qty", "") or ""
+        keep_spoons = "butter" in str(ing.get("item") or "").lower()
+        plus = _volume_plus_total(qty_text) if abs(ratio - 1) > 1e-9 and not keep_spoons else None
+        if plus:
+            # "1/4 cup + 2 tbsp" is ONE amount: scaled whole and said in the
+            # easiest measure, not each half on its own.
+            tsp_total, words = plus
+            text = _measure_terms_qty(_easiest_volume(tsp_total * ratio))
+            scaled_ingredients.append(_with_item_label({**ing, "qty": text + (" " + words if words else "")}))
+            continue
         if _QTY_NEEDS_TEXT_SCALING.search(qty_text):
             # Brackets, ranges, ½-style fractions, a trailing ", divided" —
             # scaled as TEXT, by the same rules as the steps (scale_steps),
@@ -1057,15 +1066,16 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
         parsed = _parse_cook_qty(qty_text)
         if parsed:
             amount, unit = parsed
-            # The step scaler's arithmetic (_step_scaled): a stick of butter
-            # cut to a fraction is tablespoons, a clove stays whole, a
-            # "1/4 bunch" stays a part, under a quarter cup is spoons.
-            scaled, unit = _step_scaled(amount, ratio, unit)
+            # The step scaler's arithmetic (_scaled_measure): a stick of
+            # butter cut to a fraction is tablespoons, a clove stays whole,
+            # a "1/4 bunch" stays a part, a cup/tbsp/tsp amount is said in
+            # the easiest measure ("2 tbsp + 2 tsp").
+            terms = _scaled_measure(amount, ratio, unit, keep_spoons=keep_spoons)
             words = _qty_words_after_amount(qty_text, parsed)
             # Written as a plain number ("0.5 cup"), which every reader of
             # this list parses and the Cook screen shows as "½ cup"
             # (shell.js humanQtyText) — the words after it ride along.
-            text = _quantities._format_quantity(scaled, unit) + (" " + words if words else "")
+            text = _measure_terms_qty(terms) + (" " + words if words else "")
             scaled_ingredients.append(_with_item_label({**ing, "qty": text}))
         else:
             scaled_ingredients.append(dict(ing))
@@ -1212,6 +1222,16 @@ _STEP_UNIT_RE = re.compile(
     r"(?P<sp>\s*)(?P<unit>" + "|".join(sorted(map(re.escape, _STEP_UNIT_WORDS), key=len, reverse=True)) + r")\b",
     re.IGNORECASE,
 )
+_STEP_VOLUME_WORDS = "|".join(sorted(
+    (re.escape(w) for w, (c, _s, _p) in _STEP_UNIT_WORDS.items() if c in ("cup", "tbsp", "tsp")),
+    key=len, reverse=True,
+))
+# "1/4 cup + 2 tbsp", "1 cup plus 2 tablespoons" — one amount in two measures.
+_STEP_PLUS_RE = re.compile(
+    r"(?<![\w.\-–/])(?:" + _STEP_NUM + r")\s*(?:" + _STEP_VOLUME_WORDS + r")\.?"
+    r"\s*(?:\+|\bplus\b)\s*(?:" + _STEP_NUM + r")\s*(?:" + _STEP_VOLUME_WORDS + r")\b",
+    re.IGNORECASE,
+)
 
 
 def _step_number(text: str) -> float | None:
@@ -1246,9 +1266,7 @@ def _step_amount_text(amount: float) -> str:
     return f"{whole} {best}" if whole else best
 
 
-def _step_scaled(
-    amount: float, ratio: float, unit: str | None, butter: bool = True, to_spoons: bool = True,
-) -> tuple[float, str | None]:
+def _step_scaled(amount: float, ratio: float, unit: str | None, butter: bool = True) -> tuple[float, str | None]:
     """scale_recipe's arithmetic for one amount, so the step and the chip
     agree: a stick of butter cut to a fraction becomes tablespoons, and a
     thing that only comes whole stays whole. A stick of anything else
@@ -1256,11 +1274,9 @@ def _step_scaled(
 
     A part of one the recipe itself wrote ("1/4 bunch", "1/2 head") is not
     a thing that only comes whole: it scales as a part, never up to a
-    whole bunch at every size. Less than a quarter cup is measured in
-    tablespoons ("1/3 cup" halved is 2 ⅔ tbsp, not "0.166667 cup", and
-    not the ⅛ cup the nearest fraction would round it to) — unless
-    `to_spoons` is off, which a range asks so its two ends keep one unit.
-    (Defect hunt, 2026-10-20.)"""
+    whole bunch at every size (defect hunt, 2026-10-20). A cup, tablespoon
+    or teaspoon amount is left as plain arithmetic here — what it is
+    MEASURED with is _scaled_measure's call (_easiest_volume)."""
     scaled = amount * ratio
     if unit == "stick" and not butter:
         return max(1.0, float(round(scaled))), unit
@@ -1270,13 +1286,114 @@ def _step_scaled(
         if abs(amount - round(amount)) > 1e-9:
             return max(0.125, scaled), unit   # never less than an eighth of one
         return max(1.0, float(round(scaled))), unit
-    if unit == "cup" and to_spoons and abs(ratio - 1) > 1e-9 and 0 < scaled < 0.25 - 1e-9:
-        # Only a scaled amount: the recipe's own "1/8 cup" stays its words.
-        return scaled * _CUP_TBSP, "tbsp"
     return scaled, unit
 
 
-_CUP_TBSP = 16.0
+# EASIEST MEASURE (Emily, 2026-10-20: "keep whichever is more intuitive and
+# will result in less fractions so it's easier for the user to measure
+# it"). A scaled cup/tbsp/tsp amount is said in the measures a home cook
+# owns, at most two of them ("2 tbsp + 2 tsp"), choosing the one that takes
+# the fewest scoops — "¼ cup" (one scoop) over "4 tbsp" (four), "2 tbsp +
+# 2 tsp" over "2 ⅔ tbsp" (no such spoon). Never short by more than 5% (nor
+# over by more); when nothing lands that close (a pinch-sized amount), the
+# nearest measure ABOVE it. Each entry: unit, teaspoons in one, and the
+# parts of one there is a measure for -> how many scoops that part takes.
+_VOLUME_TSP = {"cup": 48.0, "tbsp": 3.0, "tsp": 1.0}
+_KITCHEN_MEASURES = (
+    ("cup", 48.0, ((0.0, 0), (1 / 4, 1), (1 / 3, 1), (1 / 2, 1), (2 / 3, 1), (3 / 4, 1))),
+    ("tbsp", 3.0, ((0.0, 0),)),   # no half-tablespoon in a home drawer
+    ("tsp", 1.0, ((0.0, 0), (1 / 8, 1), (1 / 4, 1), (1 / 2, 1), (3 / 4, 2))),
+)
+_MEASURE_SHORT = 0.05   # never short by more than this
+_MEASURE_OVER = 0.05
+
+
+def _easiest_volume(tsp: float) -> list[tuple[float, str]]:
+    """`tsp` teaspoons as one or two kitchen measures, biggest first:
+    8 -> [(2, "tbsp"), (2, "tsp")], 12 -> [(0.25, "cup")], 1.5 -> [(1.5,
+    "tsp")]. See the block comment above for the rule."""
+    if tsp <= 0:
+        return [(0.0, "tsp")]
+    terms_by_unit = []
+    for unit, size, parts in _KITCHEN_MEASURES:
+        terms = []
+        for whole in range(0, int(tsp * (1 + _MEASURE_OVER) / size) + 2):
+            for part, part_scoops in parts:
+                n = whole + part
+                if n <= 0:
+                    continue
+                terms.append((n * size, whole + part_scoops, 1 if part else 0, (n, unit)))
+        terms_by_unit.append(terms)
+    candidates = []   # (value, scoops, pieces, fractions, smallest unit used, terms)
+    for i, terms in enumerate(terms_by_unit):
+        for value, scoops, fracs, term in terms:
+            candidates.append((value, scoops, 1, fracs, i, [term]))
+        for j in range(i + 1, len(terms_by_unit)):
+            for v1, s1, f1, t1 in terms:
+                if v1 > tsp * (1 + _MEASURE_OVER):
+                    continue
+                for v2, s2, f2, t2 in terms_by_unit[j]:
+                    # The second measure tops up less than one of the first.
+                    if v2 >= _KITCHEN_MEASURES[i][1]:
+                        continue
+                    candidates.append((v1 + v2, s1 + s2, 2, f1 + f2, j, [t1, t2]))
+    lo, hi = tsp * (1 - _MEASURE_SHORT) - 1e-9, tsp * (1 + _MEASURE_OVER) + 1e-9
+    close = [c for c in candidates if lo <= c[0] <= hi]
+    if close:
+        best = min(close, key=lambda c: (c[1], c[2], c[3], abs(c[0] - tsp), c[4]))
+    else:
+        above = [c for c in candidates if c[0] >= lo]
+        best = min(above, key=lambda c: (c[0], c[1], c[2], c[3]))
+    return best[5]
+
+
+def _scaled_measure(
+    amount: float, ratio: float, unit: str | None, butter: bool = True, keep_spoons: bool = False,
+) -> list[tuple[float, str | None]]:
+    """One amount scaled for a cook: _step_scaled's rules, and a scaled
+    cup/tbsp/tsp said in the easiest measure (_easiest_volume). The
+    recipe's own size is never touched, and neither is butter, which is
+    cut by the tablespoon marks on its wrapper ("6 tbsp", not "¼ cup + 2
+    tbsp") — `keep_spoons`, as is a stick cut to tablespoons. `butter` is
+    _step_scaled's (is a stick here a stick of butter). One (amount,
+    unit), or two to be read as "a + b"."""
+    scaled, new_unit = _step_scaled(amount, ratio, unit, butter)
+    if (
+        new_unit not in _VOLUME_TSP or abs(ratio - 1) < 1e-9 or keep_spoons
+        or unit == "stick" or scaled <= 0
+    ):
+        return [(scaled, new_unit)]
+    return _easiest_volume(scaled * _VOLUME_TSP[new_unit])
+
+
+def _measure_terms_qty(terms: list[tuple[float, str | None]]) -> str:
+    """A scaled amount as the qty column writes it: "0.25 cup", or two
+    measures joined the way recipe_import keeps a page's "1/4 cup + 2 tbsp"
+    — "2 tbsp + 2 tsp". shell.js humanQtyText draws each side's number."""
+    return " + ".join(_quantities._format_quantity(n, u) for n, u in terms)
+
+
+def _volume_plus_total(qty_text: str) -> tuple[float, str] | None:
+    """(teaspoons, the words after) for a qty that is one volume said in two
+    or more measures ("1/4 cup + 2 tbsp", "1 cup plus 2 tbsp sifted");
+    None for anything else, which scales as before."""
+    parts = re.split(r"\s*(?:\+|\bplus\b)\s*", _ascii_fractions(qty_text or "").strip())
+    if len(parts) < 2 or not all(parts):
+        return None
+    total, words = 0.0, ""
+    for i, part in enumerate(parts):
+        lead = re.match(r"^(" + _NUM + r")\s*([a-z]+)\.?(.*)$", part, re.IGNORECASE)
+        if not lead:
+            return None
+        got = _quantities._parse_quantity(lead.group(1) + " " + lead.group(2))
+        if not got or got[1] not in _VOLUME_TSP:
+            return None
+        rest = lead.group(3).strip()
+        if rest and i < len(parts) - 1:
+            return None   # "1 cup flour + 2 tbsp sugar" is two things
+        total += got[0] * _VOLUME_TSP[got[1]]
+        words = rest
+    return total, words
 
 
 def _step_ingredient_forms(items: list[str]) -> list[str]:
@@ -1411,6 +1528,22 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
 
     def rewrite(step: str) -> str:
         step = _STEP_COUNT_FIRST_CONTAINER.sub(count_first, step)
+        # "1/4 cup + 2 tbsp flour" is one amount: scaled whole, said in the
+        # easiest measure, and parked behind a marker so the pass below
+        # does not scale it a second time.
+        parked: list[str] = []
+
+        def plus_first(m) -> str:
+            got = _volume_plus_total(m.group(0))
+            if not got or re.match(r"\s*(?:of\s+)?(?:[a-z]+\s+)?butter\b", step[m.end():].lower()):
+                return m.group(0)
+            parked.append(" + ".join(
+                _step_amount_text(n) + " " + ("cups" if u == "cup" and n > 1 else u)
+                for n, u in _easiest_volume(got[0] * ratio)
+            ))
+            return "\x00" + "x" * len(parked) + "\x00"
+
+        step = _STEP_PLUS_RE.sub(plus_first, step)
         out, pos = [], 0
         for m in _STEP_AMOUNT_RE.finditer(step):
             if m.start() < pos:
@@ -1444,21 +1577,33 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
                     continue  # "cut into 8 slices"
                 # Butter is the noun the stick is OF ("1 stick cold butter"),
                 # or a bare "1 stick" in a recipe that lists butter.
-                butter = bool(
-                    re.match(r"\s*(?:of\s+)?(?:[a-z]+\s+)?butter\b", after.lower())
-                    or (has_butter and re.match(r"\s*(?:[.,;:)]|$)", after))
-                )
-                new_a, new_unit = _step_scaled(a, ratio, canon, butter, to_spoons=b is None)
-                new_b = _step_scaled(b, ratio, canon, butter, to_spoons=False)[0] if b is not None else None
-                biggest = new_b if new_b is not None else new_a
-                if new_unit != canon:
-                    unit_text = new_unit  # a stick cut to tablespoons
-                elif sing == plur:
-                    unit_text = written
+                butter_named = bool(re.match(r"\s*(?:of\s+)?(?:[a-z]+\s+)?butter\b", after.lower()))
+                butter = bool(butter_named or (has_butter and re.match(r"\s*(?:[.,;:)]|$)", after)))
+
+                def unit_word(n: float, u: str | None) -> str:
+                    if u != canon:
+                        return "cups" if u == "cup" and n > 1 else u  # a stick cut to tablespoons, a cup said in spoons
+                    if sing == plur:
+                        return "L" if written == "l" else written   # "l" reads as "1" (2026-10-20)
+                    word = plur if n > 1 else sing
+                    return word[:1].upper() + word[1:] if written[:1].isupper() else word
+
+                if b is None:
+                    # The easiest measure (_easiest_volume), as the chip says it.
+                    terms = _scaled_measure(a, ratio, canon, butter, keep_spoons=butter_named)
+                    if len(terms) > 1:
+                        out.append(step[pos:m.start()] + " + ".join(
+                            _step_amount_text(n) + " " + unit_word(n, u) for n, u in terms
+                        ))
+                        pos = m.end() + unit_m.end()
+                        continue
+                    new_a, new_unit = terms[0]
+                    new_b = None
                 else:
-                    unit_text = plur if biggest > 1 else sing
-                    if written[:1].isupper():
-                        unit_text = unit_text[:1].upper() + unit_text[1:]
+                    new_a, new_unit = _step_scaled(a, ratio, canon, butter)
+                    new_b = _step_scaled(b, ratio, canon, butter)[0]
+                biggest = new_b if new_b is not None else new_a
+                unit_text = unit_word(biggest, new_unit)
                 amount = _step_amount_text(new_a)
                 # A range whose two ends round to one number is that number
                 # ("1 to 2 cloves" halved is "1 clove", not "1 to 1 clove").
@@ -1495,7 +1640,10 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
             out.append(step[pos:m.start()] + amount + noun_m.group("sp") + (noun_m.group("size") or "") + noun + tail)
             pos = m.end() + noun_m.end()
         out.append(step[pos:])
-        return "".join(out)
+        text = "".join(out)
+        for k in range(len(parked), 0, -1):
+            text = text.replace("\x00" + "x" * k + "\x00", parked[k - 1])
+        return text
 
     return [rewrite(s) if isinstance(s, str) else s for s in steps]
 
@@ -3903,7 +4051,8 @@ def _amount_the_steps_use(key: str, steps: list[str]) -> str | None:
     # is the shape the grocery list parses and merges.
     whole, part = int(total), Fraction(total - int(total)).limit_denominator(8)
     number = " ".join(p for p in (str(whole) if whole else "", str(part) if part else "") if p) or "0"
-    return f"{number} {unit_seen}".strip() if unit_seen else number
+    # A litre is "L" ("½ l" reads as "½ 1"; 2026-10-20) — parsers lowercase.
+    return f"{number} {'L' if unit_seen == 'l' else unit_seen}".strip() if unit_seen else number
 
 
 def complete_ingredient_list(

@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A scaled amount is said in the easiest measure; a litre is "L"**
+  (2026-10-20, Emily's call; branch `fix/easiest-measure-and-capital-l`;
+  tests `tests/test_easiest_measure_and_capital_l.py`). The stepper said
+  half of 1/3 cup as "2 ⅔ tbsp" (no such spoon). `recipes._easiest_volume`
+  now says a scaled cup/tbsp/tsp in at most two kitchen measures, fewest
+  scoops first, within 5% (never more than 5% short; a pinch-sized amount
+  with nothing that close rounds UP): "2 tbsp + 2 tsp", "¼ cup", "1 ½ tsp".
+  List and steps share it (`_scaled_measure`); "1/4 cup + 2 tbsp" scales
+  as one amount; butter keeps its tablespoons; ranges keep one unit; the
+  recipe's own size is untouched. `_format_quantity` writes "L" ("½ l"
+  read as "½ 1"); shell.js draws "L" on the cook card and every grocery
+  quantity span (old rows say "l"); parsers still read l/L/litre/liter.
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
   tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`

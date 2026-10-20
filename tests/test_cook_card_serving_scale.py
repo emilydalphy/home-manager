@@ -61,7 +61,7 @@ def test_plain_card_scales_to_eaters_for_that_date_and_slot():
     assert card["default_servings"] == 2
     assert card["servings"] is None, "not a batch chip — this is one ordinary night, scaled"
     assert {i["item"]: i["qty"] for i in card["ingredients"]} == {
-        "stock": "0.5 l", "carrot": "1",
+        "stock": "0.5 L", "carrot": "1",
     }
 
 

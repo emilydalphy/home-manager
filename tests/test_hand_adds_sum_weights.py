@@ -27,7 +27,7 @@ def _lines(name: str) -> list[str]:
     ("500 g", "1 kg", "1.5 kg"),
     ("8 oz", "1 lb", "1.5 lbs"),
     ("1 lb", "4 oz", "1.25 lbs"),
-    ("500 ml", "1 l", "1.5 l"),
+    ("500 ml", "1 l", "1.5 L"),
     ("250 g", "250 g", "500 g"),       # one word: unchanged
 ])
 def test_a_households_two_amounts_in_one_family_add_up(a, b, expected):

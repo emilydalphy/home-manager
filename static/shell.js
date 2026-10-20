@@ -721,11 +721,19 @@
   // grocery list) rather than a separate amount and unit. This re-splits
   // just the leading decimal back out, reformats it with humanQtyAmount,
   // and leaves everything after it — the unit word — untouched.
+  //
+  // Two measures of one amount ("2 tbsp + 2 tsp", the scaler's easiest
+  // measure — recipes._easiest_volume) get each number drawn, and a litre
+  // reads "L": "½ l" looked like "½ 1" (Emily, 2026-10-20). The grocery
+  // rows apply the same litre regex inline (no shared helper, so every
+  // test harness that lifts one of these functions still runs it).
   function humanQtyText(text) {
     var raw = String(text == null ? '' : text).trim();
-    var m = /^(\d+(?:\.\d+)?)(\s.*)?$/.exec(raw);
-    if (!m) return raw;
-    return humanQtyAmount(parseFloat(m[1])) + (m[2] || '');
+    return raw.split(' + ').map(function (part) {
+      var m = /^(\d+(?:\.\d+)?)(\s.*)?$/.exec(part);
+      var shown = m ? humanQtyAmount(parseFloat(m[1])) + (m[2] || '') : part;
+      return shown.replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L');
+    }).join(' + ');
   }
   // "18:30" -> "6:30 pm", "07:00" -> "7:00 am", "12:00" -> "12:00 pm".
   function humanTime(hhmm) {
@@ -6299,7 +6307,7 @@
         var id = String(c.item_id);
         return '<div class="gro-ps-row gro-carry-row">' +
           '<p class="gro-ps-name">' + escapeHtml(c.item) +
-            (c.quantity ? ' <span class="gro-qty">' + escapeHtml(c.quantity) + '</span>' : '') + '</p>' +
+            (c.quantity ? ' <span class="gro-qty">' + escapeHtml(String(c.quantity).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L')) + '</span>' : '') + '</p>' +
           (c.this_week_quantity
             ? '<p class="gro-carry-thisweek">This week&rsquo;s recipes: ' + escapeHtml(c.this_week_quantity) + '</p>'
             : '') +
@@ -6811,7 +6819,7 @@
         aside.map(function (it) {
           return '<div class="gro-elsewhere-row">' +
             '<span class="gro-staple-name">' + escapeHtml(it.item) +
-              (it.quantity ? ' <span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') + '</span>' +
+              (it.quantity ? ' <span class="gro-qty">' + escapeHtml(String(it.quantity).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L')) + '</span>' : '') + '</span>' +
             '<button type="button" class="gro-staple-act" data-gro="elsewhere-back" data-id="' + String(it.id) + '" ' +
               'data-name="' + escapeHtml(it.item) + '" aria-label="' + escapeHtml('Put ' + it.item + ' back on the list') + '">' +
               escapeHtml(GRO_ELSEWHERE_BACK) + '</button>' +
@@ -6893,7 +6901,7 @@
             '</p>' +
             // The week's measured total ("2½ tsp", "about ½ tsp") where
             // the meals said one; a tick still buys one jar (spices.py).
-            ((sp.total || sp.quantity) ? '<span class="gro-qty">' + escapeHtml(sp.total || sp.quantity) + '</span>' : '') +
+            ((sp.total || sp.quantity) ? '<span class="gro-qty">' + escapeHtml(String(sp.total || sp.quantity).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L')) + '</span>' : '') +
           '</div>';
         }).join('') +
         (recent.length
@@ -7146,7 +7154,7 @@
         ? '<div class="gro-line-text"><p class="gro-name">' + escapeHtml(it.item) + '</p>' +
             '<p class="gro-line-weeks">' + escapeHtml(it.week_note) + '</p></div>'
         : '<p class="gro-name">' + escapeHtml(it.item) + '</p>') +
-      (it.quantity ? '<span class="gro-line-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
+      (it.quantity ? '<span class="gro-line-qty">' + escapeHtml(String(it.quantity).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L')) + '</span>' : '') +
       '<button type="button" class="gro-rowmore" data-gro="row-menu" data-id="' + id + '" ' +
         'aria-expanded="' + open + '" aria-label="More for ' + escapeHtml(it.item) + '">' +
         GRO_ICONS.dots + '</button>' +
@@ -7512,7 +7520,7 @@
         escapeHtml(groSortAllRowSig(it, pillStores)) + '">' +
         '<div class="gro-sortall-head">' +
           '<span class="gro-sortall-name">' + escapeHtml(it.item) + '</span>' +
-          (it.quantity ? '<span class="gro-qty">' + escapeHtml(it.quantity) + '</span>' : '') +
+          (it.quantity ? '<span class="gro-qty">' + escapeHtml(String(it.quantity).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L')) + '</span>' : '') +
         '</div>' +
         // Above the chips, not below them: the kitchen may already have
         // this, and that is worth reading BEFORE choosing which shop to
@@ -7799,7 +7807,7 @@
               // "Put back on the list" here also cancels its fridge move.
               var why = it.removed_by === 'freezer' ? ' &middot; from the freezer' : '';
               return '<div class="gro-fix">' +
-                '<span>' + escapeHtml(it.item) + (it.quantity ? ' &middot; ' + escapeHtml(it.quantity) : '') + why + '</span>' +
+                '<span>' + escapeHtml(it.item) + (it.quantity ? ' &middot; ' + escapeHtml(String(it.quantity).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L')) : '') + why + '</span>' +
                 '<button type="button" class="secondary" data-gro="undo-already-have" data-id="' + String(it.id) + '">Put back on the list</button>' +
               '</div>';
             }).join('') +

@@ -611,6 +611,10 @@ def _format_quantity(amount: float, unit: str | None, sig: int = 6) -> str:
     # A sized package ("tub (48 oz)") pluralizes the package word and
     # leaves the size alone: "2 tubs (48 oz)", never "2 tub (48 ozs)".
     head, size_suffix = _split_package_size(unit)
+    if head == "l":
+        # A litre is written "L": "½ l chicken stock" read as "½ 1" (Emily,
+        # 2026-10-20). Every parser lowercases first, so "3 L" reads back.
+        return f"{amount_str} L{size_suffix}"
     # One or less is singular: "½ cup", "¾ lb", "1 head" — the way a person
     # writes it, and what the Cook screen renders once shell.js's
     # humanQtyText has turned the leading 0.5 into "½". This used to

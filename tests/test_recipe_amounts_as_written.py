@@ -209,7 +209,8 @@ def test_the_flour_merges_on_the_grocery_list_and_shows_as_written_on_the_card(s
     assert (flour["qty"], flour["qty_as_written"]) == ("26 tbsp", "1 1/2 cups + 2 tablespoons")
     # The cook card: the page's words, and scaled as words.
     assert _cook_card_text("Shortbread")["almond flour"] == "1 1/2 cups + 2 tablespoons"
-    assert _cook_card_text("Shortbread", 8)["almond flour"] == "3 cups + 4 tablespoons"
+    # Scaled, it is one amount said in the easiest measure (2026-10-20).
+    assert _cook_card_text("Shortbread", 8)["almond flour"] == "3.25 cups"
     # Almond flour, not plain flour: pantry-staples-assumed keeps plain flour
     # off the list as already at home (merge 2026-10-19).
     # The grocery list: one almond flour line with another meal's almond flour, no "+".
