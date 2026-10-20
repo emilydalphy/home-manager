@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A mustard allergy holds back Dijon** (2026-10-20, defect hunt, branch
+  `overnight/mustard-holds-back-dijon`, stacked on
+  `overnight/celiac-holds-back-gluten`; tests
+  `tests/test_mustard_holds_back_dijon.py`). "mustard" had no family, so a
+  "Dijon" line passed the hard gate. Now `_ALLERGEN_ALIASES["mustard"]` =
+  dijon, piccalilli. Why: a Canadian priority allergen, and the jar is
+  named for the town. Still open: "no red meat" doesn't reach lamb.
+
 - **"Celiac" on someone's restrictions holds back gluten** (2026-10-20,
   defect hunt, branch `overnight/celiac-holds-back-gluten`, tests
   `tests/test_celiac_is_gluten.py`). The allergy matcher read "Celiac" /

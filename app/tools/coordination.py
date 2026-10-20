@@ -180,6 +180,10 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso", "tamari", "shoyu",
             "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara"},
     "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne"},
+    # Mustard is one of Canada's priority allergens, and the jar on the line
+    # is usually named for the town: "mustard allergy" let "Dijon" through
+    # (defect hunt, 2026-10-20). Only words that are mustard by definition.
+    "mustard": {"dijon", "piccalilli"},
 }
 # Meats said the household's way ("we don't eat pork") reach the cuts and
 # cures that ARE that meat. A no-pork house was offered Bacon lardons,
