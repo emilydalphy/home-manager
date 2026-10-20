@@ -246,6 +246,13 @@ why*, not duplicating the diff.
   entry must be `{"adults": n, "children": n}` (ISO date key, whole numbers
   >= 0) or the save is a 400; the generator also skips a non-dict entry
   already saved, so an old bad row reads as no guests instead of crashing.
+- **A recipe serves at least 1** (2026-10-20, overnight hunt; branch
+  `overnight/recipe-serves-at-least-one`; tests
+  `tests/test_servings_must_be_positive.py`). `update_recipe_details` (chat
+  tool and "Fill in this recipe") saved `default_servings` of 0 or negative;
+  the card then said 0 while `scale_recipe` quietly scaled from 4. The save
+  now raises a ValueError the chat relays; `fill_in_recipe` drops a model's
+  non-positive count (keeps the recipe's own) rather than losing the steps.
 
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
