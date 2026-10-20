@@ -1724,6 +1724,14 @@ def get_feedback_nudge() -> dict:
     records it per person and leaves the household rating empty, and the
     question used to keep coming back on Kitchen and in every new chat
     for a week after it had been answered.
+
+    A NOTE-ONLY answer counts too (Emily 2026-10-20): "a bit too spicy"
+    with no Liked / Not a hit is still someone answering. Notes live in
+    recipes.feedback_notes (household, from mark_recipe_feedback) and
+    recipe_notes note_type='feedback' (log_recipe_note); blank/whitespace
+    notes don't count, and a note on another dish never reaches this one.
+    member_recipe_feedback.rating is NOT NULL, so a per-person note always
+    arrives on a row that already counts as a verdict.
     """
     conn = get_conn()
     row = conn.execute(
@@ -1738,6 +1746,12 @@ def get_feedback_nudge() -> dict:
           AND NOT EXISTS (
               SELECT 1 FROM member_recipe_feedback mrf
               WHERE mrf.household_id = mpe.household_id AND mrf.recipe_id = mpe.recipe_id
+          )
+          AND TRIM((SELECT feedback_notes FROM recipes WHERE id = mpe.recipe_id)) = ''
+          AND NOT EXISTS (
+              SELECT 1 FROM recipe_notes rn
+              WHERE rn.household_id = mpe.household_id AND rn.recipe_id = mpe.recipe_id
+                AND rn.note_type = 'feedback' AND TRIM(rn.note) != ''
           )
         ORDER BY mpe.cooked_at DESC LIMIT 1
         """,

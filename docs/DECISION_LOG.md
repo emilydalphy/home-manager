@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A note-only answer to "How did it go?" counts as answered**
+  (2026-10-20, Emily's call; branch `fix/note-only-answer-counts`; tests
+  `tests/test_feedback_nudge_note_only.py`). `get_feedback_nudge` (Kitchen,
+  chat, morning text) now also stops on a non-blank `recipes.feedback_notes`
+  or a `recipe_notes` feedback row for that dish. Per-person notes ride on
+  `member_recipe_feedback` rows, whose rating is NOT NULL, so they already
+  counted; deviation notes (what changed) are not an answer.
+
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
   tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`
