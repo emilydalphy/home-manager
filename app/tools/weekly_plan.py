@@ -2076,12 +2076,22 @@ def _attention_moves_on(today: date, start_date: str, day_count: int) -> bool:
     the nudge for what follows it still has to open before it ends (the
     old "from Saturday" rule, which this generalises rather than replaces).
     Before the period starts, never — a future period has no "days left".
+
+    The first clause also waits until no more days are left than a week
+    has after its Friday (two). Without that, a two-week plan reached its
+    "fifth day" with nine days still planned, and Today asked "Shall I put
+    Oct 30–Nov 5 together?" under a NEXT WEEK eyebrow on Oct 20 (defect
+    hunt 2026-10-20). For any period of seven days or fewer the two
+    conditions are the same day, so only longer periods move.
     """
     start = date.fromisoformat(start_date)
     if today < start:
         return False
     end = date.fromisoformat(period_end_date(start_date, day_count))
-    return (today - start).days >= PLAN_AHEAD_FROM_WEEKDAY or (end - today).days <= 1
+    days_in, days_left = (today - start).days, (end - today).days
+    return (
+        days_in >= PLAN_AHEAD_FROM_WEEKDAY and days_left <= 6 - PLAN_AHEAD_FROM_WEEKDAY
+    ) or days_left <= 1
 
 
 def _plan_before_shop_day(today: date) -> dict | None:
