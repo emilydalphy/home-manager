@@ -1,0 +1,121 @@
+{
+ "dish_name": "Chiles Rellenos",
+ "cuisine": "Mexican",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Poblano peppers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Oaxaca cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Set a rack about 6 inches under the broiler and turn it on high. Line a baking sheet with foil and lay the 4 poblanos on it.",
+  "Broil the poblanos for 5 to 7 minutes, until the top side is blistered and black in patches. Turn them over and broil the other side for another 5 to 7 minutes. They should look soft and a little slumped.",
+  "Put the poblanos in a bowl, cover it with a plate and leave them to steam for 15 minutes.",
+  "Meanwhile, start the sauce. Heat a dry cast iron skillet over high. Add the 4 tomatoes whole, half the onion in one piece and the 2 garlic cloves in their skins. Turn them now and then until the tomatoes are blistered and soft, 8 to 10 minutes. Take the garlic out after about 5 minutes, once it feels soft.",
+  "Peel the garlic. Put it in a blender with the tomatoes, the onion piece, 1/4 cup water and 1/2 tsp of the salt, and blend until smooth.",
+  "Heat 1 tbsp of the oil in a small saucepan over medium and pour in the sauce. Stand back a little. It'll spatter. Simmer it for 8 to 10 minutes, stirring now and then, until it's a little thicker. Turn the heat to low and cover it.",
+  "Rub the charred skin off the poblanos with your fingers, leaving the stems on. If a stubborn bit won't come off, rinse it quickly under the tap.",
+  "Cut a slit down one side of each poblano, from just below the stem to about half an inch from the tip. Open it gently and pull out the seeds and the white ribs. Try not to tear the flesh.",
+  "Cut the 8 oz Oaxaca cheese into thick strips. Tuck a quarter of it into each poblano and fold the sides back over the cheese. Push a toothpick through the slit if it won't stay shut.",
+  "Pour the rest of the oil into a large heavy skillet. It should be about 1/2 inch deep. Heat it over medium-high.",
+  "While the oil heats, separate the 4 eggs, with the whites in a large clean bowl and the yolks in a small one. Beat the whites with an electric mixer on medium-high for 3 to 4 minutes, until they stand up in stiff peaks.",
+  "Beat in the yolks one at a time, then 1/4 tsp of the salt and 2 tbsp of the flour. Stop as soon as you can't see the flour. Any longer and the batter goes flat.",
+  "Spread the rest of the flour on a plate. Roll each stuffed poblano in it and tap off what doesn't stick. The batter won't hold on to a bare pepper.",
+  "You want the oil at 350°F, so if you have a thermometer, check it now. No thermometer? Drop in a little batter. It should sizzle and puff right away.",
+  "Hold a poblano by the stem and spoon batter over it until it's covered all over. Lower it into the oil and do a second one the same way. Fry them for 3 to 4 minutes, until the underside is deep golden and puffed.",
+  "Turn them carefully with a spatula and a fork and fry the other side for 3 to 4 minutes, until it's golden too. Lift them onto a paper towel lined plate. Batter and fry the other two the same way, then sprinkle the last 1/4 tsp salt over all four.",
+  "Chop a small handful of the cilantro. Taste the sauce, and add a pinch more salt if it's flat.",
+  "Spoon the warm sauce onto plates and set a chile relleno on each. Pull out any toothpicks. Serve with the 1/2 cup crema drizzled over and the cilantro on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three roast the poblanos until blackened, steam and peel them, stuff them with a mild melting cheese, dip them in a batter of whites beaten stiff with the yolks folded back in, and fry them. Recipiana (the lead) broils the chiles, dusts them in flour before battering, fries at 350°F for 3 to 4 minutes a side and serves them on a charred tomato, onion and garlic salsa with crema, cilantro and queso fresco. Giangi's Kitchen roasts over a flame and skips the sauce, finishing with cotija and cilantro, and Hola Jalapeño fries its salsa ranchera in oil and shallow fries the chiles in a cup of oil. This one makes one chile per person, shallow fries in about 1/2 inch of oil, and leaves the serrano out of the salsa to keep it mild.",
+ "sources": [
+  {
+   "name": "Recipiana",
+   "title": "Crispy & Authentic Chiles Rellenos with Cheese and Salsa Recipe",
+   "url": "https://recipiana.com/crispy-and-authentic-chiles-rellenos-with-cheese-and-salsa-recipe/",
+   "rating": 5.0,
+   "rating_count": 69,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Giangi's Kitchen",
+   "title": "Chile Relleno Pepper",
+   "url": "https://www.giangiskitchen.com/chiles-rellenos/",
+   "rating": 5.0,
+   "rating_count": 40,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hola Jalapeño",
+   "title": "Authentic Chile Relleno Recipe",
+   "url": "https://www.holajalapeno.com/chile-relleno/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
