@@ -1,0 +1,52 @@
+{
+ "dish_name": "LA Galbi",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Flanken-cut beef short ribs", "qty": "3 lb", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Asian pear", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 small piece", "category": "produce", "cook_qty": "a 1 inch piece"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Mirin", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "1 1/2 tbsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Red leaf lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "3"},
+  {"item": "Sesame seeds", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or up to 24 hours ahead: peel half the onion and half the pear and grate them finely into a large bowl, juice and all. Peel a 1 inch piece of the ginger and grate it in with the 3 garlic cloves.",
+  "Add 1/2 cup soy sauce, 6 tbsp brown sugar, 3 tbsp mirin, 3 tbsp water, 1 1/2 tbsp toasted sesame oil and 1 1/2 tsp black pepper. Whisk until the sugar dissolves.",
+  "Rinse the 3 lb short ribs under cold water to wash off any bits of bone, and pat them dry. Turn each one in the marinade until it's coated, then cover the bowl and refrigerate it overnight. Turn the ribs once if you think of it.",
+  "When you're ready to cook, put 2 cups of rice in a pot, cover it with cold water and swirl it with your hand. Pour off the cloudy water and repeat three or four times, until the water is almost clear.",
+  "Add 2 1/4 cups fresh water to the rice and bring it to a boil over high heat. Cover the pot, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered while you cook the ribs.",
+  "Meanwhile, separate the lettuce into leaves, wash them and pat them dry. Thinly slice 3 green onions.",
+  "Lift the ribs out of the marinade and let the extra drip back into the bowl. Pour the marinade through a sieve into a small bowl and keep it by the stove.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high until it shimmers. Lay in a third of the ribs in one layer, with space between them.",
+  "Leave them for 2 to 3 minutes, until the underside is dark brown and caramelized in spots. Flip them and cook the other side for 2 minutes.",
+  "Spoon 2 tbsp of the strained marinade into the pan and turn the ribs in it for about 30 seconds, until it bubbles down to a sticky glaze. Move them to a platter.",
+  "Wipe out the pan with a paper towel. Cook the other two batches the same way, with 1 tbsp of the oil and 2 tbsp of the marinade each time. Throw away any marinade that's left.",
+  "Cut the ribs between the bones into pieces of two or three bones with kitchen scissors.",
+  "Taste a piece. If it's flat, add a pinch of salt.",
+  "Scatter the green onions and 1 tbsp sesame seeds over the ribs. Serve with the rice and the lettuce leaves."
+ ],
+ "advance_prep_notes": "Marinate the ribs the night before (overnight, up to 24 hours).",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "All three marinate thin cross-cut short ribs in soy, sugar, grated pear or other fruit, garlic and sesame oil, then cook them fast over high heat. RecipeTin Eats adds grated onion, ginger, mirin and black pepper, marinates for 24 hours, discards the marinade and sears the ribs for about 2 minutes a side on a smoking grill or skillet. Korean Bapsang uses more liquid (water, honey and rice wine), marinates 6 to 8 hours or overnight, and in a pan adds the strained marinade once the pan dries so the ribs finish glazed. America's Test Kitchen soaks and rinses the ribs first, marinates in pear, apple, onion and pineapple juice for at least a day, and reduces the marinade in the skillet. This one follows RecipeTin's marinade scaled up to 3 lb of ribs, marinates overnight and borrows the pan glaze.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Galbi - Korean BBQ Marinated Beef Short Ribs", "url": "https://www.recipetineats.com/korean-bbq-marinated-beef-short-ribs-galbi/", "rating": 4.96, "rating_count": 23, "read": true, "lead": true},
+  {"name": "Korean Bapsang", "title": "LA Galbi (Korean BBQ Short Ribs)", "url": "https://www.koreanbapsang.com/la-galbi-gui-grilled-la-style-short-ribs/", "rating": 4.58, "rating_count": 299, "read": true, "lead": false},
+  {"name": "America's Test Kitchen", "title": "LA Galbi (Korean BBQ Short Ribs)", "url": "https://www.americastestkitchen.com/recipes/16838-korean-bbq-short-ribs-la-galbi", "rating": 4.1, "rating_count": 17, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

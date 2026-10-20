@@ -1,0 +1,46 @@
+{
+ "dish_name": "Korean Grilled Mackerel",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Mackerel", "qty": "2 (about 1 lb each), filleted", "category": "meat/seafood"},
+  {"item": "Coarse sea salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "1"},
+  {"item": "Toasted sesame oil", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Kimchi", "qty": "1 jar", "category": "other", "cook_qty": "1 cup"}
+ ],
+ "instructions": [
+  "Put 2 cups of rice in a pot, cover it with cold water and swirl it with your hand. Pour off the cloudy water and repeat three or four times, until the water is almost clear.",
+  "Add 2 1/4 cups fresh water to the rice and bring it to a boil over high heat. Cover the pot, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered. No peeking.",
+  "Meanwhile, pat the 4 mackerel fillets dry with paper towels. Cut three shallow slashes across the skin of each one, about 1/4 inch deep, so they stay flat in the pan.",
+  "Squeeze the juice of half the lemon over the flesh side of the fillets. Sprinkle the 2 tsp salt evenly over both sides and set them on a plate for 20 minutes.",
+  "While the fish sits, make the dipping sauce. Mince the garlic clove and thinly slice 1 green onion. Stir them into a small bowl with 3 tbsp soy sauce, 1 tsp sugar and 1 tsp toasted sesame oil until the sugar dissolves.",
+  "Cut the other lemon half into wedges. Spoon about 1 cup of the kimchi into a small serving bowl.",
+  "After 20 minutes, shake off any loose salt and pat the fillets dry again with paper towels.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over medium-high until it shimmers. Lay 2 of the fillets in, skin side down. Stand back a little. They'll spatter.",
+  "Leave them alone for 3 to 4 minutes, until the skin is deep golden and crisp and the flesh has turned opaque most of the way up the sides.",
+  "Flip them and cook the other side for about 2 minutes, until the thickest part flakes when you press it with a fork. Move them to a plate, skin side up.",
+  "Add the other 1 tbsp oil to the pan and cook the last 2 fillets the same way.",
+  "Taste a flake of the fish. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Fluff the rice with a spoon. Serve the mackerel with the rice, the kimchi, the lemon wedges and the dipping sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook the mackerel plainly with salt and serve it with rice. Korean Bapsang slashes the skin, salts the fillets for 20 to 30 minutes (with optional lemon and ginger juice), shakes off the extra salt and cooks them skin side down on a grill, in a skillet or under the broiler, 2 to 3 minutes then about 2 on the other side. Aeri's Kitchen pan-fries store-bought salted mackerel in a few spoons of oil over medium-high, flipping once when golden, and serves it with rice and kimchi. Easy Korean Food broils it and brushes on a soy, garlic, green onion, sugar and sesame oil sauce halfway through. This one salts like Korean Bapsang, pan-fries skin side down, and serves Easy Korean Food's sauce on the side for dipping. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Korean) has no version, so the first read version leads.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Godeungeo Gui (Grilled Mackerel)", "url": "https://www.koreanbapsang.com/godengeo-gui-grilled-mackerel/", "rating": 4.75, "rating_count": 12, "read": true, "lead": true},
+  {"name": "Aeri's Kitchen", "title": "Salted Mackerel GuI (JaBan GoDeungEo GuI)", "url": "https://www.aeriskitchen.com/2009/10/fried-salted-mackerel-%EC%9E%90%EB%B0%98-%EA%B3%A0%EB%93%B1%EC%96%B4-%EA%B5%AC%EC%9D%B4-jaban-godeungeo-gui/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Easy Korean Food", "title": "Grilled Mackerel Recipe: Korean Godeungeo Gui", "url": "https://www.easykoreanfood.com/Grilled-mackerel-recipe.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
