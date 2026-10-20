@@ -77,6 +77,7 @@ def _people_block() -> str:
         + "function inviteRowHtml() { return ''; }\n"
         + "function inviteAdultNamed() { return null; }\n"
         + "function inviteNewHtml() { return ''; }\n"
+        + "function inviteHelpersHtml() { return ''; }\n"
         + "function wwkFactsHtml() { return ''; }\n"
         + _function("wwkPeopleHtml") + "\n"
     )

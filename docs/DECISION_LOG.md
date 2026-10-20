@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A helper has a row in Who's here** (2026-10-20, defect hunt; branch
+  `overnight/helper-shows-in-whos-here`; tests
+  `tests/test_helper_in_whos_here.py`). An adult added as "Someone not
+  eating here" (`members.eats_here = 0`) signs in, but Who's here lists only
+  the people meals are planned for, so a helper appeared nowhere in
+  Preferences: no "Invite Maria", no "Joined", no way to send a new link
+  after the first one's week ran out. `/api/household/invites` now carries
+  `eats_here` per adult and `inviteHelpersHtml` draws each helper (name,
+  "Helps out", the ordinary invite row; no age chips, restrictions or main
+  person). Still open for Emily: nobody can take a helper OUT of the
+  household (remove-me is self-only), and Preferences' "Invite another
+  adult" always adds an eater.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a

@@ -12349,7 +12349,7 @@
       '</div>';
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
-    else html += inviteNewHtml();
+    else html += inviteHelpersHtml() + inviteNewHtml();
     html += wwkFactsHtml('people', { household: true, lead: 'Anything else for the household' });
     if (mem.notes && String(mem.notes).trim()) html += wwkNote('From setup: ' + String(mem.notes).trim());
     return html;
@@ -12519,6 +12519,27 @@
       '<button type="button" class="wwk-invite-btn" data-invite="send" data-member-id="' + id + '">' +
         'Invite ' + escapeHtml(adult.name) + '</button>' +
     '</div>';
+  }
+
+  // The helpers (2026-10-20): an adult added as "Someone not eating here"
+  // (a nanny, a grandparent who helps with dinners — members.eats_here = 0)
+  // signs in like anyone, but the people above are the ones meals are
+  // planned for, so a helper had no row anywhere in Preferences: nobody
+  // could see whether they'd joined, or send them a new link once the
+  // first ran out after its week. Each gets one here — their name, what
+  // they are, and the same invite row an adult above carries. No age
+  // chips, restrictions or "Make main person": they don't eat here.
+  function inviteHelpersHtml() {
+    return (inviteState.adults || []).filter(function (a) {
+      return a.eats_here === false;
+    }).map(function (a) {
+      return '<div class="wwk-person wwk-helper">' +
+        '<p class="wwk-person-name">' + escapeHtml(a.name) +
+          ' <span class="pill pill-neutral wwk-person-main">Helps out</span></p>' +
+        '<p class="wwk-note">Sees the plan and the list. I don’t plan meals for them.</p>' +
+        inviteRowHtml(a) +
+      '</div>';
+    }).join('');
   }
 
   function inviteNewHtml() {
