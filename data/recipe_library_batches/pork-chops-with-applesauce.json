@@ -1,0 +1,107 @@
+{
+ "dish_name": "Pork Chops with Applesauce",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Boneless pork loin chops",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Granny Smith apples",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Pecans",
+   "qty": "1 bag (4 oz)",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel and core the 3 apples and cut them into 1/2 inch pieces. Roughly chop 1/4 cup of the pecans.",
+  "Pat the 1.5 lb of chops dry with paper towels and sprinkle them on both sides with 3/4 tsp of the salt and the 1/2 tsp pepper.",
+  "Put the chopped pecans in a large dry skillet over medium heat and stir them for 2 to 3 minutes, until they smell toasty and turn a shade darker. Tip them into a small bowl.",
+  "Turn the heat under the skillet to medium high and add the 1 tbsp oil and 1 tbsp of the butter. When the butter foams, lay in the chops and leave them alone for 4 minutes, until they're golden brown underneath and let go of the pan.",
+  "Flip them and cook the other side for 3 to 4 minutes. You're cooking them to 145°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest chop: it's done when the middle is faintly pink and the juices run clear. Move the chops to a plate and cover them loosely with foil.",
+  "Turn the heat to medium and add the last 1 tbsp butter to the skillet. Add the apples, the 2 tbsp brown sugar, 1/2 tsp cinnamon, the pinch of nutmeg and the remaining 1/4 tsp salt, and stir to coat the apples, scraping up the brown bits from the pan.",
+  "Pour in 1/3 cup of water, cover the skillet and cook for 8 to 10 minutes, stirring once or twice, until the apples are soft enough to crush with a spoon.",
+  "Take off the lid and mash the apples with a fork or potato masher, leaving it a little chunky. If it's watery, let it bubble for a minute more. Pour in any juices from the chops' plate. Taste it, and add a pinch more salt if it's flat.",
+  "Spoon the applesauce over the chops and scatter the toasted pecans on top. Serve with mashed potatoes or green beans."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the chops in a skillet and cook tart apples with sugar and cinnamon alongside. Taste of Home (the most reviewed; its page gives a review count of 77 rather than a rating count) sears boneless loin chops in butter to 145°F, then cooks sliced apples, brown sugar, cinnamon, nutmeg and pecans in the same pan into a syrupy topping. Mr. Food simmers sliced Granny Smiths with sugar, water, cinnamon and nutmeg into applesauce and pan fries floured shoulder chops in butter with onion; Food.com mashes a slow cooked chunky applesauce with brown sugar, vanilla and lemon and serves it on crumb coated chops. This one follows Taste of Home's pan and seasoning but adds a little water and mashes the apples into a chunky applesauce, keeping the pecans toasted on top.",
+ "sources": [
+  {
+   "name": "Taste of Home",
+   "title": "Pork Chops with Apples",
+   "url": "https://www.tasteofhome.com/recipes/cinnamon-apple-pork-chops/",
+   "rating": 4.73,
+   "rating_count": 77,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mr. Food",
+   "title": "Pork Chops & Applesauce",
+   "url": "https://www.mrfood.com/Pork/Pork-Chops-and-Applesauce",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Chops and Chunky Apples",
+   "url": "https://www.food.com/recipe/chops-and-chunky-apples-243388",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

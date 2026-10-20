@@ -1,0 +1,121 @@
+{
+ "dish_name": "Crispy Baked Fish Sticks",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Grated parmesan",
+   "qty": "1 tub (5 oz)",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup + 1 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dill pickles",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Toss the 1 1/2 cups panko with 2 tbsp of the olive oil on a large rimmed baking sheet and spread it out in an even layer.",
+  "Toast the panko in the oven for 4 to 6 minutes, stirring halfway, until it's light golden. Keep an eye on it near the end. It goes from golden to burnt quickly.",
+  "Tip the panko into a wide shallow bowl and stir in the 1/4 cup parmesan, the 2 tsp paprika, 1/2 tsp of the salt and 1/4 tsp of the pepper. Turn the oven up to 425°F.",
+  "Brush the remaining 1 tbsp olive oil over the same baking sheet.",
+  "Pat the 1.25 lb cod dry with paper towels and cut it into strips about 3/4 inch wide and 4 inches long.",
+  "In another bowl, whisk the egg with 1 tbsp of the mayonnaise, the 2 tbsp flour and the remaining 1/4 tsp salt and 1/4 tsp pepper until it's smooth.",
+  "Put the fish in the egg mix and turn it gently with a spatula to coat every strip. Work straight away. If the coated fish sits around it turns watery.",
+  "Lift the strips out one at a time with tongs and lay them in the panko. Spoon crumbs over the top and press them on with your fingers. Set each one on the oiled baking sheet with a little space around it.",
+  "Bake for 12 to 14 minutes, until the crumbs are deep golden and crisp. You're cooking it to 145°F in the middle, so if you have a thermometer, check one of the thickest sticks. No thermometer? Break one open: it's done when the fish is white all the way through and flakes apart.",
+  "While they bake, finely chop the 2 dill pickles. Stir them into the remaining 1/2 cup mayonnaise with the juice of half the lemon. Taste the tartar sauce, and add a pinch of salt if it's flat.",
+  "Cut the rest of the lemon into wedges.",
+  "Serve the fish sticks hot with the tartar sauce and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cut firm white fish into strips, coat them in seasoned panko and bake them hot on a sheet, and the two most detailed ones toast the panko in oil first so it browns before the fish overcooks. RecipeTin Eats (the most rated) toasts plain panko at 350°F, mixes in parmesan and paprika, uses a single batter of egg, mayonnaise and flour instead of separate flour and egg dips, and bakes the strips at 425°F for 13 minutes. Carlsbad Cravings adds cornmeal and a big dried herb mix and bakes on a rack at 450°F; Killing Thyme uses a flour, egg and Old Bay panko line and bakes at 425°F to 140 to 145°F. This one follows RecipeTin Eats and makes a quick tartar sauce from mayonnaise, pickles and lemon, the dip all three serve.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Fish Fingers",
+   "url": "https://www.recipetineats.com/fish-fingers-recipe/",
+   "rating": 4.98,
+   "rating_count": 82,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Carlsbad Cravings",
+   "title": "Homemade Fish Sticks",
+   "url": "https://carlsbadcravings.com/fish-sticks/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Killing Thyme",
+   "title": "Homemade Crispy Baked Fish Sticks",
+   "url": "https://www.killingthyme.net/homemade-crispy-baked-fish-sticks/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

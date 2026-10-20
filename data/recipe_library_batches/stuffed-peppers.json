@@ -1,0 +1,126 @@
+{
+ "dish_name": "Stuffed Peppers",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {
+   "item": "Bell peppers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Lean ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Long grain white rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Fill a large pot with water and set it over high heat to come to a boil.",
+  "Meanwhile, cut the tops off the 4 bell peppers, about 1/2 inch down. Pull out the seeds and the white ribs. Cut the stems off the tops and finely chop what's left of the tops.",
+  "Dice the onion and mince the 2 garlic cloves.",
+  "When the water boils, lower in the peppers and cook them for 5 minutes, until they just start to soften. Lift them out with tongs and stand them upside down on a plate to drain.",
+  "Heat the 1 tbsp olive oil in a large skillet over medium high. Add the 1 lb beef and the onion, sprinkle over 1/2 tsp of the salt and the 1/4 tsp pepper, and break the meat up with a spoon. Stir only every couple of minutes so it browns. After 7 to 8 minutes there's no pink left and the pan has brown bits on the bottom.",
+  "Add the garlic and the chopped pepper tops and cook for 1 minute, until the garlic smells fragrant. If there's a lot of fat in the pan, spoon most of it off.",
+  "Stir in the can of diced tomatoes with their juice, 1 cup of water, the 1 tbsp Worcestershire, the 1/2 cup rice and the 1/2 tsp Italian seasoning. Bring it to a boil, then turn the heat to low and cover the pan.",
+  "Simmer for 18 to 20 minutes, stirring once or twice, until the rice is tender. If it looks dry before the rice is done, add a splash more water.",
+  "Take the pan off the heat and stir in 1/2 cup of the marinara. Taste the filling, and add a pinch more salt if it's flat.",
+  "Spread 1 cup of the marinara over the bottom of a 9x13 inch baking dish. Stand the peppers up in the sauce and sprinkle the remaining 1/4 tsp salt inside them.",
+  "Pack the filling into the peppers, mounding it up over the tops. Spoon the last 1/2 cup of marinara over the filling.",
+  "Cover the dish tightly with foil and bake for 35 minutes.",
+  "Take off the foil and spoon some of the sauce from the dish over the peppers. Sprinkle the 1/2 cup mozzarella over the tops and bake uncovered for 10 to 12 minutes more, until the cheese has melted and a knife slides easily into the side of a pepper.",
+  "Let the peppers sit for 5 minutes. Chop 2 tbsp of the parsley and scatter it over the top.",
+  "Serve each pepper with a spoonful of the sauce from the dish."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions brown ground beef with onion and seasonings, bake the filled peppers in a 9x13 dish and finish with melted cheese. Spend With Pennies (the most rated) uses half beef and half Italian sausage, blanches whole peppers for 5 minutes, simmers raw rice right in the filling with tomatoes, water and Worcestershire, and bakes the peppers on a bed of marinara at 350°F, covered for 35 minutes and then uncovered with cheese. Well Plated halves the peppers, stirs cooked brown rice, spinach and fire roasted tomatoes into the beef, and bakes them uncovered at 375°F with cheddar and pepper jack. This one follows Spend With Pennies but uses all beef, and adds Well Plated's parsley at the end.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Stuffed Peppers",
+   "url": "https://www.spendwithpennies.com/stuffed-peppers/",
+   "rating": 4.98,
+   "rating_count": 835,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Stuffed Peppers",
+   "url": "https://www.wellplated.com/stuffed-peppers/",
+   "rating": 4.74,
+   "rating_count": 115,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

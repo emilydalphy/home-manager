@@ -1,0 +1,103 @@
+{
+ "dish_name": "Roast Pork Tenderloin",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle.",
+  "Trim any fat off the 1.5 lb pork tenderloin. To take off the thin, shiny silver skin, slide a thin knife under one end of it and cut along the length, angling the blade up toward the skin. Pat the pork dry with paper towels.",
+  "In a small bowl, stir together the 1 tsp salt, 1/2 tsp pepper, 1 tsp Italian seasoning, 1 tsp garlic powder and 1 tsp coriander.",
+  "Rub 1 tbsp of the olive oil all over the pork. Sprinkle the spice mix over it and rub it in with your hands until it's coated on every side.",
+  "Heat the remaining 1 tbsp oil in a large oven safe skillet over medium high until it shimmers. Lay in the pork and brown it on all sides, turning it every 1 to 2 minutes, about 6 minutes in all. Stand back a little. It'll spatter.",
+  "Put the skillet in the oven and roast for 7 minutes. Flip the pork over and roast it for another 6 to 8 minutes. You're cooking it to 145°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when the middle is faintly pink and the juices run clear.",
+  "Use an oven mitt to take out the skillet, and lay a dry towel over the handle. It stays very hot. Move the pork to a cutting board, cover it loosely with foil and let it rest for 5 to 10 minutes.",
+  "Set the skillet over medium heat and pour in the 1/2 cup chicken broth. It'll hiss. Scrape up the brown bits from the bottom and let it bubble for 2 to 3 minutes, until it's cooked down by about half.",
+  "Take the pan off the heat and swirl in the 1 tbsp cold butter until it melts into the sauce. Pour in any juices from the cutting board. Taste it, and add a pinch more salt if it's flat.",
+  "Slice the pork into 1/2 inch rounds. If you're keeping some for lunches, set those slices aside before you sauce the rest.",
+  "Serve the slices with the pan sauce spooned over them."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three sear the tenderloin in an oven safe skillet and finish it in a 390 to 400°F oven, then rest it before slicing. Natasha's Kitchen (the most rated) rubs it with oil and a dry mix of salt, pepper, Italian seasoning, garlic powder and coriander, browns it for 6 minutes and roasts it for 13 to 15 minutes, flipping halfway, to about 150°F. Well Plated uses a paprika, brown sugar and cumin rub, pulls it at 135°F and spoons the pan juices over the slices; RecipeTin Eats seasons it with salt and pepper only and builds a creamy marsala sauce in the same skillet. This one follows Natasha's rub and timing, cooks to 145°F, and makes a small broth and butter pan sauce in the skillet.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Roasted Pork Tenderloin Recipe",
+   "url": "https://natashaskitchen.com/roasted-pork-tenderloin-recipe/",
+   "rating": 4.96,
+   "rating_count": 908,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Baked Pork Tenderloin",
+   "url": "https://www.wellplated.com/baked-pork-tenderloin/",
+   "rating": 4.85,
+   "rating_count": 72,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pork Tenderloin with Creamy Marsala Sauce",
+   "url": "https://www.recipetineats.com/pork-tenderloin/",
+   "rating": 4.98,
+   "rating_count": 70,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
