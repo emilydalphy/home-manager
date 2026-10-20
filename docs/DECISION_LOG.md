@@ -13,6 +13,72 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
+  call; branch `fix/fortnight-shop-reminder-waits`; tests
+  `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
+  shop" reminder could still bring "plan next" up in a fortnight's first week.
+  On a plan longer than 7 days it now opens the card only with two days or
+  fewer left (same rule as `_attention_moves_on`); 7-day and shorter plans
+  unchanged.
+- **A note-only answer to "How did it go?" counts as answered**
+  (2026-10-20, Emily's call; branch `fix/note-only-answer-counts`; tests
+  `tests/test_feedback_nudge_note_only.py`). `get_feedback_nudge` (Kitchen,
+  chat, morning text) now also stops on a non-blank `recipes.feedback_notes`
+  or a `recipe_notes` feedback row for that dish. Per-person notes ride on
+  `member_recipe_feedback` rows, whose rating is NOT NULL, so they already
+  counted; deviation notes (what changed) are not an answer.
+
+
+- **The share link shows only approved weeks, and nothing written to the
+  household** (2026-10-20, Emily's call; branch
+  `fix/share-link-approved-weeks-only`; tests
+  `tests/test_share_link_approved_weeks_only.py`). `get_shared_weekly_plan`
+  picks the approved week covering today, else the next approved one, else
+  says "No plan has been made for this week yet" — a draft is never public.
+  `is_first_plan`/`new_recipe_count` left the payload and share.html lost
+  the "Here's your first week" banner and "N new recipes" tag: they were
+  notes to the household. Why: a draft is a working copy, and the link
+  should carry the menu and nothing else.
+
+- **A person's own age stays Adult in Who's here** (2026-10-20, Emily's call;
+  branch `fix/own-age-stays-adult`; tests `tests/test_own_age_stays_adult.py`).
+  POST /api/memory/member/age-group refuses, 400 "Your own age stays Adult
+  here. Another adult can change it.", when the signed-in (verified
+  `current_member`) member is the target and the new group isn't Adult.
+  Why: in a two-adult home, marking yourself Teen made your phone quietly act
+  as the other adult. No pick on the device keeps today's behaviour; a lone
+  adult still hears the last-adult sentence. The screen's existing refusal
+  path (wwkCommit: revert + toast of `userMessage`) shows it; no JS change.
+- **A prep cut moves with its dinner on a nights swap; limits state the rule, not Pomona's ability**
+  (2026-10-20, Emily's call; branch `fix/prep-moves-with-its-dinner`; tests
+  `tests/test_swap_moves_prep_cuts.py`, `tests/test_prep_days.py`).
+  `swap_dinner_nights` now carries each prep cut the same days ahead of its
+  dinner (`_nights_swap_prep_cut_moves`; was: left in place); a past day
+  lands on today, Undo restores day + wording from the token; a cut feeding
+  meals that don't all move by the same amount stays put. The prep-day
+  refusal now reads "…so prep needs to be on or before Wednesday", and that
+  shape is pomona-copywriter rule 16.
+- **A freezer night goes with its cook when the cook comes off the week**
+  (2026-10-20, Emily's call; branch `fix/freezer-night-goes-with-its-cook`;
+  tests `tests/test_freezer_night_goes_with_its_cook.py`). The Review "−",
+  nobody home and the night off removed a cook whose only later night was a
+  freezer night and left Friday reheating a portion nobody cooks. Now
+  `weekly_plan.drop_freezer_nights_of` hands each such night back `open`
+  (thaw and list with it). The "−" and night-off drops of that shape now
+  carry an Undo (`plan_undo` records the new open rows as `invented`);
+  an away night has no Undo, so it stays dropped. A MOVED cook is unchanged.
+- **A scaled amount is said in the easiest measure; a litre is "L"**
+  (2026-10-20, Emily's call; branch `fix/easiest-measure-and-capital-l`;
+  tests `tests/test_easiest_measure_and_capital_l.py`). The stepper said
+  half of 1/3 cup as "2 ⅔ tbsp" (no such spoon). `recipes._easiest_volume`
+  now says a scaled cup/tbsp/tsp in at most two kitchen measures, fewest
+  scoops first, within 5% (never more than 5% short; a pinch-sized amount
+  with nothing that close rounds UP): "2 tbsp + 2 tsp", "¼ cup", "1 ½ tsp".
+  List and steps share it (`_scaled_measure`); "1/4 cup + 2 tbsp" scales
+  as one amount; butter keeps its tablespoons; ranges keep one unit; the
+  recipe's own size is untouched. `_format_quantity` writes "L" ("½ l"
+  read as "½ 1"); shell.js draws "L" on the cook card and every grocery
+  quantity span (old rows say "l"); parsers still read l/L/litre/liter.
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
   tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`

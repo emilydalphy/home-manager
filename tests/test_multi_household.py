@@ -611,6 +611,8 @@ def test_a_share_link_shows_its_own_households_plan(client, beta_household):
             plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
             tools.add_recipe(recipe, [{"item": "something", "qty": "1"}])
             tools.plan_meal(_week_start(), recipe, slot="dinner", weekly_plan_id=plan_id)
+            # Only an approved week is shared (Emily, 2026-10-20).
+            tools.approve_weekly_plan(plan_id, approved_by="Emily")
 
     _sign_in(client, "test-password")
     emily_token = client.get("/api/share-link").json()["token"]

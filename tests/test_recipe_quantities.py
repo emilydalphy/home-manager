@@ -211,7 +211,7 @@ def test_the_serving_stepper_scales_the_cooking_amount_not_the_bottle():
 
     scaled = {i["item"]: i["qty"] for i in tools.scale_recipe("Lemon Pasta", 8)["scaled_ingredients"]}
 
-    assert scaled["Olive oil"] == "4 tbsp"
+    assert scaled["Olive oil"] == "0.25 cup"   # 4 tbsp, in one scoop (easiest measure, 2026-10-20)
     assert scaled["Baby spinach"] == "8 cups"
 
 

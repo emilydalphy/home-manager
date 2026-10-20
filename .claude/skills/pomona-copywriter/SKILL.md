@@ -59,6 +59,7 @@ Four failures that shipped before Emily caught them, so check for them by name:
 13. **Name the person when there is one.** "Trash night — Jamie's turn." The house has people in it.
 14. **One exclamation mark or emoji per screen at most, in the app.** Most screens: none. Never in error copy. (Emily's own emails: see "Who's talking".)
 15. **"Passphrase", never "password." The app is Pomona**, in every user-facing line.
+16. **A limit states the rule about the thing, never what I can do.** Refusals and limits say what's true of the food, the day or the plan — not "I can only…" or "I can't…". (Emily, 2026-10-20, rewriting the prep-day refusal: *"Chicken Bowls is on Wednesday, so prep needs to be on or before Wednesday."*) The old line was "…so I can only put its prep on Wednesday or before" — same fact, but it made the rule sound like my shortcoming. Name the thing, then the rule it has to follow.
 
 ## Recipe steps
 

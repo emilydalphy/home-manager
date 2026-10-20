@@ -118,7 +118,7 @@ def test_swapping_the_source_reingests_the_former_reheat_nights_own_ingredients(
     # this is the fix: it finally buys its OWN single share, not the
     # doubled amount that used to cover it and not nothing at all.
     on_list = _grocery_by_item()
-    assert on_list["stock"] == "1 l"
+    assert on_list["stock"] == "1 L"
     assert on_list["beef"] == "1 lb"
     assert on_list["lettuce"] == "1 head"
     assert on_list["salt"] == "1 box"
@@ -176,4 +176,4 @@ def test_swapping_a_night_that_was_never_a_leftovers_source_is_unaffected():
 
     tools.swap_meal_in_plan(plan_id, TUE, "Soup", slot="dinner")
 
-    assert _grocery_by_item() == {"stock": "1 l"}
+    assert _grocery_by_item() == {"stock": "1 L"}

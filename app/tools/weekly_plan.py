@@ -1186,7 +1186,28 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
     # alone).
     conn = get_conn()
     rescale_source_id = None
+    dropped_freezer: list[dict] = []
+    holder_id = None
     try:
+        # Lock first: a cook with freezer nights is snapshotted for Undo
+        # below, and the snapshot has to be of the week this write changes.
+        conn.execute("BEGIN IMMEDIATE")
+        # A cook whose only later nights eat a portion it FREEZES feeds no
+        # fed night, so it comes off outright — and its freezer nights go
+        # with it (no cook, no portion; Emily, 2026-10-20). That re-plans
+        # another night, so this shape leaves an Undo like the cook_on_fed
+        # one does.
+        freezer = freezer_nights_of(conn, weekly_plan_id, entry_id)
+        if freezer:
+            all_rows = conn.execute(
+                "SELECT id, derived_from_json FROM meal_plan_entries WHERE weekly_plan_id = ? "
+                "AND household_id = ? AND component_category IS NULL",
+                (weekly_plan_id, household_id()),
+            ).fetchall()
+            touched = _plan_undo.touched_ids(
+                all_rows, {entry_id, *(n["entry_id"] for n in freezer)}, [f"{meal_date}:{slot}"],
+            )
+            snap = _plan_undo.snapshot(conn, touched)
         rescale_source_id = _unlink_leftover_target(weekly_plan_id, entry_id, conn=conn)
         _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
         _release_ready_made_recommendations(conn, [entry_id])
@@ -1194,11 +1215,21 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
             "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
             (entry_id, household_id()),
         )
-        plan_slot_open(
+        holder = plan_slot_open(
             weekly_plan_id, meal_date, slot, open_reason,
             derived_from={"constraint": "household_cut_back", "dish": dish},
             conn=conn,
         )
+        if freezer:
+            holder_id = holder["entry_id"]
+            dropped_freezer = drop_freezer_nights_of(conn, weekly_plan_id, entry_id, meal_date, freezer)
+            invented = [d["entry_id"] for d in dropped_freezer]
+            _plan_undo.stamp(conn, holder_id, DROP_DISH_UNDO_KEY, {
+                "kind": "drop_with_freezer", "dish": dish, "source_entry_id": rescale_source_id,
+                "weekly_plan_id": weekly_plan_id, **snap, "invented": invented,
+                "after": _plan_undo.fingerprint(conn, touched | set(invented), holder_id),
+                "grocery": _plan_undo.lines_changed(conn, snap),
+            })
         conn.commit()
     except Exception:
         conn.rollback()
@@ -1231,6 +1262,21 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
                 rescale_source_id, entry_id,
             )
         _keep_freezer_answer_after_rescale(weekly_plan_id, rescale_source_id, entry_id)
+    if dropped_freezer:
+        days = [_weekday_of(meal_date)]
+        for d in dropped_freezer:
+            if fed_night_label(d) not in days:
+                days.append(fed_night_label(d))
+        return {
+            "status": "dropped", "date": meal_date, "slot": slot, "dish": dish,
+            "open_reason": open_reason,
+            # The freezer nights that went with the cook, each now `open`.
+            "freezer_nights_dropped": dropped_freezer,
+            "said": f"{_join_with_and(days)} are yours to fill.",
+            "can_undo": True,
+            "undo_entry_id": holder_id,
+            "day": _day_of(weekly_plan_id, meal_date),
+        }
     return {
         "status": "dropped",
         "date": meal_date,
@@ -1495,7 +1541,12 @@ def drop_dish_undo(weekly_plan_id: int, entry_id: int) -> dict:
     # The batch is whole again, so the line goes back with it. Nothing is
     # excluded from the recipe group this time (0 names no row): the
     # leftovers night is back and the ingest reads it as the reheat it is.
-    _rescale_after_a_chain_moved(weekly_plan_id, record.get("source_entry_id") or 0, 0)
+    # A cook that came off with its freezer nights ("drop_with_freezer")
+    # rescaled nothing on the way down unless it was itself a reheat target,
+    # and its own line came back exactly from the record — so no rescale
+    # without a source.
+    if record.get("kind") != "drop_with_freezer" or record.get("source_entry_id"):
+        _rescale_after_a_chain_moved(weekly_plan_id, record.get("source_entry_id") or 0, 0)
     dish = record.get("dish") or ""
     return {
         "status": "restored", "date": meal_date, "slot": slot, "dish": dish or None,
@@ -2282,7 +2333,14 @@ def get_week_planning_nudge() -> dict:
         # _plan_before_shop_day) — the week after this one, two days before
         # the shop. Not a different week and not a different card: the one
         # thing it changes is whether the offer is on screen yet.
-        if _attention_moves_on(today, cover_start, cover_days) or shop_reminder:
+        # On a plan longer than a week the reminder waits too: it only
+        # opens the offer once two days or fewer of the plan are left (the
+        # same rule as _attention_moves_on), never in a fortnight's first
+        # week. Plans of seven days or fewer are unchanged.
+        reminder_opens = bool(shop_reminder) and (
+            cover_days <= 7 or (cover_end - today).days <= 6 - PLAN_AHEAD_FROM_WEEKDAY
+        )
+        if _attention_moves_on(today, cover_start, cover_days) or reminder_opens:
             following = cover_end + timedelta(days=1)
             if _plan_covers_any(following.isoformat(), target_days) is None:
                 target = following
@@ -9214,6 +9272,84 @@ def move_cook_onto_fed_night(conn, weekly_plan_id: int, entry_id: int,
     _recheck_ready_made_after_redate(conn, [entry_id])
 
 
+# The constraint an `open` row carries when it stands where a freezer night
+# was, because the cook that froze its portion came off the week.
+FREEZER_COOK_GONE = "freezer_cook_gone"
+
+
+def freezer_nights_of(conn, weekly_plan_id: int, cook_id: int) -> list[dict]:
+    """
+    The planned nights on this plan eating a portion frozen on `cook_id`
+    (from_freezer.cook = "entry_id:<cook_id>") that have not been eaten or
+    started — the ones that go when the cook goes (drop_freezer_nights_of).
+    """
+    out = []
+    for r in conn.execute(
+        "SELECT id, date, slot, derived_from_json, cooked_status, cook_started_at FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL "
+        "AND slot_state = 'planned' AND derived_from_json LIKE ?",
+        (weekly_plan_id, household_id(), f'%"entry_id:{int(cook_id)}"%'),
+    ).fetchall():
+        try:
+            derived = json.loads(r["derived_from_json"] or "{}")
+        except (TypeError, ValueError):
+            continue
+        if _frozen_portion_cook_id(derived) != cook_id or cook_begun(r):
+            continue
+        frozen = derived.get(_leftovers_mod().FROM_FREEZER_KEY) or {}
+        out.append({"entry_id": r["id"], "date": r["date"], "slot": r["slot"],
+                    "dish": frozen.get("dish") or ""})
+    return out
+
+
+def drop_freezer_nights_of(conn, weekly_plan_id: int, cook_id: int, cook_date: str,
+                           nights: list[dict] | None = None) -> list[dict]:
+    """
+    A cook that comes off the week OUTRIGHT takes its freezer nights with it
+    — no cook, no portion (Emily, 2026-10-20). Before this the Review "−",
+    an away night and a night off each deleted Monday's chili and left
+    Friday's "Leftovers from the freezer — Monday’s Turkey Chili" standing,
+    thaw reminder and all, over a portion nobody would cook.
+
+    Each such night is handed back as an `open` question (somebody is still
+    eating that night), its prep rows and anything it put on the list going
+    with the row (delete_plan_entry). A cook that MOVES is not this: its
+    freezer nights are re-said for the new day (move_cook_onto_fed_night).
+
+    On the caller's transaction. Returns the `open` rows written, as
+    {"entry_id", "date", "slot"} — rows an Undo did not snapshot, so the
+    caller's undo record names them under "invented" (plan_undo.restore).
+    """
+    if nights is None:
+        nights = freezer_nights_of(conn, weekly_plan_id, cook_id)
+    out = []
+    for n in nights:
+        dish = n.get("dish") or "dish"
+        delete_plan_entry(conn, n["entry_id"])
+        holder = plan_slot_open(
+            weekly_plan_id, n["date"], n["slot"],
+            f"{_weekday_of(cook_date)}’s {dish} came off the week, so there’s no frozen "
+            "portion for this one — it’s yours to fill.",
+            derived_from={"constraint": FREEZER_COOK_GONE, "dish": dish},
+            conn=conn,
+        )
+        out.append({"entry_id": holder["entry_id"], "date": n["date"], "slot": n["slot"]})
+    return out
+
+
+def freezer_nights_said(dropped: list[dict]) -> str:
+    """" Friday’s yours to fill." — the clause a toast adds when a freezer
+    night went with its cook, or "" when none did."""
+    if not dropped:
+        return ""
+    days = []
+    for d in dropped:
+        label = fed_night_label(d)
+        if label not in days:
+            days.append(label)
+    return f" {_join_with_and(days)} {'is' if len(days) == 1 else 'are'} yours to fill."
+
+
 def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str, new_date: str) -> int:
     """
     Move one dinner's freezer-to-fridge reminders by exactly the number of
@@ -9271,8 +9407,9 @@ def _redate_plan_rows(
     rewritten — `after` rows, each {id, date, slot, slot_state, meal,
     derived, changed} — and may return a refusal sentence. With
     `move_prep_cuts`, a prep-cut row that would now fall AFTER its meal
-    moves by the same number of days (the Move sheet; the nights swap
-    leaves prep cuts on the prep day, as it always has).
+    moves by the same number of days (the Move sheet). The nights swap
+    does not use it: since 2026-10-20 it carries EVERY prep cut with its
+    dinner, before this runs (_nights_swap_prep_cut_moves).
 
     Runs on the caller's connection and transaction; neither begins,
     commits nor closes. Returns {"refused": sentence} with nothing written,
@@ -9411,13 +9548,97 @@ def _frozen_portion_cook_id(derived: dict) -> int | None:
         return None
 
 
+def _nights_swap_prep_cut_moves(conn, weekly_plan_id: int, new_date: dict[int, str],
+                                today: str) -> dict[int, dict]:
+    """
+    The prep cuts a nights swap carries with their dinners (Emily,
+    2026-10-20): prep Tuesday for a Wednesday dinner that moves to Friday
+    is now prep Thursday — the same number of days before the meal. Before
+    this, the swap left every cut on its prep day, so a dinner pulled
+    earlier could leave its prep sitting after it, and one pushed later
+    left the prep days early.
+
+    A cut is one prep_tasks row per meal it feeds (add_prep_cut), so "a
+    cut that feeds several meals" is the rows sharing a (date, description)
+    on this plan. It moves only when EVERY meal it feeds moves by the same
+    number of days; otherwise — one of them stays put, or the two traded
+    dinners both use it — it is left exactly where it is, because there is
+    no one right day to carry it to. A carried day that would be in the
+    past lands on `today` instead, and never after the earliest meal it
+    feeds.
+
+    Returns {entry id: {task id: {"from", "to", "was", "said"}}} for the
+    rows that change — dates and the sentence ("ready for Wednesday" re-said
+    for the new weekday). Reads only; the caller writes, and keeps "from"
+    and "was" on the Undo token so Undo puts each row back exactly.
+    """
+    from . import prep_sessions as _prep_sessions  # lazy: it imports this module
+    if not new_date:
+        return {}
+    meal_dates = {
+        r["id"]: r["date"] for r in conn.execute(
+            "SELECT id, date FROM meal_plan_entries WHERE household_id = ? AND weekly_plan_id = ?",
+            (household_id(), weekly_plan_id),
+        ).fetchall()
+    }
+    cuts = conn.execute(
+        "SELECT id, task_date, description, meal_plan_entry_id FROM prep_tasks "
+        "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = ? "
+        "AND meal_plan_entry_id IS NOT NULL AND task_date IS NOT NULL",
+        (household_id(), weekly_plan_id, _prep_sessions.PREP_CUT_TASK_TYPE),
+    ).fetchall()
+    groups: dict[tuple, list] = {}
+    for t in cuts:
+        groups.setdefault((t["task_date"], t["description"] or ""), []).append(t)
+
+    def _shift(entry_id: int) -> int:
+        old = meal_dates.get(entry_id)
+        new = new_date.get(entry_id, old)
+        if not old or not new:
+            return 0
+        return (date.fromisoformat(new) - date.fromisoformat(old)).days
+
+    out: dict[int, dict] = {}
+    for (task_date, said), rows in groups.items():
+        if not any(t["meal_plan_entry_id"] in new_date for t in rows):
+            continue
+        shifts = {_shift(t["meal_plan_entry_id"]) for t in rows}
+        if len(shifts) != 1:
+            continue  # its meals move by different amounts — leave it
+        delta = shifts.pop()
+        if delta == 0:
+            continue
+        to = (date.fromisoformat(task_date) + timedelta(days=delta)).isoformat()
+        if to < today:
+            to = today
+        earliest_meal = min(
+            new_date.get(t["meal_plan_entry_id"], meal_dates.get(t["meal_plan_entry_id"])) or to
+            for t in rows
+        )
+        if to > earliest_meal:
+            to = earliest_meal
+        for t in rows:
+            eid = t["meal_plan_entry_id"]
+            old_wd = _weekday_of(meal_dates[eid])
+            new_wd = _weekday_of(new_date.get(eid, meal_dates[eid]))
+            resaid = said.replace(f"for {old_wd}", f"for {new_wd}")
+            if to == task_date and resaid == said:
+                continue
+            out.setdefault(eid, {})[t["id"]] = {
+                "from": task_date, "to": to, "was": t["description"], "said": resaid,
+            }
+    return out
+
+
 def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: str, new_date: str) -> int:
     """
-    A prep-cut row ("Get the lasagna ready for Wednesday") stays on its
-    prep day when its meal moves — a prep day is a rhythm fact — UNLESS the
-    meal now comes before it: prepping Thursday for Tuesday's dinner is
-    nonsense. Those move by the same number of days the meal did. Either
-    way a weekday the sentence names is re-said.
+    The Move sheet's rule (meal_move): a prep-cut row ("Get the lasagna
+    ready for Wednesday") stays on its prep day when its meal moves — a
+    prep day is a rhythm fact — UNLESS the meal now comes before it:
+    prepping Thursday for Tuesday's dinner is nonsense. Those move by the
+    same number of days the meal did. Either way a weekday the sentence
+    names is re-said. (The nights swap no longer uses this: it carries
+    every cut with its dinner — _nights_swap_prep_cut_moves, 2026-10-20.)
     """
     from . import prep_sessions as _prep_sessions  # lazy: it imports this module
     delta = (date.fromisoformat(new_date) - date.fromisoformat(old_date)).days
@@ -9614,9 +9835,35 @@ def _apply_dinner_nights_swap(
         new_date = {r["id"]: (date_b if r["date"] == date_a else date_a) for r in moving}
         mapping = {f"{date_a}:dinner": f"{date_b}:dinner", f"{date_b}:dinner": f"{date_a}:dinner"}
         now_iso = datetime.now().isoformat(timespec="seconds")
+        # A prep cut moves with its dinner, the same days ahead of it
+        # (Emily, 2026-10-20 — this swap used to leave every cut where it
+        # was). Worked out before the write so each dinner's Undo token can
+        # carry the exact day and sentence each of its cuts had; an Undo
+        # puts those back rather than shifting again, so a day that was
+        # pulled up to today comes back to where it really was.
+        if undo:
+            cut_moves: dict[int, dict] = {}
+            restore_cuts: dict[str, dict] = {}
+            for r in moving:
+                token = json.loads(r["derived_from_json"] or "{}").get(NIGHTS_MOVED_KEY) or {}
+                restore_cuts.update(token.get("prep_cuts") or {})
+        else:
+            cut_moves = _nights_swap_prep_cut_moves(
+                conn, weekly_plan_id, new_date, today or _household_today(conn).isoformat())
+            restore_cuts = {}
+
+        def _token(r):
+            token = {"date": r["date"], "at": now_iso}
+            cuts = cut_moves.get(r["id"])
+            if cuts:
+                token["prep_cuts"] = {
+                    str(tid): {"date": m["from"], "description": m["was"]} for tid, m in cuts.items()
+                }
+            return token
+
         done = _redate_plan_rows(
             conn, weekly_plan_id, rows, new_date, mapping=mapping,
-            token_for=None if undo else (lambda r: {"date": r["date"], "at": now_iso}),
+            token_for=None if undo else _token,
             # An Undo is exempt: it puts back a week that was already
             # standing, and refusing it would strand the household on the
             # move they just tried to take back.
@@ -9640,6 +9887,22 @@ def _apply_dinner_nights_swap(
         from . import meal_move as _meal_move
         _meal_move._resay_freezer_nights(conn, {"rows": [dict(r) for r in rows]}, new_date)
         prep_moved = done["prep_moved"]
+        for cuts in cut_moves.values():
+            for tid, m in cuts.items():
+                conn.execute(
+                    "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
+                    (m["to"], m["said"], tid, household_id()),
+                )
+                if m["to"] != m["from"]:
+                    prep_moved += 1
+        for tid, was in restore_cuts.items():
+            if not isinstance(was, dict):
+                continue
+            cur = conn.execute(
+                "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
+                (was.get("date"), was.get("description"), int(tid), household_id()),
+            )
+            prep_moved += cur.rowcount
         if own_conn:
             conn.commit()
     except Exception:

@@ -749,7 +749,7 @@ def test_the_happy_path_lands_where_it_always_did():
     rows = _rows_on(MON, "dinner")
     assert [r["id"] for r in rows] == [out["entry_id"]]
     assert rows[0]["slot_state"] == "planned"
-    assert _grocery_by_item() == {"milk": "1 l", "carrots": "3"}
+    assert _grocery_by_item() == {"milk": "1 L", "carrots": "3"}
     conn = get_conn()
     assert conn.execute(
         "SELECT COUNT(*) c FROM meal_plan_grocery_links WHERE meal_plan_entry_id = ?", (entry_id,)
@@ -778,7 +778,7 @@ def test_swapping_a_reheat_night_still_rescales_the_source():
     on_list = _grocery_by_item()
     assert on_list["beef"] == "2 lbs"
     assert on_list["lettuce"] == "2 heads"
-    assert on_list["milk"] == "1 l"
+    assert on_list["milk"] == "1 L"
     assert [t["entry_id"] for t in tools.plan_leftover_chains(plan_id)["sources"][mon]["targets"]] == [thu]
 
 
@@ -795,7 +795,7 @@ def test_swapping_the_cook_night_still_buys_for_the_nights_it_fed():
     # one lb of beef a night, bought together as one recipe-week.
     assert on_list["beef"] == "2 lbs"
     assert on_list["lettuce"] == "2 heads"
-    assert on_list["milk"] == "1 l"
+    assert on_list["milk"] == "1 L"
     assert tools.plan_leftover_chains(plan_id) == {"sources": {}, "leftovers": {}}
 
 
@@ -819,7 +819,7 @@ def test_resolve_open_slot_still_settles_the_slot_and_buys_for_it():
     assert out["was_open"] is True
     assert out["groceries_added"] == ["milk", "carrots"]
     assert [r["slot_state"] for r in _rows_on(TUE, "dinner")] == ["planned"]
-    assert _grocery_by_item() == {"beef": "1 lb", "lettuce": "1 head", "milk": "1 l", "carrots": "3"}
+    assert _grocery_by_item() == {"beef": "1 lb", "lettuce": "1 head", "milk": "1 L", "carrots": "3"}
     conn = get_conn()
     derived = conn.execute(
         "SELECT derived_from_json, reasoning FROM meal_plan_entries WHERE id = ?", (out["entry_id"],)
@@ -839,5 +839,5 @@ def test_plan_meal_on_its_own_still_commits_as_it_always_did():
     _recipes()
     out = tools.plan_meal(MON, "Soup", slot="dinner", add_ingredients_to_grocery_list=True)
 
-    assert _grocery_by_item() == {"milk": "1 l", "carrots": "3"}
+    assert _grocery_by_item() == {"milk": "1 L", "carrots": "3"}
     assert [r["id"] for r in _rows_on(MON, "dinner")] == [out["entry_id"]]

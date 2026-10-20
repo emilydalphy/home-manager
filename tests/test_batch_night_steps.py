@@ -70,7 +70,9 @@ def test_fractions_ranges_and_whole_things_follow_scale_recipes_rules():
         0.75,
         INGS,
     )
-    assert got[0] == "Add ⅜ cup rice, 1 ⅛ cups stock and 1 ½-2 ¼ tbsp oil."
+    # The easiest measure (2026-10-20): no ⅛-cup scoop, so ⅜ and 1 ⅛ cups are
+    # said in two measures; a range keeps one unit.
+    assert got[0] == "Add ¼ cup + 2 tbsp rice, 1 cup + 2 tbsp stock and 1 ½-2 ¼ tbsp oil."
     # A clove only comes whole (scale_recipe's _DISCRETE_UNITS); a stick
     # cut to a fraction is tablespoons.
     assert got[1] == "Mince 2 garlic cloves; melt 3 tbsp butter."

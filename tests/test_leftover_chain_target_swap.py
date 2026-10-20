@@ -186,7 +186,7 @@ def test_swapping_a_target_in_an_approved_plan_rescales_the_sources_grocery_line
     assert on_list["beef"] == "2 lbs"
     assert on_list["lettuce"] == "2 heads"
     assert on_list["salt"] == "1 box"
-    assert on_list["stock"] == "1 l"
+    assert on_list["stock"] == "1 L"
     assert len(on_list) == 4
 
     # The ledger actually recorded the new amount against the source — the
@@ -225,7 +225,7 @@ def test_clearing_a_target_slot_behaves_the_same_as_swapping_it():
     assert on_list["beef"] == "1 lb"
     assert on_list["lettuce"] == "1 head"
     assert on_list["salt"] == "1 box"
-    assert on_list["stock"] == "1 l"
+    assert on_list["stock"] == "1 L"
     assert len(on_list) == 4
     assert _ledger_items_for(tue) == {"beef": "1 lb", "lettuce": "1 head", "salt": "to taste"}
     assert _ledger_items_for(fri) == {}
@@ -299,7 +299,7 @@ def test_rescale_shares_one_buffer_with_an_unrelated_same_recipe_cook():
     # 2.5 lb, not the 2 lb a source-alone re-rounding would produce.
     on_list = _grocery_by_item()
     assert on_list["ground beef"] == "2.5 lbs"
-    assert on_list["stock"] == "1 l"
+    assert on_list["stock"] == "1 L"
 
     # The ledger still ROUNDS ONCE to the line — Tuesday's new share plus
     # Thursday's unchanged share, put through the same single rounding the

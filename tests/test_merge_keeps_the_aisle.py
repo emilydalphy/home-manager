@@ -33,7 +33,7 @@ def test_chat_adding_a_bare_name_does_not_move_the_plan_line():
     """Chat's add_grocery_items with a plain string files it as 'other'."""
     tools.add_grocery_item("Milk", "1 l", "dairy", source_weekly_plan_id=None)
     tools.add_grocery_items(["milk"])
-    assert _lines() == [("Milk", "1 l", "dairy")]
+    assert _lines() == [("Milk", "1 L", "dairy")]
 
 
 def test_a_line_with_no_aisle_takes_the_one_the_add_knows():

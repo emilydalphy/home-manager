@@ -245,7 +245,8 @@ def restore(conn, record: dict, holder_id: int) -> None:
     Put the snapshot back, on the caller's own open transaction: every row
     as it read, the rows the answer deleted re-inserted with their own ids,
     their prep rows and grocery links with them, and the holder itself gone
-    when it is a row the answer invented.
+    when it is a row the answer invented (as is every row the record names
+    under "invented").
 
     The grocery lines the answer itself changed come back first, by
     _restore_lines' rule (a deleted line exactly; a trimmed line only if
@@ -261,6 +262,13 @@ def restore(conn, record: dict, holder_id: int) -> None:
     snap_ids = {e["id"] for e in record.get("entries") or []}
     if holder_id not in snap_ids:
         _weekly_plan.delete_plan_entry(conn, holder_id)
+    # Other rows the answer wrote that were not there before — the `open`
+    # questions standing where a freezer night went with its cook
+    # (weekly_plan.drop_freezer_nights_of, 2026-10-20). Gone before the
+    # snapshot puts the freezer nights back on their own slots.
+    for rid in record.get("invented") or []:
+        if rid not in snap_ids and rid != holder_id:
+            _weekly_plan.delete_plan_entry(conn, rid)
     if snap_ids:
         marks = ",".join("?" * len(snap_ids))
         conn.execute(
