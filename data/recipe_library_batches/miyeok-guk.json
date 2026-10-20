@@ -1,0 +1,89 @@
+{
+ "dish_name": "Miyeok Guk",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Dried seaweed (miyeok)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 oz"
+  },
+  {
+   "item": "Beef brisket",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 oz of the seaweed in a large bowl of cold water and leave it to soak for 15 minutes, until it's soft and plump. It swells to several times its size.",
+  "Meanwhile, rinse the 1 1/2 cups rice and cook it according to the package so it's ready with the soup.",
+  "Cut the beef across the grain into thin bite size pieces. Mince the 2 garlic cloves. Toss the beef with the garlic, 2 tsp of the soy sauce and the pinch of pepper.",
+  "Drain the seaweed and rinse it twice in fresh water. Squeeze out as much water as you can, then cut it into bite size pieces.",
+  "Heat the 1 tbsp sesame oil in a large pot over medium high. Add the beef and cook, stirring, for about 2 minutes, until there's no red left.",
+  "Add the seaweed and the last 1 tsp soy sauce. Cook, stirring, for 4 to 5 minutes, until the seaweed is glossy and smells nutty. Add a splash of water if it starts to stick.",
+  "Pour in 7 cups of water and bring it to a boil over high. Skim off any foam that rises.",
+  "Stir in 1 tsp of the salt. Turn the heat to medium low, cover and simmer for 25 minutes, until the beef is tender and the soup has turned a little cloudy.",
+  "Taste it. If it's flat, add the rest of the salt a pinch at a time.",
+  "Serve hot with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soak dried miyeok until soft, brown thin pieces of beef in sesame oil with garlic and soy, then simmer the seaweed and beef in water for 20 to 30 minutes. Korean Bapsang (the lead) marinates sliced brisket briefly with soup soy sauce, garlic and pepper, sautés the seaweed with the beef for a few minutes before the water goes in, and simmers until the broth turns milky. Two Plaid Aprons uses more beef, often ground, and less seaweed. This one follows the lead's method and ratios, uses regular soy sauce and salt in place of soup soy sauce as the lead suggests, and uses a little more beef so it holds up as a lunch with rice.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Miyeok Guk (Beef Seaweed Soup)",
+   "url": "https://www.koreanbapsang.com/2013/12/miyeok-guk-beef-seaweed-soup.html",
+   "rating": 4.7,
+   "rating_count": 69,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Korean Seaweed Soup (Miyeok Guk)",
+   "url": "https://twoplaidaprons.com/korean-seaweed-soup-miyeok-guk/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
