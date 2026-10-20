@@ -865,20 +865,8 @@ class TestAPhraseIsMatchedAsAPhrase:
             ["red", "meat"]
         ]
 
-    def test_beef_is_a_known_miss_for_red_meat(self, kitchen):
-        """
-        DOCUMENTED LIMIT, not an accident. This check matches words the
-        household wrote against words on the recipe; it has no idea that
-        beef, lamb and pork are what "red meat" means. Closing it needs a
-        food taxonomy (or an alias entry per category), not a regex — and
-        until then it is better written down here than discovered on a
-        Tuesday. See _ALLERGEN_ALIASES: extend it when a real miss shows up.
-        """
-        tools.add_recipe("Beef Stew", ingredients=[{"item": "stewing beef", "qty": "600g"}])
-        tools.add_fact("people", "no red meat during the week", hard=True)
-
-        assert tools.check_plan_conflicts(self._plan_with("Beef Stew"))["conflicts"] == [], \
-            "if this ever starts passing, delete the test and celebrate"
+    # test_beef_is_a_known_miss_for_red_meat lived here: "red meat" now
+    # reaches beef, lamb and the rest (tests/test_no_red_meat_holds_back_lamb.py).
 
     def test_a_phrase_is_not_assembled_across_two_ingredients(self, kitchen):
         """

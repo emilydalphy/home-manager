@@ -3347,7 +3347,7 @@ def _step_words_missing(used_text: str, listed: str) -> list[str]:
     # exceptions — the same table, so the two can't disagree. A two-word
     # key ("coconut milk", "peanut butter") is the compound itself.
     plain = used_text
-    for _words, pattern in _coordination._COMPOUND_EXCEPTIONS:
+    for _words, pattern, *_ in _coordination._COMPOUND_EXCEPTIONS:
         plain = pattern.sub(" ", plain)
     no_egg_words = _NOT_AN_EGG_RE.sub(" ", plain)
 

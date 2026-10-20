@@ -203,6 +203,23 @@ _MEAT_ALIASES: dict[str, set[str]] = {
     "beef": {"sirloin", "ribeye", "rib eye", "bresaola", "filet mignon", "ground chuck",
              "chuck roast"},
 }
+# "No red meat" is a category, not a word any ingredient line says: read
+# as the phrase "red" + "meat" it found only a line that literally said
+# "red meat", and let Lamb Kofta, beef stew and veal through the hard gate
+# (defect hunt, 2026-10-20). Keyed by the whole phrase, so it is reached
+# only when "red meat" IS the avoidance — "red" and "meat" on their own
+# still mean only themselves, which is what keeps red peppers, red wine and
+# red lentils out. Pork counts: nutrition guidance (WHO/IARC, Canada's Food
+# Guide, USDA) files it as red meat, and for a hard gate the over-safe
+# reading is the right way to be wrong. Only words that are the meat by
+# definition, as above: no "steak" (salmon, cauliflower), "burger" or
+# "buffalo" (buffalo wings are chicken). "goat" and "lamb" have food names
+# that aren't the animal — see _COMPOUND_EXCEPTIONS.
+_PHRASE_FAMILIES: dict[tuple[str, ...], set[str]] = {
+    ("red", "meat"): {"red meat", "beef", "lamb", "mutton", "veal", "venison", "goat",
+                      "bison", "elk", "pork"}
+                     | _MEAT_ALIASES["beef"] | _MEAT_ALIASES["pork"],
+}
 # Aliases matched exactly as written, with no singular/plural twin: an
 # egg-white line says "3 whites", and the singular would reach "white
 # wine" and "white beans".
@@ -305,7 +322,7 @@ _PLANT_MOD = (
     r"coconut|oat|soy|soya|almond|cashew|rice|chocolate|vanilla)"
 )
 
-_COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
+_COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     (frozenset({"butter", "butters"}), re.compile(
         r"\b(?:peanut|almond|cashew|hazelnut|pistachio|pecan|walnut|macadamia|"
         r"sunflower|pumpkin|sesame|seed|nut|apple|cocoa|cacao|shea|coconut)s?\s+butters?\b"
@@ -352,6 +369,14 @@ _COMPOUND_EXCEPTIONS: tuple[tuple[frozenset[str], re.Pattern], ...] = (
     # That is the failure this whole check exists to prevent, so the false
     # positive matters more here than the rarity of the restriction.
     (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
+    # Red meat's (2026-10-20): goat's cheese and milk are dairy, not the
+    # animal; lamb's lettuce and lamb's quarters are greens. Matched on the
+    # folded text, where "goat's" is "goat s". Not for an avoidance of
+    # goat itself, which may well be its milk.
+    (frozenset({"goat", "goats"}), re.compile(
+        r"\bgoat(?:\s?s)?\s+(?:cheeses?|milks?|yogh?urts?|butters?|kefirs?|feta|cheddar|brie)\b"
+    ), frozenset({"goat", "goats"})),
+    (frozenset({"lamb", "lambs"}), re.compile(r"\blamb(?:\s?s)?\s+(?:lettuces?|quarters)\b")),
     # Gluten/wheat's own false positive: a naturally gluten-free flour,
     # noodle or pasta still contains the word that means "gluten" to the
     # alias table above. "Gluten-Free Pasta" made with rice flour flagged a
@@ -713,6 +738,15 @@ def _keyword_variants(keyword: str) -> set[str]:
     return variants
 
 
+def _phrase_family(phrase: list[str]) -> set[str] | None:
+    """The _PHRASE_FAMILIES entry this whole phrase names ("red meats" too), or None."""
+    for key, family in _PHRASE_FAMILIES.items():
+        if len(key) == len(phrase) and all(
+                _keyword_variants(k) & _keyword_variants(w) for k, w in zip(key, phrase)):
+            return family
+    return None
+
+
 def _match_terms(
     phrases: list[list[str]], excepted: list[str] | None = None,
 ) -> list[tuple[str, list[set[str]]]]:
@@ -763,6 +797,15 @@ def _match_terms(
     for phrase in phrases:
         groups = _Groups()
         groups.carve_outs = tuple(_carve_out_re(c) for c in carves if _covers(c, phrase))
+        family = _phrase_family(phrase)
+        if family is not None:
+            # One group, not one per word: any single member of the family
+            # on a line is the clash ("ground lamb"), not "red" then "meat".
+            variants = set().union(*(_keyword_variants(b) for b in family)) - excluded
+            if variants:
+                groups.append(variants)
+                out.append((" ".join(phrase), groups))
+            continue
         kept: list[str] = []
         for word in phrase:
             variants: set[str] = set()
@@ -1455,7 +1498,7 @@ def check_meal_conflicts(
         # oat milk: when the LIST names a compound exception, the steps'
         # bare word is that compound, not the allergen (review, 2026-10-13).
         listed_text = " ".join(segments[1:])
-        for words, pattern in _COMPOUND_EXCEPTIONS:
+        for words, pattern, *_ in _COMPOUND_EXCEPTIONS:
             if pattern.search(listed_text):
                 bare = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(words))) + r")\b")
                 step_segments = [bare.sub(" ", s) for s in step_segments]
