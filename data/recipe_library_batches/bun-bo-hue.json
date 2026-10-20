@@ -1,0 +1,165 @@
+{
+ "dish_name": "Bun Bo Hue",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 180,
+ "ingredients": [
+  {
+   "item": "Beef shank",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pork hocks",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "7 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1 tsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 1 tsp"
+  },
+  {
+   "item": "Shrimp paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Annatto seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Thick rice noodles",
+   "qty": "1 package (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the 1.5 lb beef shank and the 1.5 lb pork hocks in a large stockpot, at least 8 quarts. If the hocks are whole, ask the butcher to cut them into 1-inch slices. Cover the meat with cold water and bring it to a boil over high, then boil for 5 minutes.",
+  "Drain the meat in a colander and rinse it under running water. Rinse out the pot too.",
+  "Meanwhile, trim 6 of the lemongrass stalks, cut each one into 3 pieces and bash them with the back of a knife until they split open. Peel the onion and cut it in half.",
+  "Put the meat back in the clean pot with the can of broth, 10 cups water, the bashed lemongrass and the onion. Bring it to a boil over high, then skim off the gray foam with a spoon.",
+  "Stir in 1 tbsp salt, 1 tbsp of the sugar and 2 tbsp of the fish sauce. Turn the heat down so it bubbles gently, partly cover the pot and simmer.",
+  "After about 1 hour, check the pork. When a fork slides in easily and the meat pulls away from the bone, lift the hocks into a bowl and cover them.",
+  "Keep the beef simmering for another 1 to 1 1/2 hours, until a fork slides in easily. Lift it onto a board and let it cool for 10 minutes.",
+  "While the beef simmers, mince 1 shallot and 3 of the garlic cloves for the broth. For the sate, mince the other 2 shallots, the last 3 garlic cloves and the pale inner part of the last lemongrass stalk.",
+  "Put the 1/3 cup oil and 1 tbsp annatto seeds in a small pan over medium-low. Cook for 1 to 2 minutes, swirling, until the oil turns deep red-orange. Don't let the seeds go black. Strain the oil into a heatproof bowl and throw out the seeds.",
+  "Put 2 tbsp of the red oil back in the small pan over medium. Add the shallot and garlic for the broth and cook for 2 to 3 minutes, stirring, until golden. Scrape it all into the broth.",
+  "Ladle 1/2 cup of the hot soup into a small bowl and stir in the 1 tbsp shrimp paste. Leave it for 5 minutes to settle, then pour the cloudy liquid into the pot and leave the grit at the bottom of the bowl.",
+  "For the sate, pour the rest of the red oil into the small pan over medium-low. Add the sate shallots, garlic and lemongrass and cook for 3 to 4 minutes, stirring, until soft and golden. Stir in the 1 tbsp pepper flakes, the last 1 tsp sugar and the last 1 tsp fish sauce and cook for 1 minute. Spoon it into a small bowl for the table.",
+  "Bring a separate pot of water to a boil. Cook half the package of noodles, about 7 oz, the way the package says, usually 8 to 10 minutes. Drain them and rinse them under hot water. Divide them between 4 big bowls.",
+  "Slice the beef thinly across the grain. Slice 3 of the green onions. Rinse the 8 oz bean sprouts, pick the mint and Thai basil leaves, and cut the 2 limes into wedges. Pile them on a plate.",
+  "Fish the lemongrass and onion out of the broth. Put the pork back in and heat it through for 5 minutes. Taste the broth. If it's flat, add a pinch more salt.",
+  "Top the noodles with the sliced beef and a piece or two of pork and ladle the hot broth over. Scatter the green onions on top. Serve with the herbs, bean sprouts, lime wedges and the sate."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions parboil beef shank and pork hocks to clean them, simmer them for 2 to 3 hours with lots of bashed lemongrass and onion, season the broth with shrimp paste, fish sauce, salt and sugar, color it with annatto oil, and serve it over thick round rice noodles with herbs, sprouts and lime. Hungry Huy adds oxtail, Hue pork sausage and pork blood, browns shallot and garlic in the annatto oil for the pot, and makes a long-cooked lemongrass chili sate. Cooking Therapy and Takes Two Eggs use a bun bo hue spice packet and a quick sate, and Takes Two Eggs settles the shrimp paste in water and pours off the clear liquid. This one follows Hungry Huy for four bowls with shank and hocks only, a quick sate, and the heat kept on the side.",
+ "sources": [
+  {
+   "name": "Hungry Huy",
+   "title": "Bún Bò Huế - Spicy Vietnamese Beef & Pork Noodle Soup",
+   "url": "https://www.hungryhuy.com/bun-bo-hue-recipe/",
+   "rating": 4.96,
+   "rating_count": 47,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Therapy",
+   "title": "The Best Bun Bo Hue (Spicy Vietnamese Beef Noodle Soup)",
+   "url": "https://www.cooking-therapy.com/bun-bo-hue/",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Bun Bo Hue (Spicy Vietnamese Beef Noodle Soup)",
+   "url": "https://takestwoeggs.com/bun-bo-hue-vietnamese-spicy-beef-noodle-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

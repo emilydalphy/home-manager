@@ -1,0 +1,127 @@
+{
+ "dish_name": "Tofu in Tomato Sauce",
+ "cuisine": "Vietnamese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (16 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red Thai chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a rimmed baking sheet with parchment.",
+  "Rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and bring it to a boil, then cover it, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, drain the tofu and pat it dry with a clean towel. Cut it into 3/4-inch cubes.",
+  "Toss the tofu on the baking sheet with 1 tbsp of the oil, 1/2 tsp of the salt and 1/4 tsp of the pepper. Spread the cubes out so they aren't touching.",
+  "Bake for 20 to 25 minutes, turning the cubes halfway, until they're golden and firm at the edges.",
+  "While the tofu bakes, cut the 6 tomatoes into chunks and thinly slice the onion. Mince the 3 garlic cloves. Slice 3 of the green onions, keeping the white and green parts apart, and chop a small handful of the cilantro.",
+  "Thinly slice the chili into a small bowl for the table.",
+  "Heat the last 1 tbsp oil in a large skillet over medium. Add the onion and cook for 4 to 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the garlic and the green onion whites and cook for 30 seconds, until it smells fragrant.",
+  "Add the tomatoes, 1 1/2 tbsp soy sauce, 1 tsp sugar, the remaining 1/2 tsp salt and the remaining 1/4 tsp pepper. Cook for 7 to 8 minutes, stirring and pressing the tomatoes with the spoon, until they break down into a chunky sauce. A lid on the pan speeds this up.",
+  "Pour in 1 cup water and let it bubble for 3 to 4 minutes, until the sauce thickens a little.",
+  "Stir in the tofu, the green onion tops and the cilantro and cook for 1 minute. Take the pan off the heat, cover it and leave it for 5 minutes.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the sliced chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions brown the tofu first, then cook down fresh tomatoes into a quick savory sauce and fold the tofu through at the end with green onion. Green Bowl 2 Soul bakes the tofu at 400°F and builds the sauce from red onion, garlic, chili, soy sauce and a little palm sugar, then lets it sit covered off the heat. Hungry Huy deep fries pressed tofu and seasons the tomatoes with tomato paste, fish sauce, salt and sugar, while Messy Vegan Cook fries it and uses soy sauce and mushroom seasoning. This one follows Green Bowl 2 Soul with a full block of tofu and the chili moved to the side.",
+ "sources": [
+  {
+   "name": "Green Bowl 2 Soul",
+   "title": "Vietnamese tomato tofu",
+   "url": "https://greenbowl2soul.com/vietnamese-tofu-in-tomato-sauce/",
+   "rating": 4.87,
+   "rating_count": 61,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry Huy",
+   "title": "Vietnamese Tofu with Tomato Sauce (Đậu Sốt Cà Chua)",
+   "url": "https://www.hungryhuy.com/how-to-make-dau-sot-ca-vietnamese-tofu-with-tomato-sauce/",
+   "rating": 5.0,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Messy Vegan Cook",
+   "title": "Vietnamese tomato tofu (Đậu Sốt Cà Chua)",
+   "url": "https://messyvegancook.com/vietnamese-tofu-and-tomato-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
