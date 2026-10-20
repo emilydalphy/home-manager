@@ -734,7 +734,7 @@ def save_week_intake(
                 (intake_id, household_id()),
             ).fetchone()
             saved = _intake_row_to_dict(row)
-            _sync_guest_attendance(saved)
+            _sync_guest_attendance(saved, previous=base.get("guest_counts") or {})
             return saved
         except sqlite3.IntegrityError:
             # Somebody took this revision number between our read and our
@@ -812,7 +812,17 @@ def clear_week_intake(week_start: str) -> dict:
     return {"week_start": week_start, "cleared": True}
 
 
-def _sync_guest_attendance(intake: dict) -> None:
+def _guest_total(extras) -> int:
+    """Adults + children in one date's guest_counts entry; 0 for anything unreadable."""
+    if not isinstance(extras, dict):
+        return 0
+    try:
+        return int(extras.get("adults", 0) or 0) + int(extras.get("children", 0) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _sync_guest_attendance(intake: dict, previous: dict | None = None) -> None:
     """
     Push the "Hosting guests" answers into attendance, so a bigger table is
     the SAME fact as a smaller one rather than a parallel notion of it.
@@ -829,13 +839,48 @@ def _sync_guest_attendance(intake: dict) -> None:
     tag is a dinner concept in this app. Deliberately tolerant of failure —
     a household mid-onboarding may have no members yet, and an intake save
     must not fail over a headcount echo.
+
+    TAKING GUESTS OFF is the same fact the other way, and it used to be
+    lost (defect hunt, 2026-10-20). A screen that drops a night's guests
+    deletes that date from guest_counts rather than writing a zero (the
+    re-plan grid's guest stepper taken to 0, a day taken off "Which
+    days?"), and the loop below only walks the dates still in it — so
+    attendance kept "Dinner for 4 — 2 guests", the draft was planned and
+    shopped for four, and the morning text said so, after the household
+    had said nobody was coming. `previous` is the revision this
+    one replaced: a date whose guests it held and this one doesn't is
+    zeroed, but only while attendance still carries the intake's own number
+    — a count somebody set since (chat, the day sheet) is theirs to keep.
     """
     from . import attendance as _attendance
 
-    for day, extras in (intake.get("guest_counts") or {}).items():
+    current_counts = intake.get("guest_counts") or {}
+    for day, extras in (previous or {}).items():
+        if day in current_counts:
+            continue
+        was = _guest_total(extras)
+        if not was:
+            continue
+        try:
+            att = _attendance.get_slot_attendance(day, "dinner")
+            if att["explicit"] and att["guest_count"] == was:
+                # The row's own source kept, as holidays._clear_hosting
+                # does: a trip's row stays the trip's.
+                _attendance.set_guest_count(day, "dinner", 0, source=att["source"] or "guests")
+        except ValueError:
+            continue
+
+    for day, extras in current_counts.items():
         if not isinstance(extras, dict):
             continue
-        total_guests = int(extras.get("adults", 0) or 0) + int(extras.get("children", 0) or 0)
+        total_guests = _guest_total(extras)
+        # This save didn't change this night's guests (the moods screen,
+        # a cuisine pick), so it has nothing to say about them. Pushing the
+        # intake's number again would put back "3 guests" over the 5
+        # somebody set in chat or the day sheet since — the same rule as
+        # the taking-off loop above, for a date that stays.
+        if previous is not None and day in previous and _guest_total(previous[day]) == total_guests:
+            continue
         try:
             current = _attendance.get_slot_attendance(day, "dinner")
             if current["guest_count"] == total_guests:
