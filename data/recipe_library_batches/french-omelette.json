@@ -1,0 +1,38 @@
+{
+ "dish_name": "French Omelette",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Eggs", "qty": "12", "category": "dairy"},
+  {"item": "Butter", "qty": "1 package", "category": "dairy", "cook_qty": "8 tsp"},
+  {"item": "Chives", "qty": "1 bunch", "category": "produce"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Set the 12 eggs on the counter about 20 minutes before you start. Fridge-cold eggs brown underneath before the top sets.",
+  "Heat the oven to 200°F and put 4 plates in to warm.",
+  "Finely chop 3 tbsp of the chives.",
+  "Crack the eggs into a large bowl and beat them with a fork until they're completely smooth, with no stringy bits of white left. Beat in the 3/4 tsp salt, the 1/4 tsp white pepper and 2 tbsp of the chopped chives.",
+  "Set an 8-inch nonstick skillet over medium low. Add 1 tsp of the butter and let it melt. It should foam gently without turning brown.",
+  "Pour in a quarter of the eggs, about 2/3 cup. Leave them for 30 seconds, then stir quickly with a silicone spatula or chopsticks while you shake the pan, until small soft curds form and the bottom starts to set, about 30 seconds more.",
+  "Stop stirring and smooth the top into an even layer. Put a lid on the pan for 45 seconds to 1 minute, until the top is just set but still glossy. The shorter time keeps the middle soft.",
+  "Tilt the pan away from you and roll the omelette from the handle side toward the far edge with the spatula, so you end up with a neat log. Tip it seam side down onto a warm plate.",
+  "Rub 1 tsp of the butter over the top and sprinkle on a little of the remaining chopped chives. Keep it in the oven while you make the rest.",
+  "Make the other 3 omelettes the same way, with 1 tsp of butter in the pan and 1 tsp rubbed on top each time. If the first one browned, turn the heat down a touch for the next.",
+  "Serve them hot, as soon as the last one is rolled."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both French versions keep it to eggs, butter and salt in a small nonstick pan over gentle heat, stirring to soft curds before the omelette is rolled and turned out seam side down with a little butter on top, pale with no browning. Not Quite Nigella sieves the eggs, adds chives and white pepper, and covers the pan for under a minute to set the top; Le Cordon Bleu uses clarified butter, folds it with a fork and shapes it into a torpedo under a towel. RecipeTin Eats' omelette is a softer folded, cheese-filled style with cream in the eggs, so this follows the lead's rolled method. Written as four 3-egg omelettes made one after another.",
+ "sources": [
+  {"name": "Not Quite Nigella", "title": "French Omelette Recipe", "url": "https://www.notquitenigella.com/2025/09/21/french-omelette-recipe/", "rating": 5.0, "rating_count": 62, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Omelette", "url": "https://www.recipetineats.com/omelette/", "rating": 4.98, "rating_count": 48, "read": true, "lead": false},
+  {"name": "Le Cordon Bleu", "title": "Classic Omelette", "url": "https://www.cordonbleu.edu/news/classic-omelette-recipe/en", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

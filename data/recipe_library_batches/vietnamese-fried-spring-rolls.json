@@ -1,0 +1,174 @@
+{
+ "dish_name": "Vietnamese Fried Spring Rolls",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Raw shrimp",
+   "qty": "1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Bean thread noodles",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 small bundle (about 1 oz)"
+  },
+  {
+   "item": "Dried wood ear mushrooms",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 2 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp + 2 tbsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Spring roll wrappers",
+   "qty": "1 package",
+   "category": "frozen",
+   "cook_qty": "16 sheets"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Take the spring roll wrappers out of the freezer and leave them in their package on the counter to thaw while you make the filling.",
+  "Put the bean thread noodles and 2 tbsp of the dried wood ear mushrooms in separate bowls and cover both with hot water. Soak them for 10 minutes, until the noodles are soft and the mushrooms have swelled up.",
+  "Meanwhile, peel and grate 1 carrot on the big holes of a box grater. Finely chop the shallot. Peel the shrimp and chop them into small pieces.",
+  "Drain the noodles and the mushrooms and squeeze out the water. Cut the noodles into short lengths with scissors and finely chop the mushrooms.",
+  "In a big bowl, mix the 3/4 lb pork, the shrimp, carrot, shallot, noodles and mushrooms. Add the yolk of the egg (save the white for another use), 1 tbsp fish sauce, 1 tsp oyster sauce, 2 tsp sugar, the 1/2 tsp garlic powder, the 1/2 tsp pepper and 1/2 tsp salt. Mix it with your hands until it's evenly combined and a little sticky.",
+  "Stir the 1 tbsp cornstarch into 1 tbsp water in a small bowl. That's your glue.",
+  "Peel off one wrapper and lay it like a diamond with a corner pointing at you. Put about 2 tbsp of the filling near the bottom corner and shape it into a log about 4 inches long.",
+  "Fold the bottom corner over the filling, fold in both sides, and roll it up tightly toward the top corner. Brush the last corner with a little of the cornstarch glue and press it closed. Keep going until you've used all the filling. You should get about 16 rolls.",
+  "If you're freezing some, set them on a tray so they're not touching and freeze until firm, about 2 hours, then move them to a freezer bag. Fry them straight from frozen and add 2 to 3 minutes to the frying time.",
+  "Make the dipping sauce: squeeze the 2 limes into a bowl (you want about 3 tbsp juice). Add 2 tbsp fish sauce, 2 tbsp sugar, 1/4 cup warm water and the garlic clove, minced. Stir until the sugar dissolves. Thinly slice the 2 chilies into a small bowl for the table.",
+  "Wash the lettuce, tear it into leaves and put it on a platter with the mint sprigs.",
+  "Pour the oil into a heavy pot so it's about 2 inches deep and heat it over medium to 350°F. If you have a thermometer, clip it to the side. No thermometer? Dip the end of a wooden chopstick in: steady small bubbles around it mean it's ready.",
+  "Lower in 5 or 6 rolls so they're not crowded. Fry for 5 to 6 minutes, turning them now and then, until they're deep golden all over and crisp. Stand back a little. They spatter.",
+  "Lift them onto a rack or paper towels to drain and fry the rest in batches. Cut one open to check the filling is cooked through and no pink is left.",
+  "Serve with the lettuce, the mint, the dipping sauce and the sliced chilies."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions fill wheat egg roll wrappers with ground pork, soaked bean thread noodles, chopped wood ear mushrooms and a sweet savory seasoning, then deep fry them. Savory Sweet Spoon adds shrimp, crab, taro and carrot and binds it with egg yolks, frying at 350 to 375°F for a few minutes. Hungry Huy keeps it to pork, onion and jicama, squeezes the water out of the vegetables, and fries longer at 325°F. This one follows the lead with pork and shrimp, leaves out the crab and taro to keep the shopping simple, and serves the rolls with lettuce, mint and a lime fish sauce dip.",
+ "sources": [
+  {
+   "name": "Savory Sweet Spoon",
+   "title": "Chả Giò (Vietnamese Egg Rolls)",
+   "url": "https://www.savorysweetspoon.com/cha-gio/",
+   "rating": 5.0,
+   "rating_count": 55,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry Huy",
+   "title": "Vietnamese Egg Rolls Recipe (Chả Giò)",
+   "url": "https://www.hungryhuy.com/vietnamese-spring-rolls-egg-rolls-recipe-cach-lam-cha-gio-nem-ran/",
+   "rating": 4.97,
+   "rating_count": 51,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Caroline's Cooking",
+   "title": "Vietnamese fried spring rolls - cha gio",
+   "url": "https://www.carolinescooking.com/vietnamese-fried-spring-rolls-cha-gio/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

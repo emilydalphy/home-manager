@@ -1,0 +1,42 @@
+{
+ "dish_name": "Quiche Lorraine",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 80,
+ "ingredients": [
+  {"item": "Frozen deep-dish pie crust", "qty": "1 package", "category": "frozen", "cook_qty": "1 crust (9-inch)"},
+  {"item": "Thick-cut bacon", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Shallots", "qty": "2", "category": "produce"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Heavy cream", "qty": "1 carton (16 oz)", "category": "dairy", "cook_qty": "1 1/4 cups"},
+  {"item": "Gruyère", "qty": "4 oz", "category": "dairy"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Cayenne pepper", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Ground nutmeg", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle. Take the crust out of the freezer and leave it on the counter for about 10 minutes, until a fork goes in easily.",
+  "Meanwhile, dice the 8 oz bacon and finely chop the 2 shallots. Finely shred the 4 oz Gruyère.",
+  "Prick the bottom and sides of the crust all over with a fork and set it on a baking sheet. Bake it for 10 to 15 minutes, until it's lightly golden. If the bottom puffs up, prick it again so it settles back down.",
+  "While the crust bakes, put the bacon in a medium nonstick skillet over medium heat. Cook it for about 10 minutes, stirring now and then, until it's crisp and the fat has melted out. Lift it onto a paper towel-lined plate with a slotted spoon.",
+  "Take the crust out and turn the oven down to 325°F. Leave the crust on the baking sheet.",
+  "Pour off all but about 1 tbsp of the bacon fat. Turn the heat to medium low, add the shallots and cook them for 3 to 4 minutes, stirring, until they're soft and see-through but not brown. Take the pan off the heat.",
+  "In a medium bowl, whisk the 4 eggs until smooth. Whisk in the 1 1/4 cups cream, the 1/4 tsp salt, the 1/8 tsp cayenne and the pinch of nutmeg.",
+  "Spread the shallots over the bottom of the crust. Scatter half the bacon over them, then all the Gruyère, then the rest of the bacon. Pour the custard slowly over the top.",
+  "Slide the baking sheet into the oven and bake for 45 to 50 minutes, until the top is lightly golden and the custard is set. You're baking it to about 170°F in the center, so if you have a thermometer, check it there. No thermometer? Give the pan a gentle nudge: it's done when the edges are firm and only the very middle wobbles a little.",
+  "Let it cool on a rack for 15 minutes before you slice it. Cut it sooner and the middle will be runny.",
+  "Serve it warm or at room temperature. Wrap the leftover slices and keep them in the fridge for up to 3 days. They're good cold, or warmed at 350°F for about 15 minutes."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bake a 9-inch crust first, crisp the bacon, soften an onion or shallot in its fat, and bake it under a custard of 4 eggs and about 1 1/4 cups cream with Gruyère or cheddar until the middle has only a slight wobble. Once Upon a Chef uses a frozen deep-dish crust and shallots, adds a little cayenne and nutmeg, layers the bacon and cheese, and bakes low at 325°F so the custard stays silky. RecipeTin Eats cooks onion and garlic with the bacon and bakes hotter for 35 to 40 minutes; Natasha's Kitchen uses half-and-half, smoked paprika and a homemade crust brushed with egg white, and says it's done at 165 to 185°F inside. All of them say it keeps in the fridge for a few days and reheats well.",
+ "sources": [
+  {"name": "Once Upon a Chef", "title": "Quiche Lorraine", "url": "https://www.onceuponachef.com/recipes/quiche-lorraine.html", "rating": 4.95, "rating_count": 383, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Quiche Lorraine", "url": "https://www.recipetineats.com/quiche-lorraine/", "rating": 4.99, "rating_count": 92, "read": true, "lead": false},
+  {"name": "Natasha's Kitchen", "title": "Classic Quiche Lorraine", "url": "https://natashaskitchen.com/quiche-lorraine/", "rating": 4.93, "rating_count": 257, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

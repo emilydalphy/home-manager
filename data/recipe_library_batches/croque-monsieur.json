@@ -1,0 +1,48 @@
+{
+ "dish_name": "Croque Monsieur",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Sourdough bread", "qty": "1 loaf", "category": "other", "cook_qty": "8 slices"},
+  {"item": "Sliced ham", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Gruyère cheese", "qty": "1 lb", "category": "dairy"},
+  {"item": "Parmesan", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "6 tbsp grated"},
+  {"item": "Milk", "qty": "1 cup", "category": "dairy"},
+  {"item": "Heavy cream", "qty": "1 carton (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Unsalted butter", "qty": "7 tbsp", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "8 tsp"},
+  {"item": "Ground nutmeg", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "White pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Cornichons", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C) and line a baking sheet with parchment.",
+  "Pour the 1 cup milk and the 1 cup cream into a small saucepan and warm it over medium until it steams. Don't let it boil. Take it off the heat.",
+  "While the milk warms, cut 12 oz of the Gruyère into thin slices, about 16 of them, and shred the rest. You'll have about 1 cup shredded. Grate 6 tbsp of the Parmesan.",
+  "Melt 3 tbsp of the butter in a second small saucepan over medium, then turn the heat to low. Add the 3 tbsp flour and stir for 3 minutes, until it smells toasty but is still pale.",
+  "Whisk in half the warm milk until it's smooth, then whisk in the rest along with the 1/2 tsp salt, a pinch of white pepper and the 1/4 tsp nutmeg. Keep whisking for about a minute, until it's thick enough to spread like soft butter. Take it off the heat.",
+  "Lay out 8 slices of the sourdough and spread half the béchamel over them, the way you'd butter bread.",
+  "On 4 of the slices, lay 2 slices of Gruyère each, folding them to fit. Spread 4 tsp of the Dijon over the cheese, shared between the 4.",
+  "Lay the 8 oz ham over the cheese and spread the other 4 tsp Dijon over the ham. Top each with 2 more slices of Gruyère, then close the sandwiches with the other 4 slices of bread, béchamel side down.",
+  "Melt 2 tbsp of the butter in a large skillet over medium. Add 2 sandwiches and cook for about 2 minutes, pressing down lightly with a spatula, until the bottom is deep golden. Flip them and cook the other side for 2 minutes, then move them to the baking sheet.",
+  "Melt the last 2 tbsp butter in the skillet and cook the other 2 sandwiches the same way.",
+  "Spread the rest of the béchamel thickly over the tops. Scatter the shredded Gruyère over them, then the Parmesan.",
+  "Bake for 10 minutes, until the cheese has melted. Switch the oven to broil and broil for 2 to 3 minutes, until the tops are bubbling with brown spots. Keep an eye on them. They go from golden to burnt quickly.",
+  "Serve hot, with a knife and fork and the cornichons on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three spread Dijon inside and cover the top with Gruyère, finishing under the broiler until it bubbles. RecipeTin Eats makes a thick milk and cream béchamel, spreads it inside as well as on top, pan fries the sandwiches in butter, then bakes and broils them, and adds Parmesan to the topping. Martha Stewart's version (on PBS) uses an all milk béchamel with Gruyère stirred in, toasted country bread and cornichons on the side; Well Seasoned Studio toasts pain de mie and bakes at 375°F before a short broil. This one follows RecipeTin's method with a slightly shorter bake.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Croque Monsieur (French hot ham and cheese sandwich)", "url": "https://www.recipetineats.com/croque-monsieur/", "rating": 4.95, "rating_count": 34, "read": true, "lead": true},
+  {"name": "PBS Food (Martha Stewart)", "title": "Croque Monsieur", "url": "https://www.pbs.org/food/recipes/croque-monsieur", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Well Seasoned Studio", "title": "Bistro-Style Croque Monsieur / Croque Madame", "url": "https://www.wellseasonedstudio.com/bistro-style-croque-monsieur-or-madame/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

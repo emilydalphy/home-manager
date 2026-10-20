@@ -1,0 +1,44 @@
+{
+ "dish_name": "Tartiflette",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {"item": "Reblochon cheese", "qty": "1 wheel (about 1 lb)", "category": "dairy"},
+  {"item": "Russet potatoes", "qty": "2 lb", "category": "produce"},
+  {"item": "Slab bacon", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Unsalted butter", "qty": "3 tbsp", "category": "dairy"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Salt", "qty": "2 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cornichons", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "At least 1 hour before you start cooking, put the whole reblochon in the freezer. It's too soft to slice neatly otherwise.",
+  "Heat the oven to 400°F (200°C).",
+  "Peel the 2 lb potatoes and cut them into 1 inch cubes. Put them in a large pot, cover them with cold water by about an inch, add 2 tsp of the salt and bring it to a simmer over high heat.",
+  "Meanwhile, halve the onion and slice it thinly. Cut the 8 oz bacon into small batons about 1/4 inch thick.",
+  "Simmer the potatoes for about 15 minutes, until a knife slides in easily but the cubes still hold their shape. Drain them in a colander and leave them there to steam dry.",
+  "Melt the 3 tbsp butter in the same pot over medium high. Add the onion and cook for 5 minutes, stirring often, until it's soft and starting to color.",
+  "Add the bacon and cook for 5 to 6 minutes, stirring, until it's lightly browned and the onion is golden.",
+  "Pour in the 1/2 cup wine and let it bubble for 30 seconds while you scrape up the browned bits from the bottom.",
+  "Take the pot off the heat. Add the potatoes, the remaining 1/2 tsp salt and the 1/2 tsp pepper and stir gently until they're coated. Taste a piece of potato, and add a pinch more salt if it's flat.",
+  "Tip everything into a baking dish about 9 by 13 inches and spread it out evenly.",
+  "Take the cheese out of the freezer and slice it in half through the middle, so you have two thinner rounds with rind on one side. Lay them on top, rind side up.",
+  "Bake for 25 to 30 minutes, until the cheese has melted down over the potatoes and the top is golden and bubbling at the edges.",
+  "Let it sit for 5 minutes, then serve with the cornichons on the side."
+ ],
+ "advance_prep_notes": "Put the reblochon in the freezer at least 1 hour before cooking so it can be sliced.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "All three layer potatoes, onion and bacon under reblochon laid rind side up and bake it until the cheese runs over everything. RecipeTin Eats boils cubed potatoes, softens the onion in butter, browns the bacon with it, deglazes with a splash of white wine and bakes at 400°F for 30 minutes, firming the cheese in the freezer first so it slices. French Entrée adds a cream, flour and wine sauce with thyme and bay and simmers sliced potatoes in milk; Great British Chefs cooks the potatoes in the bacon fat with water, then adds cream. This one follows RecipeTin and leaves out the cream, with cornichons on the side as Great British Chefs serves it.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Tartiflette", "url": "https://www.recipetineats.com/tartiflette/", "rating": 5.0, "rating_count": 20, "read": true, "lead": true},
+  {"name": "French Entrée", "title": "Tartiflette with reblochon", "url": "https://www.frenchentree.com/living-in-france/food-recipes/tartiflette-with-reblochon/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Great British Chefs", "title": "Tartiflette", "url": "https://www.greatbritishchefs.com/recipes/tartiflette-recipe", "rating": 4.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
