@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
+  call; branch `fix/fortnight-shop-reminder-waits`; tests
+  `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
+  shop" reminder could still bring "plan next" up in a fortnight's first week.
+  On a plan longer than 7 days it now opens the card only with two days or
+  fewer left (same rule as `_attention_moves_on`); 7-day and shorter plans
+  unchanged.
+
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
   tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`

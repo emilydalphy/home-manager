@@ -2282,7 +2282,14 @@ def get_week_planning_nudge() -> dict:
         # _plan_before_shop_day) — the week after this one, two days before
         # the shop. Not a different week and not a different card: the one
         # thing it changes is whether the offer is on screen yet.
-        if _attention_moves_on(today, cover_start, cover_days) or shop_reminder:
+        # On a plan longer than a week the reminder waits too: it only
+        # opens the offer once two days or fewer of the plan are left (the
+        # same rule as _attention_moves_on), never in a fortnight's first
+        # week. Plans of seven days or fewer are unchanged.
+        reminder_opens = bool(shop_reminder) and (
+            cover_days <= 7 or (cover_end - today).days <= 6 - PLAN_AHEAD_FROM_WEEKDAY
+        )
+        if _attention_moves_on(today, cover_start, cover_days) or reminder_opens:
             following = cover_end + timedelta(days=1)
             if _plan_covers_any(following.isoformat(), target_days) is None:
                 target = following
