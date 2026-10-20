@@ -1,0 +1,49 @@
+{
+ "dish_name": "Cumin Lamb",
+ "cuisine": "Chinese",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Boneless leg of lamb", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Ground cumin", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Ground Sichuan peppercorns", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sichuan chili flakes", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Dried red chilies", "qty": "1 bag", "category": "pantry", "cook_qty": "8"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 piece", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice and put it in a pot with 2 1/4 cups water. Bring it to a boil, cover it, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, cut the 1 lb lamb into 2/3 inch cubes. Put it in a bowl with 1 tbsp soy sauce, 1 tbsp Shaoxing wine and the 1/2 tsp salt, mix well and leave it for 20 minutes while you prep the rest.",
+  "Stir the spice mix together in a small bowl: the 2 tbsp cumin, 1/2 tsp sugar and the 1/4 tsp Sichuan pepper. Put the 2 tsp chili flakes in a separate small dish for the table.",
+  "Cut the onion into 1 inch pieces. Mince a thumb-size piece of the ginger and thinly slice the 5 garlic cloves. Chop 1 cup of the cilantro.",
+  "Pour off any liquid from the lamb. Sprinkle in the 1/4 cup cornstarch a spoonful at a time, tossing as you go, until every piece is coated.",
+  "Heat 3 tbsp of the oil in a large skillet over medium high until it shimmers. Spread the lamb out in a single layer, in two batches if it won't fit without overlapping. Leave it alone for about 1 minute, until the underside is golden.",
+  "Flip the pieces and cook the other side for 30 to 40 seconds, until it's lightly golden and the inside is still a little pink. Move the lamb to a plate.",
+  "Add the last 1 tbsp oil to the pan with the 8 dried chilies, the ginger and the garlic. Stir for about 15 seconds, until they smell fragrant.",
+  "Add the onion and stir-fry for about 1 minute, until it starts to soften but still has some crunch.",
+  "Tip the lamb back in, sprinkle the spice mix all over and toss right away so every piece is coated. Take the pan off the heat.",
+  "Taste a piece. If it's flat, add a pinch more salt.",
+  "Stir in the cilantro and serve right away with the rice and the chili flakes on the side. Leave the whole dried chilies on the side of your plate."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both marinate bite-size lamb in soy and Shaoxing wine, sear it hard in a hot pan until golden outside and still pink inside, then toss it with a lot of cumin, chili and fresh cilantro. Omnivore's Cookbook coats the lamb in cornstarch after a 20 minute marinade, sears it in a single layer, fries dried chilies, ginger, garlic and onion, and finishes with a ground cumin, chili flake, sugar and Sichuan pepper mix. The Woks of Life puts the cumin in the marinade, toasts whole cumin seeds and adds fresh chilies and scallions with no onion. This one follows Omnivore's Cookbook and moves the chili flakes to the table.",
+ "sources": [
+  {"name": "Omnivore's Cookbook", "title": "Real-Deal Xinjiang Cumin Lamb", "url": "https://omnivorescookbook.com/cumin-lamb/", "rating": 4.91, "rating_count": 44, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Xinjiang Cumin Lamb", "url": "https://thewoksoflife.com/cumin-lamb/", "rating": 4.94, "rating_count": 30, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
