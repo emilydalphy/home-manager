@@ -1,0 +1,101 @@
+{
+ "dish_name": "Tabbouleh",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Fine bulgur",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine hearts",
+   "qty": "1 package",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1/3 cup bulgur in a fine sieve, shake it dry and tip it into a small bowl.",
+  "Squeeze the 2 lemons over the bulgur, add the 1/4 cup olive oil and stir. Leave it while you chop. It soaks up the juice and roughly doubles.",
+  "Wash both bunches of parsley and dry them very well in a salad spinner or a clean dish towel. Wet parsley makes a soggy salad.",
+  "Cut off the thick stems and chop the leaves very finely with a sharp knife. You want about 3 cups. Don't use a food processor. It bruises the parsley and turns it to mush.",
+  "Pick 1/2 cup of leaves from the mint and chop them finely.",
+  "Finely dice the 3 tomatoes and the onion into pieces about the size of a pea.",
+  "Put the parsley, mint, tomatoes and onion in a large bowl. Add the soaked bulgur with all its dressing and the 1 tsp salt, and toss well.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Spoon what you're keeping for later lunches into containers and put them in the fridge. It keeps for up to 3 days.",
+  "Serve cold, with leaves from the romaine hearts."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three treat it as a parsley salad with only a little fine bulgur, chopped by hand, with tomato, onion, lemon, olive oil and salt. Plant Based Folk soaks the rinsed bulgur in the lemon juice and olive oil while the herbs are chopped, then tosses everything together with mint and white onion. The Matbakh moistens the bulgur with a few spoons of water, uses green onion instead of white and much more of everything for 6. Mama's Lebanese Kitchen adds cucumber and seven spice on the onion, drains the tomatoes, mixes only at serving time and serves it with lettuce leaves. This one follows Plant Based Folk, scaled up a little for a lunch.",
+ "sources": [
+  {
+   "name": "Plant Based Folk",
+   "title": "Authentic Taboule Lebanese Salad",
+   "url": "https://plantbasedfolk.com/taboule-salad/",
+   "rating": 4.99,
+   "rating_count": 85,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Lebanese Tabbouleh Salad",
+   "url": "https://thematbakh.com/bulgar-wheat-tabouli/",
+   "rating": 5.0,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mama's Lebanese Kitchen",
+   "title": "Authentic Lebanese Tabbouleh Recipe",
+   "url": "https://mamaslebanesekitchen.com/salads/authentic-lebanese-tabbouleh-recipe/",
+   "rating": 4.85,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

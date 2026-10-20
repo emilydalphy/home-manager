@@ -1,0 +1,127 @@
+{
+ "dish_name": "Kafta bil Sanieh",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Peel the 4 potatoes and slice them into rounds about 1/4 inch thick.",
+  "Toss the potatoes on a large rimmed baking sheet with 2 tbsp of the olive oil and 1/2 tsp of the salt, and spread them out in a single layer. Roast for 20 minutes, flipping them halfway, until the edges start to brown. They finish cooking in the sauce.",
+  "Meanwhile, pick the leaves from the parsley and chop them very finely. You want about 1 1/2 cups.",
+  "Grate 1 of the onions on the large holes of a box grater, then squeeze out as much juice as you can with your hands.",
+  "In a large bowl, put the parsley and grated onion with the 1 lb beef, 1 tsp allspice, 1 tsp cinnamon, 1/2 tsp of the pepper and 1 tsp of the salt. Mix it with your hands until the green is spread evenly through the meat.",
+  "Shape it into 12 thin oval patties, about 1/2 inch thick.",
+  "Heat the last 1 tbsp olive oil in a large skillet over medium high. Brown half the patties for 2 minutes, then flip them and brown the other side for 2 minutes. They'll still be pink inside. Move them to a plate and brown the rest the same way.",
+  "Turn the heat down to medium. Stir the 1 tbsp tomato paste into 1 cup water and pour it into the skillet. Scrape up the browned bits with a wooden spoon, then stir in the 15 oz tomato sauce, the remaining 1/2 tsp salt and the last 1/4 tsp pepper. Let it bubble for 1 minute and take it off the heat.",
+  "Slice the other onion and the 2 tomatoes into thin rounds.",
+  "Take the potatoes out and turn the oven down to 350°F. In a 9 by 13 inch baking dish, stand the kafta, potato, onion and tomato slices up on their edges in rows, one after another, leaning on each other.",
+  "Pour the sauce over everything and cover the dish tightly with foil.",
+  "Bake for 35 minutes. Take off the foil and bake for 10 more minutes, until a knife slides easily into a potato and the sauce is thick and bubbling at the edges. You're cooking the kafta to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "For the last 5 minutes, wrap 4 of the pitas in foil and put them in the oven to warm.",
+  "Taste the sauce, and add a pinch more salt if it's flat.",
+  "Serve with the warm pita."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bake thin beef kafta patties with parsley, onion and warm spices in a tray with potato, tomato and onion slices under a tomato sauce. The Salt and Sweet seasons the kafta with allspice and cinnamon, roasts the potato slices first, stands everything on its edge and bakes it covered in tomato sauce and thinned tomato paste at 350°F. Zaatar and Zaytoun flash fries the patties and half fries the potatoes before baking uncovered with seven spice. The Matbakh adds garlic, egg, breadcrumbs and green pepper, and spreads the kafta as one layer. This one follows The Salt and Sweet and browns the patties first the Zaatar and Zaytoun way, making the sauce in that skillet.",
+ "sources": [
+  {
+   "name": "The Salt and Sweet",
+   "title": "Kafta bil Sanieh",
+   "url": "https://thesaltandsweet.com/kafta-bil-sanieh/",
+   "rating": 5.0,
+   "rating_count": 101,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Zaatar and Zaytoun",
+   "title": "Kafta bil Sanieh (Lebanese Baked Kafta)",
+   "url": "https://zaatarandzaytoun.com/kafta-bil-sanieh-lebanese-baked-kafta/",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Kafta Bil Sanieh - Baked Kafta and Potatoes",
+   "url": "https://thematbakh.com/kafta-bil-sanieh/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
