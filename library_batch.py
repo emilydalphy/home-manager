@@ -105,6 +105,14 @@ def check_one(path: Path) -> list[str]:
         problems.append(f"lead should be {ordered[0].get('name')} by the app's rule (top rating, 20+ ratings)")
     completed = tools.complete_ingredient_list(e["ingredients"], e["instructions"], SERVES)
     added = [i["item"] for i in completed if i["item"] not in {x["item"] for x in e["ingredients"]}]
+    # A soup that makes its own broth says "the broth" (Pot-au-Feu, Canh
+    # Chua, 2026-10-20): a look, not a fix, so the step isn't reworded to
+    # "the cooking liquid" to please the checker.
+    own = [a for a in added if a.lower() in ("broth", "stock")]
+    for a in own:
+        print(f"  look {path.name}: a step says {a.lower()}, not on the list"
+              " (fine if the dish makes its own; add it if it's bought)")
+    added = [a for a in added if a not in own]
     if added:
         problems.append(f"steps use things not on the list: {', '.join(added)}")
     r = recipes.check_steps_ingredients_consistency(e["ingredients"], e["instructions"], SERVES)
