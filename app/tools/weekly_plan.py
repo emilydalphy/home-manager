@@ -9271,8 +9271,9 @@ def _redate_plan_rows(
     rewritten — `after` rows, each {id, date, slot, slot_state, meal,
     derived, changed} — and may return a refusal sentence. With
     `move_prep_cuts`, a prep-cut row that would now fall AFTER its meal
-    moves by the same number of days (the Move sheet; the nights swap
-    leaves prep cuts on the prep day, as it always has).
+    moves by the same number of days (the Move sheet). The nights swap
+    does not use it: since 2026-10-20 it carries EVERY prep cut with its
+    dinner, before this runs (_nights_swap_prep_cut_moves).
 
     Runs on the caller's connection and transaction; neither begins,
     commits nor closes. Returns {"refused": sentence} with nothing written,
@@ -9411,13 +9412,97 @@ def _frozen_portion_cook_id(derived: dict) -> int | None:
         return None
 
 
+def _nights_swap_prep_cut_moves(conn, weekly_plan_id: int, new_date: dict[int, str],
+                                today: str) -> dict[int, dict]:
+    """
+    The prep cuts a nights swap carries with their dinners (Emily,
+    2026-10-20): prep Tuesday for a Wednesday dinner that moves to Friday
+    is now prep Thursday — the same number of days before the meal. Before
+    this, the swap left every cut on its prep day, so a dinner pulled
+    earlier could leave its prep sitting after it, and one pushed later
+    left the prep days early.
+
+    A cut is one prep_tasks row per meal it feeds (add_prep_cut), so "a
+    cut that feeds several meals" is the rows sharing a (date, description)
+    on this plan. It moves only when EVERY meal it feeds moves by the same
+    number of days; otherwise — one of them stays put, or the two traded
+    dinners both use it — it is left exactly where it is, because there is
+    no one right day to carry it to. A carried day that would be in the
+    past lands on `today` instead, and never after the earliest meal it
+    feeds.
+
+    Returns {entry id: {task id: {"from", "to", "was", "said"}}} for the
+    rows that change — dates and the sentence ("ready for Wednesday" re-said
+    for the new weekday). Reads only; the caller writes, and keeps "from"
+    and "was" on the Undo token so Undo puts each row back exactly.
+    """
+    from . import prep_sessions as _prep_sessions  # lazy: it imports this module
+    if not new_date:
+        return {}
+    meal_dates = {
+        r["id"]: r["date"] for r in conn.execute(
+            "SELECT id, date FROM meal_plan_entries WHERE household_id = ? AND weekly_plan_id = ?",
+            (household_id(), weekly_plan_id),
+        ).fetchall()
+    }
+    cuts = conn.execute(
+        "SELECT id, task_date, description, meal_plan_entry_id FROM prep_tasks "
+        "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = ? "
+        "AND meal_plan_entry_id IS NOT NULL AND task_date IS NOT NULL",
+        (household_id(), weekly_plan_id, _prep_sessions.PREP_CUT_TASK_TYPE),
+    ).fetchall()
+    groups: dict[tuple, list] = {}
+    for t in cuts:
+        groups.setdefault((t["task_date"], t["description"] or ""), []).append(t)
+
+    def _shift(entry_id: int) -> int:
+        old = meal_dates.get(entry_id)
+        new = new_date.get(entry_id, old)
+        if not old or not new:
+            return 0
+        return (date.fromisoformat(new) - date.fromisoformat(old)).days
+
+    out: dict[int, dict] = {}
+    for (task_date, said), rows in groups.items():
+        if not any(t["meal_plan_entry_id"] in new_date for t in rows):
+            continue
+        shifts = {_shift(t["meal_plan_entry_id"]) for t in rows}
+        if len(shifts) != 1:
+            continue  # its meals move by different amounts — leave it
+        delta = shifts.pop()
+        if delta == 0:
+            continue
+        to = (date.fromisoformat(task_date) + timedelta(days=delta)).isoformat()
+        if to < today:
+            to = today
+        earliest_meal = min(
+            new_date.get(t["meal_plan_entry_id"], meal_dates.get(t["meal_plan_entry_id"])) or to
+            for t in rows
+        )
+        if to > earliest_meal:
+            to = earliest_meal
+        for t in rows:
+            eid = t["meal_plan_entry_id"]
+            old_wd = _weekday_of(meal_dates[eid])
+            new_wd = _weekday_of(new_date.get(eid, meal_dates[eid]))
+            resaid = said.replace(f"for {old_wd}", f"for {new_wd}")
+            if to == task_date and resaid == said:
+                continue
+            out.setdefault(eid, {})[t["id"]] = {
+                "from": task_date, "to": to, "was": t["description"], "said": resaid,
+            }
+    return out
+
+
 def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: str, new_date: str) -> int:
     """
-    A prep-cut row ("Get the lasagna ready for Wednesday") stays on its
-    prep day when its meal moves — a prep day is a rhythm fact — UNLESS the
-    meal now comes before it: prepping Thursday for Tuesday's dinner is
-    nonsense. Those move by the same number of days the meal did. Either
-    way a weekday the sentence names is re-said.
+    The Move sheet's rule (meal_move): a prep-cut row ("Get the lasagna
+    ready for Wednesday") stays on its prep day when its meal moves — a
+    prep day is a rhythm fact — UNLESS the meal now comes before it:
+    prepping Thursday for Tuesday's dinner is nonsense. Those move by the
+    same number of days the meal did. Either way a weekday the sentence
+    names is re-said. (The nights swap no longer uses this: it carries
+    every cut with its dinner — _nights_swap_prep_cut_moves, 2026-10-20.)
     """
     from . import prep_sessions as _prep_sessions  # lazy: it imports this module
     delta = (date.fromisoformat(new_date) - date.fromisoformat(old_date)).days
@@ -9614,9 +9699,35 @@ def _apply_dinner_nights_swap(
         new_date = {r["id"]: (date_b if r["date"] == date_a else date_a) for r in moving}
         mapping = {f"{date_a}:dinner": f"{date_b}:dinner", f"{date_b}:dinner": f"{date_a}:dinner"}
         now_iso = datetime.now().isoformat(timespec="seconds")
+        # A prep cut moves with its dinner, the same days ahead of it
+        # (Emily, 2026-10-20 — this swap used to leave every cut where it
+        # was). Worked out before the write so each dinner's Undo token can
+        # carry the exact day and sentence each of its cuts had; an Undo
+        # puts those back rather than shifting again, so a day that was
+        # pulled up to today comes back to where it really was.
+        if undo:
+            cut_moves: dict[int, dict] = {}
+            restore_cuts: dict[str, dict] = {}
+            for r in moving:
+                token = json.loads(r["derived_from_json"] or "{}").get(NIGHTS_MOVED_KEY) or {}
+                restore_cuts.update(token.get("prep_cuts") or {})
+        else:
+            cut_moves = _nights_swap_prep_cut_moves(
+                conn, weekly_plan_id, new_date, today or _household_today(conn).isoformat())
+            restore_cuts = {}
+
+        def _token(r):
+            token = {"date": r["date"], "at": now_iso}
+            cuts = cut_moves.get(r["id"])
+            if cuts:
+                token["prep_cuts"] = {
+                    str(tid): {"date": m["from"], "description": m["was"]} for tid, m in cuts.items()
+                }
+            return token
+
         done = _redate_plan_rows(
             conn, weekly_plan_id, rows, new_date, mapping=mapping,
-            token_for=None if undo else (lambda r: {"date": r["date"], "at": now_iso}),
+            token_for=None if undo else _token,
             # An Undo is exempt: it puts back a week that was already
             # standing, and refusing it would strand the household on the
             # move they just tried to take back.
@@ -9640,6 +9751,22 @@ def _apply_dinner_nights_swap(
         from . import meal_move as _meal_move
         _meal_move._resay_freezer_nights(conn, {"rows": [dict(r) for r in rows]}, new_date)
         prep_moved = done["prep_moved"]
+        for cuts in cut_moves.values():
+            for tid, m in cuts.items():
+                conn.execute(
+                    "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
+                    (m["to"], m["said"], tid, household_id()),
+                )
+                if m["to"] != m["from"]:
+                    prep_moved += 1
+        for tid, was in restore_cuts.items():
+            if not isinstance(was, dict):
+                continue
+            cur = conn.execute(
+                "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
+                (was.get("date"), was.get("description"), int(tid), household_id()),
+            )
+            prep_moved += cur.rowcount
         if own_conn:
             conn.commit()
     except Exception:

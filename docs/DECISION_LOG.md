@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A prep cut moves with its dinner on a nights swap; limits state the rule, not Pomona's ability**
+  (2026-10-20, Emily's call; branch `fix/prep-moves-with-its-dinner`; tests
+  `tests/test_swap_moves_prep_cuts.py`, `tests/test_prep_days.py`).
+  `swap_dinner_nights` now carries each prep cut the same days ahead of its
+  dinner (`_nights_swap_prep_cut_moves`; was: left in place); a past day
+  lands on today, Undo restores day + wording from the token; a cut feeding
+  meals that don't all move by the same amount stays put. The prep-day
+  refusal now reads "…so prep needs to be on or before Wednesday", and that
+  shape is pomona-copywriter rule 16.
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
   tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`
