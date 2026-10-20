@@ -874,6 +874,13 @@ def _sync_guest_attendance(intake: dict, previous: dict | None = None) -> None:
         if not isinstance(extras, dict):
             continue
         total_guests = _guest_total(extras)
+        # This save didn't change this night's guests (the moods screen,
+        # a cuisine pick), so it has nothing to say about them. Pushing the
+        # intake's number again would put back "3 guests" over the 5
+        # somebody set in chat or the day sheet since — the same rule as
+        # the taking-off loop above, for a date that stays.
+        if previous is not None and day in previous and _guest_total(previous[day]) == total_guests:
+            continue
         try:
             current = _attendance.get_slot_attendance(day, "dinner")
             if current["guest_count"] == total_guests:

@@ -89,6 +89,23 @@ def test_a_save_that_does_not_touch_guests_leaves_them(couple):
     assert tools.get_slot_attendance(friday, "dinner")["guest_count"] == 2
 
 
+def test_a_save_that_does_not_touch_guests_keeps_a_count_set_since(couple):
+    """The date stays in the answers, but this save didn't change it — so
+    the 5 set in the day sheet since is not overwritten by the intake's 2."""
+    week = _week()
+    friday = _friday(week)
+    tools.save_week_intake(week, night_tags={friday: ["guests"]},
+                           guest_counts={friday: {"adults": 2, "children": 0}})
+    tools.set_guest_count(friday, "dinner", 5)
+
+    tools.save_week_intake(week, moods=["quick"])
+    assert tools.get_slot_attendance(friday, "dinner")["guest_count"] == 5
+
+    # Changing the night's guests on the answers again still reaches the table.
+    tools.save_week_intake(week, guest_counts={friday: {"adults": 3, "children": 0}})
+    assert tools.get_slot_attendance(friday, "dinner")["guest_count"] == 3
+
+
 def test_the_next_draft_is_planned_for_the_household_not_the_guests(couple, monkeypatch):
     week = _week()
     friday = _friday(week)
