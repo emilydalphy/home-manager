@@ -12698,14 +12698,17 @@
     return m ? (m.dietary_restrictions || []).slice() : [];
   }
 
-  // Removal resends the member's remaining list under replace=true
-  // (set_member_dietary_restrictions' removal mechanism); an add merges.
+  // Removal names the ONE chip; the server takes it off the list as stored
+  // now. It used to resend this screen's copy of the rest under
+  // replace=true, which erased an allergy added elsewhere (share link,
+  // the other adult's phone) since the sheet opened (2026-10-20). Both
+  // paths adopt the server's answer, so that newer allergy then appears.
   function wwkRemoveRestriction(name, value) {
     var next = wwkMemberRestrictions(name).filter(function (r) { return r !== value; });
     wwkCommit('people', function () {
       (wwkMem().members || []).forEach(function (m) { if (m.name === name) m.dietary_restrictions = next; });
     }, function () {
-      return wwkPost('/api/memory/member/restrictions', { name: name, restrictions: next, replace: true });
+      return wwkPost('/api/memory/member/restrictions/remove', { name: name, restriction: value });
     }, wwkAdoptMemory);
   }
 

@@ -1026,6 +1026,14 @@ class MemberRestrictionsRequest(BaseModel):
     replace: bool = False
 
 
+class MemberRestrictionRemoveRequest(BaseModel):
+    """Settings' chip remove: the one restriction to take off, by name —
+    never the screen's copy of the rest of the list (see
+    tools.remove_member_dietary_restriction)."""
+    name: str
+    restriction: str
+
+
 class StoreTypicalItemAddRequest(BaseModel):
     store: str
     item: str
@@ -2482,6 +2490,24 @@ def set_memory_member_restrictions(req: MemberRestrictionsRequest):
         memory = tools.get_household_memory_for_display()
     except Exception as e:
         logger.exception("Setting member dietary restrictions failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return memory
+
+
+@app.post("/api/memory/member/restrictions/remove")
+def remove_memory_member_restriction(req: MemberRestrictionRemoveRequest):
+    """Take one restriction off one member, against the list as it is
+    stored NOW — so an allergy added elsewhere after Settings opened
+    survives. Answers the whole memory payload, so the sheet redraws from
+    the server's list and the newer allergy appears."""
+    _require_member_here(req.name)
+    if not (req.restriction or "").strip():
+        raise HTTPException(status_code=400, detail="Say which one to take off.")
+    try:
+        tools.remove_member_dietary_restriction(req.name, req.restriction)
+        memory = tools.get_household_memory_for_display()
+    except Exception as e:
+        logger.exception("Removing a member dietary restriction failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return memory
 
