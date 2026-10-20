@@ -329,6 +329,7 @@ def test_a_failure_inside_the_source_rescale_leaves_the_list_and_chain_intact(mo
     assert _grocery_by_item() == {"beef": "3 lbs", "lettuce": "3 heads"}
 
 
+@ON_MONDAY
 def test_a_failure_inside_the_rebuy_for_stranded_reheat_nights_rolls_the_swap_back(monkeypatch):
     """
     Swapping the SOURCE of a chain: the nights that were eating off it get

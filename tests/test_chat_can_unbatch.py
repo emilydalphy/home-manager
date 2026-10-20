@@ -311,6 +311,7 @@ def test_one_day_of_a_longer_batch_is_freed_and_the_rest_stays():
     assert "links_to" in _derived(ids[(THU, "dinner")])
 
 
+@ON_MONDAY
 def test_naming_the_day_that_cooks_takes_the_whole_batch_apart():
     """"Don't cook ahead on Monday" is about the cook, not about one of
     the nights it feeds."""

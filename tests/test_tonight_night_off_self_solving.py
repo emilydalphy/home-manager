@@ -303,6 +303,7 @@ def test_a_chain_that_feeds_a_lunch_first_cooks_at_that_lunch():
 
 # ------------------------------------ (d) tonight is a leftovers night
 
+@ON_MONDAY
 def test_a_leftovers_night_goes_in_the_freezer_and_the_cook_keeps_its_size():
     """Tonight reheats Monday's batch. Its portion goes in the freezer —
     not onto a later night, where days-old leftovers would be a food-safety

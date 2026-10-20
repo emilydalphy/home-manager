@@ -19,7 +19,7 @@ from pathlib import Path
 
 import nodeharness
 import pytest
-from conftest import household_today
+from conftest import household_today, on_the_weeks_monday
 from shop_harness import CLICK
 
 from app import tools
@@ -29,6 +29,12 @@ from app.tools import pantry, spices
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
+
+# Approval buys only from the household's today on (2026-10-18), and dal_week
+# cooks on this week's Monday: run on that Monday, or from Tuesday the dal
+# has gone by, nothing of it is assumed or bought, and the file asserts on
+# whichever weekday the suite ran.
+pytestmark = on_the_weeks_monday()
 
 
 def _monday(offset_weeks: int = 0) -> str:
