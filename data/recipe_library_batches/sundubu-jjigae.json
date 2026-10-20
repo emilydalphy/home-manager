@@ -1,0 +1,42 @@
+{
+ "dish_name": "Sundubu Jjigae",
+ "cuisine": "Korean",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Extra soft tofu (sundubu)", "qty": "2 packages (12 oz each)", "category": "dairy"},
+  {"item": "Kimchi", "qty": "1 jar", "category": "other", "cook_qty": "2/3 cup + 1/4 cup juice"},
+  {"item": "Pork shoulder", "qty": "6 oz", "category": "meat/seafood"},
+  {"item": "Gochugaru", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Sesame oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Short-grain white rice", "qty": "1.5 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1.5 cups rice in a few changes of water until the water runs mostly clear. Cook it in a rice cooker, or in a covered pot with 1 3/4 cups water over low heat for 18 minutes, then leave it covered off the heat for 10 minutes.",
+  "Meanwhile, cut the 6 oz pork into thin strips about 1 inch long. Cut 2/3 cup of the kimchi into thin strips, and pour 1/4 cup of the juice from the jar into a cup.",
+  "Mince the 4 garlic cloves. Finely chop 2 of the scallions. Put 1 tsp of the gochugaru in a small bowl for the table.",
+  "Put the pork, kimchi, garlic, the other 2 tsp gochugaru and the 2 tbsp sesame oil into a medium pot while it's still cold. Set it over medium heat and stir fry for 3 to 4 minutes, until the pork is nearly cooked and the oil has turned red. Starting cold keeps the chili flakes from burning.",
+  "Pour in 2 cups water and the kimchi juice. Bring it to a boil and let it boil for 3 to 4 minutes. Skim off any foam with a spoon.",
+  "Spoon the tofu from both packages into the pot in big chunks. Gently stir in 1/2 tsp salt and the pinch of black pepper, trying not to break the tofu up too much. Let it boil for 4 to 5 minutes, until the tofu is hot all the way through.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Turn the heat to low. Crack the 4 eggs into the stew, spaced apart. Cover and cook for 2 to 3 minutes, until the whites have set and the yolks are still soft.",
+  "Scatter the scallions over the top and turn off the heat.",
+  "Serve with the rice, with the gochugaru on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions build a chili oil base before the liquid goes in, then add the soft tofu in big spoonfuls and finish with scallion and an egg cracked into the bubbling stew. Korean Bapsang's kimchi version stir fries pork, kimchi, garlic, gochugaru and sesame oil together, adds water and kimchi juice, and seasons with salted shrimp or salt. Kimchi Mari fries a separate chili sauce of gochugaru, soy, garlic and oyster sauce, then simmers the tofu in water with soup soy sauce, fermented shrimp and fish sauce. This one follows Korean Bapsang's kimchi version doubled for 4, seasons with plain salt, sets the eggs in the covered pot, and keeps some of the chili flakes for the table.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Kimchi Sundubu Jjigae", "url": "https://www.koreanbapsang.com/kimchi-soondubu-jjigae-soft-tofu-stew-kimchi/", "rating": 4.72, "rating_count": 401, "read": true, "lead": true},
+  {"name": "Kimchi Mari", "title": "Spicy Soft Tofu Stew (Sundubu Jjigae)", "url": "https://kimchimari.com/sundubu-jjigae-soft-tofu-stew/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
