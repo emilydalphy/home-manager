@@ -71,18 +71,30 @@
     {
       tab: 'grocery',
       title: 'Shop',
-      body: 'Approve the week and your shopping list lands here. Before you shop, tick any spices, sauces or pantry staples you’re out of. I leave those off unless you say.',
+      // "Approve the week" only while there's a week to approve: "Show me
+      // around again" is mostly tapped by a household whose week is
+      // already approved and whose list is already here (defect hunt,
+      // 2026-10-20 — it told them to approve a week marked Approved).
+      body: function (el, approved) {
+        return (approved
+          ? 'Your shopping list lives here, built from the week.'
+          : 'Approve the week and your shopping list lands here.') +
+          ' Before you shop, tick any spices, sauces or pantry staples you’re out of. I leave those off unless you say.';
+      },
       target: function (late) { return first('[data-gro="goto-beforeshop"]') || (late ? tabButton('grocery') : null); }
     },
     {
       tab: 'kitchen',
       title: 'Cook',
-      // Two ways to read, by what's ringed: Start cooking (tonight has a
-      // cook) or just the Cook tab (a draft nobody's approved yet).
-      body: function (el) {
-        return el && el.closest && el.closest('#kit-dock')
-          ? 'Tonight’s dinner, when to start, and the recipe. Start cooking takes you through it a step at a time.'
-          : 'Once the week’s approved, tonight’s dinner lives here, with when to start and the recipe. Start cooking takes you through it a step at a time.';
+      // Three ways to read: by what's ringed — Start cooking (tonight has
+      // a cook) — else by the week: approved (a night with nothing to
+      // cook, on a replay) or a draft nobody's approved yet.
+      body: function (el, approved) {
+        if (el && el.closest && el.closest('#kit-dock')) {
+          return 'Tonight’s dinner, when to start, and the recipe. Start cooking takes you through it a step at a time.';
+        }
+        return (approved ? 'Tonight’s dinner lives here' : 'Once the week’s approved, tonight’s dinner lives here') +
+          ', with when to start and the recipe. Start cooking takes you through it a step at a time.';
       },
       target: function (late) { return first('#kit-dock button') || (late ? tabButton('kitchen') : null); }
     },
@@ -95,8 +107,14 @@
   ];
   var LAST_LABEL = 'Back to my week';
 
+  // `approved`: the week on Plan is approved — the shell's answer
+  // (host.weekApproved), since this file never fetches. No answer reads
+  // as a draft, the tour's first and usual case.
   function bodyOf(stop, el) {
-    return typeof stop.body === 'function' ? stop.body(el) : stop.body;
+    if (typeof stop.body !== 'function') return stop.body;
+    var approved = false;
+    try { approved = !!(state && state.host.weekApproved && state.host.weekApproved()); } catch (err) { approved = false; }
+    return stop.body(el, approved);
   }
 
   var root = null;
@@ -239,7 +257,7 @@
     if (s.host.onEnd) s.host.onEnd(skipped, s.opts);
   }
 
-  // host: { goTab(key), onEnd(skipped, opts) }. opts.replay: started from
+  // host: { goTab(key), onEnd(skipped, opts), weekApproved() }. opts.replay: started from
   // Preferences rather than by the first draft.
   function start(host, opts) {
     if (state) return false;

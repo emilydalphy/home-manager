@@ -15465,6 +15465,10 @@
   // consent screen. Any of those and it waits for the next time Plan is
   // built — it isn't recorded as seen until it is finished or skipped.
   var tourHost = {
+    // Whether the week Plan shows is approved: Shop and Cook say "once
+    // it's approved" only while it isn't (a replay from Preferences is
+    // usually on an approved week).
+    weekApproved: function () { return weekPlanState(weekState.data) === 'set'; },
     goTab: function (key) {
       var panel = panels[key];
       if (panel && panel.classList.contains('active')) return;
