@@ -58,6 +58,15 @@ why*, not duplicating the diff.
   meals that don't all move by the same amount stays put. The prep-day
   refusal now reads "…so prep needs to be on or before Wednesday", and that
   shape is pomona-copywriter rule 16.
+- **A freezer night goes with its cook when the cook comes off the week**
+  (2026-10-20, Emily's call; branch `fix/freezer-night-goes-with-its-cook`;
+  tests `tests/test_freezer_night_goes_with_its_cook.py`). The Review "−",
+  nobody home and the night off removed a cook whose only later night was a
+  freezer night and left Friday reheating a portion nobody cooks. Now
+  `weekly_plan.drop_freezer_nights_of` hands each such night back `open`
+  (thaw and list with it). The "−" and night-off drops of that shape now
+  carry an Undo (`plan_undo` records the new open rows as `invented`);
+  an away night has no Undo, so it stays dropped. A MOVED cook is unchanged.
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
   tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`

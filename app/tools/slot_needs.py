@@ -299,7 +299,8 @@ def set_slot_need(
         )
         plan_id = _plan_id_for_date(conn, date_str, slot) if need == "away" else None
         if plan_id is not None:
-            _cook_on_the_fed_night(conn, plan_id, date_str, slot)
+            if not _cook_on_the_fed_night(conn, plan_id, date_str, slot):
+                _drop_its_freezer_nights(conn, plan_id, date_str, slot)
             _settle_slot_empty(
                 plan_id, date_str, slot, resolved_reason,
                 derived_from={"need": "away", "away_stretch_id": away_stretch_id},
@@ -372,6 +373,25 @@ def _cook_on_the_fed_night(conn, plan_id: int, date_str: str, slot: str) -> bool
     if status is not None and status["status"] == "approved":
         _weekly_plan._rescale_leftover_source_grocery(source_id, target["entry_id"], conn=conn)
     return True
+
+
+def _drop_its_freezer_nights(conn, plan_id: int, date_str: str, slot: str) -> None:
+    """
+    The away is about to clear a cook that did NOT move (nothing it feeds,
+    or the move was declined): a night eating a portion that cook freezes
+    goes with it, handed back as a question — no cook, no portion (Emily,
+    2026-10-20; weekly_plan.drop_freezer_nights_of, the "−"'s and the night
+    off's own). A cook already ticked cooked made its portion, so its
+    freezer nights stay. On the caller's transaction.
+    """
+    row = conn.execute(
+        "SELECT id, cooked_status FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+        "AND date = ? AND slot = ? AND slot_state = 'planned' AND component_category IS NULL",
+        (plan_id, household_id(), date_str, slot),
+    ).fetchone()
+    if row is None or (row["cooked_status"] or "") == "done":
+        return
+    _weekly_plan.drop_freezer_nights_of(conn, plan_id, row["id"], date_str)
 
 
 def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:

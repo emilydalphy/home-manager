@@ -936,7 +936,9 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
 
     `said` is the toast, `can_undo` whether tonight_night_off_undo can put
     the week back exactly: every shape except the drop, whose grocery
-    reversal cannot be un-said. `frozen` names what went in the freezer.
+    reversal cannot be un-said — unless the drop took a freezer night with
+    it (a cook whose portion nobody will now freeze, 2026-10-20), which
+    re-plans another night and so can be taken back. `frozen` names what went in the freezer.
 
     Refusals are still answers, not errors, but only for a tonight with no
     plan to change (no plan covering it, or a component-based one).
@@ -1057,13 +1059,26 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             # off the week. No undo: its groceries are reversed here.
             use_soon = _fresh_bought_for(tonight_row["id"], conn=conn)
             touched_entries = [tonight_row["id"]] if tonight_row is not None else []
-            _settle_night_off(plan_id, today, use_soon, conn)
+            freezer = (_weekly_plan.freezer_nights_of(conn, plan_id, tonight_row["id"])
+                       if tonight_row is not None else [])
+            dropped: list[dict] = []
+            if freezer:
+                # Its freezer nights go with it — no cook, no portion
+                # (Emily, 2026-10-20) — and since that re-plans another
+                # night, this drop leaves an Undo like the other shapes.
+                touched_entries, dropped = _night_off_drop_with_freezer(
+                    conn, plan_id, tonight_row, today, dish, use_soon, freezer,
+                )
+                out["can_undo"] = True
+                out["freezer_nights_dropped"] = dropped
+            else:
+                _settle_night_off(plan_id, today, use_soon, conn)
             conn.commit()
             # The weekdays the dish is still planned on after tonight — the
             # fact `said` rests on, carried so a client building its own
             # sentence (shell.js tonightNightOffSaid) reads it, not a rule.
             out["still_on"] = step["still_on"]
-            out["said"] = _said(kind, dish, step, use_soon)
+            out["said"] = _said(kind, dish, step, use_soon) + _weekly_plan.freezer_nights_said(dropped)
         else:
             touched_entries = _night_off_with_undo(conn, plan, rows, tonight_row, today, step, out)
             conn.commit()
@@ -1224,6 +1239,40 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
     out["frozen"] = {"item": frozen["item"], "quantity": frozen["quantity"]} if frozen else None
     out["said"] = _said(kind, dish, step)
     return list(touched)
+
+
+def _night_off_drop_with_freezer(conn, plan_id: int, tonight_row, today: str, dish: str,
+                                 use_soon: list[str], freezer: list[dict]) -> tuple[list[int], list[dict]]:
+    """The drop, for a dinner whose only later nights eat a portion it
+    freezes: tonight settles off as any drop does, its freezer nights are
+    handed back as questions (weekly_plan.drop_freezer_nights_of), and the
+    undo record goes on tonight's row — the same snapshot / fingerprint /
+    stamp every other shape uses, the new `open` rows named under
+    "invented" so Undo takes them away before putting the nights back.
+    Returns (the meals touched, the open rows written)."""
+    all_rows = conn.execute(
+        "SELECT id, derived_from_json FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+        "AND component_category IS NULL",
+        (plan_id, household_id()),
+    ).fetchall()
+    touched = _plan_undo.touched_ids(
+        all_rows, {tonight_row["id"], *(n["entry_id"] for n in freezer)}, [f"{today}:dinner"],
+    )
+    snap = _plan_undo.snapshot(conn, touched)
+    _settle_night_off(plan_id, today, use_soon, conn)
+    dropped = _weekly_plan.drop_freezer_nights_of(conn, plan_id, tonight_row["id"], today, freezer)
+    invented = [d["entry_id"] for d in dropped]
+    holder = next(
+        (r for r in _tonight_holder(conn, plan_id, today) if (r["slot_state"] or "") == "planned_empty"),
+        None,
+    )
+    _plan_undo.stamp(conn, holder["id"], NIGHT_OFF_UNDO_KEY, {
+        "kind": "drop_with_freezer", "dish": dish, **snap, "invented": invented,
+        "after": _plan_undo.fingerprint(conn, touched | set(invented), holder["id"]),
+        "grocery": _plan_undo.lines_changed(conn, snap),
+        "inventory": None,
+    })
+    return sorted(touched), dropped
 
 
 def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) -> dict:
