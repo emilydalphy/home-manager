@@ -1,0 +1,46 @@
+{
+ "dish_name": "Oven-Fried Chicken",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Bone-in, skin-on chicken thighs", "qty": "4", "category": "meat/seafood"},
+  {"item": "Chicken drumsticks", "qty": "4", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cooking spray", "qty": "1 can", "category": "pantry"},
+  {"item": "Corn flakes", "qty": "1 box", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Panko breadcrumbs", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Cornmeal", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Seasoned salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Milk", "qty": "1 tbsp", "category": "dairy"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Line a rimmed baking sheet with foil and coat it with cooking spray.",
+  "Pat the 4 thighs and 4 drumsticks dry with paper towels and sprinkle the 1/2 tsp salt over them on all sides.",
+  "Put 1 1/2 cups corn flakes in a zip-top bag and crush them with a rolling pin until they're fine crumbs. Tip them into a shallow dish and stir in the 3/4 cup panko and 1/4 cup cornmeal.",
+  "In a second shallow dish, stir together the 3/4 cup flour, 1/2 tsp garlic powder, 1/2 tsp seasoned salt, 1/2 tsp paprika and 1/2 tsp pepper.",
+  "In a third dish, beat the 2 eggs with the 1 tbsp milk until there are no streaks left.",
+  "Coat one piece at a time. Roll it in the flour and shake off the extra, dip it in the egg and let it drip, then press it into the crumbs on every side so they stick. Set it on the baking sheet skin side up, with room between the pieces.",
+  "Spray the tops with cooking spray until you can't see any dry crumbs.",
+  "Bake for 45 to 55 minutes without turning, until the coating is deep golden and crisp. You're cooking it to 175°F, so if you have a thermometer, check the thickest piece without touching the bone. No thermometer? Cut into the thickest piece next to the bone: it's done when the juices run clear and there's no pink left.",
+  "Let it rest on the pan for 5 minutes. Serve with hot sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three coat bone-in pieces in something crunchy, usually crushed cornflakes, and bake them in a hot oven with a little fat on top instead of frying. Spend With Pennies uses a full three-step coating of seasoned flour, egg and milk, then a mix of panko, cornflake crumbs and cornmeal, sprays the tops with oil and bakes at 375°F for 45 to 55 minutes. Simply Scratch and Andie Mitchell soak the chicken overnight in buttermilk instead (Simply Scratch with hot sauce and cayenne in it) and bake at 400°F on a rack. This follows Spend With Pennies for 8 pieces, salts the chicken before it's coated and puts the hot sauce on the side.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Oven Fried Chicken", "url": "https://www.spendwithpennies.com/oven-fried-chicken/", "rating": 4.96, "rating_count": 25, "read": true, "lead": true},
+  {"name": "Simply Scratch", "title": "Oven-Fried Buttermilk Chicken", "url": "https://www.simplyscratch.com/oven-fried-buttermilk-chicken", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Andie Mitchell", "title": "Buttermilk Oven \"Fried\" Chicken", "url": "https://www.andiemitchell.com/buttermilk-oven-fried-chicken/", "rating": 3.4, "rating_count": 15, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

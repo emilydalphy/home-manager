@@ -1,0 +1,131 @@
+{
+ "dish_name": "Smash Burgers",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Ground chuck",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sliced cheddar cheese",
+   "qty": "1 package (8 oz)",
+   "category": "dairy",
+   "cook_qty": "4 slices"
+  },
+  {
+   "item": "Hamburger buns",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Yellow mustard",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dill pickle chips",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp juice + chips"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, mix the 1.25 lb ground chuck with the 1/2 tsp pepper, 1/2 tsp garlic powder, 1/2 tsp onion powder, 1/2 tsp mustard powder and 1 tsp Worcestershire, using your hands, until it's evenly combined. Leave the salt out for now.",
+  "Divide it into 4 balls, about 5 oz each. Pat each ball into a disc about 1 inch thick and smooth the edges. Put them on a plate in the fridge for 15 minutes.",
+  "Meanwhile, stir together the sauce in a small bowl: 1/4 cup mayonnaise, 1 tbsp yellow mustard and 1 tbsp juice from the pickle jar.",
+  "Spread the 1 tbsp butter over the cut sides of the 4 buns. Heat a 12 inch cast iron or heavy nonstick skillet over medium high and toast the buns butter side down for about 1 minute, until golden. Set them on plates.",
+  "Turn on the exhaust fan. Sprinkle the 1/2 tsp salt all over the patties. Add the 1 1/2 tsp oil to the hot pan and swirl it around.",
+  "Put 2 patties in the pan, one at a time, and press each one down hard with a sturdy metal spatula until it's about 1/4 inch thick. Stand back a little. They'll spatter. Leave them alone for about 2 minutes, until the underside is deep brown and the edges are crisp and lacy.",
+  "Scrape under each patty with the spatula and flip it. Lay a slice of cheddar on top and cook the other side for 2 minutes for a little pink in the middle, or 3 minutes for none. You're cooking it to 160°F for well done, so if you have a thermometer, check one there. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Move the burgers onto the bottom buns and cook the other 2 patties the same way.",
+  "Taste a corner of one patty. If it's flat, sprinkle a pinch more salt over the hot burgers.",
+  "Serve on the toasted buns with the sauce and pickle chips."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three press 80/20 ground beef into a very hot skillet until it's about 1/4 inch thick, cook it about 2 minutes until a dark crust forms, then flip, add cheese and give it a minute or two more. Once Upon a Chef (the lead) mixes garlic powder, onion powder, ground mustard, pepper and Worcestershire into the beef, chills the patties, and salts only the outside right before they hit the pan. Seeded at the Table toasts the buttered buns in the skillet first and uses seasoned salt and American cheese, and An Edible Mosaic smashes two thinner patties per burger and makes a mayonnaise, mustard and pickle juice sauce. This one follows the lead with cheddar, cooks two at a time so each has room to smash, borrows the toasted buns and the sauce, and uses about 1/2 tsp table salt for the lead's heaping 3/4 tsp kosher salt.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Smash Burger Recipe (Extra Crispy)",
+   "url": "https://www.onceuponachef.com/recipes/smash-burgers.html",
+   "rating": 4.89,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Seeded at the Table",
+   "title": "Smash Burgers",
+   "url": "https://www.seededatthetable.com/smash-burgers/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "An Edible Mosaic",
+   "title": "Smash Burgers Recipe",
+   "url": "https://www.anediblemosaic.com/smash-burgers-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,52 @@
+{
+ "dish_name": "Chicken and Dumplings",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {"item": "Bone-in, skin-on chicken thighs", "qty": "2 lb", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Bay leaf", "qty": "1", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "4 cups"},
+  {"item": "All-purpose flour", "qty": "1 1/4 cups", "category": "pantry"},
+  {"item": "Baking powder", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable shortening", "qty": "1 tub", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Milk", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "2 tbsp"}
+ ],
+ "instructions": [
+  "Cut the onion into quarters. Peel the 2 carrots and cut them into thirds, and cut 2 ribs of the celery into thirds.",
+  "Pat the 2 lb thighs dry with paper towels and sprinkle 1/4 tsp of the salt and the 1/4 tsp pepper over them.",
+  "Put the thighs skin side down in a large soup pot over medium heat. Leave them alone for 6 to 8 minutes, until the skin is golden and lets go of the pot. Move them to a plate.",
+  "Add the onion, carrots and celery to the fat in the pot and cook for 3 minutes, stirring now and then, until they pick up a little color.",
+  "Pour in the 4 cups broth and scrape up the browned bits from the bottom. Put the chicken back in with the bay leaf and bring it to a boil.",
+  "Turn the heat down, put the lid on and simmer for 40 minutes, until the meat pulls easily off the bone. You're cooking it to 175°F, so if you have a thermometer, check the thickest thigh near the bone. No thermometer? Cut into one next to the bone: it's done when the juices run clear and there's no pink left.",
+  "While the chicken simmers, make the dumplings. In a bowl, stir 1 cup of the flour with the 1/4 tsp baking powder and the remaining 1/4 tsp salt. Add the 3 tbsp shortening and work it in with a fork until it's the size of small crumbs.",
+  "Add the milk a little at a time, stirring with the fork, until you have a soft dough that isn't sticky. You may not need all of it.",
+  "Dust the counter with some of the remaining 1/4 cup flour and knead the dough 5 or 6 times, until it's smooth.",
+  "Roll the dough out 1/8 inch thick and cut it into strips about 1 inch by 2 inches. Dust them with the last of the flour so they don't stick together.",
+  "Lift the chicken and vegetables out of the pot onto a cutting board and take out the bay leaf.",
+  "Bring the broth back to a boil and drop in the dumplings one at a time. Turn the heat down and simmer for 15 to 20 minutes, stirring gently now and then, until they're tender. Cut one open to check. There should be no raw dough in the middle.",
+  "Meanwhile, shred the chicken and throw away the skin and bones. Chop the vegetables into bite-size pieces.",
+  "Stir the 2 tbsp cornstarch with 2 tbsp cold water in a small cup until smooth. Stir it into the simmering broth a little at a time, until it's as thick as you like.",
+  "Stir the chicken and vegetables back into the pot and cook for 2 to 3 minutes, until everything is hot.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and serve it hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies simmers a whole cut-up chicken with onion, carrot, celery and a bay leaf in broth, rolls a shortening and milk dough thin and cuts it into strips, cooks the strips in the strained broth and thickens it with cornstarch. Taste of Home drops spoonfuls of a biscuit-mix dough on top of the simmering stew and covers the pot, and Natasha's Kitchen makes a thinner soup with potatoes and small egg and butter dumplings. This follows Spend With Pennies, written for 4 with bone-in thighs in place of half a whole chicken, browned skin side down before the broth goes in. Taste of Home's page shows a review count, not a rating count.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Chicken and Dumplings", "url": "https://www.spendwithpennies.com/old-fashioned-chicken-and-dumplings/", "rating": 4.95, "rating_count": 919, "read": true, "lead": true},
+  {"name": "Natasha's Kitchen", "title": "Chicken and Dumpling Soup", "url": "https://natashaskitchen.com/chicken-and-dumpling-soup/", "rating": 4.9, "rating_count": 37, "read": true, "lead": false},
+  {"name": "Taste of Home", "title": "Chicken and Dumplings", "url": "https://www.tasteofhome.com/recipes/chicken-and-dumplings/", "rating": 4.59, "rating_count": 119, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
