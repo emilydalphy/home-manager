@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A blank name makes nobody** (2026-10-20, overnight defect hunt;
+  branch `overnight/blank-names-refused`; tests
+  `tests/test_blank_names_refused.py`). Chat's `add_member("")`,
+  `add_pet("", …)` and a restriction/age said about "" saved empty
+  rows — a nameless person counted at every meal. The routes already
+  refused a blank name; the tools didn't. Now `add_member`, `add_pet` and
+  `_get_or_create_member` (every member write by name) raise a ValueError
+  sentence the chat relays. `add_fact`/`hold_thing` already refused (fact
+  now says why); `set_member_dietary_restrictions` replies with the
+  stored spelling ("Theo", not "theo").
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
