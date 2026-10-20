@@ -1,0 +1,99 @@
+{
+ "dish_name": "Gozleme",
+ "cuisine": "Turkish",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 3/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup + 1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Feta",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "In a big bowl, stir together 2 1/2 cups of the flour and the 1/2 tsp salt. Pour in 3/4 cup water and 1/3 cup of the olive oil and mix with a spoon until it comes together in a shaggy ball.",
+  "Tip it onto the counter and knead for 5 to 7 minutes, until it's smooth and soft. If it sticks, dust the counter with a little of the remaining flour.",
+  "Put the dough back in the bowl, cover it with a plate and leave it for 20 minutes. Rested dough rolls out thin without shrinking back.",
+  "Meanwhile, put the 8 oz spinach in a big bowl. Mince the 2 garlic cloves and add them with the 2 eggs and the 1/4 tsp pepper.",
+  "Scrunch it all together with your hands for about a minute, until the spinach has wilted down to about a third of its size. Crumble in the 8 oz feta and fold it through gently so it stays in small chunks.",
+  "Cut the dough into 4 equal pieces and keep three covered. Dust the counter with flour and roll one piece into a thin rectangle about 14 by 8 inches.",
+  "Spread a quarter of the spinach filling over one half of the rectangle, leaving a thin border. Scatter a quarter of the mozzarella over the spinach.",
+  "Fold the bare half over the filling and press the edges firmly to seal, pushing any air out as you go. Make the other three the same way.",
+  "Heat 1 tbsp of the olive oil in a large skillet over medium-high. Slide in one gozleme and cook for about 3 minutes, pressing down lightly with a spatula, until the underside is deep golden and crisp.",
+  "Flip it and cook the other side for about 3 minutes, pressing it down the same way, until it's crisp all over. Move it to a board and cook the other three, with 1 tbsp oil for each one.",
+  "Cut the lemon into wedges. Cut each gozleme into 6 pieces.",
+  "Serve hot with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions make a plain unleavened dough of flour, water and salt, roll it very thin, fill one half or the middle with spinach and feta plus a little mozzarella, and cook it in a lightly oiled skillet until crisp on both sides. RecipeTin Eats puts olive oil in the dough, wilts raw spinach by scrunching it with garlic, egg and pepper, and cooks each one about 3 minutes a side over medium-high. Manu's Menu sautés the spinach with onion first, uses far less cheese and folds the dough like an envelope. This one follows RecipeTin Eats.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Gozleme! (Spinach & Feta or Spiced Lamb/Beef)",
+   "url": "https://www.recipetineats.com/gozleme/",
+   "rating": 4.96,
+   "rating_count": 136,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Manu's Menu",
+   "title": "Spinach and Feta Gozleme",
+   "url": "https://www.manusmenu.com/wprm_print/spinach-and-feta-gozleme-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

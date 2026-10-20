@@ -1,0 +1,143 @@
+{
+ "dish_name": "Tavuk Sote",
+ "cuisine": "Turkish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the 1 1/2 lb chicken thighs into bite-sized pieces and pat them dry. Toss them with 1/2 tsp of the salt and the 1/2 tsp pepper.",
+  "Dice the onion and slice the 8 oz mushrooms. Seed the red and green peppers and cut them into strips. Mince the 3 garlic cloves and dice the 2 tomatoes.",
+  "Heat 1 tbsp of the olive oil in a large skillet over medium-high. Add half the chicken in a single layer and leave it for about 3 minutes, until the underside is golden and lets go of the pan.",
+  "Stir it and cook for 2 minutes more, then move it to a plate. Brown the rest of the chicken the same way. It doesn't need to be cooked through yet.",
+  "Add the remaining 1 tbsp oil, the onion and the mushrooms to the pan. Cook for about 5 minutes, stirring now and then, until the mushrooms have let go of their water and started to brown.",
+  "Add the peppers and cook for 3 minutes, until they soften a little. Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Stir in the 1 tbsp tomato paste, the 1 tsp paprika and the 1 tsp thyme and cook for 1 minute, until the paste turns a shade darker.",
+  "Add the tomatoes, the remaining 1/2 tsp salt and 1/4 cup water and scrape up the browned bits from the bottom of the pan. Put the chicken back in with any juices from the plate.",
+  "Cover the pan, turn the heat down to medium and simmer for about 10 minutes, until the sauce has thickened and the chicken is cooked through. You're cooking it to 175°F in the middle, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Take the pan off the heat and chop a big handful of the parsley over it. Cut the lemon into wedges. Taste it. If it's flat, add a pinch of salt first, then a squeeze of lemon.",
+  "Serve with crusty bread and the rest of the lemon wedges, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook bite-sized chicken with peppers and tomato in one pan. Cooking Gorgeous and A Kitchen in Istanbul (on Fethiye Times) both brown the chicken first in batches and set it aside, soften the vegetables in the same pan, fry tomato paste with paprika or pul biber, then return the chicken with chopped tomato and water to simmer until cooked through. Cooking Gorgeous adds mushrooms and thyme and simmers covered for 10 minutes; A Kitchen in Istanbul adds hot pepper paste, a pinch of sugar and lots of parsley. The Food.com version skips the browning and simmers the chicken with whole garlic cloves and tomato. This one follows Cooking Gorgeous, finished with parsley and lemon. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Chicken Sauté (Tavuk Sote)",
+   "url": "https://cookingorgeous.com/blog/tavuk-sote-turkish-chicken-saute/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fethiye Times (A Kitchen in Istanbul)",
+   "title": "Recipe: Tavuk Sote (Sautéed Chicken)",
+   "url": "https://fethiyetimes.com/?p=6054",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Turkish Tavuk Sote (Chicken Saute)",
+   "url": "https://www.food.com/recipe/turkish-tavuk-sote-chicken-saute-130219",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

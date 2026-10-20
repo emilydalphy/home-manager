@@ -1,0 +1,124 @@
+{
+ "dish_name": "Mercimek Corbasi",
+ "cuisine": "Turkish",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Red lentils",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Put 8 cups of water on to boil in a kettle or pot.",
+  "Meanwhile, finely dice the onion and the carrot and mince the 2 garlic cloves. Rinse the 1 1/2 cups lentils in a sieve until the water runs almost clear.",
+  "Melt 1 tbsp of the butter with the 3 tbsp olive oil in a large pot over medium. Add the onion and carrot and cook for about 5 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Stir in 1/2 tsp of the paprika, the 1/2 tsp cumin, 1/2 tsp of the dried mint, the 1/2 tsp black pepper and the 1 tsp salt. Cook for 1 minute, stirring, until it smells toasty.",
+  "Add the garlic and the 1 tbsp tomato paste and cook for 1 minute, stirring, until the paste turns a shade darker.",
+  "Add the lentils and the hot water and scrape the bottom of the pot. Bring it to a boil, then cover, turn the heat down to medium low and simmer for 25 to 30 minutes, until the lentils have fallen apart. Stir it now and then so nothing sticks.",
+  "Take the pot off the heat and blend the soup with a stick blender until it's smooth. Using a regular blender? Work in batches, fill it no more than halfway and hold the lid down with a towel.",
+  "Cut the lemon into wedges. Taste the soup. If it's flat, add a pinch more salt first, then a squeeze from one of the wedges.",
+  "Melt the remaining 2 tbsp butter in a small pan over medium. Stir in the remaining 2 tsp paprika and 1/2 tsp dried mint and cook for about 30 seconds, until it foams and turns brick red. Take it off the heat right away so the mint doesn't burn.",
+  "Serve with the paprika butter spooned over each bowl, the lemon wedges and crusty bread, with the Aleppo pepper on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions simmer red lentils with onion in water until they collapse, blend the soup smooth, and adjust the salt at the end. Hungry Paprikas softens onion and carrot in butter and olive oil, toasts paprika, cumin, Aleppo pepper and dried mint before the garlic and tomato paste go in, simmers 30 minutes, and finishes each bowl with a paprika and mint butter and a squeeze of lemon. Little Spice Jar keeps it to lentils, onion and a bouillon cube and thickens it with a butter and flour roux. This one follows Hungry Paprikas, with the Aleppo pepper on the side and a little more lentil for a lunch-sized bowl. It keeps 3 days in the fridge and thickens as it sits, so loosen it with a splash of water when you reheat it.",
+ "sources": [
+  {
+   "name": "Hungry Paprikas",
+   "title": "Creamy Turkish Red Lentil Soup (Mercimek Corbasi)",
+   "url": "https://www.hungrypaprikas.com/mercimek-corbasi/",
+   "rating": 5.0,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Little Spice Jar",
+   "title": "Turkish Red Lentil Soup (Mercimek Corbasi)",
+   "url": "https://www.littlespicejar.com/turkish-red-lentil-soup-mercimek-corbasi/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
