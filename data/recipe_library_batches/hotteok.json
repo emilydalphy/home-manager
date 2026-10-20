@@ -1,0 +1,43 @@
+{
+ "dish_name": "Hotteok",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Active dry yeast", "qty": "1 packet (2 1/4 tsp)", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp + 1 tbsp"},
+  {"item": "All-purpose flour", "qty": "2 cups", "category": "pantry"},
+  {"item": "Sweet rice flour", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Milk", "qty": "1 1/4 cups", "category": "dairy"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Light brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Ground cinnamon", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Walnuts", "qty": "1/3 cup", "category": "pantry"}
+ ],
+ "instructions": [
+  "About 2 hours before you want them: pour 1/4 cup warm water into a cup. It should feel like a warm bath, about 100 to 110°F. Stir in the 1 tsp sugar and the yeast and leave it for 10 minutes, until it's foamy.",
+  "In a large bowl, whisk the 2 cups flour, the 1/2 cup sweet rice flour, the 1 tbsp sugar and the 1 tsp salt. Warm the 1 1/4 cups milk until it's lukewarm. Add the yeast mixture, the milk and 1 tbsp of the oil to the flour.",
+  "Knead it in the bowl for about 5 minutes, until it's smooth. It should be sticky and stretch when you pull it. Cover the bowl and leave it somewhere warm for about 1 hour, until it has doubled.",
+  "Meanwhile, chop the 1/3 cup walnuts. Mix them with the 1/2 cup brown sugar and the 1 tsp cinnamon in a small bowl.",
+  "Push the dough down and gather it back into a round. Cover it and leave it for another 20 to 30 minutes, until it's puffy again.",
+  "Heat 1 1/2 tbsp of the oil in a large nonstick skillet over medium. Rub a little oil on your hands so the dough doesn't stick.",
+  "Pull off a piece of dough about the size of a golf ball, roughly an eighth of it. Flatten it in your palm into a thick disk with a shallow dip in the middle. Spoon in about 1 1/2 tbsp of the filling.",
+  "Pull the edges up over the filling and pinch them together to seal it. Make 3 more the same way.",
+  "Put them in the pan sealed side down and press each one flat with an oiled spatula. Cook for 1 minute, then flip them and press them down again.",
+  "Cook for 2 to 3 minutes more, turning them once or twice, until both sides are deep golden brown. Move them to a plate.",
+  "Add the last 1 1/2 tbsp oil and make the other 4 the same way.",
+  "Let them cool for a couple of minutes before you bite in. The filling is molten sugar and it's very hot."
+ ],
+ "advance_prep_notes": "make the dough about 2 hours ahead so it has time to rise",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "Both read versions make a soft, sticky yeast dough from all-purpose flour, glutinous (sweet) rice flour, milk and a little sugar, let it rise about an hour, knock it down for a shorter second rise, then wrap it around a brown sugar, cinnamon and nut filling and fry it in oil, pressing it flat in the pan. Korean Bapsang (the lead) proofs the yeast in warm water first, adds oil to the dough and fills it with brown sugar, cinnamon and roasted seeds and nuts. King Arthur uses instant yeast straight into warm milk, a cinnamon filling mix with toasted walnuts, and rolls each piece to a 5 inch circle before filling it. This one follows the lead with walnuts as the nut.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Hotteok (Korean Sweet Pancakes)", "url": "https://www.koreanbapsang.com/hotteok-sweet-korean-pancakes/", "rating": 4.65, "rating_count": 76, "read": true, "lead": true},
+  {"name": "King Arthur Baking", "title": "Hotteok (Korean Sweet Pancakes)", "url": "https://www.kingarthurbaking.com/recipes/hotteok-korean-sweet-pancakes-recipe", "rating": 4.7, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
