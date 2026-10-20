@@ -288,3 +288,36 @@ def test_a_target_off_to_the_side_is_not_ringed_and_cook_reads_by_what_is_ringed
     assert out["holeTop"] == "496px"
     assert out["cook"].startswith("Once the week’s approved, tonight’s dinner lives here")
     assert out["ask"].startswith("This is where you ask:") and "Tap here" not in out["ask"]
+
+
+def test_a_replay_on_an_approved_week_does_not_ask_for_it_to_be_approved():
+    # Defect hunt, 2026-10-20: "Show me around again" on an approved week
+    # (the usual replay) read "Approve the week and your shopping list
+    # lands here" on Shop and "Once the week's approved" on Cook, under a
+    # week marked Approved. The shell says which (host.weekApproved).
+    script = """
+      function walk(approved) {
+        var host = { goTab: function () {}, onEnd: function () {} };
+        if (approved !== null) host.weekApproved = function () { return approved; };
+        Tour.start(host);
+        // The overlay is built once and reused (created[0]).
+        var root = created[0], next = document.activeElement, seen = {};
+        for (var i = 0; i < 5; i++) {
+          seen[root.querySelector('#tour-title').textContent] = root.querySelector('#tour-body').textContent;
+          next.click();
+        }
+        next.click();
+        return seen;
+      }
+      console.log(JSON.stringify({ set: walk(true), draft: walk(false), unknown: walk(null) }));
+    """
+    out = _run(script)
+    shop_tail = " Before you shop, tick any spices, sauces or pantry staples you’re out of. I leave those off unless you say."
+    assert out["set"]["Shop"] == "Your shopping list lives here, built from the week." + shop_tail
+    assert out["set"]["Cook"].startswith("Tonight’s dinner lives here, with when to start")
+    for key in ("draft", "unknown"):
+        assert out[key]["Shop"] == "Approve the week and your shopping list lands here." + shop_tail
+        assert out[key]["Cook"].startswith("Once the week’s approved, tonight’s dinner lives here")
+    # ...and the shell's answer is Plan's own approved/draft read.
+    host = SHELL_JS[SHELL_JS.index("var tourHost = {"):SHELL_JS.index("function tourBlocked()")]
+    assert "weekApproved: function () { return weekPlanState(weekState.data) === 'set'; }" in host

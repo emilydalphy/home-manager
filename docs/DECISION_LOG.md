@@ -45,6 +45,14 @@ why*, not duplicating the diff.
   line had 'other'; changing one on purpose stays `update_grocery_item`'s.
   A line SHOWN under Other by a word no section knows ("bakery") counts
   as having no aisle and takes the add's (review, same night).
+- **The tour's replay doesn't ask you to approve an approved week**
+  (2026-10-20, defect hunt; branch `overnight/tour-knows-an-approved-week`;
+  test in `tests/test_first_open_tour.py`). "Show me around again" is
+  mostly tapped on an approved week, and Shop said "Approve the week and
+  your shopping list lands here" (Cook: "Once the week's approved") under
+  an Approved badge. The shell now tells tour.js (`host.weekApproved`,
+  Plan's own `weekPlanState`) and those two stops drop the "approve" half;
+  the first-draft tour reads exactly as before.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
