@@ -1,0 +1,128 @@
+{
+ "dish_name": "Nohut Yemegi",
+ "cuisine": "Turkish",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Canned chickpeas",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cubanelle pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Red pepper paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vermicelli",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 1 1/2 cups rice in a bowl, cover it with water, swish it around and pour the water off. Do this 3 or 4 times, until the water is almost clear, then drain the rice in a sieve.",
+  "Finely chop the onion. Seed the Cubanelle pepper and slice it thin. Mince the 3 garlic cloves. Drain and rinse the chickpeas.",
+  "Heat 2 tbsp of the olive oil in a medium pot over medium high. Add the onion and pepper and cook for about 5 minutes, stirring, until they're soft and smell sweet.",
+  "Add the garlic and stir for 1 minute. Keep it moving so it doesn't burn.",
+  "Stir in the 2 tbsp tomato paste and 1 tbsp red pepper paste and cook for 1 to 2 minutes, until they turn a darker red and start to catch on the bottom.",
+  "Add the chickpeas and stir to coat them in the paste. Pour in 3 cups hot water, add 1 tsp of the salt and bring it to a boil. Cover, turn the heat to low and simmer for 25 minutes.",
+  "Meanwhile, heat the remaining 1 tbsp olive oil and the 1 tbsp butter in a wide saucepan with a lid over medium. Break 1/4 cup vermicelli into short pieces, add it to the pan and stir for 1 to 2 minutes, until it's golden brown. Watch it closely. It goes from golden to burnt fast.",
+  "Add the drained rice and the remaining 1/2 tsp salt and stir for 2 minutes, until every grain is coated and hot.",
+  "Pour in 2 1/4 cups hot water and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes without lifting the lid. Take it off the heat and leave it covered for 10 minutes, then fluff it with a fork.",
+  "Take the lid off the stew. If it's thin, turn the heat up and boil it for 5 minutes, then mash a few chickpeas against the side of the pot with a spoon and stir them in to thicken it.",
+  "Chop a small handful of the parsley and scatter it over the stew.",
+  "Taste it. If it's flat, add salt first, then a squeeze of lemon.",
+  "Serve the stew with the pilav, with the yogurt and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions soften onion and pepper in fat, fry tomato paste and Turkish red pepper paste until they darken, then simmer the chickpeas in water until the sauce thickens, served with rice. Aye Cooks (on Happy Plates) adds green chillies and chilli flakes, simmers it covered for about 25 minutes, mashes a few chickpeas to thicken it and serves it with a vermicelli rice pilav, yogurt and parsley. Almost Turkish Recipes cooks stew beef in first and simmers dried chickpeas for about an hour. This one follows Aye Cooks with canned chickpeas, a mild pepper in the pot and the chilli flakes on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Happy Plates (Aye Cooks)",
+   "title": "Vegan turkish chickpea stew with pilav",
+   "url": "https://happyplates.com/r/43007/vegan-turkish-chickpea-stew-with-pilav",
+   "rating": 4.8,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Almost Turkish Recipes",
+   "title": "Chickpea and Beef Stew (Etli Nohut)",
+   "url": "https://almostturkishrecipes.com/2020/04/chickpea-and-beef-stew-etli-nohut.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

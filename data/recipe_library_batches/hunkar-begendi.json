@@ -1,0 +1,151 @@
+{
+ "dish_name": "Hunkar Begendi",
+ "cuisine": "Turkish",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Boneless leg of lamb",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Globe eggplants",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Red pepper paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "5 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "2 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Medium cheddar",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "4 oz"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Prick the 3 eggplants all over with a fork and set them on a foil lined baking sheet.",
+  "Roast the eggplants for about 40 minutes, turning them over halfway, until the skins are wrinkled and charred and the eggplants have collapsed. If you have a gas burner, you can char them right over the flame instead, turning them every few minutes, for a smokier taste.",
+  "Meanwhile, cut the 1 1/4 lb lamb into 1 inch cubes. Pat them dry and toss them with 1 tsp of the salt and 1/4 tsp of the black pepper.",
+  "Finely chop the onion and the green pepper. Mince the 2 garlic cloves. Grate 4 oz of the cheese, about 1 cup.",
+  "Heat 1 tbsp of the butter and 1 tbsp of the olive oil in a wide, heavy pot over medium high. Add the lamb in a single layer and leave it for 2 to 3 minutes, until the underside is browned. Turn the pieces and brown the other sides for 2 minutes more, then move the lamb to a plate.",
+  "Add the remaining 2 tbsp olive oil, the onion and the green pepper to the pot. Cook for about 5 minutes, stirring, until they're soft and starting to color.",
+  "Add the garlic, 1 tbsp tomato paste and 1 tbsp red pepper paste and stir for 1 minute, until the pastes turn a shade darker.",
+  "Put the lamb and its juices back in, add the can of diced tomatoes and 1/3 cup water, and bring it to a boil. Cover, turn the heat to low and simmer for 50 to 60 minutes, until the lamb is tender and the sauce is thick.",
+  "When the eggplants are done, let them cool for 10 minutes. Split them open, scoop the flesh into a colander and throw away the skins and stems. Let the flesh drain for 10 minutes.",
+  "Chop the eggplant flesh finely, put it in a bowl and mash it with the juice of half the lemon.",
+  "Warm the 2 1/2 cups milk in a small saucepan or the microwave until it's steaming.",
+  "Melt the remaining 4 tbsp butter in a medium saucepan over medium. Stir in the 1/2 cup flour and cook it for 1 to 2 minutes, stirring, until it smells nutty but hasn't browned.",
+  "Pour in the warm milk a splash at a time, whisking after each one so no lumps form. Keep whisking for about 4 minutes, until the sauce is thick enough to coat a spoon.",
+  "Stir in the eggplant, the remaining 1/2 tsp salt and the remaining 1/4 tsp black pepper and cook for 2 minutes. Take the pan off the heat and stir in the grated cheese until it melts.",
+  "Chop a small handful of the parsley.",
+  "Taste the stew. If it's flat, add salt first, then a squeeze of lemon from the other half.",
+  "Spread the eggplant sauce over each plate, spoon the lamb stew into the middle and scatter the parsley over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions put browned lamb over a smoky eggplant puree. Ozlem's Turkish Table and Turkeys for Life simmer the lamb with onion, garlic and tomato for about an hour and fold roasted eggplant into a butter, flour and milk sauce with grated cheese; Ozlem adds green pepper and Turkish red pepper paste, and suggests baking the eggplants at 425°F when there's no open flame. SBS (Adam Liaw's version) is a quick one: seared lamb fillet with olives, cumin and isot pepper over an eggplant puree made with cream and kaşar instead of a roux. This one follows Ozlem's. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Hünkar Beğendi; Sultan's Lamb Stew Over Smoked Aubergine and Béchamel Sauce",
+   "url": "https://ozlemsturkishtable.com/2026/08/hunkar-begendi-sultans-lamb-stew-over-smoked-aubergine-and-bechamel-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkeys for Life",
+   "title": "Hünkar Beğendi Recipe - Sultan's Delight",
+   "url": "https://www.turkeysforlife.com/2012/09/turkish-recipes-hunkar-begendi-ottoman.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "SBS Food",
+   "title": "Lamb and Eggplant Sultan's Delight (Hunkar Begendi)",
+   "url": "https://www.sbs.com.au/food/recipes/lamb-eggplant-sultans-delight-hunkar-begendi",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

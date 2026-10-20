@@ -1,0 +1,119 @@
+{
+ "dish_name": "Manti",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 90,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "3 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "3 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Mix 3 1/4 cups of the flour and 1 1/2 tsp of the salt in a large bowl and make a well in the middle. Crack in the 2 eggs, pour in 2/3 cup water and stir with a fork, then work it together with your hand into a shaggy dough.",
+  "Tip the dough onto the counter and knead it for 8 to 10 minutes, until it's smooth and springs back when you press it. If it sticks, dust it with a little of the remaining 1/4 cup flour. Cover it with a damp towel and let it rest for 30 minutes.",
+  "While the dough rests, grate the onion on the large holes of a box grater and squeeze it hard in your hands over the sink. Throw the juice away. A wet filling makes the dough soggy and the dumplings lose their shape.",
+  "Mix the onion with the 1/2 lb beef, 1/2 tsp of the salt and the 1/2 tsp black pepper. Keep it in the fridge until you're ready to fill.",
+  "Cut the dough in half and keep one half covered. Roll the other half on a floured counter as thin as you can, about 1/16 inch, into a rough 16 inch circle. Dust it with flour as you go so it doesn't stick.",
+  "Cut the sheet into 1 1/4 inch squares with a knife or a pizza cutter. Put a little filling, about the size of a chickpea, in the middle of each square.",
+  "Bring two opposite corners up over the filling and pinch them together, then bring up the other two and pinch all four seams closed. Set the dumplings on a floured baking sheet so they aren't touching.",
+  "Put a large pot of water on to boil and add 3/4 tsp of the salt. Roll, cut and fill the second half of the dough the same way.",
+  "If you're freezing some, put that baking sheet in the freezer for 1 hour, until the dumplings are hard, then tip them into a freezer bag. They keep for 3 months. Cook them straight from frozen and give them 2 or 3 extra minutes in the water.",
+  "Grate the 2 garlic cloves into the 2 cups yogurt and stir in the last 1/4 tsp salt. Leave it on the counter so it isn't fridge cold when you serve.",
+  "Drop the dumplings into the boiling water and stir once so they don't stick together. Cook them for 12 to 15 minutes, until they float and one you bite into is tender all the way through.",
+  "Meanwhile, melt the 4 tbsp butter in a small saucepan over medium low. Stir in the 2 tbsp tomato paste and cook for 1 minute, until it turns a shade darker. Add 1 tsp of the sumac and 2 tsp of the dried mint and stir for 20 seconds, until you can smell the mint.",
+  "Pour 1/2 cup water into the butter and let it simmer for 1 to 2 minutes, stirring, until it's a smooth, loose sauce.",
+  "Taste the garlic yogurt. If it's flat, add a pinch more salt.",
+  "Drain the dumplings and divide them among 4 shallow bowls. Spoon the garlic yogurt over them, then drizzle on the tomato butter.",
+  "Sprinkle the bowls with the remaining 1/2 tsp sumac and 1/2 tsp dried mint. Serve with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions make an egg and flour dough rested for 30 minutes, fill tiny squares with ground beef and onion, pinch the four corners together, boil them until tender and top them with garlic yogurt and a tomato butter finished with dried mint and sumac. Cooking Orgeous grates the onion, thins the tomato butter with water and freezes the raw dumplings on a tray to cook from frozen. Tara's Multicultural Table adds parsley and pepper flakes to the filling and gives the option of stirring the tomato butter into the cooking water. This one doubles Cooking Orgeous for 4 and moves the chilli to the table. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Cooking Orgeous",
+   "title": "Turkish Manti Recipe",
+   "url": "https://cookingorgeous.com/blog/manti-turkish-ravioli-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Kayseri Mantısı (Kayseri-Style Dumplings)",
+   "url": "https://tarasmulticulturaltable.com/manti-turkish-dumplings/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
