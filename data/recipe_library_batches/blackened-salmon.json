@@ -1,0 +1,131 @@
+{
+ "dish_name": "Blackened Salmon",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Skin-on salmon fillets",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cayenne pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "In a small bowl, stir together the 1 tbsp paprika, 1 tsp brown sugar, 3/4 tsp salt, 3/4 tsp onion powder, 3/4 tsp garlic powder, 1/4 tsp cayenne, 1/2 tsp oregano and 1/2 tsp thyme.",
+  "Cut the 1.5 lb salmon into 4 pieces if it isn't already. Lay them skin side down on a plate and pat the tops very dry with paper towels.",
+  "Melt 2 tbsp of the butter and brush it over the flesh side of the salmon. Sprinkle the spice mix evenly over the buttered side and pat it on so it sticks.",
+  "Squeeze 2 tbsp of juice from half the lemon and cut the other half into wedges. Stir the lemon juice and the 1 tbsp honey together in the empty spice bowl. Chop 1 tbsp of the parsley.",
+  "Turn on the fan over the stove. Heat a large cast iron skillet over medium heat with nothing in it for about 3 minutes, until a drop of water dances on the surface.",
+  "Lay the salmon in the pan spice side down, one piece at a time. Leave it alone for 2 to 3 minutes, until the spices have turned dark and crusty. Expect some smoke.",
+  "Flip the pieces onto the skin side and cook for 5 to 6 minutes, until the skin is crisp. If you have a thermometer, you're cooking it to 145°F in the thickest part. No thermometer? Press the thickest piece with a fork: it's done when it flakes and there's no see through center left. Move the salmon to plates.",
+  "Take the pan off the heat. Stand back and pour the 1/4 cup broth in at the edge of the pan. It'll steam hard.",
+  "Add the lemon and honey mixture and the remaining 2 tbsp butter. Stir until the butter melts and the sauce is smooth, about 30 seconds.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a squeeze of the lemon. Spoon it over the salmon and scatter the parsley on top.",
+  "Serve over rice with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three coat dry salmon in a paprika, garlic powder, onion powder, thyme, oregano and cayenne rub and sear it spice side down in a hot cast iron skillet until the crust goes dark. Well Plated adds a little brown sugar, brushes the fish with butter instead of oil, uses a dry pan over medium heat and cooks to 145°F; Primavera Kitchen starts the fillets skin side down in oil and bastes with butter. Cooking Classy makes a quick sauce in the same pan with chicken broth, lime juice, honey and butter. This follows Well Plated with the cayenne halved for a milder crust, the salt in table salt, and Cooking Classy's pan sauce made with the lemon from Well Plated.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Blackened Salmon",
+   "url": "https://www.wellplated.com/blackened-salmon/",
+   "rating": 4.86,
+   "rating_count": 260,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Primavera Kitchen",
+   "title": "Blackened Salmon Recipe",
+   "url": "https://www.primaverakitchen.com/blackened-salmon-recipe/",
+   "rating": 3.43,
+   "rating_count": 208,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Blackened Salmon",
+   "url": "https://www.cookingclassy.com/blackened-salmon/",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

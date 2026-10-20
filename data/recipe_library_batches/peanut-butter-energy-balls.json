@@ -1,0 +1,95 @@
+{
+ "dish_name": "Peanut Butter Energy Balls",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Old-fashioned rolled oats",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground flaxseed",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Creamy peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mini chocolate chips",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Raisins",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Roughly chop the 3 tbsp peanuts.",
+  "Put the 1 1/4 cups oats, 2 tbsp flaxseed, 1/2 cup peanut butter, 1/3 cup honey, 1 tsp vanilla and 1/8 tsp salt in a large bowl. Add the chopped peanuts, 3 tbsp chocolate chips and 2 tbsp raisins.",
+  "Stir until everything is evenly coated. When you squeeze a little in your hand, it should hold together like a sticky dough.",
+  "Cover the bowl and put it in the fridge for 30 minutes, so it's firm enough to roll.",
+  "Scoop up a tablespoon of the mixture at a time and roll it between your palms into a 1 inch ball. This makes about 18 balls.",
+  "Eat them right away, or keep them in an airtight container in the fridge for up to 2 weeks. They also freeze for up to 3 months."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both stir rolled oats, peanut butter, honey and vanilla together with chocolate chips and a seed or nut add-in, then chill and roll the mixture into small balls that keep in the fridge. Well Plated (the lead) uses 1 1/4 cups oats to 1/2 cup nut butter and 1/3 cup honey, chills the bowl for 30 minutes before rolling, and its peanut butter version adds chocolate chips, chopped peanuts and raisins. Love and Lemons uses a full cup of peanut butter with ground flaxseed and coconut, rolls the balls first and then chills them for 1 to 2 hours. The flaxseed here fills the lead's 2 tbsp of 'power mix-ins', and its 1/4 tsp kosher salt is written as 1/8 tsp table salt.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Energy Balls",
+   "url": "https://www.wellplated.com/energy-balls/",
+   "rating": 4.87,
+   "rating_count": 337,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "No-Bake Energy Balls",
+   "url": "https://www.loveandlemons.com/energy-balls/",
+   "rating": 4.84,
+   "rating_count": 48,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

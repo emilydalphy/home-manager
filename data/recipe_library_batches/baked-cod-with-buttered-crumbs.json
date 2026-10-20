@@ -1,0 +1,124 @@
+{
+ "dish_name": "Baked Cod with Buttered Crumbs",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/3 cup grated"
+  },
+  {
+   "item": "Pecorino Romano cheese",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/3 cup grated"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped + more for serving"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salted butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Line a rimmed baking sheet with foil and brush 1 tsp of the olive oil over it.",
+  "Pat the 1.5 lb cod dry with paper towels and run your fingers over it to find any bones. Pull out any you feel. Cut it into 4 portions and lay them on the sheet with a little room between them. Sprinkle the 1/4 tsp salt and 1/4 tsp pepper over the tops.",
+  "Grate 1/3 cup of the Parmesan and 1/3 cup of the Romano. Chop 1 tbsp of the parsley. Squeeze 2 tsp of juice from half the lemon and cut the other half into wedges.",
+  "In a medium bowl, toss the 3/4 cup breadcrumbs with the grated cheeses, the 2 tbsp wine, the 2 tsp lemon juice, the remaining 2 tsp olive oil, the chopped parsley, the 1/2 tsp garlic powder and 1/2 tsp of the paprika. Stir with a fork until all the crumbs are damp.",
+  "Pile the crumbs onto the fish, covering the whole top of each piece, and press them down with your hands so they stay put. Scoop up any that fall onto the foil and press them back on.",
+  "Cut the 3 tbsp butter into small pieces and dot them over the crumbs. Sprinkle the remaining 1/4 tsp paprika over the top.",
+  "Bake for 18 to 22 minutes, until the crumbs are golden brown and the fish flakes easily when you press it with a fork. Thinner pieces will be ready first. If you have a thermometer, you're cooking it to 145°F in the thickest part. No thermometer? Push a fork into the thickest piece: it's done when the fish is white all the way through and flakes apart.",
+  "Move the fish to plates and spoon the buttery juices from the foil over the top. Scatter on some more chopped parsley. Taste a flake of the fish. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with the lemon wedges and roasted potatoes or a green salad."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cover cod with buttery crumbs and bake it hot until the fish flakes. Cooking with Mamma C tosses plain breadcrumbs with Parmesan, Romano, white wine, lemon juice, olive oil, parsley, garlic powder and paprika, dots the top with salted butter and bakes at 400°F for 25 minutes. Ina Garten on Food Network uses Ritz cracker crumbs and panko with melted butter, garlic and lemon zest, bakes the fish 10 minutes before the crumbs go on and pours wine and lemon juice into the dish; Well Seasoned Studio mixes Ritz and panko with Parmesan and bakes at 350°F to 145°F. This follows Cooking with Mamma C, cut to 1.5 lb of cod for 4 with a little salt on the fish first.",
+ "sources": [
+  {
+   "name": "Cooking with Mamma C",
+   "title": "Baked Cod with Bread Crumbs and Butter (Divine!)",
+   "url": "https://cookingwithmammac.com/baked-cod-with-bread-crumbs/",
+   "rating": 4.68,
+   "rating_count": 46,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network (Ina Garten)",
+   "title": "Baked Cod with Garlic and Herb Ritz Crumbs",
+   "url": "https://www.foodnetwork.com/recipes/ina-garten/baked-cod-with-garlic-and-herb-ritz-crumbs-11982578",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Well Seasoned Studio",
+   "title": "Garlic-Parmesan Baked Cod With Buttery Ritz Cracker Topping",
+   "url": "https://www.wellseasonedstudio.com/baked-cod-with-panko/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

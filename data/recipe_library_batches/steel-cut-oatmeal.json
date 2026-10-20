@@ -1,0 +1,78 @@
+{
+ "dish_name": "Steel-Cut Oatmeal",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Milk",
+   "qty": "1 quart",
+   "category": "dairy",
+   "cook_qty": "1 cup + splashes for reheating"
+  },
+  {
+   "item": "Steel-cut oats",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Walnuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 2 1/2 cups water and 1 cup of the milk in a medium saucepan and bring it to a boil over high heat. Keep an eye on it. Milk boils over fast.",
+  "Stir in the 1 cup oats and 1/4 tsp salt. When it comes back to a boil, turn the heat down to low so it's barely bubbling.",
+  "Simmer for 20 minutes, stirring every few minutes and scraping along the bottom so nothing sticks. If it foams up toward the rim, lift the pan off the heat for a few seconds until it settles.",
+  "Meanwhile, toast the 1/2 cup walnuts in a dry skillet over medium heat for 3 to 5 minutes, shaking the pan often, until they smell toasty. Chop them roughly.",
+  "Taste a spoonful of the oats. They should be tender with a little chew. For softer, creamier oats, keep them simmering for 5 to 10 minutes, stirring often. If they get thicker than you like, stir in a splash of water.",
+  "Take the pan off the heat and let it sit for 3 minutes to thicken. That should be about 4 cups.",
+  "Spoon the oatmeal into bowls. Drizzle 1 tbsp of the maple syrup over each bowl, sprinkle the 1/2 tsp cinnamon over them and scatter the walnuts on top.",
+  "To eat it through the week, cool any portions you're saving and keep them covered in the fridge for up to 5 days, with the toppings kept separate. Reheat a portion in the microwave with a splash of the milk for 1 to 2 minutes, stirring halfway, then add the toppings."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both bring 2 1/2 cups water and 1 cup milk to a boil, stir in 1 cup steel-cut oats with a little salt, and simmer gently for 20 to 25 minutes, scraping the bottom, then let the pot stand off the heat to thicken. Well Plated (the lead) stops at 20 minutes to judge the texture, cooks 5 to 10 minutes longer for creamier oats and warns about boil-overs. Love and Lemons cooks it 20 to 25 minutes straight and leaves the toppings open. The toppings here (toasted walnuts, maple syrup and cinnamon) come from the mix-ins both suggest.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Steel Cut Oats | How to Cook the Perfect Bowl",
+   "url": "https://www.wellplated.com/steel-cut-oats/",
+   "rating": 4.78,
+   "rating_count": 154,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Steel Cut Oats Recipe",
+   "url": "https://www.loveandlemons.com/steel-cut-oats/",
+   "rating": 4.91,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

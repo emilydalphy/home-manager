@@ -1,0 +1,148 @@
+{
+ "dish_name": "Shepherd's Pie",
+ "cuisine": "American",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/4 cup grated"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground lamb",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Low-sodium beef broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Frozen mixed vegetables",
+   "qty": "1 bag (12 oz)",
+   "category": "frozen",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the center. Peel the 2 lb potatoes and cut them into 1 inch pieces. Put them in a large saucepan, cover them with cold water by an inch and bring them to a boil over high heat.",
+  "Turn the heat down so the water bubbles steadily and cook the potatoes for 12 to 15 minutes, until a knife slides into a piece with no resistance. Meanwhile, finely chop the onion, mince the 2 garlic cloves and grate 1/4 cup of the Parmesan.",
+  "While the potatoes cook, heat the 1 tbsp olive oil in a large skillet over medium high heat. Add the 1 lb lamb, sprinkle it with 1 tsp of the salt and 1/2 tsp of the pepper, and break it up with a spatula. Cook for 6 to 8 minutes, stirring now and then, until it's browned and there's no pink left.",
+  "Tilt the pan and spoon off all but about 1 tbsp of the fat. Turn the heat down to medium and add the onion. Cook for 3 to 4 minutes, stirring, until it's soft and see through. Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Sprinkle the 2 tbsp flour over the lamb and stir for 1 minute. You'll see a thin film form on the bottom of the pan.",
+  "Pour in the 1/2 cup wine and scrape up the browned bits from the bottom. Let it bubble for 1 minute. Stir in the 1 cup broth, the 1 tbsp tomato paste and the 1 tbsp Worcestershire.",
+  "Add the 1 1/2 cups frozen vegetables, 1/2 tsp of the salt and the remaining 1/4 tsp pepper and bring it to a gentle boil. Turn the heat to low, cover the pan and simmer for 10 minutes, until the sauce has thickened enough to coat a spoon. Taste it, and add a pinch more salt if it's flat.",
+  "When the potatoes are tender, drain them well and put them back in the warm pot. Mash them until there are no lumps. Add the 3/4 cup cream and the remaining 1/2 tsp salt and mash until smooth.",
+  "Crack the egg into a small bowl and beat it with a fork. Mash the Parmesan and the beaten egg into the potatoes until they disappear.",
+  "Spread the lamb filling in a deep pie dish or a 9 by 9 inch baking dish. Spoon the potatoes over the top and spread them out to the edges, pressing them against the sides of the dish so the filling can't bubble up. Run a fork across the top to make ridges. If you'd like it for another night, stop here: let it cool, cover it and refrigerate it for up to 2 days or freeze it for up to 3 months. Thaw it in the fridge overnight and bake it for 35 to 40 minutes.",
+  "Melt the 2 tbsp butter and drizzle it over the potatoes. Set the dish on a foil lined baking sheet and bake for 25 to 30 minutes, until the ridges on top are golden and the filling is bubbling at the edges.",
+  "Let it sit for 15 minutes before you cut into it, or it'll run. Chop 1 tbsp of the chives and scatter them over the top. Serve with a green salad."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions brown ground lamb with onion and garlic, stir in flour, add red wine, beef broth, tomato paste and Worcestershire, and bake under mashed potatoes until golden. Natasha's Kitchen works in frozen mixed vegetables, simmers the filling only 10 minutes, mashes the potatoes with warm cream, Parmesan and an egg, drizzles butter on top and bakes at 400°F for 25 to 30 minutes. RecipeTin Eats softens carrot and celery with thyme and rosemary, simmers the filling for 30 minutes into a thick gravy with a bouillon cube and bay leaves, adds peas at the end, and bakes at 350°F for 30 to 40 minutes, saying the filling can be made a day ahead. This follows Natasha's Kitchen with lamb as the meat, about the same amounts it uses (it calls that 8 portions, written here as 4 dinner portions), and the make ahead and freezing option from RecipeTin Eats.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Shepherd's Pie Recipe",
+   "url": "https://natashaskitchen.com/shepherds-pie-recipe/",
+   "rating": 4.98,
+   "rating_count": 627,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Shepherd's Pie",
+   "url": "https://www.recipetineats.com/shepherds-pie/",
+   "rating": 4.94,
+   "rating_count": 214,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

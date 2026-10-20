@@ -1,0 +1,124 @@
+{
+ "dish_name": "Shrimp Boil",
+ "cuisine": "American",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Old Bay seasoning",
+   "qty": "1/3 cup + 1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp leaves"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Corn on the cob",
+   "qty": "3 ears",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked sausage",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Large shrimp",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 1/2 tbsp chopped"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot (8 quarts or bigger) with 3 quarts of water. Cut the onion into 6 wedges and smash the 6 garlic cloves with the flat of a knife. Add them to the pot with the 1/3 cup Old Bay and 1 tbsp of thyme leaves. Cover and bring it to a boil over high heat.",
+  "Meanwhile, cut the 1 lb potatoes into quarters. Husk the 3 ears of corn and break or cut each one into 3 pieces. Slice the 12 oz sausage into 1 inch pieces. If your shrimp aren't deveined, run a small knife down the back of each one and pull out the dark vein. You can leave the shells on or peel them.",
+  "Add the potatoes and the 2 tsp salt to the boiling water. Cook for 10 to 15 minutes, until a knife goes into a potato with a little resistance left.",
+  "Add the corn and cook for 3 minutes. Add the sausage and cook for 4 minutes.",
+  "Melt the 4 tbsp butter in a small pan or the microwave. Squeeze 1 1/2 tbsp of juice from half the lemon and stir it into the butter. Cut the other half into wedges. Chop 1 1/2 tbsp of the parsley.",
+  "Stir the 1.25 lb shrimp into the pot and cook for 2 to 3 minutes, until they're pink and curled and the flesh has turned from see through to white. Don't walk away. They go rubbery fast.",
+  "Scoop out 1/4 cup of the cooking water and set it aside. Drain everything in a colander and fish out the thyme stems.",
+  "Spread it all out on a large platter or a rimmed baking sheet. Drizzle the lemon butter over the top and spoon the saved cooking water over it.",
+  "Sprinkle on the remaining 1 tsp Old Bay, the 1/4 tsp pepper and the chopped parsley. Taste a potato. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Slice the baguette. Serve with the bread, the lemon wedges and the hot sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both build a big pot of water seasoned with onion, garlic and a half cup of Old Bay, then add potatoes first, corn and sausage next and shrimp last for 2 to 3 minutes, and finish everything on a platter with melted butter. Cooking Classy adds thyme, salts the water, uses andouille and dresses the platter with butter, lemon juice and parsley. Spend With Pennies adds a can of beer, a halved lemon and bay leaves to the water, uses smoked sausage and serves it with baguette, lemon wedges and hot sauce. This follows Cooking Classy cut to 4 servings, with the milder smoked sausage from Spend With Pennies and its hot sauce on the side.",
+ "sources": [
+  {
+   "name": "Cooking Classy",
+   "title": "Shrimp Boil",
+   "url": "https://www.cookingclassy.com/shrimp-boil/",
+   "rating": 5.0,
+   "rating_count": 36,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Shrimp Boil",
+   "url": "https://www.spendwithpennies.com/shrimp-boil/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

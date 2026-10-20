@@ -1,0 +1,118 @@
+{
+ "dish_name": "Zucchini Bread",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Canola oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Walnuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Rub the 1 tbsp butter around the inside of two 8 by 4 inch loaf pans.",
+  "Grate the 2 zucchini on the large holes of a box grater. Don't squeeze out the liquid. That should be about 3 cups.",
+  "Whisk the 3 cups flour, 1 1/2 tsp baking powder, 1 tsp baking soda, 1 tsp salt and 2 tsp cinnamon together in a medium bowl.",
+  "In a large bowl, whisk the 3 eggs, 1 cup oil, 1 1/2 cups sugar and 1 tbsp vanilla for about 1 minute, until smooth and well blended.",
+  "Add the flour mixture and stir with a spatula until you can't see any dry flour. The batter will be very thick. Stop as soon as it comes together, or the loaves will come out tough.",
+  "Roughly chop the 1 cup walnuts. Fold the zucchini and the walnuts into the batter. It will look stiff at first and loosen as you fold.",
+  "Divide the batter between the two pans and smooth the tops. Bake for 50 to 60 minutes, until a toothpick pushed into the center comes out clean or with a few moist crumbs. Start checking at 50 minutes.",
+  "Cool the loaves in the pans for 10 to 15 minutes. Turn them out onto a wire rack and let them cool completely before slicing. This makes 2 loaves, about 20 slices.",
+  "Wrapped well, the loaves keep on the counter for 3 days. You can also freeze one for up to 3 months."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three whisk the dry ingredients with cinnamon, beat eggs with sugar, fat and vanilla, fold in about 2 to 3 cups of unsqueezed grated zucchini and nuts, and bake two 8 by 4 inch loaves for 50 to 65 minutes. Natasha's Kitchen (the lead) uses a cup of light oil, 3 cups of zucchini and both baking powder and soda at 350°F. Once Upon a Chef uses melted butter, nutmeg and a little more sugar and bakes lower, at 325°F. Spend with Pennies cuts the flour to 2 cups, uses only baking soda and a full tablespoon of cinnamon. This follows the lead, which makes 2 loaves.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Zucchini Bread",
+   "url": "https://natashaskitchen.com/zucchini-bread-recipe/",
+   "rating": 4.98,
+   "rating_count": 218,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend with Pennies",
+   "title": "The Best Zucchini Bread",
+   "url": "https://www.spendwithpennies.com/zucchini-bread/",
+   "rating": 4.91,
+   "rating_count": 2858,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Zucchini Bread",
+   "url": "https://www.onceuponachef.com/recipes/zucchini-bread.html",
+   "rating": 4.82,
+   "rating_count": 230,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

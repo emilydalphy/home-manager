@@ -1,0 +1,90 @@
+{
+ "dish_name": "Hash Browns and Eggs",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Peel the 1 1/2 lb potatoes and grate them on the large holes of a box grater.",
+  "Pile the grated potato in the middle of a clean kitchen towel, gather it up and twist it hard over the sink. Keep twisting until only a few drops come out. If the potatoes stay wet, they'll steam and won't go crisp.",
+  "Transfer the potatoes to a bowl and toss them with the 1/2 tsp onion powder.",
+  "Heat a 12 inch cast iron or nonstick skillet over medium heat. Once it's hot but not smoking, add 1 tbsp of the olive oil and 1 tbsp of the butter and swirl them together.",
+  "Spread the potatoes over the pan in an even layer about 1/3 inch thick. Don't stir them. Cook for 6 minutes, until the underside is deep golden and crisp. If it's browning too fast, turn the heat down a little.",
+  "Sprinkle 1/4 tsp of the salt and 1/4 tsp of the pepper over the top.",
+  "Flip the hash browns. If they won't turn in one piece, cut them into quarters with the edge of a spatula and flip each piece. Sprinkle another 1/4 tsp of the salt over this side.",
+  "Drizzle the remaining 1 tbsp olive oil around the edges and dot 1 tbsp of the butter around them too. Cook the second side for 6 minutes without stirring, until it's golden brown and crisp.",
+  "Meanwhile, chop 1 tbsp of the chives. Heat a large nonstick skillet over medium heat and melt half the remaining butter in it.",
+  "Crack 4 of the eggs into the pan with space between them and sprinkle them with a little of the remaining salt and pepper. Cook for 3 to 4 minutes, until the whites are set all the way through and the yolks are still runny. For over easy, flip them and cook the other side for 30 seconds. Move them to plates.",
+  "Melt the rest of the butter in the pan and fry the last 4 eggs the same way, with the last of the salt and pepper.",
+  "Slide the hash browns onto a board and cut them into 4 wedges. Serve each wedge with 2 eggs, with the chives scattered over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both grate russet potatoes on the large holes of a box grater and get as much water out as they can before frying in a hot skillet. Natasha's Kitchen (the lead) wrings the shreds in cloth, seasons them with onion powder and cooks them as one thin cake in oil and butter, 6 minutes a side without stirring, adding more fat at the edges after the flip. Spend with Pennies rinses and soaks the shreds, binds them with egg and garlic powder into small patties and finishes them in the oven. This follows the lead's skillet cake for 4, made in a 12 inch pan, with two fried eggs each for the diner plate.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "The Best Crispy Hash Browns Recipe",
+   "url": "https://natashaskitchen.com/crispy-hash-browns/",
+   "rating": 5.0,
+   "rating_count": 117,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend with Pennies",
+   "title": "Homemade Shredded Hashbrowns",
+   "url": "https://www.spendwithpennies.com/homemade-shredded-hashbrowns/",
+   "rating": 4.97,
+   "rating_count": 113,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

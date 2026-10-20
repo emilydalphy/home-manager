@@ -1,0 +1,41 @@
+{
+ "dish_name": "Cornbread",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 10,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Yellow cornmeal", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Baking powder", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Creamed corn", "qty": "1 can (14.75 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Unsalted butter", "qty": "10 tbsp", "category": "dairy"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Milk", "qty": "3/4 cup", "category": "dairy"}
+ ],
+ "instructions": [
+  "Put a 10 inch cast iron skillet in the oven and heat the oven to 425°F with the skillet inside.",
+  "Meanwhile, melt 8 tbsp of the butter in a small pan over low heat or in the microwave. Set it aside to cool a little.",
+  "In a large bowl, whisk together the 3/4 cup cornmeal, 1 1/2 cups flour, 1 tbsp baking powder, 1/2 cup sugar and 1/4 tsp salt.",
+  "In a second bowl, whisk the 2 eggs. Add 1 cup of the creamed corn, the 3/4 cup milk and the melted butter, and whisk until it's evenly mixed.",
+  "Pour the wet mix into the dry mix and stir with a spatula until there's no dry flour left. A few lumps are fine. Stop there, or the cornbread comes out tough.",
+  "Using oven mitts, take the skillet out of the oven and set it on the stove. Add the last 2 tbsp butter and swirl it around so it coats the bottom and halfway up the sides. The handle is very hot, so keep a mitt on it.",
+  "Pour the batter into the skillet and smooth the top. Put it back in the oven and turn the oven down to 375°F.",
+  "Bake for 25 to 30 minutes, until the top is light golden and a skewer pushed into the middle comes out clean. The top should spring back when you press it.",
+  "Leave it in the skillet for 15 minutes, then turn it out onto a board and cut it into 10 wedges. This makes 10 wedges.",
+  "Serve it warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three are quick breads that stir a wet mix into flour, cornmeal, sugar and baking powder just until combined. RecipeTin Eats adds a cup of canned creamed corn for moisture, heats a buttered cast iron skillet at 425°F before the batter goes in, then bakes at 375°F for 25 to 30 minutes. Bless This Mess and Dinners, Dishes and Desserts use equal flour and cornmeal with oil or butter and milk, baked at 400°F in a round pan for 20 to 25 minutes, and are sweeter. This follows RecipeTin Eats as written; it makes one 10 inch skillet, about 10 wedges.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Cornbread recipe (creamed corn)", "url": "https://www.recipetineats.com/cornbread/", "rating": 4.94, "rating_count": 190, "read": true, "lead": true},
+  {"name": "Bless This Mess", "title": "The Best Homemade Cornbread Recipe", "url": "https://blessthismessplease.com/the-best-cornbread-recipe/", "rating": 4.77, "rating_count": 869, "read": true, "lead": false},
+  {"name": "Dinners, Dishes and Desserts", "title": "Best Cornbread Recipe", "url": "https://dinnersdishesanddesserts.com/best-cornbread-recipe/", "rating": 4.46, "rating_count": 57, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

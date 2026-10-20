@@ -1,0 +1,51 @@
+{
+ "dish_name": "Vegetarian Chili",
+ "cuisine": "American",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Fire-roasted diced tomatoes", "qty": "1 can (14 oz)", "category": "pantry"},
+  {"item": "Kidney beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Pinto beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Chipotle peppers in adobo", "qty": "1 can (7 oz)", "category": "pantry", "cook_qty": "1 pepper + 1 tbsp sauce"},
+  {"item": "Frozen corn", "qty": "1 bag", "category": "frozen", "cook_qty": "1 cup"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Tortilla chips", "qty": "1 bag", "category": "pantry"}
+ ],
+ "instructions": [
+  "Chop the onion and the bell pepper, and mince the 2 garlic cloves. Pull 1 chipotle pepper out of the can and dice it. Drain the kidney beans and pinto beans in a colander and rinse them.",
+  "Heat the 2 tbsp olive oil in a large pot over medium heat until it shimmers. Add the onion, 1/4 tsp of the salt and half the black pepper. Cook for about 5 minutes, stirring now and then, until the onion turns soft and see-through.",
+  "Add the bell pepper and cook for 5 to 8 minutes, stirring now and then, until it's soft. Turn the heat down a little if the onion starts to brown too fast.",
+  "Add the garlic, the 1 tsp chili powder and the 1 tsp cumin. Stir for about 30 seconds, until it smells toasty.",
+  "Add the tomatoes with their juice, the beans, 1 cup of the broth, the diced chipotle, 1 tbsp of the adobo sauce from the can, 1 cup of the corn, the remaining 1/2 tsp salt and the rest of the pepper. Stir and bring it to a simmer.",
+  "Put the lid on, turn the heat to low and simmer for 25 minutes, stirring every so often, until the chili has thickened. If it catches on the bottom, add a splash more broth.",
+  "Meanwhile, get the toppings ready. Squeeze one lime into a small cup. That should be about 1 tbsp. Cut the other lime into wedges. Dice the avocado, chop a handful of the cilantro and slice the jalapeño into thin rounds.",
+  "Take the pot off the heat and stir in the 1 tbsp lime juice.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of one of the lime wedges.",
+  "Serve with the avocado, sour cream, cilantro, lime wedges and tortilla chips, with the jalapeño and the rest of the chipotles on the side for anyone who wants it hotter."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soften onion and bell pepper in olive oil, bloom chili powder and cumin with the garlic, then simmer canned tomatoes, two kinds of beans, corn and a little broth until thick. Love and Lemons keeps it short, with a 25 minute covered simmer, smoky depth from chipotles in adobo and lime juice stirred in at the end. Ambitious Kitchen adds carrot, sweet potato and mild green chiles, uses a larger spice blend with oregano, paprika and cayenne, and simmers 30 to 45 minutes. This follows Love and Lemons for 4, with one chipotle in the pot instead of three so the base stays mild, the rest of the can and a jalapeño at the table, and tortilla chips for crunch from Ambitious Kitchen's toppings.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Vegetarian Chili", "url": "https://www.loveandlemons.com/vegetarian-chili/", "rating": 4.95, "rating_count": 169, "read": true, "lead": true},
+  {"name": "Ambitious Kitchen", "title": "The Best Vegetarian Chili Recipe", "url": "https://www.ambitiouskitchen.com/best-vegetarian-chili-recipe/", "rating": 4.89, "rating_count": 206, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
