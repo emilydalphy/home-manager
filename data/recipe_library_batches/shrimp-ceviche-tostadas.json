@@ -1,0 +1,108 @@
+{
+ "dish_name": "Shrimp Ceviche Tostadas",
+ "cuisine": "Mexican",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Peeled deveined raw shrimp",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "7",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tostada shells",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large bowl with ice and water. Bring 3 quarts of water and 1 1/2 tsp of the salt to a boil in a large pot.",
+  "While the water heats, seed the 3 tomatoes and cut them into 1/4 inch dice. Dice the 2 cucumbers the same size. Mince the red onion until you have 3/4 cup. Seed and mince the jalapeño, and chop 3 tbsp of the cilantro.",
+  "Zest one of the limes. That should be about 1 1/2 tsp. Squeeze it and 5 more of the limes, then the 2 lemons. That should be about 3/4 cup lime juice and 1/3 cup lemon juice.",
+  "When the water boils, turn off the heat and add the 1 1/2 lb shrimp. Leave them in the hot water for 2 to 3 minutes, stirring once, until they're pink and opaque all the way through. Cut one in half to check.",
+  "Drain the shrimp in a colander and transfer them into the ice water. Leave them for 2 minutes, until they're cold, then drain them and pat them dry.",
+  "Cut the shrimp into 1/2 inch pieces and put them in a large glass or ceramic bowl.",
+  "Add the tomatoes, cucumbers, onion, jalapeño, chopped cilantro, lime zest, lime juice, lemon juice and the remaining 1/2 tsp salt. Stir it together, cover it and refrigerate for 30 minutes, stirring once halfway through.",
+  "Just before you eat, cut the 2 avocados into 1/2 inch dice and fold them in gently.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Cut the last lime into wedges. Use a slotted spoon to pile a heaping 1/2 cup of the ceviche on each tostada.",
+  "Serve right away with the lime wedges and the hot sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both poach peeled shrimp in salted water off the heat for 2 to 3 minutes, chill them, chop them and toss them with lime juice, seeded tomato, cucumber, red onion, a seeded green chile and cilantro, chill it for 30 minutes and fold in avocado at the end. Jessica Gavin, the lead, adds lime zest and lemon juice along with the lime, cools the shrimp under cold water and suggests tostadas as one way to serve it. Pinch and Swirl flavors the poaching water with lime, peppercorns and cilantro stems, adds radishes and plates every tostada with about 1/2 cup. This follows the lead, scaled to 1 1/2 lb for 4 as a dinner on 12 tostadas, with hot sauce at the table. The lead uses kosher salt; this gives it in table salt.",
+ "sources": [
+  {
+   "name": "Jessica Gavin",
+   "title": "Shrimp Ceviche with Avocado",
+   "url": "https://www.jessicagavin.com/shrimp-ceviche/",
+   "rating": 4.95,
+   "rating_count": 53,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pinch and Swirl",
+   "title": "Shrimp Ceviche Tostadas",
+   "url": "https://pinchandswirl.com/shrimp-ceviche-tostadas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

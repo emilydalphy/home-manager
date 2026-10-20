@@ -1,0 +1,140 @@
+{
+ "dish_name": "Enchiladas Suizas",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried Mexican oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatillos",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano chiles",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "6 inch corn tortillas",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Monterey Jack cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cotija cheese",
+   "qty": "1 package",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Cut the chicken breasts lengthwise into thirds. Put them in a medium saucepan with 2 1/2 cups water, 2 of the garlic cloves, the 2 bay leaves and 3/4 tsp of the salt. Bring it to a simmer over high heat.",
+  "Turn the heat down so it simmers gently and cook for 5 to 7 minutes. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Move the chicken to a bowl and let it cool for 5 minutes. You can keep the cooking liquid for another day or pour it away.",
+  "Meanwhile, start the sauce. Halve one of the serranos lengthwise and scrape out the seeds. Put the halves in a second medium saucepan. Cut the onion in half, cut one 1/2 inch slice from one half and add it to the pan. Finely chop the other half of the onion and set it aside for the top.",
+  "Add the 1 lb tomatillos and the remaining 2 garlic cloves to the pan, pour in enough water to cover them, and bring it to a gentle simmer over medium high.",
+  "Turn the heat down so it barely bubbles and cook for about 20 minutes, until the tomatillos are very soft and olive green. While it cooks, heat the oven to 425°F with a rack in the middle.",
+  "Shred the chicken into 1/2 inch pieces with two forks. Toss it with the 1/2 tsp oregano and the 1/4 tsp pepper.",
+  "Chop 2/3 cup of the cilantro sprigs. With a slotted spoon, transfer the onion slice, garlic, serrano and about a quarter of the tomatillos into a blender. Add the cilantro, the 3/4 tsp sugar and the remaining 1/2 tsp salt, and blend for about 1 minute, until smooth.",
+  "Add the rest of the tomatillos and the 1/2 cup crema and blend for 45 to 60 seconds, until smooth. Pour away the cooking water.",
+  "Line a baking sheet with a double layer of paper towels. Heat the 1/3 cup oil in a 10 inch ovensafe skillet over medium until it reaches 325°F. No thermometer? Dip the edge of a tortilla in. It's ready when it sizzles right away.",
+  "Fry one tortilla for 5 seconds, then flip it and fry the other side for 5 seconds, until it puffs in spots but isn't brown. Transfer it to the paper towels. Fry all 8 the same way, then press more paper towels on top. Let the oil cool a little, pour it into a heatproof bowl and wipe out the skillet.",
+  "Spread 1/4 cup of the sauce over the bottom of the skillet. Put 1/4 cup of the chicken along the lower third of a tortilla, roll it up tight and set it seam side down in the skillet. Fill and roll the rest, with 6 down the middle and 1 along each side.",
+  "Spread 1/3 cup of the sauce over the enchiladas and scatter the shredded cheese over the top. Bake for about 12 minutes, until the cheese has melted and the edges are bubbling.",
+  "Meanwhile, pour the rest of the sauce into a small saucepan and heat it over medium high for about 5 minutes, stirring now and then, until it simmers gently. Slice 4 of the radishes thin, pick a handful of cilantro leaves, crumble the cotija and slice the other serrano thin for anyone who wants heat.",
+  "Taste the warm sauce. If it's flat, add a pinch more salt.",
+  "Divide the warm sauce among 4 shallow bowls and set 2 enchiladas in each. Top them with the cilantro leaves, radishes, cotija and chopped onion. Serve with the sliced serrano on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both make a green sauce from tomatillos, serranos, garlic and cilantro, enrich it with crema, roll shredded chicken in softened corn tortillas and bake them under melted cheese. America's Test Kitchen, the lead, poaches strips of chicken breast with garlic and bay, simmers the tomatillos before blending them with crema, flash fries the tortillas so they hold up, and bakes them under Monterey Jack in one skillet with extra sauce in each bowl. Simple Comfort Food roasts tomatillos with poblanos and tops the dish with both Jack and Swiss cheese at 350°F. This follows the lead for 4, with one seeded serrano in the sauce and a second sliced at the table to keep the base mild. The lead's 345 comes from the page's reviewCount; ATK shows it as the rating count.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Enchiladas Suizas (Swiss Enchiladas)",
+   "url": "https://www.americastestkitchen.com/recipes/16134-enchiladas-suizas-swiss-enchiladas",
+   "rating": 4.2,
+   "rating_count": 345,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simple Comfort Food",
+   "title": "Enchiladas Suizas",
+   "url": "https://www.simplecomfortfood.com/2014/03/27/enchiladas-suizas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
