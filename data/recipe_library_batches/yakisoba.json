@@ -1,0 +1,139 @@
+{
+ "dish_name": "Yakisoba",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Yakisoba noodles",
+   "qty": "4 servings (about 1 1/2 lbs)",
+   "category": "other"
+  },
+  {
+   "item": "Thinly sliced pork belly",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Pickled red ginger",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Make the sauce. Whisk 1/3 cup Worcestershire sauce, 2 tbsp oyster sauce, 2 tbsp ketchup, 1 tbsp soy sauce and 1 tbsp sugar in a small bowl until the sugar dissolves.",
+  "Cut the 1 lb pork belly into 1 1/2 inch pieces.",
+  "Thinly slice the onion. Peel the carrot and cut it into thin matchsticks. Cut a third of the cabbage into 1 inch pieces.",
+  "Cut the stems off the 4 shiitake and slice the caps. Cut 3 of the green onions into 2 inch lengths and thinly slice the last one for the top.",
+  "Heat 1 tbsp oil in your largest skillet or wok over medium. Add the noodles and warm them for 1 to 2 minutes a side, loosening them gently with tongs until the strands come apart. Tip them onto a plate.",
+  "Turn the heat to medium-high and add 1 tbsp oil. Lay the pork in a single layer and sprinkle it with the 1/4 tsp pepper.",
+  "Cook the pork for 2 to 3 minutes, turning once, until the edges are browned and there's no pink left.",
+  "Add the onion and stir-fry for 1 to 2 minutes, until it softens. Add the carrot and stir-fry for another 1 to 2 minutes.",
+  "Add the last 1 tbsp oil, then the cabbage and shiitake. Stir-fry for 2 to 3 minutes, until the cabbage is wilted but still has some crunch. Add the green onion lengths and cook for 1 more minute.",
+  "Put the noodles back in the pan and pour the sauce over. Toss for about 2 minutes until everything is coated and hot, leaving it alone for about 20 seconds between tosses so the sauce catches a little on the pan.",
+  "Taste a noodle. If it's flat, add a splash more soy sauce.",
+  "Serve right away with the sliced green onion on top and the pickled ginger on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions stir-fry pork and cabbage hot and fast, add steamed or boiled wheat noodles, and toss them in a sweet and tangy sauce built on Worcestershire, oyster sauce and ketchup, finished with pickled red ginger. Just One Cookbook (the lead) loosens the pre-steamed noodles in the pan first, cooks the vegetables in stages from onion to green onion, and sweetens the sauce with a little sugar; Norecipes leaves the noodles to sit between tosses so the sauce caramelizes, and Foodie Crush soaks the noodles in hot water and starts the pan with ginger. This one scales the lead from three servings to four.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Yakisoba (Japanese Stir-Fried Noodles)",
+   "url": "https://www.justonecookbook.com/yakisoba/",
+   "rating": 4.8,
+   "rating_count": 426,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Norecipes",
+   "title": "Yakisoba",
+   "url": "https://norecipes.com/yakisoba/",
+   "rating": 4.55,
+   "rating_count": 42,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Foodie Crush",
+   "title": "Yakisoba (25-Minute Japanese Noodle Stir-Fry)",
+   "url": "https://www.foodiecrush.com/yakisoba/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

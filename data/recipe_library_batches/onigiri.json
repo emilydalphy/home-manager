@@ -1,0 +1,81 @@
+{
+ "dish_name": "Onigiri",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salmon fillet",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted seaweed sheets (nori)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4 sheets"
+  }
+ ],
+ "instructions": [
+  "Put the 2 cups rice in a bowl, cover it with cold water, swish it with your hand and pour the water off. Do this 3 or 4 times, until the water is only a little cloudy, then drain the rice well in a sieve.",
+  "Put the rice in a rice cooker or a heavy pot with 2 1/4 cups cold water and let it soak for 20 minutes.",
+  "Cook the rice. In a rice cooker, start it now. In a pot, bring it to a boil over high, cover it, turn the heat to the lowest setting and cook for 13 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, heat the oven to 425°F and line a small baking sheet with foil.",
+  "Pat the 8 oz salmon dry with paper towels and sprinkle 1/2 tsp of the salt over both sides. Lay it skin side down on the sheet.",
+  "Bake it for 12 to 18 minutes, until it's firm, opaque all the way through and flakes easily with a fork. Cook it a little past just done. Moist salmon makes the rice soggy.",
+  "Once it's cool enough to touch, pull off the skin, pick out any bones and break the salmon into small flakes with a fork.",
+  "Cut each of the 4 nori sheets in half to make 8 pieces, and keep them in a dry bag.",
+  "Spread the cooked rice out in a wide bowl or on a tray and leave it for a few minutes, until you can hold it comfortably. It should still be warm.",
+  "Set out a bowl of water and put the remaining 1 tsp salt in a small dish. Wet your palms, then dab 2 fingertips in the salt and rub it over both palms.",
+  "Scoop about 1/3 cup of rice into one palm and press a dip into the middle. Spoon in an eighth of the salmon, about 1 tbsp, and cover it with another 1/3 cup of rice.",
+  "Cup your bottom hand and bend your top hand into a roof shape. Press gently to make a corner, turn the ball and press again, until you have a triangle about 1 1/2 inches thick. Press just firmly enough for it to hold, or the rice turns dense.",
+  "Set it on a plate and make 7 more the same way, wetting and salting your hands each time.",
+  "Wrap a piece of nori around the bottom of each onigiri, shiny side out, right before you eat. Serve warm or at room temperature. To pack them for lunch, wrap each one in plastic wrap, pack the nori separately in a dry bag, keep them cool and eat them within 6 hours. The rice turns hard in the fridge."
+ ],
+ "method_notes": "All three fill warm short grain rice with salted salmon, shape it with wet, salted hands and wrap it in nori. Just One Cookbook salts the fillet and bakes it at 425°F until well done and dry, uses about 1/3 cup of rice under and over the filling, and wraps the nori just before eating so it stays crisp, with tuna mayo, okaka, umeboshi and mentaiko as other fillings. No Recipes cures the salmon in salt overnight and steams it in sake, and RecipeTin Japan uses ready grilled salted salmon and covers both sides with half a nori sheet. This one keeps to the lead's salmon filling.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Onigiri (Japanese Rice Balls)",
+   "url": "https://www.justonecookbook.com/onigiri-rice-balls/",
+   "rating": 4.76,
+   "rating_count": 239,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Salmon Onigiri",
+   "url": "https://norecipes.com/salmon-onigiri-rice-balls/",
+   "rating": 5,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Onigiri (Japanese Rice Ball)",
+   "url": "https://japan.recipetineats.com/onigiri-japanese-rice-ball/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

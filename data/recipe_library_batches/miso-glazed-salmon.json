@@ -1,0 +1,116 @@
+{
+ "dish_name": "Miso Glazed Salmon",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Skin-on salmon fillets",
+   "qty": "4 (about 1 1/2 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Miso",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, and no more than 3: stir 4 tbsp miso, 2 tbsp sake, 2 tbsp mirin, 2 tbsp soy sauce, 1 tbsp sugar and the 1/2 tsp sesame oil together in a shallow dish until smooth.",
+  "Spoon 2 tbsp of the marinade into a small bowl, cover it and put it in the fridge for the end.",
+  "Pat the 4 fillets dry and lay them skin side up in the dish. Spoon the marinade over the tops and sides, cover, and put the dish in the fridge. Don't leave it overnight. The miso is salty enough to start curing the fish.",
+  "About 40 minutes before dinner, rinse the 1 1/2 cups rice until the water runs nearly clear and get it cooking.",
+  "Set an oven rack in the middle, about 9 inches below the broiler, and heat the broiler on high for 5 minutes.",
+  "Line a baking sheet with foil and rub it with the 1 tsp vegetable oil.",
+  "Scrape most of the marinade off the salmon with a spoon, leaving a thin coat. Thick patches of miso burn under the broiler.",
+  "Lay the fillets skin side down on the sheet and broil them for 10 to 13 minutes without turning, until the tops are browned in spots. If the edges start to char before the middle is done, move the pan down a rack.",
+  "You're cooking it to 130°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Push a fork into the thickest part: it's done when it flakes apart and is only just opaque in the middle.",
+  "Brush the 2 tbsp of saved marinade over the hot fillets.",
+  "Thinly slice 2 of the green onions and scatter them over the salmon with 1 tsp sesame seeds.",
+  "Taste a little from the edge of one fillet. If it's flat, add a few drops more soy sauce over the top.",
+  "Serve with the rice."
+ ],
+ "advance_prep_notes": "marinate the salmon 1 to 3 hours ahead",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Both read versions marinate skin-on salmon in a miso mixture for about an hour in the fridge, then broil it skin side down without flipping for 10 to 13 minutes. Just One Cookbook (the lead) uses miso, sake, mirin, soy and a little sesame oil, warns against marinating overnight, scrapes off the thick marinade so it doesn't burn, and takes the fish to 125 to 130°F; The Modern Proper adds fresh and ground ginger, rice vinegar and brown sugar and broils until it flakes. This one doubles the lead to four fillets, adds a spoon of sugar for a sweeter glaze, and keeps a little of the raw marinade aside to brush on after broiling.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Miso Salmon",
+   "url": "https://www.justonecookbook.com/miso-salmon/",
+   "rating": 4.75,
+   "rating_count": 644,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Modern Proper",
+   "title": "Miso Glazed Salmon",
+   "url": "https://themodernproper.com/miso-glazed-salmon",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
