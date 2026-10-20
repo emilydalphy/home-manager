@@ -1,0 +1,118 @@
+{
+ "dish_name": "Warak Enab",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 60,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Grape leaves",
+   "qty": "1 jar (16 oz)",
+   "category": "pantry",
+   "cook_qty": "about 45 leaves"
+  },
+  {
+   "item": "Medium-grain rice",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon gold potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Gently unroll the grape leaves from the jar and rinse them in a bowl of cold water. Stack them on a plate. You need about 40 whole leaves for rolling and a few torn ones to line the pot.",
+  "Rinse the 3/4 cup rice in a sieve until the water runs clear, then let it drain.",
+  "Finely chop the parsley until you have about 1/2 cup. Finely dice the onion and 2 of the tomatoes. Squeeze the juice from 1 of the lemons.",
+  "In a bowl, mix the rice, parsley, onion and chopped tomato with the 1 1/2 tsp dried mint, 1 tsp of the salt, the 1/2 tsp pepper, 1 tbsp of the olive oil and half the lemon juice.",
+  "Peel the potato and cut it into 1/3 inch slices. Slice the last tomato into rounds. Lay the potato over the bottom of a medium heavy pot and cover it with the torn leaves.",
+  "To roll, lay a leaf flat, shiny side down, and snip off the stem. Put a heaped teaspoon of filling in a line across the bottom of the leaf. Fold the bottom up over it, fold in both sides and roll it up firmly into a little cigar. Don't overfill them. The rice swells as it cooks.",
+  "Pack the rolls seam side down in snug rows over the potato. When the first layer is full, lay the tomato slices over it and make a second layer on top.",
+  "Stir the rest of the lemon juice, 1 tbsp olive oil and the remaining 1/2 tsp salt into 2 cups water and pour it over the rolls. Set a heatproof plate upside down on top to hold them down. The liquid should just cover them, so add a little more water if it doesn't.",
+  "Cover the pot and bring it to a boil over medium high. Turn the heat to low and simmer for 40 minutes. Cut one roll open to check. The rice in the middle should be soft all the way through.",
+  "Turn off the heat and leave the pot covered for 15 minutes.",
+  "Serve them warm or cold, with the second lemon cut into wedges.",
+  "Keep the rest in a lidded container in the fridge for up to 5 days."
+ ],
+ "method_notes": "All three roll raw rice with parsley, tomato, onion, mint and lemon in jarred grape leaves, pack them over sliced potato, weigh them down with a plate and simmer them in lemony water. Plant Based Folk layers sliced tomato and onion between the rolls and simmers them for 40 minutes before a 15 minute rest, which this version follows at half the batch. Zaatar and Zaytoun adds spring onion, tomato paste and seven spice to the filling and cooks it for over an hour, and An Edible Mosaic chills the filling for 3 hours and serves the rolls with yogurt and lemon.",
+ "sources": [
+  {
+   "name": "Plant Based Folk",
+   "title": "Warak Enab (Lebanese Grape Leaves)",
+   "url": "https://plantbasedfolk.com/warak-enab-lebanese-grape-leaves/",
+   "rating": 5.0,
+   "rating_count": 104,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Zaatar and Zaytoun",
+   "title": "Lebanese Stuffed Grape Leaves (Warak Enab bi Zeit)",
+   "url": "https://zaatarandzaytoun.com/lebanese-stuffed-grape-leaves-warak-enab-bi-zeit/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "An Edible Mosaic",
+   "title": "Warak Enab bi Zeit (Syrian Vegetarian Stuffed Grape Leaves Recipe)",
+   "url": "https://www.anediblemosaic.com/warak-enab-aka-yalanji-syrian-stuffed-grape-leaves-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}

@@ -1,0 +1,128 @@
+{
+ "dish_name": "Pollo al Ajillo",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "10 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "other"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the 1.5 lb chicken thighs into 1 1/2 inch pieces and pat them dry with paper towels. Sprinkle them with the 3/4 tsp salt and 1/2 tsp pepper and toss.",
+  "Smash 4 of the garlic cloves with the flat of a knife and peel them. Thinly slice the other 6 cloves. Chop the parsley leaves until you have about 1/4 cup.",
+  "Heat 3 tbsp olive oil in a large skillet over medium. Add the 4 smashed cloves and cook them for 2 to 3 minutes, turning them, until they're golden. Lift them out with a slotted spoon and set them aside.",
+  "Turn the heat up to medium high. Add the chicken in a single layer and leave it alone for 3 to 4 minutes, until the underside is golden and lets go of the pan. Flip the pieces and brown the other side for 3 minutes. If they don't all fit, brown them in two batches.",
+  "Turn the heat down to medium. Add the sliced garlic, the 1/2 tsp paprika and the 2 bay leaves and stir for 1 minute, until the garlic smells fragrant and is just turning pale gold. Don't let it go brown. Burnt garlic tastes bitter.",
+  "Pour in the 1/2 cup wine and scrape up the browned bits from the bottom of the pan. Let it bubble for about 2 minutes, until it has cooked down by half.",
+  "Add 1/2 cup broth, half of the chopped parsley and the golden garlic cloves. Cover, turn the heat to low and simmer for 10 minutes. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest piece. No thermometer? Cut into one: it's done when there's no pink left and the juices run clear.",
+  "Stir the 1 tsp cornstarch into 1 tbsp cold water in a cup. Take the lid off, stir it into the pan and let the sauce bubble for 1 minute, until it's glossy and a little thicker.",
+  "Take the pan off the heat. Pull out the bay leaves, squeeze in the juice of half the lemon and scatter over the rest of the parsley.",
+  "Taste it. If it's flat, add salt first, then a squeeze from the other lemon half.",
+  "Serve with the crusty bread."
+ ],
+ "method_notes": "All three brown the chicken in olive oil with plenty of garlic and finish it with wine. Mediterranean Living uses boneless thigh chunks with crushed and sliced garlic, simmers them in white wine with parsley, and thickens the sauce with a little cornstarch and lemon, which this version follows. Spain on a Fork fries whole cloves first to flavor the oil, then adds broth and bay leaves with the wine, and Laylita browns the cloves in their skins and adds them back at the end. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the most rated read version leads.",
+ "sources": [
+  {
+   "name": "Mediterranean Living",
+   "title": "Spanish Garlic Chicken (Pollo al Ajillo)",
+   "url": "https://www.mediterraneanliving.com/spanish-garlic-chicken-pollo-al-ajillo/",
+   "rating": 4.89,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish GARLIC Chicken | Pollo al Ajillo",
+   "url": "https://spainonafork.com/spanish-garlic-chicken-one-of-spains-most-iconic-recipes/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Laylita's Recipes",
+   "title": "Pollo al Ajillo (Spanish Garlic Chicken)",
+   "url": "https://www.laylita.com/recipes/pollo-al-ajillo-spanish-garlic-chicken/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}

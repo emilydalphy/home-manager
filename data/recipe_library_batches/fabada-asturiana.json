@@ -1,0 +1,129 @@
+{
+ "dish_name": "Fabada Asturiana",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 165,
+ "ingredients": [
+  {
+   "item": "Dried large white beans",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Spanish chorizo",
+   "qty": "2 links",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Morcilla",
+   "qty": "2 links",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Slab bacon",
+   "qty": "1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Saffron",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "The night before: put the 1 lb beans in a big bowl, cover them with cold water by about 3 inches and leave them to soak overnight.",
+  "Drain and rinse the beans. Cut the 1/4 lb bacon into 4 chunks and finely chop the onion. Peel the 6 garlic cloves and leave them whole. Prick the 2 chorizo links and 2 morcilla links a few times with a fork.",
+  "Heat 2 tbsp of the olive oil in a large heavy pot over medium. Add the bacon and cook for about 5 minutes, turning it, until it's golden on all sides.",
+  "Add the onion and cook for 6 to 8 minutes, stirring now and then, until it's soft and golden. Add the garlic and stir for 1 minute.",
+  "Take the pot off the heat and stir in the 1 tsp smoked paprika for 20 seconds, until it smells toasty.",
+  "Add the beans, the 4 cups broth and 2 cups cold water. The beans should be covered by about an inch. Lay the chorizo and morcilla on top. Bring it to a slow boil over medium high and skim off the foam that rises.",
+  "Crumble in the pinch of saffron and add the other 2 tbsp olive oil. Turn the heat to low, partly cover and simmer very gently for 2 to 2 1/2 hours, until the beans are creamy all the way through.",
+  "While it simmers, add a splash of cold water every 15 minutes or so to keep the beans just covered. Don't stir. Give the pot a gentle shake instead, or the beans break up.",
+  "Lift the chorizo, morcilla and bacon out onto a board and cut them into thick slices.",
+  "If the broth looks thin, scoop out about 1/2 cup of the beans, mash them with a fork and stir them back in. Stir in the 1/2 tsp salt.",
+  "Put the sliced meat back in the pot, take it off the heat, cover it and leave it to sit for 20 minutes.",
+  "Taste it. If it's flat, add salt first, then a squeeze of lemon.",
+  "Ladle the beans into bowls, top each with the chorizo, morcilla and bacon, and serve with the crusty bread."
+ ],
+ "advance_prep_notes": "Soak the beans overnight, the night before.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All three soak large white beans overnight and simmer them very gently for 2 hours or more with chorizo and morcilla, adding cold water now and then and never stirring so the beans stay whole. José Andrés cooks them in chicken stock with slab bacon, a whole head of garlic, an onion, pimentón, saffron and olive oil, then rests the pot and mashes a few beans if the broth is thin, which this version follows, browning the bacon and onion first. Saveur cooks the beans in water with pancetta for 1 1/2 to 2 hours before the sausages go in for the last 45 minutes, and The Local's version uses only the sausages, salt and saffron. No version had ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Explore Parts Unknown",
+   "title": "Fabada Asturiana (José Andrés)",
+   "url": "https://explorepartsunknown.com/asturias/recipe-fabada-asturiana/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Saveur",
+   "title": "Fabada Asturiana (White Beans With Ham, Saffron, and Sausages)",
+   "url": "https://www.saveur.com/story/recipes/fabada-asturiana-white-beans-with-ham-saffron-sausages/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Local Spain",
+   "title": "Fabada, a traditional Asturian bean stew",
+   "url": "https://www.thelocal.es/20191108/recipe-fabada-asturiana-asturian-bean-stew",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}
