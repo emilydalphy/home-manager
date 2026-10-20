@@ -1,0 +1,130 @@
+{
+ "dish_name": "Pepperoni Pizza",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "3 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "1 packet (1/4 oz)",
+   "category": "pantry",
+   "cook_qty": "2 1/4 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pizza sauce",
+   "qty": "1 jar (14 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Low-moisture mozzarella",
+   "qty": "12 oz",
+   "category": "dairy",
+   "cook_qty": "3 cups grated"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/4 cup grated"
+  },
+  {
+   "item": "Sliced pepperoni",
+   "qty": "1 package (6 oz)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours before dinner, or the night before, make the dough. In a large bowl, stir together 3 cups of the flour, the 2 1/4 tsp yeast, 1 tsp sugar and the 1 1/4 tsp salt.",
+  "Pour in 1 cup plus 2 tbsp warm tap water and 2 tbsp of the olive oil. Stir with a wooden spoon until there's no dry flour left. It'll look shaggy and a little sticky.",
+  "Dust the counter with a little of the last 1/4 cup flour and tip the dough out. Knead it for 5 minutes, until it's smooth and springs back slowly when you poke it.",
+  "Put it back in the bowl, cover it with plastic wrap and leave it somewhere warm for 1 1/2 to 2 hours, until it's doubled. If you're making it the night before, put the covered bowl in the fridge once it's doubled and take it out 1 hour before you shape it.",
+  "About 45 minutes before you want to eat, put a large baking sheet upside down on the lowest rack, or a pizza stone if you have one, and heat the oven to 500°F. Give it a full 30 minutes to get hot.",
+  "Meanwhile, grate the 12 oz mozzarella (about 3 cups) and 1/4 cup of the Parmesan.",
+  "Melt the 1 tbsp butter in a small bowl in the microwave, about 20 seconds. Stir in the last 1 tbsp olive oil and the 1/4 tsp garlic powder.",
+  "Put the 1 tsp red pepper flakes in a small bowl for the table.",
+  "Taste the pizza sauce. If it's flat, stir in a pinch of salt.",
+  "Tip the dough onto the floured counter and cut it in half. Shape each half into a ball and cover one with a clean kitchen towel.",
+  "Lay a sheet of parchment on the counter and press the other ball flat on it. Stretch it out from the middle with your fingertips into a 12 inch round, leaving the outer 1/2 inch a little thicker. If it keeps shrinking back, leave it for 5 minutes and try again.",
+  "Spread 1/2 cup of the sauce over it with the back of a spoon, leaving a 1 inch border bare. Scatter over half the mozzarella, 1 tbsp of the Parmesan and 1/4 tsp of the Italian seasoning. Lay half the pepperoni over the top.",
+  "Brush the bare border with half the garlic butter and sprinkle it with 1 tbsp of the Parmesan.",
+  "Slide the pizza on its parchment onto the hot baking sheet. Bake for 8 to 11 minutes, until the crust is deep golden, the cheese is bubbling with brown spots and the edges of the pepperoni have curled up and crisped.",
+  "While it bakes, stretch and top the second pizza the same way on a fresh sheet of parchment, with the rest of the sauce, mozzarella, Italian seasoning, pepperoni, garlic butter and Parmesan.",
+  "Slide the first pizza onto a cutting board and pull out the parchment. Put the second pizza in to bake the same way.",
+  "Let the first pizza sit for 2 minutes, then cut it into 8 slices. Cut the second one the same way when it comes out.",
+  "Serve with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "make the dough at least 2 hours ahead so it has time to rise, or the night before and keep it in the fridge",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "Both read versions make a yeasted dough, let it rise until doubled, stretch it by hand rather than rolling it and bake it on a preheated stone or pan in a very hot oven with sauce, mozzarella and pepperoni. Oh Sweet Basil (the lead, and the only one with 20 or more ratings) makes a big batch of dough that keeps in the fridge for days, heats the pan at 500°F to 550°F, uses only a little sauce, adds Parmesan and Italian seasoning under the pepperoni and brushes the crust with butter, olive oil, Parmesan and garlic salt before a 6 to 8 minute bake. Lauren's Latest makes two 12 inch pizzas from 3 cups of bread flour, uses more sauce and cheese and bakes them at 475°F for 9 to 12 minutes. This one makes two 12 inch pizzas from a dough the size of Lauren's Latest and finishes the crust the lead's way, with garlic powder in place of garlic salt.",
+ "sources": [
+  {
+   "name": "Oh Sweet Basil",
+   "title": "Perfect Pepperoni Pizza Recipe",
+   "url": "https://ohsweetbasil.com/pepperoni-pizza-recipe/",
+   "rating": 3.34,
+   "rating_count": 39,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lauren's Latest",
+   "title": "Pepperoni Pizza Recipe with Homemade Pizza Dough",
+   "url": "https://laurenslatest.com/pepperoni-pizza-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

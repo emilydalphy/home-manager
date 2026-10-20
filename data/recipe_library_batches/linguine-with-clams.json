@@ -1,0 +1,46 @@
+{
+ "dish_name": "Linguine with Clams",
+ "cuisine": "Italian",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Littleneck clams", "qty": "2 lb", "category": "meat/seafood"},
+  {"item": "Linguine", "qty": "1 lb", "category": "pantry"},
+  {"item": "Shallots", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Olive oil", "qty": "6 tbsp", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "6 tbsp chopped"},
+  {"item": "Unsalted butter", "qty": "1 package", "category": "dairy", "cook_qty": "3 tbsp"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Scrub the 2 lb clams under cold running water. Throw out any with cracked shells, and any open ones that don't close when you tap them.",
+  "Fill a large pot with 4 quarts of water, add the 1 tbsp salt and bring it to a boil over high heat.",
+  "Meanwhile, finely chop the 2 shallots and coarsely chop the 6 garlic cloves. Chop the parsley leaves until you have 6 tbsp.",
+  "Zest the lemon until you have 1 tsp. Squeeze 1 tbsp of juice from one half and cut the other half into wedges.",
+  "Add the 1 lb linguine to the boiling water and cook it for 2 minutes less than the package says. It finishes cooking in the sauce.",
+  "While the pasta cooks, heat the 6 tbsp olive oil in your largest skillet or a wide pot over medium high. Add the shallots and cook for 1 to 2 minutes, stirring, until they're soft.",
+  "Add the garlic and cook for 30 seconds, stirring, until it smells fragrant and is just starting to turn golden.",
+  "Pour in the 1 cup wine, then add the clams and 4 tbsp of the parsley. Cover the pan and cook for 6 to 8 minutes, giving it a shake now and then, until the shells have opened. Throw out any clams that stay shut.",
+  "Scoop out 1/2 cup of the pasta water, then drain the linguine. Don't rinse it.",
+  "Add the linguine to the pan with the clams and turn the heat to medium. Toss it with tongs for 1 to 2 minutes, until the pasta has soaked up most of the liquid and is just tender. If it looks dry, add a splash of the pasta water.",
+  "Take the pan off the heat. Add 3 tbsp butter, the lemon zest, the 1 tbsp lemon juice and the last 2 tbsp parsley, and toss until the butter has melted into the sauce.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze from one of the lemon wedges.",
+  "Serve with the lemon wedges, with the 1/2 tsp red pepper flakes in a small bowl on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Once Upon a Chef (the lead, and the only version with 20 or more ratings) steams fresh littlenecks open in white wine over shallot, garlic and chili flakes, finishes the linguine in the pan, and adds butter, lemon zest and juice off the heat. Spend With Pennies makes it from three cans of chopped clams: it simmers the clam juice with wine, onion, celery and basil, then stirs the clams in for the last 2 to 3 minutes. Cooking My Dreams soaks fresh clams in salted water to purge the sand and lifts most of the shells out before serving. This one follows the lead and puts the chili flakes on the side. For a pantry night, three 6.5 oz cans of chopped clams can stand in: simmer their juice with the wine and add the clams at the very end.",
+ "sources": [
+  {"name": "Once Upon a Chef", "title": "Linguine with Clams", "url": "https://www.onceuponachef.com/recipes/linguini-with-clams.html", "rating": 4.84, "rating_count": 242, "read": true, "lead": true},
+  {"name": "Spend With Pennies", "title": "Linguine with Clam Sauce", "url": "https://www.spendwithpennies.com/linguine-with-clam-sauce/", "rating": 4.6, "rating_count": 5, "read": true, "lead": false},
+  {"name": "Cooking My Dreams", "title": "Linguine alle Vongole (Pasta with Clams)", "url": "https://cookingmydreams.com/?p=14930", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

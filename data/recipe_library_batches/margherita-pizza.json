@@ -1,0 +1,97 @@
+{
+ "dish_name": "Margherita Pizza",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Pizza dough",
+   "qty": "2 lb",
+   "category": "other"
+  },
+  {
+   "item": "Whole peeled tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh mozzarella",
+   "qty": "1 lb",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornmeal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "If the dough is in the fridge, take it out at least 1 hour ahead. Cut it into 2 equal pieces and leave them covered on the counter. Cold dough keeps shrinking back when you stretch it.",
+  "Put a rack in the lowest position and heat the oven to 500°F.",
+  "Meanwhile, tip the tomatoes and their juice into a bowl and crush them with your hands until there are no big pieces left.",
+  "Finely grate the garlic clove into the tomatoes and stir in 1 tbsp of the olive oil and 1/4 tsp of the salt. Taste it, and add a pinch more salt if it's flat.",
+  "Tear the 1 lb mozzarella into bite sized pieces and spread them out on a plate lined with paper towel. Pat the tops dry, or the middle of the pizza comes out soggy.",
+  "Put the 1 tsp red pepper flakes in a small bowl for the table.",
+  "Sprinkle 1 tbsp of the cornmeal over a large baking sheet. Lay one piece of dough on it and stretch it out from the middle with your fingertips into a 12 inch round or a long oval about 1/4 inch thick, leaving the edge a little thicker.",
+  "Spread half the sauce over the dough with the back of a spoon, leaving a 1 inch border bare. Scatter half the mozzarella over the sauce.",
+  "Bake on the lowest rack for 10 to 12 minutes, until the crust is browned underneath and the cheese has melted and bubbled with a few golden spots.",
+  "While it bakes, sprinkle the other 1 tbsp cornmeal over a second baking sheet and stretch and top the second pizza the same way.",
+  "Take the first pizza out and put the second one in to bake the same way.",
+  "Scatter a big handful of the basil leaves over the hot pizza. Drizzle it with 1/2 tbsp of the olive oil and sprinkle it with a pinch of salt.",
+  "When the second pizza comes out, finish it the same way with more basil, the last 1/2 tbsp olive oil and a pinch of salt.",
+  "Cut them into slices and serve with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions spread a plain tomato sauce over stretched dough, top it with fresh mozzarella, bake it as hot as the oven goes and finish with fresh basil and olive oil. Love and Lemons (the lead, and the only version with 20 or more ratings) blends canned San Marzano tomatoes with olive oil, garlic and salt, stretches the dough on a cornmeal dusted baking sheet, bakes at 500°F for 10 to 12 minutes and adds the basil, a drizzle of oil and red pepper flakes after baking. The East Coast Kitchen crushes the tomatoes by hand with olive oil and basil, bakes on a pizza stone heated for 30 minutes and puts some basil on before baking. This one follows the lead, crushes the tomatoes by hand so no food processor is needed, makes two pizzas for four and puts the red pepper flakes on the side.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Margherita Pizza",
+   "url": "https://www.loveandlemons.com/margherita-pizza/",
+   "rating": 4.79,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The East Coast Kitchen",
+   "title": "Homemade Margherita Pizza",
+   "url": "https://theeastcoastkitchen.com/homemade-margherita-pizza/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

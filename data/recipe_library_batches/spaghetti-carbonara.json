@@ -1,0 +1,77 @@
+{
+ "dish_name": "Spaghetti Carbonara",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Pancetta",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil over high heat.",
+  "Meanwhile, cut the 6 oz pancetta into small strips about 1/4 inch thick, if it isn't already diced. Finely grate all 4 oz of the parmesan and put about 1/4 cup of it aside for the table.",
+  "Crack 2 of the eggs into a large heatproof bowl. Separate the other 2 and add just the yolks. Whisk until smooth, then stir in the rest of the grated parmesan and 1/4 tsp of the pepper.",
+  "Add the 2 tsp salt and the 1 lb spaghetti to the boiling water. Cook it for the time on the package, stirring now and then, until it's tender with a little bite.",
+  "While it cooks, put the pancetta in a large nonstick skillet over medium high, with no oil. Cook it for 4 to 5 minutes, stirring now and then, until the fat has melted out and the edges are golden and crisp. Turn off the heat and leave the pancetta and its fat in the pan.",
+  "Just before the spaghetti is done, scoop out 1 cup of the pasta water. Drain the spaghetti.",
+  "Tip the hot spaghetti into the skillet and toss it in the pancetta fat.",
+  "Tip the spaghetti, the pancetta and every bit of fat into the bowl with the eggs. Pour in 1/2 cup of the pasta water and stir hard with tongs for about 1 minute, until the sauce goes from thin and watery to creamy and clings to the strands. Do this in the bowl, away from the stove. In the hot pan the eggs scramble.",
+  "If it's too thick, loosen it with a splash more of the pasta water.",
+  "Taste it. If it's flat, add a pinch more salt. Serve right away in warm bowls, with the parmesan you kept and the rest of the pepper over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions crisp cured pork in its own fat with no oil, beat egg with grated cheese and pepper, and toss the hot pasta through it with pasta water away from direct heat so the eggs turn creamy rather than scrambled. RecipeTin Eats uses 2 eggs plus 2 yolks and parmigiano for 400 g spaghetti, says pancetta or bacon works in place of guanciale, and mixes everything in the egg bowl for a minute. Vincenzo's Plate uses 1 egg plus 3 yolks with pecorino, and finishes the pasta in the pan set over the steaming pot. This one follows RecipeTin Eats with pancetta and parmesan.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Carbonara (real)",
+   "url": "https://www.recipetineats.com/carbonara/",
+   "rating": 4.95,
+   "rating_count": 227,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vincenzo's Plate",
+   "title": "Spaghetti alla Carbonara Recipe",
+   "url": "https://www.vincenzosplate.com/spaghetti-carbonara/",
+   "rating": 4.92,
+   "rating_count": 50,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

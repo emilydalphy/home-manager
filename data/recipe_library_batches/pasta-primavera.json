@@ -1,0 +1,134 @@
+{
+ "dish_name": "Pasta Primavera",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Penne",
+   "qty": "1 lb",
+   "category": "pantry",
+   "cook_qty": "10 oz"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Asparagus",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow squash",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Pecorino Romano",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil over high heat and add 2 tsp of the salt.",
+  "Meanwhile, snap the woody ends off the asparagus and cut the spears into 1 inch pieces. Slice the zucchini and the squash into thin half moons. Thinly slice half the red onion.",
+  "Thinly slice the 4 garlic cloves and halve the cherry tomatoes. Finely grate the 3 oz pecorino, squeeze the juice from the lemon and pick the leaves off the basil.",
+  "Add 10 oz of the penne to the boiling water and cook it for the time on the package, until it's tender with a little bite. Tip 1/2 cup of the frozen peas into the pot for the last minute.",
+  "While the pasta cooks, heat 2 tbsp of the olive oil in a large, deep skillet over medium high. Add the asparagus and onion with 1/2 tsp of the salt and cook for about 2 minutes, stirring, until the asparagus turns bright green.",
+  "Add the zucchini and squash with the last 1/2 tsp salt and the 1/4 tsp pepper. Cook for about 3 minutes, stirring now and then, until they're just tender and a few edges are golden.",
+  "Add the garlic and tomatoes and cook for about 1 minute, until the garlic smells fragrant and the tomatoes start to soften. Turn off the heat.",
+  "Just before draining, scoop out 1 cup of the pasta water. Drain the penne and peas and tip them into the skillet.",
+  "Add most of the pecorino, the lemon juice and 1/4 cup of the pasta water. Toss until the cheese melts into a light sauce that coats the pasta. If it looks dry, add another splash of pasta water.",
+  "Tear in the basil leaves and toss once more.",
+  "Taste it. If it's flat, add a pinch more salt or a little more of the pasta water. Serve drizzled with the last 1 tbsp olive oil and topped with the rest of the pecorino, with the red pepper flakes on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook the pasta while spring vegetables cook quickly in olive oil in a wide pan, then toss everything together with cheese and a little pasta water. Love and Lemons uses penne, zucchini, yellow squash, asparagus, cherry tomatoes, red onion and peas with pecorino, lemon juice and lots of basil, and keeps it cream free. Cooking Classy adds the vegetables in stages by how long they take and loosens it with pasta water and lemon, while RecipeTin Eats makes the richer Le Cirque style with a butter, cream and parmesan sauce and toasted pine nuts. This one follows Love and Lemons, cooking the vegetables in stages and using pasta water to bring the sauce together.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Pasta Primavera",
+   "url": "https://www.loveandlemons.com/pasta-primavera/",
+   "rating": 4.98,
+   "rating_count": 111,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Pasta Primavera",
+   "url": "https://www.cookingclassy.com/pasta-primavera/",
+   "rating": 4.95,
+   "rating_count": 85,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pasta Primavera",
+   "url": "https://www.recipetineats.com/pasta-primavera/",
+   "rating": 4.94,
+   "rating_count": 32,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
