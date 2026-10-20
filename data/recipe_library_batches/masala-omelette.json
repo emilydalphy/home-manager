@@ -1,0 +1,43 @@
+{
+ "dish_name": "Masala Omelette",
+ "cuisine": "Indian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Green bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Roma tomato", "qty": "1", "category": "produce"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Sandwich bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Finely chop half the onion and a quarter of the bell pepper. Seed the tomato and chop it finely. Finely chop the green chili and 1/4 cup of the cilantro.",
+  "Put all the chopped vegetables, the chili and the cilantro in a large bowl. Stir in the 1/2 tsp salt, 1/4 tsp turmeric, 1/4 tsp garam masala and 1/4 tsp black pepper.",
+  "Crack in the 8 eggs and beat with a fork for about a minute, until they're frothy and there are no streaks of white left.",
+  "Heat 1 1/2 tsp of the oil in an 8 or 9 inch nonstick pan over medium. Don't let it get very hot, or the outside browns before the middle sets.",
+  "Stir the bowl and pour in a quarter of the mixture, about 3/4 cup. Tilt the pan so the egg spreads to the edges. Cook for about 2 minutes, until the edges are set and the underside is light golden.",
+  "Flip it and cook the other side for about 1 minute, until there's no wet egg left. Fold it in half and slide it onto a plate.",
+  "Make the other 3 the same way, with 1 1/2 tsp of oil each time. Stir the bowl before each one so the vegetables don't sink.",
+  "While the last omelette cooks, toast 8 slices of the bread.",
+  "Serve the omelettes hot with the toast."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three beat the eggs with finely chopped onion, green chili and cilantro and cook them in a little oil over medium, flipping once. Swasthi's adds bell pepper, tomato, turmeric and salt, beats the eggs until frothy and keeps the pan from getting too hot so the omelette cooks through before it browns; Sailu's Food uses shallots, a splash of milk, black pepper, turmeric and garam masala and flips it for only a few seconds; Go Sum It Up adds ginger, garlic and Kashmiri chili and folds it into a half moon. This follows Swasthi's mix with Sailu's garam masala and pepper, made as four 2 egg omelettes. Swasthi's version leads on rating (5.0 against 4.4), though Sailu's has more ratings.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Omelette recipe", "url": "https://www.indianhealthyrecipes.com/omelette/", "rating": 4.99, "rating_count": 67, "read": true, "lead": true},
+  {"name": "Sailu's Food", "title": "Masala Omelette", "url": "https://www.sailusfood.com/masala-omelette-recipe-breakfast-india/", "rating": 4.4, "rating_count": 271, "read": true, "lead": false},
+  {"name": "Go Sum It Up", "title": "Masala Omelette Recipe | Indian Masala Omelette Recipe", "url": "https://gosumitup.com/indian-masala-omelette-recipe-masala-omelet", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

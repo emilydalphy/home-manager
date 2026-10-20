@@ -1,0 +1,47 @@
+{
+ "dish_name": "Mongolian Beef",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Flank steak", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Carrot", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Fresh ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "1 1/2 tsp"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Low-sodium soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "1 tbsp", "category": "dairy"},
+  {"item": "Sesame seeds", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sriracha", "qty": "1 bottle", "category": "pantry"},
+  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot.",
+  "Slice the 1.5 lb flank steak against the grain into strips about 1/4 inch thick. Put them in a bowl, add the 1/3 cup cornstarch and toss until every strip is coated.",
+  "Peel the carrot and cut it into thin matchsticks. Slice the red pepper into thin strips. Cut 4 of the green onions into 1 inch pieces.",
+  "Grate 1 1/2 tsp of the ginger and the 6 garlic cloves into a bowl. Stir in 1/2 cup brown sugar, 1/2 cup water and 1/2 cup low-sodium soy sauce until the sugar dissolves. This is the sauce.",
+  "Heat 1 tbsp of the oil and the 1 tbsp butter in a large skillet or wok over medium-high. When the butter foams, add the carrot and pepper and stir-fry for 3 to 4 minutes, until they're crisp-tender. Transfer them onto a plate.",
+  "Turn the heat up to high and add 1 tbsp of the oil. When it shimmers, lay in half the beef in one layer and leave it for 2 minutes, until the underside is crisp and brown. Flip the strips and cook the other side for 2 minutes. Move them to the plate with the vegetables.",
+  "Add the last 1 tbsp oil and cook the rest of the beef the same way.",
+  "Put all the beef and vegetables back in the pan with the green onions. Stir the sauce and pour it in. Turn the heat down to medium low and simmer for about 3 minutes, stirring, until the sauce is thick and glossy and coats the beef.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Scatter the 1 tsp sesame seeds over the top.",
+  "Serve over the rice, with the sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three coat thin strips of flank steak in cornstarch, sear or shallow fry them until crusty, then toss them in a brown sugar and soy sauce glaze with ginger, garlic and green onions. Natasha's Kitchen, the lead, stir-fries carrot and red pepper in butter and oil first, sears the beef in batches and lets the cornstarch on the beef thicken the sauce, with sriracha stirred in. RecipeTin Eats marinates the beef for 10 minutes and adds chicken broth and Chinese cooking wine to the sauce, and Once Upon a Chef tenderizes the beef with baking soda for an hour, adds dark soy and dried chillies and thickens the sauce with a slurry. This one scales Natasha's to 1.5 lb of beef and puts the sriracha on the table.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Mongolian Beef", "url": "https://natashaskitchen.com/mongolian-beef/", "rating": 5.0, "rating_count": 287, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Crispy Sticky Mongolian Beef", "url": "https://www.recipetineats.com/crispy-sticky-mongolian-beef/", "rating": 4.93, "rating_count": 125, "read": true, "lead": false},
+  {"name": "Once Upon a Chef", "title": "Mongolian Beef", "url": "https://www.onceuponachef.com/recipes/mongolian-beef.html", "rating": 4.66, "rating_count": 26, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

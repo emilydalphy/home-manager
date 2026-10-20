@@ -1,0 +1,51 @@
+{
+ "dish_name": "Pork Chile Verde",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 180,
+ "ingredients": [
+  {"item": "Boneless pork shoulder", "qty": "2 lb", "category": "meat/seafood"},
+  {"item": "Tomatillos", "qty": "1 lb", "category": "produce"},
+  {"item": "Poblano peppers", "qty": "2", "category": "produce"},
+  {"item": "Jalapeños", "qty": "2", "category": "produce"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Chicken stock", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Mexican oregano", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Lime", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Pull the husks off the 1 lb tomatillos and rinse off the sticky coating. Put them on a rimmed baking sheet with the 2 poblanos and roast for 15 minutes.",
+  "Meanwhile, cut the 2 lb pork into 1 1/2 inch chunks. Trim off any thick pieces of fat, but leave a little on each chunk. Pat them dry and toss them with 1 tsp of the salt and the 1/2 tsp pepper.",
+  "Turn the poblanos over and roast for 15 minutes, until their skins are blistered and blackened in spots and the tomatillos are soft and slumped. If the tomatillos start to burst before then, take them out early.",
+  "Heat the 2 tbsp oil in a Dutch oven over medium high. Add half the pork in a single layer and leave it alone for 3 to 4 minutes, until it's browned underneath and lets go of the pot. Turn the pieces and brown the other side for 3 to 4 minutes. Move them to a plate and brown the rest the same way.",
+  "While the pork browns, peel the onion and cut it into quarters. Stem and seed 1 of the jalapeños. Put them in a blender with the 3 garlic cloves and half the bunch of cilantro, with the thick bottom stems twisted off.",
+  "When the poblanos are cool enough to touch, pull off as much skin as you can, cut off the tops and scrape out the seeds. Add them to the blender with the tomatillos and their juices and blend until smooth.",
+  "Put all the pork back in the pot and turn the heat to medium. Sprinkle in the 2 tsp oregano and 1/4 tsp cumin and stir for 30 seconds, until they smell fragrant. Pour in 1/2 cup of the stock with 1/2 tsp of the salt and scrape up the browned bits from the bottom as it bubbles.",
+  "Pour in the green sauce. Pour 1 cup of the stock into the blender, swirl it around and add that to the pot too. Bring it to a boil, then turn the heat to low, cover and simmer for 2 to 2 1/2 hours, stirring now and then.",
+  "Check the pork at 2 hours. It's ready when a chunk pulls apart easily with a fork. If you have a thermometer, that's about 195°F in the middle of a chunk. If it's still firm, cover it and give it another 20 to 30 minutes.",
+  "About 30 minutes before the pork is done, rinse the 1 1/2 cups rice and put it in a saucepan with 2 1/4 cups water and the last 1/4 tsp salt. Bring it to a boil, cover, turn the heat to low and cook for 18 minutes. Take it off the heat and leave it covered for 5 minutes.",
+  "Chop a handful of the remaining cilantro and cut the lime into wedges. Thinly slice the other jalapeño and put it in a small bowl for the table.",
+  "Taste the chile verde. If it's flat, add a pinch more salt, or a squeeze of the lime.",
+  "Serve over the rice with the cilantro scattered on top, with the lime wedges and sliced jalapeño on the side.",
+  "Leftovers keep in the fridge for up to 4 days. Warm them over low heat with a splash of water and use them in burritos or over rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown cubed pork shoulder and braise it in a tomatillo and green chile sauce for 2 1/2 to 3 hours, until it falls apart. Mexican Please roasts the tomatillos and poblanos at 400°F, blends them raw with onion, jalapeño, garlic and cilantro, and seasons with Mexican oregano and a little cumin, which this version follows with one seeded jalapeño in the pot and the other at the table. Lemon Blossoms sautés the onion, chiles and tomatillos in the pork fat with cumin, oregano and coriander before blending them with broth, cilantro and lime juice, and Nutmeg Nanny uses broiled tomatillos and roasted Hatch chiles. All serve it over rice or with tortillas.",
+ "sources": [
+  {"name": "Mexican Please", "title": "Chile Verde", "url": "https://www.mexicanplease.com/chili-verde-recipe/", "rating": 4.06, "rating_count": 87, "read": true, "lead": true},
+  {"name": "Lemon Blossoms", "title": "Pork Chile Verde Recipe", "url": "https://www.lemonblossoms.com/blog/pork-chile-verde/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false},
+  {"name": "Nutmeg Nanny", "title": "Pork Chile Verde", "url": "https://www.nutmegnanny.com/pork-chile-verde/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

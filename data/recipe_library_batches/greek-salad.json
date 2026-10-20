@@ -1,0 +1,44 @@
+{
+ "dish_name": "Greek Salad",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Tomatoes", "qty": "3", "category": "produce"},
+  {"item": "Persian cucumbers", "qty": "4", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Green bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Feta cheese", "qty": "1 block (8 oz)", "category": "dairy"},
+  {"item": "Kalamata olives", "qty": "1 jar", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Dried oregano", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "to taste", "category": "pantry"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Extra virgin olive oil", "qty": "6 tbsp", "category": "pantry"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Mince the garlic clove and put it in a jar with 1 tsp of the oregano, the 1/4 tsp salt, a few grinds of pepper, 3 tbsp red wine vinegar and the 6 tbsp olive oil. Put the lid on and shake it until it's well mixed. Set it aside for 20 minutes while you cut the vegetables.",
+  "Cut each of the 3 tomatoes into 6 wedges, then cut each wedge into 3 or 4 chunks. If they're very watery, scoop out the seeds with a teaspoon.",
+  "Slice the 4 cucumbers into rounds about 1/4 inch thick.",
+  "Peel half the onion and slice it thinly into rings. Wrap the other half for another day.",
+  "Cut the green pepper in half, pull out the seeds and white ribs, and cut it into short strips.",
+  "Cut the block of feta into 1/2 inch cubes.",
+  "Put the tomatoes, cucumbers, onion, pepper, feta and 3/4 cup olives in a large bowl and sprinkle the last 1 tsp oregano over them.",
+  "Shake the dressing again, pour it over the salad and toss it gently so the feta stays in pieces. Taste a piece of tomato, and add a pinch more salt if it's flat.",
+  "Serve right away with the pita."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three use tomato, cucumber, red onion, green pepper, Kalamata olives and feta with olive oil and oregano, and no lettuce. RecipeTin Eats shakes a garlic, oregano and red wine vinegar dressing in a jar and lets it sit 20 minutes, then cubes the feta and tosses everything together. My Greek Dish and Super Golden Bakes dress the vegetables with oil, a little vinegar and salt and set the feta on top as a whole slab with oregano over it; Super Golden Bakes rests the salad 15 to 20 minutes so the tomatoes release their juice. This one follows RecipeTin Eats.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Greek Salad with Homemade Greek Salad Dressing", "url": "https://www.recipetineats.com/greek-salad/", "rating": 4.97, "rating_count": 32, "read": true, "lead": true},
+  {"name": "My Greek Dish", "title": "Traditional Greek Salad recipe (Horiatiki / Xoriatiki)", "url": "https://www.mygreekdish.com/recipe/greek-feta-salad/", "rating": 4.6, "rating_count": 526, "read": true, "lead": false},
+  {"name": "Super Golden Bakes", "title": "Traditional Greek Salad (Horiatiki Salata)", "url": "https://www.supergoldenbakes.com/greek-salad-horiatiki/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

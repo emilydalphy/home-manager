@@ -1,0 +1,104 @@
+{
+ "dish_name": "Buckwheat Galettes",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Buckwheat flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "9",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sliced deli ham",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Comté cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead: whisk the 1 cup buckwheat flour and 1/2 tsp salt in a big bowl. Whisk in 2 3/4 cups cold water a little at a time, then 1 of the eggs, until there are no lumps. Cover it and put it in the fridge.",
+  "Heat the oven to 375°F and line two baking sheets with parchment. Melt the 2 tbsp butter in a small bowl.",
+  "Coarsely grate the 8 oz Comté. Whisk the batter again. It should be thin and pour easily, and coat a spoon in a thin layer. Whisk in a splash more water if it's thicker.",
+  "Heat a 10 inch nonstick or cast iron pan over medium high. Dip a folded paper towel in the melted butter and wipe a thin coat over the pan.",
+  "Pour in a generous 1/3 cup batter and tilt and swirl the pan straight away so it spreads into a thin circle about 9 inches across.",
+  "Cook it for about 1 minute, until the top looks dry and the edge starts to curl and turn lacy. Flip it with a thin spatula and cook the other side for 30 seconds, then slide it onto a plate.",
+  "Butter the pan again and repeat with the rest of the batter, stacking the galettes as you go. You'll get 8. The first one often tears, so don't worry about it. Turn the heat down a little if they brown too fast.",
+  "Build them one at a time on a lined sheet. Lay a galette down with the lacier side underneath, put a slice of ham in the middle and scatter an eighth of the cheese over the ham.",
+  "Crack 1 of the remaining 8 eggs onto the ham and spread the white out a little with a fork. Fold the four sides in over the edge of the filling so you get a square with the yolk showing in the middle. Slide it to one side and build the next. Four squares fit on each sheet.",
+  "Brush the folded edges of all 8 with the last of the butter.",
+  "Bake for 12 to 15 minutes, until the whites are set, the yolks still wobble and the cheese has melted. Swap the sheets top to bottom halfway through.",
+  "Grind black pepper over the eggs and serve two galettes each, straight from the oven."
+ ],
+ "advance_prep_notes": "Make the batter the night before, or at least 1 hour ahead, so it can rest in the fridge.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All four rest a thin buckwheat batter, cook it into large lacy crêpes, then fill each with ham, cheese and a whole egg and fold the sides in to a square with the yolk showing. Unpeeled Journal keeps the Breton batter of buckwheat, water, salt and one egg, rests it at least an hour, and either finishes each galette under a lid in the pan or bakes a trayful at 375°F for 15 minutes, which is the way taken here for four people. Mission Food blends a richer batter with milk and melted butter and rests it 2 hours, Food Nouveau mixes in some white flour and fries the egg separately, and GialloZafferano adds olive oil to the batter and finishes each one in the pan. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for French) has no galette, so the read version with the most ratings leads.",
+ "sources": [
+  {
+   "name": "Unpeeled Journal",
+   "title": "French Ham and Cheese Galettes Complètes",
+   "url": "https://unpeeledjournal.com/authentic-french-ham-egg-cheese-buckwheat-galette-crepe-complete/",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "GialloZafferano",
+   "title": "Complete Breton Galette",
+   "url": "https://www.giallozafferano.com/recipes/complete-breton-galette.html",
+   "rating": 3.9,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mission Food",
+   "title": "Galette Complète (Ham, Egg, and Cheese Buckwheat Crêpe)",
+   "url": "https://mission-food.com/galette-complete-ham-egg-and-cheese-buckwheat-crepe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Nouveau",
+   "title": "Savory Buckwheat Crepes with Egg, Ham, and Cheese",
+   "url": "https://foodnouveau.com/?p=7591",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

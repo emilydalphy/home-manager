@@ -1,0 +1,108 @@
+{
+ "dish_name": "Elote",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Corn on the cob",
+   "qty": "4 ears",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Cotija cheese",
+   "qty": "2 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Chipotle chile powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the grill to medium-high, about 400°F. No grill? Heat a grill pan over medium-high instead.",
+  "While it heats, mince the garlic clove. In a small bowl, whisk it with 2 tbsp mayonnaise, 2 tbsp crema, the juice of half the lime, 1/4 tsp salt and a pinch of sugar.",
+  "Cut the other half of the lime into wedges.",
+  "Finely crumble the 2 oz cotija onto a large flat plate. Chop about 3 tbsp of the cilantro and mix it in with the cheese.",
+  "Shuck the 4 ears of corn and pull off the silk. Lay them right on the grates, close the lid and grill for about 10 minutes, turning them every few minutes, until the kernels are tender and charred in spots all the way around.",
+  "Let the corn cool for 2 or 3 minutes, until you can hold it.",
+  "Brush each ear all over with the crema sauce, then roll it in the cheese and cilantro so it sticks.",
+  "Sprinkle each ear with a small pinch of the chipotle powder, and put the rest in a little bowl for the table.",
+  "Serve warm with the lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three grill shucked corn over medium-high heat for 10 to 15 minutes, turning it until it's charred in spots, then coat it in something creamy and finish with crumbled cotija, chile powder and lime. Once Upon a Chef makes a sauce of mayonnaise and sour cream with lime juice, garlic, salt and a little sugar, rolls the coated ears in cotija mixed with cilantro and dusts them with chipotle powder. Spend With Pennies brushes the corn with butter before the mayonnaise and uses ancho powder; Love and Lemons uses mayonnaise with lime juice and zest, and says a grill pan works too. This one follows Once Upon a Chef with Mexican crema in place of the sour cream, and the chile kept light with more on the table. Once Upon a Chef and Spend With Pennies tied on rating and count, so the first one read leads.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Grilled Mexican Street Corn (Elote)",
+   "url": "https://www.onceuponachef.com/recipes/grilled-mexican-street-corn-elote.html",
+   "rating": 5.0,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Mexican Street Corn (Elote)",
+   "url": "https://www.spendwithpennies.com/mexican-corn-elote/",
+   "rating": 5.0,
+   "rating_count": 26,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Elote Recipe (Grilled Mexican Street Corn)",
+   "url": "https://www.loveandlemons.com/elote-recipe/",
+   "rating": 4.94,
+   "rating_count": 45,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

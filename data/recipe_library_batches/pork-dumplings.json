@@ -1,0 +1,53 @@
+{
+ "dish_name": "Pork Dumplings",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 60,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Ground pork", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Round dumpling wrappers", "qty": "2 packages", "category": "frozen"},
+  {"item": "Napa cabbage", "qty": "1 head", "category": "produce"},
+  {"item": "Dried shiitake mushrooms", "qty": "1 bag", "category": "pantry"},
+  {"item": "Garlic chives", "qty": "1 bunch", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Light soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "4 tsp + 1/4 cup"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sesame oil", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground white pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Chinese black vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Chili oil", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put 10 of the dried shiitake mushrooms in a bowl and pour over enough boiling water to cover them. Leave them to soak for 20 minutes, until they're soft all the way through.",
+  "Meanwhile, finely chop enough of the cabbage to make 3 cups, about a quarter of the head. Put it in a bowl, toss it with the 1 tsp salt and set it aside for 15 minutes. It will go limp and give off water.",
+  "Finely chop enough of the garlic chives to make 1/2 cup. Mince the 2 garlic cloves and grate 1 tsp of the ginger.",
+  "Lift the mushrooms out of the water and squeeze them dry. Cut off the tough stems and finely chop the caps.",
+  "Grab the cabbage by the handful and squeeze out as much water as you can, then put it in a large bowl. Wet cabbage makes a soggy filling that's hard to seal.",
+  "Add the 1 lb pork, the mushrooms, chives, garlic and ginger, plus 4 tsp of the soy sauce, the 1 tbsp Shaoxing wine, 1 tsp sesame oil and 1/2 tsp white pepper. Mix it with your hands for about a minute, until it's evenly combined and a little sticky.",
+  "Set up to fold: a parchment lined tray, a small bowl of water and the wrappers under a damp towel so they don't dry out.",
+  "Hold a wrapper in your palm and run a wet finger around half the edge. Put a heaped tablespoon of filling in the middle, fold it into a half moon and pinch the top closed. Pleat along one side, pressing each pleat against the flat side, or simply press the edges together. Set it on the tray and cover the tray with the damp towel. Repeat until the filling is gone. That should be about 60.",
+  "Cook 40 of them tonight. To freeze the rest, put that tray in the freezer until they're hard, about 2 hours, then transfer them into a freezer bag. They keep for 3 months, and you can cook them straight from frozen.",
+  "Stir the remaining 1/4 cup soy sauce and the 2 tbsp black vinegar together in a small bowl for dipping. Put the chili oil on the table for anyone who wants heat.",
+  "Heat 2 tsp of the oil in a large nonstick skillet that has a lid, over medium high. Set 10 dumplings in the pan flat side down and press each one down gently. Cook for 2 to 3 minutes, until the bottoms are golden brown.",
+  "Pour 1/2 cup of water into the pan and put the lid on straight away. Stand back a little. It will spatter. Steam for 7 minutes, or 9 to 10 minutes if they're frozen.",
+  "Take the lid off and keep cooking for 1 to 2 minutes, until the water is gone and the bottoms are crisp again. Cut one open to check. You're cooking the filling to 160°F, so if you have a thermometer, check it there. No thermometer? The filling should be firm with no pink left.",
+  "Move them to a plate and cook the rest the same way, in batches of about 10 with 2 tsp oil and 1/2 cup water each time.",
+  "Taste a dumpling with the dipping sauce. If it's flat, add a pinch more salt to the sauce, or a splash more of the black vinegar.",
+  "Serve hot with the dipping sauce and the chili oil."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three salt or squeeze the napa cabbage before it goes into a fatty pork filling with ginger, garlic and soy, fold store bought round wrappers with a dab of water, and pan fry them flat side down before steaming with water under a lid. RecipeTin Eats (the lead) adds soaked dried shiitake and garlic chives, seasons with light soy, Chinese wine, sesame oil and white pepper, steams each batch for 7 minutes and serves soy with chili oil or black vinegar for dipping. Well Plated adds white wine vinegar and plenty of ginger to the filling and cooks from frozen for 6 to 8 minutes; The Woks of Life whips a ginger scallion puree into the pork and uses chives and an infused Sichuan peppercorn oil instead of cabbage. This one doubles the lead's filling to 1 lb pork, which makes about 60, and freezes the 20 not cooked tonight.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Chinese dumplings (Potstickers!)", "url": "https://www.recipetineats.com/potstickers-chinese-pan-fried-dumplings/", "rating": 4.99, "rating_count": 83, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Pork and Chive Dumplings", "url": "https://thewoksoflife.com/pork-chive-dumplings/", "rating": 4.94, "rating_count": 31, "read": true, "lead": false},
+  {"name": "Well Plated", "title": "Pork Dumplings", "url": "https://www.wellplated.com/pork-dumplings/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

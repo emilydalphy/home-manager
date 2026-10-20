@@ -1,0 +1,51 @@
+{
+ "dish_name": "Pork Gyros",
+ "cuisine": "Greek",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Pork tenderloin", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Dried thyme", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Dried rosemary", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Honey", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Salt", "qty": "1 3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Persian cucumbers", "qty": "3", "category": "produce"},
+  {"item": "Greek yogurt", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "1 1/2 cups"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other", "cook_qty": "4"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Romaine lettuce", "qty": "1 head", "category": "produce"}
+ ],
+ "instructions": [
+  "The night before, or at least 2 hours ahead: cut the pork tenderloin into thin strips about 1/4 inch thick. Put them in a bowl.",
+  "Mince 1 of the garlic cloves. Thinly slice half the red onion. Add both to the pork with 3 tbsp olive oil, 1 tbsp red wine vinegar, the 2 tsp thyme, the 2 tsp rosemary, the 2 tsp honey, 1 tsp of the salt and 1/4 tsp of the pepper.",
+  "Squeeze it all together with your hands until every strip is coated. Cover the bowl and put it in the fridge.",
+  "To make the tzatziki, grate the 3 cucumbers on the large holes of a box grater. Squeeze them a handful at a time in a clean kitchen towel until no more water comes out. Squeeze hard, or the tzatziki will be runny.",
+  "Grate the other 2 garlic cloves into a bowl. Add the cucumber, 1 1/2 cups of the Greek yogurt, 3 tbsp olive oil, 1 tbsp red wine vinegar and 1/2 tsp of the salt. Stir it together and put it in the fridge.",
+  "Heat the oven to 475°F (245°C).",
+  "Meanwhile, slice the 2 tomatoes, shred a few leaves of the lettuce, and slice the other half of the red onion as thin as you can.",
+  "Brush the 4 pitas on both sides with 2 tbsp olive oil, then sprinkle them with the 1 tsp oregano, the last 1/4 tsp salt and the last 1/4 tsp pepper.",
+  "Heat a large skillet over high until it's very hot. Add half the pork with its onions and marinade and spread it out in one layer.",
+  "Leave it alone for 2 minutes, until the underside is browned and crisp at the edges. Flip the strips and cook the other side for 2 minutes. You're cooking it to 145°F, so if you have a thermometer, check the thickest strip. No thermometer? Cut a strip open: it's done when it's white with only a blush of pink in the middle.",
+  "Transfer the pork onto a plate and cook the second half the same way.",
+  "While the second batch cooks, put the pitas straight on the oven rack for 1 to 2 minutes, until they're warm and soft.",
+  "Taste a strip of pork. If it's flat, sprinkle a pinch more salt over the pan.",
+  "Spread a big spoonful of tzatziki down the middle of each warm pita. Top with the pork, lettuce, tomato and sliced onion, then fold it closed and serve."
+ ],
+ "advance_prep_notes": "Marinate the pork at least 2 hours ahead, ideally the night before.",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "Both versions marinate pork in olive oil, garlic, onion, vinegar and dried herbs, cook it hot and fast, and wrap it in warm pita with tzatziki, tomato and red onion. My Greek Dish uses tenderloin strips with thyme, rosemary and a little honey, marinates for 2 hours or overnight, sears them a minute a side in a very hot pan and oils and seasons the pitas before warming them. Bon Appeteach marinates thin slices of pork butt in yogurt, lemon and warm spices, stacks them on a spit and smokes them for two hours. This one follows My Greek Dish at 4 servings, cooked in two batches so the pork browns.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Homemade Greek Pork Gyros Souvlaki recipe", "url": "https://www.mygreekdish.com/recipe/souvlaki-with-gyros/", "rating": 4.7, "rating_count": 813, "read": true, "lead": true},
+  {"name": "Bon Appeteach", "title": "Pork Gyros Recipe", "url": "https://www.bonappeteach.com/pork-gyros-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

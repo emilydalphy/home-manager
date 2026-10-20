@@ -1,0 +1,48 @@
+{
+ "dish_name": "Revithia",
+ "cuisine": "Greek",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 115,
+ "ingredients": [
+  {"item": "Dried chickpeas", "qty": "12 oz", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Crushed tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Feta", "qty": "6 oz", "category": "dairy"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "The night before, or at least 8 hours ahead: put the 12 oz chickpeas in a large bowl and cover them with cold water by a few inches. Leave them on the counter to soak.",
+  "Heat the oven to 375°F (190°C).",
+  "Drain the chickpeas and put them in a large pot with the 2 bay leaves. Cover them with fresh water by about 2 inches. Bring it to a boil over high, then turn it down to a steady simmer. Cook for 45 minutes to 1 hour, until a chickpea squashes easily between your fingers.",
+  "Meanwhile, finely chop the onion, dice the 2 carrots and grate or mince the 3 garlic cloves.",
+  "Put the onion and carrots in a 9 by 13 inch baking dish. Pour over the 1/3 cup olive oil, sprinkle on 1/2 tsp of the salt and stir. Roast for 10 to 15 minutes, until they're soft and golden at the edges.",
+  "Take the dish out and stir in the garlic, the crushed tomatoes, the 2 tsp oregano, the 1 tsp sugar, another 1/2 tsp of the salt and 1/4 tsp of the pepper. Roast for 20 minutes, until the sauce has thickened and darkened at the edges.",
+  "Drain the chickpeas and pick out the bay leaves. Stir the chickpeas into the sauce with 2 cups of water, the last 1 tsp salt and the last 1/4 tsp pepper.",
+  "Bake uncovered for 45 to 50 minutes, stirring once halfway, until the chickpeas are very soft and the top is browned at the edges. If it gets thicker than you like, stir in a splash of water.",
+  "Meanwhile, crumble the 6 oz feta and chop 1/4 cup of the parsley. Put the 1/4 tsp red pepper flakes in a small bowl for the table.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Spoon it into bowls and top with the feta and parsley. Serve with the crusty bread, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "Soak the chickpeas the night before, at least 8 hours ahead.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "All three soak dried chickpeas overnight and finish them slowly in the oven with plenty of olive oil and onion. Dimitra's Dishes boils the chickpeas with bay until tender, roasts onion and carrot in the baking dish, builds a tomato and oregano sauce there with a little sugar, then bakes it all with water and tops it with feta and parsley. The Sifnos versions are plainer: Oliveology bakes the soaked chickpeas covered in water with red onion, rosemary and oil for 2 to 3 hours and serves them with lemon, and iCookGreek adds a little tomato, garlic, rosemary and lemon slices. This one follows Dimitra's Dishes for 4, with a little more liquid so it eats as a soup.",
+ "sources": [
+  {"name": "Dimitra's Dishes", "title": "Revithada: Baked Chickpea Stew", "url": "https://www.dimitrasdishes.com/revithada/", "rating": 4.2, "rating_count": 23, "read": true, "lead": true},
+  {"name": "Oliveology", "title": "Revythada", "url": "https://oliveology.co.uk/revythada", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "iCookGreek", "title": "Baked chickpea soup (revithada)", "url": "https://en.icookgreek.com/recipes/item/baked-chickpea-soup-revithada", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,133 @@
+{
+ "dish_name": "Fattoush",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 7,
+ "ingredients": [
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F.",
+  "Split 2 of the pitas into thin rounds and cut them into 1 inch pieces. Stale pita works well here. Toss the pieces on a baking sheet with 2 tbsp of the olive oil and 1/4 tsp of the salt, and spread them out in a single layer.",
+  "Bake for 5 to 7 minutes, shaking the pan halfway, until they're golden and crisp. Leave them on the pan to cool.",
+  "Meanwhile, make the dressing. Squeeze 1/4 cup juice from the lemons into a jar. Add the remaining 6 tbsp olive oil, 1 tsp salt, 1/2 tsp of the sumac, 1 tsp pomegranate molasses and the 1/2 tsp dried mint, put the lid on and shake it until it's combined.",
+  "Chop the romaine into bite-size pieces. Cut the 3 tomatoes into chunks and slice the 3 cucumbers into half moons.",
+  "Seed the pepper and cut it into bite-size pieces. Thinly slice 6 of the radishes and half the onion.",
+  "Pick a big handful of leaves from the mint and from the parsley, and roughly chop them.",
+  "Put all the vegetables and herbs in a large bowl, pour over the dressing and toss well. If you're packing it for lunch, keep the dressing and the pita chips separate and toss them in just before you eat.",
+  "Add about three quarters of the pita chips and toss once more.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Serve right away, topped with the rest of the pita chips and the last 1/2 tsp sumac."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three toss romaine, tomato, cucumber, radish, onion, mint and parsley in a lemon, olive oil and sumac dressing with a little pomegranate molasses, and add crisp pita at the end. Plant Based Folk bakes the pita plain, adds bell pepper, purslane and dried mint, and crushes the bread over the top. RecipeTin Eats bakes oiled, salted pita squares at 425°F and adds garlic to the dressing. Zaatar and Zaytoun fries the bread and adds baby greens and pomegranate seeds. This one follows Plant Based Folk without the purslane, which is hard to find, and oils the pita the RecipeTin way.",
+ "sources": [
+  {
+   "name": "Plant Based Folk",
+   "title": "Authentic Fattoush Salad",
+   "url": "https://plantbasedfolk.com/fattoush-salad/",
+   "rating": 4.97,
+   "rating_count": 62,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Lebanese Fattoush",
+   "url": "https://www.recipetineats.com/lebanese-fattoush-salad/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Zaatar and Zaytoun",
+   "title": "Fattoush Salad",
+   "url": "https://zaatarandzaytoun.com/fattoush/",
+   "rating": 4.73,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,131 @@
+{
+ "dish_name": "Stuffed Shells",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Jumbo pasta shells",
+   "qty": "1 box (12 oz)",
+   "category": "pantry",
+   "cook_qty": "24 shells"
+  },
+  {
+   "item": "Whole milk ricotta",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "8 oz",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped, plus a little for the top"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Bring a large pot of water to a boil and add 2 tsp of the salt.",
+  "Meanwhile, finely chop the onion and mince the 3 garlic cloves.",
+  "Heat 1 tbsp of the olive oil in a medium saucepan over medium. Add the onion and cook for 4 to 5 minutes, stirring now and then, until it's soft and turning golden at the edges.",
+  "Add the garlic, the 1/4 tsp oregano and 1/4 tsp of the salt. Stir for about 30 seconds, until the garlic smells fragrant.",
+  "Pour in the whole jar of marinara and bring it to a gentle bubble. Let it simmer for 2 minutes, then take it off the heat. Taste it, and add a pinch more salt if it's flat.",
+  "Drop 24 of the shells into the boiling water and stir so they don't stick together. Cook them for 2 minutes less than the package says. They finish cooking in the oven.",
+  "While the shells cook, make the filling. Grate 1/2 cup of the Parmesan and chop 1/4 cup of the parsley. In a large bowl, stir together the ricotta, 1 1/4 cups of the mozzarella, the Parmesan, the chopped parsley, the egg, the last 3/4 tsp salt and the 1/4 tsp pepper until it's smooth.",
+  "Drain the shells and rinse them under cold water. Toss them with the other 1 tbsp olive oil. You need 20 whole shells, so set aside any that tore.",
+  "Spread the sauce over the bottom of a 9x13 inch baking dish.",
+  "Fill each shell with about 2 tbsp of the filling. Don't overstuff them. Set them open side up in the sauce in a single layer.",
+  "Scatter the remaining 3/4 cup mozzarella over the shells. Cover the dish tightly with foil.",
+  "Bake for 30 minutes, until the sauce is bubbling at the edges.",
+  "Take off the foil and bake for 10 minutes, until the cheese has melted and has a few golden spots.",
+  "Let it sit for 5 minutes. Chop a little more parsley and scatter it over the top.",
+  "Serve 5 shells to each plate, with plenty of the sauce spooned over.",
+  "To freeze it in portions, assemble it in 4 small foil or freezer containers instead of the big dish, 5 shells with their share of the sauce and cheese in each. Cover them tightly with foil and freeze for up to 3 months. Bake one from frozen, still covered, at 375°F for 45 to 50 minutes, then uncover it for 10 minutes, until it's bubbling and hot in the middle."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three boil jumbo shells, fill them with ricotta bound with an egg and Parmesan, set them in marinara in a 9x13 dish, top with mozzarella and bake covered, then uncovered or under the broiler to brown the cheese. Natasha's Kitchen (the lead) softens onion, garlic and oregano before the marinara goes in, puts mozzarella and parsley in the filling and bakes at 375°F for 30 minutes before a quick broil. Well Plated adds spinach and a pinch of nutmeg to the filling and tops it with Parmesan, and Averie Cooks wilts fresh spinach with garlic and freezes the shells assembled, either in the dish or in a bag. This one follows the lead at 20 shells for four and uncovers the dish for 10 minutes instead of broiling.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Stuffed Shells",
+   "url": "https://natashaskitchen.com/stuffed-shells-recipe/",
+   "rating": 4.99,
+   "rating_count": 395,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Stuffed Shells",
+   "url": "https://www.wellplated.com/stuffed-shells/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Averie Cooks",
+   "title": "Ricotta and Spinach Stuffed Shells",
+   "url": "https://www.averiecooks.com/ricotta-spinach-stuffed-shells/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

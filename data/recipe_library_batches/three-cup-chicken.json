@@ -1,0 +1,121 @@
+{
+ "dish_name": "Three Cup Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Chicken wings",
+   "qty": "2.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (3 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a pot, swishing it with your fingers and pouring off the water two or three times, until the water is only a little cloudy. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, if your wings are whole, cut them at the joints into drumettes and flats and throw away the tips. Pat the 2.5 lb of wings very dry with paper towels.",
+  "Peel the ginger and cut it into about 8 thin coins. Slice the 6 garlic cloves. Break the dried chili in half.",
+  "Pick the leaves off the basil and throw away the stems.",
+  "In a small bowl, stir together 1/4 cup Shaoxing wine, 1/4 cup warm water, 2 tbsp light soy sauce, 2 tsp dark soy sauce and 2 tsp sugar until the sugar dissolves.",
+  "Put the 1 tbsp sesame oil and 2 tbsp vegetable oil in a wok or a large lidded skillet with the ginger, garlic and chili. Set it over medium heat and cook for about 2 minutes, stirring now and then, until it sizzles and the garlic edges are just turning gold.",
+  "Turn the heat to high. Push the aromatics to the side and lay the wings in a single layer, then pile the aromatics on top of the chicken so they don't burn. Leave the wings alone for 3 to 4 minutes, until they're golden underneath.",
+  "Flip the wings and cook the other side for 3 minutes, until it's golden too.",
+  "Pour in the sauce and scrape up the browned bits from the bottom. Cover, turn the heat to medium low and simmer for 20 minutes, turning the wings once halfway.",
+  "Take off the lid and turn the heat to high. Cook for 4 to 6 minutes, stirring often, until the sauce is thick and sticky and coats the wings. Stay with it here. It goes from glaze to scorched quickly at the end.",
+  "You're cooking the wings to 175°F, so if you have a thermometer, check the thickest drumette near the bone. No thermometer? Cut into one: it's done when the juices run clear and there's no pink at the bone.",
+  "Take the pan off the heat, add the basil and toss for about 1 minute, until it wilts.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions warm ginger, garlic and dried chili in sesame oil before the chicken goes in, brown bone in wings, braise them covered in Shaoxing wine, soy and sugar, then reduce the sauce to a glaze and finish with basil. The Woks of Life uses a mix of sesame and vegetable oil, adds water, light and dark soy and a little sugar, and braises 15 to 20 minutes. Omnivore's Cookbook uses only sesame oil, fries the ginger slowly for 10 minutes and far more garlic, uses brown sugar and braises 40 minutes, and says boneless thighs work too. This one follows The Woks of Life's ratios and timing and keeps a single dried chili so the base stays mild.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Three Cup Chicken (San Bei Ji)",
+   "url": "https://thewoksoflife.com/three-cup-chicken/",
+   "rating": 4.99,
+   "rating_count": 53,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Three Cup Chicken (三杯鸡)",
+   "url": "https://omnivorescookbook.com/three-cup-chicken/",
+   "rating": 5.0,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

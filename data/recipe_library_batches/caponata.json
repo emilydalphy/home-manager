@@ -1,0 +1,53 @@
+{
+ "dish_name": "Caponata",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Eggplant", "qty": "1 (about 1 lb)", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Golden raisins", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sherry vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Capers", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Yellow onion", "qty": "1 small", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "1 stalk"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "3", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Baguette", "qty": "1", "category": "other"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F and line a large baking sheet with parchment.",
+  "Cut the eggplant into 1/2 inch cubes. Toss them on the sheet with 1 1/2 tbsp of the olive oil, 1/2 tsp of the salt and a few grinds of the pepper, then spread them out in a single layer with room between the pieces.",
+  "Roast for 25 to 30 minutes, turning the cubes once halfway, until they're soft and browned at the edges.",
+  "Meanwhile, stir the 2 tbsp raisins, 2 tbsp sherry vinegar and 1 tbsp capers together in a small bowl and set it aside. The raisins plump up in the vinegar while you cook.",
+  "Chop the onion, dice 1 stalk of the celery and dice the red pepper. Dice the 3 tomatoes and mince the 2 garlic cloves.",
+  "Heat 1 1/2 tbsp of the olive oil in a large skillet over medium. Add the onion and celery and cook for about 8 minutes, stirring now and then, until they're soft.",
+  "Add the red pepper and the remaining 1/4 tsp salt. Cook for about 8 minutes, until the pepper is tender.",
+  "Stir in 2 tsp tomato paste and the garlic and cook for 1 minute, until the paste turns a shade darker.",
+  "Add the tomatoes and 1/2 tsp sugar. Cook for about 8 minutes, stirring often, until the tomatoes have broken down and it looks saucy.",
+  "Add the roasted eggplant and the raisin mixture with all its vinegar. Cook for 5 minutes, stirring.",
+  "Take the pan off the heat. Chop 3 tbsp of the parsley and stir it in. Taste it. If it's flat, add a pinch more salt or a few more drops of the vinegar.",
+  "Let it cool to room temperature. It tastes even better the next day, and it keeps in a covered container in the fridge for up to 5 days.",
+  "When you're ready to eat, heat the oven to 425°F. Cut the baguette into 1/2 inch slices, brush them with the last 1 tbsp of olive oil and toast them on a baking sheet for 6 to 8 minutes, until golden at the edges.",
+  "Serve the caponata at room temperature with the toasted baguette."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All four cook eggplant separately, then stir it into a sweet and sour base of onion, celery and tomato with vinegar, sugar and capers, and serve it at room temperature. Love and Lemons roasts the eggplant at 425°F, plumps golden raisins in sherry vinegar with the capers, adds red bell pepper and tomato paste, finishes with parsley and says it's best on days 2 and 3. A Family Feast and Sicilian Food Culture fry the eggplant in oil instead, and Sicilian Food Culture adds green olives and cooks the vinegar into the sauce for 10 minutes; Bon Appétit roasts the eggplant and uses olives and red wine vinegar with no tomato paste. This one follows Love and Lemons, sized for 4, with basil left off and the crostini toasted at home.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Eggplant Caponata", "url": "https://www.loveandlemons.com/caponata/", "rating": 5.0, "rating_count": 39, "read": true, "lead": true},
+  {"name": "Bon Appétit", "title": "Caponata", "url": "https://www.bonappetit.com/recipe/caponata", "rating": 4.3, "rating_count": 12, "read": true, "lead": false},
+  {"name": "A Family Feast", "title": "Caponata", "url": "https://www.afamilyfeast.com/caponata/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Sicilian Food Culture", "title": "Caponata", "url": "https://sicilianfoodculture.com/recipe/caponata/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

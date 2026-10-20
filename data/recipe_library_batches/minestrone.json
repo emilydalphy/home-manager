@@ -1,0 +1,52 @@
+{
+ "dish_name": "Minestrone",
+ "cuisine": "Italian",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 ribs"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Diced tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Cannellini beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Green beans", "qty": "1/4 lb", "category": "produce"},
+  {"item": "Zucchini", "qty": "1", "category": "produce"},
+  {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "4 cups"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ditalini", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup chopped"},
+  {"item": "Parmesan", "qty": "2 oz", "category": "dairy"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Dice the onion, chop the 2 carrots and thinly slice 2 ribs of the celery. Mince the 3 garlic cloves.",
+  "Trim the green beans and cut them into 1 inch pieces. Dice the zucchini into 1/2 inch pieces. Drain and rinse the cannellini beans.",
+  "Heat the 2 tbsp olive oil in a large pot over medium heat. Add the onion, carrots, celery, 1 tsp salt and the 1/4 tsp pepper and cook for about 8 minutes, stirring now and then, until the vegetables are starting to soften. Don't rush them. That's where the flavor starts.",
+  "Add the garlic and 1 tbsp tomato paste and cook for 1 minute, stirring, until the paste turns a shade darker.",
+  "Add the tomatoes with their juice, the cannellini beans, the green beans, the 4 cups broth, the 2 bay leaves, the 1 tsp oregano and the 1 tsp thyme. Bring it to a simmer, cover the pot, turn the heat down to low and simmer gently for 20 minutes.",
+  "Meanwhile, chop the parsley leaves until you have 1/2 cup and finely grate the Parmesan.",
+  "Stir in the 3/4 cup ditalini and the zucchini. Cook uncovered for about 10 minutes, stirring now and then so it doesn't stick to the bottom, until the ditalini is tender.",
+  "Take the pot off the heat, fish out the bay leaves and stir in half the parsley.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the soup into bowls and scatter the rest of the parsley over the top. Serve with the Parmesan and the 1/4 tsp red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions soften onion, carrot and celery in olive oil, simmer them with canned tomatoes, broth, beans and dried herbs for about 20 minutes, then cook small pasta right in the pot. Love and Lemons (the lead) keeps it vegetarian with vegetable broth, green beans, bay, oregano and thyme, and finishes with parsley, chili flakes and Parmesan. RecipeTin Eats starts with bacon, adds tomato paste and Worcestershire, and adds potato, zucchini and spinach. Once Upon a Chef adds potato, zucchini, tomato paste and a pinch of sugar, and purées a cup of the soup to thicken it. This one follows the lead, adds the zucchini and a spoonful of tomato paste from the other two, and puts the chili flakes on the side. The pasta keeps soaking up broth, so leftovers come back thick.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Minestrone Soup", "url": "https://www.loveandlemons.com/minestrone-soup/", "rating": 4.96, "rating_count": 697, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Minestrone Soup", "url": "https://www.recipetineats.com/minestrone-soup/", "rating": 4.94, "rating_count": 135, "read": true, "lead": false},
+  {"name": "Once Upon a Chef", "title": "Minestrone Soup", "url": "https://www.onceuponachef.com/recipes/minestrone-soup.html", "rating": 4.95, "rating_count": 35, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

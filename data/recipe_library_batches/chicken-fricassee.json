@@ -1,0 +1,144 @@
+{
+ "dish_name": "Chicken Fricassee",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "4",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Chicken drumsticks",
+   "qty": "4",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White mushrooms",
+   "qty": "10 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (1 pint)",
+   "category": "dairy",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the 4 thighs and 4 drumsticks dry with paper towels. Sprinkle 1 tsp of the salt and 1/2 tsp of the pepper over all sides and leave them on a plate while you chop.",
+  "Slice the 2 onions into strips about 1/2 inch wide. Halve the mushrooms, and cut any big ones into quarters. Mince the 2 garlic cloves.",
+  "Melt 2 tbsp of the butter in a large deep skillet or Dutch oven with a lid over medium high. Lay the thighs in skin side down and cook them for 4 to 5 minutes without moving them, until the skin is golden brown. Flip them and cook the other side for 1 minute, then move them back to the plate.",
+  "Brown the drumsticks in the same pan. Turn them every 2 minutes so three sides get some color, about 6 minutes in all, then move them to the plate with the thighs.",
+  "Add the remaining 2 tbsp butter, then the mushrooms, onions, bay leaf and 3 sprigs of thyme. Cook for about 5 minutes, stirring now and then, until the mushrooms are lightly golden. They won't go deep brown, and that's fine.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant. Sprinkle in the 3 tbsp flour and stir for 1 minute, until you can't see any dry flour.",
+  "Pour in 1/2 cup of the wine and 3 cups of the broth, then add 1/4 tsp of the salt and 1/4 tsp of the pepper. Stir and scrape the bottom of the pan as you go so the browned bits lift into the sauce.",
+  "Nestle the chicken back in, skin side up, with any juices from the plate. Bring it to a gentle bubble, turn the heat down to medium low, cover and cook for 10 minutes.",
+  "Meanwhile, rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and a pinch of salt and bring it to a boil. Cover, turn the heat to low and cook for 18 minutes, then take it off the heat and leave the lid on.",
+  "Take the lid off the chicken and keep it bubbling gently for 20 minutes, until the sauce has cooked down a little. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest one near the bone. No thermometer? Pierce it near the bone: it's done when the juices run clear.",
+  "Move the chicken to a plate. Fish out the bay leaf and the thyme stems.",
+  "Stir the 2/3 cup cream into the sauce and bring it back to a simmer, about 2 minutes.",
+  "Put the chicken back in the sauce, skin side up, and take the pan off the heat. Chop 2 tbsp of the parsley and scatter it over.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions brown bone-in thighs and drumsticks in butter, soften mushrooms and onion in the same pan, stir in flour, add white wine and stock with thyme and bay, braise the chicken skin side up, and stir in cream at the end with parsley. RecipeTin Eats (the lead) simmers it covered for 10 minutes and then uncovered for 20 so the sauce reduces as the chicken cooks, and serves it over mashed potato or rice. Jessica Gavin uses more stock and boils the sauce down after the chicken comes out, and both she and The Modern Proper add a pinch of nutmeg with the cream. This one follows the lead and serves it over rice.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chicken Fricassée (French creamy chicken stew)",
+   "url": "https://www.recipetineats.com/chicken-fricassee/",
+   "rating": 4.94,
+   "rating_count": 177,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jessica Gavin",
+   "title": "Chicken Fricassee",
+   "url": "https://www.jessicagavin.com/chicken-fricassee/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Modern Proper",
+   "title": "Chicken Fricassee",
+   "url": "https://themodernproper.com/chicken-fricassee",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

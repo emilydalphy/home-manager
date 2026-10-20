@@ -1,0 +1,76 @@
+{
+ "dish_name": "Cacio e Pepe",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Pecorino Romano",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a wide pot about halfway with water and bring it to a boil over high heat. Use less water than you would for other pasta. The sauce needs the water to be starchy.",
+  "Meanwhile, finely grate all 8 oz of the pecorino on the small holes of a box grater. Put about 1 cup of it aside for the table and the rest in a medium bowl.",
+  "Coarsely grind the 1 tbsp peppercorns in a pepper mill, or crush them in a mortar. Put about a third of the pepper aside with the table cheese.",
+  "When the water boils, add the 2 tsp salt and the 1 lb spaghetti. Cook it for half the time the package says, stirring now and then. It finishes cooking in the skillet.",
+  "While it cooks, heat a large skillet over medium and add the rest of the pepper to the dry pan. Stir it for about 1 minute, until it smells strong and toasty. Don't let it smoke.",
+  "Ladle about 1 cup of the pasta water into the skillet. It'll hiss and bubble.",
+  "Lift the spaghetti into the skillet with tongs, and keep the pot of water on the stove. Toss and shake the pan over medium for 4 to 5 minutes, adding a splash of pasta water whenever it looks dry, until the spaghetti is just tender with a little bite. You want a few spoonfuls of cloudy liquid left in the pan.",
+  "While the spaghetti finishes, stir a few tablespoons of hot pasta water into the cheese in the bowl with a fork, a little at a time, until it's a thick, smooth paste with no dry bits.",
+  "Take the skillet off the heat and wait 30 seconds. Add the cheese paste and toss quickly with the tongs until a creamy sauce coats every strand. If it looks thick or clumpy, add a splash more pasta water and keep tossing. Keep the pan off the heat. Too hot and the cheese turns stringy.",
+  "Taste a strand. If it's flat, add a pinch more salt. Serve right away, with the pecorino and pepper you kept for the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions are only spaghetti, Pecorino Romano and black pepper bound with starchy pasta water, with no butter. Pina Bresciani cooks the pasta half its time in a shallow pot of lightly salted water, finishes it in the pan with toasted pepper and pasta water, then stirs in a pecorino paste off the heat after 30 seconds. Vincenzo's Plate also makes a cheese paste and melts it over steam from the pasta pot, while America's Test Kitchen whisks the cheese with pasta water, a little cream and oil and tosses everything in a bowl. This one follows Pina's method and ratios, doubled for four.",
+ "sources": [
+  {
+   "name": "Pina Bresciani",
+   "title": "How To Make An Authentic Cacio e Pepe Like A Roman",
+   "url": "https://pinabresciani.com/authentic-cacio-e-pepe-recipe/",
+   "rating": 4.72,
+   "rating_count": 98,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vincenzo's Plate",
+   "title": "Cacio e Pepe Recipe",
+   "url": "https://www.vincenzosplate.com/cacio-e-pepe-pasta/",
+   "rating": 4.6,
+   "rating_count": 27,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "America's Test Kitchen",
+   "title": "Spaghetti with Pecorino Romano and Black Pepper (Cacio e Pepe)",
+   "url": "https://www.americastestkitchen.com/recipes/5031-spaghetti-with-pecorino-romano-and-black-pepper-cacio-e-pepe",
+   "rating": 4.3,
+   "rating_count": 162,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

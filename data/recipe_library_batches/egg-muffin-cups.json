@@ -1,0 +1,101 @@
+{
+ "dish_name": "Egg Muffin Cups",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cooked ham",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Shredded cheddar",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Eggs",
+   "qty": "10",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to 4 days ahead, or the morning you eat them, heat the oven to 350°F with a rack in the middle. Brush the oil generously into all 12 cups of a muffin pan and up the sides too.",
+  "Cut the 8 oz ham into small dice, finely dice the red pepper and thinly slice 2 of the green onions.",
+  "Divide the ham, pepper, green onions and 1 cup of the cheddar between the 12 cups.",
+  "Crack the 10 eggs into a large bowl or a jug with a spout. Add 1/4 tsp salt, 1/4 tsp pepper and 1/4 tsp garlic powder and whisk until there are no streaks of white left.",
+  "Pour the eggs over the filling, filling each cup about three quarters full. Sprinkle the last 1/2 cup cheddar over the tops.",
+  "Bake for 22 to 25 minutes, until they've puffed up and the centers are set. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no runny egg in the center.",
+  "Leave them in the pan for 5 minutes. Run a thin knife around each one and lift them out.",
+  "Serve 3 each while they're warm. If you're making them ahead, cool them completely on a rack, then keep them in a sealed container in the fridge for up to 4 days.",
+  "In the morning, microwave 3 per person on a plate for 45 to 60 seconds, until they're hot in the middle."
+ ],
+ "advance_prep_notes": "Bake them up to 4 days ahead and reheat in the morning.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+ ],
+ "method_notes": "Both scatter the fillings into a well greased 12 cup muffin pan, pour whisked eggs over and bake at 350°F for 22 to 25 minutes until set. Spend With Pennies (the lead) uses 10 eggs with ham, red pepper, onion, cheddar and mozzarella and says they keep in the fridge or freezer. Love and Lemons makes a vegetarian version with 9 eggs, bell pepper, scallions and feta and whisks in a little flour and baking powder for a fluffier, sturdier cup. This one follows the lead, using all cheddar in place of the cheddar and mozzarella mix and green onion for the minced onion.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Make Ahead Egg Muffins",
+   "url": "https://www.spendwithpennies.com/make-ahead-egg-muffins/",
+   "rating": 4.97,
+   "rating_count": 179,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Breakfast Egg Muffins",
+   "url": "https://www.loveandlemons.com/egg-muffins/",
+   "rating": 4.86,
+   "rating_count": 90,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

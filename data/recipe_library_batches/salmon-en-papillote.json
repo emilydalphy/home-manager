@@ -1,0 +1,74 @@
+{
+ "dish_name": "Salmon en Papillote",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Salmon fillets", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Baby potatoes", "qty": "12 oz", "category": "produce"},
+  {"item": "Zucchini", "qty": "2", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh dill", "qty": "1 bunch", "category": "produce"},
+  {"item": "Dry white wine", "qty": "1/4 cup", "category": "other"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Parchment paper", "qty": "1 roll", "category": "other"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a large rimmed baking sheet with parchment paper.",
+  "Slice the 12 oz baby potatoes into rounds about 1/4 inch thick. Toss them on the lined sheet with 2 tbsp of the olive oil and 1/4 tsp of the salt, and spread them out in a single layer.",
+  "Roast the potatoes for 12 minutes, until the edges are starting to turn golden. They finish cooking in the parcels.",
+  "Meanwhile, slice the 2 zucchini into 1/4 inch rounds. Core the bell pepper and cut it into thin strips, and cut the red onion into thin wedges. Mince the 2 garlic cloves.",
+  "Put the zucchini, bell pepper, onion and garlic in a bowl with 1 tbsp of the olive oil, 1/2 tsp of the salt and 1/4 tsp of the black pepper, and toss them together.",
+  "Pat the 1.5 lb salmon fillets dry with paper towels and cut them into 4 pieces if they came as one. Sprinkle them all over with the remaining 1/2 tsp salt and 1/4 tsp black pepper.",
+  "Tear off 4 sheets of parchment about 16 inches long. Fold each one in half, then open it up again.",
+  "Take the potatoes out of the oven and leave the oven on. Divide the potatoes and the vegetables between the 4 sheets, piling them up next to the fold.",
+  "Set a piece of salmon on each pile. Lay 2 or 3 dill sprigs on each piece, drizzle the last 1 tbsp of olive oil over the four and spoon the 1/4 cup wine over them, about a spoonful on each.",
+  "Fold the paper over the fish. Starting at one corner, make small, tight, overlapping folds all the way around the open edge, pressing each fold down hard, until the parcel is sealed. Tuck the last fold underneath.",
+  "Slide the used parchment off the baking sheet and set the 4 parcels on it. Bake for 15 minutes, until the parcels have puffed up.",
+  "Let the parcels sit for 2 minutes, then open one. Stand back a little. Hot steam comes out. You're cooking the salmon to 130°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Press the thickest part with a fork: it's done when it flakes and is only just opaque in the middle. If it isn't, fold it shut and give all the parcels 3 more minutes.",
+  "Cut the lemon into wedges. Taste the juices in the open parcel. If they're flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve the parcels on plates with the lemon wedges and the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three seal the fish in parchment with lemon and herbs and bake it hot for 15 to 20 minutes. RecipeTin Eats (the most rated) bakes the fish on a bed of potato, zucchini, bell pepper and red onion with dill, olive oil and a splash of white wine at 375°F for 18 minutes, giving the potatoes a head start in a skillet first; this version gives them that head start on the lined baking sheet instead, so no pan gets used. Salted Mint brushes the salmon with lemon garlic butter and bakes it at 400°F for 20 minutes, and Craving Home Cooked bakes it on sliced zucchini and onion with dill at 350°F until the center reads 125 to 135°F. RecipeTin Eats uses snapper and says any fillet works, so this one swaps in salmon.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Fish en Papillote (Fish in a Bag)",
+   "url": "https://www.recipetineats.com/fish-en-papillote-recipe/",
+   "rating": 4.88,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Salted Mint",
+   "title": "Easy Salmon en Papillote",
+   "url": "https://saltedmint.com/?p=8666",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Craving Home Cooked",
+   "title": "Salmon en Papillote",
+   "url": "https://cravinghomecooked.com/salmon-en-papillote/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

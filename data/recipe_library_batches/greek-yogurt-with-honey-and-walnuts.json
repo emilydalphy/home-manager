@@ -1,0 +1,32 @@
+{
+ "dish_name": "Greek Yogurt with Honey and Walnuts",
+ "cuisine": "Greek",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 3,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {"item": "Greek yogurt", "qty": "1 tub (32 oz)", "category": "dairy", "cook_qty": "3 cups"},
+  {"item": "Walnuts", "qty": "1 bag (6 oz)", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Honey", "qty": "1 jar", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Ground cinnamon", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 3/4 cup walnuts in a dry skillet over medium. Toast them for 3 to 4 minutes, shaking the pan often, until they're a shade darker and smell toasty. Watch them near the end. They burn fast.",
+  "Transfer the walnuts into a small bowl and break up any big pieces with your fingers. Pour in the 1/3 cup honey and stir until every piece is coated.",
+  "Stir the 1/2 tsp vanilla into the 3 cups yogurt until smooth, then divide it among 4 bowls.",
+  "Spoon the honey walnuts over each bowl and dust the tops with the 1/4 tsp cinnamon.",
+  "Serve right away. If it sits, the honey turns the yogurt runny."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three top thick, plain Greek yogurt with honey and walnuts. My Greek Dish toasts the walnuts first, tosses them in honey while they're warm, stirs a little vanilla into the yogurt and finishes with cinnamon. Real Greek Recipes layers yogurt, honey and raw walnuts in a jar, and Walnuts.org spoons toasted nuts and a small drizzle of honey over plain or vanilla yogurt with optional fruit or granola. This one follows My Greek Dish, toasting the nuts in a dry pan instead of the oven to keep it quick.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Greek Yogurt with Honey and Walnuts recipe (Yiaourti me meli)", "url": "https://www.mygreekdish.com/recipe/greek-yogurt-with-honey-walnuts-recipe-yiaourti-meli/", "rating": 4.84, "rating_count": 706, "read": true, "lead": true},
+  {"name": "Real Greek Recipes", "title": "Greek Yogurt With Honey And Walnuts", "url": "https://realgreekrecipes.com/greek-yogurt-with-honey-and-walnuts/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false},
+  {"name": "Walnuts.org", "title": "Greek Yogurt with Walnuts and Honey", "url": "https://walnuts.org/recipe/greek-yogurt-with-walnuts-and-honey/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

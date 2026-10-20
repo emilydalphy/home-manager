@@ -1,0 +1,101 @@
+{
+ "dish_name": "Buffalo Chicken Wraps",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {
+   "item": "Rotisserie chicken",
+   "qty": "1",
+   "category": "meat/seafood",
+   "cook_qty": "3 cups shredded"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Large flour tortillas",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "2 cups chopped"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Blue cheese dressing",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Pull the meat off the rotisserie chicken, leaving the skin and bones behind, and shred 3 cups of it into bite-size pieces with two forks. Leftover cooked chicken works the same way.",
+  "Chop 2 cups of the romaine. Peel the carrot and grate it on the large holes of a box grater.",
+  "Melt 2 tbsp butter in a large skillet over medium heat. Stir in 1/3 cup hot sauce and let it bubble for about 30 seconds, until it looks smooth and glossy.",
+  "Add the chicken and toss it in the sauce for 2 to 3 minutes, until it's hot all the way through and the sauce coats every piece. Take the pan off the heat.",
+  "Halve the avocado, take out the pit, and scoop each half out of its skin. Cut it into thin slices.",
+  "Stack the 4 tortillas between two damp paper towels and microwave them for 20 seconds. Cold tortillas crack when you roll them.",
+  "Lay the tortillas flat. On each one, make a line of 1/2 cup lettuce just below the middle, then add a quarter of the carrot, the avocado and the chicken on top.",
+  "Drizzle 2 tbsp blue cheese dressing over the filling in each wrap, 1/2 cup in all.",
+  "Fold the two sides of each tortilla in over the filling, then roll it up tightly from the bottom. Cut each wrap in half on the diagonal.",
+  "If you're packing them, wrap each one tightly in foil and keep it cold until lunch.",
+  "Serve with the hot sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions toss cooked chicken in buffalo sauce and roll it into large flour tortillas with lettuce and a creamy dressing. Kristine's Kitchen (the lead) uses leftover or rotisserie chicken with romaine, shredded carrot, avocado and blue cheese dressing. Taste of Home breads and fries chicken breast, makes the sauce from hot sauce and melted butter, and adds cheddar and tomato; Simply Whisked bakes frozen tenders and uses spring mix. This one follows the lead's fillings and warms the chicken in Taste of Home's butter and hot sauce, with more hot sauce on the side. No version had 20 or more ratings (Taste of Home's page gives only a reviewCount of 14, no ratingCount) and RecipeTin Eats (the trusted cook for American) has no version, so the first read version leads. Fit Foodie Finds and Allrecipes blocked the reader and were skipped.",
+ "sources": [
+  {
+   "name": "Kristine's Kitchen",
+   "title": "Buffalo Chicken Wrap",
+   "url": "https://kristineskitchenblog.com/buffalo-chicken-wrap/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Buffalo Chicken Wrap",
+   "url": "https://www.tasteofhome.com/recipes/buffalo-chicken-wraps/",
+   "rating": 4.14,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Simply Whisked",
+   "title": "Buffalo Chicken Wraps",
+   "url": "https://www.simplywhisked.com/buffalo-chicken-wraps/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

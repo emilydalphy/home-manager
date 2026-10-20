@@ -1,0 +1,127 @@
+{
+ "dish_name": "Classic Pasta Salad",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Rotini",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp + 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Grape tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sliced black olives",
+   "qty": "1 can (2.25 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh mozzarella pearls",
+   "qty": "1 tub (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil and add 1 tbsp of the salt.",
+  "Meanwhile, mince the garlic clove. Put it in a jar with the 1/3 cup olive oil, 3 tbsp vinegar, 1/2 tsp oregano, 1/2 tsp sugar, the last 1/4 tsp salt and 1/4 tsp pepper. Close the lid and shake hard until it looks cloudy.",
+  "Halve the grape tomatoes. Seed and dice the bell pepper. Finely dice a quarter of the red onion. Drain the olives and the mozzarella pearls. Chop 2 tbsp of the parsley.",
+  "Add the 8 oz rotini to the boiling water and cook it for the time on the box, usually 8 to 10 minutes, until it's tender with a little bite in the middle.",
+  "Drain it in a colander and rinse it under cold water until it's cool. Shake the colander hard. Water left on the rotini makes the dressing thin.",
+  "Transfer the rotini into a large bowl with the tomatoes, bell pepper, onion, olives, mozzarella and parsley. Pour in all but about 2 tbsp of the dressing and toss until everything is coated.",
+  "Taste it, and add a pinch more salt if it's flat, or a splash more of the vinegar.",
+  "Cover the bowl and chill it for at least 1 hour. Keep the leftover dressing in its jar in the fridge.",
+  "It keeps in the fridge for up to 4 days. Before you pack each lunch, stir a little of the saved dressing through it."
+ ],
+ "method_notes": "All three toss cold rotini with tomatoes, olives, red onion, mozzarella and an Italian vinaigrette and serve it chilled or at room temperature. Spend With Pennies adds three colors of bell pepper and parsley and chills it for 2 hours, Natasha's Kitchen adds cucumber, roasted red peppers and kalamatas, and RecipeTin Eats makes its own oregano and red wine vinegar dressing and holds a little back to refresh the salad on later days. All three use salami. This keeps it vegetarian by leaving the salami out and using more mozzarella, halves Spend With Pennies' batch for 4 lunches and uses a homemade dressing in place of a bottle.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Italian Pasta Salad",
+   "url": "https://www.spendwithpennies.com/italian-pasta-salad/",
+   "rating": 5.0,
+   "rating_count": 470,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Italian Pasta Salad",
+   "url": "https://natashaskitchen.com/italian-pasta-salad/",
+   "rating": 5.0,
+   "rating_count": 178,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Italian Pasta Salad with Homemade Italian Dressing",
+   "url": "https://www.recipetineats.com/italian-pasta-salad-with-homemade-italian-dressing/",
+   "rating": 5.0,
+   "rating_count": 24,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed",
+ "fallback_used": false
+}

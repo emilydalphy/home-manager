@@ -1,0 +1,124 @@
+{
+ "dish_name": "Asa Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the cod into 1 1/2 inch chunks and pat them dry with paper towels. Toss them gently in a bowl with 1 tbsp berbere and 3/4 tsp of the salt, and set the bowl aside.",
+  "Meanwhile, cut the red onion into 1 inch chunks and the bell pepper into thin strips. Chop the 2 tomatoes.",
+  "Mince the 3 garlic cloves and grate 1 tbsp of the ginger. Slice the jalapeño into thin rounds and put them in a small bowl for the table.",
+  "Heat the oil in a large nonstick skillet over high heat until it shimmers. Add the fish in a single layer and leave it alone for about 90 seconds, until the underside is browned and lets go of the pan.",
+  "Turn the pieces gently with a thin spatula and brown the other side for 1 minute. It won't be cooked through yet. Move the fish to a plate.",
+  "Turn the heat down to medium high and add 2 tbsp ghee. Add the onion, bell pepper and the last 1/4 tsp salt, and cook for 3 minutes, stirring, until the edges brown but the pepper still has some crunch.",
+  "Add the garlic and ginger and stir for 30 seconds, until fragrant.",
+  "Add the tomatoes and cook for 2 minutes, stirring, until they break down into a loose sauce.",
+  "Put the fish and any juices back in the pan and turn the pieces gently in the sauce. Cook for 2 minutes, until the thickest piece is opaque in the middle and flakes when you press it with a fork.",
+  "Take the pan off the heat and squeeze 1 lime over the fish. Cut the other lime into wedges.",
+  "Taste it. If it's flat, add salt first, then a squeeze of lime.",
+  "Serve with injera, the lime wedges and the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three coat firm white fish in berbere, cook it until golden, and bring it together with onion, garlic and green chili, finished with lime or lemon. Basbaas Foods sears cubed halibut briefly and sets it aside, cooks red onion, garlic, ginger, jalapeño and plum tomatoes in the same pan with a splash of white wine, then returns the fish to finish; Global Kitchen Travels marinates monkfish in berbere for an hour and deep fries it before tossing it with caramelized onion and lime; Clove Garden simmers tilapia with onion, leek, bell pepper and cardamom in a little water. This version follows the Basbaas sear and return method so it fits in 15 minutes, adds bell pepper strips as the dish note asks, and leaves out the wine.",
+ "sources": [
+  {
+   "name": "Basbaas Foods",
+   "title": "Halibut Tibs",
+   "url": "https://basbaasfoods.com/blogs/tastes-travels/halibut-tibs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Global Kitchen Travels",
+   "title": "Ethiopian Asa Tibs (Fried Fish)",
+   "url": "https://globalkitchentravels.com/ethiopian-tibs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Clove Garden",
+   "title": "Fish Tibs (Yeasa Tibs)",
+   "url": "https://clovegarden.com/recipes/qmf_fshtib1.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

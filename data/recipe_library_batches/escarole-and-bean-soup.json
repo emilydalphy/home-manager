@@ -1,0 +1,126 @@
+{
+ "dish_name": "Escarole and Bean Soup",
+ "cuisine": "Italian",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Escarole",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 ribs"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced pancetta",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Chicken stock",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cannellini beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/4 cup grated"
+  }
+ ],
+ "instructions": [
+  "Cut the base off the escarole and pull the leaves apart. Rinse each leaf on both sides under cold running water, paying attention to the pale base where the grit hides. Drain them in a colander.",
+  "Cut the escarole crosswise into strips about 1 inch wide. Chop the onion and 2 ribs of the celery, and mince the 3 garlic cloves.",
+  "Heat 2 tbsp of the olive oil in a large pot over medium. Add the 4 oz pancetta and cook for about 4 minutes, stirring now and then, until the fat runs and the edges turn golden.",
+  "Add the onion and celery and cook for 5 minutes, stirring often, until the onion is soft and see-through.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Pile in the escarole and stir for 1 to 2 minutes, until it wilts down.",
+  "Pour in the 4 cups stock, add the bay leaf and bring it to a boil over high heat.",
+  "Turn the heat down to medium low. Add both cans of beans with their liquid and add the 1/2 tsp salt and 1/4 tsp pepper. Simmer for 10 minutes, until the escarole is tender. Don't drain the beans. Their liquid gives the broth its body.",
+  "Meanwhile, grate 1/4 cup of the parmesan and squeeze 2 tbsp juice from the lemon.",
+  "Take the pot off the heat and lift out the bay leaf. Stir in the 2 tbsp lemon juice.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze more of the lemon.",
+  "Ladle it into bowls and serve with the parmesan and the last 1 tbsp olive oil drizzled on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions soften onion and garlic in olive oil, add stock and canned or cooked cannellini, and wilt the escarole in at the end, with Parmesan at the table. Flavor the Moments (the lead) starts with pancetta, onion and celery, adds a bay leaf, keeps the bean liquid for body, simmers only 5 to 10 minutes and finishes with lemon juice. Sunset uses a little prosciutto and only a minute for the escarole, and Italian Recipe Book skips the meat, infuses the oil with garlic, chilli and bay, and blends half the beans for a creamy soup. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Italian) has no version, so the first read version leads. Sip and Feast's highly rated version blocked the reader, so it was skipped.",
+ "sources": [
+  {
+   "name": "Flavor the Moments",
+   "title": "Escarole and Bean Soup",
+   "url": "https://flavorthemoments.com/escarole-and-bean-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sunset",
+   "title": "Escarole and White Bean Soup",
+   "url": "https://www.sunset.com/recipe/escarole-white-bean-soup",
+   "rating": 4.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Italian Recipe Book",
+   "title": "Escarole and Bean Soup (Creamy, Delicious and Light)",
+   "url": "https://italianrecipebook.com/thick-escarole-bean-soup/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

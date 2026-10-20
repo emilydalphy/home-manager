@@ -1,0 +1,129 @@
+{
+ "dish_name": "Riz a Djej",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cinnamon sticks",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Slivered almonds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lebanese 7 spice",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Peel one of the onions and cut it in half. Put it in a large pot with the 1 1/4 lb chicken, the 2 cinnamon sticks, 2 bay leaves, 1 tsp of the salt, 1/2 tsp of the black pepper and 5 cups water.",
+  "Bring it to a boil over high heat, then turn it down to medium low so it bubbles gently. Skim off any foam and simmer for 25 minutes. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut into it: it's done when there's no pink left and the juices run clear.",
+  "Meanwhile, rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear and leave it to drain. Finely chop the second onion.",
+  "Melt 1 tbsp of the butter in a Dutch oven or other heavy pot over medium. Add the 1/4 cup cashews, 1/4 cup almonds and 2 tbsp pine nuts and stir for 3 to 5 minutes, until they're golden brown. Keep an eye on the pine nuts. They darken first. Transfer the nuts onto a plate.",
+  "Melt the remaining 2 tbsp butter in the same pot, add the chopped onion and cook for 5 minutes, stirring now and then, until it's soft.",
+  "Turn the heat up to medium high and add the 1/2 lb beef with 1/2 tsp of the salt. Break it up with a spoon and leave it alone for a minute between stirs. After 5 to 6 minutes there's no pink left and the bits are starting to brown.",
+  "Stir in the 2 tsp seven spice and the last 1/4 tsp black pepper and cook for 1 minute, until it smells fragrant.",
+  "When the chicken is done, lift it onto a board. Pour the cooking liquid through a sieve into a large measuring cup or bowl.",
+  "Add the drained rice to the beef and stir for 1 minute, until every grain is coated. Pour in 2 1/4 cups of the cooking liquid and the last 1/2 tsp salt and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes. No peeking.",
+  "While the rice cooks, shred the chicken with two forks and toss it with 1/4 cup of the leftover cooking liquid so it stays moist. Cover it to keep it warm. Save the rest of the liquid for a soup.",
+  "Fluff the rice with a fork and spoon it onto a platter. Pile the chicken on top and scatter the nuts over it.",
+  "Chop a small handful of the parsley and scatter it over the platter.",
+  "Taste the rice. If it's flat, add a pinch of salt.",
+  "Serve with plain yogurt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions poach the chicken with onion, cinnamon sticks and bay leaves, cook the rice in that broth with onion and ground beef, and finish it with chicken and butter-toasted almonds, cashews and pine nuts on top. Feel Good Foodie poaches thighs for 25 minutes, seasons the beef with seven spice only, and spoons it onto a platter; The Matbakh boils a whole chicken for an hour and a half, adds allspice, cinnamon and nutmeg, and layers the chicken and rice in a bowl to turn out as a dome. This one follows Feel Good Foodie's thighs, spices and platter.",
+ "sources": [
+  {
+   "name": "Feel Good Foodie",
+   "title": "Lebanese Chicken and Rice",
+   "url": "https://feelgoodfoodie.net/recipe/lebanese-chicken-and-rice/",
+   "rating": 4.97,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Lebanese Chicken and Rice (Riz a Djej)",
+   "url": "https://thematbakh.com/lebanese-chicken-and-rice/",
+   "rating": 4.41,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

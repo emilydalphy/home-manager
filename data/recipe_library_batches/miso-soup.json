@@ -1,0 +1,74 @@
+{
+ "dish_name": "Miso Soup",
+ "cuisine": "Japanese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "White miso",
+   "qty": "1 tub",
+   "category": "other",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Silken tofu",
+   "qty": "1 package (14 oz)",
+   "category": "dairy",
+   "cook_qty": "7 oz"
+  },
+  {
+   "item": "Dried wakame",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pour 4 cups of water into a medium saucepan, stir in the 2 tsp dashi granules and bring it to a gentle boil over medium heat.",
+  "Meanwhile, thinly slice 1 of the green onions. Cut half the block of tofu (about 7 oz) into 1/2 inch cubes.",
+  "Turn the heat down to low so the dashi is barely moving.",
+  "Put the 4 tbsp miso in a ladle, dip it into the pot so it fills with dashi, and stir the miso with chopsticks until it melts. Put it back into the pot and stir until there are no lumps.",
+  "Taste the soup. If it's thin, stir in a little more miso the same way. If it's too salty, add a splash of water.",
+  "Slide the tofu in and stir gently once so the cubes don't break.",
+  "Add the 1 tbsp wakame and the green onion. Let it heat for about 1 minute, until the wakame turns soft and bright green. Don't let it boil once the miso is in. Boiling dulls the flavor.",
+  "Ladle it into bowls and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions use about 1 tbsp miso for every cup of broth, dissolve the miso in a little hot broth before it joins the pot, add silken tofu, wakame and green onion last, and keep the soup off the boil once the miso is in. Just One Cookbook makes awase dashi from kombu and bonito flakes and points to dashi powder for its quick version; Love and Lemons makes a kombu broth, soaks the wakame first and seasons with tamari. This one follows Just One Cookbook's ratios with instant dashi so it's done in minutes.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Homemade Miso Soup with Tofu",
+   "url": "https://www.justonecookbook.com/homemade-miso-soup/",
+   "rating": 4.85,
+   "rating_count": 623,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Miso Soup",
+   "url": "https://www.loveandlemons.com/miso-soup/",
+   "rating": 4.85,
+   "rating_count": 52,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,45 @@
+{
+ "dish_name": "Char Siu",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Boneless pork shoulder", "qty": "2 lb", "category": "meat/seafood"},
+  {"item": "Granulated sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Chinese five spice powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground white pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sesame oil", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Hoisin sauce", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Molasses", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tsp"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Honey", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"}
+ ],
+ "instructions": [
+  "The night before, or at least 8 hours ahead: cut the 2 lb pork into long strips about 2 inches thick. Leave the fat on.",
+  "Finely mince the 2 garlic cloves into a bowl. Stir in the 3 tbsp sugar, 1 1/4 tsp salt, 1/2 tsp five spice, 1/4 tsp white pepper, 1/2 tsp sesame oil, 2 tsp Shaoxing wine, 2 tsp soy sauce, 2 tsp hoisin and 1 1/2 tsp molasses. Spoon 1 1/2 tbsp of this marinade into a small covered cup and keep it in the fridge for the glaze. Rub the rest all over the pork, cover it and refrigerate overnight.",
+  "When you're ready to cook, heat the oven to 475°F with a rack in the upper third.",
+  "Line a sheet pan with foil and set a metal rack on top. Lay the pork strips on the rack with space between them, then pour 1 1/2 cups of water into the pan under the rack. The water stops the drippings from burning and smoking.",
+  "Roast for 10 minutes. Turn the oven down to 375°F and roast for another 15 minutes.",
+  "Meanwhile, stir the reserved marinade together with the 1 1/2 tbsp honey and 2 tsp hot water to make the glaze. If the honey is too thick to mix, warm it for a few seconds in the microwave first.",
+  "Flip the strips over and turn the pan around in the oven. If the pan under the rack is dry, add about 1 cup of water. Roast for 15 more minutes, checking now and then. If the edges are getting dark too fast, turn the oven down by 25°F.",
+  "Brush the top of each strip with glaze, flip them and brush the other side, keeping a little glaze back. Roast for a final 10 minutes, until the outside is sticky and the edges are caramelized and dark in spots.",
+  "You're cooking it to at least 145°F in the middle, so if you have a thermometer, check the thickest strip. No thermometer? Cut into the thickest one: the middle should be pale with no pink, wet look, and the juices should run clear. For darker edges, broil for 1 to 2 minutes and watch it the whole time. The sugar burns fast.",
+  "Brush the last of the glaze over the pork and let it rest for 10 minutes. Slice it thinly across the grain.",
+  "Taste a slice. If it's flat, sprinkle on a pinch more salt.",
+  "Serve with steamed rice and a green vegetable like blanched choy sum."
+ ],
+ "advance_prep_notes": "marinate overnight, the night before (at least 8 hours)",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "Both versions marinate fatty pork shoulder for a long time in a sweet hoisin, soy and five spice mix, roast it on a rack and baste it with a honey glaze near the end. The Woks of Life (the lead) seasons with sugar, salt, white pepper, Shaoxing wine, a little molasses and garlic, marinates at least 8 hours, starts the roast at 475°F before dropping to 375°F over a pan of water, and glazes with reserved marinade thinned with maltose or honey for the last 10 minutes. RecipeTin Eats uses a honey heavy marinade for 24 to 48 hours, roasts low at 320°F for about 90 minutes and simmers the leftover marinade into a syrup to baste with several times. This one follows the lead's ratios scaled to 2 lb for 4, leaves out the optional red food colouring and uses honey rather than maltose.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Char Siu (Chinese BBQ Pork)", "url": "https://thewoksoflife.com/chinese-bbq-pork-cha-siu/", "rating": 4.95, "rating_count": 765, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Char Siu Pork - Chinese BBQ Pork", "url": "https://www.recipetineats.com/chinese-barbecue-pork-char-siu/", "rating": 4.96, "rating_count": 332, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

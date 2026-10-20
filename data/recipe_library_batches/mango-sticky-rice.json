@@ -1,0 +1,95 @@
+{
+ "dish_name": "Mango Sticky Rice",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Glutinous rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry",
+   "cook_qty": "1 2/3 cups"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup + 2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mangoes",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: rinse the 1 cup glutinous rice in a few changes of cold water until the water is mostly clear. Cover it with plenty of cold water and leave it to soak.",
+  "Bring a few inches of water to a hard boil in a pot that fits your steamer basket. Line the basket with cheesecloth or a thin, clean kitchen towel.",
+  "Drain the rice and spread it evenly in the lined basket. Set it over the boiling water, cover and steam for 30 minutes, until the grains are shiny, see-through and chewy. Check the water halfway and top it up with boiling water if it's getting low.",
+  "Meanwhile, make the syrup for the rice. Shake the can of coconut milk well. In a small pot over medium, stir 1 cup of the coconut milk with 1/2 cup plus 2 tbsp sugar and 1/4 tsp of the salt until the sugar dissolves and it just starts to bubble at the edges. Take it off the heat.",
+  "In a second small pot, whisk the remaining 2/3 cup coconut milk with the other 1/4 tsp salt and 2 tsp cornstarch until smooth. Bring it to a gentle bubble over medium, stirring all the time, and cook for about 2 minutes, until it's thick enough to coat the back of a spoon. Take it off the heat.",
+  "Transfer the hot rice into a bowl and pour the warm syrup over it. Stir it through with a spatula, cover the bowl and leave it for 20 to 30 minutes, until the rice has soaked up all the liquid and looks glossy.",
+  "Meanwhile, toast the 1 tbsp sesame seeds in a small dry pan over medium, shaking the pan, for 2 to 3 minutes, until they're golden. Transfer them onto a plate.",
+  "Cut the cheeks off the 2 mangoes, slicing down both sides of the flat stone. Peel the cheeks and cut each one into thick slices.",
+  "Serve the sticky rice with the mango alongside, the coconut sauce spooned over the rice and the sesame seeds on top."
+ ],
+ "advance_prep_notes": "soak the rice overnight, the night before (or at least 4 hours ahead)",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All three cook glutinous rice, stir sweetened, salted coconut milk through it while it's hot and serve it with ripe mango and a little more coconut on top. Cooking with Nart, the lead, soaks the rice overnight, steams it for 30 minutes, lets it soak up a pandan-scented syrup for 20 to 30 minutes and spoons a salty sauce thickened with cornstarch over the top, with sesame seeds or fried mung beans. The David Thompson recipe on Grantourismo steams for 45 minutes to an hour and thickens the topping with rice flour, and Pickled Plum simmers the rice in a pot and sweetens with condensed milk instead. This one keeps the lead's ratios for 1 cup of rice, leaves out the pandan and mung beans, and uses one can of coconut milk for both the syrup and the sauce.",
+ "sources": [
+  {
+   "name": "Cooking with Nart",
+   "title": "Mango Sticky Rice Recipe",
+   "url": "https://www.cookingwithnart.com/mango-sticky-rice/",
+   "rating": 4.99,
+   "rating_count": 69,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Grantourismo",
+   "title": "Mango Sticky Rice Recipe by Chef David Thompson",
+   "url": "https://grantourismotravels.com/mango-sticky-rice-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Thai Mango Sticky Rice",
+   "url": "https://www.pickledplum.com/mango-sticky-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

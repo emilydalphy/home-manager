@@ -1,0 +1,51 @@
+{
+ "dish_name": "Kung Pao Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Boneless skinless chicken thighs", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Low-sodium soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "5 tbsp"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 tbsp + 1 tsp"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Low-sodium chicken broth", "qty": "1 can (14.5 oz)", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Chinese black vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Hoisin sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Dried red chilies", "qty": "1 bag", "category": "pantry", "cook_qty": "4"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Roasted unsalted peanuts", "qty": "1 bag", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Vegetable oil", "qty": "3 tbsp + 1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, cut the 1 lb chicken thighs into 3/4 inch pieces and put them in a bowl. Add 2 tbsp of the soy sauce, 1 tbsp of the Shaoxing wine, 1 tbsp of the cornstarch and 1 tsp of the oil. Mix well and leave it for 10 minutes while you get everything else ready.",
+  "In a small bowl, whisk the last 3 tbsp soy sauce, 1 tsp dark soy sauce, 1/3 cup broth, 1 1/2 tbsp black vinegar, the last 1 tbsp Shaoxing wine, 2 tsp hoisin, 2 tsp sugar and the last 1 tsp cornstarch until smooth.",
+  "Cut the bell pepper into 3/4 inch pieces. Mince the 3 garlic cloves and 2 tsp of the ginger. Cut 4 of the green onions into 1 inch lengths. Leave the 4 dried chilies whole. Whole ones flavor the oil without making the dish very hot.",
+  "Heat 1 1/2 tbsp of the oil in a wok or large skillet over medium high. Spread the chicken out in one layer and leave it for about 2 minutes, until the underside is golden. Stir and cook for 2 to 3 minutes, until it's browned all over and almost cooked through. Move it to a plate.",
+  "Add the last 1 1/2 tbsp oil, the chilies and the bell pepper. Stir fry for 2 minutes, until the pepper softens at the edges and the chilies darken a shade. Don't let them turn black.",
+  "Add the garlic and ginger and stir for 30 seconds, until they smell fragrant.",
+  "Stir the sauce again and pour it in. Once it starts to thicken, about 30 seconds, put the chicken and its juices back in and toss for 1 to 2 minutes, until the sauce is glossy and coats everything. You're cooking the chicken to 175°F, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Take the pan off the heat and toss in the green onions and the 1/3 cup peanuts.",
+  "Taste it. If it's flat, add a pinch of salt or a splash more of the black vinegar.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions marinate small pieces of chicken in soy, wine and cornstarch, fry dried red chilies with garlic and ginger, then toss the chicken in a sweet and sour sauce of soy, black vinegar and sugar with peanuts and green onions. Natasha's Kitchen browns the chicken first, adds red and green bell peppers and a little hoisin and chicken broth to the sauce. RecipeTin Eats uses thighs, skips the peppers and leans on ground Sichuan pepper for the tingle, and Omnivore's Cookbook does the same with a pinch of Sichuan pepper and an optional chili oil. This one follows Natasha's Kitchen scaled to 4, with thighs from RecipeTin Eats and the chilies left whole so it stays mild.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Kung Pao Chicken", "url": "https://natashaskitchen.com/kung-pao-chicken/", "rating": 4.92, "rating_count": 127, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Kung Pao Chicken", "url": "https://www.recipetineats.com/kung-pao-chicken/", "rating": 4.9, "rating_count": 99, "read": true, "lead": false},
+  {"name": "Omnivore's Cookbook", "title": "Kung Pao Chicken (宫保鸡丁)", "url": "https://omnivorescookbook.com/kung-pao-chicken/", "rating": 4.85, "rating_count": 20, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

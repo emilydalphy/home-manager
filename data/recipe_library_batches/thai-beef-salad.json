@@ -1,0 +1,51 @@
+{
+ "dish_name": "Thai Beef Salad",
+ "cuisine": "Thai",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Sirloin steak", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce"},
+  {"item": "Limes", "qty": "3", "category": "produce"},
+  {"item": "Mixed salad greens", "qty": "1 bag", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "English cucumber", "qty": "1", "category": "produce"},
+  {"item": "Thai bird chilies", "qty": "1 package", "category": "produce", "cook_qty": "2"},
+  {"item": "Roasted peanuts", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Take the 1 lb steak out of the fridge about 20 minutes before you cook it, and pat it dry.",
+  "Meanwhile, make the dressing. Finely chop 2 tbsp of the cilantro stems. Pound them with the garlic clove and a pinch of the salt in a mortar until you have a smooth paste. No mortar? Mince them together, then press the side of your knife over them on the board until they turn to paste.",
+  "Juice the 3 limes to get 6 tbsp. Scrape the paste into a jar or bowl and add the lime juice, 1/4 cup fish sauce, 1 1/2 tbsp sugar and 2 tbsp of the oil. Shake or stir until the sugar dissolves.",
+  "Taste the dressing. It should taste sour first, then salty, then a little sweet. If it's flat, add a splash more fish sauce.",
+  "Halve the cherry tomatoes. Very thinly slice half the red onion. Halve the cucumber lengthwise and slice it into half moons. Pick 1/2 cup cilantro leaves and 1/2 cup mint leaves, plus a few extra of each for the top. Finely chop the 1/2 cup peanuts.",
+  "Thinly slice 2 chilies into a small bowl for the table.",
+  "Heat a heavy skillet over high until it's smoking. Rub the steak with the last 1 tbsp oil and sprinkle it all over with the rest of the salt and the 1/2 tsp pepper.",
+  "Lay the steak in the pan and leave it alone for 2 minutes, until the underside is deep brown. Flip it and cook the other side for 2 minutes. That's medium rare for a steak about 3/4 inch thick. You're cooking it to 125°F in the middle, so if you have a thermometer, check it there. No thermometer? Press the middle: it should feel soft with a little spring, like the base of your thumb.",
+  "Move the steak to a plate, cover it loosely with foil and let it rest for 10 minutes.",
+  "Put the salad greens in a wide bowl and toss them with 1 tbsp of the dressing. Pile them onto a platter.",
+  "Slice the steak thinly across the grain. Put it in the bowl with the tomatoes, onion, cucumber, cilantro and mint, pour over most of the remaining dressing and toss gently.",
+  "Pile the beef and vegetables over the greens. Scatter over the peanuts and extra leaves and drizzle with the last of the dressing.",
+  "Serve right away, with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions sear or grill the steak, rest it, slice it thin against the grain and toss it in a lime juice, fish sauce and sugar dressing with tomato, red onion, cucumber and cilantro, mint or green onion. RecipeTin Eats pounds chilli, garlic and cilantro stems into a paste for the dressing, sears sirloin in a smoking hot pan for 2 minutes a side, and finishes with peanuts over dressed lettuce. Foodiecrush marinates rib eye in ponzu, sesame oil and ginger first and serves lettuce on the side; Hungry in Thailand adds sesame oil and carrot. This one follows RecipeTin Eats for 4 and moves the chilli out of the dressing to the side.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Thai Beef Salad", "url": "https://www.recipetineats.com/thai-beef-salad-2/", "rating": 4.98, "rating_count": 163, "read": true, "lead": true},
+  {"name": "Foodiecrush", "title": "Thai Beef Salad Recipe (Yum Nua)", "url": "https://www.foodiecrush.com/thai-beef-salad-yum-nua/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Hungry in Thailand", "title": "Yum Nua Recipe (Authentic Thai Beef Salad)", "url": "https://hungryinthailand.com/yum-nua/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

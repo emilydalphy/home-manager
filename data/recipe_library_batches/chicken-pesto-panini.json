@@ -1,0 +1,85 @@
+{
+ "dish_name": "Chicken Pesto Panini",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 16,
+ "ingredients": [
+  {
+   "item": "Cooked chicken",
+   "qty": "2 cups",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Basil pesto",
+   "qty": "1 jar (6 oz)",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Sourdough bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Sliced mozzarella",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Sun-dried tomatoes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice or shred 2 cups of leftover roast chicken into bite-size pieces. Toss it in a bowl with 1/4 cup of the pesto.",
+  "Lay out 8 slices of the sourdough and spread 1 tbsp pesto over one side of each, 1/2 cup in all.",
+  "Drain 1/2 cup of the sun-dried tomatoes and pat them dry on paper towel.",
+  "On 4 of the slices, pesto side up, divide the chicken, then the 8 oz mozzarella, the sun-dried tomatoes and 2 cups of the spinach. Top with the other 4 slices, pesto side down.",
+  "Brush the outsides of the sandwiches with the 2 tbsp olive oil.",
+  "Heat a large skillet or grill pan over medium for 2 minutes. Put in 2 of the sandwiches and set a heavy pan on top to press them down. Cook for 3 to 4 minutes, until the underside is golden and crisp.",
+  "Flip them, put the heavy pan back on and cook the other side for 3 to 4 minutes, until it's golden and the cheese is melting out at the edges. If the bread browns before the cheese melts, turn the heat down a little.",
+  "Cook the other 2 sandwiches the same way. If you have a panini press, cook them in it for about 5 minutes instead.",
+  "Cut them in half and serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions put chicken, pesto and mozzarella between slices of bread and press the sandwich in a hot pan until the bread is crisp and the cheese melts. Tasting Table (the lead) coats the chicken in pesto, spreads more pesto on the sourdough, adds sun-dried tomatoes and spinach, and presses the sandwiches under a heavy skillet or in a panini press for 3 to 4 minutes a side. Kitchen Swagger sears thin raw chicken breasts first, uses fresh mozzarella, tomato and balsamic glaze on panini bread, and presses the sandwich with a spatula in the same pan. This one follows the lead but starts from leftover roast chicken.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Chicken Pesto Panini Recipe",
+   "url": "https://www.tastingtable.com/1553083/chicken-pesto-panini-recipe/",
+   "rating": 5.0,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kitchen Swagger",
+   "title": "Chicken Pesto Panini Recipe",
+   "url": "https://kitchenswagger.com/cast-iron-chicken-pesto-and-mozzarella-panini-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

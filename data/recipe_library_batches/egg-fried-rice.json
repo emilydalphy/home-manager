@@ -1,0 +1,130 @@
+{
+ "dish_name": "Egg Fried Rice",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas and carrots",
+   "qty": "1 bag (16 oz)",
+   "category": "frozen",
+   "cook_qty": "2 1/2 cups"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The day before: rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes. Spread it out on a plate or tray to cool, then cover it and refrigerate.",
+  "When you're ready to cook, take the rice out of the fridge and break up any clumps with your fingers so the grains are separate.",
+  "Finely chop the onion and mince the 4 garlic cloves. Slice the whole bunch of green onions.",
+  "Crack the 6 eggs into a bowl and beat them with a fork until there are no streaks of white left.",
+  "In a small bowl, stir together the 2 tbsp Shaoxing wine, 2 tbsp oyster sauce, 2 tbsp soy sauce, 2 tsp sesame oil and 1/2 tsp white pepper.",
+  "Heat 3 tbsp of the oil in your largest wok or skillet over high until it shimmers and starts to smoke. Add the onion and stir for about 1 minute, until it starts to soften.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the 2 1/2 cups frozen peas and carrots straight from the freezer. Stir for 2 minutes, until they've thawed and the water has cooked off.",
+  "Add all the rice and pour the sauce over it. Toss and press the rice against the pan for 2 to 3 minutes, until the liquid has gone and the grains look dry and a little toasted.",
+  "Push the rice to one side of the pan. Add the last 1 tbsp oil to the empty space and pour in the eggs. Leave them for about 20 seconds, then scramble them until they're fully set and in small pieces.",
+  "Add the green onions and toss everything together until the egg is spread through the rice. Take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve it hot, straight from the pan."
+ ],
+ "advance_prep_notes": "cook and chill the rice the day before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All three versions use cold cooked rice, stir fry it hard in hot oil, and finish with plenty of green onion. RecipeTin Eats softens onion and garlic first, adds mixed vegetables and seasons with Shaoxing wine, oyster sauce, soy, sesame oil and white pepper, then scrambles the egg in a cleared space in the pan. Omnivore's Cookbook keeps it to egg, rice, salt and green onion, cooking the egg first so it coats the grains, and BBC Good Food fries onion until browned and seasons only at the table. This one follows RecipeTin Eats, doubled for 4 and without its optional bacon, with the rice cooked the day before.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Fried Rice",
+   "url": "https://www.recipetineats.com/egg-fried-rice/",
+   "rating": 4.99,
+   "rating_count": 300,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Easy Egg Fried Rice (蛋炒饭)",
+   "url": "https://omnivorescookbook.com/egg-fried-rice/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "BBC Good Food",
+   "title": "Easy egg-fried rice",
+   "url": "https://www.bbcgoodfood.com/recipes/egg-fried-rice",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

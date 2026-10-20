@@ -1,0 +1,126 @@
+{
+ "dish_name": "Rajas con Crema Tacos",
+ "cuisine": "Mexican",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Poblano peppers",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Oaxaca cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Turn the broiler to high with a rack about 6 inches below it. Lay the 6 poblanos on a foil-lined baking sheet and broil them for 10 to 15 minutes, turning them every few minutes, until the skin is blackened and blistered all over.",
+  "Put them in a bowl, cover it with a plate and leave them to steam for 10 minutes. This loosens the skin.",
+  "Meanwhile, thinly slice the onion and mince the garlic clove. Thinly slice 6 of the radishes. Pull the 4 oz Oaxaca cheese into thin strings, or shred it.",
+  "Peel the poblanos, rubbing the skin off with a paper towel. Don't rinse them under the tap, or you'll wash away the smoky flavor. Pull out the stems and seeds and cut the flesh into strips about 1/4 inch wide.",
+  "Heat the 1 tbsp oil and 1 tbsp butter in a large skillet over medium. Add the onion and 1/4 tsp of the salt and cook for 5 to 6 minutes, stirring now and then, until it's soft and golden at the edges.",
+  "Add the garlic and stir for 30 seconds, until you can smell it.",
+  "Add the poblano strips, 1 cup of the corn, the remaining 1/2 tsp salt and the 1/4 tsp pepper. Cook for 2 to 3 minutes, stirring, until the corn is hot and a few strips have browned.",
+  "Pour in 1/2 cup of the broth and 1 cup of the crema. Turn the heat to low and simmer for about 5 minutes, stirring now and then, until the sauce is thick enough to coat the strips. Keep it at a gentle bubble. A hard boil can make the crema split.",
+  "While it simmers, warm the 12 tortillas in a dry pan over medium-high for about 30 seconds a side, and stack them in a clean kitchen towel.",
+  "Take the skillet off the heat and stir in the cheese until it melts.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve the rajas in the warm tortillas with the sliced radishes."
+ ],
+ "method_notes": "All three char poblanos, steam them in a covered bowl or bag, peel and cut them into strips, then cook them with onion and corn and finish them in Mexican crema. Maricruz Avalos softens the onion in oil and butter, simmers the rajas in crema with a little vegetable broth and melts in Oaxaca cheese. Lemon Blossoms adds garlic, half and half and Monterey Jack, and Sweet Life Bake skips the cheese and tops the tacos with sliced radishes. This one follows Maricruz Avalos with fresh garlic in place of garlic powder and the radishes from Sweet Life Bake for crunch. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Mexican) has no version, so the read version with the most ratings leads.",
+ "sources": [
+  {
+   "name": "Maricruz Avalos",
+   "title": "Rajas Con Crema",
+   "url": "https://www.maricruzavalos.com/rajas-con-crema/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lemon Blossoms",
+   "title": "Rajas con Crema Recipe",
+   "url": "https://www.lemonblossoms.com/blog/rajas-con-crema/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sweet Life Bake",
+   "title": "Tacos de Rajas de Poblano con Elote y Crema",
+   "url": "https://sweetlifebake.com/tacos-de-rajas-de-poblano-con-elote-y-crema/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

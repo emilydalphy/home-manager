@@ -1,0 +1,135 @@
+{
+ "dish_name": "Patatas Bravas",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Baby potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Hot smoked paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F (230°C) and line a large baking sheet with parchment paper.",
+  "Cut the potatoes in half. Put them in a large pot with 2 quarts of cold water and 2 tbsp white vinegar and bring it to a boil over high heat.",
+  "Boil them for 4 to 5 minutes, until a knife goes in with a little push but they still hold their shape. Drain them and leave them in the colander for 5 minutes to steam dry.",
+  "Meanwhile, make the aioli. Grate 1 of the garlic cloves into a small bowl, whisk in 1/4 cup mayonnaise and 2 tbsp of the olive oil until smooth, and put it in the fridge.",
+  "Transfer the potatoes onto the baking sheet. Toss them with 2 tbsp of the olive oil, 1 tsp of the salt, the 1/2 tsp black pepper and 1/2 tsp of the smoked paprika. Spread them out cut side down with a little room between them.",
+  "Roast for 20 to 25 minutes, turning them once halfway, until they're deep golden and crisp at the edges.",
+  "While they roast, finely chop the onion and mince the last 2 garlic cloves.",
+  "Warm the last 2 tbsp of olive oil in a small saucepan over medium heat. Add the onion and cook for about 5 minutes, stirring now and then, until it's soft and pale gold.",
+  "Add the garlic and the remaining 1 tsp smoked paprika and stir for 30 seconds, until it smells toasty. Don't let the paprika go darker than brick red, or it turns bitter.",
+  "Pour in the crushed tomatoes and add 1/4 tsp sugar and the remaining 1/2 tsp salt. Simmer for 8 to 10 minutes, stirring often, until the sauce is thick enough to leave a clear line when you drag a spoon through it.",
+  "Take the pan off the heat and stir in 1 tsp sherry vinegar. Taste it, and add a pinch more salt if it's flat.",
+  "Put the 1/2 tsp hot smoked paprika in a small bowl for the table, and chop 2 tbsp of the parsley.",
+  "Pile the potatoes on a platter. Spoon the bravas sauce over them, drizzle the aioli on top and scatter the parsley over everything.",
+  "Serve hot, with the hot paprika on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions cook the potatoes until golden and pair them with a smoky red sauce and a garlic mayonnaise. The Wanderlust Kitchen parboils baby potatoes with a splash of vinegar so they hold their shape, roasts them at 450°F and makes a quick sauce from blended tomatoes, onion, garlic and hot paprika. Spain on a Fork shallow fries the potatoes and makes the Madrid style sauce with no tomato, thickened paprika and broth instead, and Jamie Oliver fries parboiled potatoes and blends a chunkier sauce with carrot, chilli and sherry vinegar. This one follows the lead's parboil and roast, cooks the onion before the tomatoes so no blender is needed, finishes the sauce with sherry vinegar, and keeps the sauce mild with the hot paprika on the side.",
+ "sources": [
+  {
+   "name": "The Wanderlust Kitchen",
+   "title": "Patatas Bravas Recipe",
+   "url": "https://thewanderlustkitchen.com/patatas-bravas/",
+   "rating": 4.48,
+   "rating_count": 185,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "The FAMOUS Patatas Bravas from Barcelona Spain",
+   "url": "https://spainonafork.com/the-famous-patatas-bravas-from-barcelona-spain-classic-tapas-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Jamie Oliver",
+   "title": "Patatas bravas",
+   "url": "https://www.jamieoliver.com/recipes/potato/patatas-bravas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

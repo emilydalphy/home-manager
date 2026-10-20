@@ -1,0 +1,108 @@
+{
+ "dish_name": "Cilbir",
+ "cuisine": "Turkish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub (500 g)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Distilled white vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Pita",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Take the 2 cups yogurt out of the fridge first. Grate or crush the garlic clove to a paste and stir it into the yogurt with 1/4 tsp of the salt.",
+  "Spread the yogurt over 4 plates or shallow bowls, making a flat bed big enough for 2 eggs on each.",
+  "Bring about 6 cups of water to a boil in a wide pot over high heat.",
+  "Meanwhile, crack 4 of the eggs one at a time into a fine sieve over the sink and let the thin, watery white drip off for about 20 seconds. Transfer them gently into a measuring cup. You'll do the second 4 the same way after the first batch.",
+  "Add 1 tbsp of the vinegar and 1 tsp of the salt to the boiling water and take the pot off the heat. Hold the cup just above the water and slide the eggs in one at a time, leaving space between them. Cover the pot and leave it for 3 minutes, until the whites are set and the yolks still jiggle.",
+  "While they poach, melt the 4 tbsp butter in a small pan over medium heat and let it bubble for 2 to 3 minutes, until it smells nutty. Stir in the 2 tsp Aleppo pepper. It will foam. Take it off the heat.",
+  "Lift the eggs out with a slotted spoon, let them drain over the pot and set 1 on each plate of yogurt.",
+  "Bring the water back to a boil, add the last 1 tbsp vinegar and 1 tsp salt, and poach the other 4 eggs the same way. Set one on each plate.",
+  "Spoon the red butter over the eggs. Crumble the 1/2 tsp dried mint over the top and scatter on a little chopped dill.",
+  "Serve right away with warm pita."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions build the dish the same way: garlic yogurt spread on the plate, soft poached eggs on top and melted butter with Aleppo pepper or paprika spooned over. America's Test Kitchen drains the thin whites in a colander, poaches the eggs off the heat in a covered pot and finishes with dried mint; Cooking Gorgeous poaches in a swirl of simmering vinegared water and adds mint or dill to the yogurt, and An Edible Mosaic blooms smoked paprika and cayenne in butter with olive oil and finishes with dill. This follows America's Test Kitchen with 2 eggs a person, poached in two batches. America's Test Kitchen leads with 4.4 from 146 reviews.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Çılbır (Turkish Poached Eggs with Yogurt and Spiced Butter)",
+   "url": "https://www.americastestkitchen.com/recipes/14698-cilbir-turkish-poached-eggs-with-yogurt-and-spiced-butter",
+   "rating": 4.4,
+   "rating_count": 146,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Turkish Eggs Çılbır",
+   "url": "https://cookingorgeous.com/blog/cilbir/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "An Edible Mosaic",
+   "title": "Cilbir (Turkish Eggs with Yogurt Recipe)",
+   "url": "https://www.anediblemosaic.com/cilbir-turkish-eggs-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

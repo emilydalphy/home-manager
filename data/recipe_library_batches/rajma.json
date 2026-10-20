@@ -1,0 +1,152 @@
+{
+ "dish_name": "Rajma",
+ "cuisine": "Indian",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Red kidney beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Drain and rinse the 2 cans of kidney beans.",
+  "Finely chop the onion. Halve the 3 tomatoes and grate the cut sides on the large holes of a box grater until only the skin is left in your hand. Throw away the skins. Grate 1 tsp of the ginger and mince the 3 garlic cloves.",
+  "Thinly slice the green chili into a small bowl for the table.",
+  "Melt 3 tbsp ghee in a heavy pot over medium. Add the bay leaf and the 1/2 tsp cumin seeds. After about 20 seconds the seeds will sizzle and smell toasty. That's your cue for the onion.",
+  "Add the onion with 1/4 tsp of the salt and cook for 5 to 6 minutes, stirring now and then, until it's golden. Don't rush this part. The onion gives the gravy its body.",
+  "Add the ginger and garlic and stir for 30 to 60 seconds, until they stop smelling raw.",
+  "Add the grated tomatoes and cook for 3 to 4 minutes, stirring, until they thicken and stop smelling raw.",
+  "Turn the heat to low. Add 1/4 tsp turmeric, 1/2 tsp Kashmiri chili powder, 3/4 tsp of the garam masala, 2 tsp coriander, 3/4 tsp ground cumin and the other 1/2 tsp salt. Stir for 2 to 3 minutes, until it smells fragrant and you can see oil at the edges. If it starts to stick, add a splash of water.",
+  "Add the beans and 1 cup hot water and bring it to a simmer over medium. Simmer for 10 to 15 minutes, stirring now and then, until the gravy thickens a little.",
+  "Mash about 2 tbsp of the beans against the side of the pot and stir them back in. If it's thicker than you like, add a little more hot water.",
+  "Add the last 1/4 tsp garam masala and crush the 2 tsp kasuri methi between your palms over the pot. Simmer for 2 minutes, then turn off the heat.",
+  "Squeeze in the juice of half the lemon and cut the other half into wedges. Chop 2 tbsp of the cilantro and scatter it over. Taste it. If it's flat, add a pinch more salt or a squeeze from a wedge.",
+  "Serve over basmati rice, with the lemon wedges and the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three build a Punjabi onion-tomato masala: cumin seeds (and a bay leaf) in ghee or oil, onion cooked golden, ginger-garlic, tomato cooked down, then ground spices until oil shows, with a few beans mashed in to thicken the gravy and kasuri methi to finish. Swasthi's gives dried beans soaked 6 hours to overnight and pressure cooked, or two cans as the shortcut, simmered 10 to 15 minutes and finished with lemon. Cook with Manali uses dried beans only and cooks the tomato masala a full 15 minutes before a 20 to 30 minute simmer. Tea for Turmeric adds whole spices, tomato paste, cream and butter. This one uses Swasthi's canned bean route so it fits a weeknight, keeps the chili low and puts the green chili on the side.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Rajma Recipe (Rajma Masala)",
+   "url": "https://www.indianhealthyrecipes.com/rajma-recipe-rajma-masala/",
+   "rating": 4.99,
+   "rating_count": 653,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Rajma Masala",
+   "url": "https://www.cookwithmanali.com/rajma/",
+   "rating": 4.94,
+   "rating_count": 77,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tea for Turmeric",
+   "title": "Rajma Recipe (Rajma Masala - Red Kidney Beans Curry)",
+   "url": "https://www.teaforturmeric.com/rajma/",
+   "rating": 5,
+   "rating_count": 29,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

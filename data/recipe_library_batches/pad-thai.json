@@ -1,0 +1,135 @@
+{
+ "dish_name": "Pad Thai",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pad Thai rice noodles",
+   "qty": "1 package (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind puree",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Make the sauce. Stir together 3 tbsp tamarind puree, 6 tbsp brown sugar, 1/4 cup fish sauce and 3 tbsp oyster sauce until the sugar dissolves.",
+  "Peel and devein the 12 oz shrimp if they aren't already, and pat them dry. Crack the 4 eggs into a bowl and whisk them lightly.",
+  "Slice the onion. Finely chop the 4 garlic cloves. Cut enough of the tofu into 1 1/4 inch sticks to fill 1 cup. Cut 1/2 cup of the garlic chives into 1 1/4 inch lengths.",
+  "Finely chop the 1/2 cup peanuts. Cut the 2 limes into wedges. Put the red pepper flakes in a small bowl for the table.",
+  "Put the 8 oz noodles in a large bowl and cover them with boiling water. Soak for 5 minutes, then drain and rinse them quickly under cold water. Cook them within 10 minutes or they start to clump.",
+  "You'll cook it in two batches. Heat 2 tbsp oil in a large nonstick skillet over high heat. Add half the onion and half the garlic and stir for 30 seconds.",
+  "Add half the shrimp and cook for about 1 1/2 minutes, turning them once, until they're mostly pink.",
+  "Push everything to one side and pour half the eggs into the empty space. Scramble them until just set, then mix them in.",
+  "Add 1 1/2 cups of the bean sprouts, half the tofu, half the noodles and half the sauce. Toss gently for about 1 1/2 minutes, until the noodles have soaked up the sauce and the shrimp are pink and opaque all the way through.",
+  "Toss in half the chives and 2 tbsp of the peanuts, then transfer it onto a platter.",
+  "Wipe out the pan and cook the second batch the same way with the last 2 tbsp oil, the rest of the onion, garlic, shrimp, eggs, tofu, noodles, sauce and chives, another 1 1/2 cups of the bean sprouts and another 2 tbsp of the peanuts.",
+  "Taste it. If it's flat, add a splash more fish sauce or a squeeze of the lime.",
+  "Serve sprinkled with the rest of the peanuts, with the lime wedges, the rest of the bean sprouts and the pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both soak or briefly boil rice sticks until just pliable, rinse them cold, and build a sauce of tamarind, brown sugar and fish sauce, cooking garlic and the protein hot and fast, scrambling egg at the side of the pan, then tossing in bean sprouts, noodles and sauce and finishing with peanuts and lime. RecipeTin Eats (chicken in the original, any protein fine) adds oyster sauce, onion, firm tofu and garlic chives, insists on tamarind puree rather than concentrate (a third the amount if concentrate is all you have), and serves extra sprouts and chilli on the side. Mission Food cooks shrimp with garlic and scallions and leaves out the oyster sauce, onion and tofu. The lead serves 2 to 3, so this doubles it and cooks it in two batches so the pan stays hot.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pad Thai",
+   "url": "https://www.recipetineats.com/chicken-pad-thai/",
+   "rating": 4.93,
+   "rating_count": 453,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mission Food",
+   "title": "Authentic Pad Thai with Shrimp",
+   "url": "https://mission-food.com/shrimp-pad-thai/",
+   "rating": 4.91,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,53 @@
+{
+ "dish_name": "Chicken and Sausage Gumbo",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 130,
+ "ingredients": [
+  {"item": "Rotisserie chicken", "qty": "1", "category": "meat/seafood"},
+  {"item": "Andouille sausage", "qty": "12 oz", "category": "meat/seafood"},
+  {"item": "Vegetable oil", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Green bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 ribs"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Creole seasoning", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Bay leaf", "qty": "1", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Chicken stock", "qty": "4 cups", "category": "pantry"},
+  {"item": "Frozen cut okra", "qty": "1 bag (12 oz)", "category": "frozen"},
+  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Dice the onion, the green pepper and 2 ribs of the celery, and keep them together in one bowl. Mince the 3 garlic cloves. Slice the andouille into rounds about 1/4 inch thick.",
+  "Pull all the meat off the rotisserie chicken and shred it into bite-size pieces. Leave out the skin and bones.",
+  "Put the sausage in a large Dutch oven over medium heat. Cook for 6 to 8 minutes, stirring now and then, until the rounds are browned on both sides. Lift them out with a slotted spoon onto a plate and leave the fat in the pot.",
+  "Turn the heat down to medium low. Add the 1/2 cup oil and the 1/2 cup flour and stir until it's a smooth paste. That's your roux.",
+  "Keep stirring the roux with a flat wooden spoon for 30 to 45 minutes, scraping across the whole bottom of the pot, until it turns a deep chocolate brown and smells nutty. Don't walk away from it. If you see black flecks, it has burned, and you'll need to start the roux again.",
+  "Add the onion, pepper and celery with 1/2 tsp of the salt. Stand back a little. It'll hiss and steam. Cook for 8 to 10 minutes, stirring often, until the vegetables are soft and the onion turns see-through.",
+  "Add the garlic, the 1 1/2 tsp Creole seasoning, the 1/2 tsp thyme and the 1/4 tsp pepper. Stir for about 1 minute, until it smells fragrant.",
+  "Pour in the 4 cups stock about a cup at a time, stirring well after each one until the gumbo is smooth. Add the bay leaf. Bring it to a boil, then turn it down to a gentle simmer and cook uncovered for 45 minutes, stirring now and then.",
+  "Stir in the sausage, the shredded chicken and the frozen okra straight from the bag. Simmer uncovered for another 30 minutes, stirring now and then, until the gumbo is thick enough to coat a spoon. Skim off any fat that pools on top.",
+  "Meanwhile, rinse the 1 1/2 cups rice in a sieve until the water runs clear. Put it in a saucepan with 2 1/4 cups water and the remaining 1/2 tsp salt and bring it to a boil. Cover, turn the heat to low and cook for 18 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Thinly slice 4 of the green onions.",
+  "Fish out the bay leaf. Taste the gumbo. If it's flat, add a pinch more salt.",
+  "Serve over the rice with the green onions on top and the hot sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions cook a dark roux of flour and fat, soften onion, green pepper and celery in it, add garlic and Creole or Cajun seasoning, then simmer stock with bay and thyme before the sausage, chicken and okra go in, served over white rice. Southern Bite, the lead, takes the roux to milk chocolate brown, adds shredded cooked chicken and browned andouille after a 45 minute simmer, then simmers another 30 to 45 minutes with okra and serves it with green onion and hot sauce. A Spicy Perspective makes a quicker butter and oil roux, simmers whole thighs with canned tomatoes and shreds them, and XOXO Bella browns the sausage first and uses a rotisserie chicken and tomatoes. This one follows the lead without tomatoes, browns the sausage in the gumbo pot first like XOXO Bella so its fat goes into the roux, and keeps the hot sauce at the table.",
+ "sources": [
+  {"name": "Southern Bite", "title": "Chicken and Sausage Gumbo", "url": "https://southernbite.com/chicken-and-sausage-gumbo/", "rating": 4.91, "rating_count": 32, "read": true, "lead": true},
+  {"name": "A Spicy Perspective", "title": "Chicken and Sausage Gumbo Recipe", "url": "https://www.aspicyperspective.com/chicken-and-sausage-gumbo/", "rating": 5, "rating_count": 1, "read": true, "lead": false},
+  {"name": "XOXO Bella", "title": "Chicken and Sausage Gumbo", "url": "https://xoxobella.com/chicken-and-sausage-gumbo/", "rating": 4.86, "rating_count": 7, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

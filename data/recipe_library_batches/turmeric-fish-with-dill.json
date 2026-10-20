@@ -1,0 +1,137 @@
+{
+ "dish_name": "Turmeric Fish with Dill",
+ "cuisine": "Vietnamese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Catfish fillets",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp + 3 tbsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp + 3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red Thai chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dill",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Cut the 1.25 lb catfish into 2-inch pieces and pat them dry with paper towels. Put them in a bowl.",
+  "Mince 3 of the garlic cloves and the shallot. Add them to the fish with 1 1/2 tsp fish sauce, 1 1/2 tsp turmeric, 1/2 tsp salt, 1/2 tsp sugar and 1 tbsp of the oil. Turn the pieces gently with your hands until they're coated, then cover the bowl and put it in the fridge for 30 minutes. Turmeric stains, so wear gloves if you have them.",
+  "Meanwhile, make the nuoc cham. Stir 3 tbsp sugar into 1/2 cup warm water until it dissolves. Mince the last garlic clove and add it with 3 tbsp fish sauce and the juice of the 2 limes.",
+  "Thinly slice the chili into a small bowl for the table.",
+  "Bring a pot of water to a boil and cook the 8 oz vermicelli the way the package says, usually 3 to 5 minutes. Drain it, rinse it under cold water and shake it dry. Divide it between 4 bowls.",
+  "Thinly slice the onion. Cut the green onions and the dill into 2-inch lengths, leaving out the thick dill stems. Roughly chop 1/2 cup peanuts.",
+  "Heat 2 tbsp of the oil in a large nonstick skillet over medium-high until it shimmers. Add the fish in a single layer, working in two batches if it doesn't fit. Leave it for 2 to 3 minutes, until the underside is golden and lets go of the pan.",
+  "Flip the pieces and cook the other side for 2 minutes. The fish is done when it flakes easily in the middle. Move it to a plate.",
+  "Wipe out the pan and add the last 1 tbsp oil over medium. Add the onion and half the green onions and cook for 2 minutes, until the onion turns see-through.",
+  "Add half the dill and toss it for 30 seconds, until it wilts.",
+  "Put the fish back in the pan and scatter the rest of the green onions and dill over it. Turn everything gently for 1 minute to warm the fish through, then take the pan off the heat.",
+  "Taste a piece of fish. If it's flat, add a pinch more salt.",
+  "Spoon the fish and greens over the noodles and scatter the peanuts on top. Serve with the nuoc cham and the sliced chili."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All versions marinate firm white fish in fish sauce and turmeric, brown it in a hot pan, then wilt a big handful of dill and green onions in the same pan and serve it over rice vermicelli. Posh Journal marinates the fish for 30 minutes with garlic, shallot and sugar, wilts sliced onion with the herbs, and serves it with peanuts and nuoc cham. Caroline's Cooking adds galangal or ginger to the marinade and pushes the fish aside to wilt the herbs, and Marion's Kitchen adds curry powder and steams the fish briefly under a lid. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Vietnamese) has no version, so the best rated read version leads.",
+ "sources": [
+  {
+   "name": "Posh Journal",
+   "title": "Cha Ca (Vietnamese Turmeric Fish with Dill)",
+   "url": "https://poshjournal.com/cha-ca-vietnamese-turmeric-fish",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Marion's Kitchen",
+   "title": "Vietnamese Turmeric & Dill Fish 'Cha Ca'",
+   "url": "https://www.marionskitchen.com/vietnamese-turmeric-dill-fish-cha-ca/",
+   "rating": 4.9,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Caroline's Cooking",
+   "title": "Vietnamese turmeric fish, Cha ca La Vong",
+   "url": "https://www.carolinescooking.com/vietnamese-turmeric-fish-cha-ca-la-vong/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

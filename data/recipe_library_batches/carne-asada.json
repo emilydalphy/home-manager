@@ -1,0 +1,49 @@
+{
+ "dish_name": "Carne Asada",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Flank steak", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Orange", "qty": "1", "category": "produce"},
+  {"item": "Limes", "qty": "3", "category": "produce"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Ground cumin", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Chili powder", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "12 (6 inch)", "category": "other"},
+  {"item": "Avocado", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "At least 2 hours ahead, and no more than 4: squeeze the orange into a measuring cup. That should be about 1/3 cup of juice. Squeeze 2 of the limes into the same cup, about 3 tbsp.",
+  "Mince the 3 garlic cloves. Seed the jalapeño and mince it. Finely chop about 1/3 cup of the cilantro.",
+  "In a bowl, whisk the juices with the 2 tbsp olive oil, 3 tbsp soy sauce, the garlic, jalapeño, chopped cilantro, the 3/4 tsp cumin, the 3/4 tsp chili powder, the 1/2 tsp salt and the 1/2 tsp pepper. Spoon 3 tbsp of it into a small covered bowl and put it in the fridge. That's your sauce for the table.",
+  "Put the flank steak in a zip-top bag and pour in the rest of the marinade. Squeeze out the air, seal it, and turn it a few times until the steak is coated. Put it in the fridge for 2 to 4 hours, turning the bag once halfway.",
+  "On the day, take the steak out of the fridge about 20 minutes before you cook it. Heat a grill to about 400°F, or set a cast iron skillet or grill pan over high heat until it smokes.",
+  "Lift the steak out of the bag, let the extra marinade drip off and pat it dry with paper towels. Throw the used marinade away.",
+  "Lay the steak on the grill or in the pan and leave it alone for 5 to 7 minutes, until the underside is deep brown with charred edges. Flip it and cook the other side for 5 to 6 minutes.",
+  "You're cooking it to 130°F in the thickest part for medium rare, so if you have a thermometer, check it there. No thermometer? Cut a small slit in the thickest part: it's ready when the middle is rosy pink. Move it to a board, cover it loosely with foil and let it rest for 5 minutes.",
+  "While the steak rests, warm the 12 tortillas on the grill or in a dry skillet over medium high for about 30 seconds, then flip them and warm the other side until they're soft and have a few brown spots. Stack them in a clean kitchen towel and wrap them up.",
+  "Slice the avocado, chop a small handful of the cilantro and cut the last lime into wedges.",
+  "Find the lines running along the steak and slice it thin across them. Cutting the other way makes it chewy. Spoon the reserved sauce over the slices.",
+  "Taste a slice. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve with the warm tortillas, avocado, cilantro and lime wedges."
+ ],
+ "advance_prep_notes": "marinate 2 to 4 hours ahead",
+ "advance_prep_step_indices": [1, 2, 3, 4],
+ "method_notes": "All three marinate flank or skirt steak in orange and lime juice with garlic, jalapeño and oil, cook it hot and fast, rest it and slice it thin across the grain. Jo Cooks, the lead, adds soy sauce, cumin, chili powder and cilantro, marinates for 2 to 4 hours, grills it 5 to 7 minutes a side and keeps a little of the marinade back to spoon over the sliced steak. RecipeTin Eats leaves out the soy and adds white vinegar and a whole cup of cilantro, and Spend With Pennies blends its marinade and leaves it overnight. This one follows the lead at three quarters of its size, with the jalapeño seeded.",
+ "sources": [
+  {"name": "Jo Cooks", "title": "Carne Asada", "url": "https://www.jocooks.com/recipes/carne-asada/", "rating": 4.75, "rating_count": 51, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Carne Asada", "url": "https://www.recipetineats.com/carne-asada/", "rating": 5.0, "rating_count": 16, "read": true, "lead": false},
+  {"name": "Spend With Pennies", "title": "Carne Asada Recipe", "url": "https://www.spendwithpennies.com/carne-asada-recipe/", "rating": 5.0, "rating_count": 11, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

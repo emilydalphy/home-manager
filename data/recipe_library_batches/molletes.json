@@ -1,0 +1,110 @@
+{
+ "dish_name": "Molletes",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Bolillo rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Refried beans",
+   "qty": "1 can (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Oaxaca cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Set an oven rack about 6 inches under the broiler and turn the broiler on high. Take the 3 tbsp butter out so it softens a little.",
+  "Make the pico de gallo. Dice the 2 tomatoes, finely chop a quarter of the onion and chop 2 tbsp of the cilantro. Toss them in a small bowl with the juice of half the lime and the 1/4 tsp salt.",
+  "Seed and thinly slice the jalapeño and put it in a small bowl for the table. Cut the other half of the lime into wedges.",
+  "Spoon the refried beans into a small pan over medium and stir for about 3 minutes, until they're hot and easy to spread. If they're stiff, stir in a splash of water.",
+  "Split the 4 rolls in half lengthwise and spread the cut sides with the butter. Lay them buttered side up on a baking sheet and broil for 1 to 2 minutes, until the edges are golden. Watch them closely. They go from golden to burnt fast.",
+  "Spread the beans over the 8 halves, right out to the edges. Pull the 8 oz Oaxaca cheese into thin strings and pile it over the beans.",
+  "Broil for 2 to 3 minutes, until the cheese has melted and is browning in spots.",
+  "Slice the avocado. Top each mollete with a spoonful of the pico de gallo and a few slices of avocado.",
+  "Serve with the sliced jalapeño and the lime wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions split crusty rolls, spread them with mashed beans, cover them with melting cheese and toast them until the cheese bubbles, then top them with pico de gallo. Bon Appetit butters and broils the rolls before the beans go on, makes its own refried pintos with onion and a bay leaf, uses Oaxaca or Monterey Jack and adds a fried egg, avocado and pickled onion. Tasting Table blends black beans with cumin and oregano and also toasts the buttered rolls first, and Mama Latina Tips mashes canned black beans and tops them with queso fresco. This one keeps the lead's butter-and-broil method and uses canned refried beans so it fits a ten-minute morning.",
+ "sources": [
+  {
+   "name": "Bon Appetit",
+   "title": "Molletes",
+   "url": "https://www.bonappetit.com/recipe/molletes",
+   "rating": 4.3,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tasting Table",
+   "title": "Black Bean Molletes Recipe",
+   "url": "https://www.tastingtable.com/2237060/black-bean-molletes-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mama Latina Tips",
+   "title": "Black Bean Molletes",
+   "url": "https://www.mamalatinatips.com/2013/08/molletes-recipe.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,44 @@
+{
+ "dish_name": "Cold Sesame Noodles",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Dried wheat noodles", "qty": "1 package (12 oz)", "category": "pantry", "cook_qty": "9 oz"},
+  {"item": "Chinese sesame paste", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Chinkiang black vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 piece", "category": "produce", "cook_qty": "1 tsp minced"},
+  {"item": "Ground Sichuan peppercorns", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "English cucumber", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "1", "category": "produce"},
+  {"item": "Sesame seeds", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Chili oil", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil for the noodles.",
+  "Meanwhile, stir the sesame paste in its jar until the oil on top is mixed back in. Put 1/4 cup in a bowl and stir in 2 tbsp warm water a little at a time, until it's smooth.",
+  "Stir in the 2 tbsp soy sauce, then the 2 tbsp black vinegar, the 1 tbsp sugar and the 1 tsp sesame oil, mixing each one in before you add the next.",
+  "Mince the 2 garlic cloves and 1 tsp of the ginger and stir them in with the 1/8 tsp Sichuan pepper. The sauce should be smooth and pourable. If it's thick, stir in another 1 to 2 tbsp warm water.",
+  "Cut the cucumber and the carrot into thin matchsticks.",
+  "Cook the 9 oz noodles in the boiling water until they're tender, following the time on the package.",
+  "Drain the noodles and rinse them under cold running water, tossing them with your hands until they're cold all the way through. Shake off as much water as you can, or the sauce will be watery.",
+  "To pack them, divide the noodles among 4 containers with the cucumber, the carrot and the 1 tbsp sesame seeds on top, and spoon the sauce into 4 small jars. They keep in the fridge for up to 3 days. Pour the sauce over and mix it in right before you eat.",
+  "To eat them now, divide the noodles among 4 bowls, spoon the sauce over and top with the cucumber, the carrot and the sesame seeds. Serve with the chili oil on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three dress cold rinsed wheat noodles in a sauce built on sesame paste, soy and vinegar with garlic, and top them with raw cucumber. Omnivore's Cookbook thins Chinese sesame paste with warm water before adding soy, black vinegar, a little sweetness, ginger, garlic and ground Sichuan pepper, and keeps the sauce separate until you eat. RecipeTin Eats leans on peanut butter with a spoon of sesame paste and dark soy, and The Woks of Life mostly peanut butter with orange juice and more vegetables. This one follows Omnivore's Cookbook, adds carrot as its own notes suggest, and puts the chili oil on the side. Tahini works in place of the Chinese sesame paste, though it tastes milder.",
+ "sources": [
+  {"name": "Omnivore's Cookbook", "title": "Real Deal Sesame Noodles", "url": "https://omnivorescookbook.com/sesame-noodles/", "rating": 5.0, "rating_count": 26, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Sesame Noodles", "url": "https://www.recipetineats.com/sesame-noodles/", "rating": 4.94, "rating_count": 43, "read": true, "lead": false},
+  {"name": "The Woks of Life", "title": "Cold Sesame Noodles", "url": "https://thewoksoflife.com/cold-sesame-noodles/", "rating": 5.0, "rating_count": 9, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

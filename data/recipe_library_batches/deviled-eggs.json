@@ -1,0 +1,38 @@
+{
+ "dish_name": "Deviled Eggs",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Eggs", "qty": "6", "category": "dairy"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "White vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Paprika", "qty": "a pinch", "category": "pantry"},
+  {"item": "Chives", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Up to 2 days ahead, or at least 1 hour before: fill a saucepan with enough water to cover the eggs by 1 inch and bring it to a gentle boil over medium high. Lower the 6 cold eggs in with a slotted spoon. Boil them for 30 seconds, then cover the pan, turn the heat to low and let them simmer gently for 12 minutes.",
+  "Meanwhile, fill a bowl with ice and cold water. Move the eggs into it and leave them for 15 minutes, until they're cold all the way through. If you're working ahead, keep them in their shells in the fridge.",
+  "Tap each egg on the counter until the shell is cracked all over, then peel it under cool running water, starting from the wide end.",
+  "Cut the eggs in half lengthwise. Pop the yolks into a bowl and set the whites on a plate, cut side up.",
+  "Mash the yolks with a fork until there are no lumps left. Add the 1/4 cup mayonnaise, the 2 tsp Dijon, the 1/2 tsp vinegar and a pinch each of salt and pepper, and stir until the filling is smooth.",
+  "Taste the filling, and add a pinch more salt if it's flat.",
+  "Spoon the filling into a zip top bag, push it into one corner and snip off the tip. Pipe it into the whites, or spoon it in.",
+  "Finely chop about 1 tsp of the chives. Sprinkle the eggs with a pinch of paprika and the chives.",
+  "Cover the plate and keep the eggs in the fridge until you serve them. Filled eggs keep for up to 1 day."
+ ],
+ "advance_prep_notes": "boil the eggs up to 2 days ahead, or at least 1 hour before",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "Both cook 6 eggs for 11 to 12 minutes, chill them in ice water, then mash the yolks with mayonnaise, mustard, vinegar, salt and pepper and pipe the filling back into the whites. Jessica Gavin (the lead) lowers the eggs into barely boiling water, covers them and simmers them low for 12 minutes, uses Dijon and white vinegar, and tops them with paprika and chives. Once Upon a Chef boils them 11 minutes, presses the yolks through a sieve and adds cider vinegar, whole grain mustard, Worcestershire, a little sugar, cayenne and mixed herbs. This one follows the lead, with the eggs boiled ahead so the filling takes 15 minutes on the day.",
+ "sources": [
+  {"name": "Jessica Gavin", "title": "Deviled Eggs", "url": "https://www.jessicagavin.com/deviled-eggs/", "rating": 4.9, "rating_count": 35, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Deviled Eggs", "url": "https://www.onceuponachef.com/recipes/deviled-eggs.html", "rating": 4.8, "rating_count": 42, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

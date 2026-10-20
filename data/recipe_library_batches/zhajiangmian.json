@@ -1,0 +1,146 @@
+{
+ "dish_name": "Zhajiangmian",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Skin-on pork belly",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Star anise",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 small",
+   "category": "pantry"
+  },
+  {
+   "item": "Sichuan peppercorns",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sweet bean sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ground bean sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried wheat noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Finely chop 3 of the scallions, keeping the white parts and the green parts in separate piles. Cut 3 thin slices from the ginger.",
+  "Put the 3 tbsp oil, the scallion greens, the ginger slices, the 2 star anise, 3 bay leaves, the cinnamon stick and the 1 tsp Sichuan peppercorns in a cold wok or large skillet. Set it over low heat and let them sizzle gently for about 15 minutes, until the scallions are crisp and dark green but not burnt.",
+  "Meanwhile, cut the skin and the thick layers of fat away from the lean meat of the 1/2 lb pork belly. Cut the skin and fat into 1/2 inch pieces, and the lean meat into 1/2 inch pieces in a separate pile.",
+  "Sprinkle 1 tbsp water over the lean pork and mix it with your fingers until the water is soaked up.",
+  "Scoop all the aromatics out of the oil with a slotted spoon and throw them away, leaving the oil in the wok.",
+  "Turn the heat to medium low and add the pork skin and fat. Cook for 5 to 6 minutes, stirring now and then, until the fat has melted out and the edges are lightly golden.",
+  "Add the lean pork and stir for about 1 minute, until it turns pale all over.",
+  "Turn the heat down to low. Stir in the 2 tbsp Shaoxing wine, the 2 tsp dark soy sauce, the 2 tbsp sweet bean sauce, the 2 tbsp ground bean sauce, 1/2 cup water, the scallion whites, the 1/2 tsp sugar and the 1/4 tsp salt.",
+  "Cover the wok, turn the heat up to medium and simmer for 10 minutes. Meanwhile, put a large pot of water on to boil for the noodles.",
+  "While it simmers, cut the carrot and the 2 cucumbers into thin matchsticks. Mince the 2 garlic cloves and put them in a small bowl for the table.",
+  "Take the lid off, turn the heat up to medium high and stir for 8 to 10 minutes, until the sauce is thick and glossy and the oil starts to pool at the edges. Stop before it gets dry. Take it off the heat.",
+  "While the sauce cooks down, cook the 8 oz noodles in the boiling water as the package says, then drain them well.",
+  "Divide the noodles between 4 bowls and spoon some of the sauce over each. Top with the carrot and cucumber.",
+  "Serve with the raw garlic on the side and the rest of the sauce in a bowl for anyone who wants more."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both fry a fatty pork in a lot of oil, cook fermented bean pastes into it until thick, and toss it with wheat noodles under crisp raw cucumber and carrot. The Woks of Life (the lead) infuses the oil with scallion, ginger, star anise, bay, cinnamon and Sichuan peppercorns first, renders the pork belly fat before the lean meat goes in, uses both sweet bean sauce and ground bean sauce with Shaoxing wine and dark soy, then simmers and reduces it; its full batch keeps in the fridge for about 10 days. Taste Asian Food skips the infused oil, fries the pork with garlic, ginger and scallion and adds soaked shiitake and their soaking water. This one follows the lead's method at half its sauce, which is the right amount for 8 oz of noodles.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Zha Jiang Mian (Beijing \"Fried Sauce\" Noodles)",
+   "url": "https://thewoksoflife.com/beijing-fried-sauce-noodles-zha-jiang-mian/",
+   "rating": 4.83,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Asian Food",
+   "title": "Zha Jiang Mian (炸酱面)",
+   "url": "https://tasteasianfood.com/zha-jiang-mian/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

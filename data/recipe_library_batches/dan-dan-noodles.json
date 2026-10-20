@@ -1,0 +1,52 @@
+{
+ "dish_name": "Dan Dan Noodles",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Ground pork", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Fresh wheat noodles", "qty": "1 lb", "category": "produce"},
+  {"item": "Choy sum", "qty": "1 bunch", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Roasted peanuts", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Chinese sesame paste", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Light soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Hoisin sauce", "qty": "1 jar", "category": "pantry", "cook_qty": "4 tsp"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Granulated sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Chinese five spice powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Chili oil", "qty": "1 jar", "category": "pantry"},
+  {"item": "Ground Sichuan pepper", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with water and bring it to a boil over high heat for the noodles.",
+  "Meanwhile, make the sauce. Mince the 2 garlic cloves into a bowl and add the 2 tbsp sesame paste, 1/4 cup light soy sauce, 1 tbsp sugar and 1/2 tsp of the five spice. Stir until it's smooth.",
+  "Heat the 3/4 cup broth until it's steaming, in the microwave or a small pan. Stir it into the sauce a splash at a time, so the sesame paste loosens instead of clumping.",
+  "In a small bowl, stir together the 4 tsp hoisin, 2 tsp dark soy sauce, 2 tbsp Shaoxing wine and the remaining 1/2 tsp five spice for the pork.",
+  "Trim the choy sum and cut it into 4 inch pieces. Thinly slice 2 of the scallions and roughly chop the 1/4 cup peanuts.",
+  "Heat the 1 tbsp oil in a large skillet or wok over high heat until it shimmers. Add the 1 lb pork and break it up with a spatula. Then leave it alone for a minute so it browns on the bottom.",
+  "Keep cooking and breaking it up for 4 to 5 minutes, until there's no pink left and some bits are browned and crisp.",
+  "Pour in the hoisin mixture and stir for 1 to 2 minutes, until the liquid has cooked off and the pork looks dark and glossy. Take it off the heat.",
+  "Cook the noodles in the boiling water as the package says, usually 2 to 3 minutes for fresh noodles. Add the choy sum for the last minute, then drain everything.",
+  "Stir the sauce and divide it among 4 bowls. Pile the noodles on top, then the pork, with the choy sum to the side. Scatter over the scallions and peanuts.",
+  "Toss one bowl and taste it. If it's flat, add a pinch more salt.",
+  "Serve with the chili oil and Sichuan pepper on the side, and toss each bowl well before eating."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three build the bowl the same way: a sesame paste and soy sauce in the bottom, chewy wheat noodles and blanched greens, crumbled pork cooked dark with Chinese wine and soy on top, then peanuts and scallions, tossed before eating. RecipeTin Eats (the lead) thins its sauce with hot chicken stock, seasons it with sugar, garlic and five spice, and cooks the pork with hoisin, dark soy and wine. The Woks of Life is close but makes its own chili oil, and Omnivore's Cookbook sharpens its sauce with Chinkiang vinegar and honey and adds fermented black beans to the pork. All of them put chili oil and Sichuan pepper in the sauce; this one keeps the bowl mild and puts both on the table, and leaves out the preserved mustard greens (sui mi ya cai), which are hard to find.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Dan Dan Noodles", "url": "https://www.recipetineats.com/dan-dan-noodles/", "rating": 4.97, "rating_count": 62, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Dan Dan Noodles", "url": "https://thewoksoflife.com/dan-dan-noodles/", "rating": 4.94, "rating_count": 208, "read": true, "lead": false},
+  {"name": "Omnivore's Cookbook", "title": "Dan Dan Noodles (担担面)", "url": "https://omnivorescookbook.com/dan-dan-noodles/", "rating": 4.93, "rating_count": 41, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

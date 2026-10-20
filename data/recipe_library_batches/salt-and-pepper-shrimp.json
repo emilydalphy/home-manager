@@ -1,0 +1,98 @@
+{
+ "dish_name": "Salt and Pepper Shrimp",
+ "cuisine": "Chinese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Shell-on large shrimp",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Whole black peppercorns",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sichuan peppercorns",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a pot, swishing it with your fingers and pouring off the water two or three times, until the water is only a little cloudy. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, put the 2 tsp black peppercorns and 1 tsp Sichuan peppercorns in a small dry skillet over medium low. Shake the pan now and then for 4 to 5 minutes, until they smell toasty and look a shade darker. Transfer them onto a plate.",
+  "Put the 1 1/2 tsp salt in the same pan and stir it over medium for about 1 minute, until it's hot and very slightly off white. Transfer it onto the plate with the peppercorns and let it all cool.",
+  "Grind the peppercorns to a powder in a spice grinder or mortar, or crush them under a heavy pan. Mix them with the toasted salt in a small bowl. This is your pepper salt.",
+  "With kitchen scissors, snip each shrimp shell along the back and pull out the dark vein. Leave the shells on. Rinse the 1.5 lb shrimp and pat them very dry with paper towels.",
+  "Finely chop the 8 garlic cloves. Seed the jalapeño and slice it thinly.",
+  "Put the 1/3 cup cornstarch in a large bowl, add the shrimp and toss until every one is coated. Shake off the extra as you pick them up.",
+  "Heat the 1/2 cup oil in a large skillet over medium high. You're heating it to 375°F, so if you have a thermometer, check it. No thermometer? Drop in a pinch of cornstarch: it's ready when it bubbles fast straight away.",
+  "Lay in about a third of the shrimp, an inch apart. Stand back a little. They'll spatter. Fry for about 1 minute, until the underside is crisp and pale gold.",
+  "Flip them and cook the other side for about 1 minute, until they're curled, pink and opaque all the way through. Lift them onto paper towels and sprinkle them with a pinch of the pepper salt. Fry the rest in two more batches the same way.",
+  "Pour off all but about 2 tbsp of the oil. Turn the heat to medium, add the garlic and stir for 30 to 60 seconds, until it's pale gold. Watch it closely. It burns fast.",
+  "Add the jalapeño and turn off the heat. Stir for 30 seconds.",
+  "Put the shrimp back in the pan, sprinkle over 2 tsp of the pepper salt and toss for about 10 seconds, until they're coated with the garlic.",
+  "Taste one. If it's flat, add a pinch more of the pepper salt.",
+  "Serve with the rice, with the rest of the pepper salt in a small dish on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions dry the shrimp well, coat them lightly in starch, shallow fry them at 375°F and toss them at the end with fried garlic, fresh chili and a pepper salt. The Woks of Life keeps the shells on, toasts whole peppercorns (any mix of white, black and Sichuan) and salt separately in a dry pan, mixes two parts pepper to one part salt and fries the shrimp only 30 seconds a side. Omnivore's Cookbook peels the shrimp, uses ground white pepper mixed with salt without toasting, and fries them about 2 minutes a side. This one follows The Woks of Life with a shorter toast for the peppercorns and a mild jalapeño for the chili.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Salt and Pepper Shrimp",
+   "url": "https://thewoksoflife.com/salt-and-pepper-shrimp/",
+   "rating": 4.98,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Salt and Pepper Shrimp (椒盐虾)",
+   "url": "https://omnivorescookbook.com/salt-and-pepper-shrimp/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

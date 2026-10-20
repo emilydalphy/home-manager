@@ -1,0 +1,121 @@
+{
+ "dish_name": "Mushroom Risotto",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1.5 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Arborio rice",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pour the 5 cups broth into a saucepan and set it over low heat so it's warm when you need it.",
+  "Meanwhile, slice the 1.5 lb mushrooms about 1/8 inch thick. Finely chop the 2 shallots and mince the 3 garlic cloves, keeping them in separate piles.",
+  "Finely grate the Parmesan and chop the parsley leaves until you have 2 tbsp.",
+  "Heat 1 tbsp of the olive oil and 1 1/2 tbsp butter in a large heavy pot over high heat. When the butter melts, add half the mushrooms and cook for about 4 minutes, stirring now and then, until they're golden brown.",
+  "Add 1 of the garlic cloves and 1/4 tsp salt and cook for 1 1/2 minutes, until the mushrooms are deep golden. Transfer them into a bowl.",
+  "Cook the rest of the mushrooms the same way with the last 1 tbsp olive oil, another 1 1/2 tbsp butter, another garlic clove and 1/4 tsp salt, and add them to the bowl.",
+  "Turn the heat down to medium and melt 1 tbsp butter in the same pot. Add the shallots and cook for about 2 minutes, stirring, until they're soft and see-through but not browned.",
+  "Add the last garlic clove and cook for 30 seconds, until it smells fragrant.",
+  "Pour in the 1/4 cup wine and let it bubble for 1 to 2 minutes, scraping up the browned bits from the bottom, until it's mostly gone.",
+  "Add the 1 1/4 cups rice and stir for 1 minute, until the edges of the grains look see-through.",
+  "Ladle in about 1 1/2 cups of the warm broth. Stir, then let it bubble for about 3 minutes, stirring a few times, until most of it has been absorbed.",
+  "Add the rest of the broth about 1 cup at a time, stirring every minute or so and letting each addition mostly absorb before the next. You don't need to stir constantly. After about 12 minutes the rice should be tender with a little bite in the middle, and the risotto should still look loose and saucy.",
+  "Take the pot off the heat. Add the 1/2 cup cream and the last 2 tbsp butter and stir hard for about 30 seconds, until it turns creamy.",
+  "Stir in half the Parmesan, 1/2 tsp salt and the 1/2 tsp pepper, then stir in half the mushrooms. It should slump gently when you spoon it, not hold its shape.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the risotto into bowls and top with the rest of the mushrooms and their buttery juices, the parsley and the rest of the Parmesan. Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats (the lead) browns the mushrooms hard in two batches with butter and garlic, makes the risotto in the same pot with shallot, wine and broth added in big ladlefuls without constant stirring, then finishes it with cream, butter and Parmesan and folds in half the mushrooms, keeping the rest for the top. Love and Lemons browns the mushrooms the same way but uses onion, thyme, more wine and olive oil only, adds broth 3/4 cup at a time with constant stirring, and finishes with pecorino or Parmesan. Both keep a third to a half of the mushrooms back for the top. This one follows the lead with vegetable broth in place of chicken stock so it stays vegetarian.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Mushroom Risotto",
+   "url": "https://www.recipetineats.com/mushroom-risotto/",
+   "rating": 4.99,
+   "rating_count": 185,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Mushroom Risotto",
+   "url": "https://www.loveandlemons.com/mushroom-risotto/",
+   "rating": 4.88,
+   "rating_count": 140,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

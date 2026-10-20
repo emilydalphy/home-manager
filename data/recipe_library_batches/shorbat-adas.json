@@ -1,0 +1,133 @@
+{
+ "dish_name": "Shorbat Adas",
+ "cuisine": "Lebanese",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red lentils",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "2 cartons (32 oz)",
+   "category": "pantry",
+   "cook_qty": "6 cups"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion, the 2 carrots and 2 stalks of the celery. Mince the 2 garlic cloves.",
+  "Put the 1 1/4 cups lentils in a sieve and rinse them under cold water until it runs mostly clear.",
+  "Heat 2 tbsp of the olive oil in a large pot over medium. Add the onion, carrot and celery with 1/2 tsp of the salt and cook for 6 to 7 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Add the garlic, 1 1/4 tsp cumin and 3/4 tsp turmeric. Stir for about 30 seconds, until it smells toasty and the vegetables turn yellow.",
+  "Add the lentils, 3 tbsp rice and 6 cups broth. Bring it to a boil over high, then turn it down to medium low, set the lid on slightly ajar and simmer for 20 minutes, stirring now and then, until the lentils have fallen apart and the rice is soft.",
+  "Meanwhile, tear 1 of the pitas into bite-size pieces. Heat the last 2 tbsp olive oil in a skillet over medium and fry the pieces for 3 to 4 minutes, turning them, until they're golden and crisp. Transfer them onto a paper towel.",
+  "Chop a good handful of the parsley. Juice 1 of the lemons and cut the other into wedges.",
+  "Take the pot off the heat and blend it with a stick blender for a few seconds, so it's mostly smooth with a little texture left. No stick blender? Whisk it hard for a minute.",
+  "Stir in the lemon juice, half the chopped parsley, the remaining 1/2 tsp salt and the 1/2 tsp pepper. If it's thicker than you like, stir in a splash of water.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Serve topped with the crispy pita and the rest of the parsley, with the lemon wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook red lentils with onion, cumin and lemon, and finish with lemon at the table. Plant Based Folk softens onion, garlic, cumin and turmeric in olive oil, simmers the lentils in vegetable stock with a little short grain rice, adds carrot and celery partway, then half blends it with lemon juice and parsley. Cookin' with Mima boils lentils, potato, carrot and onion in water for up to an hour, blends it very smooth and serves it with fried pita. MarocMama keeps it to onion, garlic, cumin and turmeric in chicken stock, unblended. This one follows Plant Based Folk, softens the carrot and celery with the onion from the start, and adds Mima's fried pita on top.",
+ "sources": [
+  {
+   "name": "Plant Based Folk",
+   "title": "Lebanese Lentil Soup",
+   "url": "https://plantbasedfolk.com/lebanese-lentil-soup/",
+   "rating": 4.93,
+   "rating_count": 139,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookin' with Mima",
+   "title": "Lebanese Lentil Soup (Shorbet Adas)",
+   "url": "https://www.cookinwithmima.com/lebanese-lentil-soup/",
+   "rating": 4.94,
+   "rating_count": 86,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "MarocMama",
+   "title": "Lebanese Shorbat Addas (Lentil Soup)",
+   "url": "https://marocmama.com/lebanese-shorbat-adas-lentil-soup/",
+   "rating": 4.6,
+   "rating_count": 25,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

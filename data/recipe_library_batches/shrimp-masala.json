@@ -1,0 +1,52 @@
+{
+ "dish_name": "Shrimp Masala",
+ "cuisine": "Indian",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Large shrimp", "qty": "1 1/4 lb", "category": "meat/seafood"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "3", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "1 tsp grated"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Green chilies", "qty": "2", "category": "produce"},
+  {"item": "Curry leaves", "qty": "1 package", "category": "produce", "cook_qty": "2 sprigs"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Unsweetened shredded coconut", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Tamarind paste", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Cumin seeds", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Ground coriander", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "If the shrimp still have their shells, peel and devein them. Pat them dry, toss them in a bowl with 1/4 tsp of the salt and 1/4 tsp of the Kashmiri chili powder, and keep them in the fridge while you make the masala.",
+  "Chop the 2 onions and the 3 tomatoes. Grate 1 tsp of the ginger. Mince 2 of the garlic cloves and thinly slice the other 2. Slit one green chili down one side, and thinly slice the other into a small bowl for the table. Chop 1/4 cup of the cilantro.",
+  "Heat 1 1/2 tbsp of the oil in a large skillet over medium. Add the onions and cook for 6 to 7 minutes, stirring now and then, until they're soft and turning light golden at the edges.",
+  "Add the ginger and the minced garlic and stir for about a minute, until they stop smelling raw.",
+  "Add the tomatoes, 1 tsp of the salt and the 1/4 tsp turmeric. Cook for about 5 minutes, stirring, until the tomatoes break down and look mushy.",
+  "Turn the heat to low and stir in the last 1 tsp Kashmiri chili powder, the 2 tsp coriander, 1 tsp garam masala, 1/4 tsp pepper and 1/2 cup coconut. Cook for 3 minutes, stirring, until it smells toasty. If it starts to stick, add a splash of water.",
+  "Take the pan off the heat and let the masala cool for 5 minutes. Scrape it into a blender with 1 cup water and the 1 tsp tamarind paste. Hold the lid down with a towel and blend until it's completely smooth.",
+  "Wipe out the skillet and heat the other 1 1/2 tbsp oil over medium high. Add the shrimp in a single layer and leave them for 1 minute. Flip them and cook the other side for 1 minute. They should be pink on the outside but not cooked through. Move them to a plate.",
+  "Turn the heat to medium and add the 1/2 tsp cumin seeds, the slit chili, the sliced garlic and 2 sprigs of the curry leaves. Stand back a little. The leaves will spatter. Stir for about 40 seconds, until the garlic is pale gold and smells fragrant.",
+  "Pour in the blended masala. Swirl 1 cup water around the blender jar and add that too. Bring it to a boil over high, then turn it to medium and simmer for 5 to 6 minutes, stirring now and then, until it thickens and you see small pools of oil on top. It should still pour easily.",
+  "Turn the heat to low and add the shrimp with any juices from the plate. Cook for 2 to 3 minutes, stirring gently, until they curl into a loose C and are opaque all the way through. Take the pan off the heat right away. Any longer and the shrimp turn rubbery.",
+  "Taste it. If it's flat, add a pinch more salt. Scatter over the chopped cilantro.",
+  "Serve with basmati rice or naan, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions build an onion and tomato masala with ginger, garlic, Kashmiri chili, turmeric and garam masala, and both warn that the shrimp only need a few minutes. Swasthi's Recipes (the lead) cooks the masala with coconut and coriander, blends it smooth with water and a little tamarind, then sizzles cumin, curry leaves, green chili and garlic before the sauce goes back in, and sears the prawns briefly first. Piping Pot Curry keeps the onions sliced and unblended, starts with mustard seeds and curry leaves, and marinates the shrimp in lime juice, chili and turmeric for 15 to 30 minutes. This one follows the lead for 4, with tamarind as the sour note and the sliced chili on the side.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Prawn Curry (Prawn Masala)", "url": "https://www.indianhealthyrecipes.com/prawn-curry-prawn-masala/", "rating": 4.96, "rating_count": 284, "read": true, "lead": true},
+  {"name": "Piping Pot Curry", "title": "Shrimp Masala (Indian Shrimp Curry)", "url": "https://pipingpotcurry.com/shrimp-masala", "rating": 4.95, "rating_count": 19, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,96 @@
+{
+ "dish_name": "Chinese Steamed Egg Custard",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  }
+ ],
+ "instructions": [
+  "Set a steamer rack in a wok or a wide pot with a lid, add about 2 inches of water and bring it to a boil over high heat. Keep the water below the rack.",
+  "Meanwhile, crack the 4 eggs into a large bowl, add the 1/4 tsp salt and beat them with a fork or chopsticks for a full minute, until there are no streaks of white left.",
+  "Stir in the 3/4 cup broth, 3/4 cup water and the 1 tsp sesame oil until it's all one even yellow.",
+  "Pour the mixture through a fine sieve into a shallow heatproof dish, like a glass pie plate. Pop or skim off any bubbles on top with a spoon. No sieve? Pour it slowly down the side of the dish instead.",
+  "Set the dish on the rack, cover the pot and steam on high for 3 minutes.",
+  "Turn off the heat and leave the lid on for 14 minutes. No peeking.",
+  "Meanwhile, thinly slice 2 of the scallions.",
+  "Lift the lid and give the dish a gentle shake. The custard should wobble all over like a soft jelly, with no liquid in the middle. If it's still runny in the center, cover it and steam on low for another 1 to 2 minutes.",
+  "Lift the dish out with oven mitts. Drizzle the 2 tsp soy sauce over the top and scatter on the scallions.",
+  "Serve hot, straight from the dish."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All four thin beaten eggs with warm water or stock, strain them for a smooth top and steam them gently until they just set with a wobble, finishing with scallion, soy and sesame oil. The Woks of Life (the lead) matches the egg volume with an equal amount each of water and stock, steams on high for only 3 minutes, then turns off the heat and lets it finish with the lid on for 14 minutes. Omnivore's Cookbook and Wok and Kin steam on low the whole time, for 7 to 13 minutes, and cover the dish with plastic wrap so drips don't mark the top; Made With Lau uses about twice the water and seasons with chicken bouillon. This one follows the lead's ratio and steam-then-rest method, scaled to 4 eggs.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Steamed Eggs (蒸蛋)",
+   "url": "https://thewoksoflife.com/steamed-egg/",
+   "rating": 4.93,
+   "rating_count": 38,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Chinese Steamed Eggs (鸡蛋羹)",
+   "url": "https://omnivorescookbook.com/chinese-steamed-eggs/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Wok and Kin",
+   "title": "Chinese Steamed Egg (蒸水蛋)",
+   "url": "https://www.wokandkin.com/chinese-steamed-egg/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Made With Lau",
+   "title": "Dad's Steamed Eggs: The Chinese Restaurant Way",
+   "url": "https://madewithlau.com/recipes/steamed-egg",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

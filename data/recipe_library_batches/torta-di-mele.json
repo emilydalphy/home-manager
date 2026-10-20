@@ -1,0 +1,110 @@
+{
+ "dish_name": "Torta di Mele",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Honeycrisp apples",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Powdered sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F (180°C) with a rack in the middle. Brush an 8-inch round cake pan with a little of the olive oil and line the bottom with a circle of parchment paper.",
+  "Peel and core the 2 apples. Cut one into small chunks, about the size of a fingernail, and slice the other into thin wedges. Finely grate the zest from the lemon.",
+  "Put the 2 eggs and 1/2 cup sugar in a large bowl and whisk hard, or beat with a hand mixer, for 3 to 4 minutes, until the mixture is pale and thick and falls off the whisk in a ribbon.",
+  "Whisk in the rest of the olive oil a little at a time, then the 1 tsp vanilla.",
+  "Sift the 1 cup flour, 2 tsp baking powder and the pinch of salt over the bowl. Fold them in with a spatula until you can't see any dry flour. Stop there. Overmixing makes the cake tough.",
+  "Fold in the apple chunks and the lemon zest. The batter is thick and there's a lot of apple. That's how it should be.",
+  "Scrape the batter into the pan and smooth the top. Lay the apple wedges over it in a circle, overlapping a little, and press them in lightly.",
+  "Bake for 35 to 40 minutes, until the top is golden, the edges pull away from the pan and a toothpick in the middle comes out clean. If you hit a piece of apple, try another spot.",
+  "Let it cool in the pan for 15 minutes, then run a knife around the edge, lift it out and peel off the paper. Cool it on a rack.",
+  "Dust the top with the 1 tbsp powdered sugar through a small sieve just before you serve it. Cut it into 8 slices and serve it at room temperature. It keeps in a covered container for 3 days, in the fridge if your kitchen is warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three beat eggs and sugar until pale and thick and then fold in flour with a plain fat, but they differ on the fat and the apples. The Petite Cook (the lead) uses olive oil, vanilla and lemon zest, folds half the apples in as small chunks and lays the rest in thin slices on top, baking at 180°C for 30 to 40 minutes. Barbara Bakes uses melted butter and milk and stands every slice upright in the batter in rings, then finishes with a cinnamon glaze. A Family Feast makes a very thick, apple-heavy batter with cream and butter in a sugared dish and turns it out upside down. This one follows the lead at two thirds of the batch, in an 8-inch pan, so it gives 8 slices for a few breakfasts.",
+ "sources": [
+  {
+   "name": "The Petite Cook",
+   "title": "Torta di Mele - Italian Apple Cake",
+   "url": "https://www.thepetitecook.com/italian-apple-cake/",
+   "rating": 4.83,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Barbara Bakes",
+   "title": "Torta di Mele (Apple Cake)",
+   "url": "https://www.barbarabakes.com/torta-di-mele-apple-cake/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "A Family Feast",
+   "title": "Torta di Mele",
+   "url": "https://www.afamilyfeast.com/torta-di-mele-apple-cake/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

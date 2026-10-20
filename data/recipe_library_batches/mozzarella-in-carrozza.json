@@ -1,0 +1,40 @@
+{
+ "dish_name": "Mozzarella in Carrozza",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Fresh mozzarella", "qty": "1 lb", "category": "dairy", "cook_qty": "12 oz"},
+  {"item": "White sandwich bread", "qty": "1 loaf", "category": "other", "cook_qty": "8 slices"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Plain breadcrumbs", "qty": "2 cups", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "4 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut three quarters of the mozzarella into slices about 1/4 inch thick. Lay them on a few sheets of paper towel, cover them with more paper towel and press down gently. Swap in dry towels if they soak through, and keep going until the cheese feels dry. Wet cheese makes the bread soggy and spits in the oil.",
+  "Lay out 4 slices of the bread and cover each one with the mozzarella, right up to the edges but not hanging over. Sprinkle the 1/4 tsp salt over the cheese.",
+  "Top them with the other 4 slices of bread and press down firmly with your hand so the sandwiches hold together.",
+  "Cut the crusts off with a sharp knife. Then cut each sandwich corner to corner both ways, so you have 16 small triangles.",
+  "Set out three shallow bowls. Put the 1/2 cup flour in the first. Crack the 4 eggs into the second and beat them with a fork until smooth. Put the 2 cups breadcrumbs in the third.",
+  "Coat each triangle in flour and shake off the extra. Dip it in the egg, turning it with a fork so it's covered all over, and let the extra drip off. Press it into the breadcrumbs on both sides and along the edges, then set it on a plate or tray.",
+  "Give each triangle a second coat the same way, egg first and then breadcrumbs. Press the edges flat with the side of a knife. The second coat seals the edges so the cheese stays inside.",
+  "Put the plate in the fridge for 15 minutes so the coating firms up.",
+  "Meanwhile, pour the 4 cups oil into a deep, heavy saucepan and heat it over medium. You're heating it to 350°F, so if you have a thermometer, clip it to the side. No thermometer? Drop in a pinch of breadcrumbs. The oil is ready when they sizzle straight away and turn golden in about 30 seconds.",
+  "Fry 4 triangles at a time, turning them with a slotted spoon, for 1 1/2 to 2 minutes, until they're deep golden all over. Stand back a little. The oil may spatter. Move them to a plate lined with paper towel.",
+  "Fry the rest the same way, letting the oil heat back up between batches.",
+  "Give them 2 minutes on the plate before anyone bites in. The cheese inside is very hot. Serve them warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions make a mozzarella sandwich on soft white bread, cut off the crusts, coat it in flour, egg and breadcrumbs, then go back for a second coat of egg and crumbs before frying until golden. GialloZafferano (the lead) uses buffalo mozzarella from the day before, presses it dry between paper towels, cuts each sandwich into four, chills the pieces for 30 minutes after each coat and deep fries them at 170 to 180°C. Taste Cooking uses low-moisture deli mozzarella, makes halves instead of quarters, shallow fries them in a small pan and serves them with lemon wedges and pepperoncini. This one follows the lead with one shorter chill after both coats.",
+ "sources": [
+  {"name": "GialloZafferano", "title": "Mozzarella in carrozza", "url": "https://ricette.giallozafferano.it/Mozzarella-in-carrozza.html", "rating": 4.2, "rating_count": 483, "read": true, "lead": true},
+  {"name": "Taste Cooking", "title": "Mozzarella in Carrozza", "url": "https://tastecooking.com/recipes/mozzarella-in-carrozza/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

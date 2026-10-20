@@ -1,0 +1,43 @@
+{
+ "dish_name": "Bean and Cheese Burritos",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Refried beans", "qty": "1 can (16 oz)", "category": "pantry"},
+  {"item": "Salsa", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup, plus more for serving"},
+  {"item": "Chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Onion powder", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Shredded cheddar cheese", "qty": "4 oz", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Flour tortillas", "qty": "8 (8 inch)", "category": "other"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a rimmed baking sheet with parchment.",
+  "Heat 1 tbsp of the oil in a medium skillet over medium. Add the 1 tsp chili powder, 1/2 tsp cumin, 1/4 tsp oregano, 1/4 tsp onion powder and 1/8 tsp garlic powder and stir for about 30 seconds, until they sizzle and smell toasty.",
+  "Add the can of refried beans and 1/4 cup of the salsa. Stir for 2 to 3 minutes, until the beans are warm, smooth and easy to spread. Take the pan off the heat.",
+  "Stack the 8 tortillas on a plate, cover them with a damp paper towel and microwave for 30 seconds. Warm tortillas fold without cracking.",
+  "Spread about 1/4 cup of the beans in a line down the middle of each tortilla and sprinkle 2 tbsp of the cheese over the beans.",
+  "Fold the two sides in over the filling, then roll the tortilla up from the bottom, keeping the sides tucked in as you go. Set each burrito seam side down on the baking sheet.",
+  "Brush the tops with the remaining 1 tbsp oil and sprinkle the pinch of salt over them. Bake for 6 to 8 minutes, until the tortillas are golden in spots and the cheese has melted.",
+  "Let them cool for 2 minutes. Serve with the sour cream and more salsa.",
+  "To freeze a batch, roll them as in step 6 and skip the baking. Let them cool completely, wrap each one tightly in foil and put them in a freezer bag. They keep for up to 3 months. To reheat one, take off the foil and bake it from frozen at 350°F for 25 to 30 minutes, until it's hot in the middle. Or wrap it in a paper towel and microwave it for 1 minute, then flip it and microwave it for 1 minute."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fill flour tortillas with mashed beans and plenty of cheese, fold the sides in and roll them tight. Love to Be in the Kitchen stirs canned refried beans with salsa, chili powder, cumin, oregano and onion and garlic powder, fills 8 tortillas with a little cheese and bakes them at 400°F for 5 to 7 minutes, which this version follows with the spices toasted in oil first. Well Plated makes its own beans from canned pintos simmered with onion and salsa and crisps each burrito in a skillet, and Cooking with Cocktail Rings simmers cooked pintos in lard until very thick and freezes the burritos in foil for up to 3 months.",
+ "sources": [
+  {"name": "Love to Be in the Kitchen", "title": "Easy Bean and Cheese Burritos", "url": "https://lovetobeinthekitchen.com/easy-bean-and-cheese-burritos/", "rating": 4.76, "rating_count": 75, "read": true, "lead": true},
+  {"name": "Well Plated", "title": "Bean and Cheese Burrito", "url": "https://www.wellplated.com/bean-and-cheese-burrito/", "rating": 4.88, "rating_count": 8, "read": true, "lead": false},
+  {"name": "Cooking with Cocktail Rings", "title": "Refried Bean and Cheese Burritos (Easy Freezer Meal)", "url": "https://cookingwithcocktailrings.com/refried-bean-and-cheese-burritos-easy-freezer-meal/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

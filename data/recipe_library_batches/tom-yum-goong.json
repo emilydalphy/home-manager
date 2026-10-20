@@ -1,0 +1,130 @@
+{
+ "dish_name": "Tom Yum Goong",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Shell-on shrimp",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "4 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Galangal",
+   "qty": "1 piece (about 1 1/2 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "10"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice and get it cooking the way you usually do.",
+  "Peel the 1 1/4 lb shrimp and put the heads and shells in a large pot. Run a small knife down the back of each shrimp and pull out the dark vein. Keep the shrimp in the fridge until the end.",
+  "Peel the tough outer layer off the 4 lemongrass stalks and cut each one into 3 pieces. Lay them on the board with the 6 garlic cloves and 1 of the chilies, and bash them all with a meat mallet or rolling pin until they split open. Transfer them into the pot.",
+  "Scrunch 10 lime leaves in your hand to bruise them and add them to the pot. Slice the galangal into 4 to 6 thin coins and add those too.",
+  "Pour in the 1 cup broth and 6 cups of water. Bring it to a simmer over high heat, then cover the pot, turn the heat to medium and simmer for 10 minutes.",
+  "Meanwhile, cut the onion into wedges about 1/2 inch thick, tear the 8 oz mushrooms into bite-size pieces and cut the 2 tomatoes into wedges.",
+  "Juice the 3 limes. That should be about 6 tbsp. Thinly slice the other 3 chilies and put them in a small bowl for the table.",
+  "Set a sieve over a large bowl and strain the broth into it. Throw away the shells and aromatics, then pour the broth back into the pot over medium-low heat.",
+  "Add the onion and mushrooms and simmer for 3 minutes, until the onion has softened. Add the tomatoes and simmer for 1 minute.",
+  "Add the shrimp and simmer for about 2 minutes, until they're pink, curled and opaque all the way through. Don't let them go longer, or they turn rubbery.",
+  "Stir in 2 tsp sugar and 6 tbsp fish sauce and simmer for 1 minute. Take the pot off the heat.",
+  "Stir in the lime juice.",
+  "Taste it. If it's flat, add a little more fish sauce, a teaspoon at a time.",
+  "Ladle it into bowls and scatter a handful of cilantro leaves over the top. Serve with the jasmine rice, with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both make a quick broth from bruised lemongrass, makrut lime leaves, galangal and chilies, add mushrooms, cook the shrimp for only a minute or two, and season at the end with fish sauce and lime juice. RecipeTin Eats simmers the shrimp heads and shells in the broth for 10 minutes and strains it, adds onion and tomato with the mushrooms, and gives creamy versions with roasted chili paste and evaporated or coconut milk. Thai Table boils the aromatics in plain water, puts the fish sauce, lime and crushed chilies in the serving bowls, and stirs in roasted chili paste. This one is RecipeTin's clear version for 4, with one chili in the pot and the rest on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Tom Yum Soup (Thai Soup)",
+   "url": "https://www.recipetineats.com/tom-yum-soup-thai/",
+   "rating": 4.96,
+   "rating_count": 70,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Thai Table",
+   "title": "Tom Yum Goong",
+   "url": "https://thaitable.com/recipes/tom-yum-goong",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

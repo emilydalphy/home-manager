@@ -1,0 +1,159 @@
+{
+ "dish_name": "Vegetable Pulao",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "5",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "5",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (24 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups rice in a bowl of cold water, swishing it with your hand and pouring off the cloudy water, 4 or 5 times until the water runs mostly clear. Cover it with fresh cold water and leave it to soak for 20 minutes.",
+  "Meanwhile, thinly slice the onion. Peel the carrot and potato and cut them into 1/2 inch dice. Trim the 1/4 lb beans and cut them into 1 inch pieces. Grate the ginger, mince the 3 garlic cloves and slit the green chili down one side. Chop 1/4 cup of the mint leaves.",
+  "Make the raita. Grate the 2 cucumbers, squeeze out as much water as you can with your hands, and stir them into 1 1/2 cups yogurt with the 1/2 tsp ground cumin, 1/4 tsp of the salt and 1 tbsp of the chopped mint. Put it in the fridge.",
+  "Drain the rice well in a sieve.",
+  "Melt 3 tbsp ghee in a heavy pot with a tight lid over medium. Add the bay leaf, 1 tsp cumin seeds, 5 cardamom pods, 5 cloves, cinnamon stick and star anise. Stir for about 30 seconds, until they sizzle and smell fragrant.",
+  "Add the onion and the green chili and cook for 6 to 8 minutes, stirring now and then, until the onion is golden.",
+  "Add the ginger and garlic and cook for 1 minute, until they stop smelling raw.",
+  "Add the carrot, potato, beans, 3/4 cup peas and the other 3 tbsp chopped mint. Stir for 2 to 3 minutes, until everything is coated and glossy.",
+  "Pour in 3 3/4 cups water and add the remaining 1 1/4 tsp salt. Taste the water. It should taste a little salty. Turn the heat to high and bring it to a rolling boil.",
+  "Stir in the rice once, gently, and bring it back to a boil. Cover, turn the heat to low and cook for 12 to 15 minutes, until the water is gone and you can see small holes on the surface of the rice.",
+  "Take the pot off the heat and leave the lid on for 10 minutes. No peeking.",
+  "Fluff the rice gently with a fork, lifting from the bottom. Taste a few grains. If it's flat, sprinkle over a pinch more salt and fluff it through.",
+  "Serve with the cucumber raita."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soak basmati for 20 minutes, sizzle whole spices in ghee, cook the onion golden, add ginger garlic and the vegetables, then bring salted water to a rolling boil before the drained rice goes in and cooks covered on low. Swasthi's uses a cinnamon, clove, cardamom, bay and star anise base with mint and serves it with raita; Hebbar's Kitchen grinds the mint, cilantro, ginger and some of the spices to a green paste, adds tomato and cashews and makes an onion tomato raita on the side. This one follows Swasthi's stovetop pot ratio of water to rice, uses cumin seeds in place of shahi jeera, and pairs it with a cucumber and mint raita.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Pulao Recipe | Veg Pulao | Vegetable Pulao | Pulav",
+   "url": "https://www.indianhealthyrecipes.com/pulao-recipe-veg-pulao-recipe/",
+   "rating": 5.0,
+   "rating_count": 617,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Veg Pulao Recipe | Simple & Easy Vegetable Pulav",
+   "url": "https://hebbarskitchen.com/veg-pulao-recipe/",
+   "rating": 4.99,
+   "rating_count": 294,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

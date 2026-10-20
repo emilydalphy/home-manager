@@ -1,0 +1,107 @@
+{
+ "dish_name": "Chicken Parmesan",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Italian breadcrumbs",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (about 4 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F.",
+  "Lay each chicken breast flat and slice it in half through its thickness, so you end up with 4 thin cutlets.",
+  "Put the cutlets between two sheets of plastic wrap and pound them with a rolling pin or the bottom of a heavy pan until they're an even 1/3 inch thick.",
+  "Pat the cutlets dry and sprinkle both sides with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Finely grate 1/2 cup of the Parmesan. Set out three shallow bowls. Stir the 1/2 cup flour with the other 1/2 tsp salt and 1/4 tsp pepper in the first. Beat the 2 eggs in the second until they're frothy. Mix the 1/2 cup breadcrumbs and the grated Parmesan in the third.",
+  "Coat a cutlet in the flour and tap off the extra. Dip it in the egg and let the extra drip off, then press it into the crumbs on both sides until it's thickly coated. Repeat with the rest and set them on a plate for 5 minutes. The coating sticks better in the pan after a short rest.",
+  "Heat 2 tbsp of the olive oil in a large nonstick skillet over medium until it shimmers. Add 2 cutlets. They should sizzle as they go in. Cook for 3 to 4 minutes, until the underside is golden brown.",
+  "Flip them and cook the other side for 3 minutes, until it's golden too. They don't need to be cooked through yet. Move them to a plate.",
+  "Add the other 2 tbsp of olive oil to the pan and cook the last 2 cutlets the same way.",
+  "Taste the marinara. If it's flat, stir a pinch more salt into it.",
+  "Spread half the marinara over the bottom of a 9x13 inch baking dish and lay the cutlets on top in a single layer. Spoon the rest of the marinara down the middle of each cutlet, leaving about an inch bare at each end. Scatter 1 cup of the mozzarella over the sauce.",
+  "Bake it uncovered for about 15 minutes, until the cheese has melted and the sauce is bubbling. You're cooking it to 160°F in the middle, so if you have a thermometer, check the thickest cutlet there. No thermometer? Cut into the center: it's done when there's no pink left.",
+  "Let it sit for 5 minutes, then tear a few basil leaves over the top.",
+  "Serve with spaghetti or a green salad, with the rest of the Parmesan to grate over at the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions cut the breasts into thin, even cutlets, coat them in flour, egg and a breadcrumb and Parmesan mix, fry them golden, then top them with tomato sauce and mozzarella for a short bake. Natasha's Kitchen (the lead) shallow fries in a little olive oil without cooking the chicken through, sets the cutlets on jarred marinara in a baking dish and bakes them at 425°F for 15 minutes. RecipeTin Eats dry brines the chicken for 30 minutes, uses panko, fries in deeper oil, makes its own tomato sauce with wine and garlic and leaves the ends of each cutlet uncovered to keep them crisp. This one follows Natasha's and borrows RecipeTin's bare edges.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Chicken Parmesan",
+   "url": "https://natashaskitchen.com/chicken-parmesan/",
+   "rating": 4.99,
+   "rating_count": 515,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chicken Parmigiana",
+   "url": "https://www.recipetineats.com/chicken-parmigiana/",
+   "rating": 4.99,
+   "rating_count": 193,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

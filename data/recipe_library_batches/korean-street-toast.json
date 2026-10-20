@@ -1,0 +1,116 @@
+{
+ "dish_name": "Korean Street Toast",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Shred a quarter of the cabbage as thin as you can, about 4 cups. Use the leafy part and leave out the thick core. Peel the carrot and grate it on the big holes of a box grater. Thinly slice 2 of the scallions.",
+  "In a large bowl, beat the 6 eggs with the 1/2 tsp salt and 1/4 tsp pepper. Add the cabbage, carrot and scallions and mix until every shred is coated in egg.",
+  "Melt 1 tbsp of the butter in a large nonstick skillet over medium. Toast 4 slices of the bread for 1 to 2 minutes a side, until golden, and move them to a plate.",
+  "Melt another 1 tbsp of the butter and toast the other 4 slices the same way.",
+  "Melt another 1 tbsp of the butter in the same pan. Scoop in a quarter of the egg mixture and press it into a square about the size of a slice of bread. Make a second square beside it. Cook for about 3 minutes, until the underside is golden and the top is mostly set.",
+  "Flip them carefully with a wide spatula and cook the other side for 2 minutes. If one breaks, push it back together with the spatula. Put each omelette on a slice of toast.",
+  "Melt the last 1 tbsp of butter and cook the other half of the egg mixture the same way, two squares at a time.",
+  "Sprinkle 1 tsp sugar over each omelette, add a good squeeze of ketchup, and top with a second slice of toast. Cut each sandwich in half.",
+  "Serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All four versions fold shredded cabbage into beaten egg, cook it in butter as a flat omelette about the size of the bread, and tuck it between buttered toast with ketchup. Korean Bapsang (the lead) adds carrot, onion and garlic chives, uses one egg per sandwich and sprinkles sugar over the omelette the way Seoul street stalls do. Beyond Kimchee also adds carrot and green onion and makes four at once with ham and mayo. Tiffy Cooks mixes cheese into the egg, and What To Cook Today layers cheese, ham and pickles. This one keeps to egg, cabbage, carrot and scallion with sugar and ketchup, using a little more egg per sandwich for breakfast. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Korean) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Gilgeori toast (Korean street toast)",
+   "url": "https://www.koreanbapsang.com/gilgeori-toast-korean-street-toast/",
+   "rating": 4.94,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Popular Korean Street Toast",
+   "url": "https://www.beyondkimchee.com/korean-street-toast/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tiffy Cooks",
+   "title": "10 Minute Korean Street Toast with Cabbage and Egg",
+   "url": "https://tiffycooks.com/10-minute-korean-street-toast-with-cabbage-and-egg/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "What To Cook Today",
+   "title": "Easy Gilgeori Toast (Korean Street Toast with Cabbage and Egg)",
+   "url": "https://whattocooktoday.com/easy-gilgeori-toast.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

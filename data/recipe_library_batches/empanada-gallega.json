@@ -1,0 +1,118 @@
+{
+ "dish_name": "Empanada Gallega",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Canned tuna in olive oil",
+   "qty": "3 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 3 of the eggs in a small pot, cover them with cold water and bring it to a boil over high heat. Turn the heat to low and simmer for 10 minutes, then move the eggs into a bowl of cold water.",
+  "Meanwhile, start the dough. Stir 2 cups of the flour and 1/2 tsp of the salt together in a big bowl. Pour in the 1/4 cup olive oil and 1/2 cup water and stir with a fork until it comes together in a shaggy ball.",
+  "Transfer it onto the counter and knead for about 5 minutes, until it's smooth and soft. Turn the bowl upside down over it and leave it to rest for 30 minutes.",
+  "While the dough rests, finely dice the onion and the red pepper, and mince the 2 garlic cloves.",
+  "Drain the 3 cans of tuna through a sieve set over a bowl, and keep the oil. Put 3 tbsp of the tuna oil in a large skillet over medium heat.",
+  "Add the onion, the pepper and the remaining 1/2 tsp salt. Cook for about 10 minutes, stirring now and then, until they're soft and sweet but not brown.",
+  "Add the garlic and the 1/2 tsp smoked paprika and stir for 30 seconds, until it smells toasty. Stir in 1/2 cup passata and let it bubble for 3 to 4 minutes, until it's thick enough that a spoon leaves a trail across the pan.",
+  "Take the pan off the heat. Flake in the tuna, add the 1/4 tsp pepper and stir. Taste it, and add a pinch more salt if it's flat. Spread it out on a plate to cool. A warm filling makes the bottom crust soggy.",
+  "Heat the oven to 375°F and line a baking sheet with parchment. Peel the 3 cooked eggs and slice them into rounds.",
+  "Dust the counter with the last 1/4 cup of flour. Cut the dough into two pieces, one a little bigger than the other. Roll the bigger piece into a rectangle about 10 by 13 inches, as thin as you can get it, and lay it on the sheet.",
+  "Spread the cooled filling over the dough, leaving a 1 inch border all the way round. Lay the egg slices over the filling.",
+  "Roll the smaller piece of dough into a rectangle about 9 by 12 inches and lay it over the top. Fold the bottom edge up over the top edge and pinch it closed all the way round.",
+  "Beat the last egg and brush it all over the top. Cut a small hole in the middle with a knife for the steam.",
+  "Bake for 25 to 30 minutes, until the top is deep golden and the crust sounds hollow when you tap it.",
+  "Let it cool on the sheet for at least 20 minutes, then cut it into squares. It slices most neatly at room temperature.",
+  "Serve it warm or at room temperature, or wrap the cooled squares for packed lunches."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions fill a thin two-crust pie with onion and pepper cooked slowly in olive oil, tomato and drained tuna, then glaze it with beaten egg and bake it on a flat sheet. Spain on a Fork uses an unyeasted dough of flour, olive oil and water, cooks the vegetables in the oil from the tuna cans, and lays sliced hard-boiled eggs over the filling. Caroline's Cooking and Recipes From Europe use a yeasted dough, with Recipes From Europe adding garlic and using far more onion, and Caroline's adding white wine to the dough. This one follows Spain on a Fork with one whole red pepper in place of two half peppers and a little garlic from Recipes From Europe. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Tuna Empanada | The Famous Galician Tuna Pie Recipe",
+   "url": "https://spainonafork.com/spanish-tuna-empanada-the-famous-galician-tuna-pie-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes From Europe",
+   "title": "Empanada Gallega (Savory Galician Pie)",
+   "url": "https://www.recipesfromeurope.com/?p=11063",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Caroline's Cooking",
+   "title": "Empanada gallega (Galician pie)",
+   "url": "https://www.carolinescooking.com/empanada-gallega/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,106 @@
+{
+ "dish_name": "Buttermilk Pancakes",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Buttermilk",
+   "qty": "1 pint",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Whisk the 2 cups flour, 2 tbsp sugar, 1 tsp baking powder, 1/2 tsp baking soda and 1/4 tsp salt in a large bowl. In a second bowl, whisk the 2 cups buttermilk, 2 eggs and 1 tsp vanilla. If you'd like a head start, do this the night before: cover both bowls and put the buttermilk bowl in the fridge.",
+  "Melt the 2 tbsp butter in a small pan over low heat or in the microwave, then let it cool for a minute.",
+  "Heat a griddle or a large nonstick skillet over medium for about 3 minutes. If you have an electric griddle, set it to 325°F. Brush it with a little of the oil.",
+  "Make a well in the middle of the flour and pour in the buttermilk mixture. Stir with a spatula until there's no dry flour left. It should still look a little lumpy.",
+  "Stir in the melted butter and let the batter sit for 5 minutes.",
+  "Pour the batter onto the griddle 1/3 cup at a time, leaving room between them. Cook for about 2 minutes, until bubbles rise and pop on top and the edges look set.",
+  "Flip them and cook the other side for 1 to 2 minutes, until golden and springy when you press the middle. Move them to a plate and cover it with a clean towel.",
+  "Cook the rest of the batter the same way, brushing the griddle with a little more oil between batches. Turn the heat down a notch if they brown before the middles cook. You'll get about 12 pancakes.",
+  "Serve with the maple syrup."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both use 2 cups each of flour and buttermilk with 2 eggs, vanilla, baking powder and baking soda, stir the wet into the dry until just combined and lumpy, and cook over medium heat until bubbles form, about 2 minutes, then 1 to 2 minutes on the second side. Spend With Pennies keeps the eggs whole, uses 2 tbsp melted butter and 1/3 cup batter a pancake, and rests the batter 5 minutes. Lena's Kitchen beats the whites separately and folds them in, with more sugar and 1/2 cup butter. This follows Spend With Pennies. Keeping the dry and wet bowls apart overnight is this version's make-ahead, not a step from either source.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Fluffy Buttermilk Pancakes",
+   "url": "https://www.spendwithpennies.com/fluffy-buttermilk-pancakes/",
+   "rating": 4.97,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lena's Kitchen",
+   "title": "Fluffy Buttermilk Pancakes",
+   "url": "https://lenaskitchenblog.com/fluffy-buttermilk-pancakes/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "default_servings": 4,
+ "origin": "seed",
+ "fallback_used": false
+}

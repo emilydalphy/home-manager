@@ -1,0 +1,138 @@
+{
+ "dish_name": "Kuru Fasulye",
+ "cuisine": "Turkish",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 135,
+ "ingredients": [
+  {
+   "item": "Dried white beans",
+   "qty": "1 lb",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Red pepper paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before: put the 1 1/2 cups beans in a large bowl, pick out any stones, and cover them with cold water by at least 3 inches. Leave them on the counter overnight.",
+  "Drain the beans and put them in a pot with fresh water to cover by 2 inches. Bring it to a boil, then turn the heat down and simmer for 40 to 45 minutes, until the beans are tender but still hold their shape. They finish cooking in the oven. Drain them and throw out the cooking water.",
+  "While the beans cook, heat the oven to 350°F.",
+  "Cut the 3/4 lb lamb into 3/4 inch cubes, pat them dry and toss them with 1/2 tsp of the salt. Dice the onion, mince the 3 garlic cloves and chop the 2 tomatoes.",
+  "Heat the 1 tbsp olive oil in a Dutch oven over medium high. Add the lamb and leave it until the underside is browned and lets go of the pot, about 3 minutes. Turn the pieces and brown the other sides for 2 to 3 minutes.",
+  "Turn the heat down to medium, add the onion and cook for about 5 minutes, stirring, until it's soft and see-through. Add the garlic and cook for 30 seconds, until you can smell it.",
+  "Add the tomatoes and cook for 3 to 4 minutes, stirring, until they break down.",
+  "Stir in the 1 tbsp tomato paste, 1 1/2 tsp red pepper paste, 1/2 tsp black pepper and 1/4 tsp cumin and cook for 1 minute, until the pastes turn a shade darker.",
+  "Add the drained beans, another 1/2 tsp of the salt and 3 cups of the beef broth. Stir and check that the liquid covers the beans, then bring it to a simmer.",
+  "Cover the pot and bake for 1 hour, stirring every 20 minutes, until the lamb is tender and the beans are creamy. If it looks dry when you stir it, add a splash of water.",
+  "About 30 minutes before the stew comes out, rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Melt the 1 tbsp butter in a medium saucepan over medium, add the rice and stir for 2 minutes, until the grains look glassy at the edges.",
+  "Add 2 1/4 cups water and the last 1/2 tsp salt and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Chop a small handful of the parsley and scatter it over the stew.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve the stew with the rice, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "Soak the dried beans overnight, the night before.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Both read versions brown lamb with onion, cook in tomato and tomato paste, then simmer white beans in stock until thick, served with rice. Cooking Orgeous soaks dried beans overnight, cooks them for an hour on their own, adds red pepper paste, cumin and black pepper and finishes it covered in a 350°F oven for an hour. Turkeys for Life uses canned haricot beans and only 150 g lamb with green pepper, cooked on the stovetop in under an hour. This one follows Cooking Orgeous but shifts the balance toward the beans (1 1/2 cups dried beans to 3/4 lb lamb, against its 1 1/4 cups to 1 lb), cuts the first bean simmer to about 45 minutes as Turkeys for Life suggests for dried beans, and puts the chilli on the side.",
+ "sources": [
+  {
+   "name": "Cooking Orgeous",
+   "title": "Kuru Fasulye",
+   "url": "https://cookingorgeous.com/blog/kuru-fasulye/",
+   "rating": 5.0,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkeys for Life",
+   "title": "Kuru Fasulye Recipe - Turkish White Bean Stew",
+   "url": "https://www.turkeysforlife.com/2021/04/kuru-fasulye-recipe-white-bean.html",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

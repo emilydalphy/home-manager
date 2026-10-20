@@ -1,0 +1,52 @@
+{
+ "dish_name": "General Tso's Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Hoisin sauce", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 cup + 1 tbsp"},
+  {"item": "Chicken broth", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Fresh ginger", "qty": "1 piece (2 inch)", "category": "produce", "cook_qty": "1 tbsp"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "3 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Sesame seeds", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sambal oelek", "qty": "1 jar", "category": "pantry"},
+  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot.",
+  "In a small bowl, stir together 3 tbsp soy sauce, 1 tbsp hoisin, 1 tbsp rice vinegar and 1 tsp sesame oil.",
+  "Cut the 1.5 lb chicken thighs into 1 inch pieces and put them in a bowl. Finely grate 1 tsp of the ginger and 1 of the garlic cloves over the chicken, add 2 tbsp of the soy mixture and mix well. Leave it in the fridge for 30 minutes.",
+  "Meanwhile, finely chop 2 tsp of the ginger and the other 2 garlic cloves. Thinly slice 2 of the green onions.",
+  "Stir 3 tbsp brown sugar and 1 tbsp of the cornstarch into the rest of the soy mixture until there are no lumps, then stir in the 3/4 cup chicken broth. This is the sauce.",
+  "Transfer the remaining 1 cup cornstarch over the chicken and toss it with your hands until every piece is coated and the pieces are separate. Transfer it all into a colander and shake it so the loose cornstarch falls through.",
+  "Pour the oil into a large, deep skillet until it's about 3/4 inch deep and heat it over medium-high. You're heating it to 390°F, so if you have a thermometer, check it. No thermometer? Dip the end of a wooden chopstick in: it's ready when bubbles stream up from it straight away.",
+  "Stand back a little. It'll spatter. Fry half the chicken for about 3 minutes, turning the pieces halfway, until they're golden and crisp. Lift them onto a plate lined with paper towel.",
+  "Fry the rest of the chicken the same way. You're cooking it to 175°F in the middle, so if you have a thermometer, check a big piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Turn off the heat and let the oil cool. Wipe out a second large skillet, or carefully pour the cooled oil into a heatproof bowl and wipe out the first one.",
+  "Heat 2 tbsp of fresh oil in the skillet over medium. Add the chopped ginger and garlic and stir for about 30 seconds, until the garlic is light golden.",
+  "Stir the sauce, pour it into the pan and let it bubble for 1 to 2 minutes, stirring, until it's thick enough that a spoon drawn across the pan leaves a clear path.",
+  "Taste the sauce. If it's flat, add a pinch of salt or a splash more of the vinegar.",
+  "Take the pan off the heat, add the chicken and toss it quickly until every piece is coated. Work fast, or the coating goes soft. Scatter the green onions and 1 tsp sesame seeds over the top.",
+  "Serve over the rice, with the sambal oelek on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions coat bite-size chicken thighs in cornstarch, fry them crisp and toss them at the last minute in a soy, hoisin, rice vinegar and sugar sauce thickened with cornstarch, after a quick sizzle of ginger, garlic and chilli. RecipeTin Eats, the lead, marinates the chicken for 30 minutes in part of the sauce with ginger and garlic, fries it in about 2 cm of oil at 390°F and builds the sauce on chicken stock with sambal oelek and chilli flakes. Natasha's Kitchen pan fries the chicken in batches in a little oil, uses water and more vinegar in the sauce, and white sugar. This one follows RecipeTin Eats but keeps the sauce mild and puts the sambal oelek on the table.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "General Tso's Chicken", "url": "https://www.recipetineats.com/general-tsos-chicken/", "rating": 4.98, "rating_count": 169, "read": true, "lead": true},
+  {"name": "Natasha's Kitchen", "title": "General Tso's Chicken Recipe", "url": "https://natashaskitchen.com/general-tsos-chicken/", "rating": 4.9, "rating_count": 727, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,131 @@
+{
+ "dish_name": "Egg Salad Sandwiches",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 stalk"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Green leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the 8 eggs in a medium pot in a single layer and cover them with cold water by about an inch. Bring it to a boil over high heat.",
+  "As soon as the water boils, turn off the heat, put the lid on and leave the eggs in the hot water for 12 minutes.",
+  "Meanwhile, fill a bowl with ice and cold water. Finely chop 2 tbsp of the celery, 3 tbsp of the red onion, 3 tbsp of the dill and 3 tbsp of the chives, and mince the garlic clove.",
+  "In a small bowl, stir together 1/3 cup mayonnaise, 2 tsp juice from the lemon, 2 tsp Dijon, the garlic, and the 1/4 tsp each of salt, paprika and pepper.",
+  "Lift the eggs into the ice water and leave them for 5 minutes, until they're cool enough to hold.",
+  "Tap each egg on the counter, roll it to crack the shell all over, and peel it under cold running water.",
+  "Chop the eggs into chunky pieces and put them in a bowl with the celery, onion, dill and chives.",
+  "Fold the dressing in gently until every piece is coated. Taste it, and add a pinch more salt or a squeeze of the lemon if it's flat.",
+  "Toast the 8 slices of bread if you like. Lay a leaf of the lettuce on 4 of the slices, spread a quarter of the egg salad over each, and top with the other 4 slices.",
+  "If you're packing them for lunch, keep the egg salad cold in its own container and put the sandwiches together when you eat, or the bread goes soggy.",
+  "Cut each sandwich in half and serve."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions bind chopped hard-boiled eggs with mayonnaise and mustard and season with salt, pepper and often paprika. Natasha's Kitchen (the lead) keeps the eggs chunky and adds celery, red onion, dill and chives, with lemon juice and a little garlic in the dressing. Divas Can Cook mashes the eggs and uses dill and sweet relish, parsley and onion powder; TidyMom uses sweet relish and a pinch of cayenne. This one follows the lead's salad and serves it on bread with lettuce, the way Divas Can Cook does.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Best Egg Salad Recipe",
+   "url": "https://natashaskitchen.com/egg-salad-recipe/",
+   "rating": 4.98,
+   "rating_count": 237,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Divas Can Cook",
+   "title": "Classic Egg Salad Sandwich",
+   "url": "https://divascancook.com/classic-egg-salad-sandwich-recipe/",
+   "rating": 4.93,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "TidyMom",
+   "title": "Egg Salad (Sandwich)",
+   "url": "https://tidymom.net/egg-salad-sandwich/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,45 @@
+{
+ "dish_name": "Egg Banh Mi",
+ "cuisine": "Vietnamese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Small baguettes", "qty": "4", "category": "other"},
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Pâté", "qty": "1 container", "category": "meat/seafood", "cook_qty": "1/4 cup"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "4 tsp"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce", "cook_qty": "1"},
+  {"item": "Daikon radish", "qty": "1", "category": "produce", "cook_qty": "a 4-inch piece"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Persian cucumbers", "qty": "2", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Make the quick pickles first. In a bowl, stir 1/2 cup rice vinegar, 1/2 cup warm water, 2 tbsp sugar and 1/2 tsp of the salt until the sugar dissolves.",
+  "Peel the carrot and a 4-inch piece of the daikon and cut them into thin matchsticks. Drop them into the vinegar and leave them for at least 15 minutes while you do everything else.",
+  "Meanwhile, heat the oven to 350°F. Thinly slice the 2 cucumbers, pick a big handful of cilantro sprigs, and thinly slice the jalapeño into a small bowl for the table.",
+  "Split each baguette along one side without cutting all the way through. Warm them on the oven rack for 4 to 5 minutes, until the crust crackles when you press it.",
+  "Spread 1 tbsp pâté on one inside of each baguette and 1 tbsp mayonnaise on the other.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over medium high. Crack in 4 of the eggs and cook for 2 to 3 minutes, until the whites are set and the edges are brown and crisp. Leave the yolks runny, or flip them and cook the other side for 30 seconds if you like them firmer.",
+  "Sprinkle the eggs with half of the remaining 1/4 tsp salt and half the pepper and slide them onto a plate. Add the last 1 tbsp oil and fry the other 4 eggs the same way, seasoning them with the rest of the salt and pepper.",
+  "Drain the pickles. Fill each baguette with cucumber slices, a small handful of pickles and 2 eggs, then drizzle 1 tsp soy sauce over the eggs and tuck in the cilantro.",
+  "Serve with the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions split a baguette, spread it with mayo, fill it with cucumber, pickled carrot and daikon and cilantro, and top it with two fried eggs per sandwich. Cooking Therapy uses store bought pickles, spreads pâté on one side and finishes with a drizzle of soy sauce. Omnivore's Cookbook makes its own quick pickles and mixes soy and garlic powder into the mayo instead of using pâté. This one follows the lead's pâté, mayo and soy, makes a quick pickle while the bread warms, and fries the eggs with crisp edges. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Vietnamese) has no egg banh mi, so the first read version leads.",
+ "sources": [
+  {"name": "Cooking Therapy", "title": "10-Minute Bánh Mì Ốp La (Fried Egg Banh Mi)", "url": "https://www.cooking-therapy.com/banh-mi-op-la/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Omnivore's Cookbook", "title": "Egg Banh Mi", "url": "https://omnivorescookbook.com/egg-banh-mi/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

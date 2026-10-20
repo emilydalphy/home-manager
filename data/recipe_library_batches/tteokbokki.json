@@ -1,0 +1,110 @@
+{
+ "dish_name": "Tteokbokki",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Korean rice cakes (garaetteok)",
+   "qty": "1 lb",
+   "category": "other"
+  },
+  {
+   "item": "Dried kelp (dasima)",
+   "qty": "1 package",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pull apart any rice cakes stuck together and put them in a bowl of warm water to soak for 20 minutes while you do everything else. If yours are fresh and soft, 5 minutes is enough.",
+  "Put the 4 eggs in a small pot and cover them with cold water. Bring it to a boil over high, then turn it down to a simmer and cook them for 9 minutes. Move them to a bowl of cold water and peel them once they're cool enough to hold.",
+  "Meanwhile, cut a quarter off the onion. Put it in a wide, deep pan with a 3 inch square of the kelp and 4 cups of water. Bring it to a boil over medium high and boil for 10 minutes, then lift out the kelp and onion with tongs. That should be about 3 cups of liquid in the pan, so top it up with water if it has boiled down below that.",
+  "While it boils, thinly slice the rest of the onion. Cut about 2 cups of the cabbage into 2 inch pieces. Cut 3 of the scallions into 2 inch lengths and mince the 3 garlic cloves.",
+  "Stir 3 tbsp gochujang, 1 tbsp soy sauce and 2 1/2 tbsp sugar into the pan until the gochujang has dissolved.",
+  "Drain the rice cakes and add them to the pan. Boil over medium, stirring often, for 8 to 10 minutes, until they're soft all the way through and the sauce has started to thicken. Keep stirring and scraping the bottom. Rice cakes stick fast if you leave them.",
+  "Add the sliced onion, cabbage and garlic. Keep it bubbling, stirring now and then, for 4 to 5 minutes, until the cabbage is tender and the sauce coats a spoon. If the sauce gets too thick before the rice cakes are soft, add a splash of water.",
+  "Halve the eggs. Add them to the pan with the scallions and cook for 2 minutes, spooning sauce over the eggs.",
+  "Taste the sauce. If it's flat, add a little more soy sauce.",
+  "Scatter the 1 tbsp sesame seeds over the top. Serve hot, with the 1 tsp gochugaru in a small dish on the side for anyone who wants more heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions read simmer the rice cakes in a stock with a gochujang, soy and sugar sauce until they soften and the sauce thickens, then finish with cabbage, scallions and halved boiled eggs. Korean Bapsang (the lead) makes a quick anchovy and kelp stock first, adds fish cakes with the vegetables and uses corn syrup with the sugar. Bon Appétit fries the rice cakes in oil until crisp before the sauce goes in and adds bok choy. To keep it vegetarian this one uses a kelp and onion stock, leaves out the anchovies and fish cakes, uses a little more sugar in place of corn syrup, and puts the gochugaru on the side so the pot stays mild.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Tteokbokki - Spicy stir-fried rice cakes",
+   "url": "https://www.koreanbapsang.com/tteokbokki-spicy-stir-fried-rice-cakes/",
+   "rating": 4.65,
+   "rating_count": 370,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bon Appétit",
+   "title": "Tteokbokki (Spicy Korean Rice Cakes)",
+   "url": "https://www.bonappetit.com/recipe/tteokbokki",
+   "rating": 4.8,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

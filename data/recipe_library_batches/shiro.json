@@ -1,0 +1,43 @@
+{
+ "dish_name": "Shiro",
+ "cuisine": "Ethiopian",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Chickpea flour", "qty": "1 cup", "category": "pantry"},
+  {"item": "Berbere", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cardamom", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Roma tomato", "qty": "1", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Olive oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Injera", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Finely chop the onion, mince the 3 garlic cloves, and dice the tomato.",
+  "Put the 1 cup chickpea flour in a dry wide pot over medium heat. Stir it constantly for 4 to 5 minutes, until it's a shade darker and smells nutty. Add the 1 tbsp berbere, 1 tsp cumin and 1/2 tsp cardamom and stir for 30 seconds, then transfer it all into a bowl.",
+  "Whisk 1 cup water into the spiced flour, a little at a time, until it's a smooth paste with no lumps.",
+  "Wipe out the pot and set it back over medium heat with the 1/3 cup oil. Add the onion and 1/2 tsp of the salt and cook, stirring, until it's soft and golden, 6 to 8 minutes.",
+  "Add the garlic, the tomato and 2 tbsp tomato paste. Cook, stirring, for 2 to 3 minutes, until the tomato breaks down and the paste turns a darker red.",
+  "Pour in the flour paste and another 2 1/2 cups water while you whisk, and add the remaining 1/2 tsp salt. Keep whisking until it comes to a bubble.",
+  "Turn the heat to low and simmer, uncovered, for 10 to 12 minutes, whisking every couple of minutes, until it's as thick as a loose porridge and little pools of red oil show on top. Stand back a little. It spits as it thickens.",
+  "Turn off the heat, squeeze in half the lemon, and stir.",
+  "Taste it. If it's flat, add salt first, then a squeeze from the other lemon half.",
+  "Serve with injera or rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions toast chickpea flour with spices, soften onion and garlic in oil, then whisk the flour into water and simmer it until it thickens. Urban Farmie roasts the flour with berbere, cardamom, cumin and garlic powder, uses about 4 parts water to 1 part flour with tomato paste and a generous amount of oil, and simmers 20 to 30 minutes until the oil rises. Wikibooks toasts the flour plain, adds paprika, turmeric and cayenne with the berbere, and simmers in broth or water for 20 to 25 minutes. This version adds a fresh tomato, mixes the flour to a paste first so it stays smooth, and finishes with lemon.",
+ "sources": [
+  {"name": "Urban Farmie", "title": "Ethiopian Shiro Wat", "url": "https://urbanfarmie.com/shiro-wat/", "rating": 5.0, "rating_count": 63, "read": true, "lead": true},
+  {"name": "Wikibooks Cookbook", "title": "Yetsom Shiro (Ethiopian Vegan Chickpea Stew)", "url": "https://en.wikibooks.org/wiki/Cookbook:Yetsom_Shiro_(Ethiopian_Vegan_Chickpea_Stew)", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

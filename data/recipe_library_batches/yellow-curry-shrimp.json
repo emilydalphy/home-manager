@@ -1,0 +1,49 @@
+{
+ "dish_name": "Yellow Curry Shrimp",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Shrimp", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Yukon gold potatoes", "qty": "2", "category": "produce"},
+  {"item": "Carrots", "qty": "1", "category": "produce"},
+  {"item": "Yellow curry paste", "qty": "1 jar", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Coconut milk", "qty": "1 can (13.5 oz)", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "1 cup", "category": "pantry"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Tamarind paste", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Sliced bamboo shoots", "qty": "1 can (8 oz)", "category": "pantry"},
+  {"item": "Thai basil", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fried shallots", "qty": "1 container", "category": "pantry"},
+  {"item": "Red jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice and get it cooking before anything else.",
+  "Peel the 2 potatoes and cut them into 1 inch pieces about 1/2 inch thick. Peel the carrot and slice it 1/4 inch thick on an angle.",
+  "Pat the 1 lb shrimp dry and keep them in the fridge until the end. Drain the bamboo shoots. Pick about 16 leaves off the basil. Thinly slice the jalapeño and put it in a small bowl for the table.",
+  "Open the coconut milk without shaking it and scoop about 1/2 cup of the thick cream off the top into a large deep skillet. Add 1 tbsp oil and let it bubble over medium for 2 to 3 minutes, until it looks shiny and the oil starts to separate out.",
+  "Add 3 tbsp curry paste and stir it into the cream for about 2 minutes, until it darkens a little and smells fragrant.",
+  "Pour in the 1 cup broth and stir until the paste dissolves. Let it simmer for 1 minute.",
+  "Turn the heat down to medium low. Stir in 2 tsp tamarind, 1 tbsp fish sauce and 2 tsp sugar until the tamarind dissolves.",
+  "Pour in the rest of the coconut milk and add the potatoes and carrot. Bring it to a gentle simmer and cook uncovered for 15 to 20 minutes, stirring now and then, until a knife slides easily into a piece of potato.",
+  "Add the shrimp and bamboo shoots and simmer for about 3 minutes, until the shrimp are pink all over and curled into a loose C. Take it off the heat as soon as they're pink. Any longer and they turn rubbery.",
+  "Taste it. If it's flat, add a splash more fish sauce, or a little more tamarind if it needs some sharpness.",
+  "Tear the basil leaves over the top and scatter a handful of the fried shallots on top.",
+  "Serve over the jasmine rice, with the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fry yellow curry paste first, simmer potatoes (and carrot in two of them) in coconut milk until tender and add the shrimp or chicken near the end, seasoning with fish sauce and sugar. RecipeTin Eats makes its own paste with turmeric, lemongrass and galangal, thins it with chicken stock, sharpens it with tamarind, adds the prawns and bamboo shoots for the last 3 minutes and finishes with Thai basil and fried shallots. Rachel Cooks Thai fries a store bought paste in the thick coconut cream from the top of the can, and Food.com browns onion, ginger and garlic first and warns that the shrimp turn rubbery if overcooked. This one follows the lead's curry with a store bought yellow paste fried in the coconut cream, so the fish sauce and sugar are lighter than the lead's.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Thai Yellow Curry (from scratch!)", "url": "https://www.recipetineats.com/thai-yellow-curry/", "rating": 4.95, "rating_count": 59, "read": true, "lead": true},
+  {"name": "Rachel Cooks Thai", "title": "Yellow Curry with Chicken and Potatoes | Gang Garee Gai", "url": "https://rachelcooksthai.com/yellow-curry/", "rating": 4.78, "rating_count": 9, "read": true, "lead": false},
+  {"name": "Food.com", "title": "Shrimp in Yellow Curry (Gang Lueng Goong)", "url": "https://www.food.com/recipe/shrimp-in-yellow-curry-gang-lueng-goong-154375", "rating": 4.5, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

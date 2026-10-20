@@ -1,0 +1,166 @@
+{
+ "dish_name": "Lahmacun",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "3 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a big bowl, stir 3 cups of the flour with 3/4 tsp of the salt. Make a well in the middle, add 1/2 cup water and 1/3 cup yogurt, and stir until it comes together.",
+  "Knead it on the counter for 3 to 4 minutes, until it's smooth and stretchy. Put it back in the bowl, cover it and leave it in the fridge for 15 minutes.",
+  "Put a baking sheet on the lowest rack and heat the oven to 450°F. Cut a piece of parchment to fit the sheet.",
+  "Meanwhile, roughly chop the yellow onion, the green and red peppers, the tomato and the 2 garlic cloves. Pulse them in a food processor until they're finely chopped but not a paste. No processor? Chop everything as finely as you can by hand.",
+  "Transfer the vegetables into a bowl. Add the 1/2 lb beef, 2 tsp tomato paste, the 1 tsp paprika, the 1/2 tsp cumin, the remaining 3/4 tsp salt and the 1/4 tsp pepper. Finely chop a small handful of the parsley, add it, and mix with your hands until it's evenly combined.",
+  "Thinly slice the red onion into half moons and toss it with the 1/2 tsp sumac. Halve the cherry tomatoes and toss them with the 1 tbsp olive oil and 2 tsp pomegranate molasses.",
+  "Pull the rest of the parsley leaves off their stems. Cut the lemon into wedges.",
+  "Cut the dough into 4 pieces. Dust the counter with the remaining flour and roll one piece into a very thin circle about 11 inches across. You should almost be able to see the counter through it.",
+  "Lay it on the parchment and spread a quarter of the topping right out to the edges in a thin, even layer.",
+  "Pull out the oven rack and slide the parchment onto the hot sheet. Bake for 8 to 10 minutes, until the edges are crisp and the meat has no pink left. While it bakes, roll and top the next one.",
+  "Bake the other three the same way. Stack the baked ones on a plate and cover them with a clean towel. They stay soft enough to roll.",
+  "Serve with the sumac onions, the tomatoes, the parsley leaves and the lemon wedges, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three spread a thin raw layer of spiced minced meat, onion, tomato and peppers over very thin dough and bake it hot and fast until the edges crisp, then eat it rolled up with lemon, parsley and onion. Turkeys for Life makes a no-yeast yogurt dough, pulses the topping in a processor, and bakes each one on a preheated sheet on the bottom shelf at 230°C; Yummy Istanbul uses a yeasted pita dough, lamb and isot pepper on a pizza stone at 235°C, brushing the edges with butter. Ottolenghi goes his own way with cinnamon, allspice, tahini and pine nuts on small yeasted rounds. This one follows Turkeys for Life with the chilli moved to the table. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no lahmacun, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Turkeys for Life",
+   "title": "Turkish Lahmacun Recipe (Homemade Lahmacun, Turkish Pizza)",
+   "url": "https://www.turkeysforlife.com/2023/01/turkish-lahmacun-recipe.html",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yummy Istanbul",
+   "title": "Lahmacun Recipe: Easy & Homemade",
+   "url": "https://yummyistanbul.com/turkish-lahmacun-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Ottolenghi",
+   "title": "Lahmacun: Turkish pizza with minced beef and salad",
+   "url": "https://ottolenghi.co.uk/pages/recipes/lahmacun-turkish-pizza-spicy-minced-beef",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

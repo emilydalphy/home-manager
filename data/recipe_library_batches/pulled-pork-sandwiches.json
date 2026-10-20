@@ -1,0 +1,140 @@
+{
+ "dish_name": "Pulled Pork Sandwiches",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 510,
+ "ingredients": [
+  {
+   "item": "Boneless pork shoulder",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1/4 cup"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Apple juice",
+   "qty": "1 bottle (16 oz)",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp + 1 tbsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Coleslaw mix",
+   "qty": "1 bag (14 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Hamburger buns",
+   "qty": "4",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "About 8 1/2 hours before dinner, stir together the rub in a small bowl: 1 tbsp brown sugar, the 1 tsp paprika, 1/2 tsp of the onion powder, the 1/2 tsp garlic powder, the 1/4 tsp cumin, 1/2 tsp of the mustard powder, 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Pat the 2 lb pork dry with paper towels. If it's one thick piece, cut it in half. Rub the spice mix all over every side.",
+  "Put the pork in the slow cooker and pour the 1/2 cup apple juice around it. Cover and cook on low for 8 hours. No peeking. It's ready when it falls apart as you press it with a fork.",
+  "About 40 minutes before dinner, heat the oven to 350°F. Ladle 1/2 cup of the juices from the slow cooker into a medium saucepan.",
+  "Add the 1 cup ketchup, 3 tbsp of the vinegar, 1/4 cup brown sugar, the 1 tsp Worcestershire, the remaining 1/2 tsp onion powder, the remaining 1/2 tsp mustard powder and the remaining 1/2 tsp pepper. Whisk it smooth and bring it to a simmer over medium.",
+  "Turn the heat down to low, partly cover the pan and simmer the sauce gently for 30 minutes, stirring now and then, until it's thick enough to coat a spoon. Keep the lid partly on. It spatters.",
+  "Meanwhile, lift the pork out of the slow cooker onto a rimmed baking sheet. Roast it for 20 minutes, until the outside is browned and the edges are a little crisp.",
+  "While the pork roasts, make the slaw. In a large bowl, stir together the 1/3 cup mayonnaise, the last 1 tbsp vinegar and the remaining 1/4 tsp salt. Add the coleslaw mix and toss until it's coated.",
+  "Shred the pork on the baking sheet with two forks, pulling out and throwing away any soft pieces of fat.",
+  "Pour about two thirds of the sauce over the pork and toss until it's coated. Pour the rest of the sauce into a small bowl.",
+  "Split the 4 buns and toast them cut side down in a dry skillet over medium for about 1 minute, until golden.",
+  "Taste the pork. If it's flat, add a pinch more salt.",
+  "Serve the pork piled on the toasted buns with the coleslaw on top and the extra sauce on the side."
+ ],
+ "advance_prep_notes": "start the slow cooker about 8 1/2 hours before dinner",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Both cook a pork shoulder low and slow until it shreds, then coat it in a ketchup, cider vinegar and brown sugar barbecue sauce and serve it on rolls with coleslaw. RecipeTin Eats (the lead) rubs the pork with a sweet paprika spice mix, slow cooks it in apple cider or apple juice for 8 hours on low, browns it in the oven before shredding and simmers a separate sauce made with some of the cooking juices. Simply Scratch sears the pork in a skillet first and cooks it right in the sauce with onion and chipotle powder. This one follows the lead for a 2 lb shoulder, leaves out the lead's splash of lemon juice in the sauce and dresses bagged coleslaw mix with mayonnaise and vinegar.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Slow Cooker BBQ Pulled Pork Sandwich",
+   "url": "https://www.recipetineats.com/slow-cooker-bbq-pulled-pork-sandwich/",
+   "rating": 5.0,
+   "rating_count": 39,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Scratch",
+   "title": "Slow Cooker Pulled Pork Sandwiches",
+   "url": "https://simplyscratch.com/2013/08/slow-cooker-pulled-pork-sandwiches.html",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,51 @@
+{
+ "dish_name": "Kafta Kebabs",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Ground beef", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Lebanese seven spice", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Tahini", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"},
+  {"item": "Wooden skewers", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Put 12 wooden skewers in a dish of water to soak while you make the meat.",
+  "Finely chop one of the onions. Pick the leaves from the parsley and finely chop about 1 cup of them, keeping a small handful back for the end.",
+  "Put the 1.5 lb beef in a large bowl with the chopped onion and parsley, the 1 tbsp seven spice, 1 1/2 tsp of the salt and the 3/4 tsp pepper.",
+  "Mix it with your hands for about 2 minutes, squeezing it through your fingers, until it turns sticky and holds together in one mass.",
+  "Wet your hands and divide the meat into 12 even pieces. Squeeze each one around a skewer into a log about 5 inches long and 1 inch thick. Snip the skewers short if they won't fit flat in your skillet.",
+  "In a small bowl, stir the 1/2 cup tahini with the juice of half the lemon, the garlic clove grated, 1/4 tsp of the salt and 1/3 cup cold water. It goes thick and clumpy at first. Keep stirring and it turns smooth and pourable. Cut the other half of the lemon into wedges.",
+  "Slice the second onion into thin half moons and cut the 2 tomatoes into wedges.",
+  "Heat 1 tbsp of the oil in a large skillet over medium high until it shimmers. Lay in half the skewers and cook for 3 to 4 minutes, until the undersides are deep brown and let go of the pan.",
+  "Turn them and keep cooking, turning every 2 minutes or so, until they're browned all over, about 6 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the thickest one: it's done when there's no pink left. Move them to a plate.",
+  "Add the last 1 tbsp oil and cook the rest of the skewers the same way.",
+  "Pour off all but about 1 tbsp of the fat. Add the sliced onion and the last 1/4 tsp salt and cook over medium for about 5 minutes, stirring and scraping up the brown bits, until the onion is soft and browned at the edges.",
+  "Add the tomato wedges and cook for 2 to 3 minutes, until they soften and the skins start to wrinkle.",
+  "Wrap the pitas in a damp paper towel and microwave them for 30 seconds to warm them.",
+  "Chop the parsley you kept back and scatter it over the kafta.",
+  "Taste the tahini sauce. If it's flat, add a pinch of salt first, then a squeeze from one of the lemon wedges.",
+  "Serve the kafta with the onions and tomatoes, the tahini sauce, the warm pita and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three mix ground beef with finely chopped onion, plenty of parsley, salt, pepper and warm spice, knead it well and shape it around skewers or into fingers. Simply Lebanese uses 2 tsp seven spice per pound and cooks the kafta in a skillet, then softens sliced onion and tomato in the same pan. Zaatar and Zaytoun uses much less seven spice and grills the kafta hot; The Things We Make swaps the blend for allspice, cumin and a pinch of cayenne and bakes it at 375°F as an option. This one follows Simply Lebanese's spice ratio and skillet, cooks in two batches so the kafta browns, and adds a tahini sauce.",
+ "sources": [
+  {"name": "Simply Lebanese", "title": "Kafta", "url": "https://www.simplyleb.com/recipe/kafta/", "rating": 4.57, "rating_count": 37, "read": true, "lead": true},
+  {"name": "Zaatar and Zaytoun", "title": "Lebanese Kafta", "url": "https://zaatarandzaytoun.com/kafta/", "rating": 5, "rating_count": 5, "read": true, "lead": false},
+  {"name": "The Things We Make", "title": "Beef Kafta", "url": "https://thethingswellmake.com/kafta-beef-kebab-recipe/", "rating": 5, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

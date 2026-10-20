@@ -1,0 +1,138 @@
+{
+ "dish_name": "Poha",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Thick poha",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Raw peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  }
+ ],
+ "instructions": [
+  "Put the 3 cups poha in a colander and rinse it under cold running water for about 30 seconds, turning it with your hand so every flake gets wet. Drain it well and leave it in the colander for 5 minutes to soften.",
+  "Meanwhile, finely chop the 2 onions and 1/4 cup of the cilantro. Thinly slice the green chili and put it in a small bowl for the table.",
+  "Press a flake of poha between your fingers. It should squash easily. If it still feels hard, sprinkle over a tablespoon of water, toss it and give it 2 more minutes.",
+  "Sprinkle the 3/4 tsp salt and 1 tsp sugar over the poha and run your fingers through it to break up any clumps.",
+  "Heat the 3 tbsp oil in a large frying pan over medium. Add the 1/3 cup peanuts and fry them, stirring, for 3 to 4 minutes, until they're golden and crunchy. Lift them out onto a plate with a slotted spoon and leave the oil in the pan.",
+  "Add the 1 tsp mustard seeds and 1 tsp cumin seeds to the oil. When the mustard seeds start to pop, after about 30 seconds, add the pinch of asafoetida, 2 sprigs of curry leaves and the onions. Stand back a little. The leaves spatter.",
+  "Cook the onions for 4 to 5 minutes, stirring now and then, until they're soft and see-through.",
+  "Add the 1 cup frozen peas and cook for 2 minutes, stirring, until they're bright green and hot.",
+  "Stir in the 1/2 tsp turmeric for a few seconds, then add the poha. Fold it gently with a spatula until every flake is yellow.",
+  "Turn the heat to low, cover the pan and cook for 2 to 3 minutes, until the poha is steaming hot and soft. If it looks dry, sprinkle over a tablespoon of water before you cover it. Turn off the heat.",
+  "Squeeze the juice of half the lemon over the poha, scatter over the cilantro and fold it through. Cut the other half into wedges. Taste it, and add a pinch more salt or a squeeze from a wedge if it's flat.",
+  "Serve topped with the peanuts, with the lemon wedges and the sliced chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three rinse thick poha briefly instead of soaking it and drain it well so it doesn't turn mushy, then build a tempering of mustard and cumin seeds, curry leaves, green chili and onion before the turmeric and the flakes go in, cover it to steam for a few minutes and finish with lemon and cilantro. Swasthi's fries the peanuts first and keeps them for the top, salts and sweetens the poha before it reaches the pan, and makes potato or mixed vegetables optional. Archana's Kitchen blanches fresh peas and stirs them in with the poha; Yummy Tummy uses frozen peas and seasons the drained flakes with turmeric and chili powder first. This one follows Swasthi's method with frozen peas added and puts the chili on the side.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Poha Recipe (Indian Breakfast)",
+   "url": "https://www.indianhealthyrecipes.com/poha-recipe/",
+   "rating": 5.0,
+   "rating_count": 301,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Matar Poha Recipe (Flattened Rice Stir Fry with Green Peas)",
+   "url": "https://www.archanaskitchen.com/matar-poha-recipe-flattened-rice-stir-fry-with-green-peas",
+   "rating": 4.9,
+   "rating_count": 5889,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Yummy Tummy Aarthi",
+   "title": "Peas Poha Recipe | Pattani Aval Upma Recipe | Matar Poha Recipe",
+   "url": "https://www.yummytummyaarthi.com/peas-poha-recipe",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

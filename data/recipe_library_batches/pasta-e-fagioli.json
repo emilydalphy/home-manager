@@ -1,0 +1,48 @@
+{
+ "dish_name": "Pasta e Fagioli",
+ "cuisine": "Italian",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 ribs"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Fresh rosemary", "qty": "1 package", "category": "produce", "cook_qty": "1 tsp chopped"},
+  {"item": "Diced tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Cannellini beans", "qty": "2 cans (15 oz each)", "category": "pantry"},
+  {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "4 cups"},
+  {"item": "Parmesan", "qty": "4 oz", "category": "dairy"},
+  {"item": "Ditalini", "qty": "1 cup", "category": "pantry"},
+  {"item": "Lacinato kale", "qty": "1 bunch", "category": "produce", "cook_qty": "4 large leaves"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Dice the onion and finely chop the 2 carrots and 2 ribs of the celery. Mince the 3 garlic cloves and chop the rosemary leaves until you have 1 tsp.",
+  "Drain and rinse both cans of beans. Put 1 cup of them in a bowl and mash them with a fork until they're mostly smooth.",
+  "Strip the leaves from 4 large stems of the kale and tear them into bite-size pieces. If your Parmesan has a rind, cut it off and keep it, then finely grate the cheese.",
+  "Heat 2 tbsp of the olive oil in a large pot over medium heat. Add the onion, carrots, celery, 1 tsp salt and the 1/4 tsp pepper and cook for 10 to 12 minutes, stirring now and then, until everything is very soft. Don't rush this. That's where the flavor starts.",
+  "Add the garlic, 1 tbsp tomato paste and the rosemary and cook for 1 minute, stirring, until the paste turns a shade darker.",
+  "Add the tomatoes with their juice, the whole beans, the mashed beans, the 4 cups broth and the Parmesan rind, if you have one. Bring it to a simmer, then turn the heat down to medium low and simmer uncovered for 20 minutes, stirring now and then.",
+  "Stir in the 1 cup ditalini and simmer for about 10 minutes, stirring often so it doesn't stick to the bottom, until the ditalini is tender. The soup thickens a lot as it cooks. If it gets too thick to ladle, stir in a splash of water.",
+  "Stir in the kale and cook for about 2 minutes, until it wilts. Fish out the Parmesan rind.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the soup into bowls, drizzle the last 1 tbsp olive oil over the top and scatter on the grated Parmesan. Serve with the 1/4 tsp red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions build on onion, carrot and celery, add tomatoes, broth and cannellini beans, and cook small pasta in the pot at the end. Love and Lemons (the lead) keeps it vegetarian: a long, slow soffritto, tomato paste and rosemary, a Parmesan rind in the broth, then kale at the end with chili flakes. Once Upon a Chef renders pancetta first, adds wine, lentils and bay, and purées a cup of the soup to thicken it before stirring in Parmesan. Spend With Pennies browns Italian sausage, uses kidney and cannellini beans with tomato sauce and dried herbs, and cooks the pasta separately. This one follows the lead and mashes a cup of the beans for a thicker body in place of the blender step. Natasha's Kitchen has a higher rated version, but it's an Olive Garden copycat with ground beef, so it wasn't read.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Pasta e Fagioli", "url": "https://www.loveandlemons.com/pasta-fagioli/", "rating": 5.0, "rating_count": 84, "read": true, "lead": true},
+  {"name": "Spend With Pennies", "title": "Pasta e Fagioli Soup Recipe", "url": "https://www.spendwithpennies.com/pasta-fagioli-soup-recipe/", "rating": 4.98, "rating_count": 72, "read": true, "lead": false},
+  {"name": "Once Upon a Chef", "title": "Pasta Fagioli", "url": "https://www.onceuponachef.com/recipes/pasta-fagioli.html", "rating": 4.93, "rating_count": 424, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

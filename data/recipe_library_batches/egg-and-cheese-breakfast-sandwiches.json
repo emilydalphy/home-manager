@@ -1,0 +1,93 @@
+{
+ "dish_name": "Egg and Cheese Breakfast Sandwiches",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "English muffins",
+   "qty": "1 package (6 count)",
+   "category": "other",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded cheddar cheese",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/3 cups"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Split 4 of the English muffins. Finely chop about 4 tsp of the chives.",
+  "You'll make the sandwiches two at a time. Melt 1 tbsp of the butter in a 12 inch nonstick skillet over medium heat and swirl it around the pan.",
+  "Lay 2 of the split muffins, cut side down, on one side of the pan. Crack 4 of the eggs onto the other side in two pairs, side by side, and break each yolk with your spatula so it spreads.",
+  "Cook for 2 to 3 minutes, until the egg whites are set and the muffins are golden underneath. Sprinkle the eggs with half the salt, a little pepper, half the chives and 1/3 cup of the cheese.",
+  "Press a toasted muffin half, cut side down, onto each egg and push down lightly with the spatula.",
+  "Flip each one over so the egg side is up. Scatter another 1/3 cup of the cheese over the eggs, then fold each pair together into a sandwich. Cook for about 30 seconds, until the cheese melts, and take them out of the pan.",
+  "Make the other two sandwiches the same way with the last 1 tbsp butter, the last 4 eggs, the remaining salt, a little more pepper, the rest of the chives and the last 2/3 cup cheese.",
+  "Serve them hot.",
+  "To freeze any sandwiches, let them cool completely. Wrap each one in parchment and then foil, and freeze them in a freezer bag for up to 1 month.",
+  "To reheat one from frozen, take off the foil, wrap it in a damp paper towel and microwave it at half power for 1 1/2 minutes. Turn it over and heat it at full power for 30 to 60 seconds. You're heating it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Press the center: it's ready when the cheese has melted and the middle feels hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Natasha's Kitchen (the lead) toasts the muffin and fries two eggs with broken yolks in the same pan, melts cheese and chives over them, presses the muffin on and folds it into a sandwich with ham. Taste of Home bakes a dozen eggs with milk in one dish, cuts them into squares and builds a freezer batch with Colby Jack and Canadian bacon, and Eat the Gains blends eggs with cottage cheese and adds sausage patties. All the freezer versions wrap each sandwich and reheat it in the microwave. This one follows the lead's pan method without the ham, two sandwiches at a time, and adds the freezer wrap and reheat from Taste of Home. Taste of Home's page gives only a review count (4), not a rating count.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Breakfast Sandwich - A One Pan Breakfast",
+   "url": "https://natashaskitchen.com/breakfast-sandwich/",
+   "rating": 4.9,
+   "rating_count": 69,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Freezer Breakfast Sandwiches",
+   "url": "https://www.tasteofhome.com/recipes/freezer-breakfast-sandwiches/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Eat the Gains",
+   "title": "Freezer Breakfast Sandwiches",
+   "url": "https://eatthegains.com/freezer-breakfast-sandwiches/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

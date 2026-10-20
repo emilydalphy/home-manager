@@ -1,0 +1,45 @@
+{
+ "dish_name": "Green Papaya Salad",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Green papaya", "qty": "1 medium", "category": "produce"},
+  {"item": "Long beans", "qty": "1 bunch", "category": "produce"},
+  {"item": "Grape tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Thai bird chilies", "qty": "1 package", "category": "produce", "cook_qty": "4"},
+  {"item": "Limes", "qty": "3", "category": "produce"},
+  {"item": "Palm sugar", "qty": "1 package", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Roasted unsalted peanuts", "qty": "1 cup", "category": "pantry"},
+  {"item": "Thai basil", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Peel the papaya with a vegetable peeler, cut it in half the long way and scoop out the white seeds with a spoon.",
+  "Shred the papaya into long thin strands with a julienne peeler or on the large holes of a box grater. That should be about 4 tightly packed cups. Put it in the fridge while you make the rest.",
+  "Cut 20 of the long beans into 2 inch pieces. Cut the tomatoes in half. Pick a big handful of leaves off the basil.",
+  "Thinly slice 3 of the chilies and put them in a small bowl for the table.",
+  "Put the 1 cup peanuts in a mortar and pound them lightly, until they break into large pieces. Stop before they turn to powder. Transfer them into a small bowl. No mortar? Put them in a zip bag and tap them with a rolling pin.",
+  "Roughly chop the 6 garlic cloves and the last chili, seeds and all. Pound them in the mortar for about a minute, until you have a rough, wet paste.",
+  "Juice 2 of the limes. That should be about 1/4 cup.",
+  "Add 1/2 cup grated palm sugar, the lime juice and 1/4 cup fish sauce to the mortar. Stir until the sugar dissolves, then pour the dressing into a large bowl.",
+  "Pound the beans in the mortar in two batches, until they split and soften a little. They're raw, so give them a good bashing. Add them to the dressing.",
+  "Squeeze the tomatoes over the bowl a handful at a time, so they burst a little, and drop them in.",
+  "Add the papaya and three quarters of the peanuts. Toss with two spoons or tongs for about 30 seconds, until every strand is coated.",
+  "Taste it. If it's flat, add a splash more fish sauce or a squeeze of the last lime.",
+  "Pile it onto plates right away and spoon some of the dressing from the bowl over each one. It goes limp if it sits.",
+  "Scatter the basil leaves and the rest of the peanuts on top. Serve with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions shred unripe papaya, pound garlic and bird chilies into a paste, and dress it with lime, fish sauce and sugar along with long or green beans, tomatoes and crushed peanuts. RecipeTin Eats pounds dried shrimp into the paste, sweetens with palm sugar, bruises the raw snake beans in the mortar, crushes the tomatoes by hand and finishes with Thai basil; its dressing makes more than the salad takes, so this one uses half of it. Norecipes blends the dressing, makes the dried shrimp optional and finishes with cilantro. This one leaves out the dried shrimp and keeps the pot mild with one chili pounded in and the rest sliced for the table.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Thai Green Papaya Salad (Som Tum)", "url": "https://www.recipetineats.com/green-papaya-salad/", "rating": 5.0, "rating_count": 48, "read": true, "lead": true},
+  {"name": "Norecipes", "title": "Green Papaya Salad", "url": "https://norecipes.com/green-papaya-salad-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

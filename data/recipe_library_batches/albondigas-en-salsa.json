@@ -1,0 +1,148 @@
+{
+ "dish_name": "Albondigas en Salsa",
+ "cuisine": "Spanish",
+ "main_protein": "beef",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1 canister",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Canned chopped tomatoes",
+   "qty": "2 cans (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion. Mince 3 of the garlic cloves for the sauce. Chop the parsley leaves until you have about 1/4 cup.",
+  "Grate the other 2 garlic cloves into a big bowl. Add the egg and beat it with a fork. Stir in 3 tbsp breadcrumbs, half the chopped parsley, the 3/4 tsp sweet paprika, 1/4 tsp of the smoked paprika, 1 tsp of the salt and the 1/4 tsp pepper.",
+  "Add the 1 lb beef and mix it in with your hands. Stop as soon as it's evenly mixed. Any longer and the meatballs come out tough.",
+  "Wet your hands and roll the mix into balls about the size of a walnut. You'll get about 30. Set them on a plate.",
+  "Heat 1 tbsp olive oil in a large deep skillet over medium high. Add half the meatballs with room between them and cook for about 5 minutes, turning them every minute or so, until they're brown on all sides. They'll still be pink inside. Move them to a plate and brown the rest the same way.",
+  "Turn the heat down to medium and add 2 tbsp olive oil to the same pan. Add the onion and cook for about 5 minutes, stirring now and then, until it's soft and see through.",
+  "Add the minced garlic, the 1/2 tsp fennel seeds, 1 tsp oregano and the remaining 1/4 tsp smoked paprika. Stir for 1 minute, until it smells fragrant.",
+  "Pour in the 2 cans of tomatoes with their juice, add the 2 bay leaves and the remaining 1/4 tsp salt, and scrape up the browned bits from the bottom of the pan. Bring it to a bubble, then turn the heat to medium low and simmer for 20 minutes, stirring now and then, until it has thickened a little.",
+  "Nestle the meatballs into the sauce with any juices from the plate. Cover and simmer for 8 to 10 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one in half: it's done when there's no pink left.",
+  "Take the pan off the heat, pull out the bay leaves and scatter over the rest of the parsley. Put the 1/2 tsp red pepper flakes in a small bowl for the table.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve with the crusty bread, with the red pepper flakes on the side.",
+  "To freeze the leftovers, let them cool in their sauce, then pack them into a lidded container. They keep in the freezer for up to 3 months. Thaw them in the fridge overnight and warm them over low heat with a splash of water."
+ ],
+ "method_notes": "All three brown small meatballs in olive oil first and finish them in a tomato sauce. Where Is My Spoon binds a pound of beef and pork with egg, a little dried breadcrumb, parsley and three paprikas, then simmers the meatballs in canned tomatoes with fennel seed, oregano and bay, which this version follows with beef and the heat moved to the table. Grantourismo uses milk soaked bread and adds sugar and chilli to the sauce, and Bake to the Roots chills the meatballs before frying and sharpens its passata with vinegar.",
+ "sources": [
+  {
+   "name": "Where Is My Spoon",
+   "title": "Spanish Meatballs – Albondigas Recipe",
+   "url": "https://whereismyspoon.co/albondigas-spanish-meatballs-in-tomato-sauce-spanish-food/",
+   "rating": 4.58,
+   "rating_count": 107,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Grantourismo",
+   "title": "Spanish Meatballs Recipe for Albondigas",
+   "url": "https://grantourismotravels.com/spanish-meatballs-recipe-for-albondigas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Bake to the Roots",
+   "title": "Albóndigas with Tomato Sauce",
+   "url": "https://baketotheroots.de/albondigas",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}

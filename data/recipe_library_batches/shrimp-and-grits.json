@@ -1,0 +1,49 @@
+{
+ "dish_name": "Shrimp and Grits",
+ "cuisine": "American",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Jumbo shrimp", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Bacon", "qty": "1 package (12 oz)", "category": "meat/seafood", "cook_qty": "4 slices"},
+  {"item": "Cajun seasoning", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "1 rib"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "All-purpose flour", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "2 cups", "category": "pantry"},
+  {"item": "Worcestershire sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Whole milk", "qty": "4 cups", "category": "dairy"},
+  {"item": "Quick-cooking grits", "qty": "1 cup", "category": "pantry"},
+  {"item": "Sharp cheddar", "qty": "1 block (8 oz)", "category": "dairy", "cook_qty": "2 oz"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel and devein the 1.5 lb shrimp if they aren't already, and pat them dry. Toss them in a bowl with the 1 tsp Cajun seasoning and 1/2 tsp of the salt.",
+  "Cut 4 slices of the bacon into small pieces. Thinly slice the whole bunch of green onions, keeping the white and light green parts apart from the dark green tops. Finely dice 1 rib of the celery and the red pepper, and finely chop the 2 garlic cloves. Shred 2 oz of the cheddar, about 3/4 cup.",
+  "Put the bacon in a large nonstick skillet over medium heat. Cook for about 7 minutes, stirring now and then, until it's crisp.",
+  "Turn the heat up to medium high and add the shrimp. Cook for about 2 minutes, stirring once or twice, until they're mostly pink but still a little gray in the middle. Transfer the shrimp and bacon into a bowl. Don't wash the skillet.",
+  "Melt the 2 tbsp butter in the same skillet over medium. Add the white and light green onion, the celery, the red pepper and the garlic. Cook for about 4 minutes, stirring now and then, until the vegetables are soft.",
+  "Sprinkle in the 3 tbsp flour and stir for 1 minute, until there's no dry flour left. Slowly whisk in the 2 cups broth and the 1 tbsp Worcestershire and bring it to a boil. Turn it down and simmer for 5 to 7 minutes, until the sauce is thick enough to coat a spoon. Take the skillet off the heat.",
+  "Meanwhile, pour the 4 cups milk into a medium saucepan, add the remaining 3/4 tsp salt and bring it to a gentle boil over medium. Watch it closely. Milk boils over fast.",
+  "Whisking the whole time, pour the 1 cup grits into the milk in a slow stream. Turn the heat to low and cook for about 5 minutes, whisking often, until the grits are thick and creamy. Take the pan off the heat, stir in the cheddar until it melts, and put the lid on.",
+  "Put the skillet back over medium heat and bring the sauce to a simmer. Add the shrimp and bacon with any juices from the bowl. Cook for 2 to 3 minutes, stirring often, until the shrimp are pink all the way through and curled into a loose C.",
+  "Stir in the 1/4 tsp pepper and a small handful of the dark green onion tops. Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the grits into bowls and the shrimp and sauce over the top. Scatter on the rest of the green onion tops and serve with the hot sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions crisp bacon, cook the shrimp briefly and take them out, build a flour-thickened sauce with green onion, garlic and broth in the same pan, then return the shrimp to finish and spoon it all over hot grits. Once Upon a Chef, the lead, seasons the shrimp with Cajun seasoning, adds celery, red pepper, Worcestershire and hot sauce to the sauce, and cooks quick grits in milk with cheddar stirred in. Southern Bite cooks old-fashioned grits in water for 20 to 25 minutes with cream cheese and butter and finishes its sauce with lemon juice and hot sauce. This one follows the lead and puts the hot sauce on the side. It takes about 45 minutes at a real stove, a little more than thirty.",
+ "sources": [
+  {"name": "Once Upon a Chef", "title": "Shrimp and Grits Recipe", "url": "https://www.onceuponachef.com/recipes/shrimp-and-grits.html", "rating": 4.89, "rating_count": 85, "read": true, "lead": true},
+  {"name": "Southern Bite", "title": "Shrimp and Grits", "url": "https://southernbite.com/shrimp-and-grits/", "rating": 5, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

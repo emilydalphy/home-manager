@@ -1,0 +1,149 @@
+{
+ "dish_name": "Rasam",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Toor dal",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "White rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fenugreek seeds",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1/2 cup toor dal in a sieve until the water runs clear. Put it in a small pot with 2 cups water and bring it to a boil over high heat.",
+  "Turn the heat down to low, partly cover the pot and simmer for 35 to 40 minutes, stirring now and then, until the dal is completely soft and squashes when you press it with a spoon. Add a splash of water if it starts to catch.",
+  "Meanwhile, rinse the 1 1/2 cups rice in a sieve until the water runs clear. Put it in a second pot with 2 1/4 cups water, bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Turn off the heat and leave the lid on until you serve.",
+  "While the dal and rice cook, make the rasam powder. Put the 1/4 tsp fenugreek seeds and 1 of the dried chilies in a small dry frying pan over medium low and stir until the seeds turn light golden, about 2 minutes.",
+  "Add 1 1/2 tsp of the cumin seeds and the 1 tsp peppercorns and stir for about 30 seconds, until they smell toasty. Transfer them onto a plate to cool, then grind them to a fine powder in a spice grinder or with a mortar and pestle.",
+  "Chop the 2 tomatoes. Crush the 4 garlic cloves with the flat of a knife. Finely chop 1/4 cup of the cilantro, stems and all.",
+  "When the dal is soft, mash it smooth with a whisk and set it aside.",
+  "Heat the 2 tbsp ghee in a medium pot over medium. Add the 1/2 tsp mustard seeds, the last 1/2 tsp cumin seeds and the other dried chili, broken in half. When the mustard seeds pop, add the garlic, 1 sprig of curry leaves and the pinch of asafoetida. Stand back a little. The leaves spatter.",
+  "Stir for about a minute, until the garlic smells sweet and the leaves are crisp. Add the tomatoes, 1 tsp salt and 1/4 tsp turmeric and cook for 5 to 6 minutes, pressing the tomatoes with the spoon, until they're soft and mushy.",
+  "Stir in the rasam powder and cook for 2 minutes, until it smells good.",
+  "Add the mashed dal, 3 cups water, 1 tbsp tamarind paste and 2 tsp jaggery and stir until the tamarind and jaggery dissolve. Bring it to a boil, then turn it down and simmer gently for 5 minutes. Don't let it boil hard. Hard boiling dulls the flavor.",
+  "Stir in the cilantro and turn off the heat. Taste it, and add a pinch more salt if it's flat, or a little more tamarind paste if it isn't sour enough.",
+  "Serve hot over the rice, or in cups as a soup with the rice on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three temper mustard and cumin seeds, dried red chili, curry leaves, hing and garlic in fat, cook tomato and turmeric soft, add tamarind and a pepper and cumin spice mix, and simmer briefly before finishing with cilantro. Swasthi's dry roasts fenugreek, red chili, cumin and pepper and grinds them fine, fries the powder into the tomatoes, and balances the sour with jaggery; she makes hers without lentils and treats tamarind as optional. Hebbar's paruppu rasam roasts a similar mix with coriander seed and simmers it with a cup of tamarind extract before stirring in 2 cups cooked toor dal; the pepper rasam from the same site pounds raw pepper, cumin and garlic and adds 1 cup cooked toor dal at the end. This one follows Swasthi's spice powder and order, uses tamarind paste as the sour, and adds mashed toor dal the way both of Hebbar's versions do.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Rasam Recipe | South Indian Hotel Style",
+   "url": "https://www.indianhealthyrecipes.com/tomato-rasam-recipe/",
+   "rating": 5.0,
+   "rating_count": 294,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Pepper Rasam Recipe | Village Style Milagu Rasam",
+   "url": "https://hebbarskitchen.com/pepper-rasam-recipe-milagu-rasam-recipe/",
+   "rating": 5.0,
+   "rating_count": 248,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Paruppu Rasam Recipe | Dal Rasam Recipe | Garlic Paruppu Rasam",
+   "url": "https://hebbarskitchen.com/paruppu-rasam-recipe-dal-rasam-recipe/",
+   "rating": 5.0,
+   "rating_count": 235,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

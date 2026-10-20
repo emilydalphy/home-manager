@@ -1,0 +1,52 @@
+{
+ "dish_name": "Ground Beef Tacos",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Ground beef", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Onion powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Crispy taco shells", "qty": "1 box (12)", "category": "pantry"},
+  {"item": "Shredded cheddar", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Iceberg lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 350°F.",
+  "Meanwhile, finely chop the onion and mince the 2 garlic cloves. In a small bowl, stir together the 1 tsp garlic powder, 1 tsp onion powder, 1 tsp oregano, 2 tsp cumin, 2 tsp paprika, 1 tsp salt and 1/4 tsp pepper.",
+  "Heat the 1 tbsp oil in a large skillet over medium high. Add the onion and cook for 3 to 4 minutes, stirring now and then, until it's soft and the edges are turning golden.",
+  "Add the 1 lb beef and break it up with a wooden spoon. Spread it out and leave it alone for 2 minutes, until the bottom is brown.",
+  "Keep stirring and breaking it up for 2 to 3 minutes, until there's no red left. If there's a lot of fat in the pan, spoon most of it off.",
+  "Add the garlic and the spice mix and stir for 1 minute, until it smells toasty.",
+  "Stir in 2 tbsp tomato paste and 1/4 cup water. Let it bubble for 1 to 2 minutes, until the water has cooked off and the meat looks juicy, not watery.",
+  "Taste the meat. If it's flat, add a pinch more salt.",
+  "Stand 10 to 12 of the taco shells up in a baking dish. Spoon in the beef and sprinkle 1 cup of the cheddar over the tops.",
+  "Bake for 5 to 7 minutes, until the cheese has melted and the shells are crisp.",
+  "Meanwhile, shred a quarter of the lettuce and dice the 2 tomatoes. Put them in bowls on the table with the sour cream and the hot sauce.",
+  "Serve the tacos hot, with the lettuce, tomatoes, sour cream and hot sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown 1 lb of ground beef with a cumin and chili blend, then add tomato paste and a little water and cook it down until the meat is juicy, not wet. RecipeTin Eats softens onion and garlic first, uses its own blend of garlic and onion powder, oregano, cumin, paprika and a little cayenne, then fills crispy shells, tops them with cheese and bakes them for 5 to 7 minutes. Natasha's Kitchen browns the beef before the onion and uses a ready taco seasoning, and Spend With Pennies drains the fat and uses chili powder and red pepper flakes. This one follows RecipeTin Eats with the garlic added after the beef browns and the heat left to the hot sauce at the table.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Old School Beef Taco recipe", "url": "https://www.recipetineats.com/ground-beef-tacos-recipe/", "rating": 4.97, "rating_count": 81, "read": true, "lead": true},
+  {"name": "Spend With Pennies", "title": "Easy Ground Beef Tacos", "url": "https://www.spendwithpennies.com/easy-ground-beef-tacos/", "rating": 4.91, "rating_count": 44, "read": true, "lead": false},
+  {"name": "Natasha's Kitchen", "title": "Ground Beef Tacos", "url": "https://natashaskitchen.com/ground-beef-tacos/", "rating": 5.0, "rating_count": 10, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,42 @@
+{
+ "dish_name": "Chana Chaat",
+ "cuisine": "Indian",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Chickpeas", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "1", "category": "produce"},
+  {"item": "Persian cucumbers", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Green chilies", "qty": "1", "category": "produce"},
+  {"item": "Kashmiri chili powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Chaat masala", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Tamarind chutney", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Cilantro chutney", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Sev", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"}
+ ],
+ "instructions": [
+  "Drain the 2 cans of chickpeas into a sieve and rinse them under cold water. Shake the sieve well, then transfer them onto a clean towel and pat them dry.",
+  "Finely chop the onion, the tomato and the cucumber. Chop 2 tbsp of the cilantro.",
+  "Finely chop the green chili and put it in a small bowl for the table.",
+  "Put the chickpeas in a large bowl and sprinkle over the 1/2 tsp chili powder, 1/2 tsp cumin, 1 tsp chaat masala and 1/2 tsp salt. Toss until every chickpea is coated.",
+  "Add the 1/4 cup tamarind chutney and 2 tsp cilantro chutney and stir until the chickpeas are glossy all over.",
+  "Add the onion, tomato and cucumber and toss again. Taste it, and add a pinch more salt if it's flat.",
+  "Spoon it into bowls and top each one with the 1/4 cup sev and the chopped cilantro right before serving. The sev goes soft if it sits.",
+  "Serve with the chopped green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions toss cooked chickpeas with chili powder or chaat masala, cumin, salt and tamarind chutney, add finely chopped onion, tomato, cucumber and green chili, and top with sev and cilantro just before serving. Hebbar's Kitchen (the lead) also stirs in a spoon of green chutney and some boiled potato, and serves it with chai. Swasthi's Recipes soaks and pressure cooks dried chickpeas, lists canned as fine, keeps the potato, green chutney and a spoon of yogurt optional, and uses lemon juice if there's no tamarind chutney. This one follows the lead with canned chickpeas and leaves out the potato so nothing needs cooking.",
+ "sources": [
+  {"name": "Hebbar's Kitchen", "title": "chana chaat recipe | chole chaat recipe | chickpea chaat", "url": "https://hebbarskitchen.com/chana-chaat-recipe-chole-chaat-recipe/", "rating": 5.0, "rating_count": 236, "read": true, "lead": true},
+  {"name": "Swasthi's Recipes", "title": "Chana Chaat Recipe (Chickpea Chaat)", "url": "https://www.indianhealthyrecipes.com/chana-chaat-recipe/", "rating": 5.0, "rating_count": 30, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

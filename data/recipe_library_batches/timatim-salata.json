@@ -1,0 +1,104 @@
+{
+ "dish_name": "Timatim Salata",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Roma tomatoes",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Finely chop the red onion and put it in a bowl of cold water for 5 minutes. Drain it and pat it dry with a paper towel.",
+  "Meanwhile, cut the 6 tomatoes into 1/2 inch chunks, keeping the seeds and juice. Don't dice them fine, or the salad turns mushy.",
+  "Cut the jalapeño in half lengthwise, scrape out the seeds and the white ribs, and slice it thin. Mince the garlic clove.",
+  "Juice both limes into a small bowl. Add the olive oil, 3/4 tsp salt, 1/4 tsp black pepper and 1/2 tsp berbere, and whisk until it looks cloudy and comes together.",
+  "Put the tomatoes, onion, jalapeño and garlic in a large bowl. Pour the dressing over and toss gently with a big spoon until everything is coated.",
+  "Cover the bowl and chill it for at least 15 minutes, or up to 4 hours. Toss it once more right before you serve it.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve cold with injera."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions are diced ripe tomato, onion, garlic or not, and green chili dressed with oil and something sour, then chilled briefly. Lula Moges's Enebla version uses white vinegar and four seeded jalapeños with garlic and chills it 10 minutes to a day; Urban Farmie soaks the onion in cold water first, cuts the tomatoes into chunky 1/2 inch pieces, and adds a little berbere with balsamic and lemon; Just a Pinch keeps it to sliced tomatoes, lemon, oil, garlic and jalapeño. None uses lime, so this version swaps the lemon or vinegar for lime as the dish note asks, and takes the onion soak and the chunky cut from Urban Farmie.",
+ "sources": [
+  {
+   "name": "TouchWood Editions (Enebla, Lula Moges)",
+   "title": "Ethiopian Tomato Salad (Timatim Selata)",
+   "url": "https://touchwoodeditions.com/blogs/news-events/try-this-recipe-for-ethiopian-tomato-salad-timatim",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Urban Farmie",
+   "title": "Timatim (Ethiopian Tomato Salad)",
+   "url": "https://urbanfarmie.com/timatim-ethiopian-tomato-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Just a Pinch",
+   "title": "Ethiopian Tomato Salad - Timatim Firfir",
+   "url": "https://www.justapinch.com/recipes/salad/other-salad/ethiopian-tomato-salad-timatim-firfir.html",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

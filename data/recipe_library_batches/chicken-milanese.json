@@ -1,0 +1,53 @@
+{
+ "dish_name": "Chicken Milanese",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Boneless skinless chicken breasts", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Panko breadcrumbs", "qty": "2 cups", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Parmesan", "qty": "1 wedge (8 oz)", "category": "dairy", "cook_qty": "3/4 cup grated + the rest shaved"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "3 tbsp chopped"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Basil", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup leaves"},
+  {"item": "Baby arugula", "qty": "1 package (5 oz)", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 200°F and set a wire rack on a baking sheet inside.",
+  "Halve the pint of cherry tomatoes into a bowl. Smash 1 garlic clove with the flat of a knife and add it. Squeeze in 3 tbsp juice from the lemons (about 1 1/2 lemons), then add the 1/3 cup olive oil and 1/4 tsp of the salt. Stir and leave it while you do the chicken. Cut the last lemon half into wedges.",
+  "Slice each chicken breast in half through its thickness so you have 4 thin pieces. Lay them between two sheets of plastic wrap and pound them with a mallet or a heavy pan to an even 1/4 inch.",
+  "Sprinkle 3/4 tsp of the salt and 1/4 tsp of the pepper over both sides of the cutlets.",
+  "Finely grate 3/4 cup of the Parmesan. Mince the other garlic clove and chop 3 tbsp of the parsley.",
+  "Set out three shallow dishes. Put the 3/4 cup flour in the first. Beat the 2 eggs in the second with 1/4 cup of the grated Parmesan and 1 tbsp water. In the third, mix the 2 cups panko with the remaining 1/2 cup grated Parmesan, the minced garlic, the parsley and the last 1/4 tsp salt and 1/4 tsp pepper.",
+  "Coat a cutlet in flour and shake off the extra. Dip it in the egg and let the extra drip off. Lay it in the crumbs and press so they stick on both sides. Set it on a plate and do the rest the same way.",
+  "Heat 1/4 cup of the vegetable oil in a large skillet over medium-high heat until it shimmers and a pinch of crumbs sizzles right away.",
+  "Lay in 2 cutlets so they don't touch. Cook them without moving for 2 to 3 minutes, until the underside is deep golden. Flip them and cook the other side for 2 to 3 minutes. Stand back a little. They spatter.",
+  "You're cooking them to 160°F in the thickest part, so if you have a thermometer, check there. No thermometer? Cut into the thickest part: it's done when there's no pink left. Move them to the rack in the oven.",
+  "Carefully wipe the burnt crumbs out of the pan with a wad of paper towel. Add the other 1/4 cup vegetable oil, heat it the same way and cook the last 2 cutlets.",
+  "Fish the garlic clove out of the tomatoes and tear in 1/2 cup of the basil leaves. Put the arugula in a large bowl, spoon about 3 tbsp of the tomato juices over it and toss.",
+  "Shave the rest of the Parmesan into thin curls with a vegetable peeler.",
+  "Put a cutlet on each plate, pile the arugula on top and spoon the tomatoes over it. Scatter the shaved Parmesan on top.",
+  "Taste the salad. If it's flat, add a pinch more salt or a squeeze of one of the lemon wedges.",
+  "Serve with the rest of the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions slice chicken breasts thin, pound them, bread them in flour, egg and panko, shallow fry them a couple at a time until golden, and serve them under or beside arugula dressed with lemon and olive oil, with shaved Parmesan. Coley Cooks puts Parmesan, garlic and parsley in the crumbs and Parmesan in the egg, and sits halved tomatoes in lemon, garlic and oil so their juices dress the greens; Well Plated seasons the crumbs with garlic and onion powder and keeps the cutlets warm on a rack in a low oven; Craving Home Cooked fries in olive oil. Coley pounds to about 1/2 inch, the others to 1/4 inch, which is what this one does.",
+ "sources": [
+  {"name": "Coley Cooks", "title": "Chicken Milanese with Tomato Arugula Salad", "url": "https://coleycooks.com/chicken-milanese/", "rating": 5.0, "rating_count": 57, "read": true, "lead": true},
+  {"name": "Well Plated", "title": "Chicken Milanese With Lemony Arugula Salad", "url": "https://www.wellplated.com/chicken-milanese/", "rating": 5.0, "rating_count": 8, "read": true, "lead": false},
+  {"name": "Craving Home Cooked", "title": "Chicken Milanese", "url": "https://cravinghomecooked.com/chicken-milanese/", "rating": 4.3, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

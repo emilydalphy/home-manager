@@ -1,0 +1,172 @@
+{
+ "dish_name": "Moussaka",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 95,
+ "ingredients": [
+  {
+   "item": "Eggplants",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2 leaves",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 3/4 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/3 cup grated"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F and line 2 rimmed baking sheets with parchment.",
+  "Cut the 2 eggplants into rounds about 1/3 inch thick. Layer them in a colander in the sink, sprinkling 1 tsp of the salt over the layers as you go. Leave them for 30 minutes.",
+  "Meanwhile, dice the onion and mince the 2 garlic cloves. Heat 1 tbsp of the olive oil in a large skillet over medium high. Add the onion and cook for 4 to 5 minutes, stirring now and then, until it's soft and turning golden.",
+  "Add the 1 lb beef and break it up with a wooden spoon. Cook for 6 to 8 minutes, until there's no pink left and it's browning in spots.",
+  "Add the garlic, 2 tbsp tomato paste, 1 1/2 tsp oregano and 1/2 tsp cinnamon. Stir for about 1 minute, until the paste turns a shade darker and you can smell the cinnamon.",
+  "Pour in the 1/3 cup red wine and scrape up the browned bits from the bottom of the pan. Let it bubble for about 1 1/2 minutes, until the sharp smell of alcohol is gone.",
+  "Stir in the can of crushed tomatoes, 2/3 cup beef broth, the 2 bay leaves, 1 tsp sugar, 1/2 tsp of the salt and 1/8 tsp of the pepper. Bring it to a simmer, then turn the heat down to medium low. Cook for 15 to 20 minutes, stirring now and then, until it's thick and there's very little liquid left in the pan.",
+  "Fish out the bay leaves and take the pan off the heat. Taste the sauce, and add a pinch more salt if it's flat.",
+  "While the sauce simmers, pat the eggplant slices dry with paper towels, pressing hard. Leave the salty water on and the moussaka comes out too salty. Lay the slices on the lined sheets in a single layer and brush both sides with the remaining 2 tbsp olive oil.",
+  "Bake the eggplant for 15 to 20 minutes, until the slices are soft and lightly browned. Take them out and turn the oven down to 350°F.",
+  "While the eggplant bakes, melt 3 tbsp butter in a medium saucepan over medium. Add the 1/4 cup flour and stir constantly for 1 minute, until it smells a little toasty.",
+  "Pour in the 1 3/4 cups milk a little at a time, whisking the whole time so no lumps form. Keep whisking for 3 to 5 minutes, until the sauce is thick enough to coat the back of a spoon.",
+  "Take it off the heat. Grate 1/3 cup of the parmesan and whisk it in with the 1/8 tsp nutmeg, the remaining 1/2 tsp salt and the remaining 1/8 tsp pepper. Leave it for 5 minutes to cool a little.",
+  "Whisk in 1 egg and the yolk of the second egg until the sauce is smooth. Whisk quickly so the egg doesn't scramble.",
+  "Lay half the eggplant in the bottom of an 8 by 8 inch baking dish. Spread all of the meat sauce over it, then cover it with the rest of the eggplant.",
+  "Pour the béchamel over the top and spread it out to the edges. Sprinkle the 1/4 cup panko over it.",
+  "Bake for 30 to 35 minutes, until the top is golden brown and the edges are bubbling.",
+  "Let it stand for 10 minutes before you cut it, or the layers slide apart. Cut it into 4 squares and serve."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions salt sliced eggplant for about 30 minutes, layer it with a beef or lamb sauce spiced with cinnamon and finished with red wine and tomato, and top it with a cheesy béchamel set with egg before baking at 350°F. RecipeTin Eats brushes the eggplant with oil and bakes it instead of frying, simmers the sauce with crushed tomatoes, tomato paste, broth, oregano and bay, and sprinkles panko over the béchamel. My Greek Dish fries the eggplant (baking is its lighter option), adds an optional potato layer and whole cloves, uses two yolks in a bigger béchamel, bakes it for an hour and says to let it cool to warm before cutting. This one follows RecipeTin Eats, sized for an 8 by 8 dish, with beef and plain salt in place of its stock cube and stock powder.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Moussaka (Greek Eggplant Lasagna)",
+   "url": "https://www.recipetineats.com/moussaka/",
+   "rating": 4.94,
+   "rating_count": 311,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Greek Dish",
+   "title": "Traditional Moussaka recipe with eggplants (aubergines) and potatoes",
+   "url": "https://www.mygreekdish.com/recipe/mousakas/",
+   "rating": 4.6,
+   "rating_count": 2408,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

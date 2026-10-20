@@ -1,0 +1,34 @@
+{
+ "dish_name": "Homemade Granola Bars",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Creamy peanut butter", "qty": "1 jar (16 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Honey", "qty": "1 bottle", "category": "pantry", "cook_qty": "2/3 cup"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Rolled oats", "qty": "2 1/2 cups", "category": "pantry"},
+  {"item": "Mini chocolate chips", "qty": "1 bag", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Pepitas", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"}
+ ],
+ "instructions": [
+  "At least 1 hour before you want them, or up to a week ahead, line an 8 inch square pan with parchment paper, leaving some hanging over two sides.",
+  "In a large bowl, stir together the 1 cup peanut butter, 2/3 cup honey, 1 tsp vanilla and 1/2 tsp salt until smooth.",
+  "Add the 2 1/2 cups oats, 1/3 cup chocolate chips and 3 tbsp pepitas. It looks too dry at first, so keep stirring until every oat is coated and it holds together.",
+  "Transfer it into the pan and spread it out. Lay a second sheet of parchment on top and press down hard with the bottom of a measuring cup, right into the corners. Press firmly, or the bars will crumble when you cut them.",
+  "Put the pan in the fridge for at least 1 hour, until the slab feels firm.",
+  "Lift it out by the parchment and cut it into 8 bars. Keep them in a sealed container in the fridge for up to a week."
+ ],
+ "advance_prep_notes": "make them at least 1 hour ahead so they can chill before cutting",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5],
+ "method_notes": "Both versions bind rolled oats with honey and add a little salt and vanilla. Love and Lemons (the lead) makes them with no baking: peanut butter and honey stirred with oats, mini chocolate chips and pepitas, pressed into an 8 inch pan and chilled for an hour. Once Upon a Chef toasts the oats, nuts and coconut, binds them with a boiled honey, brown sugar and butter syrup plus crisp rice cereal and dried fruit, and bakes them at 300°F for a crisp bar. Love and Lemons and Once Upon a Chef both round to 4.8, so the one with more ratings leads. One pan makes 8 bars, which covers two snacks for four.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Homemade Granola Bars", "url": "https://www.loveandlemons.com/granola-bars/", "rating": 4.8, "rating_count": 441, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Crispy Honey Nut Granola Bars", "url": "https://www.onceuponachef.com/recipes/chewy-granola-bars.html", "rating": 4.8, "rating_count": 71, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

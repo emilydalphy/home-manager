@@ -1,0 +1,146 @@
+{
+ "dish_name": "Thai Fish Cakes",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "White fish fillets",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce",
+   "cook_qty": "6"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Start with the relish. In a small pot over medium-low, stir 1/2 cup vinegar, 1/2 cup sugar and a pinch of salt for 2 to 3 minutes, until the sugar dissolves. Take it off the heat and let it cool.",
+  "Meanwhile, cut the 2 cucumbers in half lengthwise and slice them thinly. Thinly slice the shallot. Put them both in a small serving bowl.",
+  "Thinly slice 2 of the chilies into a little dish for the table. Roughly chop the 2 tbsp peanuts.",
+  "Chop 1 tbsp of the cilantro and pick a small handful of leaves for the top. Squeeze 1 tbsp juice from half the lime.",
+  "Cut the 1 lb fish into chunks and put it in a food processor with 2 tbsp curry paste, 1 tbsp fish sauce, the egg, the chopped cilantro and the 1 tbsp lime juice. Blend for about 1 minute, scraping down the sides once, until it's a smooth, sticky paste.",
+  "Scrape the paste into a bowl. Slice 6 of the green beans into thin rounds and stir them in with the 1/4 cup rice flour until there's no dry flour left.",
+  "Wet your hands and shape the mixture into 12 patties about 1/2 inch thick, using about 1/4 cup for each.",
+  "Heat 4 tbsp oil in a large nonstick skillet over medium-high until it shimmers. Lay in half the patties and cook for 2 minutes, until the underside is deep golden. Flip them and cook the other side for 2 minutes. They're done when they've puffed a little and feel springy when you press one.",
+  "Move them to a plate lined with paper towels. Add the other 2 tbsp oil and cook the second batch the same way.",
+  "Pour the cooled syrup over the cucumbers and shallot and scatter the peanuts on top.",
+  "Cut the other half of the lime into wedges.",
+  "Serve the fish cakes with the cilantro leaves on top, with the cucumber relish, lime wedges and sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three grind white fish with red curry paste, egg and fish sauce into a sticky paste, stir in thin slices of green bean and fry small flat cakes until golden. RecipeTin Eats, the lead, blends it in a food processor with cilantro, lime juice and rice flour, shapes 12 patties from 1 lb and shallow fries them 2 minutes a side, serving them with sweet chilli sauce. Temple of Thai and ImportFood work the paste by hand, add kaffir lime leaves and fry in deeper oil, and both serve a cucumber relish of cucumber, shallot and chilli in a cooled vinegar and sugar syrup with crushed peanuts. This one follows the lead's cakes with 2 tbsp curry paste instead of 3 to keep them milder, and serves ImportFood's relish with the chilies on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Fish Cakes",
+   "url": "https://www.recipetineats.com/thai-fish-cakes/",
+   "rating": 4.87,
+   "rating_count": 88,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "ImportFood",
+   "title": "Spicy Thai Fish Cakes, 'Tod Man Pla'",
+   "url": "https://importfood.com/recipes/recipe/4-spicy-thai-fish-cakes-tod-man-pla",
+   "rating": 4.0,
+   "rating_count": 21,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Temple of Thai",
+   "title": "Thai Fish Cakes with Cucumber Relish (Tod Man Pla)",
+   "url": "https://www.templeofthai.com/recipes/thai_fish_cakes.php",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

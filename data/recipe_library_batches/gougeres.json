@@ -1,0 +1,96 @@
+{
+ "dish_name": "Gougeres",
+ "cuisine": "French",
+ "main_protein": "cheese",
+ "default_servings": 7,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 32,
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "5",
+   "category": "dairy"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Gruyère cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with one rack in the upper third and one in the lower third. Line two baking sheets with parchment.",
+  "Coarsely grate the 8 oz Gruyère. That should be about 2 cups.",
+  "Crack 4 of the eggs into a small bowl. Separate the last egg and add only its white to the bowl. Keep the yolk for something else.",
+  "Put the 1 cup milk, 1/2 cup butter cut into 4 pieces and 1 tsp salt in a medium saucepan over high heat and bring it to a boil.",
+  "Add the 1 cup flour all at once, turn the heat down to medium and stir hard with a wooden spoon. In under a minute it pulls into a ball and leaves a thin film on the bottom of the pan.",
+  "Keep stirring for 2 more minutes to dry the dough out. Drier dough makes puffier gougères.",
+  "Scrape the dough into a big bowl and let it sit for 1 minute. Beat in the eggs one at a time with the wooden spoon or a hand mixer, and get each one fully in before you add the next. Add the egg white last.",
+  "The dough looks split and slippery after the first egg or two. Keep beating. By the time the white is in, it's smooth, glossy and thick.",
+  "Beat in the 2 tsp Dijon, then stir in all the grated Gruyère.",
+  "Scoop heaping tablespoons of dough onto the two sheets, about 2 inches apart. You'll get 28 to 30.",
+  "If you're freezing some, put one sheet straight into the freezer. Once the mounds are hard, after about 1 hour, pack them into a freezer bag.",
+  "Slide the other sheet into the oven and turn the heat down to 375°F right away. Bake for 15 minutes, then turn the sheet front to back.",
+  "Bake for another 15 to 17 minutes, until they're puffed, deep golden and firm enough to pick up. Keep the oven door shut until the first 15 minutes are up, or they can sink.",
+  "Serve them warm, straight from the oven. To bake the frozen ones, put them on a lined sheet straight from the freezer and bake them the same way, giving them a few minutes longer, until they're puffed and golden. This makes about 28 puffs."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three make a choux dough on the stove, dry it out over the heat, beat in eggs one at a time, fold in Gruyère and bake in heaping tablespoon mounds. Once Upon a Chef (Dorie Greenspan's recipe) uses milk instead of water, adds an extra egg white and Dijon, starts the oven at 425°F and drops it to 375°F as the sheets go in, and freezes the scooped dough to bake straight from frozen. RecipeTin Eats uses water, nutmeg and pepper, brushes the tops with yolk and extra cheese, and bakes 25 minutes at 425°F. King Arthur also tops the puffs with cheese and bakes 15 minutes at 425°F, then 20 to 25 at 350°F, and says to keep the door shut.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Gougères (French Cheese Puffs)",
+   "url": "https://www.onceuponachef.com/recipes/gougeres.html",
+   "rating": 4.91,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "French Cheese Puffs (Gougeres)",
+   "url": "https://www.recipetineats.com/gougeres-french-cheese-puffs/",
+   "rating": 4.91,
+   "rating_count": 42,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "King Arthur Baking",
+   "title": "Gougères",
+   "url": "https://www.kingarthurbaking.com/recipes/gougeres-recipe",
+   "rating": 4.7,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

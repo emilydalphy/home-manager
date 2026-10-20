@@ -1,0 +1,49 @@
+{
+ "dish_name": "Salade Nicoise",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Baby potatoes", "qty": "1 lb", "category": "produce"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Green beans", "qty": "8 oz", "category": "produce"},
+  {"item": "Tuna in olive oil", "qty": "2 cans (5 oz)", "category": "pantry"},
+  {"item": "Romaine hearts", "qty": "1", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Radishes", "qty": "1 bunch", "category": "produce"},
+  {"item": "Kalamata olives", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Capers", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Lemons", "qty": "1", "category": "produce"},
+  {"item": "Extra virgin olive oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "to taste", "category": "pantry"},
+  {"item": "Baguette", "qty": "1", "category": "other"}
+ ],
+ "instructions": [
+  "Put the 1 lb potatoes in a large pot and cover them with cold water by about an inch. Stir in 1 tsp of the salt. Bring it to a boil over high heat, then turn it down to a steady simmer for 12 to 15 minutes, until a knife slides in easily.",
+  "Meanwhile, bring a small pot of water to a boil. Lower in the 4 eggs with a spoon and boil them for 10 minutes.",
+  "While the eggs cook, trim the 8 oz green beans and fill a big bowl with ice water.",
+  "Make the dressing in a jar: squeeze in the juice of the lemon, about 2 tbsp, then add the 1/3 cup olive oil, 1 tsp Dijon, the garlic clove grated, 1/4 tsp of the salt and a grind of pepper. Put the lid on and shake it until it's creamy.",
+  "When the eggs are done, lift them into the ice water.",
+  "When the potatoes have about 3 minutes left, add the green beans to the same pot. Cook them until they're bright green and still a little crisp, then lift them into the ice water with tongs. After a minute, take them out and pat them dry.",
+  "Drain the potatoes and let them cool for 10 minutes. Halve them and toss them in a bowl with 2 tbsp of the dressing while they're still warm.",
+  "Peel the eggs and cut them in half. Halve the cherry tomatoes and quarter 6 of the radishes. Tear the romaine into large pieces and spread it over a big platter. Drain the 2 cans of tuna and break it into large chunks.",
+  "Arrange the potatoes, green beans, tomatoes and radishes in groups over the romaine. Pile the tuna in the middle and set the eggs around it. Scatter the 1/2 cup olives and 2 tbsp capers over the top.",
+  "Chop 2 tbsp of the parsley. Sprinkle the last 1/4 tsp of salt and a grind of pepper over the eggs and tomatoes, drizzle the rest of the dressing over everything and scatter on the parsley.",
+  "Serve with the baguette, sliced."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both lay the parts out on a platter rather than tossing them: boiled potatoes, green beans cooled in cold water, hard-boiled eggs, tomatoes and olives under a lemon, olive oil and Dijon dressing. Love and Lemons leaves out the tuna and adds white beans, artichoke hearts, radishes and capers, finishing with parsley and flaky salt, and suggests crusty bread; RecipeTin Eats builds it on cos lettuce with good canned tuna in oil and says a dozen anchovies are the more traditional choice. The tuna and the dressing amounts here come from RecipeTin Eats, since the dish promises tuna and the lead's dressing is on another page; the white beans and artichokes are left out to keep it to the classic.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Nicoise Salad", "url": "https://www.loveandlemons.com/nicoise-salad/", "rating": 5.0, "rating_count": 30, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Nicoise Salad (French salad with tuna)", "url": "https://www.recipetineats.com/nicoise-salad/", "rating": 4.91, "rating_count": 21, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

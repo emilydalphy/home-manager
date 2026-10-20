@@ -1,0 +1,118 @@
+{
+ "dish_name": "Lentil Sambusa",
+ "cuisine": "Ethiopian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Brown lentils",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Berbere",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Spring roll wrappers",
+   "qty": "1 package",
+   "category": "frozen",
+   "cook_qty": "8 sheets"
+  }
+ ],
+ "instructions": [
+  "Rinse the 3/4 cup lentils in a sieve and put them in a small pot. Cover them with water by about 2 inches and bring it to a boil over medium high.",
+  "Turn the heat down and simmer the lentils for 18 to 20 minutes, until they're tender but still hold their shape. Drain them well.",
+  "Meanwhile, finely chop the onion. Seed and finely chop the jalapeño, mince the 2 garlic cloves and grate the ginger.",
+  "Heat 1/4 cup of the oil in a large skillet over medium. Add the onion and 1/4 tsp of the salt and cook for 8 to 10 minutes, stirring now and then, until the onion is soft and golden at the edges. Don't rush the onions. That's where the flavor starts.",
+  "Add the jalapeño, garlic and ginger and cook for 1 minute, until it smells fragrant. Stir in the 2 tsp berbere and 1 tsp coriander and cook for 30 seconds. If the spices start to stick, turn the heat down. Burnt berbere tastes bitter.",
+  "Add the drained lentils and 1/2 tsp of the salt. Cook for 3 to 4 minutes, stirring and pressing some of the lentils against the pan with the back of the spoon, until the filling is fairly dry and holds together when you press it.",
+  "Take the pan off the heat and squeeze in the juice of half the lemon. Taste it, and add the last 1/4 tsp salt if it's flat. Spread the filling on a plate and let it cool for 10 minutes. Hot filling tears the wrappers.",
+  "Cut 8 spring roll wrappers in half to make 16 long strips. Keep them under a damp towel while you work, and set a small cup of water next to you for sealing.",
+  "Lay a strip in front of you with a short end closest to you. Put a heaping tablespoon of filling near that end and fold one corner over it to make a triangle. Keep folding the triangle up the strip, like folding a flag.",
+  "Brush the last bit of the strip with water and press it onto the triangle to seal it. Repeat with the rest of the strips and filling to make 16.",
+  "To freeze some for later, lay them on a lined tray without touching and freeze until hard, about 2 hours, then move them to a freezer bag. They keep for up to 3 months. Fry them straight from frozen and give them an extra minute.",
+  "Pour the remaining 4 cups oil into a deep heavy pot. It should come no more than halfway up the sides. Heat it over medium high. You're heating it to 350°F, so if you have a thermometer, clip it to the side. No thermometer? Drop in a scrap of wrapper: it's ready when it sizzles right away and floats.",
+  "Lower 4 or 5 sambusas into the oil and fry for about 1 1/2 minutes, until the underside is golden. Stand back a little. They can spatter.",
+  "Flip them and fry the other side for another 1 1/2 minutes, until they're golden brown and crisp all over. Lift them onto a plate lined with paper towels.",
+  "Let the oil heat back up for a minute before each new batch, and fry the rest the same way.",
+  "Cut the other half of the lemon into wedges. Serve the sambusas warm with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions cook lentils with onion, garlic and ginger into a fairly dry filling, wrap it in thin pastry and deep fry at about 350 to 365°F until golden. Luladey Moges's version (Touchwood Editions) boils brown lentils briefly, adds jalapeño and ground coriander, and uses spring roll wrappers as the shortcut; Great British Chefs makes its own dough and niter kibbeh, simmers the lentils in stock with berbere for close to an hour, and fries smaller sambusas for under a minute. This one takes the spring roll wrappers from the first and the berbere from the second, and freezes the shaped sambusas raw so they fry from frozen. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Ethiopian) has no sambusa, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Touchwood Editions",
+   "title": "Ye Misir Sambusa (Ethiopian Lentil Samosa)",
+   "url": "https://touchwoodeditions.com/blogs/recipes/quick-ethiopian-lentil-samosa-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Great British Chefs",
+   "title": "Lentil sambusas",
+   "url": "https://www.greatbritishchefs.com/recipes/lentil-sambusa-recipe",
+   "rating": 4.5,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food and Spice",
+   "title": "Spiced Lentil Sambusas",
+   "url": "https://www.foodandspice.com/2024/10/spiced-lentil-sambusas.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

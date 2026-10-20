@@ -1,0 +1,45 @@
+{
+ "dish_name": "Sweet Potato Breakfast Hash",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Sweet potatoes", "qty": "1 lb", "category": "produce"},
+  {"item": "White wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Red bell peppers", "qty": "2", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Mild Italian sausage", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Sriracha", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle.",
+  "Scrub the 1 lb sweet potatoes and cut them into 3/4 inch cubes. You can leave the skin on. Put them in a medium saucepan, cover with cold water by 2 inches and add 2 tsp vinegar and 1 tsp of the salt.",
+  "Bring the pot to a boil over high heat, then turn it down and simmer for 5 minutes, until a fork slides in but the cubes still hold their shape. Drain them.",
+  "Meanwhile, cut the 2 red peppers into 1/2 inch pieces. Thinly slice 3 of the green onions, keeping the white and light green parts apart from the dark green tops.",
+  "Heat 1 tsp of the oil in a large oven safe skillet over medium heat. Squeeze the 8 oz sausage out of its casings into the pan, break it into small pieces and cook for 6 to 8 minutes, until it's browned and there's no pink left. Move it to a plate.",
+  "Add 1 tbsp of the oil and the peppers to the same pan and turn the heat up to medium high. Cook for 4 minutes, stirring now and then, until they start to soften.",
+  "Add the sweet potatoes and the last 2 tsp oil. Cook for 6 to 8 minutes, turning them every couple of minutes with a spatula, until they're browned in spots.",
+  "Stir the sausage back in with the white and light green onion, 1/4 tsp of the salt and the 1/4 tsp pepper, and cook for 2 minutes. Taste a piece of sweet potato, and add a pinch more salt if it's flat.",
+  "Make 4 wells in the hash with the back of a spoon. Crack each of the 4 eggs into a small cup and transfer it into a well. Sprinkle the last 1/4 tsp salt over the eggs.",
+  "Move the skillet to the oven and bake for 10 to 15 minutes, until the whites are set and the yolks still jiggle when you nudge the pan. Give it a few more minutes if you like firm yolks. Use an oven mitt on the handle. It stays hot for a while.",
+  "While it bakes, halve, pit and dice the avocado.",
+  "Scatter the dark green onion tops over the hash. Serve it with an egg on each plate, with the avocado and sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both make the hash in one big skillet and cook the eggs in wells right in it. Well Plated (the lead, and the only version with 20 or more ratings) parboils the cubed sweet potatoes with vinegar and salt so they brown fast without going mushy, browns sausage and red peppers, then bakes the eggs in a 400°F oven and serves it with avocado. Love and Lemons skips the sausage and the boil, cooks the cubes in the pan with onion, poblano, kale and chili powder, and covers the pan on the stove to set the eggs. This one follows the lead with mild sausage and puts the sriracha on the side instead of in the hash.",
+ "sources": [
+  {"name": "Well Plated", "title": "Sweet Potato Hash", "url": "https://www.wellplated.com/sweet-potato-hash/", "rating": 4.86, "rating_count": 34, "read": true, "lead": true},
+  {"name": "Love and Lemons", "title": "Sweet Potato Hash", "url": "https://www.loveandlemons.com/sweet-potato-hash/", "rating": 5.0, "rating_count": 16, "read": true, "lead": false},
+  {"name": "Kitchen Swagger", "title": "Sweet Potato Breakfast Hash With Eggs Recipe", "url": "https://kitchenswagger.com/sweet-potato-breakfast-hash-with-eggs-recipe/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,48 @@
+{
+ "dish_name": "Tacos al Pastor",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Boneless pork shoulder", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Dried guajillo chiles", "qty": "6", "category": "pantry"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Chipotles in adobo", "qty": "1 can (7 oz)", "category": "pantry", "cook_qty": "3 chipotles + 2 tbsp adobo"},
+  {"item": "Achiote paste", "qty": "1 package (3.5 oz)", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Pineapple chunks in juice", "qty": "1 can (20 oz)", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Limes", "qty": "2", "category": "produce"}
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead: cut the 1.5 lb pork shoulder into slices about 1/4 inch thick. Sprinkle 1 tsp of the salt over them.",
+  "Pull the stems off the 6 guajillos and shake out the seeds. Cover the chiles with hot tap water and soak them for 15 minutes, until they're soft and bend easily.",
+  "Drain the chiles and put them in a blender with the 6 garlic cloves, 1 chipotle, 1 tbsp of the adobo from the can, the 1 1/2 tbsp achiote paste, 2 tsp sugar, the last 1/4 tsp salt and 1/3 cup of the juice from the pineapple can. Blend until smooth.",
+  "Coat the pork all over with the marinade in a bowl or a zip bag. Cover it and put it in the fridge. Drain the pineapple chunks and keep them in the fridge too.",
+  "When you're ready to cook, set a rack about 6 inches under the broiler and turn it on high. Line two baking sheets with foil.",
+  "Lay the pork on one sheet in a single layer, with a little room between the slices. Broil for 10 minutes, until the edges start to char.",
+  "Flip the slices and broil the other side for 5 to 8 minutes, until it's charred at the edges too. You're cooking it to 145°F, so if you have a thermometer, check the thickest slice. No thermometer? Cut into one. It should be white or barely pink in the middle. Move the pork to a board.",
+  "Spread the pineapple on the second sheet and broil it for 10 to 12 minutes, until it's browned in spots.",
+  "Meanwhile, finely chop half the onion and a big handful of the cilantro and mix them in a small bowl. Cut the 2 limes into wedges.",
+  "Finely chop the 2 remaining chipotles and stir them with 1 tbsp of the adobo in a small bowl for the table.",
+  "Chop the pork into small pieces. Heat 2 tbsp oil in a large skillet over medium-high and add the pork. Leave it alone for 2 minutes, until the bottom crisps. Stir it and cook for 2 minutes.",
+  "Chop the pineapple into small pieces and stir it through the pork. Taste it, and add a pinch more salt or a squeeze of lime if it's flat.",
+  "Warm the 12 tortillas in a dry pan for about 30 seconds a side. Serve the pork in the tortillas with the onion and cilantro, the lime wedges and the chipotle on the side."
+ ],
+ "advance_prep_notes": "Marinate the pork the night before, or at least 1 hour ahead.",
+ "advance_prep_step_indices": [1, 2, 3, 4],
+ "method_notes": "All three marinate thin slices of pork shoulder in a blended paste of dried chiles, garlic and achiote, char the meat hard, and serve it chopped in corn tortillas with pineapple, onion and cilantro. I Am a Food Blog (the lead) soaks guajillos, blends them with a whole can of chipotles in adobo, sugar, achiote and pineapple juice, then broils the pork and the drained canned pineapple and fries the chopped meat before serving. Rick Bayless uses ancho with cinnamon, vinegar and agave and sears everything in a cast iron skillet; Carlsbad Cravings toasts guajillos and adds orange juice, vinegar and cumin, then grills. This one uses just one chipotle in the marinade to keep it mild, with more chipotle on the side.",
+ "sources": [
+  {"name": "I Am a Food Blog", "title": "Al Pastor Recipe", "url": "https://iamafoodblog.com/al-pastor/", "rating": 4.64, "rating_count": 125, "read": true, "lead": true},
+  {"name": "Rick Bayless", "title": "Tacos al Pastor at home (slightly simplified)", "url": "https://www.rickbayless.com/recipe/pastor-style-tacos/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Carlsbad Cravings", "title": "Al Pastor Taco", "url": "https://carlsbadcravings.com/al-pastor/", "rating": 5.0, "rating_count": 8, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

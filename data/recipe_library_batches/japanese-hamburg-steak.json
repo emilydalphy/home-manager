@@ -1,0 +1,140 @@
+{
+ "dish_name": "Japanese Hamburg Steak",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Tonkatsu sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a few changes of cold water, swishing it with your hand, until the water is only a little cloudy. Drain it well.",
+  "Cook the rice with 1 2/3 cups water. In a rice cooker, start it now. In a pot, bring it to a boil, cover it, turn the heat to the lowest setting and cook for 13 minutes, then take it off the heat and leave the lid on until dinner.",
+  "Meanwhile, finely mince the onion.",
+  "Heat 1 tbsp of the oil in a large skillet over medium. Add the onion and cook for 5 to 6 minutes, stirring now and then, until it's soft and translucent. Transfer it into a large bowl and leave it to cool for 10 minutes.",
+  "Add the 1 lb beef, 1/2 lb pork, 1 tsp salt, 1/4 tsp pepper and 1/2 tsp nutmeg to the cooled onion, then the 2/3 cup panko, 1/4 cup milk and 2 eggs.",
+  "Mix it with a spatula, then knead it with your hand for about 1 minute, until it's sticky and a little paler.",
+  "Divide it into 4 equal portions. Toss each one back and forth between your hands about 5 times to knock out the air. Without this, the patties crack in the pan.",
+  "Shape each portion into an oval about 1 inch thick. Set them on a plate, cover them and chill them in the fridge for 30 minutes.",
+  "Heat the last 1 tbsp of oil in the same skillet over medium until it shimmers. Lay in the patties and press a shallow dent into the middle of each one with two fingers. The middles puff up as they cook.",
+  "Cook them without moving them for about 3 minutes, until the underside is well browned. Flip them carefully and brown the other side for 3 minutes.",
+  "Pour in 1/4 cup of the red wine, turn the heat to low and cover the pan. Cook for 8 to 10 minutes.",
+  "You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Push a skewer into the center of a patty: it's done when the juices run clear. Move the patties to plates and leave the pan as it is.",
+  "Add the 1 tbsp butter, 1/4 cup ketchup, 1/4 cup tonkatsu sauce, the remaining 1/4 cup red wine and 2 tbsp water to the pan. Set it over medium and stir, scraping up the browned bits.",
+  "Let it bubble for 2 to 3 minutes, until the wine smell is gone and the sauce is thick enough that a spatula drawn across the pan leaves a line. Take it off the heat.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Spoon some sauce over each patty and pour the rest into a small bowl. Serve with the rice and the extra sauce at the table."
+ ],
+ "method_notes": "All three bind ground meat with cooked onion, panko soaked in milk and nutmeg, toss each patty between the hands to push the air out, sear it, then finish it covered on low heat and make the sauce in the same pan. Just One Cookbook uses beef and pork 2 to 1 with an egg, chills the patties for 30 minutes, steams them in red wine and makes the sauce from butter, ketchup, tonkatsu sauce and more wine. Beyond Kimchee uses equal beef and pork and a red wine, beef stock, ketchup, Worcestershire and steak sauce gravy, and No Recipes uses lean beef with steamed onion and cabbage, mayonnaise and gelatin in the mix and a red wine, ketchup, oyster and Worcestershire sauce. This one doubles the lead's patty mix so each dinner patty is about 6 oz, and makes a little more sauce to match.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Japanese Hamburger Steak (Hambagu)",
+   "url": "https://www.justonecookbook.com/hamburger-steak-hambagu/",
+   "rating": 4.81,
+   "rating_count": 331,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Japanese Hamburger Steak Recipe (Hambagu)",
+   "url": "https://www.beyondkimchee.com/hambak-steak/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "No Recipes",
+   "title": "Hamburg Steak (Hambāgu)",
+   "url": "https://norecipes.com/hamburg-steak-hambagu/",
+   "rating": 5,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

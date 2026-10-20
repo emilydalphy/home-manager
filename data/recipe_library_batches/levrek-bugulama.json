@@ -1,0 +1,106 @@
+{
+ "dish_name": "Levrek Bugulama",
+ "cuisine": "Turkish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Sea bass fillets",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pat the 4 sea bass fillets dry with paper towels. Sprinkle them all over with 1/2 tsp of the salt and the 1/4 tsp pepper and leave them on a plate.",
+  "Thinly slice the red onion. Seed the 2 peppers and cut them into thin strips. Mince the 3 garlic cloves and thinly slice the 3 tomatoes.",
+  "Squeeze 1 tbsp juice from one lemon and keep the squeezed halves. Thinly slice the other lemon. Chop a big handful of the parsley.",
+  "Heat the 1/4 cup olive oil in a large, wide pan with a lid over medium-high. Add the onion and peppers with the remaining 1/2 tsp salt and cook for 4 to 5 minutes, stirring now and then, until they're soft and just starting to brown at the edges.",
+  "Add the garlic and cook for 30 seconds, until it smells fragrant. Pour in the 1 tbsp lemon juice and 1/2 cup water, cover the pan, turn the heat down to medium low and cook for 5 minutes.",
+  "Lay the fillets on the vegetables, skin side down if they have skin. Cover them with the tomato slices, then the lemon slices.",
+  "Put the lid back on and cook on medium low for 8 to 10 minutes, until the fish is white all the way through and flakes when you press it with a fork. Leave the lid on for the first 6 minutes.",
+  "Take the pan off the heat and scatter the parsley over the top. Taste the juices in the pan. If they're flat, add a pinch of salt first, then a squeeze from the juiced lemon halves.",
+  "Serve with crusty bread, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions steam the sea bass gently on a bed of softened onion with tomato and lemon, in their own juices plus a little water and olive oil, and finish with parsley and lemon. Ozlem's Turkish Table cooks fillets on the stove: onion and peppers softened in olive oil, garlic, lemon juice and water added and covered for 5 minutes, then the fish layered on with tomato and lemon slices and covered 8 to 10 minutes. Yemek.com uses whole fish stuffed with onion, garlic and bay, surrounded with thin potato, carrot and tomato, covered tightly with paper and baked at 190°C for 20 minutes. This one follows Ozlem's quicker stovetop version, with the pepper flakes on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Steamed Sea Bass with Vegetables; Sebzeli Levrek Bugulama",
+   "url": "https://ozlemsturkishtable.com/easyrecipe-print/20284-0/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Levrek Buğulama",
+   "url": "https://yemek.com/tarif/levrek-bugulama/",
+   "rating": 4.6,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

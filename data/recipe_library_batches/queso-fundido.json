@@ -1,0 +1,90 @@
+{
+ "dish_name": "Queso Fundido",
+ "cuisine": "Mexican",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Oaxaca cheese",
+   "qty": "12 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Mexican chorizo",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Diced green chiles",
+   "qty": "1 can (4 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Tortilla chips",
+   "qty": "1 bag",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F.",
+  "Finely chop the onion and mince the 2 garlic cloves.",
+  "Pull the 12 oz Oaxaca cheese apart into thin strings. If yours is a block, shred it on the big holes of a box grater instead.",
+  "Heat 1 tbsp oil in a 10 inch oven-safe skillet over medium. Squeeze the 6 oz chorizo out of its casing into the pan.",
+  "Cook the chorizo for about 6 minutes, breaking it up with a wooden spoon, until it's crumbly and browned all over.",
+  "Tilt the pan and spoon off most of the fat, leaving about a tablespoon behind.",
+  "Add the onion and cook for about 5 minutes, stirring now and then, until it's soft.",
+  "Add the garlic and the can of green chiles and stir for 1 minute, until you can smell the garlic.",
+  "Spread the chorizo mixture evenly over the bottom of the pan and scatter the cheese over the top.",
+  "Bake for 8 to 10 minutes, until the cheese has melted and is bubbling at the edges. Take it out as soon as it's melted. Any longer and the cheese turns firm.",
+  "Meanwhile, chop a small handful of the cilantro.",
+  "Use an oven mitt to set the skillet on a trivet. The handle is very hot. Scatter the cilantro over the cheese.",
+  "Serve right away, straight from the skillet, with the tortilla chips."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions brown fresh Mexican chorizo in an oven-safe skillet, drain off the fat, soften onion and garlic, spread it in the pan under a layer of melting cheese and bake at 350°F only until the cheese is gooey. The Daring Gourmet adds canned roasted green chiles (or roasted poblanos), uses a pound of cheese for six and warns that overbaking makes the cheese firm. Tara's Multicultural Table uses Oaxaca or Monterey Jack for four, saves a little chorizo to scatter on top and serves it with roasted salsa and tortillas or chips. This one follows The Daring Gourmet's method, sized to 12 oz of cheese.",
+ "sources": [
+  {
+   "name": "The Daring Gourmet",
+   "title": "Queso Fundido",
+   "url": "https://www.daringgourmet.com/queso-fundido/",
+   "rating": 5.0,
+   "rating_count": 43,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Queso Fundido (Melted Cheese with Chorizo)",
+   "url": "https://tarasmulticulturaltable.com/sundaysupper-easy-cinco-de-mayo-recipes-queso-fundido-melted-cheese-with-chorizo/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

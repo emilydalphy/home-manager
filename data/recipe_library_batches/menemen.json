@@ -1,0 +1,117 @@
+{
+ "dish_name": "Menemen",
+ "cuisine": "Turkish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cubanelle peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Feta",
+   "qty": "1 block (7 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Dice the onion. Seed the 2 peppers and cut them into thin strips. Chop the 4 tomatoes into small pieces, keeping the juice.",
+  "Heat the 2 tbsp oil in a large skillet over medium. Add the onion and cook for 2 minutes, until it starts to soften.",
+  "Add the peppers and cook for 3 to 4 minutes, stirring now and then, until they're soft and the onion is turning golden at the edges.",
+  "Stir in 1 tbsp tomato paste and 1/2 tsp of the Aleppo pepper and cook for 1 minute, until the paste turns a shade darker.",
+  "Add the tomatoes, 1/2 tsp of the salt and the 1/4 tsp black pepper. Cook for 5 to 6 minutes, stirring and pressing the tomatoes with the spoon, until they've broken down into a thick sauce. If it's still watery, give it another couple of minutes.",
+  "Meanwhile, beat the 8 eggs in a bowl with the remaining 1/4 tsp salt until no streaks of white are left. Put the remaining 1/2 tsp Aleppo pepper in a small bowl for the table.",
+  "Turn the heat down to medium low and pour in the eggs. Leave them for 20 seconds, then stir gently, folding the set egg through the sauce.",
+  "Keep folding for 2 to 3 minutes. Take the pan off the heat while the eggs still look soft and a little loose. They finish cooking in the hot sauce.",
+  "Crumble half the block of feta over the top and scatter on 2 tbsp chopped parsley. Taste it, and add a pinch more salt if it's flat.",
+  "Serve from the pan with the bread and the Aleppo pepper on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions soften green pepper (and often onion) in oil, cook tomatoes down into a thick sauce, then stir beaten eggs through over gentle heat and stop while they're still soft. Not Quite Nigella builds the base with onion, pepper, chopped tomato and passata seasoned with Aleppo pepper, and adds sujuk with mozzarella and parmesan melted on top; Cooking Gorgeous fries tomato paste with the peppers and covers the pan while the tomatoes collapse, and Downshiftology keeps it to pepper, tomato, Aleppo and parsley. This follows Not Quite Nigella's onion, pepper and tomato base, uses tomato paste in place of the passata, leaves out the sujuk (that's Sucuklu Yumurta) and finishes with feta, the white cheese it names as the alternative. Not Quite Nigella leads with 5.0 from 79 ratings.",
+ "sources": [
+  {
+   "name": "Not Quite Nigella",
+   "title": "Menemen Recipe",
+   "url": "https://www.notquitenigella.com/2024/09/04/menemen-recipe/",
+   "rating": 5.0,
+   "rating_count": 79,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Menemen",
+   "url": "https://cookingorgeous.com/blog/menemen/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Downshiftology",
+   "title": "Menemen",
+   "url": "https://downshiftology.com/recipes/menemen/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

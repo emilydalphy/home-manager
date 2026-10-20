@@ -1,0 +1,49 @@
+{
+ "dish_name": "Red-Braised Pork Belly",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 125,
+ "ingredients": [
+  {"item": "Skin-on pork belly", "qty": "2 lb", "category": "meat/seafood"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "5"},
+  {"item": "Fresh ginger", "qty": "1 piece (2 inch)", "category": "produce", "cook_qty": "1 1/2 inch"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Star anise", "qty": "2 pods", "category": "pantry"},
+  {"item": "Baby bok choy", "qty": "1 lb", "category": "produce"},
+  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the 2 lb pork belly into 1 inch cubes. Put them in a medium pot and add enough cold water to cover them by about an inch.",
+  "Cut 2 of the green onions into 2 inch pieces and slice a 1/2 inch chunk of the ginger. Add them to the pot.",
+  "Bring it to a full boil over high heat and boil for 5 minutes. Skim off the brown foam with a fine strainer or a ladle as it rises, until the water looks clear.",
+  "Set a strainer over a big bowl and drain the pork. Save 2 cups of the cooking water and throw out the onion and ginger. Rinse the pork under the tap and shake it dry.",
+  "Slice another 1 inch chunk of the ginger and cut 3 more green onions into 2 inch pieces.",
+  "Make sure your Dutch oven is completely dry, or the hot sugar will spatter. Put in the 2 tbsp oil and 3 tbsp sugar and set it over low heat. Don't stir. Swirl the pot now and then until the sugar melts and turns light amber, 3 to 5 minutes.",
+  "Stand back a little and lay the pork into the caramel with tongs. Turn the heat up to medium low and brown the pork for about 1 minute on each side, turning the pieces as you go.",
+  "Pour in the 1/3 cup Shaoxing wine and scrape up the browned bits from the bottom of the pot.",
+  "Add the 2 cups saved cooking water, 3 tbsp soy sauce, 1 1/2 tbsp dark soy sauce, the sliced ginger, the green onion pieces and the 2 star anise pods.",
+  "Bring it to a boil over medium-high, then turn it down to low so it simmers gently. Cover the pot, leaving a gap about a finger wide, and cook for 1 1/2 hours, stirring 2 or 3 times.",
+  "About 30 minutes before the pork is done, rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot.",
+  "Check the pork. It's ready when a chopstick slides into the meat with no push. If there's still a lot of thin liquid, take the lid off and turn the heat to medium.",
+  "Cook it uncovered for 10 to 15 minutes, stirring often, until the liquid has turned into a glossy glaze that coats the pork. Keep an eye on the bottom of the pot so it doesn't burn.",
+  "Meanwhile, bring a pot of water to a boil. Cut the 1 lb baby bok choy in half lengthways and cook it for 1 minute, until it's bright green. Drain it well.",
+  "Fish out the star anise and the ginger slices. Taste the glaze. If it's flat, add a splash more soy sauce.",
+  "Serve the pork and its glaze over the rice, with the bok choy on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three blanch cubed pork belly, brown it, then braise it in Shaoxing wine, light and dark soy sauce, sugar, ginger, green onion and star anise until tender and reduce the liquid to a glaze. Omnivore's Cookbook, the lead, blanches with ginger and green onion, saves the blanching water as the braising liquid, browns the pork in a caramel of sugar and oil and simmers it with the lid ajar for 1 1/2 hours. Caroline's Cooking does the same in a smaller batch for about an hour, and Two Plaid Aprons browns the pork without caramel, adds the sugar with the soy, braises for 30 to 40 minutes, thickens the sauce with a slurry and serves it with blanched bok choy. This one follows Omnivore's Cookbook and borrows the bok choy from Two Plaid Aprons.",
+ "sources": [
+  {"name": "Omnivore's Cookbook", "title": "Hong Shao Rou (Red Braised Pork)", "url": "https://omnivorescookbook.com/hong-shao-rou/", "rating": 5.0, "rating_count": 42, "read": true, "lead": true},
+  {"name": "Caroline's Cooking", "title": "Hong shao rou (red braised pork belly)", "url": "https://www.carolinescooking.com/hong-shao-rou-red-braised-pork-belly/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false},
+  {"name": "Two Plaid Aprons", "title": "Hong Shao Rou (Red Braised Pork)", "url": "https://twoplaidaprons.com/hong-shao-rou-red-braised-pork/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

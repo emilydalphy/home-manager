@@ -1,0 +1,115 @@
+{
+ "dish_name": "Kitsune Udon",
+ "cuisine": "Japanese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Kombu",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "2 pieces"
+  },
+  {
+   "item": "Bonito flakes (katsuobushi)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Inari age (seasoned fried tofu pouches)",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "8 pouches"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Frozen udon noodles",
+   "qty": "1 package",
+   "category": "frozen",
+   "cook_qty": "4 portions"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Wipe 2 pieces of kombu, each about 2 by 5 inches, with a damp cloth. Put them in a large saucepan with 5 1/2 cups cold water.",
+  "Set the pan over medium low and bring it slowly toward a boil, about 15 minutes. When small bubbles appear around the edge, lift out the kombu. Left in, it makes the broth slimy and bitter.",
+  "Add the 3 cups bonito flakes and bring it to a boil. Turn the heat down, simmer for 15 seconds, then take the pan off the heat. Leave it for 10 minutes, until the flakes sink.",
+  "Meanwhile, bring a large pot of water to a boil for the noodles.",
+  "Thinly slice the 2 green onions. Gently squeeze the extra syrup from the 8 inari age pouches.",
+  "Strain the broth through a fine sieve into a clean saucepan. You should have about 5 cups.",
+  "Add 2 tbsp mirin, 2 tsp sugar, 2 tbsp light soy sauce and 1 tsp salt and bring it to a boil over medium high. Turn the heat to the lowest setting and cover the pan.",
+  "Drop the 4 portions of frozen udon into the boiling water and cook for 1 to 2 minutes, loosening them with chopsticks, until they've separated and are hot all the way through.",
+  "Drain the noodles and shake the colander hard. Any water left on them thins the soup. Divide them between 4 deep bowls.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Ladle the hot broth over the noodles. Lay 2 inari age pouches in each bowl and scatter over the green onions. Serve with the shichimi togarashi on the side."
+ ],
+ "method_notes": "All three serve udon in a hot dashi broth seasoned with soy sauce and mirin and top it with sweet seasoned fried tofu and green onion, with shichimi togarashi on the side. Just One Cookbook makes the dashi from kombu and bonito flakes, seasons it with light soy sauce, mirin, sugar and salt, and uses store-bought inari age and frozen Sanuki udon, with fish cake as an option. Pickled Plum simmers kombu straight in the seasoned dashi, and RecipeTin Japan (written for soba) simmers its own aburaage in soy sauce, sugar and mirin for about 10 minutes. This one doubles the lead for four and leaves out the fish cake.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Kitsune Udon",
+   "url": "https://www.justonecookbook.com/kitsune-udon/",
+   "rating": 4.6,
+   "rating_count": 173,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Kitsune Udon",
+   "url": "https://pickledplum.com/kitsune-udon-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Kitsune Soba (Buckwheat Noodle Soup with Fried Tofu)",
+   "url": "https://japan.recipetineats.com/kitsune-soba-buckwheat-noodle-soup-with-fried-tofu/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

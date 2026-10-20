@@ -1,0 +1,46 @@
+{
+ "dish_name": "Rosemary Focaccia",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Russet potato", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/2 cup + 1 1/2 tbsp", "category": "pantry"},
+  {"item": "Bread flour", "qty": "1 2/3 cups", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "4 tsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Instant yeast", "qty": "1 packet", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Fresh rosemary", "qty": "1 package", "category": "produce"},
+  {"item": "Flaky sea salt", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "About 3 hours before you want it: peel the potato and cut half of it into 1 inch chunks. Boil them in a small saucepan of water for 10 to 15 minutes, until a knife slides into the middle with no resistance.",
+  "Drain the potato and mash it until it's completely smooth, with no lumps. Measure out 1/2 cup, packed, and let it cool.",
+  "Meanwhile, cut the 5 garlic cloves into thin sticks and put them in a small saucepan with 1/2 cup of the olive oil. Set it over medium heat. When small bubbles start rising around the garlic, turn the heat to low and leave it for 10 minutes. The garlic should poach gently and never sizzle. Pour it through a small strainer into a cup, keep the garlic and the oil separately, and let both cool.",
+  "In a large bowl, stir together the 1 2/3 cups flour, 4 tsp sugar, 1 tsp salt and 1 tsp yeast with a firm spatula.",
+  "Make a well in the middle and pour in the remaining 1 1/2 tbsp olive oil and 3/4 cup very warm water, about 104°F. No thermometer? It should feel hotter than a bath on your wrist but not hot enough to sting. Mix until you can't see any dry flour. The dough will be too sticky to knead. If it looks dry, work in more water a tablespoon at a time.",
+  "Add the 1/2 cup mashed potato. Fold it through with the spatula, then smear the dough against the side of the bowl until the potato disappears. Pat it into a rough ball, cover the bowl and leave it somewhere warm for 30 minutes, until it's half again as big.",
+  "Rub 2 tsp of the garlic oil around a second large bowl. Scrape the dough in and fold the edges into the middle six times, then shape it into a ball. Cover and leave it somewhere warm for 30 minutes.",
+  "Meanwhile, spread 2 tbsp of the garlic oil over the base and sides of a 10 x 8 inch metal baking pan or a 9 inch round cake pan.",
+  "Scrape the dough into the pan and stretch it out to fill the base. It's an elastic dough and will pull back a little. Bumpy is fine. Cover the pan and leave it somewhere warm for 40 minutes, until the dough fills the pan and is about a third taller.",
+  "About 20 minutes into that rise, heat the oven to 430°F with a rack in the middle.",
+  "Drizzle 2 tsp of the garlic oil over the dough and rub it lightly over the top. Push your fingertips deep into the dough, right down to the pan, about six times across the surface. It will sink a little. That's fine.",
+  "Finely chop 2 1/2 tsp of the rosemary leaves. Press the poached garlic into the top of the dough and scatter the rosemary over it.",
+  "Drizzle 2 tbsp of the garlic oil over the top so it runs into the dimples, then sprinkle the 1/4 tsp flaky salt over it.",
+  "Bake for 25 to 30 minutes, until the top is deep golden and lightly crisp and the sides look crusty.",
+  "Turn it out onto a rack and let it cool for at least 10 minutes before you cut it into 8 pieces. Wrap any pieces you're keeping for sandwiches airtight. They keep at room temperature for 2 days.",
+  "Serve warm, with the rest of the garlic oil for dipping."
+ ],
+ "advance_prep_notes": "Make the dough about 3 hours ahead so it has time to rise twice before it goes in the pan.",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5, 6, 7],
+ "method_notes": "Both read versions make a wet, sticky dough with no kneading, rise it in a bowl, then again in a well oiled pan, dimple it with oiled fingers and finish it with more oil, salt and rosemary. RecipeTin Eats adds mashed potato for a softer crumb, uses bread flour and instant yeast, folds the dough between its first two rises and bakes it at 430°F for 25 to 30 minutes, topped with garlic poached slowly in olive oil and chopped rosemary. Love and Lemons uses all purpose flour and active dry yeast, mixes it 5 minutes in a stand mixer and bakes it in a 9x13 dish at 425°F. This one follows RecipeTin Eats with its garlic and rosemary topping, and uses the strained garlic oil for the bowl, the pan and the top.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Focaccia recipe", "url": "https://www.recipetineats.com/focaccia-recipe/", "rating": 4.96, "rating_count": 221, "read": true, "lead": true},
+  {"name": "Love and Lemons", "title": "Focaccia Bread Recipe", "url": "https://www.loveandlemons.com/focaccia/", "rating": 4.69, "rating_count": 295, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

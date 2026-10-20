@@ -1,0 +1,107 @@
+{
+ "dish_name": "Shaking Beef",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef sirloin",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "7 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into 1-inch cubes and pat them dry with paper towels.",
+  "In a bowl, mix 2 tbsp soy sauce, 1 tbsp oyster sauce, 1 tbsp sugar, 1/2 tsp black pepper and 4 minced garlic cloves. Toss the beef in this marinade, cover, and let it sit at room temperature for 20 minutes while you prep everything else.",
+  "While the beef marinates, thinly slice the red onion and set half aside for cooking and half for the salad. Wash and tear the lettuce onto a platter, halve the cherry tomatoes, and scatter the raw onion over the top.",
+  "Make the dipping sauce: juice 1 lime into a small bowl, add 1/2 tsp salt and 1/2 tsp black pepper, and stir until the salt dissolves. Set aside.",
+  "Make the stir-fry sauce: stir together 2 tbsp soy sauce, 1 tbsp oyster sauce, 1 tbsp sugar and the juice of the remaining lime in a small bowl.",
+  "Heat a wok or large heavy skillet over high heat until it's smoking hot, then add 2 tbsp of the oil.",
+  "Add the beef in a single layer, working in two batches so the pan stays hot and the beef browns instead of steams. Let it sit untouched for 1 minute so a deep brown crust forms, then shake the pan or toss with tongs to sear the other sides, about 1 more minute per batch. Remove the beef to a plate.",
+  "Add the remaining 1 tbsp oil to the wok, then the remaining 3 cloves of minced garlic and the reserved sliced onion. Stir constantly for 30 seconds until the garlic is fragrant but not browned.",
+  "Pour in the stir-fry sauce and let it bubble for 30 seconds, scraping up any browned bits from the bottom of the pan.",
+  "Return the beef and any juices to the wok, toss to coat in the sauce, and cook just until the beef is warmed through and reaches your liking, about 1 minute for medium.",
+  "Take the wok off the heat and stir in the butter until it melts into the sauce for a glossy finish.",
+  "Taste it. If it's flat, add a little more salt or a squeeze of lime.",
+  "Pile the beef over the lettuce, tomato and onion platter, and serve with the peppery lime dipping sauce on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one source (Rasa Malaysia) was accessible, so no cross-recipe comparison of agreements/differences can be made. This version: prep 30 min, cook 15 min, total 45 min, serves 4, ~387 calories. Beef is cut into cubes and seared/stir-fried in a wok using a \"shaking\" (luc lac) tossing motion to brown all sides quickly over high heat, rather than a simple sear. The dish is described as savory, tangy, and peppery, built on a soy-based marinade/sauce (noted as contributed by \"Ravenous Couple\"), paired with fresh crisp greens for serving. The recipe emphasizes authenticity to the Vietnamese original (bo luc lac = \"shaking beef\"), with Bee Yinn Low framing it as a quick, restaurant-style weeknight dish. No peppery lime dipping sauce component was detailed before the fetch was cut off, and no second or third source could be retrieved to compare quantities, marinade ratios, or sauce composition.",
+ "sources": [
+  {
+   "name": "Rasa Malaysia",
+   "title": "Shaking Beef - Vietnamese Bo Luc Lac",
+   "url": "https://rasamalaysia.com/bo-luc-lac-vietnamese-shaking-beef/",
+   "rating": 4.53,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

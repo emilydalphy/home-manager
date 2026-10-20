@@ -1,0 +1,102 @@
+{
+ "dish_name": "Waffles",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Granulated sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 2/3 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Turn on the waffle iron to heat. If it has a temperature dial, set it to 400°F. Heat the oven to 200°F and set a wire rack on a baking sheet.",
+  "Melt the 1/3 cup butter in a small pan over low heat or in the microwave, then let it cool for a few minutes.",
+  "In a large bowl, whisk the 2 cups flour, 2 tbsp sugar, 1 tbsp baking powder and 1/2 tsp salt.",
+  "Separate the 2 eggs, with the whites in a clean medium bowl and the yolks in another bowl.",
+  "Whisk the 1 2/3 cups milk, the melted butter and 1 tsp vanilla into the yolks.",
+  "Beat the whites with a hand mixer on medium high for 2 to 3 minutes, until they're thick and glossy and a peak stands straight up when you lift the beaters.",
+  "Pour the yolk mixture into the flour and stir with a spatula until there's no dry flour left. A few lumps are fine.",
+  "Add the whites and fold them in gently with the spatula. Stop as soon as the big streaks of white are gone, or the waffles come out flat.",
+  "Brush the hot iron with a little of the oil. Spoon in enough batter to cover most of the grid, close the lid and cook for 3 to 5 minutes. They're done when they're golden and the steam coming out the sides has almost stopped.",
+  "Move the waffle to the rack in the oven. Cook the rest of the batter the same way, brushing the iron with a little more oil when it starts to stick. You'll get about 6 waffles.",
+  "Serve with the maple syrup.",
+  "To freeze any extras, let them cool completely on the rack. Freeze them in a single layer on the baking sheet for 1 hour, then pack them into a freezer bag. Reheat them straight from frozen in the toaster for 2 to 3 minutes, until hot and crisp."
+ ],
+ "method_notes": "Both mix the dry ingredients, whisk in milk, eggs, vanilla and melted butter and cook in a hot iron until golden, 3 to 6 minutes. Spend With Pennies separates the eggs and folds in whites beaten to stiff peaks for a lighter waffle, with 2 eggs and 1/3 cup butter to 2 cups flour. RecipeTin Eats uses 4 whole eggs and much more butter and suggests resting the batter in the fridge for 2 hours or overnight. This follows Spend With Pennies, whose batch makes about 6 waffles, and adds freezing and toaster reheating for school mornings. Double every amount for a freezer batch.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Waffle Recipe",
+   "url": "https://www.spendwithpennies.com/homemade-waffles/",
+   "rating": 4.97,
+   "rating_count": 1356,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Really great waffles",
+   "url": "https://www.recipetineats.com/waffles/",
+   "rating": 4.94,
+   "rating_count": 83,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed",
+ "fallback_used": false
+}

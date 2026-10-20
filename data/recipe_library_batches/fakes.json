@@ -1,0 +1,40 @@
+{
+ "dish_name": "Fakes",
+ "cuisine": "Greek",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {"item": "Brown lentils", "qty": "1 1/4 cups", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Extra virgin olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp + more for the table"},
+  {"item": "Feta cheese", "qty": "1 block (7 oz)", "category": "dairy"}
+ ],
+ "instructions": [
+  "Transfer the 1 1/4 cups lentils into a sieve and rinse them under cold water. Pick out any small stones you see.",
+  "Put the lentils in a large pot, cover them with cold water by about 2 inches and bring them to a boil over high heat. Let them boil for 2 minutes, then drain them in the sieve and rinse the pot.",
+  "Meanwhile, finely chop the onion and finely chop the 2 garlic cloves.",
+  "Put the lentils back in the pot with 3 cups fresh water, the onion, the garlic and the 2 bay leaves. Bring it to a boil, then turn the heat to low, cover and simmer for 25 minutes, until the lentils are almost tender.",
+  "Stir in 3 tbsp of the olive oil, 1 tbsp tomato paste, the 1 tsp salt and the 1/4 tsp pepper. Simmer uncovered for 15 to 20 minutes, stirring now and then, until the lentils are soft and the soup is thick and a little creamy. If it gets too thick to stir easily, add a splash of hot water.",
+  "Take the pot off the heat and pull out the bay leaves. Stir in 1 tbsp red wine vinegar.",
+  "Taste it. If it's flat, add a pinch more salt or a few more drops of the vinegar.",
+  "Ladle it into bowls, crumble about half the block of feta over the top and drizzle on the last 1 tbsp olive oil. Serve with the vinegar on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cook brown lentils with onion, garlic and bay leaf and add the olive oil partway through, then let the soup thicken with the oil stirred in. My Greek Dish and Real Greek Recipes boil the lentils briefly and drain them first; My Greek Dish adds a spoon of tomato paste for color and finishes with red wine vinegar and crumbled feta, while Real Greek Recipes keeps it to five ingredients and puts the vinegar on the table. Greek City Times adds carrot, celery, grated tomato and parsley and uses a lot more water. This one follows My Greek Dish, with the vinegar stirred in off the heat and more at the table.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Greek Lentil Soup recipe (Fakes Soupa)", "url": "https://www.mygreekdish.com/recipe/lentil-soup-fakes-soupa/", "rating": 4.6, "rating_count": 634, "read": true, "lead": true},
+  {"name": "Real Greek Recipes", "title": "Greek Lentil Soup Recipe", "url": "https://realgreekrecipes.com/greek-lentil-soup-recipe/", "rating": 4.59, "rating_count": 12, "read": true, "lead": false},
+  {"name": "Greek City Times", "title": "Fakes: Greek Lentil soup recipe", "url": "https://greekcitytimes.com/2022/08/09/fakes-greek-lentil-soup-recipe-3", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

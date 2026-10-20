@@ -1,0 +1,123 @@
+{
+ "dish_name": "Beef Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Ribeye steak",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Berbere",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the 1.5 lbs ribeye into thin strips about 1/4 inch thick and 2 inches long, trimming off any thick fat. Pat them dry with paper towels and toss them with 3/4 tsp of the salt and the 1/2 tsp black pepper.",
+  "Make the awaze: in a small bowl, stir the 2 tbsp berbere, 1 tbsp of the olive oil, 2 tbsp water and the last 1/4 tsp salt into a loose paste.",
+  "Slice the red onion. Thinly slice the 4 garlic cloves. Cut the tomatoes into thin wedges and scoop out most of the seeds. Seed the jalapeño and slice it into strips.",
+  "Pull 2 sprigs off the rosemary and keep them whole. Cut the lemon in half.",
+  "Heat a large cast iron skillet over high until it's very hot, then add the last 2 tbsp olive oil. Add half the beef in a single layer and leave it for 1 minute, until the underside is browned. Stir and cook it for 1 minute, then move it to a plate. Brown the second half the same way. Stand back a little. It'll spatter.",
+  "Turn the heat to medium-high and add the onion. Cook it for 3 minutes, stirring, until it softens and the edges brown. Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the tomatoes, jalapeño, rosemary sprigs, half the awaze and 2 tbsp water. Cook for 2 minutes, stirring and scraping up the brown bits, until the tomatoes just start to slump.",
+  "Put the beef back with any juices from the plate and toss it for about 1 minute, until it's coated and hot. It should still be a little pink in the middle.",
+  "Take the pan off the heat. Stir in the 2 tbsp ghee until it melts, and pull out the rosemary sprigs.",
+  "Taste it. If it's flat, add salt first, then a squeeze of lemon from one half.",
+  "Serve with injera or rice, with the rest of the awaze and the other lemon half cut into wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook bite-size beef fast in a hot pan with red onion, garlic, tomato, chili, berbere and rosemary, and finish with niter kibbeh or clarified butter. Gypsy Plate makes a separate awaze paste of berbere, oil and water, sears thin ribeye first, then adds onion, garlic, tomato, jalapeño and a rosemary sprig for a few minutes; this version keeps half the awaze for the table so the pan stays mild. Unpeeled Journal tosses ribeye with rosemary, ginger, garlic and a little berbere before it goes in and adds water at the end, while Cuisine Noir cooks it longer into a saucier, stew-like dish. No version had 20 or more ratings and the trusted cook for this cuisine (RecipeTin Eats) has no beef tibs, so this follows the top-rated version read.",
+ "sources": [
+  {
+   "name": "Gypsy Plate",
+   "title": "Awaze Tibs Recipe (Ethiopian Beef Tibs)",
+   "url": "https://gypsyplate.com/awaze-tibs/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Unpeeled Journal",
+   "title": "Ethiopian Awaze Beef Tibs Recipe",
+   "url": "https://unpeeledjournal.com/ethiopian-awaze-beef-tibs-recipe/",
+   "rating": 4.43,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cuisine Noir",
+   "title": "Ethiopian Tibs",
+   "url": "https://www.cuisinenoir.com/recipes/ethiopian-tibs-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

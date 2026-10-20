@@ -1,0 +1,50 @@
+{
+ "dish_name": "Thai Stir-Fried Vegetables",
+ "cuisine": "Thai",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Extra-firm tofu", "qty": "1 block (14 oz)", "category": "dairy"},
+  {"item": "Broccoli", "qty": "1 head", "category": "produce"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce", "cook_qty": "1"},
+  {"item": "Cremini mushrooms", "qty": "8 oz", "category": "produce"},
+  {"item": "Napa cabbage", "qty": "1 head", "category": "produce", "cook_qty": "1/4"},
+  {"item": "Snow peas", "qty": "4 oz", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Thai chilies", "qty": "2", "category": "produce"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, drain the tofu and press it between paper towels to get the surface water off. Cut it into 3/4 inch cubes and sprinkle them with the 1/4 tsp salt.",
+  "Cut the broccoli into small florets. Peel 1 carrot, halve it lengthwise and slice it thin on an angle. Slice the 8 oz mushrooms. Cut a quarter of the cabbage into 2 inch pieces. Pull the strings off the 4 oz snow peas.",
+  "Mince the 4 garlic cloves. Thinly slice the 2 chilies and put them in a small bowl for the table.",
+  "In a small bowl, stir together 3 tbsp oyster sauce, 1 tbsp soy sauce, 1 tbsp fish sauce, 2 tsp sugar and 3 tbsp water until the sugar dissolves.",
+  "Heat 2 tbsp of the oil in a wok or large nonstick skillet over medium-high until it shimmers. Add the tofu in a single layer and leave it alone for 3 minutes, until the underside is golden and lets go of the pan.",
+  "Turn the cubes and brown the other sides for another 4 to 5 minutes, turning them every minute or so. Move them to a plate.",
+  "Add the last 1 tbsp oil and the garlic to the pan and stir for about 20 seconds, until it smells fragrant and is barely golden.",
+  "Add the broccoli, the carrot and 2 tbsp water. Stir-fry for 2 minutes, until the broccoli turns bright green.",
+  "Add the mushrooms and the cabbage and stir-fry for 2 minutes, until the cabbage starts to wilt at the edges.",
+  "Pour in the sauce and add the snow peas and the tofu. Toss for about 1 minute, until the sauce turns glossy and the snow peas are bright green but still crisp. Don't let the vegetables go soft.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the jasmine rice, with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions fry garlic in hot oil first, add the firm vegetables before the leafy and quick ones, splash in water so they steam a little, and season with oyster sauce, a little sugar and fish sauce or soy. Taste Asian Food mixes oyster sauce, fish sauce and Golden Mountain seasoning sauce with sugar and water, adds it with the stems and finishes the leaves and snow peas for 30 seconds. ImportFood's tofu version fries cubes of firm tofu golden first, then thickens the sauce with cornstarch; Rachel Cooks Thai adds shrimp. This one browns the tofu first, as ImportFood does, and follows Taste Asian Food's order and sauce, with the chilies moved to the table. No version had 20 or more ratings, and RecipeTin Eats (the trusted cook for Thai) has only a Chinese style vegetable stir fry, so the best rated Thai version leads.",
+ "sources": [
+  {"name": "Taste Asian Food", "title": "Thai vegetable stir-fry", "url": "https://tasteasianfood.com/thai-vegetable-stir-fry/", "rating": 4.6, "rating_count": 8, "read": true, "lead": true},
+  {"name": "ImportFood", "title": "Stir-Fried Vegetables and Tofu, 'Pad Phak Taohu'", "url": "https://importfood.com/recipes/recipe/1219-stir-fried-vegetables-and-tofu-pad-phak-taohu", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Rachel Cooks Thai", "title": "Stirfried Mixed Vegetables | Pad Pak Ruam Mit", "url": "https://rachelcooksthai.com/stir-fried-mixed-vegetables/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

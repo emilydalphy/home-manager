@@ -1,0 +1,47 @@
+{
+ "dish_name": "Ribollita",
+ "cuisine": "Italian",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {"item": "Crusty sourdough bread", "qty": "1 small loaf", "category": "other", "cook_qty": "6 oz"},
+  {"item": "Extra virgin olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 stalks"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Fresh rosemary", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tsp chopped"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Diced tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "4 cups"},
+  {"item": "Cannellini beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Parmesan", "qty": "1 wedge with rind (4 oz)", "category": "dairy", "cook_qty": "the rind + 1/2 cup grated"},
+  {"item": "Lacinato kale", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Tear 6 oz of the bread into bite size pieces, about 4 cups, and spread them out on a baking sheet. Bake for 10 to 15 minutes, until they're dry and crisp at the edges. If your bread is already stale and dry, skip the oven.",
+  "Meanwhile, dice the onion, 2 stalks of the celery and the 2 carrots. Mince the 3 garlic cloves and chop 1 tsp of the rosemary leaves.",
+  "Drain and rinse the beans. Strip the kale leaves off their stems and tear them into bite size pieces. Cut the rind off the Parmesan and grate 1/2 cup of the cheese.",
+  "Heat 2 tbsp of the olive oil in a large pot or Dutch oven over medium. Add the onion, celery, carrots, 1/2 tsp of the salt and the 1/4 tsp pepper. Cook for 10 to 15 minutes, stirring now and then, until they're very soft. Don't rush this. That's where the flavor starts.",
+  "Add the garlic and rosemary and cook for 30 seconds, until they smell fragrant.",
+  "Pour in the 1/4 cup wine and stir for about 1 minute, scraping the bottom of the pot, until most of it has cooked off.",
+  "Add the tomatoes with their juice, the 4 cups broth, the beans, the Parmesan rind and the remaining 1/4 tsp salt. Bring it to a boil, then turn the heat to low, cover and simmer for 20 minutes.",
+  "Fish out the Parmesan rind. Stir in the kale and cook uncovered for about 5 minutes, until it's wilted and tender.",
+  "Stir in half the toasted bread and simmer for 2 to 3 minutes, until it softens and thickens the soup. For a thicker ribollita, stir in more of the bread.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls, top each one with any bread you didn't stir in and drizzle with the last 2 tbsp of olive oil. Serve with the grated Parmesan."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both build the soup on onion, carrot and celery softened slowly in olive oil, simmer it with cannellini beans, tomato and dark Tuscan kale, and thicken it with stale bread. Love and Lemons uses canned or cooked beans, vegetable broth, a splash of white wine, rosemary and a Parmesan rind, toasts fresh bread in the oven to dry it, stirs in half and saves the rest for the top. Great Italian Chefs cooks dried beans from scratch with bay and thyme, adds fennel seed, chili, potato, Savoy cabbage and fresh tomatoes, and takes nearly 2 hours. This one follows Love and Lemons, sized for 4 with a little less bread.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Ribollita Recipe", "url": "https://www.loveandlemons.com/ribollita/", "rating": 5.0, "rating_count": 23, "read": true, "lead": true},
+  {"name": "Great Italian Chefs", "title": "Ribollita – Tuscan vegetable and bread soup", "url": "https://www.greatitalianchefs.com/recipes/ribollita-recipe", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,140 @@
+{
+ "dish_name": "Tavuk Sis",
+ "cuisine": "Turkish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.75 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Turkish red pepper paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flatbreads",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 2 hours ahead: mince 3 of the garlic cloves into a large bowl. Whisk in 1/2 cup of the yogurt, 3 tbsp of the olive oil, 1 tbsp tomato paste, 1 tbsp red pepper paste, the 1 tsp paprika, the 1/2 tsp black pepper and 1 tsp of the salt.",
+  "Cut the 1.75 lb chicken into 1 1/2 inch chunks. Add them to the bowl and turn them until every piece is coated. Cover and refrigerate. Don't leave it longer than 24 hours, or the chicken turns soft.",
+  "On the day, if you're using wooden skewers, soak 8 of them in water for 30 minutes.",
+  "Heat the broiler to high with a rack about 6 inches below it, and line a rimmed baking sheet with foil.",
+  "Meanwhile, cut the red onion and the green pepper into chunks about the size of the chicken.",
+  "Make the sauce. Mince the last garlic clove into a small bowl and stir in the remaining 1 cup yogurt, the juice of half the lemon and the last 1/4 tsp salt. Cut the other half of the lemon into wedges.",
+  "Thread the chicken onto 4 of the skewers, pushing the pieces close together. Thread the onion, pepper and cherry tomatoes onto the other 4 and brush them with the last 1 tbsp olive oil.",
+  "Lay the chicken skewers on the sheet and broil them for 6 to 7 minutes, until the tops are charred in spots.",
+  "Turn the chicken skewers over and add the vegetable skewers to the sheet. Broil for another 6 to 8 minutes, until the chicken is charred on the other side and the vegetables are soft and blistered.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut into the biggest piece: it's done when the juices run clear and there's no pink left.",
+  "Let the skewers rest for 5 minutes. Meanwhile, warm the 4 flatbreads one at a time in a dry skillet over medium, about 20 seconds on each side.",
+  "Taste a piece of the chicken. If it's flat, add a pinch of salt first, then a squeeze of a lemon wedge. Put the Aleppo pepper in a small bowl for the table.",
+  "Serve with the warm flatbreads, the yogurt sauce and the lemon wedges, with the Aleppo pepper on the side."
+ ],
+ "advance_prep_notes": "Marinate the chicken the night before, or at least 2 hours ahead.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "All three marinate chunks of chicken thigh for a couple of hours or overnight and cook them hot until charred. Cooking Gorgeous marinates in olive oil, milk, tomato paste and Turkish red pepper paste with paprika and chilli flakes, threads onion, green pepper and tomato alongside, and broils or grills the skewers for about 15 minutes. Give Recipe uses the same oil and tomato paste base with a few spoons of yogurt, oregano and cumin, and This Healthy Table uses a full yogurt, lemon and sumac marinade. This one follows the lead's paste base with yogurt in place of the milk, as the dish is a yogurt marinade, and puts the chilli on the table.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Chicken Shish Kebab Recipe",
+   "url": "https://cookingorgeous.com/wprm_print/chicken-shish-kebab-recipe",
+   "rating": 5.0,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Give Recipe",
+   "title": "Turkish Chicken Kebab Recipe (Tavuk Şiş)",
+   "url": "https://www.giverecipe.com/turkish-chicken-kabobs-in-oven/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "This Healthy Table",
+   "title": "Turkish Chicken Kabobs",
+   "url": "https://thishealthytable.com/blog/turkish-chicken-kabobs/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

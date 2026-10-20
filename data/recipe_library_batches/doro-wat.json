@@ -1,0 +1,51 @@
+{
+ "dish_name": "Doro Wat",
+ "cuisine": "Ethiopian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 80,
+ "ingredients": [
+  {"item": "Chicken drumsticks", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Red onions", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 piece (2 inch)", "category": "produce"},
+  {"item": "Ghee", "qty": "1 jar", "category": "dairy", "cook_qty": "4 tbsp"},
+  {"item": "Berbere", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Ground cardamom", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Injera", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Bring a small pot of water to a boil and gently lower in the 4 eggs with a spoon. Boil them for 10 minutes, then move them to a bowl of cold water.",
+  "Meanwhile, pull the skin off the 8 drumsticks, using a paper towel for grip, and cut 2 shallow slashes into the meaty part of each. Put them in a bowl, squeeze half the lemon over them, add 1 1/2 tsp of the salt, and toss. Leave them while you start the onions.",
+  "Finely chop the 2 onions. Mince the 6 garlic cloves and finely grate the ginger until you have about 2 tbsp.",
+  "Put the onions in a heavy pot or Dutch oven over medium heat with no fat at all. Cook them dry for 10 minutes, stirring often, until they've shrunk and are starting to stick and brown.",
+  "Add 2 tbsp of the ghee and the remaining 1/2 tsp salt, turn the heat to medium-low, and cook for 15 minutes, stirring every few minutes, until the onions are deep golden brown and jammy. Don't rush the onions. That's where the flavor starts.",
+  "Add the garlic and ginger and stir for 1 minute, until they smell fragrant.",
+  "Stir in the 2 tbsp berbere, 1 tbsp paprika, 1/2 tsp cardamom and 2 tbsp tomato paste. Cook, stirring all the time, for 2 minutes, until the paste darkens and it smells toasty. If it starts to catch, add a splash of water. Burnt berbere tastes bitter.",
+  "Add the drumsticks with their lemony juices and turn them in the onion paste until they're coated. Pour in 1 1/2 cups water and scrape up anything stuck to the bottom of the pot.",
+  "Bring it to a bubble, then cover, turn the heat to low, and simmer for 35 to 40 minutes, turning the drumsticks halfway, until the meat pulls easily from the bone. You're cooking them to 175°F, so if you have a thermometer, check the thickest part away from the bone. No thermometer? Cut into one next to the bone: it's done when the juices run clear with no pink.",
+  "While it simmers, peel the eggs and cut 4 or 5 shallow slits around each white with a small knife.",
+  "Slice the jalapeño into thin rings and put them in a small bowl for the table.",
+  "Take the lid off, nestle the eggs into the sauce, and simmer uncovered for 5 to 10 minutes, spooning sauce over the eggs, until the sauce is thick enough to coat a spoon.",
+  "Turn off the heat and stir in the last 2 tbsp ghee.",
+  "Taste it. If it's flat, add salt first, then a squeeze from the other lemon half.",
+  "Serve with injera or rice, and the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three build the stew on a lot of onion cooked down until jammy, then berbere, garlic, ginger and spiced butter, simmer the chicken in it and add scored hard-boiled eggs at the end. Ministry of Curry soaks skinless drumsticks in lemon juice and salt, uses ghee, tomato paste and up to 1/3 cup berbere (half to start, then to taste), and simmers on the stove 20 to 30 minutes in about a cup of water. Foreign Fork and SBS cook the onions dry and slowly for 30 minutes to an hour before any fat goes in, add cardamom, and simmer the chicken about an hour. This version follows the lead's drumsticks and lemon, cooks the onions dry first as the others do, and keeps the berbere moderate with chili at the table.",
+ "sources": [
+  {"name": "Ministry of Curry", "title": "Doro Wat (Ethiopian Chicken Stew)", "url": "https://ministryofcurry.com/doro-wat-chicken-stew/", "rating": 4.76, "rating_count": 62, "read": true, "lead": true},
+  {"name": "Foreign Fork", "title": "Doro Wat from Ethiopia", "url": "https://foreignfork.com/doro-wat-from-ethiopia/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "SBS Food", "title": "Ethiopian red chicken stew (doro wat)", "url": "https://www.sbs.com.au/food/recipes/ethiopian-red-chicken-stew-doro-wat", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

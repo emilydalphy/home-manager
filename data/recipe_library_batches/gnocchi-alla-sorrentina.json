@@ -1,0 +1,42 @@
+{
+ "dish_name": "Gnocchi alla Sorrentina",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Potato gnocchi", "qty": "2 packages (16 oz each)", "category": "pantry"},
+  {"item": "Whole peeled tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Fresh mozzarella", "qty": "8 oz", "category": "dairy"},
+  {"item": "Parmesan", "qty": "1 wedge (about 4 oz)", "category": "dairy"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fresh basil", "qty": "1 bunch", "category": "produce"},
+  {"item": "Salt", "qty": "1 tbsp plus 1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Bring a large pot of water to a boil with 1 tbsp of the salt.",
+  "Meanwhile, pour the tomatoes into a bowl and crush them with your hands into small pieces. Peel the 3 garlic cloves and crush each one with the flat of a knife. Finely chop 1 tbsp of the parsley.",
+  "Cut the 8 oz mozzarella into small cubes and spread them on a paper towel. Pat them dry. Wet mozzarella makes the dish watery.",
+  "Heat the 1/4 cup olive oil in a large skillet over medium high. Add the garlic and cook for 1 to 2 minutes, turning it, until it just starts to turn golden at the edges. Stir in the parsley.",
+  "Turn the heat to high and pour in the tomatoes. Stand back a little. They'll spatter. Stir in the remaining 1 tsp salt and keep it at a lively simmer for 6 to 8 minutes, stirring often, until it has thickened a little but is still loose.",
+  "Take the pan off the heat. Fish out the garlic and tear in 6 of the basil leaves.",
+  "Drop the 2 packages of gnocchi into the boiling water. Cook them until they float to the top, about 2 to 3 minutes, then lift them out with a slotted spoon straight into the sauce.",
+  "Grate 1/4 cup of the Parmesan. Add half the mozzarella and half the grated Parmesan to the gnocchi and stir gently to combine. If it looks dry, add a splash of the gnocchi water.",
+  "Transfer it into a 9 by 13 inch baking dish and scatter the rest of the mozzarella and Parmesan over the top.",
+  "Bake for about 20 minutes, until the sauce is bubbling at the edges and the cheese has melted. For a browned top, switch to the broiler for the last 2 minutes and watch it closely.",
+  "Let it sit for 5 minutes. Tear a few more basil leaves over the top.",
+  "Serve with the rest of the Parmesan for grating at the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions make a quick sauce of garlic browned in olive oil and canned tomatoes, finished with basil off the heat, then boil the gnocchi until they float, stir them into the sauce with cubed fresh mozzarella and bake until the cheese melts, topped with Parmesan. Christina's Cucina (the lead) makes flour gnocchi from scratch and argues against packaged ones; her sauce adds parsley to the garlic and simmers briskly only 5 to 7 minutes so it stays loose, and she bakes it in single bowls at 400°F for about 20 minutes. Fat Tire Tours simmers the sauce about 15 minutes and bakes at 460°F. This one follows the lead's sauce and oven but uses store-bought potato gnocchi, as the starter list calls for, and bakes it in one dish.",
+ "sources": [
+  {"name": "Christina's Cucina", "title": "Gnocchi alla Sorrentina (Authentic Italian Recipe)", "url": "https://www.christinascucina.com/gnocchi-alla-sorrentina-authentic-italian-recipe/", "rating": 4.84, "rating_count": 42, "read": true, "lead": true},
+  {"name": "Fat Tire Tours", "title": "Gnocchi alla Sorrentina Recipe", "url": "https://www.fattiretours.com/travel-to-eat/gnocchi-alla-sorrentina-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

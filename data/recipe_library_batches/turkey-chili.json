@@ -1,0 +1,49 @@
+{
+ "dish_name": "Turkey Chili",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Ground turkey", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Chili powder", "qty": "1 1/2 tbsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Red kidney beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Diced tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Tomato sauce", "qty": "1 can (15 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Shredded cheddar", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Sour cream", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Chop the onion and the bell pepper and mince the 2 garlic cloves. Drain and rinse the kidney beans.",
+  "Heat the 1 tbsp oil in a large pot or Dutch oven over medium high. Add the 1 lb turkey, sprinkle 1/4 tsp of the salt over it and press it into an even layer.",
+  "Leave it alone for 4 minutes, until the bottom is browned and lets go of the pot. Then break it up with a spoon and keep cooking for 3 to 4 minutes, until there's no pink left and some pieces are golden at the edges.",
+  "Turn the heat to medium, add the onion and cook for about 5 minutes, stirring now and then, until it's soft.",
+  "Add the garlic, the 1 1/2 tbsp chili powder, 1/2 tsp cumin and 1/2 tsp oregano. Stir for about 1 minute, until the spices darken a little and smell toasty.",
+  "Pour in the 1 cup broth and scrape up the brown bits on the bottom of the pot. Add the beans, the diced tomatoes with their juice, the 1 cup tomato sauce, the bell pepper, the remaining 1/2 tsp salt and the 1/2 tsp pepper.",
+  "Bring it to a boil over medium high, then turn the heat down so it simmers gently. Cook it uncovered for 35 to 40 minutes, stirring every 10 minutes or so, until it's thick and the bell pepper is tender.",
+  "Meanwhile, thinly slice the jalapeño and put it in a small bowl for the table.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the 1 cup cheddar, the 1/2 cup sour cream and the sliced jalapeño on the side.",
+  "It keeps for 4 days in the fridge. Reheat it over medium low with a splash of water, stirring until it's hot all the way through."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies leads: brown a pound of ground turkey with onion, garlic and chili powder, then add kidney beans, diced tomatoes with chilies, broth, tomato sauce, bell pepper, oregano and cumin and simmer uncovered 35 to 45 minutes until thick. Natasha's Kitchen uses the same base but three kinds of beans, corn, garlic powder and jalapeños in the pot, and simmers only 20 minutes. This follows the lead's amounts, which it calls 6 servings, as 4 dinner bowls, browns the turkey hard before the onion goes in, and swaps the tomatoes with chilies for plain diced tomatoes so the heat is the jalapeño on the side. The cheddar and sour cream are the usual toppings.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Turkey Chili Recipe", "url": "https://www.spendwithpennies.com/turkey-chili/", "rating": 5.0, "rating_count": 56, "read": true, "lead": true},
+  {"name": "Natasha's Kitchen", "title": "Turkey Chili Recipe", "url": "https://natashaskitchen.com/turkey-chili-recipe/", "rating": 4.94, "rating_count": 138, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

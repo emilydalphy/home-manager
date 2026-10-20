@@ -1,0 +1,136 @@
+{
+ "dish_name": "Farro Salad",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Pearled farro",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Walnuts",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Radicchio",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "1 cup sliced"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 tbsp leaves"
+  },
+  {
+   "item": "Medjool dates",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Pecorino Romano",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup shaved"
+  },
+  {
+   "item": "Honeycrisp apple",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baby arugula",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Bring a medium pot of water to a boil over high heat and add 1 tsp of the salt. Add the 1 cup farro and simmer for 15 to 20 minutes, until it's tender but still chewy in the middle. Whole farro takes closer to 45 minutes, so check your package.",
+  "Meanwhile, toast the 1/2 cup walnuts in a dry skillet over medium for 4 to 5 minutes, shaking the pan often, until they smell toasty and turn a shade darker. Transfer them onto a plate to cool, then chop them.",
+  "Make the dressing in a jar. Grate in the garlic clove and add the 1/4 cup vinegar, 1 tsp honey, 1/4 tsp mustard, 1/4 tsp of the salt and a few grinds of pepper. Pour in the 1/4 cup olive oil, put the lid on and shake hard until it looks creamy.",
+  "Drain the farro well and spread it out on a large plate to cool for 10 minutes.",
+  "Meanwhile, thinly slice 1 cup of the radicchio, about half a small head. Chop 1/2 cup of the parsley and strip 1 tbsp of thyme leaves from the stems.",
+  "Pit and chop the 3 dates. Shave 1/2 cup of the pecorino with a vegetable peeler.",
+  "Put the farro in a large bowl with the radicchio, parsley, thyme, dates and pecorino. Add half the dressing, the last 1/4 tsp salt and a few grinds of pepper, and toss well.",
+  "If you're keeping it for lunches through the week, cover the bowl and refrigerate it now, with the walnuts and the rest of the dressing kept separately. It keeps for up to 4 days.",
+  "On the day you eat it, thinly slice the apple. Toss it into the salad with 1 cup of the arugula, the walnuts and the rest of the dressing.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more of the vinegar.",
+  "Serve it cold or at room temperature."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions boil the farro until tender but chewy, cool it, and toss it with greens, cheese and a sharp dressing, and both say it keeps for days. Love and Lemons (the lead) mixes the farro with arugula, radicchio, apple, dates, parsley, thyme, toasted walnuts and pecorino in an apple cider vinegar dressing, and says to add the apple and arugula just before eating if you make it ahead. RecipeTin Eats toasts the farro and cooks it in water with cider vinegar, then dresses it with a sizzled garlic, cumin and coriander oil over roasted tomatoes, spinach and goat's cheese. This one follows the lead, sweetens the dressing with honey and keeps the apple, arugula and walnuts back until the day it's eaten.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Farro Salad",
+   "url": "https://www.loveandlemons.com/farro-salad/",
+   "rating": 5.0,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Farro Salad with Sizzled Garlic Dressing",
+   "url": "https://www.recipetineats.com/farro-salad/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

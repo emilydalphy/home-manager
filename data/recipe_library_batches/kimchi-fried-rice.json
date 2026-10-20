@@ -1,0 +1,48 @@
+{
+ "dish_name": "Kimchi Fried Rice",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Kimchi", "qty": "1 jar (about 24 oz)", "category": "other", "cook_qty": "2 cups"},
+  {"item": "Thick-cut bacon", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Gochujang", "qty": "1 tub", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "4 tsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "3"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Roasted seaweed snacks", "qty": "1 pack", "category": "pantry"},
+  {"item": "Sesame seeds", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "The day before, or whenever you have time: cook the 2 cups of rice the way you usually do. Spread it out on a plate or tray to cool, then cover it and refrigerate it. That should be about 6 cups. Leftover rice works the same.",
+  "Set a sieve over a bowl and add 2 cups of the kimchi. Press it hard with a spoon to squeeze out the juice, then measure out 6 tbsp of the juice. If you're short, top it up with juice from the jar.",
+  "Chop the squeezed kimchi into bite-size pieces. Thinly slice 3 green onions and mince the 4 garlic cloves.",
+  "Crumble the cold rice with your hands so there are no big clumps left.",
+  "Cut the 8 oz bacon into 1/2 inch pieces. Put it in a large nonstick skillet or wok over medium heat and cook, stirring now and then, for 6 to 8 minutes, until it's browned and crisp at the edges.",
+  "Pour off all but about 2 tbsp of the fat, leaving the bacon in the pan.",
+  "Turn the heat up to medium-high. Add the garlic and cook for 20 seconds, until it smells fragrant. Add 2 tbsp gochujang and stir it around for 30 seconds, breaking it up, until it looks a little drier.",
+  "Add the kimchi and cook for 1 to 2 minutes, stirring, until it's hot and the pan looks dry again.",
+  "Add the rice and the 6 tbsp kimchi juice. Toss for 2 to 3 minutes, pressing out any clumps, until every grain is stained red.",
+  "Press the rice flat in the pan and leave it alone for 2 minutes, until you hear it crackle and the bottom is crisp. Stir it up.",
+  "Turn off the heat. Stir in 4 tsp toasted sesame oil and most of the green onions.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Heat the 2 tbsp vegetable oil in a second nonstick skillet over medium. Crack in the 4 eggs and fry them for 2 to 3 minutes, until the whites are set and the yolks are still runny.",
+  "Spoon the rice into bowls and top each one with a fried egg. Crumble the seaweed over the top and scatter on the rest of the green onions and 1 tbsp sesame seeds.",
+  "Serve with the rest of the kimchi on the side."
+ ],
+ "advance_prep_notes": "Cook the rice the day before and chill it (or use 6 cups of leftover rice).",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Both fry cold cooked rice with kimchi and a spoonful of gochujang, loosen it with kimchi juice and finish it with sesame oil and a fried egg. RecipeTin Eats squeezes the juice out of the kimchi so the rice doesn't go soggy, fries garlic then gochujang before the kimchi, keeps it meatless with enoki mushrooms and tops it with seaweed strips. Korean Bapsang browns bacon first (or uses ham, Spam or tuna), stir-fries the kimchi with onion, soy sauce and gochujang for a few minutes until it darkens, and adds the rice over lower heat. This one follows RecipeTin's order and ratios doubled for a dinner, with Korean Bapsang's bacon for the pork.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Kimchi Fried Rice", "url": "https://www.recipetineats.com/korean-kimchi-fried-rice/", "rating": 5.0, "rating_count": 23, "read": true, "lead": true},
+  {"name": "Korean Bapsang", "title": "Kimchi Fried Rice (Kimchi Bokkeum Bap)", "url": "https://www.koreanbapsang.com/kimchi-fried-rice-kimchi-bokkeum-bap/", "rating": 4.75, "rating_count": 75, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

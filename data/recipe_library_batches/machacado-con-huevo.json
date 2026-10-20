@@ -1,0 +1,113 @@
+{
+ "dish_name": "Machacado con Huevo",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Machaca",
+   "qty": "3 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flour tortillas",
+   "qty": "8",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Chop half the onion and dice the 2 tomatoes. Mince the garlic clove and finely chop 2 tbsp of the cilantro.",
+  "Halve the jalapeño and scrape out the seeds. Finely chop one half for the pan, and thinly slice the other half into a small bowl for the table.",
+  "Break up any clumps in the 3 oz machaca with your fingers. Taste a shred. Dried beef is often salty, and that tells you how much salt the eggs need.",
+  "Crack the 8 eggs into a bowl and add the cilantro and 1/4 tsp pepper. If the beef tasted mild, add a pinch of salt. Beat with a fork until there are no streaks of white left.",
+  "Warm the 8 tortillas in a dry large skillet over medium, about 30 seconds a side, and wrap them in a clean kitchen towel.",
+  "Heat 2 tbsp oil in the same skillet over medium. Add the machaca and stir it constantly for about 3 minutes, until it turns a shade darker and smells toasty. Stand back a little. It can spatter.",
+  "Add the onion and cook for about 3 minutes, stirring, until it's soft.",
+  "Add the garlic and stir for 30 seconds, until you can smell it.",
+  "Add the tomatoes and the chopped jalapeño and cook for 2 minutes, stirring now and then, until the tomatoes soften.",
+  "Pour in the eggs and turn the heat up to medium-high. Stir constantly for about 2 minutes, until the eggs are set but still a little glossy, then take the pan off the heat.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Serve with the warm tortillas, with the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cook the dried shredded beef with onion, tomato and fresh chile, then scramble beaten eggs through it, and all warn to taste the beef before salting since it is often salty already. Mexican Food Journal (Nuevo León style) fries the machaca alone in oil for 3 minutes first, then adds onion, garlic, tomato and serrano, and finishes the eggs over higher heat with cilantro beaten in; it uses 4 eggs for four people. Pati Jinich chars tomatoes, garlic, onion and chiles into a chunky salsa and cooks the machaca in it before 8 eggs go in; Slender Kitchen softens the vegetables first and scrambles 8 eggs beside them. This one follows Mexican Food Journal's order with 8 eggs and half the chile on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Mexican) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Mexican Food Journal",
+   "title": "Machaca con Huevo Recipe",
+   "url": "https://mexicanfoodjournal.com/machaca-con-huevo/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pati Jinich",
+   "title": "Machaca Egg Scramble",
+   "url": "https://patijinich.com/machaca-egg-scramble/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Slender Kitchen",
+   "title": "Machaca con Huevo",
+   "url": "https://www.slenderkitchen.com/recipe/machaca-con-huevo",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

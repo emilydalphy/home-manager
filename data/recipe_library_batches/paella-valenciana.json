@@ -1,0 +1,134 @@
+{
+ "dish_name": "Paella Valenciana",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bomba rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Saffron",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen lima beans",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Pour the 4 cups broth and 1/2 cup water into a saucepan and crumble in the pinch of saffron between your fingers. Warm it over low heat while you cook.",
+  "Meanwhile, cut the 1.5 lb chicken into 2 inch pieces, pat them dry and toss them with 3/4 tsp of the salt.",
+  "Finely chop the onion and mince the 2 garlic cloves. Trim the 1/2 lb green beans and cut them into 2 inch lengths. Cut the tomato in half and grate the cut sides on the big holes of a box grater into a bowl. Throw away the skin.",
+  "Heat 3 tbsp olive oil in a 12 to 14 inch paella pan or your widest skillet over medium high. Add the chicken in a single layer and leave it for 4 minutes, until the underside is golden. Turn the pieces, brown the other side for 3 to 4 minutes, then push them out to the edge of the pan.",
+  "Add the green beans and 3/4 cup lima beans to the middle of the pan and cook for 3 minutes, stirring, until the green beans are bright and spotted brown.",
+  "Add the onion and cook for 3 minutes, until it's soft. Add the garlic and the 1 tsp paprika and stir for 30 seconds, until it smells fragrant. Have the tomato ready. Paprika burns fast.",
+  "Stir in the grated tomato and cook for 2 to 3 minutes, until it's darker and thick like jam.",
+  "Add the 1 1/2 cups rice and stir for 2 minutes, until every grain is coated and shiny.",
+  "Pour in the hot saffron broth with the remaining 3/4 tsp salt and stir once to spread the rice evenly. Lay the chicken on top and tuck in 1 sprig rosemary. From here on, don't stir.",
+  "Let it bubble over medium heat for 10 minutes. Turn the heat to medium low and cook for 8 to 10 minutes, turning the pan now and then if the edges cook slower than the middle, until the broth is gone and the rice is tender with a little bite. Taste a few grains from the top to check.",
+  "Turn the heat up to medium high for 1 to 2 minutes for the crispy bottom. You'll hear it crackle and smell toasting rice. Take it off as soon as it smells toasty, before it smells burnt.",
+  "Cover the pan with a clean dish towel or foil and leave it for 5 minutes. Pull out the rosemary. The chicken is done at 175°F, so if you have a thermometer, check a thick piece. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Taste a spoonful. If it's flat, add salt first, then a squeeze of lemon.",
+  "Cut the rest of the lemon into wedges. Serve it straight from the pan with the lemon wedges."
+ ],
+ "method_notes": "All three brown the chicken in the wide pan, cook the beans in its fat, then add the rice and liquid and leave it unstirred until a crust forms on the bottom. The Daring Gourmet's Valencian paella uses boneless thighs, green beans, lima beans, onion, garlic and rosemary with 1 1/2 cups rice to about 4 cups of a ready made paella broth, and adds artichokes and piquillo peppers; this version makes the broth from chicken stock and saffron and leaves those two out. Recipes From Europe keeps it to chicken, rabbit, the two beans, grated tomato, paprika and rosemary with no onion or garlic, the way Valencians make it. RecipeTin Eats cooks a mixed paella with chorizo and seafood, which is a different dish, so it informed only the pan and rice timing.",
+ "sources": [
+  {
+   "name": "The Daring Gourmet",
+   "title": "Valencian Paella",
+   "url": "https://www.daringgourmet.com/valencian-paella/",
+   "rating": 4.99,
+   "rating_count": 84,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Spanish Paella",
+   "url": "https://www.recipetineats.com/spanish-paella/",
+   "rating": 4.9,
+   "rating_count": 76,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes From Europe",
+   "title": "Paella Valenciana",
+   "url": "https://www.recipesfromeurope.com/paella-valenciana/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}

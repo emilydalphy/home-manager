@@ -1,0 +1,168 @@
+{
+ "dish_name": "Banh Xeo",
+ "cuisine": "Vietnamese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 85,
+ "ingredients": [
+  {
+   "item": "Rice flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Peeled split mung beans",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pork belly",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Medium shrimp",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Bird's eye chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 3 hours ahead, or the night before: whisk the 1 1/2 cups rice flour, 1/2 cup all-purpose flour, 2 tsp turmeric and 3/4 tsp of the salt in a large bowl. Whisk in the can of coconut milk and 2 cups water until it's smooth and thin, like cream. Cover it and put it in the fridge.",
+  "At the same time, put the 1/3 cup mung beans in a small bowl and cover them with warm water by an inch. Leave them to soak.",
+  "When you're ready to cook, put the 12 oz pork belly in a small pot, cover it with water and add the last 1/4 tsp salt. Bring it to a boil, then turn it down to a simmer and cook for 25 minutes, until a knife slides in easily.",
+  "Meanwhile, drain the mung beans and put them in a small saucepan with water to cover by 1/2 inch. Simmer them for 10 to 15 minutes, until they squash easily between your fingers, then drain them.",
+  "Make the dipping sauce. Stir the 3 tbsp sugar into 1/3 cup warm water until it dissolves. Squeeze 3 tbsp juice from the limes and stir it in with the 3 tbsp fish sauce. Mince the 2 garlic cloves and add them.",
+  "Slice the 2 chilies and put them in a small bowl for the table.",
+  "Peel and devein the 1 lb shrimp if they need it, and cut each one in half lengthwise. Thinly slice the onion and the green onions.",
+  "Rinse and dry the bean sprouts. Separate the lettuce into leaves, wash and dry them with the mint and cilantro, and pile the leaves and herbs on a platter.",
+  "Lift the pork out of the water and let it cool for a few minutes. Slice it as thin as you can.",
+  "Heat the oven to 200°F and put a baking sheet in it to keep the crepes warm. Stir the batter well, since the flour settles, and stir in the green onions.",
+  "Heat a 10 inch nonstick skillet over medium high and add 1 tsp of the oil. Add a few slices of onion, a few slices of pork and 4 or 5 shrimp halves, and cook for about 1 minute, stirring, until the shrimp turn pink at the edges.",
+  "Pour in about 1/2 cup of the batter and tilt the pan right away so it covers the base in a thin layer. It should sizzle. If it's too thick to spread, stir a few tablespoons of water into the batter before the next one.",
+  "Scatter a spoonful of mung beans and a small handful of bean sprouts over one half. Turn the heat to medium, cover the pan and cook for 3 minutes, until the sprouts have softened and the edges of the crepe look see-through.",
+  "Take the lid off, turn the heat down to medium low and cook for 5 to 7 minutes, until the underside is deep golden and crisp and the edges lift from the pan. If it goes quiet, drizzle a little more oil around the edge.",
+  "Fold it in half and slide it onto the baking sheet in the oven. Make the rest the same way, adding 1 tsp oil each time. You'll get 8 to 10 crepes.",
+  "Taste the dipping sauce. If it's flat, add a squeeze more of the lime.",
+  "Serve the crepes with the lettuce, herbs, dipping sauce and sliced chilies on the side."
+ ],
+ "advance_prep_notes": "make the batter and soak the mung beans at least 3 hours ahead, or the night before",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "All three read versions make a thin batter of rice flour, turmeric, coconut and water with green onion, fry a little pork and shrimp in a hot pan, pour the batter over in a thin layer, add mung beans and bean sprouts, cover it for a few minutes and then cook it uncovered until crisp before folding it in half. Hungry Huy (the lead) adds some all-purpose flour, rests the batter at least 3 hours or overnight, boils the pork belly before slicing it, and serves it with lettuce, mustard greens, mint, cilantro and perilla and a prepared dipping sauce. Great British Chefs adds cornflour and sugar to the batter, poaches the pork and prawns in stock and fills it with chayote and carrot, and Take Two Eggs blends soaked mung beans into the batter. This one follows the lead and makes a simple garlic, lime and fish sauce dip with the chilies on the side.",
+ "sources": [
+  {
+   "name": "Hungry Huy",
+   "title": "Bánh Xèo (Vietnamese Sizzling Pancakes / Crêpes)",
+   "url": "https://www.hungryhuy.com/banh-xeo/",
+   "rating": 4.97,
+   "rating_count": 89,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Great British Chefs",
+   "title": "Bánh xèo, crispy Vietnamese pancakes",
+   "url": "https://www.greatbritishchefs.com/recipes/ban-xeo-recipe-vietnamese-pancakes",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Take Two Eggs",
+   "title": "Bánh Xèo (Vietnamese Crêpes)",
+   "url": "https://takestwoeggs.com/banh-xeo/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

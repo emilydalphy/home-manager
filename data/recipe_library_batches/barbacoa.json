@@ -1,0 +1,48 @@
+{
+ "dish_name": "Barbacoa",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 380,
+ "ingredients": [
+  {"item": "Boneless beef chuck roast", "qty": "2.5 lb", "category": "meat/seafood"},
+  {"item": "Chipotles in adobo", "qty": "1 can (7 oz)", "category": "pantry", "cook_qty": "2 chipotles"},
+  {"item": "Apple cider vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Ground cumin", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Mexican oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cloves", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "About 6 1/2 hours before dinner: trim the thick outside fat off the 2.5 lb chuck roast and cut it into 5 or 6 large chunks. Pat them dry and season all over with 1 tsp of the salt.",
+  "Heat the 1 tbsp oil in a large skillet over medium high. Brown the chunks in two batches, leaving each side for about 3 minutes, until it's deep brown and lets go of the pan. Turn them and brown the other sides the same way. Move them into the slow cooker as they're done.",
+  "Squeeze the juice from 1 of the limes into a blender. Add 2 chipotles from the can, the 3 tbsp vinegar, the 3 garlic cloves, the 2 tsp cumin, the 1 tsp oregano, the 1/4 tsp cloves, the 1/2 tsp pepper and the remaining 1/2 tsp salt. Blend until smooth.",
+  "Pour the sauce over the beef in the slow cooker. Pour the 1/2 cup broth into the hot skillet, scrape up the browned bits and pour that in too. Tuck in the 2 bay leaves.",
+  "Cover and cook on high for 6 hours, or on low for 8 hours. No peeking. It's ready when a chunk falls apart when you press it with a fork.",
+  "About 15 minutes before dinner, finely dice the onion, chop a large handful of the cilantro and cut the second lime into wedges.",
+  "Take out the bay leaves. Shred the beef right in the slow cooker with two forks and stir it through the juices. Cover it and leave it on warm for 10 minutes.",
+  "Warm each tortilla in a dry skillet over medium for about 30 seconds, flip it and warm the other side for 30 seconds. Stack them in a clean towel as you go.",
+  "Taste the beef. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Serve in the warm tortillas, with the onion, cilantro and lime wedges on the side."
+ ],
+ "advance_prep_notes": "start the slow cooker about 6 1/2 hours before dinner (8 1/2 on low)",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5],
+ "method_notes": "All three read versions cook chuck roast in a slow cooker with chipotles in adobo, garlic, cumin, oregano and bay, then shred it in its juices. Food.com's copycat blends the chipotles with cider vinegar, lime juice, black pepper and ground cloves, sears the roast in chunks first and adds a little chicken broth. The Slow Roasted Italian does the same and shreds the beef an hour before serving so it soaks up the sauce, while Pip and Ebby skips the sear and adds canned green chiles and onion. This one follows Food.com at about half its amounts, with 2 chipotles so the pot stays mild.",
+ "sources": [
+  {"name": "Food.com", "title": "Chipotle's Barbacoa Copycat Recipe", "url": "https://www.food.com/recipe/chipotles-barbacoa-copycat-recipe-472445", "rating": 5.0, "rating_count": 79, "read": true, "lead": true},
+  {"name": "The Slow Roasted Italian", "title": "Chipotle Barbacoa (Slow Cooker Copycat)", "url": "https://www.theslowroasteditalian.com/chipotles-copycat-barbacoa-recipe/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false},
+  {"name": "Pip and Ebby", "title": "Barbacoa Beef Slow Cooker Recipe", "url": "https://pipandebby.com/pip-ebby/barbacoa-beef/", "rating": 4.34, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

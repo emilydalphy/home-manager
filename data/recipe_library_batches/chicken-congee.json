@@ -1,0 +1,102 @@
+{
+ "dish_name": "Chicken Congee",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Short grain white rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 2 tsp"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 1/2 cup rice in a bowl, cover it with water and swish it around with your fingers. Drain it and rinse it once or twice more, until the water is only a little cloudy.",
+  "Cut 2 thick slices from the ginger. Put the rice, the 4 cups broth, 4 cups water, 1 tbsp of the Shaoxing wine and the ginger slices in a large pot. Bring it to a simmer over medium high heat.",
+  "Turn the heat to low. Cover the pot but leave a finger's width gap at the edge, so it doesn't boil over. Simmer for 30 minutes, stirring every 5 minutes or so and scraping the bottom. Stir more often near the end, as it thickens and starts to catch.",
+  "Meanwhile, cut the 8 oz chicken into thin strips, about 1/4 inch thick. Toss them in a bowl with the remaining 2 tsp Shaoxing wine, 1/2 tsp of the salt and the 1 tsp cornstarch until every piece is coated.",
+  "Thinly slice 2 of the scallions.",
+  "When the rice has broken down and the congee is thick and creamy, fish out the ginger. If it's thicker than you like, stir in a splash of hot water.",
+  "Turn the heat up to medium. Add the chicken, the scallions and the last 1/4 tsp salt, stirring all the time so the strips don't clump together. Cook for 2 to 3 minutes, until the chicken has turned white all the way through. You're cooking it to 175°F, so if you have a thermometer, check the thickest strip. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Turn off the heat and stir in the 1 tsp sesame oil. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and serve hot. Careful with the first spoonful. Congee holds its heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three simmer a small amount of rinsed rice in a lot of liquid until it breaks down, then stir in thinly sliced, cornstarch-coated chicken for the last couple of minutes so it stays tender. Omnivore's Cookbook (the lead) uses half chicken broth and half water with ginger and Shaoxing wine, simmers it partly covered for 30 minutes and seasons the chicken with Shaoxing wine, salt and cornstarch. Made With Lau cooks the rice in plain water and whisks it hard to break it down, then seasons with oyster sauce and chicken bouillon; Two Plaid Aprons adds oyster sauce to the chicken and tops the bowls with cilantro and chili oil. This one follows the lead, with thighs instead of breast and salt in place of the bouillon.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Chicken Congee (Instant Pot Version Included) 鸡粥",
+   "url": "https://omnivorescookbook.com/chicken-congee/",
+   "rating": 4.87,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Made With Lau",
+   "title": "Dad's Congee: The Chinese Restaurant Way",
+   "url": "https://www.madewithlau.com/recipes/chicken-congee",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Chicken Congee",
+   "url": "https://twoplaidaprons.com/chicken-congee/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

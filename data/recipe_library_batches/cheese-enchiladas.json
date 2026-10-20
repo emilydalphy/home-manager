@@ -1,0 +1,49 @@
+{
+ "dish_name": "Cheese Enchiladas",
+ "cuisine": "Mexican",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Tomato sauce", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Chili powder", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sour cream", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "1/2 cup, plus more to serve"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Monterey Jack cheese", "qty": "8 oz", "category": "dairy"},
+  {"item": "Cheddar cheese", "qty": "8 oz", "category": "dairy"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Flour tortillas", "qty": "8", "category": "other"},
+  {"item": "Iceberg lettuce", "qty": "1 head", "category": "produce"}
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Rub a little of the oil around a 9 by 13 inch baking dish.",
+  "Finely chop the onion and mince the garlic clove. Finely chop 2 tbsp of the parsley.",
+  "Heat the rest of the oil in a medium saucepan over medium. Add the garlic, the 1 tbsp chili powder, 1/2 tsp oregano and 1/4 tsp cumin and stir for about 30 seconds, until it smells toasty. Don't let it go dark.",
+  "Pour in the can of tomato sauce, 2/3 cup water and 1/4 tsp of the salt. Bring it to a bubble, then simmer for 5 minutes, stirring now and then, until it's a little thicker. Taste it, and add a pinch more salt if it's flat.",
+  "While the sauce simmers, shred the 8 oz Monterey Jack and the 8 oz cheddar. Set 1/2 cup of the cheddar aside for the top.",
+  "In a large bowl, stir together 1/2 cup of the sour cream, the chopped parsley, the remaining 1/4 tsp salt and the 1/4 tsp pepper. Mix in the Monterey Jack, the rest of the cheddar and the onion.",
+  "Wrap the 8 tortillas in a damp paper towel and microwave them for 30 seconds, so they roll without cracking.",
+  "Spread 2 tbsp of the sauce over a tortilla. Spoon about 1/2 cup of the filling down the middle, roll it up and lay it seam side down in the dish. Do the rest the same way, packing them in side by side.",
+  "Pour the rest of the sauce over the top. Make sure it covers the ends of the tortillas, or they'll dry out and go hard.",
+  "Bake uncovered for 20 minutes. Sprinkle the 1/2 cup cheddar you kept over the top and bake for another 5 minutes, until it's melted and the sauce is bubbling at the edges.",
+  "While they bake, shred about a quarter of the lettuce.",
+  "Let the enchiladas sit for 5 minutes. Serve with the shredded lettuce and more of the sour cream."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fill tortillas with a mix of melting cheeses and onion, roll them, cover them in red sauce and bake at 350°F for 20 to 25 minutes. Taste of Home (the lead) simmers its own sauce from canned tomato sauce, water, chili powder, garlic, oregano and cumin, mixes sour cream and parsley into the Monterey Jack and cheddar filling, and adds the last of the cheddar for the final few minutes; Food.com has the same recipe at half size. Devour Dinner uses bottled enchilada sauce stirred with sour cream and says corn tortillas work too if warmed in a damp towel first. This one halves the lead to 8 enchiladas and cooks the spices and garlic in a little oil before the tomato goes in.",
+ "sources": [
+  {"name": "Taste of Home", "title": "Cheese Enchiladas", "url": "https://www.tasteofhome.com/recipes/cheese-enchiladas/", "rating": 4.21, "rating_count": 42, "read": true, "lead": true},
+  {"name": "Devour Dinner", "title": "Cheese Enchiladas Recipe", "url": "https://www.devourdinner.com/cheese-enchiladas/", "rating": 5.0, "rating_count": 16, "read": true, "lead": false},
+  {"name": "Food.com", "title": "Cheese Enchiladas", "url": "https://www.food.com/recipe/cheese-enchiladas-242388", "rating": 5.0, "rating_count": 9, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

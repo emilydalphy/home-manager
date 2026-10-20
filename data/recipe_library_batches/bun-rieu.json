@@ -1,0 +1,170 @@
+{
+ "dish_name": "Bun Rieu",
+ "cuisine": "Vietnamese",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Dried shrimp",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Raw shrimp",
+   "qty": "1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lump crab meat",
+   "qty": "1 can (6 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shrimp paste in soybean oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Minced crab paste in spices",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chicken bouillon powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "8 oz"
+  },
+  {
+   "item": "Fried tofu puffs",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "4 oz"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put 2 tbsp dried shrimp in a small bowl, cover them with hot water and soak for 10 minutes, until they're soft.",
+  "Meanwhile, pour 2 quarts water into a large pot, cover it and bring it to a boil over high heat.",
+  "Peel the 1/4 lb fresh shrimp and chop them very finely, almost to a paste. Drain the dried shrimp and chop them finely too.",
+  "Spoon about 1 tbsp of the orange oil off the top of the shrimp paste jar into a small dish and keep it for the tomatoes.",
+  "In a big bowl, beat the 2 eggs. Add the 1/2 lb pork, both kinds of shrimp, 1/2 cup shrimp paste and 1/4 cup crab paste and mix until it's even. Drain the crab meat, squeeze out the liquid and fold it in gently. The mixture will be soft and loose, much softer than a meatball mix.",
+  "When the water boils, add 1 1/2 cups chicken broth, 1 tbsp fish sauce, 1 1/2 tsp bouillon powder and 1 tbsp sugar. Stir until they dissolve, then turn the heat down so it simmers gently.",
+  "Finely chop the 2 shallots and cut the 3 tomatoes into quarters. Heat the 1 tbsp oil and the reserved paste oil in a skillet over medium. Add the shallots and cook for about 2 minutes, until they're soft and smell sweet.",
+  "Add the tomatoes and the 1/2 tsp salt and cook for 2 to 3 minutes, until they start to soften but still hold their shape. Transfer the tomatoes, shallots and all the oil into the broth.",
+  "Scoop the crab mixture into the simmering broth about 1 1/2 tbsp at a time. Don't stir. Let it set for 10 to 12 minutes, until the pieces float and feel firm. Break one open to check there's no pink left in the middle.",
+  "Meanwhile, bring a second pot of water to a boil and cook 8 oz rice vermicelli for 3 to 4 minutes, until it's soft. Drain it and rinse it under cold water.",
+  "Rinse the bean sprouts, pick the mint leaves, thinly slice 3 green onions, cut the lime into wedges and thinly slice the 2 chilies.",
+  "Cut 4 oz tofu puffs in half, add them to the soup and simmer for 2 to 3 minutes, until they're hot. Taste the broth. If it's flat, add a splash more fish sauce or a pinch of salt.",
+  "Divide the noodles between 4 big bowls and ladle the broth, tomatoes, tofu and crab over them. Scatter the green onions on top.",
+  "Serve with the bean sprouts, mint, lime wedges and sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions fry shallots and quartered tomatoes in oil before they go into a seasoned chicken broth, and drop spoonfuls of a soft crab, pork, shrimp and egg mixture into the simmering pot until it floats. Savory Sweet Spoon builds the crab mixture from jarred shrimp paste in soybean oil, canned crab paste in spices and lump crab, adds soaked dried shrimp, and fries the tomatoes in the oil from the jars. Hungry Huy adds ketchup and fermented shrimp paste to the broth, uses canned minced prawn, and simmers it longer. This one follows the lead at half the size for 4 bowls, chops the shrimp by hand instead of in a food processor, and puts the chilies on the side.",
+ "sources": [
+  {
+   "name": "Savory Sweet Spoon",
+   "title": "Bún Riêu (Vietnamese Crab Noodle Soup)",
+   "url": "https://www.savorysweetspoon.com/bun-rieu/",
+   "rating": 5.0,
+   "rating_count": 43,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry Huy",
+   "title": "Bún Riêu (Vietnamese Crab, Pork & Tomato Noodle Soup)",
+   "url": "https://www.hungryhuy.com/bun-rieu/",
+   "rating": 5.0,
+   "rating_count": 29,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

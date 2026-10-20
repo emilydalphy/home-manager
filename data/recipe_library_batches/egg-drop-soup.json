@@ -1,0 +1,107 @@
+{
+ "dish_name": "Egg Drop Soup",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Chicken broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Ground white pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut 2 thin slices from the ginger. Thinly slice 3 of the scallions, keeping the white parts and the green parts in separate piles.",
+  "Pour the 6 cups broth into a medium pot and add the ginger slices and the scallion whites. Bring it to a simmer over medium high heat, about 5 minutes.",
+  "Meanwhile, stir the 1/4 cup cornstarch into 1/2 cup cold water in a small bowl until there are no lumps. In another bowl, beat the 4 eggs with a fork until they're smooth and an even yellow.",
+  "Fish out the ginger slices. Stir in the 3/4 tsp salt, 1/4 tsp sugar, 1/4 tsp white pepper and the 1/4 tsp turmeric.",
+  "Stir the cornstarch mixture again, since it settles fast. Keep stirring the soup while you pour it in slowly, then let it simmer for 2 minutes, until the soup thickens enough to coat a spoon.",
+  "Turn the heat down to low so the soup is barely bubbling. Stir it in a slow circle with a ladle and pour the eggs in a thin stream into the moving soup. Stir slowly for big ribbons of egg, or faster for fine wisps.",
+  "Leave it alone for 10 seconds so the egg sets, then turn off the heat. Stir in the 1 tsp sesame oil.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and scatter the scallion greens on top. Serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three season a simmering chicken broth, thicken it with a cornstarch slurry and then drizzle in beaten egg while the soup moves, so the egg sets in ribbons. The Woks of Life (the lead) seasons with salt, a little sugar, white pepper and sesame oil, adds turmeric for the yellow color and controls ribbon size by how fast you stir. Omnivore's Cookbook and Spend With Pennies first simmer the broth with ginger and scallion whites, and Omnivore's adds the egg in three batches, letting each set before breaking it up. This one follows the lead's seasoning and slurry, scaled up for four lunch bowls, and borrows the ginger and scallion simmer from the other two.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Egg Drop Soup",
+   "url": "https://thewoksoflife.com/egg-drop-soup/",
+   "rating": 4.95,
+   "rating_count": 676,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Chinese Egg Drop Soup",
+   "url": "https://omnivorescookbook.com/egg-drop-soup/",
+   "rating": 4.92,
+   "rating_count": 70,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Egg Drop Soup",
+   "url": "https://www.spendwithpennies.com/egg-drop-soup/",
+   "rating": 4.94,
+   "rating_count": 60,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

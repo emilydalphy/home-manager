@@ -1,0 +1,99 @@
+{
+ "dish_name": "Guacamole",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Avocados",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tortilla chips",
+   "qty": "1 bag",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely dice half the onion. Seed and dice the 2 tomatoes, and mince the 2 garlic cloves.",
+  "Halve the jalapeño, scrape out the seeds and ribs, and dice it fine. Put half of it in a small bowl for the table.",
+  "Finely chop 3 tbsp of the cilantro.",
+  "Halve the 3 avocados, take out the pits and scoop the flesh into a bowl. Mash it with a fork, as chunky or as smooth as you like it.",
+  "Squeeze the juice of half the lime over the avocado and stir it through.",
+  "Add the onion, tomatoes, garlic, cilantro, the other half of the jalapeño and 1/2 tsp salt. Stir until it's all mixed in.",
+  "Taste it, and add a pinch more salt if it's flat, or a squeeze of the other lime half.",
+  "Serve with the tortilla chips, with the extra jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three mash 3 ripe avocados with a fork, keep it chunky and season with lime and about 1/2 tsp salt, tasting at the end for more of either. Downshiftology stirs in onion, Roma tomatoes, cilantro, a seeded jalapeño and garlic; Natasha's Kitchen skips the chile and garlic, uses white onion and makes the tomato optional; Once Upon a Chef uses scallions instead of onion and adds a little cumin. This one follows Downshiftology, with half the jalapeño stirred in and the rest on the side. Downshiftology and Natasha's Kitchen both round to 5.0, and Downshiftology has more ratings.",
+ "sources": [
+  {
+   "name": "Downshiftology",
+   "title": "Best Ever Guacamole (Fresh, Easy & Authentic)",
+   "url": "https://downshiftology.com/recipes/best-ever-guacamole/",
+   "rating": 4.96,
+   "rating_count": 854,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Best Guacamole Recipe",
+   "url": "https://natashaskitchen.com/best-guacamole-recipe/",
+   "rating": 4.97,
+   "rating_count": 92,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Guacamole",
+   "url": "https://www.onceuponachef.com/recipes/guacamole.html",
+   "rating": 4.92,
+   "rating_count": 35,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

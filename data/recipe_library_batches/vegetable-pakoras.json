@@ -1,0 +1,49 @@
+{
+ "dish_name": "Vegetable Pakoras",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Carrots", "qty": "1 lb", "category": "produce", "cook_qty": "1"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Green cabbage", "qty": "1 head", "category": "produce", "cook_qty": "1 cup shredded"},
+  {"item": "Green bell pepper", "qty": "1", "category": "produce", "cook_qty": "1/4 cup sliced"},
+  {"item": "Green beans", "qty": "1/4 lb", "category": "produce", "cook_qty": "6 beans"},
+  {"item": "Baby spinach", "qty": "1 bag", "category": "produce", "cook_qty": "1 cup chopped"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "1/2 tsp grated"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Green chilies", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Besan", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Rice flour", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Carom seeds", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "4 cups", "category": "pantry"},
+  {"item": "Cilantro chutney", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the carrot and cut it into thin strips about 2 inches long. Thinly slice the onion and shred 1 cup of the cabbage.",
+  "Cut a quarter of the bell pepper into thin strips, about 1/4 cup. Cut 6 of the green beans into thin strips the same length as the carrot. Roughly chop 1 cup of the spinach.",
+  "Grate 1/2 tsp of the ginger and mince the garlic clove. Seed and finely chop the green chili, and chop 2 tbsp of the cilantro.",
+  "Put all the vegetables in a large bowl with the ginger, garlic, chili, cilantro, 1/2 tsp salt and 1/2 tsp garam masala. Squeeze and toss them with your hands for about a minute, until they start to soften and feel damp. Leave them for 10 minutes.",
+  "Add the 1/2 cup besan and 1/4 cup rice flour, and crush the 1/2 tsp carom seeds between your palms over the bowl. Mix with your hands until the flour clings to the vegetables in a thick, sticky dough. It shouldn't be a runny batter. If it's too dry to hold together, sprinkle in water 1 tbsp at a time.",
+  "Pour the 4 cups oil into a deep heavy pot. It should come no more than halfway up the sides. Heat it over medium. You're heating it to 350°F, so if you have a thermometer, clip it to the side. No thermometer? Drop in a pinch of the dough: it's ready when it sizzles and rises to the top without browning right away.",
+  "Pinch off walnut sized pieces of the dough, flatten each one a little between your fingers and slide 5 or 6 of them gently into the oil. Stand back a little. They can spatter.",
+  "Leave them alone for a minute or two, until they firm up. Then turn them and keep frying, turning now and then, for 3 to 4 minutes, until they're deep golden and crisp all over.",
+  "Lift them onto a wire rack or a colander with a slotted spoon. Let the oil heat back up for a minute before each new batch, and fry the rest the same way.",
+  "Serve hot with the cilantro chutney."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions coat thin strips of mixed vegetables in besan and fry small loose clusters in medium hot oil until golden and crisp. Swasthi's Recipes (the lead) salts the vegetables with ginger garlic, green chili, mint and garam masala, squeezes them and rests them 10 minutes so their own water binds 1/2 cup besan and 1/4 cup rice flour into a sticky dough, with ajwain for flavor. Hebbar's Kitchen also uses no water at all and adds potato, curry leaves, turmeric, chili powder and amchur, while Sailu's Food stirs water into the besan to make a coating batter with a spoon of hot oil. This one follows the lead with cilantro in place of mint and one seeded chili, and the cabbage, pepper, beans and spinach can be swapped for whatever vegetables are on hand.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Pakora Recipe | Vegetable Pakora", "url": "https://www.indianhealthyrecipes.com/pakora-recipe/", "rating": 5.0, "rating_count": 245, "read": true, "lead": true},
+  {"name": "Hebbar's Kitchen", "title": "Veg Pakora Recipe | Crispy Mix Veg Pakoda", "url": "https://hebbarskitchen.com/veg-pakora-recipe-mix-veg-pakoda-mixed/", "rating": 5.0, "rating_count": 193, "read": true, "lead": false},
+  {"name": "Sailu's Food", "title": "Mixed Vegetable Pakora", "url": "https://www.sailusfood.com/vegetable-pakora-recipe", "rating": 4.4, "rating_count": 282, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

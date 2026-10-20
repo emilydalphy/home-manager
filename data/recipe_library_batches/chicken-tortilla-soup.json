@@ -1,0 +1,53 @@
+{
+ "dish_name": "Chicken Tortilla Soup",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry"},
+  {"item": "Black beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Crushed tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Diced tomatoes with green chiles", "qty": "1 can (10 oz)", "category": "pantry"},
+  {"item": "Frozen corn", "qty": "1 bag (12 oz)", "category": "frozen", "cook_qty": "1 cup"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "6", "category": "other"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Pat the 1 lb chicken thighs dry and season them with 3/4 tsp of the salt and the 1/4 tsp pepper. Chop the onion and mince the 3 garlic cloves.",
+  "Heat 1 tbsp olive oil in a large pot over medium. Add the onion and cook for 4 to 5 minutes, stirring now and then, until it's soft.",
+  "Add the garlic, 1 tsp cumin and 1 tsp chili powder and stir for 30 seconds, until it smells toasty.",
+  "Pour in the carton of broth, the crushed tomatoes and the diced tomatoes with chiles and their juice. Rinse and drain the black beans and add them with 1 cup of the frozen corn and 1/4 tsp of the salt.",
+  "Add the chicken and bring the soup to a boil over high. Turn it down to a gentle simmer and cook uncovered for 20 minutes. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest one. No thermometer? Cut one open. There should be no pink left.",
+  "Meanwhile, cut the 6 tortillas into strips about 1/4 inch wide. Heat 1/4 cup vegetable oil in a small skillet over medium-high.",
+  "Fry the strips a handful at a time for about 1 minute, turning them, until they're golden and crisp. Lift them onto a paper towel and sprinkle with the last 1/4 tsp salt.",
+  "Seed and thinly slice the jalapeño into a small bowl for the table. Slice the avocado, cut half the lime into wedges and chop a handful of the cilantro.",
+  "Lift the chicken onto a board and shred it with two forks. Put it back in the pot and simmer for 3 minutes.",
+  "Take the pot off the heat. Squeeze in the juice from the other half of the lime and stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Ladle the soup into bowls and top with the tortilla strips and avocado. Serve with the lime wedges and the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three simmer chicken in a tomato and broth base, shred it back into the pot, and top bowls with crisp corn tortilla strips fried in a little oil. Spend With Pennies (the lead) softens onion, garlic and jalapeño, adds broth, black beans, crushed tomatoes, a can of tomatoes with green chiles, corn, cumin, chili powder, lime and cilantro, poaches chicken breasts for 20 minutes, and serves it with avocado and lime. Mexican Please roasts tomatoes and blends them with browned onion and a chipotle for a smooth, beanless broth, and Once Upon a Chef purées tortillas into a creamy soup. This one keeps the lead's pot, cooks the spices in the oil first, uses thighs for juicier meat, adds the lime and cilantro at the end, and puts the jalapeño on the side.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Chicken Tortilla Soup", "url": "https://www.spendwithpennies.com/chicken-tortilla-soup/", "rating": 4.99, "rating_count": 791, "read": true, "lead": true},
+  {"name": "Mexican Please", "title": "Chicken Tortilla Soup", "url": "https://www.mexicanplease.com/chicken-tortilla-soup/", "rating": 4.36, "rating_count": 37, "read": true, "lead": false},
+  {"name": "Once Upon a Chef", "title": "Creamy Chicken Tortilla Soup", "url": "https://www.onceuponachef.com/recipes/chicken-tortilla-soup.html", "rating": 4.82, "rating_count": 162, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

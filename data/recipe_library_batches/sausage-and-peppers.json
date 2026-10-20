@@ -1,0 +1,129 @@
+{
+ "dish_name": "Sausage and Peppers",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Mild Italian sausage links",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bell peppers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/3 cup",
+   "category": "other"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Hoagie rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the onion in half and slice it thinly. Seed the 3 peppers and slice them into strips about 1/4 inch wide. Mince the 3 garlic cloves.",
+  "Heat the 1 tbsp olive oil in a 12 inch skillet with a lid over medium. Add the 1.5 lb sausages and cook them for 6 to 8 minutes, turning them every couple of minutes, until they're browned on all sides. Don't prick them.",
+  "Pour in 1 cup water. Stand back a little. It'll spatter. Cover the pan, turn the heat down to medium low and simmer for 10 minutes.",
+  "Lift the sausages onto a cutting board and pour out any water left in the pan.",
+  "Put the pan back over medium and melt the 2 tbsp butter in it. Add the onion, the 1 tsp Italian seasoning and 1/4 tsp of the salt. Cook for about 4 minutes, stirring and scraping up the browned bits, until the onion is soft.",
+  "Add the peppers, the last 1/4 tsp salt and the 1/4 tsp black pepper. Cook for 6 to 8 minutes, stirring now and then, until the peppers are soft and browned in spots.",
+  "Meanwhile, slice the sausages into pieces about 1 inch thick.",
+  "Add the garlic to the peppers and stir for 30 seconds, until it smells fragrant. Pour in the 1/3 cup wine and let it bubble for 1 minute, scraping the bottom of the pan.",
+  "Stir in the tomatoes with their juice and the sausage. Simmer uncovered for 5 minutes, stirring now and then, until the sauce has thickened a little. You're cooking the sausage to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut a piece open: it's done when there's no pink left.",
+  "While it simmers, split the 4 rolls and toast them cut side up under the broiler for 1 to 2 minutes, until they're golden at the edges. Put the 1 tsp red pepper flakes in a small bowl for the table.",
+  "Take the pan off the heat. Chop 2 tbsp of the parsley and stir it in. Taste it, and add a pinch more salt if it's flat.",
+  "Serve in the toasted rolls, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook Italian sausage with sliced bell peppers, onion, garlic and dried Italian herbs. Spend With Pennies (the lead) browns the links, simmers them covered in a cup of water to cook them through, softens the onion and peppers in butter in the same pan, then adds white wine, garlic and an optional can of diced tomatoes and brings the sausage back to 160°F. Jo Cooks browns the links and finishes them in the pan with the peppers before piling them into hoagie rolls, and Well Plated roasts sliced precooked chicken sausage with the peppers and a splash of red wine vinegar on one sheet pan at 400°F. This one follows the lead at 1.5 lb of sausage for four, keeps the tomatoes in and slices the sausage so it fills rolls or sits over polenta.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Sausage and Peppers",
+   "url": "https://www.spendwithpennies.com/sausage-and-peppers/",
+   "rating": 5.0,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Sausage and Peppers",
+   "url": "https://www.wellplated.com/sausage-and-peppers/",
+   "rating": 4.84,
+   "rating_count": 174,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Sausage Peppers And Onions",
+   "url": "https://www.jocooks.com/recipes/sausage-peppers-and-onions/",
+   "rating": 4.75,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

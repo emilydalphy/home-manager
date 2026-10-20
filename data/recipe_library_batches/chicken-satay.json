@@ -1,0 +1,130 @@
+{
+ "dish_name": "Chicken Satay",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 1 tsp"
+  },
+  {
+   "item": "Red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smooth peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bamboo skewers",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "16"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the 1.25 lb chicken thighs into 3/4-inch pieces.",
+  "Shake the can of coconut milk well. In a bowl, mix 1/4 cup of the coconut milk with 1 tbsp curry powder, 1 tsp of the sugar, 2 tsp of the curry paste and 1/2 tsp of the salt. Add the chicken, toss until it's coated and leave it for 20 minutes.",
+  "Meanwhile, make the peanut sauce. In a small saucepan, stir together the rest of the coconut milk, the remaining 2 tbsp curry paste, 3/4 cup peanut butter, 1/4 cup sugar, 2 tsp dark soy sauce, the other 1/2 tsp salt, 2 tbsp vinegar and 3/4 cup water.",
+  "Set it over medium-low and simmer for 5 minutes, stirring now and then, until it's smooth and thick but still pourable. If it's too thick, stir in a splash of water. Cover it and keep it warm on the lowest heat.",
+  "Thread 4 or 5 pieces of chicken onto each of the 16 skewers, pushing them close together.",
+  "Heat 1 1/2 tbsp oil in a large nonstick skillet over medium-high. Lay in half the skewers and cook for 3 minutes, until the underside is golden with a few dark spots. Flip them and cook the other side for 3 minutes. You're cooking them to 175°F, so if you have a thermometer, check the thickest piece. No thermometer? Cut into one: it's done when there's no pink left in the middle.",
+  "Move them to a platter. Add the other 1 1/2 tbsp oil and cook the second batch the same way.",
+  "Meanwhile, finely chop the 2 tbsp peanuts and pick a small handful of cilantro leaves. Thinly slice the red chili into a little dish for the table and cut the lime into wedges.",
+  "Taste the peanut sauce, and add a pinch more salt if it's flat.",
+  "Pour the sauce into a bowl and scatter half the peanuts on top. Scatter the rest of the peanuts and the cilantro over the skewers.",
+  "Serve the skewers with the peanut sauce, lime wedges and sliced chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both marinate thigh pieces with curry flavors and sugar, thread them on skewers, cook them hot until charred at the edges and serve a sweet peanut sauce made with coconut milk and red curry paste. RecipeTin Eats, the lead, marinates in a little coconut milk with curry powder and curry paste for 20 minutes, pan fries the skewers 3 minutes a side and simmers the rest of the can with peanut butter, sugar, dark soy, vinegar and water. Once Upon a Chef marinates in soy, brown sugar, ketchup, turmeric and coriander for 4 hours or more, grills them, and sharpens its sauce with lime juice and sriracha. This one follows the lead in a skillet and keeps the chili on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Chicken Satay with Peanut Sauce",
+   "url": "https://www.recipetineats.com/thai-chicken-satay/",
+   "rating": 4.97,
+   "rating_count": 514,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Chicken Satay",
+   "url": "https://www.onceuponachef.com/recipes/chicken-satay.html",
+   "rating": 4.97,
+   "rating_count": 31,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

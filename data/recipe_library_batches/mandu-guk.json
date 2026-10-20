@@ -1,0 +1,111 @@
+{
+ "dish_name": "Mandu Guk",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Frozen pork mandu",
+   "qty": "2 lb",
+   "category": "frozen"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "8 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted seaweed snack sheets",
+   "qty": "1 package",
+   "category": "pantry"
+  },
+  {
+   "item": "Kimchi",
+   "qty": "1 jar",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pour the 8 cups broth into a large pot, cover and bring it to a boil over high.",
+  "Meanwhile, thinly slice 2 of the scallions on a diagonal and mince the 3 garlic cloves. Crack the 2 eggs into a small bowl, add 1 tbsp water and beat them with a fork.",
+  "Stir the garlic and 1 tbsp soy sauce into the boiling broth. Add the 2 lb mandu straight from the freezer, a few at a time, and stir gently so they don't stick to the bottom.",
+  "Once it's back to a boil, turn the heat to medium so it simmers steadily. A hard boil can split the wrappers. Cook for 8 to 10 minutes, until all the mandu float and the filling is steaming hot in the middle. Cut one open to check.",
+  "Pour the egg into the soup in a thin stream, moving around the pot in a circle. Give it two gentle stirs and leave it for 30 seconds, until the egg sets in soft ribbons.",
+  "Turn off the heat and stir in the 2 tsp sesame oil and most of the scallions.",
+  "Taste the broth. If it's flat, add a pinch of salt.",
+  "Ladle it into bowls and top with the rest of the scallions and the pinch of pepper. Crumble 2 of the seaweed sheets over the top.",
+  "Serve hot with kimchi on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions bring a broth to a boil, add the dumplings and cook them until they float, then finish with scallion and a little egg. Korean Bapsang (the lead) uses store-bought chicken broth seasoned with garlic and soup soy sauce and tops the bowls with thin strips of fried egg and roasted seaweed. Beyond Kimchee makes a quick anchovy and kelp stock and swirls beaten egg straight into the pot, then finishes with sesame oil and serves kimchi alongside. Taste Korean Food uses beef bone broth and keeps it at a gentle simmer so the wrappers don't split. This one follows the lead's chicken broth base and uses the swirled egg from Beyond Kimchee, which is quicker than frying egg strips. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Korean) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Manduguk (Korean Dumpling Soup)",
+   "url": "https://www.koreanbapsang.com/manduguk-korean-dumpling-soup/",
+   "rating": 4.63,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Mandu-guk (Korean Dumpling Soup)",
+   "url": "https://www.beyondkimchee.com/korean-dumpling-soup-mandu-guk",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Taste Korean Food",
+   "title": "Mandu-guk: Korean Dumpling Soup",
+   "url": "https://www.tastekoreanfood.com/recipes/mandu-guk-korean-dumpling-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

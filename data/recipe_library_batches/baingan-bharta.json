@@ -1,0 +1,48 @@
+{
+ "dish_name": "Baingan Bharta",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Eggplants", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "8 cloves", "category": "produce"},
+  {"item": "Red onions", "qty": "2", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "4", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce", "cook_qty": "1 tbsp chopped"},
+  {"item": "Green chilies", "qty": "2", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 2 eggplants and dry them. Cut 2 deep slits in each one and push a garlic clove into each slit, so 4 of the cloves go in. Brush the eggplants all over with 1 tbsp of the oil.",
+  "If you have a gas burner, set the eggplants right on the grate over a medium high flame. Turn them with tongs every 2 to 3 minutes for 12 to 15 minutes, until the skin is black and blistered all over and they slump. A knife should slide through the thickest part with no resistance.",
+  "No gas burner? Cut the eggplants in half lengthwise, tuck the garlic underneath, and set them skin side up on a foil-lined tray. Broil them on the second rack from the top for 20 to 25 minutes, until the skin is charred and the flesh is completely soft.",
+  "Put the eggplants in a bowl and cover it with a plate for 10 minutes.",
+  "Meanwhile, finely chop the 2 onions. Halve the 4 tomatoes, scoop out the seeds and chop them. Finely chop 1 tbsp of the ginger and the last 4 garlic cloves. Chop 1/4 cup of the cilantro. Thinly slice the green chilies into a small bowl for the table.",
+  "Peel the charred skin off the eggplants and cut off the stems. Scoop out any thick clumps of seeds. Mash the flesh and the roasted garlic together with a fork or a potato masher, until it's mostly smooth with a few strands left.",
+  "Heat the other 3 tbsp oil in a large skillet over medium. Add the ginger and chopped garlic and stir for 30 to 60 seconds, until they smell fragrant.",
+  "Add the onions and cook for 7 to 8 minutes, stirring now and then, until they're light golden. Don't rush the onions. That's where the flavor starts.",
+  "Add the tomatoes and 1 tsp of the salt. Cook for 5 to 6 minutes, stirring, until the tomatoes are soft and falling apart.",
+  "Stir in the 1 tsp Kashmiri chili powder and cook for 1 minute.",
+  "Add the mashed eggplant and the last 1/4 tsp salt. Mix well and mash it a little more with the spoon. Cook for 8 to 10 minutes over medium, stirring often, until it's thick, no longer watery and smells smoky.",
+  "Stir in the 1/2 tsp garam masala and take the pan off the heat. Leave it for 2 minutes.",
+  "Scatter over the cilantro and squeeze in the juice of half the lemon. Taste it. If it's flat, add a pinch more salt or a squeeze of the other half.",
+  "Serve with roti or naan, with the sliced green chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions char a whole eggplant over a flame until it collapses, peel and mash it, then cook it into an onion and tomato base with ginger, garlic, mild chili powder and salt, finishing with cilantro. Swasthi's Recipes (the lead) tucks garlic and green chili into slits before roasting, browns the onions light golden, cooks the mash for 8 to 10 minutes and finishes with garam masala and lemon off the heat, with broiler and air fryer options for anyone without gas. Hebbar's Kitchen starts with cumin seeds and a dried red chili and adds coriander powder, and Cook with Manali cooks the onions only until soft in mustard oil and simmers the mash 10 minutes. This one follows the lead for 4, with the green chilies on the side instead of roasted in.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Baingan Bharta Recipe (Eggplant Bharta)", "url": "https://www.indianhealthyrecipes.com/baingan-bharta/", "rating": 4.99, "rating_count": 251, "read": true, "lead": true},
+  {"name": "Hebbar's Kitchen", "title": "Baingan Bharta Recipe | Baingan Ka Bharta | Smoky Eggplant Stir Fry Mash", "url": "https://hebbarskitchen.com/baingan-bharta-recipe-baingan-ka-bharta/", "rating": 4.96, "rating_count": 240, "read": true, "lead": false},
+  {"name": "Cook with Manali", "title": "Baingan Bharta (Punjabi-Style)", "url": "https://www.cookwithmanali.com/baingan-bharta/", "rating": 4.93, "rating_count": 109, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

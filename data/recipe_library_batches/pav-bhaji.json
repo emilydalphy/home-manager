@@ -1,0 +1,154 @@
+{
+ "dish_name": "Pav Bhaji",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pav bhaji masala",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Soft dinner rolls",
+   "qty": "8",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel the 2 potatoes and cut them into 1 inch cubes. Peel and slice the carrot. Cut 2 cups of small florets from the cauliflower.",
+  "Put the potatoes, carrot and cauliflower in a pot, cover them with water by an inch and bring it to a boil. Simmer for 12 to 15 minutes, until a knife slides into a potato cube with no push. Add 3/4 cup of the peas for the last 3 minutes.",
+  "Meanwhile, finely chop 1 onion, the bell pepper and the 2 tomatoes. Grate the ginger and mince the 4 garlic cloves.",
+  "Finely chop the other onion and put it in a small bowl for the top. Slice the green chili into a small dish for the table. Chop 1/4 cup of the cilantro.",
+  "Drain the vegetables, saving 1 cup of the cooking water. Mash them well in the pot with a potato masher.",
+  "Melt 1 tbsp of the butter with the 1 tbsp oil in a large skillet or wide pot over medium. Add the chopped onion and cook for 5 to 6 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the ginger and garlic and stir for about a minute, until they stop smelling raw.",
+  "Add the bell pepper and cook for 3 to 4 minutes, until it softens. Add the tomatoes and the 1 tsp salt and cook for 5 to 6 minutes, mashing them with the spoon, until they break down into a thick sauce.",
+  "Turn the heat to low and stir in 1 1/2 tsp Kashmiri chili powder, 1/4 tsp turmeric and 1 tbsp of the pav bhaji masala. Cook for 2 minutes, stirring, until it smells toasty and the raw spice smell is gone.",
+  "Add the mashed vegetables and 3/4 cup of the saved cooking water. Mash everything together in the pan until it's mostly smooth. Simmer over medium low for 5 minutes, stirring often, until it's thick but still spoonable. Add a splash more of the water if it gets stiff.",
+  "Crush 2 tsp kasuri methi between your palms into the pan. Stir in 1 tbsp butter and half the chopped cilantro and take it off the heat. Squeeze in the juice of half the lemon. Taste it, and add a pinch more salt or a little more lemon if it's flat.",
+  "Slice the 8 rolls in half sideways, leaving one edge attached. Melt 2 tbsp butter in a large skillet over medium and sprinkle the last 1/2 tbsp pav bhaji masala into it. Press the rolls in cut side down and toast them for 1 to 2 minutes, until golden and crisp. Do it in two batches if they don't all fit.",
+  "Spoon the bhaji into bowls. Top each one with a piece of the last 2 tbsp butter, some of the chopped raw onion and the rest of the chopped cilantro. Cut the other half of the lemon into wedges.",
+  "Serve with the toasted rolls, the lemon wedges and the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both boil potatoes, cauliflower, peas and carrot or green pepper until very soft and mash them into a masala of onion, ginger, garlic and tomato cooked in butter and oil with Kashmiri chili, turmeric and pav bhaji masala, finish with kasuri methi, cilantro, lemon and more butter, and toast the rolls in butter with a sprinkle of the masala. Swasthi's cooks the bell pepper into the masala, uses about 1 1/2 tbsp masala and simmers only 3 to 5 minutes once the vegetables go in. Cook with Manali starts with cumin seeds, adds tomato puree and a little hot chili powder, uses more garlic and simmers the bhaji 15 minutes. This one follows Swasthi's, boils the vegetables in a pot rather than a pressure cooker and keeps the green chili on the side.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Pav Bhaji Recipe (Mumbai Street Style)",
+   "url": "https://www.indianhealthyrecipes.com/pav-bhaji-recipe-how-to-make-pav-bhaji-step-by-step-pictures/",
+   "rating": 4.99,
+   "rating_count": 748,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Pav Bhaji Recipe (Mumbai Style)",
+   "url": "https://www.cookwithmanali.com/pav-bhaji/",
+   "rating": 4.89,
+   "rating_count": 53,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

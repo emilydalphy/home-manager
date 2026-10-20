@@ -1,0 +1,48 @@
+{
+ "dish_name": "Chicken Fajitas",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Ground cumin", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Chili powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Bell peppers", "qty": "3", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Avocados", "qty": "2", "category": "produce"},
+  {"item": "Small flour tortillas", "qty": "8", "category": "other"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy"}
+ ],
+ "instructions": [
+  "Squeeze one of the limes into a large shallow bowl. That should be about 2 tbsp of juice. Mince the garlic clove and finely chop 1 tbsp of the cilantro.",
+  "Add 2 tbsp of the olive oil, the garlic, the cilantro, the 1 1/2 tsp cumin, the 1/2 tsp chili powder and 1 tsp of the salt to the lime juice and stir it together.",
+  "Pat the chicken thighs dry with paper towels. Turn them in the marinade until they're coated all over, and leave them on the counter while you cut the vegetables, or up to 30 minutes.",
+  "Meanwhile, seed the 3 bell peppers and cut them into strips about 1/2 inch wide. Peel the onion, cut it in half and slice it thin.",
+  "Set a large heavy skillet over medium high and heat it until it starts to smoke. Add 1 tbsp of the olive oil, then lay in the chicken in one layer, letting the extra marinade drip back into the bowl. Stand back a little. It will spatter.",
+  "Cook the chicken for about 6 minutes, until the underside is deep golden with a few charred spots and lets go of the pan. Turn the pieces over and cook the other side for 5 to 6 minutes.",
+  "You're cooking the chicken to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left and the juices run clear. Move it to a plate, cover it loosely with foil and let it rest for 5 minutes.",
+  "Add the last 1 tbsp olive oil to the same pan, still over medium high. Add the peppers and onion, spread them out and leave them for about 1 minute so they char. Stir and keep cooking for 5 to 6 minutes, stirring every minute or so, until the onion is soft and the peppers are charred at the edges but still have a little bite. Sprinkle them with the last 1/4 tsp salt and the 1/4 tsp pepper.",
+  "While the vegetables cook, wrap the 8 tortillas in a damp paper towel and microwave them for 30 to 45 seconds, until they're warm and soft. Keep them wrapped in a clean kitchen towel.",
+  "Slice the 2 avocados. Chop a handful of the cilantro and cut the other lime into wedges.",
+  "Slice the chicken into strips and put it back into the pan with the vegetables. Toss it with any juices from the plate.",
+  "Taste a strip of chicken. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve the pan at the table with the warm tortillas, avocado, sour cream, chopped cilantro and lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both marinate boneless chicken thighs in lime juice, oil, garlic, cumin and salt, sear them hard in a hot skillet, rest and slice them, and char sliced peppers and onion over high heat. Cafe Delites, the lead, adds chili powder and cilantro to the marinade, gives it 30 minutes and cooks the vegetables in the chicken pan afterward. RecipeTin Eats adds orange juice and black pepper, marinates for 1 to 24 hours, cooks the vegetables in small batches in a second pan and serves them with sour cream and lime. This one follows the lead's short marinade and one pan, with RecipeTin Eats' sour cream and lime at the table.",
+ "sources": [
+  {"name": "Cafe Delites", "title": "Best Chicken Fajitas", "url": "https://cafedelites.com/chicken-fajitas/", "rating": 4.99, "rating_count": 58, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Chicken Fajitas", "url": "https://www.recipetineats.com/chicken-fajitas/", "rating": 4.94, "rating_count": 89, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

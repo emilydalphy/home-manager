@@ -1,0 +1,123 @@
+{
+ "dish_name": "Oeufs Cocotte",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 small carton",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "4 tbsp grated"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 390°F. Rub the insides of four 10 oz ramekins with a little butter and set them on a baking sheet.",
+  "Thinly slice the 8 oz mushrooms and mince the 2 garlic cloves. Strip and chop 2 tsp thyme leaves.",
+  "Melt the 2 tbsp butter in a large skillet over medium high. Add the mushrooms in an even layer and cook for about 3 minutes, stirring once or twice, until the edges turn golden.",
+  "Add the garlic, thyme, 1/4 tsp salt and 1/8 tsp pepper and cook for 1 minute, until the garlic smells fragrant.",
+  "Add the whole bag of spinach and stir for about 30 seconds, only until it wilts. Take the pan off the heat.",
+  "Divide the mushrooms and spinach between the ramekins and press a small dip into the middle of each. Crack 1 egg into each dip.",
+  "Spoon 1 tbsp cream over each egg, then grate the parmesan and scatter 1 tbsp over each one.",
+  "Bake for 12 to 15 minutes, until the whites are set and the yolks still jiggle when you nudge the sheet. Check at 12 minutes. Take them out a touch early. They keep cooking in the hot ramekins.",
+  "While they bake, slice the baguette and toast it. Finely chop 2 tsp chives.",
+  "Dust the eggs with the 1/8 tsp smoked paprika and scatter the chives on top. Serve hot with the toast."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bake eggs in buttered ramekins with cream over the top until the whites set and the yolks are still runny. RecipeTin Eats puts each egg on a bed of garlicky mushrooms and spinach, tops it with parmesan and bakes at 390°F without a water bath for 12 to 15 minutes. Food Faith Fitness and The Daily Meal keep it to eggs, cream and seasoning and bake in a water bath at 350°F, The Daily Meal under foil, for 12 to 20 minutes. All serve them with toast or bread for dipping.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Baked Eggs with Mushrooms (Shirred Eggs)",
+   "url": "https://www.recipetineats.com/shirred-eggs-baked-eggs/",
+   "rating": 5.0,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Faith Fitness",
+   "title": "Eggs en Cocotte",
+   "url": "https://www.foodfaithfitness.com/eggs-en-cocotte/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Daily Meal",
+   "title": "Basic Baked Eggs",
+   "url": "https://www.thedailymeal.com/recipes/basic-oeufs-en-cocotte-french-baked-eggs-recipe/",
+   "rating": 3.8,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

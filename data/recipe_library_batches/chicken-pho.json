@@ -1,0 +1,171 @@
+{
+ "dish_name": "Chicken Pho",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 110,
+ "ingredients": [
+  {
+   "item": "Bone-in skin-on chicken thighs",
+   "qty": "3 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Star anise",
+   "qty": "5 pods",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "8 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried flat rice noodles",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Bird's eye chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Hoisin sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the 2 onions in half. You can leave the skins on. Slice the ginger into coins about 1/3 inch thick, skin and all.",
+  "Heat the 1 tbsp oil in a large pot over high. Put the onions in cut side down with the ginger and leave them for 2 minutes, until the undersides are blackened in spots. Turn them over and char the other side for 2 minutes.",
+  "Pour in 8 cups water. Add the 3 lb chicken thighs, half the cilantro (stems and all), the 5 star anise, the cinnamon stick, the 4 cloves, the 2 tsp fennel seeds, the 2 tsp coriander seeds, the 8 tsp fish sauce and the 2 tbsp sugar. Bring it up to a simmer.",
+  "Turn the heat down to low so it barely bubbles, and set the lid on with a crack open. Simmer for 1 1/2 hours. Skim off the gray foam once or twice as it rises.",
+  "Meanwhile, finely slice 2 of the green onions. Rinse the 12 oz bean sprouts. Pick the leaves from the Thai basil, the mint and the rest of the cilantro.",
+  "Cut the 2 limes into wedges and slice the 2 chilies. Set them out on the table with the herbs, bean sprouts, hoisin and sriracha.",
+  "Lift the chicken out onto a plate. Pour the soup through a sieve into a clean pot. That should be about 6 cups. If you have more, boil it for a few minutes to bring it down. If you have less, top it up with water.",
+  "Stir the 3/4 tsp salt into the soup and keep it at a gentle simmer. It should taste a little salty. The noodles will dilute it.",
+  "When the chicken is cool enough to handle, pull the meat into shreds and throw away the skin and bones.",
+  "Cook the 14 oz noodles the way the packet says. Drain them very well.",
+  "Taste the soup. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Divide the noodles between 4 big bowls and pile the chicken on top. Ladle about 1 1/2 cups of the hot soup into each bowl and scatter over the green onions.",
+  "Serve with the bean sprouts, herbs, lime wedges, chilies, hoisin and sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions build a ginger and onion broth with whole spices, season it with fish sauce, and serve it over rice noodles with herbs, bean sprouts, lime and chilli on the side. RecipeTin Eats (the lead) chars the onion and ginger in the pot, simmers bone-in chicken thighs with star anise, cinnamon, cloves, fennel and coriander seed for 1 1/2 hours and salts the strained broth at the end. Delightful Plate dry-roasts ginger and shallots, poaches a whole chicken for 15 to 20 minutes, then returns the bones to simmer for another hour. Nadia Lim's quicker version poaches chicken breasts in store-bought stock with browned shallots and lemongrass for 15 minutes. This one follows the lead.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Vietnamese Chicken Pho soup (Pho Ga)",
+   "url": "https://www.recipetineats.com/vietnamese-chicken-pho-soup-pho-ga/",
+   "rating": 4.99,
+   "rating_count": 164,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delightful Plate",
+   "title": "Authentic Pho Ga (Vietnamese Chicken Noodle Soup)",
+   "url": "https://delightfulplate.com/authentic-pho-ga-vietnamese-chicken-noodle-soup/",
+   "rating": 4.83,
+   "rating_count": 28,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Nadia Lim",
+   "title": "Vietnamese chicken noodle soup (Pho Ga)",
+   "url": "https://nadialim.com/vietnamese-chicken-noodle-soup-pho-ga/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

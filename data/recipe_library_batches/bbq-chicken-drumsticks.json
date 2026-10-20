@@ -1,0 +1,112 @@
+{
+ "dish_name": "BBQ Chicken Drumsticks",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Chicken drumsticks",
+   "qty": "2.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Mustard powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 390°F (200°C) with a rack in the middle.",
+  "Pat the drumsticks dry with paper towels and sprinkle 1/2 tsp of the salt all over them.",
+  "In a 9 by 13 inch ceramic or glass baking dish, stir together the 3/4 cup ketchup, 3 tbsp vinegar, 3 tbsp brown sugar, 1 1/2 tsp Worcestershire, 1 1/2 tsp mustard powder, 1 1/2 tsp onion powder, the remaining 1/4 tsp salt and the 1/2 tsp pepper. Stir in 3/4 cup water until it's smooth.",
+  "Add the drumsticks and turn them in the sauce until they're coated all over. Lay them skin side down in a single layer.",
+  "Bake for 20 minutes. Take the dish out, turn each drumstick skin side up and spoon some of the sauce over the top.",
+  "Bake for another 30 minutes, until the sauce has thickened and the skin is starting to brown. You're cooking them to 175°F in the thickest part, so if you have a thermometer, check one there without touching the bone. No thermometer? Cut into the thickest drumstick next to the bone: it's done when the juices run clear and there's no pink left.",
+  "While they bake, thinly slice 2 of the green onions.",
+  "If there's a layer of fat sitting on the sauce, tilt the dish and spoon most of it off.",
+  "Turn the oven to broil on high. Spoon the sauce over the drumsticks again and broil for 2 to 3 minutes, until the sauce is bubbling and dark at the edges. Stay close. The sugar in the sauce can burn fast.",
+  "Taste the sauce in the dish. If it's flat, add a pinch more salt or a small splash of the vinegar.",
+  "Scatter the green onions over the drumsticks. Serve with the extra sauce from the dish spooned over."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bake the drumsticks first and let the barbecue sauce cook onto them, finishing until the sauce is sticky and caramelized. RecipeTin Eats (the lead) bakes the chicken right in a quick homemade sauce of ketchup, cider vinegar, brown sugar, Worcestershire, mustard powder and onion powder at 390°F, turning once, then broils it for a few minutes to glaze. Together as Family and Corrie Cooks rub the drumsticks with oil and a garlic, onion and paprika mix, bake them dry and brush on bottled sauce only for the last 10 to 25 minutes. This one follows the lead, sized for 2.5 lb of drumsticks, and finishes with green onions as the lead suggests.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Oven Baked BBQ Chicken - with quick homemade barbecue sauce",
+   "url": "https://www.recipetineats.com/oven-baked-bbq-chicken/",
+   "rating": 4.95,
+   "rating_count": 37,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Together as Family",
+   "title": "Oven Baked BBQ Chicken Drumsticks",
+   "url": "https://togetherasfamily.com/best-oven-baked-bbq-chicken-drumsticks-recipe/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Corrie Cooks",
+   "title": "Baked BBQ Chicken Drumsticks",
+   "url": "https://www.corriecooks.com/baked-bbq-chicken-drumsticks/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

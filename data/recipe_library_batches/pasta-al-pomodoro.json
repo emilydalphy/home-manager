@@ -1,0 +1,89 @@
+{
+ "dish_name": "Pasta al Pomodoro",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "2 pints",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp + 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with about 4 quarts of water, add 1 tbsp of the salt, cover it and bring it to a boil over high heat.",
+  "Meanwhile, halve the 2 pints of cherry tomatoes and thinly slice the 2 garlic cloves. Pick a big handful of basil leaves, about 1/4 cup, and grate 1/2 cup of the parmesan.",
+  "When the water boils, add the 12 oz spaghetti and stir for the first minute so it doesn't stick. Cook it for 1 minute less than the package says.",
+  "Meanwhile, heat the 3 tbsp olive oil in a large skillet over medium high. Add the garlic and stir for about 30 seconds, until it smells fragrant and only just starts to color.",
+  "Add the tomatoes and the remaining 1/2 tsp salt. Stand back a little. They'll spatter. Cook for 3 to 4 minutes, stirring, until they're hot and the skins start to split.",
+  "Press about half the tomatoes with the back of a spoon so their juice runs into the oil. Turn the heat to low.",
+  "Scoop out 1 cup of the pasta water. Lift the spaghetti straight into the skillet with tongs.",
+  "Pour in 3/4 cup of the pasta water and toss over medium high heat for 1 to 2 minutes, until the sauce thickens and clings to the spaghetti. Add a splash more of the water if it looks dry.",
+  "Take the pan off the heat. Tear in the basil and toss it through.",
+  "Taste it. If it's flat, add a pinch more salt and a grind of pepper.",
+  "Serve with the parmesan on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions flavor olive oil with garlic, cook fresh tomatoes in it only briefly, and finish the pasta in the pan with starchy cooking water and torn basil. RecipeTin Eats (the lead) warms halved cherry tomatoes in garlic oil and tosses the spaghetti through with about 3/4 cup of the pasta water, serving it with parmesan. Foodiecrush browns whole garlic cloves in the oil and lifts them out, simmers quartered tomatoes for 6 to 8 minutes until creamy, and skips the parmesan. This one follows the lead and presses some of the tomatoes so the sauce has more juice. RecipeTin's rating covers its whole page of eight simple Italian pastas, not this sauce alone, and Two Peas and Their Pod's and The Cookie Rookie's versions blocked the reader, so they were skipped.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "8 simple Italian Pasta Recipes (Fresh Tomato & Basil Sauce)",
+   "url": "https://www.recipetineats.com/quick-easy-pasta-recipes/",
+   "rating": 5.0,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Foodiecrush",
+   "title": "Quick and Authentic Pasta Pomodoro Sauce",
+   "url": "https://www.foodiecrush.com/pasta-pomodoro/",
+   "rating": 4.56,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

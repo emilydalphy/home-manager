@@ -1,0 +1,129 @@
+{
+ "dish_name": "Dolmades",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Grape leaves",
+   "qty": "1 jar (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or up to 3 days ahead: finely chop the onion. Heat 1/4 cup of the olive oil in a medium saucepan over medium low and add the onion.",
+  "Cook the onion for about 10 minutes, stirring now and then, until it's very soft and pale gold. Don't let it brown.",
+  "Meanwhile, squeeze the juice from 2 of the lemons. That should be about 1/2 cup.",
+  "Stir the 1/2 cup rice into the onion and cook for 1 minute. Add 1 cup water, half the lemon juice, the 1/2 tsp salt and the 1/4 tsp pepper.",
+  "Bring it to a boil, then turn the heat to low and simmer for 6 to 7 minutes, until the rice has soaked up the liquid. It will still be firm in the middle and finishes cooking in the leaves.",
+  "Take the pan off the heat. Chop 3 tbsp of the parsley, 1 tbsp of the mint and 1/4 cup of the dill and stir them into the rice. Taste it, and add a pinch more salt if it's flat. Spread it on a plate to cool, about 20 minutes.",
+  "Meanwhile, take the grape leaves out of the jar, rinse them well under cold water and drain them. Snip off any hard stems. Set aside the small and torn leaves for the pot.",
+  "Lay a leaf shiny side down with the stem end toward you. Put a heaped tablespoon of the filling near the stem end. Fold the bottom over the filling, fold in the sides and roll it up snugly but not tight. The rice swells as it cooks.",
+  "Keep going until the filling is used up. You should have about 20.",
+  "Line the bottom of a medium pot with half the small and torn leaves. Pack the dolmades in seam side down, close together, in one or two layers.",
+  "Pour 6 tbsp of the olive oil and the rest of the lemon juice over them. Cover them with the rest of the torn leaves, then add water until they're just covered, about 1 1/2 cups.",
+  "Set a heatproof plate upside down on top to hold them in place. Put the lid on and bring it to a boil over medium high.",
+  "Turn the heat to low and simmer, covered, for 35 to 40 minutes, until a leaf is tender when you bite it and the rice is soft.",
+  "Take the pot off the heat and leave the dolmades in it, lid on, for at least 30 minutes. They soak up most of the liquid as they sit.",
+  "Lift them into a container. Eat them at room temperature, or cover them and keep them in the fridge for up to 3 days.",
+  "To serve, cut the last lemon into wedges and drizzle the last 2 tbsp olive oil over the dolmades.",
+  "Serve at room temperature with the lemon wedges."
+ ],
+ "advance_prep_notes": "Cook them at least 2 hours ahead, or up to 3 days ahead, so they can cool.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15
+ ],
+ "method_notes": "All three versions soften onion in plenty of olive oil, par cook the rice with lemon and fresh herbs, roll it loosely in rinsed jarred leaves, and simmer the rolls under a plate in water, oil and lemon. Dimitra's Dishes keeps the filling to rice, onion, parsley, mint and dill, simmers them for 35 to 40 minutes and lets them rest in the pot to soak up the juices. Diane Kochilas adds a lot more onion and scallion, white wine, raisins and pine nuts, and The Happy Foodie adds lemon zest and lays lemon slices on top. This one follows the lead's simple herb filling and ratios.",
+ "sources": [
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Greek Stuffed Grape Leaves: Dolmadakia",
+   "url": "https://www.dimitrasdishes.com/dolmades/",
+   "rating": 4.5,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Diane Kochilas",
+   "title": "BEST Greek Vegetarian Stuffed Grape Leaves (Dolmades Yialantzi)",
+   "url": "https://www.dianekochilas.com/?p=42900",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Happy Foodie",
+   "title": "Ergon Foods' Dolmadakia, Stuffed Vine Leaves with Rice",
+   "url": "https://thehappyfoodie.co.uk/recipes/dolmadakia-stuffed-vine-leaves-with-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

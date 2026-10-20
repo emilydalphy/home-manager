@@ -1,0 +1,48 @@
+{
+ "dish_name": "Cheeseburger Pasta",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Lean ground beef", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Elbow macaroni", "qty": "1 box (16 oz)", "category": "pantry", "cook_qty": "10 oz"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Crushed tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Yellow mustard", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cheddar cheese", "qty": "8 oz", "category": "dairy", "cook_qty": "1 1/2 cups + 1/2 cup shredded"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Finely chop the onion and mince the 2 garlic cloves. Shred the 8 oz cheddar. That should be about 2 cups.",
+  "Heat the 1 tbsp olive oil in a large, deep skillet or Dutch oven over medium. Add the onion and cook for about 4 minutes, stirring now and then, until it's soft and see-through.",
+  "Turn the heat up to high and add the 1 lb beef with 1/2 tsp of the salt and the 1/2 tsp pepper. Break it up with a wooden spoon, then leave it alone for a couple of minutes so it browns. Keep stirring and breaking it up until there's no pink left and some bits are crusty and brown, about 5 minutes.",
+  "Turn the heat down to medium. Add the garlic, 2 tbsp tomato paste, 1 tsp chili powder, 1 tsp oregano and 1 tsp garlic powder. Stir for about 1 minute, until the paste turns a shade darker and the spices smell toasty.",
+  "Pour in the can of crushed tomatoes and the 1 1/2 cups broth, add the remaining 1/2 tsp salt and scrape up anything stuck to the bottom. Bring it to a boil.",
+  "Stir in 10 oz of the macaroni. Turn the heat down so it's at a gentle simmer, cover and cook for 8 to 10 minutes, stirring every few minutes so nothing catches on the bottom. It's ready when the pasta is tender with a little bite and it's still saucy. If it looks dry before the pasta is done, add a splash of water.",
+  "Take the pan off the heat. Stir in the 1 tbsp mustard and 1 1/2 cups of the cheddar until it melts into the sauce.",
+  "Scatter the last 1/2 cup cheddar over the top, cover and leave it for 2 minutes so it melts.",
+  "Thinly slice 2 of the green onions and scatter them over the top. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the hot sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions brown the beef with onion and garlic in one pot, cook dry pasta right in the liquid and stir the cheddar through at the end. RecipeTin Eats seasons it with chili powder, oregano, garlic powder, tomato paste and a little hot sauce, simmers macaroni in crushed tomato and broth for about 10 minutes, and melts mozzarella on top. The Dinner Bite cooks shell pasta in beef stock with chopped tomato and finishes it with milk, cheddar and burger sauce or yellow mustard. This follows RecipeTin Eats with less pasta for 4, all cheddar instead of the mozzarella, the hot sauce moved to the table and The Dinner Bite's mustard for the cheeseburger tang.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Cheeseburger Casserole (Homemade Hamburger Helper)", "url": "https://www.recipetineats.com/cheeseburger-casserole-homemade-hamburger-helper/", "rating": 4.86, "rating_count": 103, "read": true, "lead": true},
+  {"name": "The Dinner Bite", "title": "One Pot Cheeseburger Pasta", "url": "https://www.thedinnerbite.com/one-pot-cheeseburger-pasta/", "rating": 5, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

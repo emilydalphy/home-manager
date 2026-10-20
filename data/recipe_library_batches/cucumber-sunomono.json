@@ -1,0 +1,92 @@
+{
+ "dish_name": "Cucumber Sunomono",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 1,
+ "ingredients": [
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Dried wakame",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1/2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Stir the 1/4 cup rice vinegar, 2 tbsp sugar, 1/2 tsp of the salt and 1/2 tsp soy sauce together in a small microwave safe bowl. Microwave it for 20 to 30 seconds, then stir until the sugar has dissolved. Put it in the fridge to cool.",
+  "Cover the 1 tbsp wakame with cold water in a small bowl. Leave it for 5 minutes, until it's soft and bright green.",
+  "Meanwhile, peel the 4 cucumbers in stripes, leaving every other strip of skin on. Slice them into thin rounds.",
+  "Put the cucumber in a bowl, sprinkle the remaining 1 tsp salt over it and rub it in gently with your hands. Leave it for 5 minutes.",
+  "Squeeze the wakame hard to get the water out and put it in a serving bowl.",
+  "Squeeze the cucumber a handful at a time, getting out as much liquid as you can, and add it to the wakame. If you skip this, the dressing turns watery.",
+  "Pour the cooled dressing over, add the 1/2 tbsp sesame seeds and toss. Serve it cold, or keep it covered in the fridge for up to a day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions slice cucumber thin, salt it for a few minutes and squeeze it, then dress it in rice vinegar with a little soy, and two of them add rehydrated wakame. Just One Cookbook dissolves sugar and salt into the vinegar over heat and cools it, and finishes with sesame seeds. Tara's Multicultural Table whisks the same sweet dressing cold, and RecipeTin Japan skips the sugar for a dashi, mirin and soy dressing. This one follows Just One Cookbook's ratios, using Persian cucumbers since Japanese ones are hard to find.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Japanese Cucumber Salad (Sunomono)",
+   "url": "https://www.justonecookbook.com/sunomono/",
+   "rating": 4.66,
+   "rating_count": 154,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Cucumber and Seaweed Sunomono (Vinegar Dressing)",
+   "url": "https://japan.recipetineats.com/cucumber-and-seaweed-sunomono-vinegar-dressing/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Sunomono (Japanese Cucumber Salad)",
+   "url": "https://tarasmulticulturaltable.com/sunomono-japanese-vinegar-salad/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

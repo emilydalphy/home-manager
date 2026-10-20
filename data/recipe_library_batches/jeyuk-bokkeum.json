@@ -1,0 +1,49 @@
+{
+ "dish_name": "Jeyuk Bokkeum",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Boneless pork shoulder", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Asian pear", "qty": "1 small", "category": "produce"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 small piece", "category": "produce", "cook_qty": "a 1/2 inch piece"},
+  {"item": "Gochujang", "qty": "1 tub", "category": "pantry", "cook_qty": "4 1/2 tbsp"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Sesame seeds", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the pear and grate it finely into a large bowl, juice and all. Grate in half of one onion, 2 of the garlic cloves and a 1/2 inch piece of peeled ginger.",
+  "Stir in 4 1/2 tbsp gochujang, 3 tbsp brown sugar, 1 1/2 tbsp soy sauce and 1 tbsp toasted sesame oil until smooth.",
+  "Slice the 1.5 lb pork against the grain as thinly as you can, about 1/8 inch. If it's soft, 20 minutes in the freezer firms it up for slicing. Add it to the bowl and toss with your hands until every slice is coated. Leave it for 30 minutes.",
+  "Meanwhile, put 2 cups of rice in a pot, cover it with cold water and swirl it with your hand. Pour off the cloudy water and repeat three or four times, until the water is almost clear.",
+  "Add 2 1/4 cups fresh water to the rice and bring it to a boil over high heat. Cover the pot, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered while you cook the pork.",
+  "While the rice cooks, slice the rest of the onions into thin half moons. Mince the last garlic clove and thinly slice 2 green onions.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over high. Add the sliced onion and cook for 2 minutes, stirring, until it starts to soften and char at the edges. Add the garlic and cook for 30 seconds, until it smells fragrant. Transfer it all onto a plate.",
+  "Add 1 tbsp of the oil and half the pork, spread out in one layer. Leave it alone for 2 minutes, until the underside is dark and caramelized. Turn the heat down a little if it starts to smoke.",
+  "Stir and cook for 2 to 3 minutes, until there's no pink left when you cut a piece open. Move it to the plate with the onions.",
+  "Cook the rest of the pork the same way with the last 1 tbsp of oil.",
+  "Put the onions and all the pork back in the pan and toss for 1 minute, until it's all hot and glossy.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Scatter the green onions and 2 tsp sesame seeds over the top. Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three slice pork shoulder thin, coat it in a gochujang marinade with garlic, ginger, soy, sugar and sesame oil, and stir-fry it hot until it caramelizes. RecipeTin Eats sweetens and tenderizes the marinade with grated pear and onion, marinates for 30 minutes or overnight, and cooks sliced onion and garlic first before the pork goes in. Korean Bapsang uses twice the pork with a hotter marinade (gochugaru, rice wine and honey as well) and cooks it in two batches. Tara's Multicultural Table half-freezes the pork for slicing, adds rice vinegar and marinates at least an hour. This one follows RecipeTin's marinade scaled to 1.5 lb and cooks the pork in two batches so it browns.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Spicy Korean Pork Stir Fry", "url": "https://www.recipetineats.com/spicy-korean-pork-stir-fry/", "rating": 4.99, "rating_count": 70, "read": true, "lead": true},
+  {"name": "Korean Bapsang", "title": "Jeyuk Bokkeum (or Spicy Pork Bulgogi)", "url": "https://www.koreanbapsang.com/dweji-bulgogi-korean-spicy-pork-bbq/", "rating": 4.85, "rating_count": 208, "read": true, "lead": false},
+  {"name": "Tara's Multicultural Table", "title": "Jeyuk Bokkeum (Stir-Fried Spicy Pork)", "url": "https://tarasmulticulturaltable.com/jeyuk-bokkeum-stir-fried-spicy-pork/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

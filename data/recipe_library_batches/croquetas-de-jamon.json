@@ -1,0 +1,120 @@
+{
+ "dish_name": "Croquetas de Jamon",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Serrano ham",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Nutmeg",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: very finely dice the onion and the 4 oz ham.",
+  "Heat the 2 tbsp butter and 2 tbsp olive oil in a heavy saucepan over medium high. When the butter has melted, add the onion and a pinch of salt. Cook for 3 to 4 minutes, until the onion is soft and just starting to color, then grate in a pinch of nutmeg. Go easy on the salt. The ham is already salty.",
+  "Add the ham and cook for 30 seconds. Add 1/2 cup of the flour and stir without stopping for 2 to 3 minutes, until it turns light golden and smells toasty. Keep stirring, or the flour will burn.",
+  "Turn the heat down to medium. Pour in the 2 cups milk a splash at a time, stirring the whole time and letting each splash disappear before you add the next. This takes 10 to 15 minutes. It's ready when it's thick and pulls away from the sides of the pan as you stir.",
+  "Spread it in a lightly oiled dish, press plastic wrap right onto the surface, and refrigerate it for at least 4 hours, or overnight, until it's firm.",
+  "When you're ready to cook, set out three shallow bowls: the remaining 1/4 cup flour in the first, the egg beaten with a fork in the second, and the 1 cup breadcrumbs in the third.",
+  "With two spoons or damp hands, shape the cold filling into 12 small logs about 2 inches long.",
+  "Roll each log in the flour, then the egg, then the breadcrumbs, until it's coated all over.",
+  "To freeze some for later, lay the breaded croquetas on a tray in the freezer until hard, about 1 hour, then move them to a freezer bag. They keep for 3 months. Fry them straight from frozen and give them an extra minute or two.",
+  "Pour the 2 cups vegetable oil into a deep skillet or heavy pot, about an inch deep, and heat it over medium high. You're heating it to 350°F, so if you have a thermometer, check it there. No thermometer? Dip the end of one croqueta in: the oil is ready when it bubbles steadily right away.",
+  "Fry 4 croquetas at a time for 3 to 4 minutes, turning them halfway, until they're deep golden all over. Stand back a little. They can spatter. Lift them onto paper towels.",
+  "Let them cool for 2 minutes before you eat them. The middles stay very hot.",
+  "Serve them warm."
+ ],
+ "advance_prep_notes": "Make the filling the night before, or at least 4 hours ahead, so it chills firm.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "All three cook diced ham into a thick béchamel, chill it until firm, shape it, roll it in egg and breadcrumbs and fry it until golden. Spanish Sabores softens onion in butter and olive oil with nutmeg, toasts the flour with the ham until light brown, adds the milk very slowly over 15 to 20 minutes, and chills the dough at least 4 hours or overnight (or 30 minutes in the freezer spread thin on a sheet). It also says the breaded croquetas freeze for three months. Salted Mint simmers the béchamel much longer, about 40 minutes, and Spain on a Fork uses olive oil and garlic with a quicker, thinner sauce chilled 30 minutes in the freezer. This is the lead's recipe halved to make 12.",
+ "sources": [
+  {
+   "name": "Spanish Sabores",
+   "title": "Croquetas de Jamón Serrano Recipe",
+   "url": "https://spanishsabores.com/croquetas-de-jamon-serrano-recipe-traditional-spanish-ham-croquettes/",
+   "rating": 5.0,
+   "rating_count": 78,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "CRISPY Spanish Ham Croquettes (Croquetas de Jamón)",
+   "url": "https://spainonafork.com/crispy-spanish-ham-croquettes-croquetas-de-jamon-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Salted Mint",
+   "title": "Croquetas De Jamón",
+   "url": "https://saltedmint.com/croquetas-de-jamon/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

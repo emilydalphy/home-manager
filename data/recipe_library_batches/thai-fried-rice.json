@@ -1,0 +1,147 @@
+{
+ "dish_name": "Thai Fried Rice",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless pork loin chops",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "6"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The day before, or whenever you have time: cook the 2 cups jasmine rice the way you usually do. Spread it on a tray to cool, then cover it and refrigerate it. That should be about 6 cups. Leftover rice works the same.",
+  "Slice the 12 oz pork into thin strips, about 1/4 inch thick. Toss them with 1/4 tsp salt.",
+  "Stir 4 tbsp fish sauce, 3 tbsp oyster sauce and 2 tsp sugar together in a small bowl until the sugar dissolves.",
+  "Thinly slice the 3 chilies into another small bowl. Add the juice of 1 lime and the last 2 tbsp fish sauce, and put it on the table.",
+  "Dice the onion and mince the 4 garlic cloves. Cut 6 green onions into 1 1/2 inch pieces, keeping the white parts and the green parts separate.",
+  "Cut the other lime and the 2 tomatoes into wedges, and slice half the cucumber. Pick a handful of cilantro leaves.",
+  "Beat the 4 eggs in a bowl. Crumble the cold rice with your hands so there are no big clumps left.",
+  "Heat 3 tbsp oil in a large wok or 12 inch skillet over medium-high. Add the onion and stir-fry for 2 minutes, until it starts to soften. Add the garlic and stir for 20 seconds, until it smells fragrant.",
+  "Add the pork and the white parts of the green onions and stir-fry for 2 to 3 minutes. The pork is done when there's no pink left in the middle of a strip (145°F, if you have a thermometer).",
+  "Push everything to one side of the pan. Pour the eggs into the empty side and scramble them for about 30 seconds, until just set, then break them into small pieces.",
+  "Add the rice and pour the sauce over it. Stir-fry for 3 minutes, tossing and pressing out any clumps, until every grain is coated and hot. Stir in the green parts of the green onions halfway through.",
+  "Spread the rice out and leave it alone for 1 minute, so the bottom toasts a little. Stir it up.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Serve with the tomato and lime wedges, the cucumber slices and the cilantro, with the chili fish sauce on the side."
+ ],
+ "advance_prep_notes": "Cook the rice the day before and chill it (or use 6 cups of leftover rice).",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All three fry cold cooked rice hard and fast in one wok with garlic, the meat and scrambled egg, then season it at the end. RecipeTin Eats (written for shrimp or chicken) stir-fries garlic and onion, then the protein and green onion whites, scrambles the egg to one side and tosses the rice with fish sauce, oyster sauce and a little sugar, served with tomato, cucumber and cilantro. Once Upon a Chef uses ground pork with ginger, peas and broccoli and the same fish sauce and oyster sauce mix. Cooking with Nart seasons khao pad moo with soy and sweet soy, adds collard greens, and serves it with lime and prik nam pla (fish sauce with chilies). This one follows RecipeTin's order and ratios for a dinner of 4, with sliced pork and Nart's chili fish sauce on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Fried Rice",
+   "url": "https://www.recipetineats.com/thai-chicken-fried-rice/",
+   "rating": 4.95,
+   "rating_count": 60,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Thai-Style Pork Fried Rice",
+   "url": "https://www.onceuponachef.com/recipes/thai-pork-fried-rice.html",
+   "rating": 4.76,
+   "rating_count": 61,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking with Nart",
+   "title": "Thai Pork Fried Rice | Khao Pad Moo",
+   "url": "https://www.cookingwithnart.com/?p=8489",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,127 @@
+{
+ "dish_name": "Sloppy Joes",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Mustard powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Beef bouillon cubes",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 cube"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Hamburger buns",
+   "qty": "4",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion and dice the green pepper. Mince the 2 garlic cloves.",
+  "Melt the 1 tbsp butter in a large, deep skillet over medium high. Add the onion and pepper and cook for about 4 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Add the 1 lb beef and the 1/4 tsp salt. Break the beef up with a wooden spoon, then leave it alone for a couple of minutes so it browns. Keep stirring and breaking it up until there's no pink left and some bits are crusty, about 5 minutes.",
+  "Stir in 1 tbsp tomato paste and the 1 tsp mustard powder and cook for 1 minute, until the paste turns a shade darker.",
+  "Pour in the can of crushed tomatoes and add the 1/2 cup ketchup, 1 1/2 tbsp brown sugar, 2 tsp Worcestershire and the 1/4 tsp pepper. Crumble in 1 bouillon cube. Stir well and scrape up anything stuck to the bottom.",
+  "Turn the heat down to medium low and simmer, uncovered, for about 15 minutes, stirring every few minutes so it doesn't catch on the bottom. It's ready when it's thick rather than runny and a spoon dragged through it leaves a trail.",
+  "Meanwhile, heat the broiler. Split the 4 buns and lay them cut side up on a baking sheet. Broil them for 1 to 2 minutes, until golden. Watch them closely.",
+  "Taste the filling. If it's flat, add a pinch more salt.",
+  "Serve the filling spooned onto the toasted buns."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both cook onion and green pepper in butter, brown a pound of ground beef with them, then simmer it in a tomato, ketchup, brown sugar, Worcestershire and mustard sauce until thick and spoon it onto toasted buns. RecipeTin Eats (the lead) uses crushed tomatoes, a crumbled beef bouillon cube and tomato paste and simmers it covered for 30 minutes, or 15 minutes uncovered when you're in a hurry. Once Upon a Chef tenderizes leaner beef with baking soda first, uses canned tomato sauce, adds smoked paprika, cumin and oregano with a little hot sauce, and leaves out the ketchup and sugar. This one follows the lead's quicker uncovered simmer and adds the garlic after the vegetables soften rather than with the onion.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Sloppy Joes",
+   "url": "https://www.recipetineats.com/sloppy-joes/",
+   "rating": 5.0,
+   "rating_count": 54,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Homemade Sloppy Joes",
+   "url": "https://www.onceuponachef.com/recipes/sloppy-joes.html",
+   "rating": 4.82,
+   "rating_count": 194,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

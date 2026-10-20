@@ -1,0 +1,137 @@
+{
+ "dish_name": "Saag Gosht",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 100,
+ "ingredients": [
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Spinach",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Black cardamom pod",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Amchur",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the 1 1/2 lb lamb into 1 1/2 inch cubes, trimming off any thick pieces of fat. Pat them dry with paper towels and toss them with 1/2 tsp of the salt.",
+  "Finely chop the onion and the 2 tomatoes. Grate the ginger and mince the 5 garlic cloves. Thinly slice the green chili and put it in a small bowl for the table.",
+  "Heat 1 tbsp of the ghee in a heavy pot or Dutch oven over medium high. Add half the lamb and leave it until the underside is browned and lets go of the pot, about 3 minutes. Turn the pieces and brown the other sides for 2 to 3 minutes. Lift them onto a plate and brown the rest the same way.",
+  "Turn the heat down to medium and add the other 2 tbsp ghee and the 1/2 tsp cumin seeds. When they sizzle, after about 20 seconds, add the bay leaf, black cardamom and 3 cloves and stir for a few seconds.",
+  "Add the onion and cook for 6 to 8 minutes, stirring and scraping up the browned bits, until it's light golden.",
+  "Add the ginger and garlic and cook for 1 minute, until they stop smelling raw.",
+  "Crush the 2 tsp kasuri methi between your palms into the pot and stir in the 3/4 tsp amchur, 1/2 tsp chili powder and another 1/2 tsp of the salt. Stir for 30 seconds.",
+  "Add the tomatoes and cook for 5 minutes, mashing them with the spoon, until they're soft and pulpy. Stir in the 3/4 tsp garam masala and cook for 1 minute.",
+  "Return the lamb and any juices on the plate to the pot and pour in 1 1/2 cups water. Bring it to a boil, then cover, turn the heat to low and simmer for 1 hour to 1 hour 15 minutes, stirring now and then, until a piece of lamb breaks apart easily when you press it with a spoon. Add a splash of water if it starts to stick.",
+  "Meanwhile, wash the 2 bunches spinach well in a sink of cold water, lifting it out so the grit stays behind, and cut off the thick stems. Put it in a large pot with 1/4 cup water, cover and cook over medium for 3 to 4 minutes, until it's all wilted.",
+  "Blend the spinach with its cooking water until smooth.",
+  "When the lamb is tender, stir in the spinach puree. Simmer uncovered over medium low for 8 to 10 minutes, stirring now and then, until the sauce is thick and clings to the lamb.",
+  "Taste it. If it's flat, add the last 1/4 tsp salt, then a pinch more if it needs it.",
+  "Serve with naan or rice, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions puree the spinach separately and build a base of onion browned in fat, then ginger, garlic and spices, before the lamb and spinach come together. Easy Indian Cookbook blooms cumin, black cardamom, cloves and bay in ghee, adds kasuri methi, amchur, chili and a fresh tomato, browns the lamb in a second pan and simmers it only about 15 minutes before the spinach goes in. Food Republic grinds its onion base to a paste with tomato paste and simmers lamb shoulder for an hour until tender. This one follows the lead's spices and ratios in one pot, but braises shoulder for about an hour, which is the honest time for that cut.",
+ "sources": [
+  {
+   "name": "Easy Indian Cookbook",
+   "title": "Saag Gosht / Lamb Palak (Lamb Spinach Curry)",
+   "url": "https://easyindiancookbook.com/lamb-palak-saag-gosht/",
+   "rating": 5.0,
+   "rating_count": 261,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Republic",
+   "title": "Saag Gosht",
+   "url": "https://www.foodrepublic.com/recipes/saag-gosht/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

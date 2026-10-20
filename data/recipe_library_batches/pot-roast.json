@@ -1,0 +1,50 @@
+{
+ "dish_name": "Pot Roast",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 215,
+ "ingredients": [
+  {"item": "Boneless beef chuck roast", "qty": "3 lb", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Carrots", "qty": "4", "category": "produce"},
+  {"item": "Baby potatoes", "qty": "1 lb", "category": "produce"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup + 2 tbsp chopped"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Dry red wine", "qty": "1 bottle", "category": "other", "cook_qty": "3/4 cup"},
+  {"item": "Low-sodium beef broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3 cups"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce", "cook_qty": "4 sprigs"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 1/2 tbsp"}
+ ],
+ "instructions": [
+  "If you have time, season the roast up to 1 hour before you cook: sprinkle 1 1/4 tsp of the salt and 3/4 tsp of the pepper all over it and leave it on a plate on the counter.",
+  "Heat the oven to 325°F with a rack in the lower third. Meanwhile, coarsely chop the onion and the 3 garlic cloves. Peel the 4 carrots and cut them into 2 inch pieces, halve the 1 lb potatoes, and chop 1/4 cup of the parsley.",
+  "Pat the roast dry with paper towels. Heat the 1 tbsp olive oil in a large Dutch oven over medium high until it shimmers. Add the roast and leave it alone for 3 to 4 minutes, until the underside is deep brown and lets go of the pot. Stand back a little. It'll spatter.",
+  "Turn the roast and brown each of the other sides the same way, about 12 to 15 minutes in all. Move it to a plate.",
+  "Turn the heat down to medium and add the onion. Cook for 4 to 5 minutes, stirring now and then, until it's soft and golden. Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Stir in the 2 tbsp tomato paste and cook for 2 minutes, stirring, until it turns a shade darker.",
+  "Pour in the 3/4 cup wine and scrape up the browned bits from the bottom. Let it bubble for 2 to 3 minutes, until it has cooked down by about a quarter.",
+  "Add the 3 cups broth, the 2 bay leaves, 4 sprigs of the thyme, the chopped parsley and the remaining 1/4 tsp salt and 1/4 tsp pepper. Put the roast back in with any juices from the plate and bring it to a simmer.",
+  "Put the lid on and move the pot to the oven. Cook for 2 hours.",
+  "Take the pot out and tuck the carrots and potatoes around the roast, pushing them down into the liquid. Put the lid back on and cook for 1 hour, until the roast pulls apart easily with two forks and the vegetables are tender. If the meat still feels tough, give it another 30 minutes.",
+  "Lift the roast and vegetables onto a platter and cover them loosely with foil. Fish the bay leaves and thyme stems out of the pot.",
+  "Stir the 1 1/2 tbsp cornstarch with 1 1/2 tbsp cold water in a small cup until smooth. Set the pot over medium heat on the stove and bring the liquid to a simmer. Stir in the cornstarch mix and simmer for 1 to 2 minutes, until the gravy is thick enough to coat a spoon.",
+  "Taste the gravy. If it's flat, add a pinch more salt.",
+  "Pull the roast into big pieces with two forks. Chop 2 tbsp more of the parsley and scatter it over the top. Serve with the vegetables and the gravy."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions salt a chuck roast, sear it hard in a Dutch oven, soften onion and garlic in the same pot, cook tomato paste into it, deglaze with a cup of red wine and braise the roast in beef stock with thyme until it pulls apart. Natasha's Kitchen lets the salted roast sit for an hour, braises at 325°F for 3 to 4 hours with bay leaves, parsley and carrots in from the start, and thickens the liquid with cornstarch at the end. The Modern Proper uses 350°F, adds a spoonful of brown sugar and puts carrots and baby potatoes in for the last hour. This follows Natasha's Kitchen for a 3 lb roast for 4, with the potatoes and the later vegetable timing from The Modern Proper so they stay whole.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Classic Pot Roast", "url": "https://natashaskitchen.com/pot-roast/", "rating": 4.98, "rating_count": 110, "read": true, "lead": true},
+  {"name": "The Modern Proper", "title": "Classic Pot Roast Recipe (Stove Top, Crock-Pot, & Instant Pot)", "url": "https://themodernproper.com/classic-pot-roast", "rating": 5.0, "rating_count": 26, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

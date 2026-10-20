@@ -1,0 +1,43 @@
+{
+ "dish_name": "Banana Bread",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {"item": "Bananas", "qty": "3", "category": "produce"},
+  {"item": "Unsalted butter", "qty": "1/2 cup (1 stick)", "category": "dairy"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Baking soda", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Walnuts", "qty": "1 bag (8 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Raisins", "qty": "1 box", "category": "pantry", "cook_qty": "1/2 cup"}
+ ],
+ "instructions": [
+  "At least 30 minutes before you start, take the 1/2 cup butter out of the fridge so it softens.",
+  "Heat the oven to 350°F with a rack in the middle. Line a 9 by 5 inch loaf pan with parchment paper, leaving some hanging over the long sides.",
+  "Put the 1 cup walnuts in a dry skillet over medium heat and stir them constantly for 4 to 5 minutes, until they smell toasty and turn a shade darker. Transfer them onto a cutting board, let them cool for a few minutes, then chop them coarsely.",
+  "In a large bowl, beat the soft butter with the 3/4 cup sugar for about 2 minutes, using a hand mixer or a wooden spoon, until it's pale and fluffy.",
+  "Mash the 3 bananas on a plate with a fork until they look like chunky applesauce. Lightly beat the 2 eggs in a cup.",
+  "Add the bananas and eggs to the butter mixture and mix until they're blended in.",
+  "In another bowl, whisk together the 1 1/2 cups flour, the 1 tsp baking soda and the 1/2 tsp salt.",
+  "Add the flour mixture and the 1/2 tsp vanilla to the banana mixture and stir gently. Stop as soon as there's no dry flour left. Any more and the loaf comes out tough.",
+  "Fold in the walnuts and the 1/2 cup raisins. Scrape the batter into the pan and smooth the top.",
+  "Bake for 55 to 60 minutes, until the top is deep golden and cracked and a toothpick pushed into the center comes out clean.",
+  "Leave it in the pan for 10 minutes, then lift it out by the parchment onto a wire rack. Let it cool for at least 30 minutes before you slice it.",
+  "Wrap any leftover loaf and keep it at room temperature for up to 3 days, or freeze the slices in a bag for up to 3 months."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both mash very ripe bananas, mix them with sugar, eggs and butter, fold in flour with baking soda and salt, and bake a single loaf at 350°F until a skewer comes out clean. Natasha's Kitchen (the lead) creams softened butter with white sugar, uses 3 bananas, and folds in toasted walnuts and raisins, baking 55 to 60 minutes. RecipeTin Eats uses 4 bananas, brown sugar, melted butter with oil and sour cream, an extra yolk, and cinnamon and allspice, baking it 70 minutes. This one follows the lead but lines the pan with parchment instead of greasing and flouring it.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Moist Banana Bread Recipe", "url": "https://natashaskitchen.com/banana-bread-recipe-video/", "rating": 5.0, "rating_count": 7088, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "JB's Banana Bread", "url": "https://www.recipetineats.com/banana-bread/", "rating": 5.0, "rating_count": 291, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

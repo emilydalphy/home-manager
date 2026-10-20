@@ -1,0 +1,113 @@
+{
+ "dish_name": "Pinchos Morunos",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup + 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "In the morning, or at least 2 hours ahead: toast the 1 tsp cumin seeds and 1 tsp coriander seeds in a dry skillet over medium for about 1 minute, until they smell toasty and start to pop. Transfer them into a mortar, or into a zip bag, and crush them with the pestle or a rolling pin.",
+  "Mince 3 of the garlic cloves into a large bowl. Squeeze in 2 tbsp juice from half the lemon. Add the crushed seeds, the 1 1/2 tsp smoked paprika, the 1 tsp oregano, the 1 tsp salt, the 1/2 tsp pepper and 1/4 cup of the olive oil, and stir it into a paste.",
+  "Trim any thin silvery skin off the 1.5 lb pork and cut it into 1 inch cubes. Toss the cubes in the paste until they're coated all over, then cover the bowl and put it in the fridge.",
+  "About 30 minutes before you cook, put 8 wooden skewers in a dish of water to soak, and take the pork out of the fridge.",
+  "Meanwhile, grate the last garlic clove into 1/2 cup mayonnaise and stir in a squeeze of juice from the other half of the lemon. Cut what's left of that lemon half into wedges.",
+  "Thread the pork onto the skewers, leaving a little space between the pieces.",
+  "Heat a grill or a grill pan over high until it's very hot, and brush it with the last 1 tbsp of olive oil.",
+  "Lay the skewers on and leave them for 3 to 4 minutes, until the underside is charred in spots and lets go easily. Turn them and cook the other side for 3 to 4 minutes.",
+  "You're cooking them to 145°F in the middle, so if you have a thermometer, check a thick piece. No thermometer? Cut into one: it's done when the inside is a pale blush pink and the juice runs clear.",
+  "Move the skewers to a plate and let them rest for 3 minutes. Taste a piece. If it's flat, sprinkle on a little salt and squeeze over a lemon wedge.",
+  "Serve with crusty bread, the garlic mayo and the lemon wedges."
+ ],
+ "advance_prep_notes": "Marinate the pork in the morning, or at least 2 hours ahead.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Both versions marinate cubes of pork in cumin, coriander, paprika, garlic, oregano, lemon juice and olive oil for at least 2 hours, then thread them on skewers and cook them fast over high heat. Spanish Fiestas grinds whole cumin and coriander seeds, keeps the marinade to those few spices and suggests marinating overnight. Searching for Spice uses ground spices with smoked paprika, chilli powder, dried parsley and a pinch of saffron, and marinates for 4 to 24 hours. This one follows Spanish Fiestas with the seeds toasted first, leaves out the chilli so it stays mild, and adds a quick garlic mayo for the table. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Spanish Fiestas",
+   "title": "Pinchos Morunos Recipe | How to Make Spanish Pork Kebabs",
+   "url": "https://www.spanish-fiestas.com/recipes/pinchos-morunos/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Searching for Spice",
+   "title": "Pinchos Morunos - Spanish Pork Skewers",
+   "url": "https://searchingforspice.com/pinchos-morunos-spanish-pork-skewers/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,51 @@
+{
+ "dish_name": "Chicken Tenders",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Chicken tenderloins", "qty": "1.75 lb", "category": "meat/seafood"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tbsp chopped"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Panko breadcrumbs", "qty": "1 cup", "category": "pantry"},
+  {"item": "Italian breadcrumbs", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Parmesan cheese", "qty": "1/4 cup", "category": "dairy"},
+  {"item": "Paprika", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Onion powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Greek yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Honey", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Brush a large rimmed baking sheet with 1 tbsp of the olive oil.",
+  "Finely chop 1 tbsp of the parsley and mince the 2 garlic cloves. Squeeze 2 tbsp juice from the lemon and cut the rest into wedges.",
+  "In a large bowl, whisk the egg with 2 tbsp of the olive oil, the 2 tbsp lemon juice, the parsley, the garlic, 3/4 tsp salt and 1/4 tsp pepper.",
+  "Pat the 1.75 lb chicken dry with paper towels and add it to the bowl. Turn the pieces until they're all coated and leave them for 5 minutes.",
+  "Meanwhile, mix the coating in a shallow dish: the 1 cup panko, 1/2 cup Italian breadcrumbs, 1/4 cup parmesan, 1 tsp paprika, 1/2 tsp garlic powder and 1/2 tsp onion powder.",
+  "Lift the tenders out of the egg one at a time, let the extra drip off and lay each one in the crumbs. Press the crumbs on firmly on both sides and set it on the baking sheet. Leave a little space between them.",
+  "Drizzle the last 1 tbsp olive oil over the tops. Bake for 10 minutes.",
+  "Meanwhile, make the dip. Stir the 1/2 cup Greek yogurt with 2 tbsp Dijon and 1 tbsp honey and a pinch of salt.",
+  "Flip the tenders with tongs and bake the other side for 5 to 10 minutes, until the crumbs are golden. You're cooking them to 160°F in the middle, so if you have a thermometer, check the thickest one. No thermometer? Cut into the thickest one: it's done when there's no pink left.",
+  "For extra color, turn the oven to broil and give them 2 minutes. Stay by the oven. The crumbs go from golden to burnt quickly.",
+  "Taste one. If it's flat, sprinkle a pinch more salt over the hot tenders, or add a squeeze of the lemon.",
+  "Serve with the honey mustard dip and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions dry the chicken, coat it in egg and then a seasoned crumb, and cook it until golden and cooked through. Cafe Delites bakes them at 400°F after a short soak in egg whisked with olive oil, lemon, garlic and parsley, using panko, regular breadcrumbs and parmesan with paprika, garlic and onion powder, and broils them at the end for color. Natasha's Kitchen pounds the tenders thin and pan fries them in a quarter inch of oil after an egg, mayonnaise and milk wash and Italian breadcrumbs. Well Plated soaks the chicken in buttermilk, bakes it on a rack and serves a dip of Greek yogurt, Dijon and honey. This follows Cafe Delites and borrows Well Plated's honey mustard dip.",
+ "sources": [
+  {"name": "Cafe Delites", "title": "Crispy Chicken Tenders", "url": "https://cafedelites.com/crispy-chicken-tenders/", "rating": 4.98, "rating_count": 45, "read": true, "lead": true},
+  {"name": "Natasha's Kitchen", "title": "Otbivnaya (Otbivni) Chicken Tenders", "url": "https://natashaskitchen.com/otbivnaya-otbivni-chicken-tenders/", "rating": 5, "rating_count": 22, "read": true, "lead": false},
+  {"name": "Well Plated", "title": "Chicken Tenders Recipe", "url": "https://www.wellplated.com/honey-mustard-chicken-tenders/", "rating": 4.6, "rating_count": 15, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

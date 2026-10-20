@@ -1,0 +1,47 @@
+{
+ "dish_name": "Pepperoni Pizza",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Active dry yeast", "qty": "1 packet (1/4 oz)", "category": "pantry", "cook_qty": "2 1/4 tsp"},
+  {"item": "Honey", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Bread flour", "qty": "3 1/2 cups", "category": "pantry"},
+  {"item": "Pizza sauce", "qty": "1 jar (14 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Low-moisture mozzarella", "qty": "1 lb", "category": "dairy", "cook_qty": "4 cups grated"},
+  {"item": "Sliced pepperoni", "qty": "1 package (6 oz)", "category": "meat/seafood"}
+ ],
+ "instructions": [
+  "At least 2 hours before dinner, make the dough. Pour 1 cup warm water into a large bowl. It should be 107 to 110°F, or about as warm as a bath. Stir in the 2 1/4 tsp yeast and 1 tbsp honey and leave it for 5 to 10 minutes, until it's foamy on top. If it doesn't foam, the yeast is dead, so start again with fresh yeast.",
+  "Add the 1 tsp salt, 2 tbsp of the olive oil and 1 1/2 cups of the flour. Stir until it's smooth.",
+  "Add another 1 1/2 cups of the flour a little at a time, stirring, until it comes together into a soft dough. It should feel a little tacky but not stick to your fingers. If it sticks, work in up to 1/4 cup more of the flour.",
+  "Dust the counter with a little of the flour and knead the dough for about 8 minutes, until it's smooth and the bowl is mostly clean. A stand mixer with a dough hook takes about 6 minutes on low.",
+  "Rub the bowl and the dough with a little of the olive oil, put the dough back in, cover it with plastic wrap and leave it somewhere warm for 1 to 2 hours, until it's doubled.",
+  "About 45 minutes before you want to eat, put a pizza stone on the middle rack, or a baking sheet turned upside down, and heat the oven to 475°F. Give it at least 30 minutes to get hot.",
+  "Meanwhile, grate the 1 lb mozzarella. That should be about 4 cups.",
+  "Taste the pizza sauce. If it's flat, stir in a pinch of salt.",
+  "Transfer the dough onto a floured counter and cut it in half.",
+  "Lay a sheet of parchment on the counter and stretch one half out on it into a 12 inch round, working from the middle out with your fingertips and leaving the edge a little thicker. If it keeps shrinking back, leave it for 5 minutes and try again.",
+  "Spread half the sauce over it, about 3/4 cup, leaving a small border bare. Scatter 2 cups of the mozzarella over the sauce and lay half the pepperoni on top, about 35 slices.",
+  "Brush the bare crust with half the rest of the olive oil.",
+  "Slide the pizza on its parchment onto the hot stone. Bake for 9 to 12 minutes, until the cheese is melted and bubbly and the crust is golden brown.",
+  "While it bakes, stretch and top the second pizza the same way on a fresh sheet of parchment, with the rest of the sauce, mozzarella, pepperoni and olive oil.",
+  "Slide the first pizza onto a cutting board and pull out the parchment. Put the second pizza in to bake the same way.",
+  "Let the first pizza sit for 2 minutes, then cut it into 8 slices. Cut the second one the same way when it comes out.",
+  "Serve them hot."
+ ],
+ "advance_prep_notes": "make the dough at least 2 hours ahead so it has time to rise",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5],
+ "method_notes": "Lauren's Latest leads now. Oh Sweet Basil, which led before, is rated 3.3 from 39 ratings, under the 4.0 a version needs to lead, and no version found had 20 or more ratings at 4.0 or higher (Cooking with Curls is rated 4.7 from only 3), so the first version read that isn't rated low leads. The recipe now follows Lauren's Latest: a bread flour dough started with honey and proofed yeast, two 12 inch pizzas with about 3/4 cup sauce, 2 cups mozzarella and 35 slices of pepperoni each, olive oil brushed on the crust and a 9 to 12 minute bake at 475°F on a hot stone. Oh Sweet Basil's Parmesan, Italian seasoning and garlic butter crust are gone, and so are the red pepper flakes, which no version called for.",
+ "sources": [
+  {"name": "Lauren's Latest", "title": "Pepperoni Pizza Recipe with Homemade Pizza Dough", "url": "https://laurenslatest.com/pepperoni-pizza-recipe/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Oh Sweet Basil", "title": "Perfect Pepperoni Pizza Recipe", "url": "https://ohsweetbasil.com/pepperoni-pizza-recipe/", "rating": 3.34, "rating_count": 39, "read": true, "lead": false},
+  {"name": "Cooking with Curls", "title": "Homemade Pepperoni Pizza", "url": "https://cookingwithcurls.com/2018/04/15/homemade-pepperoni-pizza/", "rating": 4.67, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,89 @@
+{
+ "dish_name": "Sigara Boregi",
+ "cuisine": "Turkish",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Yufka sheets",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "3 sheets"
+  },
+  {
+   "item": "Feta",
+   "qty": "1 block (7 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Crumble the block of feta into a bowl with a fork and stir in 1 cup of the mozzarella.",
+  "Finely chop 1 cup of the parsley leaves, 2 tbsp of the mint and 2 tbsp of the dill. Add them to the cheese with the 1/2 tsp pepper and mix well.",
+  "Stack the 3 yufka sheets and cut them into 8 wedges, like a pizza, so you have 24 triangles. Keep them under a damp towel while you work, or the edges dry out and crack. If you can't find yufka, 24 square spring roll wrappers work the same way.",
+  "Lay one triangle with the point facing away from you. Spread a heaped tablespoon of the filling in a thin line along the wide end, leaving a little gap at each side.",
+  "Fold the wide end over the filling, fold in both sides, then roll it up firmly toward the point. Wet the tip with a dab of water and press it down to seal. Roll the rest the same way. Don't overfill them, or the cheese leaks out in the oil.",
+  "To freeze some for later, lay them on a lined tray so they aren't touching and freeze until hard, about 2 hours. Then bag them. They keep for a month, and you fry them straight from frozen.",
+  "Pour the 1/2 cup oil into a large nonstick skillet and heat it over medium. You're aiming for 365°F, so if you have a thermometer, check it there. No thermometer? Drop in a scrap of pastry. It should sizzle right away and turn golden in about 30 seconds.",
+  "Fry the rolls in batches with room between them, turning them with tongs, until they're crisp and golden all over, 2 to 3 minutes. Give frozen ones about a minute longer. Stand back a little. The cheese can spatter.",
+  "Lift them onto paper towels to drain, then fry the next batch.",
+  "Serve them warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions roll a feta filling with a melting cheese and fresh herbs into thin pastry, seal the tip with a little water or a flour paste, and fry them in hot oil until golden. Cooking Gorgeous cuts three yufka sheets into 24 triangles and adds parsley, mint and dill to feta and halloumi, while Hungry Paprikas uses square spring roll wrappers, feta, mozzarella, parsley and chives and freezes the rolled pastries to fry from frozen. This follows Cooking Gorgeous with mozzarella as the melting cheese, and keeps the freezer step from Hungry Paprikas. Cooking Gorgeous leads with 5.0 from 22 ratings.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Sigara Boregi - Turkish Cheese Rolls",
+   "url": "https://cookingorgeous.com/blog/turkish-rolls-sigara-boregi/",
+   "rating": 5.0,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry Paprikas",
+   "title": "Sigara Boregi",
+   "url": "https://www.hungrypaprikas.com/sigara-boregi/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

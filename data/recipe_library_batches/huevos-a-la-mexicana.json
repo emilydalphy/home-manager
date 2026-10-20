@@ -1,0 +1,116 @@
+{
+ "dish_name": "Huevos a la Mexicana",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeños",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion. Thinly slice the white parts of 4 green onions.",
+  "Stem and seed the 3 jalapeños and chop them fine.",
+  "Core the 4 tomatoes, scoop out the seeds and cut them into small dice.",
+  "Crack the 8 eggs into a bowl, add 1/2 tsp of the salt and beat them lightly with a fork.",
+  "Pick a big handful of cilantro leaves.",
+  "Halve, pit and slice the 2 avocados.",
+  "Warm the 8 tortillas in a large dry nonstick skillet over medium, about 30 seconds a side, and stack them in a clean kitchen towel.",
+  "Add the 2 tbsp oil to the same skillet. Add the onion, the green onions and 1/2 tsp of the salt and cook for 3 to 4 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Add the jalapeños and cook for 1 minute.",
+  "Add the tomatoes and the last 1/2 tsp salt. Cook for 2 to 3 minutes, stirring, until the tomatoes soften and smell sweet.",
+  "Turn the heat down to medium low and pour in the eggs. Stir them through the vegetables.",
+  "Every 20 seconds or so, fold the cooked egg from the edges into the middle. After 2 to 3 minutes they should be almost set and still look moist. Take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Lay 2 tortillas on each warm plate and spoon the eggs over them. Top them with the avocado and the cilantro.",
+  "Serve with the hot sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Grantourismo's version leads now. Mexican Food Journal, which led before, is rated 3.8 from 6 ratings, under the 4.0 a version needs to lead, and no version found had 20 or more ratings, so the first version read that isn't rated low leads. The recipe now follows Grantourismo: onion and the white parts of green onion softened in oil first, the chiles a minute later, then seeded tomatoes, and the eggs folded in gently over medium low until almost set, spooned onto warm tortillas with avocado and cilantro and hot sauce on the side. The garlic and the refried beans from the old lead are gone, and it uses 3 seeded jalapeños rather than doubling the lead's 3 green chiles, so the eggs stay mild and the heat is at the table.",
+ "sources": [
+  {
+   "name": "Grantourismo",
+   "title": "Huevos a la Mexicana Recipe",
+   "url": "https://grantourismotravels.com/huevos-a-la-mexicana-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexican Food Journal",
+   "title": "Huevo a la Mexicana Recipe",
+   "url": "https://mexicanfoodjournal.com/huevo-a-la-mexicana/",
+   "rating": 3.84,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kitchen Gidget",
+   "title": "Huevos a la Mexicana",
+   "url": "https://www.kitchengidget.com/huevos-a-la-mexicana/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

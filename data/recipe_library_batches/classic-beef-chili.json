@@ -1,0 +1,52 @@
+{
+ "dish_name": "Classic Beef Chili",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {"item": "Ground beef", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Ground cumin", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Chili powder", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Beef broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Tomato sauce", "qty": "2 cans (8 oz)", "category": "pantry"},
+  {"item": "Diced tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Red kidney beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sour cream", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Shredded cheddar", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Chop the onion and mince the 3 garlic cloves. Drain the kidney beans.",
+  "Heat the 1 tbsp oil in a large pot or Dutch oven over medium high. Add the 1 lb beef, sprinkle 1/2 tsp of the salt over it and break it into a few big pieces.",
+  "Leave it alone for 3 to 4 minutes, until the bottom is well browned. Then break it up with a spoon and cook for another 4 minutes or so, until there's no pink left.",
+  "If there's a lot of fat in the pot, spoon it off, leaving about 1 tbsp behind.",
+  "Turn the heat to medium, add the onion and cook for about 5 minutes, stirring now and then, until it's soft.",
+  "Add the garlic and the 2 tbsp tomato paste and stir for 1 minute, until the paste turns a shade darker.",
+  "Add the 2 tbsp cumin, 1 tbsp chili powder, 1/2 tsp paprika, 1 1/2 tbsp sugar and 1/4 tsp pepper. Stir for about 30 seconds, until the spices smell toasty.",
+  "Pour in the 1 1/2 cups broth and scrape up the brown bits on the bottom of the pot. Add both cans of tomato sauce, the diced tomatoes with their juice, the beans and the remaining 1/2 tsp salt.",
+  "Bring it to a boil, then turn the heat down so it simmers gently. Cook it uncovered for 30 minutes, stirring every 10 minutes or so, until it's thick.",
+  "Meanwhile, thinly slice the green onions.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the 1/2 cup sour cream, the 1 cup cheddar and the green onions on top.",
+  "To freeze the leftovers, let them cool, then pack them into containers and freeze for up to 3 months. Thaw it overnight in the fridge and reheat it over medium low with a splash of water."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lil' Luna leads with a quick weeknight chili: a pound of browned beef, cumin, chili powder, garlic powder, garlic salt, paprika and a little sugar, then tomato sauce, diced tomatoes, kidney beans and beef broth, simmered uncovered 25 to 30 minutes and topped with sour cream, cheese and green onions. Once Upon a Chef goes further with 2 1/2 lb beef, onion, garlic and bell pepper, ancho and chipotle powders, tomato paste and cornmeal, and simmers it covered for 2 hours. This keeps the lead's spice blend and simmer, which it calls 6 servings, as 4 dinner bowls, and borrows the onion, fresh garlic and fried tomato paste from Once Upon a Chef in place of the garlic powder and garlic salt.",
+ "sources": [
+  {"name": "Lil' Luna", "title": "Easy Chili Recipe", "url": "https://lilluna.com/best-chili-recipe/", "rating": 5.0, "rating_count": 83, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Classic Beef Chili", "url": "https://www.onceuponachef.com/recipes/classic-beef-chili.html", "rating": 4.86, "rating_count": 361, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

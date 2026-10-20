@@ -1,0 +1,49 @@
+{
+ "dish_name": "Chicken Chow Mein",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Boneless skinless chicken breasts", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Chow mein noodles", "qty": "12 oz", "category": "pantry"},
+  {"item": "Green cabbage", "qty": "1 small head", "category": "produce"},
+  {"item": "Carrot", "qty": "1", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Low-sodium soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Chicken broth", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil for the noodles.",
+  "Meanwhile, whisk together 1/4 cup oyster sauce, 3 tbsp low-sodium soy sauce, 1 tbsp sesame oil, 1/2 cup chicken broth, 1 tbsp cornstarch and 1 tbsp sugar in a small bowl. This is the sauce.",
+  "Thinly shred about a quarter of the cabbage, enough for 3 cups. Peel the carrot and cut it into thin matchsticks. Mince the 3 garlic cloves. Cut 4 of the green onions into 1 inch pieces, keeping the white and green parts apart.",
+  "Slice the 1 lb chicken breasts into strips about 1/4 inch thick. Pat them dry and sprinkle them with the 1/4 tsp salt.",
+  "Cook the 12 oz noodles in the boiling water for 1 minute less than the package says. Drain them, rinse them under cold water and shake off as much water as you can.",
+  "Heat 2 tbsp of the oil in a large wok or skillet over medium-high until it shimmers. Add the chicken in one layer and leave it for 2 minutes, until it's golden underneath. Stir it and cook for 2 to 3 minutes, until it's golden all over.",
+  "You're cooking the chicken to 160°F, so if you have a thermometer, check the thickest strip. No thermometer? Cut one open: it's done when there's no pink left. Move it to a plate.",
+  "Add the last 1 tbsp oil to the pan with the cabbage, carrot and white parts of the green onions. Stir-fry for 3 to 4 minutes, until the cabbage softens and turns a little see-through.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the noodles and chicken. Stir the sauce, pour it over and toss everything with tongs for about 2 minutes, until the sauce thickens and coats the noodles.",
+  "Toss in the green parts of the green onions.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Serve it hot, straight from the pan."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown thin strips of chicken, stir-fry cabbage, carrot and green onion with garlic, then toss in boiled chow mein noodles with a soy and oyster sauce mixture. Natasha's Kitchen, the lead, sears the chicken first and sets it aside, and makes the sauce with chicken broth, cornstarch, sugar and 3 tbsp of untoasted sesame oil. RecipeTin Eats marinates the chicken in a spoonful of the sauce, adds Chinese cooking wine and bean sprouts, and stir-fries everything in under 5 minutes, and Once Upon a Chef adds celery and browns the vegetables for 8 minutes. This one follows Natasha's amounts for 4 and uses 1 tbsp toasted sesame oil, as Once Upon a Chef does.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Chicken Chow Mein with the Best Chow Mein Sauce", "url": "https://natashaskitchen.com/chicken-chow-mein/", "rating": 4.95, "rating_count": 1242, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Chow Mein", "url": "https://www.recipetineats.com/chicken-chow-mein/", "rating": 4.97, "rating_count": 359, "read": true, "lead": false},
+  {"name": "Once Upon a Chef", "title": "Chicken Chow Mein", "url": "https://www.onceuponachef.com/recipes/chicken-chow-mein.html", "rating": 4.64, "rating_count": 47, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

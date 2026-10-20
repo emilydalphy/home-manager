@@ -1,0 +1,153 @@
+{
+ "dish_name": "Lentejas con Chorizo",
+ "cuisine": "Spanish",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Brown lentils",
+   "qty": "1 bag (1 lb)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Spanish chorizo",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "2 cartons (32 oz)",
+   "category": "pantry",
+   "cook_qty": "6 cups"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of the lentils in a sieve under cold water and pick out any small stones.",
+  "Finely chop the onion and both peppers. Peel the carrot and slice it thin. Mince the 4 garlic cloves.",
+  "Peel the potato and cut it into 3/4 inch pieces. Halve the 2 tomatoes and grate the cut sides on the large holes of a box grater into a bowl, then throw away the skins.",
+  "Slice the 8 oz chorizo into rounds about 1/2 inch thick.",
+  "Heat the 2 tbsp oil in a large pot over medium. Add the chorizo and cook for 3 to 4 minutes, stirring now and then, until the edges brown and the oil turns orange.",
+  "Add the onion, the peppers and the carrot. Cook for 6 to 8 minutes, stirring now and then, until they're soft.",
+  "Add the garlic and cook for 30 seconds, until it smells fragrant. Stir in the 1 tsp paprika and add the grated tomato right after it, so the paprika doesn't burn.",
+  "Cook the tomato for about 3 minutes, until it thickens and turns a shade darker.",
+  "Add the lentils, the potato, 6 cups of the broth and the bay leaf. Turn the heat up to high and bring it to a boil.",
+  "Cover the pot and turn the heat down low. Simmer for 30 to 35 minutes, stirring once or twice, until the lentils are soft and a piece of potato breaks when you press it against the side of the pot.",
+  "Take out the bay leaf. Stir in the 3/4 tsp salt, the 1/4 tsp pepper and 1 tbsp of the vinegar.",
+  "Chop a small handful of the parsley and scatter it over the pot.",
+  "Taste it. If it's flat, add a pinch more salt first, then a few more drops of vinegar.",
+  "Serve in bowls with the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions use brown lentils with Spanish chorizo, onion, grated tomato and paprika, and simmer them until soft. Spain on a Fork (the lead) browns sliced chorizo first, softens peppers, carrot and onion in its orange oil, cooks paprika and tomato into a quick sofrito, then simmers the lentils with potato and bay and salts only at the end. Spanish Sabores cooks the lentils separately with a ham bone and stirs in a slow sofrito, and Recipes from Europe adds pork ribs and chard. This one follows the lead with a little more lentil for a dinner portion and finishes with a splash of sherry vinegar. It keeps well and is even better the next day, reheated with a splash of water. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Lentil Stew with Chorizo",
+   "url": "https://spainonafork.com/spanish-lentil-stew-with-chorizo-recipe/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spanish Sabores",
+   "title": "Lentejas con Chorizo Recipe",
+   "url": "https://spanishsabores.com/lentejas-con-chorizo-recipe-simple-spanish-lentil-soup/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes from Europe",
+   "title": "Spanish Lentil Stew with Chorizo and Pork Ribs",
+   "url": "https://www.recipesfromeurope.com/spanish-lentil-stew/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

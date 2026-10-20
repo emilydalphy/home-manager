@@ -1,0 +1,159 @@
+{
+ "dish_name": "Chicken Cacciatore",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 80,
+ "ingredients": [
+  {
+   "item": "Bone-in skin-on chicken thighs",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried rosemary",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1/2 cup",
+   "category": "other"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the 2 lb chicken thighs dry with paper towels. Sprinkle them all over with 1 tsp of the salt and 1/4 tsp of the black pepper.",
+  "Slice the 8 oz mushrooms. Dice the onion and both peppers into pieces about 1/2 inch across. Mince the 4 garlic cloves.",
+  "Heat 2 tbsp of the olive oil in a deep 12 inch skillet with a lid, or a Dutch oven, over medium high until it shimmers. Lay the chicken in skin side down and leave it alone for 5 to 6 minutes, until the skin is deep golden and lets go of the pan. Stand back a little. It'll spatter.",
+  "Flip the thighs and cook the other side for 4 minutes. Move them to a plate.",
+  "Spoon off all but a thin layer of the fat. Add the last 1 tbsp olive oil and the mushrooms and cook for 3 minutes without stirring, until they're browned underneath. Stir and cook for 2 minutes.",
+  "Turn the heat down to medium. Add the onion, both peppers, 1/2 tsp of the salt and the last 1/4 tsp black pepper. Cook for 5 minutes, stirring now and then, until the vegetables have softened.",
+  "Add the garlic, the 3/4 tsp rosemary and the 3/4 tsp oregano. Stir for 1 minute, until the garlic smells fragrant.",
+  "Pour in the 1/2 cup wine and scrape up the browned bits from the bottom of the pan. Let it bubble for 2 minutes, until it's reduced by about half.",
+  "Stir in the diced tomatoes with their juice, the tomato sauce and the bay leaf. Bring it to a boil, then turn the heat down to low and simmer uncovered for 20 minutes, stirring now and then.",
+  "Set the chicken back in the sauce skin side up, with any juices from the plate. Keep the skin above the sauce. Cover and simmer gently for 35 to 40 minutes. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest part away from the bone. No thermometer? Cut into one near the bone: it's done when the juices run clear and the meat pulls away easily.",
+  "While the chicken simmers, bring a large pot of water to a boil with the last 1 tbsp salt. Grate 1/2 cup of the Parmesan and put the 1/2 tsp red pepper flakes in a small bowl for the table.",
+  "Cook the 12 oz spaghetti in the boiling water for 1 minute less than the package says, then drain it.",
+  "Take the lid off the chicken. If the sauce looks thin, simmer it uncovered for 5 minutes, until it coats a spoon. Fish out the bay leaf.",
+  "Stir the 3 tbsp capers into the sauce around the chicken. Taste it, and add a pinch more salt if it's flat.",
+  "Serve the chicken and sauce over the spaghetti, with the Parmesan and red pepper flakes on the side.",
+  "It's even better the next day. Keep leftover chicken and sauce apart from the pasta in the fridge for up to 4 days. Reheat it covered over low heat with a splash of water, until it's hot all the way through."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown bone-in chicken thighs hard, soften peppers, onion, mushrooms and garlic in the same pan, deglaze with red wine and braise the chicken in tomatoes with dried or fresh herbs. Spend With Pennies (the lead) simmers diced tomatoes, tomato sauce, bay, rosemary, oregano and chili flakes for 20 minutes before the chicken goes back in skin side up for 40 minutes covered, then stirs in capers and serves it over pasta with Parmesan. Once Upon a Chef dredges the chicken in flour, adds broth, tomato paste, sage and a little honey and takes the skin off at the end, and RecipeTin Eats melts anchovies into the onion, uses tomato paste and broth, finishes with olives and serves it over mashed potato or polenta. This one follows the lead and puts the chili flakes on the side.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Chicken Cacciatore",
+   "url": "https://www.spendwithpennies.com/chicken-cacciatore/",
+   "rating": 4.98,
+   "rating_count": 106,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Chicken Cacciatore",
+   "url": "https://www.onceuponachef.com/recipes/chicken-cacciatore.html",
+   "rating": 4.89,
+   "rating_count": 84,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chicken Cacciatore",
+   "url": "https://www.recipetineats.com/chicken-cacciatore/",
+   "rating": 4.9,
+   "rating_count": 49,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

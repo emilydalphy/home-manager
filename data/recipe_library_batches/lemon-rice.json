@@ -1,0 +1,127 @@
+{
+ "dish_name": "Lemon Rice",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Raw peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "2 tsp chopped"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the day before: rinse the 2 cups basmati rice in a sieve until the water runs clear. Put it in a medium pot with 3 1/2 cups water and 1/2 tsp of the salt and bring it to a boil over high heat.",
+  "Stir it once, cover, turn the heat to low and cook for 15 minutes. Turn off the heat and leave the lid on for 5 minutes. Fluff it with a fork, spread it on a tray until it's completely cool, then cover and refrigerate it. Warm rice turns mushy when you toss it. About 6 cups of leftover rice works too.",
+  "Peel and finely chop 2 tsp of the ginger. Break the 2 dried chilies in half. Juice 1 of the lemons.",
+  "Heat 1 tbsp of the oil in a large frying pan over medium. Add the 1/3 cup peanuts and fry them, stirring, for 3 to 4 minutes, until they're golden and crunchy. Lift them out onto a plate.",
+  "Add the other 2 tbsp oil to the pan with the 1 tsp mustard seeds, 2 tsp chana dal and 1 1/2 tsp urad dal. Fry for 2 to 3 minutes, stirring, until the dals turn golden and smell nutty.",
+  "Add the ginger, the chilies and 2 sprigs of curry leaves and stir for about 30 seconds, until the leaves are crisp. Stand back a little. They spatter.",
+  "Stir in the pinch of asafoetida, 3/4 tsp turmeric and the last 1/2 tsp salt, then pour in 3 tbsp water. Cook, stirring, for about a minute, until the water has bubbled away and the dals are a little softer.",
+  "Turn the heat to low and add the cold rice. Pour over the lemon juice and toss it gently with a spatula for 2 minutes, until every grain is yellow and the chill is off. Lift and fold rather than stir, so the grains don't break.",
+  "Turn off the heat. Taste it, and add a pinch more salt or a squeeze of the second lemon if it's flat. Cut the rest of that lemon into wedges.",
+  "Scatter the peanuts over the top and serve warm or at room temperature, with the lemon wedges."
+ ],
+ "advance_prep_notes": "cook the rice at least 2 hours ahead so it's cold, or the day before",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "All three toss cooled, fluffed rice with lemon juice and a tempering of mustard seeds, urad dal, curry leaves, chili, turmeric and hing in oil, with peanuts fried until golden and crunchy. Swasthi's recommends aged basmati, fries the peanuts first and sets them aside, adds chana dal and ginger to the tempering, and splashes in a little water to soften the dals before the rice and lemon go in off the heat. Cook with Manali soaks the dals for 10 minutes instead and seasons the rice with salt and lemon before the tempering; Hebbar's makes a big batch of the tempering ahead and stirs 2 tbsp of it into 3 cups of leftover rice. This one follows Swasthi's method and ratios for four, using dried chilies in place of green.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Lemon Rice Recipe (Chitranna)",
+   "url": "https://www.indianhealthyrecipes.com/lemon-rice-recipe/",
+   "rating": 4.99,
+   "rating_count": 308,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "25-Minute Lemon Rice Recipe (South Indian-Style)",
+   "url": "https://www.cookwithmanali.com/lemon-rice/",
+   "rating": 4.67,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Lemon Rice | South Indian Chitrannam & Gojju Premix in 1 min",
+   "url": "https://hebbarskitchen.com/lemon-rice-recipe-chitranna-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,52 @@
+{
+ "dish_name": "Chicken Kathi Rolls",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Greek yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1/4 cup"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Kashmiri chili powder", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Kasuri methi", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Red onions", "qty": "2", "category": "produce"},
+  {"item": "Bell peppers", "qty": "2", "category": "produce"},
+  {"item": "Green chilies", "qty": "2", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Frozen parathas", "qty": "1 package (8)", "category": "frozen"},
+  {"item": "Mint chutney", "qty": "1 jar", "category": "pantry"},
+  {"item": "Chaat masala", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the 1.5 lb chicken thighs into strips about 1/2 inch wide.",
+  "In a bowl, stir together 1/4 cup yogurt, the juice of half the lemon, 1 1/2 tsp Kashmiri chili powder, 1 1/2 tsp garam masala and 1 tsp of the salt. Crush 2 tsp kasuri methi between your palms into the bowl. Add the chicken, toss until every strip is coated and leave it for 20 minutes while you get everything else ready.",
+  "Thinly slice both red onions and the 2 bell peppers. Put half the sliced onion in a small bowl with 1/4 tsp of the salt, squeeze the other half of the lemon over it and toss. Set it aside to soften.",
+  "Thinly slice the 2 green chilies into a small dish for the table. Chop a big handful of the cilantro.",
+  "Heat 1 tbsp of the oil in a large skillet over high. Add the rest of the sliced onion and the peppers and stir them for 3 to 4 minutes, until they soften and pick up a few brown spots. Transfer them onto a plate.",
+  "Add 2 tbsp oil to the same pan over medium high and lay the chicken in a single layer. Cook it in two batches if it doesn't fit. Leave it alone for about 3 minutes, until the underside is browned and lets go of the pan.",
+  "Turn the strips over and cook the other side for 3 to 4 minutes. You're cooking it to 175°F in the thickest strip, so if you have a thermometer, check it there. No thermometer? Cut into the thickest strip: it's done when there's no pink left.",
+  "Stir the onions and peppers back in with the chopped cilantro and take the pan off the heat. Taste a piece, and add a pinch more salt if it's flat. Let the filling cool for a few minutes. If you're packing the rolls, let it cool completely first, or the parathas go soggy.",
+  "Beat the 4 eggs in a bowl with the last 1/4 tsp salt until there are no streaks of white.",
+  "Heat a nonstick skillet over medium. Cook a paratha for about 1 minute, until golden spots show underneath. Flip it and cook the other side for about 1 minute.",
+  "Brush the pan with a little of the last 1 tbsp oil and pour in about 2 tbsp of the egg. Tilt the pan to spread it to the size of the paratha, then lay the paratha straight on top and press it down. Cook for about 1 minute, until the egg has set and stuck to it, and lift it out egg side up. Repeat with the other 7 parathas and the rest of the egg.",
+  "Spread a spoonful of the mint chutney down the middle of each paratha on the egg side. Add a line of the chicken filling and some of the lemony onions, and sprinkle the 1 tsp chaat masala over all 8.",
+  "Roll each one up tightly and wrap the bottom half in parchment or foil. To pack them for lunch, wrap each cooled roll all the way in foil.",
+  "Serve with the sliced green chilies and more of the mint chutney on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three marinate strips of chicken in yogurt (or hung curd), lemon and spices, cook them with sliced onion and peppers, and roll them in parathas with raw onion. Swasthi's marinates breast with Kashmiri chili, garam masala and kasuri methi, fries the chicken apart from the vegetables, presses each paratha onto beaten egg and finishes with lemony onions, chaat masala and chili sauce or mint chutney. Ministry of Curry cooks the chicken right in with the vegetables, skips the egg and spreads cilantro mint chutney; Archana's Kitchen uses tandoori masala, makes the parathas from scratch and lines them with egg. This one follows Swasthi's but uses thighs, keeps the green chilies on the side and uses store-bought frozen parathas, as Swasthi's and Ministry of Curry both suggest.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Chicken Kathi Roll (Chicken Frankie)", "url": "https://www.indianhealthyrecipes.com/chicken-kathi-roll/", "rating": 5.0, "rating_count": 21, "read": true, "lead": true},
+  {"name": "Archana's Kitchen", "title": "Chicken Kathi Roll Recipe", "url": "https://www.archanaskitchen.com/recipe/chicken-kathi-roll-recipe", "rating": 4.9, "rating_count": 34655, "read": true, "lead": false},
+  {"name": "Ministry of Curry", "title": "The BEST Chicken Kathi rolls", "url": "https://ministryofcurry.com/chicken-kathi-rolls/", "rating": 4.85, "rating_count": 26, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

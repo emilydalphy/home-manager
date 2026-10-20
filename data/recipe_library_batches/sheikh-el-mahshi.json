@@ -1,0 +1,132 @@
+{
+ "dish_name": "Sheikh el Mahshi",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Small eggplants",
+   "qty": "8",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a baking sheet with parchment.",
+  "Leave the stems on the 8 eggplants. Cut a slit down one side of each one, starting about 1/2 inch below the stem and stopping 1/2 inch from the bottom. Don't cut through to the other side.",
+  "Lay the eggplants on the sheet, brush them all over with 2 tbsp of the olive oil, and sprinkle on 1/4 tsp of the salt. Roast for 25 minutes, until they're soft and the skins have wrinkled.",
+  "Meanwhile, finely chop the onion and dice the 2 tomatoes.",
+  "Heat 1 tbsp of the olive oil in a large skillet over medium low. Add the 1/4 cup pine nuts and stir for 3 to 4 minutes, until they're golden. Watch them closely. They go from golden to burnt very quickly. Transfer them onto a plate.",
+  "Add the last 1 tbsp olive oil and the onion to the same skillet and turn the heat up to medium. Cook for 6 to 8 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Turn the heat up to medium high and add the 1 lb beef. Break it up with a spoon and leave it alone for a minute between stirs. After 6 to 8 minutes there's no pink left and the bits are starting to brown.",
+  "Stir in 1 tsp of the salt, the 1 tsp allspice, 1/2 tsp cinnamon, 1/2 tsp black pepper and 1 tbsp of the tomato paste. Cook for 1 minute, stirring, until it smells warm and the paste turns a shade darker.",
+  "Take the pan off the heat and stir in 1 tbsp pomegranate molasses and half the pine nuts. Taste the filling, and add a pinch more salt if it's flat.",
+  "When the eggplants come out, turn the oven down to 350°F. Leave them for a few minutes, until you can handle them.",
+  "Set the eggplants slit side up in a 9 by 13 inch baking dish. Push each slit open with a spoon to make a pocket and pack 3 to 4 tbsp of the filling into each one. Pile any extra filling on top.",
+  "Scatter the tomatoes and the rest of the pine nuts over the eggplants.",
+  "Whisk the remaining 2 tbsp tomato paste and the last 1/4 tsp salt into 1 1/2 cups water. Pour it over and around the eggplants.",
+  "Bake uncovered for 35 to 40 minutes, until a knife slides into the eggplants with no push back and the sauce has thickened.",
+  "Chop a small handful of the parsley and scatter it over the top.",
+  "Taste the sauce. If it's flat, add a pinch of salt.",
+  "Serve with plain yogurt and warm pita bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions slit small whole eggplants, soften them in the oven first, fill the pocket with ground meat cooked with onion, allspice and cinnamon, and bake them in tomato paste thinned with water at 350°F. Salt & Sweet roasts the oiled eggplants at 400°F for 25 minutes, toasts pine nuts separately, scatters diced tomato on top and bakes 40 minutes; The Matbakh only half roasts peeled eggplants, browns the meat in butter, adds optional pomegranate molasses, lays tomato slices over and bakes about an hour. This one follows Salt & Sweet's timings and adds The Matbakh's pomegranate molasses and a little tomato paste fried into the filling.",
+ "sources": [
+  {
+   "name": "Salt & Sweet",
+   "title": "Sheikh el Mahshi (Lebanese Stuffed Eggplant)",
+   "url": "https://thesaltandsweet.com/sheikh-el-mahshi-stuffed-eggplant/",
+   "rating": 5.0,
+   "rating_count": 59,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Sheikh El Mahshi (Stuffed Eggplant)",
+   "url": "https://thematbakh.com/sheikh-el-mahshi/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

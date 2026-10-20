@@ -1,0 +1,153 @@
+{
+ "dish_name": "Jjajangmyeon",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Fresh udon noodles",
+   "qty": "1 1/2 lbs",
+   "category": "other"
+  },
+  {
+   "item": "Pork shoulder",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Korean black bean paste (chunjang)",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, cover it and set it over high heat for the noodles.",
+  "Cut the 3/4 lb pork into 1/2 inch cubes. Peel and finely grate the ginger. In a bowl, toss the pork with the ginger, 1 tbsp mirin, 1/8 tsp of the salt and the 1/8 tsp pepper, and leave it while you chop.",
+  "Cut the onion into 1/2 inch pieces. Cut a quarter of the cabbage, about 8 oz, and the zucchini into pieces the same size. Cut the cucumber into thin matchsticks for the top.",
+  "Put 2 tbsp of the oil, 5 tbsp black bean paste, 1 tbsp sugar and 1 tbsp oyster sauce in a small saucepan over medium. Fry it for 2 to 3 minutes, stirring the whole time, until it loosens, turns glossy and smells roasted. Don't skip this. Raw paste tastes bitter. Set it aside off the heat.",
+  "Heat the remaining 2 tbsp oil in a large deep skillet or wok over medium high. Add the pork, spread it out and leave it for 2 minutes, until the edges brown.",
+  "Stir fry the pork for 2 minutes, until there's no pink left. Add 1 tbsp soy sauce and stir until the pan looks dry again.",
+  "Add the onion and cook for 4 to 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the cabbage and zucchini and stir fry for 3 to 4 minutes, until they soften.",
+  "Scrape in the fried black bean paste and stir until the pork and vegetables are coated dark.",
+  "Pour in 1 cup of the broth and bring it to a boil. Turn it down to a simmer and cook for 3 to 4 minutes.",
+  "Meanwhile, stir 1 tbsp cornstarch into 1/4 cup of the broth until smooth.",
+  "Stir the cornstarch mixture again and pour it into the sauce. Cook for about 1 minute, stirring, until the sauce thickens and turns glossy. Turn the heat to low.",
+  "Add the noodles to the boiling water and stir to separate them. Cook them by the package time, until they're tender with a firm bite, then drain.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Divide the noodles between 4 bowls and spoon the sauce over. Serve with the cucumber on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions fry the black bean paste in oil before it meets anything else, stir fry fatty pork with onion, cabbage and zucchini, then loosen it with stock and thicken it with a starch slurry before spooning it over thick wheat noodles with cucumber on top. Korean Bapsang fries the paste in a separate pan with sugar and oyster sauce and marinates the pork with rice wine and ginger. Beyond Kimchee strains the paste out of its oil and starts the pork in lard with leek, and Ian Kewks adds potato and simmers the sauce longer under a lid. This one follows Korean Bapsang and uses fresh udon where jjajangmyeon noodles are hard to find.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Jajangmyeon (noodles in a black bean sauce)",
+   "url": "https://www.koreanbapsang.com/jajangmyeon-noodles-in-black-bean-sauce/",
+   "rating": 4.69,
+   "rating_count": 347,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ian Kewks",
+   "title": "Jajangmyeon (Korean Black Bean Noodles)",
+   "url": "https://www.iankewks.com/jajangmyeon-korean-black-bean-noodles/",
+   "rating": 4.7,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Korean Black Bean Noodles (Jajangmyeon)",
+   "url": "https://www.beyondkimchee.com/jjajangmyun/",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

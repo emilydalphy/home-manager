@@ -1,0 +1,136 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed",
+ "dish_name": "Yaki Udon",
+ "cuisine": "Japanese",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Frozen udon noodles",
+   "qty": "1 package (5 blocks)",
+   "category": "frozen"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dashi powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bonito flakes",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Pickled red ginger",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Put a large pot of water on to boil over high heat.",
+  "Meanwhile, thinly slice the onion. Cut the core out of the cabbage and cut a quarter of the head into 1 inch squares. Peel the carrot and cut it into thin 2 inch matchsticks.",
+  "Pull the stems off the 4 shiitake and slice the caps. Cut 4 of the scallions into 2 inch pieces.",
+  "In a small bowl, stir together 1/4 cup soy sauce, 2 tbsp sake, 2 tsp mirin and 1 tsp dashi powder.",
+  "If the 1 lb shrimp aren't peeled, peel and devein them. Pat them dry with paper towels and toss them with the 1/4 tsp salt and 1/4 tsp pepper.",
+  "Drop 4 of the udon blocks into the boiling water for 30 to 40 seconds, just until the noodles loosen apart. Drain them well.",
+  "Heat your largest frying pan or a wok over medium high and add 1 tbsp of the oil. Lay the shrimp in a single layer and cook for about 1 minute, until the undersides turn pink. Flip them and cook the other side for about 1 minute, until they're opaque all the way through. Move them to a plate.",
+  "Add the other 1 tbsp oil and the onion to the pan. Stir fry until it's soft, about 2 minutes.",
+  "Add the cabbage, carrot, shiitake and scallions and toss them in the oil. Cover the pan, turn the heat to medium low and steam them for 3 minutes, until the cabbage has just wilted.",
+  "Turn the heat back up to medium high. Add the udon and toss it gently with tongs so the noodles don't break.",
+  "Pour the sauce down the hot side of the pan and let it sizzle for a few seconds, then toss everything until the noodles are evenly brown. Put the shrimp back in and toss for about 1 minute to heat them through. If there's still liquid in the pan, keep tossing over the heat until it's gone.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve topped with the 6 tbsp bonito flakes, with the 1/4 cup pickled red ginger on the side."
+ ],
+ "method_notes": "Both read versions blanch frozen udon briefly, stir fry onion, carrot, cabbage and mushrooms, then toss the noodles with a soy based sauce until it's absorbed. Just One Cookbook (the lead) cooks its protein first in the pan, steams the vegetables under a lid for 3 minutes and seasons with soy, sake, mirin and dashi powder, then tops it with bonito flakes and pickled red ginger. It names seafood as a swap for its pork belly. Two Plaid Aprons sears the shrimp separately and adds them back at the end, uses a soy, oyster sauce, Worcestershire and sugar sauce and scrambles an egg in. This one follows the lead's sauce and steaming, with the shrimp seared and set aside so they don't overcook.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Yaki Udon (Japanese Stir-Fried Udon Noodles)",
+   "url": "https://www.justonecookbook.com/yaki-udon/",
+   "rating": 4.69,
+   "rating_count": 180,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Shrimp Yaki Udon",
+   "url": "https://twoplaidaprons.com/shrimp-yaki-udon/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ]
+}

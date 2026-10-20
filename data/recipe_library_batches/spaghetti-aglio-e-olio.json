@@ -1,0 +1,43 @@
+{
+ "dish_name": "Spaghetti Aglio e Olio",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Spaghetti", "qty": "1 lb", "category": "pantry"},
+  {"item": "Garlic", "qty": "8 cloves", "category": "produce"},
+  {"item": "Extra virgin olive oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tbsp + 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Parmesan", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "1/2 cup grated"}
+ ],
+ "instructions": [
+  "Fill a large pot with about 4 quarts of water, add 1 tbsp of the salt and bring it to a boil over high heat.",
+  "Meanwhile, peel the 8 garlic cloves and slice them as thin as you can. Chop 1/3 cup of the parsley and grate 1/2 cup of the Parmesan.",
+  "Grate 1 tsp of zest from the lemon, then cut it in half and squeeze 1 tsp of juice into a small bowl.",
+  "Add the 1 lb spaghetti to the boiling water and stir it for the first minute. Cook it for 1 minute less than the package says.",
+  "About 5 minutes before the pasta is done, put the 1/3 cup olive oil and the sliced garlic in a large, deep skillet and set it over medium heat. As soon as the garlic starts to sizzle, turn the heat down to medium low.",
+  "Cook the garlic for 2 to 3 minutes, stirring often, until the slices are pale gold at the edges. Don't let them go brown. Brown garlic tastes bitter.",
+  "Stir in 1/4 tsp of the red pepper flakes and cook for 20 seconds, then take the skillet off the heat.",
+  "Before you drain the pasta, scoop out 1 1/2 cups of the cooking water with a mug. Then drain the spaghetti.",
+  "Put the skillet back over medium high heat. Add the spaghetti, 1/2 cup of the pasta water, the remaining 1/2 tsp salt and the 1/4 tsp black pepper.",
+  "Toss it with tongs for 1 to 2 minutes, until the oil and water come together into a thin, glossy sauce that coats the strands and nothing is pooling in the pan. If it looks dry or sticky, add more of the pasta water a splash at a time and keep tossing.",
+  "Take the pan off the heat. Add the lemon zest, the lemon juice and the parsley and toss again. Taste it. If it's flat, add a pinch more salt or a few more drops of the lemon.",
+  "Serve right away with the grated Parmesan and the remaining 1/4 tsp red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook the spaghetti in salted water, warm sliced garlic gently in olive oil with chili flakes until it's only lightly golden, then toss the pasta in the pan with reserved pasta water until it turns glossy, and finish with parsley and Parmesan. Love and Lemons uses 12 oz pasta and 1/4 cup oil, adds a bunch of lacinato kale, and brightens it with lemon zest and juice. RecipeTin Eats and Once Upon a Chef use 1 lb pasta and 1/2 cup oil with no greens; Once Upon a Chef starts the garlic in cold oil and stirs the cheese into the pan. This one follows Love and Lemons' method and lemon finish, sized up to 1 lb of pasta for a dinner, with the kale left out and half the chili flakes on the side.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Spaghetti Aglio e Olio", "url": "https://www.loveandlemons.com/spaghetti-aglio-e-olio/", "rating": 4.93, "rating_count": 82, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Aglio e Olio (Spaghetti with garlic olive oil)", "url": "https://www.recipetineats.com/aglio-e-olio-garlic-spaghetti/", "rating": 5.0, "rating_count": 16, "read": true, "lead": false},
+  {"name": "Once Upon a Chef", "title": "Spaghetti Aglio e Olio", "url": "https://www.onceuponachef.com/recipes/spaghetti-aglio-e-olio.html", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

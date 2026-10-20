@@ -1,0 +1,106 @@
+{
+ "dish_name": "Stracciatella Soup",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Chicken broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "3 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Nutmeg",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pour the 6 cups broth into a large pot, add the 1/2 tsp thyme and bring it to a gentle simmer over medium heat, about 8 minutes.",
+  "Meanwhile, finely grate all of the Parmesan. Chop the parsley leaves until you have 2 tbsp, and roughly chop 2 big handfuls of the spinach.",
+  "Crack the 4 eggs into a bowl or a jug with a spout. Add half of the Parmesan, 1 tbsp of the parsley, 1/4 tsp salt, the nutmeg and the pepper, and whisk until no streaks of white are left.",
+  "Taste the broth and add a pinch of salt if it's flat.",
+  "Stir the spinach into the broth and cook it for 1 minute, until it wilts.",
+  "Turn the heat down so the broth is barely bubbling. Stir it slowly in a circle with a fork while you pour in the eggs in a thin stream. The eggs will set into soft shreds as they hit the broth.",
+  "Stop stirring and leave it on the heat for 1 minute, until the shreds of egg are just set.",
+  "Ladle the soup into bowls and scatter the last 1 tbsp parsley and the rest of the Parmesan over the top.",
+  "Serve hot, with crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions whisk eggs with grated Parmesan and drizzle them into gently simmering chicken broth while stirring, so the egg sets in thin shreds within a minute or two. Once Upon a Chef (the lead) simmers the broth with thyme, wilts in spinach, adds nutmeg and parsley to the eggs and uses white pepper. Coley Cooks uses 4 eggs and adds semolina and lemon zest to the egg mixture. Giada De Laurentiis adds parsley and basil to the eggs and stirs the spinach in at the end. This one follows the lead with 4 eggs to make it a fuller lunch. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Italian) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Stracciatella Soup (Italian Egg Drop Soup)",
+   "url": "https://www.onceuponachef.com/recipes/stracciatella-soup-italian-egg-drop-soup.html",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Coley Cooks",
+   "title": "Stracciatella Soup (Italian Egg Drop Soup)",
+   "url": "https://coleycooks.com/stracciatella-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Network (Giada De Laurentiis)",
+   "title": "Stracciatella Soup",
+   "url": "https://www.foodnetwork.com/recipes/giada-de-laurentiis/stracciatella-soup-recipe-1957514",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

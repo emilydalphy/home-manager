@@ -1,0 +1,68 @@
+{
+ "dish_name": "Steak Frites",
+ "cuisine": "French",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "New York strip steaks", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Russet potatoes", "qty": "2.5 lb", "category": "produce"},
+  {"item": "Unsalted butter", "qty": "4 tbsp", "category": "dairy"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with racks in the upper and lower thirds. Set the 4 tbsp butter on the counter to soften.",
+  "Scrub the 2.5 lb potatoes and cut them into sticks about 1/3 inch thick. Put them in a big bowl of cold water, swish them around and leave them to soak for 10 minutes while the oven heats.",
+  "Meanwhile, take the steaks out of the fridge. Pat the 1.5 lb steaks dry with paper towels and sprinkle both sides with 1 tsp of the salt and the 1/2 tsp pepper. Leave them on a plate.",
+  "Drain the potatoes and dry them well on a clean kitchen towel. Get them as dry as you can. Wet potatoes steam and don't crisp.",
+  "Toss the potatoes with the 1/4 cup olive oil and 1/2 tsp of the salt. Spread them out on two rimmed baking sheets in a single layer with a little room between them, and roast for 20 minutes.",
+  "Flip the fries with a spatula and swap the sheets between the racks. Roast for another 15 to 20 minutes, until they're golden and crisp at the edges.",
+  "Meanwhile, chop the parsley leaves until you have about 2 tbsp. In a small bowl, mash the softened butter with the parsley, 1 tsp juice from half the lemon and 1/4 tsp of the salt until it's evenly mixed. Cut the other half of the lemon into wedges.",
+  "When the fries have about 12 minutes left, heat a large cast iron or heavy skillet over high for 3 to 4 minutes, until it's very hot. Add the 1 tbsp vegetable oil and swirl it around.",
+  "Lay the steaks in the pan, away from you. Stand back a little. They'll spatter. Leave them for 3 to 4 minutes, until the underside has a deep brown crust and lets go of the pan.",
+  "Flip them and cook the other side for 3 to 4 minutes. You're cooking them to 130°F in the middle for medium rare, so if you have a thermometer, check the thickest part. No thermometer? Cut a small slit in the thickest part: it's medium rare when the center is rosy pink and juicy.",
+  "Move the steaks to a cutting board, put a spoonful of the herb butter on each one and let them rest for 5 minutes.",
+  "Transfer the fries into a big bowl and toss them with the remaining 1/4 tsp salt. Taste one. If they're flat, add a pinch more salt.",
+  "Slice the steaks across the grain into 1/2 inch strips and spoon the rest of the herb butter over the top. Serve with the fries and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three pat thick strip or ribeye steaks dry, salt them, sear them hard in a very hot pan for a few minutes a side and rest them before slicing. Savory Experiments (the most rated) cooks strip steaks in a smoking cast iron pan for 2 to 3 minutes a side and tops them with a parsley and lemon maître d'hôtel butter, which this version follows, and it lists oven fries among its fry options. Billy Parisi bastes the steak with butter, thyme and garlic and double fries the potatoes in oil, and Zestful Kitchen soaks the potatoes, roasts them on two sheets at 375°F and then 425°F, and serves the steak with a mushroom crème fraîche sauce. This one makes oven fries at 425°F so there's no pot of hot oil on a weeknight.",
+ "sources": [
+  {
+   "name": "Savory Experiments",
+   "title": "Steak Frites Recipe",
+   "url": "https://www.savoryexperiments.com/steak-frites/",
+   "rating": 4.84,
+   "rating_count": 85,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Billy Parisi",
+   "title": "Steak Frites Recipe",
+   "url": "https://billyparisi.com/steak-frites-recipe/",
+   "rating": 5.0,
+   "rating_count": 19,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Zestful Kitchen",
+   "title": "Steak Frites Recipe",
+   "url": "https://zestfulkitchen.com/steak-frites-recipe/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

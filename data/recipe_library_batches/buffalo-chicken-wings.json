@@ -1,0 +1,42 @@
+{
+ "dish_name": "Buffalo Chicken Wings",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {"item": "Chicken wings", "qty": "2 lb", "category": "meat/seafood"},
+  {"item": "Baking powder", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "3 tbsp", "category": "dairy"},
+  {"item": "Frank's RedHot sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce"},
+  {"item": "Ranch dressing", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 450°F with a rack in the middle. Line a rimmed baking sheet with foil and set a wire rack on top.",
+  "If your wings are whole, cut them through the joints into drumettes and flats and throw away the tips. Pat the 2 lb of wings very dry with paper towels. Any water left on the skin stops it crisping.",
+  "In a small bowl, stir together the 2 tsp baking powder, the 3/4 tsp salt and the 1 1/2 tsp garlic powder.",
+  "Put the wings in a large bowl, sprinkle the baking powder mix over them and toss with your hands until every piece has a thin, even coat.",
+  "Lay the wings on the rack in a single layer, skin side up, with a little room between them.",
+  "Bake for 25 minutes, until the skin is turning golden and you can hear the fat sizzling.",
+  "Flip each wing over and bake the other side for 20 to 25 minutes, until the skin is crisp and deep golden. You're cooking them to 175°F in the thickest part, so if you have a thermometer, check a drumette there. No thermometer? Cut into the thickest drumette: it's done when the juices run clear and there's no pink near the bone.",
+  "Meanwhile, cut 4 stalks of the celery into sticks about 4 inches long.",
+  "While the wings finish, melt the 3 tbsp butter in a small saucepan over low heat. Take it off the heat and whisk in the 3 tbsp hot sauce and the 2 tsp sugar until the sugar dissolves.",
+  "Transfer the hot wings into a large clean bowl, pour the sauce over and toss until they're coated all over.",
+  "Serve with the celery sticks and ranch dressing."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three dry the wings well, coat them in baking powder and seasoning, and bake them before they meet the sauce. Natasha's Kitchen (the lead) bakes them on a rack at 450°F for 50 minutes, flipping halfway, and tosses them in melted butter, Frank's RedHot and a little sugar. Jessica Gavin uses the same rack and heat but simmers a thickened hot sauce and makes a yogurt ranch dip, and Spend With Pennies adds flour, bakes at 425°F on parchment and broils the sauced wings. This one follows the lead for 2 lb of wings and serves them with celery and store-bought ranch.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Crispy Buffalo Wings", "url": "https://natashaskitchen.com/buffalo-wings-recipe/", "rating": 5.0, "rating_count": 404, "read": true, "lead": true},
+  {"name": "Jessica Gavin", "title": "Baked Buffalo Wings", "url": "https://www.jessicagavin.com/crispy-baked-buffalo-wings/", "rating": 4.8, "rating_count": 82, "read": true, "lead": false},
+  {"name": "Spend With Pennies", "title": "Baked Buffalo Wings", "url": "https://www.spendwithpennies.com/baked-buffalo-wings/", "rating": 4.9, "rating_count": 75, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

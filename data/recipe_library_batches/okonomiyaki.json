@@ -1,0 +1,112 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed",
+ "dish_name": "Okonomiyaki",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dashi powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Thinly sliced pork belly",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bonito flakes",
+   "qty": "1 bag",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Okonomiyaki sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Japanese mayonnaise",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Aonori",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Pickled red ginger",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 200°F and put a baking sheet in it to keep the first pancakes warm.",
+  "Stir the 1 tsp dashi powder into 2 cups warm water until it dissolves.",
+  "In a large bowl, whisk the 2 cups flour and the 1/4 tsp salt with the dashi until the batter is smooth with no lumps.",
+  "Cut the core out of the cabbage and shred it finely until you have about 6 cups. Stir 4 cups of it into the batter with 2 of the eggs. Keep the other 2 cups for the tops.",
+  "Cut the 3/4 lb pork belly into 4 inch pieces.",
+  "Heat 1 tbsp of the oil in each of two large frying pans over medium. Ladle a little less than a quarter of the batter into each pan and spread it into a round about 7 inches across.",
+  "Scatter 1/2 cup of the reserved cabbage over each pancake and make a well in the middle. Crack 1 egg into each well.",
+  "Lay a quarter of the pork over each pancake so it covers the top, and sprinkle a small handful of bonito flakes over it. Drizzle a spoonful of the leftover batter in thin lines across the pork to hold it in place.",
+  "Cook for 8 to 10 minutes, until the underside is golden brown and the pancake stays flat when you slide a spatula under it.",
+  "Flip each one over with two spatulas in one quick move. Cook the pork side for 8 to 10 minutes, until the pork is browned and crisp.",
+  "Flip them back so the pork side is up and poke a chopstick into the middle. If it comes out clean and dry, they're done. Move them to the baking sheet in the oven.",
+  "Cook the other two pancakes the same way with the last 2 tbsp oil and the rest of the batter, cabbage, eggs and pork.",
+  "Taste a corner. If it's flat, add a pinch more salt.",
+  "Brush each pancake with okonomiyaki sauce and drizzle mayonnaise over it in thin lines. Sprinkle with aonori, more bonito flakes and pickled red ginger, cut each one into quarters and serve."
+ ],
+ "method_notes": "Both read versions make a batter of flour and dashi with shredded cabbage and egg, top the pancake with thin pork belly, cook it about 10 minutes a side and finish it with a brown sauce, Kewpie mayonnaise, aonori, bonito flakes and pickled red ginger. RecipeTin Japan (the lead) keeps a plain flour and dashi batter, piles extra cabbage on top with an egg cracked into the middle and bonito under the pork, and uses bottled Bulldog sauce. Just One Cookbook adds grated nagaimo, tempura scraps, baking powder and red ginger to a cabbage heavy batter, rests it for an hour if there's time, cooks it covered on medium low and gives a homemade sauce of ketchup, Worcestershire, oyster sauce and sugar. This one follows the lead, sized up to four pancakes in two pans.",
+ "sources": [
+  {
+   "name": "RecipeTin Japan",
+   "title": "Okonomiyaki (Japanese Savoury Pancake)",
+   "url": "https://japan.recipetineats.com/okonomiyaki-japanese-savoury-pancake/",
+   "rating": 4.76,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Okonomiyaki",
+   "url": "https://www.justonecookbook.com/okonomiyaki/",
+   "rating": 4.74,
+   "rating_count": 727,
+   "read": true,
+   "lead": false
+  }
+ ]
+}

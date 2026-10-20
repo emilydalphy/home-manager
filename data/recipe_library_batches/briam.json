@@ -1,0 +1,46 @@
+{
+ "dish_name": "Briam",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 105,
+ "ingredients": [
+  {"item": "Tomatoes", "qty": "5", "category": "produce"},
+  {"item": "Yukon Gold potatoes", "qty": "1 lb", "category": "produce"},
+  {"item": "Eggplant", "qty": "1", "category": "produce"},
+  {"item": "Zucchini", "qty": "2", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Olive oil", "qty": "2/3 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Feta", "qty": "7 oz", "category": "dairy"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C).",
+  "Core the 5 tomatoes and cut them into thin slices.",
+  "Peel the potatoes and cut them into slices about 1/4 inch thick. Cut the eggplant and the 2 zucchini into rounds about 1/2 inch thick.",
+  "Thinly slice the onion, finely chop the 2 garlic cloves and chop 1/4 cup of the parsley.",
+  "Lay half the tomato slices over the bottom of a large baking dish, about 9 by 13 inches or a little bigger. Sprinkle them with 1/2 tsp of the salt.",
+  "Spread the potatoes, eggplant and zucchini over the tomatoes in an even layer. Sprinkle on 1 tsp of the salt, 1/4 tsp of the pepper and the 1 tsp oregano.",
+  "Scatter the onion and garlic over the vegetables and lay the rest of the tomato slices on top. Sprinkle on the last 1/2 tsp salt and the last 1/4 tsp pepper, then the parsley. Drizzle the 2/3 cup olive oil evenly over everything.",
+  "Cover the dish tightly with foil and bake for 45 minutes.",
+  "Take off the foil and turn the vegetables gently with a spatula so the oily tomato coats everything. Bake uncovered for 45 minutes to 1 hour, until a knife slides easily into the potatoes and the top is browned in spots.",
+  "Let it sit for 10 minutes. Taste a piece of potato, and sprinkle on a pinch more salt if it's flat.",
+  "Serve warm or at room temperature with the feta and crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bake sliced potatoes and zucchini slowly with tomato, onion, garlic, parsley and a lot of olive oil until soft and browned. My Greek Dish layers sliced tomato under and over the potatoes, eggplant and zucchini, bakes it covered at 400°F, uncovers it halfway to toss and colour the top, and serves it with feta and bread. Souvlaki for the Soul skips the eggplant, tosses everything together with grated tomato in a single layer and bakes it uncovered at 350°F, and Diane Kochilas on SBS adds bell peppers and oregano and salts the zucchini first. This one follows My Greek Dish for 4, with the dried oregano its author suggests.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Delicious Briam recipe (Greek mixed Roasted Vegetables)", "url": "https://www.mygreekdish.com/recipe/briam-recipe-greek-mixed-roasted-vegetables/", "rating": 4.73, "rating_count": 784, "read": true, "lead": true},
+  {"name": "Souvlaki for the Soul", "title": "Briam (Greek Roasted Vegetables)", "url": "https://souvlakiforthesoul.com/briam-greek-roasted-vegetables/", "rating": 5.0, "rating_count": 17, "read": true, "lead": false},
+  {"name": "SBS Food", "title": "Roasted vegetable casserole (briam)", "url": "https://www.sbs.com.au/food/recipes/roasted-vegetable-casserole-briam", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

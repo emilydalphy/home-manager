@@ -1,0 +1,114 @@
+{
+ "dish_name": "Baked Salmon with Lemon and Dill",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Salmon fillets",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub (5.3 oz)",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parchment paper",
+   "qty": "1 roll",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a rimmed baking sheet with parchment paper.",
+  "Squeeze 2 tbsp of juice from one of the lemons. Finely chop 2 tbsp of the dill, mince the 1 tbsp capers and finely mince the garlic clove.",
+  "In a small bowl, stir together the 1/3 cup Greek yogurt, 3 tbsp mayonnaise, the 2 tbsp lemon juice, 1 tbsp of the chopped dill, the capers, the garlic and 1/4 tsp of the salt. Put the bowl in the fridge.",
+  "Pat the 1.25 lb salmon dry with paper towels and cut it into 4 pieces if it came as one. Set the pieces skin side down on the lined sheet with space between them.",
+  "Sprinkle the salmon with the remaining 1/2 tsp salt and the 1/2 tsp pepper and drizzle the 2 tsp olive oil over the top.",
+  "Cut the second lemon into 8 thin slices and lay 2 slices on each piece of salmon.",
+  "Bake for 8 to 12 minutes, depending on how thick the pieces are. You're cooking it to 140°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Press the thickest part with a fork: it's done when it flakes and is only just opaque in the middle.",
+  "Scatter the last 1 tbsp of chopped dill over the salmon. Taste the sauce, and add a pinch more salt or a squeeze of what's left of the first lemon if it's flat.",
+  "Serve the salmon with the lemon dill sauce spooned over the top, with rice or roast potatoes."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bake salmon with lemon and fresh dill on a lined sheet for 15 minutes or less at 325 to 400°F. The Endless Meal (the only one with 20 or more ratings) bakes 5 oz fillets at 400°F for 8 to 10 minutes to 140°F with olive oil and lemon slices on top, and serves them with a cold sauce of Greek yogurt, mayonnaise, lemon juice, dill, capers and garlic. Six Sisters' Stuff spoons a lemon, garlic and dill butter over a whole fillet and bakes it sealed in foil at 375°F; Well Seasoned Studio scatters lemon zest and dill over a side of salmon and bakes it low, at 325°F, to 120°F. This one follows The Endless Meal and keeps a little dill back to scatter over the fish at the end.",
+ "sources": [
+  {
+   "name": "The Endless Meal",
+   "title": "Salmon with Lemon Dill Sauce",
+   "url": "https://www.theendlessmeal.com/salmon-with-lemon-dill-sauce/",
+   "rating": 4.72,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Six Sisters' Stuff",
+   "title": "Lemon and Dill Salmon Recipe",
+   "url": "https://www.sixsistersstuff.com/recipe/lemon-and-dill-salmon/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Well Seasoned Studio",
+   "title": "Flaky Oven-Baked Salmon with Lemon and Dill",
+   "url": "https://www.wellseasonedstudio.com/baked-salmon-with-lemon-dill/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

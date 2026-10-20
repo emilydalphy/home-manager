@@ -1,0 +1,127 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed",
+ "dish_name": "Japanese Ginger Pork",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Thinly sliced pork loin",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (3 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1.5 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1.5 cups rice in a few changes of cold water until the water runs mostly clear. Cook it in a rice cooker or a covered pot according to the package.",
+  "Meanwhile, cut the cabbage in half and shred one half as thinly as you can. Put it in a bowl of cold water for 5 minutes, then drain it well and keep it in the fridge.",
+  "Scrape the skin off the ginger with a spoon and grate the whole piece on a fine grater. Squeeze the grated ginger in your fingers over a small bowl until you have about 2 tbsp of juice. Keep the squeezed pulp.",
+  "Grate about 2 tbsp of the onion into a bowl, juice and all. Stir in 1/4 cup soy sauce, 1/4 cup mirin, 1/4 cup sake, 2 tsp sugar, 1 tbsp of the ginger juice and all of the ginger pulp. Thinly slice the rest of the onion.",
+  "Lay the 1.5 lb pork out on a tray. If the slices are thicker than 1/8 inch, make a few small cuts through the white strip between the fat and the meat so they stay flat in the pan. Sprinkle them with the other 2 tbsp sake and the last 1 tbsp ginger juice and leave them for 5 minutes.",
+  "Dust both sides of the pork lightly with the 2 tbsp flour.",
+  "Heat a large frying pan over medium high and add 1 tbsp of the oil. Lay in as many slices as fit in one layer without overlapping. Cook until the undersides are golden, about 1 minute, then flip them and cook the other side for about 1 minute, until there's no pink left. Move them to a plate.",
+  "Cook the rest of the pork the same way with another 1 tbsp of oil, and move it to the plate.",
+  "Turn the heat to medium and add the last 1 tbsp oil and the sliced onion. Cook, stirring now and then, until it's soft and golden at the edges, 5 to 6 minutes.",
+  "Put all the pork back in the pan. Stir the sauce so no sugar is left at the bottom of the bowl and pour it over. Let it bubble for about 2 minutes, turning the pork and spooning the sauce over it, until the sauce thickens enough to coat the pork.",
+  "Take the pan off the heat and grind the 1/4 tsp black pepper over the pork. Taste it. If it's flat, add a pinch of salt.",
+  "Serve with the rice and the shredded cabbage, with the sauce from the pan spooned over the pork."
+ ],
+ "method_notes": "All three glaze pork in a soy, sake and ginger sauce at the very end, and all serve it with shredded cabbage and rice. Just One Cookbook (the lead) marinates thin pork loin in sake and ginger juice for 5 minutes, dusts it with flour, sears it in batches, browns sliced onion in the same pan and finishes with a sauce of soy, mirin, sake, a little sugar, ginger and grated onion. RecipeTin Japan uses the same marinade and sauce without onion or flour and suggests pork neck. No Recipes rubs thick rib chops with ginger and salt for an hour, dusts them in potato starch and glazes them in soy, sake and honey.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Ginger Pork (Shogayaki)",
+   "url": "https://www.justonecookbook.com/ginger-pork-shogayaki/",
+   "rating": 4.75,
+   "rating_count": 180,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Pork Shogayaki (Ginger Pork)",
+   "url": "https://japan.recipetineats.com/pork-shogayaki-ginger-pork/",
+   "rating": 4.86,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "No Recipes",
+   "title": "Shogayaki (Japanese Ginger Pork Chops)",
+   "url": "https://norecipes.com/shogayaki-japanese-ginger-pork/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ]
+}

@@ -1,0 +1,49 @@
+{
+ "dish_name": "Pesce all'Acqua Pazza",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Skin-on snapper fillets", "qty": "1.5 lb (4 fillets)", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Extra virgin olive oil", "qty": "6 tbsp", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Fennel bulb", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "2 pints", "category": "produce"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Basil", "qty": "1 bunch", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Baguette", "qty": "1", "category": "other"},
+  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 350°F.",
+  "Thinly slice half the red onion and the whole fennel bulb, about 1/3 inch thick. Mince 4 of the garlic cloves and cut the last clove in half. Halve the 2 pints of cherry tomatoes.",
+  "Pick the leaves off the basil and parsley and keep a small handful of the stems. Finely slice 2 tbsp of the basil leaves and chop 2 tbsp of the parsley.",
+  "Heat 3 tbsp of the olive oil in a large skillet with a lid over medium. Add the onion and fennel and cook for 4 to 5 minutes, stirring now and then, until they're soft but not browned.",
+  "Add the minced garlic and cook for 1 minute, until it smells fragrant.",
+  "Add the tomatoes and cook for 4 minutes, stirring, until they start to soften.",
+  "Turn the heat up to high and pour in the 1 1/2 cups wine. Let it boil hard for 2 to 3 minutes, until it has cooked down by about half.",
+  "Add 3 cups water, 1/2 tsp of the salt and the herb stems. Bring it to a boil, then turn the heat to medium and simmer it uncovered for about 20 minutes, until it has cooked down by about two thirds and the tomatoes have broken down.",
+  "While the sauce simmers, cut 8 slices from the baguette on the diagonal, about 1/3 inch thick. Brush both sides with 2 tbsp of the olive oil and sprinkle them with 1/4 tsp of the salt.",
+  "Bake the bread on a baking sheet for 10 minutes, turning the slices halfway, until they're crisp all the way through. Rub one side of each slice with the cut side of the halved garlic clove.",
+  "Pat the fish dry with paper towels and sprinkle the flesh side with the remaining 1/2 tsp salt.",
+  "Lay the fillets skin side down on the sauce. Put the lid on and cook for 6 to 8 minutes. You're cooking it to 135°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Push a fork into the thickest part: it's done when the flesh is white all the way through and flakes apart easily.",
+  "Lift the fish onto a plate. Pull the herb stems out of the sauce and stir in the sliced basil and chopped parsley. Taste the sauce. If it's flat, add a pinch more salt.",
+  "Put 2 slices of the garlic toast in each shallow bowl and spoon a little of the sauce over them. Set a fillet on top and spoon the rest of the sauce around it.",
+  "Drizzle each bowl with the last 1 tbsp of olive oil and serve with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook garlic and cherry tomatoes in olive oil, add white wine and water, and poach the fish in that broth under a lid, finishing with parsley. RecipeTin Eats softens red onion and fennel first, reduces the wine, then simmers the broth for 20 to 25 minutes with the herb stems before the skin-on snapper goes in for about 6 minutes, and serves it over garlic rubbed crostini. Coley Cooks keeps it to 15 minutes with olives, capers and oregano and no long simmer; Tasting Table poaches a whole branzino for 15 minutes in a quick wine and tomato broth. This one follows RecipeTin Eats, sized for 4, with dried chili flakes on the side instead of fresh chili in the sauce.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Acqua Pazza - Italian Poached Fish", "url": "https://www.recipetineats.com/acqua-pazza-italian-poached-fish/", "rating": 5.0, "rating_count": 61, "read": true, "lead": true},
+  {"name": "Coley Cooks", "title": "Fish Acqua Pazza Recipe", "url": "https://coleycooks.com/acqua-pazza/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Tasting Table", "title": "Pesce all' Acqua Pazza (Fish in Crazy Water) Recipe", "url": "https://www.tastingtable.com/688496/pesce-all-acqua-pazza-fish-in-crazy-water-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

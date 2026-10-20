@@ -1,0 +1,44 @@
+{
+ "dish_name": "Penne Arrabbiata",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Penne", "qty": "1 lb", "category": "pantry"},
+  {"item": "Crushed tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Fresno chile", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1 tbsp plus 3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Parmesan", "qty": "1 wedge (about 4 oz)", "category": "dairy"}
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil with 1 tbsp of the salt.",
+  "Meanwhile, finely mince the 3 garlic cloves. Finely chop the Fresno chile, seeds and all, and put it in a small bowl with 1/4 tsp of the red pepper flakes for the table.",
+  "Heat the 1/4 cup olive oil in a large, deep skillet over medium. Add the garlic and stir for about 10 seconds, then add the other 1/4 tsp of red pepper flakes. Keep stirring for about 1 minute, until the garlic is pale gold and smells fragrant. Watch it closely. Burnt garlic turns the sauce bitter.",
+  "Pour in the crushed tomatoes. Add 1/2 cup water to the empty can, swirl it around and pour it into the pan. Stir in 3/4 tsp of the salt and the 1/4 tsp pepper.",
+  "Turn the heat up to high until it bubbles, then turn it back down to medium and simmer for 15 minutes, stirring now and then, until the sauce is thicker and a shade darker.",
+  "When the sauce has about 10 minutes to go, add the 1 lb penne to the boiling water. Cook it for the time on the package for al dente, stirring a couple of times so it doesn't stick.",
+  "Taste the sauce once it's been simmering for 10 minutes. If it tastes sharp or sour, stir in 1/2 tsp sugar.",
+  "Just before the pasta is done, give the pot a big stir and scoop out 1 cup of the cooking water. Drain the pasta.",
+  "Transfer the penne into the sauce with 1/2 cup of the pasta water. Toss it over the heat for about 1 minute, until every piece is coated. If it looks thick, add a splash more of the water.",
+  "Take the pan off the heat. Chop 2 tbsp of the parsley and stir it through. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the Parmesan grated over the top and the bowl of chile and pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions start with garlic and chili in plenty of olive oil, add canned tomatoes and simmer about 12 to 20 minutes. RecipeTin Eats (the lead) uses crushed tomatoes, a fresh red chili plus chili flakes, a little sugar only if the tomatoes are sour, and tosses the penne in the sauce with pasta water, serving it with Parmesan and parsley. Italian Style Cooking uses whole peeled tomatoes, two chilies and one garlic clove it takes out before serving, and simmers covered. Love and Lemons softens a little onion first and uses much more chili flakes. This one keeps a gentle heat in the pot and puts the fresh chile and the rest of the flakes on the table.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Penne all'Arrabbiata (spicy tomato pasta)", "url": "https://www.recipetineats.com/penne-all-arrabbiata-spicy-tomato-pasta/", "rating": 4.91, "rating_count": 40, "read": true, "lead": true},
+  {"name": "Italian Style Cooking", "title": "Penne all arrabbiata", "url": "https://italianstylecooking.net/en/penne-all-arrabbiata/", "rating": 4.53, "rating_count": 494, "read": true, "lead": false},
+  {"name": "Love and Lemons", "title": "Arrabbiata Sauce", "url": "https://www.loveandlemons.com/arrabbiata-sauce/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,46 @@
+{
+ "dish_name": "Psari Plaki",
+ "cuisine": "Greek",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {"item": "Cod fillets", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cinnamon", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Diced tomatoes", "qty": "1 can (14 oz)", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "1/2 cup"},
+  {"item": "Honey", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Cut the 2 onions in half and slice them thinly. Slice the 3 garlic cloves.",
+  "Heat the 2 tbsp olive oil in a large skillet over medium. Add the onions and cook for about 10 minutes, stirring now and then, until they're soft and starting to turn golden. Don't rush the onions. That's where the flavor starts.",
+  "Add the garlic and cook for 1 minute, until it smells fragrant. Stir in the 1 tsp paprika, 1 tsp oregano and 1 tsp cinnamon and cook for 30 seconds.",
+  "Stir the 1 tbsp tomato paste into 1/4 cup water. Add it to the pan with the can of tomatoes, the 1/2 cup wine, 3/4 tsp of the salt and 1/4 tsp of the pepper. Bring it to a boil, then turn the heat down and simmer for about 15 minutes, until the sauce has thickened a little.",
+  "Meanwhile, heat the oven to 375°F. Pat the 1.5 lb cod dry with paper towels and sprinkle it on both sides with the last 1/2 tsp salt and 1/4 tsp pepper. Lay it in a single layer in a baking dish.",
+  "Chop 1/2 cup of the parsley. Take the sauce off the heat and stir in the 1 tsp honey and half the chopped parsley.",
+  "Pour the sauce over the fish so it's covered. Bake uncovered for 20 to 25 minutes, until the fish is opaque all the way through and flakes when you press it with a fork. If you have a thermometer, you're cooking it to 145°F in the thickest part.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Scatter the rest of the chopped parsley over the top. Serve with the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bake white fish under a sauce of olive oil, onions, garlic and tomato with oregano and parsley. Scrummy Lane cooks a lot of onion slowly until sweet, adds paprika and cinnamon with tomatoes, tomato paste and wine, simmers it down, sweetens it with a little honey and bakes it over the fish uncovered. Eleni Saltas adds leeks, celery and tomato sauce, seasons the cod with lemon and bakes it at 350°F for 40 minutes, and SBS (Maria Benardis) layers raw spring onion, garlic, parsley and sliced tomato over the fish with potatoes and olives and bakes it for an hour. This one follows Scrummy Lane, with parsley in place of basil and a little more fish.",
+ "sources": [
+  {"name": "Scrummy Lane", "title": "Easy Greek Oven Baked Fish (Psari Plaki)", "url": "https://scrummylane.com/greek-oven-baked-fish/", "rating": 5.0, "rating_count": 28, "read": true, "lead": true},
+  {"name": "Eleni Saltas", "title": "Psari Plaki (Baked Fish)", "url": "https://elenisaltas.com/2018/08/11/psari-plaki-baked-fish/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "SBS Food", "title": "Fish plaki (psari plaki)", "url": "https://www.sbs.com.au/food/recipe/fish-plaki-psari-plaki/xyiy4exft", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

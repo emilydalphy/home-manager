@@ -1,0 +1,170 @@
+{
+ "dish_name": "Sambar",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Toor dal",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Okra",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen drumsticks (moringa)",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "10 pieces"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Sambar powder",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fenugreek seeds",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 3/4 cup toor dal in a sieve until the water runs clear. Put it in a medium pot with 3 cups water and the 1/4 tsp turmeric and bring it to a boil over high. Skim off the foam, partly cover, and simmer over medium low for 40 to 45 minutes, stirring now and then, until the dal falls apart when you press it. Add a splash of water if it gets thick before it's soft.",
+  "Meanwhile, dice the onion, chop the 2 tomatoes, and peel and dice the carrot into 1/2 inch pieces. Cut the 1/4 lb okra into 1 inch pieces and slit the green chili down one side. Chop 1/4 cup of the cilantro.",
+  "When the dal has about 30 minutes left, start the rice. Rinse the 1 1/2 cups rice until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and 1/2 tsp of the salt and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "When the dal has about 20 minutes left, heat 1 tsp oil in a large pot over medium. Add the onion and cook for 2 minutes, until it starts to soften.",
+  "Add the tomatoes, carrot, okra, 10 drumstick pieces (straight from frozen is fine) and the green chili. Cook for 2 to 3 minutes, stirring.",
+  "Stir in the 1/2 tsp chili powder and pour in 4 cups water. Bring it to a boil and simmer over medium for about 10 minutes, until the carrot is just tender.",
+  "Stir in the 2 tbsp sambar powder, 1 tbsp tamarind paste, 1 tbsp jaggery and the remaining 2 tsp salt. Simmer for 5 minutes.",
+  "Mash the dal smooth with a whisk or potato masher and stir it into the vegetables. Bring it back to a gentle boil and simmer for 3 minutes. It should be like a thick soup. If it's thicker than that, add a splash of hot water. Stir in the 1/4 cup cilantro and turn off the heat.",
+  "Melt 1 tbsp ghee in a small pan over medium. Add the 1/2 tsp mustard seeds, 1/2 tsp cumin seeds, the pinch of fenugreek seeds and the 2 dried red chilies.",
+  "When the mustard seeds start to pop, after about 30 seconds, add 1 sprig of curry leaves. Stand back a little. They'll spatter. Once the leaves are crisp, a few seconds later, stir in the 1/8 tsp asafoetida and pour it all over the sambar.",
+  "Taste it. If it's flat, add a pinch more salt, or a little more tamarind paste if it needs more tang.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cook toor dal soft and mash it, cook the vegetables separately in water, then season them with sambar powder, tamarind and a little jaggery before the dal goes in, and finish with a ghee tempering of mustard seeds, curry leaves and asafoetida. Swasthi's sautes onion with the vegetables first, uses drumsticks, okra, carrot and tomato, and grinds her own sambar powder if you don't have one; Cook with Manali uses eggplant, carrots and drumsticks with store bought or homemade powder and a little Kashmiri chili. This one follows Swasthi's ratios with store bought sambar powder and tamarind paste, cooks the dal in a pot rather than a pressure cooker, and serves it over rice.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Sambar Recipe, How to Make Sambar",
+   "url": "https://www.indianhealthyrecipes.com/andhra-sambar-recipe-how-to-make-south-indian-sambar/",
+   "rating": 4.98,
+   "rating_count": 746,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Simple Sambar Recipe (That Actually Tastes Good)",
+   "url": "https://www.cookwithmanali.com/sambar/",
+   "rating": 5.0,
+   "rating_count": 39,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

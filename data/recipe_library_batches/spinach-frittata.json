@@ -1,0 +1,109 @@
+{
+ "dish_name": "Spinach Frittata",
+ "cuisine": "Italian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 half-pint",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cheddar cheese",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "3/4 cup shredded"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 package",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 325°F (165°C) with a rack in the middle.",
+  "Thinly slice the 3 shallots. Shred 3/4 cup of the Cheddar and finely grate 1/2 cup of the Parmesan. Chop 1/4 cup of the basil leaves.",
+  "Heat the 2 tbsp olive oil in a 10-inch ovenproof nonstick or cast iron skillet over medium. Add the shallots and cook for 3 to 4 minutes, stirring often, until they're soft. Don't let them brown.",
+  "Add half the spinach and stir until it wilts down, about 1 minute. Add the rest of the spinach and 1/4 tsp of the salt and stir for 1 to 2 minutes, until it's all wilted. Turn off the heat.",
+  "In a large bowl, whisk the 8 eggs with the 1/3 cup cream, the 1/4 tsp pepper and the last 1/4 tsp salt until there are no streaks of white.",
+  "Scrape the spinach and shallots into the eggs and add the Cheddar, Parmesan and basil. Stir it together and pour it all back into the skillet. No need to wash it.",
+  "Bake for 20 to 25 minutes, until the edges are puffed and golden and the middle is set. You're cooking it to 160°F in the center, so if you have a thermometer, check it there. No thermometer? Give the pan a little shake: it's done when the middle doesn't wobble and a knife in the center comes out with no runny egg.",
+  "Lay an oven mitt over the handle as a reminder that it's hot. Let the frittata rest in the pan for 5 minutes.",
+  "Run a spatula around the edge, slide it onto a board and cut it into wedges. Serve it warm or at room temperature.",
+  "Wrap any leftover wedges and keep them in the fridge for up to 3 days. Eat them cold, or warm a wedge in the microwave for about 45 seconds."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three wilt the spinach in a skillet first and bake the eggs with cheese, but they differ on heat and dairy. Once Upon a Chef (the lead) softens shallots without browning, wilts the spinach in two batches, adds cream, Cheddar, Parmigiano and basil and bakes it gently at 325°F for 20 to 23 minutes. Clean and Delicious bakes hotter and faster at 400°F for 10 to 12 minutes with egg whites, milk, peppers and feta. Julie's Eats & Treats wilts the spinach in butter, adds grape tomatoes and Swiss and bakes at 350°F for 25 to 30 minutes. This one follows the lead and adds how to keep and reheat the leftovers.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Spinach Frittata",
+   "url": "https://www.onceuponachef.com/recipes/spinach-frittata.html",
+   "rating": 4.92,
+   "rating_count": 102,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Clean & Delicious",
+   "title": "Spinach Frittata",
+   "url": "https://cleananddelicious.com/spinach-frittata/",
+   "rating": 4.38,
+   "rating_count": 24,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Julie's Eats & Treats",
+   "title": "Spinach Frittata",
+   "url": "https://www.julieseatsandtreats.com/spinach-frittata/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

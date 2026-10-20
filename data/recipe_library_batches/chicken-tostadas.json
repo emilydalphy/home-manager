@@ -1,0 +1,140 @@
+{
+ "dish_name": "Chicken Tostadas",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rotisserie chicken",
+   "qty": "1",
+   "category": "meat/seafood",
+   "cook_qty": "3 cups shredded"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Refried beans",
+   "qty": "1 can (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Queso fresco",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Mexican crema",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Pickled jalapeños",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Brush the 8 tortillas on both sides with 2 tbsp of the oil and lay them in a single layer on two baking sheets. Sprinkle them with 1/4 tsp of the salt.",
+  "Bake for 5 to 6 minutes. Flip them and bake the other side for 5 to 6 minutes, until they're golden and stiff. They'll crisp a little more as they cool.",
+  "Meanwhile, pull 3 cups of meat off the chicken and shred it, leaving the skin and bones behind. Thinly slice 4 of the scallions.",
+  "Pick a handful of cilantro leaves for the top, and finely chop about 2 tbsp of the stems.",
+  "Shred half the lettuce, dice the 2 tomatoes and crumble the 4 oz queso fresco.",
+  "Heat the last 1 tbsp oil in a large skillet over medium. Add the scallions and the 1/2 tsp cumin and stir for 30 seconds, until they smell fragrant.",
+  "Add the chicken, the remaining 1/4 tsp salt, the 1/4 tsp pepper and 2 tbsp water. Stir for 3 to 4 minutes, until the chicken is hot all the way through and a few edges are crisp.",
+  "Take the pan off the heat. Squeeze the juice of half the lime over the chicken and stir in the chopped cilantro stems. Cut the other half of the lime into wedges.",
+  "Warm the can of refried beans in a small saucepan over medium low with 2 tbsp water, stirring, for 3 to 4 minutes, until they're smooth and easy to spread.",
+  "Taste the chicken. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Halve, pit and slice the avocado. Spread a layer of beans over each tostada, then top with the chicken, lettuce, tomatoes, avocado and queso fresco. Drizzle over the 1/2 cup crema and scatter on the cilantro leaves.",
+  "Serve right away with the lime wedges and the pickled jalapeños."
+ ],
+ "method_notes": "All three put plain cooked chicken on a crisp corn shell and finish it with fresh toppings. RecipeTin Eats bakes oil-sprayed tortilla rounds until crisp and dresses the shredded chicken with lime, scallion, cilantro stems, mayonnaise and canned jalapeño (as a small party bite in a muffin tin). Cooking With Curls fries the shells, tosses the chicken in taco sauce and layers refried beans, lettuce, tomato, onion, avocado, queso fresco and crema, and Mely Martínez's version on Kavey Eats seasons the chicken simply and adds pickled jalapeños at the table. This one bakes full tortillas as RecipeTin does, warms the chicken with scallions, cumin and lime, swaps the mayonnaise for a crema drizzle, and puts the jalapeños on the side. No version had 20 or more ratings, so RecipeTin Eats (the trusted cook for Mexican) leads.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Spicy Little Muffin Tin Chicken Tostadas",
+   "url": "https://www.recipetineats.com/spicy-little-muffin-tin-chicken-tostadas/",
+   "rating": 5.0,
+   "rating_count": 14,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking With Curls",
+   "title": "Chicken Tostadas",
+   "url": "https://cookingwithcurls.com/chicken-tostadas/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kavey Eats",
+   "title": "Tostadas De Pollo | Chicken Tostadas",
+   "url": "https://www.kaveyeats.com/tostadas-de-pollo-mexican-chicken-tostadas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

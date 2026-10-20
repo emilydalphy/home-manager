@@ -1,0 +1,166 @@
+{
+ "dish_name": "Red Curry Tofu",
+ "cuisine": "Thai",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "1 stalk",
+   "category": "produce"
+  },
+  {
+   "item": "Low-sodium vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "6"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Butternut squash",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice and get it cooking the way you usually do.",
+  "Drain the tofu, wrap it in a clean kitchen towel and press gently to squeeze out the water. Cut it into 3/4 inch cubes and pat them dry.",
+  "Put the tofu in a bowl with 2 tbsp cornstarch and 1/2 tsp salt and toss gently until every piece is coated.",
+  "Peel the squash and cut 2 cups of it into 3/4 inch cubes. Wrap the rest for another meal. Trim the 8 oz green beans and cut them into 2 inch pieces. Seed the bell pepper and cut it into strips.",
+  "Mince the 2 garlic cloves and finely grate 2 tsp of the ginger. Peel the tough outer layer off the lemongrass and finely chop 1 tbsp from the pale bottom part.",
+  "Heat 2 tbsp oil in a large heavy skillet over medium-high. Add the tofu in a single layer and fry for 8 to 10 minutes, turning the pieces with tongs every couple of minutes, until they're golden and crisp on most sides. Move them to a plate.",
+  "Add the last 1 tbsp oil to the same pan with 4 tbsp curry paste, the garlic, ginger and lemongrass. Cook for about 2 minutes, stirring, until it smells fragrant and the paste looks a little darker and drier.",
+  "Pour in the 1 cup broth and stir until the paste dissolves. Let it bubble hard for 3 minutes, until it has cooked down by about half.",
+  "Add the can of coconut milk, 6 torn lime leaves, 1 tbsp sugar and 1 tbsp soy sauce, and stir. Add the squash, bring it to a simmer, then turn the heat to medium and simmer for 10 minutes, until a knife goes into the squash with only a little resistance.",
+  "Add the green beans and bell pepper and cook for 4 to 5 minutes, until the beans are bright green and tender but still have some bite, and the sauce coats a spoon.",
+  "Take the pan off the heat. Stir in the tofu and a big handful of Thai basil leaves, about 1 cup, until the basil wilts.",
+  "Thinly slice 2 Thai chilies into a small bowl and pick a handful of cilantro leaves.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the jasmine rice with the cilantro on top and the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook store-bought red curry paste in oil before the liquid goes in and finish the curry in coconut milk with tofu and vegetables. RecipeTin Eats (written for chicken) fries the paste with garlic, ginger and lemongrass until it dries out, reduces a cup of broth by half, then simmers it with coconut milk, lime leaves, sugar and fish sauce, adds squash and green beans late and stirs in Thai basil off the heat. Grateful Grazer adapts that same method to tofu, boiling and cornstarch-coating the cubes and baking them crisp. VegKit fries onion, garlic and paste, adds raw tofu with baby corn, beans, pepper and carrot and simmers it all in coconut milk. No tofu version had 20 or more ratings, so this follows RecipeTin Eats (the trusted cook for Thai), with pan-fried tofu, vegetable broth and soy sauce in place of fish sauce. Many jarred red curry pastes contain shrimp paste, so check the label for a vegetarian one.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Red Curry with Chicken",
+   "url": "https://www.recipetineats.com/thai-red-curry-with-chicken/",
+   "rating": 4.94,
+   "rating_count": 359,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Grateful Grazer",
+   "title": "Thai Red Curry with Crispy Tofu and Vegetables",
+   "url": "https://gratefulgrazer.com/thai-red-curry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "VegKit",
+   "title": "Easy Thai Red Curry",
+   "url": "https://www.vegkit.com/recipes/easy-thai-red-curry/",
+   "rating": 4.5,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

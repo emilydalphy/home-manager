@@ -1,0 +1,106 @@
+{
+ "dish_name": "Tuna and White Bean Salad",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Tuna in olive oil",
+   "qty": "2 cans (5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cannellini beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Arugula",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Thinly slice half the red onion and put it in a large bowl. Finely grate the zest of the lemon over it, squeeze in all the juice and add 1/2 tsp salt.",
+  "Stir it and leave it for 10 minutes while you get everything else ready. The onion will turn pink and lose its sharp bite.",
+  "Meanwhile, transfer the 2 cans of beans into a colander, rinse them under cold water and shake off as much water as you can.",
+  "Pick the leaves off the parsley and chop them until you have 1/4 cup.",
+  "Whisk 3 tbsp olive oil and the 1/4 tsp pepper into the onion and lemon juice.",
+  "Add the beans and the parsley and stir until they're coated in the dressing.",
+  "Drain the 2 cans of tuna. Break it into big flakes over the beans and fold it in gently with a spoon, so it stays in chunks.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the arugula, with crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions toss canned cannellini with oil-packed tuna, red onion and an oil and acid dressing, and break the tuna into chunks rather than mashing it. America's Test Kitchen keeps it to tuna, beans, red onion, parsley, olive oil and red wine vinegar with lemon wedges on the side. Giada De Laurentiis makes the dressing from the tuna's own oil and red wine vinegar and adds capers, cherry tomatoes, arugula and basil. With Spice softens the onion in vinegar first and adds lemon, celery and dill. This one softens the onion in lemon juice, uses the lemon as the only acid and serves it over arugula. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Italian) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Tuna and White Bean Salad",
+   "url": "https://www.americastestkitchen.com/recipes/5488-tuna-and-white-bean-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network (Giada De Laurentiis)",
+   "title": "White Bean Tuna Salad",
+   "url": "https://www.foodnetwork.com/recipes/giada-de-laurentiis/white-bean-tuna-salad-recipe-1941561",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "With Spice",
+   "title": "Italian tuna white bean salad",
+   "url": "https://www.withspice.com/blog/tuna-white-bean-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

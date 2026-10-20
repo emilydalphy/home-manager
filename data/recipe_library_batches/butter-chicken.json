@@ -1,0 +1,187 @@
+{
+ "dish_name": "Butter Chicken",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce",
+   "cook_qty": "4 tsp grated"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "5 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 small carton (1 cup)",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead: cut the chicken into 1 inch pieces and pat them dry with paper towels. Toss them in a large bowl with 1 tbsp juice squeezed from half the lemon, 3/4 tsp of the chili powder and 1/2 tsp of the salt, and leave them for 20 minutes.",
+  "Grate 2 tsp of the ginger and mince 3 of the garlic cloves. Add them to the chicken with the 1/2 cup yogurt, 1 tbsp of the oil, the 1/4 tsp turmeric, 1 tsp of the garam masala, 1 tsp of the coriander and 1/2 tsp of the cumin. Crush 1 tsp of the kasuri methi between your palms over the bowl. Mix well, cover and put it in the fridge overnight, or for at least 1 hour.",
+  "Take the chicken out of the fridge when you start. Put the 1/3 cup cashews in a small bowl, cover them with hot water and leave them to soak for 20 minutes.",
+  "Meanwhile, thinly slice the onion and roughly chop the 6 tomatoes.",
+  "Heat the last 1 tbsp of oil in a large skillet over medium. Add the onion and cook for about 7 minutes, stirring now and then, until it's light golden. Transfer it into a blender and leave it to cool for a few minutes.",
+  "Drain the cashews and add them to the blender with the tomatoes and 1/2 cup water. Blend until it's completely smooth.",
+  "Grate the last 2 tsp of ginger and mince the last 3 garlic cloves.",
+  "Melt 2 tbsp of the butter in a large heavy pot over medium low. Add the cinnamon stick, the 3 cardamom pods and the 3 cloves. After about 30 seconds they'll sizzle and smell warm.",
+  "Add the ginger and garlic and cook for 1 to 2 minutes, stirring, until they smell fragrant. Don't let them brown.",
+  "Take the pot off the heat and stir in the last 1 tsp chili powder, 1 tsp of the garam masala, 1 tsp of the coriander and the last 1/2 tsp cumin.",
+  "Pour in the tomato puree and put the pot back over medium high. Partly cover it and bring it to a boil. Stand back a little. It will spatter.",
+  "Turn the heat to medium low and cook for 8 to 10 minutes, stirring now and then, until the sauce is thick.",
+  "Pour in 1 cup hot water and simmer for about 10 minutes, until it thickens again and you can see a little butter on top. Pick out the cinnamon stick, cardamom pods and cloves.",
+  "Meanwhile, melt 1 tbsp of the butter in the skillet over medium. Add half the chicken, spacing the pieces apart, and cook for about 2 minutes, until golden underneath. Turn them and cook the other side for 2 minutes, until the marinade has dried on, then move them to a plate. They don't need to be cooked through yet.",
+  "Melt another 1 tbsp of the butter in the skillet and cook the rest of the chicken the same way.",
+  "Add the chicken to the sauce, cover and simmer for 5 to 7 minutes. You're cooking it to 175°F in the middle, so if you have a thermometer, check the biggest piece. No thermometer? Cut into the biggest piece: it's done when there's no pink left.",
+  "Stir in the last 3/4 tsp salt and the 1 tsp sugar. Crush the last 1 1/2 tsp kasuri methi over the pot and stir in the last 1 tbsp of butter until it melts.",
+  "Take the pot off the heat and stir in the 1/3 cup cream. Chop a small handful of the cilantro and scatter it over the top. Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with basmati rice or naan."
+ ],
+ "advance_prep_notes": "marinate the chicken overnight, the night before (at least 1 hour ahead)",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "All three versions marinate chicken in yogurt and spices and finish it in a tomato sauce with cream. Swasthi's (the lead) marinates in two stages, blends fresh tomatoes with sauteed onion and soaked cashews, simmers the puree with whole spices in butter, and browns the chicken separately before it goes in. Cafe Delites browns the chicken first and blends onion, spices and crushed tomatoes in the same pan. RecipeTin Eats is the quickest, simmering the marinated chicken straight in passata and cream. This one follows Swasthi's method with a little more chicken.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Butter Chicken Recipe (Indian Chicken Makhani)",
+   "url": "https://www.indianhealthyrecipes.com/butter-chicken/",
+   "rating": 5.0,
+   "rating_count": 1761,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Butter Chicken",
+   "url": "https://www.recipetineats.com/butter-chicken/",
+   "rating": 5.0,
+   "rating_count": 1106,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cafe Delites",
+   "title": "Butter Chicken Recipe",
+   "url": "https://cafedelites.com/butter-chicken/",
+   "rating": 5.0,
+   "rating_count": 590,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

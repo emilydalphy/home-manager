@@ -1,0 +1,106 @@
+{
+ "dish_name": "Zaru Soba",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Kombu",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 piece"
+  },
+  {
+   "item": "Dried soba noodles",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted seaweed sheets (nori)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 sheet"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Wasabi",
+   "qty": "1 tube",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or up to a month: pour the 1/4 cup sake and 1/2 cup mirin into a small saucepan and bring it to a boil over medium high. Let it bubble for about 30 seconds, until it no longer smells boozy.",
+  "Wipe a 2 inch square of the kombu with a damp cloth. Add it to the pan with the 1/2 cup soy sauce, bring it back to a boil, then turn the heat to low and simmer for 5 minutes.",
+  "Take the pan off the heat and leave it to cool completely. Lift out the kombu, pour the sauce into a jar and keep it in the fridge. It's strong, so you'll thin it with water before serving.",
+  "Bring a large pot of water to a boil. Don't salt it. Fill a big bowl with cold water and plenty of ice.",
+  "Meanwhile, thinly slice the 2 green onions. Cut the sheet of nori into thin strips with scissors.",
+  "Stir 6 tbsp of the sauce into 1 cup plus 2 tbsp ice water. Taste it, add a splash more water if it's too salty or a little more sauce if it's weak, and pour it into 4 small cups.",
+  "Add the 14 oz soba to the boiling water, fanning it out so the strands don't clump. Stir now and then and cook for the time on the package, usually 4 to 5 minutes, until a strand is tender with a little bite.",
+  "Drain the noodles in a colander and rinse them under cold running water, rubbing them gently with your hands until they no longer feel slippery. Don't skip this, or they turn gummy.",
+  "Move the noodles into the ice water for 30 seconds. Drain them again and shake the colander hard to get rid of the water.",
+  "Divide the noodles between 4 plates or bamboo mats and scatter the nori over the top. Serve with the cups of dipping sauce, the green onions and a little wasabi on the side."
+ ],
+ "advance_prep_notes": "make the dipping sauce at least 1 hour ahead so it can cool (it keeps a month in the fridge)",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "All three cook the noodles in unsalted water, rinse them well under cold water and serve them with a cold soy and mirin dipping sauce, green onions, nori and wasabi. Just One Cookbook simmers sake, mirin and soy sauce with kombu and bonito flakes into a concentrate, cools it and thins it with iced water, then chills the noodles in ice water for 30 seconds. RecipeTin Japan heats dashi, soy sauce and mirin 4 to 1 to 1 for a ready to use sauce, and No Recipes boils dashi, soy sauce, sake and sugar and adds grated daikon. This one follows the lead but leaves out the bonito flakes so it stays vegetarian.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Zaru Soba (Cold Soba with Dipping Sauce)",
+   "url": "https://www.justonecookbook.com/zaru-soba-cold-soba-noodles/",
+   "rating": 4.81,
+   "rating_count": 168,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Zaru Soba (Cold Soba Noodles)",
+   "url": "https://japan.recipetineats.com/zaru-soba-cold-soba-noodles/",
+   "rating": 4.84,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "No Recipes",
+   "title": "Zaru Soba (Chilled Soba Noodles)",
+   "url": "https://norecipes.com/cold-zaru-soba-recipe/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

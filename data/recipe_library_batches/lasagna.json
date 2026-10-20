@@ -1,0 +1,143 @@
+{
+ "dish_name": "Lasagna",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 85,
+ "ingredients": [
+  {
+   "item": "Lasagna noodles",
+   "qty": "1 box (1 lb)",
+   "category": "pantry",
+   "cook_qty": "9 noodles"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp plus 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ricotta",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (about 4 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or up to 2 days ahead: bring a large pot of water to a boil with 1 tbsp of the salt.",
+  "Meanwhile, finely chop the onion and mince the 2 garlic cloves. Chop 3 tbsp of the parsley leaves and grate 1/4 cup of the Parmesan.",
+  "When the water boils, add 9 of the lasagna noodles and cook them for the time on the package for al dente, stirring now and then so they don't stick together. Drain them, rinse them under cold water and lay them flat on a clean kitchen towel.",
+  "Meanwhile, set a large skillet over medium high. Add the 1 lb beef and sprinkle over 1/2 tsp of the salt and the 1/4 tsp pepper. Press it into big pieces and leave it for 3 to 4 minutes, until it's browned underneath.",
+  "Break the beef up with a spoon and keep cooking for 3 to 4 minutes, stirring, until there's no pink left. Spoon off all but about 1 tbsp of the fat.",
+  "Add the onion and cook for 5 minutes, stirring now and then, until it's soft.",
+  "Add the garlic, 1 tbsp tomato paste and the 1/2 tsp Italian seasoning. Stir for about 1 minute, until the paste turns a shade darker.",
+  "Pour in the marinara and let it bubble gently, uncovered, for 5 minutes, until it's a little thicker. Taste it. If it's flat, add a pinch more salt. Take it off the heat.",
+  "In a bowl, stir together 1 cup of the ricotta, the egg, 3/4 cup of the mozzarella, 2 tbsp of the grated Parmesan, 2 tbsp of the parsley and the last 1/4 tsp of salt.",
+  "Spread about 1/2 cup of the meat sauce over the bottom of an 8 inch square baking dish. Lay 3 noodles on top, trimming the ends with a knife so they fit. Spread half the ricotta mixture over the noodles, then a third of the sauce that's left.",
+  "Lay 3 more noodles on top. Spread the rest of the ricotta mixture over them, then half the remaining sauce.",
+  "Top with the last 3 noodles and spread the rest of the sauce over them, right to the edges, so no noodle is showing.",
+  "Let it cool, cover the dish tightly with foil and keep it in the fridge.",
+  "On the day, about 2 hours before dinner: take the lasagna out of the fridge and let it sit on the counter for 30 minutes while the oven heats to 350°F.",
+  "Bake it, still covered with the foil, for 55 to 60 minutes, until the sauce is bubbling at the edges and a knife pushed into the middle for 10 seconds comes out hot.",
+  "Take off the foil. Scatter the other 1 1/4 cups of mozzarella and the last 2 tbsp of Parmesan over the top. Bake it uncovered for 15 minutes, until the cheese has melted and browned in spots.",
+  "Let it rest for 15 minutes before you cut it. Any sooner and the layers slide apart. Scatter the last 1 tbsp of chopped parsley over the top.",
+  "Serve with a green salad or garlic bread."
+ ],
+ "advance_prep_notes": "Assemble the lasagna the night before, or up to 2 days ahead, and keep it covered in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13
+ ],
+ "method_notes": "Both read versions layer lasagna noodles with a beef and tomato sauce and finish with a thick layer of mozzarella. Spend With Pennies (the lead) browns beef and Italian sausage with onion and garlic, simmers it briefly in jarred pasta sauce with tomato paste and Italian seasoning, layers boiled noodles with a ricotta, egg, mozzarella and Parmesan filling, and bakes it covered at 350°F before adding the top cheese. It says the lasagna can be assembled up to 2 days ahead and needs about 20 minutes in the oven from the fridge. RecipeTin Eats simmers a from scratch ragù with red wine for 2 hours and uses a cheese white sauce in place of ricotta. This one follows Spend With Pennies with beef only, sized down to an 8 inch dish.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Easy Homemade Lasagna",
+   "url": "https://www.spendwithpennies.com/easy-homemade-lasagna/",
+   "rating": 4.96,
+   "rating_count": 3432,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Lasagna",
+   "url": "https://www.recipetineats.com/lasagna/",
+   "rating": 4.93,
+   "rating_count": 413,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

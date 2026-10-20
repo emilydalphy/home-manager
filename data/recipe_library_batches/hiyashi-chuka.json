@@ -1,0 +1,131 @@
+{
+ "dish_name": "Hiyashi Chuka",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Fresh ramen noodles",
+   "qty": "1 1/2 lbs",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Sliced ham",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 1/2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Karashi mustard",
+   "qty": "1 tube",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water and put it on high heat for the noodles.",
+  "Meanwhile, peel the ginger and grate 1 tsp of it into a small saucepan. Add the 1/3 cup soy sauce, 1/4 cup rice vinegar, 1/4 cup water, 2 1/2 tbsp of the sugar and the 4 tsp sesame oil.",
+  "Bring the dressing to a simmer over medium heat, stirring until the sugar dissolves, then take it off the heat.",
+  "Set the saucepan in a bowl of ice water and stir now and then until the dressing is cold, about 10 minutes.",
+  "Crack 2 of the eggs into a bowl and beat them with 1/2 tbsp of the sugar and 1/8 tsp of the salt.",
+  "Heat 1 tbsp of the neutral oil in a large nonstick skillet over medium. Pour in the egg and tilt the pan so it spreads into a thin sheet.",
+  "When the top is set and no longer shiny, about 1 minute, flip it and cook the other side for 30 seconds. Slide it onto a plate lined with a paper towel.",
+  "Make a second sheet the same way with the last 2 eggs, the last 1/2 tbsp sugar, the last 1/8 tsp salt and the last 1 tbsp oil.",
+  "While the egg sheets cool, cut the 3 cucumbers into thin matchsticks. Cut the tomato into 8 wedges. Stack the ham and cut it into thin strips.",
+  "Roll up each egg sheet, cut it into thin strips and shake them loose.",
+  "Drop the noodles into the boiling water, loosening them with your fingers, and cook them for the time on the package. Pull them a little early so they stay firm.",
+  "Drain the noodles in a colander and rinse them under cold running water, rubbing them with your hands, until they're cold. Shake the colander hard to get the water off.",
+  "Divide the noodles between 4 wide bowls. Lay the egg, ham, cucumber and tomato over the top in separate piles.",
+  "Pour the cold dressing over the bowls and sprinkle with the 2 tsp sesame seeds.",
+  "Serve with the karashi mustard and chili oil on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions top cold rinsed ramen with strips of thin omelette, cucumber and tomato, pour on a soy and rice vinegar dressing sweetened with sugar and rounded out with sesame oil, and serve hot karashi mustard on the side. Just One Cookbook simmers its dressing with ginger, stock and a little la-yu, then chills it, and adds ham and crab sticks; Pickled Plum whisks a raw dressing and uses shrimp, lettuce and green onion. This one follows Just One Cookbook with water in place of the stock, ham as the only meat, and the chili oil at the table.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Hiyashi Chuka (Cold Ramen)",
+   "url": "https://www.justonecookbook.com/hiyashi-chuka/",
+   "rating": 4.8,
+   "rating_count": 82,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Hiyashi Chuka (Chilled Ramen)",
+   "url": "https://pickledplum.com/hiyashi-chuka-recipe/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,157 @@
+{
+ "dish_name": "Aloo Gobi",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Cut the cauliflower into 1 1/2 inch florets. That should be about 3 cups. Put them in a bowl, cover them with hot tap water and leave them for 4 minutes. Drain them, rinse them and let them drain well.",
+  "Cut the 1 lb potatoes into 3/4 inch cubes and keep them in a bowl of cold water until you need them.",
+  "Finely chop the onion and the 2 tomatoes. Grate 2 tsp of the ginger and mince the 4 garlic cloves. Thinly slice the green chili into a small bowl for the table.",
+  "Heat 3 tbsp oil in a wide heavy pan with a lid over medium. Add the 3/4 tsp cumin seeds. After about 20 seconds they'll sizzle and smell toasty. That's your cue for the onion.",
+  "Add the onion and cook for 4 to 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the ginger and garlic and stir for 30 seconds, until they smell fragrant.",
+  "Drain the potatoes, add them to the pan and stir them around for 2 to 3 minutes. Cover the pan, turn the heat to medium low and cook for about 8 minutes, stirring now and then, until a knife goes into a cube but still meets resistance in the middle. Sprinkle in a little water if they stick.",
+  "Turn the heat up to medium high and add the cauliflower. Stir fry it uncovered for 3 minutes, until a few florets have golden spots.",
+  "Turn the heat to medium low. Add 1 tsp Kashmiri chili powder, 1/2 tsp turmeric, 3/4 tsp ground cumin, 1 tsp garam masala and 1 tsp coriander and stir until everything is coated. Sprinkle 3 tbsp water around the sides of the pan.",
+  "Cover the pan and cook for 8 to 10 minutes, stirring every few minutes, until the vegetables are almost tender.",
+  "Sprinkle over the 1 tsp salt and stir. Cover and cook for about 5 minutes, until the potatoes are soft right through. The cauliflower should still have a little bite.",
+  "Take the lid off and turn the heat to medium high. Add the tomatoes and crush the 1 tbsp kasuri methi between your palms over the pan. Stir fry for 2 to 4 minutes, until the tomatoes soften and stop smelling raw. Add a splash more oil if it starts to stick.",
+  "Turn off the heat. Chop 3 tbsp of the cilantro and scatter it over, then squeeze in the juice of half the lemon. Cut the other half into wedges. Taste it. If it's flat, add a pinch more salt or a squeeze from a wedge.",
+  "Serve with roti or rice and a bowl of the yogurt, with the lemon wedges and the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's is a semi-dry stir fry: cumin seeds in oil, onion, then the potatoes cooked covered until half done before the cauliflower goes in, so the cauliflower stays a little crunchy. The ground spices go in with a few spoons of water, salt only once the potatoes are nearly done, and the tomatoes and kasuri methi last over high heat. Tea for Turmeric cooks a tomato masala first and steams both vegetables together in it for about 25 minutes, finishing with lemon. Cook with Manali pan fries the potatoes and cauliflower first, then folds them into the masala. This one follows Swasthi's order, softens the onion before the garlic and ginger go in, and puts the green chili on the side.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Aloo Gobi Recipe (Cauliflower Potato Curry)",
+   "url": "https://www.indianhealthyrecipes.com/aloo-gobi/",
+   "rating": 5,
+   "rating_count": 635,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tea for Turmeric",
+   "title": "Cauliflower and Potato Curry (Aloo Gobi)",
+   "url": "https://www.teaforturmeric.com/aloo-gobi/",
+   "rating": 4.94,
+   "rating_count": 94,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Authentic Aloo Gobi - Potatoes & Cauliflower",
+   "url": "https://www.cookwithmanali.com/aloo-gobi/",
+   "rating": 4.79,
+   "rating_count": 283,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

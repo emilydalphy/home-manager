@@ -1,0 +1,118 @@
+{
+ "dish_name": "Beef and Broccoli",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Low-sodium soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Wrap the 1 lb flank steak in plastic wrap and put it in the freezer for 30 minutes. Firm steak is much easier to slice thinly.",
+  "While it firms up, rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, grate the 3 garlic cloves and 1 tsp of the ginger into a bowl. Add 1/2 cup hot water, the 6 tbsp soy sauce, 3 tbsp brown sugar, 1 1/2 tbsp cornstarch, 1/4 tsp black pepper and 2 tbsp sesame oil. Stir until the sugar dissolves.",
+  "Cut the 1 lb broccoli into bite sized florets. You should have about 6 cups.",
+  "Take the steak out of the freezer and slice it as thinly as you can against the grain, then cut the slices into bite sized strips. Sprinkle the 1/4 tsp salt over them.",
+  "Toast the 2 tsp sesame seeds in a large dry skillet over medium for about 2 minutes, shaking the pan, until they're golden. Transfer them into a small bowl.",
+  "Add 1 tbsp of the oil to the same skillet over medium. Add the broccoli and toss it for 1 minute, then add 2 tbsp water and set the lid on loosely. Cook for 3 to 4 minutes, tossing a couple of times, until it's bright green and tender but still has some bite. Transfer it onto a plate.",
+  "Turn the heat to high and add 1 tbsp of the oil. Lay half the beef in a single layer and leave it for about 1 1/2 minutes, until the underside is browned. Flip the pieces and cook the other side for 1 minute. Move them to a plate.",
+  "Add the last 1 tbsp oil and cook the rest of the beef the same way.",
+  "Put all the beef back in the pan. Stir the sauce again and pour it in. Turn the heat to medium low and let it simmer for 3 to 4 minutes, stirring now and then, until the sauce is thick and coats the beef.",
+  "Add the broccoli and toss until it's coated and hot. If the sauce is very thick, stir in a tablespoon or two of water.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice with the toasted sesame seeds on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions sear thinly sliced steak on high heat, cook the broccoli separately until crisp tender, and bring them together in a soy sauce thickened with cornstarch, served over rice. Natasha's Kitchen freezes flank steak briefly for easier slicing, makes a sweet sauce of soy, brown sugar, sesame oil, garlic and ginger, and simmers the beef in it for a few minutes. Once Upon a Chef marinates flat iron steak in soy and Shaoxing wine, steams the broccoli with a splash of water, and uses oyster sauce and chicken broth in a lighter sauce cooked for under a minute. This one follows Natasha's Kitchen, with the beef seared in two batches and the broccoli steamed briefly in the pan.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Beef and Broccoli Recipe",
+   "url": "https://natashaskitchen.com/beef-and-broccoli/",
+   "rating": 4.97,
+   "rating_count": 2074,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Beef and Broccoli",
+   "url": "https://www.onceuponachef.com/recipes/beef-and-broccoli.html",
+   "rating": 4.77,
+   "rating_count": 186,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

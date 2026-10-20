@@ -1,0 +1,94 @@
+{
+ "dish_name": "Spanish Tortilla",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 1/4 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into thin slices, about 1/4 inch thick. Thinly slice the onion.",
+  "Heat 1/2 cup olive oil in a 10 inch nonstick skillet over medium heat. Add the potatoes and onion, sprinkle 1/2 tsp of the salt over them and turn them in the oil until they're all coated.",
+  "Cover the pan and cook for about 20 minutes, turning the potatoes with a spatula every 5 minutes, until they're soft all the way through and break when you press one. They should bubble gently, not fry. If they start to sizzle hard or brown, turn the heat down.",
+  "Meanwhile, crack the 6 eggs into a large bowl. Add the remaining 1/2 tsp salt and the 1/4 tsp black pepper and whisk with a fork until there are no streaks of white left.",
+  "Set a colander over a heatproof bowl and lift the potatoes and onion into it with a slotted spoon. Pour all but about 2 tbsp of the oil out of the skillet into the bowl. Save the drained oil for another day's cooking.",
+  "Turn the broiler on high.",
+  "Put the skillet back over medium high heat. Transfer the potatoes and onion back in, spread them out evenly and pour the eggs over the top.",
+  "Cook for about 5 minutes without stirring, running the spatula around the edge now and then, until the edges are set and the underside is light golden when you lift it.",
+  "Slide the skillet under the broiler for 2 to 3 minutes, until the middle is just set and doesn't wobble when you shake the pan. If your skillet can't go under the broiler, put a large plate over it, turn it over so the tortilla lands on the plate, then slide it back into the pan and cook the other side for 3 minutes.",
+  "Let it rest in the pan for 5 minutes. Run the spatula around the edge, set a serving plate on top of the skillet and turn it over so the tortilla drops out.",
+  "Chop 2 tbsp of the parsley, scatter it over the top and cut the tortilla into wedges.",
+  "Serve warm, or cold the next day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions cook thin potato slices slowly in a generous amount of olive oil until soft, drain off most of the oil and set them with beaten eggs in a nonstick pan. RecipeTin Eats, the lead, stews the potatoes and onion under a lid for about 20 minutes, cooks the underside for 5 minutes over higher heat and finishes the top under the broiler instead of flipping. Spain on a Fork leaves out the onion, folds the potatoes into the eggs and cooks on low heat with a plate flip, and Jamie Oliver cooks the eggs slowly for 20 minutes before flipping. No version had 20 or more ratings, so the version from RecipeTin Eats (the trusted cook for Spanish) leads, with the plate flip given for a skillet that can't go under the broiler.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Spanish Tortilla (Omelette)",
+   "url": "https://www.recipetineats.com/spanish-tortilla-omelette/",
+   "rating": 4.67,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "The Authentic Spanish Tortilla de Patatas Potato Omelette",
+   "url": "https://spainonafork.com/authentic-spanish-tortilla-de-patatas-potato-omelette/",
+   "rating": 4.72,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Jamie Oliver",
+   "title": "Spanish tortilla",
+   "url": "https://www.jamieoliver.com/recipes/eggs/spanish-tortilla/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

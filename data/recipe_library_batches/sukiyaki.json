@@ -1,0 +1,138 @@
+{
+ "dish_name": "Sukiyaki",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Thinly sliced beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Napa cabbage",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Leeks",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Shiitake mushrooms",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Enoki mushrooms",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Shungiku",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Shirataki noodles",
+   "qty": "1 package (7 oz)",
+   "category": "other"
+  },
+  {
+   "item": "Pasteurized eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Kombu",
+   "qty": "1 package",
+   "category": "pantry"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 30 minutes ahead, put a 2 inch square of kombu in a jug with 2 cups of cold water and leave it on the counter.",
+  "Rinse the 1 1/2 cups rice until the water runs nearly clear and get it cooking.",
+  "Make the sauce. Bring 3/4 cup sake and 3/4 cup mirin to a boil in a small saucepan and let it bubble for 1 minute.",
+  "Stir in 1/3 cup sugar and 3/4 cup soy sauce. Bring it back to a boil, then take it off the heat once the sugar has dissolved.",
+  "Meanwhile, cut 8 leaves of the cabbage into 2 inch pieces. Slice the white and light green parts of the leeks on the diagonal, about 1/2 inch thick.",
+  "Cut the stems off the 6 shiitake. Trim the root end off the enoki and pull it apart into small clumps. Pick the shungiku leaves off the thick stems.",
+  "Cut the tofu into 8 pieces and pat them dry with a paper towel.",
+  "Bring a small pot of water to a boil. Drain the shirataki, drop it in for 1 minute, then drain it again. Snip it into shorter lengths with kitchen scissors.",
+  "Arrange the vegetables, tofu, shirataki and the 1 lb beef on a platter by the stove, or by a tabletop burner if you're cooking at the table.",
+  "Crack each of the 4 eggs into its own small bowl and beat it lightly with chopsticks. Everyone dips the hot food into their egg.",
+  "Heat a large heavy skillet or cast iron pot over medium. Add 1 tbsp oil, then pour in just enough sauce to cover the bottom.",
+  "Lay half the beef in a single layer and cook it for about 1 minute, turning once, until it's browned on both sides.",
+  "Add half the cabbage, leeks, mushrooms, tofu and shirataki in their own piles around the beef. Pour in more sauce until it's about 1/4 inch deep.",
+  "Bring it to a gentle simmer, turn the heat down to low and cook for 5 to 8 minutes, until the cabbage and leeks are tender. Add half the shungiku for the last minute.",
+  "Taste the broth. If it's too salty or sweet, add a splash of the kombu water. If it's flat, add a splash more sauce.",
+  "Serve straight from the pan with the rice and the beaten eggs.",
+  "When the pan is nearly empty, cook the second round the same way with the rest of the beef, vegetables, tofu, shirataki and shungiku, topping it up with sauce and kombu water as it cooks down."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions are Kanto style: a premixed warishita of equal parts soy sauce, mirin and sake with sugar, boiled briefly, then thin beef seared in a little fat and simmered with vegetables, tofu and shirataki in a shallow layer of the sauce, eaten dipped in beaten raw egg. Just One Cookbook (the lead) uses 3 tbsp sugar per 1/2 cup each of the liquids, cooks at the table in rounds and keeps kombu dashi on hand to thin the sauce as it reduces; Japanese Taste uses a little less sugar and browns the leeks in beef tallow first. Both say to use pasteurized eggs for dipping. This one doubles the lead to four servings, cooks it in two rounds on the stove or a tabletop burner, and serves it with rice instead of the udon finish.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Sukiyaki",
+   "url": "https://www.justonecookbook.com/sukiyaki/",
+   "rating": 4.75,
+   "rating_count": 285,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Taste",
+   "title": "How To Make Sukiyaki At Home (Kanto Sukiyaki Recipe)",
+   "url": "https://japanesetaste.com/blogs/japanese-taste-recipes/how-to-make-sukiyaki-at-home-kanto-sukiyaki-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

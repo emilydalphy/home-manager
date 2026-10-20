@@ -1,0 +1,122 @@
+{
+ "dish_name": "Oyakodon",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover the pan and cook for 15 minutes. Take it off the heat and keep the lid on until you're ready to serve.",
+  "Meanwhile, cut the 1.25 lb chicken into 1 inch pieces. Toss them with the 2 tbsp sake and leave them for 5 minutes.",
+  "Slice the onion 1/4 inch thick. Thinly slice 3 of the green onions.",
+  "Crack the 8 eggs into a bowl and break them up with chopsticks or a fork, 5 or 6 strokes only, so you can still see streaks of white and yolk. Don't beat them smooth.",
+  "In a 12 inch skillet with a lid, stir together 1 cup water, the 1/2 tsp dashi granules, 1/4 cup soy sauce, 1/4 cup mirin and the 4 tsp sugar until the sugar dissolves. Spread the onion over the bottom.",
+  "Set the pan over medium and bring it to a simmer. Lay the chicken over the onion in one layer. When it bubbles again, turn the heat to medium low and simmer for about 6 minutes, turning the pieces halfway, until the onion is soft. You're cooking the chicken to 175°F, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Taste the sauce. If it's flat, add a pinch of salt.",
+  "Turn the heat up to medium. When small bubbles show around the edge, pour about two thirds of the egg in a slow circle over the chicken, keeping it off the hot rim of the pan. Leave it for about 1 minute, until the whites start to set.",
+  "Pour the rest of the egg over the top and scatter the green onions over it. Cover and cook for about 1 minute, until the top is nearly set but still soft and glossy. Turn off the heat.",
+  "Fluff the rice and divide it among 4 bowls. Cut the chicken and egg into 4 wedges with a spatula and slide one over each bowl, with a spoonful of the sauce from the pan.",
+  "Serve with the shichimi togarashi on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three simmer sliced onion and bite-size chicken thigh in dashi with soy sauce and mirin, then pour in loosely beaten egg and take it off the heat while it's still soft. Just One Cookbook uses dashi, soy sauce and mirin in a 4 to 1 to 1 ratio with a little sugar, marinates the chicken in sake and adds the eggs in two pours, mostly whites then mostly yolks. RecipeTin Japan uses more mirin and no sugar, and Pepper.ph separates the whites and yolks fully. Most cook one bowl at a time in a small pan; RecipeTin Japan says one large pan works too, which is what this one does for four.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Oyakodon (Chicken and Egg Rice Bowl)",
+   "url": "https://www.justonecookbook.com/oyakodon/",
+   "rating": 4.72,
+   "rating_count": 657,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Oyako-don (Chicken and Egg on Rice)",
+   "url": "https://japan.recipetineats.com/oyako-don-chicken-egg-rice/",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pepper.ph",
+   "title": "Oyakodon (Japanese Chicken & Egg Rice Bowl)",
+   "url": "https://pepper.ph/recipes/oyakodon-chicken-egg-rice-bowl",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

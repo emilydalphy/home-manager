@@ -1,0 +1,51 @@
+{
+ "dish_name": "Japchae",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Korean sweet potato glass noodles", "qty": "8 oz", "category": "pantry"},
+  {"item": "Beef sirloin", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup + 1 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp + 1 tsp"},
+  {"item": "Mirin", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrot", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Fresh shiitake mushrooms", "qty": "1 package (3.5 oz)", "category": "produce"},
+  {"item": "Spinach", "qty": "1 bunch", "category": "produce"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Sesame oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Sesame seeds", "qty": "1 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 8 oz glass noodles in a large bowl and cover them with hot water from the kettle. Leave them to soak for 15 minutes.",
+  "Meanwhile, slice the 8 oz sirloin against the grain into thin matchsticks about 1/4 inch thick. Toss them in a bowl with 1 tbsp of the soy sauce, 1 tsp of the sugar and 1 tbsp of the mirin.",
+  "In another bowl, stir together the rest of the soy sauce (1/4 cup), 1/2 cup water, the remaining 2 tbsp sugar, the remaining 2 tbsp mirin, 1 tbsp of the vegetable oil and the 1 tsp black pepper. Mince the 2 garlic cloves into it and stir until the sugar dissolves.",
+  "Thinly slice the onion and the red bell pepper. Peel the carrot and cut it into thin matchsticks. Cut the stems off the shiitake and slice the caps 1/4 inch thick.",
+  "Rinse the spinach well, shake off the water and cut off any thick stems.",
+  "Drain the noodles in a colander.",
+  "Heat 1 tbsp of the vegetable oil in a large skillet or wok over medium high. Add the onion, carrot and bell pepper with a pinch of salt and stir fry for 3 to 4 minutes, until they're soft but still have a little crunch.",
+  "Add the mushrooms and another pinch of salt and stir fry for 2 minutes, until they soften. Add the spinach and stir for about 1 minute, until it wilts. Transfer the vegetables onto a large plate.",
+  "Put the pan back over high heat with the last 1 tbsp vegetable oil. Spread the beef out in one layer and leave it for 1 minute so it browns. Stir fry it for 1 to 2 minutes, until no pink is left. Lift the beef onto the plate with the vegetables and leave the juices in the pan.",
+  "Turn the heat to medium. Add the noodles to the pan, pour the sauce over them and toss. Cook for 3 to 4 minutes, tossing often, until the noodles are soft and chewy and have soaked up most of the liquid.",
+  "Turn the heat to low. Add the vegetables and beef back to the pan with the 1 tbsp sesame oil and the 1 tbsp sesame seeds. Toss until everything is mixed through the noodles.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm or at room temperature."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions cook the vegetables and the beef separately and bring them together with the noodles and a soy, sugar, sesame oil and garlic sauce at the end. Beyond Kimchee soaks the noodles in hot water instead of boiling them and finishes them in the beef's pan juices with a watery sauce until it's absorbed. Korean Bapsang boils the noodles, blanches the spinach separately and tosses everything by hand in a bowl, and RecipeTin Eats marinates the beef briefly and tosses it all in a big bowl of sauce. This one follows Beyond Kimchee with a little more beef so it holds up as a dinner for 4.",
+ "sources": [
+  {"name": "Beyond Kimchee", "title": "Easy Japchae with Chewy Korean Glass Noodles", "url": "https://www.beyondkimchee.com/japchae", "rating": 5.0, "rating_count": 23, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Japchae - Korean Noodles", "url": "https://www.recipetineats.com/japchae-korean-noodles/", "rating": 4.89, "rating_count": 42, "read": true, "lead": false},
+  {"name": "Korean Bapsang", "title": "Japchae (stir-fried starch noodles with beef and vegetables)", "url": "https://www.koreanbapsang.com/japchae-korean-stir-fried-starch/", "rating": 4.67, "rating_count": 500, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

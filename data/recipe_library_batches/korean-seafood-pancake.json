@@ -1,0 +1,46 @@
+{
+ "dish_name": "Korean Seafood Pancake",
+ "cuisine": "Korean",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Frozen seafood mix", "qty": "12 oz", "category": "frozen"},
+  {"item": "Green onions", "qty": "2 bunches", "category": "produce"},
+  {"item": "Sesame oil", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "All-purpose flour", "qty": "1 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Vegetable oil", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "4 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Gochugaru", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the sealed bag of 12 oz frozen seafood in a bowl of cold water for about 20 minutes, until it's thawed.",
+  "Meanwhile, make the dipping sauce. In a small bowl, stir the 2 tbsp soy sauce, the 4 tsp rice vinegar, 2 tbsp water, the 1 tsp sugar, a pinch of black pepper and a pinch of gochugaru until the sugar dissolves.",
+  "Trim the green onions and cut them in half crosswise. If the white parts are thick, slice them in half lengthwise.",
+  "Drain the seafood and pat it dry with paper towels. Get it as dry as you can, or the pancake will come out soggy. Cut any big pieces into bite size and toss them with the 1 tbsp sesame oil.",
+  "In a large bowl, whisk the 1 cup flour and the 1/2 tsp salt with 3/4 cup ice cold water until smooth. It should be thinner than a breakfast pancake batter and thicker than a crepe batter. If it's too thick, whisk in more cold water a tablespoon at a time. Stir in half the seafood.",
+  "Crack the egg into a small bowl and beat it with a fork.",
+  "Heat 4 tbsp of the oil in a large nonstick skillet over medium high. Ladle in half the batter and spread it into a thin, even round.",
+  "Lay half the green onions over it in a single layer and press them into the batter. Scatter half the remaining seafood on top and drizzle over half the egg.",
+  "Cook for 3 to 4 minutes, until the underside is golden brown. If it's browning too fast, turn the heat down to medium.",
+  "Pour 2 tbsp of the oil around the edge. Flip it with a wide spatula, or slide it onto a plate and put it back into the pan upside down. Press it down and cook the other side for 3 to 4 minutes, until it's golden and crisp. Slide it onto a cutting board.",
+  "Make the second pancake the same way, with 4 tbsp of the oil to start and the last 2 tbsp after you flip it.",
+  "Cut the pancakes into wedges and serve them hot with the dipping sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions make a thin batter with ice cold or sparkling water, keep the seafood well drained, fry the pancake in plenty of oil until golden and crisp on both sides, and serve it with a soy and vinegar dipping sauce. Korean Bapsang (the lead) uses Korean pancake mix or flour with salt, lays whole green onion lengths over the batter, adds the rest of the seafood and a drizzle of beaten egg on top, and makes two large pancakes. SideChef adds rice flour, potato starch, baking powder, garlic and ginger and stirs the egg into the batter, and Sift and Simmer makes smaller pancakes from a flour, rice flour and potato starch batter with sesame oil in the dip. This one follows the lead with all-purpose flour.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Haemul Pajeon (Seafood Scallion Pancake)", "url": "https://www.koreanbapsang.com/haemul-pajeon/", "rating": 4.66, "rating_count": 125, "read": true, "lead": true},
+  {"name": "SideChef", "title": "Haemul Pajeon (Seafood Scallion Pancakes)", "url": "https://www.sidechef.com/recipes/4432/haemul_pajeon_seafood_scallion_pancakes", "rating": 4.0, "rating_count": 3, "read": true, "lead": false},
+  {"name": "Sift and Simmer", "title": "Haemul Pajeon (Korean Crispy Seafood Pancakes)", "url": "https://www.siftandsimmer.com/haemul-pajeon-korean-crispy-seafood-pancakes/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

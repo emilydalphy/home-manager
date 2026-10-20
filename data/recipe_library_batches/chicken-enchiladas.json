@@ -1,0 +1,48 @@
+{
+ "dish_name": "Chicken Enchiladas",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Cream cheese", "qty": "1 package (8 oz)", "category": "dairy", "cook_qty": "2 oz"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy"},
+  {"item": "Diced green chiles", "qty": "1 can (4 oz)", "category": "pantry"},
+  {"item": "Red enchilada sauce", "qty": "1 can (19 oz)", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Shredded Mexican cheese blend", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "2 cups"},
+  {"item": "Flour tortillas", "qty": "8 (8 inch)", "category": "pantry"}
+ ],
+ "instructions": [
+  "Take the cream cheese out of the fridge. Heat the oven to 400°F and brush a 9x13 baking dish with a little of the oil.",
+  "Pat the 1 lb chicken dry with paper towels and sprinkle 1/2 tsp of the salt over both sides.",
+  "Heat the rest of the oil in a large skillet over medium high. Lay the chicken in and leave it alone for 5 to 6 minutes, until the underside is deep golden and lets go of the pan.",
+  "Flip the pieces and cook the other side for 5 to 6 minutes. You're cooking them to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Move the chicken to a board and let it rest for 5 minutes. Shred it with two forks.",
+  "Meanwhile, put 2 oz of the cream cheese in a large bowl and stir it with a spatula until it's smooth.",
+  "Whisk in 1/4 cup of the sour cream, the can of green chiles with their juice, the 19 oz enchilada sauce, the remaining 1/4 tsp salt, the 1/4 tsp pepper, 1/2 tsp garlic powder and 1/2 tsp paprika until there are no lumps of cream cheese left.",
+  "Pour about a third of the sauce into a small bowl and set it aside for the top.",
+  "Add the chicken and 1 1/2 cups of the cheese to the big bowl and stir until everything is coated.",
+  "Taste the filling. If it's flat, add a pinch more salt.",
+  "Spoon the filling down the middle of each of the 8 tortillas, roll them up tightly and lay them seam side down in the dish.",
+  "Pour the sauce you set aside over the top and spread it to the edges. Sprinkle the last 1/2 cup of cheese over it. To make it ahead, cover the dish now and keep it in the fridge for up to a day.",
+  "Cover the dish with foil and bake for 30 minutes. If it's coming straight from the fridge, bake it covered for 40 minutes.",
+  "Take off the foil and bake for 10 minutes, until the cheese has melted and the sauce is bubbling at the edges. Let it sit for 5 minutes before you serve it.",
+  "Serve hot, with the rest of the sour cream on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions roll 8 tortillas around chicken and cheese, cover them with a red sauce and more cheese, and bake them in a 9x13 dish. Natasha's Kitchen poaches the chicken, beats cream cheese, sour cream and green chiles into canned mild enchilada sauce, uses two thirds of that sauce in the filling and bakes covered at 400°F for 30 minutes, then 10 uncovered. RecipeTin Eats makes its own sauce from a flour roux, spices, broth and tomato, sears spiced chicken in a skillet and adds refried beans, corn and bell pepper to the filling. This one follows Natasha's sauce and bake, sized for 4, with the chicken seared in a skillet the RecipeTin Eats way.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "The BEST Chicken Enchiladas Recipe", "url": "https://natashaskitchen.com/chicken-enchiladas/", "rating": 4.93, "rating_count": 400, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Chicken Enchiladas", "url": "https://www.recipetineats.com/chicken-enchiladas/", "rating": 4.92, "rating_count": 140, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,125 @@
+{
+ "dish_name": "Grilled Cheese and Tomato Soup",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce",
+   "cook_qty": "1 carrot"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 stalk"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "9 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh chives",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Potato bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Sharp cheddar",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "4 oz"
+  },
+  {
+   "item": "Gouda",
+   "qty": "1 wedge (about 7 oz)",
+   "category": "dairy",
+   "cook_qty": "4 oz"
+  }
+ ],
+ "instructions": [
+  "Roughly chop the onion, 1 carrot and 1 celery stalk. Mince the 2 garlic cloves.",
+  "Heat 1 tbsp olive oil in a large pot over medium high. Add the onion, carrot and celery and cook for 5 to 6 minutes, stirring now and then, until they're soft and the edges are golden brown.",
+  "Add the garlic and cook for about 30 seconds, until it smells fragrant.",
+  "Pour in the can of crushed tomatoes and 3 cups of the broth, add 1/2 tsp salt and bring it to a boil. Turn the heat down and let it simmer for 20 minutes, until it has cooked down a little.",
+  "Meanwhile, grate 4 oz cheddar and 4 oz Gouda and toss them together. Snip a small handful of the chives.",
+  "Lay out 4 of the 8 slices of bread. Pile the cheese evenly over them, add a little of the pepper and close each one with one of the other 4 slices. Press down lightly.",
+  "When the soup is done, take it off the heat and blend it until smooth, either with a stick blender right in the pot or in batches in a blender. If you use a blender, fill it no more than halfway and hold the lid down with a folded towel. Hot soup can push the lid off.",
+  "Put the soup back over low heat and stir in 3 tbsp of the butter until it melts, then the rest of the pepper. Taste it. If it's flat, add a pinch more salt. Leave it on low while you cook the sandwiches.",
+  "Melt 3 tbsp butter in a large skillet over medium. Put 2 sandwiches in and press them down with a smaller pan or a spatula. Cook for 2 to 3 minutes, until the underside is deep golden.",
+  "Flip them and cook the other side for 2 to 3 minutes, until it's golden and the cheese has melted. Move them to a board and cook the other 2 sandwiches the same way in the last 3 tbsp butter.",
+  "Cut the sandwiches in half. Ladle the soup into bowls and scatter the chives over the top.",
+  "Serve the soup with the grilled cheese."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions build the soup on onion, celery and garlic softened in olive oil, then canned tomatoes and stock, and finish it with chives. Tasting Table browns carrot with the base, adds chile flakes, simmers it for 20 minutes, blends it smooth and stirs in butter at the end, then fries Comté and Gouda sandwiches on potato bread in butter under a weight. Cozymeal leaves its soup unblended with milk and cream, and spreads its Gruyère and cheddar sandwiches with Dijon. This one follows Tasting Table, leaves out the chile flakes, swaps the Comté for sharp cheddar and makes four sandwiches. Natasha's Kitchen has a very well rated tomato soup, but it isn't the pair, so only versions that make both were weighed for the lead.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Grilled Cheese and Tomato Soup Recipe",
+   "url": "https://www.tastingtable.com/686813/tomato-soup-grilled-cheese-comte-gouda-hot-soups/",
+   "rating": 4.7,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cozymeal",
+   "title": "Grilled Cheese and Tomato Soup",
+   "url": "https://cozymeal.com/recipes/r/grilled-cheese-and-tomato-soup",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

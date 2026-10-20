@@ -1,0 +1,41 @@
+{
+ "dish_name": "Besan Chilla",
+ "cuisine": "Indian",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Besan (chickpea flour)", "qty": "2 cups", "category": "pantry"},
+  {"item": "Ajwain (carom seeds)", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Roma tomato", "qty": "1", "category": "produce"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "2 tsp grated"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Ketchup", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Finely chop the onion and the tomato. Seed and finely chop the green chili, grate 2 tsp of the ginger and chop 1/4 cup of the cilantro.",
+  "In a large bowl, stir together the 2 cups besan, 1 tsp ajwain, 1/4 tsp turmeric and 3/4 tsp salt.",
+  "Add the onion, tomato, chili, ginger and cilantro. Whisk in 1 1/3 cups water a little at a time, then up to 2/3 cup more, until the batter is thick but pours easily, like pancake batter. Add the water slowly, or the batter goes lumpy.",
+  "Set a large nonstick or cast iron pan over medium high and rub it with a few drops of the oil. Once it's hot, turn the heat down to medium.",
+  "Stir the batter up from the bottom. Pour about 1/2 cup into the middle of the pan and quickly spread it into a 6 inch round with the back of the ladle.",
+  "Drizzle about 1 tsp of oil around the edge and a few drops over the top. Cook for 2 to 3 minutes, until the edges look dry and lift away from the pan.",
+  "Flip it and press the edges down with a spatula. Cook the other side for about 2 minutes, until it has golden spots and no wet batter shows when you press the middle.",
+  "Slide it onto a plate and cover it with a clean towel. Make the rest the same way, stirring the batter each time. You'll get about 8. If they brown too fast, turn the heat down a touch.",
+  "Serve hot with ketchup."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions whisk besan with ajwain and salt, stir in finely chopped onion, ginger, green chili and cilantro, and add water slowly to a thick but pourable batter that's spread thin on a hot pan turned down to medium, with oil drizzled round the edge before it's flipped and pressed. Swasthi's adds tomato and a pinch of turmeric and warns that a pan that's too hot browns them before they cook through; Cook with Manali's adds grated carrot and green pepper and cooks each side about 2 minutes. This follows Swasthi's batter at twice the amount, for about 8 chilla, with one seeded chili.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Besan Chilla Recipe (Breakfast Cheela)", "url": "https://www.indianhealthyrecipes.com/cheela-recipe/", "rating": 5.0, "rating_count": 158, "read": true, "lead": true},
+  {"name": "Cook with Manali", "title": "25-Minute Besan Chilla Recipe (Vegan)", "url": "https://www.cookwithmanali.com/besan-chilla/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

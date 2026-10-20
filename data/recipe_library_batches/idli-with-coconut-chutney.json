@@ -1,0 +1,49 @@
+{
+ "dish_name": "Idli with Coconut Chutney",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Urad dal", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Idli rice", "qty": "1 cup", "category": "pantry"},
+  {"item": "Fenugreek seeds", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Frozen grated coconut", "qty": "1 bag", "category": "frozen", "cook_qty": "1 cup"},
+  {"item": "Chana dal", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Curry leaves", "qty": "1 package", "category": "produce", "cook_qty": "2 sprigs"},
+  {"item": "Cumin seeds", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Mustard seeds", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 1/2 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "The morning before, at least 20 hours ahead: Put the 1/2 cup urad dal and the 1/2 tsp fenugreek seeds in one bowl and the 1 cup idli rice in another. Rinse each one a few times, until the water runs clear. Cover both with plenty of fresh water and leave them to soak for at least 6 hours.",
+  "That evening: Drain the dal and put it in a blender with 1/2 cup ice cold water. Blend for 3 to 5 minutes, until the batter is smooth, thick and frothy. Add 2 to 4 tbsp more water if the blender stalls. Don't let the batter get warm, or the idli come out dense. Scrape it into a large bowl.",
+  "Drain the rice and blend it with 1/2 cup water until it's a slightly gritty batter, about the texture of fine semolina. Pour it into the dal batter, add 1/2 tsp of the salt and mix them together with a clean hand for about a minute. It should be thick but still pour from a spoon.",
+  "Cover the bowl loosely and leave it somewhere warm overnight, 8 to 14 hours, until it has risen to about double and looks light and bubbly. In a cold kitchen, put it in the oven with only the light switched on.",
+  "In the morning, pour about 2 inches of water into an idli steamer, or a large pot that fits your idli stand. Cover it and bring it to a boil over high heat.",
+  "Meanwhile, start the chutney. Heat 2 tsp of the oil in a small pan over medium. Add the 2 tbsp chana dal and stir for about 2 minutes, until it turns light golden.",
+  "Crush the 3 garlic cloves with the flat of a knife. Add them to the pan with 1 sprig of the curry leaves and the green chili, and stir for about a minute, until the chili blisters and the leaves turn crisp.",
+  "Turn the heat to low and add the 3/4 tsp cumin seeds. Stir for 30 seconds, until they smell toasty. Add the 1 cup coconut and stir for 2 to 3 minutes, until it's hot all the way through. Take the pan off the heat and leave it to cool.",
+  "Rub the idli plates with 1 1/2 tsp of the oil. Stir the batter gently once or twice, no more, so it keeps its air. Spoon it into the molds, filling each one almost to the top. You'll get about 16.",
+  "When the water is boiling hard and steaming, set the stand in the steamer. Cover it and steam over high heat for 10 minutes. No peeking.",
+  "Turn off the heat and leave the lid on for 2 minutes. Lift out the stand and leave the idli to cool for 2 to 3 minutes. A toothpick pushed into the middle of one should come out clean, and the tops shouldn't look wet.",
+  "Run a wet spoon around each idli to lift it out of its mold. If your stand doesn't hold all the batter, oil the molds again and steam the rest the same way.",
+  "While the idli steam, scrape the coconut mixture into the blender. Add the remaining 1/2 tsp salt and about 1/2 cup water, and blend until it's a smooth, thick chutney. Taste it, and add a pinch more salt if it's flat. Spoon it into a bowl.",
+  "Heat the last 1 tsp of oil in the small pan over medium. Add the 1/2 tsp mustard seeds. When they start to pop, add the other curry leaf sprig, stir for a few seconds and pour it all over the chutney. Stand back a little. The leaves spatter.",
+  "Serve the idli hot with the coconut chutney."
+ ],
+ "advance_prep_notes": "Soak the rice and dal for at least 6 hours, then grind the batter and leave it to ferment overnight. Start the morning before.",
+ "advance_prep_step_indices": [1, 2, 3, 4],
+ "method_notes": "Both idli versions soak urad dal and idli rice separately, grind the dal smooth and fluffy and the rice a little coarse, mix the two by hand and ferment the batter about 8 hours until it doubles, then steam it in greased molds for 10 minutes. Swasthi's soaks the dal with fenugreek (or adds soaked poha), grinds it with chilled water so it stays cool and keeps salt light; Hebbar's uses twice the rice to dal, grinds in a wet grinder and salts the batter after fermenting. Swasthi's coconut chutney roasts chana and urad dal with garlic, green chili and curry leaves, warms the coconut through with cumin, blends it with salt and water and finishes with an optional mustard seed and curry leaf tempering. This one uses chana dal alone in the chutney, as her recipe allows, and keeps it to one green chili.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Idli Recipe (Idli Batter Recipe with Pro Tips)", "url": "https://www.indianhealthyrecipes.com/soft-idli-recipe/", "rating": 4.99, "rating_count": 588, "read": true, "lead": true},
+  {"name": "Swasthi's Recipes", "title": "Idli Chutney (Dosa Chutney Recipe)", "url": "https://www.indianhealthyrecipes.com/coconut-chutney-recipe/", "rating": 4.99, "rating_count": 98, "read": true, "lead": false},
+  {"name": "Hebbar's Kitchen", "title": "How to Make Soft Idli Recipe", "url": "https://hebbarskitchen.com/idli-recipe-idli-with-idli-rava-recipe/", "rating": 4.89, "rating_count": 63, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

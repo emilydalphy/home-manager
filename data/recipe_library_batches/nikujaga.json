@@ -1,0 +1,122 @@
+{
+ "dish_name": "Nikujaga",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Thinly sliced beef",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Shirataki noodles",
+   "qty": "1 package (7 oz)",
+   "category": "other"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dashi powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice until the water runs nearly clear and get it cooking before anything else.",
+  "Meanwhile, peel the 3 potatoes and cut each one into quarters. Put them in a bowl of cold water while you cut everything else.",
+  "Cut the onion into thin wedges. Peel the carrot and cut it into bite-size chunks on the diagonal. Pull the strings off the snow peas.",
+  "Cut the 3/4 lb beef into pieces about 3 inches wide.",
+  "Bring a small pot of water to a boil. Drain the shirataki, drop it in for 1 minute, then drain it again. Snip it into shorter lengths with kitchen scissors.",
+  "Stir 1 tsp dashi powder into 2 cups of hot water until it dissolves.",
+  "Heat 1 tbsp oil in a large pot over medium. Add the onion and cook for 2 to 3 minutes, stirring, until it starts to soften.",
+  "Add the beef and cook, stirring, for about 2 minutes, until there's no pink left.",
+  "Drain the potatoes and add them to the pot with the carrot and shirataki. Stir for a minute so the potatoes get coated in the oil and beef juices.",
+  "Pour in the dashi. It should nearly cover everything. Turn the heat up and bring it to a boil, then skim off the gray foam that rises to the top.",
+  "Stir in 1 tbsp sugar, 2 tbsp sake, 1/4 cup mirin and 1/4 cup soy sauce, and turn the heat down to low.",
+  "Lay a sheet of foil right on the surface, or use a lid a little smaller than the pot. Simmer for 12 to 15 minutes, until a skewer slides easily into a potato. Don't stir, or the potatoes will break up.",
+  "Scatter the snow peas over the top, put the foil back and simmer for 2 more minutes, until they're bright green.",
+  "Taste the broth. If it's flat, add a splash more soy sauce.",
+  "Serve in bowls with some of the broth spooned over, with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions soften onion, cook thin beef until it loses its pink, add potatoes and carrot, then simmer in dashi with soy, mirin, sake and sugar until the potatoes are tender. Just One Cookbook (the lead) skims the foam, simmers under a drop lid without stirring, adds shirataki and snow peas, and lets the pot sit 30 to 60 minutes off the heat so the potatoes take on the broth; Pickled Plum skips the noodles and the lid and simmers longer, 20 to 30 minutes. This one follows the lead's seasoning ratio with the beef raised from 1/2 to 3/4 lb for a dinner of four, and leaves the long rest out. It tastes even better the next day.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Nikujaga (Japanese Meat and Potato Stew)",
+   "url": "https://www.justonecookbook.com/nikujaga/",
+   "rating": 4.72,
+   "rating_count": 199,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Nikujaga (Japanese Beef & Potato Stew)",
+   "url": "https://pickledplum.com/recipe-nikujaga-japanese-meat-and-potato-stew/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

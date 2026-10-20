@@ -1,0 +1,48 @@
+{
+ "dish_name": "Breakfast Tacos",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Yukon gold potatoes", "qty": "1 lb", "category": "produce"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Small flour tortillas", "qty": "8", "category": "other"},
+  {"item": "Cotija cheese", "qty": "4 oz", "category": "dairy"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Cut the 1 lb potatoes into 1/2 inch cubes. No need to peel them. Chop half the onion.",
+  "Heat the 2 tbsp oil in a large nonstick skillet over medium. Add the potatoes and 1/2 tsp of the salt, cover the pan and cook for 8 minutes, stirring twice, until a knife slides into a cube easily.",
+  "Meanwhile, make the pico de gallo. Dice the 2 tomatoes, finely chop a quarter of the onion and chop 2 tbsp of the cilantro. Toss them in a small bowl with the juice of half the lime and 1/4 tsp of the salt.",
+  "Crack the 8 eggs into a bowl, add the remaining 1/2 tsp salt and the 1/4 tsp pepper, and beat them with a fork until there are no streaks of white left.",
+  "Take the lid off the potatoes and turn the heat up to medium high. Add the chopped onion and cook for 4 to 5 minutes, stirring now and then, until the potatoes are browned at the edges and the onion is soft.",
+  "Mince the garlic clove, stir it into the potatoes and cook for 30 seconds, until you can smell it.",
+  "While the potatoes brown, warm the 8 tortillas in a second dry pan over medium, about 20 seconds a side, and stack them in a clean kitchen towel.",
+  "Turn the heat under the potatoes down to medium low and pour in the eggs. Leave them for about 20 seconds, then stir slowly with a spatula, pushing the set egg from the edges into the middle.",
+  "Keep stirring gently for 2 to 3 minutes. Take the pan off the heat while the eggs still look a little glossy. They keep cooking in the hot pan.",
+  "Taste the eggs, and add a pinch more salt if they're flat.",
+  "Slice the avocado and crumble the 4 oz cotija. Seed and thinly slice the jalapeño and cut the other half of the lime into wedges.",
+  "Spoon the eggs and potatoes into the tortillas and top them with the pico de gallo, cotija and avocado. Serve with the sliced jalapeño and lime wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions scramble the eggs softly, take them off the heat while they're still a little wet and pile them into warm tortillas with fresh toppings. RecipeTin Eats browns chorizo first, softens onion, garlic and chili in the drippings and scrambles the eggs there, then tops the tacos with pico de gallo, cotija, avocado and cilantro. 5 Dollar Dinners cooks diced potatoes covered in the pan until tender and browned and scrambles the eggs right in with them, and Spend With Pennies uses bell pepper, cheddar and bacon. This one uses the potatoes in place of chorizo and keeps the lead's toppings, with the chili on the side. No version had 20 or more ratings, so the trusted cook for Mexican (RecipeTin Eats) leads.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Mexican Breakfast Tacos (Chorizo and Egg)", "url": "https://www.recipetineats.com/mexican-breakfast-tacos-chorizo-and-egg/", "rating": 5.0, "rating_count": 8, "read": true, "lead": true},
+  {"name": "Spend With Pennies", "title": "Breakfast Tacos", "url": "https://www.spendwithpennies.com/breakfast-tacos/", "rating": 5.0, "rating_count": 19, "read": true, "lead": false},
+  {"name": "5 Dollar Dinners", "title": "Potato and Egg Breakfast Tacos", "url": "https://www.5dollardinners.com/potato-and-egg-breakfast-tacos/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

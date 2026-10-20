@@ -1,0 +1,114 @@
+{
+ "dish_name": "Pogaca",
+ "cuisine": "Turkish",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "1 packet",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Feta",
+   "qty": "1 block (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours before you want them, or the day before you bake for the week: stir the 4 cups flour, 3/4 tsp salt and the packet of yeast together in a large bowl and make a well in the middle.",
+  "Crack 2 of the eggs into another bowl. Separate the third egg, adding the yolk to the bowl and keeping the white in a cup for later. Whisk in the 2 tbsp sugar, 3/4 cup yogurt and 1/4 cup lukewarm water.",
+  "Pour the egg mixture into the flour and stir until it comes together as a soft, sticky dough. Transfer it onto a floured counter and knead for 2 to 3 minutes, until it's smooth.",
+  "Rub the 1 tsp oil around a clean bowl, put the dough in and cover it tightly. Leave it somewhere warm until it's about doubled, 45 to 60 minutes.",
+  "Meanwhile, crumble the block of feta into a bowl. Finely chop 1/2 cup of the parsley leaves and mix them in with the 1/4 tsp pepper.",
+  "Line a large baking sheet with parchment. Turn the dough out, cut it into 8 even pieces and roll each into a ball. Cover them with a damp towel and let them rest for 5 minutes.",
+  "Press one ball out into an oval about 1/4 inch thick. Put an eighth of the feta in the middle, fold the dough over into a half moon and press the edge firmly with the side of your hand to seal it. Set it on the sheet and shape the rest.",
+  "Whisk the saved egg white with the 1 tbsp milk, brush it over the tops and scatter on the 2 tbsp sesame seeds. Leave them to puff up for 15 to 20 minutes while the oven heats to 350°F.",
+  "Bake for 15 to 18 minutes, until they're deep golden on top and underneath. Cool them on a rack.",
+  "Serve them warm or at room temperature. Once they're cool, keep them in a tin or a bag for up to 3 days, or freeze them for a month. Warm them in a 350°F oven for 5 to 10 minutes."
+ ],
+ "advance_prep_notes": "Bake ahead for the week: the dough rises for about an hour, so start at least 2 hours before. They keep 3 days in a tin or a month in the freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "Both read versions fill a soft enriched dough with crumbled feta and parsley, brush the tops with egg and scatter on seeds before baking. Sainsbury's Magazine makes a quick yogurt and egg dough with fast action yeast, one long rise and a short second proof, and folds six large half moons; Cooking Gorgeous uses a milk, water and oil dough for 22 smaller buns and binds the filling with egg white. This follows Sainsbury's, scaled to 8 rolls. Neither version had 20 or more ratings (Sainsbury's has 19) and RecipeTin Eats, the trusted cook for Turkish, has no version, so the best rated read version leads.",
+ "sources": [
+  {
+   "name": "Sainsbury's Magazine",
+   "title": "Feta and parsley pogaca",
+   "url": "https://www.sainsburysmagazine.co.uk/recipes/snacks/feta-and-parsley-pogaca",
+   "rating": 5.0,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Pogaca (Turkish Cheese Buns)",
+   "url": "https://cookingorgeous.com/?p=1803",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

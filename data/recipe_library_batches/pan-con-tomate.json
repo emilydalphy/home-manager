@@ -1,0 +1,85 @@
+{
+ "dish_name": "Pan con Tomate",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vine tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Turn the broiler on high and set a rack about 4 inches below it.",
+  "Cut the baguette on an angle into slices about 1 inch thick and lay them on a baking sheet. Drizzle 2 tbsp of the olive oil over the slices.",
+  "Broil for 2 to 3 minutes, until the tops are golden and crisp at the edges. Keep an eye on them. They go from golden to burnt fast.",
+  "Meanwhile, cut the 3 tomatoes and the 2 garlic cloves in half, and chop 2 tbsp of the parsley.",
+  "While the toast is still hot, rub the cut side of a garlic half lightly over each slice.",
+  "Rub a tomato half hard over each slice, cut side down. Squeeze it as you go and keep rubbing until only the skin is left in your hand. Throw the skins away.",
+  "Sprinkle the 1/2 tsp salt over the slices, scatter on the parsley and drizzle the remaining 2 tbsp olive oil over the top.",
+  "Serve right away, while the toast is warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions toast crusty bread, put ripe tomato on it and finish with good olive oil and salt. Spain on a Fork, the lead, oils the baguette slices before a quick broil, rubs them with cut garlic and then rubs the cut tomato straight onto the bread, the Catalan way, finishing with parsley. Recipes From Europe and The Wanderlust Kitchen grate the tomato into a bowl first and spoon the pulp on, which is easier when the tomatoes are very soft, and Recipes From Europe leaves out the garlic. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Pan Con Tomate – Catalan Tomato Rubbed Bread",
+   "url": "https://spainonafork.com/pan-con-tomate/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes From Europe",
+   "title": "Pan Con Tomate",
+   "url": "https://www.recipesfromeurope.com/pan-con-tomate/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Wanderlust Kitchen",
+   "title": "Pan con Tomate Recipe",
+   "url": "https://thewanderlustkitchen.com/pan-con-tomate/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,111 @@
+{
+ "dish_name": "Leek and Potato Soup",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Leeks",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "1.5 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (48 oz)",
+   "category": "pantry",
+   "cook_qty": "5 cups"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "2 thick slices"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F for the croutons.",
+  "Cut the root ends and the dark green tops off the 3 leeks. Halve them lengthwise and rinse them under cold water, fanning the layers apart to wash out any grit. Thinly slice the white and pale green parts.",
+  "Peel the 1.5 lb potatoes and cut them into 1-inch cubes. Mince the 2 garlic cloves.",
+  "Melt 2 tbsp of the butter in a large pot over medium heat. Add the leeks and 1/2 tsp of the salt and cook for about 7 minutes, stirring now and then, until they're soft and sweet. Turn the heat down if they start to brown.",
+  "Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Add the potatoes and 5 cups of the broth. Bring it to a boil over high heat, then cover, turn the heat to low and simmer gently for 20 to 25 minutes, until a potato cube falls apart when you press it with a spoon.",
+  "Meanwhile, tear 2 thick slices of the bread into small pieces. Melt the last 1 tbsp of butter, toss it with the bread on a baking sheet and bake for 8 to 10 minutes, until golden and crunchy. Sprinkle them with a pinch of the salt while they're hot.",
+  "Finely chop 2 tbsp of the chives.",
+  "Take the pot off the heat and blend the soup with a stick blender until it's just smooth. Stop as soon as it's smooth. Blended too long, potato turns gluey. No stick blender? Blend it in batches in a blender filled no more than halfway, with the lid's vent open and a towel over the top.",
+  "Stir in 1/2 cup of the cream, the rest of the salt and the 1/2 tsp pepper. Warm it over low for a minute without letting it boil.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls, drizzle each with a little of the remaining cream and top with the chives and croutons. Leftovers keep in the fridge for 3 days. It thickens as it sits, so add a splash of water when you reheat it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soften the leeks in butter without browning, simmer them with potatoes in about 6 cups of stock until the potatoes fall apart, blend it smooth and stir in cream at the end with chives on top. RecipeTin Eats cooks the garlic with the leeks, simmers 25 minutes, warns that over-blending makes it gluey and adds buttered croutons; Love and Lemons uses unpeeled Yukon Golds, a thyme bundle and a homemade leek-top broth with an optional squeeze of lemon; Once Upon a Chef adds bay and thyme and simmers only 15 minutes. This follows the lead with vegetable broth, and the garlic goes in after the leeks so it doesn't burn.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Leek and Potato Soup",
+   "url": "https://www.recipetineats.com/leek-and-potato-soup/",
+   "rating": 4.98,
+   "rating_count": 151,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Potato Leek Soup",
+   "url": "https://www.loveandlemons.com/potato-leek-soup/",
+   "rating": 4.91,
+   "rating_count": 193,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Potato Leek Soup (Extra Creamy)",
+   "url": "https://www.onceuponachef.com/recipes/potato-leek-soup.html",
+   "rating": 4.84,
+   "rating_count": 1229,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,112 @@
+{
+ "dish_name": "Turkey Burgers",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sweet Italian turkey sausage",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Hamburger buns",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut along the sausage casings with kitchen scissors and peel them off. Put the sausage meat in a large bowl with the 1 lb ground turkey, 1 tsp Worcestershire, 1 tsp Dijon, the 1/4 tsp salt and the 1/4 tsp pepper.",
+  "Mix it with your hands until it's evenly combined. It will feel wet and soft. Stop as soon as it's mixed. Overworked meat makes tough burgers.",
+  "Line a plate with parchment. With damp hands, shape the mixture into 4 patties about 1/2 inch thick and 4 1/2 inches across. Press a shallow dent into the middle of each one with your thumb, then put them in the fridge for 15 minutes so they hold together in the pan.",
+  "Meanwhile, wash and dry 4 lettuce leaves and slice the tomato.",
+  "Heat the 1 tbsp oil in a large cast iron or nonstick skillet over medium high until it shimmers. Lay in the patties, dent side up, and cook for 5 minutes without moving them, until the underside is deep brown and lets go of the pan.",
+  "Flip them and cook the other side for 4 to 5 minutes, until it's browned too. Turn the heat down a little if they're darkening too fast. You're cooking them to 165°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the middle of one: it's done when there's no pink left and the juices run clear.",
+  "Move the burgers to a plate to rest for 3 minutes. Meanwhile, toast the 4 buns cut side down in the same skillet over medium for about 1 minute, until golden.",
+  "Taste a corner of one patty. If it's flat, sprinkle a pinch more salt over the hot burgers.",
+  "Serve on the toasted buns with the mayonnaise, lettuce and tomato."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bind ground turkey with Worcestershire and form patties about 1/2 inch thick, cooked to 165°F and served on toasted buns. Once Upon a Chef (the lead) mixes lean ground turkey with Italian turkey sausage for fat and flavor, adds only Dijon, Worcestershire and pepper, chills the wet patties and cooks them on a hot grill. Well Plated adds panko, an egg and tomato paste and cooks the patties in a hot cast iron skillet, and Chef Lola's Kitchen adds Parmesan, parsley and garlic and presses a dent into each patty so it stays flat. This one follows the lead's sausage mix but cooks it in a skillet, uses sweet sausage so the burgers stay mild, and takes the thumb dent from Chef Lola's Kitchen.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Turkey Burgers",
+   "url": "https://www.onceuponachef.com/recipes/turkey-burgers.html",
+   "rating": 4.89,
+   "rating_count": 36,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated by Erin",
+   "title": "Turkey Burgers",
+   "url": "https://www.wellplated.com/turkey-burgers/",
+   "rating": 4.84,
+   "rating_count": 31,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Chef Lola's Kitchen",
+   "title": "Delicious Juicy Turkey Burger Recipe",
+   "url": "https://cheflolaskitchen.com/juicy-turkey-burger-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

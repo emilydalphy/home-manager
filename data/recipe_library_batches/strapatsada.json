@@ -1,0 +1,39 @@
+{
+ "dish_name": "Strapatsada",
+ "cuisine": "Greek",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Tomatoes", "qty": "4", "category": "produce"},
+  {"item": "Feta", "qty": "6 oz", "category": "dairy"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Cut the 4 tomatoes in half. Set a box grater in a wide bowl and grate the cut sides on the coarse holes until only the skin is left in your hand. Throw the skins away.",
+  "Crumble the 6 oz feta with your fingers into small pieces.",
+  "Crack the 8 eggs into another bowl, add 1/4 tsp of the salt and beat them lightly with a fork, only until the yolks and whites are mixed.",
+  "Heat 3 tbsp of the olive oil in a large nonstick skillet over medium high. Add the grated tomato and the other 1/2 tsp salt. Cook, stirring often, for 8 to 10 minutes, until it's thick and jammy and a spoon dragged through it leaves a path with no juice running back in. Don't rush this. Watery tomato makes runny eggs.",
+  "Stir in the feta and cook for about 1 minute, until most of it has melted into the tomato.",
+  "Turn the heat down to low and pour in the eggs. Stir slowly and constantly with a spatula for about 1 minute.",
+  "Take the pan off the heat and keep stirring for 1 to 2 minutes, until the eggs set into soft curds that still look a little glossy. If they're still runny, put the pan back on low for 30 seconds.",
+  "Taste it, and add a pinch more salt if it's flat. Grind the 1/4 tsp pepper over the top, sprinkle on the 1/2 tsp oregano and drizzle with the last 1 tbsp olive oil.",
+  "Serve with the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three grate fresh ripe tomatoes, cook them in olive oil until the juice is gone, then scramble the eggs into them gently and pull them while still soft. Real Greek Recipes salts the tomato early, melts the feta into it before the eggs go in, and finishes the eggs off the heat with pepper, oregano and a drizzle of olive oil. Souvlaki for the Soul and Mission Food stir or scatter the feta in at the end instead, and Mission Food cooks the tomato for as long as 20 to 25 minutes. This one follows Real Greek Recipes.",
+ "sources": [
+  {"name": "Real Greek Recipes", "title": "Greek Scrambled Eggs with Tomato and Feta (Strapatsada)", "url": "https://realgreekrecipes.com/scrambled-eggs-with-tomato/", "rating": 4.5, "rating_count": 42, "read": true, "lead": true},
+  {"name": "Souvlaki for the Soul", "title": "Strapatsada (Greek Scrambled Eggs / Kagianas)", "url": "https://souvlakiforthesoul.com/strapatsada-greek-scrambled-eggs-kagianas/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Mission Food", "title": "Strapatsada (Greek Scrambled Eggs with Tomatoes)", "url": "https://mission-food.com/strapatsada-greek-scrambled-eggs-with-tomatoes/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

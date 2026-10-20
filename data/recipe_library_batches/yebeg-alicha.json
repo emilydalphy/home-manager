@@ -1,0 +1,110 @@
+{
+ "dish_name": "Yebeg Alicha",
+ "cuisine": "Ethiopian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {
+   "item": "Lamb shoulder",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water and set it over high heat to come to a boil.",
+  "Meanwhile, cut the 2 lbs lamb shoulder into 1 1/2-inch cubes, trimming off any thick pieces of fat.",
+  "Dice both onions. Mince the 4 garlic cloves, and peel and finely grate the ginger until you have about 2 tsp. Seed the jalapeño, cut it into thin strips and put it in a small bowl for the table.",
+  "When the water is boiling, add the lamb and cook it for 5 minutes, until the outside turns grey and foam rises to the top. Drain it in a colander.",
+  "Wipe out the pot and set it over medium heat with the 3 tbsp ghee. Add the onions and 1/2 tsp of the salt and cook for 8 to 10 minutes, stirring often, until they're soft and starting to turn golden at the edges. Don't rush the onions. That's where the flavor starts.",
+  "Add the garlic and ginger and stir for 1 minute, until it smells fragrant.",
+  "Sprinkle in the 1 tsp turmeric and stir for 30 seconds so it doesn't clump. It will smell warm and earthy.",
+  "Pour in 2 cups of water and bring it to a boil. Add the lamb, 1 tbsp coriander, 1 tsp cardamom and the last 1 tsp salt, and stir.",
+  "Turn the heat to low, cover and simmer for 35 to 45 minutes, stirring now and then, until a piece of lamb breaks apart when you press it with a spoon. The liquid should be down by about half and look like a light golden sauce. If the lamb is tender but the sauce is still thin, take the lid off and simmer for 10 minutes.",
+  "Take the pot off the heat and squeeze in the juice of half the lemon. Cut the other half into wedges.",
+  "Taste it. If it's flat, add salt first, then a squeeze from one of the lemon wedges.",
+  "Serve with injera or rice, with the jalapeño strips and lemon wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions par-cook the lamb in boiling water and drain it first, cook onion in niter kibbeh or clarified butter, add garlic, ginger and turmeric, then simmer the lamb in water with no berbere so the stew stays mild and golden. Tara's Multicultural Table (from Luladey Moges's Enebla) uses 1 tsp turmeric with coriander and cardamom and reduces the liquid by half to a moderately thick sauce. Food.com uses much less turmeric, softens the onion in water before the butter goes in, adds korerima (false cardamom) and a pinch of ajowan, and stirs green chili strips in at the end; here the chili goes on the side. No version had 20 or more ratings and the trusted cook for this cuisine (RecipeTin Eats) has no yebeg alicha, so this follows the most clearly sourced version.",
+ "sources": [
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Ye Beg Alicha Wot (Ethiopian Mild Lamb Stew)",
+   "url": "https://tarasmulticulturaltable.com/ye-beg-alicha-wot/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Ethiopian Mild Lamb Stew (Yebeg Alicha)",
+   "url": "https://www.food.com/recipe/ethiopian-mild-lamb-stew-yebeg-alicha-321660",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

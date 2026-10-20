@@ -1,0 +1,50 @@
+{
+ "dish_name": "Picadillo",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Ground beef", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Roma tomatoes", "qty": "8", "category": "produce"},
+  {"item": "Yukon Gold potatoes", "qty": "2", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Chili powder", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Cut the stems out of the 8 tomatoes, put them on a baking sheet and roast them for 20 minutes, until the skins split and start to blacken in spots.",
+  "Meanwhile, finely chop a quarter of the onion and cut the rest into chunks. Mince 2 of the garlic cloves and peel the other 2.",
+  "Peel the 2 potatoes and 2 carrots and cut them into 1/2 inch pieces. Keep them small, or they won't cook through in the sauce.",
+  "Heat the 1 tbsp oil in a large deep skillet over medium. Add the chopped onion and cook for 3 minutes, until it's soft. Add the minced garlic and cook for 30 seconds, until you can smell it.",
+  "Turn the heat to medium high and add the 1.5 lb beef with 1 tsp of the salt. Break it up with a wooden spoon and cook for 6 to 8 minutes, until it's browned in places and no pink is left. Spoon off some of the fat if there's a lot in the pan.",
+  "Stir in the potatoes and carrots and cook for 2 minutes. Add the 1 tbsp chili powder and 1 1/2 tsp cumin and stir for 30 seconds, until they smell toasty.",
+  "Put the roasted tomatoes and any juice from the baking sheet in a blender with the onion chunks and the 2 peeled garlic cloves. Blend until smooth.",
+  "Pour the blended tomatoes into the skillet with the 1 1/2 cups broth, the remaining 1/2 tsp salt and the 1/2 tsp pepper. Stir and bring it to a bubble.",
+  "Turn the heat to medium low and simmer uncovered for 20 minutes, stirring now and then, until the potatoes are tender when you poke one with a fork and the sauce has thickened.",
+  "Meanwhile, thinly slice the jalapeño into a small bowl for the table and chop a large handful of the cilantro.",
+  "Warm each tortilla in a dry skillet over medium for about 30 seconds, flip it and warm the other side for 30 seconds. Stack them in a clean towel as you go.",
+  "Taste the picadillo. If it's flat, add a pinch more salt. Scatter the cilantro over the top.",
+  "Serve with the warm tortillas, with the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions brown ground beef with onion and garlic, add diced potato and carrot and simmer it all in a tomato sauce until the potatoes are tender, about 20 minutes. Mexican Please roasts plum tomatoes and blends them with onion, garlic and jalapeño, seasons with cumin and chili powder and loosens it with stock, with raisins as an option. Mexican Food Journal uses canned tomato sauce, peas and raisins, and So Much Food adds poblano, ancho chile powder, tomato paste, peas and corn. This one follows Mexican Please and puts the jalapeño on the side so the pot stays mild.",
+ "sources": [
+  {"name": "Mexican Please", "title": "Mexican Picadillo", "url": "https://www.mexicanplease.com/mexican-picadillo/", "rating": 4.09, "rating_count": 46, "read": true, "lead": true},
+  {"name": "Mexican Food Journal", "title": "Mexican Picadillo Recipe", "url": "https://mexicanfoodjournal.com/picadillo/", "rating": 4.0, "rating_count": 21, "read": true, "lead": false},
+  {"name": "So Much Food", "title": "Authentic Mexican Picadillo Recipe", "url": "https://somuchfoodblog.com/mexican-picadillo/", "rating": 5.0, "rating_count": 10, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

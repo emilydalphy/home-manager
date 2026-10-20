@@ -1,0 +1,50 @@
+{
+ "dish_name": "Vietnamese Chicken Salad",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Cooked chicken", "qty": "12 oz", "category": "meat/seafood"},
+  {"item": "Napa cabbage", "qty": "1 head", "category": "produce", "cook_qty": "6 cups shredded"},
+  {"item": "Red onion", "qty": "1", "category": "produce", "cook_qty": "1/2"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Persian cucumbers", "qty": "2", "category": "produce"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce", "cook_qty": "1 large"},
+  {"item": "Fresh mint", "qty": "1 bunch", "category": "produce", "cook_qty": "1 cup leaves"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1 cup leaves"},
+  {"item": "Limes", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Roasted unsalted peanuts", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Red chilli", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Start with the dressing. Mince the 1 garlic clove and squeeze the lime. That should be about 2 tbsp of juice.",
+  "Put the garlic and lime juice in a jar with 1/4 cup fish sauce, 2 tbsp rice vinegar, 1/4 cup vegetable oil and 1 tbsp sugar. Put the lid on and shake it until the sugar has dissolved, then leave it on the counter while you cut the vegetables.",
+  "Cut the cabbage in half and shred one half as finely as you can, about 6 cups. Slice half the red onion paper thin.",
+  "Seed the bell pepper and cut it into thin strips. Halve the 2 cucumbers lengthwise, scoop out the seeds with a teaspoon and slice them into thin half moons.",
+  "Peel 1 large carrot and cut it into thin matchsticks, or shred it on the big holes of a box grater.",
+  "Pick about 1 cup of mint leaves and 1 cup of cilantro leaves, packed. Tear any big mint leaves in half.",
+  "Cut or pull the 12 oz chicken into thin strips about the size of the carrot pieces.",
+  "Finely chop the 1/2 cup peanuts. Thinly slice the chilli and put it in a small bowl for the table.",
+  "Put the cabbage, onion, pepper, cucumbers, carrot, herbs and chicken in your biggest bowl. Shake the dressing again, pour in half and toss well with your hands or tongs.",
+  "Leave it for 5 minutes, so the cabbage softens a little. Toss again and pour in most of the rest of the dressing.",
+  "Taste a forkful. If it's flat, add the last of the dressing. If you're packing it for lunch, keep the peanuts in a separate container and scatter them on just before eating.",
+  "Scatter the peanuts over the top. Serve with the sliced chilli on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions toss shredded cabbage, onion, mint, cilantro and chicken with a fish sauce, lime, sugar and garlic dressing. RecipeTin Eats, the lead, starts from cooked chicken, adds bell pepper, cucumber and carrot, uses a dressing with rice vinegar and oil, and dresses it in two goes with a 5 minute rest so the cabbage softens, finishing with lots of chopped peanuts. Takes Two Eggs and I Am a Food Blog poach the chicken first (with ginger and onion, or scallion and ginger), use green cabbage and an oil-free nuoc cham style dressing; Takes Two Eggs adds rau ram and fried shallots and I Am a Food Blog tops it with avocado. This one keeps the chilli on the side instead of in the dressing.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Vietnamese Chicken Salad", "url": "https://www.recipetineats.com/vietnamese-chicken-salad/", "rating": 4.98, "rating_count": 89, "read": true, "lead": true},
+  {"name": "I Am a Food Blog", "title": "Goi Ga - Vietnamese Chicken Salad Recipe", "url": "https://iamafoodblog.com/goi-ga-vietnamese-chicken-salad-recipe/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false},
+  {"name": "Takes Two Eggs", "title": "Goi Ga (Vietnamese Chicken Salad)", "url": "https://takestwoeggs.com/goi-ga-vietnamese-chicken-salad/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

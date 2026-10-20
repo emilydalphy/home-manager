@@ -1,0 +1,44 @@
+{
+ "dish_name": "Vietnamese Ginger Chicken",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 1/2 tbsp"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce"},
+  {"item": "Shallots", "qty": "2", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Thai chilies", "qty": "2", "category": "produce"},
+  {"item": "English cucumber", "qty": "1", "category": "produce"},
+  {"item": "Jasmine rice", "qty": "1.5 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1.5 cups rice until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave the lid on.",
+  "Pat the 1.5 lb chicken dry and cut it into 2 inch pieces. Toss it in a bowl with the 2 1/2 tbsp fish sauce and leave it while you get everything else ready.",
+  "Peel the ginger and cut it into thin matchsticks. That should be about 1/4 cup. Halve the 2 shallots and slice them thinly.",
+  "Thinly slice 3 of the green onions. Slice the 2 chilies into a small bowl for the table. Cut the cucumber into thin rounds.",
+  "Put the 2 tbsp oil and the 3 tbsp brown sugar in a large nonstick skillet, at least 12 inches, before you turn on the heat. Set it over medium high and stir until the sugar melts and bubbles, 1 to 2 minutes.",
+  "Take the pan off the heat and carefully add the chicken with its fish sauce. Stand back a little. It will sizzle hard. Add the ginger and shallots and toss everything together. The caramel may harden into clumps. It melts again as it cooks.",
+  "Put the pan back over medium high and stir for 2 to 3 minutes, until the outside of the chicken has turned from pink to white. It shouldn't brown yet.",
+  "Pour in 1/3 cup water, stir, and bring it to a fast simmer. Let it bubble hard for 10 to 12 minutes, stirring now and then, until the liquid cooks down to a thick, sticky glaze.",
+  "Once it's a glaze, keep tossing the chicken for 2 to 3 minutes, until it's a deep caramel brown all over. Turn the heat down a little if the glaze starts to catch. You're cooking it to 175°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut into the thickest piece: it's done when there's no pink left and the juices run clear.",
+  "Take the pan off the heat and scatter the green onions over the chicken.",
+  "Taste a piece of chicken with some of the glaze. If it's flat, add a few drops more fish sauce and toss.",
+  "Serve over the jasmine rice with the cucumber and the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook sugar in oil to a caramel, toss the chicken through it with plenty of ginger and fish sauce, then braise it briefly in a little liquid and reduce it to a glaze. RecipeTin Eats uses thigh pieces tossed in fish sauce, melts brown sugar in cold oil, takes the pan off the heat to add the chicken, and boils the water down hard in a wide pan. Vicky Pham marinates bone-in pieces with bouillon and pepper, takes the caramel darker, adds garlic and braises in coconut soda under a lid, and Onolicious Hawaii uses wings and drumsticks with lots of black pepper. This one follows the lead and puts the chilli on the side instead of in the marinade.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Vietnamese Caramel Ginger Chicken", "url": "https://www.recipetineats.com/vietnamese-caramel-ginger-chicken/", "rating": 4.88, "rating_count": 99, "read": true, "lead": true},
+  {"name": "Vicky Pham", "title": "Vietnamese Ginger Chicken (Ga Kho Gung)", "url": "https://www.vickypham.com/blog/vietnamese-ginger-chicken-ga-kho-gung", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Onolicious Hawaii", "title": "Vietnamese Ginger Chicken", "url": "https://onolicioushawaii.com/vietnamese-ginger-chicken/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

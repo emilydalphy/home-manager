@@ -1,0 +1,45 @@
+{
+ "dish_name": "Tom Rim",
+ "cuisine": "Vietnamese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Large shrimp", "qty": "1 1/2 lbs", "category": "meat/seafood"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Dark brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "3"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice until the water runs clear. Put it in a pot with 2 1/4 cups water, bring it to a boil, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on until you're ready to eat.",
+  "Meanwhile, whisk 3 tbsp fish sauce and 2 tbsp brown sugar with 1/3 cup water until the sugar dissolves.",
+  "Finely chop the onion and mince the 4 garlic cloves. Thinly slice 3 green onions and chop about 1/4 cup of cilantro.",
+  "Peel and devein the 1 1/2 lbs shrimp if they aren't already, and pat them very dry. Sprinkle 1/4 tsp of the pepper over them.",
+  "Heat 2 tbsp of the oil in a large skillet over high until it shimmers. Add half the shrimp in a single layer and leave them for 1 minute, until the undersides are pink with a few browned spots. Flip them and cook the other side for 30 seconds, then move them to a plate. They'll still be a little see-through in the middle. Do the rest the same way.",
+  "Turn the heat to medium and add the last 1 tbsp oil and the onion. Cook for about 5 minutes, stirring now and then, until soft and see-through.",
+  "Add the garlic and stir for 30 seconds, until you can smell it. Don't let it brown.",
+  "Pour in the fish sauce mixture and turn the heat up to medium high. Let it bubble for 2 to 3 minutes, scraping up the browned bits, until it's reduced to a dark, glossy syrup that coats the spoon.",
+  "Transfer the shrimp and their juices back in and toss them in the sauce for 1 to 2 minutes, until the sauce is sticky and clings to them and the shrimp are white all the way through.",
+  "Take the pan off the heat and stir in the green onions, the cilantro and the last 1/4 tsp pepper. Put the 1/2 tsp red pepper flakes in a small bowl for the table.",
+  "Taste the sauce. If it's flat, add a few drops more fish sauce.",
+  "Serve over the rice, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions cook shrimp in a fish sauce and sugar sauce with garlic and finish with green onion, served with plain rice. Once Upon a Chef, the lead, dissolves dark brown sugar in fish sauce and water instead of making a caramel, softens onion and garlic, cooks peeled shrimp and simmers them in the thin sauce, finishing with green onion and cilantro. Wok and Kin and Vicky Pham cook shell-on shrimp the traditional way, marinate them with garlic, shallot, bouillon powder and black pepper, and cook them until the sugar caramelizes and the sauce is nearly gone; Wok and Kin adds dark soy and puts the fish sauce in last. This one follows the lead's sauce but sears the shrimp first and reduces the sauce to a sticky glaze before they go back in.",
+ "sources": [
+  {"name": "Once Upon a Chef", "title": "Vietnamese Caramelized Shrimp", "url": "https://www.onceuponachef.com/recipes/vietnamese-caramel-shrimp.html", "rating": 4.69, "rating_count": 35, "read": true, "lead": true},
+  {"name": "Wok and Kin", "title": "Tôm Rim (Vietnamese Caramelized Shrimp)", "url": "https://www.wokandkin.com/tom-rim/", "rating": 5.0, "rating_count": 8, "read": true, "lead": false},
+  {"name": "Vicky Pham", "title": "Vietnamese Caramelized Shrimp (Tôm Rim)", "url": "https://vickypham.com/blog/vietnamese-caramelized-shrimp-tom-rim/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

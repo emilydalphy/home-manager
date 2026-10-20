@@ -173,6 +173,17 @@ up the extra sauce", "so everyone can build their own wrap") and not how it look
 noodles glisten").
     - PLAIN, NOT CLEVER. No wordplay or quotable lines ("a wet tzatziki is a watery tzatziki"). \
 Say it straight: "Squeeze out as much water as you can, or the tzatziki will be runny."
+    - AMOUNT CHECKS SAY "THAT SHOULD BE ABOUT". After grating, juicing or straining, check the \
+amount with "That should be about 2 cups", never "That's about", "You want about" or "You'll have about".
+    - SAY WHEN A PAN ISN'T ON THE HEAT YET. If a step mixes things in a pan before it goes on the \
+stove, say "off the heat" so nobody wonders.
+    - SAY "TRANSFER", NOT "TIP". "Transfer them into a small bowl", never "tip them into". To add \
+something to a pan, say "add".
+    - A CURE OR BRINE BY WEIGHT SAYS ITS PERCENTAGE. When the salt is a share of the food's weight, say \
+so on the list and in the step ("Salt (5% of the salmon's weight), 4 tsp (23 g)"; "Weigh the salmon. The \
+salt is 5% of its weight, so for 1 lb that's 23 g").
+    - NO "MORE" AFTER A TIME. "Cover and cook for 1 hour, until it's tender", never "cook for 1 hour \
+more". Each step's time stands on its own.
     - Otherwise: a short heads-up or reassurance where a cook would wobble ("Stand back a little. \
 They'll spatter." "Don't rush the onions. That's where the flavor starts." "No peeking."). \
 Name the household's people where a step is about them ("serve Arjun's bowl first", "the last \
@@ -4137,7 +4148,10 @@ actual step(s) that are the advance prep (e.g. instructions = ["Preheat oven..."
 marinade and coat chicken...", "Bake..."] with advance_prep_notes "marinate at least 4 hours \
 ahead" should set advance_prep_step_indices to [2]) — this lets the Cook screen show a clear \
 "do ahead" vs "day of" split instead of one flat numbered list. Leave it empty whenever \
-advance_prep_notes is empty.
+advance_prep_notes is empty. Only what the dish NEEDS done ahead is advance prep. A step that \
+merely CAN be done ahead (setting the rice cooker timer the night before) stays a day-of step, \
+with the option as its last line: "If you'd like the rice ready when you wake up, do this the \
+night before and set the cooker's timer."
 - KEEP THE STEP THAT MAKES THE DISH. When the real version of a dish depends on an overnight \
 step — tikka masala's yogurt marinade, soaked dried chickpeas, a dough that rests, a brine — \
 keep it rather than shortening it to fit the night's time cap. Write it as its own first step \

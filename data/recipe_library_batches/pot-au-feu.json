@@ -1,0 +1,142 @@
+{
+ "dish_name": "Pot-au-Feu",
+ "cuisine": "French",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 210,
+ "ingredients": [
+  {
+   "item": "Beef chuck roast",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bone-in beef short ribs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 sprigs"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Turnips",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Leeks",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Parsnip",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "1.5 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornichons",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Tie the 2 lb chuck roast around the middle with kitchen twine in two or three places so it holds together while it simmers.",
+  "Put the chuck and the 1.5 lb short ribs in a large stockpot, 8 quarts or bigger, and pour in 10 cups of cold water. Bring it slowly to a boil over medium heat. This takes about 20 minutes.",
+  "As it comes up to the boil, grey foam will rise to the top. Skim it off with a large spoon, then pour in 1/2 cup cold water to stop the boil. When it simmers again, skim it again and add another 1/2 cup cold water. Skim once more when it comes back up.",
+  "Meanwhile, halve the onion without peeling it. Set it cut side down in a dry skillet over medium high for 3 to 4 minutes, until the cut sides are blackened in spots. Push the 2 cloves into one of the halves.",
+  "Tie the 4 thyme sprigs, the 2 bay leaves and a handful of the parsley stems into a bundle with twine.",
+  "Turn the heat down so the pot barely bubbles. Add the 2 tsp salt, the 1/2 tsp peppercorns, the onion and the herb bundle. Simmer uncovered for 2 hours, skimming now and then. Don't let it boil hard, or the liquid turns cloudy.",
+  "While it simmers, peel the carrots, the 2 turnips and the parsnip. Cut the carrots and parsnip into 3 inch lengths and the turnips into quarters. Cut 2 celery stalks into 3 inch lengths. Trim the 2 leeks down to the white and light green, cut them into 3 inch lengths and rinse out any grit.",
+  "After the 2 hours, add the carrots, turnips, parsnip, celery and leeks to the pot. Simmer for 30 minutes.",
+  "Add the 1.5 lb potatoes and simmer for another 25 to 30 minutes, until the potatoes are tender, the vegetables are soft but still holding their shape, and a fork slides easily into the beef.",
+  "Lift the meat and vegetables onto a warm platter and cover them with foil. Pour the cooking liquid through a fine sieve into a large bowl and throw away the onion and herb bundle. Taste the liquid, and add a pinch more salt if it's flat.",
+  "Cut the twine off the chuck and slice it against the grain about 1/2 inch thick. Pull the short rib meat off the bones. Chop a small handful of the parsley leaves and scatter it over the platter.",
+  "You'll have more of the liquid than you need tonight. Cool what's left, then keep it in the fridge for up to 4 days or freeze it for soup another night.",
+  "Ladle some of the hot liquid into bowls to start, then serve the beef and vegetables with the Dijon, the cornichons and sliced baguette."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both simmer large pieces of beef with onion, thyme, bay and cloves, skim the broth, add the vegetables late so they hold their shape, and serve the meat and vegetables with broth. The French Cooking Academy starts mixed cuts in cold water, stops the boil twice with cold water to skim, simmers 2 hours before adding carrots, turnips, leeks, parsnip and celery for an hour, and serves it with Dijon, cornichons and coarse salt, keeping the broth for onion soup; it also adds chicken wings to the broth, which this one leaves out. The Splendid Table braises a chuck roast with marrow bones in the oven, then cooks potatoes, rutabaga and carrots in the strained broth. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for French) has no version, so the first read version leads, with potatoes added from The Splendid Table.",
+ "sources": [
+  {
+   "name": "The French Cooking Academy",
+   "title": "Pot-au-Feu",
+   "url": "https://www.thefrenchcookingacademy.com/recipes/pot-au-feu",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Splendid Table",
+   "title": "Pot au Feu",
+   "url": "https://www.splendidtable.org/recipes/pot-au-feu",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

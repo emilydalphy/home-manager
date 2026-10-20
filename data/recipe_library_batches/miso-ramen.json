@@ -1,0 +1,168 @@
+{
+ "dish_name": "Miso Ramen",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh ramen noodles",
+   "qty": "1 1/4 lbs",
+   "category": "other"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "8 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Canned corn",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Nori",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "2 sheets"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Doubanjiang",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Miso",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ground white pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Fill your largest pot with water and bring it to a boil. You'll use it for the eggs, the sprouts and the noodles.",
+  "Meanwhile, mince the 2 shallots and the 4 garlic cloves. Peel the ginger and grate 1 tsp of it.",
+  "Grind 2 tbsp of the sesame seeds in a mortar, or crush them under the flat of a knife.",
+  "Thinly slice the green onions, cut 2 of the nori sheets into quarters, and drain the corn.",
+  "Lower the 4 eggs into the boiling water and cook them for 6 1/2 minutes. Lift them into a bowl of cold water and peel them once they're cool enough to hold.",
+  "Drop the 1/2 lb bean sprouts into the same water for 1 minute, then scoop them out. Keep the pot at a simmer for the noodles.",
+  "Heat 2 tbsp sesame oil in a second large pot over medium. Add the shallots and cook for about 2 minutes, stirring, until they're soft.",
+  "Add the 1/2 lb pork and turn the heat to medium-high. Break it up with a spoon and cook for about 5 minutes, until there's no pink left and some bits are browned.",
+  "Add the garlic and ginger and stir for 30 seconds, until they smell fragrant.",
+  "Stir in 2 tsp doubanjiang and 6 tbsp miso and cook for 1 minute, stirring, until they coat the pork.",
+  "Add the ground sesame, 2 tbsp sugar and 2 tbsp sake, then pour in the 8 cups broth. Bring it to a simmer, scraping up anything stuck to the bottom.",
+  "Stir in the 1/2 tsp white pepper and 1/2 tsp salt. Cover and keep it at the lowest simmer.",
+  "Bring the big pot back to a boil and cook the 1 1/4 lbs noodles for about 15 seconds less than the package says. Drain them well.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Divide the noodles among 4 deep bowls and ladle the hot broth over them. Top each bowl with a halved egg, the bean sprouts, corn, green onions and 2 pieces of nori.",
+  "Serve with the chili oil on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions build the soup from ground pork and garlic and ginger cooked in a little oil, then miso stirred in with chicken stock and simmered briefly, poured over ramen noodles with toppings. Just One Cookbook (the lead) adds shallot, doubanjiang, ground toasted sesame, sugar and sake, and tops the bowls with egg, bean sprouts, corn, nori and green onion; Norecipes browns the pork hard for a fond, adds gelatin for body, and strains and blends the broth with butter; Whitney Bond adds shiitake, soy and chili garlic sauce and cooks the noodles right in the soup. This one doubles the lead to four bowls, browns the pork before the garlic goes in, and puts the chili oil on the side.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Miso Ramen",
+   "url": "https://www.justonecookbook.com/homemade-chashu-miso-ramen/",
+   "rating": 4.79,
+   "rating_count": 600,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Norecipes",
+   "title": "Miso Ramen",
+   "url": "https://norecipes.com/miso-ramen-broth-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Whitney Bond",
+   "title": "Miso Ramen",
+   "url": "https://whitneybond.com/miso-ramen/",
+   "rating": 4.89,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

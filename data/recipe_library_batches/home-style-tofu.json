@@ -1,0 +1,136 @@
+{
+ "dish_name": "Home-Style Tofu",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Firm tofu",
+   "qty": "2 blocks (14 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a pot, swishing it with your fingers and pouring off the water two or three times, until the water is only a little cloudy. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes, then take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, drain the 2 blocks of tofu and pat them dry with paper towels. Cut each block in half lengthwise, then cut it across into slices about 1/4 inch thick. Lay the slices on a towel and pat the tops dry too.",
+  "Peel the carrot and slice it thinly on an angle. Seed the bell pepper and cut it into 1 inch pieces. Smash and chop the 3 garlic cloves.",
+  "Cut 4 of the scallions into 1 inch pieces, keeping the white and green parts in separate piles.",
+  "Seed the red chili, slice it thinly and put it in a small bowl for the table.",
+  "In a small bowl, stir together 3 tbsp light soy sauce, 1 tbsp oyster sauce, 2 tsp Shaoxing wine, 1/2 tsp sugar and 1/2 cup water.",
+  "Heat a large cast iron or nonstick skillet over medium high until a drop of water sizzles away. Add 1 tbsp of the oil and lay in half the tofu in a single layer. Leave it alone for 3 to 4 minutes, until the underside is golden and lets go of the pan.",
+  "Flip each slice and cook the other side for 3 minutes, until it's golden too. Move the tofu to a plate.",
+  "Add another 1 tbsp oil and fry the second half of the tofu the same way. Move it to the plate.",
+  "Add the last 1 tbsp oil to the pan and turn the heat to medium. Add the scallion whites and stir for 30 seconds, then add the garlic and stir for 30 seconds, until it smells fragrant. Don't let the garlic brown.",
+  "Turn the heat to high and add the 8 oz pork. Break it up with your spatula and stir fry for about 3 minutes, until there's no pink left and the bits are starting to brown.",
+  "Add the carrot and pepper and stir fry for 1 minute.",
+  "Stir the sauce and pour it in. When it comes to a boil, slide the tofu back in and turn it gently to coat. Cover, turn the heat to medium low and simmer for 4 minutes, until the carrot is just tender.",
+  "Take off the lid and turn the heat to high. Scatter in the scallion greens and fold everything together gently for about 1 minute, until the sauce is down to a few glossy spoonfuls. Fold, don't stir hard, or the tofu will break.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the sliced chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions pan fry the tofu golden first, then build a quick sauce and return the tofu to it. The Woks of Life fries thin slabs of firm tofu in a cast iron pan and cooks a little ground pork with garlic, scallion and chili in a sauce of light soy, oyster sauce, Shaoxing wine, sugar and water. Omnivore's Cookbook deep fries the tofu and simmers it for 5 minutes with doubanjiang, carrot, bell pepper and bamboo shoots, thickening the sauce with cornstarch; China Sichuan Food also leads with doubanjiang and carrot. This one follows The Woks of Life's sauce and method, adds the carrot and pepper from the other two with a short covered simmer, and puts the fresh chili on the side.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Home Style Tofu",
+   "url": "https://thewoksoflife.com/home-style-tofu/",
+   "rating": 4.98,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Home Style Tofu (家常豆腐)",
+   "url": "https://omnivorescookbook.com/home-style-tofu/",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "China Sichuan Food",
+   "title": "Home Style Tofu",
+   "url": "https://www.chinasichuanfood.com/home-style-tofu/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

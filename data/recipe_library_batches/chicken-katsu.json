@@ -1,0 +1,128 @@
+{
+ "dish_name": "Chicken Katsu",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover the pan and cook for 15 minutes. Take it off the heat and keep the lid on until you're ready to serve.",
+  "Meanwhile, stir together the 1/3 cup ketchup, 2 tbsp Worcestershire, 1 tbsp soy sauce and the 2 tsp sugar in a small bowl until the sugar dissolves.",
+  "Shred half the cabbage as thin as you can with a sharp knife. Put it in a bowl and keep it in the fridge.",
+  "Lay the 1.5 lb chicken thighs between two sheets of plastic wrap and pound them with a meat mallet or rolling pin to an even 1/2 inch. Pat them dry and sprinkle both sides with the 1 tsp salt and 1/4 tsp pepper.",
+  "Pour the oil into a heavy pot, saving 1 tbsp of it for the egg. It should be about 1 1/2 inches deep. Heat it over medium low to 340°F while you coat the chicken. No thermometer? Drop in a crumb of panko: it should sink a little and float straight back up, sizzling.",
+  "Set out three plates: the 1/3 cup flour on one, the 2 eggs beaten with the 1 tbsp oil on the next, and the 1 1/2 cups panko on the last.",
+  "Coat each thigh in flour and shake off the extra. Dip it in the egg, then lay it in the panko and press so the crumbs stick on both sides.",
+  "Turn the heat to medium. Lower 2 or 3 thighs into the oil, laying them away from you, so they cover no more than half the surface. Stand back a little. They'll spatter. Fry them for about 3 minutes, until the underside is golden brown, then flip them and cook the other side for 2 to 3 minutes.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check the thickest part. No thermometer? Cut into the center of one: it's done when there's no pink left and the juices run clear.",
+  "Lift them out, hold them over the pot for a few seconds to drip, and set them on a wire rack. Skim out any loose crumbs, then fry the rest the same way.",
+  "Cut each cutlet across into strips about 1 inch wide.",
+  "Taste a strip. If it's flat, sprinkle a pinch more salt over the cutlets.",
+  "Serve with the rice, the shredded cabbage and the katsu sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three pound the chicken to an even thickness, season it and coat it in flour, egg and panko, then fry it at 340 to 350°F until golden. Just One Cookbook butterflies a breast (thighs work too, it says), adds a little oil to the egg and deep fries one cutlet at a time for about 3 minutes, serving it with tonkatsu sauce and shredded cabbage. Spend With Pennies shallow fries in half an inch of oil for 3 to 4 minutes a side, and Hungry Huy uses thighs and a homemade sauce of ketchup, Worcestershire, soy sauce and sugar. This one follows Just One Cookbook's method with thighs, cooked to 175°F, and the ketchup and Worcestershire sauce.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Chicken Katsu",
+   "url": "https://www.justonecookbook.com/chicken-katsu/",
+   "rating": 4.77,
+   "rating_count": 142,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Chicken Katsu",
+   "url": "https://www.spendwithpennies.com/chicken-katsu/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hungry Huy",
+   "title": "Chicken Katsu & Homemade Katsu Sauce",
+   "url": "https://www.hungryhuy.com/chicken-katsu/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

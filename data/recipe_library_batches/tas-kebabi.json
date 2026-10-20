@@ -1,0 +1,144 @@
+{
+ "dish_name": "Tas Kebabi",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 115,
+ "ingredients": [
+  {
+   "item": "Beef chuck",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cubanelle peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the 2 lb beef chuck into 1 inch cubes, trimming off any big pieces of fat. Pat the cubes dry with paper towels and toss them with 1 tsp of the salt and the 1/2 tsp black pepper.",
+  "Dice the onion and finely chop the 3 garlic cloves.",
+  "Heat the 2 tbsp olive oil in a Dutch oven over medium high. Add half the beef in a single layer and leave it until the underside is deep brown and lets go of the pot, about 3 minutes. Turn the pieces and brown the other sides for 2 to 3 minutes, then move them to a plate. Brown the second half the same way. Don't crowd the pot, or the beef will steam instead of brown.",
+  "Turn the heat down to medium and add the onion to the same pot. Cook it for about 5 minutes, stirring and scraping up the brown bits, until it's soft and golden.",
+  "Add the garlic and cook for 30 seconds, until you can smell it. Stir in the 1 1/2 tbsp tomato paste, the 1 tbsp flour and the 1/2 tsp paprika and cook for 1 minute, stirring, until the paste turns a shade darker.",
+  "Pour in 2 cups of the beef broth and scrape the bottom of the pot clean. Put the beef and its juices back in, add the 2 bay leaves and bring it to a boil.",
+  "Turn the heat to low, cover and simmer for 1 1/2 hours, stirring every 15 minutes or so, until a cube of beef breaks apart easily with a fork.",
+  "About 30 minutes before the beef is done, rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Melt the 1 tbsp butter in a medium saucepan over medium, add the rice and stir for 2 minutes, until the grains look glassy at the edges.",
+  "Add 2 1/4 cups water and 1/2 tsp of the salt and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes. No peeking.",
+  "Meanwhile, peel the 2 potatoes and cut them into 1/2 inch cubes. Seed the Cubanelle peppers and the red pepper and cut them into strips.",
+  "Heat the 1/4 cup vegetable oil in a large skillet over medium. Fry the potatoes in two batches, turning them now and then, until they're golden and crisp on all sides and tender inside, 8 to 10 minutes a batch. Lift them onto a paper towel lined plate with a slotted spoon and sprinkle them with the last 1/4 tsp salt.",
+  "Add the peppers to the same skillet and cook for 3 to 4 minutes, stirring, until they soften and blister in spots. Lift them onto the plate with the potatoes.",
+  "Fish the bay leaves out of the stew. Chop a small handful of the parsley and stir it in.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve the stew over the rice with the potatoes and peppers on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions brown the beef with onion, garlic and tomato paste, simmer it until tender and add potatoes and peppers fried in a separate pan, served over rice. Cooking Orgeous thickens the base with a spoon of flour, simmers it in stock with bay leaves and paprika for 1 1/2 hours and lays the fried potatoes and peppers on top at the end. Theodehlicious seasons with cumin, paprika and thyme, uses tomato sauce and water, and pressure cooks it for 30 minutes with carrots added. This one follows Cooking Orgeous. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Cooking Orgeous",
+   "title": "Tas Kebabi - Turkish Beef Stew",
+   "url": "https://cookingorgeous.com/blog/tas-kebabi-turkish-beef-stew/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Theodehlicious",
+   "title": "Tas Kebabi (Turkish Beef Stew)",
+   "url": "https://theodehlicious.com/tas-kebabi-recipe/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

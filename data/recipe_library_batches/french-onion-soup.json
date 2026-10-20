@@ -1,0 +1,43 @@
+{
+ "dish_name": "French Onion Soup",
+ "cuisine": "French",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 95,
+ "ingredients": [
+  {"item": "Yellow onions", "qty": "2.5 lb", "category": "produce"},
+  {"item": "Unsalted butter", "qty": "7 tbsp", "category": "dairy"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Low-sodium beef broth", "qty": "2 cartons (32 oz)", "category": "pantry", "cook_qty": "6 cups"},
+  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce", "cook_qty": "3 sprigs"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Baguette", "qty": "1", "category": "other", "cook_qty": "8 slices"},
+  {"item": "Gruyère cheese", "qty": "6 oz", "category": "dairy"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the 2.5 lb onions, halve them and slice them thinly from top to bottom.",
+  "Melt the 7 tbsp butter in a large heavy pot over medium. When it foams, add the onions and stir until they're coated.",
+  "Turn the heat to medium low and cook for 30 minutes, stirring every few minutes, until the onions are soft and see-through.",
+  "Turn the heat up to medium high, add 1 tsp of the salt and cook for another 20 to 30 minutes, stirring more often and scraping the bottom, until the onions are a deep golden brown and taste sweet. If the bottom starts to catch, add a splash of water and scrape it up. Don't rush the onions. That's where the flavor starts.",
+  "Pour in the 3/4 cup wine and let it boil hard for 2 minutes, scraping the bottom, until most of it has cooked off.",
+  "Sprinkle the 2 tbsp flour over the onions and stir for 1 minute.",
+  "Add the 6 cups broth, the 3 thyme sprigs and the 2 bay leaves and bring it to a simmer. Cover, turn the heat down low and simmer gently for 30 minutes.",
+  "Meanwhile, heat the broiler to high. Cut 8 slices from the baguette, about 1/2 inch thick, and lay them on a baking sheet. Broil for 1 to 2 minutes, until light golden, then flip them and toast the other side for 1 minute.",
+  "Grate the 6 oz Gruyère and pile it on the toasts. Broil for 2 to 3 minutes, until the cheese has melted and has brown spots. Watch them closely. Cheese burns fast under a broiler.",
+  "Fish out the thyme stems and bay leaves and stir in the 1/2 tsp pepper. Taste the soup, and add the last 1/4 tsp salt if it's flat.",
+  "Ladle the soup into bowls, set 2 cheese toasts on top of each and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both cook about 2.5 to 3 lb of onions in butter for close to an hour until deep brown, deglaze with dry white wine, stir in 2 tbsp flour, add 6 cups beef broth with thyme and bay and simmer covered for 30 minutes. RecipeTin Eats starts the onions on medium low and only salts them once they're soft, then turns the heat up; it tops the bowls with toasts broiled with Gruyère on a tray, so no ovenproof bowls are needed. Once Upon a Chef adds sugar, Worcestershire and a splash of sherry and broils the bread and cheese right on the bowls with Parmesan. This one follows RecipeTin with a little more cheese.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "French Onion Soup", "url": "https://www.recipetineats.com/french-onion-soup/", "rating": 4.86, "rating_count": 493, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Classic French Onion Soup", "url": "https://www.onceuponachef.com/recipes/french-onion-soup.html", "rating": 4.74, "rating_count": 150, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

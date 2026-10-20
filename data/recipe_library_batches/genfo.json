@@ -1,0 +1,81 @@
+{
+ "dish_name": "Genfo",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Barley flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 1 1/2 cups barley flour in a large dry skillet over medium. Toast it for 5 to 7 minutes, stirring often, until it's a shade darker and smells nutty. Transfer it into a bowl.",
+  "Bring 4 cups water to a boil in a medium heavy pot. Pour 1 cup of it into a mug and set it aside. Stir the 1/2 tsp salt and 1/2 tsp cardamom into the pot and turn the heat down to medium low.",
+  "Add the toasted flour a few spoonfuls at a time, stirring hard with a wooden spoon after each one so no lumps form. It gets very thick fast. Keep going until all the flour is in.",
+  "Cover the pot and cook on low for 8 to 10 minutes. Every couple of minutes, stir and press it against the side of the pot, adding a few spoonfuls of the hot water from the mug if it looks dry. It's ready when it's smooth and stiff and no longer tastes raw.",
+  "Meanwhile, melt 4 tbsp ghee (or niter kibbeh, if you have it) in a small pan over low. Stir in the 1 1/2 tsp berbere and warm it for 1 minute, until the ghee turns red and smells toasty. Take it off the heat.",
+  "Wet the inside of a medium bowl with water. Pack the hot genfo into it, then turn it out onto a serving plate as a dome.",
+  "Press a deep well into the top with the back of a ladle. Pour the spiced ghee into the well.",
+  "Spoon some of the yogurt around the base of the dome. Serve hot, with the rest of the yogurt and the honey on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions cook barley flour in water into a stiff porridge, stirring hard so it doesn't lump, and finish it with niter kibbeh. Culinary Medicine toasts the flour first, adds it gradually to boiling salted water spiced with cardamom, keeps some water back to loosen it, then shapes a mound with a well of spiced butter and berbere and serves yogurt alongside. Wikibooks whisks roasted barley flour into cold water, stirs in the butter at the end and offers honey and berbere or mitmita as toppings. This one follows the toasted flour, the mound and the berbere butter of the first and adds honey on the side from the second. No version had ratings and RecipeTin Eats (the trusted cook for Ethiopian) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Culinary Medicine",
+   "title": "Genfo (Ethiopian barley porridge)",
+   "url": "https://mds.culinarymedicine.org/?p=20518",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wikibooks",
+   "title": "Cookbook:Genfo (Ethiopian Porridge)",
+   "url": "https://en.wikibooks.org/wiki/Cookbook:Genfo_(Ethiopian_Porridge)",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

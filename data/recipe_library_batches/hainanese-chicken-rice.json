@@ -1,0 +1,131 @@
+{
+ "dish_name": "Hainanese Chicken Rice",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Whole chicken",
+   "qty": "1 (about 3 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 large piece (about 6 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp + 1/4 tsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ice",
+   "qty": "1 bag",
+   "category": "frozen"
+  }
+ ],
+ "instructions": [
+  "Pull the loose fat from inside the chicken's cavity and set it aside for the rice. Pat the chicken dry and rub 2 tsp of the salt all over the skin.",
+  "Cut 5 thin slices from the ginger. Put them in a large pot with 2 whole green onions and about 12 cups water, and bring it to a boil over high heat.",
+  "Lower the chicken in breast side up. The water should come just to the top of the breast, so add or ladle out water until it does. When the water boils again, lift the chicken by the cavity with tongs to pour out the cold water inside, then lower it back in.",
+  "Once it's boiling again, cover the pot and turn the heat to its lowest setting, so the water barely trembles. Cook for 30 to 35 minutes.",
+  "Meanwhile, rinse the 2 cups rice until the water runs mostly clear. Cover it with cold water and leave it to soak for 20 minutes, then drain it well.",
+  "While the chicken cooks, make the sweet soy sauce. Warm 3 tbsp water and 1 1/2 tbsp sugar in a small saucepan over medium heat, stirring until the sugar dissolves and it turns a little syrupy, about 2 minutes. Take it off the heat, stir in the 3 tbsp dark soy sauce and pour it into a small bowl.",
+  "Make the ginger sauce. Chop a 3-inch piece of the ginger and 2 of the garlic cloves very finely, in a mini food processor or with a knife. Warm 2 tbsp of the oil in a small pan over medium low, add the ginger and garlic, and cook for 2 to 3 minutes, stirring, until it smells sweet and the edges are barely golden. Stir in a pinch of the salt and spoon it into a small bowl.",
+  "Make the chili sauce. Seed the 2 chilies if you'd like it milder. Chop them very finely with a 1-inch piece of the ginger and 1 garlic clove, or pulse them in the mini food processor to a coarse paste. Stir in the juice of half the lime, 1/2 tsp sesame oil, 1/4 tsp salt, 1/4 tsp sugar and 1/2 tsp rice vinegar, and set it aside.",
+  "Fill a large bowl with ice and cold water. You're cooking the chicken to 165°F in the thickest part of the thigh, so if you have a thermometer, check it there. No thermometer? Poke a skewer into the thickest part of the thigh: it's done when the juices run clear.",
+  "Lift the chicken into the ice bath, pouring the hot water out of the cavity first, and leave it for 15 minutes. Keep the pot of broth over low heat.",
+  "Meanwhile, put the chicken fat and the last 1 tbsp oil in a medium saucepan over medium heat. Cook for 2 to 3 minutes until the fat melts out, then lift out any solid bits. Mince the last 3 garlic cloves, add them and stir for 30 seconds, until they smell fragrant but haven't browned.",
+  "Add the drained rice and stir for 2 minutes, until every grain is coated and glossy. Pour in 2 1/2 cups of the hot broth from the chicken pot and 1 1/4 tsp salt and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "Lift the chicken out of the ice bath, let it drain and pat it dry. Brush the skin with the last 1 1/2 tsp sesame oil. Cut off the legs and wings, then cut the breasts off the bone and slice them across.",
+  "Stir 2 tbsp of the hot broth into the chili sauce. Thinly slice 1 green onion. Taste the rest of the broth, add a pinch of salt if it's flat, and ladle it into small bowls with the sliced green onion on top.",
+  "Fluff the rice and taste it. If it's flat, add a pinch more salt.",
+  "Serve the chicken on the rice with sprigs of the cilantro, the three sauces and the cups of hot broth."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions poach a whole chicken in water with ginger and scallion, chill it in an ice bath to firm the skin, and cook the rice in the poaching broth after frying it in the chicken's own fat with garlic. The Woks of Life keeps the water just below a simmer for about 35 minutes and serves three sauces (ginger garlic oil, sweet dark soy, and a chili lime sauce thinned with broth), while Omnivore's Cookbook simmers it a little harder, fries ginger and scallion with the rice too, and gives a choice of sesame oil or sweet soy on the skin. This one follows The Woks of Life's method and sauces, sized for a 3 lb bird and 2 cups of rice, and serves the leftover broth on the side as both do.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Hainanese Chicken Rice",
+   "url": "https://thewoksoflife.com/hainanese-chicken-rice/",
+   "rating": 4.97,
+   "rating_count": 54,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Hainanese Chicken Rice (海南鸡饭)",
+   "url": "https://omnivorescookbook.com/hainanese-chicken-rice/",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

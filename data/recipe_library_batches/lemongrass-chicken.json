@@ -1,0 +1,140 @@
+{
+ "dish_name": "Lemongrass Chicken",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 1/4 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Red Thai chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: trim the 2 lemongrass stalks, peel off the tough outer layer and mince the pale inner part as finely as you can. Mince 2 of the garlic cloves. Juice 1 of the limes.",
+  "In a bowl, stir together the lime juice, 2 tbsp fish sauce, 1 tbsp soy sauce, 2 tbsp brown sugar, 1 tbsp of the oil, the lemongrass and the garlic. Add the 1.5 lb chicken and turn it until every piece is coated. Cover it and put it in the fridge.",
+  "When you're ready to cook, rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and bring it to a boil, then cover it, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, make the nuoc cham. Stir 2 tbsp sugar into 1/2 cup warm water until it dissolves. Mince the last 2 garlic cloves and thinly slice the chili. Add them with 1/4 cup fish sauce, 1/4 cup rice vinegar and the juice of the last 2 limes.",
+  "Slice the cucumber into thin rounds and pick a handful of cilantro leaves.",
+  "Heat the last 1 tbsp oil in a large skillet over medium. Lift the chicken out of the marinade, shaking off the loose bits of lemongrass, and lay it in the pan.",
+  "Cook for 3 to 4 minutes, until the underside is dark golden. The sugar in the marinade browns fast, so turn the heat down a little if it's getting too dark.",
+  "Flip the pieces and cook the other side for 3 to 4 minutes. You're cooking it to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juice runs clear and there's no pink left.",
+  "Move the chicken to a board and let it rest for 5 minutes, then slice it into strips.",
+  "Taste a slice. If it's flat, add a pinch of salt.",
+  "Serve over the rice with the cucumber, the cilantro and the nuoc cham."
+ ],
+ "advance_prep_notes": "Marinate the chicken at least 1 hour ahead, or the night before.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Every version builds the flavor from lemongrass, garlic, fish sauce and sugar on boneless chicken thighs, browned hard in a hot pan. RecipeTin Eats marinates whole thighs for at least an hour with lime, soy and brown sugar, pan fries them until dark golden, slices them after a rest, and serves them with nuoc cham carrying the chili. Delightful Plate and SBS (Luke Nguyen) slice the thighs first and stir-fry them with fried lemongrass and fresh chili, and SBS finishes them in coconut juice. This one follows RecipeTin Eats and keeps the chili in the nuoc cham on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Vietnamese Noodles with Lemongrass Chicken",
+   "url": "https://www.recipetineats.com/vietnamese-chicken-noodle-bowl/",
+   "rating": 4.98,
+   "rating_count": 254,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delightful Plate",
+   "title": "Lemongrass Chicken Stir-Fry (Gà Xào Sả Ớt)",
+   "url": "https://delightfulplate.com/vietnamese-lemongrass-chicken-stir-fry-ga-xao-sa-ot/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "SBS Food",
+   "title": "Lemongrass chilli chicken (ga xao xa ot)",
+   "url": "https://www.sbs.com.au/food/recipe/lemongrass-chilli-chicken-ga-xao-xa-ot/lknb3dg1k",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

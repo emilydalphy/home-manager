@@ -1,0 +1,136 @@
+{
+ "dish_name": "Karniyarik",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Italian eggplants",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel the 4 eggplants in long stripes from the stem down, leaving every other strip of skin on and the stem in place. Cut a slit down the length of each one, stopping about an inch from both ends. Don't cut through the bottom.",
+  "Fill a large bowl with cold water and stir in 2 tsp of the salt. Put the eggplants in and soak them for 30 minutes. Set a plate on top if they float.",
+  "Meanwhile, heat the oven to 350°F. Finely chop the onion, mince the 3 garlic cloves, and dice the green pepper and the 2 tomatoes.",
+  "Heat 1 tbsp olive oil in a large skillet over medium. Add the onion and cook for about 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Turn the heat up to medium high and add the 1 lb beef. Break it up with a spoon and leave it alone for a minute between stirs. After 6 to 8 minutes there's no pink left and the bits are starting to brown.",
+  "Add the garlic and cook for 30 seconds, until it smells fragrant. Stir in 1 tbsp of the tomato paste and cook for 1 minute, until it turns a shade darker.",
+  "Add the green pepper, the tomatoes, 3/4 tsp of the salt and the 1/4 tsp black pepper. Cook for 5 minutes, until the pepper is soft and most of the juice has cooked off. Take the pan off the heat, taste the filling, and add a pinch more salt if it's flat.",
+  "Drain the eggplants, squeeze them gently, and pat them dry with paper towels, inside the slit too.",
+  "Heat the 1/4 cup vegetable oil in a large skillet over medium. Fry the eggplants two at a time, turning them every couple of minutes, until they're soft and golden brown all over, 8 to 10 minutes a batch. Stand back a little when they go in. They'll spatter. Lift them onto paper towels.",
+  "Set the eggplants slit side up in a baking dish. Open each slit gently with a spoon to make a boat, then fill it with the beef mixture, pressing it in.",
+  "Whisk the remaining 2 tbsp tomato paste and the last 1/4 tsp salt into 1 cup boiling water. Spoon it over the filling and pour the rest around the eggplants.",
+  "Bake uncovered for 30 minutes, until the eggplants are completely soft and the sauce has thickened a little.",
+  "Chop a small handful of the parsley and scatter it over the top. Put the Aleppo pepper in a small bowl for the table.",
+  "Serve with plain yogurt and warm crusty bread, with the Aleppo pepper on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three split the eggplant down the middle and fill it with beef cooked with onion, garlic, tomato and green pepper, then bake it in a thin tomato sauce. Unicorns in the Kitchen peels the eggplants in stripes, soaks them in salted water for 30 minutes and fries them whole before stuffing, then bakes them at 350°F in tomato paste and water, and serves them with rice and cacik. This Healthy Table halves them, fries them cut side down and adds paprika and Aleppo pepper to the filling. Silk Road Recipes roasts the halves instead of frying and adds cinnamon, pine nuts and pomegranate molasses. This one follows the lead and puts the Aleppo pepper on the table.",
+ "sources": [
+  {
+   "name": "Unicorns in the Kitchen",
+   "title": "Karniyarik Turkish Stuffed Eggplant",
+   "url": "https://www.unicornsinthekitchen.com/karniyarik-turkish-stuffed-eggplant-recipe/",
+   "rating": 4.67,
+   "rating_count": 33,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "This Healthy Table",
+   "title": "Turkish Stuffed Eggplant (Karniyarik)",
+   "url": "https://thishealthytable.com/blog/turkish-stuffed-eggplant/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Silk Road Recipes",
+   "title": "Turkish Stuffed Eggplant (Karniyarik)",
+   "url": "https://silkroadrecipes.com/turkish-stuffed-eggplant-karniyarik/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

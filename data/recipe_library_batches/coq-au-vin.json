@@ -1,0 +1,161 @@
+{
+ "dish_name": "Coq au Vin",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 95,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "8",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Diced pancetta",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Sliced cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Brandy",
+   "qty": "1 small bottle",
+   "category": "other",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "2 1/2 cups"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2 1/2 cups"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Wide egg noodles",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim any loose flaps of skin from the 8 thighs and pat them dry with paper towels. Sprinkle 2 tsp of the salt and the 1/2 tsp pepper all over them.",
+  "Meanwhile, roughly chop the onion and the 4 garlic cloves. Peel the 3 carrots and cut them on an angle into 1/2 inch chunks. Strip and chop 1 tbsp of thyme leaves. Set the 4 tbsp butter out to soften.",
+  "Heat 1 tbsp of the oil in a large Dutch oven over medium. Add the 4 oz pancetta and cook for 5 to 8 minutes, stirring now and then, until the fat has melted out and the pieces are crisp. Lift them out with a slotted spoon onto a plate lined with paper towel, and leave the fat in the pot.",
+  "Turn the heat up to medium high. Lay in half the thighs, skin side down, and cook them for about 5 minutes without moving them, until the skin is golden and crisp. Brown the skin side only. Move them to a plate and brown the rest the same way. Stand back a little. They'll spatter.",
+  "Pour off all but about 2 tbsp of the fat. Turn the heat down to medium low, add the onion and cook for 3 to 5 minutes, stirring now and then, until it's soft and starting to brown.",
+  "Add the garlic and stir for about 1 minute, until it smells fragrant.",
+  "Take the pot off the heat and pour in the 1/4 cup brandy. Put it back on the heat and scrape up the browned bits from the bottom while it bubbles away, about 1 minute.",
+  "Add 2 1/2 cups of the wine, 2 1/2 cups of the broth, 1 1/2 tbsp of the tomato paste, 2 tsp of the balsamic vinegar, the 1 1/2 tsp sugar, the chopped thyme, the bay leaf and 1/2 tsp of the salt. Bring it to a boil, then turn the heat to medium and let it bubble gently, uncovered, for 15 minutes.",
+  "Put the chicken back in, skin side up, with any juices from the plate, and add the carrots. Bring it back to a simmer, cover, turn the heat to low and cook for 30 minutes. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest one near the bone. No thermometer? Pierce it near the bone: it's done when the juices run clear and the carrots are tender.",
+  "Meanwhile, heat the remaining 2 tbsp oil in a large skillet over medium. Add the 8 oz mushrooms and the last 1/4 tsp salt and cook for about 5 minutes, stirring often, until they're golden brown. Take them off the heat.",
+  "In a small bowl, mash the softened butter and the 4 tbsp flour together with a fork into a smooth paste. Put a large pot of water on to boil for the noodles.",
+  "Lift the chicken out of the pot onto a plate with tongs.",
+  "Turn the heat under the pot to medium. Stir in about three quarters of the butter paste and let it bubble gently for 5 to 7 minutes, until the sauce has thickened. Stir in the rest of the paste if you'd like it thicker. Fish out the bay leaf.",
+  "Pull the skin off the chicken with a fork and throw it away. Put the chicken back in the sauce with any juices and simmer it uncovered for 10 minutes.",
+  "Meanwhile, add a big pinch of salt to the boiling water and cook the 12 oz noodles as the package says. Drain them.",
+  "Stir the mushrooms and pancetta into the pot.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a few drops more of the balsamic vinegar.",
+  "Serve over the egg noodles."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions crisp bacon or pancetta, brown the chicken thighs, soften onion and garlic in the fat, braise the chicken in red wine and stock with tomato paste, thyme and bay, brown the mushrooms on their own and thicken the sauce with butter and flour. Once Upon a Chef (the lead, on a tie at 4.9 with the most ratings) deglazes the pot with Cognac (any brandy works, as here), adds a little balsamic and sugar, braises on the stove for 30 minutes with carrots, and takes the skin off before serving. RecipeTin Eats marinates the chicken in the wine overnight, boils the wine down by half, cooks it in the oven for 45 minutes with pearl onions, serves it over mashed potato or tagliatelle, and says it's better made a day ahead. This one follows the lead and serves it over egg noodles. Leftovers reheat gently, covered, with a splash of water.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Coq au Vin",
+   "url": "https://www.onceuponachef.com/recipes/coq-au-vin.html",
+   "rating": 4.93,
+   "rating_count": 317,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Coq au Vin",
+   "url": "https://www.recipetineats.com/coq-au-vin/",
+   "rating": 4.92,
+   "rating_count": 82,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

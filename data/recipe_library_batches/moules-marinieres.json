@@ -1,0 +1,66 @@
+{
+ "dish_name": "Moules Marinieres",
+ "cuisine": "French",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Mussels", "qty": "4 lb", "category": "meat/seafood"},
+  {"item": "Shallots", "qty": "3", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup chopped"},
+  {"item": "Unsalted butter", "qty": "8 tbsp", "category": "dairy"},
+  {"item": "Dry white wine", "qty": "1 cup", "category": "other"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Baguette", "qty": "1", "category": "other"}
+ ],
+ "instructions": [
+  "Transfer the 4 lb mussels into a colander and rinse them under cold running water. Pull off any stringy beards by tugging them toward the hinge, and scrub off any grit.",
+  "Tap any open mussels on the counter. Throw away any that don't close, and any with cracked shells.",
+  "Finely chop the 3 shallots and mince the 4 garlic cloves. Chop the parsley leaves until you have about 1/2 cup, and slice the baguette.",
+  "Melt 6 tbsp of the butter in a large, wide pot with a lid over medium heat. Add the shallots and cook for about 3 minutes, stirring, until they're soft and see-through but not brown.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Pour in the 1 cup wine and turn the heat up to medium high. Let it boil for 3 to 4 minutes, until it has cooked down by about half.",
+  "Add the mussels and put the lid on right away. Cook for 5 to 7 minutes, shaking the pot once or twice with the lid held on, until the shells have opened wide. No peeking for the first 4 minutes.",
+  "Take the pot off the heat. Lift the mussels out with a slotted spoon into 4 big bowls, and throw away any that stayed shut.",
+  "Stir the last 2 tbsp butter, the 1/2 tsp pepper and the parsley into the cooking liquid in the pot until the butter melts.",
+  "Taste the cooking liquid. If it's flat, add a pinch of salt.",
+  "Ladle the cooking liquid over the mussels. Serve with the sliced baguette and an empty bowl for the shells."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soften shallots and garlic in butter, add white wine and steam the mussels with the lid on until they open, then finish with parsley. Rouxbe (the most rated) reduces the wine before the mussels go in and steams them for 6 to 8 minutes, which this version follows. SBS cooks a leek, bay leaves and thyme with the shallots and uses a lot more butter, and Tangerine Zest adds a sprig of rosemary to the wine and cooks the mussels for up to 10 minutes. This one swirls a little cold butter into the broth at the end. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for French) keeps its mussels recipe in a cookbook with no recipe on the page, so the most rated read version leads.",
+ "sources": [
+  {
+   "name": "Rouxbe",
+   "title": "Moules Marinière | Mussels Mariniere",
+   "url": "https://rouxbe.com/recipes/1521-moules-mariniere-mussels-mariniere",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Mussels in white wine (moules marinières)",
+   "url": "https://www.sbs.com.au/food/recipe/mussels-in-white-wine-moules-marinieres/pq9d4u795",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tangerine Zest",
+   "title": "Mussels Mariniere",
+   "url": "https://tangerinezest.com/en/homepage/mussels-mariniere/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

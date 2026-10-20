@@ -1,0 +1,43 @@
+{
+ "dish_name": "Blueberry Muffins",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 23,
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "2 cups + 1 tbsp", "category": "pantry"},
+  {"item": "Baking powder", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 cup + 1 tbsp"},
+  {"item": "Unsalted butter", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Milk", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Almond extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/8 tsp"},
+  {"item": "Blueberries", "qty": "2 pints", "category": "produce", "cook_qty": "2 1/4 cups"}
+ ],
+ "instructions": [
+  "About 30 minutes before you start, take the 1/2 cup butter and the 2 eggs out of the fridge so they come to room temperature.",
+  "Heat the oven to 400°F with a rack in the middle, and line a 12 cup muffin pan with paper liners.",
+  "In a medium bowl, whisk together 2 cups of the flour, the 2 tsp baking powder and the 1/2 tsp salt.",
+  "In a large bowl, beat the butter with 1 cup of the sugar using a hand mixer on medium speed for 2 to 3 minutes, until it's pale and fluffy.",
+  "Beat in the eggs one at a time. Then beat in the 1/2 cup milk, 1 tsp vanilla and 1/8 tsp almond extract. It may look a little curdled, and that's fine.",
+  "Transfer the flour mixture into the bowl and fold it in with a spatula until you can't see any dry flour. Stop there. More mixing makes the muffins tough.",
+  "In a small bowl, toss 2 1/4 cups of the blueberries with the last 1 tbsp flour until they're lightly coated. Fold them gently into the batter.",
+  "Divide the batter between the 12 cups. Sprinkle the last 1 tbsp sugar over the tops.",
+  "Put the pan in the oven and turn the heat down to 375°F straight away. Bake for 18 to 23 minutes, until the tops are golden and a toothpick in the middle of one comes out clean.",
+  "Leave them in the pan for 2 minutes, then move them to a wire rack to cool.",
+  "Serve them warm or at room temperature, with the rest of the blueberries. Keep cooled muffins in a sealed container for up to 2 days, or freeze them in a bag for up to 1 month and thaw them on the counter."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cream soft butter with sugar, beat in eggs, add a liquid dairy and fold in the flour just until it disappears before the berries go in. Spend With Pennies (the lead) uses milk with a little almond extract, tosses the berries in a spoonful of flour, sugars the tops and starts the oven at 400°F before dropping it to 375°F for a taller dome. Baker by Nature makes a richer batter with brown sugar, sour cream and a pinch of nutmeg and allspice, and King Arthur uses sour cream or yogurt with a thick, almost cookie-dough batter at 375°F. This one follows the lead, and the batch of 12 covers several breakfasts for four.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Blueberry Muffins", "url": "https://www.spendwithpennies.com/blueberry-muffins/", "rating": 5.0, "rating_count": 44, "read": true, "lead": true},
+  {"name": "Baker by Nature", "title": "The Best Blueberry Muffin Recipe", "url": "https://bakerbynature.com/blueberry-muffins/", "rating": 4.86, "rating_count": 34, "read": true, "lead": false},
+  {"name": "King Arthur Baking", "title": "Blueberry Muffins", "url": "https://www.kingarthurbaking.com/recipes/blueberry-muffins-recipe", "rating": 4.2, "rating_count": 227, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

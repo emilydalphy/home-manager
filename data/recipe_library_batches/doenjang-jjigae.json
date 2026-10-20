@@ -1,0 +1,45 @@
+{
+ "dish_name": "Doenjang Jjigae",
+ "cuisine": "Korean",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "1.5 cups", "category": "pantry"},
+  {"item": "Firm tofu", "qty": "1 block (16 oz)", "category": "dairy"},
+  {"item": "Zucchini", "qty": "1", "category": "produce"},
+  {"item": "Yukon Gold potato", "qty": "1", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Pork shoulder", "qty": "6 oz", "category": "meat/seafood"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Doenjang", "qty": "1 tub", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Gochugaru", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1.5 cups rice in a few changes of water until the water runs mostly clear. Cook it in a rice cooker, or in a covered pot with 1 3/4 cups water over low heat for 18 minutes, then leave it covered off the heat for 10 minutes.",
+  "Meanwhile, cut the tofu into 1 inch cubes and the zucchini into 1 inch pieces. Peel the potato and cut it into thin bite size slices about 1/4 inch thick.",
+  "Thinly slice half the onion. Mince the 4 garlic cloves. Cut 2 of the scallions into 1 inch pieces. Slice the jalapeño into a small bowl for the table.",
+  "Slice the 6 oz pork into thin strips.",
+  "Heat the 1 tbsp vegetable oil in a medium pot over medium. Add the pork, 1/4 cup doenjang and the 1 tsp gochugaru. Stir for 3 to 4 minutes, until the pork has lost its pink outside and the paste smells toasty.",
+  "Pour in 4 cups water and stir until the paste has dissolved. Add the potato, turn the heat up to medium high and boil for 4 minutes.",
+  "Add the onion, garlic, tofu and zucchini. Boil for 5 to 6 minutes, until the zucchini is tender and a piece of potato breaks easily against the side of the pot with a spoon.",
+  "Stir in the scallions and the 2 tsp vinegar and cook for 1 minute.",
+  "Taste it. If it's flat, add a pinch more salt or a few more drops of the vinegar.",
+  "Serve with the rice, with the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions dissolve doenjang into water or anchovy stock and simmer tofu, zucchini and onion in it for only a few minutes, finishing with scallion and fresh chili. Korean Bapsang fries pork with the soybean paste and chili flakes before the water goes in, adds radish or potato, and adds an optional splash of vinegar at the end. Beyond Kimchee makes no meat base, simmers dried anchovies and kelp in rice water for the stock and stirs in a little gochujang with the doenjang. This one follows Korean Bapsang doubled for 4, uses potato rather than Korean radish, and puts the fresh chili on the side.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Doenjang Jjigae (Korean Soybean Paste Stew)", "url": "https://www.koreanbapsang.com/doenjang-jjigae-korean-soy-bean-paste/", "rating": 4.68, "rating_count": 283, "read": true, "lead": true},
+  {"name": "Beyond Kimchee", "title": "Doenjang Jjigae (Rich Korean Soybean Stew)", "url": "https://www.beyondkimchee.com/doenjang-jjigae/", "rating": 4.95, "rating_count": 18, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

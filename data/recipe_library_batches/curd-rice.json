@@ -1,0 +1,148 @@
+{
+ "dish_name": "Curd Rice",
+ "cuisine": "Indian",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "White rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (32 oz)",
+   "category": "dairy",
+   "cook_qty": "2 1/2 cups"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp minced"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the day before: rinse the 1 cup rice in a sieve until the water runs clear. Put it in a medium pot with 3 cups water and 1/2 tsp of the salt and bring it to a boil over high heat.",
+  "Stir it, cover, turn the heat to low and cook for 20 to 25 minutes, until the rice is very soft and the water is gone. Mash it lightly with a potato masher, spread it out in a wide bowl and leave it until it's completely cool, then cover and refrigerate it. Warm rice makes the yogurt split. If you have about 4 cups of soft leftover rice, use that instead.",
+  "Whisk the 2 1/2 cups yogurt and 1/2 cup milk together until smooth. Add them to the cold rice with the last 1/4 tsp salt and mix until there are no dry clumps. It should be thick but loose enough to spoon, so stir in a few spoonfuls of water if it's stiff.",
+  "Peel and finely grate the carrot. Grate the cucumber and squeeze out the water with your hands. Chop 2 tbsp of the cilantro. Stir all three into the rice.",
+  "Peel and mince 1 tsp of the ginger. Roughly chop the 1/4 cup cashews.",
+  "For the tadka, heat the 1 tbsp oil in a small frying pan over medium. Add the 1 tsp mustard seeds and 1 tsp cumin seeds. When the mustard seeds start to pop, add the 1 1/2 tsp chana dal, 1 1/2 tsp urad dal, the cashews and the 2 dried chilies, broken in half.",
+  "Stir for 1 to 2 minutes, until the dals and cashews are golden. Add the ginger and 2 sprigs of curry leaves and stir for about 30 seconds, until the leaves are crisp. Stand back a little. They spatter. Take the pan off the heat and stir in the pinch of asafoetida.",
+  "Pour the tadka, oil and all, over the curd rice and stir it through. Taste it, and add a pinch more salt if it's flat.",
+  "Serve cool or at room temperature."
+ ],
+ "advance_prep_notes": "cook the rice at least 2 hours ahead so it's cold, or the day before",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "All three cook the rice softer than usual, mash it lightly and cool it completely before the yogurt goes in, then pour over a tempering of mustard seeds, urad dal, dried red chili, curry leaves, ginger and hing. Swasthi's uses about 1 1/4 cups yogurt for every 1/2 cup raw rice, adds chana dal, grated carrot and cucumber and optional cashews, and makes milk optional. Hebbar's temple style loosens the yogurt with milk and a little cream and adds cashews, raisins and pomegranate; Cook with Manali mixes in 1/2 cup milk and chills it for a few hours before serving. This one follows Swasthi's ratios for four, with a little milk to keep it soft and the cashews in for crunch.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Curd Rice Recipe",
+   "url": "https://www.indianhealthyrecipes.com/curd-rice-recipe/",
+   "rating": 5.0,
+   "rating_count": 177,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Curd Rice Recipe | Thayir Sadam - Temple Style",
+   "url": "https://hebbarskitchen.com/curd-rice-recipe-mosaranna-thayir-sadam/",
+   "rating": 4.99,
+   "rating_count": 71,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Curd Rice",
+   "url": "https://www.cookwithmanali.com/curd-rice/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
