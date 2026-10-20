@@ -163,7 +163,7 @@ def test_a_kilo_amount_keeps_its_own_scale():
 
 
 def test_a_litre_amount_keeps_its_own_scale():
-    assert _booked_for("1 l") == "0.75 l"
+    assert _booked_for("1 l") == "0.75 L"
 
 
 def test_a_gram_amount_rounds_up_to_its_step():

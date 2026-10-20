@@ -470,7 +470,7 @@ def test_the_ordinary_unlink_still_rescales_for_every_other_caller():
     on_list = _grocery_by_item()
     assert on_list["beef"] == "2 lbs"
     assert on_list["lettuce"] == "2 heads"
-    assert on_list["milk"] == "1 l"
+    assert on_list["milk"] == "1 L"
 
 
 # ------------------------------------------------------- the "+", recorded
