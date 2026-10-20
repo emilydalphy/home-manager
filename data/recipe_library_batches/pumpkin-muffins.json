@@ -1,0 +1,44 @@
+{
+ "dish_name": "Pumpkin Muffins",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "1 3/4 cups", "category": "pantry"},
+  {"item": "Baking soda", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Pumpkin pie spice", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 cup + 1 tbsp"},
+  {"item": "Pumpkin puree", "qty": "1 can (15 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1/4 cup"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Ground cinnamon", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle, and line a 12 cup muffin pan with paper liners.",
+  "Melt the 1/2 cup butter in a small saucepan over low heat, then take it off the heat to cool a little.",
+  "In a large bowl, whisk together the 1 3/4 cups flour, 1 tsp baking soda, 2 tsp pumpkin pie spice and 1/2 tsp salt.",
+  "In a medium bowl, stir the melted butter with 1 cup of the sugar.",
+  "Add 1 1/2 cups pumpkin puree, the 2 eggs, 1/4 cup yogurt and 1 tsp vanilla to the butter mixture. Whisk until it's smooth and the same color all the way through.",
+  "Pour the wet mixture into the flour mixture and fold it together with a spatula until you can't see any dry flour. Stop there. A few lumps are fine, and more stirring makes the muffins tough.",
+  "Divide the batter between the 12 cups. They'll be filled almost to the top.",
+  "Stir the last 1 tbsp sugar with the 1/2 tsp cinnamon and sprinkle it over the tops.",
+  "Bake for 5 minutes. Turn the oven down to 350°F without opening the door and bake for another 15 to 20 minutes, until the tops spring back when you press them and a toothpick in the middle comes out clean.",
+  "Leave them in the pan for 5 minutes, then move them to a wire rack to cool.",
+  "Serve them warm or at room temperature. Once they're completely cool, freeze any extras in a sealed bag for up to 3 months and thaw them on the counter."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three are one-bowl style batters of flour, pumpkin, sugar, fat, eggs and warm spices. Little Sweet Baker (the lead) uses melted butter, a generous 1 1/2 cups of pumpkin and a little yogurt, tops them with cinnamon sugar, and starts the oven at 425°F for 5 minutes before dropping to 350°F for a taller top. Once Upon a Chef creams softened butter with more sugar and adds a pecan streusel, and Love and Lemons makes a lighter version with oil, maple syrup and some whole wheat flour. This one follows the lead. One batch makes 12 muffins, which covers several snacks for four, and the rest freeze well.",
+ "sources": [
+  {"name": "Little Sweet Baker", "title": "Soft & Moist Pumpkin Muffins", "url": "https://www.littlesweetbaker.com/pumpkin-muffins/", "rating": 5.0, "rating_count": 22, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Pumpkin Muffins", "url": "https://www.onceuponachef.com/recipes/pumpkin-muffins.html", "rating": 4.9, "rating_count": 429, "read": true, "lead": false},
+  {"name": "Love and Lemons", "title": "Healthy Pumpkin Muffins", "url": "https://www.loveandlemons.com/pumpkin-muffins/", "rating": 4.7, "rating_count": 60, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

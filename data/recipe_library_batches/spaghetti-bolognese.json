@@ -1,0 +1,50 @@
+{
+ "dish_name": "Spaghetti Bolognese",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Olive oil", "qty": "1 1/2 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Ground beef", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Dry red wine", "qty": "1 bottle", "category": "other", "cook_qty": "1/2 cup"},
+  {"item": "Crushed tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Beef bouillon cubes", "qty": "1 box", "category": "pantry", "cook_qty": "2 cubes"},
+  {"item": "Worcestershire sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce", "cook_qty": "2 sprigs"},
+  {"item": "Salt", "qty": "1 tbsp + 3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Spaghetti", "qty": "12 oz", "category": "pantry"},
+  {"item": "Parmesan", "qty": "1 wedge", "category": "dairy"}
+ ],
+ "instructions": [
+  "Finely chop the onion and mince the 2 garlic cloves.",
+  "Heat the 1 1/2 tbsp olive oil in a large deep skillet or pot over medium high. Add the onion and cook for about 4 minutes, stirring now and then, until it's soft and light golden.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Turn the heat up to high and add the 1 lb beef. Break it up with a wooden spoon and cook for 5 to 6 minutes, until there's no pink left and some of it has browned. Don't keep stirring. Let it sit for a minute between stirs so it browns.",
+  "Stir in 2 tbsp tomato paste and cook for 1 minute, until it turns a shade darker.",
+  "Pour in the 1/2 cup red wine and let it bubble for 1 minute, scraping the browned bits off the bottom of the pan, until the sharp alcohol smell is gone.",
+  "Add the can of crushed tomatoes, then crumble in the 2 bouillon cubes. Stir in the 2 tsp Worcestershire, 2 tsp sugar, the 2 bay leaves, 2 sprigs of thyme, 3/4 tsp of the salt and the 1/2 tsp pepper.",
+  "Bring it to a simmer, then turn the heat down to medium so it bubbles gently. Cook it uncovered for 20 to 30 minutes, stirring now and then, until it's thick and glossy. If it gets too thick, stir in a splash of water.",
+  "While the sauce simmers, bring a large pot of water to a boil and add the remaining 1 tbsp salt. Cook the 12 oz spaghetti for 1 minute less than the packet says.",
+  "Scoop out a mug of the pasta water, then drain the spaghetti. Fish the bay leaves and thyme stems out of the sauce.",
+  "Tip the spaghetti into the sauce with about 1/2 cup of the pasta water. Toss it over medium heat for 1 1/2 to 2 minutes, until the pasta is coated and the sauce clings to it.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Grate the Parmesan. Serve the spaghetti with the Parmesan on the side. Leftovers freeze well in a sealed container for up to 3 months."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soften onion, brown the beef hard, and simmer it with wine, canned tomatoes and tomato paste. RecipeTin Eats (the lead) keeps it to a weeknight 20 to 30 minute simmer and builds depth with beef bouillon, Worcestershire, a little sugar, bay and thyme, then tosses the pasta in the sauce with some pasta water. BBC Good Food starts from fried bacon and a full soffritto of onion, carrot and celery with rosemary, adds stock and parmesan, and simmers it covered for over an hour. This one follows the lead and fries the tomato paste for a minute after the beef browns.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Spaghetti Bolognese", "url": "https://www.recipetineats.com/spaghetti-bolognese/", "rating": 5.0, "rating_count": 478, "read": true, "lead": true},
+  {"name": "BBC Good Food", "title": "The best spaghetti bolognese recipe", "url": "https://www.bbcgoodfood.com/recipes/best-spaghetti-bolognese-recipe", "rating": 4.8, "rating_count": 1221, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

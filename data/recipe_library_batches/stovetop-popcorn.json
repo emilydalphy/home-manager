@@ -1,0 +1,32 @@
+{
+ "dish_name": "Stovetop Popcorn",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 2,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {"item": "Popcorn kernels", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "3 tbsp", "category": "dairy"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Melt the 3 tbsp butter in a small saucepan over low heat, then take it off the heat. Get out a big bowl for the popcorn.",
+  "Pour the 1/4 cup oil into a large pot with a lid and set it over medium heat. Drop in 3 of the kernels and put the lid on.",
+  "When those kernels pop, add the rest of the 1/2 cup kernels and give the pot a shake so they're coated in oil. Take the pot off the heat for 30 seconds with the lid on.",
+  "Put the pot back over medium heat with the lid slightly ajar so the steam can get out. Once the popping starts, shake the pot every few seconds so nothing sticks to the bottom.",
+  "When the popping slows to 2 or 3 seconds between pops, about 3 minutes in, take it off the heat and tip the popcorn straight into the bowl. Don't wait for every last kernel. The bottom burns fast.",
+  "Drizzle the melted butter over the popcorn, sprinkle on the 1/2 tsp salt and toss with your hands until it's evenly coated. Taste a few pieces and add a pinch more salt if you like.",
+  "Serve it right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions heat the oil with a few test kernels, add the rest once those pop, and shake the pot until the popping slows. Love and Lemons (the lead) uses 1/4 cup neutral oil to 1/2 cup kernels, rests the pot off the heat for 30 seconds so all the kernels heat evenly, keeps the lid slightly open to let the steam out, and finishes with melted butter and salt, with nutritional yeast as an option. Zestful Kitchen uses a little less oil over medium high heat and stops at about 3 seconds between pops. Neither version had 20 or more ratings and RecipeTin Eats (the trusted cook for American) has no plain popcorn recipe, so the version with the most ratings leads.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Stovetop Popcorn", "url": "https://www.loveandlemons.com/stovetop-popcorn/", "rating": 5.0, "rating_count": 6, "read": true, "lead": true},
+  {"name": "Zestful Kitchen", "title": "How to Make Stovetop Popcorn", "url": "https://zestfulkitchen.com/how-to-make-stovetop-popcorn/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

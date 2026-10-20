@@ -1,0 +1,124 @@
+{
+ "dish_name": "Penne alla Vodka",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Penne",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vodka",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Whole peeled tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp plus 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (about 4 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil with 1 tbsp of the salt.",
+  "Meanwhile, finely chop half the onion and mince the 4 garlic cloves.",
+  "Tip the can of tomatoes into a bowl and squeeze them with your hand until there are no whole tomatoes left.",
+  "Heat the 3 tbsp olive oil in a large, deep skillet or Dutch oven over medium. Add the onion and cook for 5 to 6 minutes, stirring now and then, until it's soft and see-through but not brown.",
+  "Add the garlic and stir for about 30 seconds, until it smells fragrant.",
+  "Stir in 3 tbsp tomato paste and 1/4 tsp of the red pepper flakes. Keep stirring for about 1 minute, until the paste turns a shade darker and starts to stick to the bottom of the pan.",
+  "Take the pan off the heat and pour in 1/4 cup vodka. Put it back over medium and stir for about 2 minutes, scraping the bottom, until most of the liquid has cooked off and the sharp alcohol smell is gone.",
+  "Add the tomatoes and 1/2 tsp of the salt. Once it bubbles, turn the heat to low, set the lid on partway and simmer for 15 minutes, stirring now and then, until the sauce is thicker and a deeper red.",
+  "When the sauce has about 10 minutes to go, add the 1 lb penne to the boiling water. Cook it for the time on the package for al dente, stirring a couple of times so it doesn't stick.",
+  "Meanwhile, finely grate 1/2 cup of the Parmesan. Put the other 1/4 tsp of red pepper flakes in a small bowl for the table.",
+  "Stir 3/4 cup cream into the sauce, then the grated Parmesan. Bring it back to a gentle simmer, stirring, until it's smooth and an even orange pink.",
+  "Just before the pasta is done, scoop out 1 cup of the cooking water. Drain the penne.",
+  "Tip the penne into the sauce with 1/4 cup of the pasta water. Toss it over medium low for about 1 minute, until every piece is coated and the sauce looks glossy. If it looks thick, add a splash more of the water.",
+  "Take the pan off the heat and tear about 8 basil leaves over the top. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rest of the Parmesan grated over the top and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three highly rated versions cook tomato paste and vodka together, then bring the sauce together with heavy cream and toss the pasta through it with a little pasta water. Natasha's Kitchen (the lead) softens onion in olive oil, adds garlic, cooks the paste and vodka down, then simmers mashed whole canned tomatoes for 15 minutes before the cream and Parmesan go in. RecipeTin Eats skips the canned tomatoes and fries half a cup of tomato paste, then simmers it in cream for a 15 minute sauce. Billy Parisi starts with crisp pancetta and finishes with pecorino and basil. This one follows Natasha's, leaves out the pancetta so it stays vegetarian, and keeps a gentle heat in the pot with the rest of the pepper flakes on the table.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Penne alla Vodka Recipe",
+   "url": "https://natashaskitchen.com/penne-alla-vodka/",
+   "rating": 4.97,
+   "rating_count": 125,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Penne alla Vodka",
+   "url": "https://www.recipetineats.com/vodka-pasta/",
+   "rating": 5.0,
+   "rating_count": 59,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Billy Parisi",
+   "title": "Penne Alla Vodka Recipe",
+   "url": "https://www.billyparisi.com/penne-alla-vodka-recipe/",
+   "rating": 5.0,
+   "rating_count": 99,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

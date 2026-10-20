@@ -1,0 +1,99 @@
+{
+ "dish_name": "Fettuccine Alfredo",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Fettuccine",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (about 4 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp plus 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil with 1 tbsp of the salt.",
+  "Meanwhile, mince the shallot as finely as you can. Chop 1 tbsp of the parsley leaves.",
+  "Finely grate 1 cup of the Parmesan on a microplane or the smallest holes of a box grater. Coarse or pre-grated cheese can make the sauce grainy.",
+  "Add the 12 oz fettuccine to the boiling water and cook it for the time on the package for al dente, stirring a couple of times so the strands don't stick together.",
+  "Meanwhile, melt 4 tbsp butter in a large, deep skillet over medium. Add the shallot and cook for about 2 minutes, stirring, until it's soft and see-through.",
+  "Pour in 3/4 cup cream and bring it to a boil. Turn the heat down to medium low and simmer for 3 minutes, until it's a little thicker.",
+  "Take the pan off the heat. Stir in the 1 cup Parmesan, 1/4 tsp of the salt and the 1/4 tsp pepper until the sauce is smooth. Keep it off the heat while the cheese melts, or it can clump.",
+  "Just before the pasta is done, scoop out 1 cup of the cooking water. Drain the fettuccine.",
+  "Tip the fettuccine into the sauce with 1/4 cup of the pasta water. Put the pan back over medium and toss gently with tongs for about 1 minute, until the sauce turns glossy and coats every strand in a thin layer. If it looks thick or sticky, add a splash more of the water.",
+  "Take the pan off the heat and scatter the parsley over the top. Taste it. If it's flat, add a pinch more salt.",
+  "Serve right away, with the rest of the Parmesan to grate over at the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions simmer heavy cream in melted butter, take the pan off the heat to melt in the Parmesan, and toss the pasta through with some of its cooking water. RecipeTin Eats (the lead) softens a minced shallot in the butter, simmers the cream for 3 minutes and insists on freshly and finely grated Parmigiano Reggiano so the sauce stays smooth. Spend With Pennies and Once Upon a Chef use garlic instead of shallot, add a pinch of nutmeg and use more butter and cream for the amount of pasta. This one follows RecipeTin's ratios, sized up to four.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Fettuccine Alfredo",
+   "url": "https://www.recipetineats.com/fettuccine-alfredo/",
+   "rating": 4.95,
+   "rating_count": 71,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Fettuccine Alfredo",
+   "url": "https://www.spendwithpennies.com/fettuccine-alfredo/",
+   "rating": 5.0,
+   "rating_count": 28,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Fettuccine Alfredo",
+   "url": "https://www.onceuponachef.com/recipes/fettuccine-alfredo.html",
+   "rating": 4.96,
+   "rating_count": 22,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
