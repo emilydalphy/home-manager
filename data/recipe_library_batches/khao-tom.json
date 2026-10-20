@@ -1,0 +1,47 @@
+{
+ "dish_name": "Khao Tom",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Ground pork", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Thai bird chilies", "qty": "1 package", "category": "produce", "cook_qty": "2"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Chicken bouillon cubes", "qty": "1 box", "category": "pantry", "cook_qty": "1 cube"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Ground white pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large soup pot with 12 cups of water, put the lid on and bring it to a boil over high heat. It takes a while, so get it going first.",
+  "Meanwhile, rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear, and leave it to drain.",
+  "Pick the cilantro leaves off the stems and set the leaves aside for the top. Finely chop a small handful of the stems. Pound them with the 5 garlic cloves in a mortar to a rough paste, or chop them together on the board until they're very fine.",
+  "In a bowl, mix the 8 oz ground pork with 1/2 tbsp of the soy sauce and 1/4 tsp of the white pepper. Wet your hands and roll it into about 20 small balls, about 2 tsp each, and set them on a plate.",
+  "Heat the 3 tbsp oil in a skillet over medium. Add the garlic paste and stir for 1 to 2 minutes, until it's golden and smells toasty. Don't let it go dark brown, or it turns bitter.",
+  "Add the remaining 3/4 tsp white pepper and the drained rice to the skillet. Stir for 30 seconds, until every grain is coated in the garlic oil.",
+  "Crumble 1 bouillon cube into the boiling water and add the 1 tsp salt and the remaining 1 tbsp soy sauce. Stir until the cube dissolves.",
+  "Scrape the rice and all the garlic into the pot. Turn the heat down so it boils gently, put the lid on slightly ajar, and cook for 10 minutes. Stir the bottom once or twice so the rice doesn't stick.",
+  "Meanwhile, chop 1 celery stalk. Slice 4 green onions. Thinly slice 2 chilies into a small bowl for the table and cut the lime into wedges.",
+  "Add the celery to the pot, then drop the pork balls in one at a time so they don't stick together. Cook for about 5 minutes, until they float. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Taste the broth. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Ladle the soup into bowls so everyone gets rice, broth and pork balls. Top with the green onions and cilantro leaves, and serve with the lime wedges and sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions build a light, garlicky soup of jasmine rice and seasoned pork, topped with green onion and cilantro and finished at the table with white pepper, chilies and lime or chili vinegar. Hungry in Thailand fries a garlic and coriander root paste with white pepper, toasts the raw rice in it and simmers it in seasoned water, adding celery and pork balls for the last 5 minutes. Rachel Cooks Thai pours a long-simmered pork broth over cooked rice and cooked minced pork, and Marion's Kitchen cooks the rice down to a thick porridge and serves it with garlic oil, chili vinegar and an optional egg. This one follows Hungry in Thailand, with cilantro stems in place of the roots and the pork balls seasoned with soy and white pepper. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no version, so the first read version leads.",
+ "sources": [
+  {"name": "Hungry in Thailand", "title": "Khao Tom Recipe (Thai Rice Soup)", "url": "https://hungryinthailand.com/khao-tom/", "rating": 5.0, "rating_count": 4, "read": true, "lead": true},
+  {"name": "Rachel Cooks Thai", "title": "Thai Rice Soup (Khao Tom)", "url": "https://rachelcooksthai.com/thai-rice-soup-khao-tom/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Marion's Kitchen", "title": "Thai Pork & Rice Soup (Khao Tom Moo Sap)", "url": "https://www.marionskitchen.com/thai-pork-rice-soup-khao-tom-moo-sap/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,114 @@
+{
+ "dish_name": "Chicken Teriyaki",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot.",
+  "In a small microwave-safe bowl, stir together 1/4 cup soy sauce, 1/4 cup mirin, 1/4 cup sake and 2 tbsp sugar. Microwave it for 30 seconds and stir until the sugar has dissolved.",
+  "Lay the 2 lb chicken thighs smooth side down on a board. Cut shallow slits about 1/2 inch apart across the thick parts, without cutting all the way through, and press each thigh open with your fingers so it's an even thickness all over.",
+  "Pat the thighs dry with paper towels and sprinkle both sides with the 1/8 tsp salt and 1/4 tsp pepper.",
+  "Heat 1 tbsp oil in a large skillet over medium-high until it shimmers. Lay in half the thighs smooth side down and cook for 5 minutes without moving them, until the underside is deep golden and lets go of the pan.",
+  "Flip them, turn the heat down to low, cover the pan and cook for 3 minutes. Move them to a plate.",
+  "Turn the heat back up to medium-high, add the other 1 tbsp oil and cook the second batch the same way.",
+  "Put the first batch back in the pan. Wipe up the fat around the chicken with a folded paper towel held in tongs. The pan is hot.",
+  "Turn the heat to medium and pour in the sauce. Let it bubble for 3 to 4 minutes, turning the chicken and spooning the sauce over it, until the sauce is thick and glossy and clings to the chicken. You're cooking it to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear and there's no pink left.",
+  "Move the chicken to a board and let it rest for 2 minutes. If the sauce in the pan is still thin, let it bubble for another minute. Take it off the heat while it's still a little runny. It thickens as it cools.",
+  "Thinly slice 2 of the green onions. Slice the chicken across into strips about 1 inch wide.",
+  "Taste the sauce, and add a pinch more salt if it's flat.",
+  "Serve the chicken over the rice with the sauce spooned over and the green onions on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook the thighs in a skillet first and only then add a sauce of soy sauce, mirin, sugar and sake (or water) to reduce into a glaze around them. Just One Cookbook, the lead, scores the thighs to an even thickness, sears them smooth side down for 5 minutes, steams them covered on low for 3, wipes out the fat and glazes them in a 2:2:2:1 sauce of soy, mirin, sake and sugar. Viet World Kitchen reduces the sauce separately for 20 minutes and uses only a little to glaze, and Khin's Kitchen cooks skin-on thighs with ginger in the sauce and a crunchy slaw alongside. This one doubles the lead's sauce for 2 lb of thighs, cooks them in two batches and serves them over short-grain rice with green onions as Viet World Kitchen does.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Chicken Teriyaki",
+   "url": "https://www.justonecookbook.com/chicken-teriyaki/",
+   "rating": 4.75,
+   "rating_count": 394,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Khin's Kitchen",
+   "title": "Teriyaki Chicken",
+   "url": "https://khinskitchen.com/teriyaki-chicken/",
+   "rating": 4.74,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Viet World Kitchen",
+   "title": "Chicken Teriyaki",
+   "url": "https://www.vietworldkitchen.com/blog/2013/09/true-chicken-teriyaki-recipe.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

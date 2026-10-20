@@ -1,0 +1,87 @@
+{
+ "dish_name": "Thai Omelette",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot. Start the omelettes when the rice is nearly done.",
+  "Trim and thinly slice 4 of the green onions.",
+  "Crack the 8 eggs into a bowl or jug with a spout. Add 4 tsp fish sauce and the green onions and beat with a fork until the eggs are frothy and there are no streaks of white left.",
+  "Pour 1/3 cup of the oil into a wok or an 8-inch skillet and heat it over medium-high until it shimmers and just starts to smoke. You want it at about 375°F, so if you have a thermometer, check it. No thermometer? Dip a chopstick in the egg and then into the oil: it's ready when it sizzles right away.",
+  "Pour a quarter of the egg, about 1/2 cup, into the middle of the oil. Stand back a little. It'll puff up and spatter. Cook for about 1 minute without moving it, until the underside is golden brown and the edges are crisp. Lift an edge with a spatula to check.",
+  "Flip it and cook the other side for about 1 minute, until it's golden too.",
+  "Lift it out and hold it over the pan for a few seconds so the oil drips off, then put it on a plate lined with paper towels.",
+  "Cook the other three the same way. Add some of the rest of the oil when the pan looks low, and let it heat up again before each one.",
+  "Serve each omelette over a mound of the rice, with the Sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three beat the eggs with fish sauce, pour them into plenty of very hot oil so they puff and crisp at the edges, fry them about a minute a side and serve them over jasmine rice with chili sauce. Cooking with Nart, the lead, beats one egg per person with 1/2 tsp fish sauce and a chopped green onion and tests the oil with a chopstick dipped in egg. Grantourismo fries two eggs in about 1.5 cm of oil at 375°F, and Saveur adds soy sauce and cornstarch for lacier edges and heats the oil to 410°F. This one makes four two-egg omelettes one after another in the same pan.",
+ "sources": [
+  {
+   "name": "Cooking with Nart",
+   "title": "Thai Omelette (Kai Jeow) Recipe",
+   "url": "https://www.cookingwithnart.com/easy-thai-style-omelet-kai-jeow/",
+   "rating": 4.98,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Grantourismo",
+   "title": "Thai Omelette Recipe for Kai Jeow",
+   "url": "https://grantourismotravels.com/thai-omelette-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Saveur",
+   "title": "Kai Jeow Thai Omelette",
+   "url": "https://www.saveur.com/recipe/kai-jeow-thai-omelette/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
