@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Trading two nights' dinners refuses a night that has gone by**
+  (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
+  tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`
+  (chat's "move Thursday's dinner to Monday", POST /swap-nights, a draft
+  flag's Move) read no clock, so on a Wednesday it put Thursday's dish on
+  Monday, never to be cooked, groceries still listed. Now refused on the
+  household clock, the door the 2026-09-17 set missed; tonight still trades,
+  the undo is exempt.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
