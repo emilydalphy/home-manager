@@ -76,6 +76,15 @@ why*, not duplicating the diff.
   every delete. Still prompt-only, untouched here: "vegetarian", "halal",
   "kosher", "pescatarian" — the matcher holds no meat back for them.
 
+- **A long cook's evening nudge goes when Today says to start it**
+  (2026-10-20, overnight defect hunt; branch
+  `overnight/long-cook-nudged-at-its-start`; tests at the foot of
+  `tests/test_evening_nudge.py`). The nudge went at the dinner window's
+  start, which is ahead of the cook only while it fits before dinner lands
+  (30 min for "5_6ish", an hour otherwise): a 1 hr 50 min roast for 5:30
+  showed "Start by 3:40" and got "Tap to start" at 5:00. Now it goes at the
+  earlier of the window's start and the cook move's own `planned_start`
+  (today only), late window counted from whichever it was.
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
