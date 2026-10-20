@@ -1,0 +1,125 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed",
+ "dish_name": "Chicken Karaage",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Boneless skin-on chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Potato starch",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Japanese mayonnaise",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1.5 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Grate the ginger on a fine grater until you have 1/2 tsp with its juice. Mince the garlic clove. Whisk them together in a large bowl with 1 tbsp soy sauce, 1 1/2 tsp sake and the 1/2 tsp sesame oil.",
+  "Cut the 1.5 lb chicken thighs into 2 inch pieces and season them with the 1/2 tsp salt and 1/8 tsp pepper. Add them to the bowl and mix with your hands until every piece is coated. Cover the bowl and put it in the fridge for 30 minutes.",
+  "Meanwhile, rinse the 1.5 cups rice in a few changes of cold water until the water runs mostly clear. Cook it in a rice cooker or a covered pot according to the package.",
+  "About 15 minutes before the chicken is ready, pour the 4 cups oil into a heavy pot so it's at least 1.5 inches deep and heat it over medium low. You're heating it to 325°F, so if you have a thermometer, clip it to the side. No thermometer? Dip the tip of a wooden chopstick in. When small bubbles rise around it, the oil is ready.",
+  "Put the 1/4 cup flour and the 1/4 cup potato starch on two separate plates. Roll each piece of chicken in the flour and shake off the extra, then roll it in the potato starch and shake it again. Set the pieces on a tray.",
+  "Lower 4 or 5 pieces into the oil. Stand back a little. They'll spatter. Fry them for about 90 seconds, until they're pale golden, then move them to a wire rack. Fry the rest the same way, scooping out any loose bits of coating between batches. The chicken keeps cooking as it sits on the rack.",
+  "Turn the heat up until the oil reaches 350°F, or until bubbles rush up around the chopstick. Fry the chicken a second time in the same batches for about 45 seconds, until it's deep golden and crisp. You're cooking it to 175°F in the middle, so if you have a thermometer, check one of the bigger pieces there. No thermometer? Cut a big piece open: it's done when the juices run clear and there's no pink left.",
+  "Cut the lemon into wedges. Spoon the 1/4 cup mayonnaise into a small dish and sprinkle the 1/4 tsp shichimi togarashi over it.",
+  "Taste a piece. If it's flat, sprinkle on a pinch more salt, or squeeze on a little of the lemon.",
+  "Serve with the rice, the lemon wedges and the mayonnaise."
+ ],
+ "method_notes": "Both read versions marinate bite size skin-on thigh in soy, sake and ginger, coat it in potato starch and deep fry it, served with lemon. Just One Cookbook (the lead) uses a light marinade with garlic and sesame oil for 30 minutes, coats the chicken in flour and then potato starch, and double fries it: about 90 seconds at 325°F, a rest, then 45 seconds at 350°F, with Kewpie mayonnaise and shichimi on the side. No Recipes uses a much stronger soy and ginger marinade for 1 to 4 hours, potato starch alone and a single fry at 340°F until 160°F inside. RecipeTin Eats couldn't be read.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Karaage (Japanese Fried Chicken)",
+   "url": "https://www.justonecookbook.com/karaage/",
+   "rating": 4.77,
+   "rating_count": 421,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Karaage",
+   "url": "https://norecipes.com/karaage-recipe/",
+   "rating": 4.64,
+   "rating_count": 52,
+   "read": true,
+   "lead": false
+  }
+ ]
+}
