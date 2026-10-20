@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An adult who removes themselves stops being "who cooks"** (2026-10-20,
+  defect hunt; branch `overnight/leaver-is-not-the-cook`; tests
+  `tests/test_leaver_is_not_the_cook.py`). The `cooking_role` row names its
+  cook by free-text `who` on a household-level row, which `remove_member`'s
+  member_name delete never reached — Kitchen, Today's moves and What we know
+  kept naming the leaver as the cook. Now that row goes too (unanswered,
+  never reassigned to whoever is left).
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
