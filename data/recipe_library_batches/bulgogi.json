@@ -1,0 +1,110 @@
+{
+ "dish_name": "Bulgogi",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ribeye steak",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Asian pear",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White rice",
+   "qty": "1.5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead: put the ribeye in the freezer for about 20 minutes to firm it up, then slice it as thin as you can against the grain.",
+  "In a bowl, grate half the Asian pear and mince the garlic and ginger. Whisk them together with 2 tbsp soy sauce, 1/2 cup brown sugar, the sesame oil, and the black pepper.",
+  "Add the sliced beef to the marinade, toss to coat, cover, and refrigerate overnight or for at least 1 hour.",
+  "The next day, rinse the rice and cook it according to the package so it's ready when the beef is.",
+  "While the rice cooks, julienne the carrots and slice the scallions, keeping a few sliced scallions aside for garnish.",
+  "Heat a cast iron or heavy skillet over high heat until it's just starting to smoke, then add the vegetable oil.",
+  "Add the beef in a single layer, working in two batches so the pan stays hot and the beef sears instead of steaming. Let it sit untouched for about 1 minute so it browns, then stir and cook another 1-2 minutes until just cooked through with no pink left. Transfer to a plate and repeat with the second batch.",
+  "Once both batches are done, return all the beef to the pan for 30 seconds to reheat, then pour in any marinade left in the bowl along with 2 tbsp water. Let it bubble for about 1 minute, scraping up any browned bits, until it coats the beef in a glossy sauce.",
+  "Taste it. If it's flat, add a pinch more brown sugar or a splash more soy sauce.",
+  "Scatter the reserved scallions and sesame seeds over the beef. Serve over the rice with the lettuce leaves and julienned carrots alongside for wrapping."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "Marinate the beef overnight (at least 1 hour, ideally the night before) for the best flavor",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Only one version was accessible (the other URLs in the request set weren't provided/openable). Damn Delicious's bulgogi: ribeye steak frozen ~30 minutes to firm it up, then sliced thin against the grain. Marinade is the classic sweet-soy base: soy sauce, sugar, sesame oil, garlic, ginger, and grated Asian pear (for sweetness/tenderizing), mixed with the sliced beef and refrigerated anywhere from a short marinate up to overnight for deeper flavor. Cooking is fast — the thin marinated slices are seared in a very hot pan (cast iron recommended) for just a couple of minutes total, since the thinness and tenderizing marinade mean it cooks almost instantly and shouldn't be overcrowded or overcooked. Served traditionally with rice, lettuce/perilla leaf wraps, and ssamjang dipping sauce, plus optional veggie toppings like carrots or scallions. No other versions were read, so no cross-recipe agreements or differences can be reported.",
+ "sources": [
+  {
+   "name": "Damn Delicious",
+   "title": "Korean Beef Bulgogi",
+   "url": "https://damndelicious.net/2019/04/21/korean-beef-bulgogi/",
+   "rating": 4.98,
+   "rating_count": 351,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

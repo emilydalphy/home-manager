@@ -1,0 +1,101 @@
+{
+ "dish_name": "Roast Chicken with Potatoes",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Whole chicken",
+   "qty": "1 (5 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the chicken out of the fridge about 30 minutes before you start, so it cooks more evenly, and preheat the oven to 425°F.",
+  "Pat the chicken completely dry with paper towels, inside and out. A dry skin is what lets it crisp up.",
+  "Mash 4 tbsp of the softened butter with 1 tbsp chopped rosemary, 2 minced garlic cloves, the zest of the lemon, 1 1/2 tsp salt and 1/2 tsp black pepper in a small bowl.",
+  "Loosen the skin over the breast and thighs with your fingers and push most of the rosemary butter underneath, directly onto the meat. Rub any leftover butter over the outside of the skin.",
+  "Halve the zested lemon and stuff it into the cavity along with 2 whole garlic cloves and a couple of rosemary sprigs. Tie the legs together with kitchen twine if you have it.",
+  "Toss the potatoes (halved if large), carrots (cut into thick batons) and onion (cut into wedges) in a large roasting pan with the olive oil, remaining 2 minced garlic cloves, 1 tsp salt and 1/2 tsp pepper. Spread them in a single layer.",
+  "Set the chicken breast-side up on top of the vegetables so the drippings fall onto them as it cooks.",
+  "Roast for 20 minutes at 425°F, then turn the oven down to 375°F and keep roasting for another 50 to 60 minutes, basting the chicken with the pan juices once or twice along the way.",
+  "Check for doneness at the thickest part of the thigh: you're looking for 175°F on a thermometer. No thermometer? Pierce the thigh and check the juices run clear with no pink.",
+  "If the potatoes are tender but the skin needs more color, pull the chicken out, tent it loosely with foil and let it rest for 15 minutes while the vegetables go back in to brown a bit more.",
+  "Lift the chicken onto a cutting board and let it rest at least 10 minutes before carving. This keeps the juices in the meat instead of on the board.",
+  "While it rests, set the roasting pan over medium heat on the stovetop, pour in the chicken broth and scrape up the browned bits from the bottom. Let it bubble for 2 minutes, then swirl in the remaining 2 tbsp butter off the heat and season with a pinch of salt if needed.",
+  "Carve the chicken and serve with the roasted potatoes, carrots and onion, spooning the pan sauce over the top. Taste the sauce and vegetables; if anything tastes flat, add a little more salt or a squeeze of the leftover lemon from the cavity."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 85,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one version could be read (BeeyondCereal); no other recipe URLs were supplied, so no cross-version agreement/differences can be established. This single recipe roasts a whole ~5 lb thawed chicken (Russet or golden potatoes, plus carrots) together in one pan, rubbed/basted with a rosemary-butter mixture; butter, rosemary, and chicken drippings fall onto the potatoes and carrots below to flavor them as it bakes. The author notes it's customizable — other root vegetables like parsnips or sweet potatoes can substitute for the carrots/potatoes, and the seasoning blend can be swapped. It's pitched as a low-effort, one-pan Sunday dinner, with a reader comment mentioning doubling the potatoes and carrots specifically to stretch leftovers into lunches. No second or third source was available to compare cook times, temperatures, or precise ratios.",
+ "sources": [
+  {
+   "name": "BeeyondCereal",
+   "title": "Roasted Chicken with Potatoes and Carrots",
+   "url": "https://www.beeyondcereal.com/roasted-chicken-with-potatoes-and-carrots/",
+   "rating": 4.8,
+   "rating_count": 53,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,125 @@
+{
+ "dish_name": "Spaghetti and Meatballs",
+ "cuisine": "Italian",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "0.75 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "0.75 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1/2 cup grated, plus more for serving",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "28 oz can",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry"
+  },
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, pour the milk over the panko and let it sit for 2-3 minutes until it's soaked in.",
+  "Add the ground beef, ground pork, egg, 2 cloves of the garlic (minced), 1/2 cup parmesan, 2 tbsp chopped parsley, 1 tsp salt and the black pepper to the bowl. Mix with your hands just until combined. Don't overwork it, or the meatballs will turn dense.",
+  "Roll the mixture into 12 large meatballs, about the size of a golf ball, and set them on a plate.",
+  "Set a large pot or Dutch oven over medium-high heat and add 2 tbsp of the olive oil. Once it shimmers, add the meatballs in batches so they're not crowded. Brown them on all sides, turning every couple of minutes, about 6-8 minutes total per batch. They don't need to be cooked through yet, just deeply browned. Set them aside on a plate.",
+  "Bring a large pot of salted water to a boil for the spaghetti.",
+  "Lower the heat under the same pot you browned the meatballs in to medium. Add the remaining 1 tbsp olive oil and the onion, finely chopped. Cook, stirring occasionally, until it's soft and golden, about 5 minutes.",
+  "Add the remaining 3 cloves of garlic, minced, and stir for 30 seconds until fragrant.",
+  "Pour in the crushed tomatoes, scraping up any browned bits stuck to the bottom of the pot. Stir in the basil, oregano, a pinch of sugar and the remaining 1/4 tsp salt.",
+  "Nestle the browned meatballs back into the sauce, cover, and simmer on low for 15-20 minutes, turning them once, until a meatball reads 160°F in the center. No thermometer? Cut one open, there should be no pink left.",
+  "Meanwhile, once the pasta water is boiling, cook the spaghetti according to the package directions until al dente. Drain, reserving a splash of the pasta water.",
+  "Stir a splash of the reserved pasta water into the sauce if it looks thick. Taste it. If it's flat, add salt first, then a little more sugar if the tomatoes taste sharp.",
+  "Divide the spaghetti among bowls, top with sauce and meatballs, and finish with the remaining chopped parsley and grated parmesan."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one version was reachable (Natasha's Kitchen); the other recipe link(s) were not provided/openable, so no cross-comparison of methods could be made. Her recipe builds big, tender meatballs (ground beef and pork, breadcrumbs/panko soaked in milk, egg, garlic, parmesan, parsley, salt and pepper) formed large and browned, then simmered to finish cooking in a homemade marinara (crushed tomatoes, garlic, onion, olive oil, basil, oregano, sugar pinch) built in the same pot used for browning to pick up fond. Spaghetti is boiled separately in salted water, drained, and served under sauce and meatballs, finished with fresh parsley and parmesan. The star rating number itself wasn't visible in the fetched text, though an approximate rating-count indicator of 695 appeared near the byline, and the post logged over 1,030 comments, suggesting a long-tested, highly engaged reader following typical of a well-established family dinner recipe.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Spaghetti and Meatballs (with Video)",
+   "url": "https://natashaskitchen.com/spaghetti-and-meatballs-recipe/",
+   "rating": null,
+   "rating_count": 695,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
