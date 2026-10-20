@@ -42,3 +42,15 @@ def test_a_line_with_no_aisle_takes_the_one_the_add_knows():
     tools.add_grocery_item("Cheddar", "1 block", "other")
     tools.add_grocery_item("cheddar", "1 block", "dairy")
     assert _lines() == [("Cheddar", "2 blocks", "dairy")]
+
+
+def test_a_line_shown_under_other_by_an_unknown_word_takes_a_real_aisle():
+    """Review 2026-10-20: a recipe can file a line under a word no section
+    knows ("bakery"); the list shows it under Other, so it is a line with
+    no aisle and an add bringing one fills it. A known alias ("meat") is
+    a real aisle and stays."""
+    tools.add_grocery_item("Bagels", "1 bag", "bakery")
+    tools.add_grocery_item("bagels", "1 bag", "pantry")
+    tools.add_grocery_item("Ground beef", "1 lb", "meat")
+    tools.add_grocery_item("ground beef", "1 lb", "other")
+    assert dict((item, cat) for item, _qty, cat in _lines()) == {"Bagels": "pantry", "Ground beef": "meat"}

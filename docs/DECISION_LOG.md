@@ -22,6 +22,8 @@ why*, not duplicating the diff.
   could not move it home (the open defect `test_put_back_merged_line.py`
   characterised; inverted). Now a merge only fills in an aisle where the
   line had 'other'; changing one on purpose stays `update_grocery_item`'s.
+  A line SHOWN under Other by a word no section knows ("bakery") counts
+  as having no aisle and takes the add's (review, same night).
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a

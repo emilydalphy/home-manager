@@ -1551,7 +1551,7 @@ def add_grocery_item(
     # line of its own and the set-aside line stays exactly as it was —
     # the same rule consolidate_grocery_list keeps.
     candidates = conn.execute(
-        "SELECT id, item, quantity, source_weekly_plan_id, status, added_by FROM grocery_items "
+        "SELECT id, item, quantity, category, source_weekly_plan_id, status, added_by FROM grocery_items "
         "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall()
@@ -1602,15 +1602,23 @@ def add_grocery_item(
         # the moment someone typed "orzo", where Put back could not move it
         # home (tests/test_merge_keeps_the_aisle.py). Changing a line's
         # aisle on purpose is update_grocery_item's job, not a merge's.
+        # "None" means what the list shows as Other: '', 'other', or a word
+        # no section knows ("bakery" off a recipe) — get_grocery_list_by_
+        # section's own fallback, so a line SHOWN under Other still takes
+        # the real aisle an add brings.
+        filed = _quantities._GROCERY_CATEGORY_ALIASES.get(existing["category"], existing["category"])
+        if filed not in _quantities._GROCERY_SECTION_ORDER or filed == "other":
+            filed = category
+        else:
+            filed = existing["category"]
         conn.execute(
-            "UPDATE grocery_items SET item = ?, quantity = ?, "
-            "category = CASE WHEN COALESCE(category, '') IN ('', 'other') THEN ? ELSE category END, "
+            "UPDATE grocery_items SET item = ?, quantity = ?, category = ?, "
             "source_weekly_plan_id = CASE WHEN ? THEN NULL ELSE ? END, "
             # Fills in a store the row doesn't have yet, without
             # overwriting one already chosen for this line.
             "store = CASE WHEN store = '' THEN ? ELSE store END "
             "WHERE id = ? AND household_id = ?",
-            (line_name, merged_qty, category, 1 if keep_standing else 0, source_weekly_plan_id,
+            (line_name, merged_qty, filed, 1 if keep_standing else 0, source_weekly_plan_id,
              preferred_store, existing["id"], household_id()),
         )
         # A person asking for a spice by name wants it bought: their add
