@@ -1,0 +1,43 @@
+{
+ "dish_name": "Banh Mi",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {"item": "Small baguettes", "qty": "4", "category": "other"},
+  {"item": "Sliced roast pork", "qty": "12 oz", "category": "meat/seafood"},
+  {"item": "Pork pâté", "qty": "1 container", "category": "meat/seafood", "cook_qty": "6 tbsp"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Salt", "qty": "4 tsp", "category": "pantry"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Persian cucumbers", "qty": "2", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Red chillies", "qty": "2", "category": "produce"},
+  {"item": "Maggi seasoning", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"}
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before, make the pickled carrots. Stir the 1/2 cup sugar and the 4 tsp salt into 1 1/2 cups hot water until they dissolve, then add the 3/4 cup rice vinegar.",
+  "Peel the 1 lb carrots and cut them into thin matchsticks about 3 inches long. Push them into the liquid so they're covered and leave them for at least 1 hour, until they taste tangy and bend a little but still have some crunch. Refrigerate them if you're making them the night before.",
+  "On the day, heat the oven to 350°F. Put the baguettes straight on the rack for 5 minutes, until the crust is crisp and crackly. Let them cool for a couple of minutes.",
+  "Meanwhile, slice the 2 cucumbers lengthwise into long thin strips. Trim 4 green onions and cut them to the length of the rolls. Pull a big handful of cilantro sprigs off the bunch. Drain the carrots well.",
+  "Thinly slice the chillies and put them in a small bowl.",
+  "Split each baguette along the top, leaving the bottom joined. Spread 1 1/2 tbsp pâté on one side and 1 1/2 tbsp mayonnaise on the other.",
+  "Lay a quarter of the pork in each roll, then add the cucumber, green onion, a good stuffing of carrots and the cilantro.",
+  "Drizzle about 1/2 tsp Maggi over the filling in each roll and close them up. If you're packing them for lunch, wrap each one tightly in parchment.",
+  "Serve with the sliced chillies on the side."
+ ],
+ "advance_prep_notes": "Pickle the carrots at least 1 hour ahead, or the night before.",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "Both read versions split a crusty roll, spread it with pâté and mayonnaise, and fill it with pork, cucumber, cilantro, chilli and pickled vegetables. RecipeTin Eats, the lead, builds it cold from deli meats (Vietnamese ham, cha lua pork roll and roast or grilled pork), pickles carrot for at least an hour in a sugar, salt and rice vinegar brine, adds green onion and finishes each roll with a drizzle of Maggi seasoning. Cooking Therapy marinates sliced pork shoulder in lemongrass, garlic, fish sauce and brown sugar, sears it in a hot pan, and uses both pickled carrot and daikon. This one sticks to roast pork alone, crisps the rolls in the oven first and keeps the chillies on the side.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Banh Mi recipe", "url": "https://www.recipetineats.com/banh-mi-vietnamese-sandwich/", "rating": 4.87, "rating_count": 38, "read": true, "lead": true},
+  {"name": "Cooking Therapy", "title": "Authentic Banh Mi Recipe with Lemongrass Pork", "url": "https://www.cooking-therapy.com/lemongrass-pork-banh-mi/", "rating": 4.69, "rating_count": 19, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

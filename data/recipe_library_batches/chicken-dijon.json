@@ -1,0 +1,75 @@
+{
+ "dish_name": "Chicken Dijon",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless skinless chicken breasts", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "All-purpose flour", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Shallots", "qty": "3", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce"},
+  {"item": "Dry white wine", "qty": "1/2 cup", "category": "other"},
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Whole grain mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Crème fraîche", "qty": "8 oz", "category": "dairy"},
+  {"item": "Unsalted butter", "qty": "1 tbsp", "category": "dairy"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Lay each chicken breast flat and slice it in half horizontally, so you have 4 thin cutlets about 1/2 inch thick. Pat them dry with paper towels and sprinkle both sides with 3/4 tsp of the salt and the 1/2 tsp pepper.",
+  "Finely chop the 3 shallots and mince the 2 garlic cloves. Strip the leaves from 6 of the thyme sprigs.",
+  "Put the 1/4 cup flour on a plate. Press each cutlet into the flour on both sides and shake off the extra.",
+  "Heat the 2 tbsp olive oil and the 1 tbsp butter in a large skillet over medium high until the butter foams. Lay the cutlets in the pan and leave them for 3 to 4 minutes, until the underside is golden and lets go of the pan. If they don't all fit, brown them in two batches.",
+  "Flip them and cook the other side for 3 minutes. They don't need to be cooked through yet. Move them to a plate.",
+  "Turn the heat down to medium. Add the shallots and cook for 2 to 3 minutes, stirring, until they're soft. Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Pour in the 1/2 cup wine and scrape up the browned bits from the bottom of the pan. Let it bubble for about 2 minutes, until it has cooked down by half.",
+  "Add 3/4 cup broth and the thyme leaves and simmer for about 5 minutes, until the liquid has cooked down by about half again.",
+  "Turn the heat to low. Stir in 2 tbsp Dijon and 1 tbsp whole grain mustard, then the 8 oz crème fraîche, until the sauce is smooth. Keep it at a gentle bubble. A hard boil can make it split.",
+  "Put the chicken back in the pan with any juices from the plate and spoon the sauce over it. Cover and cook on low for 5 to 6 minutes. You're cooking it to 160°F in the middle, so if you have a thermometer, check the thickest cutlet. No thermometer? Cut into it: it's done when there's no pink left.",
+  "Take the pan off the heat and squeeze in the juice of half the lemon. Cut the other half into wedges.",
+  "Taste the sauce. If it's flat, add the last 1/4 tsp salt or a squeeze from a lemon wedge.",
+  "Serve with the crusty bread and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the chicken breasts first, build the sauce in the same pan and finish the chicken in it. La Cuisine de Géraldine (the most rated) flours the breasts, softens shallots and garlic, deglazes with white wine, reduces chicken stock, then stirs in whole grain mustard and crème fraîche with thyme and simmers the chicken in it covered, which this version follows. The Modern Proper uses cream, Dijon and whole grain mustard with tarragon and thickens it with cornstarch, and Cooking Classy pounds the breasts thin and makes a quicker broth, cream and Dijon sauce with a little honey. This one slices the breasts into cutlets so it fits in thirty minutes and uses both mustards.",
+ "sources": [
+  {
+   "name": "La Cuisine de Géraldine",
+   "title": "Creamy Dijon Mustard Chicken",
+   "url": "https://lacuisinedegeraldine.fr/en/creamy-dijon-mustard-chicken",
+   "rating": 4.78,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Modern Proper",
+   "title": "Chicken Dijon",
+   "url": "https://themodernproper.com/chicken-dijon",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Creamy Dijon Mustard Chicken",
+   "url": "https://www.cookingclassy.com/skillet-chicken-with-mustard-cream-sauce/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

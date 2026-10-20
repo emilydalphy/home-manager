@@ -1,0 +1,46 @@
+{
+ "dish_name": "Fresh Spring Rolls",
+ "cuisine": "Vietnamese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Large shrimp", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Rice paper wrappers", "qty": "1 package", "category": "pantry", "cook_qty": "12 sheets"},
+  {"item": "Rice vermicelli", "qty": "1 package", "category": "pantry", "cook_qty": "4 oz"},
+  {"item": "Butter lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Fresh mint", "qty": "1 bunch", "category": "produce"},
+  {"item": "Bean sprouts", "qty": "1/2 lb", "category": "produce"},
+  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Smooth peanut butter", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Hoisin sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"}
+ ],
+ "instructions": [
+  "Bring a medium pot of water to a boil and add the 1 tbsp salt. Fill a bowl with cold water and set it next to the stove.",
+  "Meanwhile, peel and devein the 1 lb shrimp if they aren't already.",
+  "Drop the shrimp into the boiling water and cook for 1 to 2 minutes, until they're pink, curled and white all the way through. Lift them out with a slotted spoon into the cold water.",
+  "Bring the pot back to a boil and cook 4 oz of the vermicelli for 3 to 4 minutes, or as the package says, until soft with no chalky center. Drain, rinse under cold water and shake it as dry as you can.",
+  "Drain the shrimp, pat them dry and slice each one in half lengthwise.",
+  "Mince the garlic clove. Put it in a small saucepan with 2 tbsp peanut butter, 1/4 cup hoisin and 1/2 cup water and whisk over low heat for about 2 minutes, until smooth and warm.",
+  "Take the sauce off the heat and stir in 2 tbsp rice vinegar. Let it cool. If it's thicker than you'd like for dipping, whisk in a little more water.",
+  "Separate the lettuce leaves, cut out the thick rib at the bottom of each and tear them into pieces about the size of your hand. Pick the mint leaves off the stems.",
+  "Set the shrimp, noodles, lettuce, mint, bean sprouts and 12 rice paper sheets on the table with a wide shallow bowl of warm water. Everyone rolls their own, or you can roll them all before serving.",
+  "To roll one, dip a rice paper sheet in the warm water for 2 to 3 seconds, turning it so it's all wet, and lay it flat on a board. It'll still feel a little firm, and it softens as you fill it.",
+  "Lay 3 shrimp halves cut side up in a row across the top third of the sheet, with a mint leaf between each one.",
+  "Put a piece of lettuce on the bottom third and top it with a small pile of noodles and a few bean sprouts.",
+  "Fold the bottom edge up over the filling, fold in both sides, then roll it up firmly toward the shrimp. The damp paper sticks to itself and seals the roll.",
+  "Serve with the peanut sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions poach the shrimp briefly, halve them lengthwise, and roll them in softened rice paper with lettuce, herbs and rice vermicelli, placing the shrimp so they show through the outside of the roll. RecipeTin Eats, the lead, uses cooked prawns with mint and bean sprouts, wraps the noodles and sprouts in a lettuce leaf first, uses two sheets of rice paper per roll and serves a hoisin and peanut butter dip thinned with milk or water and sharpened with vinegar. Delightful Plate adds thin slices of simmered pork, Thai basil and chives, poaches raw shrimp for about 2 minutes and offers peanut sauce or nuoc cham. This one poaches raw shrimp, uses one sheet per roll and warms the sauce in a pan instead of the microwave.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Vietnamese Rice Paper Rolls (Spring Rolls)", "url": "https://www.recipetineats.com/vietnamese-rice-paper-rolls/", "rating": 4.88, "rating_count": 132, "read": true, "lead": true},
+  {"name": "Delightful Plate", "title": "Vietnamese Fresh Spring Rolls (Goi Cuon)", "url": "https://delightfulplate.com/vietnamese-fresh-spring-rolls-goi-cuon/", "rating": 4.67, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

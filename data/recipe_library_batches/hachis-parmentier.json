@@ -1,0 +1,67 @@
+{
+ "dish_name": "Hachis Parmentier",
+ "cuisine": "French",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Cooked beef", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Yukon Gold potatoes", "qty": "2 lb", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Unsalted butter", "qty": "8 tbsp", "category": "dairy"},
+  {"item": "Milk", "qty": "1 1/4 cups", "category": "dairy"},
+  {"item": "Gruyère cheese", "qty": "4 oz", "category": "dairy"},
+  {"item": "Ground nutmeg", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the 2 lb potatoes and cut them into 2 inch chunks. Put them in a large pot, cover them with cold water by an inch and add 1 tsp of the salt.",
+  "Bring the pot to a boil over high heat, then turn it down to medium and simmer for 15 to 20 minutes, until a knife slides into a chunk with no resistance.",
+  "Meanwhile, heat the oven to 400°F and rub 1 tbsp of the butter over the inside of an 8 inch square baking dish.",
+  "Chop the 1 lb cooked beef finely with a knife, until the pieces are about 1/4 inch across. Leftover pot roast, stew beef or boiled beef all work here.",
+  "Finely chop the onion and mince the 2 garlic cloves. Chop the parsley leaves until you have about 1/4 cup, and grate the 4 oz Gruyère.",
+  "Melt 2 tbsp of the butter in a large skillet over medium heat. Add the onion and cook for 5 to 6 minutes, stirring now and then, until it's soft and starting to turn golden.",
+  "Add the garlic and 1 tbsp tomato paste and stir for 1 minute, until the garlic smells fragrant and the paste turns a shade darker.",
+  "Add the beef, 1/2 tsp of the salt and the 1/2 tsp pepper. Cook for 4 to 5 minutes, stirring now and then, until the beef is hot all the way through and a few edges have browned. Take the pan off the heat and stir in the parsley.",
+  "Let the beef cool for 5 minutes. Beat the egg in a cup, then stir it through the beef until it's evenly mixed. If the beef is still very hot, the egg will scramble.",
+  "Taste the beef. If it's flat, add a pinch more salt.",
+  "Warm the 1 1/4 cups milk in a small saucepan over medium until it's steaming, then take it off the heat.",
+  "Drain the potatoes and put them back in the hot pot. Mash them with the remaining 5 tbsp butter and the 1/4 tsp nutmeg until there are no lumps left.",
+  "Pour in the hot milk a little at a time, mashing as you go, until the potatoes are soft and spreadable. Stir in the remaining 1/2 tsp salt.",
+  "Spread half of the mashed potatoes over the bottom of the buttered dish. Spoon the beef over them in an even layer, then spread the rest of the potatoes on top, right to the edges.",
+  "Scatter the Gruyère over the top. Bake for 20 to 25 minutes, until the edges are bubbling and the top is golden in patches.",
+  "Let it sit for 5 minutes before you spoon it out. Any sooner and the layers slide apart.",
+  "Serve it hot from the dish."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Meilleur du Chef makes it the traditional way from leftover stew or pot-au-feu beef, minced and bound with sweated onion, parsley and an egg, then layers mash, meat and mash and bakes it at 200°C until golden, which this version follows. Le Coup de Grâce starts from raw ground beef with carrot, tomato paste, herbes de Provence and nutmeg, enriches the mash with cream and Parmesan, and puts the meat in one layer under the potatoes with Gruyère and Parmesan on top. This one keeps the leftover beef and the layered mash from the lead, borrows a spoon of tomato paste from Le Coup de Grâce for depth, and tops it with Gruyère.",
+ "sources": [
+  {
+   "name": "Meilleur du Chef",
+   "title": "Hachis Parmentier",
+   "url": "https://meilleurduchef.com/en/recipe/hachis-parmentier.html",
+   "rating": 4.7,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Le Coup de Grâce",
+   "title": "Hachis Parmentier Recipe (French Cottage Pie)",
+   "url": "https://lecoupdegrace.ca/en/recipe/hachis-parmentier/",
+   "rating": 4.5,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
