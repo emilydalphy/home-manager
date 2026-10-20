@@ -1,0 +1,38 @@
+{
+ "dish_name": "Chicken and Rice Casserole",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 80,
+ "ingredients": [
+  {"item": "Boneless skinless chicken breasts", "qty": "4", "category": "meat/seafood"},
+  {"item": "Long-grain white rice", "qty": "1 cup", "category": "pantry"},
+  {"item": "Onion soup mix", "qty": "1 packet (1 oz)", "category": "pantry"},
+  {"item": "Condensed cream of mushroom soup", "qty": "1 can (10.5 oz)", "category": "pantry"},
+  {"item": "Paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"}
+ ],
+ "instructions": [
+  "Heat the oven to 325°F. Rub the 1 tsp oil over the inside of a 9x13 inch glass or ceramic baking dish. Rice doesn't cook evenly in a metal pan.",
+  "Pat the 4 chicken breasts dry and lay them in the dish with a little space between them. Sprinkle the 1/2 tsp salt, 1/4 tsp pepper and 1/2 tsp paprika over the tops.",
+  "Pour the 1 cup rice over and around the chicken and shake the dish so the rice settles in an even layer. Sprinkle the packet of onion soup mix over everything.",
+  "In a bowl, whisk the can of mushroom soup with 1 1/2 cups water until smooth. Pour it evenly over the chicken and rice, making sure all the rice is covered.",
+  "Cover the dish tightly with foil and bake for 1 hour 15 minutes. No peeking.",
+  "Lift a corner of the foil and taste a few grains of rice from the middle. If it's still firm, cover it again and bake another 10 minutes. You're cooking the chicken to 160°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest breast: it's done when there's no pink left.",
+  "Leave it covered on the counter for 5 minutes. Meanwhile, chop 2 tbsp of the parsley.",
+  "Take off the foil, fluff the rice around the chicken with a fork and scatter the parsley over the top. Taste the rice. If it's flat, add a pinch more salt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions bake raw white rice and chicken together in one covered dish so the rice cooks in the liquid around the meat. Spend With Pennies lays whole chicken breasts in the dish, pours the rice over, adds onion soup mix and canned cream of mushroom soup thinned with water, and bakes it covered at 325°F for 1 hour 15 minutes, warning that rice cooks poorly in a metal pan. RecipeTin Eats bakes onion and garlic in butter first, uses skinless bone in thighs with a paprika and thyme rub over rice with broth and water, and finishes it uncovered for 20 minutes at 350°F. This follows Spend With Pennies, adding a little paprika from RecipeTin's rub and its parsley to finish.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "4 Ingredient Chicken & Rice Casserole", "url": "https://www.spendwithpennies.com/chicken-rice-casserole/", "rating": 4.86, "rating_count": 2504, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Oven Baked Chicken and Rice", "url": "https://www.recipetineats.com/oven-baked-chicken-and-rice/", "rating": 4.88, "rating_count": 635, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,116 @@
+{
+ "dish_name": "Tuna Noodle Casserole",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Egg noodles",
+   "qty": "1 bag (12 oz)",
+   "category": "pantry",
+   "cook_qty": "6 oz"
+  },
+  {
+   "item": "Canned tuna",
+   "qty": "1 can (5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Condensed cream of mushroom soup",
+   "qty": "1 can (10.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 ribs"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cheddar cheese",
+   "qty": "8 oz",
+   "category": "dairy",
+   "cook_qty": "1 cup + 1/2 cup shredded"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Bring a large pot of water to a boil and add the 1 tbsp salt. Take the 2/3 cup peas out of the freezer so they can thaw on the counter.",
+  "Meanwhile, finely chop 2 tbsp of the parsley. Shred the 8 oz cheddar. You'll have about 2 cups.",
+  "Melt 1 tbsp of the butter in the microwave. Mix it in a small bowl with the 1/2 cup panko, 1/2 cup of the cheddar and 1 tbsp of the parsley. Set the topping aside.",
+  "Add 6 oz of the noodles to the boiling water and cook them 1 minute less than the package says, so they still have some bite. Drain them and rinse them under cold water.",
+  "While the noodles cook, dice the onion and the 2 celery ribs. Melt the last 1 tbsp butter in a skillet over medium. Add the onion and celery and cook for 5 to 7 minutes, stirring now and then, until they're soft and the onion is see-through.",
+  "Drain the can of tuna. In a large bowl, stir together the can of soup and the 1/3 cup milk until smooth. Add the noodles, the onion and celery, the peas, 1 cup of the cheddar, the last 1 tbsp parsley and the 1/4 tsp pepper. Flake in the tuna with a fork and fold it all together.",
+  "Spread it in a 2 quart baking dish and sprinkle the topping evenly over it.",
+  "Bake for 18 to 20 minutes, until it's bubbling at the edges and the crumbs are golden.",
+  "Let it sit for 5 minutes before serving. Taste a spoonful. If it's flat, sprinkle a pinch more salt over it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions boil egg noodles just shy of done, fold them into a creamy sauce with canned tuna, peas, onion and cheddar, top it with buttered panko and bake it briefly. Spend With Pennies keeps it a pantry bake: canned cream of mushroom soup thinned with milk, onion and celery softened in butter, cheddar in the topping, and a hot 425°F oven for 18 to 20 minutes. The Toasty Kitchen makes its own sauce from butter, flour, chicken broth and milk with garlic, paprika and thyme, uses 12 oz each of noodles and tuna to serve 8, and bakes at 350°F. This follows Spend With Pennies; its full batch, which it calls 6 servings, is written here as dinner for 4, the same amount of noodles per plate as The Toasty Kitchen's.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Easy Tuna Casserole",
+   "url": "https://www.spendwithpennies.com/easy-tuna-casserole/",
+   "rating": 4.93,
+   "rating_count": 2133,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Toasty Kitchen",
+   "title": "Cheesy Tuna Casserole",
+   "url": "https://thetoastykitchen.com/cheesy-tuna-noodle-casserole-from-scratch/",
+   "rating": 4.77,
+   "rating_count": 99,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

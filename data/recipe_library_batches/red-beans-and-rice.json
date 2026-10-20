@@ -1,0 +1,52 @@
+{
+ "dish_name": "Red Beans and Rice",
+ "cuisine": "American",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 110,
+ "ingredients": [
+  {"item": "Dried red kidney beans", "qty": "12 oz", "category": "pantry"},
+  {"item": "Andouille sausage", "qty": "12 oz", "category": "meat/seafood"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Green bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 ribs"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Cajun seasoning", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "4 cups", "category": "pantry"},
+  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "3 tbsp chopped"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before: tip the 12 oz beans into a large bowl, pick out any small stones and cover them with cold water by about 3 inches. Leave them to soak overnight.",
+  "Drain the beans in a colander and rinse them under cold water.",
+  "Dice the onion, the green pepper and 2 ribs of the celery. Mince the 3 garlic cloves. Slice the andouille into rounds about 1/4 inch thick.",
+  "Heat the 1 tbsp olive oil in a large pot over medium. Add the sausage in a single layer and cook for 4 to 5 minutes without moving it, until the underside is golden. Flip the rounds and cook the other side for 4 minutes. Lift them out onto a plate with a slotted spoon.",
+  "Add the onion, pepper and celery to the fat in the pot. Cook for 8 to 10 minutes, stirring now and then, until the onion is soft and turning golden at the edges.",
+  "Add the garlic, the 1 1/2 tsp Cajun seasoning, the 1/2 tsp oregano, the 1/2 tsp thyme, 1/2 tsp of the salt and the 1/4 tsp pepper. Stir for about 1 minute, until it smells fragrant.",
+  "Add the beans, the sausage, the 4 cups broth and the 2 bay leaves and stir. Bring it to a boil, then turn it down to a gentle simmer, cover and cook for 1 hour, stirring now and then. If it starts to look dry, add a splash of water.",
+  "Take the lid off and simmer for another 30 minutes, until the beans are completely soft when you squeeze one and the liquid has thickened.",
+  "Meanwhile, rinse the 1 1/2 cups rice in a sieve until the water runs clear. Put it in a saucepan with 2 1/4 cups water and the remaining 1/2 tsp salt and bring it to a boil. Cover, turn the heat to low and cook for 18 minutes. Take it off the heat and leave the lid on for 5 minutes.",
+  "Thinly slice 4 of the green onions and chop 3 tbsp of the parsley.",
+  "Mash about a cup of the beans against the side of the pot with the back of your spoon and stir them back in. The pot will turn thick and creamy.",
+  "Take the pot off the heat, fish out the bay leaves, and stir in half the green onions and all the parsley. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice with the rest of the green onions on top and the hot sauce on the side."
+ ],
+ "advance_prep_notes": "Soak the beans overnight, the night before.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Both read versions soak dried red beans overnight, brown andouille first, soften onion, green pepper and celery in the fat, add garlic and Cajun seasoning, then simmer the beans with bay leaves for about 1 1/2 to 2 hours and serve them over white rice with green onion and parsley. Downshiftology, the lead, simmers in chicken broth with oregano and thyme, covered for an hour and then uncovered for 30 minutes, and mashes some beans against the pot to thicken it. Cafe Delites simmers in water with a smoked ham hock, tomato paste, cumin and paprika and pulls the hock meat back in at the end. This one follows the lead for 4 with 12 oz of beans and puts the hot sauce on the side.",
+ "sources": [
+  {"name": "Downshiftology", "title": "Louisiana Red Beans and Rice", "url": "https://downshiftology.com/recipes/red-beans-and-rice/", "rating": 5, "rating_count": 21, "read": true, "lead": true},
+  {"name": "Cafe Delites", "title": "Red Beans and Rice", "url": "https://cafedelites.com/red-beans-and-rice/", "rating": 5, "rating_count": 13, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

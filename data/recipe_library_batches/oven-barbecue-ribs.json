@@ -1,0 +1,46 @@
+{
+ "dish_name": "Oven Barbecue Ribs",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 140,
+ "ingredients": [
+  {"item": "Baby back ribs", "qty": "3 lb", "category": "meat/seafood"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Paprika", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Garlic powder", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Onion powder", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Barbecue sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Ketchup", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 275°F. Line a large rimmed baking sheet with foil.",
+  "Stir the rub together in a small bowl: the 1 tbsp paprika, 1 tbsp brown sugar, 3/4 tsp garlic powder, 3/4 tsp onion powder, 1 tsp salt and 1/2 tsp pepper.",
+  "Turn the racks bone side up. If there's a shiny white skin over the bones, slide a table knife under it at one end, grab it with a paper towel and pull it off in one sheet. Pat the ribs dry and cut each rack into 2 or 3 pieces.",
+  "Rub the spice mix all over both sides of the ribs with your hands, pressing it in.",
+  "Lay the ribs meaty side down on the sheet. Slice the 2 onions and the 4 garlic cloves and scatter them over the ribs.",
+  "Cover with a second sheet of foil and crimp the edges all the way around so it's sealed. Bake for 2 hours.",
+  "Meanwhile, stir the 1 cup barbecue sauce and 1/4 cup ketchup together in a bowl. Put half of it in a small serving bowl for the table.",
+  "After 2 hours, peel back one corner of the foil and tug at a bit of meat at the end of a rib. It should pull away easily. If it still clings to the bone, seal it up and bake another 20 to 30 minutes. If you have a thermometer, you're aiming for about 195°F in the meat between the bones.",
+  "Take the ribs out and turn the oven to broil with a rack about 6 inches from the top. Lift the ribs onto a plate. Throw away the onions, garlic and juices, line the sheet with fresh foil and put the ribs back on it meaty side up.",
+  "Brush the ribs with the 1 tbsp olive oil, then brush them thickly with the sauce from the mixing bowl.",
+  "Broil for 5 to 8 minutes, until the sauce bubbles and chars in spots. Watch it closely. The sugar in the sauce burns fast.",
+  "Let them sit for 5 minutes, then cut between the bones. Taste a piece. If it's flat, sprinkle a pinch more salt over the ribs.",
+  "Serve with the bowl of sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions rub the racks with paprika, garlic and onion powder, salt and pepper, bake them covered at a low heat until tender, then sauce them and finish with high heat. Spend With Pennies seals the ribs in foil at 275°F for 2 hours under sliced onion and garlic, then brushes on a mix of barbecue sauce, chili sauce and ketchup and broils or grills them until charred. RecipeTin Eats bakes them at 320°F over hard cider for 1 1/2 hours, crisps the rub uncovered, then builds a glaze in several coats of a homemade sauce simmered for 45 minutes. This follows Spend With Pennies, using its note to swap the chili sauce for more barbecue sauce, leaving out the lemon pepper and raising its salt a little; its 3 lb of ribs is written here for 4 rather than 6.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Tender Oven-Baked Barbecue Ribs", "url": "https://www.spendwithpennies.com/oven-barbecued-ribs-recipe/", "rating": 4.98, "rating_count": 295, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Oven Pork Ribs with Barbecue Sauce", "url": "https://www.recipetineats.com/oven-baked-barbecue-pork-ribs/", "rating": 4.98, "rating_count": 290, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

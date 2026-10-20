@@ -1,0 +1,53 @@
+{
+ "dish_name": "New England Clam Chowder",
+ "cuisine": "American",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Chopped clams", "qty": "2 cans (6.5 oz)", "category": "pantry"},
+  {"item": "Clam juice", "qty": "1 bottle (8 oz)", "category": "pantry"},
+  {"item": "Thick-cut bacon", "qty": "1 package (12 oz)", "category": "meat/seafood", "cook_qty": "4 slices"},
+  {"item": "Unsalted butter", "qty": "1 tbsp", "category": "dairy"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 ribs"},
+  {"item": "Russet potatoes", "qty": "1 lb", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "All-purpose flour", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Chicken bouillon powder", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Bay leaf", "qty": "1", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Heavy cream", "qty": "1 cup", "category": "dairy"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Oyster crackers", "qty": "1 bag", "category": "pantry"}
+ ],
+ "instructions": [
+  "Open the 2 cans of clams and drain their juice into a large measuring cup, keeping the clams in a bowl. Pour in the bottle of clam juice.",
+  "Dice the onion and 2 ribs of the celery. Peel the 1 lb potatoes and cut them into 1/2 inch cubes. Mince the 3 garlic cloves. Cut 4 slices of the bacon into small pieces.",
+  "Put the bacon in a Dutch oven over medium heat. Cook for 6 to 8 minutes, stirring now and then, until the fat has melted out and the bacon is lightly browned. Lift out half the bacon with a slotted spoon onto a paper towel and keep it for the top.",
+  "Add the 1 tbsp butter to the pot and let it melt. Turn the heat up to medium high, add the onion and celery and cook for 5 to 7 minutes, stirring now and then, until the onion is soft.",
+  "Add the potatoes and garlic and stir for 30 seconds. Sprinkle in the 1/4 cup flour and stir for 1 minute, until there's no dry flour left.",
+  "Slowly stir in the 1 1/2 cups broth and all the clam juice from the measuring cup. Add the 1 tsp bouillon, the bay leaf, the 1/4 tsp oregano, the 1/4 tsp thyme, the 1/4 tsp salt and the 1/4 tsp pepper.",
+  "Bring it to a boil, then turn it down to a simmer. Cook uncovered for 15 to 20 minutes, stirring now and then, until a potato cube breaks apart easily when you press it against the side of the pot.",
+  "Meanwhile, chop 2 tbsp of the parsley.",
+  "Stir in the 1 cup cream and bring the chowder back to a gentle simmer. Fish out the bay leaf.",
+  "Take the pot off the heat and stir in the clams. Don't let the chowder boil once they're in, or the clams turn rubbery.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and top with the saved bacon and the parsley. Serve with the oyster crackers."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions render bacon in the pot, soften onion in its fat with butter, simmer diced potatoes in clam juice until tender and finish with cream and the canned clams, served with oyster crackers and parsley. Spend With Pennies, the lead, cooks garlic and flour in with the potatoes, simmers them in chicken broth, the canned and bottled clam juice, chicken bouillon, bay and dried herbs, and stirs the clams in off the heat. Carlsbad Cravings is close to the lead with Yukon Golds and optional red pepper flakes, and Jennifer Cooks simmers the potatoes in clam juice alone and thickens with a flour and milk slurry before the cream. This one follows the lead for 4 and leaves out its dried parsley in favor of fresh on top. Jennifer Cooks gives only a review count (2), not a rating count, so that number is its review count.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "New England Clam Chowder", "url": "https://www.spendwithpennies.com/new-england-clam-chowder/", "rating": 4.94, "rating_count": 392, "read": true, "lead": true},
+  {"name": "Carlsbad Cravings", "title": "New England Clam Chowder", "url": "https://carlsbadcravings.com/new-england-clam-chowder/", "rating": 5, "rating_count": 9, "read": true, "lead": false},
+  {"name": "Jennifer Cooks", "title": "Easy New England Clam Chowder with Canned Clams", "url": "https://jennifercooks.com/clam-chowder-recipe/", "rating": 5, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
