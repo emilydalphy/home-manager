@@ -45,7 +45,7 @@
  "method_notes": "Both versions season chicken with chili, cumin or ancho and lime notes, cook it quickly in a hot pan or on the grill, slice it and pile it on quinoa with corn, tomatoes and other fresh toppings. Once Upon a Chef marinates tenderloins for at least 6 hours in olive oil, lime zest, garlic, ancho chili powder, coriander, oregano and honey, grills them for a few minutes a side and blends a creamy green sauce of jalapeño, cilantro, mayonnaise, sour cream and lime. Valentina's Corner seasons pounded breast just before cooking and browns the corn in the same pan with butter. This follows Once Upon a Chef for 4 in a skillet instead of a grill, with the corn browned in the chicken pan from Valentina's Corner and the sauce kept in its own container so the bowls pack well.",
  "sources": [
   {"name": "Once Upon a Chef", "title": "Chicken Burrito Bowls with Spicy Green Sauce", "url": "https://www.onceuponachef.com/recipes/chicken-quinoa-burrito-bowls-spicy-green-sauce.html", "rating": 4.99, "rating_count": 140, "read": true, "lead": true},
-  {"name": "Valentina's Corner", "title": "Chicken Quinoa Bowl Recipe", "url": "https://valentinascorner.com/chicken-quinoa-bowl/", "rating": 4.78, "rating_count": 9, "read": true, "lead": false}
+  {"name": "Valentina's Corner", "title": "Chicken Quinoa Bowl Recipe", "url": "https://valentinascorner.com/chicken-quinoa-bowl-recipe/", "rating": 4.78, "rating_count": 9, "read": true, "lead": false}
  ],
  "fallback_used": false,
  "origin": "seed"

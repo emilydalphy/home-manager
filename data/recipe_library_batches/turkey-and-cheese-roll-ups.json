@@ -1,0 +1,37 @@
+{
+ "dish_name": "Turkey and Cheese Roll-Ups",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Large flour tortillas", "qty": "1 package", "category": "pantry", "cook_qty": "4"},
+  {"item": "Garden vegetable cream cheese", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Colby Jack cheese slices", "qty": "1 package", "category": "dairy", "cook_qty": "8 slices"},
+  {"item": "Sliced deli turkey", "qty": "12 oz", "category": "meat/seafood"},
+  {"item": "Green leaf lettuce", "qty": "1 head", "category": "produce", "cook_qty": "4 leaves"},
+  {"item": "Persian cucumbers", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Take the cream cheese out of the fridge about 15 minutes before you start so it spreads easily.",
+  "Wash 4 lettuce leaves, pat them dry and tear out the thick part of the stem. Slice the cucumber into thin rounds.",
+  "Lay 4 tortillas flat on the counter. Spread 2 tbsp of the cream cheese over each one, all the way to the edges, so you use the 1/2 cup in all. Kids can do this part with a table knife.",
+  "On the half of each tortilla closest to you, lay 2 cheese slices side by side. Top each with 3 oz of the turkey, so the 12 oz is split four ways, then add a lettuce leaf and a quarter of the cucumber rounds. Leave the far 2 inches with only cream cheese on them.",
+  "Roll each tortilla up from the edge closest to you, firmly but gently, tucking the filling in as you go. Finish with the seam underneath. The bare strip of cream cheese holds it closed.",
+  "Wrap each roll tightly in plastic wrap and chill for 30 minutes, so it slices cleanly. If you'd like them ready for lunchboxes, roll and wrap them the night before.",
+  "Unwrap the rolls and trim off the ragged ends. Cut each roll into 6 rounds about 1 inch thick, using a gentle sawing motion so they don't squash.",
+  "Serve them cold, or pack 6 rounds per lunchbox. They keep in a sealed container in the fridge for up to 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All four lay a flour tortilla flat, add a spread, cheese and deli turkey, roll it up tightly and slice it into rounds. Happi Homemade spreads garden vegetable cream cheese to the edges as the glue and layers Colby Jack or mild cheddar, turkey and lettuce on half the tortilla. Dishes With Dad leaves a strip of bare cream cheese at the far edge to seal the roll and chills it wrapped for an hour before slicing, and Nutrition to Fit adds thin cucumber for crunch. No version had 20 or more ratings, and the trusted cook for the cuisine has no roll-up recipe, so this follows Happi Homemade for 4 large tortillas, with the sealing strip and chill from Dishes With Dad and the cucumber from Nutrition to Fit.",
+ "sources": [
+  {"name": "Happi Homemade", "title": "Turkey and Cheese Roll Ups Recipe", "url": "https://happihomemade.com/turkey-roll-ups/", "rating": 5.0, "rating_count": 1, "read": true, "lead": true},
+  {"name": "Dishes With Dad", "title": "Turkey and Cheese Roll Ups", "url": "https://disheswithdad.com/turkey-and-cheese-roll-ups/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Nutrition to Fit", "title": "Turkey and Cheese Roll Ups", "url": "https://nutritiontofit.com/turkey-and-cheese-roll-ups/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Simply Made Eats", "title": "Turkey and Cheese Roll Ups", "url": "https://simplymadeeats.com/9842/turkey-roll-ups/", "rating": 5.0, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
