@@ -1,0 +1,152 @@
+{
+ "dish_name": "Lemongrass Tofu Noodle Bowl",
+ "cuisine": "Vietnamese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 package (16 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "6 oz"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain the tofu, wrap it in a clean kitchen towel and set something heavy on top, like a pan with a can in it. Leave it for 10 minutes, then cut it into 1/2-inch cubes.",
+  "Meanwhile, trim the tops and root ends off the 2 lemongrass stalks and peel away the tough outer layers. Finely chop the pale inner part. Grate 1 tsp of the ginger.",
+  "In a wide bowl, stir the lemongrass and ginger with 3 tbsp soy sauce, 1 tbsp rice vinegar, the 2 tsp sesame oil and 1/2 tsp honey. Add the tofu, turn it gently to coat and leave it for 20 minutes, turning it once.",
+  "Bring a pot of water to a boil. Add 6 oz rice vermicelli and cook for 3 to 4 minutes, until it's soft with no hard bits in the middle. Drain it and rinse it under cold water until it's cool, then shake off as much water as you can.",
+  "Make the dressing: stir 1/4 cup sugar into 1/2 cup warm water until it dissolves. Add 2 tbsp fish sauce, the juice of the lime and the 2 garlic cloves, minced.",
+  "Peel and grate 2 carrots on the big holes of a box grater. Cut the 2 cucumbers into thin matchsticks. Chop the romaine, pick the mint leaves off the stems and roughly chop 1/2 cup peanuts.",
+  "Heat the 2 tbsp oil in a large nonstick skillet over medium high. Lift the tofu out of the marinade and lay it in the pan in a single layer. Don't stir it. Let it brown for 3 to 4 minutes, until the undersides are golden.",
+  "Turn the cubes and cook for 3 to 4 minutes more, until they're golden on most sides. Pour in the marinade left in the bowl and toss for about 30 seconds, until it's cooked down and sticks to the tofu.",
+  "Build each bowl with romaine on the bottom, then the noodles, carrot and cucumber. Top with the tofu, the mint and the peanuts, and spoon 2 tbsp of the dressing over each one.",
+  "To pack it for lunches, put the tofu, peanuts and dressing in separate small containers and keep everything in the fridge for up to 4 days. Dress it just before eating.",
+  "Serve with the rest of the dressing and the sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions marinate firm tofu with lemongrass and soy, pan fry it until golden and serve it over rice vermicelli with lettuce, herbs and peanuts. Cook Smarts marinates cubed extra-firm tofu in soy, rice vinegar, sesame oil, honey, lemongrass and ginger, spoons the marinade over it as it sears, and dresses the bowl with a lime fish sauce dressing. Runaway Rice stir fries tofu strips with lemongrass and leek, adds bean sprouts off the heat, and adds pickled carrot and radish. This one follows the lead's marinade and dressing. The dressing has fish sauce, so swap in more soy sauce for a fully vegetarian bowl.",
+ "sources": [
+  {
+   "name": "Cook Smarts",
+   "title": "Lemongrass Tofu Vermicelli Bowl",
+   "url": "https://mealplans.cooksmarts.com/recipes/2347-lemongrass-tofu-vermicelli-bowl",
+   "rating": 5.0,
+   "rating_count": 56,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Runaway Rice",
+   "title": "Lemongrass Tofu and Rice Noodles (Bun Dau Hu Xao)",
+   "url": "https://runawayrice.com/?p=4759",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

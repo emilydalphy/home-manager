@@ -1,0 +1,47 @@
+{
+ "dish_name": "Chao Ga",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {"item": "Bone-in chicken thighs", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Shallots", "qty": "3", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece", "category": "produce", "cook_qty": "a 3-inch piece"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Jasmine rice", "qty": "1 cup", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Chicken bouillon powder", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Salt", "qty": "2 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fried shallots", "qty": "1 container", "category": "pantry"},
+  {"item": "Limes", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Peel 2 of the shallots and cut them in half. Slice the 3-inch piece of ginger into coins, skin and all. Cut the stems off the cilantro and keep the leaves for the end.",
+  "Put the 2 lbs chicken thighs in a large pot with the halved shallots, the ginger, the cilantro stems, 1 tsp of the salt and 9 cups water. Bring it to a boil over high heat, then turn it down so it simmers gently.",
+  "Skim off the grey foam that rises in the first few minutes. Simmer for 25 minutes. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest one next to the bone. No thermometer? Cut into one at the bone: the juices should run clear with no pink.",
+  "Meanwhile, rinse the 1 cup rice in a sieve under cold water until the water runs clear, and shake it dry. Finely chop the last shallot.",
+  "Heat the 1 tbsp oil in a skillet over medium. Add the chopped shallot and cook for about 2 minutes, until it's soft and smells sweet. Add the rice and stir for 5 minutes, until the grains turn opaque and smell toasty.",
+  "Lift the chicken onto a plate. Scoop the ginger, shallots and cilantro stems out of the pot and throw them away.",
+  "Tip the toasted rice into the broth and bring it back to a boil. Turn it down to low and simmer for 30 to 35 minutes, stirring the bottom every 5 minutes or so, until the grains have broken down and it's thick and creamy. If it gets thicker than you like, stir in a splash of hot water.",
+  "While the rice cooks, pull the chicken off the bones into thin shreds and throw away the skin and bones. Thinly slice 3 green onions and chop a handful of the cilantro leaves.",
+  "Make the dipping sauce: mix 1/2 tsp of the salt and 1/2 tsp of the pepper in a small dish and squeeze in the lime.",
+  "Stir 1 tbsp fish sauce, 2 tsp bouillon powder, 1 tsp sugar and the last 1 tsp salt into the porridge. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and pile the chicken on top. Scatter over the green onions, the cilantro, a spoonful of fried shallots and the rest of the pepper.",
+  "Serve with the lime, salt and pepper dip on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions poach a whole chicken with shallots and ginger, toast rinsed jasmine rice in fat before it goes into the broth, and simmer it until it breaks down, then season with bouillon powder, salt and sugar. Vicky Pham adds cilantro to the poaching pot, toasts the rice in rendered chicken fat, rubs the chicken with turmeric oil and serves a salt, pepper and lime dip. Takes Two Eggs lets the chicken steep off the heat for an hour and adds fish sauce at the end. This one uses bone-in thighs so the broth is ready in 25 minutes, toasts the rice with shallot in oil, and keeps the lead's lime dip. It keeps in the fridge for 3 days and reheats with a splash of water. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Vietnamese) has no chao ga, so the first read version leads.",
+ "sources": [
+  {"name": "Vicky Pham", "title": "Vietnamese Chicken Porridge (Chao Ga)", "url": "https://vickypham.com/blog/vietnamese-chicken-porridge-chao-ga/", "rating": 5.0, "rating_count": 2, "read": true, "lead": true},
+  {"name": "Takes Two Eggs", "title": "Chao Ga (Vietnamese Chicken Rice Porridge)", "url": "https://takestwoeggs.com/chao-ga-vietnamese-chicken-rice-porridge/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

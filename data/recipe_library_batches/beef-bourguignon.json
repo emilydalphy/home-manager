@@ -1,0 +1,154 @@
+{
+ "dish_name": "Beef Bourguignon",
+ "cuisine": "French",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 210,
+ "ingredients": [
+  {
+   "item": "Beef chuck roast",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bacon",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen pearl onions",
+   "qty": "1 bag (14 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F with a rack in the lower third.",
+  "Cut the 2 lb beef into 2 inch chunks, trimming off any thick pieces of fat. Pat them dry with paper towels and sprinkle 1 tsp of the salt and 1/4 tsp of the pepper over them.",
+  "Meanwhile, cut the 4 oz bacon into 1/2 inch pieces. Dice the onion and slice the 2 carrots 1/2 inch thick. Mince the 6 garlic cloves and keep 2 of them in a separate pile for the mushrooms.",
+  "Quarter the 1 lb mushrooms. Strip the leaves from a few sprigs of thyme and chop 1 tsp of them.",
+  "Heat the 1 tbsp oil in a large Dutch oven over medium. Add the bacon and cook for 3 to 4 minutes, stirring, until it's crisp and browned. Lift it out with a slotted spoon into a large bowl and leave the fat in the pot.",
+  "Turn the heat up to medium high. Pat the beef dry again and brown it in 3 batches, turning the pieces until they're deep brown on all sides, about 5 minutes a batch. Move each batch into the bowl with the bacon. Leave room between the pieces, or they'll steam instead of brown.",
+  "Turn the heat down to medium. Add the onion and carrots and cook for 3 to 4 minutes, scraping up the browned bits, until they've softened.",
+  "Add 4 of the garlic cloves and stir for 1 minute, until they smell fragrant.",
+  "If there's more than a thin layer of fat in the pot, spoon some off. Put the beef and bacon back in with any juices from the bowl. Sprinkle in 1/4 tsp of the salt, the remaining 1/4 tsp pepper and the 2 tbsp flour, and stir for 4 to 5 minutes, until you can't see any dry flour.",
+  "Stir in 1 1/2 tbsp of the tomato paste. Pour in 2 cups of the wine and 2 cups of the broth, so the meat is just covered.",
+  "Add the bag of pearl onions, the 2 bay leaves and the chopped thyme. Bring it to a simmer on the stove.",
+  "Cover the pot and put it in the oven for 2 1/2 to 3 hours, until a chunk of beef falls apart when you press it with a fork. Check it after an hour. It should be barely bubbling, and if it's bubbling hard, turn the oven down to 325°F.",
+  "About 10 minutes before the beef is done, melt the 2 tbsp butter in a large skillet over medium high. Add the mushrooms and the last 1/4 tsp salt and cook for 5 to 7 minutes, stirring now and then, until they're golden.",
+  "Add the 2 garlic cloves you kept back to the mushrooms and stir for 30 seconds, until they smell fragrant. Take the skillet off the heat.",
+  "Take the pot out of the oven and fish out the bay leaves. Tilt the pot and spoon off the fat that's pooled on the surface.",
+  "Stir in the mushrooms and let it simmer on the stove for 2 minutes.",
+  "Chop 2 tbsp of the parsley and scatter it over off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions brown bacon and then the beef in batches, soften onion and carrot with garlic in the same pot, cook in flour and tomato paste, cover the meat in red wine and beef stock with thyme and bay, and braise it in a 350°F oven until it falls apart, adding mushrooms browned in butter. Cafe Delites (the lead, on a tie at 5.0 with the most ratings) braises it for 2 to 3 hours, adds pearl onions with the wine and a crushed bouillon cube, and skims the fat off the sauce at the end. RecipeTin Eats marinates the beef in the wine overnight, boils the wine down by half first, adds the mushrooms and onions halfway, and says it's best made a day ahead. This one follows the lead without the bouillon cube and uses frozen pearl onions so there's no peeling. Leftovers reheat gently on the stove.",
+ "sources": [
+  {
+   "name": "Cafe Delites",
+   "title": "Beef Bourguignon",
+   "url": "https://cafedelites.com/beef-bourguignon/",
+   "rating": 4.95,
+   "rating_count": 353,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Beef Bourguignon (Beef Burgundy)",
+   "url": "https://www.recipetineats.com/beef-bourguignon/",
+   "rating": 4.96,
+   "rating_count": 189,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

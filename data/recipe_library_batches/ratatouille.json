@@ -1,0 +1,120 @@
+{
+ "dish_name": "Ratatouille",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Eggplant",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Pitted black olives",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the eggplant into 3/4 inch cubes, leaving the skin on. Put them in a colander set over a bowl, sprinkle 1/2 tsp of the salt over them and toss with your hands. Leave them for 30 minutes. Beads of water will come up on the surface, and you don't need to wipe them off.",
+  "Meanwhile, chop the 2 onions into 1/2 inch pieces and finely chop the 2 garlic cloves. Cut both peppers into 3/4 inch squares and the 2 zucchini into 1/2 inch pieces.",
+  "Halve 20 of the olives. Strip the leaves from a few sprigs of thyme and chop 1 tsp of them.",
+  "Heat 2 tbsp of the oil in a large skillet over medium high. Add the eggplant and cook for 4 to 5 minutes, stirring often, until it's golden outside but still a little firm. Tip it into a large pot.",
+  "Add 1 tbsp of the oil to the same skillet, then the onions and a pinch of salt. Cook for 3 minutes, until the onions are soft and just golden at the edges.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant. Tip the onions and garlic into the pot with the eggplant.",
+  "Add 1 tbsp of the oil to the skillet and cook the peppers with a pinch of salt for 3 minutes. They should still be firm in the middle and won't take much color. Tip them into the pot.",
+  "Add 1 tbsp of the oil to the skillet and cook the zucchini with a pinch of salt for 3 minutes, so it's still firm inside. Tip it into the pot.",
+  "Set the pot over medium high. Stir in the can of tomatoes, the chopped thyme, the olives, the remaining 3/4 tsp salt and the 1/4 tsp pepper. Once it's bubbling, turn the heat down low.",
+  "Cook it uncovered for 20 to 25 minutes, stirring now and then, until all the vegetables are tender and the liquid has cooked down. It's ready when you can pile it on a plate and it holds, but it's still juicy.",
+  "Chop 2 tbsp of the basil. Take the pot off the heat and stir in half of it.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon it into bowls, drizzle the last 1 tbsp of oil over the top and scatter on the rest of the chopped basil. Serve with the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions salt the eggplant, cook each vegetable in olive oil on its own so it stays firm, then simmer everything together in tomato with thyme and finish with fresh basil and a drizzle of oil. RecipeTin Eats (the lead) sweats the eggplant for 30 minutes, blends fresh tomatoes into a purée (canned crushed tomato is its swap, used here), adds black olives and simmers it all uncovered for 20 to 25 minutes. Once Upon a Chef cuts everything smaller, makes a sauce of fresh tomato, tomato paste and a little sugar first, and adds the zucchini only at the very end. Both say it keeps well, and leftovers reheat gently or eat at room temperature the next day.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Ratatouille (French Vegetable Stew)",
+   "url": "https://www.recipetineats.com/ratatouille/",
+   "rating": 4.98,
+   "rating_count": 93,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Ratatouille",
+   "url": "https://www.onceuponachef.com/recipes/ratatouille.html",
+   "rating": 4.92,
+   "rating_count": 254,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
