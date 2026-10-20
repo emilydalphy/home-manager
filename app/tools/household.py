@@ -197,10 +197,15 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     # an empty list when someone says they have no restrictions) should
     # never actually get stored as a restriction — filtered out on both
     # merge and replace so this can't silently accumulate as real entries.
-    restrictions = [r for r in restrictions if r.strip().lower() not in _NON_RESTRICTION_VALUES]
+    # Trimmed on the way in: " Sesame " was being stored as typed.
+    restrictions = [r.strip() for r in restrictions if r.strip().lower() not in _NON_RESTRICTION_VALUES]
     if replace:
         merged = list(restrictions)
     else:
+        # The merge reads the stored list and writes it back, so it holds the
+        # write lock from the read: two adds landing together (the member's
+        # own share link, the other adult's Settings) must both survive.
+        conn.execute("BEGIN IMMEDIATE")
         existing_row = conn.execute(
             "SELECT dietary_restrictions_json FROM members WHERE id = ? AND household_id = ?",
             (member_id, household_id()),
@@ -221,6 +226,42 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     conn.close()
     _log_preference_event(f"member:{name}:dietary_restrictions", "write")
     return {"name": name, "dietary_restrictions": merged}
+
+
+def remove_member_dietary_restriction(name: str, restriction: str) -> dict:
+    """
+    Take ONE restriction off a member's STORED list — Settings' chip
+    remove. Matched trimmed and case-blind; everything else on the list is
+    left exactly as stored.
+
+    Settings used to remove a chip by resending its own copy of the whole
+    list under replace=True. Found 2026-10-20: an allergy added after the
+    sheet opened (the member through their share link, the other adult on
+    another phone) was not in that copy, so removing any OTHER chip erased
+    it — and the planner's hard gate stopped holding that food back. This
+    edits the list as it is now, read and written under one write lock.
+    Looks the person up, never creates them (the route has already refused
+    a stranger); someone not found is a no-op.
+    """
+    target = (restriction or "").strip().lower()
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT id, dietary_restrictions_json FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            (household_id(), name),
+        ).fetchone()
+        if row is None:
+            return {"name": name, "dietary_restrictions": []}
+        current = json.loads(row["dietary_restrictions_json"] or "[]")
+        kept = [r for r in current if r.strip().lower() != target]
+        if kept != current:
+            conn.execute(
+                "UPDATE members SET dietary_restrictions_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(kept), row["id"], household_id()),
+            )
+    if kept != current:
+        _log_preference_event(f"member:{name}:dietary_restrictions", "write")
+    return {"name": name, "dietary_restrictions": kept}
 
 
 LITTLE_ONE_WORDS = frozenset({"toddler", "little one", "baby", "infant"})

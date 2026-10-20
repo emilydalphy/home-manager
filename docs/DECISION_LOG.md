@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Removing one allergy in Settings removes only that one** (2026-10-20,
+  overnight defect hunt; branch `overnight/restriction-remove-one`; tests
+  `tests/test_restriction_remove_one.py`). The chip remove used to resend the
+  sheet's copy of the whole list with replace=True, erasing an allergy added
+  meanwhile via the member's share link or the other adult's phone — and the
+  planner's hard gate with it. Now `POST /api/memory/member/restrictions/remove`
+  names the one item and `tools.remove_member_dietary_restriction` edits the
+  stored list under BEGIN IMMEDIATE; the add merge holds the lock from its read
+  too, and restrictions are trimmed on write. The sheet redraws from the answer.
+
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a

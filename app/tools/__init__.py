@@ -395,6 +395,7 @@ from .household import (  # noqa: F401
     set_member_age,
     age_stage,
     set_member_dietary_restrictions,
+    remove_member_dietary_restriction,
 )
 from .inventory import (  # noqa: F401
     _LEADING_NUM_RE,

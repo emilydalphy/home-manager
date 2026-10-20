@@ -246,7 +246,7 @@ CHECKLIST = {
     # People
     "age group": ("data-wwk=\"age\"", "/api/memory/member/age-group"),
     "restriction add": ("data-kind=\"restriction\"", "restrictions: [text], replace: false"),
-    "restriction remove": ("data-wwk=\"restriction-remove\"", "restrictions: next, replace: true"),
+    "restriction remove": ("data-wwk=\"restriction-remove\"", "/api/memory/member/restrictions/remove', { name: name, restriction: value }"),
     # Won't eat (household dislikes)
     "dislike add": ("data-kind=\"dislike\"", "wwkListAdd('wont-eat', 'dislikes', 'dislikes', text)"),
     "dislike remove": ("data-wwk=\"dislike-remove\"", "wwkListRemove('wont-eat', 'dislikes', 'dislikes', value)"),
