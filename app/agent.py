@@ -2640,14 +2640,14 @@ TOOL_DEFINITIONS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "date": {"type": "string", "description": "The holiday's ISO date (YYYY-MM-DD)."},
+                "date_str": {"type": "string", "description": "The holiday's ISO date (YYYY-MM-DD)."},
                 "answer": {"type": "string", "enum": ["hosting", "out", "just_us", "unsure"]},
                 "headcount": {"type": "integer", "description": "EXTRA people beyond the household, when hosting. Omit to keep what's recorded."},
                 "bring_dish": {"type": "string", "description": "The dish they're bringing, when out. '' to say nothing after all. Omit to keep what's recorded."},
                 "on_table_at": {"type": "string", "description": "When hosting: the time they want the big meal on the table ('5pm', '17:30'). Omit to keep what's recorded; '' to fall back to their usual dinner time."},
                 "guest_notes": {"type": "string", "description": "When hosting: what the guests can't eat, in the host's words ('Sam's vegetarian; no nuts for the Wongs'), under 160 characters. Omit to keep what's recorded; '' to clear."},
             },
-            "required": ["date", "answer"],
+            "required": ["date_str", "answer"],
         },
     },
     {
@@ -2655,8 +2655,8 @@ TOOL_DEFINITIONS = [
         "description": "The big meal for a holiday the household is hosting: the menu (main, sides, something sweet), what's made ahead on which day, the shop in two trips, the prep already on the days before, and the day-of timeline working back from the time it's on the table — with `spoken`, the whole thing in plain sentences. Use for 'what's the plan for Thanksgiving', 'what am I making ahead', 'when do I start on the day', 'read me the timeline'. Read `timeline.steps` back as times a person says ('4:15 — turkey into the oven'), never as a table.",
         "input_schema": {
             "type": "object",
-            "properties": {"date": {"type": "string", "description": "The holiday's ISO date."}},
-            "required": ["date"],
+            "properties": {"date_str": {"type": "string", "description": "The holiday's ISO date."}},
+            "required": ["date_str"],
         },
     },
     {
@@ -2665,7 +2665,7 @@ TOOL_DEFINITIONS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "date": {"type": "string"},
+                "date_str": {"type": "string"},
                 "name": {"type": "string"},
                 "role": {"type": "string", "enum": ["main", "side", "sweet"]},
                 "ingredients": {"type": "array", "items": {"type": "object", "properties": {"item": {"type": "string"}, "qty": {"type": "string"}, "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]}}, "required": ["item", "qty"]}},
@@ -2676,7 +2676,7 @@ TOOL_DEFINITIONS = [
                 "ahead_days": {"type": "integer", "description": "0 = the day, 1 = the day before, 2 = two days before."},
                 "replaces": {"type": "string", "description": "The dish this takes the place of, by name."},
             },
-            "required": ["date", "name", "role"],
+            "required": ["date_str", "name", "role"],
         },
     },
     {
@@ -2684,8 +2684,8 @@ TOOL_DEFINITIONS = [
         "description": "Take a side or the sweet off the big meal ('drop the brussels sprouts'), its shopping and prep with it. The main is swapped with set_big_meal_dish, never removed.",
         "input_schema": {
             "type": "object",
-            "properties": {"date": {"type": "string"}, "name": {"type": "string"}},
-            "required": ["date", "name"],
+            "properties": {"date_str": {"type": "string"}, "name": {"type": "string"}},
+            "required": ["date_str", "name"],
         },
     },
     {
@@ -2693,8 +2693,8 @@ TOOL_DEFINITIONS = [
         "description": "When a dish on the big meal gets made: 'make the stuffing the day before', 'do the pie two days out', 'the potatoes on the day'. `when` is day_of, day_before, two_days_before or an ISO date up to two days before. The prep on Now and the Cook screen moves with it.",
         "input_schema": {
             "type": "object",
-            "properties": {"date": {"type": "string"}, "dish": {"type": "string"}, "when": {"type": "string"}},
-            "required": ["date", "dish", "when"],
+            "properties": {"date_str": {"type": "string"}, "dish": {"type": "string"}, "when": {"type": "string"}},
+            "required": ["date_str", "dish", "when"],
         },
     },
     {
@@ -2702,8 +2702,8 @@ TOOL_DEFINITIONS = [
         "description": "Propose the big meal's menu again — 'start the sides over', 'give me a different menu'. Keeps the main unless keep_main is false. Only for a hosted holiday whose week is planned.",
         "input_schema": {
             "type": "object",
-            "properties": {"date": {"type": "string"}, "keep_main": {"type": "boolean", "description": "Default true."}},
-            "required": ["date"],
+            "properties": {"date_str": {"type": "string"}, "keep_main": {"type": "boolean", "description": "Default true."}},
+            "required": ["date_str"],
         },
     },
     {
