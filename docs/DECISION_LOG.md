@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A household's own grams add up to kilos on the list** (2026-10-20; branch
+  `overnight/hand-adds-sum-weights`; `tests/test_hand_adds_sum_weights.py`).
+  Typing "500 g" flour then "1 kg" read "500 g + 1 kg"; "8 oz" beef then
+  "1 lb" read "8 oz + 1 lb". Plan lines already summed these (ledger), and
+  household lines summed only volumes (part cups, 2026-10-19).
+  `grocery._sum_measures` (was `_sum_volumes`) now adds a household's own
+  second amount in any `_UNIT_CONVERSION_GROUPS` family (oz/lb, g/kg, ml/l);
+  grams never become pounds, and a plan's share in another unit word still
+  gets its own line. A sum that would round back to the line's own amount
+  ("1 lb" + "2 oz") keeps both, as before. A line already stored
+  "500 g + 1 kg" folds on its next hand add (`_refold_quantity_segments`).
+  Not touched: a bare "12" eggs beside "1 dozen" still reads "12 + 1 dozen".
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",
   and "cook it until we reach 160 internal temperature, if you have a
