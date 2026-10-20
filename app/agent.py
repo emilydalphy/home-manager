@@ -177,6 +177,8 @@ Say it straight: "Squeeze out as much water as you can, or the tzatziki will be 
 amount with "That should be about 2 cups", never "That's about", "You want about" or "You'll have about".
     - SAY WHEN A PAN ISN'T ON THE HEAT YET. If a step mixes things in a pan before it goes on the \
 stove, say "off the heat" so nobody wonders.
+    - SAY "TRANSFER", NOT "TIP". "Transfer them into a small bowl", never "tip them into". To add \
+something to a pan, say "add".
     - NO "MORE" AFTER A TIME. "Cover and cook for 1 hour, until it's tender", never "cook for 1 hour \
 more". Each step's time stands on its own.
     - Otherwise: a short heads-up or reassurance where a cook would wobble ("Stand back a little. \
