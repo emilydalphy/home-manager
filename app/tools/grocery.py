@@ -2938,16 +2938,41 @@ def clear_grocery_list(status: str = "needed") -> dict:
     plan leftovers) instead — this one has no way to know what's still
     actually needed.
     """
+    from . import staples as _staples
+
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
+        "SELECT id, staple_id, status FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
         (household_id(), status, status),
     ).fetchall()
     count = len(rows)
-    conn.execute(
-        "DELETE FROM grocery_items WHERE household_id = ? AND (? = 'all' OR status = ?)",
-        (household_id(), status, status),
-    )
+    # A staple's line still to buy is soft-removed, not deleted (defect
+    # hunt, 2026-10-20). Deleted, the very next read of the list ran
+    # staples.sync_due_staples, found the staple still due and nothing by
+    # its name on the list, and put it straight back: "Start over" said it
+    # removed 2 items and Shop showed the same 2. A line removed TODAY is
+    # the one thing sync leaves alone (and tidies away tomorrow), so this
+    # keeps them off for the rest of the household's day — and a staple
+    # line already removed today is kept for the same reason. Unlike
+    # ⋯ → Remove this is not "not this trip": a wipe is no answer about
+    # any one staple, so no rhythm moves and no skip counts toward the
+    # auto-pause. A bought staple line is deleted like anything else.
+    held = {r["id"] for r in rows if r["staple_id"] and r["status"] in ("needed", "in_cart", "removed")}
+    gone = [r["id"] for r in rows if r["id"] not in held]
+    held = sorted(held)
+    for i in range(0, len(held), 500):
+        chunk = held[i:i + 500]
+        conn.execute(
+            f"UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            f"WHERE household_id = ? AND status != 'removed' AND id IN ({','.join('?' * len(chunk))})",
+            (_staples.ADDED_BY_STAPLE, household_id(), *chunk),
+        )
+    for i in range(0, len(gone), 500):
+        chunk = gone[i:i + 500]
+        conn.execute(
+            f"DELETE FROM grocery_items WHERE household_id = ? AND id IN ({','.join('?' * len(chunk))})",
+            (household_id(), *chunk),
+        )
     conn.commit()
     conn.close()
     return {"removed_count": count}
