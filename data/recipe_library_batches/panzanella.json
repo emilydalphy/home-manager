@@ -1,0 +1,112 @@
+{
+ "dish_name": "Panzanella",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Ciabatta",
+   "qty": "1 loaf",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F and line a baking sheet with parchment.",
+  "Cut half the ciabatta loaf (about 8 oz) into 1 inch cubes. Bread that's a day or two old works best. Spread the cubes on the sheet, drizzle them with 1 tbsp olive oil, sprinkle on 1/4 tsp salt and toss them with your hands.",
+  "Bake for 7 to 10 minutes, until the edges are crisp and golden but the middles still give a little when you squeeze one. Leave them to cool on the sheet.",
+  "Meanwhile, grate the 2 garlic cloves into your biggest bowl. Add 4 tbsp olive oil, 3 tbsp red wine vinegar, 1/2 tsp Dijon, 1/2 tsp salt and the 1/4 tsp pepper, and whisk until it's smooth.",
+  "Cut the 1.5 lbs tomatoes into wedges and slice half the cucumber into half moons. Thinly slice half the red onion.",
+  "Add the tomatoes, cucumber, onion and toasted bread to the dressing and toss until everything is coated.",
+  "Tear in about 1 cup of the basil leaves and toss gently. Leave it for 10 minutes and toss it once or twice, so the bread softens a little in the tomato juices.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more of the vinegar.",
+  "Serve with a few more basil leaves torn over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three toast cubes or torn pieces of crusty bread in the oven with a little olive oil, then toss them with tomatoes, cucumber and basil in a mustard and red wine vinegar dressing. Love and Lemons (the lead) bakes the bread at 350°F until crisp at the edges, adds red onion and three grated garlic cloves to the dressing, and makes mozzarella optional. RecipeTin Eats salts the tomatoes in a colander first and whisks their juice into the dressing, and rests the salad 5 minutes. Spend With Pennies toasts the bread hotter, at 425°F, adds parsley and rests it 15 minutes. This one uses the lead's amounts as a lunch for 4, with two garlic cloves and a 10 minute rest.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Panzanella",
+   "url": "https://www.loveandlemons.com/panzanella/",
+   "rating": 5.0,
+   "rating_count": 63,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Panzanella (Italian tomato and bread salad)",
+   "url": "https://www.recipetineats.com/panzanella/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Panzanella Salad",
+   "url": "https://www.spendwithpennies.com/easy-panzanella-salad/",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

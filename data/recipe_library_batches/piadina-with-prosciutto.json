@@ -1,0 +1,103 @@
+{
+ "dish_name": "Piadina with Prosciutto",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Prosciutto",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Low-moisture mozzarella",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Arugula",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, stir together the 2 1/2 cups flour, 1/4 tsp baking soda and 1 tsp salt. Pour in 4 tbsp of the olive oil and rub it into the flour with your fingertips until it looks like damp sand.",
+  "Add 2/3 cup room temperature water and mix with your hand until it comes together into a shaggy dough. If there's still dry flour in the bottom of the bowl, add another tablespoon of water.",
+  "Tip the dough onto the counter and knead it for 5 minutes, until it's smooth and springs back slowly when you poke it. Cover it with the upturned bowl and leave it for 20 minutes. It rolls out much more easily after the rest.",
+  "Meanwhile, cut the 8 oz mozzarella and the tomato into thin slices. Lay the tomato slices on a plate and sprinkle them with a pinch of salt and the 1/4 tsp pepper.",
+  "Cut the dough into 4 pieces and roll each into a ball. Dust the counter with a little flour and roll each ball into a thin round about 9 inches across.",
+  "Heat a large cast iron or heavy skillet over medium high for 2 minutes, with no oil. Lay in one round and cook it for 1 to 2 minutes, until it puffs in places and the underside has brown spots.",
+  "Flip it and cook the other side for 1 to 2 minutes. Stack it on a plate under a clean kitchen towel and cook the other 3 rounds the same way.",
+  "Turn the heat down to medium. Lay a quarter of the prosciutto, mozzarella and tomato over one half of each piadina and fold the other half over the top.",
+  "Put two of the folded piadine back in the skillet and warm them for 1 minute. Flip them and warm the other side for 1 minute, until the mozzarella starts to melt. Do the other two the same way.",
+  "Toss a few big handfuls of the arugula with the last 1 tbsp olive oil. Lift the top of each piadina and tuck a handful inside.",
+  "Cut each one in half and serve them warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mob (the lead) makes a quick dough of bread flour, salt, a little baking soda, olive oil and water, rests it 20 to 30 minutes, then cooks thin rounds in a dry pan over high heat and folds them around prosciutto, mozzarella, tomato with balsamic glaze, rocket and Parmesan. Giada De Laurentiis (via Food.com) uses butter in the dough, chills it, grills the rounds and tops them with lemon ricotta, fontina and prosciutto. Domenica Cooks (from Fabio Trabocchi) uses butter, milk and baking powder, rests the dough 3 hours, and warms the filled half moons in the oven until the mozzarella melts. This one follows Mob's dough at two thirds for 4 rounds, leaves out the glaze and Parmesan, and warms the folded piadine back in the skillet to soften the cheese.",
+ "sources": [
+  {
+   "name": "Mob",
+   "title": "Prosciutto Piadina",
+   "url": "https://www.mob.co.uk/recipes/prosciutto-piadina",
+   "rating": 4.6,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com (Giada De Laurentiis)",
+   "title": "Italian Flatbread (Piadina) With Fontina and Prosciutto",
+   "url": "https://www.food.com/recipe/italian-flatbread-piadina-with-fontina-and-prosciutto-340990",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Domenica Cooks",
+   "title": "Piadine with Prosciutto, Mozzarella, and Arugula",
+   "url": "https://www.domenicacooks.com/blog/2011/07/the-family-dish-fabio-trabocchis-flatbread",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
