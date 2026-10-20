@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+
+- **The share link shows only approved weeks, and nothing written to the
+  household** (2026-10-20, Emily's call; branch
+  `fix/share-link-approved-weeks-only`; tests
+  `tests/test_share_link_approved_weeks_only.py`). `get_shared_weekly_plan`
+  picks the approved week covering today, else the next approved one, else
+  says "No plan has been made for this week yet" — a draft is never public.
+  `is_first_plan`/`new_recipe_count` left the payload and share.html lost
+  the "Here's your first week" banner and "N new recipes" tag: they were
+  notes to the household. Why: a draft is a working copy, and the link
+  should carry the menu and nothing else.
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
   tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`
