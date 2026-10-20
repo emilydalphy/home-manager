@@ -1,0 +1,176 @@
+{
+ "dish_name": "Pastitsio",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 120,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef bouillon cubes",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 cube"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cloves",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge (4 oz)",
+   "category": "dairy",
+   "cook_qty": "2/3 cup grated"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Bucatini",
+   "qty": "1 box (1 lb)",
+   "category": "pantry",
+   "cook_qty": "8 oz"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "1 block (6 oz)",
+   "category": "dairy",
+   "cook_qty": "2 oz"
+  }
+ ],
+ "instructions": [
+  "Finely chop the red onion and mince the 2 garlic cloves.",
+  "Heat the 1 tbsp olive oil in a large pot over medium high. Add the onion and cook for 3 to 4 minutes, stirring, until it's soft. Add the garlic and cook for 30 seconds, until it smells fragrant.",
+  "Add the 1 lb of ground beef and cook it for 6 to 8 minutes, breaking it up with a spoon, until there's no red left and it's starting to brown in spots.",
+  "Pour in 1/3 cup of the red wine and let it bubble for about 3 minutes, until most of it has cooked off.",
+  "Stir in the can of crushed tomatoes, 1 bouillon cube (crumbled), 1 tbsp tomato paste, 1/2 tsp sugar, the bay leaf, the 1/2 tsp cinnamon, the pinch of cloves, 1/2 tsp of the salt and the 1/2 tsp pepper.",
+  "Bring it to a simmer, then turn the heat down to medium low. Let it simmer gently for 45 minutes, stirring now and then, until the liquid is mostly gone and it's thick, not saucy.",
+  "Take out the bay leaf. Taste the sauce. If it's flat, add a pinch more salt. Take it off the heat and leave the lid off so it cools while you make the rest.",
+  "Finely grate the parmesan until you have 2/3 cup. Separate the egg, putting the yolk in one small bowl and the white in another.",
+  "Melt the 4 tbsp butter in a medium saucepan over medium. Add the 6 tbsp flour and stir for 1 minute.",
+  "Pour in half of the 2 cups milk, whisking all the time. It will turn into a thick paste. Whisk in the rest of the milk until it's smooth with no lumps.",
+  "Keep whisking over medium for about 5 minutes, until it's thick enough to coat a spoon and holds a line when you draw your finger through it.",
+  "Take the béchamel off the heat. Stir in the pinch of nutmeg, 1/3 cup of the parmesan and 1/4 tsp of the salt. Let it cool for 5 minutes, then quickly whisk in the egg yolk.",
+  "Heat the oven to 350°F (180°C). Bring a large pot of water to a boil and add the last 2 tsp salt.",
+  "Cook 8 oz of the bucatini for 1 minute less than the box says. Drain it and put it back in the pot.",
+  "Let the bucatini cool for 3 minutes, then stir in the egg white. Crumble in 2 oz of the feta and stir gently.",
+  "Lay the bucatini in an 8 inch square baking dish, lining the strands up the same way as best you can. Press it into a level layer.",
+  "Spread the meat sauce over the bucatini and smooth the top. Pour the béchamel over it and spread it to the edges. Sprinkle the remaining 1/3 cup parmesan on top.",
+  "Bake for about 30 minutes, until the top is puffed and golden brown in patches.",
+  "Let it sit for at least 10 minutes so it holds together when you cut it.",
+  "Cut it into 4 squares and serve it warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions layer thick tube pasta with a cinnamon spiced beef and tomato sauce cooked until thick and dry, then a béchamel set with egg and grated hard cheese, baked at 350°F until golden. RecipeTin Eats cooks the sauce with red wine, bouillon, tomato paste, cinnamon and cloves, puts the pasta under the meat with egg white and feta stirred through it, and whisks the yolk into the béchamel. Diane Kochilas uses white wine, allspice and nutmeg, layers pasta on both sides of the meat and makes a richer béchamel with cream, whole eggs, ricotta, feta and kasseri. This one follows RecipeTin Eats at half the amounts, with parmesan in place of kefalotyri and bucatini in place of pastitsio pasta.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pastitsio (Greek Pasta Bake)",
+   "url": "https://www.recipetineats.com/pastitsio-greek-beef-pasta-bake/",
+   "rating": 4.99,
+   "rating_count": 144,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Diane Kochilas",
+   "title": "BEST Greek Pastitsio Recipe",
+   "url": "https://www.dianekochilas.com/?p=42962",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

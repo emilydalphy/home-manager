@@ -1,0 +1,46 @@
+{
+ "dish_name": "Greek Lemon Chicken and Potatoes",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 80,
+ "ingredients": [
+  {"item": "Bone-in chicken thighs", "qty": "2.5 lbs", "category": "meat/seafood"},
+  {"item": "Yukon gold potatoes", "qty": "2 lbs", "category": "produce"},
+  {"item": "Lemons", "qty": "3", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "White wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Black peppercorns", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Feta cheese", "qty": "4 oz", "category": "dairy"}
+ ],
+ "instructions": [
+  "Heat the oven to 350°F (180°C).",
+  "Pat the chicken thighs dry with paper towels. Sprinkle 1 tsp of the salt and 1/4 tsp of the pepper all over them.",
+  "Cut the potatoes into wedges about 1 inch thick.",
+  "Lay the chicken skin side up in a large roasting pan and tuck the potato wedges into the gaps. Sprinkle the remaining 1/2 tsp salt and 1/4 tsp pepper over the potatoes.",
+  "Mince the 3 garlic cloves. In a jug, stir together 1 1/2 cups warm water, the juice of 2 of the lemons, the 1 tsp white wine vinegar, the 1/4 cup olive oil, the garlic and the 1 tsp peppercorns.",
+  "Pour it around the chicken, not over the skin. It should come about halfway up the potatoes. Sprinkle the 2 tsp oregano over everything.",
+  "Cover the pan tightly with foil and bake for 50 minutes.",
+  "Take off the foil, opening the far side first so the steam goes away from you. Crumble the 4 oz of feta over the chicken and potatoes.",
+  "Bake it uncovered for another 20 to 25 minutes, until the skin is golden, the potatoes are tender and the juices are bubbling. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest one near the bone. No thermometer? Cut into one next to the bone: it's done when the juices run clear and there's no pink.",
+  "If the skin is still pale, switch the oven to broil for 2 to 3 minutes. Stay at the oven. It goes from golden to burnt fast.",
+  "Let it sit in the pan for 5 minutes. Meanwhile, cut the last lemon into wedges.",
+  "Taste a potato with some of the pan juice. If it's flat, add a pinch more salt or a squeeze from one of the lemon wedges.",
+  "Serve the chicken and potatoes with the pan juices spooned over and the lemon wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions roast chicken and potato wedges in one pan with lemon, garlic, olive oil and oregano, with some liquid in the pan so the potatoes cook in the juices. My Greek Dish uses a whole chicken in 8 pieces, water to halfway up the chicken with the juice of 3 lemons, a little white wine vinegar and peppercorns, bakes it covered at 350°F, then uncovers it and tops it with feta for the last 15 to 20 minutes. Gonna Want Seconds and Eating European use bone-in thighs, add Dijon and broth, and roast hotter or longer for crisper skin. This one follows My Greek Dish's method and lemon ratio at 4 servings, with bone-in thighs from the other two and an optional minute under the broiler.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Greek Lemon Chicken and Potatoes (Kotopoulo Lemonato)", "url": "https://www.mygreekdish.com/?p=381", "rating": 4.8, "rating_count": 677, "read": true, "lead": true},
+  {"name": "Gonna Want Seconds", "title": "Greek Lemon Chicken and Potatoes", "url": "https://www.gonnawantseconds.com/greek-lemon-chicken-and-potatoes/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Eating European", "title": "Greek Lemon Chicken and Potatoes", "url": "https://eatingeuropean.com/?p=23451", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

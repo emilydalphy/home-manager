@@ -1,0 +1,51 @@
+{
+ "dish_name": "Keftedes",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Ground beef", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Panko breadcrumbs", "qty": "1 bag (8 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Fresh mint", "qty": "1 bunch", "category": "produce", "cook_qty": "6 large leaves"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "5 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Persian cucumbers", "qty": "2", "category": "produce"},
+  {"item": "Greek yogurt", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Make the tzatziki first. Grate the 2 cucumbers on the large holes of a box grater. Squeeze them a handful at a time in a clean kitchen towel until no more water comes out. Squeeze hard, or the tzatziki will be runny.",
+  "Put the cucumber in a bowl with 1 cup of the Greek yogurt, 1 of the garlic cloves (grated), 1 tbsp olive oil, 1 tsp red wine vinegar and 1/4 tsp of the salt. Stir it together and put it in the fridge.",
+  "Grate the red onion straight into a large bowl, juice and all. Mince the other 2 garlic cloves and add them.",
+  "Add the 1.5 lbs of ground beef, 1 cup panko, the egg, 1/4 cup chopped parsley, the 6 mint leaves (finely chopped), the 1/2 tsp oregano, 1 tbsp olive oil, the remaining 3/4 tsp salt and the 1/4 tsp pepper.",
+  "Mix it with your hands for 2 to 3 minutes, until it's smooth and everything is evenly spread through.",
+  "Scoop out heaped tablespoons and roll them into balls. You'll get about 30.",
+  "Put 1/2 cup flour on a plate. Roll each meatball in it and shake off the extra.",
+  "Heat 2 tbsp olive oil in a large skillet over medium high until it shimmers. Add about a third of the meatballs, leaving room between them.",
+  "Cook them for 5 to 6 minutes, rolling them around every minute or so, until they're deep brown all over. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Move them to a plate and cover it with foil. Cook the rest in two more batches the same way, adding the last 1 tbsp olive oil if the pan looks dry.",
+  "While the last batch cooks, warm the pitas one at a time in a dry pan over medium for 30 seconds. Flip each one and warm the other side for 30 seconds.",
+  "Taste the tzatziki. If it's flat, add a pinch more salt or a few drops more of the vinegar.",
+  "Chop a little more of the parsley and scatter it over the meatballs. Serve with the warm pita and the tzatziki."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions grate or finely chop the onion into the meat, bind it with bread and egg or milk, roll walnut to golf ball sized balls, dredge them in flour and fry them in olive oil. RecipeTin Eats uses beef with a little pork, panko, parsley, a few mint leaves and oregano, and says resting the mix for an hour is optional. My Greek Dish adds soaked stale bread and a splash of red wine vinegar and rests it an hour; Diane Kochilas works in grated tomato, milk and dried mint. This one follows RecipeTin Eats at 4 servings with all beef, which it allows, and serves them with a quick tzatziki.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Greek Meatballs", "url": "https://www.recipetineats.com/greek-meatballs/", "rating": 4.99, "rating_count": 74, "read": true, "lead": true},
+  {"name": "My Greek Dish", "title": "Greek Meatballs recipe (Keftedes/ Keftethes)", "url": "https://www.mygreekdish.com/recipe/keftedes-greek-meatballs/", "rating": 4.7, "rating_count": 732, "read": true, "lead": false},
+  {"name": "Diane Kochilas", "title": "Keftedes, Greek Meatballs", "url": "https://www.dianekochilas.com/?p=17111", "rating": 5, "rating_count": 9, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
