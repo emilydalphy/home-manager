@@ -1,0 +1,46 @@
+{
+ "dish_name": "Shrimp with Lobster Sauce",
+ "cuisine": "Chinese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Large shrimp (21/25 count)", "qty": "1 1/2 lb", "category": "meat/seafood"},
+  {"item": "Ground pork", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Low-sodium chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3 cups"},
+  {"item": "Sesame oil", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "1 cup"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "5 tbsp"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes. No peeking.",
+  "Meanwhile, if your shrimp still have shells, peel and devein them. Pat them dry with paper towels. Mince the 2 garlic cloves and chop the 2 green onions. Beat the 2 eggs in a small bowl.",
+  "Stir the 5 tbsp cornstarch with 1/4 cup cold water in a small cup until smooth.",
+  "Bring 3 cups water to a boil in a wok. Add the 8 oz ground pork and break it up with a spoon. Cook for about 1 minute, until there's no pink left. Drain it in a sieve and rinse it briefly under the tap.",
+  "Wipe the wok dry and heat it over medium high until it's hot. Add the 3 tbsp oil, the garlic, the pork and the shrimp. Stir for about 30 seconds, until the garlic smells fragrant.",
+  "Add the 2 tbsp Shaoxing wine and let it sizzle for a few seconds. Pour in the 3 cups chicken broth and add the 1 tsp sesame oil, the 1/2 tsp sugar, the 1 tsp salt and the 1/4 tsp white pepper. Stir in the 1 cup frozen peas.",
+  "Bring it to a simmer. Stir the cornstarch mix again, since it settles, and pour it in a little at a time, stirring as you go. Let it bubble for about 1 minute, until the sauce is thick enough to coat a spoon. The shrimp are done when they're pink and curled into a loose C.",
+  "Drizzle the beaten egg over the top in a thin stream and scatter the green onions over it. Leave it for 5 seconds so the egg starts to set. Fold it gently a few times with a spatula, until the egg forms soft ribbons.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions make this Cantonese American takeout classic the same way: shrimp and a little ground pork cooked with garlic in a seasoned chicken stock with peas, thickened with cornstarch and finished with beaten egg drizzled in so it sets into ribbons. The Woks of Life blanches the pork in boiling water and rinses it so the sauce stays clear, then stir fries everything together briefly, and seasons with rice wine, sesame oil, sugar, salt and white pepper. Omnivore's Cookbook browns the shrimp first, adds ginger, oyster sauce and peas and carrots, and stirs the egg in off the heat. This follows The Woks of Life, doubled from 2 servings to 4 and without the optional MSG.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Shrimp with Lobster Sauce", "url": "https://thewoksoflife.com/shrimp-lobster-sauce/", "rating": 4.94, "rating_count": 177, "read": true, "lead": true},
+  {"name": "Omnivore's Cookbook", "title": "Shrimp with Lobster Sauce", "url": "https://omnivorescookbook.com/shrimp-with-lobster-sauce/", "rating": 4.88, "rating_count": 8, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,139 @@
+{
+ "dish_name": "Ma Po Eggplant",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chinese eggplants",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sichuan peppercorns",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Doubanjiang (chili bean paste)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "6"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 1/2 inch piece"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Chili oil",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "for the table"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes. No peeking.",
+  "Meanwhile, trim the ends off the eggplants and cut them into bite-size pieces. Slice the 6 green onions and set a small handful of the green parts aside for the top. Mince the 3 garlic cloves and the 1 1/2 inch piece of ginger.",
+  "Stir the 1 1/2 tbsp cornstarch with 3 tbsp cold water in a small cup until smooth.",
+  "Add the 1 1/2 tbsp oil and the 1 tbsp Sichuan peppercorns to a large skillet or wok off the heat. Set it over medium heat and cook for about 5 minutes, stirring now and then, until the peppercorns turn a shade darker and smell toasty. Scoop them out with a spoon, leaving the oil behind, and transfer them into a small bowl.",
+  "Turn the heat to medium high. Add the 12 oz ground pork and press it into one flat layer. Spoon the 2 tbsp doubanjiang over the top. Leave it for about 1 minute, until the underside is golden.",
+  "Break the pork up and stir it into the doubanjiang. Cook for 2 to 3 minutes, until the pork is browned and almost cooked through.",
+  "Add the green onions, garlic and ginger and stir for 30 seconds to 1 minute, until it smells fragrant.",
+  "Pour in the 1 1/2 tbsp Shaoxing wine and scrape up the browned bits from the bottom of the pan.",
+  "Add the eggplant, the 1 1/2 cups chicken broth, the 1 tbsp soy sauce and the 1 tbsp sugar and stir gently. Bring it to a boil, then cover and turn the heat to medium low. Simmer for 7 to 10 minutes, until a piece of eggplant is soft all the way through when you taste it.",
+  "While it simmers, crush the toasted Sichuan peppercorns in a mortar or with the bottom of a heavy pan and put them in a small bowl. Put the chili oil in another small bowl.",
+  "Stir the cornstarch mix again, since it settles, and drizzle it in. Turn the heat to medium and stir for about 1 minute, until the sauce is thick and glossy.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Scatter the reserved green onions over the eggplant. Serve over the rice, with the crushed peppercorns and the chili oil on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions brown ground meat with doubanjiang, add ginger, garlic and scallion, then cook eggplant in a stock seasoned with Shaoxing wine, soy, sugar and chili oil and thicken it with a cornstarch slurry, served over rice. Omnivore's Cookbook toasts whole Sichuan peppercorns in the oil and lifts them out, uses ground chicken, and simmers the raw eggplant covered in the sauce until soft. The Woks of Life marinates ground pork, pan fries the eggplant first, adds fermented black beans and ground Sichuan peppercorn, and uses a good deal more chili oil and stock. This follows Omnivore's Cookbook, scaled up for 4 over rice and made with ground pork as The Woks of Life does; the base stays mild with the crushed peppercorns and the chili oil served at the table.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Mapo Eggplant",
+   "url": "https://omnivorescookbook.com/mapo-eggplant/",
+   "rating": 4.96,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Mapo Eggplant",
+   "url": "https://thewoksoflife.com/mapo-eggplant/",
+   "rating": 4.74,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

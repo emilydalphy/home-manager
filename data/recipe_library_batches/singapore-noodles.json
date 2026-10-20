@@ -1,0 +1,52 @@
+{
+ "dish_name": "Singapore Noodles",
+ "cuisine": "Chinese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Rice vermicelli noodles", "qty": "1 package (8 oz)", "category": "pantry", "cook_qty": "6 oz"},
+  {"item": "Medium shrimp", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Carrot", "qty": "1", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "3"},
+  {"item": "Light soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Ground white pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Curry powder", "qty": "5 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Peanut oil", "qty": "1/4 cup", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 6 oz vermicelli in a large bowl and cover it with just boiled water. Soak it as the package says, usually 3 to 5 minutes, until it's soft and bends easily. Drain it well and snip through it a few times with kitchen scissors so the strands aren't too long to toss.",
+  "Meanwhile, stir the 1/4 cup soy sauce, the 1/4 cup Shaoxing wine, the 1 tsp sugar and the 1 tsp white pepper together in a small bowl.",
+  "Thinly slice the onion and mince the 4 garlic cloves. Peel the ginger and grate about 2 tsp of it. Cut the bell pepper into thin strips, peel the carrot and cut it into thin matchsticks, and cut 3 of the scallions into 2 inch lengths.",
+  "Peel and devein the 1 lb shrimp if they aren't already done. Pat them dry with paper towels and sprinkle them with 1/4 tsp of the salt. Beat the 4 eggs in a bowl with the remaining 1/4 tsp salt.",
+  "Heat 1 tbsp of the oil in a wok or large skillet over medium high heat until it shimmers. Add the shrimp in a single layer and cook for 1 minute, until the undersides turn pink. Flip them and cook the other side for 1 minute, until they're pink all over and curled into a loose C. Transfer them to a plate.",
+  "Add 1 tbsp of the oil and pour in the eggs. Swirl the pan so they spread into a thin omelette and cook for 1 to 2 minutes, until it's set. Roll it up, move it to a board and slice it into thin strips.",
+  "Add the remaining 2 tbsp oil and the onion. Cook for 2 minutes, stirring, until it starts to soften. Add the garlic and ginger and cook for 30 seconds, until they smell fragrant.",
+  "Add the carrot and bell pepper and stir fry for 1 minute, until the pepper turns bright.",
+  "Sprinkle in the 5 tsp curry powder and stir for 30 seconds, until it smells toasty.",
+  "Add the noodles and pour the sauce over them. Toss with tongs for about 2 minutes, until every strand is evenly yellow with no pale patches. If they start to stick, add a splash of water.",
+  "Add the shrimp, the egg strips and the scallion pieces. Toss for 1 minute, until everything is hot.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot, or pack it for lunch and reheat it with a splash of water."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soak thin rice vermicelli, cook the shrimp and a thin egg first, soften onion, garlic and ginger, then toss the noodles with curry powder, soy sauce, Shaoxing wine, sugar and white pepper and fold the shrimp and egg back in. RecipeTin Eats (the lead) mixes the curry powder into the sauce and uses bell pepper and char siu pork. The Woks of Life sprinkles the curry powder straight onto the noodles in the wok and adds napa cabbage, carrot, dried chilies and sesame oil, and Omnivore's Cookbook adds oyster sauce and carrot. This follows RecipeTin Eats doubled for 4, leaves out the char siu so shrimp carries it, adds the carrot both others use, and fries the curry powder in the oil for a moment before the noodles go in."
+ ,
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Singapore Noodles", "url": "https://www.recipetineats.com/singapore-noodles/", "rating": 4.97, "rating_count": 130, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Singapore Noodles (Singapore Mei Fun)", "url": "https://thewoksoflife.com/singapore-noodles/", "rating": 4.93, "rating_count": 156, "read": true, "lead": false},
+  {"name": "Omnivore's Cookbook", "title": "Singapore Noodles (Singapore Mei Fun)", "url": "https://omnivorescookbook.com/singapore-noodles/", "rating": 4.9, "rating_count": 19, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

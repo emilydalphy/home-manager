@@ -1,0 +1,43 @@
+{
+ "dish_name": "Youtiao with Soy Milk",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "2 cups + 2 tbsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Baking powder", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "Plain unsweetened soy milk", "qty": "1 carton (64 oz)", "category": "dairy", "cook_qty": "4 cups + 1 tbsp"},
+  {"item": "Vegetable oil", "qty": "6 cups", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"}
+ ],
+ "instructions": [
+  "The night before: take the 2 tbsp butter out to soften. Put 2 cups of the flour, the egg, the 1/2 tsp salt, the 1 1/2 tsp baking powder, the butter and 1 tbsp of the soy milk in the bowl of a stand mixer. Mix with the dough hook on the lowest speed, adding 1/3 cup water a little at a time. If it's still dry and crumbly, add up to 2 tbsp more water.",
+  "Knead on low for 15 minutes, until the dough is very soft and smooth and comes away from the bowl. No mixer? Knead it by hand on the counter for about 20 minutes. Cover the bowl and leave it for 30 minutes.",
+  "Knead the dough by hand for 5 minutes. Pat it into an even rectangle about 1/4 inch thick and 4 inches wide on a plate or small baking sheet. Wrap it tightly in plastic wrap and put it in the fridge overnight.",
+  "In the morning, 1 to 2 hours before you want to eat, take the dough out and leave it wrapped on the counter until it's at room temperature and very soft. On a cold day it can take longer. Cold dough won't puff.",
+  "Pour the 6 cups oil into a wok or a wide heavy pot and heat it over medium heat. You're heating it to 400°F, so if you have a thermometer, clip it to the side. No thermometer? Drop in a pinch of dough: it should float straight up and bubble hard all around.",
+  "Meanwhile, pour the remaining 4 cups soy milk into a saucepan off the heat. Set it over medium low and heat it for 5 to 8 minutes, stirring often, until it's steaming with small bubbles at the edge. Don't let it boil, or it'll scorch on the bottom. Turn the heat to its lowest setting to keep it warm.",
+  "Set a rack over a baking sheet next to the stove. Unwrap the dough and dust it with the last 2 tbsp flour. Cut it crosswise into 1 inch strips, making an even number.",
+  "Stack the strips in pairs. Press a chopstick firmly down the length of each pair, right through the middle, so the two pieces stick together.",
+  "Hold both ends of one pair and gently stretch it into a rope about 9 inches long. Lower it into the oil. It should rise to the top right away.",
+  "Roll it over and over with chopsticks or tongs for 1 to 2 minutes, until it's puffed and light golden all over. Stop at light golden. Darker ones come out hard. Transfer it to the rack.",
+  "Fry the rest the same way, one or two at a time. This makes 8 to 10 youtiao.",
+  "Pour the hot soy milk into 4 cups. Serve with the warm youtiao and the 1/4 cup sugar on the side."
+ ],
+ "advance_prep_notes": "Make the dough the night before; take it out of the fridge 1 to 2 hours before frying",
+ "advance_prep_step_indices": [1, 2, 3, 4],
+ "method_notes": "All three make a soft leavened dough, rest it for a long time, cut it into strips, press pairs together with a chopstick, stretch them and fry them in hot oil while turning them until they're puffed and light golden. The Woks of Life (the lead) adds egg, butter and a spoonful of milk, kneads it for 15 minutes, chills it overnight and fries at 400 to 425°F after the dough warms up on the counter. Omnivore's Cookbook uses a wetter dough with baking soda and egg white and fries at 375°F, and Tara's Multicultural Table uses egg and ice water and fries at 350°F. This follows The Woks of Life's dough and timing, uses a spoonful of the soy milk in place of the milk so there's one carton to buy, and serves it with warmed plain soy milk and sugar on the side for sweetening."
+ ,
+ "sources": [
+  {"name": "The Woks of Life", "title": "Youtiao Recipe (Chinese Fried Dough)", "url": "https://thewoksoflife.com/youtiao-recipe/", "rating": 4.92, "rating_count": 37, "read": true, "lead": true},
+  {"name": "Omnivore's Cookbook", "title": "You Tiao (Chinese Donuts)", "url": "https://omnivorescookbook.com/you-tiao-chinese-donuts/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Tara's Multicultural Table", "title": "Youtiao (Chinese Fried Dough)", "url": "https://tarasmulticulturaltable.com/youtiao-chinese-fried-dough/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

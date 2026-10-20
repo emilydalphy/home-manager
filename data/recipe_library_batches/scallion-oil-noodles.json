@@ -1,0 +1,40 @@
+{
+ "dish_name": "Scallion Oil Noodles",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Scallions", "qty": "2 bunches", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Light soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Fresh thin wheat noodles", "qty": "1 lb", "category": "produce"}
+ ],
+ "instructions": [
+  "Fill a large pot with water and bring it to a boil over high heat for the noodles.",
+  "Meanwhile, wash the 2 bunches of scallions and pat them completely dry with a kitchen towel. Wet scallions spatter hard in hot oil.",
+  "Trim off the roots and cut the scallions into 3 inch lengths, keeping the white and green parts in separate piles. Slice the white pieces in half lengthwise.",
+  "Heat the 1/4 cup oil in a wok or large skillet over medium heat until it shimmers. Add the white pieces, spread them out and cook for 2 minutes, stirring, until they wilt.",
+  "Add the green pieces and cook for 8 to 10 minutes, stirring often, until all the scallions are deep golden brown and crisp at the edges. If they brown too fast, turn the heat down to medium low. Don't rush this. Burnt scallions taste bitter.",
+  "Lift the scallions out with a slotted spoon onto a plate lined with paper towels, leaving the oil in the pan.",
+  "Turn the heat down to low. Add the 2 tbsp dark soy sauce, the 2 tbsp light soy sauce and the 1 tbsp sugar to the oil. Stand back a little. It'll sputter. Stir for about 2 minutes, until the sugar dissolves and the sauce bubbles. Take it off the heat and transfer it to a small bowl.",
+  "Cook the 1 lb noodles in the boiling water as the package says, usually 2 to 3 minutes for fresh noodles, until they're just tender. Drain them well and don't rinse them.",
+  "Divide the noodles among 4 bowls. Spoon 1 tbsp of the sauce over each bowl and pile the fried scallions on top.",
+  "Toss one bowl and taste it. If it's flat, add another spoonful of the sauce.",
+  "Serve with the rest of the sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fry a big pile of scallions slowly in neutral oil until they're golden, lift them out, then cook soy sauce and sugar into the same oil and toss it through wheat noodles with the crisp scallions on top. The Woks of Life (the lead) uses both dark and light soy sauce in equal amounts, adds the scallion greens once the whites wilt, and starts with about 1 tbsp of sauce per bowl since it's strong. Omnivore's Cookbook adds chopped garlic to the oil before the soy sauce, and Veggiekins swaps in tamari, vegan oyster sauce and a slice of ginger. This follows The Woks of Life cut down for 4, with the noodle amount from Omnivore's Cookbook, and leaves out the optional ground pork topping to keep it vegetarian."
+ ,
+ "sources": [
+  {"name": "The Woks of Life", "title": "Shanghai Soy Scallion Noodles (Cong You Ban Mian)", "url": "https://thewoksoflife.com/soy-scallion-noodles-cong-ban-mian/", "rating": 4.93, "rating_count": 39, "read": true, "lead": true},
+  {"name": "Omnivore's Cookbook", "title": "Shanghai Scallion Oil Noodle", "url": "https://omnivorescookbook.com/scallion-oil-noodle/", "rating": 4.88, "rating_count": 8, "read": true, "lead": false},
+  {"name": "Veggiekins", "title": "Easy Scallion Oil Noodles Recipe (Cong You Ban Mian)", "url": "https://veggiekinsblog.com/2024/01/19/scallion-oil-noodles/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

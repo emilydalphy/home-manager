@@ -1,0 +1,45 @@
+{
+ "dish_name": "Chinese Braised Fish",
+ "cuisine": "Chinese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Whole tilapia", "qty": "2 (about 1 lb each)", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Ginger", "qty": "1 small piece", "category": "produce", "cook_qty": "6 slices"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "3"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2/3 cup"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Chinkiang black vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 1/2 tsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tsp"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes. No peeking.",
+  "Meanwhile, make sure the fish are gutted and scaled. The fish counter will do this for you. Pat the fish very dry inside and out with paper towels. With a sharp knife, cut three diagonal slashes down to the bone on each side.",
+  "Sprinkle the 1/2 tsp salt over both sides of the fish and into the slashes. Dust both sides with a thin, even layer of the 2 tsp cornstarch.",
+  "Cut 6 thin slices from the ginger. Cut the 3 green onions into 2 inch pieces.",
+  "In a small bowl, stir together the 2/3 cup Shaoxing wine, 1 1/2 tbsp sugar, 2 tbsp black vinegar, 2 1/2 tsp dark soy sauce and 1 1/2 tsp soy sauce until the sugar dissolves.",
+  "Heat a wok or a large skillet over high heat until it just starts to smoke. Add the 3 tbsp oil and the ginger slices and turn the heat to medium. Cook for 1 to 2 minutes, until the edges of the ginger brown. Move the ginger to a plate.",
+  "Lay both fish in the pan side by side. Leave them alone for about 5 minutes, tilting the pan now and then so the oil reaches every part, until the underside is golden and lets go of the pan. Stand back a little. It'll spatter.",
+  "Carefully turn the fish over with a wide spatula and cook the other side for about 5 minutes, until it's golden too.",
+  "Put the ginger back in the pan and add the green onions. Pour in the sauce and turn the heat to medium low. Let it bubble for 4 to 5 minutes, spooning the liquid over the fish the whole time.",
+  "Carefully turn the fish over and cook for 4 to 5 minutes, still spooning the liquid over, until the sauce has cooked down and is almost syrupy. Gently pull apart the thickest part of one fish. It's done when the flesh is opaque and comes away from the bone easily.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a splash more of the black vinegar.",
+  "Lift the fish onto a platter and spoon the sauce, ginger and green onions over the top. Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions score a whole fish, fry it in a wok until golden on both sides, then braise it briefly with ginger and scallion in a soy and sugar liquid until the sauce cooks down. The Woks of Life dusts tilapia in cornstarch so the skin holds together, crisps the ginger first, and braises in a generous amount of Shaoxing wine with black vinegar, sugar and both light and dark soy, spooning it over until syrupy. Asian Cooking Mom salts a branzino before frying and braises it covered in water with light soy and a little sugar for a milder, brothier sauce. This follows The Woks of Life, sized to two 1 lb tilapia for 4, with the light salting from Asian Cooking Mom.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Chinese Braised Fish (Hongshao Yu)", "url": "https://thewoksoflife.com/chinese-braised-fish-hongshao-yu-2/", "rating": 4.91, "rating_count": 21, "read": true, "lead": true},
+  {"name": "Asian Cooking Mom", "title": "Braised Whole Fish (Branzino) (Hong Shao Yu)", "url": "https://www.asiancookingmom.com/braised-whole-fish-branzino-%E7%BA%A2%E7%83%A7%E9%B1%BC-hong-shao-yu/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

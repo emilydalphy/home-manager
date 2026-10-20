@@ -1,0 +1,47 @@
+{
+ "dish_name": "Chicken with Black Bean Sauce",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1 1/2 lb", "category": "meat/seafood"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "4 tsp"},
+  {"item": "Vegetable oil", "qty": "6 tbsp", "category": "pantry"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Fermented black beans", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Ginger", "qty": "1 small piece", "category": "produce", "cook_qty": "4 slices"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Green bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the chicken thighs across the grain into thin slices, about 1/4 inch thick. In a bowl, mix them with 6 tbsp water, 2 tbsp of the cornstarch, the 4 tsp soy sauce and 1 tbsp of the oil until the liquid is soaked up. Leave it on the counter for 30 minutes.",
+  "While the chicken sits, rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes. No peeking.",
+  "Meanwhile, rinse the 1/4 cup black beans in a sieve and drain them. Cut 4 thin slices of the ginger into matchsticks. Smash and chop the 4 garlic cloves. Chop the 4 green onions, keeping the white and green parts separate.",
+  "Cut the green and red peppers into bite-size pieces. Stir the last 1 tbsp cornstarch into 1/4 cup cold water in a small cup until smooth.",
+  "Heat a wok or your largest skillet over high heat until it just starts to smoke. Add 2 tbsp of the oil and spread half the chicken in one layer. Leave it for 1 minute, until the underside is lightly browned. Flip the pieces and cook the other side for 1 minute. Move them to a plate.",
+  "Add another 2 tbsp oil and cook the rest of the chicken the same way. Move it to the plate. It'll finish cooking in the sauce.",
+  "Turn the heat to medium and add the last 1 tbsp oil. Add the ginger and stir for 15 seconds. Add the garlic, the white parts of the green onions and the black beans and stir for 30 seconds, until it smells fragrant.",
+  "Turn the heat to high and add the peppers. Stir for about 1 minute, until they're bright and just starting to soften.",
+  "Add the 2 tbsp Shaoxing wine, the 1 tsp sugar and the 1/4 tsp salt. Put the chicken back in with any juices from the plate.",
+  "Stir the cornstarch mix again and pour it in. Stir for 1 to 2 minutes, until the sauce bubbles and turns glossy and the chicken is cooked through. You're cooking it to 175°F, but slices this thin are hard to check, so cut the thickest piece open instead. It's done when there's no pink left.",
+  "Take it off the heat and stir in the green parts of the green onions. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions coat bite-size chicken in cornstarch and Shaoxing wine or soy, sear it quickly in a hot wok, then cook ginger, garlic and fermented black beans before the bell peppers go in and the chicken comes back to finish. The Woks of Life uses whole fermented black beans, rinsed, with red and green peppers, a little sugar, Shaoxing wine and salt, and suggests a cornstarch slurry for anyone who wants more sauce. Omnivore's Cookbook uses jarred black bean sauce with oyster sauce and dark soy and adds a little onion. This follows The Woks of Life with the extra sauce, made with thighs instead of breast and sized up so it feeds 4 over rice.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Chicken with Black Bean Sauce", "url": "https://thewoksoflife.com/chicken-black-beans/", "rating": 4.89, "rating_count": 51, "read": true, "lead": true},
+  {"name": "Omnivore's Cookbook", "title": "Chicken with Black Bean Sauce", "url": "https://omnivorescookbook.com/chicken-with-black-bean-sauce/", "rating": 4.82, "rating_count": 27, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
